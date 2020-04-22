@@ -760,7 +760,7 @@ function drawPlotPanel(plot_type, plot_div) {
     plot_div.find('.plot-container').attr('class', 'plot-container');
     var mode = get_current_mode();
 
-    plot_div.find('.plot-title').html( "&nbsp;" + plot_type);
+    plot_div.find('.plot-title').html( "&nbsp;" + display_plot_names[plot_type]);
 
     console.log("SET UP PLOT", plot_type, plot_id, mode);
     switch (mode) {
@@ -886,6 +886,12 @@ function drawPlotPanel(plot_type, plot_div) {
             plot_div.find('.plot-container').attr('id', 'tm_movment-' + plot_id);
             tm7_plot('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["classA_ligands"],raw_data["tm_movement_2D"]["viewbox_size"]);
             break;
+        case "tm7_plot_middle":
+            plot_div.find('.plot-container').removeClass('none');
+            plot_div.find('.plot-container').addClass('tm_movment-container');
+            plot_div.find('.plot-container').attr('id', 'tm_movment-' + plot_id);
+            tm7_plot('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["membrane_mid"],raw_data["tm_movement_2D"]["viewbox_size"]);
+            break;
         case "tm7_plot_intra":
             plot_div.find('.plot-container').removeClass('none');
             plot_div.find('.plot-container').addClass('tm_movment-container');
@@ -903,6 +909,12 @@ function drawPlotPanel(plot_type, plot_div) {
             plot_div.find('.plot-container').addClass('tm_movment-container');
             plot_div.find('.plot-container').attr('id', 'tm_movment-' + plot_id);
             tm7_plot_3d('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["classA_ligands"]);
+            break;
+        case "tm7_plot_3d_middle":
+            plot_div.find('.plot-container').removeClass('none');
+            plot_div.find('.plot-container').addClass('tm_movment-container');
+            plot_div.find('.plot-container').attr('id', 'tm_movment-' + plot_id);
+            tm7_plot_3d('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["membrane_mid"]);
             break;
         case "tm7_plot_3d_intra":
             plot_div.find('.plot-container').removeClass('none');
@@ -927,10 +939,15 @@ var plotting_options = {
             ['tm7_plot_3d_extra','3D plot'],
             ['tm7_heatmap_extra','Heatmap']
         ],
-        'class A major pocket': [
-            ['tm7_plot_major', '2D plot'],
-            ['tm7_plot_3d_major','3D plot'],
-            ['tm7_heatmap_major','Heatmap']
+        // 'class A major pocket': [
+        //     ['tm7_plot_major', '2D plot'],
+        //     ['tm7_plot_3d_major','3D plot'],
+        //     ['tm7_heatmap_major','Heatmap']
+        // ],
+        'Middle of membrane': [
+            ['tm7_plot_middle', '2D plot'],
+            ['tm7_plot_3d_middle','3D plot'],
+            ['tm7_heatmap_middle','Heatmap']
         ],
         'cytosolic': [
             ['tm7_plot_intra', '2D plot'],
@@ -961,6 +978,8 @@ var plotting_options = {
         ['boxplot_angles', 'Box plot '],],
 };
 
+display_plot_names = {}
+
 
 
 function generate_display_options() {
@@ -975,6 +994,7 @@ function generate_display_options() {
         if ($.isArray(plotting_options[key])) {
             dropdown_html += '<li class="dropdown-header text-uppercase"><strong>' + key + '</strong></li>'
             plotting_options[key].forEach(function (opt) {
+                display_plot_names[opt[0]] = '<span class="text-uppercase"><strong>'+key + '</strong></span> - ' + opt[1];
                 dropdown_html += '<li><a class="plot_selection" href="#" plot_type="' + opt[0] + '">' + opt[1] + '</a></li>'
             });
         } else {
@@ -983,6 +1003,7 @@ function generate_display_options() {
             for (let key2 in plotting_options[key]) {
                 dropdown_html += '<li class="dropdown-header text-uppercase"><strong>' + key2 + '</strong></li>'
                 plotting_options[key][key2].forEach(function (opt) {
+                    display_plot_names[opt[0]] = '<span class="text-uppercase"><strong>'+key + '</strong></span> - <span class="text-uppercase"><strong>'+ key2 + '</strong></span> - ' + opt[1];
                     dropdown_html += '<li><a class="plot_selection" href="#" plot_type="' + opt[0] + '">' + opt[1] + '</a></li>'
                 });
             }
@@ -1156,7 +1177,8 @@ function initilizeInitialPlots() {
     var mode = get_current_mode();
     // if single structure - use interaction coloring
     if (mode == "two-crystal-groups") {
-        default_plot_types = ['tm7_plot_extra', 'tm7_plot_major', 'tm7_plot_intra'];
+        default_plot_types = ['tm7_plot_extra', 'tm7_plot_middle', 'tm7_plot_intra'];
+        // default_plot_types = ['scatterplot', 'snakeplot', ''];
     }
 
     $(".plot_row:visible").find(".panel").each(function (i) {
@@ -1188,6 +1210,8 @@ function initializeFullscreenButton(selector) {
         } else {
             fullScreenElement = $(this).closest(".panel-default").find(".plot-container");
             fullScreenElement.css('background-color', 'white');
+            var cp = fullScreenElement.find(".controls-panel");
+            cp.toggleClass("fullscreen");
         }
 
         toggleFullScreen(fullScreenElement.get(0));

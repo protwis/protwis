@@ -351,9 +351,21 @@ class Distances():
                 self.data[label] = []
             self.data[label].append(d[0]/distance_scaling_factor)
 
-    def fetch_distances_tm(self):
+    def fetch_distances_tm(self, distance_type = "CA"):
 #                .filter(gn1__in=self.filter_gns).filter(gn2__in=self.filter_gns) \
-        ds = Distance.objects.filter(structure__in=self.structures) \
+        # ds = Distance.objects.filter(structure__in=self.structures) \
+        #         .exclude(gns_pair__contains='8x').exclude(gns_pair__contains='12x').exclude(gns_pair__contains='23x').exclude(gns_pair__contains='34x').exclude(gns_pair__contains='45x')
+
+        if distance_type == "HC":
+            ds = Distance.objects.filter(structure__in=self.structures) \
+                .exclude(gns_pair__contains='8x').exclude(gns_pair__contains='12x').exclude(gns_pair__contains='23x').exclude(gns_pair__contains='34x').exclude(gns_pair__contains='45x') \
+                .values_list('distance_helix_center','gns_pair')
+        elif distance_type == "CB":
+            ds = Distance.objects.filter(structure__in=self.structures) \
+                .exclude(gns_pair__contains='8x').exclude(gns_pair__contains='12x').exclude(gns_pair__contains='23x').exclude(gns_pair__contains='34x').exclude(gns_pair__contains='45x') \
+                .values_list('distance_cb','gns_pair')
+        else:
+            ds = Distance.objects.filter(structure__in=self.structures) \
                 .exclude(gns_pair__contains='8x').exclude(gns_pair__contains='12x').exclude(gns_pair__contains='23x').exclude(gns_pair__contains='34x').exclude(gns_pair__contains='45x') \
                 .values_list('distance','gns_pair')
 

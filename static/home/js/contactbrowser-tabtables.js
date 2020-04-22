@@ -150,9 +150,10 @@ function renderDataTablesYadcf(element) {
     const analys_mode = selector.replace('-tab', '');
     var table = $(selector + " .browser-table-" + tab_number);
     var heading = $(selector + " .tab-content .panel-title:visible");
-    if (!heading.hasClass("button_added") && analys_mode == "#two-crystal-groups") {
-        heading.append(' <button type="button"  onclick="make_abs_values(\''+selector + " .browser-table-" + tab_number+'\');" class="btn btn-primary btn-xs">Toggle if difference values are absolute</button>');
-        heading.addClass("button_added");
+    if (analys_mode == "#two-crystal-groups") {
+        heading.find(".abs_button").remove();
+        heading.append(' <button type="button"  onclick="make_abs_values(this,\''+selector + " .browser-table-" + tab_number+'\');" class="btn btn-primary btn-xs abs_button" changed=0>Change negative to absolute values</button>');
+        //heading.addClass("button_added");
     }
     // If table is without tbody, then do not init further.
     if (!(table.find("thead").length)) {
@@ -189,7 +190,29 @@ function renderDataTablesYadcf(element) {
                 pageLength: 200,
                 "bLengthChange": false,
                 "bPaginate": false,
-                "bInfo": false,
+                "bInfo": true,
+                "fnInfoCallback": function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
+                    filtered = iMax - iTotal;
+                    filtered_text = filtered ? " (" + filtered + " contact-pairs filtered out)" : "";
+                    var cols = []
+                    var table = $(selector + ' .dataTables_scrollBody');
+                    cols_of_interest = [0, 1];
+                    for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
+                        for (let [j, cell] of [...row.cells].entries()) {
+                            if (cols_of_interest.includes(j)) {
+                                cols[j] = cols[j] || [];
+                                cols[j].push(cell.innerText)
+                            }
+                        }
+                    }
+                    distinctPositions = [...new Set(cols[1].map((val, i) => val.split("-")).flat())]
+                    //console.log(cols);
+                    // distinctReceptors = [...new Set(cols[1])];
+                    // distinctReceptorState = [...new Set(cols[1].map((val, i) => [cols[11]].reduce((a, arr) => [...a, arr[i]], [val])))];
+                    // distinctReceptorState = [...new Set(distinctReceptorState.map(x => x[0] + "_" + x[1]))]
+                    //console.log(iStart, iEnd, iMax, iTotal, sPre)
+                    return "Showing " + iTotal + " contact-pairs covering "+distinctPositions.length+" positions"+filtered_text;
+                  },
                 "order": [],
                 columnDefs: [{
                         type: "string",
@@ -422,7 +445,29 @@ function renderDataTablesYadcf(element) {
                 // "sDom": 't', // To disable the pages on the button..
                 "bLengthChange": false,
                 "bPaginate": false,
-                "bInfo": false,
+                "bInfo": true,
+                "fnInfoCallback": function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
+                    filtered = iMax - iTotal;
+                    filtered_text = filtered ? " (" + filtered + " contact-pairs filtered out)" : "";
+                    var cols = []
+                    var table = $(selector + ' .dataTables_scrollBody');
+                    cols_of_interest = [0, 1];
+                    for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
+                        for (let [j, cell] of [...row.cells].entries()) {
+                            if (cols_of_interest.includes(j)) {
+                                cols[j] = cols[j] || [];
+                                cols[j].push(cell.innerText)
+                            }
+                        }
+                    }
+                    distinctPositions = [...new Set(cols[1].map((val, i) => val.split("-")).flat())]
+                    //console.log(cols);
+                    // distinctReceptors = [...new Set(cols[1])];
+                    // distinctReceptorState = [...new Set(cols[1].map((val, i) => [cols[11]].reduce((a, arr) => [...a, arr[i]], [val])))];
+                    // distinctReceptorState = [...new Set(distinctReceptorState.map(x => x[0] + "_" + x[1]))]
+                    //console.log(iStart, iEnd, iMax, iTotal, sPre)
+                    return "Showing " + iTotal + " contact-pairs covering "+distinctPositions.length+" positions"+filtered_text;
+                  },
                 paging: true,
                 pageLength: 200,
                 "order": [],
@@ -688,7 +733,29 @@ function renderDataTablesYadcf(element) {
                 // "sDom": 't', // To disable the pages on the button..
                 "bLengthChange": false,
                 "bPaginate": false,
-                "bInfo": false,
+                "bInfo": true,
+                "fnInfoCallback": function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
+                    filtered = iMax - iTotal;
+                    filtered_text = filtered ? " (" + filtered + " positions filtered out)" : "";
+                    var cols = []
+                    var table = $(selector + ' .dataTables_scrollBody');
+                    cols_of_interest = [0, 1];
+                    for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
+                        for (let [j, cell] of [...row.cells].entries()) {
+                            if (cols_of_interest.includes(j)) {
+                                cols[j] = cols[j] || [];
+                                cols[j].push(cell.innerText)
+                            }
+                        }
+                    }
+                    distinctPositions = [...new Set(cols[1])]
+                    //console.log(cols);
+                    // distinctReceptors = [...new Set(cols[1])];
+                    // distinctReceptorState = [...new Set(cols[1].map((val, i) => [cols[11]].reduce((a, arr) => [...a, arr[i]], [val])))];
+                    // distinctReceptorState = [...new Set(distinctReceptorState.map(x => x[0] + "_" + x[1]))]
+                    //console.log(iStart, iEnd, iMax, iTotal, sPre)
+                    return "Showing " + iTotal + " positions"+filtered_text;
+                  },
                 paging: true,
                 pageLength: 200,
                 "order": [],
@@ -793,7 +860,29 @@ function renderDataTablesYadcf(element) {
                 // "sDom": 't', // To disable the pages on the button..
                 "bLengthChange": false,
                 "bPaginate": false,
-                "bInfo": false,
+                "bInfo": true,
+                "fnInfoCallback": function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
+                    filtered = iMax - iTotal;
+                    filtered_text = filtered ? " (" + filtered + " positions filtered out)" : "";
+                    var cols = []
+                    var table = $(selector + ' .dataTables_scrollBody');
+                    cols_of_interest = [0, 1];
+                    for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
+                        for (let [j, cell] of [...row.cells].entries()) {
+                            if (cols_of_interest.includes(j)) {
+                                cols[j] = cols[j] || [];
+                                cols[j].push(cell.innerText)
+                            }
+                        }
+                    }
+                    distinctPositions = [...new Set(cols[1])]
+                    //console.log(cols);
+                    // distinctReceptors = [...new Set(cols[1])];
+                    // distinctReceptorState = [...new Set(cols[1].map((val, i) => [cols[11]].reduce((a, arr) => [...a, arr[i]], [val])))];
+                    // distinctReceptorState = [...new Set(distinctReceptorState.map(x => x[0] + "_" + x[1]))]
+                    //console.log(iStart, iEnd, iMax, iTotal, sPre)
+                    return "Showing " + iTotal + " positions"+filtered_text;
+                  },
                 paging: true,
                 pageLength: 200,
                 "order": [],
@@ -1027,7 +1116,29 @@ function renderDataTablesYadcf(element) {
                 // "sDom": 't', // To disable the pages on the button..
                 "bLengthChange": false,
                 "bPaginate": false,
-                "bInfo": false,
+                "bInfo": true,
+                "fnInfoCallback": function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
+                    filtered = iMax - iTotal;
+                    filtered_text = filtered ? " (" + filtered + " positions filtered out)" : "";
+                    var cols = []
+                    var table = $(selector + ' .dataTables_scrollBody');
+                    cols_of_interest = [0, 1];
+                    for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
+                        for (let [j, cell] of [...row.cells].entries()) {
+                            if (cols_of_interest.includes(j)) {
+                                cols[j] = cols[j] || [];
+                                cols[j].push(cell.innerText)
+                            }
+                        }
+                    }
+                    distinctPositions = [...new Set(cols[1])]
+                    //console.log(cols);
+                    // distinctReceptors = [...new Set(cols[1])];
+                    // distinctReceptorState = [...new Set(cols[1].map((val, i) => [cols[11]].reduce((a, arr) => [...a, arr[i]], [val])))];
+                    // distinctReceptorState = [...new Set(distinctReceptorState.map(x => x[0] + "_" + x[1]))]
+                    //console.log(iStart, iEnd, iMax, iTotal, sPre)
+                    return "Showing " + iTotal + " positions"+filtered_text;
+                  },
                 paging: true,
                 pageLength: 200,
                 "order": [],
@@ -1195,11 +1306,11 @@ function renderBrowser(data) {
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
                           <th class="narrow_col">Group#</th> \
-                          <th style="writing-mode: sideways-lr;">Ion</th> \
-                          <th style="writing-mode: sideways-lr;">Pol</th> \
-                          <th style="writing-mode: sideways-lr;">Aro</th> \
-                          <th style="writing-mode: sideways-lr;">Hyd</th> \
-                          <th style="writing-mode: sideways-lr;">vdW</th> \
+                          <th style="narrow_col">Ion</th> \
+                          <th style="narrow_col">Pol</th> \
+                          <th style="narrow_col">Aro</th> \
+                          <th style="narrow_col">Hyd</th> \
+                          <th style="narrow_col">vdW</th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
@@ -1429,7 +1540,7 @@ function renderBrowser(data) {
                     </tr>`;
             tbody.append(tr);
         });
-    } else if (data['proteins'].length > 1) {
+    } else if ((data['proteins'].length > 1 && normalized) || (data['pdbs'].length > 1 && !normalized)) {
         thead = '<tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
@@ -1464,11 +1575,11 @@ function renderBrowser(data) {
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
                           <th class="narrow_col">Group#</th> \
-                          <th style="writing-mode: sideways-lr;">Ion</th> \
-                          <th style="writing-mode: sideways-lr;">Pol</th> \
-                          <th style="writing-mode: sideways-lr;">Aro</th> \
-                          <th style="writing-mode: sideways-lr;">Hyd</th> \
-                          <th style="writing-mode: sideways-lr;">vdW</th> \
+                          <th style="narrow_col">Ion</th> \
+                          <th style="narrow_col">Pol</th> \
+                          <th style="narrow_col">Aro</th> \
+                          <th style="narrow_col">Hyd</th> \
+                          <th style="narrow_col">vdW</th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
@@ -1853,11 +1964,11 @@ function renderBrowser_2(data) {
                           <th class="narrow_col">AA1<br></th> \
                           <th class="narrow_col">AA2<br></th> \
                           <th class="narrow_col">Pair<br></th> \
-                          <th style="writing-mode: sideways-lr;">Ion</th> \
-                          <th style="writing-mode: sideways-lr;">Pol</th> \
-                          <th style="writing-mode: sideways-lr;">Aro</th> \
-                          <th style="writing-mode: sideways-lr;">Hyd</th> \
-                          <th style="writing-mode: sideways-lr;">vdW</th> \
+                          <th style="narrow_col">Ion</th> \
+                          <th style="narrow_col">Pol</th> \
+                          <th style="narrow_col">Aro</th> \
+                          <th style="narrow_col">Hyd</th> \
+                          <th style="narrow_col">vdW</th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
@@ -2132,11 +2243,11 @@ function renderBrowser_2(data) {
                           <th class="narrow_col">AA1<br></th> \
                           <th class="narrow_col">AA2<br></th> \
                           <th class="narrow_col">Pair<br></th> \
-                          <th style="writing-mode: sideways-lr;">Ion</th> \
-                          <th style="writing-mode: sideways-lr;">Pol</th> \
-                          <th style="writing-mode: sideways-lr;">Aro</th> \
-                          <th style="writing-mode: sideways-lr;">Hyd</th> \
-                          <th style="writing-mode: sideways-lr;">vdW</th> \
+                          <th style="narrow_col">Ion</th> \
+                          <th style="narrow_col">Pol</th> \
+                          <th style="narrow_col">Aro</th> \
+                          <th style="narrow_col">Hyd</th> \
+                          <th style="narrow_col">vdW</th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
@@ -2952,7 +3063,7 @@ function renderBrowser_4(data) {
 
             missing_1 = Math.round(100*dssp_set1.filter(x => data['missing'][i]['present'].includes(x)).length / dssp_set1.length);
             missing_2 = Math.round(100 * dssp_set2.filter(x => data['missing'][i]['present'].includes(x)).length / dssp_set2.length);
-            
+
 
             all_angles_1_set1 = data['all_angles_set1'][i];
             all_angles_1_set2 = data['all_angles_set2'][i];
@@ -3582,9 +3693,18 @@ function gray_scale_table(table) {
     console.timeEnd('Greyscale');
 }
 
-function make_abs_values(table) {
+function make_abs_values(e,table) {
     $(".main_loading_overlay").show();
     console.time('Abs values')
+
+    if ($(e).attr('changed') == '0') {
+        $(e).html('Change back to original values');
+        $(e).attr('changed','1')
+    } else {
+        $(e).html('Change negative to absolute values');
+        $(e).attr('changed','0')
+
+    }
     console.log(table);
 
     myVar = setTimeout(function () {
@@ -3799,7 +3919,7 @@ function numberToColorGradient(value, max, palette, neg_and_pos = false) {
     var yellow = {red:255, green:255, blue: 0}
     var yellow = {red:255, green:255, blue: 0}
     var black = {red:0, green:0, blue: 0}
-    
+
     switch(palette){
         case "rwb": // red-white-blue
           return colorGradient(value/max, red, white, blue)
