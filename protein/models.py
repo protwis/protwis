@@ -1,11 +1,13 @@
 ﻿from django.utils.text import slugify
-from django.db import models
-from django.core.cache import cache
+from common.diagrams_arrestin import DrawArrestinPlot
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 from common.diagrams_gprotein import DrawGproteinPlot
-from common.diagrams_arrestin import DrawArrestinPlot
+from django.core.cache import cache
+from django.db import models
+from residue.models import (Residue, ResidueDataPoint, ResidueDataType,
+                            ResidueGenericNumberEquivalent,
+                            ResidueNumberingScheme)
 
-from residue.models import Residue, ResidueNumberingScheme, ResidueGenericNumberEquivalent, ResidueDataType, ResidueDataPoint
 
 class Protein(models.Model):
     parent = models.ForeignKey('self', null=True, on_delete=models.CASCADE)
@@ -78,6 +80,7 @@ class Protein(models.Model):
         while tmp.parent.parent.parent.parent is not None:
             tmp = tmp.parent
         return tmp.name
+
 
 class ProteinConformation(models.Model):
     protein = models.ForeignKey('Protein', on_delete=models.CASCADE)
@@ -275,6 +278,7 @@ class ProteinAnomaly(models.Model):
         db_table = 'protein_anomaly'
         unique_together = ('anomaly_type', 'generic_number')
 
+
 class ProteinAnomalyType(models.Model):
     slug = models.SlugField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
@@ -343,10 +347,11 @@ class ProteinConformationTemplateStructure(models.Model):
 
     def __str__(self):
         return self.protein_conformation.protein.name + " " + self.protein_segment.slug \
-        + " " + self.structure.pdb_code.index
+               + " " + self.structure.pdb_code.index
 
     class Meta():
         db_table = 'protein_conformation_template_structure'
+
 
 class ProteinGProtein(models.Model):
     proteins = models.ManyToManyField('Protein', through='ProteinGProteinPair', through_fields=('g_protein','protein'))
@@ -359,11 +364,18 @@ class ProteinGProtein(models.Model):
     class Meta():
         db_table = 'protein_gprotein'
 
+
 class ProteinGProteinPair(models.Model):
     protein = models.ForeignKey('Protein', on_delete=models.CASCADE)
     g_protein = models.ForeignKey('ProteinGProtein', on_delete=models.CASCADE)
     transduction = models.TextField(null=True)
-    source = models.TextField(null=True) # GuideToPharma or Asaka
+    source = models.TextField(null=True) # GuideToPharma, Asuka, Bouvier
+    emax_mean = models.FloatField(null=True)
+    emax_sem = models.FloatField(null=True)
+    emax_dnorm = models.FloatField(null=True)
+    log_ec50_mean = models.FloatField(null=True)
+    log_ec50_sem = models.FloatField(null=True)
+    log_ec50_dnorm = models.FloatField(null=True)
     log_rai_mean = models.FloatField(null=True)
     log_rai_sem  = models.FloatField(null=True)
     g_protein_subunit = models.ForeignKey('Protein', on_delete=models.CASCADE, related_name='gprotein', null=True)
