@@ -51,6 +51,7 @@ class Command(BaseCommand):
     lookup = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'CGN_lookup.csv'])
     alignment_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'CGN_referenceAlignment.fasta'])
     ortholog_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'gprotein_orthologs.csv'])
+    iupharcoupling_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', '200416_iuphar_coupling_data.csv'])
     aska_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', '200204_inoue.xlsx'])
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot'])
     local_uniprot_beta_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot_beta'])
@@ -389,17 +390,26 @@ class Command(BaseCommand):
                     self.logger.error('Failed creating barcode for ' + CGN + ' for protein ' + p.name)
 
     def create_g_proteins(self, filenames=False):
+        """
+        Function to add G-protein items to the database, moreover to add G-protein_GPCR pairs.
+        The function reads a iupharcoupling_file, which comes from parsing the Guide_to_Pharmacology.
+        The details of that file have to be asked perhaps to Christian Munk, or to Alexander Hauser.
+        """
         self.logger.info('CREATING GPROTEINS')
 
         translation = {'Gs family': '100_001_001', 'Gi/Go family': '100_001_002', 'Gq/G11 family': '100_001_003',
                        'G12/G13 family': '100_001_004', }
 
-        # read source files
+        # read source file
         if not filenames:
-            filenames = [fn for fn in os.listdir(self.gprotein_data_path) if fn.endswith('iuphar_coupling_data.csv')]
+            filenames = [self.iupharcoupling_file]
+#            filenames = [fn for fn in os.listdir(self.gprotein_data_path) if fn.endswith('iuphar_coupling_data.csv')]
+#            filenames = ['200416_iuphar_coupling_data.csv']
+#            print(filenames)
         source = "GuideToPharma"
         for filename in filenames:
-            filepath = os.sep.join([self.gprotein_data_path, filename])
+            filepath = self.iupharcoupling_file
+#            filepath = os.sep.join([self.gprotein_data_path, filename])
 
             self.logger.info('Reading filename ' + filename)
 
@@ -668,6 +678,61 @@ class Command(BaseCommand):
                                             log_rai_sem=values['sem'], g_protein_subunit=gp)
                 gpair.save()
         self.logger.info('COMPLETED ADDING Asuka Inoue\'s G-protein coupling data')
+
+    def add_bouvier_coupling_data(self):
+        """
+        This function adds coupling data to the database. For now only that coming from Asuka Inoue
+        but it might need to add data from other sources and that's why C. Munk has created the source field in the
+        database already.
+
+        @return:
+        """
+        self.logger.info('BEGIN ADDING Bouvier G-protein coupling data' )
+        translation = {'Gs family': '100_001_001', 'Gi/Go family': '100_001_002', 'Gq/G11 family': '100_001_003',
+                       'G12/G13 family': '100_001_004', }
+
+        # read source files
+        filepath = self.aska_file
+        sheetname = "Log EC50"
+        self.logger.info('Reading file ' + filepath)
+        data = self.read_excel2(filepath, sheetname)
+        source = 'Bouvier'
+        lookup = {}
+        #print(data)
+        for entry_name, couplings in data.items():
+            #print(data.items())
+            # if it has / then pick first, since it gets same protein
+            entry_name = entry_name.split("/")[0]
+            # append _human to entry name
+            # entry_name = "{}_HUMAN".format(entry_name).lower()
+            # Fetch protein
+            try:
+                p = Protein.objects.filter(genes__name=entry_name, species__common_name="Human")[0]
+            except Protein.DoesNotExist:
+                self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
+                print("protein not found for ", entry_name)
+                continue
+
+            for gprotein, values in couplings.items():
+                if gprotein == 'GNAS':
+                    gprotein = 'GNAS2'
+                if gprotein == 'GNAO1':
+                    gprotein = 'GNAO'
+                if gprotein not in lookup:
+                    gp = Protein.objects.filter(family__name=gprotein, species__common_name="Human")[0]
+                    lookup[gprotein] = gp
+                else:
+                    gp = lookup[gprotein]
+                # Assume there are there.
+                if gp.family.slug not in lookup:
+                    g = ProteinGProtein.objects.get(slug="_".join(gp.family.slug.split("_")[:3]))
+                    lookup[gp.family.slug] = g
+                else:
+                    g = lookup[gp.family.slug]
+                gpair = ProteinGProteinPair(protein=p, g_protein=g, source=source, log_ec50_mean=values['mean'],
+                                            log_ec50_sem=values['sem'], g_protein_subunit=gp)
+                gpair.save()
+        self.logger.info('COMPLETED ADDING Bouvier G-protein coupling data')
 
     def purge_cgn_proteins(self):
         try:
