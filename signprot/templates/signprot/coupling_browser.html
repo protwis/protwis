@@ -3,7 +3,8 @@
 {# load structure_extras #}
 
 {% block addon_css %}
-    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css"/>
+{#    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css"/> #}
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css"/>
     <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css"/>
     <style type="text/css">
@@ -12,7 +13,6 @@
         }
 
         #filters {
-
             font-size: 10px;
             padding: 7px 15px;
         }
@@ -79,11 +79,11 @@
             background-color: rgb(215, 215, 215);
         }
 
-        .wrapper {
+/*        .wrapper {
             overflow-x: scroll;
             overflow-y: hidden;
         }
-
+ */
         #overlay {
             top: 0px;
             position: absolute;
@@ -126,6 +126,18 @@
         .show {
             display: block;
         }
+
+/*
+::-webkit-scrollbar {
+    width: auto;
+    height: auto;
+}
+
+        .dataTables_scrollBody table {
+            transform:rotateX(180deg);
+}
+ */
+
 
     </style>
 {% endblock %}
@@ -183,7 +195,6 @@
                      </label>
                 </div>
             </div>
-
 
 
             <table width="100%" class="display compact text-nowrap" id="familiestabletab" >
@@ -807,7 +818,8 @@
 {% endblock %}
 
 {% block addon_js %}
-    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"></script>
+{#    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"></script> #}
+    <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
     <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"></script>
     <script src="{% static 'home/js/select2.js' %}"></script>
     <script src="{% static 'home/js/datatables.min.js' %}"></script>

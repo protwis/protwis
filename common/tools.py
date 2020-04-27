@@ -31,7 +31,7 @@ def fetch_from_cache(path, file_id):
     cache_file_path = os.sep.join([cache_dir_path, file_id + '.yaml'])
     if os.path.isfile(cache_file_path):
         with open(cache_file_path) as cache_file:
-            return yaml.load(cache_file)
+            return yaml.load(cache_file, Loader=yaml.FullLoader)
     else:
         return False
 
