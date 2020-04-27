@@ -95,11 +95,12 @@ function createSnakeplot(data, containerSelector) {
     colors['distance_abs'] = {}
 
 
-    index_names = { 0: 'core_distance', 1: 'a_angle', 2: 'outer_angle', 3: 'tau', 4: 'phi', 5: 'psi', 6: 'sasa', 7: 'rsa', 8: 'theta', 9: 'hse', 10: 'tau_angle' }
+    index_names = { 0: 'core_distance', 1: 'a_angle', 2: 'outer_angle', 3: 'tau', 4: 'phi', 5: 'psi', 6: 'sasa', 7: 'rsa', 8: 'theta', 9: 'hse', 10: 'tau_angle', 11:'rotation_angle' }
     neg_and_positives = ['core_distance','sasa','rsa', 'hse']
     nice_index_names = {
         'a_angle' : 'Angle to helix&7TM axes',
         'outer_angle': 'Rotamer',
+        'rotation_angle': 'Rotation angle',
         'tau': 'Tau',
         'phi': 'Phi',
         'psi': 'Psi',
