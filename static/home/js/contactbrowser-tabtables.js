@@ -1275,9 +1275,9 @@ function renderBrowser(data) {
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="3" rowspan="2">Contact Frequency (%)</th> \
                           <th colspan="2" rowspan="2">Position no. contacts (in filtered rows)</th> \
-                          <th colspan="1" rowspan="2">Distinct network group</th> \
-                          <th colspan="5" rowspan="2">Interactions</th> \
-                          <th rowspan="2">Distance (Ca, Å)</th> \
+                          <th colspan="1" rowspan="2">Net-<br>work no.</th> \
+                          <th colspan="5" rowspan="2">Interaction types (%)</th> \
+                          <th rowspan="2">Contact Ca distance (Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="6">Sidechain differences</th> \
                           <th colspan="2" rowspan="2">Position presence %</th> \
@@ -1287,7 +1287,7 @@ function renderBrowser(data) {
                           <th rowspan="2" colspan="3">Contact AA pair sequence conservation in class (%)</th> \
                         </tr> \
                         <tr> \
-                          <th colspan="2">Distance to<br/>7TM axis (Å)</th> \
+                          <th colspan="2">Distance to all other pos.</th> \
                           <th colspan="2">Angle to helix<br/>and 7TM axes</th> \
                           <th colspan="2">Rotamer</th> \
                           <th colspan="2">SASA</th> \
@@ -1305,7 +1305,7 @@ function renderBrowser(data) {
                           <th class="narrow_col">Diff<br></th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
-                          <th class="narrow_col">Group#</th> \
+                          <th class="narrow_col">No.</th> \
                           <th style="narrow_col">Ion</th> \
                           <th style="narrow_col">Pol</th> \
                           <th style="narrow_col">Aro</th> \
@@ -1498,6 +1498,17 @@ function renderBrowser(data) {
             // 7 'rsa',
             // 8 'theta',
             // 9 'hse'
+
+            // avg distance ''
+            distance_all_gn1 = '';
+            if (gn1 in data['distances']) {
+                distance_all_gn1 = data['distances'][gn1]['avg'];
+            } 
+            distance_all_gn2 = '';
+            if (gn2 in data['distances']) {
+                distance_all_gn2 = data['distances'][gn2]['avg'];
+            } 
+
             tr = `
                     <tr class="clickable-row filter_rows" id="${i}">
                       <td class="dt-center">${seg1}-${seg2}</td>
@@ -1514,8 +1525,8 @@ function renderBrowser(data) {
                       <td class="dt-center angles_tooltip" data-set1="${types_count['hydrophobic'][0]}" data-set2="${types_count['hydrophobic'][1]}">${types_count['hydrophobic'][2]}</td>
                       <td class="dt-center angles_tooltip" data-set1="${types_count['van-der-waals'][0]}" data-set2="${types_count['van-der-waals'][1]}">${types_count['van-der-waals'][2]}</td>
                       <td class="narrow_col">${distance}</td>
-                      <td class="narrow_col angles_modal angles_tooltip" data-type="core_distance" data-pos="0" data-set1="${angles_1[0][1]}" data-set2="${angles_1[0][2]}">${angles_1[0][0]}</td>
-                      <td class="narrow_col angles_modal angles_tooltip" data-type="core_distance" data-pos="1" data-set1="${angles_2[0][1]}" data-set2="${angles_2[0][2]}">${angles_2[0][0]}</td>
+                      <td class="narrow_col" data-type="distance_all_avg">${distance_all_gn1}</td>
+                      <td class="narrow_col" data-type="distance_all_avg">${distance_all_gn2}</td>
                       <td class="narrow_col angles_modal angles_tooltip" data-type="a_angle" data-pos="0" data-set1="${angles_1[1][1]}" data-set2="${angles_1[1][2]}">${angles_1[1][0]}</td>
                       <td class="narrow_col angles_modal angles_tooltip" data-type="a_angle" data-pos="1" data-set1="${angles_2[1][1]}" data-set2="${angles_2[1][2]}">${angles_2[1][0]}</td>
                       <td class="narrow_col angles_modal angles_tooltip" data-type="outer_angle" data-pos="0" data-set1="${angles_1[2][1]}" data-set2="${angles_1[2][2]}">${angles_1[2][0]}</td>
@@ -1546,9 +1557,9 @@ function renderBrowser(data) {
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="1" rowspan="2">Contact Frequency (%)</th> \
                           <th colspan="2" rowspan="2">Position no. contacts (in filtered rows)</th> \
-                          <th colspan="1" rowspan="2">Distinct network group</th> \
-                          <th rowspan="2" colspan="5">Interactions</th> \
-                          <th rowspan="2">Distance (Ca, Å)</th> \
+                          <th colspan="1" rowspan="2">Net-<br>work no.</th> \
+                          <th rowspan="2" colspan="5">Interaction types (%)</th> \
+                          <th rowspan="2">Contact Ca distance (Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="6">Sidechain differences</th> \
                           <th colspan="2" rowspan="2">Position presence %</th> \
@@ -1558,7 +1569,7 @@ function renderBrowser(data) {
                           <th rowspan="2">Class Seq Cons(%)</th> \
                         </tr> \
                         <tr> \
-                          <th colspan="2">Distance to<br/>7TM axis (Å)</th> \
+                          <th colspan="2">Distance to all other pos.</th> \
                           <th colspan="2">Angle to helix<br/>and 7TM axes</th> \
                           <th colspan="2">Rotamer</th> \
                           <th colspan="2">SASA</th> \
@@ -1574,7 +1585,7 @@ function renderBrowser(data) {
                           <th class="narrow_col">Set<br></th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
-                          <th class="narrow_col">Group#</th> \
+                          <th class="narrow_col">No.</th> \
                           <th style="narrow_col">Ion</th> \
                           <th style="narrow_col">Pol</th> \
                           <th style="narrow_col">Aro</th> \
@@ -1747,16 +1758,16 @@ function renderBrowser(data) {
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="1" rowspan="2">Positions GN</th> \
                           <th colspan="2" rowspan="2">Position no. contacts (in filtered rows)</th> \
-                          <th colspan="1" rowspan="2">Distinct network group</th> \
-                          <th rowspan="2">Interaction</th> \
-                          <th rowspan="2">Distance (Ca, Å)</th> \
+                          <th colspan="1" rowspan="2">Net-<br>work no.</th> \
+                          <th rowspan="2">Interaction types (%)</th> \
+                          <th rowspan="2">Contact Ca distance (Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="6">Sidechain differences</th> \
                           <th colspan="2">Secondary structure</th> \
                           <th rowspan="2">Class Seq Cons(%)</th> \
                         </tr> \
                         <tr> \
-                          <th colspan="2">Distance to<br/>7TM axis (Å)</th> \
+                          <th colspan="2">Distance to all other pos.</th> \
                           <th colspan="2">Angle to helix<br/>and 7TM axes</th> \
                           <th colspan="2">Rotamer</th> \
                           <th colspan="2">SASA</th> \
@@ -1769,7 +1780,7 @@ function renderBrowser(data) {
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
-                          <th class="narrow_col">Group#</th> \
+                          <th class="narrow_col">No.</th> \
                           <th></th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
@@ -1919,7 +1930,7 @@ function renderBrowser_2(data) {
                           <th colspan="2" rowspan="2">Amino acids</th> \
                           <th colspan="9" rowspan="1">AA occurrence in structure sets (%)</th> \
                           <th colspan="3" rowspan="2">Sequence conservation in class (%)</th> \
-                          <th rowspan="2" colspan="5">Interactions</th> \
+                          <th rowspan="2" colspan="5">Interaction types (%)</th> \
                           <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="6">Sidechain differences</th> \
@@ -2208,7 +2219,7 @@ function renderBrowser_2(data) {
                           <th colspan="2" rowspan="2">Amino acids</th> \
                           <th colspan="3" rowspan="1">AA occurrence in set (%)</th> \
                           <th colspan="3" rowspan="2">Sequence conservation in class (%)</th> \
-                          <th rowspan="2" colspan="5">Interactions</th> \
+                          <th rowspan="2" colspan="5">Interaction types (%)</th> \
                           <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="6">Sidechain differences</th> \
@@ -2435,7 +2446,7 @@ function renderBrowser_2(data) {
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="2" rowspan="2">Amino acids</th> \
                           <th colspan="3" rowspan="2">Conservation in class (%)</th> \
-                          <th rowspan="2">Interactions</th> \
+                          <th rowspan="2">Interaction types (%)</th> \
                           <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="6">Sidechain differences</th> \
@@ -3441,14 +3452,14 @@ function renderBrowser_5(data) {
         thead += '<tr> \
                         <th colspan="1" rowspan="2">Seg-<br>ment</th> \
                         <th colspan="1" rowspan="2">Pos</th> \
-                        <th colspan="1" rowspan="2">Pair movement</th> \
-                        <th colspan="2">Backbone Ca movement</th> \
+                        <th colspan="3">Backbone Ca movement</th> \
                         <th colspan="1" rowspan="2">Ca half-sphere exposure (Å&sup2;)</th> \
                         <th colspan="3">Sidechain differences</th> \
                         <th colspan="5" rowspan="1">Seq consensus</th> \
                         <th colspan="2" rowspan="1">Class seq consensus</th> \
                         </tr> \
                         <tr> \
+                        <th colspan="1">Avg distance to<br/>residues</th> \
                         <th colspan="1">Distance to<br/>7TM axis (Å)</th> \
                         <th colspan="1">Angle to helix<br/>and 7TM axes</th> \
                         <th colspan="1">Rotamer</th> \
@@ -3481,14 +3492,14 @@ function renderBrowser_5(data) {
         thead += '<tr> \
                 <th colspan="1" rowspan="2">Seg-<br>ment</th> \
                 <th colspan="1" rowspan="2">Pos</th> \
-                <th colspan="1" rowspan="2">Pair movement</th> \
-                <th colspan="2">Backbone Ca movement</th> \
+                <th colspan="3">Backbone Ca movement</th> \
                 <th colspan="1" rowspan="2">Ca half-sphere exposure (Å&sup2;)</th> \
                 <th colspan="3">Sidechain differences</th> \
                 <th colspan="2" rowspan="1">Seq consensus</th> \
                 <th colspan="2" rowspan="1">Class seq consensus</th> \
                 </tr> \
                 <tr> \
+                <th colspan="1">Avg distance to<br/>residues</th> \
                 <th colspan="1">Distance to<br/>7TM axis (Å)</th> \
                 <th colspan="1">Angle to helix<br/>and 7TM axes</th> \
                 <th colspan="1">Rotamer</th> \
