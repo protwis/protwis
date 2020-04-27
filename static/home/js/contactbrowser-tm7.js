@@ -8,7 +8,7 @@ function tm7_plot(containerSelector, plot_data, viewBox) {
     /*matrix_set1 = JSON.parse(matrix_set1);
     matrix_set2 = JSON.parse(matrix_set2);
 
-    // Scaling factor from Å distance to pixel distance..
+    // Scaling factor from &#197; distance to pixel distance..
     var scaling_factor = 8;
 
     var TMS = ["TM1", "TM2", "TM3", "TM4", "TM5", "TM6", "TM7"];
@@ -51,7 +51,7 @@ function tm7_plot(containerSelector, plot_data, viewBox) {
         }
     }*/
 
-    // Scaling factor from Å distance to pixel distance..
+    // Scaling factor from &#197; distance to pixel distance..
     var scaling_factor = 8;
 
     // Set colors
@@ -112,7 +112,7 @@ function tm7_plot(containerSelector, plot_data, viewBox) {
     console.log('viewBox', viewBox)
     viewBox_x = viewBox['diff_x']*scaling_factor+2*padding
     viewBox_y = viewBox['diff_y'] * scaling_factor + 2 * padding
-    
+
     // fix min_x,min_y to reflect the viewBox from input
     min_y = min_y - (viewBox_y-(max_y-min_y))/2
     min_x = min_x - (viewBox_x-(max_x-min_x))/2
@@ -312,7 +312,7 @@ function tm7_plot(containerSelector, plot_data, viewBox) {
         .attr("startOffset", "50%")
         .attr("text-anchor", "Middle")
         .attr("font-size", values_font_size)
-        .text(function (d, i) { return d.rotation ? Math.abs(d.rotation) + "°" : "" })
+        .text(function (d, i) { return d.rotation ? Math.abs(d.rotation) + "&#176;" : "" })
         .attr("display", function (d, i) {
             return Math.abs(d.rotation) >= 40 && Math.abs(d.rotation) > 0 ? "" : "none";
         });
@@ -330,7 +330,7 @@ function tm7_plot(containerSelector, plot_data, viewBox) {
         })
         .attr("font-size", values_font_size)
         .attr("fill", "grey")
-        .text(function (d, i) { return d.rotation ? Math.abs(d.rotation) + "°" : "" })
+        .text(function (d, i) { return d.rotation ? Math.abs(d.rotation) + "&#176;" : "" })
         .attr("display", function (d, i) {
             return Math.abs(d.rotation) < 40 && Math.abs(d.rotation) >= minimum_angle_to_show  ? "" : "none";
         });
@@ -361,7 +361,7 @@ function tm7_plot(containerSelector, plot_data, viewBox) {
         .attr("font-size", values_font_size)
         .attr("fill", "grey")
         .text(function (d, i) {
-            return d.movement > 0 ? d.movement.toFixed(1) + "Å" : "";
+            return d.movement > 0 ? d.movement.toFixed(1) + "&#197;" : "";
         })
         .attr("display", function (d, i) {
             return d.movement > minimum_distance_to_show ? "" : "none";
@@ -433,7 +433,7 @@ function tm7_plot(containerSelector, plot_data, viewBox) {
             .tween("text", function (d, ii) {
                 var i = d3.interpolate(0, Math.abs(d.rotation));
                 return function (t) {
-                    d3.select(this).text(i(t).toFixed(0) + "°");
+                    d3.select(this).text(i(t).toFixed(0) + "&#176;");
                 };
             })
             .attr("font-size",values_font_size)
@@ -447,7 +447,7 @@ function tm7_plot(containerSelector, plot_data, viewBox) {
             .tween("text", function (d, ii) {
                 var i = d3.interpolate(0, Math.abs(d.rotation));
                 return function (t) {
-                    d3.select(this).text(i(t).toFixed(0) + "°");
+                    d3.select(this).text(i(t).toFixed(0) + "&#176;");
                 };
             })
             .attr("opacity", 1)
@@ -469,7 +469,7 @@ function tm7_plot(containerSelector, plot_data, viewBox) {
             .tween("text", function (d, ii) {
                 var i = d3.interpolate(0, d.movement);
                 return function (t) {
-                    d3.select(this).text(i(t).toFixed(1) + "Å");
+                    d3.select(this).text(i(t).toFixed(1) + "&#197;");
                 };
             })
             .attr("font-size",values_font_size)
@@ -493,7 +493,7 @@ function tm7_plot(containerSelector, plot_data, viewBox) {
             .tween("text", function (d, ii) {
                 var i = d3.interpolate(Math.abs(d.rotation), 0);
                 return function (t) {
-                    d3.select(this).text(i(t).toFixed(0) + "°");
+                    d3.select(this).text(i(t).toFixed(0) + "&#176;");
                 };
             })
             .attr("font-size",values_font_size_hiding)
@@ -506,7 +506,7 @@ function tm7_plot(containerSelector, plot_data, viewBox) {
             .tween("text", function (d, ii) {
                 var i = d3.interpolate(Math.abs(d.rotation), 0);
                 return function (t) {
-                    d3.select(this).text(i(t).toFixed(0) + "°");
+                    d3.select(this).text(i(t).toFixed(0) + "&#176;");
                 };
             })
             .attr("opacity", 0)
@@ -526,7 +526,7 @@ function tm7_plot(containerSelector, plot_data, viewBox) {
             .tween("text", function (d, ii) {
                 var i = d3.interpolate(d.movement, 0);
                 return function (t) {
-                    d3.select(this).text(i(t).toFixed(1) + "Å");
+                    d3.select(this).text(i(t).toFixed(1) + "&#197;");
                 };
             })
             .attr("opacity", 0)
