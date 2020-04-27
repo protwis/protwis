@@ -2061,7 +2061,7 @@ def InteractionBrowserData(request):
                 var1,var2 = std1**2,std2**2
                 n1, n2 = d1[4],d2[4]
 
-                mean_diff = mean2-mean1
+                mean_diff = mean1-mean2
 
                 # Save values for NGL calcs
                 gn1,gn2 = label.split("_")
