@@ -51,32 +51,26 @@ function select_all(e) {
             });
         };
 
-
 $(document).ready(function () {
 
-    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-        console.log( 'show tab' );
-        $($.fn.dataTable.tables(true)).DataTable()
-            .columns.adjust()
-//            .responsive.recalc();
-    });
+//    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+//        console.log( 'show tab' );
+//        $($.fn.dataTable.tables(true)).DataTable()
+//            .columns.adjust()
+////            .responsive.recalc();
+//    });
 
+console.time("table1load");
     oTable1 = $("#familiestabletab").dataTable({
         "scrollY": $(window).height() - 450,
         "scrollX": true,
         "scrollCollapse": true,
         "scroller": true,
         "paging": false,
+//        "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
         "bSortCellsTop": false, //prevent sort arrows going on bottom row
         "autoWidth": true,
-//        "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
         "pageLength": -1,
-//        "dom": 'Blfrtip',
-//        "buttons": ['copy', 'csv', 'excel'],
-        "order": [],
-        columnDefs: [
-            { targets: 'no-sort', orderable: false }
-            ],
         "bInfo": true,
     }).yadcf(
         [
@@ -224,9 +218,12 @@ $(document).ready(function () {
         }
     );
 
-    yadcf.exResetAllFilters(oTable1);
+//    yadcf.exResetAllFilters(oTable1);
+setTimeout(() => {
+  console.timeEnd("table1load");
+}, );
 
-
+console.time("table2load");
     oTable2 = $("#subtypestabletab").dataTable({
         "scrollY": $(window).height() - 450,
         "scrollX": true,
@@ -536,9 +533,12 @@ $(document).ready(function () {
         }
     );
 
-    yadcf.exResetAllFilters(oTable2);
+//    yadcf.exResetAllFilters(oTable2);
+setTimeout(() => {
+  console.timeEnd("table2load");
+}, );
 
-
+console.time("table3load");
     oTable3 = $("#bouviertabletab").dataTable({
         "scrollY": $(window).height() - 450,
         "scrollX": true,
@@ -928,9 +928,12 @@ $(document).ready(function () {
         }
     );
 
-    yadcf.exResetAllFilters(oTable3);
+//    yadcf.exResetAllFilters(oTable3);
+setTimeout(() => {
+  console.timeEnd("table3load");
+}, );
 
-
+console.time("table4load");
     oTable4 = $("#inouetabletab").dataTable({
         //data: data1,
         //"ordering": false,
@@ -1316,8 +1319,10 @@ $(document).ready(function () {
         }
     );
 
-    yadcf.exResetAllFilters(oTable4);
-
+//    yadcf.exResetAllFilters(oTable4);
+setTimeout(() => {
+  console.timeEnd("table4load");
+}, );
 
 
 
@@ -1328,6 +1333,10 @@ $(document).ready(function () {
     $('#reset_tab1').click(function () {
         window.location.href = '/signprot/couplings/#table_1';
     });
+
+
+
+
 
 
 });

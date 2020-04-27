@@ -131,6 +131,7 @@ def recreate3Dorder(distance_matrix, gn_grouping, mirror = False):
     to_ref = consecutive_group_order(gn_grouping) # based on groups - same initial four points, same plane
     for repeat in range(0,10):
         to = to_ref[:]
+        skip_this_loop = False
 
         if repeat > 0:
             random.seed(repeat)
@@ -193,8 +194,10 @@ def recreate3Dorder(distance_matrix, gn_grouping, mirror = False):
                         scaler += 0.01
                         # print("Scaling up", scaler)
                         if scaler > 1.1: # Way off, only if DB data is wrong (TODO: throw and handle error )
+                            skip_this_loop = True
                             break
                         pass
+
 
                 # Alternative 3: place point using the most distant references (should minimize placement rounding error)
                 # ref_distances = [reorder_dist[i][x] for x in range(0,min(i,max(gn_grouping)+1))]
@@ -215,6 +218,10 @@ def recreate3Dorder(distance_matrix, gn_grouping, mirror = False):
                 # changes = [abs(np.linalg.norm(tms[i][j]-tms[ref_point]) - ref_dist) for j in range(0,2)]
                 # print("CHANGES", i, changes)
                 # tms[i] = tms[i][changes.index(min(changes))]
+
+        # Verify if this loop could reconstruct all points
+        if skip_this_loop:
+            continue
 
         # Rearrange to correct order
         tms = [tms[to.index(i)] for i in range(0,len(gn_grouping))]
@@ -650,7 +657,20 @@ def tm_movement_2D(pdbs1, pdbs2, mode, data, gn_dictionary):
     rotations = [0] * 7
     for i in range(0,7):
         try:
-            rotations[i] = [data['tab4'][gn_dictionary[x]]['angles_set1'][1]-data['tab4'][gn_dictionary[x]]['angles_set2'][1] if abs(data['tab4'][gn_dictionary[x]]['angles_set1'][1]-data['tab4'][gn_dictionary[x]]['angles_set2'][1]) < 180 else -1*data['tab4'][gn_dictionary[x]]['angles_set2'][1]-data['tab4'][gn_dictionary[x]]['angles_set1'][1] for x in gns[i]]
+            # rotations[i] = [data['tab4'][gn_dictionary[x]]['angles_set1'][1]-data['tab4'][gn_dictionary[x]]['angles_set2'][1] if abs(data['tab4'][gn_dictionary[x]]['angles_set1'][1]-data['tab4'][gn_dictionary[x]]['angles_set2'][1]) < 180 else -1*data['tab4'][gn_dictionary[x]]['angles_set2'][1]-data['tab4'][gn_dictionary[x]]['angles_set1'][1] for x in gns[i]]
+            angles1 = [data['tab4'][gn_dictionary[x]]['angles_set1'][11] for x in gns[i]]
+            angles1 = [angle if angle > 0 else angle + 360 for angle in angles1 ]
+            angles2 = [data['tab4'][gn_dictionary[x]]['angles_set2'][11] for x in gns[i]]
+            angles2 = [angle if angle > 0 else angle + 360 for angle in angles2 ]
+
+            rotations[i] = [angles1[x] - angles2[x] for x in range(3)]
+            rotations[i] = [value if abs(value) <= 180 else value-360 if value > 0 else value+360 for value in rotations[i]]
+
+            # count=0
+            # for x in gns[i]:
+            #     print(i, x, data['tab4'][gn_dictionary[x]]['angles_set1'][11], data['tab4'][gn_dictionary[x]]['angles_set2'][11], rotations[i][count])
+            #     count += 1
+
         except:
             rotations[i] = [0.0, 0.0, 0.0]  # TODO: verify other class B errors
 
@@ -660,6 +680,7 @@ def tm_movement_2D(pdbs1, pdbs2, mode, data, gn_dictionary):
         #     rotations[i] = -1*sum(rotations[i])/3
         # else:
         #     rotations[i] = sum(rotations[i])/3
+
 
     # ALTERNATIVE: utilize TM tip alignment (needs debugging as some angles seem off, e.g. GLP-1 active vs inactive TM2)
     # Add rotation angle based on TM point placement
