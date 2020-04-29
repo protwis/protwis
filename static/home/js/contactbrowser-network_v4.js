@@ -884,7 +884,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
         'Link Label <input id="linkLabel" type="checkbox" checked><br>' +
         'Stick drag <input id="stickyDrag" type="checkbox" checked><br>' +
         'Highlight res <input id="highlightNode" type="checkbox" checked><br>' +
-        'Add consensus AA<input id="addAA" type="checkbox"><br>' +
+        // 'Add consensus AA<input id="addAA" type="checkbox"><br>' +
         'Color links by frequency <input id="colorLinks" type="checkbox"><br>' +
         'Link Strength <input id="link_strength_change" style="width:80px;" type="range" min="0" max="1" step="any" value="0.5">' +
         'Link Distance<input id="link_distance_change" style="width:80px;" type="range" min="0" max="200" step="any" value="40">' +
