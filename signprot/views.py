@@ -159,17 +159,17 @@ def Couplings(request, template_name='signprot/coupling_browser.html'):
         p_family_name = family_names[p_class].replace('receptors','').strip()
         p_accession = p.accession
         data[p.entry_short()] = {'class': p_class_name, 'family': p_family_name, 'accession': p_accession,
-                                 'pretty': p.short(), 'GuideToPharma': {}, 'Aska': {}, 'Bouvier':{}}
+                                 'pretty': p.short(), 'GuideToPharma': {}, 'Inoue': {}, 'Bouvier': {}}
     distinct_g_families = []
     distinct_g_subunit_families = {}
-    distinct_sources = ['GuideToPharma', 'Aska', 'Bouvier']
+    distinct_sources = ['GuideToPharma', 'Inoue', 'Bouvier']
     couplings = ProteinGProteinPair.objects.all().prefetch_related('protein', 'g_protein_subunit', 'g_protein')
 
     for c in couplings:
         p = c.protein.entry_short()
         s = c.source
         t = c.transduction
-        m = c.log_rai_mean
+        m = c.log_ec50_mean
         gf = c.g_protein.name
         gf = gf.replace(" family", "")
 
@@ -196,6 +196,8 @@ def Couplings(request, template_name='signprot/coupling_browser.html'):
         else:
             if 'subunits' not in data[p][s][gf]:
                 data[p][s][gf] = {'subunits': {}, 'best': -2.00}
+# FIXME: Must change since it's no longer dependent on log_rai, also because there can
+# FIXME: be valid NULL values.
             data[p][s][gf]['subunits'][g] = round(Decimal(m), 2)
             if round(Decimal(m), 2) == -0.00:
                 data[p][s][gf]['subunits'][g] = 0.00
@@ -209,7 +211,7 @@ def Couplings(request, template_name='signprot/coupling_browser.html'):
                                                ('Gq/G11', ['gnaq', 'gna14', 'gna15']), ('G12/G13', ['gna12', 'gna13'])])
 
     # This for loop, which perhaps should be a function in itself, perhaps an instance of a Couplings class, does
-    # the job of merging together two data-sets, that of the GuideToPharma and Aska's results.
+    # the job of merging together two data-sets, that of the GuideToPharma and Asuka's results.
     for p, v in data.items():
         fd[p] = [v['class'], v['family'], v['accession'], p, v['pretty']]
         s = 'GuideToPharma'
@@ -237,7 +239,7 @@ def Couplings(request, template_name='signprot/coupling_browser.html'):
                 fd[p].append(v[s][gf])
             else:
                 fd[p].append("")
-        s = 'Aska'
+        s = 'Inoue'
         for gf in distinct_g_families:
             if gf in v[s]:
                 if v[s][gf]['best'] > threshold_primary:
@@ -258,9 +260,9 @@ def Couplings(request, template_name='signprot/coupling_browser.html'):
                 else:
                     fd[p].append("")
         #print(v)
-    #print(data['5HT1A'])
-    print(fd)
-    print(fd['5HT1A'])
+    # print(data['5HT1A'])
+    # print(fd)
+    # print(fd['5HT1A'])
     context['data'] = fd
     context['distinct_gf'] = distinct_g_families
     context['distinct_sf'] = distinct_g_subunit_families
