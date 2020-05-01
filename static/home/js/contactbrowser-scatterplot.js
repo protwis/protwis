@@ -18,6 +18,8 @@ function createScatterplot(data,containerSelector) {
     colors['distance'] = {}
     colors['distance_abs'] = {}
     colors['segment'] = {}
+    colors['network'] = {}
+    colors['set_presence'] = {}
 
 
     index_names = { 0: 'core_distance', 1: 'a_angle', 2: 'outer_angle', 3: 'tau', 4: 'phi', 5: 'psi', 6: 'sasa', 7: 'rsa', 8: 'theta', 9: 'hse', 10: 'tau_angle' }
@@ -40,6 +42,7 @@ function createScatterplot(data,containerSelector) {
         'distance_abs': 'Distance (abs)',
         'core_distance': 'Distance to 7TM axis',
         'core_distance_abs': 'Distance to 7TM axis (abs)',  
+        'set_presence' : 'Set specific presense'
     }
 
     $.each(data['distances'], function (gn, dis) {
@@ -60,6 +63,13 @@ function createScatterplot(data,containerSelector) {
         
     });
     console.log(colors)
+
+    $.each(filtered_gns_presence, function (gn, value) {
+        seq_pos = gn;
+        scale = value / 1
+        colors['set_presence'][seq_pos] = [value,scale,1];
+    })
+
     // get maximum values
     var max_values = {}
     $.each(data['tab4'], function (gn, v) {
@@ -133,6 +143,9 @@ function createScatterplot(data,containerSelector) {
             if (x == 'distance') {
                 if (!(gn in data['distances'])) return true;
                 x_abs ? X.push(Math.abs(data['distances'][gn]['avg'])) : X.push(data['distances'][gn]['avg']);
+            } else if (x == 'set_presence') {
+                if (!(gn in filtered_gns_presence)) return true;
+                x_abs ? X.push(Math.abs(filtered_gns_presence[gn])) : X.push(filtered_gns_presence[gn]);
             } else {
                 x_abs ? X.push(Math.abs(data['tab4'][gn]['angles'][index_names_rev[x]][0])) : X.push(data['tab4'][gn]['angles'][index_names_rev[x]][0]);
             }
@@ -140,6 +153,9 @@ function createScatterplot(data,containerSelector) {
                 if (!(gn in data['distances'])) return true;
                 //Y.push(data['distances'][gn]['avg']);
                 y_abs ? Y.push(Math.abs(data['distances'][gn]['avg'])) : Y.push(data['distances'][gn]['avg']);
+            } else if (y == 'set_presence') {
+                if (!(gn in filtered_gns_presence)) return true;
+                y_abs ? Y.push(Math.abs(filtered_gns_presence[gn]['avg'])) : Y.push(filtered_gns_presence[gn]['avg']);
             } else {
                 //Y.push(data['tab4'][gn]['angles'][index_names_rev[y]][0]);
                 y_abs ? Y.push(Math.abs(data['tab4'][gn]['angles'][index_names_rev[y]][0])) : Y.push(data['tab4'][gn]['angles'][index_names_rev[y]][0]);
@@ -169,6 +185,7 @@ function createScatterplot(data,containerSelector) {
         'distance_abs': 'Distance (abs)',
         'core_distance': 'Distance to 7TM axis',
         'core_distance_abs': 'Distance to 7TM axis (abs)',  
+        'set_presence' : 'Set specific presense'
     }
 
     var margin = { top: 10, right: 30, bottom: 40, left: 50 },
@@ -316,7 +333,7 @@ function createScatterplot(data,containerSelector) {
             .data(scatter_data)
             .join("text")
             .attr("dy", "0.35em")
-            .attr("x", d => x(d.x) + label_offset)
+            .attr("x", function (d) { return sp_size!='none' && d.name in colors[sp_size] ? x(d.x) + 2 + (2+colors[sp_size][d.name][1] * 8) : x(d.x) + label_offset;} )
             .attr("y", d => y(d.y))
             .text(function (d) {
                 if (label == 'set1') {
@@ -329,7 +346,8 @@ function createScatterplot(data,containerSelector) {
                     return d.name;
                 }
             })
-            .attr("font-size", function (d) { return sp_size != 'none' && label_only && d.name in colors[sp_size] ? 5 + colors[sp_size][d.name][1] * 10 : 8; })
+            // .attr("font-size", function (d) { return sp_size != 'none' && label_only && d.name in colors[sp_size] ? 5 + colors[sp_size][d.name][1] * 10 : 8; })
+            .attr("font-size", 8)
             .attr("font-weight", font_weight)
             .attr("text-anchor",text_anchor)
             .style("fill", function (d) {
@@ -371,6 +389,7 @@ function createScatterplot(data,containerSelector) {
         'distance_abs': 'Distance (abs)',
         'core_distance': 'Distance to 7TM axis',
         'core_distance_abs': 'Distance to 7TM axis (abs)',  
+        'set_presence' : 'Set specific presense'
     }
     var select_data_options = ''
     $.each(nice_index_names, function (key, description) {
@@ -436,7 +455,7 @@ function createScatterplot(data,containerSelector) {
                 select_color_options +
                 '</select>'+
             '</div > ';
-        content += '<div>Size</div><div><select id="sp_size" class="change_axis">' +
+        content += '<div>Marker size</div><div><select id="sp_size" class="change_axis">' +
             '<option value="none">Fixed</option>' +
             select_data_options +
             '</select></div>';

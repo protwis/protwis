@@ -15,6 +15,11 @@ color_scale_colors.orange = { red: 255, green: 150, blue: 113 };
 color_scale_colors.purple = { red: 128, green: 0, blue: 128 };
 color_scale_colors.false = false;
 
+function color_by_category(value, possibilities) {
+    rgb = d3.rgb(d3.interpolateSpectral(value / possibilities));
+    return rgb.hex();
+}
+
 function color_by_scale(scale, color1, color2, color3) {
 
     // case "rwb": // red-white-blue
@@ -93,13 +98,18 @@ function createSnakeplot(data, containerSelector) {
     var colors = {}
     colors['distance'] = {}
     colors['distance_abs'] = {}
+    colors['network'] = {}
+    colors['set_presence'] = {}
+    colors['ligand'] = {}
+    colors['complex'] = {}
 
 
-    index_names = { 0: 'core_distance', 1: 'a_angle', 2: 'outer_angle', 3: 'tau', 4: 'phi', 5: 'psi', 6: 'sasa', 7: 'rsa', 8: 'theta', 9: 'hse', 10: 'tau_angle' }
+    index_names = { 0: 'core_distance', 1: 'a_angle', 2: 'outer_angle', 3: 'tau', 4: 'phi', 5: 'psi', 6: 'sasa', 7: 'rsa', 8: 'theta', 9: 'hse', 10: 'tau_angle', 11:'rotation_angle' }
     neg_and_positives = ['core_distance','sasa','rsa', 'hse']
     nice_index_names = {
         'a_angle' : 'Angle to helix&7TM axes',
         'outer_angle': 'Rotamer',
+        'rotation_angle': 'Rotation angle',
         'tau': 'Tau',
         'phi': 'Phi',
         'psi': 'Psi',
@@ -115,6 +125,10 @@ function createSnakeplot(data, containerSelector) {
         'distance_abs': 'Distance (abs)',
         'core_distance': 'Distance to 7TM axis',
         'core_distance_abs': 'Distance to 7TM axis (abs)',  
+        'network' : 'Network group no.',
+        'set_presence' : 'Set specific presense',
+        'ligand' : 'Ligand interactions freq',
+        'complex' : 'SignalP interactions freq'
     }
     path_groups = {}
     path_groups_lookup = {}
@@ -134,6 +148,36 @@ function createSnakeplot(data, containerSelector) {
             path_groups_lookup[res_id] = path_id;
         });
     });
+
+
+    $.each(filtered_cluster_groups, function (id, group) {
+        $.each(group, function (i, gn) {
+            seq_pos = data['snakeplot_lookup'][gn];
+            scale = id / filtered_cluster_groups.length
+            colors['network'][seq_pos] = [id,scale,filtered_cluster_groups.length];
+        })
+    })
+
+    $.each(filtered_gns_presence, function (gn, value) {
+        seq_pos = data['snakeplot_lookup'][gn];
+        scale = value / 1
+        colors['set_presence'][seq_pos] = [value,scale,1];
+    })
+
+    max_ligand_interactions = Math.max(...Object.values(data['class_ligand_interactions'])) 
+    $.each(data['class_ligand_interactions'], function (gn, value) {
+        seq_pos = data['snakeplot_lookup'][gn];
+        scale = value / max_ligand_interactions;
+        colors['ligand'][seq_pos] = [value,scale,max_ligand_interactions];
+    })
+
+
+    max_complex_interactions = Math.max(...Object.values(data['class_complex_interactions'])) 
+    $.each(data['class_complex_interactions'], function (gn, value) {
+        seq_pos = data['snakeplot_lookup'][gn];
+        scale = value / max_complex_interactions;
+        colors['complex'][seq_pos] = [value,scale,max_complex_interactions];
+    })
 
     $.each(data['distances'], function (gn, dis) {
         seq_pos = data['snakeplot_lookup'][gn];
@@ -612,7 +656,12 @@ function createSnakeplot(data, containerSelector) {
 
                 if (pos_id in colors[fill_color]) {
                     var scale = colors[fill_color][pos_id][1];
-                    $(this).attr("fill", color_by_scale(scale,color_id1,color_id2,color_id3));
+                    if (fill_color == 'network') {
+                        // Network is more of a 'categorical' color scale, so needs different code
+                        $(this).attr("fill", color_by_category(colors[fill_color][pos_id][0],colors[fill_color][pos_id][2]));
+                    } else {
+                        $(this).attr("fill", color_by_scale(scale,color_id1,color_id2,color_id3));
+                    }
                 } else {
 
 
@@ -683,7 +732,12 @@ function createSnakeplot(data, containerSelector) {
 
                 if (pos_id in colors[fill_color]) {
                     var scale = colors[fill_color][pos_id][1];
-                    $(this).attr("stroke", color_by_scale(scale,color_id1,color_id2,color_id3));
+                    if (fill_color == 'network') {
+                        // Network is more of a 'categorical' color scale, so needs different code
+                        $(this).attr("stroke", color_by_category(colors[fill_color][pos_id][0],colors[fill_color][pos_id][2]));
+                    } else {
+                        $(this).attr("stroke", color_by_scale(scale,color_id1,color_id2,color_id3));
+                    }
                     $(this).attr("stroke-width", 5); 
                 } else {
 
@@ -754,7 +808,12 @@ function createSnakeplot(data, containerSelector) {
 
                 if (pos_id in colors[fill_color]) {
                     var scale = colors[fill_color][pos_id][1];
-                    $(containerSelector).find('#' + pos_id + 't').attr("fill", color_by_scale(scale,color_id1,color_id2,color_id3));
+                    if (fill_color == 'network') {
+                        // Network is more of a 'categorical' color scale, so needs different code
+                        $(containerSelector).find('#' + pos_id + 't').attr("fill", color_by_category(colors[fill_color][pos_id][0],colors[fill_color][pos_id][2]));
+                    } else {
+                        $(containerSelector).find('#' + pos_id + 't').attr("fill", color_by_scale(scale,color_id1,color_id2,color_id3));
+                    }
                     $(containerSelector).find('#' + pos_id + 't').attr("font-weight", 1000);
                 } else {
 
@@ -989,7 +1048,7 @@ function createSnakeplot(data, containerSelector) {
         fill_color = $(containerSelector + " #snakeplot_move_circle").val();
         if (fill_color!="none" && fill_color) legends.push({ icon: 'backbone', value: nice_index_names[fill_color]})
 
-        console.log(legends);
+        // console.log(legends);
         // legends = [{ icon: 'fill', value: 'rotamer' },
         //            { icon: 'border', value: 'distance' },
         //            { icon: 'text', value: 'distance' },
@@ -1041,7 +1100,7 @@ function createSnakeplot(data, containerSelector) {
             .style("stroke-width", 1)
             .style("fill", "white")
         
-        console.log(legendcolorscales)
+        // console.log(legendcolorscales)
 
         // for (element in legendcolorscales[0]) {
         //     console.log("test",element)
@@ -1061,9 +1120,14 @@ function createSnakeplot(data, containerSelector) {
                 range_colors.push(hex);
             });
             
-            var colors = d3v4.scaleLinear()
-                .domain(d3v4.ticks(0, 48, range_colors.length))
-                .range(range_colors);
+            if (d.value == nice_index_names['network']) {
+                var colors = d3v4.scaleSequential(d3v4.interpolateSpectral)
+                    .domain([0, 48]);
+            } else {
+                var colors = d3v4.scaleLinear()
+                    .domain(d3v4.ticks(0, 48, range_colors.length))
+                    .range(range_colors);
+            }
             
             var rects = test.selectAll(".colorinterval")
                 .data(data)
