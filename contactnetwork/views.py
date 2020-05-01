@@ -23,7 +23,7 @@ from construct.models import Construct
 from protein.models import Protein, ProteinSegment, ProteinGProtein, ProteinGProteinPair, ProteinConformation
 from residue.models import Residue, ResidueGenericNumber
 from signprot.models import SignprotComplex
-from interaction.models import StructureLigandInteraction
+from interaction.models import StructureLigandInteraction, ResidueFragmentInteraction
 from angles.models import ResidueAngle, get_angle_averages, get_all_angles
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
@@ -687,7 +687,38 @@ def InteractionBrowserData(request):
                             p = p1.intersection(p2)
                             if p:
                                 class_pair_lookup[coord+pair] = round(100*len(p)/sum_proteins)
-            cache.set(cache_key,class_pair_lookup,3600*24*7)
+            cache.set(cache_key, class_pair_lookup, 3600 * 24 * 7)
+            
+        ### Fetch class ligand / G-protein interactions for snakeplot colouring
+        cache_key = 'class_ligand_interactions_{}_{}'.format(gpcr_class,forced_class_a)
+        class_ligand_interactions = cache.get(cache_key)
+        # class_ligand_interactions=None
+        if class_ligand_interactions==None or len(class_ligand_interactions)==0:
+            class_interactions = ResidueFragmentInteraction.objects.filter(
+                structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=gpcr_class, structure_ligand_pair__annotated=True).prefetch_related(
+                'rotamer__residue__generic_number',
+                'rotamer__residue__display_generic_number',
+                'structure_ligand_pair__structure__protein_conformation__protein__family')
+
+            class_ligand_interactions = {}
+            for i in class_interactions:
+                p = i.structure_ligand_pair.structure.protein_conformation.protein.family.slug
+                if i.rotamer.residue.generic_number:
+
+                    display_gn = re.sub(r'\.[\d]+', '', i.rotamer.residue.generic_number.label)
+                    if forced_class_a:
+                        gn = i.rotamer.residue.generic_number.label
+                    else:
+                        gn = display_gn
+
+                else:
+                    continue
+                if gn not in class_ligand_interactions.keys():
+                    class_ligand_interactions[gn] = set()
+
+                class_ligand_interactions[gn].add(p)
+            class_ligand_interactions = {key: len(value) for key, value in class_ligand_interactions.items()}
+            cache.set(cache_key, class_ligand_interactions, 3600 * 24 * 7)
 
         # Get the relevant interactions
         # TODO MAKE SURE ITs only gpcr residues..
@@ -737,6 +768,7 @@ def InteractionBrowserData(request):
 
 
         data = {}
+        data['class_ligand_interactions'] = class_ligand_interactions
         data['gpcr_class'] = gpcr_class
         data['segments'] = set()
         data['segment_map'] = {}
