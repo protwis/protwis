@@ -295,7 +295,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             .attr("text-anchor", 'middle')
             .attr("fill", "#000")
             .attr("cursor", "pointer")
-            .attr("font-size", function (d) { return d.size ? assignSize(d.group) - 6 : 12; })
+            .attr("font-size", function (d) { return d.size ? assignSize(d.group) - 6 : 14; })
             .text(function (d) { return d.size ? d.group : d.name });
         
         
@@ -582,9 +582,9 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
 
         d3.select(containerSelector).select("#addAA").on("change", function () {
             addAA = d3.select(containerSelector).select("#addAA").property("checked");
-            node.select("circle").attr("r", function (d) { return addAA ? 24 : 20; })
-            node.select("text").text(
-                function (d) { return addAA ? raw_data["aa_map"][d.name]+d.name : d.name }
+            node.select("circle").attr("r", function (d) { return addAA ? 20 : 20; })
+            node.select("text").html(
+                function (d) { return addAA ? "<tspan x=0 dy=-3>"+raw_data["aa_map"][d.name]+"</tspan><tspan x=0 dy=12>"+d.name+"</tspan>" : d.name }
             );
         });
 
@@ -884,7 +884,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
         'Link Label <input id="linkLabel" type="checkbox" checked><br>' +
         'Stick drag <input id="stickyDrag" type="checkbox" checked><br>' +
         'Highlight res <input id="highlightNode" type="checkbox" checked><br>' +
-        // 'Add consensus AA<input id="addAA" type="checkbox"><br>' +
+        'Add consensus AA<input id="addAA" type="checkbox"><br>' +
         'Color links by frequency <input id="colorLinks" type="checkbox"><br>' +
         'Link Strength <input id="link_strength_change" style="width:80px;" type="range" min="0" max="1" step="any" value="0.5">' +
         'Link Distance<input id="link_distance_change" style="width:80px;" type="range" min="0" max="200" step="any" value="40">' +
