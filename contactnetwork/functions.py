@@ -395,6 +395,12 @@ def tm_movement_2D(pdbs1, pdbs2, mode, data, gn_dictionary):
         ref_membrane_mid["005"] = [['1x42', '1x43', '1x44'], ['2x52', '2x53', '2x54'], ['3x37', '3x38', '3x39'], ['4x52', '4x53', '4x54'], ['5x52', '5x53', '5x54'], ['6x42', '6x43', '6x44'], ['7x46', '7x47', '7x48']] # F
 
         membrane_mid = ref_membrane_mid[data['gpcr_class']]
+
+        if data['gpcr_class'] != "001":
+            inv_gn_dictionary = {v: k for k, v in gn_dictionary.items()}
+            for index in range(len(membrane_mid)):
+                membrane_mid[index] = [inv_gn_dictionary[res] for res in membrane_mid[index]]
+
         for i in range(0,7):
             gns[i] = [x for x in membrane_mid[i] if x in conserved]
             tm_only = [x for x in conserved if x[0]==str(i+1)]
