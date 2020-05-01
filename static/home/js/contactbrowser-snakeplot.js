@@ -99,6 +99,7 @@ function createSnakeplot(data, containerSelector) {
     colors['distance'] = {}
     colors['distance_abs'] = {}
     colors['network'] = {}
+    colors['set_presence'] = {}
 
 
     index_names = { 0: 'core_distance', 1: 'a_angle', 2: 'outer_angle', 3: 'tau', 4: 'phi', 5: 'psi', 6: 'sasa', 7: 'rsa', 8: 'theta', 9: 'hse', 10: 'tau_angle', 11:'rotation_angle' }
@@ -122,7 +123,8 @@ function createSnakeplot(data, containerSelector) {
         'distance_abs': 'Distance (abs)',
         'core_distance': 'Distance to 7TM axis',
         'core_distance_abs': 'Distance to 7TM axis (abs)',  
-        'network' : 'Network group no.'
+        'network' : 'Network group no.',
+        'set_presence' : 'Set specific presense'
     }
     path_groups = {}
     path_groups_lookup = {}
@@ -150,6 +152,12 @@ function createSnakeplot(data, containerSelector) {
             scale = id / filtered_cluster_groups.length
             colors['network'][seq_pos] = [id,scale,filtered_cluster_groups.length];
         })
+    })
+
+    $.each(filtered_gns_presence, function (gn, value) {
+        seq_pos = data['snakeplot_lookup'][gn];
+        scale = value / 1
+        colors['set_presence'][seq_pos] = [value,scale,1];
     })
 
     $.each(data['distances'], function (gn, dis) {
@@ -1021,7 +1029,7 @@ function createSnakeplot(data, containerSelector) {
         fill_color = $(containerSelector + " #snakeplot_move_circle").val();
         if (fill_color!="none" && fill_color) legends.push({ icon: 'backbone', value: nice_index_names[fill_color]})
 
-        console.log(legends);
+        // console.log(legends);
         // legends = [{ icon: 'fill', value: 'rotamer' },
         //            { icon: 'border', value: 'distance' },
         //            { icon: 'text', value: 'distance' },

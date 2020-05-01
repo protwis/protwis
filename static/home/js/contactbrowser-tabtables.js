@@ -1,10 +1,13 @@
 var filtered_gn_pairs = [];
 var filtered_cluster_groups = [];
 var filtered_gns = [];
+var filtered_gns_abs_diff_values = {};
 function filter_browser() {
     old_filtered_gn_pairs = filtered_gn_pairs;
     filtered_gn_pairs = [];
     filtered_gns = [];
+    filtered_gns_abs_diff_values = {};
+    filtered_gns_presence = {}; // Whether a filtered gn takes part in contacts only in set1,set2 or in both
     pos_contacts_count = {};
     filtered_cluster_groups = [];
     const selector = "#" + $('.main_option:visible').attr('id');
@@ -19,6 +22,17 @@ function filter_browser() {
             gns = separatePair(i['DT_RowId']);
             filtered_gns.push(gns[0]);
             filtered_gns.push(gns[1]);
+
+
+
+            if (analys_mode == "#two-crystal-groups") {
+                if (!(gns[0] in filtered_gns_abs_diff_values)) filtered_gns_abs_diff_values[gns[0]] = [];
+                if (!(gns[1] in filtered_gns_abs_diff_values)) filtered_gns_abs_diff_values[gns[1]] = [];
+                // BEWARE this 4th index can change if the column changes.. only on relevant in 2 group
+                diff_value = i['2'] - i['3'];
+                filtered_gns_abs_diff_values[gns[0]].push(diff_value);
+                filtered_gns_abs_diff_values[gns[1]].push(diff_value);
+            }
 
             // see if there is a key for gns1
             if (!(gns[0] in pos_contacts_count)) pos_contacts_count[gns[0]] = 0;
@@ -50,6 +64,26 @@ function filter_browser() {
             }
 
         })
+        filtered_gns_presence = {};
+        if (analys_mode == "#two-crystal-groups") {
+            $.each(filtered_gns_abs_diff_values, function (i, v) {
+                // Go through all the diff values. If both negative and positive diff numbers exist
+                // then label position as "both". Otherwise the correct set. This gives information whether 
+                // the position is only participating in interactions in one set or the other..
+                let max = Math.max.apply(null, v);
+                let min = Math.min.apply(null, v);
+                var in_set_1 = true ? max > 0 : false;
+                var in_set_2 = true ? min < 0 : false;
+                if (in_set_1 && in_set_2) {
+                    filtered_gns_presence[i] = 0.5; //both, middle
+                } else if (in_set_1) {
+                    filtered_gns_presence[i] = 0; //set1
+                } else if (in_set_2) {
+                    filtered_gns_presence[i] = 1; //set2
+                }
+
+            })
+        }
         console.time('Update network');
         if (old_filtered_gn_pairs.sort().join(',') !== filtered_gn_pairs.sort().join(',')) {
             // only update this if there are new filtered things..
