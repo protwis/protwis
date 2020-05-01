@@ -720,6 +720,45 @@ def InteractionBrowserData(request):
             class_ligand_interactions = {key: len(value) for key, value in class_ligand_interactions.items()}
             cache.set(cache_key, class_ligand_interactions, 3600 * 24 * 7)
 
+        cache_key = 'class_complex_interactions_{}_{}'.format(gpcr_class,forced_class_a)
+        class_complex_interactions = cache.get(cache_key)
+        # class_ligand_interactions=None
+        if class_complex_interactions == None or len(class_complex_interactions) == 0:
+            
+            interactions = Interaction.objects.filter(
+                interacting_pair__referenced_structure__protein_conformation__protein__family__slug__startswith=gpcr_class
+            ).exclude(
+                interacting_pair__res1__protein_conformation_id=F('interacting_pair__res2__protein_conformation_id') # Filter interactions with other proteins
+            ).distinct(
+            ).exclude(
+                specific_type='water-mediated'
+            ).values(
+                'interaction_type',
+                'interacting_pair__referenced_structure__protein_conformation__protein__family__slug',
+                'interacting_pair__res1__generic_number__label',
+                'interacting_pair__res1__display_generic_number__label',
+                'interacting_pair__res2__pk',
+            )
+
+            class_complex_interactions = {}
+            for i in interactions:
+                p = i['interacting_pair__referenced_structure__protein_conformation__protein__family__slug']
+
+                display_gn = re.sub(r'\.[\d]+', '', i['interacting_pair__res1__display_generic_number__label'])
+                if forced_class_a:
+                    gn = i['interacting_pair__res1__generic_number__label']
+                else:
+                    gn = display_gn
+
+                if gn not in class_complex_interactions.keys():
+                    class_complex_interactions[gn] = set()
+
+                class_complex_interactions[gn].add(p)
+
+        
+            class_complex_interactions = {key: len(value) for key, value in class_complex_interactions.items()}
+            cache.set(cache_key, class_complex_interactions, 3600 * 24 * 7)
+ 
         # Get the relevant interactions
         # TODO MAKE SURE ITs only gpcr residues..
         interactions = Interaction.objects.filter(
@@ -769,6 +808,7 @@ def InteractionBrowserData(request):
 
         data = {}
         data['class_ligand_interactions'] = class_ligand_interactions
+        data['class_complex_interactions'] = class_complex_interactions
         data['gpcr_class'] = gpcr_class
         data['segments'] = set()
         data['segment_map'] = {}

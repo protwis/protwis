@@ -101,6 +101,7 @@ function createSnakeplot(data, containerSelector) {
     colors['network'] = {}
     colors['set_presence'] = {}
     colors['ligand'] = {}
+    colors['complex'] = {}
 
 
     index_names = { 0: 'core_distance', 1: 'a_angle', 2: 'outer_angle', 3: 'tau', 4: 'phi', 5: 'psi', 6: 'sasa', 7: 'rsa', 8: 'theta', 9: 'hse', 10: 'tau_angle', 11:'rotation_angle' }
@@ -126,7 +127,8 @@ function createSnakeplot(data, containerSelector) {
         'core_distance_abs': 'Distance to 7TM axis (abs)',  
         'network' : 'Network group no.',
         'set_presence' : 'Set specific presense',
-        'ligand' : 'Ligand interactions freq'
+        'ligand' : 'Ligand interactions freq',
+        'complex' : 'SignalP interactions freq'
     }
     path_groups = {}
     path_groups_lookup = {}
@@ -167,6 +169,14 @@ function createSnakeplot(data, containerSelector) {
         seq_pos = data['snakeplot_lookup'][gn];
         scale = value / max_ligand_interactions;
         colors['ligand'][seq_pos] = [value,scale,max_ligand_interactions];
+    })
+
+
+    max_complex_interactions = Math.max(...Object.values(data['class_complex_interactions'])) 
+    $.each(data['class_complex_interactions'], function (gn, value) {
+        seq_pos = data['snakeplot_lookup'][gn];
+        scale = value / max_complex_interactions;
+        colors['complex'][seq_pos] = [value,scale,max_complex_interactions];
     })
 
     $.each(data['distances'], function (gn, dis) {
