@@ -31,6 +31,8 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
     var stickyDrag = true;
     var highlightNode = true;
     var max_freq = 0;
+
+    var filter_sets = 'all';
     function prepare_data(single_cluster = false) {
 
         console.log('PREPARE DATA',containerSelector,'cluster_groups',cluster_groups.length, plot_specified_filtered.length )
@@ -110,25 +112,29 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             cg = cluster_groups.filter(l => l.includes(gns[1]));
             cg_index2 = cluster_groups.indexOf(cg[0]);
 
-            if (single_cluster!==false && (cg_index1!=single_cluster || cg_index2!=single_cluster)) return;
+            set_type = filtered_cluster_groups_set[cg_index1];
+            if (filter_sets=='all' || filter_sets==set_type) {
+                if (single_cluster!==false && (cg_index1!=single_cluster || cg_index2!=single_cluster)) return;
 
-            if (!track_gns.includes(gns[0])) {
-                new_data["nodes"].push({ "name": gns[0], "group": seg1, "group2":cg_index1, "links":0 })
-                track_gns.push(gns[0]);
-            }
-            if (!track_gns.includes(gns[1])) {
-                new_data["nodes"].push({ "name": gns[1], "group": seg2, "group2":cg_index2, "links":0 })
-                track_gns.push(gns[1]);
-            }
+                if (!track_gns.includes(gns[0])) {
+                    new_data["nodes"].push({ "name": gns[0], "group": seg1, "group2":cg_index1, "group3":set_type, "links":0 })
+                    track_gns.push(gns[0]);
+                }
+                if (!track_gns.includes(gns[1])) {
+                    new_data["nodes"].push({ "name": gns[1], "group": seg2, "group2":cg_index2, "group3":set_type, "links":0 })
+                    track_gns.push(gns[1]);
+                }
 
-            source = new_data["nodes"].filter(obj => { return obj.name === gns[0] })[0];
-            source.links += 1;
-            target = new_data["nodes"].filter(obj => { return obj.name === gns[1] })[0];
-            target.links += 1;
-            new_data["links"].push({ "source": source, "target": target, "value": 1, "freq": freq })
-            if (Math.abs(freq) > max_freq) max_freq = Math.abs(freq);
+                source = new_data["nodes"].filter(obj => { return obj.name === gns[0] })[0];
+                source.links += 1;
+                target = new_data["nodes"].filter(obj => { return obj.name === gns[1] })[0];
+                target.links += 1;
+                new_data["links"].push({ "source": source, "target": target, "value": 1, "freq": freq })
+                if (Math.abs(freq) > max_freq) max_freq = Math.abs(freq);
+            }
         })
 
+        // console.log(new_data["nodes"]);
         // console.log(cluster_groups);
             // console.log(graph);
         // new_data['nodes'].forEach(function (n) {
@@ -595,7 +601,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
                 scale = 0.5 + Math.abs(d.freq)*0.5 / 100;
                 // scale = Math.abs(d.freq) / 100;
                 scale = 0.2 + Math.abs(d.freq) * 0.8 / max_freq;
-                console.log(max_freq, d.freq, d.links);
+                //console.log(max_freq, d.freq, d.links);
                 color = { r: 200, g: 200, b: 200 }; //grey
                 if (d.freq < 0) {
                     // if the header is a set two, then make it red
@@ -628,6 +634,13 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             }
         });
 
+        d3.select(containerSelector).select("#set_filter").on("change", function () {
+            // filter_sets = d3v4.select(containerSelector).select("#set_filter").val();
+            filter_sets = $(containerSelector+" #set_filter").val();
+            console.log('changing filtering!', filter_sets);
+            prepare_data(false);
+            init();
+        });
         // init option values
 
         // console.log("set link_strength_change to", link_strength);
@@ -640,6 +653,8 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
         d3v4.select(containerSelector).select("#gravity_change").property("value", gravity);
         console.log("set collide to", collide);
         d3v4.select(containerSelector).select("#collide_change").property("value", gravity);
+        console.log("set set_filter to", filter_sets);
+        d3v4.select(containerSelector).select("#set_filter").property("value", filter_sets);
 
         
               
@@ -886,6 +901,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
         'Highlight res <input id="highlightNode" type="checkbox" checked><br>' +
         'Add consensus AA<input id="addAA" type="checkbox"><br>' +
         'Color links by frequency <input id="colorLinks" type="checkbox"><br>' +
+        'Filter <select id="set_filter"><option value="all">All</option><option value="set1">Set1</option><option value="set2">Set2</option><option value="both">Both</option></select><br>' +
         'Link Strength <input id="link_strength_change" style="width:80px;" type="range" min="0" max="1" step="any" value="0.5">' +
         'Link Distance<input id="link_distance_change" style="width:80px;" type="range" min="0" max="200" step="any" value="40">' +
         'Charge<input id="charge_change" style="width:80px;" type="range" min="0" max="1400" step="any" value="700">' +
