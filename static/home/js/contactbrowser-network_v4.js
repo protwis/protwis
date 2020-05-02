@@ -194,6 +194,13 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             // Group nodes into their "groups" (segments)
             graph = network(new_data, net, getGroup, expand);
 
+            // Ensure all segments are there..
+            $.each(['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8'], function (i, s) {
+                if (!(graph['nodes'].find(({ group }) => group === s))) {
+                    graph['nodes'].push({'group':s, nodes: [], link_count: 0, size:1})
+                }
+            })
+
             max_size = Math.max.apply(Math, graph['nodes'].map(function(v) {
                 return v.size;
             }));
@@ -203,8 +210,10 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             }));
 
             // normalize
+            total_links = 0;
             graph['links'].forEach(function (n) {
                 n.links = n.size;
+                total_links += n.links;
                 n.size = Math.max(1,Math.round(max_link_size*n.size/max_link));
             });
         }
@@ -304,6 +313,18 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             .attr("font-size", function (d) { return d.size ? assignSize(d.group) - 6 : 14; })
             .text(function (d) { return d.size ? d.group : d.name });
         
+        if (segment_view) {
+            // Fix inital layout for segments
+            node.attr("transform", function (d) {
+                if (assignPosition(d.group)[0] != 0 ) {
+                    [d.x, d.y] = assignPosition(d.group);
+                }
+                d.fixed = true;
+                d.fx = d.x;
+                d.fy = d.y;
+                return "translate(" + d.x + "," + d.y + ")";
+            });
+        }
         
         var ticked = function() {
             node.attr("transform", function (d) {
@@ -313,6 +334,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
                 d.y = Math.max(size, Math.min(height - size, d.y));
                 return "translate(" + d.x + "," + d.y + ")";
             });
+
             link
                 .attr("x1", function(d) { return d.source.x; })
                 .attr("y1", function(d) { return d.source.y; })
@@ -594,6 +616,11 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             );
         });
 
+        d3.select(containerSelector).select("#change_to_freq").on("change", function () {
+            changeFreq = d3.select(containerSelector).select("#change_to_freq").property("checked");
+            labelText.text(function (d) { return changeFreq ? (100*d.links / total_links).toFixed(1)+"%" :  d.links  });
+        });
+
 
         d3.select(containerSelector).select("#colorLinks").on("change", function () {
             colorLinks = d3.select(containerSelector).select("#colorLinks").property("checked");
@@ -780,7 +807,63 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
         
     function getGroup(n) { return n.group; }
 
+    function assignPosition(segment) {
 
+        switch (segment) {
+        case "TM1":
+                x = 323;
+                y = 170;
+            break;
+        case "TM2":
+                x = 248;
+                y = 63;
+            break;
+        case "TM3":
+                x = 147;
+                y = 179;
+            break;
+        case "TM4":
+                x = 56;
+                y = 82;
+            break;
+        case "TM5":
+                x = 22;
+                y = 187;
+            break;
+        case "TM6":
+                x = 83;
+                y = 293;
+            break;
+        case "TM7":
+                x = 250;
+                y = 285;
+            break;
+        case "H8":
+                x = 358;
+                y = 292;
+            break;
+        case "ECL1":
+                x = 164;
+                y = 26;
+            break;
+        case "ECL2":
+                x = 209;
+                y = 334;
+            break;
+        case "ICL1":
+                x = 383;
+                y = 76;
+            break;
+        case "ICL2":
+                x = 95;
+                y = 35;
+            break;
+        default:
+            x = 0;
+            y = 0;
+        }
+        return [x,y];
+    }
 
     function assignSize(segment) {
 
@@ -901,6 +984,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
         'Highlight res <input id="highlightNode" type="checkbox" checked><br>' +
         'Add consensus AA<input id="addAA" type="checkbox"><br>' +
         'Color links by frequency <input id="colorLinks" type="checkbox"><br>' +
+        '% of kept contacts <input id="change_to_freq" type="checkbox"><br>' +
         'Filter <select id="set_filter"><option value="all">All</option><option value="set1">Set1</option><option value="set2">Set2</option><option value="both">Both</option></select><br>' +
         'Link Strength <input id="link_strength_change" style="width:80px;" type="range" min="0" max="1" step="any" value="0.5">' +
         'Link Distance<input id="link_distance_change" style="width:80px;" type="range" min="0" max="200" step="any" value="40">' +
