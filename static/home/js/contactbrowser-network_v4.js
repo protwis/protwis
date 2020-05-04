@@ -764,6 +764,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
                 svg.style("background-color", "#fff");
                 labelParent.attr("dy", function (d, i) { return d.size ? -d.size / 2 : -5 / 2; })
             }
+            simulation.alpha(1).restart();
         });
 
         d3.select(containerSelector).select("#set_filter").on("change", function () {
