@@ -195,7 +195,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             graph = network(new_data, net, getGroup, expand);
 
             // Ensure all segments are there..
-            $.each(['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8'], function (i, s) {
+            $.each(['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8','ICL1','ICL2','ECL1','ECL2'], function (i, s) {
                 if (!(graph['nodes'].find(({ group }) => group === s))) {
                     graph['nodes'].push({'group':s, nodes: [], link_count: 0, size:1})
                 }
@@ -217,7 +217,6 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
                 n.size = Math.max(1,Math.round(max_link_size*n.size/max_link));
             });
         }
-        
     
         // var link = svg.append("g")
         //     .attr("class", "links")
@@ -275,15 +274,17 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
                 .on("drag", dragged)
                 .on("end", dragended))
             .on("dblclick", dblclick)
-            .on('contextmenu', function(d){ 
-                    d3v4.event.preventDefault();
-                    if (selected_single_cluster) {
-                        console.log('already zoomed in')
-                        prepare_data(false);
-                    } else { 
-                        prepare_data(d.group2);
+            .on('contextmenu', function (d) { 
+                    if (!segment_view) {
+                        d3v4.event.preventDefault();
+                        if (selected_single_cluster) {
+                            console.log('already zoomed in')
+                            prepare_data(false);
+                        } else { 
+                            prepare_data(d.group2);
+                        }
+                        init();
                     }
-                    init();
             })
             .on("mouseover", (d) => {
                 if (!dragged && highlightNode) {
@@ -304,6 +305,22 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             // .attr("r", function (d) { return d.links**2+20; })
             .style("opacity", 1)
             .style("fill", function (d) { return assignRainbowColor(d.group); });
+        
+        if (segment_view) {
+            node.select("circle").attr("visibility", function (d) { return assignSize(d.group)>19 ? "visible" : "hidden"; })
+
+            node.append("rect")
+                .attr("class", "node")
+                .attr("visibility", function (d) { return assignSize(d.group)<19 ? "visible" : "hidden"; }) // H8 and loops are <20..
+                .attr("x", -13)
+                .attr("y",-11)
+                .attr("width", 25)
+                .attr("height", 21)
+                .attr("stroke", "#555")
+                .attr("stroke-width","2px")
+                .style("opacity", 1)
+                .style("fill", function (d) { return assignRainbowColor(d.group); });
+        }
         
         node.append("text")
             .attr("dy", ".35em")
@@ -618,7 +635,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
 
         d3.select(containerSelector).select("#change_to_freq").on("change", function () {
             changeFreq = d3.select(containerSelector).select("#change_to_freq").property("checked");
-            labelText.text(function (d) { return changeFreq ? (100*d.links / total_links).toFixed(1)+"%" :  d.links  });
+            labelText.text(function (d) { return changeFreq ? (100*d.links / total_links).toFixed(0)+"%" :  d.links  });
         });
 
 
