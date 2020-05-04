@@ -432,7 +432,8 @@ function createScatterplot(data,containerSelector) {
         
         index_names = { 0: 'core_distance', 1: 'a_angle', 2: 'outer_angle', 3: 'tau', 4: 'phi', 5: 'psi', 6: 'sasa', 7: 'rsa', 8: 'theta', 9: 'hse', 10: 'tau_angle' }
     
-        content += '<div>X-axis</div><div><select id="change_x" class="change_axis">' +
+        content += '<div><strong>Visualisation</strong></div><div></div>' +
+                   '<div>X-axis</div><div><select id="change_x" class="change_axis">' +
             select_data_options +
             '</select></div>'
             ;
@@ -440,7 +441,11 @@ function createScatterplot(data,containerSelector) {
             select_data_options +
             '</select></div>';
             
-        content += '<div>Color</div>';
+        content += '<div>Marker size</div><div><select id="sp_size" class="change_axis">' +
+        '<option value="none">Fixed</option>' +
+        select_data_options +
+        '</select></div>';
+        content += '<div>Label color</div>';
         content += '<div><select id="sp_color" class="change_axis">' +
             '<option value="segment">Segment</option>' +
             '<option value="network">Network group</option>' +
@@ -458,12 +463,6 @@ function createScatterplot(data,containerSelector) {
                 select_color_options +
                 '</select>'+
             '</div > ';
-        content += '<div>Marker size</div><div><select id="sp_size" class="change_axis">' +
-            '<option value="none">Fixed</option>' +
-            select_data_options +
-            '</select></div>';
-        // content += '</table > '
-        //         ;
         content += '</div>';
         newDiv.innerHTML = content;
 
