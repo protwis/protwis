@@ -336,7 +336,7 @@ function createSnakeplot(data, containerSelector) {
         
         index_names = { 0: 'core_distance', 1: 'a_angle', 2: 'outer_angle', 3: 'tau', 4: 'phi', 5: 'psi', 6: 'sasa', 7: 'rsa', 8: 'theta', 9: 'hse', 10: 'tau_angle' }
     
-        content += '<table><tr><td>Residue text (kept positions):</td><td><select id="text_included">' +
+        content += '<table><tr><td>Hide loops</td><td><input id=hide_loops type=checkbox></td></tr><tr><td>Residue text (kept positions):</td><td><select id="text_included">' +
         text_content_options +
         '</select>' + 
         '<div class="btn-group btn-toggle" id="included_color">' +
@@ -476,6 +476,22 @@ function createSnakeplot(data, containerSelector) {
         $(containerSelector).find(".snakeplot_controls_toggle").click(function() {
             $(containerSelector).find(".options").slideToggle();
         });
+
+        $(containerSelector).find("#hide_loops").click(function() {
+            hide_loops = $(containerSelector + " #hide_loops").prop("checked");
+            console.log("#hide_loops", hide_loops);
+            loops = ['ICL1', 'ICL2', 'ICL3', 'ECL1', 'ECL2','ECL3'];
+            $.each(loops, function (i, l) {
+                if (hide_loops) {
+                    $(containerSelector).find("." + l).hide();
+                } else {
+                    $(containerSelector).find("." + l+".short").show();
+                }
+            })
+            maxmin();
+        });
+
+        
 
         d3.select(containerSelector).select("#text_included").on("change", function () {
             text_format = $(containerSelector + " #text_included").val();
