@@ -128,7 +128,7 @@ function createSnakeplot(data, containerSelector) {
         'network' : 'Network group no.',
         'set_presence' : 'Set specific presense',
         'ligand' : 'Ligand interactions freq',
-        'complex' : 'SignalP interactions freq'
+        'complex' : 'G protein interactions'
     }
     path_groups = {}
     path_groups_lookup = {}
