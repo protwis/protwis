@@ -156,10 +156,14 @@ def recreate3Dorder(distance_matrix, gn_grouping, mirror = False):
             #print("calculating for TM", str(i+1))
             if i == 3:
                 # just take the first solution (mirrored solution)
-                if mirror:
-                    tms[i] = trilaterate(tms[0], tms[1], tms[2], reorder_dist[0][i], reorder_dist[1][i], reorder_dist[2][i])[1]
-                else:
-                    tms[i] = trilaterate(tms[0], tms[1], tms[2], reorder_dist[0][i], reorder_dist[1][i], reorder_dist[2][i])[0]
+                try:
+                    if mirror:
+                        tms[i] = trilaterate(tms[0], tms[1], tms[2], reorder_dist[0][i], reorder_dist[1][i], reorder_dist[2][i])[1]
+                    else:
+                        tms[i] = trilaterate(tms[0], tms[1], tms[2], reorder_dist[0][i], reorder_dist[1][i], reorder_dist[2][i])[0]
+                except:
+                    skip_this_loop = True
+                    break
             else:
                 # Alternative 1: Place point using just the previous three points
                 # sr = [i-3,i-2,i-1]
