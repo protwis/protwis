@@ -2209,7 +2209,9 @@ def InteractionBrowserData(request):
         data['proteins'] = list(data['proteins'])
         data['pfs'] = list(data['pfs'])
         data['pfs_lookup'] = dict(data['pfs_lookup'])
+
         data['segm_lookup'] = segm_lookup
+        data['segm_lookup_ordered'] = sorted(segm_lookup, key=functools.cmp_to_key(gpcrdb_number_comparator))
         data['segments'] = list(data['segments'])
         data['normalized'] = normalized
         data['forced_class_a'] = forced_class_a

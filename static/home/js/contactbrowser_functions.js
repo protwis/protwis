@@ -803,6 +803,14 @@ function drawPlotPanel(plot_type, plot_div) {
 
             renderHeatmap(raw_data, '#heatmapcontainer-' + plot_id);
             break;
+        case "heatmap_distances":
+            plot_div.find('.plot-container').removeClass('none');
+            plot_div.find('.plot-container').addClass('heatmap_distances-container');
+            plot_div.find('.plot-container').attr('id', "heatmap_distancescontainer-" + plot_id);
+            plot_div.find('.plot-container').html('<svg class="heatmap_distances" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin" id="heatmap_distances-' + plot_id + '" style="height: 500px;"></svg>');
+
+            renderHeatmap_distances(raw_data, '#heatmap_distancescontainer-' + plot_id);
+            break;
         case "flareplot":
             plot_div.find('.plot-container').removeClass('none');
             plot_div.find('.plot-container').addClass('flareplot-container');
@@ -975,7 +983,8 @@ var plotting_options = {
     'Residue Properties': [
         ['snakeplot', 'Snake plot'],
         ['scatterplot', 'Scatter-plot'],
-        ['boxplot_angles', 'Box plot '],],
+        ['boxplot_angles', 'Box plot '],
+        ['heatmap_distances', 'Distances'],],
 };
 
 display_plot_names = {}
