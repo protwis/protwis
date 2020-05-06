@@ -20,7 +20,11 @@
         </tr>
         <tr>
           <td>pChEMBL ID</td>
-          <td>{{experiment.chembl}}</td>
+               {% if experiment.chembl == None %}
+               <td></td>
+               {%else%}
+               <td title='{{experiment.chembl}}'>{{experiment.chembl}}</td>
+               {%endif%}
         </tr>
         <tr>
           <td>Smiles</td>
@@ -54,7 +58,7 @@
         </tr>
         <tr>
           <td>Class</td>
-          <td>{{experiment.class}}</td>
+          <td>{{experiment.receptor.family.parent.parent.parent.name}}</td>
         </tr>
         <tr>
           <td>Family</td>
@@ -74,7 +78,11 @@
         </tr>
         <tr>
           <td>Endogenous Ligand</td>
-          <td>{{experiment.endogenous_ligand}}</td>
+         {% if e.1.endogenous_ligand == None %}
+         <td></td>
+         {%else%}
+         <td title='{{e.1.endogenous_ligand}}'>{{e.1.endogenous_ligand}}</td>
+         {%endif%}
         </tr>
       </table>
     </div>
