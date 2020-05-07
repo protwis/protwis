@@ -320,6 +320,9 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
                         reps[mode][1].structureComponent = o
                         createNGLRepresentations(mode, 1, false)
                         o.autoView(selectionTwo);
+                        if (ngl_color_mode) {
+                            ColorNGLbyDistances(mode.replace("ngl-",""));
+                        }
                     });
                 });
         }
@@ -818,4 +821,35 @@ function colorNGLByData(mode, residue_positions, residue_colors, defaultColor){
   gpcr_rep[mode][structureKey].setParameters({
       color: color_schemes[mode]['feature']
   });
+}
+
+function ColorNGLbyDistances(mode) {
+
+    // hide set 2
+    $("#ngl-" + mode + " #hide_pdb2").prop('checked', true);
+    // hide interactions and other things irrelevant to color
+    $("#ngl-" + mode + " #highlight_res").prop('checked', false);
+    $("#ngl-" + mode + " #toggle_interactions").prop('checked', false);
+
+    updateStructureRepresentations(mode);
+
+    var distances = raw_data['distances']
+    var dis_min = 0, dis_max = 0;
+
+    var gns = [];
+    var values = [];
+    var colors = [];
+
+    $.each(distances, function (gn, vals) {
+        gns.push(gn);
+        values.push(vals['avg']);
+        dis_min = vals['avg'] < dis_min ? vals['avg'] : dis_min;
+        dis_max = vals['avg'] > dis_max ? vals['avg'] : dis_max;
+    })
+    c = d3.scale.linear().domain([dis_min, 0, dis_max]).range(['red', 'white', 'blue']);
+    $.each(values, function (i, v) {
+        colors.push(c(v));
+    })
+
+    colorNGLByData(mode.replace("ngl-",""), gns, colors, "#ccc");
 }

@@ -760,9 +760,16 @@ function drawPlotPanel(plot_type, plot_div) {
     plot_div.find('.plot-container').attr('class', 'plot-container');
     var mode = get_current_mode();
 
-    plot_div.find('.plot-title').html( "&nbsp;" + display_plot_names[plot_type]);
+    plot_div.find('.plot-title').html("&nbsp;" + display_plot_names[plot_type]);
+    
+    ngl_color_mode = false;
 
-    console.log("SET UP PLOT", plot_type, plot_id, mode);
+    if (plot_type.includes("ngl") && plot_type.includes("_")) {
+        ngl_color_mode = plot_type.split("_")[1];
+        plot_type = "ngl";
+    }
+
+    console.log("SET UP PLOT", plot_type, plot_id, mode,'ngl_mode',ngl_color_mode);
     switch (mode) {
         case "two-crystal-groups":
             raw_data = two_sets_data;
@@ -984,7 +991,8 @@ var plotting_options = {
         ['snakeplot', 'Snake plot'],
         ['scatterplot', 'Scatter-plot'],
         ['boxplot_angles', 'Box plot '],
-        ['heatmap_distances', 'Distances'],],
+        ['heatmap_distances', 'Distances']],
+    '3D structure': { '3D structures': [['ngl_distances', 'Distances'], ['ngl_angles', 'Angles']] },
 };
 
 display_plot_names = {}
