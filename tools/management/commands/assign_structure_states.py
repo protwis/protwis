@@ -52,7 +52,7 @@ class Command(BaseCommand):
             # V1: Grab most inactive PDB per ligandType -> 2x46 - 6x37 distance should be present and < 13Å (all classes)
             # V2: Grab most inactive PDB per Receptor family -> 2x46 - 6x37 distance should be present and < 13Å (cut-off valid for all classes)
             # V3: Just grab most inactive PDBs -> 2x46 - 6x37 distance should be present and < 13Å (cut-off valid for all classes)
-            inactive_ids = list(Distance.objects.filter(distance__lt=1300) \
+            inactive_ids = list(Distance.objects.filter(distance__lt=13*distance_scaling_factor) \
                                 .filter(gn1="2x46").filter(gn2="6x37") \
                                 .filter(structure__pdb_code__index__in=structure_ids) \
 #                                .order_by("structure__protein_conformation__protein__family__parent__name", "distance") \
@@ -179,8 +179,13 @@ class Command(BaseCommand):
                     struct.tm6_angle = percentage
 
                     # Definitely an inactive state structure When distance is smaller than 13Å
-                    if entry[1] < 13:
+                    if entry[1] < 13*distance_scaling_factor:
                         struct.state, created = ProteinState.objects.get_or_create(slug="inactive", defaults={'name': "Inactive"})
+
+                    # UGLY: knowledge-based hardcoded corrections
+                    if entry[0] in hardcoded:
+                        structure_state = hardcoded[entry[0]]
+                        struct.state, created = ProteinState.objects.get_or_create(slug=structure_state, defaults={'name': structure_state.capitalize()})
 
                     # Save changes
                     struct.save()
