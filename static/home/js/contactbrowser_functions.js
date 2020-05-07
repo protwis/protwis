@@ -992,7 +992,7 @@ var plotting_options = {
         ['scatterplot', 'Scatter-plot'],
         ['boxplot_angles', 'Box plot '],
         ['heatmap_distances', 'Heatmap of distances'],
-        ['ngl_distances', '3D represenation of distances']],
+        ['ngl_distances', '3D representation of distances']],
     // '3D structure': { '3D structures': [['ngl_distances', 'Distances'], ['ngl_angles', 'Angles']] },
 };
 
