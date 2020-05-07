@@ -833,7 +833,14 @@ function ColorNGLbyDistances(mode) {
 
     updateStructureRepresentations(mode);
 
-    var distances = raw_data['distances']
+    if (mode.startsWith("single_group")) {
+        var distances = single_set_data['distances'];
+    } else if (mode.startsWith("single")) {
+        var distances = single_crystal_data['distances'];
+    } else if (mode.startsWith("two_sets")) {
+        var distances = two_sets_data['distances'];
+    }
+
     var dis_min = 0, dis_max = 0;
 
     var gns = [];

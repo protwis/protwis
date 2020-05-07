@@ -991,8 +991,9 @@ var plotting_options = {
         ['snakeplot', 'Snake plot'],
         ['scatterplot', 'Scatter-plot'],
         ['boxplot_angles', 'Box plot '],
-        ['heatmap_distances', 'Distances']],
-    '3D structure': { '3D structures': [['ngl_distances', 'Distances'], ['ngl_angles', 'Angles']] },
+        ['heatmap_distances', 'Heatmap of distances'],
+        ['ngl_distances', '3D represenation of distances']],
+    // '3D structure': { '3D structures': [['ngl_distances', 'Distances'], ['ngl_angles', 'Angles']] },
 };
 
 display_plot_names = {}
