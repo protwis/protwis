@@ -303,6 +303,13 @@ function createSnakeplot(data, containerSelector) {
         select_color_options_red += '<option value="' + description + '" '+checked+'>' + description + '</option>';
     });
 
+    var select_color_options_black = ''
+    $.each(color_options, function (key, description) {
+        checked = '';
+        if (description == 'black') checked = 'selected';
+        select_color_options_black += '<option value="' + description + '" '+checked+'>' + description + '</option>';
+    });
+
     var select_color_options = ''
     $.each(color_options, function (key, description) {
         checked = '';
@@ -443,7 +450,7 @@ function createSnakeplot(data, containerSelector) {
                 select_color_options +
                 '</select></td><td>' +
                 '<select id=backbone_color2 class=backbone_color>' +
-                select_color_options +
+                select_color_options_black +
                 '</select></td><td>' +
                 '<select id=backbone_color3 class=backbone_color>' +
                 '<option value="none">None</option>' +
@@ -924,7 +931,16 @@ function createSnakeplot(data, containerSelector) {
             color_id1  = $(containerSelector+" #backbone_color1").val();
             color_id2  = $(containerSelector+" #backbone_color2").val();
             color_id3  = $(containerSelector+" #backbone_color3").val();
-            console.log('change backbone color to!',fill_color);
+            console.log('change backbone color to!', fill_color);
+            var path_max = 0;
+            $(containerSelector).find('.helix_path').each(function () {
+                path_id = $(this).attr('id');
+                fill_scale = path_groups[path_id][fill_color];
+                const fill_sum = fill_scale.reduce((a, b) => a + b, 0);
+                const fill_avg = (fill_sum / fill_scale.length) || 0;
+                path_max = fill_avg > path_max ? fill_avg : path_max;
+            });
+
             $(containerSelector).find('.helix_path').each(function () {
                 path_id = $(this).attr('id');
 
@@ -943,9 +959,8 @@ function createSnakeplot(data, containerSelector) {
 
                 const fill_sum = fill_scale.reduce((a, b) => a + b, 0);
                 const fill_avg = (fill_sum / fill_scale.length) || 0;
-
                 if (fill_color != 'none' && fill_scale.length!=0) {
-                        $(this).attr("stroke", color_by_scale(fill_avg,color_id1,color_id2,color_id3));
+                        $(this).attr("stroke", color_by_scale(fill_avg/path_max,color_id1,color_id2,color_id3));
                         $(this).attr("stroke-width", 6);
                 } 
                 
