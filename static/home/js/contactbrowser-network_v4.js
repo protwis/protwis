@@ -31,6 +31,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
     var stickyDrag = true;
     var highlightNode = segment_view ? false : true;
     var max_freq = 0;
+    var colorLinks = true;
 
     var filter_sets = 'all';
     function prepare_data(single_cluster = false) {
@@ -788,9 +789,11 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
         d3v4.select(containerSelector).select("#collide_change").property("value", gravity);
         console.log("set set_filter to", filter_sets);
         d3v4.select(containerSelector).select("#set_filter").property("value", filter_sets);
+        console.log("set colorLinks to", colorLinks);
+        d3.select(containerSelector).select("#colorLinks").property("checked",colorLinks);
 
-        
-              
+        // init colors from begining
+        d3v4.select(containerSelector).select("#colorLinks").dispatch("change");
 
     }
     // https://bl.ocks.org/mbostock/3750558
@@ -1094,7 +1097,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
         'Stick drag <input id="stickyDrag" type="checkbox" checked><br>' +
         'Highlight res <input id="highlightNode" type="checkbox" checked><br>' +
         'Add consensus AA<input id="addAA" type="checkbox"><br>' +
-        'Color links by frequency <input id="colorLinks" type="checkbox"><br>' +
+        'Color links by frequency <input id="colorLinks" type="checkbox" checked><br>' +
         '% of kept contacts <input id="change_to_freq" type="checkbox"><br>' +
         'Filter <select id="set_filter"><option value="all">All</option><option value="set1">Set1</option><option value="set2">Set2</option><option value="both">Both</option></select><br>' +
         'Link Strength <input id="link_strength_change" style="width:80px;" type="range" min="0" max="1" step="any" value="0.5">' +
