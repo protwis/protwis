@@ -897,6 +897,10 @@ function createSnakeplot(data, containerSelector) {
                 if (pos_id in colors[fill_color]) {
                     var scale = colors[fill_color][pos_id][1];
                     var rotation_value = Math.round(scale * 180 - 90);
+                    if (fill_color == 'outer_angle' || fill_color == 'rotation_angle') {
+                        // For these 'actual' rotation values, use the 'true value' as the rotation.
+                        var rotation_value = Math.round(colors[fill_color][pos_id][0]);
+                    }
                     var x = $(containerSelector).find('#' + pos_id + 't').attr("x");
                     var y = $(containerSelector).find('#' + pos_id + 't').attr("y");
                     // d3.select("#t37t").transition().duration(10000).attr("transform","rotate(45)")
