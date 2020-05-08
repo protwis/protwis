@@ -1,15 +1,14 @@
 function renderHeatmap_distances(data, heatMapSelector) {
 
-    var margin = {top: 80, right: 0, bottom: 10, left: 80},
+    var margin = {top: 80, right: 0, bottom: 30, left: 80},
         width = 500,
         height = 500;
-    var margin = { top: 10, right: 30, bottom: 40, left: 50 },
+    var margin = { top: 20, right: 30, bottom: 40, left: 30 },
     width = 520 - margin.left - margin.right,
     height = 520 - margin.top - margin.bottom;
 
     var x = d3.scale.ordinal().rangeBands([0, width]),
-        z = d3.scale.linear().domain([0, 4]).clamp(true),
-        c = d3.scale.category10().domain(d3.range(10));
+        z = d3.scale.linear().domain([0, 4]).clamp(true);
 
     var svg = d3v4.select(heatMapSelector).select(".heatmap_distances")
         .attr("viewBox", 0 + " " + 0 + " " + (width+ margin.left + margin.right) + " " + (height+ margin.top + margin.bottom))
@@ -41,8 +40,8 @@ function renderHeatmap_distances(data, heatMapSelector) {
         nodes.push({ name: gn, segment: seg });
     })
     var n = nodes.length;
+    label_font_size = Math.round(1*n/20);
     
-   console.log(segments);
     
   // Compute index per node.
   nodes.forEach(function(node, i) { 
@@ -64,14 +63,15 @@ function renderHeatmap_distances(data, heatMapSelector) {
   });
 
   // Precompute the orders.
-    var orders = {
-      init: d3.range(n),
+  var orders = {
+    init: d3.range(n),
     name: d3.range(n).sort(function(a, b) { return d3.ascending(nodes[a].name, nodes[b].name); }),
     count: d3.range(n).sort(function(a, b) { return nodes[b].count - nodes[a].count; }),
     group: d3.range(n).sort(function(a, b) { return nodes[b].group - nodes[a].group; })
   };
     
-    c = d3.scale.linear().domain([dis_min, 0, dis_max]).range(['red', 'white', 'blue']);
+  // Color scale.
+  c = d3.scale.linear().domain([dis_min, 0, dis_max]).range(['red', 'white', 'blue']);
   // The default sort order.
   x.domain(orders.init);
 
@@ -98,17 +98,9 @@ function renderHeatmap_distances(data, heatMapSelector) {
       .attr("y", function (d) { return x(Math.round((d.start+d.end)/2)); })
     .attr("dy", ".32em")
     .attr("text-anchor", "end")
-    .attr("font-size","5px")
+    .attr("font-size",label_font_size)
     .text(function(d, i) { return d.segment; })
     .attr("transform", function(d, i) { return "rotate(-90,-6,"+x(Math.round((d.start+d.end)/2))+")"; });
-
-//   row.append("text")
-//       .attr("x", -6)
-//       .attr("y", x.rangeBand() / 2)
-//       .attr("dy", ".32em")
-//       .attr("text-anchor", "end")
-//       .attr("font-size","5px")
-//       .text(function(d, i) { return nodes[i].segment; });
 
   var column = svg.selectAll(".column")
       .data(matrix)
@@ -119,43 +111,106 @@ function renderHeatmap_distances(data, heatMapSelector) {
   column.append("line")
       .attr("x1", -width);
 
-//   column.append("text")
-//       .attr("x", 6)
-//       .attr("y", x.rangeBand() / 2)
-//       .attr("dy", ".32em")
-//       .attr("text-anchor", "start")
-//       .attr("font-size","5px")
-//       .text(function (d, i) { return nodes[i].segment; });
-    
-    var cell_labels = svg.selectAll(".cell_label")
+  var cell_labels = svg.selectAll(".cell_label")
         .data(segments)
         .enter().append("text")
         .attr("y", -6)
         .attr("x", function (d) { return x(Math.round((d.start + d.end) / 2)); })
         .attr("dy", ".32em")
         .attr("text-anchor", "middle")
-        .attr("font-size", "5px")
+        .attr("font-size", label_font_size)
         .text(function (d, i) { return d.segment; });
 
   function row(row) {
     var cell = d3.select(this).selectAll(".cell")
-        .data(row.filter(function(d) { return d.z; }))
+      .data(row.filter(function (d) { return d.z; }))
       .enter().append("rect")
-        .attr("class", "cell")
-        .attr("x", function(d) { return x(d.x); })
-        .attr("width", x.rangeBand())
-        .attr("height", x.rangeBand())
-        // .style("fill-opacity", function(d) { return z(d.z); })
-        // .style("fill", function (d) { return nodes[d.x].group == nodes[d.y].group ? c(nodes[d.x].group) : null; })
-        .style("fill", function (d) { return c(d.z)})
-        .on("mouseover", mouseover)
-        .on("mouseout", mouseout);
+      .attr("class", "cell")
+      .attr("x", function (d) { return x(d.x); })
+      .attr("width", x.rangeBand())
+      .attr("height", x.rangeBand())
+      .style("fill", function (d) { return c(d.z) })
+      .on("click", click);
   }
 
-  function mouseover(p) {
-    d3.selectAll(".row text").classed("active", function(d, i) { return i == p.y; });
-    d3.selectAll(".column text").classed("active", function(d, i) { return i == p.x; });
+  
+  if ('max_dispersion' in data) {
+
+      // Populate heatmap legend
+      var legendHtml = '<div class="heatmap-legend">'
+          + '<span>Range: 0 to ' + Math.round(data.max_dispersion*100)/100 + '</span>'
+          + '<div class="temperature-scale">'
+          + '<span class="gray-to-red"></span>'
+          + '</div></div>';
+
+  } else {
+
+      // Populate heatmap legend
+    
+      var legend_def = svg.append("defs")
+        .append("svg:linearGradient")
+        .attr("id", "gradient")
+        .attr("x1", "0%")
+        .attr("y1", "100%")
+        .attr("x2", "100%")
+        .attr("y2", "100%")
+        .attr("spreadMethod", "pad");
+
+      legend_def.append("stop")
+        .attr("offset", "0%")
+        .attr("stop-color", "red")
+        .attr("stop-opacity", 1);
+
+      legend_def.append("stop")
+        .attr("offset", "50%")
+        .attr("stop-color", "white")
+        .attr("stop-opacity", 1);
+
+      legend_def.append("stop")
+        .attr("offset", "100%")
+        .attr("stop-color", "blue")
+        .attr("stop-opacity", 1);
+    
+      label = svg.append("g")
+      label.append("text")
+        .text('Range: ' + Math.round(dis_min * 10) / 10 + 'Å to ' + Math.round(dis_max * 10) / 10 + 'Å')
+        .attr("y", height+20)
+        .attr("x", 20)
+    
+      label.append("rect")
+        .attr("y", height+25)
+        .attr("x", 20)
+        .attr("width", 200)
+        .attr("height", 10)
+        .style("fill", "url(#gradient)");
+
   }
+  
+  function click(p) {
+
+    $this = $(this);
+    // Create the data for popover
+    $(this).attr("title","" + gn_index[p.x] + " to "  + gn_index[p.y]);
+    $(this).attr("data-content","Mean distance: " + p.z + "Å");
+    $this.popover({
+      'container': heatMapSelector,
+      'placement': 'bottom',
+      'animation': false,
+      'html': true,
+      'tabindex': '0'
+    }).popover('show');
+  }
+
+  // be sure to remove popovers when user clicks elsewhere.
+  $('html').on('mousedown', function(e) {
+      if(!$(e.target).closest('.popover').length) {
+          if ($(e.target).closest(heatMapSelector).length) {
+            $('.popover').each(function(){
+              $(this).remove();
+            });
+          }
+      }
+  });
 
   function mouseout() {
     d3.selectAll("text").classed("active", false);
