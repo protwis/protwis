@@ -103,6 +103,7 @@ function createSnakeplot(data, containerSelector) {
     colors['ligand'] = {}
     colors['complex'] = {}
     colors['mutations'] = {}
+    colors['conservation'] = {}
 
     index_names = { 0: 'core_distance', 1: 'a_angle', 2: 'outer_angle', 3: 'tau', 4: 'phi', 5: 'psi', 6: 'sasa', 7: 'rsa', 8: 'theta', 9: 'hse', 10: 'tau_angle', 11:'rotation_angle' }
     neg_and_positives = ['core_distance','sasa','rsa', 'hse']
@@ -129,7 +130,8 @@ function createSnakeplot(data, containerSelector) {
         'set_presence' : 'Set specific presense',
         'ligand' : 'Ligand interactions freq',
         'complex' : 'G protein interactions',
-        'mutations' : 'Mutations with >5 fold effect'
+        'mutations' : 'Mutations with >5 fold effect',
+        'conservation' : 'Conservation of set(s) consensus AA in class'
     }
     path_groups = {}
     path_groups_lookup = {}
@@ -149,6 +151,12 @@ function createSnakeplot(data, containerSelector) {
             path_groups_lookup[res_id] = path_id;
         });
     });
+
+    $.each(data['snakeplot_lookup_aa_cons'], function (gn, cons) {
+        seq_pos = data['snakeplot_lookup'][gn];
+        scale = cons / 100
+        colors['conservation'][seq_pos] = [cons,scale,100];
+    } )
 
 
     $.each(filtered_cluster_groups, function (id, group) {

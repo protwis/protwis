@@ -2222,7 +2222,7 @@ def InteractionBrowserData(request):
         segments = ProteinSegment.objects.all().exclude(slug__in = excluded_segment)
         proteins =  Protein.objects.filter(entry_name__in=list(data['proteins'])).distinct().all()
         a = Alignment()
-        a.ignore_alternative_residue_numbering_schemes = True;
+        a.ignore_alternative_residue_numbering_schemes = True
         a.load_proteins(proteins)
         a.load_segments(segments) #get all segments to make correct diagrams
         # build the alignment data matrix
@@ -2232,9 +2232,15 @@ def InteractionBrowserData(request):
         consensus = a.full_consensus
         data['snakeplot_lookup'] = {}
         data['snakeplot_lookup_aa'] = {}
+        data['snakeplot_lookup_aa_cons'] = {}
         for a in consensus:
             data['snakeplot_lookup'][a.family_generic_number] = a.sequence_number
             data['snakeplot_lookup_aa'][a.family_generic_number] = a.amino_acid
+            gen_aa = a.family_generic_number + a.amino_acid
+            if gen_aa in class_pair_lookup:
+                data['snakeplot_lookup_aa_cons'][a.family_generic_number] = class_pair_lookup[gen_aa]
+            else:
+                data['snakeplot_lookup_aa_cons'][a.family_generic_number] = 0
         from common.diagrams_gpcr import DrawSnakePlot
         snakeplot = DrawSnakePlot(consensus, 'Class A', 'family_diagram_preloaded_data',nobuttons = True)
         data['snakeplot'] = str(snakeplot)
