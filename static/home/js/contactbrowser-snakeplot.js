@@ -553,7 +553,7 @@ function createSnakeplot(data, containerSelector) {
                 original_title = $(this).attr('original_title');
                 if (original_title.split(" ")[1].length) {
                     // this has GN
-                    seg = original_title.split(" ")[1].split(".")[0];
+                    seg = original_title.split(" ")[1].split("x")[0];
                     gn = original_title.split(" ")[1].split("x")[1];
                     AA = original_title[0];
                 } else {
@@ -603,7 +603,7 @@ function createSnakeplot(data, containerSelector) {
             $(containerSelector).find('.rtext').each(function () {
                 original_title = $(this).attr('original_title');
                 if (original_title.split(" ")[1].length) {
-                    seg = original_title.split(" ")[1].split(".")[0];
+                    seg = original_title.split(" ")[1].split("x")[0];
                     // this has GN
                     gn = original_title.split(" ")[1].split("x")[1];
                     AA = original_title[0];
@@ -705,7 +705,7 @@ function createSnakeplot(data, containerSelector) {
                 gn = false;
                 if (original_title.split(" ")[1].length) {
                     // this has GN
-                    seg = original_title.split(" ")[1].split(".")[0];
+                    seg = original_title.split(" ")[1].split("x")[0];
                     gn = original_title.split(" ")[1].split("x")[1];
                 }
 
@@ -780,7 +780,7 @@ function createSnakeplot(data, containerSelector) {
                 pos_id = $(this).attr('id');
                 if (original_title.split(" ")[1].length) {
                     // this has GN
-                    seg = original_title.split(" ")[1].split(".")[0];
+                    seg = original_title.split(" ")[1].split("x")[0];
                     gn = original_title.split(" ")[1].split("x")[1];
                 }
 
@@ -857,7 +857,7 @@ function createSnakeplot(data, containerSelector) {
                 pos_id = $(this).attr('id');
                 if (original_title.split(" ")[1].length) {
                     // this has GN
-                    seg = original_title.split(" ")[1].split(".")[0];
+                    seg = original_title.split(" ")[1].split("x")[0];
                     gn = original_title.split(" ")[1].split("x")[1];
                 }
 
@@ -923,7 +923,7 @@ function createSnakeplot(data, containerSelector) {
                 pos_id = $(this).attr('id');
                 if (original_title.split(" ")[1].length) {
                     // this has GN
-                    seg = original_title.split(" ")[1].split(".")[0];
+                    seg = original_title.split(" ")[1].split("x")[0];
                     gn = original_title.split(" ")[1].split("x")[1];
                 }
 
@@ -1039,7 +1039,7 @@ function createSnakeplot(data, containerSelector) {
                 gn = false;
                 if (original_title.split(" ")[1].length) {
                     // this has GN
-                    seg = original_title.split(" ")[1].split(".")[0];
+                    seg = original_title.split(" ")[1].split("x")[0];
                     gn = original_title.split(" ")[1].split("x")[1];
                 }
                 //if (color_filtered && (!gn || !filtered_gns.includes(seg+"x"+gn))) {
