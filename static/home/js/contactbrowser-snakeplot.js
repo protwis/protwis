@@ -102,6 +102,7 @@ function createSnakeplot(data, containerSelector) {
     colors['set_presence'] = {}
     colors['ligand'] = {}
     colors['complex'] = {}
+    colors['ligandcomplex'] = {}
     colors['mutations'] = {}
     colors['conservation'] = {}
 
@@ -130,6 +131,7 @@ function createSnakeplot(data, containerSelector) {
         'set_presence' : 'Set specific presense',
         'ligand' : 'Ligand interactions freq',
         'complex' : 'G protein interactions',
+        'ligandcomplex' : 'Ligand and G protein interactions',
         'mutations' : 'Mutations with >5 fold effect',
         'conservation' : 'Conservation of set(s) consensus AA in class'
     }
@@ -188,9 +190,36 @@ function createSnakeplot(data, containerSelector) {
         colors['complex'][seq_pos] = [value,scale,max_complex_interactions];
     })
 
+    $.each(data['snakeplot_lookup'], function (gn, seq_pos) {
+        complex_value = gn in data['class_complex_interactions'] ? data['class_complex_interactions'][gn] : 0;
+        ligand_value = gn in data['class_ligand_interactions'] ? data['class_ligand_interactions'][gn] : 0;
+
+        if (complex_value == 0 && ligand_value == 0) {
+            // either do nothing or put in 0 value
+            // colors['ligandcomplex'][seq_pos] = [value,scale,max_mutations];
+        } else {
+            if (complex_value/max_complex_interactions >= ligand_value/max_ligand_interactions) {
+                // treat complex values 0.5-1 range
+                value = complex_value
+                scale = 0.5+(0.5)*(value / max_complex_interactions);
+                colors['ligandcomplex'][seq_pos] = [value,scale,max_complex_interactions];
+            } else {
+                // treat ligand values 0-0.5 range
+                value = ligand_value
+                scale = 0.5-(0.5)*(value / max_ligand_interactions);
+                colors['ligandcomplex'][seq_pos] = [value,scale,max_ligand_interactions];
+            }
+            console.log(gn,complex_value/max_complex_interactions,ligand_value/max_ligand_interactions, colors['ligandcomplex'][seq_pos])
+        }
+    })
+
     max_mutations = Math.max(...Object.values(data['class_mutations'])) 
-    $.each(data['class_mutations'], function (gn, value) {
-        seq_pos = data['snakeplot_lookup'][gn];
+    $.each(data['snakeplot_lookup'], function (gn, seq_pos) {
+        if (gn in data['class_mutations']) {
+            value = data['class_mutations'][gn];
+        } else {
+            value = 0;
+        }
         scale = value / max_mutations;
         colors['mutations'][seq_pos] = [value,scale,max_mutations];
     })
