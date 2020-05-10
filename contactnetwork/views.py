@@ -2234,13 +2234,19 @@ def InteractionBrowserData(request):
         data['snakeplot_lookup_aa'] = {}
         data['snakeplot_lookup_aa_cons'] = {}
         for a in consensus:
-            data['snakeplot_lookup'][a.family_generic_number] = a.sequence_number
-            data['snakeplot_lookup_aa'][a.family_generic_number] = a.amino_acid
-            gen_aa = a.family_generic_number + a.amino_acid
-            if gen_aa in class_pair_lookup:
-                data['snakeplot_lookup_aa_cons'][a.family_generic_number] = class_pair_lookup[gen_aa]
-            else:
-                data['snakeplot_lookup_aa_cons'][a.family_generic_number] = 0
+            if a.display_generic_number:
+                # Be sure to use the correct GN 
+                gn = re.sub(r'\.[\d]+', '', a.display_generic_number.label)
+                if forced_class_a:
+                    gn = a.family_generic_number
+                a.display_generic_number.label = gn
+                data['snakeplot_lookup'][gn] = a.sequence_number
+                data['snakeplot_lookup_aa'][gn] = a.amino_acid
+                gen_aa = gn + a.amino_acid
+                if gen_aa in class_pair_lookup:
+                    data['snakeplot_lookup_aa_cons'][gn] = class_pair_lookup[gen_aa]
+                else:
+                    data['snakeplot_lookup_aa_cons'][gn] = 0
         from common.diagrams_gpcr import DrawSnakePlot
         snakeplot = DrawSnakePlot(consensus, 'Class A', 'family_diagram_preloaded_data',nobuttons = True)
         data['snakeplot'] = str(snakeplot)
