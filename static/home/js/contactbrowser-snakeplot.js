@@ -13,6 +13,10 @@ color_scale_colors.yellow = {red:255, green:255, blue: 0};
 color_scale_colors.black = { red: 0, green: 0, blue: 0 };
 color_scale_colors.orange = { red: 255, green: 150, blue: 113 };
 color_scale_colors.purple = { red: 128, green: 0, blue: 128 };
+color_scale_colors.brown = { red: 165, green: 42, blue: 42 };
+color_scale_colors.olive = { red: 128, green: 128, blue: 0 };
+color_scale_colors.magenta = { red: 255, green: 0, blue: 255 };
+color_scale_colors.pink = { red: 255, green: 20, blue: 147 };
 color_scale_colors.false = false;
 
 function color_by_category(value, possibilities) {
@@ -324,6 +328,10 @@ function createSnakeplot(data, containerSelector) {
         'y': 'yellow',
         'o': 'orange',
         'p': 'purple',
+        'brown': 'brown',
+        'olive': 'olive',
+        'magenta': 'magenta',
+        'pink' : 'pink',
     }
 
     var select_color_options_white = ''
@@ -410,13 +418,13 @@ function createSnakeplot(data, containerSelector) {
             '<option value="none">None</option>' +
             select_data_options +
             '</select></td><td>' +
-            '<select id=fill_color1 class="fill_color residue_fill">' +
+            '<select id=fill_color1 class="fill_color residue_fill snakeplot_color_select">' +
             select_color_options_white +
             '</select></td><td>' +
-            '<select id=fill_color2 class="fill_color residue_fill">' +
+            '<select id=fill_color2 class="fill_color residue_fill snakeplot_color_select">' +
             select_color_options_red +
             '</select></td><td>' +
-            '<select id=fill_color3 class="fill_color residue_fill">' +
+            '<select id=fill_color3 class="fill_color residue_fill snakeplot_color_select">' +
             '<option value="none">None</option>' +
             select_color_options +
             '</select></td>' +
@@ -431,13 +439,13 @@ function createSnakeplot(data, containerSelector) {
             '<option value="none">None</option>' +
             select_data_options +
             '</select></td><td>' +
-            '<select id=border_color1 class="border_color residue_border">' +
+            '<select id=border_color1 class="border_color residue_border snakeplot_color_select">' +
             select_color_options_white +
             '</select></td><td>' +
-            '<select id=border_color2 class="border_color residue_border">' +
+            '<select id=border_color2 class="border_color residue_border snakeplot_color_select">' +
             select_color_options_red +
             '</select></td><td>' +
-            '<select id=border_color3 class="border_color residue_border">' +
+            '<select id=border_color3 class="border_color residue_border snakeplot_color_select">' +
             '<option value="none">None</option>' +
             select_color_options +
             '</select></td>' +
@@ -452,13 +460,13 @@ function createSnakeplot(data, containerSelector) {
                 '<option value="none">None</option>' +
                 select_data_options +
                 '</select></td><td>' +
-                '<select id=text_color1 class="text_color residue_text">' +
+                '<select id=text_color1 class="text_color residue_text snakeplot_color_select">' +
                 select_color_options_white +
                 '</select></td><td>' +
-                '<select id=text_color2 class="text_color residue_text">' +
+                '<select id=text_color2 class="text_color residue_text snakeplot_color_select">' +
                 select_color_options_red +
                 '</select></td><td>' +
-                '<select id=text_color3 class="text_color residue_text">' +
+                '<select id=text_color3 class="text_color residue_text snakeplot_color_select">' +
                 '<option value="none">None</option>' +
                 select_color_options +
                 '</select></td>' +
@@ -483,13 +491,13 @@ function createSnakeplot(data, containerSelector) {
                 '<option value="none">None</option>' +
                 select_data_options_backbone +
                 '</select></td><td>' +
-                '<select id=backbone_color1 class=backbone_color>' +
+                '<select id=backbone_color1 class="backbone_color snakeplot_color_select">' +
                 select_color_options +
                 '</select></td><td>' +
-                '<select id=backbone_color2 class=backbone_color>' +
+                '<select id=backbone_color2 class="backbone_color snakeplot_color_select">' +
                 select_color_options_black +
                 '</select></td><td>' +
-                '<select id=backbone_color3 class=backbone_color>' +
+                '<select id=backbone_color3 class="backbone_color snakeplot_color_select">' +
                 '<option value="none">None</option>' +
                 select_color_options +
                 '</select></td></tr>'
