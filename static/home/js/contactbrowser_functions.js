@@ -948,7 +948,7 @@ function drawPlotPanel(plot_type, plot_div) {
 }
 
 var plotting_options = {
-    'TM1-7 segment' : {
+    'TM1-7 segment movement' : {
         'extracellular': [
             ['tm7_plot_extra', '2D plot'],
             ['tm7_plot_3d_extra','3D plot'],
