@@ -78,6 +78,10 @@ class Command(BaseCommand):
                             default=False,
                             action='store_true',
                             help='Build PDB_UNIPROT_ENSEMBLE_ALL file')
+        parser.add_argument('--coupling',
+                            default=False,
+                            type=str,
+                            help='Purge and import GPCR-Gprotein coupling data')
 
     def handle(self, *args, **options):
         self.options = options
@@ -89,6 +93,19 @@ class Command(BaseCommand):
             self.add_entry()
         elif self.options['build_datafile']:
             self.build_table_from_fasta()
+        if self.options['coupling']:
+            self.purge_coupling_data()
+            self.logger.info('PASS: purge_coupling_data')
+            if os.path.exists(self.inoue_file):
+                self.add_inoue_coupling_data()
+                self.logger.info('PASS: add_inoue_coupling_data')
+            else:
+                self.logger.warning('Inoue source data ' + self.inoue_file + ' not found')
+            if os.path.exists(self.bouvier_file):
+                self.add_bouvier_coupling_data()
+                self.logger.info('PASS: add_bouvier_coupling_data')
+            else:
+                self.logger.warning('Bouvier source data ' + self.bouvier_file + ' not found')
         else:
             # Add G-proteins from CGN-db Common G-alpha Numbering <https://www.mrc-lmb.cam.ac.uk/CGN/>
             try:
