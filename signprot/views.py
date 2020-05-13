@@ -142,9 +142,10 @@ def Couplings(request, template_name='signprot/coupling_browser.html'):
     Data coming from Guide to Pharmacology, Asuka Inuoue and Michel Bouvier
     """
     context = OrderedDict()
-    threshold_primary = -0.1
-    threshold_secondary = -1
-    proteins = Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith='00',
+    threshold_primary = 0.5 # -0.1
+    threshold_secondary = 0.01 # -1
+    proteins = Protein.objects.filter(sequence_type__slug='wt',
+                                      family__slug__startswith='00',
                                       species__common_name='Human').all().prefetch_related('family')
     data = {}
     class_names = {}
@@ -158,18 +159,25 @@ def Couplings(request, template_name='signprot/coupling_browser.html'):
         p_class_name = class_names[p_class].replace('Class','').strip()
         p_family_name = family_names[p_class].replace('receptors','').strip()
         p_accession = p.accession
-        data[p.entry_short()] = {'class': p_class_name, 'family': p_family_name, 'accession': p_accession,
-                                 'pretty': p.short(), 'GuideToPharma': {}, 'Inoue': {}, 'Bouvier': {}}
+        data[p.entry_short()] = {'class': p_class_name,
+                                 'family': p_family_name,
+                                 'accession': p_accession,
+                                 'pretty': p.short(),
+                                 'GuideToPharma': {},
+                                 'Inoue': {},
+                                 'Bouvier': {}}
     distinct_g_families = []
     distinct_g_subunit_families = {}
     distinct_sources = ['GuideToPharma', 'Inoue', 'Bouvier']
-    couplings = ProteinGProteinPair.objects.all().prefetch_related('protein', 'g_protein_subunit', 'g_protein')
+    couplings = ProteinGProteinPair.objects.all().prefetch_related('protein',
+                                                                   'g_protein_subunit',
+                                                                   'g_protein')
 
     for c in couplings:
         p = c.protein.entry_short()
         s = c.source
         t = c.transduction
-        m = c.log_ec50_mean
+        m = c.emax_dnorm
         gf = c.g_protein.name
         gf = gf.replace(" family", "")
 
@@ -195,9 +203,9 @@ def Couplings(request, template_name='signprot/coupling_browser.html'):
             data[p][s][gf] = t
         else:
             if 'subunits' not in data[p][s][gf]:
-                data[p][s][gf] = {'subunits': {}, 'best': -2.00}
-# FIXME: Must change since it's no longer dependent on log_rai, also because there can
-# FIXME: be valid NULL values.
+                data[p][s][gf] = {'subunits': {}, 'best': 0.00}
+            if m is None:
+                continue
             data[p][s][gf]['subunits'][g] = round(Decimal(m), 2)
             if round(Decimal(m), 2) == -0.00:
                 data[p][s][gf]['subunits'][g] = 0.00
@@ -207,8 +215,11 @@ def Couplings(request, template_name='signprot/coupling_browser.html'):
     fd = {}  # final data
     distinct_g_families = sorted(distinct_g_families)
     distinct_g_families = ['Gs', 'Gi/Go', 'Gq/G11', 'G12/G13']
-    distinct_g_subunit_families = OrderedDict([('Gs', ['gnas2', 'gnal']), ('Gi/Go', ['gnai1', 'gnai3', 'gnao', 'gnaz']),
-                                               ('Gq/G11', ['gnaq', 'gna14', 'gna15']), ('G12/G13', ['gna12', 'gna13'])])
+    distinct_g_subunit_families = OrderedDict(
+        [('Gs', ['gnas2', 'gnal']),
+         ('Gi/Go', ['gnai1', 'gnai2', 'gnai3', 'gnao', 'gnaz']),
+         ('Gq/G11', ['gnaq', 'gna11', 'gna14', 'gna15']),
+         ('G12/G13', ['gna12', 'gna13'])])
 
     # This for loop, which perhaps should be a function in itself, perhaps an instance of a Couplings class, does
     # the job of merging together two data-sets, that of the GuideToPharma and Asuka's results.
@@ -220,8 +231,14 @@ def Couplings(request, template_name='signprot/coupling_browser.html'):
             values = []
             if 'GuideToPharma' in v and gf in v['GuideToPharma']:
                 values.append(v['GuideToPharma'][gf])
-            if 'Aska' in v and gf in v['Aska']:
-                best = v['Aska'][gf]['best']
+            if 'Inoue' in v and gf in v['Inoue']:
+                best = v['Inoue'][gf]['best']
+                if best > threshold_primary:
+                    values.append('primary')
+                elif best > threshold_secondary:
+                    values.append('secondary')
+            if 'Bouvier' in v and gf in v['Bouvier']:
+                best = v['Bouvier'][gf]['best']
                 if best > threshold_primary:
                     values.append('primary')
                 elif best > threshold_secondary:
@@ -240,6 +257,17 @@ def Couplings(request, template_name='signprot/coupling_browser.html'):
             else:
                 fd[p].append("")
         s = 'Inoue'
+        for gf in distinct_g_families:
+            if gf in v[s]:
+                if v[s][gf]['best'] > threshold_primary:
+                    fd[p].append("primary")
+                elif v[s][gf]['best'] > threshold_secondary:
+                    fd[p].append("secondary")
+                else:
+                    fd[p].append("No coupling")
+            else:
+                fd[p].append("")
+        s = 'Bouvier'
         for gf in distinct_g_families:
             if gf in v[s]:
                 if v[s][gf]['best'] > threshold_primary:
