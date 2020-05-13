@@ -93,7 +93,7 @@ class Command(BaseCommand):
             self.add_entry()
         elif self.options['build_datafile']:
             self.build_table_from_fasta()
-        if self.options['coupling']:
+        elif self.options['coupling']:
             self.purge_coupling_data()
             self.logger.info('PASS: purge_coupling_data')
             self.create_g_proteins(filenames)
