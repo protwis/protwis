@@ -245,17 +245,18 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             .style("stroke", "#000")
             .attr("id", function (d, i) { return containerSelector + "linkId_" + i; });
         
-        var link1 = svg.append("g")
-            .attr("class", "links")
-            .selectAll("line")
-            .data(graph.links)
-            .enter()
-            .append("path")
-            .attr("class", "link")
-            .style("fill", "none")
-            .style("stroke-width", function(d) { return 5 })
-            .style("stroke", "#F00");
-        
+        if (segment_view) {
+            var link1 = svg.append("g")
+                .attr("class", "links")
+                .selectAll("line")
+                .data(graph.links)
+                .enter()
+                .append("path")
+                .attr("class", "link")
+                .style("fill", "none")
+                .style("stroke-width", function (d) { return 5 })
+                .style("stroke", "#F00");
+        }
             // .style("fill", "none")
             // // .style("stroke-width", "8")
             // .style("stroke-width", function(d) { return d.size || 5; })
@@ -376,12 +377,41 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
                 .attr("x2", function(d) { return d.target.x; })
                 .attr("y2", function (d) { return d.target.y; });
             
-            link1
-                .attr("x1", function(d) { return d.source.x; })
-                .attr("y1", function(d) { return d.source.y; })
-                .attr("x2", function(d) { return d.target.x; })
-                .attr("y2", function (d) { return d.target.y; });
-            
+            if (segment_view) {
+                link1
+                    .attr("x1", function (d) { return d.source.x; })
+                    .attr("y1", function (d) { return d.source.y; })
+                    .attr("x2", function (d) { return d.target.x; })
+                    .attr("y2", function (d) { return d.target.y; });
+
+                link1.attr("d", function(d, i) {
+                    var dx = d.target.x - d.source.x,
+                        dy = d.target.y - d.source.y,
+                        dr = Math.sqrt(dx * dx + dy * dy);
+                    
+                        offset_x = 0;
+                        offset_y = 0;
+                        
+                        if (segment_view && colorLinks) {
+                            offset = 10*d.sfreq2 / max_freq;
+                            var vector = dx / dy;
+                            //var atan = Math.atan(vector);
+                            var rad = Math.atan2(dy, dx);
+                            var degrees = -rad * (180 / Math.PI);
+                            degrees = degrees ? -degrees : 0;
+                            offset_x = offset * Math.cos(Math.PI/2 + rad);
+                            offset_y = offset * Math.sin(Math.PI/2 + rad);
+                            //console.log(d.source.group,d.target.group, vector,degrees,rad);
+                        }
+                        if (dx > 0) {
+                            return "M" + (d.source.x+offset_x) + " " + (d.source.y+offset_y) + " L " + (d.target.x+offset_x) + " " + (d.target.y+offset_y);
+                        } else {
+                            return "M" + (d.target.x-offset_x) + " " + (d.target.y-offset_y) + " L " + (d.source.x-offset_x) + " " + (d.source.y-offset_y);
+                        }
+                });
+                link1.attr("visibility", function(d,i) { return colorLinks ? "visible" : "hidden"})
+            }
+
             link.attr("d", function(d, i) {
                 var dx = d.target.x - d.source.x,
                     dy = d.target.y - d.source.y,
@@ -407,33 +437,6 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
                     return "M" + (d.target.x+offset_x) + " " + (d.target.y+offset_y) + " L " + (d.source.x+offset_x) + " " + (d.source.y+offset_y);
                 }
             });
-
-            link1.attr("d", function(d, i) {
-                var dx = d.target.x - d.source.x,
-                    dy = d.target.y - d.source.y,
-                    dr = Math.sqrt(dx * dx + dy * dy);
-                
-                    offset_x = 0;
-                    offset_y = 0;
-                    
-                    if (segment_view && colorLinks) {
-                        offset = 10*d.sfreq2 / max_freq;
-                        var vector = dx / dy;
-                        //var atan = Math.atan(vector);
-                        var rad = Math.atan2(dy, dx);
-                        var degrees = -rad * (180 / Math.PI);
-                        degrees = degrees ? -degrees : 0;
-                        offset_x = offset * Math.cos(Math.PI/2 + rad);
-                        offset_y = offset * Math.sin(Math.PI/2 + rad);
-                        //console.log(d.source.group,d.target.group, vector,degrees,rad);
-                    }
-                    if (dx > 0) {
-                        return "M" + (d.source.x+offset_x) + " " + (d.source.y+offset_y) + " L " + (d.target.x+offset_x) + " " + (d.target.y+offset_y);
-                    } else {
-                        return "M" + (d.target.x-offset_x) + " " + (d.target.y-offset_y) + " L " + (d.source.x-offset_x) + " " + (d.source.y-offset_y);
-                    }
-            });
-            link1.attr("visibility", function(d,i) { return colorLinks ? "visible" : "hidden"})
         }  
         // tooltip https://observablehq.com/@skofgar/force-directed-graph-integrated-html
 
@@ -706,64 +709,72 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
 
         d3.select(containerSelector).select("#colorLinks").on("change", function () {
             colorLinks = d3.select(containerSelector).select("#colorLinks").property("checked");
-            // link.style("stroke", function (d) {
-            //     scale = 0.5 + Math.abs(d.freq)*0.5 / 100;
-            //     // scale = Math.abs(d.freq) / 100;
-            //     scale = 0.2 + Math.abs(d.freq) * 0.8 / max_freq;
-            //     //console.log(max_freq, d.freq, d.links);
-            //     color = { r: 200, g: 200, b: 200 }; //grey
-            //     if (d.freq < 0) {
-            //         // if the header is a set two, then make it red
-            //         // color = { r: 255*scale, g: (153)*scale, b: (153)*scale }; //red
-            //         color = { r: 255, g: 255-(255-153)*scale, b: 255-(255-153)*scale }; //red
-            //     } else if (d.freq > 0) {
-            //         // Positive numbers are blue either cos they are set 1 or cos "set 1 has most"
-            //         // This is also used for single set/structure
-            //         // color = { r: (153)*scale, g: (204)*scale, b: 255*scale }; //blue
-            //         color = { r: 255-(255-153)*scale, g: 255-(255-204)*scale, b: 255 }; //blue
-            //     }
-            //     var hex = rgb2hex(color.r, color.g, color.b);
-                
-            //     return colorLinks ? hex : "#000";
-            // });
-            link.style("stroke", function (d) {
-                scale = 0.5 + Math.abs(d.freq)*0.5 / 100;
-                // scale = Math.abs(d.freq) / 100;
-                scale = Math.abs(d.sfreq1) / max_freq;
-                color = { r: 255-(255-153)*scale, g: 255-(255-204)*scale, b: 255 }; //blue
-                var hex = rgb2hex(color.r, color.g, color.b);
-                return colorLinks ? hex : "#000";
-            });
-            link1.style("stroke", function (d) {
-                scale = 0.5 + Math.abs(d.freq)*0.5 / 100;
-                // scale = Math.abs(d.freq) / 100;
-                scale = Math.abs(d.sfreq2) / max_freq;
-                color = { r: 255, g: 255-(255-153)*scale, b: 255-(255-153)*scale }; //red
-                var hex = rgb2hex(color.r, color.g, color.b);
-                return colorLinks ? hex : "#000";
-            });
+            
+            if (!segment_view) {
+                link.style("stroke", function (d) {
+                    scale = 0.5 + Math.abs(d.freq)*0.5 / 100;
+                    // scale = Math.abs(d.freq) / 100;
+                    scale = 0.2 + Math.abs(d.freq) * 0.8 / max_freq;
+                    //console.log(max_freq, d.freq, d.links);
+                    color = { r: 200, g: 200, b: 200 }; //grey
+                    if (d.freq < 0) {
+                        // if the header is a set two, then make it red
+                        // color = { r: 255*scale, g: (153)*scale, b: (153)*scale }; //red
+                        color = { r: 255, g: 255-(255-153)*scale, b: 255-(255-153)*scale }; //red
+                    } else if (d.freq > 0) {
+                        // Positive numbers are blue either cos they are set 1 or cos "set 1 has most"
+                        // This is also used for single set/structure
+                        // color = { r: (153)*scale, g: (204)*scale, b: 255*scale }; //blue
+                        color = { r: 255-(255-153)*scale, g: 255-(255-204)*scale, b: 255 }; //blue
+                    }
+                    var hex = rgb2hex(color.r, color.g, color.b);
+                    
+                    return colorLinks ? hex : "#000";
+                });
+            } else {
+                link.style("stroke", function (d) {
+                    scale = 0.5 + Math.abs(d.freq)*0.5 / 100;
+                    // scale = Math.abs(d.freq) / 100;
+                    scale = Math.abs(d.sfreq1) / max_freq;
+                    color = { r: 255-(255-153)*scale, g: 255-(255-204)*scale, b: 255 }; //blue
+                    var hex = rgb2hex(color.r, color.g, color.b);
+                    return colorLinks ? hex : "#000";
+                });
+
+            }
             link.style("stroke-width", function (d) {
                 scale = 0.5 + Math.abs(d.freq)*0.5 / 100;
                 // scale = Math.abs(d.freq) / 100;
-                scale = Math.abs(d.sfreq1) / max_freq;
+                scale = segment_view ? Math.abs(d.sfreq1) / max_freq : Math.abs(d.freq) / 100;
                 
-                return colorLinks ? Math.round(20*scale) : d.size || 5; ;
-            });
-            link1.style("stroke-width", function (d) {
-                scale = 0.5 + Math.abs(d.freq)*0.5 / 100;
-                // scale = Math.abs(d.freq) / 100;
-                scale = Math.abs(d.sfreq2) / max_freq;
-                
-                return colorLinks ? Math.round(20*scale) : d.size || 5; ;
+                return colorLinks ? Math.round(20*scale) : d.size || 5;
             });
             link.style("stroke-opacity", function (d) { return colorLinks ? 1 : 0.3; })
-            link1.style("stroke-opacity", function (d) { return colorLinks ? 1 : 0; })
-            if (colorLinks) {
-                svg.style("background-color", "#fff");
-                labelParent.attr("dy",function(d,i) { stroke_width = Math.round(20*Math.abs(d.sfreq1) / max_freq); return  stroke_width ? -stroke_width/2 : -5/2;})
-            } else {
-                svg.style("background-color", "#fff");
-                labelParent.attr("dy", function (d, i) { return d.size ? -d.size / 2 : -5 / 2; })
+
+            if (segment_view) {
+                link1.style("stroke", function (d) {
+                    scale = 0.5 + Math.abs(d.freq)*0.5 / 100;
+                    // scale = Math.abs(d.freq) / 100;
+                    scale = Math.abs(d.sfreq2) / max_freq;
+                    color = { r: 255, g: 255-(255-153)*scale, b: 255-(255-153)*scale }; //red
+                    var hex = rgb2hex(color.r, color.g, color.b);
+                    return colorLinks ? hex : "#000";
+                });
+                link1.style("stroke-width", function (d) {
+                    scale = 0.5 + Math.abs(d.freq)*0.5 / 100;
+                    // scale = Math.abs(d.freq) / 100;
+                    scale = Math.abs(d.sfreq2) / max_freq;
+                    
+                    return colorLinks ? Math.round(20*scale) : d.size || 5; ;
+                });
+                link1.style("stroke-opacity", function (d) { return colorLinks ? 1 : 0; })
+                if (colorLinks) {
+                    svg.style("background-color", "#fff");
+                    labelParent.attr("dy",function(d,i) { stroke_width = Math.round(20*Math.abs(d.sfreq1) / max_freq); return  stroke_width ? -stroke_width/2 : -5/2;})
+                } else {
+                    svg.style("background-color", "#fff");
+                    labelParent.attr("dy", function (d, i) { return d.size ? -d.size / 2 : -5 / 2; })
+                }
             }
             simulation.alpha(1).restart();
         });
