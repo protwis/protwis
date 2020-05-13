@@ -96,6 +96,8 @@ class Command(BaseCommand):
         if self.options['coupling']:
             self.purge_coupling_data()
             self.logger.info('PASS: purge_coupling_data')
+            self.create_g_proteins(filenames)
+            self.logger.info('PASS: create_g_proteins')
             if os.path.exists(self.inoue_file):
                 self.add_inoue_coupling_data()
                 self.logger.info('PASS: add_inoue_coupling_data')
