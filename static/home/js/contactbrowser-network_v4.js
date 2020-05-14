@@ -270,12 +270,14 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             .attr("dy", function (d, i) { return d.size ? -d.size / 2 : -5 / 2; })
             .style("fill", "black")
             .style("opacity", 0.5)
+            .text(function(d,i) { return  d.links;})
+            .attr("text-anchor", "Middle")
             .attr("id", function (d, i) { return "labelText_" + i; });
         
         var labelText = labelParent.append("textPath")
-            .attr("xlink:href", function (d, i) { return "#"+containerSelector+"linkId_" + i; })
-            .attr("startOffset","50%").attr("text-anchor","Middle")
-            .text(function(d,i) { return  d.links;});
+            .attr("xlink:href", function (d, i) { return "#" + containerSelector + "linkId_" + i; })
+            .attr("startOffset", "50%").attr("text-anchor", "Middle");
+            // .text(function(d,i) { return  d.links;});
         
         var n = graph.nodes.length;
         var node = svg.selectAll(".node")
@@ -376,6 +378,10 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
                 .attr("y1", function(d) { return d.source.y; })
                 .attr("x2", function(d) { return d.target.x; })
                 .attr("y2", function (d) { return d.target.y; });
+            
+            labelParent
+                .attr("x", function(d) { return (d.source.x+d.target.x)/2; })
+                .attr("y", function(d) { return (d.source.y+d.target.y)/2; })
             
             if (segment_view) {
                 link1
@@ -703,7 +709,8 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
 
         d3.select(containerSelector).select("#change_to_freq").on("change", function () {
             changeFreq = d3.select(containerSelector).select("#change_to_freq").property("checked");
-            labelText.text(function (d) { return changeFreq ? (100*d.links / total_links).toFixed(0)+"%" :  d.links  });
+            // labelText.text(function (d) { return changeFreq ? (100*d.links / total_links).toFixed(0)+"%" :  d.links  });
+            labelParent.text(function (d) { return changeFreq ? (100*d.links / total_links).toFixed(0)+"%" :  d.links  });
         });
 
 
@@ -771,9 +778,11 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
                 if (colorLinks) {
                     svg.style("background-color", "#fff");
                     labelParent.attr("dy",function(d,i) { stroke_width = Math.round(20*Math.abs(d.sfreq1) / max_freq); return  stroke_width ? -stroke_width/2 : -5/2;})
+                    labelParent.attr("dy",5)
                 } else {
                     svg.style("background-color", "#fff");
                     labelParent.attr("dy", function (d, i) { return d.size ? -d.size / 2 : -5 / 2; })
+                    labelParent.attr("dy",5)
                 }
             }
             simulation.alpha(1).restart();
