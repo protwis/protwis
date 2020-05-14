@@ -327,16 +327,19 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
         
         if (segment_view) {
             node.select("circle").attr("visibility", function (d) { return d.group.startsWith("TM") ? "visible" : "hidden"; })
+            node.select("circle").style("stroke", "#000");
 
             node.append("rect")
                 .attr("class", "node")
                 .attr("visibility", function (d) { return d.group.startsWith("TM") ? "hidden" : "visible" ; }) // H8 and loops are <20..
                 .attr("x", function (d) { return d.group=='H8' ? -15 : -13; })
-                .attr("y", function (d) { return d.group=='H8' ? -13 : -8; })
+                .attr("y", function (d) { return d.group == 'H8' ? -13 : -6; })
+                .attr("rx", function (d) { return d.group=='H8' ? 0 : 6; })
+                .attr("ry", function (d) { return d.group=='H8' ? 0 : 6; })
                 .attr("width", function (d) { return d.group=='H8' ? 30 : 25; })
-                .attr("height", function (d) { return d.group=='H8' ? 26 : 15; })
-                .attr("stroke", "#555")
-                .attr("stroke-width","2px")
+                .attr("height", function (d) { return d.group=='H8' ? 26 : 12; })
+                .attr("stroke", "#000")
+                .attr("stroke-width",function (d) { return d.group=='H8' ? 2 : 1; })
                 .style("opacity", 1)
                 .style("fill", function (d) { return assignRainbowColor(d.group); });
         }
