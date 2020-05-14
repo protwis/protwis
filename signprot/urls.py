@@ -2,12 +2,14 @@ from contactnetwork.views import PdbTableData
 from django.conf.urls import url
 from django.views.decorators.cache import cache_page
 from signprot import views
+from signprot.views import *
 
 urlpatterns = [
     url(r'^$', views.BrowseSelection.as_view(), name='index'),
     url(r'^statistics/(?P<dataset>[^/]*?)/$',  views.GProtein, name='gprotein'),
     url(r'^statistics',  views.GProtein, name='gprotein'),
-    url(r'^couplings',  views.Couplings, name='couplings'),
+#    url(r'^couplings',  views.couplings, name='couplings'),
+    url(r'^couplings$', (CouplingBrowser.as_view()), name='coupling_browser'),    
     url(r'^ginterface/(?P<protein>[^/]*?)/$', views.Ginterface, name='render'),
     url(r'^ginterface[/]?$', views.TargetSelection.as_view(), name='targetselection'),
     url(r'^ajax/barcode/(?P<slug>[-\w]+)/(?P<cutoff>\d+\.\d{0,2})/$', views.ajaxBarcode, name='ajaxBarcode'),

@@ -369,7 +369,7 @@ class ProteinGProteinPair(models.Model):
     protein = models.ForeignKey('Protein', on_delete=models.CASCADE)
     g_protein = models.ForeignKey('ProteinGProtein', on_delete=models.CASCADE)
     transduction = models.TextField(null=True)
-    source = models.TextField(null=True) # GuideToPharma, Inoue, Bouvier
+    source = models.TextField(null=True) # GuideToPharma, Aska, Bouvier
     emax_mean = models.FloatField(null=True, blank=True)
     emax_sem = models.FloatField(null=True, blank=True)
     emax_dnorm = models.FloatField(null=True, blank=True)
