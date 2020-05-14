@@ -324,15 +324,15 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             .style("fill", function (d) { return assignRainbowColor(d.group); });
         
         if (segment_view) {
-            node.select("circle").attr("visibility", function (d) { return assignSize(d.group)>19 ? "visible" : "hidden"; })
+            node.select("circle").attr("visibility", function (d) { return d.group.startsWith("TM") ? "visible" : "hidden"; })
 
             node.append("rect")
                 .attr("class", "node")
-                .attr("visibility", function (d) { return assignSize(d.group)<19 ? "visible" : "hidden"; }) // H8 and loops are <20..
-                .attr("x", -13)
-                .attr("y",-11)
-                .attr("width", 25)
-                .attr("height", 21)
+                .attr("visibility", function (d) { return d.group.startsWith("TM") ? "hidden" : "visible" ; }) // H8 and loops are <20..
+                .attr("x", function (d) { return d.group=='H8' ? -15 : -13; })
+                .attr("y", function (d) { return d.group=='H8' ? -13 : -8; })
+                .attr("width", function (d) { return d.group=='H8' ? 30 : 25; })
+                .attr("height", function (d) { return d.group=='H8' ? 26 : 15; })
                 .attr("stroke", "#555")
                 .attr("stroke-width","2px")
                 .style("opacity", 1)
@@ -944,16 +944,16 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
                 y = 63;
             break;
         case "TM3":
-                x = 147;
-                y = 179;
+                x = 165;
+                y = 177;
             break;
         case "TM4":
-                x = 56;
+                x = 58;
                 y = 82;
             break;
         case "TM5":
-                x = 22;
-                y = 187;
+                x = 40;
+                y = 186;
             break;
         case "TM6":
                 x = 83;
@@ -972,8 +972,8 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
                 y = 26;
             break;
         case "ECL2":
-                x = 209;
-                y = 334;
+                x = 17;
+                y = 125;
             break;
         case "ICL1":
                 x = 383;
@@ -1015,7 +1015,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             size = 20;
             break;
         case "H8":
-            size = 18;
+            size = 20;
             break;
         default:
             size = 15;
