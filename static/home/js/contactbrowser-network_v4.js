@@ -716,6 +716,16 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             labelParent.text(function (d) { return changeFreq ? (100*d.links / total_links).toFixed(0)+"%" :  d.links  });
         });
 
+        d3.select(containerSelector).select("#node_color").on("change", function () {
+            colorNode = $(containerSelector+" #node_color").val();
+            if (colorNode=='segment') node.select("circle").style("fill", function (d) { return assignRainbowColor(d.group); });
+            if (colorNode=='grey') node.select("circle").style("fill", "#ddd");
+            if (colorNode=='white') node.select("circle").style("fill", "#fff");
+            if (colorNode=='segment') node.select("rect").style("fill", function (d) { return assignRainbowColor(d.group); });
+            if (colorNode=='grey') node.select("rect").style("fill", "#ddd");
+            if (colorNode=='white') node.select("rect").style("fill", "#fff");
+        });
+
 
         d3.select(containerSelector).select("#colorLinks").on("change", function () {
             colorLinks = d3.select(containerSelector).select("#colorLinks").property("checked");
@@ -1122,6 +1132,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
         'Add consensus AA<input id="addAA" type="checkbox"><br>' +
         'Color links by frequency <input id="colorLinks" type="checkbox" checked><br>' +
         '% of kept contacts <input id="change_to_freq" type="checkbox"><br>' +
+        'Node color <select id="node_color"><option value="segment">Segment</option><option value="grey">Grey</option><option value="white">White</option></select><br>' +
         'Filter <select id="set_filter"><option value="all">All</option><option value="set1">Set1</option><option value="set2">Set2</option><option value="both">Both</option></select><br>' +
         'Link Strength <input id="link_strength_change" style="width:80px;" type="range" min="0" max="1" step="any" value="0.5">' +
         'Link Distance<input id="link_distance_change" style="width:80px;" type="range" min="0" max="200" step="any" value="40">' +
