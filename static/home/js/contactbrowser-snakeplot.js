@@ -25,6 +25,171 @@ function color_by_category(value, possibilities) {
     return rgb.hex();
 }
 
+function prepare_residue_colors(data) {
+    var colors_gn = {}
+    // var colors = {}
+    colors_gn['distance'] = {}
+    colors_gn['distance_abs'] = {}
+    colors_gn['network'] = {}
+    colors_gn['set_presence'] = {}
+    colors_gn['ligand'] = {}
+    colors_gn['complex'] = {}
+    colors_gn['ligandcomplex'] = {}
+    colors_gn['mutations'] = {}
+    colors_gn['conservation'] = {}
+
+    index_names = { 0: 'core_distance', 1: 'a_angle', 2: 'outer_angle', 3: 'tau', 4: 'phi', 5: 'psi', 6: 'sasa', 7: 'rsa', 8: 'theta', 9: 'hse', 10: 'tau_angle', 11:'rotation_angle' }
+    neg_and_positives = ['core_distance','sasa','rsa', 'hse']
+    nice_index_names = {
+        'a_angle' : 'Angle to helix&7TM axes',
+        'outer_angle': 'Rotamer',
+        'rotation_angle': 'Rotation angle',
+        'tau': 'Tau',
+        'phi': 'Phi',
+        'psi': 'Psi',
+        'sasa': 'SASA',
+        'sasa_abs': 'SASA (abs)',
+        'rsa': 'RSA',
+        'rsa_abs': 'RSA (abs)',
+        'theta': 'Theta',
+        'hse': 'HSE',
+        'hse_abs': 'HSE (abs)',
+        'tau_angle': 'Tau dihedral',
+        'distance': 'Distance',
+        'distance_abs': 'Distance (abs)',
+        'core_distance': 'Distance to 7TM axis',
+        'core_distance_abs': 'Distance to 7TM axis (abs)',  
+        'network' : 'Network group no.',
+        'set_presence' : 'Set specific presense',
+        'ligand' : 'Ligand interactions freq',
+        'complex' : 'G protein interactions',
+        'ligandcomplex' : 'Ligand and G protein interactions',
+        'mutations' : 'Mutations with >5 fold effect',
+        'conservation' : 'Conservation of set(s) consensus AA in class'
+    }
+
+    $.each(data['snakeplot_lookup_aa_cons'], function (gn, cons) {
+        seq_pos = data['snakeplot_lookup'][gn];
+        scale = cons / 100
+        colors_gn['conservation'][gn] = [cons,scale,100];
+    } )
+
+
+    $.each(filtered_cluster_groups, function (id, group) {
+        $.each(group, function (i, gn) {
+            scale = id / filtered_cluster_groups.length
+            colors_gn['network'][gn] = [id,scale,filtered_cluster_groups.length];
+        })
+    })
+
+    $.each(filtered_gns_presence, function (gn, value) {
+        scale = value / 1
+        colors_gn['set_presence'][gn] = [value,scale,1];
+    })
+
+    max_ligand_interactions = Math.max(...Object.values(data['class_ligand_interactions'])) 
+    $.each(data['class_ligand_interactions'], function (gn, value) {
+        scale = value / max_ligand_interactions;
+        colors_gn['ligand'][gn] = [value,scale,max_ligand_interactions];
+    })
+
+
+    max_complex_interactions = Math.max(...Object.values(data['class_complex_interactions'])) 
+    $.each(data['class_complex_interactions'], function (gn, value) {
+        scale = value / max_complex_interactions;
+        colors_gn['complex'][gn] = [value,scale,max_complex_interactions];
+    })
+
+    $.each(data['snakeplot_lookup'], function (gn, seq_pos) {
+        complex_value = gn in data['class_complex_interactions'] ? data['class_complex_interactions'][gn] : 0;
+        ligand_value = gn in data['class_ligand_interactions'] ? data['class_ligand_interactions'][gn] : 0;
+
+        if (complex_value == 0 && ligand_value == 0) {
+            // either do nothing or put in 0 value
+            // colors_gn['ligandcomplex'][seq_pos] = [value,scale,max_mutations];
+        } else {
+            if (complex_value/max_complex_interactions >= ligand_value/max_ligand_interactions) {
+                // treat complex values 0.5-1 range
+                value = complex_value
+                scale = 0.5+(0.5)*(value / max_complex_interactions);
+                colors_gn['ligandcomplex'][gn] = [value,scale,max_complex_interactions];
+            } else {
+                // treat ligand values 0-0.5 range
+                value = ligand_value
+                scale = 0.5-(0.5)*(value / max_ligand_interactions);
+                colors_gn['ligandcomplex'][gn] = [value,scale,max_ligand_interactions];
+            }
+        }
+    })
+
+    max_mutations = Math.max(...Object.values(data['class_mutations'])) 
+    $.each(data['class_mutations'], function (gn, value) {
+        scale = value / max_mutations;
+        colors_gn['mutations'][gn] = [value,scale,max_mutations];
+    })
+
+    $.each(data['distances'], function (gn, dis) {
+        // console.log(gn, dis['avg'], seq_pos);
+        value = dis['avg'];
+        scale = Math.abs(value) / data['ngl_max_diff_distance'];
+        if (value < 0) {
+            // if the header is a set two, then make it red
+            scale_abs = (1-scale)*0.5;
+        } else if (value >= 0) {
+            // Positive numbers are blue either cos they are set 1 or cos "set 1 has most"
+            // This is also used for single set/structure
+            scale_abs = (scale)*0.5+0.5;
+        }
+        colors_gn['distance'][gn] = [value,scale_abs,data['ngl_max_diff_distance']];
+        colors_gn['distance_abs'][gn] = [Math.abs(value), scale, data['ngl_max_diff_distance']];
+
+    });
+
+    // get maximum values
+    var max_values = {}
+    $.each(data['tab4'], function (gn, v) {
+        $.each(v["angles"], function (i, a) {
+            value = $.isNumeric(a) ? a : a[0]; // deal with single structure and two sets
+            if (!(i in max_values)) {
+                max_values[i] = 0;
+                colors_gn[index_names[i]] = {};
+                if (neg_and_positives.includes(index_names[i])) {
+                    colors_gn[index_names[i]+"_abs"] = {};
+                }
+            }
+            if (Math.abs(value)>max_values[i]) max_values[i] = Math.abs(value)
+        });
+    });
+    $.each(data['tab4'], function (gn, v) {
+        $.each(v["angles"], function (i, a) {
+            value = $.isNumeric(a) ? a : a[0]; // deal with single structure and two sets
+            scale = Math.abs(value) / max_values[i];
+            neg_and_positive = false;
+            if (neg_and_positives.includes(index_names[i])) {
+                neg_and_positive = true;
+            }
+            if (value < 0) {
+                // if the header is a set two, then make it red
+                scale_abs = (1-scale)*0.5;
+            } else if (value >= 0) {
+                // Positive numbers are blue either cos they are set 1 or cos "set 1 has most"
+                // This is also used for single set/structure
+                scale_abs = (scale)*0.5+0.5;
+            }
+            if (neg_and_positive) {
+                colors_gn[index_names[i]][gn] = [value,scale_abs,max_values[i]];
+                colors_gn[index_names[i] + '_abs'][gn] = [Math.abs(value), scale, max_values[i]];
+            } else {
+                colors_gn[index_names[i]][gn] = [value, scale, max_values[i]];
+            }
+            if (!(i in max_values)) max_values[i] = 0;
+        });
+    });
+
+    console.log('colors_gn', colors_gn);
+    return colors_gn;
+}
+
 function color_by_scale(scale, color1, color2, color3) {
 
     // case "rwb": // red-white-blue
@@ -299,7 +464,7 @@ function createSnakeplot(data, containerSelector) {
             if (!(i in max_values)) max_values[i] = 0;
         });
     });
-    // console.log(path_groups, path_groups_lookup);
+
     console.log('colors', colors);
 
 
