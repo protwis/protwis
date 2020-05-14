@@ -34,6 +34,39 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
     var colorLinks = true;
 
     var filter_sets = 'all';
+
+    var nice_index_names = {
+        'solid': 'Color',
+        'conservation' : 'Conservation of set(s) consensus AA in class',
+        'outer_angle': 'Rotamer',
+        // 'rotation_angle': 'Rotation angle',
+        'phi': 'Phi',
+        'psi': 'Psi',
+        'tau': 'Tau',
+        'distance': 'Distance',
+        'distance_abs': 'Distance (abs)',
+        'core_distance': 'Distance to 7TM axis',
+        'core_distance_abs': 'Distance to 7TM axis (abs)',  
+        'a_angle' : 'Angle to helix&7TM axes',
+        'theta': 'Theta',
+        'tau_angle': 'Tau dihedral',
+        // 'sasa': 'SASA',
+        // 'sasa_abs': 'SASA (abs)',
+        // 'rsa': 'RSA',
+        // 'rsa_abs': 'RSA (abs)',
+        // 'hse': 'HSE',
+        // 'hse_abs': 'HSE (abs)',
+        // 'network' : 'Network group no.',
+        // 'set_presence' : 'Set specific presense',
+        // 'ligand' : 'Ligand interactions freq',
+        // 'complex' : 'G protein interactions',
+        // 'ligandcomplex' : 'Ligand and G protein interactions',
+        'mutations' : 'Mutations with >5 fold effect',
+        'cons_prop' : 'Consensus AA property ',
+    }
+
+
+
     function prepare_data(single_cluster = false) {
 
         console.log('PREPARE DATA',containerSelector,'cluster_groups',cluster_groups.length, plot_specified_filtered.length )
@@ -162,6 +195,9 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
 
     }
     prepare_data();
+
+    // See snakeplot for this code. Placed there since it reused alot of logic from the snakeplot coloring.
+    var colors_gn = prepare_residue_colors(raw_data);
 
 
 
@@ -365,8 +401,12 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             });
         }
         
-        var ticked = function() {
-            colorLinks = d3.select(containerSelector).select("#colorLinks").property("checked");
+        var ticked = function () {
+            colorLinks = false;
+            if ($(containerSelector +" #colorLinks").length) {
+                colorLinks = d3.select(containerSelector).select("#colorLinks").property("checked");
+            }
+            
             node.attr("transform", function (d) {
                 size = d.size ? assignSize(d.group) : 20
                 size += 2;
@@ -716,15 +756,145 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             labelParent.text(function (d) { return changeFreq ? (100*d.links / total_links).toFixed(0)+"%" :  d.links  });
         });
 
-        d3.select(containerSelector).select("#node_color").on("change", function () {
-            colorNode = $(containerSelector+" #node_color").val();
-            if (colorNode=='segment') node.select("circle").style("fill", function (d) { return assignRainbowColor(d.group); });
-            if (colorNode=='grey') node.select("circle").style("fill", "#ddd");
-            if (colorNode=='white') node.select("circle").style("fill", "#fff");
-            if (colorNode=='segment') node.select("rect").style("fill", function (d) { return assignRainbowColor(d.group); });
-            if (colorNode=='grey') node.select("rect").style("fill", "#ddd");
-            if (colorNode=='white') node.select("rect").style("fill", "#fff");
+        d3.select(containerSelector).select(".residue_fill").on("change", function () {
+            change_fill();
         });
+        function change_fill() {
+            fill_color = $(containerSelector + " #node_color").val();
+
+            color_id1  = $(containerSelector+" #fill_color1").spectrum("get").toHexString();
+            if ($(containerSelector + " #fill_color2").spectrum("get") && $(containerSelector + " #fill_color2").length) {
+                color_id2 = $(containerSelector + " #fill_color2").spectrum("get").toHexString();
+            } else {
+                color_id2 = false;
+            }
+            if ($(containerSelector + " #fill_color3").spectrum("get") && $(containerSelector + " #fill_color3").length) {
+                color_id3 = $(containerSelector + " #fill_color3").spectrum("get").toHexString();
+            } else {
+                color_id3 = false;
+            }
+            console.log('change fill color to!', fill_color, color_id1, color_id2, color_id3);
+            
+            // if no color 3 make only linear between two colors.
+            if (color_id3) {
+                var color_range = d3v4.scaleLinear()
+                    .domain([0, 0.5, 1])
+                    .range([color_id1, color_id2, color_id3]);
+            } else {
+                var color_range = d3v4.scaleLinear()
+                    .domain([0, 1])
+                    .range([color_id1, color_id2]);
+            }
+            if (fill_color == 'segment') {
+                node.select("circle").style("fill", function (d) { return assignRainbowColor(d.group); });
+                node.select("rect").style("fill", function (d) { return assignRainbowColor(d.group); });
+            } else if (fill_color == 'solid') {
+                node.select("rect").style("fill", color_id1);
+                node.select("circle").style("fill", color_id1);
+            } else {
+                // loop over nodes, find name
+                node.select("circle").style("fill", function (d) {
+                    name = d.name;
+                    if (colors_gn[fill_color][name]) {
+                        return color_range(colors_gn[fill_color][name][1])
+                    } else {
+                        return "#fff";
+                    }
+                })
+            }
+        }
+        $(containerSelector +" input.residue_fill").on('move.spectrum', function () { change_fill(); });
+
+        
+        d3.select(containerSelector).select(".residue_border").on("change", function () {
+            change_border();
+        });
+        function change_border() {
+            fill_color = $(containerSelector + " #residue_border").val();
+
+            color_id1  = $(containerSelector+" #border_color1").spectrum("get").toHexString();
+            color_id2 = $(containerSelector + " #border_color2").spectrum("get").toHexString();
+            if ($(containerSelector + " #border_color3").spectrum("get")) {
+                color_id3 = $(containerSelector + " #border_color3").spectrum("get").toHexString();
+            } else {
+                color_id3 = false;
+            }
+            console.log('change border color to!', fill_color, color_id1, color_id2, color_id3);
+            
+            // if no color 3 make only linear between two colors.
+            if (color_id3) {
+                var color_range = d3v4.scaleLinear()
+                    .domain([0, 0.5, 1])
+                    .range([color_id1, color_id2, color_id3]);
+            } else {
+                var color_range = d3v4.scaleLinear()
+                    .domain([0, 1])
+                    .range([color_id1, color_id2]);
+            }
+            if (fill_color == 'none') {
+                node.select("rect").style("stroke", "#000");
+                node.select("circle").style("stroke", "#000");
+            } else if (fill_color == 'solid') {
+                node.select("rect").style("stroke", color_id1);
+                node.select("circle").style("stroke", color_id1);
+            } else {
+                // loop over nodes, find name
+                node.select("circle").style("stroke", function (d) {
+                    name = d.name;
+                    if (colors_gn[fill_color][name]) {
+                        return color_range(colors_gn[fill_color][name][1]);
+                    } else {
+                        return color_range(0);
+                        // return "#000";
+                    }
+                })
+            }
+        }
+        $(containerSelector +" input.residue_border").on('move.spectrum', function () { change_border(); });
+
+        d3.select(containerSelector).select(".residue_text").on("change", function () {
+            change_text();
+        });
+        function change_text() {
+            fill_color = $(containerSelector + " #residue_text").val();
+
+            color_id1  = $(containerSelector+" #text_color1").spectrum("get").toHexString();
+            color_id2 = $(containerSelector + " #text_color2").spectrum("get").toHexString();
+            if ($(containerSelector + " #text_color3").spectrum("get")) {
+                color_id3 = $(containerSelector + " #text_color3").spectrum("get").toHexString();
+            } else {
+                color_id3 = false;
+            }
+            console.log('change text color to!', fill_color, color_id1, color_id2, color_id3);
+            
+            // if no color 3 make only linear between two colors.
+            if (color_id3) {
+                var color_range = d3v4.scaleLinear()
+                    .domain([0, 0.5, 1])
+                    .range([color_id1, color_id2, color_id3]);
+            } else {
+                var color_range = d3v4.scaleLinear()
+                    .domain([0, 1])
+                    .range([color_id1, color_id2]);
+            }
+            if (fill_color == 'none') {
+                node.select("text").style("fill", "#000");
+            } else if (fill_color == 'solid') {
+                node.select("text").style("fill", color_id1);
+            } else {
+                // loop over nodes, find name
+                node.select("text").style("fill", function (d) {
+                    name = d.name;
+                    if (colors_gn[fill_color][name]) {
+                        return color_range(colors_gn[fill_color][name][1]);
+                    } else {
+                        return color_range(0);
+                        // return "#000";
+                    }
+                })
+            }
+        }
+        $(containerSelector +" input.residue_text").on('move.spectrum', function () { change_text(); });
 
 
         d3.select(containerSelector).select("#colorLinks").on("change", function () {
@@ -1099,6 +1269,10 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
         var content = '<div class="controls">'
         //                                  +'<h4>Controls</h4>';
 
+        var select_data_options = ''
+        $.each(nice_index_names, function (key, description) {
+            select_data_options += '<option value="' + key + '">' + description + '</option>';
+        });
 
         content += '<p>Line colors: <select id="flareplot_color">' +
             '<option value="none">None (gray)</option>' +
@@ -1119,32 +1293,188 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             content += '<option value="frequency_2">Frequency group 2</option>';
         }
         content += '</select></p>';
-        content = '<span class="pull-right network_controls_toggle" style="cursor: pointer;"><span class="glyphicon glyphicon-option-horizontal btn-download png"></span></span><span class="options" style="display: block; min-width: 120px;">' +
-        // '<input id="checkCurved" type="checkbox" checked>' +
-        // '<span class="checkboxtext"> Curved links' +
-        // '</span>' +
-        // '</input>' +
-        // '<br><button class="btn btn-primary btn-xs" id="resetfixed">Release fixed</button>' +
-        // '<br><button class="btn btn-primary btn-xs" id="freeze">Freeze all</button>' +
-        'Link Label <input id="linkLabel" type="checkbox" checked><br>' +
-        'Stick drag <input id="stickyDrag" type="checkbox" checked><br>' +
-        'Highlight res <input id="highlightNode" type="checkbox" checked><br>' +
-        'Add consensus AA<input id="addAA" type="checkbox"><br>' +
-        'Color links by frequency <input id="colorLinks" type="checkbox" checked><br>' +
-        '% of kept contacts <input id="change_to_freq" type="checkbox"><br>' +
-        'Node color <select id="node_color"><option value="segment">Segment</option><option value="grey">Grey</option><option value="white">White</option></select><br>' +
-        'Filter <select id="set_filter"><option value="all">All</option><option value="set1">Set1</option><option value="set2">Set2</option><option value="both">Both</option></select><br>' +
-        'Link Strength <input id="link_strength_change" style="width:80px;" type="range" min="0" max="1" step="any" value="0.5">' +
-        'Link Distance<input id="link_distance_change" style="width:80px;" type="range" min="0" max="200" step="any" value="40">' +
-        'Charge<input id="charge_change" style="width:80px;" type="range" min="0" max="1400" step="any" value="700">' +
-        'Gravity<input id="gravity_change" style="width:80px;" type="range" min="0" max="1" step="any" value="0.1"> ' +
-        'Collide<input id="collide_change" style="width:80px;" type="range" min="0" max="200" step="any" value="30"> ' +
-        'Space<input id="size_change" style="width:80px;" type="range" min="200" max="4000" step="any" value="'+w+'"> ' +
-        '</span>';
+        content = '<span class="pull-right network_controls_toggle" style="cursor: pointer;"><span class="glyphicon glyphicon-option-horizontal btn-download png"></span></span><span class="options" style="display: block; min-width: 120px;">';
+            // '<input id="checkCurved" type="checkbox" checked>' +
+            // '<span class="checkboxtext"> Curved links' +
+            // '</span>' +
+            // '</input>' +
+            // '<br><button class="btn btn-primary btn-xs" id="resetfixed">Release fixed</button>' +
+            // '<br><button class="btn btn-primary btn-xs" id="freeze">Freeze all</button>' +
+            
+            // 'Stick drag <input id="stickyDrag" type="checkbox" checked><br>' +
+            
+            
+            // 'Node color <select id="node_color"><option value="segment">Segment</option><option value="grey">Grey</option><option value="white">White</option></select><br>' +
+
+        content += '<Strong>Options</strong><br>';
+
+        // common options
+
+        content += 'Highlight res <input id="highlightNode" type="checkbox" ><br>';
+            
+        if (mode != "single-crystal") {
+            content += 'Color links by frequency <input id="colorLinks" type="checkbox" checked><br>' +
+            '% of kept contacts <input id="change_to_freq" type="checkbox"><br>';
+        }
+        
+        if (mode == "two-crystal-groups") {
+            content += 'Filter <select id="set_filter"><option value="all">All</option><option value="set1">Set1</option><option value="set2">Set2</option><option value="both">Both</option></select><br>';
+        }
+                   
+        if (segment_view) {
+            content += 'Link Label <input id="linkLabel" type="checkbox" checked><br>' +
+                'Segment fill:<select id="node_color" class="residue_fill snakeplot_property_select">' +
+                '<option value="segment">Segment</option><option value="solid">Color</option></select><input type="text" id="fill_color1" class="togglePaletteOnly_red residue_fill" value="red" /><br>';
+                
+        } else {
+            content += 'Add consensus AA<input id="addAA" type="checkbox"><br>';
+        
+            content += '<table><tr><th>Area</th><th>Property</th><th>Color1</th><th>Color2</th><th>Color3</th></tr>';
+
+            content += '<tr><td>Residue fill:</td><td><select id="node_color" class="residue_fill snakeplot_property_select">' +
+                '<option value="segment">Segment</option>' +
+                select_data_options +
+                '</select></td>' +
+                '<td><input type="text" id="fill_color1" class="togglePaletteOnly_red residue_fill" value="red" /></td>' +
+                '<td><input type="text" id="fill_color2" class="togglePaletteOnly_blue residue_fill" value="blue" /></td>' +
+                '<td><input type="text" id="fill_color3" class="togglePaletteOnly_empty residue_fill" value="" /></td>' +
+                '</tr>'
+                ;
+            
+            content += '<tr><td>Residue border:</td><td><select id="residue_border" class="residue_border snakeplot_property_select">' +
+                '<option value="none">None</option>' +
+                select_data_options +
+                '</select></td>' +
+                '<td><input type="text" id="border_color1" class="togglePaletteOnly_red residue_border" value="red" /></td>' +
+                '<td><input type="text" id="border_color2" class="togglePaletteOnly_blue residue_border" value="blue" /></td>' +
+                '<td><input type="text" id="border_color3" class="togglePaletteOnly_empty residue_border" value="" /></td>' +
+                '</tr>'
+                ;
+            
+            content += '<tr><td>Residue text:</td><td><select id="residue_text" class="residue_text snakeplot_property_select">' +
+                '<option value="none">None</option>' +
+                select_data_options +
+                '</select></td>' +
+                '<td><input type="text" id="text_color1" class="togglePaletteOnly_red residue_text" value="red" /></td>' +
+                '<td><input type="text" id="text_color2" class="togglePaletteOnly_blue residue_text" value="blue" /></td>' +
+                '<td><input type="text" id="text_color3" class="togglePaletteOnly_empty residue_text" value="" /></td>' +
+                '</tr>'
+                ;
+            // content += '<tr><td>Residue border:</td><td><select id="snakeplot_color_border" class="residue_border snakeplot_property_select">' +
+            //     '<option value="none">None</option>' +
+            //     select_data_options +
+            //     '</select></td><td>' +
+            //     '<select id=border_color1 class="border_color residue_border snakeplot_color_select">' +
+            //     select_color_options_white +
+            //     '</select></td><td>' +
+            //     '<select id=border_color2 class="border_color residue_border snakeplot_color_select">' +
+            //     select_color_options_red +
+            //     '</select></td><td>' +
+            //     '<select id=border_color3 class="border_color residue_border snakeplot_color_select">' +
+            //     '<option value="none">None</option>' +
+            //     select_color_options +
+            //     '</select></td>' +
+            //     '<td>' + 
+            //     '<div class="btn-group btn-toggle residue_border" id="border_filtered">' +
+            //     '    <button class="btn btn-xs btn-primary active" value="true">Kept</button>' +
+            //     '    <button class="btn btn-xs btn-default" value="false">All</button>' +
+            //     '</div>' +
+            //     '</td></tr> '
+            //     ;
+            // content += '<tr><td>Border thickness:</td><td><select id="snakeplot_border_stroke" class="residue_border">' +
+            //     '<option>1</option>' +
+            //     '<option>2</option>' +
+            //     '<option SELECTED>3</option>' +
+            //     '<option>4</option>' +
+            //     '<option>5</option>' +
+            //     '</td></tr>';
+            // content += '<tr><td>Residue text:</td><td><select id="snakeplot_color_text" class="residue_text snakeplot_property_select">' +
+            //         '<option value="none">None</option>' +
+            //         select_data_options +
+            //         '</select></td><td>' +
+            //         '<select id=text_color1 class="text_color residue_text snakeplot_color_select">' +
+            //         select_color_options_white +
+            //         '</select></td><td>' +
+            //         '<select id=text_color2 class="text_color residue_text snakeplot_color_select">' +
+            //         select_color_options_red +
+            //         '</select></td><td>' +
+            //         '<select id=text_color3 class="text_color residue_text snakeplot_color_select">' +
+            //         '<option value="none">None</option>' +
+            //         select_color_options +
+            //         '</select></td>' +
+            //         '<td>' + 
+            //         '<div class="btn-group btn-toggle residue_text" id="text_filtered">' +
+            //         '    <button class="btn btn-xs btn-primary active" value="true">Kept</button>' +
+            //         '    <button class="btn btn-xs btn-default" value="false">All</button>' +
+            //         '</div>' +
+            //         '</td></tr> '
+            //         ;
+            // content += '<tr><td>Residue rotation:</td><td colspan=4><select id="snakeplot_color_rotation" class="residue_rotation snakeplot_property_select">' +
+            //     '<option value="none">None</option>' +
+            //     select_data_options +
+            //     '</select></td>' +
+            //     '<td>' + 
+            //     '<div class="btn-group btn-toggle residue_rotation" id="rotation_filtered">' +
+            //     '    <button class="btn btn-xs btn-primary active" value="true">Kept</button>' +
+            //     '    <button class="btn btn-xs btn-default" value="false">All</button>' +
+            //     '</div>' +
+            //     '</td></tr> '
+
+            content += "</table>";     
+        
+        }    
+        content += '<strong>Network settings</strong> [TODO: Show/hide button]<br><table><tr><td>Link Strength</td><td><input id="link_strength_change" style="width:80px;" type="range" min="0" max="1" step="any" value="0.5"></td>' +
+            '<td>Link Distance</td><td><input id="link_distance_change" style="width:80px;" type="range" min="0" max="200" step="any" value="40"></td></tr>' +
+            '<tr><td>Charge</td><td><input id="charge_change" style="width:80px;" type="range" min="0" max="1400" step="any" value="700"></td>' +
+            '<td>Gravity</td><td><input id="gravity_change" style="width:80px;" type="range" min="0" max="1" step="any" value="0.1"></td></tr>' +
+            '<tr><td>Collide</td><td><input id="collide_change" style="width:80px;" type="range" min="0" max="200" step="any" value="30"></td> ' +
+            '<td>Space</td><td><input id="size_change" style="width:80px;" type="range" min="200" max="4000" step="any" value="'+w+'"></td></tr></table>' +
+            '</span>';
         // content = '';
         newDiv.innerHTML = content;
 
         $(containerSelector).append(newDiv);
+
+        color_palette = [
+            ["#000", "#444", "#666", "#999", "#ccc", "#eee", "#f3f3f3", "#fff"],
+            ["#f00", "#f90", "#ff0", "#0f0", "#0ff", "#00f", "#90f", "#f0f"],
+            ["#f4cccc", "#fce5cd", "#fff2cc", "#d9ead3", "#d0e0e3", "#cfe2f3", "#d9d2e9", "#ead1dc"],
+            ["#ea9999", "#f9cb9c", "#ffe599", "#b6d7a8", "#a2c4c9", "#9fc5e8", "#b4a7d6", "#d5a6bd"],
+            ["#e06666", "#f6b26b", "#ffd966", "#93c47d", "#76a5af", "#6fa8dc", "#8e7cc3", "#c27ba0"],
+            ["#c00", "#e69138", "#f1c232", "#6aa84f", "#45818e", "#3d85c6", "#674ea7", "#a64d79"],
+            ["#900", "#b45f06", "#bf9000", "#38761d", "#134f5c", "#0b5394", "#351c75", "#741b47"],
+            ["#600", "#783f04", "#7f6000", "#274e13", "#0c343d", "#073763", "#20124d", "#4c1130"] //
+        ];
+
+
+
+        $(".togglePaletteOnly_red").spectrum({
+            showPaletteOnly: true,
+            togglePaletteOnly: true,
+            hideAfterPaletteSelect:true,
+            togglePaletteMoreText: 'more',
+            togglePaletteLessText: 'less',
+            color: 'red',
+            palette: color_palette
+        });
+        $(".togglePaletteOnly_blue").spectrum({
+            showPaletteOnly: true,
+            togglePaletteOnly: true,
+            hideAfterPaletteSelect:true,
+            togglePaletteMoreText: 'more',
+            togglePaletteLessText: 'less',
+            color: 'blue',
+            palette: color_palette
+        });
+        $(".togglePaletteOnly_empty").spectrum({
+            showPalette: true,
+            togglePaletteOnly: true,
+            hideAfterPaletteSelect:true,
+            togglePaletteMoreText: 'more',
+            togglePaletteLessText: 'less',
+            allowEmpty:true,
+            palette: color_palette
+        });
         $(containerSelector).find(".options").toggle();
 
         $(containerSelector).find(".network_controls_toggle").click(function() {
