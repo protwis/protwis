@@ -321,19 +321,19 @@ function createSnakeplot(data, containerSelector) {
 
 
     var color_options = {
-        'w': 'white',
-        'r': 'red',
-        'b': 'blue',
         'black': 'black',
-        'grey' : 'grey',
-        'g': 'green',
-        'y': 'yellow',
-        'o': 'orange',
-        'p': 'purple',
+        'b': 'blue',
         'brown': 'brown',
-        'olive': 'olive',
+        'g': 'green',
+        'grey' : 'grey',
         'magenta': 'magenta',
+        'olive': 'olive',
+        'o': 'orange',
         'pink' : 'pink',
+        'p': 'purple',
+        'r': 'red',
+        'w': 'white',
+        'y': 'yellow',
     }
 
     var select_color_options_white = ''
