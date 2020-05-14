@@ -899,8 +899,8 @@ function createSnakeplot(data, containerSelector) {
                         $(containerSelector).find('#' + pos_id + 't').attr("fill", color_by_scale(scale,color_id1,color_id2,color_id3));
                     }
                     $(containerSelector).find('#' + pos_id + 't').attr("font-weight", 1000);
-                    $(containerSelector).find('#' + pos_id + 't').attr("stroke", "#000");
-                    $(containerSelector).find('#' + pos_id + 't').attr("stroke-width", 1);
+                    // $(containerSelector).find('#' + pos_id + 't').attr("stroke", "#000");
+                    // $(containerSelector).find('#' + pos_id + 't').attr("stroke-width", 1);
                 } else {
 
                     if (fill_color.includes("distance")) {
