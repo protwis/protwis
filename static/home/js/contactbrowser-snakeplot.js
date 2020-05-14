@@ -11,6 +11,7 @@ color_scale_colors.white = {red:255, green:255, blue: 255};
 color_scale_colors.yellow = {red:255, green:255, blue: 0};
 color_scale_colors.yellow = {red:255, green:255, blue: 0};
 color_scale_colors.black = { red: 0, green: 0, blue: 0 };
+color_scale_colors.grey = { red: 211, green: 211, blue: 211 };
 color_scale_colors.orange = { red: 255, green: 150, blue: 113 };
 color_scale_colors.purple = { red: 128, green: 0, blue: 128 };
 color_scale_colors.brown = { red: 165, green: 42, blue: 42 };
@@ -324,6 +325,7 @@ function createSnakeplot(data, containerSelector) {
         'r': 'red',
         'b': 'blue',
         'black': 'black',
+        'grey' : 'grey',
         'g': 'green',
         'y': 'yellow',
         'o': 'orange',
@@ -396,14 +398,14 @@ function createSnakeplot(data, containerSelector) {
         
         index_names = { 0: 'core_distance', 1: 'a_angle', 2: 'outer_angle', 3: 'tau', 4: 'phi', 5: 'psi', 6: 'sasa', 7: 'rsa', 8: 'theta', 9: 'hse', 10: 'tau_angle' }
     
-        content += '<table><tr><td>Hide loops</td><td><input id=hide_loops type=checkbox></td></tr><tr><td>Residue text (kept positions):</td><td><select id="text_included">' +
+        content += '<table><tr><td>Hide loops</td><td><input id=hide_loops type=checkbox></td></tr><tr><td>Residue text (kept positions):</td><td><select id="text_included" class="snakeplot_property_select">' +
         text_content_options +
         '</select>' + 
         '<div class="btn-group btn-toggle" id="included_color">' +
         '    <button class="btn btn-xs btn-primary active" value="black">Black</button>' +
         '    <button class="btn btn-xs btn-default" value="grey">Grey</button>' +
             '</div>' +
-        '</td ></tr > <tr><td>Residue text (filtered out positions):</td><td><select id="text_excluded">' +
+        '</td ></tr > <tr><td>Residue text (filtered out positions):</td><td><select id="text_excluded" class="snakeplot_property_select">' +
         text_content_options +
         '</select>' + 
         '<div class="btn-group btn-toggle" id="excluded_color">' +
@@ -414,7 +416,7 @@ function createSnakeplot(data, containerSelector) {
         ;
 
         content += '<table><tr><th>Area</th><th>Property</th><th>Color1</th><th>Color2</th><th>Color3</th><th>Positions</th></tr>' +
-            '<tr><td>Residue fill:</td><td><select id="snakeplot_color" class="residue_fill">' +
+            '<tr><td>Residue fill:</td><td><select id="snakeplot_color" class="residue_fill snakeplot_property_select">' +
             '<option value="none">None</option>' +
             select_data_options +
             '</select></td><td>' +
@@ -435,7 +437,7 @@ function createSnakeplot(data, containerSelector) {
             '</div>' +
             '</td></tr > '
             ;
-        content += '<tr><td>Residue border:</td><td><select id="snakeplot_color_border" class="residue_border">' +
+        content += '<tr><td>Residue border:</td><td><select id="snakeplot_color_border" class="residue_border snakeplot_property_select">' +
             '<option value="none">None</option>' +
             select_data_options +
             '</select></td><td>' +
@@ -456,7 +458,14 @@ function createSnakeplot(data, containerSelector) {
             '</div>' +
             '</td></tr> '
             ;
-        content += '<tr><td>Residue text:</td><td><select id="snakeplot_color_text" class="residue_text">' +
+        content += '<tr><td>Border thickness:</td><td><select id="snakeplot_border_stroke" class="residue_border">' +
+            '<option>1</option>' +
+            '<option>2</option>' +
+            '<option SELECTED>3</option>' +
+            '<option>4</option>' +
+            '<option>5</option>' +
+            '</td></tr>';
+        content += '<tr><td>Residue text:</td><td><select id="snakeplot_color_text" class="residue_text snakeplot_property_select">' +
                 '<option value="none">None</option>' +
                 select_data_options +
                 '</select></td><td>' +
@@ -477,7 +486,7 @@ function createSnakeplot(data, containerSelector) {
                 '</div>' +
                 '</td></tr> '
                 ;
-        content += '<tr><td>Residue rotation:</td><td colspan=4><select id="snakeplot_color_rotation" class="residue_rotation">' +
+        content += '<tr><td>Residue rotation:</td><td colspan=4><select id="snakeplot_color_rotation" class="residue_rotation snakeplot_property_select">' +
             '<option value="none">None</option>' +
             select_data_options +
             '</select></td>' +
@@ -487,7 +496,7 @@ function createSnakeplot(data, containerSelector) {
             '    <button class="btn btn-xs btn-default" value="false">All</button>' +
             '</div>' +
             '</td></tr> '
-        content += '<tr><td colspan=6><hr></td></tr><tr><td>Backbone line:</td><td><select id="snakeplot_color_backbone">' +
+        content += '<tr><td colspan=6><hr></td></tr><tr><td>Backbone line:</td><td><select id="snakeplot_color_backbone" class="snakeplot_property_select">' +
                 '<option value="none">None</option>' +
                 select_data_options_backbone +
                 '</select></td><td>' +
@@ -502,7 +511,7 @@ function createSnakeplot(data, containerSelector) {
                 select_color_options +
                 '</select></td></tr>'
                 ;
-        content += '<tr><td>Backbone shift:</td><td><select id="snakeplot_move_circle">' +
+        content += '<tr><td>Backbone shift:</td><td><select id="snakeplot_move_circle" class="snakeplot_property_select">' +
                 '<option value="none">None</option>' +
                 select_data_options_backbone_shift +
                 '</select></td><td>' +
@@ -780,6 +789,7 @@ function createSnakeplot(data, containerSelector) {
             color_id3  = $(containerSelector+" #border_color3").val();
             color_filtered = d3.select(containerSelector).select("#border_filtered").property("checked");
             color_filtered = ($(containerSelector + " #border_filtered").find(".active").attr('value') == 'true');
+            var stroke_width = $(containerSelector + " #snakeplot_border_stroke").val();
             console.log('change stroke color to!');
 
             $(containerSelector).find('.rcircle').each(function () {
@@ -814,9 +824,8 @@ function createSnakeplot(data, containerSelector) {
                     } else {
                         $(this).attr("stroke", color_by_scale(scale,color_id1,color_id2,color_id3));
                     }
-                    $(this).attr("stroke-width", 5); 
+                    $(this).attr("stroke-width", stroke_width); 
                 } else {
-
                     if (fill_color.includes("distance")) {
                         closest = find_closest_value(seg, gn, fill_color);
                         //console.log('found closest', closest, seg, gn);
@@ -829,8 +838,7 @@ function createSnakeplot(data, containerSelector) {
                         $(this).attr("stroke-width", 1); 
                     } else {
                         $(this).attr("stroke", color_by_scale(scale,color_id1,color_id2,color_id3));
-                        $(this).attr("stroke-width", 5); 
-
+                        $(this).attr("stroke-width", stroke_width); 
                     }
                 }
                 
