@@ -1448,7 +1448,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
 
 
 
-        $(".togglePaletteOnly_red").spectrum({
+        $(containerSelector+" .togglePaletteOnly_red").spectrum({
             showPaletteOnly: true,
             togglePaletteOnly: true,
             hideAfterPaletteSelect:true,
@@ -1457,7 +1457,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             color: 'red',
             palette: color_palette
         });
-        $(".togglePaletteOnly_blue").spectrum({
+        $(containerSelector+" .togglePaletteOnly_blue").spectrum({
             showPaletteOnly: true,
             togglePaletteOnly: true,
             hideAfterPaletteSelect:true,
@@ -1466,7 +1466,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             color: 'blue',
             palette: color_palette
         });
-        $(".togglePaletteOnly_empty").spectrum({
+        $(containerSelector+" .togglePaletteOnly_empty").spectrum({
             showPalette: true,
             togglePaletteOnly: true,
             hideAfterPaletteSelect:true,
