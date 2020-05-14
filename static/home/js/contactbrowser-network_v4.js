@@ -270,12 +270,14 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             .attr("dy", function (d, i) { return d.size ? -d.size / 2 : -5 / 2; })
             .style("fill", "black")
             .style("opacity", 0.5)
+            .text(function(d,i) { return  d.links;})
+            .attr("text-anchor", "Middle")
             .attr("id", function (d, i) { return "labelText_" + i; });
         
         var labelText = labelParent.append("textPath")
-            .attr("xlink:href", function (d, i) { return "#"+containerSelector+"linkId_" + i; })
-            .attr("startOffset","50%").attr("text-anchor","Middle")
-            .text(function(d,i) { return  d.links;});
+            .attr("xlink:href", function (d, i) { return "#" + containerSelector + "linkId_" + i; })
+            .attr("startOffset", "50%").attr("text-anchor", "Middle");
+            // .text(function(d,i) { return  d.links;});
         
         var n = graph.nodes.length;
         var node = svg.selectAll(".node")
@@ -324,17 +326,20 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             .style("fill", function (d) { return assignRainbowColor(d.group); });
         
         if (segment_view) {
-            node.select("circle").attr("visibility", function (d) { return assignSize(d.group)>19 ? "visible" : "hidden"; })
+            node.select("circle").attr("visibility", function (d) { return d.group.startsWith("TM") ? "visible" : "hidden"; })
+            node.select("circle").style("stroke", "#000");
 
             node.append("rect")
                 .attr("class", "node")
-                .attr("visibility", function (d) { return assignSize(d.group)<19 ? "visible" : "hidden"; }) // H8 and loops are <20..
-                .attr("x", -13)
-                .attr("y",-11)
-                .attr("width", 25)
-                .attr("height", 21)
-                .attr("stroke", "#555")
-                .attr("stroke-width","2px")
+                .attr("visibility", function (d) { return d.group.startsWith("TM") ? "hidden" : "visible" ; }) // H8 and loops are <20..
+                .attr("x", function (d) { return d.group=='H8' ? -15 : -13; })
+                .attr("y", function (d) { return d.group == 'H8' ? -13 : -6; })
+                .attr("rx", function (d) { return d.group=='H8' ? 0 : 6; })
+                .attr("ry", function (d) { return d.group=='H8' ? 0 : 6; })
+                .attr("width", function (d) { return d.group=='H8' ? 30 : 25; })
+                .attr("height", function (d) { return d.group=='H8' ? 26 : 12; })
+                .attr("stroke", "#000")
+                .attr("stroke-width",function (d) { return d.group=='H8' ? 2 : 1; })
                 .style("opacity", 1)
                 .style("fill", function (d) { return assignRainbowColor(d.group); });
         }
@@ -376,6 +381,10 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
                 .attr("y1", function(d) { return d.source.y; })
                 .attr("x2", function(d) { return d.target.x; })
                 .attr("y2", function (d) { return d.target.y; });
+            
+            labelParent
+                .attr("x", function(d) { return (d.source.x+d.target.x)/2; })
+                .attr("y", function(d) { return (d.source.y+d.target.y)/2; })
             
             if (segment_view) {
                 link1
@@ -703,7 +712,18 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
 
         d3.select(containerSelector).select("#change_to_freq").on("change", function () {
             changeFreq = d3.select(containerSelector).select("#change_to_freq").property("checked");
-            labelText.text(function (d) { return changeFreq ? (100*d.links / total_links).toFixed(0)+"%" :  d.links  });
+            // labelText.text(function (d) { return changeFreq ? (100*d.links / total_links).toFixed(0)+"%" :  d.links  });
+            labelParent.text(function (d) { return changeFreq ? (100*d.links / total_links).toFixed(0)+"%" :  d.links  });
+        });
+
+        d3.select(containerSelector).select("#node_color").on("change", function () {
+            colorNode = $(containerSelector+" #node_color").val();
+            if (colorNode=='segment') node.select("circle").style("fill", function (d) { return assignRainbowColor(d.group); });
+            if (colorNode=='grey') node.select("circle").style("fill", "#ddd");
+            if (colorNode=='white') node.select("circle").style("fill", "#fff");
+            if (colorNode=='segment') node.select("rect").style("fill", function (d) { return assignRainbowColor(d.group); });
+            if (colorNode=='grey') node.select("rect").style("fill", "#ddd");
+            if (colorNode=='white') node.select("rect").style("fill", "#fff");
         });
 
 
@@ -771,9 +791,11 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
                 if (colorLinks) {
                     svg.style("background-color", "#fff");
                     labelParent.attr("dy",function(d,i) { stroke_width = Math.round(20*Math.abs(d.sfreq1) / max_freq); return  stroke_width ? -stroke_width/2 : -5/2;})
+                    labelParent.attr("dy",5)
                 } else {
                     svg.style("background-color", "#fff");
                     labelParent.attr("dy", function (d, i) { return d.size ? -d.size / 2 : -5 / 2; })
+                    labelParent.attr("dy",5)
                 }
             }
             simulation.alpha(1).restart();
@@ -944,16 +966,16 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
                 y = 63;
             break;
         case "TM3":
-                x = 147;
-                y = 179;
+                x = 165;
+                y = 177;
             break;
         case "TM4":
-                x = 56;
+                x = 58;
                 y = 82;
             break;
         case "TM5":
-                x = 22;
-                y = 187;
+                x = 40;
+                y = 186;
             break;
         case "TM6":
                 x = 83;
@@ -972,8 +994,8 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
                 y = 26;
             break;
         case "ECL2":
-                x = 209;
-                y = 334;
+                x = 17;
+                y = 125;
             break;
         case "ICL1":
                 x = 383;
@@ -1015,7 +1037,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             size = 20;
             break;
         case "H8":
-            size = 18;
+            size = 20;
             break;
         default:
             size = 15;
@@ -1110,6 +1132,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
         'Add consensus AA<input id="addAA" type="checkbox"><br>' +
         'Color links by frequency <input id="colorLinks" type="checkbox" checked><br>' +
         '% of kept contacts <input id="change_to_freq" type="checkbox"><br>' +
+        'Node color <select id="node_color"><option value="segment">Segment</option><option value="grey">Grey</option><option value="white">White</option></select><br>' +
         'Filter <select id="set_filter"><option value="all">All</option><option value="set1">Set1</option><option value="set2">Set2</option><option value="both">Both</option></select><br>' +
         'Link Strength <input id="link_strength_change" style="width:80px;" type="range" min="0" max="1" step="any" value="0.5">' +
         'Link Distance<input id="link_distance_change" style="width:80px;" type="range" min="0" max="200" step="any" value="40">' +
