@@ -1108,8 +1108,8 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
                 l = lm[i] || (lm[i] = {source:u, target:v, size:0, freq:0, sfreq1:0, sfreq2:0});
             l.size += 1;
             l.freq += e.freq;
-            l.sfreq1 += e.sfreq1;
-            l.sfreq2 += e.sfreq2;
+            l.sfreq1 += e.sfreq1>e.sfreq2 ? 1 : 0; // Change 1 to e.freq to 'nuance' the number
+            l.sfreq2 += e.sfreq2>e.sfreq1 ? 1 : 0;
         }
         for (i in lm) {
             // lm[i].freq /= lm[i].size; // Don't do this as the sum is more "meaningful"
