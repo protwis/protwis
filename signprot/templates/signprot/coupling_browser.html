@@ -271,22 +271,24 @@
                         <td class="text-left">{{ vals.0 }}</td>
                         <td class="text-left">{{ vals.1 }}</td>
                         <td class="uniprot">
-                            <span><a href="http://www.uniprot.org/uniprot/{{ vals.2 }}">{{ vals.3 }}</a></span>
+                            <span><a href="http://www.uniprot.org/uniprot/{{ vals.2 }}">{{ vals.4 }}</a></span>
                         </td>
-                        <td class="text-left">{{ vals.4|safe }}</td>
-                        <td class="text-center">{{ vals.21 }}</td>
+                        <td class="text-left">
+                            <span><a href="/protein/{{ vals.3 }}">{{ vals.5|safe }}</a></span>
+                        </td>
                         <td class="text-center">{{ vals.22 }}</td>
-                        <td class="text-center">{{ vals.10 }}</td>
-                        <td class="text-center">{{ vals.23 }}</td>
-                        <td class="text-center">{{ vals.25 }}</td>
-                        <td class="text-center">{{ vals.11 }}</td>
-                        <td class="text-center">{{ vals.27 }}</td>
-                        <td class="text-center">{{ vals.28 }}</td>
-                        <td class="text-center">{{ vals.12 }}</td>
+                        <td class="text-center"> </td>
+                        <td class="text-center">{{ vals.6 }}</td>
                         <td class="text-center">{{ vals.30 }}</td>
-                        <td class="text-center">{{ vals.31 }}</td>
-                        <td class="text-center">{{ vals.13 }}</td>
-                        <td class="text-center">{{ vals.33 }}</td>
+                        <td class="text-center"> </td>
+                        <td class="text-center">{{ vals.7 }}</td>
+                        <td class="text-center">{{ vals.35 }}</td>
+                        <td class="text-center"> </td>
+                        <td class="text-center">{{ vals.8 }}</td>
+                        <td class="text-center">{{ vals.36 }}</td>
+                        <td class="text-center"> </td>
+                        <td class="text-center">{{ vals.9 }}</td>
+                        <td class="text-center"> </td>
                     </tr>
                 {% endfor %}
                 </tbody>
