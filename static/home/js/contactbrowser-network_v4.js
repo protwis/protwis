@@ -756,6 +756,31 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             labelParent.text(function (d) { return changeFreq ? (100*d.links / total_links).toFixed(0)+"%" :  d.links  });
         });
 
+        $(containerSelector+ " .residue_rotation").on("change", function () {
+            change_rotation();
+        });
+        function change_rotation() {
+            fill_color = $(containerSelector + " #residue_rotation").val();
+            console.log('change rotation to!', fill_color);
+
+            if (fill_color == 'none') {
+                node.select("text").attr("transform", "");
+            } else {
+                // loop over nodes, find name
+                node.select("text").attr("transform", function (d) {
+                    var name = d.name;
+                    var scale = colors_gn[fill_color][name][1];
+                    var rotation_value = Math.round(scale * 180 - 90);
+                    if (fill_color == 'outer_angle' || fill_color == 'rotation_angle') {
+                        // For these 'actual' rotation values, use the 'true value' as the rotation.
+                        var rotation_value = Math.round(colors_gn[fill_color][name][0]);
+                    }
+
+                    return "rotate("+rotation_value+")";
+                })
+            }
+        }
+
         d3.select(containerSelector).select(".residue_fill").on("change", function () {
             change_fill();
         });
@@ -1360,6 +1385,11 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
                 '<td><input type="text" id="text_color3" class="togglePaletteOnly_empty residue_text" value="" /></td>' +
                 '</tr>'
                 ;
+            content += '<tr><td>Residue rotation:</td><td colspan=4><select id="residue_rotation" class="residue_rotation snakeplot_property_select">' +
+                '<option value="none">None</option>' +
+                select_data_options +
+                '</select></td>' 
+                '</tr> '
             // content += '<tr><td>Residue border:</td><td><select id="snakeplot_color_border" class="residue_border snakeplot_property_select">' +
             //     '<option value="none">None</option>' +
             //     select_data_options +
