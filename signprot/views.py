@@ -102,6 +102,8 @@ class CouplingBrowser(TemplateView):
     template_name = "signprot/coupling_browser.html"
 
     def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
         threshold_primary_inoue = 0.5  # -0.1
         threshold_secondary_inoue = 0.01  # -1
         threshold_primary_bouvier = 0.5  # -0.1
@@ -132,6 +134,7 @@ class CouplingBrowser(TemplateView):
 
         distinct_g_families = []
         distinct_g_subunit_families = {}
+        # distinct_sources = ['GuideToPharma', 'Aska', 'Bouvier']
         couplings = ProteinGProteinPair.objects.all().prefetch_related('protein',
                                                                        'g_protein_subunit',
                                                                        'g_protein')
@@ -140,11 +143,6 @@ class CouplingBrowser(TemplateView):
             s = c.source
             t = c.transduction
             emdn = c.emax_dnorm
-            # emmean = c.emax_mean
-            # emsem = c.emax_sem
-            # pec50dn = c.pec50_dnorm
-            # pec50mean = c.pec50_mean
-            # pec50sem = c.pec50_sem
             gf = c.g_protein.name
             gf = gf.replace(" family", "")
 
@@ -178,12 +176,13 @@ class CouplingBrowser(TemplateView):
                     continue
                 data[p][s][gf]['subunits'][g] = round(Decimal(emdn), 2)
                 if round(Decimal(emdn), 2) == -0.00:
-                    data[p][s][gf]['subunits'][g] = 0.00
+                    data[p][s][gf]['subunits'][g] = float(0.00)
                 # get the highest number into 'best'
                 if emdn > data[p][s][gf]['best']:
                     data[p][s][gf]['best'] = round(Decimal(emdn), 2)
 
         fd = {}  # final data
+        # distinct_g_families = sorted(distinct_g_families)
         distinct_g_families = ['Gs', 'Gi/Go', 'Gq/G11', 'G12/G13']
         distinct_g_subunit_families = OrderedDict(
             [('Gs', ['gnas2', 'gnal']),
@@ -218,14 +217,14 @@ class CouplingBrowser(TemplateView):
                 elif 'secondary' in values:
                     fd[p].append('secondary')
                 else:
-                    fd[p].append('')
+                    fd[p].append('NA')
             # Loop over GuideToPharma
             s = 'GuideToPharma'
             for gf in distinct_g_families:
                 if gf in v[s]:
                     fd[p].append(v[s][gf])
                 else:
-                    fd[p].append("")
+                    fd[p].append("NA")
             # Loop over Aska
             s = 'Aska'
             for gf in distinct_g_families:
@@ -235,9 +234,19 @@ class CouplingBrowser(TemplateView):
                     elif v[s][gf]['best'] > threshold_secondary_inoue:
                         fd[p].append("secondary")
                     else:
-                        fd[p].append("No coupling")
+                        fd[p].append("NA")
                 else:
                     fd[p].append("")
+            # Last bit, add values in subfamilies
+            for gf, sfs in distinct_g_subunit_families.items():
+                for sf in sfs:
+                    if gf in v[s]:
+                        if sf in v[s][gf]['subunits']:
+                            fd[p].append(v[s][gf]['subunits'][sf])
+                        else:
+                            fd[p].append("NA")
+                    else:
+                        fd[p].append("")
             # Loop over Bouvier
             s = 'Bouvier'
             for gf in distinct_g_families:
@@ -250,6 +259,7 @@ class CouplingBrowser(TemplateView):
                         fd[p].append("No coupling")
                 else:
                     fd[p].append("")
+            # Last bit, add values to subfamilies
             for gf, sfs in distinct_g_subunit_families.items():
                 for sf in sfs:
                     if gf in v[s]:
@@ -258,7 +268,22 @@ class CouplingBrowser(TemplateView):
                         else:
                             fd[p].append("")
                     else:
-                        fd[p].append("")
+                        fd[p].append("NA")
+
+            # Best Values for Gs, Gi/o, Gq/G11, G12/13 and source Inoue
+            s = 'Aska'
+            for gf in distinct_g_families:
+                if gf in v[s]:
+                    fd[p].append(v[s][gf]['best'])
+                else:
+                    fd[p].append('NA')
+            # Best Values for Gs, Gi/o, Gq/G11, G12/13 and source Bouvier
+            s = 'Bouvier'
+            for gf in distinct_g_families:
+                if gf in v[s]:
+                    fd[p].append(v[s][gf]['best'])
+                else:
+                    fd[p].append('NA')
 
         protobj = Protein.objects.filter(sequence_type__slug='wt',
                                          family__slug__startswith='00',
@@ -276,13 +301,9 @@ class CouplingBrowser(TemplateView):
                                                                      'g_protein_subunit',
                                                                      'g_protein')
 
-        context = {
-            'proteins': protobj,
-            'couplings': coupobj,
-            'data': fd,
-            'distinct_gf': distinct_g_families,
-            'distinct_sf': distinct_g_subunit_families
-        }
+        context['proteins'] = protobj
+        context['couplings'] = coupobj
+        context['tab1'] = fd
 
         return context
 

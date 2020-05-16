@@ -40,25 +40,24 @@ var tableToExcel = (function () {
 })()
 
 function select_all(e) {
-            var checkedStatus = $(e).prop("checked");
+    var checkedStatus = $(e).prop("checked");
 
-            $('.select-all  ').each(function () {
-                    $(this).prop('checked', checkedStatus);
-            });
+    $('.select-all  ').each(function () {
+        $(this).prop('checked', checkedStatus);
+    });
 
-            $('.alt').each(function () {
-                    $(this).prop('checked', checkedStatus);
-            });
-        };
+    $('.alt').each(function () {
+        $(this).prop('checked', checkedStatus);
+    });
+};
 
 $(document).ready(function () {
-
-//    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-//        console.log( 'show tab' );
-//        $($.fn.dataTable.tables(true)).DataTable()
-//            .columns.adjust()
-////            .responsive.recalc();
-//    });
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+       console.log( 'show tab' );
+       $($.fn.dataTable.tables(true)).DataTable()
+           .columns.adjust()
+//            .responsive.recalc();
+   });
 
 console.time("table1load");
     oTable1 = $("#familiestabletab").dataTable({
@@ -121,6 +120,9 @@ console.time("table1load");
                 select_type: 'select2',
                 filter_default_label: "Inoue",
                 filter_reset_button_text: false,
+                select_type_options: {
+                    width: '60px',
+                },
             },
             {
                 column_number: 7,

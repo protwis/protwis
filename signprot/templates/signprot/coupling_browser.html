@@ -265,7 +265,7 @@
                 <br>
 
                 <tbody>
-                {% for p, vals in data.items %}
+                {% for p, vals in tab1.items %}
                     <tr>
                         <td class="text-center"><input class="alt" type="checkbox" id="{{ vals.pk }}"></td>
                         <td class="text-left">{{ vals.0 }}</td>
@@ -276,19 +276,19 @@
                         <td class="text-left">
                             <span><a href="/protein/{{ vals.3 }}">{{ vals.5|safe }}</a></span>
                         </td>
-                        <td class="text-center">{{ vals.22 }}</td>
-                        <td class="text-center"> </td>
-                        <td class="text-center">{{ vals.6 }}</td>
-                        <td class="text-center">{{ vals.30 }}</td>
-                        <td class="text-center"> </td>
-                        <td class="text-center">{{ vals.7 }}</td>
-                        <td class="text-center">{{ vals.35 }}</td>
-                        <td class="text-center"> </td>
-                        <td class="text-center">{{ vals.8 }}</td>
-                        <td class="text-center">{{ vals.36 }}</td>
-                        <td class="text-center"> </td>
-                        <td class="text-center">{{ vals.9 }}</td>
-                        <td class="text-center"> </td>
+                        <td class="text-center">{{ vals.58 }}</td>
+                        <td class="text-center">{{ vals.54 }}</td>
+                        <td class="text-center">{{ vals.10 }}</td>
+                        <td class="text-center">{{ vals.59 }}</td>
+                        <td class="text-center">{{ vals.55 }}</td>
+                        <td class="text-center">{{ vals.11 }}</td>
+                        <td class="text-center">{{ vals.60 }}</td>
+                        <td class="text-center">{{ vals.56 }}</td>
+                        <td class="text-center">{{ vals.12 }}</td>
+                        <td class="text-center">{{ vals.61 }}</td>
+                        <td class="text-center">{{ vals.57 }}</td>
+                        <td class="text-center">{{ vals.13 }}</td>
+                        <td class="text-center"> soon </td>
                     </tr>
                 {% endfor %}
                 </tbody>
