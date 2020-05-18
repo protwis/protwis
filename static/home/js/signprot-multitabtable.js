@@ -1,42 +1,42 @@
-var oTable1;
-var oTable2;
-var oTable3;
-var oTable4;
+var oTable1 = [];
+var oTable2 = [];
+var oTable3 = [];
+var oTable4 = [];
 
 var tableToExcel = (function () {
-  var uri = 'data:application/vnd.ms-excel;base64,',
-    template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>',
-    base64 = function (s) {
-      return window.btoa(unescape(encodeURIComponent(s)))
-    }, format = function (s, c) {
-      return s.replace(/{(\w+)}/g, function (m, p) {
-        return c[p];
-      })
-    }
-  return function (table, name, filename) {
-    var table= $("#"+table).clone();
-    $("#excel_table").html(table);
-    // Clean up table to remove yadcf stuff
-    $("#excel_table thead tr").css('height','');
-    $("#excel_table thead th").css('height','');
-    $("#excel_table thead div").css('height','');
-    $("#excel_table thead .yadcf-filter-wrapper").remove();
-    $("#excel_table thead button").remove();
-    var tr = $("#excel_table thead tr:eq(1)");
-    // reattach th titles
-    tr.find('th').each (function( column, th) {
-      if ($(th).attr('title')) $(th).html($(th).attr('title'));
-    });
+    var uri = 'data:application/vnd.ms-excel;base64,',
+        template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>',
+        base64 = function (s) {
+            return window.btoa(unescape(encodeURIComponent(s)))
+        }, format = function (s, c) {
+            return s.replace(/{(\w+)}/g, function (m, p) {
+                return c[p];
+            })
+        }
+    return function (table, name, filename) {
+        var table= $("#"+table).clone();
+        $("#excel_table").html(table);
+        // Clean up table to remove yadcf stuff
+        $("#excel_table thead tr").css('height','');
+        $("#excel_table thead th").css('height','');
+        $("#excel_table thead div").css('height','');
+        $("#excel_table thead .yadcf-filter-wrapper").remove();
+        $("#excel_table thead button").remove();
+        var tr = $("#excel_table thead tr:eq(1)");
+        // reattach th titles
+        tr.find('th').each (function( column, th) {
+            if ($(th).attr('title')) $(th).html($(th).attr('title'));
+        });
 
-    var ctx = {
-      worksheet: name || 'Worksheet',
-      table: $("#excel_table").html()
+        var ctx = {
+            worksheet: name || 'Worksheet',
+            table: $("#excel_table").html()
+        }
+        $("#excel_table").html("");
+        document.getElementById("dlink").href = uri + base64(format(template, ctx));
+        document.getElementById("dlink").download = filename;
+        document.getElementById("dlink").click();
     }
-    $("#excel_table").html("");
-    document.getElementById("dlink").href = uri + base64(format(template, ctx));
-    document.getElementById("dlink").download = filename;
-    document.getElementById("dlink").click();
-  }
 })()
 
 function select_all(e) {
@@ -53,14 +53,14 @@ function select_all(e) {
 
 $(document).ready(function () {
     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-       console.log( 'show tab' );
-       $($.fn.dataTable.tables(true)).DataTable()
-           .columns.adjust()
+        console.log( 'show tab' );
+        $($.fn.dataTable.tables(true)).DataTable()
+            .columns.adjust()
 //            .responsive.recalc();
-   });
+    });
 
-console.time("table1load");
-    oTable1 = $("#familiestabletab").dataTable({
+    console.time("table1load");
+    oTable1 = $("#familiestabletab").DataTable({
         "scrollY": $(window).height() - 450,
         "scrollX": true,
         "scrollCollapse": true,
@@ -68,10 +68,12 @@ console.time("table1load");
         "paging": false,
 //        "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
         "bSortCellsTop": false, //prevent sort arrows going on bottom row
+        "aaSorting": [],
         "autoWidth": true,
         "pageLength": -1,
         "bInfo": true,
-    }).yadcf(
+    });
+    yadcf.init(oTable1,
         [
             {
                 column_number: 1,
@@ -91,17 +93,23 @@ console.time("table1load");
                 column_number: 3,
                 filter_type: "multi_select",
                 select_type: 'select2',
+                column_data_type: "html",
+                html_data_type: "text",
                 filter_default_label: "uniprot",
+                filter_match_mode : "exact",
                 filter_reset_button_text: false,
             },
             {
                 column_number: 4,
                 filter_type: "multi_select",
                 select_type: 'select2',
+                column_data_type: "html",
+                html_data_type: "text",
                 filter_default_label: "IUPHAR",
+                filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '100px',
+                    width: '95px',
                 },
             },
             {
@@ -221,12 +229,12 @@ console.time("table1load");
     );
 
 //    yadcf.exResetAllFilters(oTable1);
-setTimeout(() => {
-  console.timeEnd("table1load");
-}, );
+    setTimeout(() => {
+        console.timeEnd("table1load");
+    }, );
 
-console.time("table2load");
-    oTable2 = $("#subtypestabletab").dataTable({
+    console.time("table2load");
+    oTable2 = $("#subtypestabletab").DataTable({
         "scrollY": $(window).height() - 450,
         "scrollX": true,
         "scrollCollapse": true,
@@ -236,7 +244,8 @@ console.time("table2load");
         "autoWidth": true,
         "pageLength": -1,
         "bInfo": true,
-    }).yadcf(
+    });
+    yadcf.init(oTable2,
         [
             {
                 column_number: 1,
@@ -512,16 +521,6 @@ console.time("table2load");
                 column_number: 28,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "BARR2",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                },
-            },
-            {
-                column_number: 29,
-                filter_type: "multi_select",
-                select_type: 'select2',
                 filter_default_label: "BARR2/GRK2",
                 filter_reset_button_text: false,
                 select_type_options: {
@@ -536,12 +535,12 @@ console.time("table2load");
     );
 
 //    yadcf.exResetAllFilters(oTable2);
-setTimeout(() => {
-  console.timeEnd("table2load");
-}, );
+    setTimeout(() => {
+        console.timeEnd("table2load");
+    }, );
 
-console.time("table3load");
-    oTable3 = $("#bouviertabletab").dataTable({
+    console.time("table3load");
+    oTable3 = $("#bouviertabletab").DataTable({
         "scrollY": $(window).height() - 450,
         "scrollX": true,
         "scrollCollapse": true,
@@ -551,7 +550,8 @@ console.time("table3load");
         "autoWidth": true,
         "pageLength": -1,
         "bInfo": true,
-    }).yadcf(
+    });
+    yadcf.init(oTable3,
         [
             {
                 column_number: 1,
@@ -931,12 +931,12 @@ console.time("table3load");
     );
 
 //    yadcf.exResetAllFilters(oTable3);
-setTimeout(() => {
-  console.timeEnd("table3load");
-}, );
+    setTimeout(() => {
+        console.timeEnd("table3load");
+    }, );
 
-console.time("table4load");
-    oTable4 = $("#inouetabletab").dataTable({
+    console.time("table4load");
+    oTable4 = $("#inouetabletab").DataTable({
         //data: data1,
         //"ordering": false,
         //"fixedHeader":true,
@@ -952,7 +952,8 @@ console.time("table4load");
         "autoWidth": true,
         "pageLength": -1,
         "bInfo": true,
-    }).yadcf(
+    });
+    yadcf.init(oTable4,
         [
             {
                 column_number: 1,
@@ -1322,11 +1323,9 @@ console.time("table4load");
     );
 
 //    yadcf.exResetAllFilters(oTable4);
-setTimeout(() => {
-  console.timeEnd("table4load");
-}, );
-
-
+    setTimeout(() => {
+        console.timeEnd("table4load");
+    }, );
 
     // By default display the first tab. If this is not ON, one has to click on the tab for display.
     $('#myTab a:first').tab('show');
@@ -1337,10 +1336,89 @@ setTimeout(() => {
     });
 
 
+    $('.hide_columns1').click(function(evt) {
+        var columns = $(this).attr('columns').split(",");
+        columns.forEach(function(column) {
+            column = oTable1.column( column );
+            try {
+                column.visible( false, false );
+            }
+            catch(err) {
+                column.visible( false, false );
+            }
+        });
+        oTable1.draw();
+    } );
 
+    $('.hide_columns2').click(function(evt) {
+        var columns = $(this).attr('columns').split(",");
+        columns.forEach(function(column) {
+            var column = oTable2.column( column );
+            try {
+                column.visible( false, false );
+            }
+            catch(err) {
+                column.visible( false, false );
+            }
+        });
+        oTable2.draw();
+    } );
 
+    $('.hide_columns3').click(function(evt) {
+        var columns = $(this).attr('columns').split(",");
+        columns.forEach(function(column) {
+            var column = oTable3.column( column );
+            try {
+                column.visible( false, false );
+            }
+            catch(err) {
+                column.visible( false, false );
+            }
+        });
+        oTable3.draw();
+    } );
 
+    $('.hide_columns4').click(function(evt) {
+        var columns = $(this).attr('columns').split(",");
+        columns.forEach(function(column) {
+            var column = oTable4.column( column );
+            try {
+                column.visible( false, false );
+            }
+            catch(err) {
+                column.visible( false, false );
+            }
+        });
+        oTable4.draw();
+    } );
 
 });
 
+function resetHidden1() {
+    var columns = Array.from(new Array(17), (x,i) => i + 3);
+    columns.forEach(function(column) {
+        column = oTable1.column( column );
+        try {
+            column.visible( true, false );
+        }
+        catch(err) {
+            column.visible( true, false );
+        }
+    });
+    oTable1.draw();
+}
 
+function resetHidden2() {
+    var columns = Array.from(new Array(28), (x,i) => i + 3);
+    columns.forEach(function(column) {
+        console.log('columns variable ' + columns);
+        column = oTable2.column( column );
+        try {
+            column.visible( true, false );
+        }
+        catch(err) {
+            column.visible( true, false );
+        }
+    });
+    oTable2.draw();
+}
