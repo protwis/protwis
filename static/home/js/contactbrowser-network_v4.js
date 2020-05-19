@@ -746,7 +746,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             addAA = d3.select(containerSelector).select("#addAA").property("checked");
             node.select("circle").attr("r", function (d) { return addAA ? 20 : 20; })
             node.select("text").html(
-                function (d) { return addAA ? "<tspan x=0 dy=-3>"+raw_data["aa_map"][d.name]+"</tspan><tspan x=0 dy=12>"+d.name+"</tspan>" : d.name }
+                function (d) { return addAA ? "<tspan x=0 dy=-3>"+raw_data["tab4"][d.name]["class_cons"][0]+"</tspan><tspan x=0 dy=12>"+d.name+"</tspan>" : d.name }
             );
         });
 
