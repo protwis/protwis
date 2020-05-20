@@ -247,23 +247,6 @@ function createSnakeplot(data, containerSelector) {
     maxmin();
     create_legend();
 
-    $(containerSelector).find("text").tooltip({
-        'container': 'body',
-        'placement': 'top',
-        'animation': false,
-        'html' : true
-    });
-
-    $(containerSelector).find("circle").tooltip({
-        'container': 'body',
-        'placement': 'top',
-        'animation': false,
-        'html' : true
-    });
-
-    $(containerSelector).find("circle").hover(function(){
-        $('.tooltip').css('top',parseInt($('.tooltip').css('top')) + 2.8 + 'px')
-    });
 
     var colors = {}
     colors['distance'] = {}
@@ -275,6 +258,7 @@ function createSnakeplot(data, containerSelector) {
     colors['ligandcomplex'] = {}
     colors['mutations'] = {}
     colors['conservation'] = {}
+    colors['gn_aa'] = {}
 
     index_names = { 0: 'core_distance', 1: 'a_angle', 2: 'outer_angle', 3: 'tau', 4: 'phi', 5: 'psi', 6: 'sasa', 7: 'rsa', 8: 'theta', 9: 'hse', 10: 'tau_angle', 11:'rotation_angle' }
     neg_and_positives = ['core_distance','sasa','rsa', 'hse']
@@ -379,7 +363,7 @@ function createSnakeplot(data, containerSelector) {
                 scale = 0.5-(0.5)*(value / max_ligand_interactions);
                 colors['ligandcomplex'][seq_pos] = [value,scale,max_ligand_interactions];
             }
-            console.log(gn,complex_value/max_complex_interactions,ligand_value/max_ligand_interactions, colors['ligandcomplex'][seq_pos])
+            // console.log(gn,complex_value/max_complex_interactions,ligand_value/max_ligand_interactions, colors['ligandcomplex'][seq_pos])
         }
     })
 
@@ -431,6 +415,7 @@ function createSnakeplot(data, containerSelector) {
         });
     });
     $.each(data['tab4'], function (gn, v) {
+        colors["gn_aa"][gn] = v["all_seq_cons"][0]
         $.each(v["angles"], function (i, a) {
             seq_pos = data['snakeplot_lookup'][gn];
             value = a[0];
@@ -465,6 +450,43 @@ function createSnakeplot(data, containerSelector) {
         });
     });
 
+    $(containerSelector).find('.rtext').each(function () {
+        original_title = $(this).attr('original_title');
+        if (original_title.split(" ")[1].length) {
+            // this has GN
+            pos = original_title.split(" ")[0].substring(1);
+            gn = original_title.split(" ")[1];
+            AA = colors["gn_aa"][gn];
+        } else {
+            gn = "-";
+            seg = "";
+            AA = original_title[0];
+        }
+        c_id = $(this).attr('id').slice(0, -1);
+        $(this).attr('original_title', AA+pos+" "+gn)
+        $(this).attr('title', AA+pos+" "+gn)
+        $(this).text(AA);
+        $(containerSelector).find('#'+c_id).attr('original_title', AA+pos+" "+gn)
+        $(containerSelector).find('#'+c_id).attr('title', AA+pos+" "+gn)
+    });
+
+    $(containerSelector).find("text").tooltip({
+        'container': 'body',
+        'placement': 'top',
+        'animation': false,
+        'html' : true
+    });
+
+    $(containerSelector).find("circle").tooltip({
+        'container': 'body',
+        'placement': 'top',
+        'animation': false,
+        'html' : true
+    });
+
+    $(containerSelector).find("circle").hover(function(){
+        $('.tooltip').css('top',parseInt($('.tooltip').css('top')) + 2.8 + 'px')
+    });
     console.log('colors', colors);
 
 
@@ -738,6 +760,7 @@ function createSnakeplot(data, containerSelector) {
                     seg = original_title.split(" ")[1].split("x")[0];
                     gn = original_title.split(" ")[1].split("x")[1];
                     AA = original_title[0];
+                    // AA = colors["gn_aa"][gn];
                 } else {
                     gn = "-";
                     seg = "";
@@ -1375,7 +1398,7 @@ function createSnakeplot(data, containerSelector) {
                 test.remove();
                 return;
             }
-            var data = d3.range(48);
+            var data_legend = d3.range(48);
             range_colors = []
             d.colors.forEach(c => {
                 var rgb = color_scale_colors[c]
@@ -1393,7 +1416,7 @@ function createSnakeplot(data, containerSelector) {
             }
             
             var rects = test.selectAll(".colorinterval")
-                .data(data)
+                .data(data_legend)
                 .enter()
                 .append("rect")
                 .attr("y", 4)
