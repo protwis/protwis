@@ -332,6 +332,7 @@ function createScatterplot(data,containerSelector) {
             .selectAll("text")
             .data(scatter_data)
             .join("text")
+            .attr("class","marker_label")
             .attr("dy", "0.35em")
             .attr("x", function (d) { return sp_size!='none' && d.name in colors[sp_size] ? x(d.x) + 2 + (2+colors[sp_size][d.name][1] * 8) : x(d.x) + label_offset;} )
             .attr("y", d => y(d.y))
@@ -418,18 +419,21 @@ function createScatterplot(data,containerSelector) {
         newDiv.setAttribute("class", "controls-panel");
         content = '<span class="pull-right scatter_controls_toggle" style="cursor: pointer;"><span class="glyphicon glyphicon-option-horizontal btn-download png"></span></span>' +
             '<div class="scatter_options" style="display: block; min-width: 120px;">' +
-            '<div>Replace marker with label</div><div><input id="label_only" class="change_axis" type="checkbox"></div>' +
-            '<div>Label format</div><div><select id="change_label" class="change_axis">' +
+            '<div><strong>Label Format</strong></div><div></div>' +
+            '<div>Text</div><div><select id="change_label" class="change_axis">' +
             '<option value="gn">Generic Number</option>' +
             '<option value="combined">Consensus AA (combined sets) + Generic Number</option>' +
             '<option value="set1">Consensus AA (set1) + Generic Number</option>' +
             '<option value="set2">Consensus AA (set2) + Generic Number</option>' +
-            '</select></div> ';
+            '</select></div> ' +
+            '<div>Font Size</div><div><input id="change_text_size" style="width:80px;" type="range" min="0" max="50" step="any" value="12"></div>' +
+            '<div>Replace marker with label</div><div><input id="label_only" class="change_axis" type="checkbox"></div>';
             // 'Only plot kept positions <input id="color_filtered" type="checkbox" checked><br>';
         
         index_names = { 0: 'core_distance', 1: 'a_angle', 2: 'outer_angle', 3: 'tau', 4: 'phi', 5: 'psi', 6: 'sasa', 7: 'rsa', 8: 'theta', 9: 'hse', 10: 'tau_angle' }
     
-        content += '<div>X-axis</div><div><select id="change_x" class="change_axis">' +
+        content += '<div><strong>Visualisation</strong></div><div></div>' +
+                   '<div>X-axis</div><div><select id="change_x" class="change_axis">' +
             select_data_options +
             '</select></div>'
             ;
@@ -437,7 +441,11 @@ function createScatterplot(data,containerSelector) {
             select_data_options +
             '</select></div>';
             
-        content += '<div>Color</div>';
+        content += '<div>Marker size</div><div><select id="sp_size" class="change_axis">' +
+        '<option value="none">Fixed</option>' +
+        select_data_options +
+        '</select></div>';
+        content += '<div>Label color</div>';
         content += '<div><select id="sp_color" class="change_axis">' +
             '<option value="segment">Segment</option>' +
             '<option value="network">Network group</option>' +
@@ -455,12 +463,6 @@ function createScatterplot(data,containerSelector) {
                 select_color_options +
                 '</select>'+
             '</div > ';
-        content += '<div>Marker size</div><div><select id="sp_size" class="change_axis">' +
-            '<option value="none">Fixed</option>' +
-            select_data_options +
-            '</select></div>';
-        // content += '</table > '
-        //         ;
         content += '</div>';
         newDiv.innerHTML = content;
 
@@ -488,7 +490,18 @@ function createScatterplot(data,containerSelector) {
             });
         });
 
-
+        d3v4.select(containerSelector_hash).select("#change_text_size")
+            .on("input", change_text_size);
+        
+        function change_text_size() {
+            console.log('change text size!',this.value)
+            original_size = 8;
+            scaled_size = original_size * this.value / 12;
+            console.log('change text size', this.value,scaled_size);
+            $(containerSelector_hash).find('.marker_label').each(function () {
+                $(this).attr("font-size", scaled_size);
+            });
+        }
 
         $(containerSelector_hash + " .change_axis").on("change", function () {
             console.log('change axis!');

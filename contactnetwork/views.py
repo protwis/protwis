@@ -25,6 +25,7 @@ from residue.models import Residue, ResidueGenericNumber
 from signprot.models import SignprotComplex
 from interaction.models import StructureLigandInteraction, ResidueFragmentInteraction
 from angles.models import ResidueAngle, get_angle_averages, get_all_angles
+from mutation.models import MutationExperiment
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
@@ -758,6 +759,32 @@ def InteractionBrowserData(request):
         
             class_complex_interactions = {key: len(value) for key, value in class_complex_interactions.items()}
             cache.set(cache_key, class_complex_interactions, 3600 * 24 * 7)
+
+        cache_key = 'class_mutation_positions_{}_{}'.format(gpcr_class,forced_class_a)
+        class_mutations = cache.get(cache_key)
+        # class_ligand_interactions=None
+        if class_mutations == None or len(class_mutations) == 0:
+
+            class_mutations_q = MutationExperiment.objects.filter(protein__family__slug__startswith=gpcr_class).prefetch_related('protein__family','protein__parent__family','residue__generic_number','residue__display_generic_number').order_by('foldchange','exp_qual')
+
+            class_mutations = {}
+            for m in class_mutations_q:
+
+                if m.residue.generic_number and abs(m.foldchange)>5:
+                    p = m.protein.family.slug
+                    foldchange = m.foldchange
+                    d_gn = m.residue.display_generic_number.label
+                    gn = m.residue.generic_number.label
+                    display_gn = re.sub(r'\.[\d]+', '', d_gn)
+                    if not forced_class_a:
+                        gn = display_gn
+                    if gn not in class_mutations.keys():
+                        class_mutations[gn] = set()
+
+                    class_mutations[gn].add(p)
+        
+            class_mutations = {key: len(value) for key, value in class_mutations.items()}
+            cache.set(cache_key, class_mutations, 3600 * 24 * 7)
  
         # Get the relevant interactions
         # TODO MAKE SURE ITs only gpcr residues..
@@ -809,6 +836,8 @@ def InteractionBrowserData(request):
         data = {}
         data['class_ligand_interactions'] = class_ligand_interactions
         data['class_complex_interactions'] = class_complex_interactions
+        data['class_mutations'] = class_mutations
+        
         data['gpcr_class'] = gpcr_class
         data['segments'] = set()
         data['segment_map'] = {}
@@ -2180,7 +2209,9 @@ def InteractionBrowserData(request):
         data['proteins'] = list(data['proteins'])
         data['pfs'] = list(data['pfs'])
         data['pfs_lookup'] = dict(data['pfs_lookup'])
+
         data['segm_lookup'] = segm_lookup
+        data['segm_lookup_ordered'] = sorted(segm_lookup, key=functools.cmp_to_key(gpcrdb_number_comparator))
         data['segments'] = list(data['segments'])
         data['normalized'] = normalized
         data['forced_class_a'] = forced_class_a
@@ -2191,7 +2222,7 @@ def InteractionBrowserData(request):
         segments = ProteinSegment.objects.all().exclude(slug__in = excluded_segment)
         proteins =  Protein.objects.filter(entry_name__in=list(data['proteins'])).distinct().all()
         a = Alignment()
-        a.ignore_alternative_residue_numbering_schemes = True;
+        a.ignore_alternative_residue_numbering_schemes = True
         a.load_proteins(proteins)
         a.load_segments(segments) #get all segments to make correct diagrams
         # build the alignment data matrix
@@ -2201,9 +2232,21 @@ def InteractionBrowserData(request):
         consensus = a.full_consensus
         data['snakeplot_lookup'] = {}
         data['snakeplot_lookup_aa'] = {}
+        data['snakeplot_lookup_aa_cons'] = {}
         for a in consensus:
-            data['snakeplot_lookup'][a.family_generic_number] = a.sequence_number
-            data['snakeplot_lookup_aa'][a.family_generic_number] = a.amino_acid
+            if a.display_generic_number:
+                # Be sure to use the correct GN 
+                gn = re.sub(r'\.[\d]+', '', a.display_generic_number.label)
+                if forced_class_a:
+                    gn = a.family_generic_number
+                a.display_generic_number.label = gn
+                data['snakeplot_lookup'][gn] = a.sequence_number
+                data['snakeplot_lookup_aa'][gn] = a.amino_acid
+                gen_aa = gn + a.amino_acid
+                if gen_aa in class_pair_lookup:
+                    data['snakeplot_lookup_aa_cons'][gn] = class_pair_lookup[gen_aa]
+                else:
+                    data['snakeplot_lookup_aa_cons'][gn] = 0
         from common.diagrams_gpcr import DrawSnakePlot
         snakeplot = DrawSnakePlot(consensus, 'Class A', 'family_diagram_preloaded_data',nobuttons = True)
         data['snakeplot'] = str(snakeplot)

@@ -2,6 +2,7 @@ var filtered_gn_pairs = [];
 var filtered_cluster_groups = [];
 var filtered_gns = [];
 var filtered_gns_abs_diff_values = {};
+var filtered_cluster_groups_set = {};
 function filter_browser() {
     old_filtered_gn_pairs = filtered_gn_pairs;
     filtered_gn_pairs = [];
@@ -65,6 +66,7 @@ function filter_browser() {
 
         })
         filtered_gns_presence = {};
+        filtered_cluster_groups_set = {};
         if (analys_mode == "#two-crystal-groups") {
             $.each(filtered_gns_abs_diff_values, function (i, v) {
                 // Go through all the diff values. If both negative and positive diff numbers exist
@@ -72,8 +74,8 @@ function filter_browser() {
                 // the position is only participating in interactions in one set or the other..
                 let max = Math.max.apply(null, v);
                 let min = Math.min.apply(null, v);
-                var in_set_1 = true ? max > 0 : false;
-                var in_set_2 = true ? min < 0 : false;
+                var in_set_1 = true ? max >= 0 : false;
+                var in_set_2 = true ? min <= 0 : false;
                 if (in_set_1 && in_set_2) {
                     filtered_gns_presence[i] = 0.5; //both, middle
                 } else if (in_set_1) {
@@ -83,7 +85,27 @@ function filter_browser() {
                 }
 
             })
+
+            $.each(filtered_cluster_groups, function (i, gns) {
+    
+                // console.log('filter id', i);
+                var sum = 0;
+                for (var ii = 0; ii < gns.length; ii++){
+                    // console.log(ii, gns[ii],filtered_gns_presence[gns[ii]]);
+                    sum += filtered_gns_presence[gns[ii]];
+                }
+                var avg = sum / gns.length;
+                group_set = "both";
+                if (avg == 0) {
+                    group_set = "set1";
+                } else if (avg == 1) {
+                    group_set = "set2";
+                }
+                // console.log('filter id', i, avg, group_set);
+                filtered_cluster_groups_set[i] = group_set;
+            })
         }
+
         console.time('Update network');
         if (old_filtered_gn_pairs.sort().join(',') !== filtered_gn_pairs.sort().join(',')) {
             // only update this if there are new filtered things..

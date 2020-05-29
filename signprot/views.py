@@ -10,6 +10,7 @@ from django.db.models import F, Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views.decorators.cache import cache_page
+from django.views.generic import TemplateView
 
 from common import definitions
 from common.diagrams_gpcr import DrawSnakePlot
@@ -91,6 +92,403 @@ class TargetSelection(AbsTargetSelection):
     }
 
 
+class CouplingBrowser(TemplateView):
+    """
+    Class based generic view which serves coupling data between Receptors and G-proteins.
+    Data coming from Guide to Pharmacology, Asuka Inuoue and Michel Bouvier.
+    Maybe additional data from Roth and Strechan TRUPATHS protocol will be added at a later point.
+    :param dataset: ProteinGProteinPair
+    :return: context
+    """
+    template_name = "signprot/coupling_browser.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        fam_tab = self.fams_tab()
+        sub_tab = self.subt_tab()
+#        bou_tab = self.bouv_tab()
+#        ino_tab = self.inou_tab()
+
+# Keeping the following prefetch as a reminder of how it's done in the structure browser.
+        protobj = Protein.objects.filter(sequence_type__slug='wt',
+                                         family__slug__startswith='00',
+                                         species__common_name='Human').all().prefetch_related(
+            "family",
+            "parent",
+            "source").prefetch_related(
+            "family",
+            "gprotein",
+            "proteingprotein_set",
+            "proteingproteinpair_set",
+            "parent__proteingproteinpair_set__references")
+
+        context['proteins'] = protobj
+        context['famtab'] = fam_tab
+        context['subtab'] = sub_tab
+#        context['boutab'] = bou_tab
+#        context['inotab'] = ino_tab
+
+        return context
+
+    @staticmethod
+    def fams_tab():
+        """
+        This function returns what is needed in the families tab of the coupling browser
+        :return: A list of values that get invoked sort of "enumerated" in the frontend.
+        """
+        threshold_primary_inoue = 0.5  # -0.1
+        threshold_secondary_inoue = 0.01  # -1
+        threshold_primary_bouvier = 0.5  # -0.1
+        threshold_secondary_bouvier = 0.01  # -1
+        proteins = Protein.objects.filter(sequence_type__slug='wt',
+                                          family__slug__startswith='00',
+                                          species__common_name='Human').all().prefetch_related('family')
+        data = {}
+        class_names = {}
+        family_names = {}
+        for p in proteins:
+            p_class = p.family.slug.split('_')[0]
+            if p_class not in class_names:
+                class_names[p_class] = p.family.parent.parent.parent.name
+                family_names[p_class] = p.family.parent.name
+            p_class_name = class_names[p_class].replace('Class', '').strip()
+            p_family_name = family_names[p_class].replace('receptors', '').strip()
+            p_accession = p.accession
+            p_entryname = p.entry_name
+            data[p.entry_short()] = {'class': p_class_name,
+                                     'family': p_family_name,
+                                     'accession': p_accession,
+                                     'entryname': p_entryname,
+                                     'pretty': p.short(),
+                                     'GuideToPharma': {},
+                                     'Aska': {},
+                                     'Bouvier': {}}
+
+        distinct_g_families = []
+        distinct_g_subunit_families = {}
+        couplings = ProteinGProteinPair.objects.all().prefetch_related('protein',
+                                                                       'g_protein_subunit',
+                                                                       'g_protein')
+        for c in couplings:
+            p = c.protein.entry_short()
+            s = c.source
+            t = c.transduction
+            emdn = c.emax_dnorm
+            gf = c.g_protein.name
+            gf = gf.replace(" family", "")
+
+            if gf not in distinct_g_families:
+                distinct_g_families.append(gf)
+                distinct_g_subunit_families[gf] = []
+
+            if c.g_protein_subunit:
+                g = c.g_protein_subunit.entry_name
+                g = g.replace("_human", "")
+                if g not in distinct_g_subunit_families[gf]:
+                    distinct_g_subunit_families[gf].append(g)
+                    distinct_g_subunit_families[gf] = sorted(distinct_g_subunit_families[gf])
+
+            if s not in data[p]:
+                data[p][s] = {}
+
+            if gf not in data[p][s]:
+                data[p][s][gf] = {}
+
+            # If transduction (primary, secondary) in Guide To Pharmacology data
+            if t:
+                data[p][s][gf] = t
+            # Else t (primary secondary classification) doesn't exist, such as
+            # source [s]  Aska (Inoue) or Bouvier.
+            else:
+                if 'subunits' not in data[p][s][gf]:
+                    data[p][s][gf] = {'subunits': {}, 'best': 0.00}
+                if emdn is None:
+                    data[p][s][gf]['subunits'][g] = round(Decimal(0), 2)
+                    continue
+                data[p][s][gf]['subunits'][g] = round(Decimal(emdn), 2)
+                if round(Decimal(emdn), 2) == -0.00:
+                    data[p][s][gf]['subunits'][g] = float(0.00)
+                # get the highest number into 'best'
+                if emdn > data[p][s][gf]['best']:
+                    data[p][s][gf]['best'] = round(Decimal(emdn), 2)
+
+        fd = {}  # final data
+        distinct_g_families = ['Gs', 'Gi/Go', 'Gq/G11', 'G12/G13']
+        distinct_g_subunit_families = OrderedDict(
+            [('Gs', ['gnas2', 'gnal']),
+             ('Gi/Go', ['gnai1', 'gnai2', 'gnai3', 'gnat1', 'gnat2', 'gnat3', 'gnao', 'gnaz']),
+             ('Gq/G11', ['gnaq', 'gna11', 'gna14', 'gna15']),
+             ('G12/G13', ['gna12', 'gna13'])])
+
+        # This for loop, does the job of putting together
+        # data-sets, GuideToPharma, Asuka's and Bouvier.
+        for p, v in data.items():
+            fd[p] = [v['class'], v['family'], v['accession'], v['entryname'], p, v['pretty']]
+            s = 'GuideToPharma'
+            # Merge
+            for gf in distinct_g_families:
+                values = []
+                if 'GuideToPharma' in v and gf in v['GuideToPharma']:
+                    values.append(v['GuideToPharma'][gf])
+                if 'Aska' in v and gf in v['Aska']:
+                    best = v['Aska'][gf]['best']
+                    if best > threshold_primary_inoue:
+                        values.append('primary')
+                    elif best > threshold_secondary_inoue:
+                        values.append('secondary')
+                if 'Bouvier' in v and gf in v['Bouvier']:
+                    best = v['Bouvier'][gf]['best']
+                    if best > threshold_primary_bouvier:
+                        values.append('primary')
+                    elif best > threshold_secondary_bouvier:
+                        values.append('secondary')
+                if 'primary' in values:
+                    fd[p].append('primary')
+                elif 'secondary' in values:
+                    fd[p].append('secondary')
+                else:
+                    fd[p].append('NA')
+            # Loop over GuideToPharma
+            s = 'GuideToPharma'
+            for gf in distinct_g_families:
+                if gf in v[s]:
+                    fd[p].append(v[s][gf])
+                else:
+                    fd[p].append("NA")
+            # Loop over Aska
+            s = 'Aska'
+            for gf in distinct_g_families:
+                if gf in v[s]:
+                    if v[s][gf]['best'] > threshold_primary_inoue:
+                        fd[p].append("primary")
+                    elif v[s][gf]['best'] > threshold_secondary_inoue:
+                        fd[p].append("secondary")
+                    else:
+                        fd[p].append("NA")
+                else:
+                    fd[p].append("")
+            # Last bit adds values in subfamilies
+            for gf, sfs in distinct_g_subunit_families.items():
+                for sf in sfs:
+                    if gf in v[s]:
+                        if sf in v[s][gf]['subunits']:
+                            fd[p].append(v[s][gf]['subunits'][sf])
+                        else:
+                            fd[p].append("NA")
+                    else:
+                        fd[p].append("")
+            # Loop over Bouvier
+            s = 'Bouvier'
+            for gf in distinct_g_families:
+                if gf in v[s]:
+                    if v[s][gf]['best'] > threshold_primary_bouvier:
+                        fd[p].append("primary")
+                    elif v[s][gf]['best'] > threshold_secondary_bouvier:
+                        fd[p].append("secondary")
+                    else:
+                        fd[p].append("No coupling")
+                else:
+                    fd[p].append("")
+            # Last bit adds values to subfamilies
+            for gf, sfs in distinct_g_subunit_families.items():
+                for sf in sfs:
+                    if gf in v[s]:
+                        if sf in v[s][gf]['subunits']:
+                            fd[p].append(v[s][gf]['subunits'][sf])
+                        else:
+                            fd[p].append("")
+                    else:
+                        fd[p].append("NA")
+
+            # Best Values for Gs, Gi/o, Gq/G11, G12/13 and source Inoue
+            s = 'Aska'
+            for gf in distinct_g_families:
+                if gf in v[s]:
+                    fd[p].append(v[s][gf]['best'])
+                else:
+                    fd[p].append(float(0.0))
+            # Best Values for Gs, Gi/o, Gq/G11, G12/13 and source Bouvier
+            s = 'Bouvier'
+            for gf in distinct_g_families:
+                if gf in v[s]:
+                    fd[p].append(v[s][gf]['best'])
+                else:
+                    fd[p].append(float(0.0))
+
+        return fd
+
+    @staticmethod
+    def subt_tab():
+        """
+        This function returns what is needed in the subtypes tab of the coupling browser
+        :return: A list of values that get invoked sort of "enumerated" in the frontend.
+        """
+        threshold_primary_inoue = 0.5  # -0.1
+        threshold_secondary_inoue = 0.01  # -1
+        threshold_primary_bouvier = 0.5  # -0.1
+        threshold_secondary_bouvier = 0.01  # -1
+        proteins = Protein.objects.filter(sequence_type__slug='wt',
+                                          family__slug__startswith='00',
+                                          species__common_name='Human').all().prefetch_related('family')
+        data = {}
+        class_names = {}
+        family_names = {}
+        for p in proteins:
+            p_class = p.family.slug.split('_')[0]
+            if p_class not in class_names:
+                class_names[p_class] = p.family.parent.parent.parent.name
+                family_names[p_class] = p.family.parent.name
+            p_class_name = class_names[p_class].replace('Class', '').strip()
+            p_family_name = family_names[p_class].replace('receptors', '').strip()
+            p_accession = p.accession
+            p_entryname = p.entry_name
+            data[p.entry_short()] = {'class': p_class_name,
+                                     'family': p_family_name,
+                                     'accession': p_accession,
+                                     'entryname': p_entryname,
+                                     'pretty': p.short(),
+                                     'GuideToPharma': {},
+                                     'Aska': {},
+                                     'Bouvier': {}}
+
+        distinct_g_families = []
+        distinct_g_subunit_families = {}
+        couplings = ProteinGProteinPair.objects.all().prefetch_related('protein',
+                                                                       'g_protein_subunit',
+                                                                       'g_protein')
+        for c in couplings:
+            p = c.protein.entry_short()
+            s = c.source
+            t = c.transduction
+            emdn = c.emax_dnorm
+            gf = c.g_protein.name
+            gf = gf.replace(" family", "")
+
+            if gf not in distinct_g_families:
+                distinct_g_families.append(gf)
+                distinct_g_subunit_families[gf] = []
+
+            if c.g_protein_subunit:
+                g = c.g_protein_subunit.entry_name
+                g = g.replace("_human", "")
+                if g not in distinct_g_subunit_families[gf]:
+                    distinct_g_subunit_families[gf].append(g)
+                    distinct_g_subunit_families[gf] = sorted(distinct_g_subunit_families[gf])
+
+            if s not in data[p]:
+                data[p][s] = {}
+
+            if gf not in data[p][s]:
+                data[p][s][gf] = {}
+
+            # If transduction (primary, secondary) in Guide To Pharmacology data
+            if t:
+                data[p][s][gf] = t
+            # Else t (primary secondary classification) doesn't exist, such as
+            # source [s]  Aska (Inoue) or Bouvier.
+            else:
+                if 'subunits' not in data[p][s][gf]:
+                    data[p][s][gf] = {'subunits': {}, 'best': 0.00}
+                if emdn is None:
+                    data[p][s][gf]['subunits'][g] = round(Decimal(0), 2)
+                    continue
+                data[p][s][gf]['subunits'][g] = round(Decimal(emdn), 2)
+                if round(Decimal(emdn), 2) == -0.00:
+                    data[p][s][gf]['subunits'][g] = float(0.00)
+                # get the highest number into 'best'
+                if emdn > data[p][s][gf]['best']:
+                    data[p][s][gf]['best'] = round(Decimal(emdn), 2)
+
+        fd = {}  # final data
+        distinct_g_families = ['Gs', 'Gi/Go', 'Gq/G11', 'G12/G13']
+        distinct_g_subunit_families = OrderedDict(
+            [('Gs', ['gnas2', 'gnal']),
+             ('Gi/Go', ['gnai1', 'gnai2', 'gnai3', 'gnat1', 'gnat2', 'gnat3', 'gnao', 'gnaz']),
+             ('Gq/G11', ['gnaq', 'gna11', 'gna14', 'gna15']),
+             ('G12/G13', ['gna12', 'gna13'])])
+
+        # This for loop, does the job of putting together
+        # data-sets, GuideToPharma, Asuka's and Bouvier.
+        for p, v in data.items():
+            fd[p] = [v['class'], v['family'], v['accession'], v['entryname'], p, v['pretty']]
+            s = 'GuideToPharma'
+            # Merge
+            for gf in distinct_g_families:
+                values = []
+                if 'GuideToPharma' in v and gf in v['GuideToPharma']:
+                    values.append(v['GuideToPharma'][gf])
+                if 'Aska' in v and gf in v['Aska']:
+                    best = v['Aska'][gf]['best']
+                    if best > threshold_primary_inoue:
+                        values.append('primary')
+                    elif best > threshold_secondary_inoue:
+                        values.append('secondary')
+                if 'Bouvier' in v and gf in v['Bouvier']:
+                    best = v['Bouvier'][gf]['best']
+                    if best > threshold_primary_bouvier:
+                        values.append('primary')
+                    elif best > threshold_secondary_bouvier:
+                        values.append('secondary')
+                if 'primary' in values:
+                    fd[p].append('primary')
+                elif 'secondary' in values:
+                    fd[p].append('secondary')
+                else:
+                    fd[p].append('NA')
+            # Loop over GuideToPharma
+            s = 'GuideToPharma'
+            for gf in distinct_g_families:
+                if gf in v[s]:
+                    fd[p].append(v[s][gf])
+                else:
+                    fd[p].append("NA")
+            # Loop over Aska
+            s = 'Aska'
+            for gf in distinct_g_families:
+                if gf in v[s]:
+                    if v[s][gf]['best'] > threshold_primary_inoue:
+                        fd[p].append("primary")
+                    elif v[s][gf]['best'] > threshold_secondary_inoue:
+                        fd[p].append("secondary")
+                    else:
+                        fd[p].append("NA")
+                else:
+                    fd[p].append("")
+            # Last bit adds values in subfamilies
+            for gf, sfs in distinct_g_subunit_families.items():
+                for sf in sfs:
+                    if gf in v[s]:
+                        if sf in v[s][gf]['subunits']:
+                            fd[p].append(v[s][gf]['subunits'][sf])
+                        else:
+                            fd[p].append("NA")
+                    else:
+                        fd[p].append("")
+            # Loop over Bouvier
+            s = 'Bouvier'
+            for gf in distinct_g_families:
+                if gf in v[s]:
+                    if v[s][gf]['best'] > threshold_primary_bouvier:
+                        fd[p].append("primary")
+                    elif v[s][gf]['best'] > threshold_secondary_bouvier:
+                        fd[p].append("secondary")
+                    else:
+                        fd[p].append("No coupling")
+                else:
+                    fd[p].append("")
+            # Last bit adds values to subfamilies
+            for gf, sfs in distinct_g_subunit_families.items():
+                for sf in sfs:
+                    if gf in v[s]:
+                        if sf in v[s][gf]['subunits']:
+                            fd[p].append(v[s][gf]['subunits'][sf])
+                        else:
+                            fd[p].append("")
+                    else:
+                        fd[p].append("NA")
+
+        return fd
+
 # @cache_page(60*60*24*2) # 2 days caching
 def GProtein(request, dataset="GuideToPharma"):
     name_of_cache = 'gprotein_statistics_{}'.format(dataset)
@@ -136,15 +534,16 @@ def GProtein(request, dataset="GuideToPharma"):
     )
 
 # @cache_page(60*60*24*2) # 2 days caching
-def Couplings(request, template_name='signprot/coupling_browser.html'):
+def couplings(request, template_name='signprot/coupling_browser.html'):
     """
     Presents coupling data between Receptors and G-proteins.
     Data coming from Guide to Pharmacology, Asuka Inuoue and Michel Bouvier
     """
     context = OrderedDict()
-    threshold_primary = -0.1
-    threshold_secondary = -1
-    proteins = Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith='00',
+    threshold_primary = 0.5 # -0.1
+    threshold_secondary = 0.01 # -1
+    proteins = Protein.objects.filter(sequence_type__slug='wt',
+                                      family__slug__startswith='00',
                                       species__common_name='Human').all().prefetch_related('family')
     data = {}
     class_names = {}
@@ -158,18 +557,25 @@ def Couplings(request, template_name='signprot/coupling_browser.html'):
         p_class_name = class_names[p_class].replace('Class','').strip()
         p_family_name = family_names[p_class].replace('receptors','').strip()
         p_accession = p.accession
-        data[p.entry_short()] = {'class': p_class_name, 'family': p_family_name, 'accession': p_accession,
-                                 'pretty': p.short(), 'GuideToPharma': {}, 'Inoue': {}, 'Bouvier': {}}
+        data[p.entry_short()] = {'class': p_class_name,
+                                 'family': p_family_name,
+                                 'accession': p_accession,
+                                 'pretty': p.short(),
+                                 'GuideToPharma': {},
+                                 'Aska': {},
+                                 'Bouvier': {}}
     distinct_g_families = []
     distinct_g_subunit_families = {}
-    distinct_sources = ['GuideToPharma', 'Inoue', 'Bouvier']
-    couplings = ProteinGProteinPair.objects.all().prefetch_related('protein', 'g_protein_subunit', 'g_protein')
+    distinct_sources = ['GuideToPharma', 'Aska', 'Bouvier']
+    couplings = ProteinGProteinPair.objects.all().prefetch_related('protein',
+                                                                   'g_protein_subunit',
+                                                                   'g_protein')
 
     for c in couplings:
         p = c.protein.entry_short()
         s = c.source
         t = c.transduction
-        m = c.log_ec50_mean
+        m = c.emax_dnorm
         gf = c.g_protein.name
         gf = gf.replace(" family", "")
 
@@ -195,9 +601,9 @@ def Couplings(request, template_name='signprot/coupling_browser.html'):
             data[p][s][gf] = t
         else:
             if 'subunits' not in data[p][s][gf]:
-                data[p][s][gf] = {'subunits': {}, 'best': -2.00}
-# FIXME: Must change since it's no longer dependent on log_rai, also because there can
-# FIXME: be valid NULL values.
+                data[p][s][gf] = {'subunits': {}, 'best': 0.00}
+            if m is None:
+                continue
             data[p][s][gf]['subunits'][g] = round(Decimal(m), 2)
             if round(Decimal(m), 2) == -0.00:
                 data[p][s][gf]['subunits'][g] = 0.00
@@ -205,10 +611,13 @@ def Couplings(request, template_name='signprot/coupling_browser.html'):
             if m > data[p][s][gf]['best']:
                 data[p][s][gf]['best'] = round(Decimal(m), 2)
     fd = {}  # final data
-    distinct_g_families = sorted(distinct_g_families)
+#    distinct_g_families = sorted(distinct_g_families)
     distinct_g_families = ['Gs', 'Gi/Go', 'Gq/G11', 'G12/G13']
-    distinct_g_subunit_families = OrderedDict([('Gs', ['gnas2', 'gnal']), ('Gi/Go', ['gnai1', 'gnai3', 'gnao', 'gnaz']),
-                                               ('Gq/G11', ['gnaq', 'gna14', 'gna15']), ('G12/G13', ['gna12', 'gna13'])])
+    distinct_g_subunit_families = OrderedDict(
+        [('Gs', ['gnas2', 'gnal']),
+         ('Gi/Go', ['gnai1', 'gnai2', 'gnai3', 'gnao', 'gnaz']),
+         ('Gq/G11', ['gnaq', 'gna11', 'gna14', 'gna15']),
+         ('G12/G13', ['gna12', 'gna13'])])
 
     # This for loop, which perhaps should be a function in itself, perhaps an instance of a Couplings class, does
     # the job of merging together two data-sets, that of the GuideToPharma and Asuka's results.
@@ -226,6 +635,12 @@ def Couplings(request, template_name='signprot/coupling_browser.html'):
                     values.append('primary')
                 elif best > threshold_secondary:
                     values.append('secondary')
+            if 'Bouvier' in v and gf in v['Bouvier']:
+                best = v['Bouvier'][gf]['best']
+                if best > threshold_primary:
+                    values.append('primary')
+                elif best > threshold_secondary:
+                    values.append('secondary')
             if 'primary' in values:
                 fd[p].append('primary')
             elif 'secondary' in values:
@@ -239,7 +654,18 @@ def Couplings(request, template_name='signprot/coupling_browser.html'):
                 fd[p].append(v[s][gf])
             else:
                 fd[p].append("")
-        s = 'Inoue'
+        s = 'Aska'
+        for gf in distinct_g_families:
+            if gf in v[s]:
+                if v[s][gf]['best'] > threshold_primary:
+                    fd[p].append("primary")
+                elif v[s][gf]['best'] > threshold_secondary:
+                    fd[p].append("secondary")
+                else:
+                    fd[p].append("No coupling")
+            else:
+                fd[p].append("")
+        s = 'Bouvier'
         for gf in distinct_g_families:
             if gf in v[s]:
                 if v[s][gf]['best'] > threshold_primary:
@@ -259,10 +685,7 @@ def Couplings(request, template_name='signprot/coupling_browser.html'):
                         fd[p].append("")
                 else:
                     fd[p].append("")
-        #print(v)
-    # print(data['5HT1A'])
-    # print(fd)
-    # print(fd['5HT1A'])
+
     context['data'] = fd
     context['distinct_gf'] = distinct_g_families
     context['distinct_sf'] = distinct_g_subunit_families

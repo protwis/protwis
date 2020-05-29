@@ -760,9 +760,16 @@ function drawPlotPanel(plot_type, plot_div) {
     plot_div.find('.plot-container').attr('class', 'plot-container');
     var mode = get_current_mode();
 
-    plot_div.find('.plot-title').html( "&nbsp;" + display_plot_names[plot_type]);
+    plot_div.find('.plot-title').html("&nbsp;" + display_plot_names[plot_type]);
+    
+    ngl_color_mode = false;
 
-    console.log("SET UP PLOT", plot_type, plot_id, mode);
+    if (plot_type.includes("ngl") && plot_type.includes("_")) {
+        ngl_color_mode = plot_type.split("_")[1];
+        plot_type = "ngl";
+    }
+
+    console.log("SET UP PLOT", plot_type, plot_id, mode,'ngl_mode',ngl_color_mode);
     switch (mode) {
         case "two-crystal-groups":
             raw_data = two_sets_data;
@@ -802,6 +809,14 @@ function drawPlotPanel(plot_type, plot_div) {
             plot_div.find('.plot-container').html('<svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin" id="heatmap-' + plot_id + '" style="height: 500px;"></svg>');
 
             renderHeatmap(raw_data, '#heatmapcontainer-' + plot_id);
+            break;
+        case "heatmap_distances":
+            plot_div.find('.plot-container').removeClass('none');
+            plot_div.find('.plot-container').addClass('heatmap_distances-container');
+            plot_div.find('.plot-container').attr('id', "heatmap_distancescontainer-" + plot_id);
+            plot_div.find('.plot-container').html('<svg class="heatmap_distances" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin" id="heatmap_distances-' + plot_id + '" style="height: 500px;"></svg>');
+
+            renderHeatmap_distances(raw_data, '#heatmap_distancescontainer-' + plot_id);
             break;
         case "flareplot":
             plot_div.find('.plot-container').removeClass('none');
@@ -933,7 +948,7 @@ function drawPlotPanel(plot_type, plot_div) {
 }
 
 var plotting_options = {
-    'TM1-7 segment' : {
+    'TM1-7 segment movement' : {
         'extracellular': [
             ['tm7_plot_extra', '2D plot'],
             ['tm7_plot_3d_extra','3D plot'],
@@ -975,7 +990,10 @@ var plotting_options = {
     'Residue Properties': [
         ['snakeplot', 'Snake plot'],
         ['scatterplot', 'Scatter-plot'],
-        ['boxplot_angles', 'Box plot '],],
+        ['boxplot_angles', 'Box plot '],
+        ['heatmap_distances', 'Heatmap of distances'],
+        ['ngl_distances', '3D representation of distances']],
+    // '3D structure': { '3D structures': [['ngl_distances', 'Distances'], ['ngl_angles', 'Angles']] },
 };
 
 display_plot_names = {}

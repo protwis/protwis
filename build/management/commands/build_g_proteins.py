@@ -78,6 +78,10 @@ class Command(BaseCommand):
                             default=False,
                             action='store_true',
                             help='Build PDB_UNIPROT_ENSEMBLE_ALL file')
+        parser.add_argument('--coupling',
+                            default=False,
+                            action='store_true',
+                            help='Purge and import GPCR-Gprotein coupling data')
 
     def handle(self, *args, **options):
         self.options = options
@@ -89,6 +93,21 @@ class Command(BaseCommand):
             self.add_entry()
         elif self.options['build_datafile']:
             self.build_table_from_fasta()
+        elif self.options['coupling']:
+            self.purge_coupling_data()
+            self.logger.info('PASS: purge_coupling_data')
+            self.create_g_proteins(filenames)
+            self.logger.info('PASS: create_g_proteins')
+            if os.path.exists(self.inoue_file):
+                self.add_inoue_coupling_data()
+                self.logger.info('PASS: add_inoue_coupling_data')
+            else:
+                self.logger.warning('Inoue source data ' + self.inoue_file + ' not found')
+            if os.path.exists(self.bouvier_file):
+                self.add_bouvier_coupling_data()
+                self.logger.info('PASS: add_bouvier_coupling_data')
+            else:
+                self.logger.warning('Bouvier source data ' + self.bouvier_file + ' not found')
         else:
             # Add G-proteins from CGN-db Common G-alpha Numbering <https://www.mrc-lmb.cam.ac.uk/CGN/>
             try:
@@ -359,6 +378,10 @@ class Command(BaseCommand):
             subprocess.call(shlex.split(command))
 
     def purge_coupling_data(self):
+        # Connect to postgres to tell the table ID to be reset to start at 1.
+        with connection.cursor() as cursor:
+            sql1 = 'ALTER SEQUENCE protein_gprotein_pair_id_seq RESTART WITH 1;'
+            cursor.execute(sql1)
         try:
             ProteinGProteinPair.objects.filter().delete()
             ProteinGProtein.all().delete()
@@ -613,56 +636,88 @@ class Command(BaseCommand):
         peculiar format the submitter chooses, furthermore, which G-proteins were used in the experiments.
         """
         book = xlrd.open_workbook(filenames)
-#        sheet = book.sheet_by_name(sheetname)
-        sheet1 = book.sheet_by_name("pEC50")
-        sheet2 = book.sheet_by_name("Emax")
+        #        sheet = book.sheet_by_name(sheetname)
+        sheet1 = book.sheet_by_name("LogRA")
+        sheet2 = book.sheet_by_name("pEC50")
+        sheet3 = book.sheet_by_name("Emax")
+        sheet4 = book.sheet_by_name("emaxdn")
+        sheet5 = book.sheet_by_name("pec50dn")
         rows = sheet1.nrows
         cols = sheet1.ncols - 1
         maxmeancol = 13
         maxsemcol = 24
         data = {}
-        """data (a dictionary) must have this format:
+        """
+        data (a dictionary) must have this format:
         {'<protein>':
             {'<gprotein>':
                 {'mean': <mean>,
                  'sem': <sem>}
             }
-        }"""
+        }
+        """
+
+        def cleanValue(s):
+            """
+            Function to return a 0.0 (a value which means no coupling) since returning
+            an NA string to the database field declared as a float won't work, also
+            because NULL might have a meaning. In Python to return NULL one uses None
+
+            :param s:
+            :return: float
+            """
+            if s == 'NA':
+                # return None
+                return float(0.0)
+            else:
+                return float(str(s).strip())
+                # return str(s).strip()
 
         for i in range(2, rows):
-            protein = sheet1.cell_value(i, 0)
+            protein = sheet1.cell_value(i, 0)  # NOTE: Assumes protein names constant across sheets.
             protein_dict = {}
 
-            # it returns a -20.0 (a "ridiculous" value for now) since returning an NA string to the database
-            # field declared as a float won't work, also because NULL might have a meaning.
-            # In Python to return NULL one uses None
-            def cleanValue(s):
-                if s == 'NA':
-                    # return None
-                    return '-20.0'
-                else:
-                    return str(s).strip()
-
-           # ec50mean
+            # lograimean
             for j in range(2, maxmeancol):
                 gprotein = sheet1.cell_value(1, j)
                 protein_dict[gprotein] = {}
-                protein_dict[gprotein]['ec50mean'] = cleanValue(sheet1.cell_value(i, j))
+                protein_dict[gprotein]['lograimean'] = cleanValue(sheet1.cell_value(i, j))
 
-           # ec50sem
+            # lograisem
             for j in range(maxmeancol, maxsemcol):
                 gprotein = sheet1.cell_value(1, j)
-                protein_dict[gprotein]['ec50sem'] = cleanValue(sheet1.cell_value(i, j))
+                protein_dict[gprotein]['lograisem'] = cleanValue(sheet1.cell_value(i, j))
 
-           # emaxmean
+            # pec50mean
             for j in range(2, maxmeancol):
                 gprotein = sheet2.cell_value(1, j)
-                protein_dict[gprotein]['emaxmean'] = cleanValue(sheet2.cell_value(i, j))
+                protein_dict[gprotein]['pec50mean'] = cleanValue(sheet2.cell_value(i, j))
+                # print(type(cleanValue(sheet2.cell_value(i, j))), i, j)
 
-           # emaxsem
+            # pec50sem
             for j in range(maxmeancol, maxsemcol):
                 gprotein = sheet2.cell_value(1, j)
-                protein_dict[gprotein]['emaxsem'] = cleanValue(sheet2.cell_value(i, j))
+                protein_dict[gprotein]['pec50sem'] = cleanValue(sheet2.cell_value(i, j))
+
+            # emaxmean
+            for j in range(2, maxmeancol):
+                gprotein = sheet3.cell_value(1, j)
+                protein_dict[gprotein]['emaxmean'] = cleanValue(sheet3.cell_value(i, j))
+
+            # emaxsem
+            for j in range(maxmeancol, maxsemcol):
+                gprotein = sheet3.cell_value(1, j)
+                protein_dict[gprotein]['emaxsem'] = cleanValue(sheet3.cell_value(i, j))
+
+            # emaxdn
+            for j in range(2, maxmeancol):
+                gprotein = sheet4.cell_value(1, j)
+                protein_dict[gprotein]['emaxdn'] = cleanValue(sheet4.cell_value(i, j))
+
+            # pec50dn
+            for j in range(2, maxmeancol):
+                gprotein = sheet5.cell_value(1, j)
+                protein_dict[gprotein]['pec50dn'] = cleanValue(sheet5.cell_value(i, j))
 
             data[protein] = protein_dict
 
@@ -685,7 +740,6 @@ class Command(BaseCommand):
         maxmeancol = 13 # TODO: READ 14, 15. Arrestins. Perhaps with build_arrestins.py?
         maxsemcol = 26  # TODO: READ 27, 28. Arrestins. Perhaps with build_arrestins.py?
         data = {}
-
         """data is a dictionary and must have this format:
         {'<protein>':
             {'<gprotein>':
@@ -693,30 +747,39 @@ class Command(BaseCommand):
                  'sem': <sem>}
             }
         }"""
+
+        def cleanValue(s):
+            """
+            Function to return a 0.0 (a value which means no coupling) since returning
+            an NA string to the database field declared as a float won't work, also
+            because NULL might have a meaning. In Python to return NULL one uses None
+
+            :param s:
+            :return: float
+            """
+            if s == 'NA':
+                # return None
+                return float(0.0)
+            else:
+                return float(str(s).strip())
+                # return str(s).strip()
+
         for i in range(2, rows):
             protein = sheet1.cell_value(i, 0)
             protein_dict = {}
 
-            # it returns a -20.0 (a "ridiculous" value for now) since returning an NA string to the database
-            # field declared as a float won't work, also because NULL might have a meaning.
-            # In Python to return NULL one uses None
-            def cleanValue(s):
-                if s == 'NA':
-                    # return None
-                    return '-20.0'
-                else:
-                    return str(s).strip()
-
-            # ec50mean
+            # pec50mean
             for j in range(2, maxmeancol):
                 gprotein = sheet1.cell_value(1, j)
                 protein_dict[gprotein] = {}
-                protein_dict[gprotein]['ec50mean'] = cleanValue(sheet1.cell_value(i, j))
+                # Notice that the original data is logEC50, that's why it's multiplied by -1
+                protein_dict[gprotein]['pec50mean'] = -1 * cleanValue(sheet1.cell_value(i, j))
+                # print(type(cleanValue(sheet1.cell_value(i, j))), i, j)
 
-            # ec50sem
+            # pec50sem
             for j in range(maxmeancol+2, maxsemcol):
                 gprotein = sheet1.cell_value(1, j)
-                protein_dict[gprotein]['ec50sem'] = cleanValue(sheet1.cell_value(i, j))
+                protein_dict[gprotein]['pec50sem'] = cleanValue(sheet1.cell_value(i, j))
 
             # emaxmean
             for j in range(2, maxmeancol):
@@ -728,10 +791,10 @@ class Command(BaseCommand):
                 gprotein = sheet2.cell_value(1, j)
                 protein_dict[gprotein]['emaxsem'] = cleanValue(sheet2.cell_value(i, j))
 
-            # ec50dn
+            # pec50dn
             for j in range(2, maxmeancol):
                 gprotein = sheet3.cell_value(1, j)
-                protein_dict[gprotein]['ec50dn'] = cleanValue(sheet3.cell_value(i, j))
+                protein_dict[gprotein]['pec50dn'] = cleanValue(sheet3.cell_value(i, j))
 
             # emaxdn
             for j in range(2, maxmeancol):
@@ -744,15 +807,13 @@ class Command(BaseCommand):
 
     def add_inoue_coupling_data(self):
         """
-        This function adds coupling data to the database. For now only that coming from Asuka Inoue
-        but it might need to add data from other sources and that's why C. Munk has created the source field in the
-        database already.
+        This function adds coupling data coming from Asuka Inoue
 
         @return:
-        p, g, source, values['ec50mean'], values['ec50sem'], gp
+        p, g, source, values['ec50mean'], values['ec50sem'], ..., gp
         p = protein_name
         g = g_protein subfamily slug
-        source = One of GuideToPharma, Inoue, Bouvier
+        source = One of GuideToPharma, Aska, Bouvier
         values = selfdescriptive
         gp = gprotein name, e.g. gna13_human
         """
@@ -765,18 +826,18 @@ class Command(BaseCommand):
 
         self.logger.info('Reading file ' + filepath)
         data = self.read_inoue(filepath)
-        #pprint(data['UTS2R'])
-        #pprint(data)
-        source = 'Inoue'
+        #  pprint(data['UTS2R'])
+        #  pprint(data)
+        source = 'Aska'
         lookup = {}
 
         for entry_name, couplings in data.items():
-            #pprint(data.items())
-            # if it has / then pick first, since it gets same protein
+            #  pprint(data.items())
+            #  if it has / then pick first, since it gets same protein
             entry_name = entry_name.split("/")[0]
-            # append _human to entry name
-            # entry_name = "{}_HUMAN".format(entry_name).lower()
-            # Fetch protein
+            #  append _human to entry name
+            #  entry_name = "{}_HUMAN".format(entry_name).lower()
+            #  Fetch protein
             try:
                 p = Protein.objects.filter(genes__name=entry_name, species__common_name="Human")[0]
             except Protein.DoesNotExist:
@@ -801,14 +862,18 @@ class Command(BaseCommand):
                 else:
                     g = lookup[gp.family.slug]
 
-                #print(p, g, source, values['ec50mean'], values['ec50sem'], values['emaxmean'], values['emaxsem'],  gp)
+                # print(p, g, source, values['ec50mean'], values['ec50sem'], values['emaxmean'], values['emaxsem'],  gp)
                 gpair = ProteinGProteinPair(protein=p,
                                             g_protein=g,
                                             source=source,
-                                            log_ec50_mean=values['ec50mean'],
-                                            log_ec50_sem=values['ec50sem'],
+                                            log_rai_mean=values['lograimean'],
+                                            log_rai_sem=values['lograisem'],
+                                            pec50_mean=values['pec50mean'],
+                                            pec50_sem=values['pec50sem'],
+                                            pec50_dnorm=values['pec50dn'],
                                             emax_mean=values['emaxmean'],
                                             emax_sem=values['emaxsem'],
+                                            emax_dnorm=values['emaxdn'],
                                             g_protein_subunit=gp)
                 gpair.save()
 
@@ -816,45 +881,38 @@ class Command(BaseCommand):
 
     def add_bouvier_coupling_data(self):
         """
-        This function adds coupling data to the database. For now only that coming from Asuka Inoue
-        but it might need to add data from other sources and that's why C. Munk has created the source field in the
-        database already.
+        This function adds coupling data coming from Michel Bouvier's lab.
 
         @return:
-        p, g, source, values['ec50mean'], values['ec50sem'], gp
+        p, g, source, values['ec50mean'], values['ec50sem'], ..., gp
         p = protein_name
         g = g_protein subfamily slug
-        source = One of GuideToPharma, Inoue, Bouvier
+        source = One of GuideToPharma, Aska, Bouvier
         values = selfdescriptive
         gp = gprotein name, e.g. gna13_human
         """
-        self.logger.info('BEGIN ADDING Bouvier\'s G-protein coupling data' )
-        # translation = {'Gs family': '100_001_001', 'Gi/Go family': '100_001_002', 'Gq/G11 family': '100_001_003',
-        #               'G12/G13 family': '100_001_004', }
+        self.logger.info('BEGIN ADDING Bouvier\'s G-protein coupling data')
 
         # read source files
         filepath = self.bouvier_file
-
         self.logger.info('Reading file ' + filepath)
         data = self.read_bouvier(filepath)
         #pprint(data['AVP2R'])
         #pprint(data['BDKRB1'])
-        #pprint(data.keys())
         source = 'Bouvier'
         lookup = {}
 
         for entry_name, couplings in data.items():
             #pprint(data.items())
             # if it has / then pick first, since it gets same protein
-            #entry_name = entry_name.split("/")[0]
+            entry_name = entry_name.split("/")[0]
             # append _human to entry name
             #entry_name = "{}_HUMAN".format(entry_name).lower()
-            entry_name = entry_name
             #pprint(entry_name)
             # Fetch protein
             try:
                 p = Protein.objects.filter(genes__name=entry_name, species__common_name="Human")[0]
-                #print(p)
+
             except Protein.DoesNotExist:
                 self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
                 print("protein not found for ", entry_name)
@@ -879,9 +937,9 @@ class Command(BaseCommand):
                 gpair = ProteinGProteinPair(protein=p,
                                            g_protein=g,
                                            source=source,
-                                           log_ec50_mean=values['ec50mean'],
-                                           log_ec50_sem=values['ec50sem'],
-                                           log_ec50_dnorm=values['ec50dn'],
+                                           pec50_mean=values['pec50mean'],
+                                           pec50_sem=values['pec50sem'],
+                                           pec50_dnorm=values['pec50dn'],
                                            emax_mean=values['emaxmean'],
                                            emax_sem=values['emaxsem'],
                                            emax_dnorm=values['emaxdn'],
