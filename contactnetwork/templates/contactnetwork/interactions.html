@@ -765,7 +765,7 @@
         //defaultSettings[ "options"] = ["intrahelical" ] // disabled
         defaultSettings[ "options"] = []
 
-        // Apply defaultSettings to each tab
+        // Apply default settings to each tab
         var currentSettings = {}
         currentSettings["single-crystal-tab"] = JSON.parse(JSON.stringify(defaultSettings));
         currentSettings["single-crystal-group-tab"] = JSON.parse(JSON.stringify(defaultSettings));
@@ -958,7 +958,7 @@
             {% comment %} fill: none; {% endcomment %}
             stroke: grey;
             }
-        
+
         .networkPlot .controls-panel {
             position: absolute;
             padding: 3px;
@@ -982,7 +982,7 @@
             margin: 0;
         }
 
-                
+
         .snakeplot .controls-panel {
             position: absolute;
             padding: 3px;
@@ -992,7 +992,7 @@
             left: 0px;
             z-index: 1;
         }
-                
+
         .scatterplot .controls-panel {
             position: absolute;
             padding: 3px;
