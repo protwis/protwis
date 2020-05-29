@@ -625,6 +625,11 @@ def InteractionBrowserData(request):
     if not contact_options or "intrahelical" not in contact_options:
         i_options_filter = ~Q(interacting_pair__res1__protein_segment=F('interacting_pair__res2__protein_segment'))
 
+    # Filter out contact with backbone atoms
+    backbone_atoms = ["C", "O", "N", "CA"]
+    if not contact_options or "backbone" not in contact_options:
+        i_options_filter = i_options_filter & ~Q(atomname_residue1__in=backbone_atoms) & ~Q(atomname_residue2__in=backbone_atoms)
+
     # DISCUSS: cache hash now takes the normalize along, is this necessary
     normalized = "normalize" in contact_options
 
@@ -689,7 +694,7 @@ def InteractionBrowserData(request):
                             if p:
                                 class_pair_lookup[coord+pair] = round(100*len(p)/sum_proteins)
             cache.set(cache_key, class_pair_lookup, 3600 * 24 * 7)
-            
+
         ### Fetch class ligand / G-protein interactions for snakeplot colouring
         cache_key = 'class_ligand_interactions_{}_{}'.format(gpcr_class,forced_class_a)
         class_ligand_interactions = cache.get(cache_key)
@@ -725,7 +730,7 @@ def InteractionBrowserData(request):
         class_complex_interactions = cache.get(cache_key)
         # class_ligand_interactions=None
         if class_complex_interactions == None or len(class_complex_interactions) == 0:
-            
+
             interactions = Interaction.objects.filter(
                 interacting_pair__referenced_structure__protein_conformation__protein__family__slug__startswith=gpcr_class
             ).exclude(
@@ -756,7 +761,7 @@ def InteractionBrowserData(request):
 
                 class_complex_interactions[gn].add(p)
 
-        
+
             class_complex_interactions = {key: len(value) for key, value in class_complex_interactions.items()}
             cache.set(cache_key, class_complex_interactions, 3600 * 24 * 7)
 
@@ -782,10 +787,10 @@ def InteractionBrowserData(request):
                         class_mutations[gn] = set()
 
                     class_mutations[gn].add(p)
-        
+
             class_mutations = {key: len(value) for key, value in class_mutations.items()}
             cache.set(cache_key, class_mutations, 3600 * 24 * 7)
- 
+
         # Get the relevant interactions
         # TODO MAKE SURE ITs only gpcr residues..
         interactions = Interaction.objects.filter(
@@ -819,7 +824,7 @@ def InteractionBrowserData(request):
         )
 
         # FOR DEBUGGING interaction + strict filters
-        #print(interactions.query)
+        # print(interactions.query)
         interactions = list(interactions)
 
         # Grab unique interaction_IDs
@@ -837,7 +842,7 @@ def InteractionBrowserData(request):
         data['class_ligand_interactions'] = class_ligand_interactions
         data['class_complex_interactions'] = class_complex_interactions
         data['class_mutations'] = class_mutations
-        
+
         data['gpcr_class'] = gpcr_class
         data['segments'] = set()
         data['segment_map'] = {}
@@ -2235,7 +2240,7 @@ def InteractionBrowserData(request):
         data['snakeplot_lookup_aa_cons'] = {}
         for a in consensus:
             if a.display_generic_number:
-                # Be sure to use the correct GN 
+                # Be sure to use the correct GN
                 gn = re.sub(r'\.[\d]+', '', a.display_generic_number.label)
                 if forced_class_a:
                     gn = a.family_generic_number

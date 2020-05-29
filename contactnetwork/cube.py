@@ -15,7 +15,7 @@ from signprot.models import SignprotComplex
 import copy
 
 # Distance between residues in peptide
-NUM_SKIP_RESIDUES = 4
+NUM_SKIP_RESIDUES = 0
 
 def compute_interactions(pdb_name,save_to_db = False):
 
