@@ -764,7 +764,7 @@ function drawPlotPanel(plot_type, plot_div) {
     
     ngl_color_mode = false;
 
-    if (plot_type.includes("ngl") && plot_type.includes("_")) {
+    if (plot_type.startsWith("ngl") && plot_type.includes("_")) {
         ngl_color_mode = plot_type.split("_")[1];
         plot_type = "ngl";
     }
