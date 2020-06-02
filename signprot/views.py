@@ -4,6 +4,8 @@ import time
 from collections import Counter, OrderedDict
 from decimal import Decimal
 
+from pprint import pprint
+
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.core.cache import cache
 from django.db.models import F, Q
@@ -15,6 +17,7 @@ from django.views.generic import TemplateView
 from common import definitions
 from common.diagrams_gpcr import DrawSnakePlot
 from common.diagrams_gprotein import DrawGproteinPlot
+from common.tools import fetch_from_web_api
 from common.views import AbsTargetSelection
 from contactnetwork.models import InteractingResiduePair
 from mutation.models import MutationExperiment
@@ -96,8 +99,7 @@ class CouplingBrowser(TemplateView):
     """
     Class based generic view which serves coupling data between Receptors and G-proteins.
     Data coming from Guide to Pharmacology, Asuka Inuoue and Michel Bouvier.
-    Maybe additional data from Roth and Strechan TRUPATHS protocol will be added at a later point.
-    :param dataset: ProteinGProteinPair
+    :param dataset: ProteinGProteinPair (see build/management/commands/build_g_proteins.py)
     :return: context
     """
     template_name = "signprot/coupling_browser.html"
@@ -106,10 +108,9 @@ class CouplingBrowser(TemplateView):
         context = super().get_context_data(**kwargs)
         fam_tab = self.fams_tab()
         sub_tab = self.subt_tab()
-#        bou_tab = self.bouv_tab()
-#        ino_tab = self.inou_tab()
+        bou_tab = self.bouv_tab()
+        ino_tab = self.inou_tab()
 
-# Keeping the following prefetch as a reminder of how it's done in the structure browser.
         protobj = Protein.objects.filter(sequence_type__slug='wt',
                                          family__slug__startswith='00',
                                          species__common_name='Human').all().prefetch_related(
@@ -122,11 +123,16 @@ class CouplingBrowser(TemplateView):
             "proteingproteinpair_set",
             "parent__proteingproteinpair_set__references")
 
+        coupobj = ProteinGProteinPair.objects.all().prefetch_related('protein',
+                                                                     'g_protein_subunit',
+                                                                     'g_protein')
+
         context['proteins'] = protobj
+        context['couplings'] = coupobj
         context['famtab'] = fam_tab
         context['subtab'] = sub_tab
-#        context['boutab'] = bou_tab
-#        context['inotab'] = ino_tab
+        context['boutab'] = bou_tab
+        context['inotab'] = ino_tab
 
         return context
 
@@ -169,7 +175,7 @@ class CouplingBrowser(TemplateView):
         couplings = ProteinGProteinPair.objects.all().prefetch_related('protein',
                                                                        'g_protein_subunit',
                                                                        'g_protein')
-        for c in couplings:
+        for num, c in enumerate(couplings):
             p = c.protein.entry_short()
             s = c.source
             t = c.transduction
@@ -206,11 +212,10 @@ class CouplingBrowser(TemplateView):
                     data[p][s][gf]['subunits'][g] = round(Decimal(0), 2)
                     continue
                 data[p][s][gf]['subunits'][g] = round(Decimal(emdn), 2)
-                if round(Decimal(emdn), 2) == -0.00:
-                    data[p][s][gf]['subunits'][g] = float(0.00)
                 # get the highest number into 'best'
                 if emdn > data[p][s][gf]['best']:
                     data[p][s][gf]['best'] = round(Decimal(emdn), 2)
+
 
         fd = {}  # final data
         distinct_g_families = ['Gs', 'Gi/Go', 'Gq/G11', 'G12/G13']
@@ -222,7 +227,7 @@ class CouplingBrowser(TemplateView):
 
         # This for loop, does the job of putting together
         # data-sets, GuideToPharma, Asuka's and Bouvier.
-        for p, v in data.items():
+        for num, (p, v) in enumerate(data.items()):
             fd[p] = [v['class'], v['family'], v['accession'], v['entryname'], p, v['pretty']]
             s = 'GuideToPharma'
             # Merge
@@ -254,7 +259,7 @@ class CouplingBrowser(TemplateView):
                 if gf in v[s]:
                     fd[p].append(v[s][gf])
                 else:
-                    fd[p].append("NA")
+                    fd[p].append("NAg")
             # Loop over Aska
             s = 'Aska'
             for gf in distinct_g_families:
@@ -264,7 +269,7 @@ class CouplingBrowser(TemplateView):
                     elif v[s][gf]['best'] > threshold_secondary_inoue:
                         fd[p].append("secondary")
                     else:
-                        fd[p].append("NA")
+                        fd[p].append("NAi")
                 else:
                     fd[p].append("")
             # Last bit adds values in subfamilies
@@ -274,7 +279,7 @@ class CouplingBrowser(TemplateView):
                         if sf in v[s][gf]['subunits']:
                             fd[p].append(v[s][gf]['subunits'][sf])
                         else:
-                            fd[p].append("NA")
+                            fd[p].append("NAb")
                     else:
                         fd[p].append("")
             # Loop over Bouvier
@@ -304,16 +309,16 @@ class CouplingBrowser(TemplateView):
             s = 'Aska'
             for gf in distinct_g_families:
                 if gf in v[s]:
-                    fd[p].append(v[s][gf]['best'])
+                    fd[p].append(v[s][gf]['best']+100)
                 else:
-                    fd[p].append(float(0.0))
+                    fd[p].append("NAi")
             # Best Values for Gs, Gi/o, Gq/G11, G12/13 and source Bouvier
             s = 'Bouvier'
             for gf in distinct_g_families:
                 if gf in v[s]:
-                    fd[p].append(v[s][gf]['best'])
+                    fd[p].append(v[s][gf]['best']+200)
                 else:
-                    fd[p].append(float(0.0))
+                    fd[p].append("NAb")
 
         return fd
 
@@ -356,7 +361,7 @@ class CouplingBrowser(TemplateView):
         couplings = ProteinGProteinPair.objects.all().prefetch_related('protein',
                                                                        'g_protein_subunit',
                                                                        'g_protein')
-        for c in couplings:
+        for num, c in enumerate(couplings):
             p = c.protein.entry_short()
             s = c.source
             t = c.transduction
@@ -393,8 +398,6 @@ class CouplingBrowser(TemplateView):
                     data[p][s][gf]['subunits'][g] = round(Decimal(0), 2)
                     continue
                 data[p][s][gf]['subunits'][g] = round(Decimal(emdn), 2)
-                if round(Decimal(emdn), 2) == -0.00:
-                    data[p][s][gf]['subunits'][g] = float(0.00)
                 # get the highest number into 'best'
                 if emdn > data[p][s][gf]['best']:
                     data[p][s][gf]['best'] = round(Decimal(emdn), 2)
@@ -409,7 +412,7 @@ class CouplingBrowser(TemplateView):
 
         # This for loop, does the job of putting together
         # data-sets, GuideToPharma, Asuka's and Bouvier.
-        for p, v in data.items():
+        for num, (p, v) in enumerate(data.items()):
             fd[p] = [v['class'], v['family'], v['accession'], v['entryname'], p, v['pretty']]
             s = 'GuideToPharma'
             # Merge
@@ -441,7 +444,7 @@ class CouplingBrowser(TemplateView):
                 if gf in v[s]:
                     fd[p].append(v[s][gf])
                 else:
-                    fd[p].append("NA")
+                    fd[p].append("NAg")
             # Loop over Aska
             s = 'Aska'
             for gf in distinct_g_families:
@@ -451,7 +454,7 @@ class CouplingBrowser(TemplateView):
                     elif v[s][gf]['best'] > threshold_secondary_inoue:
                         fd[p].append("secondary")
                     else:
-                        fd[p].append("NA")
+                        fd[p].append("no coupling")
                 else:
                     fd[p].append("")
             # Last bit adds values in subfamilies
@@ -461,9 +464,9 @@ class CouplingBrowser(TemplateView):
                         if sf in v[s][gf]['subunits']:
                             fd[p].append(v[s][gf]['subunits'][sf])
                         else:
-                            fd[p].append("NA")
+                            fd[p].append("NAi")
                     else:
-                        fd[p].append("")
+                        fd[p].append("NAi")
             # Loop over Bouvier
             s = 'Bouvier'
             for gf in distinct_g_families:
@@ -473,9 +476,9 @@ class CouplingBrowser(TemplateView):
                     elif v[s][gf]['best'] > threshold_secondary_bouvier:
                         fd[p].append("secondary")
                     else:
-                        fd[p].append("No coupling")
+                        fd[p].append("no coupling")
                 else:
-                    fd[p].append("")
+                    fd[p].append("NAg")
             # Last bit adds values to subfamilies
             for gf, sfs in distinct_g_subunit_families.items():
                 for sf in sfs:
@@ -483,11 +486,257 @@ class CouplingBrowser(TemplateView):
                         if sf in v[s][gf]['subunits']:
                             fd[p].append(v[s][gf]['subunits'][sf])
                         else:
-                            fd[p].append("")
+                            fd[p].append("NAb")
                     else:
-                        fd[p].append("NA")
+                        fd[p].append("NAb")
 
         return fd
+
+    @staticmethod
+    def bouv_tab():
+        """
+        This function returns what is needed in the Bouvier tab of the coupling browser
+        :return: A list of values that get invoked sort of "enumerated" in the frontend.
+        """
+        proteins = Protein.objects.filter(sequence_type__slug='wt',
+                                          family__slug__startswith='00',
+                                          species__common_name='Human').all().prefetch_related('family')
+        data = {}
+        """
+        The data dictionary has some format ToDo (document):
+        {'<protein>':
+            {'<gprotein>':
+                {'value1': <value1>,
+                 'value2': <value2>}
+            }
+        }
+        """
+        class_names = {}
+        family_names = {}
+        for p in proteins:
+            p_class = p.family.slug.split('_')[0]
+            if p_class not in class_names:
+                class_names[p_class] = p.family.parent.parent.parent.name
+                family_names[p_class] = p.family.parent.name
+            p_class_name = class_names[p_class].replace('Class', '').strip()
+            p_family_name = family_names[p_class].replace('receptors', '').strip()
+            p_accession = p.accession
+            p_entryname = p.entry_name
+            data[p.entry_short()] = {'class': p_class_name,
+                                     'family': p_family_name,
+                                     'accession': p_accession,
+                                     'entryname': p_entryname,
+                                     'pretty': p.short(),
+                                     'GuideToPharma': {},
+                                     'Aska': {},
+                                     'Bouvier': {}
+                                     }
+        distinct_g_subunit_families = ['gnas2', 'gnal',  'gnai1', 'gnai2', 'gnai3',
+                                       'gnat1', 'gnat2', 'gnat3', 'gnao', 'gnaz',
+                                       'gnaq', 'gna11', 'gna14', 'gna15',
+                                       'gna12', 'gna13']
+
+        couplings = ProteinGProteinPair.objects.all().prefetch_related('protein',
+                                                                       'g_protein_subunit',
+                                                                       'g_protein')
+
+        for num, c in enumerate(couplings):
+            p = c.protein.entry_short()
+            s = c.source
+            emdn = c.emax_dnorm
+            pec50dn = c.pec50_dnorm
+            emmean = c.emax_mean
+            pec50mean = c.pec50_mean
+            emsem = c.emax_sem
+            pec50sem = c.pec50_sem
+
+            if s not in data[p]:
+                data[p][s] = {}
+
+            if c.g_protein_subunit:
+                g = c.g_protein_subunit.entry_name
+                g = g.replace("_human", "")
+                if g not in distinct_g_subunit_families:
+                    distinct_g_subunit_families.append(g)
+                    distinct_g_subunit_families = sorted(distinct_g_subunit_families)
+
+                if 'emdn' not in data[p][s]:
+                    data[p][s]['emdn'] = {'best': 0.00}
+                if 'pec50dn' not in data[p][s]:
+                    data[p][s]['pec50dn'] = {'best': 0.00}
+                if 'emmean' not in data[p][s]:
+                    data[p][s]['emmean'] = {'best': 0.00}
+                if 'pec50mean' not in data[p][s]:
+                    data[p][s]['pec50mean'] = {'best': 0.00}
+                if 'emsem' not in data[p][s]:
+                    data[p][s]['emsem'] = {}
+                if 'pec50sem' not in data[p][s]:
+                    data[p][s]['pec50sem'] = {}
+
+                if emdn is None:
+                    data[p][s]['emdn'][g] = round(Decimal(0), 2)
+                    continue
+                data[p][s]['emdn'][g] = round(Decimal(emdn), 2)
+                # get the highest number into 'best'
+                if emdn > data[p][s]['emdn']['best']:
+                    data[p][s]['emdn']['best'] = round(Decimal(emdn), 2)
+
+                if pec50dn is None:
+                    data[p][s]['pec50dn'][g] = round(Decimal(0), 2)
+                    continue
+                data[p][s]['pec50dn'][g] = round(Decimal(pec50dn), 2)
+                # get the highest number into 'best'
+                if pec50dn > data[p][s]['pec50dn']['best']:
+                    data[p][s]['pec50dn']['best'] = round(Decimal(pec50dn), 2)
+
+                if emmean is None:
+                    data[p][s]['emmean'][g] = round(Decimal(0), 2)
+                    continue
+                data[p][s]['emmean'][g] = round(Decimal(emmean), 2)
+                # get the highest number into 'best'
+                if emmean > data[p][s]['emmean']['best']:
+                    data[p][s]['emmean']['best'] = round(Decimal(emmean), 2)
+
+                if pec50mean is None:
+                    data[p][s]['pec50mean'][g] = round(Decimal(0), 2)
+                    continue
+                data[p][s]['pec50mean'][g] = round(Decimal(pec50mean), 2)
+                # get the highest number into 'best'
+                if pec50mean > data[p][s]['pec50mean']['best']:
+                    data[p][s]['pec50mean']['best'] = round(Decimal(pec50mean), 2)
+
+                if emsem is None:
+                    data[p][s]['emsem'][g] = round(Decimal(0), 2)
+                    continue
+                data[p][s]['emsem'][g] = round(Decimal(emsem), 2)
+
+                if pec50sem is None:
+                    data[p][s]['pec50sem'][g] = round(Decimal(0), 2)
+                    continue
+                data[p][s]['pec50sem'][g] = round(Decimal(pec50sem), 2)
+
+    @staticmethod
+    def inou_tab():
+        """
+        This function returns what is needed in the Inoue tab of the coupling browser
+        :return: A list of values that get invoked sort of "enumerated" in the frontend.
+        """
+        proteins = Protein.objects.filter(sequence_type__slug='wt',
+                                          family__slug__startswith='00',
+                                          species__common_name='Human').all().prefetch_related('family')
+        data = {}
+        """
+        The data dictionary has some format ToDo (document):
+        {'<protein>':
+            {'<gprotein>':
+                {'value1': <value1>,
+                 'value2': <value2>}
+            }
+        }
+        """
+        class_names = {}
+        family_names = {}
+        for p in proteins:
+            p_class = p.family.slug.split('_')[0]
+            if p_class not in class_names:
+                class_names[p_class] = p.family.parent.parent.parent.name
+                family_names[p_class] = p.family.parent.name
+            p_class_name = class_names[p_class].replace('Class', '').strip()
+            p_family_name = family_names[p_class].replace('receptors', '').strip()
+            p_accession = p.accession
+            p_entryname = p.entry_name
+            data[p.entry_short()] = {'class': p_class_name,
+                                     'family': p_family_name,
+                                     'accession': p_accession,
+                                     'entryname': p_entryname,
+                                     'pretty': p.short(),
+                                     'GuideToPharma': {},
+                                     'Aska': {},
+                                     'Bouvier': {}
+                                     }
+        distinct_g_subunit_families = ['gnas2', 'gnal',  'gnai1', 'gnai2', 'gnai3',
+                                       'gnat1', 'gnat2', 'gnat3', 'gnao', 'gnaz',
+                                       'gnaq', 'gna11', 'gna14', 'gna15',
+                                       'gna12', 'gna13']
+
+        couplings = ProteinGProteinPair.objects.all().prefetch_related('protein',
+                                                                       'g_protein_subunit',
+                                                                       'g_protein')
+
+        for num, c in enumerate(couplings):
+            p = c.protein.entry_short()
+            s = c.source
+            emdn = c.emax_dnorm
+            pec50dn = c.pec50_dnorm
+            emmean = c.emax_mean
+            pec50mean = c.pec50_mean
+            emsem = c.emax_sem
+            pec50sem = c.pec50_sem
+
+            if s not in data[p]:
+                data[p][s] = {}
+
+            if c.g_protein_subunit:
+                g = c.g_protein_subunit.entry_name
+                g = g.replace("_human", "")
+                if g not in distinct_g_subunit_families:
+                    distinct_g_subunit_families.append(g)
+                    distinct_g_subunit_families = sorted(distinct_g_subunit_families)
+
+                if 'emdn' not in data[p][s]:
+                    data[p][s]['emdn'] = {'best': 0.00}
+                if 'pec50dn' not in data[p][s]:
+                    data[p][s]['pec50dn'] = {'best': 0.00}
+                if 'emmean' not in data[p][s]:
+                    data[p][s]['emmean'] = {'best': 0.00}
+                if 'pec50mean' not in data[p][s]:
+                    data[p][s]['pec50mean'] = {'best': 0.00}
+                if 'emsem' not in data[p][s]:
+                    data[p][s]['emsem'] = {}
+                if 'pec50sem' not in data[p][s]:
+                    data[p][s]['pec50sem'] = {}
+
+                if emdn is None:
+                    data[p][s]['emdn'][g] = round(Decimal(0), 2)
+                    continue
+                data[p][s]['emdn'][g] = round(Decimal(emdn), 2)
+                # get the highest number into 'best'
+                if emdn > data[p][s]['emdn']['best']:
+                    data[p][s]['emdn']['best'] = round(Decimal(emdn), 2)
+
+                if pec50dn is None:
+                    data[p][s]['pec50dn'][g] = round(Decimal(0), 2)
+                    continue
+                data[p][s]['pec50dn'][g] = round(Decimal(pec50dn), 2)
+                # get the highest number into 'best'
+                if pec50dn > data[p][s]['pec50dn']['best']:
+                    data[p][s]['pec50dn']['best'] = round(Decimal(pec50dn), 2)
+
+                if emmean is None:
+                    data[p][s]['emmean'][g] = round(Decimal(0), 2)
+                    continue
+                data[p][s]['emmean'][g] = round(Decimal(emmean), 2)
+                # get the highest number into 'best'
+                if emmean > data[p][s]['emmean']['best']:
+                    data[p][s]['emmean']['best'] = round(Decimal(emmean), 2)
+
+                if pec50mean is None:
+                    data[p][s]['pec50mean'][g] = round(Decimal(0), 2)
+                    continue
+                data[p][s]['pec50mean'][g] = round(Decimal(pec50mean), 2)
+                # get the highest number into 'best'
+                if pec50mean > data[p][s]['pec50mean']['best']:
+                    data[p][s]['pec50mean']['best'] = round(Decimal(pec50mean), 2)
+
+                if emsem is None:
+                    data[p][s]['emsem'][g] = round(Decimal(0), 2)
+                    continue
+                data[p][s]['emsem'][g] = round(Decimal(emsem), 2)
+
+                if pec50sem is None:
+                    data[p][s]['pec50sem'][g] = round(Decimal(0), 2)
+                    continue
+                data[p][s]['pec50sem'][g] = round(Decimal(pec50sem), 2)
 
 # @cache_page(60*60*24*2) # 2 days caching
 def GProtein(request, dataset="GuideToPharma"):
