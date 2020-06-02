@@ -1933,15 +1933,39 @@ function updateInteractionSettings() {
     option_content += '<li class="list-group-item">' + classtooltip + ' Class A numbering<div class="material-switch pull-right"><input id="option-classa" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-classa" class="label-primary"></label></div></li>';
 
     // Only between helices
-    checked = currentSettings[currentTab]["options"].indexOf("intrahelical") >= 0 ? "checked" : "";
-    var heltooltip = '<span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="When enabled, interactions between residues within the same segment (i.e. TM1-7, H8 or a loop) are also included in the analysis."></span>';
-    option_content += '<li class="list-group-item">' + heltooltip + ' Intrasegment contacts<div class="material-switch pull-right"><input id="option-intrahelical" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-intrahelical" class="label-primary"></label></div></li>';
+    //checked = currentSettings[currentTab]["options"].indexOf("intrahelical") >= 0 ? "checked" : "";
+    //var heltooltip = '<span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="When enabled, interactions between residues within the same segment (i.e. TM1-7, H8 or a loop) are also included in the analysis."></span>';
+    //option_content += '<li class="list-group-item">' + heltooltip + ' Intrasegment contacts<div class="material-switch pull-right"><input id="option-intrahelical" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-intrahelical" class="label-primary"></label></div></li>';
 
     // Toggle backbone interactions
-    checked = currentSettings[currentTab]["options"].indexOf("backbone") >= 0 ? "checked" : "";
-    var bbtooltip = '<span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="When enabled, interactions with and between backbone atoms are also included in the analysis."></span>';
-    option_content += '<li class="list-group-item">' + bbtooltip + ' Backbone contacts<div class="material-switch pull-right"><input id="option-backbone" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-backbone" class="label-primary"></label></div></li>';
+    //checked = currentSettings[currentTab]["options"].indexOf("backbone") >= 0 ? "checked" : "";
+    //var bbtooltip = '<span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="When enabled, interactions with and between backbone atoms are also included in the analysis."></span>';
+    //option_content += '<li class="list-group-item">' + bbtooltip + ' Backbone contacts<div class="material-switch pull-right"><input id="option-backbone" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-backbone" class="label-primary"></label></div></li>';
 
+    option_content += "</ul>"
+    $("#interaction_settings").append(option_content);
+
+    // Setup for splitting all interactions
+    $("#interaction_settings").append('<h5 class="border-bottom">Intersegment contacts</h5>')
+    var option_content = '<ul class="list-group">'
+    checked = currentSettings[currentTab]["options"].indexOf("inter_scsc") >= 0 ? "checked" : "";
+    option_content += '<li class="list-group-item">Sidechain-sidechain<div class="material-switch pull-right"><input id="option-inter_scsc" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-inter_scsc" class="label-primary"></label></div></li>';
+    checked = currentSettings[currentTab]["options"].indexOf("inter_scbb") >= 0 ? "checked" : "";
+    option_content += '<li class="list-group-item">Sidechain-backbone<div class="material-switch pull-right"><input id="option-inter_scbb" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-inter_scbb" class="label-primary"></label></div></li>';
+    checked = currentSettings[currentTab]["options"].indexOf("inter_bbbb") >= 0 ? "checked" : "";
+    option_content += '<li class="list-group-item">Backbone-backbone<div class="material-switch pull-right"><input id="option-inter_bbbb" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-inter_bbbb" class="label-primary"></label></div></li>';
+    option_content += "</ul>"
+    $("#interaction_settings").append(option_content);
+
+    // Setup for splitting all interactions
+    $("#interaction_settings").append('<h5 class="border-bottom">Intrasegment contacts</h5>')
+    var option_content = '<ul class="list-group">'
+    checked = currentSettings[currentTab]["options"].indexOf("intra_scsc") >= 0 ? "checked" : "";
+    option_content += '<li class="list-group-item">Sidechain-sidechain<div class="material-switch pull-right"><input id="option-intra_scsc" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-intra_scsc" class="label-primary"></label></div></li>';
+    checked = currentSettings[currentTab]["options"].indexOf("intra_scbb") >= 0 ? "checked" : "";
+    option_content += '<li class="list-group-item">Sidechain-backbone<div class="material-switch pull-right"><input id="option-intra_scbb" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-intra_scbb" class="label-primary"></label></div></li>';
+    checked = currentSettings[currentTab]["options"].indexOf("intra_bbbb") >= 0 ? "checked" : "";
+    option_content += '<li class="list-group-item">Backbone-backbone<div class="material-switch pull-right"><input id="option-intra_bbbb" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-intra_bbbb" class="label-primary"></label></div></li>';
     option_content += "</ul>"
     $("#interaction_settings").append(option_content);
 

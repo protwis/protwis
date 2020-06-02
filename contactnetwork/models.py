@@ -30,8 +30,8 @@ class Interaction(models.Model):
 
     # interaction_level -> 0 - normal definition, 1 - loosened definition
     interaction_level = models.IntegerField(null=False, default=0)
-    atomname_residue1 = models.CharField(max_length=10, null=True)
-    atomname_residue2 = models.CharField(max_length=10, null=True)
+    atomname_residue1 = models.CharField(max_length=10, null=True, db_index=True)
+    atomname_residue2 = models.CharField(max_length=10, null=True, db_index=True)
 
     @classmethod
     def truncate(cls):
