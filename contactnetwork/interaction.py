@@ -8,6 +8,9 @@ import math
 
 class InteractingPair:
 
+    # Distance for encoding solely side-chain interactions
+    NUM_SKIP_BB_INTERACTIONS = 4
+
     'Common base class for all interactions'
     def __init__(self, res1, res2, dbres1, dbres2, structure):
         self.res1 = res1
@@ -37,6 +40,20 @@ class InteractingPair:
 
         # Van der Waals interactions
         self.van_der_waals_interactions()
+
+        # DISABLED for now - is a toggle in the browser
+        # Filter interactions between backbone atoms if residue distance within cut-off set in cube.py
+        # backbone_atoms = ["C", "O", "N", "CA"]
+        # if self.interactions and abs(self.res1.id[1] - self.res2.id[1]) <= self.NUM_SKIP_BB_INTERACTIONS:
+        #     for i in self.interactions:
+        #         backbone_res1 = i.atomname_residue1 in backbone_atoms
+        #         backbone_res2 = i.atomname_residue2 in backbone_atoms
+        #
+        #         # Remove interaction if both are backbone atoms
+        #         if backbone_res1 and backbone_res2:
+        #             #print("REMOVING this interaction", self.res1.id[1], self.res2.id[1], i.atomname_residue1, i.atomname_residue2)
+        #             self.interactions.remove(i)
+
 
     def get_interactions(self):
         return self.interactions
