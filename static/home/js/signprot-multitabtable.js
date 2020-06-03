@@ -116,7 +116,7 @@ $(document).ready(function () {
                 column_number: 5,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Bouvier",
+                filter_default_label: "Gs",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '60px',
@@ -126,7 +126,7 @@ $(document).ready(function () {
                 column_number: 6,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Inoue",
+                filter_default_label: "Gi/o",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '60px',
@@ -136,14 +136,17 @@ $(document).ready(function () {
                 column_number: 7,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Gtp",
+                filter_default_label: "Gq/11",
                 filter_reset_button_text: false,
+                select_type_options: {
+                    width: '60px',
+                },
             },
             {
                 column_number: 8,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Bouvier",
+                filter_default_label: "G12/13",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '60px',
@@ -153,66 +156,103 @@ $(document).ready(function () {
                 column_number: 9,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Inoue",
+                filter_default_label: "Bouvier",
                 filter_reset_button_text: false,
+                select_type_options: {
+                    width: '60px',
+                },
             },
             {
                 column_number: 10,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "GtP",
+                filter_default_label: "Inoue",
                 filter_reset_button_text: false,
+                select_type_options: {
+                    width: '60px',
+                },
             },
             {
                 column_number: 11,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Bouvier",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '60px',
-                },
-            },
-            {
-                column_number: 12,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Inoue",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 13,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "GtP",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 14,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Bouvier",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '60px',
-                },
-            },
-            {
-                column_number: 15,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Inoue",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 16,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "Gtp",
                 filter_reset_button_text: false,
             },
             {
+                column_number: 12,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Bouvier",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '60px',
+                },
+            },
+            {
+                column_number: 13,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Inoue",
+                filter_reset_button_text: false,
+            },
+            {
+                column_number: 14,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GtP",
+                filter_reset_button_text: false,
+            },
+            {
+                column_number: 15,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Bouvier",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '60px',
+                },
+            },
+            {
+                column_number: 16,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Inoue",
+                filter_reset_button_text: false,
+            },
+            {
                 column_number: 17,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GtP",
+                filter_reset_button_text: false,
+            },
+            {
+                column_number: 18,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Bouvier",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '60px',
+                },
+            },
+            {
+                column_number: 19,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Inoue",
+                filter_reset_button_text: false,
+            },
+            {
+                column_number: 20,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Gtp",
+                filter_reset_button_text: false,
+            },
+            {
+                column_number: 21,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "Bouvier",
@@ -371,7 +411,7 @@ $(document).ready(function () {
                 column_number: 13,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "GNAI3",
+                filter_default_label: "GNAI2",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '80px',
@@ -381,7 +421,7 @@ $(document).ready(function () {
                 column_number: 14,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "GNAO",
+                filter_default_label: "GNAI3",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '80px',
@@ -391,7 +431,7 @@ $(document).ready(function () {
                 column_number: 15,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "GNAZ",
+                filter_default_label: "GNAO",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '80px',
@@ -401,7 +441,7 @@ $(document).ready(function () {
                 column_number: 16,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "GNAQ",
+                filter_default_label: "GNAZ",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '80px',
@@ -411,7 +451,7 @@ $(document).ready(function () {
                 column_number: 17,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "GNA11",
+                filter_default_label: "GNAQ",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '80px',
@@ -421,7 +461,7 @@ $(document).ready(function () {
                 column_number: 18,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "GNA14",
+                filter_default_label: "GNA11",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '80px',
@@ -431,7 +471,7 @@ $(document).ready(function () {
                 column_number: 19,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "GNA15",
+                filter_default_label: "GNA14",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '80px',
@@ -441,7 +481,7 @@ $(document).ready(function () {
                 column_number: 20,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "GNAQ",
+                filter_default_label: "GNA15",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '80px',
@@ -451,7 +491,7 @@ $(document).ready(function () {
                 column_number: 21,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "GNA14",
+                filter_default_label: "GNAQ",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '80px',
@@ -461,7 +501,7 @@ $(document).ready(function () {
                 column_number: 22,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "GNA15",
+                filter_default_label: "GNA11",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '80px',
@@ -471,7 +511,7 @@ $(document).ready(function () {
                 column_number: 23,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "GNA12",
+                filter_default_label: "GNA14",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '80px',
@@ -481,7 +521,7 @@ $(document).ready(function () {
                 column_number: 24,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "GNA13",
+                filter_default_label: "GNA15",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '80px',
@@ -511,7 +551,7 @@ $(document).ready(function () {
                 column_number: 27,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "BARR1/GRK2",
+                filter_default_label: "GNA12",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '80px',
@@ -519,6 +559,26 @@ $(document).ready(function () {
             },
             {
                 column_number: 28,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNA13",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '80px',
+                },
+            },
+            {
+                column_number: 29,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "BARR1/GRK2",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '80px',
+                },
+            },
+            {
+                column_number: 30,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "BARR2/GRK2",
@@ -547,6 +607,7 @@ $(document).ready(function () {
         "scroller": true,
         "paging": false,
         "bSortCellsTop": false, //prevent sort arrows going on bottom row
+        "aaSorting": [],
         "autoWidth": true,
         "pageLength": -1,
         "bInfo": true,
@@ -643,286 +704,693 @@ $(document).ready(function () {
                     width: '80px',
                 },
             },
+
+
             {
                 column_number: 10,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Gs",
+                filter_default_label: "GNAS2",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '30px',
+                    width: '70px',
                 },
             },
             {
                 column_number: 11,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Gi1",
+                filter_default_label: "GNAI1",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '30px',
+                    width: '70px',
                 },
             },
             {
                 column_number: 12,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Gi2",
+                filter_default_label: "GNAI2",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '30px',
+                    width: '70px',
                 },
             },
             {
                 column_number: 13,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "GoA",
+                filter_default_label: "GNAO",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '30px',
+                    width: '70px',
                 },
             },
             {
                 column_number: 14,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Gs",
+                filter_default_label: "GNAZ",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '30px',
+                    width: '70px',
                 },
             },
             {
                 column_number: 15,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Gi1",
+                filter_default_label: "GNAQ",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '30px',
+                    width: '70px',
                 },
             },
             {
                 column_number: 16,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Gi2",
+                filter_default_label: "GNA11",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '30px',
+                    width: '70px',
                 },
             },
             {
                 column_number: 17,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "GoA",
+                filter_default_label: "GNA14",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '30px',
+                    width: '70px',
                 },
             },
             {
                 column_number: 18,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Gs",
+                filter_default_label: "GNA15",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '30px',
+                    width: '70px',
                 },
             },
             {
                 column_number: 19,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Gi1",
+                filter_default_label: "GNA12",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '30px',
+                    width: '70px',
                 },
             },
             {
                 column_number: 20,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Gi2",
+                filter_default_label: "GNA13",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '30px',
+                    width: '70px',
                 },
             },
+
+
+
+
             {
                 column_number: 21,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "GoA",
+                filter_default_label: "GNAS2",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '30px',
+                    width: '70px',
                 },
             },
             {
                 column_number: 22,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Gs",
+                filter_default_label: "GNAI1",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '30px',
+                    width: '70px',
                 },
             },
             {
                 column_number: 23,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Gi1",
+                filter_default_label: "GNAI2",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '30px',
+                    width: '70px',
                 },
             },
             {
                 column_number: 24,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Gi2",
+                filter_default_label: "GNAO",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '30px',
+                    width: '70px',
                 },
             },
             {
                 column_number: 25,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "GoA",
+                filter_default_label: "GNAZ",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '30px',
+                    width: '70px',
                 },
             },
             {
                 column_number: 26,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Gs",
+                filter_default_label: "GNAQ",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '30px',
+                    width: '70px',
                 },
             },
             {
                 column_number: 27,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Gi1",
+                filter_default_label: "GNA11",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '30px',
+                    width: '70px',
                 },
             },
             {
                 column_number: 28,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Gi2",
+                filter_default_label: "GNA14",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '30px',
+                    width: '70px',
                 },
             },
             {
                 column_number: 29,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "GoA",
+                filter_default_label: "GNA15",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '30px',
+                    width: '70px',
                 },
             },
             {
                 column_number: 30,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Gs",
+                filter_default_label: "GNA12",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '30px',
+                    width: '70px',
                 },
             },
             {
                 column_number: 31,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Gi1",
+                filter_default_label: "GNA13",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '30px',
+                    width: '70px',
                 },
             },
+
+
+
+
             {
                 column_number: 32,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Gi2",
+                filter_default_label: "GNAS2",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '30px',
+                    width: '70px',
                 },
             },
             {
                 column_number: 33,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "GoA",
+                filter_default_label: "GNAI1",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '30px',
+                    width: '70px',
                 },
             },
             {
                 column_number: 34,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Gs",
+                filter_default_label: "GNAI2",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '30px',
+                    width: '70px',
                 },
             },
             {
                 column_number: 35,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Gi1",
+                filter_default_label: "GNAO",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '30px',
+                    width: '70px',
                 },
             },
             {
                 column_number: 36,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Gi2",
+                filter_default_label: "GNAZ",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '30px',
+                    width: '70px',
                 },
             },
             {
                 column_number: 37,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "GoA",
+                filter_default_label: "GNAQ",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '30px',
+                    width: '70px',
                 },
             },
+            {
+                column_number: 38,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNA11",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 39,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNA14",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 40,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNA15",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 41,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNA12",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 42,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNA13",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+
+
+
+
+            {
+                column_number: 43,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNAS2",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 44,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNAI1",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 45,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNAI2",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 46,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNAO",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 47,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNAZ",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 48,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNAQ",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 49,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNA11",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 50,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNA14",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 51,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNA15",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 52,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNA12",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 53,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNA13",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+
+
+
+
+            {
+                column_number: 54,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNAS2",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 55,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNAI1",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 56,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNAI2",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 57,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNAO",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 58,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNAZ",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 59,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNAQ",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 60,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNA11",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 61,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNA14",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 62,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNA15",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 63,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNA12",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 64,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNA13",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+
+
+
+
+            {
+                column_number: 65,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNAS2",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 66,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNAI1",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 67,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNAI2",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 68,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNAO",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 69,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNAZ",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 70,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNAQ",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 71,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNA11",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 72,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNA14",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 73,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNA15",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 74,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNA12",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+            {
+                column_number: 75,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "GNA13",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '70px',
+                },
+            },
+
+
+
+
+
         ],
         {filters_tr_index: 1},
         {
@@ -1421,4 +1889,34 @@ function resetHidden2() {
         }
     });
     oTable2.draw();
+}
+
+function resetHidden3() {
+    var columns = Array.from(new Array(70), (x,i) => i + 3);
+    columns.forEach(function(column) {
+        console.log('columns variable ' + columns);
+        column = oTable3.column( column );
+        try {
+            column.visible( true, false );
+        }
+        catch(err) {
+            column.visible( true, false );
+        }
+    });
+    oTable3.draw();
+}
+
+function resetHidden4() {
+    var columns = Array.from(new Array(28), (x,i) => i + 3);
+    columns.forEach(function(column) {
+        console.log('columns variable ' + columns);
+        column = oTable4.column( column );
+        try {
+            column.visible( true, false );
+        }
+        catch(err) {
+            column.visible( true, false );
+        }
+    });
+    oTable4.draw();
 }
