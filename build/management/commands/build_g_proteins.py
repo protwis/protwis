@@ -14,11 +14,11 @@ import numpy as np
 import pandas as pd
 from pprint import pprint
 import requests
+import xlrd
 import xmltodict
 import yaml
 
 import Bio.PDB as PDB
-import xlrd
 from Bio import SeqIO, pairwise2
 from Bio.pairwise2 import format_alignment
 from common.models import Publication, WebLink, WebResource
@@ -51,7 +51,9 @@ class Command(BaseCommand):
     lookup = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'CGN_lookup.csv'])
     alignment_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'CGN_referenceAlignment.fasta'])
     ortholog_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'gprotein_orthologs.csv'])
-    aska_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', '200204_inoue.xlsx'])
+    iupharcoupling_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', '200416_iuphar_coupling_data.csv'])
+    inoue_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', '200204_inoue.xlsx'])
+    bouvier_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', '200127_bouvier.xlsx'])
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot'])
     local_uniprot_beta_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot_beta'])
     local_uniprot_gamma_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot_gamma'])
@@ -60,12 +62,26 @@ class Command(BaseCommand):
     logger = logging.getLogger(__name__)
 
     def add_arguments(self, parser):
-        parser.add_argument('--filename', action='append', dest='filename',
+        parser.add_argument('--filename',
+                            action='append',
+                            dest='filename',
                             help='Filename to import. Can be used multiple times')
-        parser.add_argument('--wt', default=False, type=str, help='Add wild type protein sequence to data')
-        parser.add_argument('--xtal', default=False, type=str, help='Add xtal to data')
-        parser.add_argument('--build_datafile', default=False, action='store_true',
+        parser.add_argument('--wt',
+                            default=False,
+                            type=str,
+                            help='Add wild type protein sequence to data')
+        parser.add_argument('--xtal',
+                            default=False,
+                            type=str,
+                            help='Add xtal to data')
+        parser.add_argument('--build_datafile',
+                            default=False,
+                            action='store_true',
                             help='Build PDB_UNIPROT_ENSEMBLE_ALL file')
+        parser.add_argument('--coupling',
+                            default=False,
+                            action='store_true',
+                            help='Purge and import GPCR-Gprotein coupling data')
 
     def handle(self, *args, **options):
         self.options = options
@@ -77,13 +93,32 @@ class Command(BaseCommand):
             self.add_entry()
         elif self.options['build_datafile']:
             self.build_table_from_fasta()
+        elif self.options['coupling']:
+            self.purge_coupling_data()
+            self.logger.info('PASS: purge_coupling_data')
+            self.create_g_proteins(filenames)
+            self.logger.info('PASS: create_g_proteins')
+            if os.path.exists(self.inoue_file):
+                self.add_inoue_coupling_data()
+                self.logger.info('PASS: add_inoue_coupling_data')
+            else:
+                self.logger.warning('Inoue source data ' + self.inoue_file + ' not found')
+            if os.path.exists(self.bouvier_file):
+                self.add_bouvier_coupling_data()
+                self.logger.info('PASS: add_bouvier_coupling_data')
+            else:
+                self.logger.warning('Bouvier source data ' + self.bouvier_file + ' not found')
         else:
-            # Add gproteins from CGN-db Common G-alpha Numbering <https://www.mrc-lmb.cam.ac.uk/CGN/>
+            # Add G-proteins from CGN-db Common G-alpha Numbering <https://www.mrc-lmb.cam.ac.uk/CGN/>
             try:
                 self.purge_signprot_complex_data()
+                self.logger.info('PASS: purge_signprot_complex_data')
                 self.purge_coupling_data()
+                self.logger.info('PASS: purge_coupling_data')
                 self.purge_cgn_proteins()
+                self.logger.info('PASS: purge_cgn_proteins')
                 self.purge_other_subunit_proteins()
+                self.logger.info('PASS: purge_other_subunit_proteins')
 
                 self.ortholog_mapping = OrderedDict()
                 with open(self.ortholog_file, 'r') as ortholog_file:
@@ -101,18 +136,32 @@ class Command(BaseCommand):
                                 if column == '':
                                     continue
                                 self.ortholog_mapping[column + '_' + header[j]] = row[0]
+                self.logger.info('PASS: ortholog_mapping')
 
                 self.create_g_proteins(filenames)
+                self.logger.info('PASS: create_g_proteins')
                 self.cgn_create_proteins_and_families()
+                self.logger.info('PASS: cgn_create_proteins_and_families')
 
                 human_and_orths = self.cgn_add_proteins()
+                self.logger.info('PASS: cgn_add_proteins')
                 self.update_protein_conformation(human_and_orths)
+                self.logger.info('PASS: update_protein_conformation')
                 self.create_barcode()
+                self.logger.info('PASS: create_barcode')
                 self.add_other_subunits()
-                if os.path.exists(self.aska_file):
-                    self.add_aska_coupling_data()
+                self.logger.info('PASS: add_other_subunits')
+                if os.path.exists(self.inoue_file):
+                    self.add_inoue_coupling_data()
+                    self.logger.info('PASS: add_inoue_coupling_data')
                 else:
-                    self.logger.warning('Asuka source data ' + self.aska_file + ' not found' )
+                    self.logger.warning('Inoue source data ' + self.inoue_file + ' not found')
+                if os.path.exists(self.bouvier_file):
+                    self.add_bouvier_coupling_data()
+                    self.logger.info('PASS: add_bouvier_coupling_data')
+                else:
+                    self.logger.warning('Bouvier source data ' + self.bouvier_file + ' not found')
+
 
             except Exception as msg:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -174,7 +223,12 @@ class Command(BaseCommand):
             prot_conf, created = ProteinConformation.objects.get_or_create(protein=prot, state=state)
 
     def fetch_missing_uniprot_files(self):
-        BASE = 'http://www.uniprot.org'
+        """
+        This function is not being used at the moment 23-04-2020
+        TODO: Check if this function is needed.
+        :return:
+        """
+        BASE = 'https://www.uniprot.org'
         KB_ENDPOINT = '/uniprot/'
         uniprot_files = os.listdir(self.local_uniprot_dir)
         new_uniprot_files = os.listdir(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot']))
@@ -354,6 +408,10 @@ class Command(BaseCommand):
             subprocess.call(shlex.split(command))
 
     def purge_coupling_data(self):
+        # Connect to postgres to tell the table ID to be reset to start at 1.
+        with connection.cursor() as cursor:
+            sql1 = 'ALTER SEQUENCE protein_gprotein_pair_id_seq RESTART WITH 1;'
+            cursor.execute(sql1)
         try:
             ProteinGProteinPair.objects.filter().delete()
             ProteinGProtein.all().delete()
@@ -419,27 +477,33 @@ class Command(BaseCommand):
                     self.logger.error('Failed creating barcode for ' + CGN + ' for protein ' + p.name)
 
     def create_g_proteins(self, filenames=False):
+        """
+        Function to add G-protein items to the database, moreover to add G-protein_GPCR pairs.
+        The function reads a iupharcoupling_file, which comes from parsing the Guide_to_Pharmacology.
+        Details perhaps from Christian Munk, or Alexander Hauser.
+        """
         self.logger.info('CREATING GPROTEINS')
 
         translation = {'Gs family': '100_001_001', 'Gi/Go family': '100_001_002', 'Gq/G11 family': '100_001_003',
                        'G12/G13 family': '100_001_004', 'GPa1 family': '100_001_005'}
 
-        # read source files
+        # read source file
         if not filenames:
-            filenames = [fn for fn in os.listdir(self.gprotein_data_path) if fn.endswith('iuphar_coupling_data.csv')]
+            filenames = [self.iupharcoupling_file]
+#            filenames = [fn for fn in os.listdir(self.gprotein_data_path) if fn.endswith('iuphar_coupling_data.csv')]
+#            filenames = ['200416_iuphar_coupling_data.csv']
+#            print(filenames)
         source = "GuideToPharma"
         for filename in filenames:
-            filepath = os.sep.join([self.gprotein_data_path, filename])
-
+            filepath = self.iupharcoupling_file
+#            filepath = os.sep.join([self.gprotein_data_path, filename])
             self.logger.info('Reading filename ' + filename)
-
             pub_years = defaultdict(int)
             pub_years_protein = defaultdict(set)
 
             with open(filepath, 'r') as f:
                 reader = csv.reader(f)
                 for row in islice(reader, 1, None):  # skip first line
-
                     entry_name = row[3]
                     primary = row[11]
                     secondary = row[12]
@@ -537,6 +601,7 @@ class Command(BaseCommand):
                         print("error in secondary assignment", p, gp, e)
         # for key, value in sorted(pub_years.items()):
         #     print(key, value,pub_years_protein[key])
+
         self.logger.info('COMPLETED CREATING G PROTEINS')
 
     def read_excel(self, filenames=False, sheet=None):
@@ -592,22 +657,119 @@ class Command(BaseCommand):
 
         return data
 
-    def read_excel2(self, filenames=False, sheetname=None):
+    def read_inoue(self, filenames=False):
         """
         This function reads G-protein coupling data coming for Asuka Inoue. The previous function *read_excel*,
         read the data from an older excel source file with slightly different formatting. It's left here in case
         of need.
+        The dimensions of the data matrix are unfortunately hard-coded since they will be fully dependent on the
+        peculiar format the submitter chooses, furthermore, which G-proteins were used in the experiments.
+        """
+        book = xlrd.open_workbook(filenames)
+        #        sheet = book.sheet_by_name(sheetname)
+        sheet1 = book.sheet_by_name("LogRA")
+        sheet2 = book.sheet_by_name("pEC50")
+        sheet3 = book.sheet_by_name("Emax")
+        sheet4 = book.sheet_by_name("emaxdn")
+        sheet5 = book.sheet_by_name("pec50dn")
+        rows = sheet1.nrows
+        cols = sheet1.ncols - 1
+        maxmeancol = 13
+        maxsemcol = 24
+        data = {}
+        """
+        data (a dictionary) must have this format:
+        {'<protein>':
+            {'<gprotein>':
+                {'mean': <mean>,
+                 'sem': <sem>}
+            }
+        }
+        """
+
+        def cleanValue(s):
+            """
+            Function to return a 0.0 (a value which means no coupling) since returning
+            an NA string to the database field declared as a float won't work, also
+            because NULL might have a meaning. In Python to return NULL one uses None
+
+            :param s:
+            :return: float
+            """
+            if s == 'NA':
+                # return None
+                return float(0.0)
+            else:
+                return float(str(s).strip())
+                # return str(s).strip()
+
+        for i in range(2, rows):
+            protein = sheet1.cell_value(i, 0)  # NOTE: Assumes protein names constant across sheets.
+            protein_dict = {}
+
+            # lograimean
+            for j in range(2, maxmeancol):
+                gprotein = sheet1.cell_value(1, j)
+                protein_dict[gprotein] = {}
+                protein_dict[gprotein]['lograimean'] = cleanValue(sheet1.cell_value(i, j))
+
+            # lograisem
+            for j in range(maxmeancol, maxsemcol):
+                gprotein = sheet1.cell_value(1, j)
+                protein_dict[gprotein]['lograisem'] = cleanValue(sheet1.cell_value(i, j))
+
+            # pec50mean
+            for j in range(2, maxmeancol):
+                gprotein = sheet2.cell_value(1, j)
+                protein_dict[gprotein]['pec50mean'] = cleanValue(sheet2.cell_value(i, j))
+                # print(type(cleanValue(sheet2.cell_value(i, j))), i, j)
+
+            # pec50sem
+            for j in range(maxmeancol, maxsemcol):
+                gprotein = sheet2.cell_value(1, j)
+                protein_dict[gprotein]['pec50sem'] = cleanValue(sheet2.cell_value(i, j))
+
+            # emaxmean
+            for j in range(2, maxmeancol):
+                gprotein = sheet3.cell_value(1, j)
+                protein_dict[gprotein]['emaxmean'] = cleanValue(sheet3.cell_value(i, j))
+
+            # emaxsem
+            for j in range(maxmeancol, maxsemcol):
+                gprotein = sheet3.cell_value(1, j)
+                protein_dict[gprotein]['emaxsem'] = cleanValue(sheet3.cell_value(i, j))
+
+            # emaxdn
+            for j in range(2, maxmeancol):
+                gprotein = sheet4.cell_value(1, j)
+                protein_dict[gprotein]['emaxdn'] = cleanValue(sheet4.cell_value(i, j))
+
+            # pec50dn
+            for j in range(2, maxmeancol):
+                gprotein = sheet5.cell_value(1, j)
+                protein_dict[gprotein]['pec50dn'] = cleanValue(sheet5.cell_value(i, j))
+
+            data[protein] = protein_dict
+
+        return data
+
+    def read_bouvier(self, filenames=False):
+        """
+        This function reads G-protein coupling data coming from Michel Bouvier.
         The dimensions of the data matrix are fixed since they will be fully dependent on the peculiar format
         the submitter chooses.
         """
         book = xlrd.open_workbook(filenames)
-        sheet = book.sheet_by_name(sheetname)
-        rows = sheet.nrows
-        cols = sheet.ncols - 1
-        maxmeancol = 13
-        maxsemcol = 24
+        # sheet = book.sheet_by_name(sheetname)
+        sheet1 = book.sheet_by_name("logec50")
+        sheet2 = book.sheet_by_name("emax")
+        sheet3 = book.sheet_by_name("logec50dn")
+        sheet4 = book.sheet_by_name("emaxdn")
+        rows = sheet1.nrows
+        cols = sheet1.ncols - 1
+        maxmeancol = 13 # TODO: READ 14, 15. Arrestins. Perhaps with build_arrestins.py?
+        maxsemcol = 26  # TODO: READ 27, 28. Arrestins. Perhaps with build_arrestins.py?
         data = {}
-
         """data is a dictionary and must have this format:
         {'<protein>':
             {'<gprotein>':
@@ -615,62 +777,97 @@ class Command(BaseCommand):
                  'sem': <sem>}
             }
         }"""
+
+        def cleanValue(s):
+            """
+            Function to return a 0.0 (a value which means no coupling) since returning
+            an NA string to the database field declared as a float won't work, also
+            because NULL might have a meaning. In Python to return NULL one uses None
+
+            :param s:
+            :return: float
+            """
+            if s == 'NA':
+                # return None
+                return float(0.0)
+            else:
+                return float(str(s).strip())
+                # return str(s).strip()
+
         for i in range(2, rows):
-            protein = sheet.cell_value(i, 0)
+            protein = sheet1.cell_value(i, 0)
             protein_dict = {}
 
-            # it returns a -2.0 (a ridiculous value for now) since returning an NA string to the database
-            # field declared as a float won't work, also because NULL might have a meaning.
-            # In Python to return NULL one uses None
-            def cleanValue(s):
-                if s == 'NA':
-                    # return None
-                    return '-2.0'
-                else:
-                    return str(s).strip()
-
-            # mean
+            # pec50mean
             for j in range(2, maxmeancol):
-                gprotein = sheet.cell_value(1, j)
+                gprotein = sheet1.cell_value(1, j)
                 protein_dict[gprotein] = {}
-                protein_dict[gprotein]['mean'] = cleanValue(sheet.cell_value(i, j))
+                # Notice that the original data is logEC50, that's why it's multiplied by -1
+                protein_dict[gprotein]['pec50mean'] = -1 * cleanValue(sheet1.cell_value(i, j))
+                # print(type(cleanValue(sheet1.cell_value(i, j))), i, j)
 
-            # sem
-            for j in range(maxmeancol, maxsemcol):
-                gprotein = sheet.cell_value(1, j)
-                protein_dict[gprotein]['sem'] = cleanValue(sheet.cell_value(i, j))
+            # pec50sem
+            for j in range(maxmeancol+2, maxsemcol):
+                gprotein = sheet1.cell_value(1, j)
+                protein_dict[gprotein]['pec50sem'] = cleanValue(sheet1.cell_value(i, j))
+
+            # emaxmean
+            for j in range(2, maxmeancol):
+                gprotein = sheet2.cell_value(1, j)
+                protein_dict[gprotein]['emaxmean'] = cleanValue(sheet2.cell_value(i, j))
+
+            # emaxsem
+            for j in range(maxmeancol+2, maxsemcol):
+                gprotein = sheet2.cell_value(1, j)
+                protein_dict[gprotein]['emaxsem'] = cleanValue(sheet2.cell_value(i, j))
+
+            # pec50dn
+            for j in range(2, maxmeancol):
+                gprotein = sheet3.cell_value(1, j)
+                protein_dict[gprotein]['pec50dn'] = cleanValue(sheet3.cell_value(i, j))
+
+            # emaxdn
+            for j in range(2, maxmeancol):
+                gprotein = sheet4.cell_value(1, j)
+                protein_dict[gprotein]['emaxdn'] = cleanValue(sheet4.cell_value(i, j))
 
             data[protein] = protein_dict
 
         return data
 
-    def add_aska_coupling_data(self):
+    def add_inoue_coupling_data(self):
         """
-        This function adds coupling data to the database. For now only that coming from Asuka Inoue
-        but it might need to add data from other sources and that's why C. Munk has created the source field in the
-        database already.
+        This function adds coupling data coming from Asuka Inoue
 
         @return:
+        p, g, source, values['ec50mean'], values['ec50sem'], ..., gp
+        p = protein_name
+        g = g_protein subfamily slug
+        source = One of GuideToPharma, Aska, Bouvier
+        values = selfdescriptive
+        gp = gprotein name, e.g. gna13_human
         """
-        self.logger.info('BEGIN ADDING Asuka Inoue\'s G-protein coupling data' )
-        translation = {'Gs family': '100_001_001', 'Gi/Go family': '100_001_002', 'Gq/G11 family': '100_001_003',
-                       'G12/G13 family': '100_001_004', }
+        self.logger.info('BEGIN ADDING Inoue\'s G-protein coupling data' )
+        # translation = {'Gs family': '100_001_001', 'Gi/Go family': '100_001_002', 'Gq/G11 family': '100_001_003',
+        #               'G12/G13 family': '100_001_004', }
 
         # read source files
-        filepath = self.aska_file
-        sheetname = "pEC50"
+        filepath = self.inoue_file
+
         self.logger.info('Reading file ' + filepath)
-        data = self.read_excel2(filepath, sheetname)
+        data = self.read_inoue(filepath)
+        #  pprint(data['UTS2R'])
+        #  pprint(data)
         source = 'Aska'
         lookup = {}
-        #print(data)
+
         for entry_name, couplings in data.items():
-            #print(data.items())
-            # if it has / then pick first, since it gets same protein
+            #  pprint(data.items())
+            #  if it has / then pick first, since it gets same protein
             entry_name = entry_name.split("/")[0]
-            # append _human to entry name
-            # entry_name = "{}_HUMAN".format(entry_name).lower()
-            # Fetch protein
+            #  append _human to entry name
+            #  entry_name = "{}_HUMAN".format(entry_name).lower()
+            #  Fetch protein
             try:
                 p = Protein.objects.filter(genes__name=entry_name, species__common_name="Human")[0]
             except Protein.DoesNotExist:
@@ -688,16 +885,98 @@ class Command(BaseCommand):
                     lookup[gprotein] = gp
                 else:
                     gp = lookup[gprotein]
-                # Assume there are there.
+                # Assume they are there.
                 if gp.family.slug not in lookup:
                     g = ProteinGProtein.objects.get(slug="_".join(gp.family.slug.split("_")[:3]))
                     lookup[gp.family.slug] = g
                 else:
                     g = lookup[gp.family.slug]
-                gpair = ProteinGProteinPair(protein=p, g_protein=g, source=source, log_rai_mean=values['mean'],
-                                            log_rai_sem=values['sem'], g_protein_subunit=gp)
+
+                # print(p, g, source, values['ec50mean'], values['ec50sem'], values['emaxmean'], values['emaxsem'],  gp)
+                gpair = ProteinGProteinPair(protein=p,
+                                            g_protein=g,
+                                            source=source,
+                                            log_rai_mean=values['lograimean'],
+                                            log_rai_sem=values['lograisem'],
+                                            pec50_mean=values['pec50mean'],
+                                            pec50_sem=values['pec50sem'],
+                                            pec50_dnorm=values['pec50dn'],
+                                            emax_mean=values['emaxmean'],
+                                            emax_sem=values['emaxsem'],
+                                            emax_dnorm=values['emaxdn'],
+                                            g_protein_subunit=gp)
                 gpair.save()
-        self.logger.info('COMPLETED ADDING Asuka Inoue\'s G-protein coupling data')
+
+        self.logger.info('COMPLETED ADDING Inoue\'s G-protein coupling data')
+
+    def add_bouvier_coupling_data(self):
+        """
+        This function adds coupling data coming from Michel Bouvier's lab.
+
+        @return:
+        p, g, source, values['ec50mean'], values['ec50sem'], ..., gp
+        p = protein_name
+        g = g_protein subfamily slug
+        source = One of GuideToPharma, Aska, Bouvier
+        values = selfdescriptive
+        gp = gprotein name, e.g. gna13_human
+        """
+        self.logger.info('BEGIN ADDING Bouvier\'s G-protein coupling data')
+
+        # read source files
+        filepath = self.bouvier_file
+        self.logger.info('Reading file ' + filepath)
+        data = self.read_bouvier(filepath)
+        #pprint(data['AVP2R'])
+        #pprint(data['BDKRB1'])
+        source = 'Bouvier'
+        lookup = {}
+
+        for entry_name, couplings in data.items():
+            #pprint(data.items())
+            # if it has / then pick first, since it gets same protein
+            entry_name = entry_name.split("/")[0]
+            # append _human to entry name
+            #entry_name = "{}_HUMAN".format(entry_name).lower()
+            #pprint(entry_name)
+            # Fetch protein
+            try:
+                p = Protein.objects.filter(genes__name=entry_name, species__common_name="Human")[0]
+
+            except Protein.DoesNotExist:
+                self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
+                print("protein not found for ", entry_name)
+                continue
+
+            for gprotein, values in couplings.items():
+                if gprotein not in lookup:
+                    gp = Protein.objects.filter(family__name=gprotein, species__common_name="Human")[0]
+                    lookup[gprotein] = gp
+                else:
+                    gp = lookup[gprotein]
+                # Assume they are there.
+                if gp.family.slug not in lookup:
+                    g = ProteinGProtein.objects.get(slug="_".join(gp.family.slug.split("_")[:3]))
+                    lookup[gp.family.slug] = g
+                else:
+                    g = lookup[gp.family.slug]
+
+                #print(p, g, source, gp)
+                #print(p, g, source, values['ec50mean'], values['ec50sem'], values['emaxmean'], values['emaxsem'],
+                #      values['ec50dn'], values['emaxdn'], gp)
+                gpair = ProteinGProteinPair(protein=p,
+                                           g_protein=g,
+                                           source=source,
+                                           pec50_mean=values['pec50mean'],
+                                           pec50_sem=values['pec50sem'],
+                                           pec50_dnorm=values['pec50dn'],
+                                           emax_mean=values['emaxmean'],
+                                           emax_sem=values['emaxsem'],
+                                           emax_dnorm=values['emaxdn'],
+                                           g_protein_subunit=gp)
+                gpair.save()
+
+        self.logger.info('COMPLETED ADDING Bouvier\'s G-protein coupling data')
 
     def purge_cgn_proteins(self):
         try:
@@ -857,7 +1136,6 @@ class Command(BaseCommand):
         self.add_cgn_residues(gprotein_list)
 
     def cgn_add_proteins(self):
-
         self.logger.info('Start parsing PDB_UNIPROT_ENSEMBLE_ALL')
         self.logger.info('Parsing file ' + self.gprotein_data_file)
 

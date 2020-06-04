@@ -131,6 +131,7 @@ def recreate3Dorder(distance_matrix, gn_grouping, mirror = False):
     to_ref = consecutive_group_order(gn_grouping) # based on groups - same initial four points, same plane
     for repeat in range(0,10):
         to = to_ref[:]
+        skip_this_loop = False
 
         if repeat > 0:
             random.seed(repeat)
@@ -155,10 +156,14 @@ def recreate3Dorder(distance_matrix, gn_grouping, mirror = False):
             #print("calculating for TM", str(i+1))
             if i == 3:
                 # just take the first solution (mirrored solution)
-                if mirror:
-                    tms[i] = trilaterate(tms[0], tms[1], tms[2], reorder_dist[0][i], reorder_dist[1][i], reorder_dist[2][i])[1]
-                else:
-                    tms[i] = trilaterate(tms[0], tms[1], tms[2], reorder_dist[0][i], reorder_dist[1][i], reorder_dist[2][i])[0]
+                try:
+                    if mirror:
+                        tms[i] = trilaterate(tms[0], tms[1], tms[2], reorder_dist[0][i], reorder_dist[1][i], reorder_dist[2][i])[1]
+                    else:
+                        tms[i] = trilaterate(tms[0], tms[1], tms[2], reorder_dist[0][i], reorder_dist[1][i], reorder_dist[2][i])[0]
+                except:
+                    skip_this_loop = True
+                    break
             else:
                 # Alternative 1: Place point using just the previous three points
                 # sr = [i-3,i-2,i-1]
@@ -193,8 +198,10 @@ def recreate3Dorder(distance_matrix, gn_grouping, mirror = False):
                         scaler += 0.01
                         # print("Scaling up", scaler)
                         if scaler > 1.1: # Way off, only if DB data is wrong (TODO: throw and handle error )
+                            skip_this_loop = True
                             break
                         pass
+
 
                 # Alternative 3: place point using the most distant references (should minimize placement rounding error)
                 # ref_distances = [reorder_dist[i][x] for x in range(0,min(i,max(gn_grouping)+1))]
@@ -215,6 +222,10 @@ def recreate3Dorder(distance_matrix, gn_grouping, mirror = False):
                 # changes = [abs(np.linalg.norm(tms[i][j]-tms[ref_point]) - ref_dist) for j in range(0,2)]
                 # print("CHANGES", i, changes)
                 # tms[i] = tms[i][changes.index(min(changes))]
+
+        # Verify if this loop could reconstruct all points
+        if skip_this_loop:
+            continue
 
         # Rearrange to correct order
         tms = [tms[to.index(i)] for i in range(0,len(gn_grouping))]
@@ -278,10 +289,11 @@ def trilaterate(P1,P2,P3,r1,r2,r3):
     return p_12_a,p_12_b
 
 
-# mode => 0 - extracellular, 1 intracellular, 2 major pocket (class A)
+# mode => 0 - extracellular, 1 intracellular, 2 major pocket (class A), 3 middle
 def tm_movement_2D(pdbs1, pdbs2, mode, data, gn_dictionary):
+    string_mode = ["extracellular", "intracellular", "pocket", "middle"]
     intracellular = (mode == 1)
-    print("COMPARISON")
+    print("COMPARISON", string_mode[mode])
     print(pdbs1)
     print("VS")
     print(pdbs2)
@@ -347,6 +359,7 @@ def tm_movement_2D(pdbs1, pdbs2, mode, data, gn_dictionary):
                 for upwards in range(9, 6, -1):
                    if len(tm_only) >= (start_pos+upwards):
                        middle_gpcr[i] = tm_only[(start_pos+upwards-3):(start_pos+upwards)]
+                       continue
             else:
                 if len(tm_only) < 9:
                     print("too few residues")
@@ -374,6 +387,56 @@ def tm_movement_2D(pdbs1, pdbs2, mode, data, gn_dictionary):
         #     middle_gpcr[i] = tm_only[0:3]
         #print(middle_gpcr)
 
+    elif mode == 3: # Middle
+        # References points from membrane middle of GPCR
+        ref_membrane_mid = {}
+        ref_membrane_mid["001"] = [['1x43', '1x44','1x45'], ['2x51', '2x52','2x53'], ['3x35', '3x36', '3x37'], ['4x53', '4x54', '4x55'], ['5x45', '5x46', '5x47'], ['6x47', '6x48', '6x49'], ['7x42', '7x43', '7x44']] # A
+        #ref_membrane_mid["002"] = [['1x50', '1x51', '1x52'], ['2x57', '2x58', '2x59'], ['3x40','3x41','3x42'], ['4x53', '4x54', '4x55'], ['5x44', '5x45', '5x46'], ['6x48', '6x49', '6x50'], ['7x49', '7x50', '7x51']] # B1
+        #ref_membrane_mid["002"] = [['1x50', '1x51', '1x52'], ['2x57', '2x58', '2x59'], ['3x40','3x41','3x42'], ['4x55', '4x56'], ['5x42', '5x43', '5x44'], ['7x47', '7x49']] # B1
+        ref_membrane_mid["002"] = [['1x50', '1x51', '1x52'], ['2x57', '2x58', '2x59'], ['3x40','3x41','3x42'], ['4x55', '4x56'], ['5x42', '5x43', '5x44'], ['6x48', '6x49', '6x50'], ['7x47', '7x49']] # B1
+        ref_membrane_mid["003"] = ref_membrane_mid["002"] # B2
+        ref_membrane_mid["004"] = [['1x48', '1x49', '1x50'], ['2x47', '2x48', '2x49'], ['3x39', '3x40', '3x41'], ['4x40', '4x41', '4x42'], ['5x47', '5x48', '5x49'], ['6x47', '6x48', '6x49'], ['7x39', '7x40', '7x41']] # C
+        ref_membrane_mid["005"] = [['1x42', '1x43', '1x44'], ['2x52', '2x53', '2x54'], ['3x37', '3x38', '3x39'], ['4x52', '4x53', '4x54'], ['5x52', '5x53', '5x54'], ['6x42', '6x43', '6x44'], ['7x46', '7x47', '7x48']] # F
+
+        membrane_mid = ref_membrane_mid[data['gpcr_class']]
+
+        if data['gpcr_class'] != "001":
+            inv_gn_dictionary = {v: k for k, v in gn_dictionary.items()}
+            for index in range(len(membrane_mid)):
+                membrane_mid[index] = [inv_gn_dictionary[res] for res in membrane_mid[index]]
+
+        for i in range(0,7):
+            gns[i] = [x for x in membrane_mid[i] if x in conserved]
+            tm_only = [x for x in conserved if x[0]==str(i+1)]
+            if i % 2 == 1: #all uneven TMs (as # = i+1)
+                tm_only.reverse()
+            if len(gns[i]) > 0:
+                if i % 2 == 1: #all uneven TMs (as # = i+1)
+                    start_pos = tm_only.index(gns[i][-1])
+                else:
+                    start_pos = tm_only.index(gns[i][0])
+
+                gns[i] = tm_only[start_pos:(start_pos+3)]
+
+                # Stay close for this as references
+                #middle_gpcr[i] = tm_only[(start_pos+6):(start_pos+9)]
+                for upwards in range(6, 3, -1):
+                   if len(tm_only) >= (start_pos+upwards):
+                       middle_gpcr[i] = tm_only[(start_pos+upwards-3):(start_pos+upwards)]
+                       continue
+            else:
+                if len(tm_only) < 6:
+                    print("too few residues")
+                    return []
+                else:
+                    #print("Refind",i, gns[i])
+                    gns[i] = tm_only[0:3]
+                    middle_gpcr[i] = tm_only[3:6]
+
+                    # for upwards in range(15, 6, -1):
+                    #     if len(tm_only) >= upwards:
+                    #         middle_gpcr[i] = tm_only[(upwards-3):upwards]
+
     # Merge the reference and the helper points
     gns_flat = [y for x in gns for y in x]
     middle_gpcr = [list(filter(lambda x: x in conserved and x not in gns_flat, tm_list)) for tm_list in middle_gpcr]
@@ -388,8 +451,9 @@ def tm_movement_2D(pdbs1, pdbs2, mode, data, gn_dictionary):
 
     distances_set1.filter_gns.extend([y for x in ends_and_middle for y in x])
     distances_set2.filter_gns = distances_set1.filter_gns
-    distances_set1.fetch_distances_tm()
-    distances_set2.fetch_distances_tm()
+    distances_set1.fetch_distances_tm(distance_type = "HC")
+    distances_set2.fetch_distances_tm(distance_type = "HC")
+
 
     membrane_data1 = [x[:] for x in [[0] * len(ends_and_middle_flat)] * len(ends_and_middle_flat)]
     membrane_data2 = [x[:] for x in [[0] * len(ends_and_middle_flat)] * len(ends_and_middle_flat)]
@@ -603,7 +667,20 @@ def tm_movement_2D(pdbs1, pdbs2, mode, data, gn_dictionary):
     rotations = [0] * 7
     for i in range(0,7):
         try:
-            rotations[i] = [data['tab4'][gn_dictionary[x]]['angles_set1'][1]-data['tab4'][gn_dictionary[x]]['angles_set2'][1] if abs(data['tab4'][gn_dictionary[x]]['angles_set1'][1]-data['tab4'][gn_dictionary[x]]['angles_set2'][1]) < 180 else -1*data['tab4'][gn_dictionary[x]]['angles_set2'][1]-data['tab4'][gn_dictionary[x]]['angles_set1'][1] for x in gns[i]]
+            # rotations[i] = [data['tab4'][gn_dictionary[x]]['angles_set1'][1]-data['tab4'][gn_dictionary[x]]['angles_set2'][1] if abs(data['tab4'][gn_dictionary[x]]['angles_set1'][1]-data['tab4'][gn_dictionary[x]]['angles_set2'][1]) < 180 else -1*data['tab4'][gn_dictionary[x]]['angles_set2'][1]-data['tab4'][gn_dictionary[x]]['angles_set1'][1] for x in gns[i]]
+            angles1 = [data['tab4'][gn_dictionary[x]]['angles_set1'][11] for x in gns[i]]
+            angles1 = [angle if angle > 0 else angle + 360 for angle in angles1 ]
+            angles2 = [data['tab4'][gn_dictionary[x]]['angles_set2'][11] for x in gns[i]]
+            angles2 = [angle if angle > 0 else angle + 360 for angle in angles2 ]
+
+            rotations[i] = [angles1[x] - angles2[x] for x in range(3)]
+            rotations[i] = [value if abs(value) <= 180 else value-360 if value > 0 else value+360 for value in rotations[i]]
+
+            # count=0
+            # for x in gns[i]:
+            #     print(i, x, data['tab4'][gn_dictionary[x]]['angles_set1'][11], data['tab4'][gn_dictionary[x]]['angles_set2'][11], rotations[i][count])
+            #     count += 1
+
         except:
             rotations[i] = [0.0, 0.0, 0.0]  # TODO: verify other class B errors
 
@@ -613,6 +690,7 @@ def tm_movement_2D(pdbs1, pdbs2, mode, data, gn_dictionary):
         #     rotations[i] = -1*sum(rotations[i])/3
         # else:
         #     rotations[i] = sum(rotations[i])/3
+
 
     # ALTERNATIVE: utilize TM tip alignment (needs debugging as some angles seem off, e.g. GLP-1 active vs inactive TM2)
     # Add rotation angle based on TM point placement

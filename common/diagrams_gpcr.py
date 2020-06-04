@@ -798,7 +798,8 @@ class DrawSnakePlot(Diagram):
                             x_left += 0.1*(length-length_of_residues_in_loop)
                     if tries>30:
                         break
-
+                    # Ensure that bends don't go off the left
+                    x_left = max(-20,x_left)
                 pos = 60
 
                 points2 = "M "+str(x1)+" "+str(y1)+" Q"+str(x1+60)+" "+str(temp_max_y+100*orientation)+" "+str(x_left)+" "+str(temp_max_y+100*orientation )

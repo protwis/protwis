@@ -151,9 +151,9 @@ class Diagram:
         output =  """
             <circle class='{} rcircle' cx='{}' cy='{}' r='{}' stroke='black' stroke-width='2' fill='{}'
             fill-opacity='1' id='{}' title='{}' original_title='{}' original_cx='{}' original_cy='{}'/>
-            <text x='{}' y='{}' text-anchor='middle' alignment-baseline='central' font-family='helvetica' font-size='16' fill=''
+            <text x='{}' y='{}' text-anchor='middle' dominant-baseline='middle' font-family='helvetica' font-size='16' fill=''
             id='{}' class='rtext {}' title='{}' original_title='{}' original_x='{}' original_y='{}'> {} </text>
-            """.format(resclass,x,y,radius,cfill,id,label,label,x,y,x,y,idtext,resclass,label,label,x,y,aa) #aa
+            """.format(resclass,x,y,radius,cfill,id,label,label,x,y,x,y+2,idtext,resclass,label,label,x,y+2,aa) #aa
         return output
 
     def DrawResidueSquare(self, x,y,aa,residue_number,label,radius, resclass = '',cfill="white", precolor = False):

@@ -2220,7 +2220,8 @@ class ConstructBrowser(TemplateView):
         context = super(ConstructBrowser, self).get_context_data(**kwargs)
         try:
             cons = Construct.objects.defer('schematics','snakecache').all().prefetch_related(
-                "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type", "modifications", "deletions", "crystallization__chemical_lists",
+                "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type",
+                "modifications", "deletions", "crystallization__chemical_lists",
                 "protein__species","structure__pdb_code","structure__publication__web_link", "contributor")
 
             context['constructs'] = []
