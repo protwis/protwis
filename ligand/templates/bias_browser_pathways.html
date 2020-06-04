@@ -12,8 +12,22 @@
 <script src="https://cdn.datatables.net/buttons/1.0.3/js/buttons.colVis.js"></script>
 
 <script type="text/javascript" charset="utf-8">
+    function getCookie(c_name) {
+        if (document.cookie.length > 0) {
+            c_start = document.cookie.indexOf(c_name + "=");
+            if (c_start != -1) {
+                c_start = c_start + c_name.length + 1;
+                c_end = document.cookie.indexOf(";", c_start);
+                if (c_end == -1) c_end = document.cookie.length;
+                return unescape(document.cookie.substring(c_start, c_end));
+            }
+        }
+        return "";
+    }
     // main table load
     $(document).ready(function() {
+    var ligand_counter = read_unique_ids();
+    var receptor_counter = read_unique_ids_receptor()
         oTable = $('#structures_scrollable').DataTable({
             StateSave: true,
             dom: 'Bftrip<>',
@@ -38,34 +52,39 @@
                         $(node).removeClass('dt-button buttons-excel buttons-html5');
                     },
                     action: function(e, dt, node, config) {
+                        read_unique_ids()
                         reset_filters()
                     },
                 },
-                {
-                    text: 'Get Vendors',
-                    className: 'btn btn-primary',
-                    titleAttr: 'Vendors info for top 20 ligands',
-                    init: function(api, node, config) {
-                        $(node).removeClass('dt-button buttons-excel buttons-html5');
-                    },
-                    action: function(e, dt, node, config) {
-                        var id = read_ids()
-                        var result
-                        $.ajax({
-                            type: 'POST',
-                            url: '/ligand/vendors',
-                            data: {
-                                data: id,
-                                csrfmiddlewaretoken: '{{csrf_token }}',
-                                action: 'post',
-                            },
-                            success: function() {
-
-                                myFunction('/ligand/browservendors', 'Detail View', window, 720, 1000)
-                            }
-                        });
-                    },
+            {
+                text: 'Get Vendors',
+                className: 'btn btn-primary',
+                titleAttr: 'Vendors info for top 20 ligands',
+                init: function(api, node, config) {
+                    $(node).removeClass('dt-button buttons-excel buttons-html5');
                 },
+                action: function(e, dt, node, config) {
+                    var id = read_ids()
+                    var result
+                    console.log('test' + id)
+                    $.ajaxSetup({
+                        headers: { "X-CSRFToken": getCookie("csrftoken") }
+                    });
+                    $.ajax({
+                        type: 'POST',
+                        url: '/ligand/vendors',
+                        data: {
+                            ids: id,
+                            csrfmiddlewaretoken: '{{csrf_token }}',
+                            action: 'post',
+                        },
+                        success: function() {
+
+                            myFunction('/ligand/browservendors', 'Detail View', window, 850, 1000)
+                        }
+                    });
+                },
+            },
             ],
             scrollX: '100%',
             scrollY: '70vh',
@@ -73,6 +92,11 @@
             "order": [
                 [4, "desc"]
             ],
+            language: {
+                info: "Showing 1 to _END_ of _TOTAL_ entries for "+ ligand_counter+ " ligand/s and "+ receptor_counter+" receptor/s entries to show",
+                infoEmpty: "Affichage de l'&eacute;lement 0 &agrave; 0 sur 0 &eacute;l&eacute;ments",
+
+                },
             AutoWidth: false,
             paging: true,
             "lengthMenu": [
@@ -85,6 +109,8 @@
             "initComplete": function(settings, json) {
                 $('#loadingSpinner').show();
                 $('#structures_scrollable_body').hide();
+                 ligand_counter = read_unique_ids();
+                 receptor_counter = read_unique_ids_receptor()
                 setTimeout(function() {
                     oTable.columns().flatten().each(function(colIdx) {
                         var columnData = [];
@@ -106,6 +132,8 @@
             "fnDrawCallback": function() {
                 $('#loadingSpinner').show();
                 $('#structures_scrollable_body').hide();
+                ligand_counter = read_unique_ids();
+                receptor_counter = read_unique_ids_receptor()
                 setTimeout(function() {
                     $('#loadingSpinner').hide();
                     $('#structures_scrollable_body').show();
@@ -172,6 +200,8 @@
                     column_number: 6,
                     filter_type: "multi_select",
                     select_type: 'select2',
+                    column_data_type: "html",
+                    html_data_type: "text",
                     filter_default_label: "Select",
                     filter_reset_button_text: false,
                 },
@@ -180,6 +210,8 @@
                     column_number: 7,
                     filter_type: "multi_select",
                     select_type: 'select2',
+                    column_data_type: "html",
+                    html_data_type: "text",
                     filter_default_label: "Select",
                     filter_reset_button_text: false,
                 },
@@ -196,6 +228,8 @@
                     column_number: 9,
                     filter_type: "multi_select",
                     select_type: 'select2',
+                    column_data_type: "html",
+                    html_data_type: "text",
                     filter_default_label: "Select",
                     filter_reset_button_text: false,
                 },
@@ -376,7 +410,35 @@
         const x = win.top.outerWidth / 2 + win.top.screenX - (w / 2);
         return win.open(url, title, 'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width=' + w + ', height=' + h + ', top=' + y + ', left=' + x);
     }
+    function read_unique_ids() {
+        var ids = [];
+        var table = document.getElementById("structures_scrollable")
+        var temp_lenght = table.rows.length;
+        var l = 0;
+        for (var i = 2; i < temp_lenght; i++) {
+            var x = table.rows[i].cells[0];
+            ids.push($(x).find('span:first')[0].innerText)
+        }
+        l = countUnique(ids);
+        return l
+    }
+    function read_unique_ids_receptor() {
+        var ids = [];
+        var table = document.getElementById("structures_scrollable")
+        var temp_lenght = table.rows.length;
+        var l = 0;
+        for (var i = 2; i < temp_lenght; i++) {
+            var x = table.rows[i].cells[2];
+            console.log(x);
+            ids.push($(x)[0].innerText)
+        }
+        l = countUnique(ids);
+        return l
+    }
 
+    function countUnique(iterable) {
+        return new Set(iterable).size;
+    }
     function read_ids() {
         var ids = [];
         var table = document.getElementById("structures_scrollable")
@@ -414,7 +476,7 @@
 
 <img id="loadingSpinner" style="position: absolute;
     left: 50%;
-    top: 50%;" src="{% static 'home/images/35.gif' %}" />
+    top: 50%;" src="{% static 'home/images/loading.gif' %}" />
 
 {% if data %}
 {% autoescape off %}
@@ -488,13 +550,13 @@
                         <td>{{e.1.receptor.species.common_name}}</td>
 
                         <!-- ligand -->
-                        <td style="border-left: 1px solid black;" title='{{e.1.ligand}}'>
+                        <td title='{{e.1.ligand}}'>
                             {%if e.1.chembl%}
                             <a href='/ligand/{{e.1.chembl}}' target='blank'>
                                 {%else%}
                                 <a href='/ligand/{{e.1.ligand}}' target='blank'>
                                     {%endif%}
-                        {{e.1.ligand}}
+                                    {{e.1.ligand}}
                         </td>
                         <!-- signalling_protein -->
                         <td style="border-left: 1px solid black;">{{e.1.signalling_protein}}</td>

@@ -233,21 +233,24 @@ function build_table() {
     $.each(table_data, function(id, v) {
         
         // console.log(v[v.length-1]);
-        // 1: "receptor"
-        // 2: "isoform_id"
-        // 3: "number_of_transcripts"
-        // 4: "transcripts"
-        // 5: "number_of_tissues"
-        // 6: "tissues"
-        // 7: "varying_segments"
-        // 8: "functional_annotation"
-        // 9: "reference (PMID)"
-        if (v[9]==0) v[9] = '';
+        // 0: "receptor"
+        // 1: "isoform_id"
+        // 2: "number_of_transcripts"
+        // 3: "transcripts"
+        // 4: "number_of_tissues"
+        // 5: "tissues"
+        // 6: "varying_segments"
+        // 7: "functional_annotation"
+        // 8: "reference (PMID)"
+        if (v[8]==0) v[8] = '';
+        if (v[9]==0) { v[9] = '' } else {
+          v[9] = `<a href="https://www.ncbi.nlm.nih.gov/pubmed/${v[9]}"  target=_blank>${v[9]}</a>`;
+        }
         if (v[10]==0) { v[10] = '' } else {
-          v[10] = `<a href="https://www.ncbi.nlm.nih.gov/pubmed/${v[10]}"  target=_blank>${v[10]}</a>`;
+          v[10] = `<a href="${v[11]}"  target=_blank>${v[10]}</a>`;
         }
         // https://www.ensembl.org/homo_sapiens/Transcript/Summary?t=ENST00000371950
-        var tooltips_transcripts = v[4];
+        var tooltips_transcripts = v[3];
         if (tooltips_transcripts) {
           ts = tooltips_transcripts.split(",");
           tooltips_transcripts = '';
@@ -311,15 +314,16 @@ function build_table() {
         } else {
           total_completeness_avg = 0;
         }
-        var tooltips_tissues = v[7];
+        var tooltips_tissues = v[6];
         tr = `
                     <tr id="${id}">
-                      <td class="protein">${v[1]}</td>
-                      <td class="popovertooltip" html_content="${tooltips_transcripts}" content="${v[4]}" popover-title='Transcripts'>#${v[2]}</td>
-                      <td>${v[5]}</td>
-                      <td class="popovertooltip" html_content="${tooltips_tissues}" content="${tooltips_tissues}" popover-title='Tissues'>${v[6]}</td>
+                      <td class="protein">${v[0]}</td>
+                      <td class="popovertooltip" html_content="${tooltips_transcripts}" content="${v[3]}" popover-title='Transcripts'>#${v[1]}</td>
+                      <td>${v[4]}</td>
+                      <td class="popovertooltip" html_content="${tooltips_tissues}" content="${tooltips_tissues}" popover-title='Tissues'>${v[5]}</td>
                       ${completeness}
                       <td>${total_completeness_avg}</td>
+                      <td>${v[8]}</td>
                       <td>${v[9]}</td>
                       <td>${v[10]}</td>
                     </tr>`;
@@ -346,9 +350,9 @@ function build_table() {
     $('.protein').on('click', function(e) {
       id = $(this).closest('tr').attr('id');
       d = table_data[id];
-      e_id = d[4].split(', ');
-      p = d[1];
-      iso_id = d[2];
+      e_id = d[3].split(', ');
+      p = d[0];
+      iso_id = d[1];
       // console.log(id, d,p,iso_id);
       $("#alignment").modal();
       $("#alignment").find(".modal-body").html("Loading..");
@@ -591,6 +595,7 @@ function build_table() {
                     <th>Ref(%)</th>
                     <th></th>
                     <th class="no-sort">Reference</th>
+                    <th class="no-sort">ProteomicsDBID</th>
                 </tr>
             </thead>
             <tbody>

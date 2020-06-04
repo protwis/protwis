@@ -351,6 +351,17 @@ class LigandVendorLink(models.Model):
     vendor_external_id = models.CharField(max_length=300) #RegistryID
     sid = models.CharField(max_length=200, unique=True) #SID
 
+class LigandVendors(models.Model):
+    slug = models.SlugField(max_length=100, unique=True)
+    name = models.CharField(max_length=200, default='')
+    url = models.TextField(null=True)
+
+class LigandVendorLink(models.Model):
+    vendor = models.ForeignKey('LigandVendors', on_delete=models.CASCADE)
+    lp = models.ForeignKey('LigandProperities', related_name='vendors', on_delete=models.CASCADE)
+    url = models.CharField(max_length=300)  #SourceRecordURL
+    vendor_external_id = models.CharField(max_length=300) #RegistryID
+    sid = models.CharField(max_length=200, unique=True) #SID
 
 
 #Biased Signalling - start
