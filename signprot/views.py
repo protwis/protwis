@@ -99,6 +99,7 @@ class CouplingBrowser(TemplateView):
     """
     Class based generic view which serves coupling data between Receptors and G-proteins.
     Data coming from Guide to Pharmacology, Asuka Inuoue and Michel Bouvier.
+    More data might come later from Roth and Strachan TRUPATH biosensor.
     :param dataset: ProteinGProteinPair (see build/management/commands/build_g_proteins.py)
     :return: context
     """
@@ -123,24 +124,17 @@ class CouplingBrowser(TemplateView):
         context['couplings'] = coupobj
         context['famtab'] = fam_tab
 
-        for num, key in enumerate(fam_tab['SSR2']):
-            print(num, key)
-#        print(fam_tab['SSR2'])
-
-        for num, key in enumerate(fam_tab['5HT5A']):
-            print(num, key)
-
-# THIS ONE TO CHECK THAT DIMENSION IS CONSISTENT ACROSS ALL
-#        for key, value in context['famtab'].items():
-#            print(key, len(value))
-
         return context
 
     @staticmethod
     def fams_tab():
         """
-        This function returns what is needed in the families tab of the coupling browser
-        :return: A list of values that get invoked sort of "enumerated" in the frontend.
+        This function returns what is needed in the families (maybe others - needs refactoring) tab of the coupling
+        browser.
+        :return: key.value pairs from fd dictionary
+        keys = gene names of proteins
+        values = gpcrDB general values and emax-double-normalized, pec50-double-normalized, emax-mean, pec50-mean
+        emax-sem, pec50sem.
         """
         threshold_primary_inoue = 0.5  # -0.1
         threshold_secondary_inoue = 0.01  # -1
@@ -175,7 +169,7 @@ class CouplingBrowser(TemplateView):
         couplings = ProteinGProteinPair.objects.all().prefetch_related('protein',
                                                                        'g_protein_subunit',
                                                                        'g_protein')
-        for num, c in enumerate(couplings):
+        for c in couplings:
             p = c.protein.entry_short()
             s = c.source
             t = c.transduction
@@ -213,14 +207,16 @@ class CouplingBrowser(TemplateView):
             # source [s]  Aska (Inoue) or Bouvier.
             else:
                 if 'emdn' not in data[p][s][gf]:
-                    data[p][s][gf] = {'emdn': {}, 'max': 0.00}
+                    data[p][s][gf] = {'emdn': {}, 'max': 0.00, 'maxid': str()}
                 if emdn is None:
                     data[p][s][gf]['emdn'][g] = round(Decimal(0), 2)
                     continue
                 data[p][s][gf]['emdn'][g] = round(Decimal(emdn), 2)
                 # get the highest number into 'max'
+                # TODO: Who is max? It will eventually be needed, count on it!
                 if emdn > data[p][s][gf]['max']:
                     data[p][s][gf]['max'] = round(Decimal(emdn), 2)
+                    data[p][s][gf]['maxid'] = g
                 # pec50dn
                 if 'pec50dn' not in data[p][s][gf]:
                     data[p][s][gf]['pec50dn'] = {}
@@ -257,7 +253,6 @@ class CouplingBrowser(TemplateView):
                     continue
                 data[p][s][gf]['pec50sem'][g] = round(Decimal(pec50sem), 2)
 
-#        print(data['SSR2'])
 
         fd = {}  # final data
         distinct_g_families = ['Gs', 'Gi/Go', 'Gq/G11', 'G12/G13']
@@ -269,7 +264,7 @@ class CouplingBrowser(TemplateView):
 
         # This for loop, does the job of putting together
         # data-sets, GuideToPharma, Asuka's and Bouvier.
-        for num, (p, v) in enumerate(data.items()):
+        for p, v in data.items():
             fd[p] = [v['class'], v['family'], v['accession'], v['entryname'], p, v['pretty']]
             s = 'GuideToPharma'
             # Merge
@@ -314,7 +309,7 @@ class CouplingBrowser(TemplateView):
                         fd[p].append("NAi")
                 else:
                     fd[p].append("")
-            # Last bit adds values in subfamilies
+            # Last bit adds values in subfamilies (i.e. subtypes)
             for gf, sfs in distinct_g_subunit_families.items():
                 for sf in sfs:
                     if gf in v[s]:
@@ -377,7 +372,7 @@ class CouplingBrowser(TemplateView):
                         fd[p].append("No coupling")
                 else:
                     fd[p].append("")
-            # Last bit adds values to subfamilies
+            # Last bit adds values to subfamilies (i.e. subtypes)
             for gf, sfs in distinct_g_subunit_families.items():
                 for sf in sfs:
                     if gf in v[s]:
@@ -428,14 +423,15 @@ class CouplingBrowser(TemplateView):
                     else:
                         fd[p].append("pec50sem nab")
 
-            # max Values for Gs, Gi/o, Gq/G11, G12/13 and source Inoue
+            # max Values for Gs, Gi/Go, Gq/G11, G12/13 and source Inoue
             s = 'Aska'
             for gf in distinct_g_families:
                 if gf in v[s]:
                     fd[p].append(v[s][gf]['max']+100)
                 else:
                     fd[p].append("NAi max")
-            # max Values for Gs, Gi/o, Gq/G11, G12/13 and source Bouvier
+
+            # max Values for Gs, Gi/Go, Gq/G11, G12/13 and source Bouvier
             s = 'Bouvier'
             for gf in distinct_g_families:
                 if gf in v[s]:
