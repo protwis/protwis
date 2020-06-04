@@ -1841,7 +1841,7 @@ class ClosestReceptorHomolog():
         self.protein = protein
         self.protein_segments = protein_segments
         self.normalized = normalized
-        self.family_mapping = {'001':'001','002':'002','003':'002','004':'004','005':'005','006':'001','007':['001','002','004','005']}
+        self.family_mapping = {'001':'001','002':'002','003':'002','004':'004','005':'005','006':'006','007':'001','008':['001','002','004','005']}
         self.all_proteins = []
 
     def find_closest_receptor_homolog(self):
@@ -1850,7 +1850,7 @@ class ClosestReceptorHomolog():
         exclusion_list = ['opsd_todpa', 'adrb1_melga', 'g1sgd4_rabit', 'us28_hcmva', 'q08bg4_danre', 'q9wtk1_cavpo', 'q80km9_hcmv', 'q98sw5_xenla']
         if self.protein in exclusion_list:
             exclusion_list.remove(self.protein)
-        if p.family.slug[:3]=='007':
+        if p.family.slug[:3]=='008':
             structures = Structure.objects.all().exclude(annotated=False).exclude(refined=True).exclude(protein_conformation__protein__parent__entry_name__in=exclusion_list)
         else:
             structures = Structure.objects.filter(protein_conformation__protein__parent__family__slug__istartswith=self.family_mapping[p.family.slug[:3]]).exclude(

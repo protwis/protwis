@@ -29,6 +29,7 @@ class Command(BaseBuild):
 			if options['make_db']:
 				if len(options['make_db'])>1:
 					prots = Protein.objects.filter(entry_name__in=options['make_db'])
+					### FIXME
 				elif len(options['make_db'])==1:
 					prots = []
 					fasta = ''

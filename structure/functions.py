@@ -33,6 +33,7 @@ import numpy
 import zipfile
 import pprint
 import json
+import yaml
 
 
 logger = logging.getLogger("protwis")
@@ -914,7 +915,7 @@ class PdbStateIdentifier():
         if tm2_gn=='2x41' and tm6_gn=='6x38' and tm3_gn=='3x44' and tm7_gn=='7x52' and inactive_cutoff==2 and intermediate_cutoff==7.15:
             if family.slug.startswith('002') or family.slug.startswith('003'):
                 tm6_gn, tm7_gn = '6x33', '7x51'
-                inactive_cutoff, intermediate_cutoff = 2.5, 6
+                inactive_cutoff, intermediate_cutoff = 2.5, 5.75
             elif family.slug.startswith('004'):
                 inactive_cutoff, intermediate_cutoff = 5, 7.15
         self.tm2_gn, self.tm6_gn, self.tm3_gn, self.tm7_gn = tm2_gn, tm6_gn, tm3_gn, tm7_gn
@@ -936,7 +937,7 @@ class PdbStateIdentifier():
         elif self.structure_type=='complex':
             self.parent_prot_conf = ProteinConformation.objects.get(protein=self.structure.receptor_protein)
         # class A and T
-        if self.parent_prot_conf.protein.family.slug.startswith('001') or self.parent_prot_conf.protein.family.slug.startswith('006'):
+        if self.parent_prot_conf.protein.family.slug.startswith('001') or self.parent_prot_conf.protein.family.slug.startswith('007'):
             tm6 = self.get_residue_distance(self.tm2_gn, self.tm6_gn)
             tm7 = self.get_residue_distance(self.tm3_gn, self.tm7_gn)
             print(tm6, tm7, tm6-tm7)
@@ -982,8 +983,10 @@ class PdbStateIdentifier():
                     self.state = ProteinState.objects.get(slug='intermediate')
                 elif self.activation_value>self.intermediate_cutoff:
                     self.state = ProteinState.objects.get(slug='active')
+        # class D
+        #########
         # class F
-        elif self.parent_prot_conf.protein.family.slug.startswith('005'):
+        elif self.parent_prot_conf.protein.family.slug.startswith('006'):
             tm2_gn_f = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm2_gn, scheme__short_name='GPCRdb(F)').label
             tm6_gn_f = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm6_gn, scheme__short_name='GPCRdb(F)').label
             tm3_gn_f = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm3_gn, scheme__short_name='GPCRdb(F)').label
@@ -1091,6 +1094,36 @@ class StructureSeqNumOverwrite():
             if r.sequence_number in target_dict:
                 r.sequence_number = int(target_dict[r.sequence_number])
                 r.save()
+
+
+class StructureBuildCheck():
+    def __init__(self):
+        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'xtal_segends.yaml']), 'r') as f:
+            self.annotation_data = yaml.load(f, Loader=yaml.FullLoader)
+
+    def check_rotamers(self, pdb):
+        structure = Structure.objects.get(pdb_code__index=pdb)
+        structure_residues = Residue.objects.filter(protein_conformation=structure.protein_conformation)
+        wt_residues = Residue.objects.filter(protein_conformation__protein=structure.protein_conformation.protein.parent)
+        key = structure.protein_conformation.protein.parent.entry_name+'_'+pdb
+        try:
+            annotation = self.annotation_data[key]
+        except:
+            raise Exception('Warning: {} not annotated'.format(pdb))
+        errors = []
+        for i in range(1,9):
+            if annotation[str(i)+'e']!='-':
+                anno_len = int(annotation[str(i)+'e']-annotation[str(i)+'b']+1)
+                if i==8:
+                    struct_len = len(structure_residues.filter(protein_segment__slug='H8'))
+                    wt_len = len(wt_residues.filter(protein_segment__slug='H8'))
+                else:
+                    struct_len = len(structure_residues.filter(protein_segment__slug='TM'+str(i)))
+                    wt_len = len(wt_residues.filter(protein_segment__slug='TM'+str(i)))
+                if anno_len!=struct_len:
+                    if wt_len!=struct_len:
+                        errors.append(['H'+str(i), anno_len, struct_len])
+        return errors
 
 
 def update_template_source(template_source, keys, struct, segment, just_rot=False):

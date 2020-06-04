@@ -131,7 +131,6 @@ class QueryPDB():
                         missing_yaml = True
                 if not missing_from_db:
                     continue
-                print(s)
                 try:
                     pdb_data_dict = fetch_pdb_info(s, protein, new_xtal=True)
                     exp_method = pdb_data_dict['experimental_method']

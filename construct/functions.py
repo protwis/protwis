@@ -27,6 +27,8 @@ AA_three = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
      'ILE': 'I', 'PRO': 'P', 'THR': 'T', 'PHE': 'F', 'ASN': 'N', 
      'GLY': 'G', 'HIS': 'H', 'LEU': 'L', 'ARG': 'R', 'TRP': 'W', 
      'ALA': 'A', 'VAL':'V', 'GLU': 'E', 'TYR': 'Y', 'MET': 'M'}
+# to override some faulty PDB DBREF entries
+uniprot_convert_table = {'Q548Y0_HUMAN':'OX2R_HUMAN'}
 
 # def look_for_value(d,k):
 #     ### look for a value in dict if found, give back, otherwise None
@@ -42,7 +44,10 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
             if line.startswith('DBREF'):
                 line = line.split()
                 if len(line)>7:
-                    uniprot = line[7]
+                    if line[7] in uniprot_convert_table:
+                        uniprot = uniprot_convert_table[line[7]]
+                    else:
+                        uniprot = line[7]
                     try:
                         p = Protein.objects.get(entry_name=uniprot.lower())
                         slug = p.family.slug
@@ -69,7 +74,6 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
         d['construct_crystal']['uniprot'] = protein.entry_name
         d['protein'] = protein.name
         d['wt_seq'] = protein.sequence
-
 
 
     d['contact_info'] = {}
@@ -129,16 +133,23 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
         if line.startswith('DBREF'):
             line = line.split()
             if len(line)>7:
-                uniprot = line[7]
+                if line[7] in uniprot_convert_table:
+                    uniprot = uniprot_convert_table[line[7]]
+                else:
+                    uniprot = line[7]
                 if uniprot == d['construct_crystal']['uniprot'].upper():
                     uniprot_code = line[6]
 
     for line in pdb_file.split('\n'):
         if line.startswith('DBREF'):
+            # print(line)
             line = line.split()
             if len(line)<8:
                 continue
-            uniprot = line[7]
+            if line[7] in uniprot_convert_table:
+                uniprot = uniprot_convert_table[line[7]]
+            else:
+                uniprot = line[7]
             start = line[8]
             end = line[9]
             # print(line,uniprot,d['construct_crystal']['uniprot'].upper()) #show DBREF

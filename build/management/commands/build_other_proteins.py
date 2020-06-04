@@ -102,8 +102,8 @@ class Command(BuildHumanProteins):
             # parse files
             filenames = os.listdir(self.local_uniprot_dir)
 
-            ###GP - class D addition
-            construct_entry_names = construct_entry_names+['a0a1d8ptb4_canal', 'a0a0w0dd93_cangb', 'q8wzm9_sorma', 'b1gvb8_pench', 'mam2_schpo', 'q4wyu8_aspfu', 'q8nir1_neucs']
+            ###GP - class D addition - just temporary - FIXME
+            construct_entry_names = construct_entry_names+['a0a0w0dd93_cangb', 'q8wzm9_sorma', 'b1gvb8_pench', 'mam2_schpo', 'q4wyu8_aspfu', 'q8nir1_neucs', 'ste2_lackl', 'q6fly8_canga', 'g2ye05_botf4', 's6exb4_zygb2', 'c5dx97_zygrc']
 
             # Keep track of first or second iteration
             reviewed = ['SWISSPROT','TREMBL'][iteration-1]
@@ -181,7 +181,6 @@ class Command(BuildHumanProteins):
 
                     # check whether the entry name is in the construct list
                     if not p and up['entry_name'] in construct_entry_names:
-                        print(up['entry_name'])
                         # BLAST sequence to find closest hit (for reference positions)
                         blast = BlastSearch()
                         blast_out = blast.run(up['sequence'])
