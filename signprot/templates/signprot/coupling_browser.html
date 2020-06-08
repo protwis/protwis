@@ -3,8 +3,8 @@
 {# load structure_extras #}
 
 {% block addon_css %}
-{#    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css"/> #}
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css"/>
+{# SAAS  <link rel="stylesheet" href="https://cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css"> #}
     <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css"/>
     <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css"/>
     <style type="text/css">
@@ -253,28 +253,28 @@
                     <th title="uniprot"></th>
                     <th title="IUPHAR" class='rightborder'></th>
 
-                    <th title="Gs"></th>
-                    <th title="Gi/o"></th>
-                    <th title="Gq/11"></th>
-                    <th title="G12/13" class='rightborder'></th>
+                    <th title="Gs">Gs</th>
+                    <th title="Gi/Go">Gi/Go</th>
+                    <th title="Gq/G11">Gq/G11</th>
+                    <th title="G12/G13" class='rightborder'>G12/G13</th>
 
-                    <th title="Bouvier"></th>
-                    <th title="Inoue"></th>
-                    <th title="GtP" class='rightborder'></th>
+                    <th title="Bouvier">Bouvier</th>
+                    <th title="Inoue">Inoue</th>
+                    <th title="GtP" class='rightborder'>GtP</th>
 
-                    <th title="Bouvier"></th>
-                    <th title="Inoue"></th>
-                    <th title="GtP" class='rightborder'></th>
+                    <th title="Bouvier">Bouvier</th>
+                    <th title="Inoue">Inoue</th>
+                    <th title="GtP" class='rightborder'>GtP</th>
 
-                    <th title="Bouvier"></th>
-                    <th title="Inoue"></th>
-                    <th title="GtP" class='rightborder'></th>
+                    <th title="Bouvier">Bouvier</th>
+                    <th title="Inoue">Inoue</th>
+                    <th title="GtP" class='rightborder'>GtP</th>
 
-                    <th title="Bouvier"></th>
-                    <th title="Inoue"></th>
-                    <th title="GtP" class='rightborder'></th>
+                    <th title="Bouvier">Bouvier</th>
+                    <th title="Inoue">Inoue</th>
+                    <th title="GtP" class='rightborder'>GtP</th>
 
-                    <th title="Bouvier"></th>
+                    <th title="Bouvier">Bouvier</th>
                 </tr>
 
                 </thead>
@@ -359,19 +359,19 @@
                         </button>
                     </th>
                     <th colspan=9 class="over_header flexible_over_header" style='text-align:left;'>
-                        Gi/o
+                        Gi/Go
                         <button type="button" class="close hide_columns2" columns="8,9,10,11,12,13,14,15,16"
                                 style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                         </button>
                     </th>
                     <th colspan=8 class="over_header flexible_over_header" style='text-align:left;'>
-                        Gq/11
+                        Gq/G11
                         <button type="button" class="close hide_columns2" columns="17,18,19,20,21,22,23,24"
                                 style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                         </button>
                     </th>
                     <th colspan=4 class="over_header flexible_over_header" style='text-align:left;'>
-                        G12/13
+                        G12/G13
                         <button type="button" class="close hide_columns2" columns="25,26,27,28"
                                 style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                         </button>
@@ -405,36 +405,36 @@
                     <th title="UniProt"></th>
                     <th title="IUPHAR" class='rightborder'></th>
                     {# Gs #}
-                    <th title="GNAS2" class='rightborder'></th>
-                    <th title="GNAS2"></th>
-                    <th title="GNAL" class='rightborder'></th>
-                    {# Gi/o #}
-                    <th title="GNAI1"></th>
-                    <th title="GNAI2"></th>
-                    <th title="GNAO"></th>
-                    <th title="GNAZ" class='rightborder'></th>
-                    <th title="GNAI1"></th>
-                    <th title="GNAI2"></th>
-                    <th title="GNAI3"></th>
-                    <th title="GNAO"></th>
-                    <th title="GNAZ" class='rightborder'></th>
-                    {# Gq/11 #}
-                    <th title="GNAQ"></th>
-                    <th title="GNA11"></th>
-                    <th title="GNA14"></th>
-                    <th title="GNA15" class='rightborder'></th>
-                    <th title="GNAQ"></th>
-                    <th title="GNA11"></th>
-                    <th title="GNA14"></th>
-                    <th title="GNA15" class='rightborder'></th>
-                    {# G12/13 #}
-                    <th title="GNA12"></th>
-                    <th title="GNA13" class='rightborder'></th>
-                    <th title="GNA12"></th>
-                    <th title="GNA13" class='rightborder'></th>
+                    <th title="GNAS2" class='rightborder'>Gs <br> (GNAS)</th>
+                    <th title="GNAS2">Gs <br> (GNAS)</th>
+                    <th title="GNAL" class='rightborder'>Golf <br> (GNAL)</th>
+                    {# Gi/Go #}
+                    <th title="GNAI1">Gi1 <br> (GNAI1)</th>
+                    <th title="GNAI2">Gi2 <br> (GNAI2)</th>
+                    <th title="GNAO">Go1 <br> (GNAO1)</th>
+                    <th title="GNAZ" class='rightborder'>Gz <br> (GNAZ)</th>
+                    <th title="GNAI1">Gi1 <br> (GNAI1)</th>
+                    <th title="GNAI2">Gi2 <br> (GNAI2)</th>
+                    <th title="GNAI3">Gi3 <br> (GNAI3)</th>
+                    <th title="GNAO">Go1 <br> (GNAO1)</th>
+                    <th title="GNAZ" class='rightborder'>Gz <br> (GNAz)</th>
+                    {# Gq/G11 #}
+                    <th title="GNAQ">Gq <br> (GNAQ)</th>
+                    <th title="GNA11">G11 <br> (GNA11)</th>
+                    <th title="GNA14">G14 <br> (GNA14)</th>
+                    <th title="GNA15" class='rightborder'>G15 <br> (GNA15)</th>
+                    <th title="GNAQ">G1 <br> (GNAQ)</th>
+                    <th title="GNA11">G11 <br> (GNA11)</th>
+                    <th title="GNA14">G14 <br> (GNA14)</th>
+                    <th title="GNA15" class='rightborder'>G15 <br> (GNA15)</th>
+                    {# G12/G13 #}
+                    <th title="GNA12">G12 <br> (GNA12)</th>
+                    <th title="GNA13" class='rightborder'>G13 <br> (GNA13)</th>
+                    <th title="GNA12">G12 <br> (GNA12)</th>
+                    <th title="GNA13" class='rightborder'>G13 <br> (GNA13)</th>
                     {# Arrestin #}
-                    <th title="BARR1/GRK2"></th>
-                    <th title="BARR2/GRK2"></th>
+                    <th title="BARR1/GRK2">BARR1/GRK2</th>
+                    <th title="BARR2/GRK2">BARR2/GRK2</th>
                 </tr>
 
                 </thead>
@@ -803,43 +803,43 @@
                     </th>
                     <th colspan=4 class="over_header flexible_over_header" style='text-align:left;'>
                         Emax DNorm Families
-                        <button type="button" class="close hide_columns3" columns="5,6,7,8"
+                        <button type="button" class="close hide_columns4" columns="5,6,7,8"
                                 style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                         </button>
                     </th>
                     <th colspan=11 class="over_header flexible_over_header" style='text-align:left;'>
                         pEC50 (dNorm)
-                        <button type="button" class="close hide_columns3" columns="9,10,11,12,13,14,15,16,17,18,19"
+                        <button type="button" class="close hide_columns4" columns="9,10,11,12,13,14,15,16,17,18,19"
                                 style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                         </button>
                     </th>
                     <th colspan=11 class="over_header flexible_over_header" style='text-align:left;'>
                         Emax (dNorm)
-                        <button type="button" class="close hide_columns3" columns="20,21,22,23,24,25,26,27,28,29,30"
+                        <button type="button" class="close hide_columns4" columns="20,21,22,23,24,25,26,27,28,29,30"
                                 style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                         </button>
                     </th>
                     <th colspan=11 class="over_header flexible_over_header" style='text-align:left;'>
                         pEC50 (raw)
-                        <button type="button" class="close hide_columns3" columns="31,32,33,34,35,36,37,38,39,40,41"
+                        <button type="button" class="close hide_columns4" columns="31,32,33,34,35,36,37,38,39,40,41"
                                 style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                         </button>
                     </th>
                     <th colspan=11 class="over_header flexible_over_header" style='text-align:left;'>
                         Emax (raw)
-                        <button type="button" class="close hide_columns3" columns="42,43,44,45,46,47,48,49,50,51,52"
+                        <button type="button" class="close hide_columns4" columns="42,43,44,45,46,47,48,49,50,51,52"
                                 style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                         </button>
                     </th>
                     <th colspan=11 class="over_header flexible_over_header" style='text-align:left;'>
                         pEC50 (SEM)
-                        <button type="button" class="close hide_columns3" columns="53,54,55,56,57,58,59,60,61,62,63"
+                        <button type="button" class="close hide_columns4" columns="53,54,55,56,57,58,59,60,61,62,63"
                                 style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                         </button>
                     </th>
                     <th colspan=11 class="over_header flexible_over_header" style='text-align:left;'>
                         Emax (SEM)
-                        <button type="button" class="close hide_columns3" columns="64,65,66,67,68,69,70,71,72,73,74"
+                        <button type="button" class="close hide_columns4" columns="64,65,66,67,68,69,70,71,72,73,74"
                                 style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                         </button>
                     </th>
@@ -1055,8 +1055,8 @@
 {% endblock %}
 
 {% block addon_js %}
-{#    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"></script> #}
-    <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"></script>
+{#  SAAS  <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script> #}
     <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"></script>
     <script src="{% static 'home/js/select2.js' %}"></script>
     <script src="{% static 'home/js/datatables.min.js' %}"></script>

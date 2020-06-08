@@ -51,6 +51,71 @@ function select_all(e) {
     });
 };
 
+function resetHidden1() {
+    var columns = Array.from(new Array(17), (x,i) => i + 3);
+    columns.forEach(function(column) {
+        column = oTable1.column( column );
+        try {
+            column.visible( true, false );
+        }
+        catch(err) {
+            column.visible( true, false );
+        }
+    });
+    oTable1.draw();
+}
+
+function resetHidden2() {
+    var columns = Array.from(new Array(28), (x,i) => i + 3);
+    columns.forEach(function(column) {
+        console.log('columns variable ' + columns);
+        column = oTable2.column( column );
+        try {
+            column.visible( true, false );
+        }
+        catch(err) {
+            column.visible( true, false );
+        }
+    });
+    oTable2.draw();
+}
+
+function resetHidden3() {
+    var columns = Array.from(new Array(70), (x,i) => i + 3);
+    columns.forEach(function(column) {
+        console.log('columns variable ' + columns);
+        column = oTable3.column( column );
+        try {
+            column.visible( true, false );
+        }
+        catch(err) {
+            column.visible( true, false );
+        }
+    });
+    oTable3.draw();
+}
+
+function resetHidden4() {
+    var columns = Array.from(new Array(70), (x,i) => i + 3);
+    columns.forEach(function(column) {
+        console.log('columns variable ' + columns);
+        column = oTable4.column( column );
+        try {
+            column.visible( true, false );
+        }
+        catch(err) {
+            column.visible( true, false );
+        }
+    });
+    oTable4.draw();
+}
+
+function reset_tab1() {
+// Just a button to go back to the main page.
+    window.location.href = '/signprot/couplings';
+}
+
+
 $(document).ready(function () {
     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
         console.log( 'show tab' );
@@ -112,155 +177,110 @@ $(document).ready(function () {
                     width: '95px',
                 },
             },
+
             {
-                column_number: 5,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Gs",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '60px',
-                },
+                column_number : 5,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 6,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Gi/o",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '60px',
-                },
+                column_number : 6,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 7,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Gq/11",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '60px',
-                },
+                column_number : 7,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 8,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "G12/13",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '60px',
-                },
+                column_number : 8,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 9,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Bouvier",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '60px',
-                },
+                column_number : 9,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 10,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Inoue",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '60px',
-                },
+                column_number : 10,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
+
             {
-                column_number: 11,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Gtp",
-                filter_reset_button_text: false,
+                column_number : 11,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 12,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Bouvier",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '60px',
-                },
+                column_number : 12,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 13,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Inoue",
-                filter_reset_button_text: false,
+                column_number : 13,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 14,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "GtP",
-                filter_reset_button_text: false,
+                column_number : 14,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 15,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Bouvier",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '60px',
-                },
+                column_number :15,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 16,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Inoue",
-                filter_reset_button_text: false,
+                column_number : 16,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 17,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "GtP",
-                filter_reset_button_text: false,
+                column_number : 17,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 18,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Bouvier",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '60px',
-                },
+                column_number : 18,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 19,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Inoue",
-                filter_reset_button_text: false,
+                column_number : 19,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 20,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Gtp",
-                filter_reset_button_text: false,
+                column_number : 20,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 21,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Bouvier",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '100px',
-                },
+                column_number : 21,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
         ],
         {filters_tr_index: 1},
         {
@@ -327,266 +347,164 @@ $(document).ready(function () {
                     width: '100px',
                 },
             },
+
             {
-                column_number: 5,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "GNAS2",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                },
+                column_number : 5,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 6,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "GNAS2",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                },
+                column_number : 6,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 7,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "GNAL",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                },
+                column_number : 7,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
+
             {
-                column_number: 8,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "GNAI1",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                },
+                column_number : 8,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 9,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "GNAI2",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                },
+                column_number : 9,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 10,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "GNAO",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                },
+                column_number : 10,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 11,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "GNAZ",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                },
+                column_number : 11,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 12,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "GNAI1",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                },
+                column_number : 12,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 13,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "GNAI2",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                },
+                column_number : 13,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 14,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "GNAI3",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                },
+                column_number : 14,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 15,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "GNAO",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                },
+                column_number : 15,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 16,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "GNAZ",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                },
+                column_number : 16,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 17,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "GNAQ",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                },
+                column_number : 17,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 18,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "GNA11",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                },
+                column_number : 18,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 19,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "GNA14",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                },
+                column_number : 19,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 20,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "GNA15",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                },
+                column_number : 20,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 21,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "GNAQ",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                },
+                column_number : 21,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 22,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "GNA11",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                },
+                column_number : 22,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 23,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "GNA14",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                },
+                column_number : 23,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 24,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "GNA15",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                },
+                column_number : 24,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 25,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "GNA12",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                },
+                column_number : 25,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 26,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "GNA13",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                },
+                column_number : 26,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 27,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "GNA12",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                },
+                column_number : 27,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 28,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "GNA13",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                },
+                column_number : 28,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 29,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "BARR1/GRK2",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                },
+                column_number : 29,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
             {
-                column_number: 30,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "BARR2/GRK2",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                },
+                column_number : 30,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
             },
+
         ],
         {filters_tr_index: 2},
         {
@@ -1447,7 +1365,10 @@ $(document).ready(function () {
                 column_number: 3,
                 filter_type: "multi_select",
                 select_type: 'select2',
+                column_data_type: "html",
+                html_data_type: "text",
                 filter_default_label: "UniProt",
+                filter_match_mode: "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '80px',
@@ -1456,9 +1377,10 @@ $(document).ready(function () {
             {
                 column_number: 4,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
+                column_data_type: "html",
+                html_data_type: "text",
                 filter_default_label: "IUPHAR",
-                filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '100px',
@@ -2187,20 +2109,23 @@ $(document).ready(function () {
 
 
         ],
+
         {filters_tr_index: 1},
+
         {
             cumulative_filtering: true
         }
     );
 
 //    yadcf.exResetAllFilters(oTable4);
+
     setTimeout(() => {
         console.timeEnd("table4load");
     }, );
 
 // By default display the first tab. If this is not ON, one has to click on the tab for display.
-    $('#myTab a:first').tab('show');
-
+//    $('#myTab a:first').tab('show');
+     $('#myTab a[href="#table_1"]').tab('show');
 // Just a button to go back to the main page.
     $('#reset_tab1').click(function () {
         window.location.href = '/signprot/couplings';
@@ -2264,67 +2189,3 @@ $(document).ready(function () {
     } );
 
 });
-
-function resetHidden1() {
-    var columns = Array.from(new Array(17), (x,i) => i + 3);
-    columns.forEach(function(column) {
-        column = oTable1.column( column );
-        try {
-            column.visible( true, false );
-        }
-        catch(err) {
-            column.visible( true, false );
-        }
-    });
-    oTable1.draw();
-}
-
-function resetHidden2() {
-    var columns = Array.from(new Array(28), (x,i) => i + 3);
-    columns.forEach(function(column) {
-        console.log('columns variable ' + columns);
-        column = oTable2.column( column );
-        try {
-            column.visible( true, false );
-        }
-        catch(err) {
-            column.visible( true, false );
-        }
-    });
-    oTable2.draw();
-}
-
-function resetHidden3() {
-    var columns = Array.from(new Array(70), (x,i) => i + 3);
-    columns.forEach(function(column) {
-        console.log('columns variable ' + columns);
-        column = oTable3.column( column );
-        try {
-            column.visible( true, false );
-        }
-        catch(err) {
-            column.visible( true, false );
-        }
-    });
-    oTable3.draw();
-}
-
-function resetHidden4() {
-    var columns = Array.from(new Array(70), (x,i) => i + 3);
-    columns.forEach(function(column) {
-        console.log('columns variable ' + columns);
-        column = oTable4.column( column );
-        try {
-            column.visible( true, false );
-        }
-        catch(err) {
-            column.visible( true, false );
-        }
-    });
-    oTable4.draw();
-}
-
-function reset_tab1() {
-// Just a button to go back to the main page.
-    window.location.href = '/signprot/couplings';
-}

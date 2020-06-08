@@ -111,7 +111,7 @@ class CouplingBrowser(TemplateView):
 
         protobj = Protein.objects.filter(sequence_type__slug='wt',
                                          family__slug__startswith='00',
-                                         species__common_name='Human').all().prefetch_related(
+                                         species__common_name='Human').prefetch_related(
             "family",
             "parent",
             "source")
@@ -120,8 +120,8 @@ class CouplingBrowser(TemplateView):
                                                                      'g_protein_subunit',
                                                                      'g_protein')
 
-        context['proteins'] = protobj
-        context['couplings'] = coupobj
+#        context['proteins'] = protobj
+#        context['couplings'] = coupobj
         context['famtab'] = fam_tab
 
         return context
@@ -166,9 +166,9 @@ class CouplingBrowser(TemplateView):
 
         distinct_g_families = []
         distinct_g_subunit_families = {}
-        couplings = ProteinGProteinPair.objects.all().prefetch_related('protein',
-                                                                       'g_protein_subunit',
-                                                                       'g_protein')
+        couplings = ProteinGProteinPair.objects.prefetch_related('protein',
+                                                                 'g_protein_subunit',
+                                                                 'g_protein')
         for c in couplings:
             p = c.protein.entry_short()
             s = c.source
