@@ -270,7 +270,7 @@ class LigandProperities(models.Model):
 
 
     def __str__(self):
-        return str(self.inchikey)
+        return self.inchikey
 
     class Meta():
         db_table = 'ligand_properities'
@@ -418,8 +418,8 @@ class AnalyzedExperiment(models.Model):
     labs_quantity = models.CharField(max_length=5)
     residue = models.CharField(max_length=5,null = True)
     mutation = models.CharField(max_length=5,null = True)
-    primary= models.CharField(max_length=40,null = True)
-    secondary= models.CharField(max_length=40,null = True)
+    primary= models.CharField(max_length=100,null = True)
+    secondary= models.CharField(max_length=100,null = True)
 
 class AnalyzedAssay(models.Model):
     experiment = models.ForeignKey(
