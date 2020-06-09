@@ -103,7 +103,7 @@ class Command(BaseCommand):
                 # Hardcoded annotations
                 hardcoded = {
                     "6CMO" : "active", # Complex with G prot - irregular conformation
-                    "5ZKP" : "unknown" # Unknown state (auto-inhibited with H8?)
+                    "5ZKP" : "other" # Unknown/other activation states (in this case auto-inhibited with H8?)
                 }
 
                 distances = list(Distance.objects.filter(gn1="2x46").filter(gn2="6x37") \
