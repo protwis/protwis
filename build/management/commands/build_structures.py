@@ -172,13 +172,13 @@ class Command(BaseBuild):
 
 
         AA = {'ALA':'A', 'ARG':'R', 'ASN':'N', 'ASP':'D',
-     'CYS':'C', 'GLN':'Q', 'GLU':'E', 'GLY':'G',
-     'HIS':'H', 'ILE':'I', 'LEU':'L', 'LYS':'K',
-     'MET':'M', 'PHE':'F', 'PRO':'P', 'SER':'S',
-     'THR':'T', 'TRP':'W', 'TYR':'Y', 'VAL':'V', 
-     'YCM':'C', 'CSD':'C', 'TYS':'Y', 'SEP':'S', 'TPO':'T'} #non-standard AAs
+             'CYS':'C', 'GLN':'Q', 'GLU':'E', 'GLY':'G',
+             'HIS':'H', 'ILE':'I', 'LEU':'L', 'LYS':'K',
+             'MET':'M', 'PHE':'F', 'PRO':'P', 'SER':'S',
+             'THR':'T', 'TRP':'W', 'TYR':'Y', 'VAL':'V',
+             'YCM':'C', 'CSD':'C', 'TYS':'Y', 'SEP':'S', 'TPO':'T'} #non-standard AAs
 
-        atom_num_dict = {'E':9, 'S':6, 'Y':12, 'G':4, 'A':5, 'V':7, 'M':8, 'L':8, 'I':8, 'T':7, 'F':11, 'H':10, 'K':9, 
+        atom_num_dict = {'E':9, 'S':6, 'Y':12, 'G':4, 'A':5, 'V':7, 'M':8, 'L':8, 'I':8, 'T':7, 'F':11, 'H':10, 'K':9,
                          'D':8, 'C':6, 'R':11, 'P':7, 'Q':9, 'N':8, 'W':14}
 
 
@@ -315,9 +315,11 @@ class Command(BaseBuild):
                 if chain not in pdbseq:
                     pdbseq[chain] = {}
                 pos = residue_id[3][1]
-                pdbseq[chain][pos] = [i,AA[residue.resname]]
-                i += 1
-        
+
+                if residue.resname != "NH2": # skip amidation of peptide
+                    pdbseq[chain][pos] = [i, AA[residue.resname]]
+                    i += 1
+
         parent_seq_protein = str(structure.protein_conformation.protein.parent.sequence)
         # print(structure.protein_conformation.protein.parent.entry_name)
         rs = Residue.objects.filter(protein_conformation__protein=structure.protein_conformation.protein.parent).prefetch_related('display_generic_number','generic_number','protein_segment')
@@ -344,7 +346,7 @@ class Command(BaseBuild):
         # print(seq)
         # print('parent_seq',len(parent_seq),'pdb_seq',len(seq))
         #align WT with structure seq -- make gaps penalties big, so to avoid too much overfitting
-        
+
         if structure.pdb_code.index in ['6NBI','6NBF','6NBH','6U1N']:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -3, -1)
         else:
@@ -855,7 +857,7 @@ class Command(BaseBuild):
 
         rotamer_bulk = []
         for i,res in enumerate(bulked_res):
-            rotamer_bulk.append(Rotamer(residue=res, structure=structure, pdbdata=bulked_rot[i][0], 
+            rotamer_bulk.append(Rotamer(residue=res, structure=structure, pdbdata=bulked_rot[i][0],
                                         missing_atoms=bulked_rot[i][1]))
 
         Rotamer.objects.bulk_create(rotamer_bulk)
@@ -897,7 +899,7 @@ class Command(BaseBuild):
         while count.value<len(filenames):
             with lock:
                 source_file = filenames[count.value]
-                count.value +=1 
+                count.value +=1
             source_file_path = os.sep.join([self.structure_data_dir, source_file])
             # sbc = StructureBuildCheck()
             # if source_file != "2RH1.yaml":
@@ -905,6 +907,7 @@ class Command(BaseBuild):
             if os.path.isfile(source_file_path) and source_file[0] != '.':
                 with open(source_file_path, 'r') as f:
                     sd = yaml.load(f, Loader=yaml.FullLoader)
+
                     # is this a representative structure (will be used to guide structure-based alignments)?
                     representative = False
                     if 'representative' in sd and sd['representative']:
@@ -949,7 +952,7 @@ class Command(BaseBuild):
 
                     except Structure.DoesNotExist:
                         s = Structure()
-                    
+
                     s.representative = representative
 
                     # protein state
@@ -993,7 +996,7 @@ class Command(BaseBuild):
                     pdb_path = os.sep.join([self.pdb_data_dir, sd['pdb'] + '.pdb'])
                     if not os.path.isfile(pdb_path):
                         self.logger.info('Fetching PDB file {}'.format(sd['pdb']))
-                        url = 'http://www.rcsb.org/pdb/files/%s.pdb' % sd['pdb']
+                        url = 'https://www.rcsb.org/pdb/files/%s.pdb' % sd['pdb']
                         pdbdata_raw = urlopen(url).read().decode('utf-8')
                         with open(pdb_path, 'w') as f:
                             f.write(pdbdata_raw)
