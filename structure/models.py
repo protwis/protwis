@@ -164,7 +164,7 @@ class StructureComplexModel(models.Model):
     main_template = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
     pdb_data = models.ForeignKey('PdbData', null=True, on_delete=models.CASCADE)
     version = models.DateField()
-    prot_signprot_pair = models.ForeignKey('protein.ProteinGProteinPair', related_name='+', on_delete=models.CASCADE, null=True)
+    # prot_signprot_pair = models.ForeignKey('protein.ProteinGProteinPair', related_name='+', on_delete=models.CASCADE, null=True)
     stats_text = models.ForeignKey('StatsText', on_delete=models.CASCADE)
 
     def __repr__(self):
@@ -322,7 +322,7 @@ class StructureExtraProteins(models.Model):
     note = models.CharField(max_length=50, null=True)
     chain = models.CharField(max_length=1)
     category = models.CharField(max_length=20)
-    wt_coverage = models.IntegerField()
+    wt_coverage = models.IntegerField(null=True)
 
     def __str__(self):
         return self.display_name

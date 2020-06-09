@@ -270,7 +270,7 @@ class LigandProperities(models.Model):
 
 
     def __str__(self):
-        return str(self.inchikey)
+        return self.inchikey
 
     class Meta():
         db_table = 'ligand_properities'
@@ -351,17 +351,6 @@ class LigandVendorLink(models.Model):
     vendor_external_id = models.CharField(max_length=300) #RegistryID
     sid = models.CharField(max_length=200, unique=True) #SID
 
-class LigandVendors(models.Model):
-    slug = models.SlugField(max_length=100, unique=True)
-    name = models.CharField(max_length=200, default='')
-    url = models.TextField(null=True)
-
-class LigandVendorLink(models.Model):
-    vendor = models.ForeignKey('LigandVendors', on_delete=models.CASCADE)
-    lp = models.ForeignKey('LigandProperities', related_name='vendors', on_delete=models.CASCADE)
-    url = models.CharField(max_length=300)  #SourceRecordURL
-    vendor_external_id = models.CharField(max_length=300) #RegistryID
-    sid = models.CharField(max_length=200, unique=True) #SID
 
 
 #Biased Signalling - start
@@ -431,8 +420,8 @@ class AnalyzedExperiment(models.Model):
     labs_quantity = models.CharField(max_length=5)
     residue = models.CharField(max_length=5,null = True)
     mutation = models.CharField(max_length=5,null = True)
-    primary= models.CharField(max_length=40,null = True)
-    secondary= models.CharField(max_length=40,null = True)
+    primary= models.CharField(max_length=100,null = True)
+    secondary= models.CharField(max_length=100,null = True)
 
 class AnalyzedAssay(models.Model):
     experiment = models.ForeignKey(

@@ -152,7 +152,7 @@ class Command(BaseBuild):
         elif i<=int(v['2e']):
             a['s'] = 'TM2'
             a['numbers']['bw'] = '2.'+str(50+i-int(v['2x']))
-        elif 'D1e1' in v and v['D1e1x']!="-" and i<int(v['3b']):
+        elif 'D1e1x' in v and v['D1e1x']!="-" and i<int(v['3b']):
             if i<int(v['D1e1b']):
                 a['s'] = 'D1e1'
             elif i<=int(v['D1e1e']):
@@ -160,7 +160,7 @@ class Command(BaseBuild):
                 a['numbers']['bw'] = 'D1e1.'+str(50+i-int(v['D1e1x']))
             else:
                 a['s'] = 'D1e1'
-        elif v['e1x']!="-" and i<int(v['3b']):
+        elif 'e1x' in v and v['e1x']!="-" and i<int(v['3b']):
             if i<int(v['e1b']):
                 a['s'] = 'ECL1'
             elif i<=int(v['e1e']):
@@ -456,7 +456,6 @@ class Command(BaseBuild):
                     seg, number = res['numbers']['bw'].split(".")
                     gn = self.b_and_c_check(b_and_c,number,seg)
                     res['numbers']['generic_number'] = seg+"x"+gn
-
 
                 # print("\t",res)
 
