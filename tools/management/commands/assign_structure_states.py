@@ -51,10 +51,11 @@ class Command(BaseCommand):
 
             # V1: Grab most inactive PDB per ligandType -> 2x46 - 6x37 distance should be present and < 13Å (all classes)
             # V2: Grab most inactive PDB per Receptor family -> 2x46 - 6x37 distance should be present and < 13Å (cut-off valid for all classes)
-            # V3: Just grab most inactive PDBs -> 2x46 - 6x37 distance should be present and < 13Å (cut-off valid for all classes)
+            # V3: Just grab most inactive PDBs -> 2x46 - 6x37 distance should be present and < 13Å (cut-off valid for all classes at this point 10-01-2020)
             inactive_ids = list(Distance.objects.filter(distance__lt=13*distance_scaling_factor) \
                                 .filter(gn1="2x46").filter(gn2="6x37") \
                                 .filter(structure__pdb_code__index__in=structure_ids) \
+                                .exclude(structure__pdb_code__index__in=active_ids) \
 #                                .order_by("structure__protein_conformation__protein__family__parent__name", "distance") \
 #                                .distinct("structure__protein_conformation__protein__family__parent__name") \
                                 .values_list("structure__pdb_code__index"))
@@ -93,17 +94,19 @@ class Command(BaseCommand):
 
                 # Calculate score per pdbs
                 scoring_results = {}
+                all_scoring_results = {}
                 for pdb in dis.pdbs:
-                    min_active_distance = mean([ finalMap[pdb+"_"+x] for x in active_ids ])
-                    min_inactive_distance = mean([ finalMap[pdb+"_"+x] for x in inactive_ids ])
+                    min_active_distance = mean([ abs(finalMap[pdb+"_"+x]) for x in active_ids ])
+                    min_inactive_distance = mean([ abs(finalMap[pdb+"_"+x]) for x in inactive_ids ])
                     scoring_results[pdb] = min_active_distance-min_inactive_distance
-
-#                    print("{}|{}|{}|{}".format(pdb, scoring_results[pdb], min_active_distance, min_inactive_distance))
+                    all_scoring_results[pdb] = [min_active_distance-min_inactive_distance, min_active_distance, min_inactive_distance]
+                    # print("{}|{}|{}|{}".format(pdb, scoring_results[pdb], min_active_distance, min_inactive_distance))
 
                 # Hardcoded annotations
                 hardcoded = {
                     "6CMO" : "active", # Complex with G prot - irregular conformation
-                    "5ZKP" : "other" # Unknown/other activation states (in this case auto-inhibited with H8?)
+                    "5ZKP" : "other", # Unknown/other activation states (in this case auto-inhibited with H8?)
+                    "5NX2" : "intermediate", # Closer to active + groups together but internally more inactive
                 }
 
                 distances = list(Distance.objects.filter(gn1="2x46").filter(gn2="6x37") \
@@ -134,11 +137,26 @@ class Command(BaseCommand):
                     # Classification
                     score = scoring_results[entry[0]]
                     structure_state = "inactive"
-                    if entry[1] >= 13: # below this distance always inactive structure
-                        if score < -0.95*lowest_inactive_distance:
-                            structure_state = "active"
-                        elif score < 0:
+                    #if entry[1] >= 13: # below this distance always inactive structure
+                    #    if score < -0.95*lowest_inactive_distance:
+                    #        structure_state = "active"
+                    #    elif score < 0:
+                    #        structure_state = "intermediate"
+
+                    if score < 0: # above this score always inactive structure
+                        structure_state = "active"
+                        if slug[0] == "001" and score > -60:
                             structure_state = "intermediate"
+                            print(slug, entry[0], structure_state, score)
+                        #if slug=="002" and score > -20:
+                        #    structure_state = "intermediate"
+                        #elif slug=="004" and score > 0:
+                        #    structure_state = "intermediate"
+                        #elif slug=="005" and score > 0 :
+                        #    structure_state = "intermediate"
+
+
+
 
                     # UGLY: knowledge-based hardcoded corrections
                     if entry[0] in hardcoded:
@@ -146,6 +164,16 @@ class Command(BaseCommand):
 
                     # Percentage Gprot-bound likeness
                     gprot_likeness = 100 - int(round((score-min_score)/(max_score-min_score)*100))
+
+                    if entry[0] in active_ids:
+                        gprot_likeness = 100
+                        structure_state = "active"
+                    elif entry[0] in inactive_ids and structure_state=="inactive":
+                        gprot_likeness = 0
+                        #structure_state = "inactive"
+                    # elif entry[0] in inactive_ids:
+                    #     gprot_likeness = 0
+                    #     structure_state = "inactive"
 
                     # Store for structure
                     struct = Structure.objects.get(pdb_code__index=entry[0])
