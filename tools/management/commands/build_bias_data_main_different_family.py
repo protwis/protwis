@@ -87,7 +87,9 @@ class Command(BaseBuild):
             print('--error--', msg, '\n')
             self.logger.info("The error appeared in def handle")
 
-
+    def purge_bias_data(self):
+        delete_bias_experiment = AnalyzedExperiment.objects.all()
+        delete_bias_experiment.delete()
 
     def fetch_experiment(self, publication, ligand, receptor, residue, mutation, source):
         """
@@ -298,6 +300,7 @@ class Command(BaseBuild):
         lgb = (a-b)-(c-d)
         return lgb
 
+
     def calc_bias_factor(self, biasdata):
         most_reference = dict()
         most_potent = dict()
@@ -504,7 +507,7 @@ class Command(BaseBuild):
             labs = list()
             i[1]['labs'] = 0
             labs.append(i[1]['publication'])
-            lab_counter = 0
+            lab_counter = 1
             for j in context.items():
                 if j[1]['publication'] not in labs:
                     if set(i[1]['authors']) & set(j[1]['authors']):
@@ -513,7 +516,7 @@ class Command(BaseBuild):
                         i[1]['labs'] = lab_counter
 
 
-            temp_obj = 0
+            temp_obj = 1
             name = str(i[1]['ref_ligand_experiment']) + \
                 '/' + str(i[1]['ligand']) + '/' + str(i[1]['receptor'])
             if(name in temp):
@@ -541,15 +544,22 @@ class Command(BaseBuild):
         return vendor_count
 
     def fetch_receptor_trunsducers(self, receptor):
-        primary = ""
-        secondary = ""
+        primary = set()
+        temp = str()
+        temp1 = str()
+        secondary = set()
         gprotein = ProteinGProteinPair.objects.filter(protein=receptor)
         for x in gprotein:
             if x.transduction and x.transduction == 'primary':
-                primary += str(x.g_protein.name)
+                primary.add(x.g_protein.name)
             elif x.transduction and x.transduction == 'secondary':
-                secondary += str(x.g_protein.name)
-        return primary, secondary
+                secondary.add(x.g_protein.name)
+        for i in primary:
+            temp += str(i) + str(', ')
+
+        for i in secondary:
+            temp1 += str(i) + str(', ')
+        return temp, temp1
 
     def bias_list(self):
         context = {}

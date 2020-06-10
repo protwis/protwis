@@ -479,3 +479,20 @@ class BiasedPathwaysAssay(models.Model):
 
 
 #Pathways Part - end
+class ChemblAssays(models.Model):
+    ligand = models.ForeignKey(Ligand, on_delete = models.CASCADE)
+    #change doi to publication object
+    publication = models.ForeignKey(Publication, on_delete = models.CASCADE, null= True)
+    receptor = models.ForeignKey('protein.Protein', on_delete = models.CASCADE)
+    chembl = models.CharField(max_length=100,null = True)
+    smiles = models.TextField(null = True)
+    activity = models.CharField(max_length=50,null = True)
+    standard_type  = models.CharField(max_length=100,null = True)
+    standard_value = models.CharField(max_length=100,null = True)
+    standard_units = models.CharField(max_length=100,null = True)
+    standard_relation = models.CharField(max_length=100,null = True)
+    assay_description = models.CharField(max_length=1000,null = True)
+    assay_type = models.CharField(max_length=50,null = True)
+    pchembl_value = models.CharField(max_length=50,null = True)
+    document_chembl_id = models.CharField(max_length=50,null = True)
+    cell_line = models.TextField(null = True)

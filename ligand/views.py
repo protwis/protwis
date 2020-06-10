@@ -536,8 +536,9 @@ class BiasBrowser(TemplateView):
             temp['publication_quantity'] = instance.article_quantity
             temp['lab_quantity'] = instance.labs_quantity
             temp['reference_ligand'] = instance.reference_ligand
-            temp['primary'] =   instance.primary.replace('family','').strip()
-            temp['secondary'] = instance.secondary.replace('family','').strip()
+            temp['primary'] = instance.primary.replace(' family,','')
+            temp['secondary'] = instance.secondary.replace(' family,','')
+
             if instance.receptor:
                 temp['class'] = instance.receptor.family.parent.parent.parent.name.replace('Class','').strip()
                 temp['receptor'] = instance.receptor
