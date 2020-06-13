@@ -622,13 +622,60 @@ def InteractionBrowserData(request):
     i_options_filter = Q()
     # Filter out contact within the same helix
     #if contact_options and len(contact_options) > 0:
-    if not contact_options or "intrahelical" not in contact_options:
-        i_options_filter = ~Q(interacting_pair__res1__protein_segment=F('interacting_pair__res2__protein_segment'))
+    # if not contact_options or "intrahelical" not in contact_options:
+    #    i_options_filter = ~Q(interacting_pair__res1__protein_segment=F('interacting_pair__res2__protein_segment'))
 
     # Filter out contact with backbone atoms
+    # backbone_atoms = ["C", "O", "N", "CA"]
+    # if not contact_options or "backbone" not in contact_options:
+    #    i_options_filter = i_options_filter & ~Q(atomname_residue1__in=backbone_atoms) & ~Q(atomname_residue2__in=backbone_atoms)
+
+    # Filters for inter- and intrasegment contacts + BB/SC filters
     backbone_atoms = ["C", "O", "N", "CA"]
-    if not contact_options or "backbone" not in contact_options:
-        i_options_filter = i_options_filter & ~Q(atomname_residue1__in=backbone_atoms) & ~Q(atomname_residue2__in=backbone_atoms)
+
+    # INTERsegment interactions
+    inter_segments = ~Q(interacting_pair__res1__protein_segment=F('interacting_pair__res2__protein_segment'))
+
+    # Blocking filter for empty settings
+    inter_options_filter = (inter_segments & Q(atomname_residue1="FOO"))
+
+    # BB-BB
+    if contact_options and "inter_bbbb" in contact_options:
+        bbbb = Q(atomname_residue1__in=backbone_atoms) & Q(atomname_residue2__in=backbone_atoms) & inter_segments
+        inter_options_filter = inter_options_filter | bbbb
+
+    # SC-BB
+    if contact_options and "inter_scbb" in contact_options:
+        scbb = ((Q(atomname_residue1__in=backbone_atoms) & ~Q(atomname_residue2__in=backbone_atoms)) | (~Q(atomname_residue1__in=backbone_atoms) & Q(atomname_residue2__in=backbone_atoms))) & inter_segments
+        inter_options_filter = inter_options_filter | scbb
+
+    # SC-SC
+    if contact_options and "inter_scsc" in contact_options:
+        scsc = ~Q(atomname_residue1__in=backbone_atoms) & ~Q(atomname_residue2__in=backbone_atoms) & inter_segments
+        inter_options_filter = inter_options_filter | scsc
+
+    # INTRAsegment interactions
+    intra_segments = Q(interacting_pair__res1__protein_segment=F('interacting_pair__res2__protein_segment'))
+
+    # Blocking filter for empty settings
+    intra_options_filter = (intra_segments & Q(atomname_residue1="FOO"))
+
+    # BB-BB
+    if contact_options and "intra_bbbb" in contact_options:
+        bbbb = Q(atomname_residue1__in=backbone_atoms) & Q(atomname_residue2__in=backbone_atoms) & intra_segments
+        intra_options_filter = intra_options_filter | bbbb
+
+    # SC-BB
+    if contact_options and "intra_scbb" in contact_options:
+        scbb = ((Q(atomname_residue1__in=backbone_atoms) & ~Q(atomname_residue2__in=backbone_atoms)) | (~Q(atomname_residue1__in=backbone_atoms) & Q(atomname_residue2__in=backbone_atoms))) & intra_segments
+        intra_options_filter = intra_options_filter | scbb
+
+    # SC-SC
+    if contact_options and "intra_scsc" in contact_options:
+        scsc = ~Q(atomname_residue1__in=backbone_atoms) & ~Q(atomname_residue2__in=backbone_atoms) & intra_segments
+        intra_options_filter = intra_options_filter | scsc
+
+    i_options_filter = inter_options_filter | intra_options_filter
 
     # DISCUSS: cache hash now takes the normalize along, is this necessary
     normalized = "normalize" in contact_options

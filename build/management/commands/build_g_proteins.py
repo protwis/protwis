@@ -39,7 +39,7 @@ from signprot.models import SignprotBarcode, SignprotComplex, SignprotStructure
 class Command(BaseCommand):
     help = 'Build G proteins'
 
-    # source file directory
+    # source files
     gprotein_data_path = os.sep.join([settings.DATA_DIR, 'g_protein_data'])
     if not os.path.exists(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'PDB_UNIPROT_ENSEMBLE_ALL.txt'])):
         with open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'PDB_UNIPROT_ENSEMBLE_ALL.txt']), 'w') as f:
