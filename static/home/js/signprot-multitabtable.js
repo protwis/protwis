@@ -1,7 +1,9 @@
-var oTable1 = [];
-var oTable2 = [];
-var oTable3 = [];
-var oTable4 = [];
+let oTable1 = [];
+let oTable2 = [];
+let oTable3 = [];
+let oTable4 = [];
+
+let table1data;
 
 var tableToExcel = (function () {
     var uri = 'data:application/vnd.ms-excel;base64,',
@@ -16,6 +18,7 @@ var tableToExcel = (function () {
     return function (table, name, filename) {
         var table= $("#"+table).clone();
         $("#excel_table").html(table);
+
         // Clean up table to remove yadcf stuff
         $("#excel_table thead tr").css('height','');
         $("#excel_table thead th").css('height','');
@@ -23,6 +26,7 @@ var tableToExcel = (function () {
         $("#excel_table thead .yadcf-filter-wrapper").remove();
         $("#excel_table thead button").remove();
         var tr = $("#excel_table thead tr:eq(1)");
+
         // reattach th titles
         tr.find('th').each (function( column, th) {
             if ($(th).attr('title')) $(th).html($(th).attr('title'));
@@ -112,11 +116,17 @@ function resetHidden4() {
 
 function reset_tab1() {
 // Just a button to go back to the main page.
-    window.location.href = '/signprot/couplings';
+    window.location.href = '/signprot/couplings/#table_1';
+}
+
+function reset_tab2() {
+// Just a button to go back to the main page.
+    window.location.href = '/signprot/couplings/#table_2';
 }
 
 
 $(document).ready(function () {
+
     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
         console.log( 'show tab' );
         $($.fn.dataTable.tables(true)).DataTable()
@@ -126,18 +136,20 @@ $(document).ready(function () {
 
     console.time("table1load");
     oTable1 = $("#familiestabletab").DataTable({
-        "scrollY": $(window).height() - 450,
-        "scrollX": true,
-        "scrollCollapse": true,
-        "scroller": true,
-        "paging": false,
+//        data: table1data,
+        scrollY: $(window).height() - 450,
+        scrollX: true,
+        scrollCollapse: true,
+        scroller: true,
+        paging: false,
 //        "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
-        "bSortCellsTop": false, //prevent sort arrows going on bottom row
-        "aaSorting": [],
-        "autoWidth": true,
-        "pageLength": -1,
-        "bInfo": true,
+        bSortCellsTop: false, //prevent sort arrows going on bottom row
+        aaSorting: [],
+        autoWidth: true,
+        pageLength: -1,
+        bInfo: true
     });
+
     yadcf.init(oTable1,
         [
             {
@@ -288,22 +300,25 @@ $(document).ready(function () {
         }
     );
 
-//    yadcf.exResetAllFilters(oTable1);
+    yadcf.exResetAllFilters(oTable1);
     setTimeout(() => {
         console.timeEnd("table1load");
     }, );
 
+
     console.time("table2load");
     oTable2 = $("#subtypestabletab").DataTable({
-        "scrollY": $(window).height() - 450,
-        "scrollX": true,
-        "scrollCollapse": true,
-        "scroller": true,
-        "paging": false,
-        "bSortCellsTop": false, //prevent sort arrows going on bottom row
-        "autoWidth": true,
-        "pageLength": -1,
-        "bInfo": true,
+//        data: table2data,
+        scrollY: $(window).height() - 500,
+        scrollX: true,
+        scrollCollapse: true,
+        scroller: true,
+        paging: false,
+        bSortCellsTop: false, //prevent sort arrows going on bottom row
+        aaSorting: [],
+        autoWidth: true,
+        pageLength: -1,
+        bInfo: true
     });
     yadcf.init(oTable2,
         [
@@ -353,13 +368,11 @@ $(document).ready(function () {
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
             },
-
             {
                 column_number : 6,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
             },
-
             {
                 column_number : 7,
                 filter_type: "range_number",
@@ -372,133 +385,117 @@ $(document).ready(function () {
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
             },
-
             {
                 column_number : 9,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
             },
-
             {
                 column_number : 10,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
             },
-
             {
                 column_number : 11,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
             },
-
             {
                 column_number : 12,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
             },
-
             {
                 column_number : 13,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
             },
-
             {
                 column_number : 14,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
             },
-
             {
                 column_number : 15,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
             },
-
             {
                 column_number : 16,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
             },
 
+
             {
                 column_number : 17,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
             },
-
             {
                 column_number : 18,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
             },
-
             {
                 column_number : 19,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
             },
-
             {
                 column_number : 20,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
             },
-
             {
                 column_number : 21,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
             },
-
             {
                 column_number : 22,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
             },
-
             {
                 column_number : 23,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
             },
-
             {
                 column_number : 24,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
             },
 
+
             {
                 column_number : 25,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
             },
-
             {
                 column_number : 26,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
             },
-
             {
                 column_number : 27,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
             },
-
             {
                 column_number : 28,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
             },
 
+
             {
                 column_number : 29,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
             },
-
             {
                 column_number : 30,
                 filter_type: "range_number",
@@ -512,23 +509,25 @@ $(document).ready(function () {
         }
     );
 
-//    yadcf.exResetAllFilters(oTable2);
+    yadcf.exResetAllFilters(oTable2);
     setTimeout(() => {
         console.timeEnd("table2load");
     }, );
 
+
     console.time("table3load");
     oTable3 = $("#bouviertabletab").DataTable({
-        "scrollY": $(window).height() - 450,
-        "scrollX": true,
-        "scrollCollapse": true,
-        "scroller": true,
-        "paging": false,
-        "bSortCellsTop": false, //prevent sort arrows going on bottom row
-        "aaSorting": [],
-        "autoWidth": true,
-        "pageLength": -1,
-        "bInfo": true,
+//        data: table3data,
+        scrollY: $(window).height() - 500,
+        scrollX: true,
+        scrollCollapse: true,
+        scroller: true,
+        paging: false,
+        bSortCellsTop: false, //prevent sort arrows going on bottom row
+        aaSorting: [],
+        autoWidth: true,
+        pageLength: -1,
+        bInfo: true
     });
     yadcf.init(oTable3,
         [
@@ -704,8 +703,6 @@ $(document).ready(function () {
             },
 
 
-
-
             {
                 column_number: 21,
                 filter_type: "range_number",
@@ -794,8 +791,6 @@ $(document).ready(function () {
                     width: '70px',
                 },
             },
-
-
 
 
             {
@@ -888,8 +883,6 @@ $(document).ready(function () {
             },
 
 
-
-
             {
                 column_number: 43,
                 filter_type: "range_number",
@@ -980,8 +973,6 @@ $(document).ready(function () {
             },
 
 
-
-
             {
                 column_number: 54,
                 filter_type: "range_number",
@@ -1070,8 +1061,6 @@ $(document).ready(function () {
                     width: '70px',
                 },
             },
-
-
 
 
             {
@@ -1164,9 +1153,6 @@ $(document).ready(function () {
             },
 
 
-
-
-
         ],
         {filters_tr_index: 1},
         {
@@ -1174,29 +1160,32 @@ $(document).ready(function () {
         }
     );
 
-//    yadcf.exResetAllFilters(oTable3);
+    yadcf.exResetAllFilters(oTable3);
     setTimeout(() => {
         console.timeEnd("table3load");
     }, );
 
     console.time("table4load");
     oTable4 = $("#inouetabletab").DataTable({
+//        data: table4data,
         //data: data1,
         //"ordering": false,
         //"fixedHeader":true,
         //"searching": false,
         //"info": false,
-        "deferRender": true,
-        "scrollY": $(window).height() - 450,
-        "scrollX": true,
-        "scrollCollapse": true,
-        "scroller": true,
-        "paging": false,
-        "bSortCellsTop": false, //prevent sort arrows going on bottom row
-        "autoWidth": true,
-        "pageLength": -1,
-        "bInfo": true,
+        deferRender: true,
+        scrollY: $(window).height() - 500,
+        scrollX: true,
+        scrollCollapse: true,
+        scroller: true,
+        paging: false,
+        bSortCellsTop: false, //prevent sort arrows going on bottom row
+        aaSorting: [],
+        autoWidth: true,
+        pageLength: -1,
+        bInfo: true
     });
+
     yadcf.init(oTable4,
         [
             {
@@ -1278,8 +1267,6 @@ $(document).ready(function () {
                     width: '80px',
                 },
             },
-
-
 
 
             {
@@ -1372,7 +1359,6 @@ $(document).ready(function () {
             },
 
 
-
             {
                 column_number: 20,
                 filter_type: "range_number",
@@ -1461,7 +1447,6 @@ $(document).ready(function () {
                     width: '70px',
                 },
             },
-
 
 
             {
@@ -1554,7 +1539,6 @@ $(document).ready(function () {
             },
 
 
-
             {
                 column_number: 42,
                 filter_type: "range_number",
@@ -1645,7 +1629,6 @@ $(document).ready(function () {
             },
 
 
-
             {
                 column_number: 53,
                 filter_type: "range_number",
@@ -1734,7 +1717,6 @@ $(document).ready(function () {
                     width: '70px',
                 },
             },
-
 
 
             {
@@ -1837,20 +1819,20 @@ $(document).ready(function () {
         }
     );
 
-//    yadcf.exResetAllFilters(oTable4);
+    yadcf.exResetAllFilters(oTable4);
 
     setTimeout(() => {
         console.timeEnd("table4load");
     }, );
 
 // By default display the first tab. If this is not ON, one has to click on the tab for display.
-//    $('#myTab a:first').tab('show');
-     $('#myTab a[href="#table_4"]').tab('show');
+    $('#myTab a:first').tab('show');
+//    $('#myTab a[href="#table_1"]').tab('show');
+
 // Just a button to go back to the main page.
     $('#reset_tab1').click(function () {
         window.location.href = '/signprot/couplings';
     });
-
 
     $('.hide_columns1').click(function(evt) {
         var columns = $(this).attr('columns').split(",");
@@ -1907,5 +1889,91 @@ $(document).ready(function () {
         });
         oTable4.draw();
     } );
+
+
+// =============================================================================
+// START OVERLAY COLUMNS CODE HERE
+// =============================================================================
+    toggle_enabled = true;
+    $('#toggle_fixed_btn').click(function() {
+        if (toggle_enabled) {
+            toggle_enabled = false;
+            $("#overlay").hide();
+            $("#toggle_fixed_btn").attr('value',"Enable fixed columns");
+            $("#toggle_fixed_btn").addClass('clicked_button');
+        } else {
+            toggle_enabled = true;
+            $('.dataTables_scrollBody').scroll();
+            $("#toggle_fixed_btn").attr('value',"Disable fixed columns");
+            $("#toggle_fixed_btn").removeClass('clicked_button');
+        }
+    });
+
+    var left = 0;
+    var old_left = 0;
+    $('.dataTables_scrollBody').scroll(function(){
+        // If user scrolls and it's > 100px from left, then attach fixed columns overlay
+        left = $('.dataTables_scrollBody').scrollLeft();
+        if (left!=old_left) $("#overlay").hide();
+        old_left = left;
+
+        if (left > 100 && toggle_enabled) {
+            $("#overlay").css({ left: left + 'px' });
+            if ($("#overlay").is(":hidden")) $("#overlay").show();
+        }
+    });
+
+
+    $('.dataTables_scrollBody').append('<div id=overlay><table id="overlay_table" class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
+
+    function create_overlay() {
+        // This function fires upon filtering, to update what rows to show as an overlay
+        $("#overlay_table tbody tr").remove();
+        var $target = $("#overlay_table tbody");
+        $("#familiestabletab tbody tr").each(function() {
+            var $tds = $(this).children(),
+                $row = $("<tr></tr>");
+            $row.append($tds.eq(1).clone()).append($tds.eq(3).clone()).append($tds.eq(4).clone()).appendTo($target);
+            $row.height($(this).height());
+        });
+        $("#overlay_table .border-right").removeClass("border-right");
+
+
+        $("#overlay_table tbody tr").remove();
+        $("#subtypestabletab tbody tr").each(function() {
+            var $tds = $(this).children(),
+                $row = $("<tr></tr>");
+            $row.append($tds.eq(1).clone()).append($tds.eq(3).clone()).append($tds.eq(4).clone()).appendTo($target);
+            $row.height($(this).height());
+        });
+        $("#overlay_table .border-right").removeClass("border-right");
+
+        $("#overlay_table tbody tr").remove();
+        $("#bouviertabletab tbody tr").each(function() {
+            var $tds = $(this).children(),
+                $row = $("<tr></tr>");
+            $row.append($tds.eq(1).clone()).append($tds.eq(3).clone()).append($tds.eq(4).clone()).appendTo($target);
+            $row.height($(this).height());
+        });
+        $("#overlay_table .border-right").removeClass("border-right");
+
+        $("#overlay_table tbody tr").remove();
+        $("#inouetabletab tbody tr").each(function() {
+            var $tds = $(this).children(),
+                $row = $("<tr></tr>");
+            $row.append($tds.eq(1).clone()).append($tds.eq(3).clone()).append($tds.eq(4).clone()).appendTo($target);
+            $row.height($(this).height());
+        });
+        $("#overlay_table .border-right").removeClass("border-right");
+
+    }
+
+
+    create_overlay();
+    $("#overlay").hide();
+
+// =============================================================================
+// END OVERLAY COLUMNS CODE HERE
+// =============================================================================
 
 });
