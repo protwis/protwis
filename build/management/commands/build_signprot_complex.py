@@ -19,7 +19,7 @@ class Command(BaseCommand):
 
     def create_signprot_complex(self):
         with open(self.signprot_complex_data_file, 'r') as f:
-            signprot_complex_data = yaml.load(f)
+            signprot_complex_data = yaml.load(f, Loader=yaml.FullLoader)
         for protein, data in signprot_complex_data.items():
             if type(data)==type([]):
                 for i in data:

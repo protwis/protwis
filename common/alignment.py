@@ -981,8 +981,11 @@ class Alignment:
                         list(AMINO_ACID_GROUPS.keys())[pos]
                     ])
                 #print(self.feat_consensus[segment])
+
             del feats
-            del feat_cons_tmp
+            if 'feat_cons_tmp' in locals():
+                del feat_cons_tmp
+
             self.calculate_zscales()
             self.stats_done = True
 

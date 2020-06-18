@@ -1,6 +1,6 @@
 {% extends "home/base.html" %}
 {% load alignment_extras %}
-{% load staticfiles %}
+{% load static %}
 
 {% block addon_css %}
 <link href="{% static 'home/css/alignment.css' %}" rel="stylesheet">
@@ -15,6 +15,7 @@
     <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
     </button>
     <ul class="dropdown-menu">
+        <li><a href="/alignment/render_alignment_excel">Excel (xlsx)</a></li>
         <li><a href="/alignment/fasta">Alignment (fasta)</a></li>
         <li><a href="/alignment/csv">Spreadsheet (csv)</a></li>
     </ul>

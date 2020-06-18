@@ -36,7 +36,7 @@ class Command(BaseCommand):
                                 .values_list("pdb_code__index"))
             structure_ids = [x[0] for x in structure_ids]
 
-#            print("Identified the following PDBs")
+#            print("Selected the following PDBs for this class")
 #            print(structure_ids)
 
             # Get all PDB-codes for G-protein coupled structures in this class
@@ -45,17 +45,21 @@ class Command(BaseCommand):
                                 .exclude(structure__pdb_code__index="6CMO") \
                                 .values_list("structure__pdb_code__index"))
             active_ids = [x[0] for x in active_ids] # flatten
-            #                print("The following PDBs are G-prot complex structures:")
-            #                print(active_ids)
+            # print("The following PDBs are G-prot complex structures:")
+            # print(active_ids)
 
-            # Grab most inactive PDB per ligandType -> 2x46 - 6x37 distance present and <13Å (all classes)
-            inactive_ids = list(Distance.objects.filter(distance__lt=1300) \
+
+            # V1: Grab most inactive PDB per ligandType -> 2x46 - 6x37 distance should be present and < 13Å (all classes)
+            # V2: Grab most inactive PDB per Receptor family -> 2x46 - 6x37 distance should be present and < 13Å (cut-off valid for all classes)
+            # V3: Just grab most inactive PDBs -> 2x46 - 6x37 distance should be present and < 13Å (cut-off valid for all classes)
+            inactive_ids = list(Distance.objects.filter(distance__lt=13*distance_scaling_factor) \
                                 .filter(gn1="2x46").filter(gn2="6x37") \
                                 .filter(structure__pdb_code__index__in=structure_ids) \
-                                .order_by("structure__protein_conformation__protein__family__parent__parent__name", "distance") \
-                                .distinct("structure__protein_conformation__protein__family__parent__parent__name") \
+#                                .order_by("structure__protein_conformation__protein__family__parent__name", "distance") \
+#                                .distinct("structure__protein_conformation__protein__family__parent__name") \
                                 .values_list("structure__pdb_code__index"))
             inactive_ids = [x[0] for x in inactive_ids]
+            # print(inactive_ids)
 
             if len(structure_ids) > 0 and len(active_ids) > 0 and len(inactive_ids) > 0:
 
@@ -64,7 +68,7 @@ class Command(BaseCommand):
 
                 # create distance matrix for given structures on lower half TM + G-Prot only residues
                 dis = Distances()
-                dis.lower_only = True # only lower half TM + G-prot only helices
+                dis.filtered_gns = True # only lower half TM + G-prot only helices
                 dis.load_pdbs(structure_ids)
                 distance_matrix = dis.get_distance_matrix(True, False) # normalize, but don't use the cache
                 distance_matrix = pd.DataFrame(distance_matrix, columns=dis.pdbs, index=dis.pdbs)
@@ -90,7 +94,6 @@ class Command(BaseCommand):
                 # Calculate score per pdbs
                 scoring_results = {}
                 for pdb in dis.pdbs:
-#                    print("Processing {}".format(pdb))
                     min_active_distance = mean([ finalMap[pdb+"_"+x] for x in active_ids ])
                     min_inactive_distance = mean([ finalMap[pdb+"_"+x] for x in inactive_ids ])
                     scoring_results[pdb] = min_active_distance-min_inactive_distance
@@ -115,10 +118,13 @@ class Command(BaseCommand):
                 min_open = range_distance['distance__min']
                 max_open = range_distance['distance__max']
 
+                min_score = min(scoring_results.items(), key=lambda x: x[1])[1]
+                max_score = max(scoring_results.items(), key=lambda x: x[1])[1]
+
                 # find smallest distance between any active structure and any inactive structure
                 lowest_inactive_distance = min([ finalMap[y+"_"+x] for y in inactive_ids for x in active_ids ])
                 for entry in distances:
-                    # Percentage score
+                    # Percentage score for TM2-TM6 opening
                     percentage = int(round((entry[1]-min_open)/(max_open-min_open)*100))
                     if percentage < 0:
                         percentage = 0
@@ -138,10 +144,14 @@ class Command(BaseCommand):
                     if entry[0] in hardcoded:
                         structure_state = hardcoded[entry[0]]
 
+                    # Percentage Gprot-bound likeness
+                    gprot_likeness = 100 - int(round((score-min_score)/(max_score-min_score)*100))
+
                     # Store for structure
                     struct = Structure.objects.get(pdb_code__index=entry[0])
                     struct.state, created = ProteinState.objects.get_or_create(slug=structure_state, defaults={'name': structure_state.capitalize()})
                     struct.tm6_angle = percentage
+                    struct.gprot_bound_likeness = gprot_likeness
                     struct.save()
 
                     #print("Class {}: structure {} to state {} and opening is {}%".format(slug, entry[0], structure_state, percentage))
@@ -169,8 +179,13 @@ class Command(BaseCommand):
                     struct.tm6_angle = percentage
 
                     # Definitely an inactive state structure When distance is smaller than 13Å
-                    if entry[1] < 13:
+                    if entry[1] < 13*distance_scaling_factor:
                         struct.state, created = ProteinState.objects.get_or_create(slug="inactive", defaults={'name': "Inactive"})
+
+                    # UGLY: knowledge-based hardcoded corrections
+                    if entry[0] in hardcoded:
+                        structure_state = hardcoded[entry[0]]
+                        struct.state, created = ProteinState.objects.get_or_create(slug=structure_state, defaults={'name': structure_state.capitalize()})
 
                     # Save changes
                     struct.save()

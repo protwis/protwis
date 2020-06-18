@@ -1,40 +1,39 @@
-from django.core.management.base import BaseCommand, CommandError
-from django.conf import settings
-from django.db import connection
-from django.db import IntegrityError
-
-from common.models import WebResource, WebLink
-
-from protein.models import (Protein, ProteinConformation, ProteinState, ProteinFamily, ProteinAlias, ProteinSequenceType, Species, Gene, ProteinSource, ProteinSegment)
-
-from residue.models import (ResidueNumberingScheme, ResidueGenericNumber, Residue, ResidueGenericNumberEquivalent)
-
-from signprot.models import SignprotStructure
-import pandas as pd
-
-import requests
+import logging
+import os
+from urllib.request import urlopen
 from xml.etree.ElementTree import fromstring
 
-import os
-import logging
-from urllib.request import urlopen
+import pandas as pd
+import requests
+
+from common.models import WebLink, WebResource
+from django.conf import settings
+from django.core.management.base import BaseCommand, CommandError
+from django.db import IntegrityError, connection
+from protein.models import (Gene, Protein, ProteinAlias, ProteinConformation,
+                            ProteinFamily, ProteinSegment, ProteinSequenceType,
+                            ProteinSource, ProteinState, Species)
+from residue.models import (Residue, ResidueGenericNumber,
+                            ResidueGenericNumberEquivalent,
+                            ResidueNumberingScheme)
+from signprot.models import SignprotStructure
 
 
 class Command(BaseCommand):
     help = 'Build Arrestin proteins'
 
-    # source file directory
+    # source files
     arrestin_data_file = os.sep.join([settings.DATA_DIR, 'arrestin_data', 'ortholog_alignment.xlsx'])
-
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'protein_data', 'uniprot'])
-    remote_uniprot_dir = 'http://www.uniprot.org/uniprot/'
+    remote_uniprot_dir = 'https://www.uniprot.org/uniprot/'
+
     logger = logging.getLogger(__name__)
 
-
     def add_arguments(self, parser):
-        parser.add_argument('--filename', action='append', dest='filename',
-            help='Filename to import. Can be used multiple times')
-
+        parser.add_argument('--filename',
+                            action='append',
+                            dest='filename',
+                            help='Filename to import. Can be used multiple times')
 
     def handle(self, *args, **options):
         if options['filename']:
@@ -138,7 +137,7 @@ class Command(BaseCommand):
 
     def map_pdb_to_uniprot(self, pdb_id):
         """Get uniprot ID from PDB ID."""
-        pdb_mapping_url = 'http://www.rcsb.org/pdb/rest/das/pdb_uniprot_mapping/alignment'
+        pdb_mapping_url = 'https://www.rcsb.org/pdb/rest/das/pdb_uniprot_mapping/alignment'
         pdb_mapping_response = requests.get(
             pdb_mapping_url, params={'query': pdb_id}
         ).text
@@ -275,7 +274,6 @@ class Command(BaseCommand):
             structure, created = SignprotStructure.objects.get_or_create(PDB_code=structure[0], resolution=res, protein = p)
             if created:
                 self.logger.info('Created structure ' + structure.PDB_code + ' for protein ' + p.name)
-
 
     def create_can_rns(self):
         """Add new numbering scheme entry_name."""

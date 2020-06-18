@@ -110,6 +110,10 @@ input.form-control {
     -moz-border-radius: 0 6px 6px;
     border-radius: 0 6px 6px 6px;
 }
+h3.dropleft .dropleft>.dropdown-menu {
+    right: 100% !important;
+    left: auto !important;
+}
 
 .dropdown-submenu:hover>.dropdown-menu {
     display: block;
@@ -154,4 +158,13 @@ text.segment {
 
 .selection_buttons {
     margin-top: 5px;
+}
+
+.structure_overlay::-webkit-scrollbar { /* WebKit */
+    width: 0;
+    height: 0;
+}
+.structure_overlay {
+    -webkit-transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
 }

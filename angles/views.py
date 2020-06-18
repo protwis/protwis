@@ -62,10 +62,16 @@ def get_angles(request):
         # Grab PDB data
         if len(pdbs)==1 and len(pdbs2)==0:
             pdbs = list(pdbs)
-            query = Angle.objects.filter(structure__pdb_code__index=pdbs[0]).prefetch_related("residue__generic_number").order_by('residue__generic_number__label')
+            query = Angle.objects.filter(structure__pdb_code__index=pdbs[0]).prefetch_related("residue__generic_number").order_by('residue__display_generic_number__label')
 
             # Prep data
-            data['data'] = [[q.residue.generic_number.label,q.residue.sequence_number, q.a_angle, q.b_angle, q.outer_angle, q.hse, q.sasa, q.rsa, q.phi, q.psi, q.theta, q.tau, q.core_distance, q.ss_dssp, q.ss_stride ] for q in query]
+            #data['data'] = [[q.residue.generic_number.label,q.residue.sequence_number, q.a_angle, q.b_angle, q.outer_angle, q.hse, q.sasa, q.rsa, q.phi, q.psi, q.theta, q.tau, q.core_distance, q.ss_dssp, q.ss_stride ] for q in query ]
+            data['data'] = []
+            for q in query:
+                if q.residue.display_generic_number != None:
+                    data['data'].append([q.residue.short_display_generic_number(),q.residue.sequence_number, q.a_angle, q.b_angle, q.outer_angle, q.hse, q.sasa, q.rsa, q.phi, q.psi, q.theta, q.tau, q.core_distance, q.ss_dssp, q.ss_stride ])
+                else:
+                    data['data'].append(["-",q.residue.sequence_number, q.a_angle, q.b_angle, q.outer_angle, q.hse, q.sasa, q.rsa, q.phi, q.psi, q.theta, q.tau, q.core_distance, q.ss_dssp, q.ss_stride ])
             data['headers'] = [{"title" : "Value"}]
         else: # always a grouping or a comparison
             query = Angle.objects.filter(structure__pdb_code__index__in=pdbs).prefetch_related("residue__generic_number") \

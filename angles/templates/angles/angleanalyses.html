@@ -1,5 +1,5 @@
 {% extends "home/base.html" %}
-{% load staticfiles %}
+{% load static %}
 
 {% block content %}
 
@@ -1507,6 +1507,12 @@
                 }
                 controls += '</select></p>';
             }
+
+            if (pdbs){
+              controls += '<input type="button" id="ngl_download_'+mode+'_struc1" value="Download 1">';
+              if (two_structures)
+                controls += '<input type="button" id="ngl_download_'+mode+'_struc2" value="Download 2">';
+            }
 //            controls += '<p>Colors: <select id="ngl_color"><option value="blue">blue</option><option value="grey">greys</option></select></p><br/>';
 
 
@@ -1564,7 +1570,19 @@
                 updateStructureRepresentations(mode)
               });
 
+            $('#ngl_download_'+mode+'_struc1').click(function(e){
+              console.log("test 1")
+              var pdbWriter = new NGL.PdbWriter(reps[mode][0].structureComponent.structure)
+              pdbWriter.download('structure')
+            });
+
             if (two_structures) {
+              $('#ngl_download_'+mode+'_struc2').click(function(e){
+                console.log("test 2")
+                var pdbWriter = new NGL.PdbWriter(reps[mode][1].structureComponent.structure)
+                pdbWriter.download('structure')
+              });
+
               // structure selection
               $("#ngl_pdb_"+mode+"_ref").change(function(e){
                     createNGLview(mode, $(this).val(), pdbs, pdbs_set2, $("#ngl_pdb_"+mode+"_ref2").val());

@@ -4,6 +4,9 @@ from django.db import models
 import numpy as np
 import statistics
 
+
+distance_scaling_factor = 10000
+
 class InteractingResiduePair(models.Model):
     referenced_structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
     res1 = models.ForeignKey('residue.Residue', related_name='residue1', on_delete=models.CASCADE)
@@ -27,8 +30,8 @@ class Interaction(models.Model):
 
     # interaction_level -> 0 - normal definition, 1 - loosened definition
     interaction_level = models.IntegerField(null=False, default=0)
-    atomname_residue1 = models.CharField(max_length=10, null=True)
-    atomname_residue2 = models.CharField(max_length=10, null=True)
+    atomname_residue1 = models.CharField(max_length=10, null=True, db_index=True)
+    atomname_residue2 = models.CharField(max_length=10, null=True, db_index=True)
 
     @classmethod
     def truncate(cls):
@@ -59,7 +62,9 @@ class Distance(models.Model):
     gn1 = models.CharField(max_length=100, null=True)
     gn2 = models.CharField(max_length=100, null=True)
     gns_pair = models.CharField(db_index=True, max_length=100, null=True)
-    distance = models.IntegerField()
+    distance = models.IntegerField(null=True)
+    distance_cb = models.IntegerField(null=True)
+    distance_helix_center = models.IntegerField(null=True)
 
     @classmethod
     def truncate(cls):
@@ -71,6 +76,7 @@ class Distance(models.Model):
         db_table = 'distance'
 
 def get_distance_averages(pdbs,s_lookup, interaction_keys,normalized = False, standard_deviation = False, split_by_amino_acid = False):
+    ## Returned dataset is in ClassA GNs...
     matrix = {}
     group_distances = {}
 
@@ -82,7 +88,7 @@ def get_distance_averages(pdbs,s_lookup, interaction_keys,normalized = False, st
                          .values('gns_pair','distance','res1__amino_acid','res2__amino_acid','structure__pk'))
     if not normalized:
         for d in ds:
-            if split_by_amino_acid: 
+            if split_by_amino_acid:
                 key = '{}{}{}'.format(d['gns_pair'],d['res1__amino_acid'],d['res2__amino_acid']).replace("_",",")
             else:
                 key = d['gns_pair']
@@ -97,13 +103,13 @@ def get_distance_averages(pdbs,s_lookup, interaction_keys,normalized = False, st
                     stdevdists = 0
                 else:
                     stdevdists = statistics.stdev(dists)
-                group_distances[key] = stdevdists/100
+                group_distances[key] = stdevdists/distance_scaling_factor
             else:
-                group_distances[key] = sum(dists)/len(dists)/100
+                group_distances[key] = sum(dists)/len(dists)/distance_scaling_factor
     else:
         # NORMALIZE CODE
         for d in ds:
-            if split_by_amino_acid: 
+            if split_by_amino_acid:
                 key = '{}{}{}'.format(d['gns_pair'],d['res1__amino_acid'],d['res2__amino_acid']).replace("_",",")
             else:
                 key = d['gns_pair']
@@ -128,9 +134,9 @@ def get_distance_averages(pdbs,s_lookup, interaction_keys,normalized = False, st
                     # stdevofmeans = np.std(means, ddof=1)
                     stdevofmeans = statistics.stdev(means)
 
-                group_distances[key] = stdevofmeans/100
+                group_distances[key] = stdevofmeans/distance_scaling_factor
             else:
                 meanofmeans = sum(means)/len(means)
-                group_distances[key] = meanofmeans/100
+                group_distances[key] = meanofmeans/distance_scaling_factor
 
     return group_distances
