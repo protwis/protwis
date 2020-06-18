@@ -16,6 +16,8 @@ def lineformat ( objs ):
     else:
         return '-'
 
+# .replace('<sup>','').replace('</sup>','').replace('<sub>','').replace('</sub>','').replace('&alpha;','alpha').replace('&beta;','beta')
+
 @register.filter
 def ligandrole ( objs ):
     elements = [obj.ligand_role.name for obj in objs]
@@ -71,7 +73,7 @@ def only_antibodies ( objs ):
         return '-'
 
 @register.filter
-def senior_author ( objs ):
+def last_author ( objs ):
     if objs:
         return objs.split(',')[-1]
     else:

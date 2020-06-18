@@ -260,7 +260,7 @@ class Command(BaseBuild):
 		# files = os.listdir(data_dir)
 		# for f in files:
 		# 	with open(data_dir+f, 'r') as yf:
-		# 		y = yaml.load(yf)
+		# 		y = yaml.load(yf, Loader=yaml.FullLoader)
 		# 		s = Structure.objects.get(pdb_code__index=f.split('.')[0])
 		# 		if s.protein_conformation.protein.parent.family.parent.parent.parent.slug=='002':
 		# 			p = PdbStateIdentifier(s)
@@ -368,7 +368,7 @@ class ChangeDistanceValues(object):
 		for f in files:
 			try:
 				with open(os.sep.join([self.path, f]), 'r') as yf:
-					y = yaml.load(yf)
+					y = yaml.load(yf, Loader=yaml.FullLoader)
 					ps = PdbStateIdentifier(Structure.objects.get(pdb_code__index=y['pdb']))
 					ps.run()
 					print(f, y['distance'], y['state'], round(float(ps.activation_value), 2), ps.state)

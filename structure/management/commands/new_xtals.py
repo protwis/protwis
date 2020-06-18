@@ -12,6 +12,7 @@ from residue.models import Residue
 from structure.models import Structure, PdbData, StructureType
 from structure.sequence_parser import SequenceParser
 from structure.functions import PdbChainSelector, PdbStateIdentifier
+from structure.management.commands.structure_yaml_editor import StructureYaml
 from construct.functions import *
 from common.models import WebResource, WebLink, Publication
 
@@ -32,6 +33,7 @@ class Command(BaseBuild):
         super(Command, self).add_arguments(parser=parser)
         parser.add_argument('--classified', help="Use PDB's 'G protein-coupled receptors' classification", default=False,
                             action='store_true')
+        parser.add_argument('-r', help="Query specific receptor(s) with UniProt entry names", default=False, type=str, nargs='+')
 
     def handle(self, *args, **options):
         if options['verbosity'] in [0,1,2,3]:
@@ -42,7 +44,10 @@ class Command(BaseBuild):
             q = QueryPDBClassifiedGPCR()
             q.new_xtals(self.verbose)
         else:
-            self.uniprots = self.get_all_GPCR_uniprots()
+            if options['r']:
+                self.uniprots = self.fetch_accession_from_entryname(options['r'])
+            else:
+                self.uniprots = self.get_all_GPCR_uniprots()
             self.yamls = self.get_all_yamls()
             self.prepare_input(options['proc'], self.uniprots)
 
@@ -57,6 +62,9 @@ class Command(BaseBuild):
         if self.verbose:
             print('Missing from db: ', q.db_list)
             print('Missing yamls: ', q.yaml_list)
+
+    def fetch_accession_from_entryname(self, listof_entrynames):
+        return [i.accession for i in Protein.objects.filter(entry_name__in=listof_entrynames)]
 
     def get_all_GPCR_uniprots(self):
         try:
@@ -85,11 +93,14 @@ class QueryPDB():
         self.uniprots = uniprots
         self.yamls = yamls
         self.db_list, self.yaml_list = [], []
+        self.missing_x50_list = ['4KNG','3N7P','3N7R','3N7S','4HJ0','6DKJ','5OTT','5OTU','5OTV','5OTX','6GB1']
+        self.missing_x50_exceptions = ['6TPG','6TPJ']
 
     def new_xtals(self, uniprot):
         ''' List GPCR crystal structures missing from GPCRdb and the yaml files. Adds missing structures to DB.
         '''
         structs = self.pdb_request_by_uniprot(uniprot)
+        consider_list = []
         try:
             protein = Protein.objects.get(accession=uniprot)
         except:
@@ -135,12 +146,15 @@ class QueryPDB():
                                     presentx50s.append(x)
                             # Filter out ones without all 7 x50 positions present in the xtal
                             if len(presentx50s)!=7:
-                                try:
-                                    del self.db_list[self.db_list.index(s)]
-                                    missing_from_db = False
-                                    del self.yaml_list[self.yaml_list.index(s)]
-                                except:
-                                    pass
+                                if s not in self.missing_x50_list:
+                                    consider_list.append(s)
+                                if s not in self.missing_x50_exceptions:
+                                    try:
+                                        del self.db_list[self.db_list.index(s)]
+                                        missing_from_db = False
+                                        del self.yaml_list[self.yaml_list.index(s)]
+                                    except:
+                                        pass
                     else:
                         print('Warning: no deletions in pdb info, check {}'.format(s))
                         continue
@@ -223,11 +237,25 @@ class QueryPDB():
                                         continue
                                     else:
                                         ligands.append({'name': key, 'pubchemId': 'None', 'title': pdb_data_dict['ligands'][key]['comp_name'], 'role': '.nan', 'type': 'None'})
+                                sy = StructureYaml(s+'.yaml')
+                                bril, by = sy.check_aux_protein('BRIL')
+                                t4, ty = sy.check_aux_protein('T4-Lysozyme')
+                                if bril:
+                                    auxiliary_proteins.append('BRIL')
+                                if t4:
+                                    auxiliary_proteins.append('T4-Lysozyme')
                                 for key, values in pdb_data_dict['auxiliary'].items():
                                     if pdb_data_dict['auxiliary'][key]['subtype'] in ['Expression tag', 'Linker']:
                                         continue
                                     else:
-                                        auxiliary_proteins.append(pdb_data_dict['auxiliary'][key]['subtype'])
+                                        if pdb_data_dict['auxiliary'][key]['subtype']=='Soluble cytochrome b562':
+                                            aux_p = 'BRIL'
+                                        elif pdb_data_dict['auxiliary'][key]['subtype'] in ['Endolysin','T4-Lysozyme']:
+                                            aux_p = 'T4-Lysozyme'
+                                        else:
+                                            aux_p = pdb_data_dict['auxiliary'][key]['subtype']
+                                        if aux_p not in auxiliary_proteins:
+                                            auxiliary_proteins.append(aux_p)
                                 for key, values in pdb_data_dict['construct_sequences'].items():
                                     if key!=protein.entry_name and key not in struct_yaml_dict['auxiliary_protein']:
                                         if 'arrestin' in key:
@@ -250,7 +278,7 @@ class QueryPDB():
                             Structure.objects.filter(pdb_code__index=pdb_code.index).update(state=pi.state)
                             print(pi.state, pi.activation_value)
                             with open('../../data/protwis/gpcr/structure_data/structures/{}.yaml'.format(pdb_code.index), 'r') as yf:
-                                struct_yaml = yaml.load(yf)
+                                struct_yaml = yaml.load(yf, Loader=yaml.FullLoader)
                             struct_yaml['state'] = pi.state.name
                             try:
                                 struct_yaml['distance'] = round(float(pi.activation_value), 2)
@@ -265,6 +293,7 @@ class QueryPDB():
                         print('{} added to db (preferred_chain chain: {})'.format(s, preferred_chain))
                 except Exception as msg:
                     print(s, msg)
+        print('Structures with missing x50s: {}'.format(consider_list))
 
 
     def pdb_request_by_uniprot(self, uniprot_id):

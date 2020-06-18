@@ -295,29 +295,12 @@ canvas {
 {% block addon_js %}
     <script src="{% static 'home/js/ngl.js' %}"> </script>
         <script>
-        // http://proteinformatics.charite.de/ngl/doc/#User_manual/Usage/Molecular_representations
-        // http://arose.github.io/ngl/api/Stage.html
-        // http://arose.github.io/ngl/js/examples.js
-        // http://arose.github.io/ngl/
         document.addEventListener( "DOMContentLoaded", function(){
             stage = new NGL.Stage( "viewport", { backgroundColor: "white" } );
-            var color_residues = "{{color_residues}}";
-            var color_array = [];
-            var l = color_residues.split(",")
-            for (i=0; i<l.length; i++) {
-                var ar = l[i].split(":");
-                for (j=0; j<ar.length; j++) {
-                    ar[j] = ar[j].replace(" ","")
-                    ar[j] = ar[j].replace("&#39;","")
-                    ar[j] = ar[j].replace("&#39;","")
-                    ar[j] = ar[j].replace("{","")
-                    ar[j] = ar[j].replace("}","")
-                }
-                color_array.push(ar);
-            }
-            color_array.push(["darkorchid","*"])
+            var color_residues = JSON.parse('{{color_residues|safe}}');
+            color_residues.push(["darkorchid","*"])
 
-            var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( color_array );
+            var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( color_residues );
 
             if ("{{state}}"=="refined") {
                 stage.loadFile( "../pdb/{{modelname}}_{{state}}", { ext: "pdb" }  ).then( function( o ){

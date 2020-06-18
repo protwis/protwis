@@ -267,6 +267,36 @@ class Command(BaseCommand):
 
         residue_data.to_csv(path_or_buf=self.gprotein_data_path + '/test.txt', sep='\t', na_rep='NA', index=False)
 
+    def build_lookup_file(self, segment_name=None, segment_value=None):
+        segment_lengths = OrderedDict([('HN',53),('hns1',3),('S1',7),('s1h1',6),('H1',12),('h1ha',20),('HA',29),
+                                        ('hahb',78),('HB',14),('hbhc',55),('HC',12),('hchd',2),('HD',12),('hdhe',5),
+                                        ('HE',13),('hehf',7),('HF',6),('hfs2',7),('S2',8),('s2s3',2),('S3',8),('s3h2',3),
+                                        ('H2',10),('h2s4',5),('S4',7),('s4h3',15),('H3',18),('h3s5',3),('S5',7),('s5hg',1),
+                                        ('HG',17),('hgh4',21),('H4',17),('h4s6',20),('S6',5),('s6h5',5),('H5',26)])
+        if segment_name and segment_value:
+            segment_lengths[segment_name] = segment_value
+        alt = {'S1':'S1', 's1h1':'P-loop', 'hfs2':'SwI', 's3h2':'SwII', 's4h3':'SwIII', 's6h5':'TCAT'}
+        with open(os.sep.join([self.gprotein_data_path, "CGN_lookup_test1.csv"]), 'w') as f:
+            f.write('"","Domain","GalphaSSE","CGN_pos","GalphaSSE_alternative","SSE_pos","CGN","CGN_new"\n')
+            c = 1
+            for s, l in segment_lengths.items():
+                if s in ['HA','hahb','HB','hbhc','HC','hchd','HD','hdhe','HE','hehf','HF']:
+                    domain = 'H'
+                else:
+                    domain = 'G'
+                if s in alt:
+                    alt_name = alt[s]
+                else:
+                    alt_name = "NA"
+                if len(s)==4:
+                    alt_s = s[:2]+'-'+s[2:]
+                else:
+                    alt_s = s
+                for i in range(1, l+1):
+                    line = '"{}","{}","{}",{},{},{},"({}).{}.{}","({}).{}.{}"\n'.format(c, domain, s, c, alt_name, i, domain, alt_s, c, domain, s, i)
+                    f.write(line)
+                    c+=1
+
     def add_new_orthologs(self):
         residue_data = pd.read_table(self.gprotein_data_file, sep="\t", low_memory=False)
         with open(self.lookup, 'r') as csvfile:
@@ -372,7 +402,7 @@ class Command(BaseCommand):
         os.chdir('/vagrant/shared/sites/protwis')
         for record in SeqIO.parse(self.alignment_file, 'fasta'):
             sp, accession, name, ens = record.id.split('|')
-            if len(record.seq) != 455:
+            if len(record.seq) != 456:
                 continue
             command = "/env/bin/python3 manage.py build_g_proteins --wt " + str(name.lower())
             subprocess.call(shlex.split(command))
@@ -455,7 +485,7 @@ class Command(BaseCommand):
         self.logger.info('CREATING GPROTEINS')
 
         translation = {'Gs family': '100_001_001', 'Gi/Go family': '100_001_002', 'Gq/G11 family': '100_001_003',
-                       'G12/G13 family': '100_001_004', }
+                       'G12/G13 family': '100_001_004', 'GPa1 family': '100_001_005'}
 
         # read source file
         if not filenames:
@@ -1116,7 +1146,7 @@ class Command(BaseCommand):
 
         # Human proteins from CGN with families as keys: http://www.mrc-lmb.cam.ac.uk/CGN/about.html
         cgn_dict = {}
-        cgn_dict['G-Protein'] = ['Gs', 'Gi/o', 'Gq/11', 'G12/13']
+        cgn_dict['G-Protein'] = ['Gs', 'Gi/o', 'Gq/11', 'G12/13', 'GPa1']
         cgn_dict['100_001_001_001'] = ['GNAS2_HUMAN']
         cgn_dict['100_001_001_002'] = ['GNAL_HUMAN']
         cgn_dict['100_001_002_001'] = ['GNAI1_HUMAN']
@@ -1133,12 +1163,13 @@ class Command(BaseCommand):
         cgn_dict['100_001_003_004'] = ['GNA15_HUMAN']
         cgn_dict['100_001_004_001'] = ['GNA12_HUMAN']
         cgn_dict['100_001_004_002'] = ['GNA13_HUMAN']
+        cgn_dict['100_001_005_001'] = ['GPA1_YEAST']
 
         # list of all 16 proteins
         cgn_proteins_list = []
         for k in cgn_dict.keys():
             for p in cgn_dict[k]:
-                if p.endswith('_HUMAN'):
+                if p.endswith('_HUMAN') or p.endswith('_YEAST'):
                     cgn_proteins_list.append(p)
 
         # print(cgn_proteins_list)
@@ -1353,17 +1384,17 @@ class Command(BaseCommand):
         i = 1
 
         cgn_dict['Alpha'] = ['001']
-        cgn_dict['001'] = ['Gs', 'Gi/o', 'Gq/11', 'G12/13']
+        cgn_dict['001'] = ['Gs', 'Gi/o', 'Gq/11', 'G12/13', 'GPa1']
 
         # Protein families to be added
         # Key of dictionary is level in hierarchy
         cgn_dict['1'] = ['Alpha']
         cgn_dict['2'] = ['001']
-        cgn_dict['3'] = ['Gs', 'Gi/o', 'Gq/11', 'G12/13']
+        cgn_dict['3'] = ['Gs', 'Gi/o', 'Gq/11', 'G12/13', 'GPa1']
 
         # Protein lines not to be added to Protein families
         cgn_dict['4'] = ['GNAS2', 'GNAL', 'GNAI1', 'GNAI2', 'GNAI3', 'GNAT1', 'GNAT2', 'GNAT3', 'GNAZ', 'GNAO', 'GNAQ',
-                         'GNA11', 'GNA14', 'GNA15', 'GNA12', 'GNA13']
+                         'GNA11', 'GNA14', 'GNA15', 'GNA12', 'GNA13', 'GPa1']
 
         grouped_subtypes = OrderedDict()
         for j in cgn_dict['3']:
@@ -1376,6 +1407,8 @@ class Command(BaseCommand):
                 elif j == 'Gq/11' and k in ['GNAQ', 'GNA11', 'GNA14', 'GNA15']:
                     grouped_subtypes[j].append(k)
                 elif j == 'G12/13' and k in ['GNA12', 'GNA13']:
+                    grouped_subtypes[j].append(k)
+                elif j =='GPa1' and k=='GPa1':
                     grouped_subtypes[j].append(k)
 
         for entry in cgn_dict['001']:

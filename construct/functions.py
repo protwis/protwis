@@ -24,9 +24,11 @@ import logging
 import os
 
 AA_three = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
-     'ILE': 'I', 'PRO': 'P', 'THR': 'T', 'PHE': 'F', 'ASN': 'N', 
-     'GLY': 'G', 'HIS': 'H', 'LEU': 'L', 'ARG': 'R', 'TRP': 'W', 
+     'ILE': 'I', 'PRO': 'P', 'THR': 'T', 'PHE': 'F', 'ASN': 'N',
+     'GLY': 'G', 'HIS': 'H', 'LEU': 'L', 'ARG': 'R', 'TRP': 'W',
      'ALA': 'A', 'VAL':'V', 'GLU': 'E', 'TYR': 'Y', 'MET': 'M'}
+# to override some faulty PDB DBREF entries
+uniprot_convert_table = {'Q548Y0_HUMAN':'OX2R_HUMAN'}
 
 # def look_for_value(d,k):
 #     ### look for a value in dict if found, give back, otherwise None
@@ -35,14 +37,17 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     # ignore_gaspar_annotation skips PDB_RANGE edits that mark missing residues as deleted, which messes up constructs.
 
     if not protein:
-        url = 'http://www.rcsb.org/pdb/files/%s.pdb' % pdbname
+        url = 'https://www.rcsb.org/pdb/files/%s.pdb' % pdbname
         pdbdata_raw = urlopen(url).read().decode('utf-8')
         # figure out what protein this is
         for line in pdbdata_raw.split('\n'):
             if line.startswith('DBREF'):
                 line = line.split()
                 if len(line)>7:
-                    uniprot = line[7]
+                    if line[7] in uniprot_convert_table:
+                        uniprot = uniprot_convert_table[line[7]]
+                    else:
+                        uniprot = line[7]
                     try:
                         p = Protein.objects.get(entry_name=uniprot.lower())
                         slug = p.family.slug
@@ -71,7 +76,6 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
         d['wt_seq'] = protein.sequence
 
 
-
     d['contact_info'] = {}
     d['contact_info']['name_cont'] = 'gpcrdb'
     d['contact_info']['pi_email'] = 'info@gpcrdb.org'
@@ -89,7 +93,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
 
     # GET PDB FILE TO GET INITIAL VALUES - remove known WT that do not exist
     pdbdata_raw = None
-    try: 
+    try:
         structure = Structure.objects.filter(pdb_code__index=d['construct_crystal']['pdb'].upper()).get()
         if structure.pdb_data.pdb:
             pdbdata_raw = structure.pdb_data.pdb
@@ -99,7 +103,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
         pdb_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs'])
         pdb_path = os.sep.join([pdb_data_dir, pdbname + '.pdb'])
         if not os.path.isfile(pdb_path):
-            url = 'http://www.rcsb.org/pdb/files/%s.pdb' % pdbname
+            url = 'https://www.rcsb.org/pdb/files/%s.pdb' % pdbname
             pdbdata_raw = urlopen(url).read().decode('utf-8')
             with open(pdb_path, 'w') as f:
                 f.write(pdbdata_raw)
@@ -129,16 +133,23 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
         if line.startswith('DBREF'):
             line = line.split()
             if len(line)>7:
-                uniprot = line[7]
+                if line[7] in uniprot_convert_table:
+                    uniprot = uniprot_convert_table[line[7]]
+                else:
+                    uniprot = line[7]
                 if uniprot == d['construct_crystal']['uniprot'].upper():
                     uniprot_code = line[6]
 
     for line in pdb_file.split('\n'):
         if line.startswith('DBREF'):
+            # print(line)
             line = line.split()
             if len(line)<8:
                 continue
-            uniprot = line[7]
+            if line[7] in uniprot_convert_table:
+                uniprot = uniprot_convert_table[line[7]]
+            else:
+                uniprot = line[7]
             start = line[8]
             end = line[9]
             # print(line,uniprot,d['construct_crystal']['uniprot'].upper()) #show DBREF
@@ -172,13 +183,13 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     # 5T1A: The final model included 295 residues (37–225 and 241–319) of the 360 residues of CCR2
     # The sequence of human CCR2 isoform B (Uniprot ID P41597-2) was engineered for crystallization by truncation of C-terminal residues 329–360
     # ISOFORM: 314-374: SLFHIALGCR...EASLQDKEGA → RYLSVFFRKH...TGEQEVSAGL
-    # DBREF  5T1A A    2   233  UNP    P41597   CCR2_HUMAN       2    233   
-    # DBREF: DBREF  5T1A A  234   328  UNP    P41597   CCR2_HUMAN     234    328 
+    # DBREF  5T1A A    2   233  UNP    P41597   CCR2_HUMAN       2    233
+    # DBREF: DBREF  5T1A A  234   328  UNP    P41597   CCR2_HUMAN     234    328
     if pdbname.upper()=='5T1A':
         pdb_range = list(range(2,226))+list(range(241,329))
 
     # 4Z9G
-    # GLN   103 EXPRESSION TAG 
+    # GLN   103 EXPRESSION TAG
     # DBREF  4Z9G A  103   220  UNP    P34998   CRFR1_HUMAN    103    220
     # DBREF  4Z9G A  223   372  UNP    P34998   CRFR1_HUMAN    252    401 (223-372 in right isoform)
     if pdbname.upper()=='4Z9G':
@@ -212,21 +223,21 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     if pdbname.upper()=='3ZEV':
         pdb_range = list(range(50,280))+list(range(296,391))
 
-    # REMARK 999 THE AUTHORS STATE THAT THE SEQUENCE "NV" IS THE ORIGINAL SEQUENCE    
-    # REMARK 999 FROM ENDOTHELIUM, AS OPPOSED TO KSL WHICH IS THE GENOMIC SEQUENCE.   
-    # REMARK 999 THE UNIPROT RECORD WAS CHANGED TO THE GENOMIC SEQUENCE "KSL" AFTER   
-    # REMARK 999 THE CLONE WAS CREATED AND THE CONSTRUCT WAS NOT CHANGED BECAUSE IT   
-    # REMARK 999 WAS PERFORMING WELL. 
-    # SEQADV 3V2W     A       UNP  P21453    LYS   250 SEE REMARK 999                 
-    # SEQADV 3V2W ASN A  251  UNP  P21453    SER   251 SEE REMARK 999                 
-    # SEQADV 3V2W VAL A  252  UNP  P21453    LEU   252 SEE REMARK 999 
+    # REMARK 999 THE AUTHORS STATE THAT THE SEQUENCE "NV" IS THE ORIGINAL SEQUENCE
+    # REMARK 999 FROM ENDOTHELIUM, AS OPPOSED TO KSL WHICH IS THE GENOMIC SEQUENCE.
+    # REMARK 999 THE UNIPROT RECORD WAS CHANGED TO THE GENOMIC SEQUENCE "KSL" AFTER
+    # REMARK 999 THE CLONE WAS CREATED AND THE CONSTRUCT WAS NOT CHANGED BECAUSE IT
+    # REMARK 999 WAS PERFORMING WELL.
+    # SEQADV 3V2W     A       UNP  P21453    LYS   250 SEE REMARK 999
+    # SEQADV 3V2W ASN A  251  UNP  P21453    SER   251 SEE REMARK 999
+    # SEQADV 3V2W VAL A  252  UNP  P21453    LEU   252 SEE REMARK 999
     if pdbname.upper()=='3V2W' or pdbname.upper()=='3V2Y':
         pdb_range = list(range(2,232))+list(range(244,250))+list(range(251,327))
 
-    # COMPND   6 OTHER_DETAILS: RESIDUES 3-32 AT THE N-TERMINUS AND RESIDUES 244-271  
-    # COMPND   7  OF THE THIRD INTRACELLULAR LOOP WERE DELETED FROM THE CONSTRUCT.    
-    # COMPND   8  THE CONSTRUCT WAS TRUNCATED AFTER RESIDUE 367 AND A HEXAHIS TAG     
-    # COMPND   9  ADDED.   
+    # COMPND   6 OTHER_DETAILS: RESIDUES 3-32 AT THE N-TERMINUS AND RESIDUES 244-271
+    # COMPND   7  OF THE THIRD INTRACELLULAR LOOP WERE DELETED FROM THE CONSTRUCT.
+    # COMPND   8  THE CONSTRUCT WAS TRUNCATED AFTER RESIDUE 367 AND A HEXAHIS TAG
+    # COMPND   9  ADDED.
     # if pdbname.upper()=='5A8E':
     #     pdb_range = list(range(33,244))+list(range(272,367))
 
@@ -242,6 +253,8 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     if not ignore_gasper_annotation:
         ## THIS BLOCK IS DONE BY GASPAR -- IT ALSO REMOVES MISSING RESIDUES, NOT TO BE USED TO WRITE CONSTRUCTS
         # Misannotated DBREF in PDB file
+        if pdbname.upper()=='6QZH':
+            pdb_range = list(range(52,160))+list(range(165,252))+list(range(262,289))+list(range(297,342))
         if pdbname.upper()=='3SN6':
             pdb_range = list(range(30,366))
         elif pdbname.upper()=='5ZKP':
@@ -318,7 +331,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
 
         # for pos in list(set(pdb_range)):
         #     pos_in_wt.remove(int(pos))
-    else:  
+    else:
         print('NO DB REF!!')
         dbref_found = False
     # print("pos_in_wt",pos_in_wt)
@@ -346,7 +359,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     #errors, fix it.
     uniprot_mapping['P08483'] = ['acm3_rat']
     uniprot_mapping['P42866'] = ['oprm_mouse']
-     
+
     variants_mapping = {}
     cache_dir = ['sifts', 'xml']
     url = 'http://www.uniprot.org/uniprot/$index.xml'
@@ -418,10 +431,10 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                             if u_id in uniprot_mapping:
                                 receptor_chain = chain
                                 break
-        
+
         prev_elem_name = ""
         pdb_resid_total = []
-        pdb_resid_total_accounted = []                          
+        pdb_resid_total_accounted = []
         for elem in sifts.findall('.//{http://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}segment'):
             if 'segId' not in elem.attrib:
                 continue #not receptor
@@ -467,7 +480,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                             raw_u_id = node.attrib['dbAccessionId']
                             u_id_source = 'UniProt'
                             if u_id in uniprot_mapping:
-                                u_id = uniprot_mapping[u_id][0] 
+                                u_id = uniprot_mapping[u_id][0]
                                 receptor = True ## this is receptor element
                                 seg_had_receptor = True
                                 if receptor_chain=='' or receptor_chain==chain:
@@ -511,7 +524,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                                             u_id = new_u_id
                                             found_u_id = True
                                             break #no need to continue looking
-                                            
+
                             if u_id not in seg_uniprot_ids:
                                 seg_uniprot_ids.append(u_id)
                             uniprot_pos = int(node.attrib['dbResNum'])
@@ -582,7 +595,10 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                             if pos<min_pos: min_pos = pos
                         elif source=='PDB':
                             #if above fails, it's probably cos its missing residue, still should capture pdb_aa
-                            pdb_aa = AA_three[node.attrib['dbResName'].upper()]
+                            if node.attrib['dbResName'].upper() in AA_three:
+                                pdb_aa = AA_three[node.attrib['dbResName'].upper()]
+                            else:
+                                pdb_aa ="X"
 
                     elif pdb_aa and node.tag == '{http://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}residueDetail':
                         # print(node.text)
@@ -660,7 +676,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                                 receptor = True
                                 uniprot_pos = pos
                             elif prev_receptor and int(pos-1)==prev_pos:
-                                # print('last was receptor and this number is only one higher?',pos) 
+                                # print('last was receptor and this number is only one higher?',pos)
                                 receptor = True
                                 uniprot_pos = pos
                         else:
@@ -687,7 +703,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                     #         if uniprot_pos in pos_in_wt:
                     #             pos_in_wt.remove(pos)
                     #             insert_start =  str(pos+1)
-                    #         pos_list.append(pos) 
+                    #         pos_list.append(pos)
                     #         if wt_aa!=pdb_aa:
                     #             # mutation!
                     #             if {'mut':pdb_aa,'wt':wt_aa,'pos':pos,'type':'custom_maybe_wrong'} not in d['mutations']: #prevent duplicates
@@ -720,7 +736,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                         #     # print('PDB residue number:',pos, 'Receptor Uniprot pos:',uniprot_pos)
                         #     pass
                         #     # not wt likely
-                        # else:   
+                        # else:
                             if uniprot_pos<len(d['wt_seq']):
                                 wt_aa = d['wt_seq'][uniprot_pos-1]
                                 # print(pdb_aa,wt_aa)
@@ -779,7 +795,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                 ranges.append((group[0], group[-1]))
                 if (group[0], group[-1]) not in ranges:
                     ranges.append((group[0], group[-1]))
-                
+
             if pdbname in SIFT_exceptions:
                 try:
                     if ranges[0][1]==SIFT_exceptions[pdbname][0]:
@@ -838,7 +854,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
             elif receptor == False:
                 # print('\t',pdbname.lower(),'Protein in PDB, not part of receptor chain',seg_uniprot_ids,'chain',chain)
                 logger.warning('{} Protein in structure, but not part of receptor chain {} {}'.format(pdbname.lower(),seg_uniprot_ids,chain))
-        
+
         # print(sorted(pdb_resid_total))
         # print(sorted(pdb_resid_total_accounted))
         non_accounted = sorted(list(set(pdb_resid_total) - set(pdb_resid_total_accounted)))
@@ -898,7 +914,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     # url = 'http://www.ebi.ac.uk/pdbe/api/pdb/entry/modified_AA_or_NA/$index'
     # pdbe_mod = fetch_from_web_api(url, pdbname, cache_dir)
     # d['links'].append(Template(url).substitute(index=quote(str(pdbname), safe='')))
-    
+
     # if pdbe_mod: #success
     #     print(pdbe_mod)
     # else:
@@ -935,10 +951,10 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                 print('error',t)
                 continue
             # print(mod['id'],pair,mod['description'])
-            if mod['id']=='crosslink2': mod['id']="Disulfide bond" #replace non-descript crosslink2 
+            if mod['id']=='crosslink2': mod['id']="Disulfide bond" #replace non-descript crosslink2
             d['modifications'].append({'position':[position_type,position_info],'type':mod['id'],'remark':mod['description']})
             #{{v.id}} {{v.range}} {{v.description}} {{v.pdbCcId}} <br><br>
-   
+
     else:
         d['modifications2'] = 'None'
         # print('failed pdbe_mod')
@@ -958,14 +974,14 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                 else:
                     d['ligands'][ligand['chem_comp_id']]['number_of_entries'] += 1
         # print(d['ligands'])
-   
+
     else:
         d['ligands'] = 'None'
         # print('failed pdbe_ligands')
 
 
-    ## NOT NEED - FETCH MUT FROM XML 
-    
+    ## NOT NEED - FETCH MUT FROM XML
+
     # #http://www.ebi.ac.uk/pdbe/api/pdb/entry/mutated_AA_or_NA/2RH1
     # ## mutated AA
     # ### got conflicts, engerineered mutation and expression tag examples
@@ -973,7 +989,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     # url = 'http://www.ebi.ac.uk/pdbe/api/pdb/entry/mutated_AA_or_NA/$index'
     # pdbe_mut = fetch_from_web_api(url, pdbname, cache_dir)
     # d['links'].append(Template(url).substitute(index=quote(str(pdbname), safe='')))
-    
+
     # if pdbe_mut: #success
     #     r = pdbe_mut[pdbname.lower()]
     #     d['mutations_pdbe'] = []
@@ -997,7 +1013,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     url = 'http://www.rcsb.org/pdb/rest/das/pdb_uniprot_mapping/alignment?query=$index'
     uniprot_map = fetch_from_web_api(url, pdbname, cache_dir, xml = True)
     d['links'].append(Template(url).substitute(index=quote(str(pdbname), safe='')))
-    
+
     if uniprot_map: #success
         inserts = {}
         inserts_fixed = {}
@@ -1018,7 +1034,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
         for insert,blocks in inserts.items():
 
             if insert in uniprot_mapping:
-                insert = uniprot_mapping[insert][0] 
+                insert = uniprot_mapping[insert][0]
 
             inserts_fixed[insert] = {}
             cache_dir = ['uniprot', 'id']
@@ -1115,7 +1131,7 @@ def add_construct(d):
 
         mutation_type, created = ConstructMutationType.objects.get_or_create(slug=slugify(mutation['type']),name=mutation['type'], effect=None)
 
-        #construct=construct, TODO: create a unique one for each mutation per construct to avoid unambiguity 
+        #construct=construct, TODO: create a unique one for each mutation per construct to avoid unambiguity
         mut = ConstructMutation.objects.create(construct=construct, sequence_number=mutation['pos'],wild_type_amino_acid=mutation['wt'],mutated_amino_acid=mutation['mut'],remark=mutation['remark'], residue=res_wt)
         mut.effects.add(mutation_type)
         #construct.mutations.add(mut)
@@ -1212,7 +1228,7 @@ def add_construct(d):
                                                             remarks=d['expression']['expr_remark'])
 
 
-    
+
     #solubilization
     if 'solubilization' in d:
         if 'deterg_type' in d['solubilization']:
@@ -1235,7 +1251,7 @@ def add_construct(d):
                         cc, created = ChemicalConc.objects.get_or_create(concentration=d['solubilization']['deterg_concentr' + d_id], concentration_unit=d['solubilization']['deterg_concentr_unit' + d_id], chemical=chem)
                     else: #if no concentr is dictionary, then it was inputted before caputring concentration for additinal chemicals
                         cc, created = ChemicalConc.objects.get_or_create(concentration='', concentration_unit='',chemical=chem)
-                    c_list.chemicals.add(cc)       
+                    c_list.chemicals.add(cc)
 
             ct, created = ChemicalType.objects.get_or_create(name='additive')
             chem, created = Chemical.objects.get_or_create(name=d['solubilization']['solub_additive'], chemical_type=ct)
@@ -1262,7 +1278,7 @@ def add_construct(d):
             construct.purification = purification
     construct.save()
 
-    #CRYSTALLIZATION 
+    #CRYSTALLIZATION
     if 'crystallization' in d:
         if 'crystal_type' in d['crystallization']:
             c = Crystallization()
@@ -1305,7 +1321,7 @@ def add_construct(d):
             if 'chemical_components' in d['crystallization']:
                 for chemical in d['crystallization']['chemical_components']:
                     if 'type' not in chemical: #to fix legacy json files
-                        chemical['type'] = 'unknown' 
+                        chemical['type'] = 'unknown'
                     ct, created = ChemicalType.objects.get_or_create(name=chemical['type'])
                     chem, created = Chemical.objects.get_or_create(name=chemical['component'], chemical_type=ct)
                     cc, created = ChemicalConc.objects.get_or_create(concentration=chemical['value'], concentration_unit=chemical['unit'], chemical=chem)
@@ -1365,7 +1381,7 @@ def add_construct(d):
                 ligand_c = CrystallizationLigandConc()
                 ligand_c.construct_crystallization = c
                 ligand_c.ligand = ligand
-                if lr: 
+                if lr:
                     ligand_c.ligand_role = lr
                 if 'ligand_conc' in d['construct_crystal']:
                     ligand_c.ligand_conc = d['construct_crystal']['ligand_conc']
@@ -1432,7 +1448,7 @@ def convert_ordered_to_disordered_annotation(d):
             d['raw_data']['delet_end_'+str(i)] = dele['end']
             d['raw_data']['delet_origin_'+str(i)] = dele['origin']
             d['raw_data']['deletion_'+str(i)] = "del_range"
-            i+=1    
+            i+=1
         else:
             i_id = insert_starts[str(dele['start'])]
             d['raw_data']['insert_pos_type_'+str(i_id)] = "ins_range"
@@ -1444,7 +1460,7 @@ def convert_ordered_to_disordered_annotation(d):
         d['raw_data']['aamod_'+str(i)] = mod['type']
         if mod['position'][0]=='single':
             d['raw_data']['aamod_single_'+str(i)] = mod['position'][1][0]
-        else:   
+        else:
             d['raw_data']['aamod_pair_one_'+str(i)] = mod['position'][1][0]
             d['raw_data']['aamod_pair_two_'+str(i)] = mod['position'][1][1]
         d['raw_data']['aamod_position_'+str(i)] = mod['position'][0]

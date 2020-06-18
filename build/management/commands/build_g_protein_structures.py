@@ -134,6 +134,7 @@ class Command(BaseBuild):
 						remaining_mismatches.append(m)
 
 				### sanity check
+				# print(sc)
 				# print(mutations)
 				# print(shifted_mutations)
 				# print(mismatches)
@@ -141,7 +142,7 @@ class Command(BaseBuild):
 				# pprint.pprint(pdb_num_dict)
 
 				# Mismatches remained possibly to seqnumber shift, making pairwise alignment to try and fix alignment
-				if len(remaining_mismatches)>0 and sc.structure.pdb_code.index not in ['6OIJ','6OY9', '6OYA']:
+				if len(remaining_mismatches)>0 and sc.structure.pdb_code.index not in ['6OIJ','6OY9', '6OYA', '6LPB']:
 					ppb = PPBuilder()
 					seq = ''
 					for pp in ppb.build_peptides(chain, aa_only=False):

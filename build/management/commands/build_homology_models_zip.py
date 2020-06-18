@@ -230,16 +230,16 @@ class Command(BaseBuild):
             s_prot = Protein.objects.get(entry_name=sign_prot)
             signprot_complex = SignprotComplex.objects.get(structure__pdb_code__index=main_structure)
             
-            try:
-                pair = ProteinGProteinPair.objects.get(protein=r_prot, g_protein__slug=s_prot.family.parent.slug)
-            except:
-                pair = None
+            # try:
+            #     pair = ProteinGProteinPair.objects.get(protein=r_prot, g_protein__slug=s_prot.family.parent.slug)
+            # except:
+            #     pair = None
             try:
                 hommod = StructureComplexModel.objects.get(receptor_protein=gpcr_prot, sign_prot=sign_prot)
                 hommod.main_template = m_s
                 hommod.pdb_data.pdb = pdb_data
                 hommod.version = build_date
-                hommod.prot_signprot_pair = pair
+                # hommod.prot_signprot_pair = pair
                 hommod.stats_text.stats_text = ''.join(templates)
                 hommod.save()
 
@@ -253,7 +253,7 @@ class Command(BaseBuild):
                                                                 main_template=m_s, 
                                                                 pdb_data=pdb_data, 
                                                                 version=build_date,
-                                                                prot_signprot_pair=pair,
+                                                                # prot_signprot_pair=pair,
                                                                 stats_text=stats_text)
             res_prot = r_prot
             bulk_residues = []

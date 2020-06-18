@@ -119,8 +119,8 @@ class Command(BaseCommand):
                         try:
                             prns = split_row[3]
                             parent = ResidueNumberingScheme.objects.get(slug=prns)
-                        except ResidueNumberingScheme.DoesNotExists:
-                            raise Exception('Parent scheme {} does not exists, aborting!'.format(prns))
+                        except ResidueNumberingScheme.DoesNotExist:
+                            raise Exception('Parent scheme {} does not exist, aborting!'.format(prns))
                         defaults['parent'] = parent
 
                     s, created = ResidueNumberingScheme.objects.get_or_create(slug=split_row[0], defaults=defaults)
@@ -143,7 +143,7 @@ class Command(BaseCommand):
                 self.logger.info('Parsing file {}'.format(source_file_path))
                 # read the yaml file
                 with open(source_file_path, 'r') as f:
-                    ano = yaml.load(f)
+                    ano = yaml.load(f, Loader=yaml.FullLoader)
 
                     # anomaly type
                     if 'anomaly_type' in ano and ano['anomaly_type']:
@@ -159,9 +159,9 @@ class Command(BaseCommand):
                     if 'protein_segment' in ano and ano['protein_segment']:
                         try:
                             ps = ProteinSegment.objects.get(slug=ano['protein_segment'])
-                        except ProteinSegment.DoesNotExists:
+                        except ProteinSegment.DoesNotExist:
                             self.logger.error('Protein segment {} not found, skipping!'.format(
-                                anop['protein_segmemt']))
+                                ano['protein_segment']))
                             continue
 
                     # generic number

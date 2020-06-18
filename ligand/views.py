@@ -434,7 +434,6 @@ def test_link(request):
     # try:
     request.session['ids']
     if request.POST.get('action') == 'post':
-        
         request.session.modified = True
         data = request.POST.get('ids')
         data = filter(lambda char: char not in " \"?.!/;:[]", data)

@@ -164,9 +164,9 @@ def HomologyModelDetails(request, modelname, state):
 	psi = PdbStateIdentifier(model)
 	psi.run()
 	delta_distance = round(float(psi.activation_value), 2)
-			
+
 	return render(request,'homology_models_details.html',{'model': model, 'modelname': modelname, 'rotamers': rotamers, 'backbone_templates': bb_temps, 'backbone_templates_number': len(backbone_templates),
-														  'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_residues': segments_out, 'bb_main': round(bb_main/len(rotamers)*100, 1),
+														  'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_residues': json.dumps(segments_out), 'bb_main': round(bb_main/len(rotamers)*100, 1),
 														  'bb_alt': round(bb_alt/len(rotamers)*100, 1), 'bb_none': round(bb_none/len(rotamers)*100, 1), 'sc_main': round(sc_main/len(rotamers)*100, 1), 'sc_alt': round(sc_alt/len(rotamers)*100, 1),
 														  'sc_none': round(sc_none/len(rotamers)*100, 1), 'main_template_seqsim': main_template_seqsim, 'template_list': template_list, 'model_main_template': model_main_template,
 														  'state': state, 'delta_distance': delta_distance, 'version': version})
@@ -210,13 +210,12 @@ def ComplexModelDetails(request, modelname, signprot):
 				if s not in bb_temps[s.protein_conformation.protein.parent]:
 					bb_temps[s.protein_conformation.protein.parent].append(s)
 					break
-
 	return render(request,'complex_models_details.html',{'model': model, 'modelname': modelname, 'signprot': signprot, 'signprot_template': signprot_template, 'receptor_rotamers': receptor_rotamers, 'signprot_rotamers': signprot_rotamers, 'backbone_templates': bb_temps, 'backbone_templates_number': len(backbone_templates),
-														 'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_residues': segments_out, 'bb_main': round(bb_main/len(receptor_rotamers)*100, 1),
+														 'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_residues': json.dumps(segments_out), 'bb_main': round(bb_main/len(receptor_rotamers)*100, 1),
 														 'bb_alt': round(bb_alt/len(receptor_rotamers)*100, 1), 'bb_none': round(bb_none/len(receptor_rotamers)*100, 1), 'sc_main': round(sc_main/len(receptor_rotamers)*100, 1), 
 														 'sc_alt': round(sc_alt/len(receptor_rotamers)*100, 1), 'sc_none': round(sc_none/len(receptor_rotamers)*100, 1), 'main_template_seqsim': main_template_seqsim, 
 														 'template_list': template_list, 'model_main_template': model_main_template, 'state': None, 'signprot_sim': int(gp.proteins[1].similarity),
-														 'signprot_color_residues': segments_out2, 'loop_segments': loop_segments})#, 'delta_distance': delta_distance})
+														 'signprot_color_residues': json.dumps(segments_out2), 'loop_segments': loop_segments})#, 'delta_distance': delta_distance})
 
 def format_model_details(rotamers, model_main_template, color_palette, chain=None, used_colors=None):
 	backbone_templates, rotamer_templates = [],[]
@@ -276,15 +275,18 @@ def format_model_details(rotamers, model_main_template, color_palette, chain=Non
 	for s, nums in segments_formatted.items():
 		if len(nums)>1:
 			if chain:
-				text = '{} and ('.format(chain)
+				text = ':{} and ('.format(chain)
 			else:
 				text = ''
 			for n in nums:
 				text+='{} or '.format(n)
-			segments_formatted[s] = text[:-4]+')'
+			if chain:
+				segments_formatted[s] = text[:-4]+')'
+			else:
+				segments_formatted[s] = text[:-4]
 		else:
 			if chain:
-				segments_formatted[s] = '{} and ({})'.format(chain, segments_formatted[s][0])
+				segments_formatted[s] = ':{} and ({})'.format(chain, segments_formatted[s][0])
 			else:
 				segments_formatted[s] = segments_formatted[s][0]
 		if s==model_main_template:
@@ -309,6 +311,8 @@ def format_model_details(rotamers, model_main_template, color_palette, chain=Non
 			t.color = colors[t]
 			bb_temps[b][i] = t
 			template_list.append(t.pdb_code.index)
+
+	segments_out = [[i,j] for i,j in segments_out.items()]
 
 	return bb_temps, backbone_templates, r_temps, rotamer_templates, segments_out, bb_main, bb_alt, bb_none, sc_main, sc_alt, sc_none, template_list, colors
 
@@ -356,13 +360,14 @@ def StructureDetails(request, pdbname):
 			main_ligand = structure['structure_ligand_pair__pdb_reference']
 
 	crystal = Structure.objects.get(pdb_code__index=pdbname)
+	ligands = StructureLigandInteraction.objects.filter(structure=crystal, annotated=True)
 	p = Protein.objects.get(protein=crystal.protein_conformation.protein)
 	residues = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__pdb_code__index=pdbname, structure_ligand_pair__annotated=True).order_by('rotamer__residue__sequence_number')
 	try:
 		refined = Structure.objects.get(pdb_code__index=pdbname+'_refined')
 	except:
 		refined = False
-	return render(request,'structure_details.html',{'pdbname': pdbname, 'structures': structures, 'crystal': crystal, 'protein':p, 'residues':residues, 'annotated_resn': resn_list, 'main_ligand': main_ligand, 'refined': refined})
+	return render(request,'structure_details.html',{'pdbname': pdbname, 'structures': structures, 'crystal': crystal, 'protein':p, 'residues':residues, 'annotated_resn': resn_list, 'main_ligand': main_ligand, 'refined': refined, 'ligands': ligands})
 
 def ServePdbDiagram(request, pdbname):
 	structure=Structure.objects.filter(pdb_code__index=pdbname)
