@@ -571,7 +571,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                                         # if uniprot_pos not in d['xml_not_observed']:
                                         #     d['xml_not_observed'].append(uniprot_pos)
                                     else:
-                                        print('no match')
+                                        #print('no match')
                                         uniprot_pos = int(pos)
                                 else:
                                     receptor = False

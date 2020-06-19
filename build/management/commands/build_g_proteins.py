@@ -254,7 +254,7 @@ class Command(BaseCommand):
             for row in lookup_data:
                 lookup_dict[row[0]] = row[1:]
 
-        residue_data = pd.read_table(self.gprotein_data_file, sep="\t", low_memory=False)
+        residue_data = pd.read_csv(self.gprotein_data_file, sep="\t", low_memory=False)
 
         for i, row in residue_data.iterrows():
             try:
@@ -298,7 +298,7 @@ class Command(BaseCommand):
                     c+=1
 
     def add_new_orthologs(self):
-        residue_data = pd.read_table(self.gprotein_data_file, sep="\t", low_memory=False)
+        residue_data = pd.read_csv(self.gprotein_data_file, sep="\t", low_memory=False)
         with open(self.lookup, 'r') as csvfile:
             lookup_data = csv.reader(csvfile, delimiter=',', quotechar='"')
             lookup_dict = OrderedDict([('-1', 'NA.N-terminal insertion.-1'), ('-2', 'NA.N-terminal insertion.-2'),
@@ -360,7 +360,7 @@ class Command(BaseCommand):
     def add_entry(self):
         if not self.options['wt']:
             raise AssertionError('Error: Missing wt name')
-        residue_data = pd.read_table(self.gprotein_data_file, sep="\t", low_memory=False)
+        residue_data = pd.read_csv(self.gprotein_data_file, sep="\t", low_memory=False)
         try:
             if residue_data['Uniprot_ID'][self.options['wt']] and not self.options['xtal']:
                 return 0
@@ -994,7 +994,7 @@ class Command(BaseCommand):
         # Parsing pdb uniprot file for residues
         self.logger.info('Start parsing PDB_UNIPROT_ENSEMBLE_ALL')
         self.logger.info('Parsing file ' + self.gprotein_data_file)
-        residue_data = pd.read_table(self.gprotein_data_file, sep="\t", low_memory=False)
+        residue_data = pd.read_csv(self.gprotein_data_file, sep="\t", low_memory=False)
         residue_data = residue_data.loc[residue_data['Uniprot_ACC'].isin(gprotein_list)]
         cgn_scheme = ResidueNumberingScheme.objects.get(slug='cgn')
 
@@ -1096,7 +1096,7 @@ class Command(BaseCommand):
         # Parsing pdb uniprot file for generic residue numbers
         self.logger.info('Start parsing PDB_UNIPROT_ENSEMBLE_ALL')
         self.logger.info('Parsing file ' + self.gprotein_data_file)
-        residue_data = pd.read_table(self.gprotein_data_file, sep="\t", low_memory=False)
+        residue_data = pd.read_csv(self.gprotein_data_file, sep="\t", low_memory=False)
 
         residue_data = residue_data[residue_data.Uniprot_ID.notnull()]
 
@@ -1140,7 +1140,7 @@ class Command(BaseCommand):
         self.logger.info('Parsing file ' + self.gprotein_data_file)
 
         # parsing file for accessions
-        df = pd.read_table(self.gprotein_data_file, sep="\t", low_memory=False)
+        df = pd.read_csv(self.gprotein_data_file, sep="\t", low_memory=False)
         prot_type = 'purge'
         pfm = ProteinFamily()
 

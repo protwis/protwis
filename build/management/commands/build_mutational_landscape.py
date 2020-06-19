@@ -34,6 +34,7 @@ class Command(BaseCommand):
             filenames = options['filename']
         else:
             filenames = False
+        proteins_not_found = []
 
         try:
             self.purge_data()
@@ -70,6 +71,8 @@ class Command(BaseCommand):
             for index, entry in enumerate(snp_data.iterrows()):
 
                 entry_name = snp_data[index:index + 1]['EntryName'].values[0]
+                if entry_name in self.proteins_not_found:
+                    continue
                 sequence_number = snp_data[index:index + 1]['SequenceNumber'].values[0]
                 allele_frequency = float(snp_data[index:index + 1]['af'].values[0]) # af/Allele Frequency
                 allele_count = int(snp_data[index:index + 1]['ac'].values[0]) # ac/Allele Count
@@ -96,6 +99,7 @@ class Command(BaseCommand):
                 try:
                     p = Protein.objects.get(entry_name=entry_name)
                 except Protein.DoesNotExist:
+                    self.proteins_not_found.append(entry_name)
                     self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
                     continue
 
@@ -131,6 +135,8 @@ class Command(BaseCommand):
             for index, entry in enumerate(cancer_data.iterrows()):
 
                 entry_name = cancer_data[index:index+1]['EntryName'].values[0]
+                if entry_name in self.proteins_not_found:
+                    continue
                 sequence_number = cancer_data[index:index+1]['site'].values[0]
                 amino_acid = cancer_data[index:index+1]['variant'].values[0]
                 # allele_frequency = float(cancer_data[index:index+1]['allelefreq'].values[0])
@@ -139,6 +145,7 @@ class Command(BaseCommand):
                 try:
                     p = Protein.objects.get(entry_name=entry_name)
                 except Protein.DoesNotExist:
+                    self.proteins_not_found.append(entry_name)
                     self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
                     continue
 
@@ -174,12 +181,15 @@ class Command(BaseCommand):
             for index, entry in enumerate(disease_data.iterrows()):
 
                 entry_name = disease_data[index:index+1]['EntryName'].values[0]
+                if entry_name in self.proteins_not_found:
+                    continue
                 sequence_number = disease_data[index:index+1]['site'].values[0]
                 amino_acid = disease_data[index:index+1]['variant'].values[0]
 
                 try:
                     p = Protein.objects.get(entry_name=entry_name)
                 except Protein.DoesNotExist:
+                    self.proteins_not_found.append(entry_name)
                     self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
                     continue
 
@@ -217,6 +227,8 @@ class Command(BaseCommand):
             for index, entry in enumerate(ptm_data.iterrows()):
 
                 entry_name = ptm_data[index:index+1]['EntryName'].values[0]
+                if entry_name in self.proteins_not_found:
+                    continue
                 sequence_number = ptm_data[index:index+1]['SequenceNumber'].values[0]
                 modification = ptm_data[index:index+1]['Type'].values[0]
                 # source = ptm_data[index:index+1]['Source'].values[0]
@@ -224,6 +236,7 @@ class Command(BaseCommand):
                 try:
                     p = Protein.objects.get(entry_name=entry_name)
                 except Protein.DoesNotExist:
+                    self.proteins_not_found.append(entry_name)
                     self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
                     continue
 
