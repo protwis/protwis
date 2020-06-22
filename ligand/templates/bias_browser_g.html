@@ -45,104 +45,116 @@
             <table class="display compact text-nowrap" id='structures_scrollable'>
 
                 <thead id="headers">
-                    <tr>
-                        <th><a href="#"><span class="glyphicon glyphicon-info-sign"></span></a></th>
-                        <th id="col_Receptor" colspan="6" style="text-align:left">Receptor</th>
-                        <th style="border-left: 1px solid black;" id="col_Ligand" colspan="5" style="text-align:left">Tested Ligand Pair </th>
-                        <th style="border-left: 1px solid black;" colspan="2" style="text-align:left">Receptor transducers</th>
-                        <th style="border-left: 1px solid black;" id="col_Pathway" colspan="5">Pathway Bias Rank Order </th>
-                        <th style="border-left: 1px solid black;" id="col_Operational" colspan="4">Operational model <br> &#916;&#916;(Tau/Ka)</th>
-                        <th style="border-left: 1px solid black;" id="col_Log" colspan="4">Intrinsic relative<br>activity<br>(&#916;&#916;Log(Emax/EC50))</th>
-                        <th style="border-left: 1px solid black;" id="col_Potency" colspan="4">Potency ratio</th>
-                        <th style="border-left: 1px solid black;" id="col_ec50" colspan="5">Potency (Mol) (EC50 or<br> <font color="#FF0000">IC50)</font>
-                        </th>
-                        <th style="border-left: 1px solid black;" id="col_Emax" colspan="5">Emax (% of ref ligand)</th>
-                        <th style="border-left: 1px solid black;" id="col_Transduction" colspan="5">Transduction coefficient</th>
-                        <th style="border-left: 1px solid black;" id="col_Assay" colspan="5">Assay</th>
-                        <th style="border-left: 1px solid black;" id="col_Cell" colspan="5">Cell line</th>
-                        <th style="border-left: 1px solid black;" id="col_Cell" colspan="5">Time resolved</th>
-                        <th style="border-left: 1px solid black;" id="authors" style="overflow: hidden;
-                  white-space: nowrap;
-                  text-overflow: ellipsis;
-          max-width: 250px;" colspan="2">Reference</th>
-                    </tr>
-                    <tr>
+                <tr>
+                    <th><a href="#"><span class="glyphicon glyphicon-info-sign"></span></a></th>
+                    <th style="text-align:left" colspan="6" >
+                        Receptor</th>
+                    <th style="border-left: 1px solid black; text-align:left" colspan="5" style="">
+                        Tested Ligand Pair </th>
+                    <th style="border-left: 1px solid black; text-align:left" colspan="2" style="">
+                        Receptor transducers</th>
+                    <th style="border-left: 1px solid black; text-align:left" colspan="5">
+                        Pathway Bias Rank Order </th>
+                    <th class="shade" style="border-left: 1px solid black; text-align:left" colspan="4">
+                        Operational model <br> &#916;&#916;(Tau/Ka)</th>
+                    <th class="shade" style="border-left: 1px solid black; text-align:left" colspan="4" >
+                        Intrinsic relative<br>activity<br>(&#916;&#916;Log(Emax/EC50))</th>
+                    <th class="shade" style="border-left: 1px solid black; text-align:left" colspan="4" >
+                        Potency ratio</th>
+                    <th class="shade" style="border-left: 1px solid black; text-align:left" colspan="5" >
+                        Potency (pEC50 or<br><font color="#FF0000">IC50)</font></th>
+                    <th class="shade" style="border-left: 1px solid black; text-align:left" colspan="5" >
+                        Emax (% of ref ligand)</th>
+                    <th class="shade" style="border-left: 1px solid black; text-align:left" colspan="5">
+                        Transduction coefficient</th>
+                    <th style="border-left: 1px solid black; text-align:left" colspan="5">
+                        Assay</th>
+                    <th style="border-left: 1px solid black; text-align:left" colspan="5">
+                        Cell line</th>
+                    <th style="border-left: 1px solid black; text-align:left" colspan="5">
+                        Time resolved</th>
+                    <th style="border-left: 1px solid black; text-align:left; overflow: hidden;
+                              white-space: nowrap;
+                              text-overflow: ellipsis;
+                      max-width: 250px;" colspan="2">Reference</th>
+                </tr>
+                <tr>
                         <!-- Receptor -->
-                        <th><a href="#"><span class="glyphicon glyphicon-info-sign"></a></span></th>
-                        <th>Class<br></th>
-                        <th title="Receptor Family">Rec Fam</th>
-                        <th>UniProt</th>
-                        <th>IUPHAR</th>
-                        <th>Species</th>
-                        <th>Endogenous<br>Ligand</th>
-                        <!-- Ligand -->
-                        <th class='pathways' style="border-left: 1px solid black;">Reference</th>
-                        <th>Biased</th>
-                        <th>#Ven<br>dors</th>
-                        <th>#Arti<br>cles</th>
-                        <th>#Labs<br> </th>
-                        <!-- Receptor trunsducers-->
-                        <th style="border-left: 1px solid black;">Primary</th>
-                        <th>Secondary</th>
-                        <!-- Pathways -->
-                        <th class='pathways' style="border-left: 1px solid black;">P 1</th>
-                        <th class='pathways'>P 2</th>
-                        <th class='pathways'>P 3</th>
-                        <th class='pathways'>P 4</th>
-                        <th class="pathways">P 5</th>
-                        <!-- operational model -->
-                        <th class='opmodel' style="border-left: 1px solid black;">P 2 /  P 1 </th>
-                        <th class='opmodel'>P 3 /  P 1</th>
-                        <th class='opmodel'>P 4 /  P 1</th>
-                        <th class="opmodel">P 5 /  P 1</th>
-                        <!-- log bias factor -->
-                        <th class='lbf' style="border-left: 1px solid black;">P 2 /  P 1</th>
-                        <th class='lbf'>P 3 /  P 1</th>
-                        <th class='lbf'>P 4 /  P 1</th>
-                        <th class="lbf">P 5 /  P 1</th>
-                        <!-- Potency ratio -->
-                        <th class='potency' style="border-left: 1px solid black;">P 2 /  P 1</th>
-                        <th class='potency'>P 3 /  P 1</th>
-                        <th class='potency'>P 4 /  P 1</th>
-                        <th class="potency">P 5 /  P 1</th>
-                        <!-- Potency -->
-                        <th class='ec50' style="border-left: 1px solid black;">P 1</th>
-                        <th class='ec50'>P 2</th>
-                        <th class='ec50'>P 3</th>
-                        <th class='ec50'>P 4</th>
-                        <th class="ec50">P 5</th>
-                        <!-- emax -->
-                        <th class='emax' style="border-left: 1px solid black;">P 1</th>
-                        <th class='emax'>P 2</th>
-                        <th class='emax'>P 3</th>
-                        <th class='emax'>P 4</th>
-                        <th class="emax">P 5</th>
-                        <!-- transduction efficacy -->
-                        <th class='transduction' style="border-left: 1px solid black;">P 1</th>
-                        <th class='transduction'>P 2</th>
-                        <th class='transduction'>P 3</th>
-                        <th class='transduction'>P 4</th>
-                        <th class="transduction">P 5</th>
-                        <!-- Assay type -->
-                        <th class='assay' style="border-left: 1px solid black;">P 1</th>
-                        <th class='assay'>P 2</th>
-                        <th class='assay'>P 3</th>
-                        <th class='assay'>P 4</th>
-                        <th class="assay">P 5</th>
-                        <!-- Cell Line -->
-                        <th class='cell' style="border-left: 1px solid black;">P 1</th>
-                        <th class='cell'>P 2</th>
-                        <th class='cell'>P 3</th>
-                        <th class='cell'>P 4</th>
-                        <th class="cell">P 5</th>
-                        <!-- Time resolved -->
-                        <th class='Time' style="border-left: 1px solid black;">P 1</th>
-                        <th class='Time'>P 2</th>
-                        <th class='Time'>P 3</th>
-                        <th class='Time'>P 4</th>
-                        <th class="Time">P 5</th>
-                        <!-- Authors -->
-                        <th style="overflow: hidden;
+                <th><a href="#"><span class="glyphicon glyphicon-info-sign"></a></span></th>
+                <th>Class<br></th>
+                <th title="Receptor Family">Rec Fam</th>
+                <th>UniProt</th>
+                <th>IUPHAR</th>
+                <th>Species</th>
+                <th>Endogenous<br>Ligand</th>
+                <!-- Ligand -->
+                <th style="border-left: 1px solid black;">Reference</th>
+                <th>Biased</th>
+                <th>#Ven<br>dors</th>
+                <th>#Arti<br>cles</th>
+                <th>#Labs<br> </th>
+                <!-- Receptor trunsducers-->
+                <th style="border-left: 1px solid black;">Primary</th>
+                <th>Secondary</th>
+                <!-- Pathways -->
+                <th style="border-left: 1px solid black;">P 1</th>
+                <th>P 2</th>
+                <th>P 3</th>
+                <th>P 4</th>
+                <th>P 5</th>
+                <!-- operational model -->
+                <th class="shade" id='column0' style="border-left: 1px solid black;">P 2 /  P 1 </th>
+                <th class="shade" id='column1'>P 3 /  P 1</th>
+                <th class="shade" id='column2'>P 4 /  P 1</th>
+                <th class="shade" id='column3'>P 5 /  P 1</th>
+                <!-- log bias factor -->
+                <th class="shade" id='column4' style="border-left: 1px solid black;">P 2 /  P 1</th>
+                <th class="shade" id='column5'>P 3 /  P 1</th>
+                <th class="shade" id='column7'>P 4 /  P 1</th>
+                <th class="shade" id='column8'>P 5 /  P 1</th>
+                <!-- Potency ratio -->
+                <th class="shade" id='column9' style="border-left: 1px solid black;">P 2 /  P 1</th>
+                <th class="shade" id='column10' >P 3 /  P 1</th>
+                <th class="shade" id='column12' >P 4 /  P 1</th>
+                <th class="shade" id='column13' >P 5 /  P 1</th>
+                <!-- Potency -->
+                <th class="shade" id='column14' style="border-left: 1px solid black;">P 1 </th>
+                <th class="shade" id='column15'>P 2</th>
+                <th class="shade" id='column16'>P 3</th>
+                <th class="shade" id='column17'>P 4</th>
+                <th class="shade" id='column18'>P 5</th>
+                <!-- emax -->
+                <th class="shade" id='column19' style="border-left: 1px solid black;">P 1</th>
+                <th class="shade" id='column20'>P 2</th>
+                <th class="shade" id='column21'>P 3</th>
+                <th class="shade" id='column22'>P 4</th>
+                <th class="shade" id='column23'>P 5</th>
+                <!-- transduction efficacy -->
+                <th class="shade" id='column24' style="border-left: 1px solid black;">P 1</th>
+                <th class="shade" id='column25'>P 2</th>
+                <th class="shade" id='column26'>P 3</th>
+                <th class="shade" id='column27'>P 4</th>
+                <th class="shade" id='column28'>P 5</th>
+                <!-- Assay type -->
+                <th class="skip" style="border-left: 1px solid black;">P 1</th>
+                <th class="skip" >P 2</th>
+                <th class="skip" >P 3</th>
+                <th class="skip" >P 4</th>
+                <th class="skip" >P 5</th>
+                <!-- Cell Line -->
+                <th  class="skip" style="border-left: 1px solid black;">P 1</th>
+                <th class="skip" >P 2</th>
+                <th class="skip" >P 3</th>
+                <th class="skip" >P 4</th>
+                <th class="skip" >P 5</th>
+                <!-- Time resolved -->
+                <th  class="skip" style="border-left: 1px solid black;">P 1</th>
+                <th class="skip" >P 2</th>
+                <th class="skip" >P 3</th>
+                <th class="skip" >P 4</th>
+                <th class="skip" >P 5</th>
+                <!-- Authors -->
+                <th  class="skip"  style="overflow: hidden;
           white-space: nowrap;
           text-overflow: ellipsis;
           max-width: 100px; border-left: 1px solid black;">Authors</th>
@@ -191,101 +203,81 @@
                         <!-- pathways -->
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
                         {% if forloop.first %}
-                        <td id="pathways" style="border-left: 1px solid black;" title="{{ex.signalling_protein}}">{{ex.signalling_protein}}</td>
+                        <td class="pathway" style="border-left: 1px solid black;">{{ex.family}}</td>
                         {% else %}
-                        <td id="pathways" title="{{ex.signalling_protein}}">{{ex.signalling_protein}}</td>
+                        <td class="pathway">{{ex.family}}</td>
                         {%endif%}
                         {%endfor%}
 
                         <!-- t factor -->
-
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
                         {% if not forloop.first %}
-                        <td class="greyscale_normal" style="text-align:right">{{ex.t_factor}}</td>
+                        <td  class="shade"  style="text-align:right">{{ex.t_factor}}</td>
                         {%endif%}
                         {%endfor%}
-
-                        <!-- {% for ex in e.1.biasdata|dictsort:"order_no" %}
-                        {% if not forloop.first %}
-                        {% widthratio forloop.counter 2 20 as outer_counter%}
-                        {% with outer_counter|add:"160" as var1 %}
-                        <td id="false" style="text-align:right; background-color: rgb( {{ var1 }},{{ var1 }},{{ var1 }})">{{ex.t_factor}}</td>
-                        {% endwith %}
-                        {%endif%}
-                        {%endfor%} -->
 
                         <!-- log bias facrtor -->
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
                         {% if not forloop.first %}
-                        <td class="greyscale_normal" title = '{{ex.log_bias_factor }}' style="text-align:right"> {{ex.log_bias_factor }}</td>
+                        <td class="shade" style="text-align:right"> {{ex.log_bias_factor }}</td>
                         {%endif%}
                         {%endfor%}
 
                         <!-- potency ratio -->
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
                         {% if not forloop.first %}
-                        <td title = '{{ex.potency }}' style= "text-align:right">{{ex.potency }}</td>
+                        <td class="shade" style= "text-align:right">{{ex.potency }}</td>
                         {%endif%}
                         {%endfor%}
 
                         <!-- potency -->
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
-                        {%if ex.quantitive_activity %}
+                        {%if ex.quantitive_activity_initial %}
                         {%if ex.quantitive_measure_type == 'EC50' %}
-                        <td title = '{{ex.quantitive_activity }}' style= "text-align:right">{{ex.quantitive_activity}} </td>
+                        <td class="shade" style= "text-align:right">{{ex.quantitive_activity_initial}} </td>
                         {%else%}
-                        <td title = '{{ex.quantitive_activity }}' style= "text-align:right">
-                            <font color="#FF0000">{{ex.quantitive_activity}} </font>
+                        <td class="shade" style= "text-align:right">
+                            <font color="#FF0000">{{ex.quantitive_activity_initial}} </font>
                         </td>
                         {%endif%}
                         {%else%}
-                        <td title = '{{ex.qualitative_activity }}'>{{ex.qualitative_activity }}</td>
+                        <td class="shade">{{ex.qualitative_activity}}</td>
                         {%endif%}
                         {%endfor%}
 
                         <!-- E max -->
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
-                        {% if ex.quantitive_efficacy == None %}
-                        <td></td>
-                        {%else%}
-                        <td style= "text-align:right">{{ex.quantitive_efficacy}}</td>
-                        {%endif%}
+                        <td class="shade" style= "text-align:right">{{ex.quantitive_efficacy}}</td>
                         {%endfor%}
 
                         <!-- T coefficient -->
-                        {% for ex in e.1.biasdata|dictsort:"order_no" %}
+                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
                         {% if ex.t_coefficient == None %}
-                        <td></td>
+                        <td class="shade" ></td>
                         {%else%}
-                        <td class="greyscale_normal" style= "text-align:right">{{ex.t_coefficient}}</td>
+                        <td class="shade" style= "text-align:right">{{ex.t_coefficient}}</td>
                         {%endif%}
                         {%endfor%}
 
                         <!-- Assay -->
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
-                        {% if ex.assay_type == None %}
-                        <td></td>
-                        {%else%}
-                        <td title='{{ex.assay_type}}' >{{ex.assay_type }}</td>
-                        {%endif%}
+
+                        <td class="donotshade" title='{{ex.assay_type}}' >{{ex.assay_type }}</td>
+
                         {%endfor%}
 
                         <!-- Cell line -->
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
-                        {% if ex.cell_line == None %}
-                        <td></td>
-                        {%else%}
-                        <td title='{{e.1.cell_line}}'>{{ex.cell_line }}</td>
-                        {%endif%}
+
+                        <td class="donotshade">{{ex.cell_line }}</td>
+
                         {%endfor%}
 
                         <!-- Time resolved -->
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
-                        {% if ex.assay_time_resolved == None %}
-                        <td></td>
-                        {%else%}
-                        <td>{{ex.assay_time_resolved }}</td>
-                        {%endif%}
+
+                        <td class="donotshade">{{ex.assay_time_resolved }}</td>
+
                         {%endfor%}
 
                         <!-- Reference -->
@@ -316,217 +308,12 @@ document.getElementById("loadingSpinner").style.display = "none";
 {% endblock %}
 
 
-
-{% block addon_css %}
-<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
-<link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
-<link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
-<link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
-<link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet">
-<link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
-<link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.4.0/css/buttons.dataTables.min.css" type="text/css" />
-
-<!-- configure radio buttons style -->
-<style>
-    ul li {
-        display: inline-block;
-    }
-</style>
-
-<style type="text/css">
-    .dataTables_scrollHeadInner {
-    margin-top: 20px;
-    }
-
-    table.dataTable thead th,
-    table.dataTable tbody td {
-    max-width: 65px ;
-    word-break: break-all;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    }
-    table.dataTable thead .sorting {
-    background-position: right;
-    }
-    .select2-container select2-container-multi{
-    width: 75%;
-    }
-
-    .select2-container-multi .select2-choices .select2-search-field input {
-    max-width: 50px;
-    }
-    .yadcf-filter-wrapper {
-    position: center;
-    display: flex;
-    white-space: normal;
-    margin-top: 7px;
-    width: 50% !important;
-    }
-
-    .select2-results {
-background-color:white;
-border:gray;
-width: 150px;
-}
-
-    .yadcf-filter-range {
-    grid-auto-columns: auto;
-    max-width: 50px !important;
-    font-family: sans-serif;
-    font-size: 80%;
-    font-weight: bold;
-    margin: auto;
-    margin-top: 10%;
-    min-width: 40px;
-    }
-
-    table.dataTable thead .sorting {
-    background-image:none !important;
-    }
-    table.dataTable thead .sorting_desc {
-    background-image:none !important;
-    }
-
-    table.dataTable thead .sorting_asc {
-    background-image:none !important;
-    }
-
-    table.dataTable.compact tbody th, table.dataTable.compact tbody td {
-    padding: 5px 10px 5px 0px !important;
-    width: 0px ;
-    }
-
-    table.dataTable.compact thead th, table.dataTable.compact thead td {
-    padding: 5px 10px 5px 0px;
-    width: 0px ;
-    }
-
-    table.dataTable.compact thead tr.over_header th {
-    border-bottom: 1px solid #ccc;
-    }
-
-    table.dataTable.compact thead th.leftborder {
-    border-left: 1px solid;
-    }
-
-    table.dataTable.compact thead th.rightborder {
-    border-right: 1px solid;
-    }
-
-    .yadcf-filter-range {
-    max-width: 40px !important;
-        font-family: sans-serif;
-        font-size: 80%;
-        font-weight: bold;
-    min-width: 40px;
-    }
-
-
-    .clicked_button {
-    background-color: rgb(215, 215, 215);
-    }
-
-    #overlay {
-    top: 0px;
-    position: absolute;
-    background: #f8f8f8;
-    /*border: 1px solid #333;*/
-    -webkit-box-shadow: 5px 0 2px -2px #888;
-    box-shadow: 5px 0 2px -2px #888;
-    }
-
-    .container {
-    width: 90%;
-    }
-
-    .wrapper {
-    overflow-x: scroll;
-    overflow-y: hidden;
-    }
-
-    #overlay tbody tr {
-    background-color: #f8f8f8;
-    }
-
-    #count_row th {
-    font-size: 11px;
-    text-align: center;
-    }
-
-    .switch-field label:hover {
-    cursor: pointer;
-    /* width: 100%; */
-    }
-
-    .switch-field input:checked+label {
-    background-color: #337ab7;
-    /* #a5dc86; */
-    box-shadow: none;
-    }
-    .border-left{
-        padding-left: 3px;
-    }
-
-    .switch-field label:first-of-type {
-    border-radius: 4px 0 0 4px;
-
-    }
-
-    .switch-field label:last-of-type {
-    border-radius: 0 4px 4px 0;
-    }
-
-    /* This is just for CodePen. */
-
-
-
-    .name {
-    width: 100px;
-    text-overflow: ellipsis;
-    cursor: pointer;
-    word-break: break-all;
-    overflow: hidden;
-    white-space: nowrap;
-    }
-
-    .name:hover {
-    overflow: visible;
-    white-space: normal;
-    /* height: auto;  /* just added this line */
-    */
-    }
-
-        .toolbar_data_css{
-            width: 250px;
-            margin-right: auto;
-            margin-left: 0px;
-            /* border: 1px solid; */
-            font-family: "Lucida Grande", Tahoma, Verdana, sans-serif;
-            font-weight: normal;
-            font-size: 120%;
-            line-height: 1.625;
-        }
-        .toolbar_data_css.td {
-            height: 15px;
-            max-width: 150px;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-        }
-</style>
-
-{% endblock %}
-
-
 {% block addon_js %}
 <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
 <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
 <script src="{% static 'home/js/dataTables.buttons.min.js' %}"> </script>
 <script src="{% static 'home/js/select2.js' %}"> </script>
 <script src="{% static 'home/js/shading.js' %}"></script>
-<script src="https://cdn.datatables.net/buttons/1.0.3/js/buttons.colVis.js"></script>
 
 <script type="text/javascript" charset="utf-8">
     function getCookie(c_name) {
@@ -546,7 +333,6 @@ width: 150px;
         oTable = $('#structures_scrollable').DataTable({
             StateSave: true,
             dom: 'Bftrip<>',
-
             buttons: [{
                     text: 'Excel',
                     className: 'btn btn-primary',
@@ -632,18 +418,15 @@ width: 150px;
                         var receptor_counter = read_unique_ids_receptor()
                         document.getElementById("ligand_counter").innerHTML = ligand_counter;
                         document.getElementById("receptor_counter").innerHTML = receptor_counter;
-                        document.getElementById("Publications").innerHTML = 5;
-
+                        // document.getElementById("Publications").innerHTML = 5;
                     $('#loadingSpinner').hide();
                     $('#structures_scrollable_body').show();
                 }, 0);
             },
 
             "fnDrawCallback": function() {
-
                 $('#loadingSpinner').show();
                 $('#structures_scrollable_body').hide();
-
                 setTimeout(function() {
                     $('#loadingSpinner').hide();
                     $('#structures_scrollable_body').show();
@@ -659,16 +442,13 @@ width: 150px;
                         if (columnData.join('').length == 0 && colIdx != 0) {
                             oTable.column(colIdx).visible(false);
                         }
-
                     });
                         var ligand_counter = read_unique_ids();
                         var receptor_counter = read_unique_ids_receptor()
                         document.getElementById("ligand_counter").innerHTML = ligand_counter;
                         document.getElementById("receptor_counter").innerHTML = receptor_counter;
-                        document.getElementById("Publications").innerHTML = 5;
-
+                        // document.getElementById("Publications").innerHTML = 5;
                     oTable.columns.adjust();
-
                 }, 1);
             }
         });
@@ -1112,7 +892,6 @@ width: 150px;
                 cumulative_filtering: true
             }
         );
-        shadeTable(oTable,[20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46],120,250)
         function reset_filters() {
             $('#loadingSpinner').show();
             $('#structures_scrollable_body').hide();
@@ -1138,20 +917,29 @@ width: 150px;
                 var $clone = [$tr];
 
                 $row.append($tds.eq(0).clone()).append($tds.eq(4).clone()).append($tds.eq(5).clone()).append($tds.eq(8).clone());
-
-                if ($tds[14].id = "pathways") {
+                // .id = "pathways"
+                if ($tds[12].className=="pathway" ){
+                    $row.append($tds.eq(12 ).clone());
+                }
+                if ($tds[13].className=="pathway" ){
+                    $row.append($tds.eq(13).clone());
+                }
+                if ($tds[11].className=="pathway" ){
+                    $row.append($tds.eq(11).clone());
+                }
+                if ($tds[14].className=="pathway" ){
                     $row.append($tds.eq(14).clone());
                 }
-                if ($tds[15].id = "pathways") {
-                    $row.append($tds.eq(15).clone());
+                if ($tds[15].className=="pathway"  ){
+                        $row.append($tds.eq(15).clone());
                 }// && isNaN($tds[15].innerText)
-                if ($tds[16].id = "pathways" && isNaN($tds[16].innerText) && $tds[16].innerText !="No activity" && $tds[16].innerText != "Not quantifiable"  && $tds[16].innerText != "Low activity") {
-                    $row.append($tds.eq(16).clone());
+                if ($tds[16].className=="pathway"  ){
+                        $row.append($tds.eq(16).clone());
                 }
-                if ($tds[17].id = "pathways" && isNaN($tds[17].innerText) && $tds[17].innerText !="No activity" && $tds[17].innerText != "Not quantifiable"  && $tds[17].innerText != "Low activity") {
+                if ($tds[17].className=="pathway"  ){
                     $row.append($tds.eq(17).clone());
                 }
-                if ($tds[18].id = "pathways" && isNaN($tds[18].innerText) && $tds[16].innerText !="No activity" && $tds[18].innerText != "Not quantifiable"  && $tds[18].innerText != "Low activity") {
+                if ($tds[18].className =="pathway"  ){
                     $row.append($tds.eq(18).clone());
                 }
                 $row.appendTo($target)
@@ -1163,6 +951,7 @@ width: 150px;
         $('#structures_scrollable').on('draw.dt', function(e, oSettings) {
             create_overlay();
         });
+        shadeTable(oTable, [".shade"], 120, 200);
         create_overlay();
         $("#overlay").hide();
         var left = 0;
@@ -1272,8 +1061,204 @@ width: 150px;
         return myJSON
     }
 </script>
-<script type="text/javascript">
-var table = document.getElementById("structures_scrollable")
+{% endblock %}
 
-</script>
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+<link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet">
+<link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
+<link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.4.0/css/buttons.dataTables.min.css" type="text/css" />
+
+<!-- configure radio buttons style -->
+<style>
+    ul li {
+        display: inline-block;
+    }
+</style>
+
+<style type="text/css">
+    .dataTables_scrollHeadInner {
+    margin-top: 20px;
+    }
+
+    table.dataTable thead th,
+    table.dataTable tbody td {
+    max-width: 65px ;
+    word-break: break-all;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    }
+    table.dataTable thead .sorting {
+    background-position: right;
+    }
+    .select2-container select2-container-multi{
+    width: 75%;
+    }
+
+    .select2-container-multi .select2-choices .select2-search-field input {
+    max-width: 50px;
+    }
+    .yadcf-filter-wrapper {
+    position: center;
+    display: flex;
+    white-space: normal;
+    margin-top: 7px;
+    width: 50% !important;
+    }
+
+    .select2-results {
+background-color:white;
+border:gray;
+width: 150px;
+}
+
+    .yadcf-filter-range {
+    grid-auto-columns: auto;
+    max-width: 50px !important;
+    font-family: sans-serif;
+    font-size: 80%;
+    font-weight: bold;
+    margin: auto;
+    margin-top: 10%;
+    min-width: 40px;
+    }
+
+    table.dataTable thead .sorting {
+    background-image:none !important;
+    }
+    table.dataTable thead .sorting_desc {
+    background-image:none !important;
+    }
+
+    table.dataTable thead .sorting_asc {
+    background-image:none !important;
+    }
+
+    table.dataTable.compact tbody th, table.dataTable.compact tbody td {
+    padding: 5px 10px 5px 0px !important;
+    width: 0px ;
+    }
+
+    table.dataTable.compact thead th, table.dataTable.compact thead td {
+    padding: 5px 10px 5px 0px;
+    width: 0px ;
+    }
+
+    table.dataTable.compact thead tr.over_header th {
+    border-bottom: 1px solid #ccc;
+    }
+
+    table.dataTable.compact thead th.leftborder {
+    border-left: 1px solid;
+    }
+
+    table.dataTable.compact thead th.rightborder {
+    border-right: 1px solid;
+    }
+
+    .yadcf-filter-range {
+    max-width: 40px !important;
+        font-family: sans-serif;
+        font-size: 80%;
+        font-weight: bold;
+    min-width: 40px;
+    }
+
+
+    .clicked_button {
+    background-color: rgb(215, 215, 215);
+    }
+
+    #overlay {
+    top: 0px;
+    position: absolute;
+    background: #f8f8f8;
+    /*border: 1px solid #333;*/
+    -webkit-box-shadow: 5px 0 2px -2px #888;
+    box-shadow: 5px 0 2px -2px #888;
+    }
+
+    .container {
+    width: 90%;
+    }
+
+    .wrapper {
+    overflow-x: scroll;
+    overflow-y: hidden;
+    }
+
+    #overlay tbody tr {
+    background-color: #f8f8f8;
+    }
+
+    #count_row th {
+    font-size: 11px;
+    text-align: center;
+    }
+
+    .switch-field label:hover {
+    cursor: pointer;
+    /* width: 100%; */
+    }
+
+    .switch-field input:checked+label {
+    background-color: #337ab7;
+    /* #a5dc86; */
+    box-shadow: none;
+    }
+    .border-left{
+        padding-left: 3px;
+    }
+
+    .switch-field label:first-of-type {
+    border-radius: 4px 0 0 4px;
+
+    }
+
+    .switch-field label:last-of-type {
+    border-radius: 0 4px 4px 0;
+    }
+
+    /* This is just for CodePen. */
+
+    .name {
+    width: 100px;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    word-break: break-all;
+    overflow: hidden;
+    white-space: nowrap;
+    }
+
+    .name:hover {
+    overflow: visible;
+    white-space: normal;
+    /* height: auto;  /* just added this line */
+    */
+    }
+
+    .toolbar_data_css{
+        width: 250px;
+        margin-right: auto;
+        margin-left: 0px;
+        /* border: 1px solid; */
+        font-family: "Lucida Grande", Tahoma, Verdana, sans-serif;
+        font-weight: normal;
+        font-size: 120%;
+        line-height: 1.625;
+    }
+    .toolbar_data_css.td {
+        height: 15px;
+        max-width: 150px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+</style>
+
 {% endblock %}

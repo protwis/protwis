@@ -149,7 +149,7 @@ class Command(BaseBuild):
             # code to skip rows in excel for faster testing
             # if i < 15:
             #     continue
-            # if i > 58:
+            # if i > 1200:
             #     break
             if i % 100 == 0:
                 print(i)
@@ -332,7 +332,8 @@ class Command(BaseBuild):
         elif p_type.lower() == 'logic50':
             potency = 10**(potency)
             p_type = 'IC50'
-        elif p_type.lower()  == 'ec50':
+
+        if p_type.lower()  == 'ec50':
             if unit.lower() == 'nm':
                 potency = potency* 10**(-9)
             elif unit.lower() == 'µm':
@@ -343,10 +344,21 @@ class Command(BaseBuild):
                 potency = potency* 10**(-6)
             else:
                 pass
-        if potency:
-            potency = (-1)*math.log10(potency)
-            p_type = 'pec50'
-            # potency = "{:.2E}".format(Decimal(potency))
+        if p_type.lower()  == 'ic50':
+            if unit.lower() == 'nm':
+                potency = potency* 10**(-9)
+            elif unit.lower() == 'µm':
+                potency = potency* 10**(-9)
+            elif unit.lower() == 'pm':
+                potency = potency* 10**(-12)
+            elif unit.lower() == 'mm':
+                potency = potency* 10**(-6)
+            else:
+                pass
+        # if potency:
+        #     potency = (-1)*math.log10(potency)
+        #     p_type = 'pec50'
+        #     # potency = "{:.2E}".format(Decimal(potency))
         return potency,p_type
 
     def define_g_family(self, protein, assay_type):
@@ -404,7 +416,7 @@ class Command(BaseBuild):
                 family = 'pERK1-2'
         else:
             family == protein
-        
+
         return family
 
     def fetch_endogenous(self, protein):

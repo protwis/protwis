@@ -228,17 +228,19 @@ class Command(BaseBuild):
                             Gq = Gq+10
                 elif (word == 'arrestin'):
                     Barr = Barr+100
-
-            if G12 > max(Gio,Gq,GS,Barr):
-                signalling_protein = 'G12'
-            elif Gio > max(G12,Gq,GS,Barr):
-                signalling_protein = 'Gio'
-            elif Gq > max(G12,Gio,GS,Barr):
-                signalling_protein = 'Gq'
-            elif GS > max(G12,Gq,Gio,Barr):
-                signalling_protein = 'GS'
-            elif Barr > max(G12,Gq,GS,Gio):
-                signalling_protein = 'Barr'
+            signal_prot = list()
+            signal_prot.append(G12, Gio ,Gq ,GS ,Barr)
+            signalling_protein = str(max(signal_prot))
+            # if G12 > max(Gio,Gq,GS,Barr):
+            #     signalling_protein = 'G12'
+            # elif Gio > max(G12,Gq,GS,Barr):
+            #     signalling_protein = 'Gio'
+            # elif Gq > max(G12,Gio,GS,Barr):
+            #     signalling_protein = 'Gq'
+            # elif GS > max(G12,Gq,Gio,Barr):
+            #     signalling_protein = 'GS'
+            # elif Barr > max(G12,Gq,GS,Gio):
+            #     signalling_protein = 'Barr'
 
 
 

@@ -420,7 +420,6 @@ document.getElementById("loadingSpinner").style.display = "none";
             },
 
             "fnDrawCallback": function() {
-
                 var ligand_counter = read_unique_ids();
                 var receptor_counter = read_unique_ids_receptor()
                 $('#loadingSpinner').show();
@@ -442,8 +441,6 @@ document.getElementById("loadingSpinner").style.display = "none";
                             oTable.column(colIdx).visible(false);
                         }
                     });
-                            // shadeTable(oTable, ['.skip'], 255, 255)
-
                         var ligand_counter = read_unique_ids();
                         var receptor_counter = read_unique_ids_receptor()
                         document.getElementById("ligand_counter").innerHTML = ligand_counter;
@@ -892,13 +889,6 @@ document.getElementById("loadingSpinner").style.display = "none";
                 cumulative_filtering: true
             }
         );
-        // shadeTable(oTable, [".shade"], 120, 200);
-        // shadeTable(oTable, [".shade","#column1","#column2","#column3","#column4","#column5","#column6","#column7",
-        //                     "#column8","#column9","#column10","#column11","#column12","#column13","#column14",
-        //                     "#column15","#column16","#column17","#column18","#column19","#column20","#column21",
-        //                     "#column22","#column23",
-        //                     "#column24","#column25","#column26","#column27","#column28","#column0"], 120, 200)
-
 
         function reset_filters() {
             $('#loadingSpinner').show();
@@ -1067,13 +1057,7 @@ document.getElementById("loadingSpinner").style.display = "none";
         return myJSON
     }
 </script>
-<script type="text/javascript">
-
-
-</script>
 {% endblock %}
-
-
 
 {% block addon_css %}
 <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />

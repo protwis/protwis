@@ -135,7 +135,7 @@ class Command(BaseBuild):
             fin_obj['vendor_counter'] = vendor_counter
             rd.append(fin_obj)
 
-        print('---counter of assays at process data---', counter)
+        
         return rd
 
     def change(self, rd):
@@ -182,6 +182,8 @@ class Command(BaseBuild):
                 temp_dict['assay_time_resolved'] = j['children'][0].assay_time_resolved
                 temp_dict['quantitive_activity'] = j['children'][0].quantitive_activity
                 temp_dict['quantitive_activity_initial'] = j['children'][0].quantitive_activity
+                if temp_dict['quantitive_activity_initial']:
+                    temp_dict['quantitive_activity_initial'] = (-1)*math.log10(temp_dict['quantitive_activity_initial'])
                 temp_dict['qualitative_activity'] = j['children'][0].qualitative_activity
                 temp_dict['quantitive_unit'] = j['children'][0].quantitive_unit
                 temp_dict['quantitive_efficacy'] = j['children'][0].quantitive_efficacy
@@ -351,7 +353,7 @@ class Command(BaseBuild):
         for i in biasdata:
             if i['t_coefficient_initial'] != None and i['t_coefficient'] == None:
                 i['t_coefficient'] = round(i['t_coefficient_initial'] - i['reference_t_coefficient_initial'],1)
-                        #print('\nex data-----',i,'--referecne',j)
+
 
     def calc_potency(self, biasdata):
         count = 0

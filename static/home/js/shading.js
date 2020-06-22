@@ -154,7 +154,3 @@ function shadeTable(table, columnIndexes, darkGrey, lightGrey)
 
     myShadingTable.shade(table.rows({page: "current"}));
 }
-
-// Uncomment the following 2 lines to test index.html:
-// let table = $("#structures_test").DataTable();
-// shadeTable(table, ["#firstColumn", ".niceColumn", 2], 80, 200);
