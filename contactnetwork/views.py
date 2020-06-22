@@ -373,6 +373,8 @@ def PdbTableData(request):
         r['signal_protein_seq_cons'] = ''
         r['signal_protein_seq_cons_color'] = ''
         for ep in s.extra_proteins.all():
+            if ep.category == "Antibody":
+                continue
             key = '{}_{}'.format(s.protein_conformation.protein.parent.pk,ep)
             if best_signal_p[key] == ep.wt_coverage:
                 # this is the best coverage
@@ -632,6 +634,7 @@ def InteractionBrowserData(request):
 
     # Filters for inter- and intrasegment contacts + BB/SC filters
     backbone_atoms = ["C", "O", "N", "CA"]
+    pure_backbone_atoms = ["C", "O", "N"]
 
     # INTERsegment interactions
     inter_segments = ~Q(interacting_pair__res1__protein_segment=F('interacting_pair__res2__protein_segment'))
@@ -646,12 +649,12 @@ def InteractionBrowserData(request):
 
     # SC-BB
     if contact_options and "inter_scbb" in contact_options:
-        scbb = ((Q(atomname_residue1__in=backbone_atoms) & ~Q(atomname_residue2__in=backbone_atoms)) | (~Q(atomname_residue1__in=backbone_atoms) & Q(atomname_residue2__in=backbone_atoms))) & inter_segments
+        scbb = ((Q(atomname_residue1__in=backbone_atoms) & ~Q(atomname_residue2__in=pure_backbone_atoms)) | (~Q(atomname_residue1__in=pure_backbone_atoms) & Q(atomname_residue2__in=backbone_atoms))) & inter_segments
         inter_options_filter = inter_options_filter | scbb
 
     # SC-SC
     if contact_options and "inter_scsc" in contact_options:
-        scsc = ~Q(atomname_residue1__in=backbone_atoms) & ~Q(atomname_residue2__in=backbone_atoms) & inter_segments
+        scsc = ~Q(atomname_residue1__in=pure_backbone_atoms) & ~Q(atomname_residue2__in=pure_backbone_atoms) & inter_segments
         inter_options_filter = inter_options_filter | scsc
 
     # INTRAsegment interactions
@@ -667,12 +670,12 @@ def InteractionBrowserData(request):
 
     # SC-BB
     if contact_options and "intra_scbb" in contact_options:
-        scbb = ((Q(atomname_residue1__in=backbone_atoms) & ~Q(atomname_residue2__in=backbone_atoms)) | (~Q(atomname_residue1__in=backbone_atoms) & Q(atomname_residue2__in=backbone_atoms))) & intra_segments
+        scbb = ((Q(atomname_residue1__in=backbone_atoms) & ~Q(atomname_residue2__in=pure_backbone_atoms)) | (~Q(atomname_residue1__in=pure_backbone_atoms) & Q(atomname_residue2__in=backbone_atoms))) & intra_segments
         intra_options_filter = intra_options_filter | scbb
 
     # SC-SC
     if contact_options and "intra_scsc" in contact_options:
-        scsc = ~Q(atomname_residue1__in=backbone_atoms) & ~Q(atomname_residue2__in=backbone_atoms) & intra_segments
+        scsc = ~Q(atomname_residue1__in=pure_backbone_atoms) & ~Q(atomname_residue2__in=pure_backbone_atoms) & intra_segments
         intra_options_filter = intra_options_filter | scsc
 
     i_options_filter = inter_options_filter | intra_options_filter
@@ -891,6 +894,18 @@ def InteractionBrowserData(request):
         data['class_mutations'] = class_mutations
 
         data['gpcr_class'] = gpcr_class
+
+        with open('{}_{}.txt'.format(gpcr_class,"gprotein"), 'w') as f:
+            for key,d in class_complex_interactions.items():
+                print(key,d)
+                f.write("%s,%s\n"%(key,d))
+        with open('{}_{}.txt'.format(gpcr_class,"ligand"), 'w') as f:
+            for key,d in class_ligand_interactions.items():
+                f.write("%s,%s\n"%(key,d))
+        with open('{}_{}.txt'.format(gpcr_class,"mutation"), 'w') as f:
+            for key,d in class_mutations.items():
+                f.write("%s,%s\n"%(key,d))
+
         data['segments'] = set()
         data['segment_map'] = {}
         data['interactions'] = {}

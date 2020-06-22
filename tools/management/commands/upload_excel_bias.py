@@ -41,7 +41,7 @@ class Command(BaseBuild):
     help = 'Reads bias data and imports it'
     # source file directory
     # structure_data_dir = os.sep.join([settings.EXCEL_DATA, 'ligand_data', 'bias'])
-    structure_data_dir = '/protwis/sites/protwis/excel/'
+    structure_data_dir = 'excel/'
     publication_cache = {}
     ligand_cache = {}
     data_all = []
@@ -194,7 +194,7 @@ class Command(BaseBuild):
             if d['protein_efficacy_quantity'] == "":
                 d['protein_efficacy_quantity'] = None
             elif d['protein_efficacy_quantity'] !=None:
-                d['protein_efficacy_quantity'] = round(d['protein_efficacy_quantity'],0)    
+                d['protein_efficacy_quantity'] = round(d['protein_efficacy_quantity'],0)
             if not isinstance(d['pathway_bias'], float):
                 d['pathway_bias'] = None
             if not isinstance(d['pathway_bias_initial'], float):

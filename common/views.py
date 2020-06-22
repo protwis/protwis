@@ -122,7 +122,6 @@ class AbsTargetSelection(TemplateView):
         for selection_box, include in self.selection_boxes.items():
             if include:
                 context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
-
         if self.filters:
             context['selection']['species'] = selection.species
             context['selection']['annotation'] = selection.annotation
@@ -195,7 +194,7 @@ class AbsSegmentSelection(TemplateView):
     except Exception as e:
         pass
 
-    ss = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').prefetch_related('generic_numbers')
+    ss = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(name__startswith='Fungal').exclude(name__startswith='ECD').prefetch_related('generic_numbers')
     ss_cats = ss.values_list('category').order_by('category').distinct('category')
     action = 'expand'
 
@@ -224,12 +223,31 @@ class AbsSegmentSelection(TemplateView):
             if include:
                 context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
 
+        for f in selection.targets:
+            if f.type=='family':
+                family = get_gpcr_class(f.item)
+                if family.name.startswith('Class D'):
+                    self.ss = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(name__startswith='ECD').prefetch_related('generic_numbers')
+                    self.ss_cats = self.ss.values_list('category').order_by('category').distinct('category')
+                elif family.name.startswith('Class B'):
+                    self.ss = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(name__startswith='Fungal').prefetch_related('generic_numbers')
+                    self.ss_cats = self.ss.values_list('category').order_by('category').distinct('category')
+            elif f.type=='protein':
+                if f.item.family.parent.parent.parent.name.startswith('Class D'):
+                    self.ss = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(name__startswith='ECD').prefetch_related('generic_numbers')
+                    self.ss_cats = self.ss.values_list('category').order_by('category').distinct('category')
+                elif f.item.family.parent.parent.parent.name.startswith('Class B'):
+                    self.ss = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(name__startswith='Fungal').prefetch_related('generic_numbers')
+                    self.ss_cats = self.ss.values_list('category').order_by('category').distinct('category')
+            
         # get attributes of this class and add them to the context
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
         return context
+
+
 
 class AbsMiscSelection(TemplateView):
     """An abstract class for selection pages of other types than target- and segmentselection"""
@@ -521,7 +539,26 @@ def SelectFullSequence(request):
         segments = ProteinSegment.objects.filter(slug__in=segmentlist['Full'], partial=False, proteinfamily=pfam).order_by(preserved)
 
     else:
-        segments = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR')
+        add_class_b, add_class_d = False, False
+        for f in selection.targets:
+            print(f)
+            if f.type=='family':
+                family = get_gpcr_class(f.item)
+                if family.name.startswith('Class D'):
+                    add_class_d = True
+                elif family.name.startswith('Class B'):
+                    add_class_b = True
+            elif f.type=='protein':
+                if f.item.family.parent.parent.parent.name.startswith('Class D'):
+                    add_class_d = True
+                elif f.item.family.parent.parent.parent.name.startswith('Class B'):
+                    add_class_b = True
+        if add_class_d:
+            segments = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(name__startswith='ECD')
+        elif add_class_b:
+            segments = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(name__startswith='Fungal')
+        else:
+            segments = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(name__startswith='Fungal').exclude(name__startswith='ECD')
 
     for segment in segments:
         selection_object = SelectionItem(segment.category, segment)
@@ -1697,3 +1734,8 @@ def ConvertSVG(request, **response_kwargs):
     response['Content-Disposition'] = 'attachment; filename="' + filename + '"'
     response.write(pdf_content)
     return response
+
+def get_gpcr_class(item):
+    while item.parent.parent!=None:
+        item = item.parent
+    return item

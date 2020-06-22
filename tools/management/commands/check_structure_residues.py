@@ -33,7 +33,7 @@ class Command(BaseBuild):
         missing_gns_count = OrderedDict()
         # raise
         with open(os.sep.join([settings.DATA_DIR, 'structure_data','annotation','xtal_segends.yaml']), 'r') as anno_f:
-            annotations = yaml.load(anno_f)
+            annotations = yaml.load(anno_f, Loader=yaml.FullLoader)
         for s in structures:
             resis = Residue.objects.filter(protein_conformation=s.protein_conformation).prefetch_related('display_generic_number','protein_segment')
             wt_resis = Residue.objects.filter(protein_conformation__protein=s.protein_conformation.protein.parent)

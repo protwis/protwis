@@ -137,7 +137,7 @@
                 },
             ],
             scrollX: '100%',
-            scrollY: '70vh',
+            scrollY: '60vh',
             scrollCollapse: true,
             "order": [
                 [3, "desc"]
@@ -222,13 +222,13 @@
                     filter_default_label: "Select",
                     filter_reset_button_text: false,
                 },
-                {
-                    column_number: 4,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Select",
-                    filter_reset_button_text: false,
-                },
+                // {
+                //     column_number: 4,
+                //     filter_type: "multi_select",
+                //     select_type: 'select2',
+                //     filter_default_label: "Select",
+                //     filter_reset_button_text: false,
+                // },
                 {
                     column_number: 5,
                     filter_type: "multi_select",
@@ -790,7 +790,7 @@
 
 <img id="loadingSpinner" style="position: absolute;
     left: 50%;
-    top: 50%;" src="{% static 'home/images/35.gif' %}" />
+    top: 50%;" src="{% static 'home/images/loading.gif' %}" />
 
 {% if data %}
 {% autoescape off %}
