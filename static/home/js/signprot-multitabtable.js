@@ -137,16 +137,17 @@ $(document).ready(function () {
     console.time("table1load");
     oTable1 = $("#familiestabletab").DataTable({
 //        data: table1data,
-        scrollY: $(window).height() - 450,
+        deferRender: true,
+        scrollY: '50vh',
         scrollX: true,
         scrollCollapse: true,
         scroller: true,
         paging: false,
-//        "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
         bSortCellsTop: false, //prevent sort arrows going on bottom row
         aaSorting: [],
         autoWidth: true,
-        pageLength: -1,
+//        pageLength: -1,
         bInfo: true
     });
 
@@ -309,15 +310,17 @@ $(document).ready(function () {
     console.time("table2load");
     oTable2 = $("#subtypestabletab").DataTable({
 //        data: table2data,
-        scrollY: $(window).height() - 500,
+        deferRender: true,
+        scrollY:  '50vh',
         scrollX: true,
         scrollCollapse: true,
         scroller: true,
         paging: false,
+        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
         bSortCellsTop: false, //prevent sort arrows going on bottom row
         aaSorting: [],
         autoWidth: true,
-        pageLength: -1,
+//        pageLength: -1,
         bInfo: true
     });
     yadcf.init(oTable2,
@@ -518,15 +521,17 @@ $(document).ready(function () {
     console.time("table3load");
     oTable3 = $("#bouviertabletab").DataTable({
 //        data: table3data,
-        scrollY: $(window).height() - 500,
+        deferRender: true,
+        scrollY:  '50vh',
         scrollX: true,
         scrollCollapse: true,
         scroller: true,
         paging: false,
+        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
         bSortCellsTop: false, //prevent sort arrows going on bottom row
         aaSorting: [],
         autoWidth: true,
-        pageLength: -1,
+//        pageLength: -1,
         bInfo: true
     });
     yadcf.init(oTable3,
@@ -1174,15 +1179,16 @@ $(document).ready(function () {
         //"searching": false,
         //"info": false,
         deferRender: true,
-        scrollY: $(window).height() - 500,
+        scrollY:  '50vh',
         scrollX: true,
         scrollCollapse: true,
         scroller: true,
         paging: false,
+        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
         bSortCellsTop: false, //prevent sort arrows going on bottom row
         aaSorting: [],
         autoWidth: true,
-        pageLength: -1,
+//        pageLength: -1,
         bInfo: true
     });
 
@@ -1891,87 +1897,143 @@ $(document).ready(function () {
     } );
 
 
+// Put top scroller
+// https://stackoverflow.com/questions/35147038/how-to-place-the-datatables-horizontal-scrollbar-on-top-of-the-table
+    console.time("scroll to top");
+    $('.dataTables_scrollHead').css({
+        'overflow-x':'scroll'
+    }).on('scroll', function(e){
+        var scrollBody = $(this).parent().find('.dataTables_scrollBody').get(0);
+        scrollBody.scrollLeft = this.scrollLeft;
+        $(scrollBody).trigger('scroll');
+    });
+    console.timeEnd("scroll to top");
+
+
 // =============================================================================
 // START OVERLAY COLUMNS CODE HERE
 // =============================================================================
     toggle_enabled = true;
-    $('#toggle_fixed_btn').click(function() {
-        if (toggle_enabled) {
-            toggle_enabled = false;
-            $("#overlay").hide();
-            $("#toggle_fixed_btn").attr('value',"Enable fixed columns");
-            $("#toggle_fixed_btn").addClass('clicked_button');
-        } else {
-            toggle_enabled = true;
-            $('.dataTables_scrollBody').scroll();
-            $("#toggle_fixed_btn").attr('value',"Disable fixed columns");
-            $("#toggle_fixed_btn").removeClass('clicked_button');
-        }
-    });
+    // $('#toggle_fixed_btn').click(function() {
+    //     if (toggle_enabled) {
+    //         toggle_enabled = false;
+    //         $("#overlay").hide();
+    //         $("#toggle_fixed_btn").attr('value',"Enable fixed columns");
+    //         $("#toggle_fixed_btn").addClass('clicked_button');
+    //     } else {
+    //         toggle_enabled = true;
+    //         $('.dataTables_scrollBody').scroll();
+    //         $("#toggle_fixed_btn").attr('value',"Disable fixed columns");
+    //         $("#toggle_fixed_btn").removeClass('clicked_button');
+    //     }
+    // });
 
-    var left = 0;
-    var old_left = 0;
-    $('.dataTables_scrollBody').scroll(function(){
+    var left1 = 0;
+    var old_left1 = 0;
+    $('#subtypestabletab').closest('.dataTables_scrollBody').scroll(function(){
         // If user scrolls and it's > 100px from left, then attach fixed columns overlay
-        left = $('.dataTables_scrollBody').scrollLeft();
-        if (left!=old_left) $("#overlay").hide();
-        old_left = left;
+        left1 = $('#subtypestabletab').closest('.dataTables_scrollBody').scrollLeft();
+        if (left1!=old_left1) $("#overlay1").hide();
+        old_left1 = left1;
 
-        if (left > 100 && toggle_enabled) {
-            $("#overlay").css({ left: left + 'px' });
-            if ($("#overlay").is(":hidden")) $("#overlay").show();
+        if (left1 > 100 && toggle_enabled) {
+            $("#overlay1").css({ left: left1 + 'px' });
+            if ($("#overlay1").is(":hidden")) $("#overlay1").show();
+        }
+    });
+
+    var left2 = 0;
+    var old_left2 = 0;
+    $('#bouviertabletab').closest('.dataTables_scrollBody').scroll(function(){
+        // If user scrolls and it's > 100px from left, then attach fixed columns overlay
+        left2 = $('#bouviertabletab').closest('.dataTables_scrollBody').scrollLeft();
+        if (left2!=old_left2) $("#overlay2").hide();
+        old_left2 = left2;
+
+        if (left2 > 100 && toggle_enabled) {
+            $("#overlay2").css({ left: left2 + 'px' });
+            if ($("#overlay2").is(":hidden")) $("#overlay2").show();
+        }
+    });
+
+    var left3 = 0;
+    var old_left3 = 0;
+    $('#inouetabletab').closest('.dataTables_scrollBody').scroll(function(){
+        // If user scrolls and it's > 100px from left, then attach fixed columns overlay
+        left3 = $('#inouetabletab').closest('.dataTables_scrollBody').scrollLeft();
+        if (left3!=old_left3) $("#overlay3").hide();
+        old_left3 = left3;
+
+        if (left3 > 100 && toggle_enabled) {
+            $("#overlay3").css({ left: left3 + 'px' });
+            if ($("#overlay3").is(":hidden")) $("#overlay3").show();
         }
     });
 
 
-    $('.dataTables_scrollBody').append('<div id=overlay><table id="overlay_table" class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
+//    $('.dataTables_scrollBody').append('<div id=overlay><table id="overlay_table" class="row-border text-center
+//    compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
 
-    function create_overlay() {
+    $('#subtypestabletab').closest('.dataTables_scrollBody').append('<div id="overlay1"><table' +
+        ' id="overlay_table1"' +
+        ' class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
+
+    $('#bouviertabletab').closest('.dataTables_scrollBody').append('<div id="overlay2"><table' +
+        ' id="overlay_table2"' +
+        ' class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
+
+    $('#inouetabletab').closest('.dataTables_scrollBody').append('<div id="overlay3"><table' +
+        ' id="overlay_table3"' +
+        ' class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
+
+    function create_overlay1() {
         // This function fires upon filtering, to update what rows to show as an overlay
-        $("#overlay_table tbody tr").remove();
-        var $target = $("#overlay_table tbody");
-        $("#familiestabletab tbody tr").each(function() {
-            var $tds = $(this).children(),
-                $row = $("<tr></tr>");
-            $row.append($tds.eq(1).clone()).append($tds.eq(3).clone()).append($tds.eq(4).clone()).appendTo($target);
-            $row.height($(this).height());
-        });
-        $("#overlay_table .border-right").removeClass("border-right");
+        $("#overlay_table1 tbody tr").remove();
+        var $target = $("#overlay_table1 tbody");
 
-
-        $("#overlay_table tbody tr").remove();
         $("#subtypestabletab tbody tr").each(function() {
             var $tds = $(this).children(),
                 $row = $("<tr></tr>");
-            $row.append($tds.eq(1).clone()).append($tds.eq(3).clone()).append($tds.eq(4).clone()).appendTo($target);
+            $row.append($tds.eq(1).clone()).append($tds.eq(2).clone()).append($tds.eq(3).clone()).append($tds.eq(4).clone()).appendTo($target);
             $row.height($(this).height());
         });
-        $("#overlay_table .border-right").removeClass("border-right");
+//        $("#overlay_table .border-right").removeClass("border-right");
+    }
 
-        $("#overlay_table tbody tr").remove();
+    function create_overlay2() {
+        // This function fires upon filtering, to update what rows to show as an overlay
+        $("#overlay_table2 tbody tr").remove();
+        var $target = $("#overlay_table2 tbody");
+
         $("#bouviertabletab tbody tr").each(function() {
             var $tds = $(this).children(),
                 $row = $("<tr></tr>");
-            $row.append($tds.eq(1).clone()).append($tds.eq(3).clone()).append($tds.eq(4).clone()).appendTo($target);
+            $row.append($tds.eq(1).clone()).append($tds.eq(2).clone()).append($tds.eq(3).clone()).append($tds.eq(4).clone()).appendTo($target);
             $row.height($(this).height());
         });
-        $("#overlay_table .border-right").removeClass("border-right");
+//        $("#overlay_table .border-right").removeClass("border-right");
+    }
 
-        $("#overlay_table tbody tr").remove();
+    function create_overlay3() {
+        // This function fires upon filtering, to update what rows to show as an overlay
+        $("#overlay_table3 tbody tr").remove();
+        var $target = $("#overlay_table3 tbody");
+
         $("#inouetabletab tbody tr").each(function() {
             var $tds = $(this).children(),
                 $row = $("<tr></tr>");
-            $row.append($tds.eq(1).clone()).append($tds.eq(3).clone()).append($tds.eq(4).clone()).appendTo($target);
+            $row.append($tds.eq(1).clone()).append($tds.eq(2).clone()).append($tds.eq(3).clone()).append($tds.eq(4).clone()).appendTo($target);
             $row.height($(this).height());
         });
-        $("#overlay_table .border-right").removeClass("border-right");
-
+//        $("#overlay_table .border-right").removeClass("border-right");
     }
 
-
-    create_overlay();
-    $("#overlay").hide();
-
+    create_overlay1();
+    create_overlay2();
+    create_overlay3();
+    $("#overlay1").hide();
+    $("#overlay2").hide();
+    $("#overlay3").hide();
 // =============================================================================
 // END OVERLAY COLUMNS CODE HERE
 // =============================================================================

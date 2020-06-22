@@ -36,6 +36,7 @@ class Command(BaseCommand):
                             help='Filename to import. Can be used multiple times')
 
     def handle(self, *args, **options):
+        self.options = options
         if options['filename']:
             filenames = options['filename']
         else:
