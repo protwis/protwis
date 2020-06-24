@@ -373,6 +373,8 @@ def PdbTableData(request):
         r['signal_protein_seq_cons'] = ''
         r['signal_protein_seq_cons_color'] = ''
         for ep in s.extra_proteins.all():
+            if ep.category == "Antibody":
+                continue
             key = '{}_{}'.format(s.protein_conformation.protein.parent.pk,ep)
             if best_signal_p[key] == ep.wt_coverage:
                 # this is the best coverage

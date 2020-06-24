@@ -127,7 +127,6 @@ class Command(BuildHumanProteins):
                     continue
 
                 up = self.parse_uniprot_file(accession)
-
                 # Skip TREMBL on first loop, and SWISSPROT on second
                 if reviewed != up['source']:
                     continue
@@ -197,6 +196,10 @@ class Command(BuildHumanProteins):
 
                 # skip if no ortholog is found FIXME use a profile to find a good template
                 if not p:
+                    try:
+                        source_file_name = os.remove(source_file_name)
+                    except:
+                        pass
                     continue
 
                 # check whether an entry already exists for this protein/species

@@ -965,7 +965,6 @@ class Alignment:
             feats = OrderedDict()
             self.feat_consensus = OrderedDict([(x, []) for x in self.segments])
             for sid, segment in enumerate(self.segments):
-                print(sid, segment)
                 feats[segment] = np.array(
                     [[x[0] for x in feat[sid]] for feat in self.feature_stats],
                     dtype='int'

@@ -89,7 +89,6 @@ class Command(BaseCommand):
         for set_name in residue_sets.keys():
             residues = []
             for res in residue_sets[set_name][1]:
-                print(res)
                 try:
                     residues.append(ResidueGenericNumberEquivalent.objects.get(label=res, scheme__slug=residue_sets[set_name][0]))
                 except Exception as e:

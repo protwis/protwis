@@ -92,10 +92,16 @@ def create_or_update_residue(protein_conformation, segment, schemes,residue,b_an
             #     logger.info('Created generic number equivalent {} ({}) for scheme {}'.format(
             #         numbers['equivalent'], numbers['generic_number'],
             #         protein_conformation.protein.residue_numbering_scheme))
-        except IntegrityError:
-            gn_equivalent = ResidueGenericNumberEquivalent.objects.get(
+        except:
+            sleep(0.5)
+            print('sleep to hope to fix')
+            gn_equivalent, created = ResidueGenericNumberEquivalent.objects.get_or_create(
                 default_generic_number=rvalues['generic_number'],
-                scheme=protein_conformation.protein.residue_numbering_scheme)
+                scheme=protein_conformation.protein.residue_numbering_scheme,
+                defaults={'label': numbers['equivalent']})
+            # gn_equivalent = ResidueGenericNumberEquivalent.objects.get(
+            #     default_generic_number=rvalues['generic_number'],
+            #     scheme=protein_conformation.protein.residue_numbering_scheme)
     
     # display generic number
     if 'display_generic_number' in numbers:
