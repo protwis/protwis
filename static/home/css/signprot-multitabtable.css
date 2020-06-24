@@ -19,6 +19,14 @@
     }
 }
 
+/*#overlay_table1 tbody > tr > td {
+white-space: nowrap;
+height:28px;
+overflow:hidden;
+word-wrap:break-word;
+}
+*/
+
 table.dataTable.compact thead th.over_header {
     border-right: 1px solid;
     border-left: 0px solid;
@@ -69,12 +77,13 @@ input.yadcf-filter {
     background-color: rgb(215, 215, 215);
 }
 
-/*        .wrapper {
-            overflow-x: scroll;
-            overflow-y: hidden;
-        }
- */
+/* .wrapper {
+    overflow-x: scroll;
+    overflow-y: hidden;
+}
+*/
 
+ */
 #overlay1 {
     top: 0px;
     position: absolute;
@@ -144,13 +153,21 @@ input.yadcf-filter {
     display: block;
 }
 
-/*
 ::-webkit-scrollbar {
     width: auto;
-    height: auto;
+    height: 12px;
 }
-
+/*
         .dataTables_scrollBody table {
             transform:rotateX(180deg);
 }
  */
+
+
+/* NOTE -- THIS HAS TO GO LAST SO THAT IT OVERRIDES ALL */
+th, td { white-space: nowrap; }
+div.dataTables_wrapper {
+/*    width: 100%;*/
+    margin: 0 auto;
+}
+tr { height: 40px; }

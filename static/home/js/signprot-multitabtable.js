@@ -124,15 +124,17 @@ function reset_tab2() {
     window.location.href = '/signprot/couplings/#table_2';
 }
 
-
+//this.element.addEventListener(t, e, { passive: true} )
+//$(document.addEventListener('touchstart', null, { passive: true})).ready(function () {
 $(document).ready(function () {
 
-    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-        console.log( 'show tab' );
-        $($.fn.dataTable.tables(true)).DataTable()
-            .columns.adjust()
+   $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+       console.log( 'show tab' );
+       $($.fn.dataTable.tables(true)).DataTable()
+           .columns.adjust()
 //            .responsive.recalc();
-    });
+   });
+
 
     console.time("table1load");
     oTable1 = $("#familiestabletab").DataTable({
@@ -143,10 +145,10 @@ $(document).ready(function () {
         scrollCollapse: true,
         scroller: true,
         paging: false,
-        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+//        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
         bSortCellsTop: false, //prevent sort arrows going on bottom row
         aaSorting: [],
-        autoWidth: true,
+        autoWidth: false,
 //        pageLength: -1,
         bInfo: true
     });
@@ -311,16 +313,26 @@ $(document).ready(function () {
     oTable2 = $("#subtypestabletab").DataTable({
 //        data: table2data,
         deferRender: true,
-        scrollY:  '50vh',
+        scrollY: '50vh',
         scrollX: true,
         scrollCollapse: true,
         scroller: true,
         paging: false,
-        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+//        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
         bSortCellsTop: false, //prevent sort arrows going on bottom row
         aaSorting: [],
-        autoWidth: true,
-//        pageLength: -1,
+        autoWidth: false,
+//        fixedColumns:   {
+//            heightMatch: 'none'
+//        },
+//        order: [[4, 'asc'],[26,'desc']],
+//        columnDefs: [
+//            {
+//                targets: 'no-sort',
+//                orderable: false
+//            }
+//            ],
+        pageLength: -1,
         bInfo: true
     });
     yadcf.init(oTable2,
@@ -349,7 +361,10 @@ $(document).ready(function () {
                 column_number: 3,
                 filter_type: "multi_select",
                 select_type: 'select2',
+                column_data_type: "html",
+                html_data_type: "text",
                 filter_default_label: "UniProt",
+                filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '80px',
@@ -359,7 +374,10 @@ $(document).ready(function () {
                 column_number: 4,
                 filter_type: "multi_select",
                 select_type: 'select2',
+                column_data_type: "html",
+                html_data_type: "text",
                 filter_default_label: "IUPHAR",
+                filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '100px',
@@ -508,7 +526,7 @@ $(document).ready(function () {
         ],
         {filters_tr_index: 2},
         {
-            cumulative_filtering: true
+            cumulative_filtering: false
         }
     );
 
@@ -527,10 +545,10 @@ $(document).ready(function () {
         scrollCollapse: true,
         scroller: true,
         paging: false,
-        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+//        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
         bSortCellsTop: false, //prevent sort arrows going on bottom row
         aaSorting: [],
-        autoWidth: true,
+        autoWidth: false,
 //        pageLength: -1,
         bInfo: true
     });
@@ -560,7 +578,10 @@ $(document).ready(function () {
                 column_number: 3,
                 filter_type: "multi_select",
                 select_type: 'select2',
+                column_data_type: "html",
+                html_data_type: "text",
                 filter_default_label: "UniProt",
+                filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '80px',
@@ -570,7 +591,10 @@ $(document).ready(function () {
                 column_number: 4,
                 filter_type: "multi_select",
                 select_type: 'select2',
+                column_data_type: "html",
+                html_data_type: "text",
                 filter_default_label: "IUPHAR",
+                filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '100px',
@@ -1181,13 +1205,13 @@ $(document).ready(function () {
         deferRender: true,
         scrollY:  '50vh',
         scrollX: true,
-        scrollCollapse: true,
+//        scrollCollapse: true,
         scroller: true,
         paging: false,
         lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
         bSortCellsTop: false, //prevent sort arrows going on bottom row
         aaSorting: [],
-        autoWidth: true,
+        autoWidth: false,
 //        pageLength: -1,
         bInfo: true
     });
@@ -1221,7 +1245,7 @@ $(document).ready(function () {
                 column_data_type: "html",
                 html_data_type: "text",
                 filter_default_label: "UniProt",
-                filter_match_mode: "exact",
+                filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '80px',
@@ -1230,10 +1254,11 @@ $(document).ready(function () {
             {
                 column_number: 4,
                 filter_type: "multi_select",
-                select_type: "select2",
+                select_type: 'select2',
                 column_data_type: "html",
                 html_data_type: "text",
                 filter_default_label: "IUPHAR",
+                filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '100px',
@@ -1910,23 +1935,28 @@ $(document).ready(function () {
     console.timeEnd("scroll to top");
 
 
+
 // =============================================================================
 // START OVERLAY COLUMNS CODE HERE
 // =============================================================================
     toggle_enabled = true;
-    // $('#toggle_fixed_btn').click(function() {
-    //     if (toggle_enabled) {
-    //         toggle_enabled = false;
-    //         $("#overlay").hide();
-    //         $("#toggle_fixed_btn").attr('value',"Enable fixed columns");
-    //         $("#toggle_fixed_btn").addClass('clicked_button');
-    //     } else {
-    //         toggle_enabled = true;
-    //         $('.dataTables_scrollBody').scroll();
-    //         $("#toggle_fixed_btn").attr('value',"Disable fixed columns");
-    //         $("#toggle_fixed_btn").removeClass('clicked_button');
-    //     }
-    // });
+    $('#toggle_fixed_btn').click(function() {
+        if (toggle_enabled) {
+            toggle_enabled = false;
+            $("#overlay1").hide();
+            $("#overlay2").hide();
+            $("#overlay3").hide();
+            $("#toggle_fixed_btn").attr('value',"Enable fixed columns");
+            $("#toggle_fixed_btn").addClass('clicked_button');
+        } else {
+            toggle_enabled = true;
+            $('#subtypestabletab').closest('.dataTables_scrollBody').scroll();
+            $('#bouviertabletab').closest('.dataTables_scrollBody').scroll();
+            $('#inouetabletab').closest('.dataTables_scrollBody').scroll();
+            $("#toggle_fixed_btn").attr('value',"Disable fixed columns");
+            $("#toggle_fixed_btn").removeClass('clicked_button');
+        }
+    });
 
     var left1 = 0;
     var old_left1 = 0;
@@ -1970,21 +2000,17 @@ $(document).ready(function () {
         }
     });
 
-
-//    $('.dataTables_scrollBody').append('<div id=overlay><table id="overlay_table" class="row-border text-center
-//    compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
-
     $('#subtypestabletab').closest('.dataTables_scrollBody').append('<div id="overlay1"><table' +
-        ' id="overlay_table1"' +
-        ' class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
+        ' width="100%" class="row-border display text-center compact dataTable no-footer text-nowrap" ' +
+        ' id="overlay_table1" role="grid" aria-describedby="subtypestabletab_info"><tbody></tbody></table></div>');
 
     $('#bouviertabletab').closest('.dataTables_scrollBody').append('<div id="overlay2"><table' +
-        ' id="overlay_table2"' +
-        ' class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
+        ' width="100%" class="row-border display text-center compact dataTable no-footer text-nowrap" ' +
+        ' id="overlay_table2" role="grid" aria-describedby="bouviertabletab_info"><tbody></tbody></table></div>');
 
     $('#inouetabletab').closest('.dataTables_scrollBody').append('<div id="overlay3"><table' +
-        ' id="overlay_table3"' +
-        ' class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
+        ' width="100%" class="row-border display text-center compact dataTable no-footer text-nowrap" ' +
+        ' id="overlay_table3" role="grid" aria-describedby="inouetabletab_info"><tbody></tbody></table></div>');
 
     function create_overlay1() {
         // This function fires upon filtering, to update what rows to show as an overlay
@@ -1996,8 +2022,11 @@ $(document).ready(function () {
                 $row = $("<tr></tr>");
             $row.append($tds.eq(1).clone()).append($tds.eq(2).clone()).append($tds.eq(3).clone()).append($tds.eq(4).clone()).appendTo($target);
             $row.height($(this).height());
+            //$row.font_size("10");
+            //$row.height("31px");
+            //$row.append($tds.height("2.5")).appendTo($target);
         });
-//        $("#overlay_table .border-right").removeClass("border-right");
+        $("#overlay_table1 .rightborder").removeClass("rightborder");
     }
 
     function create_overlay2() {
@@ -2011,7 +2040,7 @@ $(document).ready(function () {
             $row.append($tds.eq(1).clone()).append($tds.eq(2).clone()).append($tds.eq(3).clone()).append($tds.eq(4).clone()).appendTo($target);
             $row.height($(this).height());
         });
-//        $("#overlay_table .border-right").removeClass("border-right");
+        $("#overlay_table2 .rightborder").removeClass("rightborder");
     }
 
     function create_overlay3() {
@@ -2025,7 +2054,7 @@ $(document).ready(function () {
             $row.append($tds.eq(1).clone()).append($tds.eq(2).clone()).append($tds.eq(3).clone()).append($tds.eq(4).clone()).appendTo($target);
             $row.height($(this).height());
         });
-//        $("#overlay_table .border-right").removeClass("border-right");
+        $("#overlay_table3 .rightborder").removeClass("rightborder");
     }
 
     create_overlay1();
