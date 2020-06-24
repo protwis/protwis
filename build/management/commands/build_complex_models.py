@@ -1,6 +1,6 @@
 from build.management.commands.base_build import Command as BaseBuild
 from build.management.commands.build_homology_models_zip import Command as UploadModel
-from build_gpcr.management.commands.build_homology_models import CallHomologyModeling
+from build.management.commands.build_homology_models import CallHomologyModeling
 from django.db.models import Q
 from django.conf import settings
 

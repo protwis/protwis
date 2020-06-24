@@ -506,7 +506,7 @@ class ImportHomologyModel():
 
 
 class Remodeling():
-    def __init__(self, model_file, gaps={}, receptor=None, signprot=None):
+    def __init__(self, model_file, gaps={}, receptor=None, signprot=None, icl3_delete=[]):
         self.model_file = model_file
         self.struct = PDB.PDBParser(QUIET=True).get_structure('structure', self.model_file)[0]
         self.pir_file = './structure/PIR/{}'.format(self.model_file.split('/')[-1].replace('.pdb','.pir'))
@@ -514,6 +514,7 @@ class Remodeling():
         self.remark_lines = []
         self.receptor = receptor
         self.signprot = signprot
+        self.icl3_delete = icl3_delete
 
     def find_clashes(self):
         hse = HSExposureCB(self.struct, radius=11, check_chain_breaks=True, check_knots=True, receptor=self.receptor, signprot=self.signprot)
@@ -532,7 +533,6 @@ class Remodeling():
             for g in gaps:
                 text+=chain+' '+str(g[0])+'-'+str(g[1])+' '
         self.remark_lines.append(text+'\n')
-
         ref_seq, temp_seq = '', ''
         resnum = 0
         self.chains, self.first_resis = [], []
@@ -589,7 +589,7 @@ sequence:{uniprot}::::::::
     def run(self):
         log.none()
         env = environ()
-
+        print(self.gaps)
         m = LoopRemodel(env,
             alnfile = self.pir_file,
             # inimodel=self.model_file,   # initial model of the target
@@ -598,7 +598,8 @@ sequence:{uniprot}::::::::
             assess_methods=assess.DOPE,
             gaps=self.gaps,
             model_chains=self.chains,
-            start_resnums=self.first_resis) # assess loops with DOPE
+            start_resnums=self.first_resis,      # assess loops with DOPE
+            icl3_delete=self.icl3_delete)
 
         m.starting_model= 1           # index of the first loop model
         m.ending_model  = 1           # index of the last loop model
@@ -629,12 +630,13 @@ sequence:{uniprot}::::::::
 
 
 class LoopRemodel(automodel):
-    def __init__(self, env, alnfile, knowns, sequence, assess_methods, gaps=[], model_chains=[], start_resnums=[]):
+    def __init__(self, env, alnfile, knowns, sequence, assess_methods, gaps=[], model_chains=[], start_resnums=[], icl3_delete=[]):
         super(LoopRemodel, self).__init__(env, alnfile=alnfile, knowns=knowns, sequence=sequence, 
                                                assess_methods=assess_methods)
         self.gaps = gaps
         self.model_chains = model_chains
         self.start_resnums = start_resnums
+        self.icl3_delete = icl3_delete
         
     def special_patches(self, aln):
         # Rename chains and renumber the residues in each
@@ -643,15 +645,20 @@ class LoopRemodel(automodel):
 
     def select_atoms(self):
         selection_out = []
+
         for chain, gaps in self.gaps.items():
             for g in gaps:
-                for i in range(g[0],g[1]+1):
+                if chain=='R' and chain in self.icl3_delete:
+                    end_range = g[0]+10
+                else:
+                    end_range = g[1]+1
+                for i in range(g[0],end_range):
                     selection_out.append(self.residues[str(i)+':{}'.format(chain)])
         return selection(selection_out)
 
-    def make(self):
-        with SilentModeller():
-            super(LoopRemodel, self).make()
+    # def make(self):
+    #     with SilentModeller():
+    #         super(LoopRemodel, self).make()
 
 class SilentModeller(object):
     ''' No text to console.
