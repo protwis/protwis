@@ -19,7 +19,8 @@
     }
 }
 
-/*#overlay_table1 tbody > tr > td {
+/*
+#overlay_table1 tbody > tr > td {
 white-space: nowrap;
 height:28px;
 overflow:hidden;
@@ -77,13 +78,13 @@ input.yadcf-filter {
     background-color: rgb(215, 215, 215);
 }
 
-/* .wrapper {
+/*
+.wrapper {
     overflow-x: scroll;
     overflow-y: hidden;
 }
 */
 
- */
 #overlay1 {
     top: 0px;
     position: absolute;

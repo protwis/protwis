@@ -2001,16 +2001,16 @@ $(document).ready(function () {
     });
 
     $('#subtypestabletab').closest('.dataTables_scrollBody').append('<div id="overlay1"><table' +
-        ' width="100%" class="row-border display text-center compact dataTable no-footer text-nowrap" ' +
-        ' id="overlay_table1" role="grid" aria-describedby="subtypestabletab_info"><tbody></tbody></table></div>');
+        ' class="row-border text-center compact dataTable no-footer text-nowrap" ' +
+        ' id="overlay_table1"><tbody></tbody></table></div>');
 
     $('#bouviertabletab').closest('.dataTables_scrollBody').append('<div id="overlay2"><table' +
-        ' width="100%" class="row-border display text-center compact dataTable no-footer text-nowrap" ' +
-        ' id="overlay_table2" role="grid" aria-describedby="bouviertabletab_info"><tbody></tbody></table></div>');
+        ' class="row-border text-center compact dataTable no-footer text-nowrap" ' +
+        ' id="overlay_table2"><tbody></tbody></table></div>');
 
     $('#inouetabletab').closest('.dataTables_scrollBody').append('<div id="overlay3"><table' +
-        ' width="100%" class="row-border display text-center compact dataTable no-footer text-nowrap" ' +
-        ' id="overlay_table3" role="grid" aria-describedby="inouetabletab_info"><tbody></tbody></table></div>');
+        ' class="row-border text-center compact dataTable no-footer text-nowrap" ' +
+        ' id="overlay_table3"><tbody></tbody></table></div>');
 
     function create_overlay1() {
         // This function fires upon filtering, to update what rows to show as an overlay
