@@ -1016,7 +1016,7 @@
                         <th>Resolution</th>
                         <th>Preferred<br>chain</th>
                         <th>State</th>
-                        <th class='rightborder'><a href="http://docs.gpcrdb.org/structures.html" target="_blank">7TM Open IC (Å)</a></th>
+                        <th class='rightborder'>G protein bound<br>likeness</th>
                         <th>Family</th>
                         <th>Subtype</th>
                         <th>Note</th>
@@ -1098,7 +1098,7 @@
                         <td class="text-center">{{ structure.resolution|floatformat:"1" }}</td>
                         <td class="text-center">{{ structure.preferred_chain }}</td>
                         <td>{{ structure.state.name }}</td>
-                        <td class="text-center">{{ structure.distance|floatformat:"1" }}</td>
+                        <td class="text-center">{{ structure.gprot_bound_likeness|floatformat }}</td>
                         <td>
                             {% for ep in structure.extra_proteins.all %}
                                 {% if ep.category == "Arrestin" %}
@@ -1134,7 +1134,11 @@
                         </td>
                         <td>
                             {% for ep in structure.extra_proteins.all %}
-                                {{ ep.wt_coverage}}
+                                {% if ep.wt_coverage != None %}
+                                    {{ ep.wt_coverage}}
+                                {% else %}
+                                    -
+                                {% endif %}
                                 {% empty %}
                                     -
                             {% endfor %}

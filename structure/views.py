@@ -122,8 +122,7 @@ class ServeComplexModels(TemplateView):
 				"sign_protein__family__parent__parent__parent",
 				"main_template__protein_conformation__protein__parent__family",
 				"main_template__pdb_code",
-				"main_template__signprot_complex",
-				"prot_signprot_pair")
+				"main_template__signprot_complex")
 		except StructureComplexModel.DoesNotExist as e:
 			pass
 
