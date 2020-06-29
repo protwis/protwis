@@ -1,145 +1,13 @@
 {% extends "home/base.html" %}
 {% load static %}
-{# load structure_extras #}
 
 {% block addon_css %}
-{#    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css"/> #}
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css"/>
+{# SAAS  <link rel="stylesheet" href="https://cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css"> #}
     <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css"/>
     <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css"/>
-    <style type="text/css">
-        .select2-result-label {
-            font-size: 10px;
-        }
+    <link rel="stylesheet" href="{% static 'home/css/signprot-multitabtable.css' %}" type="text/css"/>
 
-        #filters {
-            font-size: 10px;
-            padding: 7px 15px;
-        }
-
-        @media (min-width: 1600px) {
-            #content {
-                width: 1570px;
-            }
-        }
-
-        @media (min-width: 1800px) {
-            #content {
-                width: 1770px;
-            }
-        }
-
-        table.dataTable.compact thead th.over_header {
-            border-right: 1px solid;
-            border-left: 0px solid;
-            text-align: center;
-            padding: 4px 4px 4px 4px;
-        }
-
-        table.dataTable.compact thead tr.over_header th {
-            border-bottom: 1px solid #ccc;
-        }
-
-        table.dataTable.compact thead th.leftborder {
-            border-left: 1px solid;
-        }
-
-        table.dataTable.compact thead th.rightborder {
-            border-right: 1px solid;
-        }
-
-        table.dataTable.compact thead th.checkbox_tr {
-            text-align: left;
-            padding: 4px 4px 4px 4px;
-        }
-
-        table.dataTable.compact thead th {
-            padding: 4px 16px 4px 2px;
-        }
-
-        .yadcf-filter-wrapper {
-            margin-top: 0px;
-        }
-
-        input.yadcf-filter {
-            width: 100px;
-            font-family: sans-serif;
-            font-size: 100%;
-            font-weight: bold;
-        }
-
-        .yadcf-filter-range-date, .yadcf-filter-range-number {
-            width: 30px;
-            font-family: sans-serif;
-            font-size: 100%;
-            font-weight: bold;
-        }
-
-        .clicked_button {
-            background-color: rgb(215, 215, 215);
-        }
-
-/*        .wrapper {
-            overflow-x: scroll;
-            overflow-y: hidden;
-        }
- */
-        #overlay {
-            top: 0px;
-            position: absolute;
-            background: #f8f8f8;
-            /*border: 1px solid #333;*/
-            -webkit-box-shadow: 5px 0 2px -2px #888;
-            box-shadow: 5px 0 2px -2px #888;
-        }
-
-        #overlay tbody tr {
-            background-color: #f8f8f8;
-        }
-
-        .highlight {
-            background-color: rgb(204, 229, 255);
-        }
-
-        .dropdown {
-            position: relative;
-            display: inline-block;
-        }
-
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            background-color: #f1f1f1;
-            width: 100%;
-            box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
-            z-index: 1;
-        }
-
-        .dropdown-content p {
-            color: black;
-            padding: 12px 16px;
-            text-decoration: none;
-            width: 100%;
-            display: block;
-        }
-
-        .show {
-            display: block;
-        }
-
-/*
-::-webkit-scrollbar {
-    width: auto;
-    height: auto;
-}
-
-        .dataTables_scrollBody table {
-            transform:rotateX(180deg);
-}
- */
-
-
-    </style>
 {% endblock %}
 
 {% block content %}
@@ -181,8 +49,8 @@
                 <div class="btn-group">
                     <a id="dlink" style="display:none;"></a>
                     <div id="excel_table" style2="display:none;"></div>
-                    <input class="btn btn-default btn-s" type="button" id="toggle_fixed_btn" value="Disable fixed columns"
-                           href="javascript:void(0)" data-toggle="buttons">
+                    {#  <input class="btn btn-default btn-s" type="button" id="toggle_fixed_btn" value="Disable #}
+                    {#  fixed columns" href="javascript:void(0)" data-toggle="buttons"> #}
                     <input class="btn btn-default btn-s" type="button" onclick="resetHidden1()" id="toggle"
                            value="Show hidden columns">
                     <!--<input class="btn btn-default btn-s" type="button" id="toggle_columns_btn" value="Show hidden
@@ -193,11 +61,11 @@
                     <input class="btn btn-default btn-s" type="button"
                            onclick="tableToExcel('familiestabletab', 'Families data', 'families_coupling.xls')"
                            value="Export Excel">
-                    <input class="btn btn-default btn-s" type="button" id="reset_tab1"
+                    <input class="btn btn-default btn-s" type="button"
+                           onclick="reset_tab1()"
                            value="Reset All">
                 </div>
             </div>
-
 
             <table width="100%" class="display compact text-nowrap" id="familiestabletab" >
 
@@ -209,7 +77,7 @@
 
                     <th colspan=4 class="over_header flexible_over_header" style='text-align:left;'>
                         Max <br> Emax DNorm
-                        <button type="button" class="close hide_columns3" columns="5,6,7,8"
+                        <button type="button" class="close hide_columns1" columns="5,6,7,8"
                                 style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                         </button>
                     </th>
@@ -253,28 +121,28 @@
                     <th title="uniprot"></th>
                     <th title="IUPHAR" class='rightborder'></th>
 
-                    <th title="Gs"></th>
-                    <th title="Gi/o"></th>
-                    <th title="Gq/11"></th>
-                    <th title="G12/13" class='rightborder'></th>
+                    <th title="Gs">Gs</th>
+                    <th title="Gi/Go">Gi/Go</th>
+                    <th title="Gq/G11">Gq/G11</th>
+                    <th title="G12/G13" class='rightborder'>G12/G13</th>
 
-                    <th title="Bouvier"></th>
-                    <th title="Inoue"></th>
-                    <th title="GtP" class='rightborder'></th>
+                    <th title="Bouvier">Bouvier</th>
+                    <th title="Inoue">Inoue</th>
+                    <th title="GtP" class='rightborder'>GtP</th>
 
-                    <th title="Bouvier"></th>
-                    <th title="Inoue"></th>
-                    <th title="GtP" class='rightborder'></th>
+                    <th title="Bouvier">Bouvier</th>
+                    <th title="Inoue">Inoue</th>
+                    <th title="GtP" class='rightborder'>GtP</th>
 
-                    <th title="Bouvier"></th>
-                    <th title="Inoue"></th>
-                    <th title="GtP" class='rightborder'></th>
+                    <th title="Bouvier">Bouvier</th>
+                    <th title="Inoue">Inoue</th>
+                    <th title="GtP" class='rightborder'>GtP</th>
 
-                    <th title="Bouvier"></th>
-                    <th title="Inoue"></th>
-                    <th title="GtP" class='rightborder'></th>
+                    <th title="Bouvier">Bouvier</th>
+                    <th title="Inoue">Inoue</th>
+                    <th title="GtP" class='rightborder'>GtP</th>
 
-                    <th title="Bouvier"></th>
+                    <th title="Bouvier">Bouvier</th>
                 </tr>
 
                 </thead>
@@ -316,6 +184,12 @@
                 </tbody>
 
             </table>
+{#            <div id=overlay>#}
+{#                <table id="overlay_table" class="row-border text-center compact dataTable no-footer text-nowrap">#}
+{#                    <tbody></tbody>#}
+{#                </table>#}
+{#            </div>#}
+
         </div>
 
 
@@ -340,7 +214,8 @@
                     <input class="btn btn-default btn-s" type="button"
                            onclick="tableToExcel('subtypestabletab', 'Subtypes data', 'subtypes_coupling.xls')"
                            value="Export Excel">
-                    <input class="btn btn-default btn-s" type="button" id="reset_tab1"
+                    <input class="btn btn-default btn-s" type="button"
+                           onclick="reset_tab1()"
                            value="Reset All">
                 </div>
             </div>
@@ -359,19 +234,19 @@
                         </button>
                     </th>
                     <th colspan=9 class="over_header flexible_over_header" style='text-align:left;'>
-                        Gi/o
+                        Gi/Go
                         <button type="button" class="close hide_columns2" columns="8,9,10,11,12,13,14,15,16"
                                 style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                         </button>
                     </th>
                     <th colspan=8 class="over_header flexible_over_header" style='text-align:left;'>
-                        Gq/11
+                        Gq/G11
                         <button type="button" class="close hide_columns2" columns="17,18,19,20,21,22,23,24"
                                 style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                         </button>
                     </th>
                     <th colspan=4 class="over_header flexible_over_header" style='text-align:left;'>
-                        G12/13
+                        G12/G13
                         <button type="button" class="close hide_columns2" columns="25,26,27,28"
                                 style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                         </button>
@@ -405,36 +280,36 @@
                     <th title="UniProt"></th>
                     <th title="IUPHAR" class='rightborder'></th>
                     {# Gs #}
-                    <th title="GNAS2" class='rightborder'></th>
-                    <th title="GNAS2"></th>
-                    <th title="GNAL" class='rightborder'></th>
-                    {# Gi/o #}
-                    <th title="GNAI1"></th>
-                    <th title="GNAI2"></th>
-                    <th title="GNAO"></th>
-                    <th title="GNAZ" class='rightborder'></th>
-                    <th title="GNAI1"></th>
-                    <th title="GNAI2"></th>
-                    <th title="GNAI3"></th>
-                    <th title="GNAO"></th>
-                    <th title="GNAZ" class='rightborder'></th>
-                    {# Gq/11 #}
-                    <th title="GNAQ"></th>
-                    <th title="GNA11"></th>
-                    <th title="GNA14"></th>
-                    <th title="GNA15" class='rightborder'></th>
-                    <th title="GNAQ"></th>
-                    <th title="GNA11"></th>
-                    <th title="GNA14"></th>
-                    <th title="GNA15" class='rightborder'></th>
-                    {# G12/13 #}
-                    <th title="GNA12"></th>
-                    <th title="GNA13" class='rightborder'></th>
-                    <th title="GNA12"></th>
-                    <th title="GNA13" class='rightborder'></th>
+                    <th title="GNAS2" class='rightborder'>Gs <br> (GNAS)</th>
+                    <th title="GNAS2">Gs <br> (GNAS)</th>
+                    <th title="GNAL" class='rightborder'>Golf <br> (GNAL)</th>
+                    {# Gi/Go #}
+                    <th title="GNAI1">Gi1 <br> (GNAI1)</th>
+                    <th title="GNAI2">Gi2 <br> (GNAI2)</th>
+                    <th title="GNAO">Go1 <br> (GNAO1)</th>
+                    <th title="GNAZ" class='rightborder'>Gz <br> (GNAZ)</th>
+                    <th title="GNAI1">Gi1 <br> (GNAI1)</th>
+                    <th title="GNAI2">Gi2 <br> (GNAI2)</th>
+                    <th title="GNAI3">Gi3 <br> (GNAI3)</th>
+                    <th title="GNAO">Go1 <br> (GNAO1)</th>
+                    <th title="GNAZ" class='rightborder'>Gz <br> (GNAz)</th>
+                    {# Gq/G11 #}
+                    <th title="GNAQ">Gq <br> (GNAQ)</th>
+                    <th title="GNA11">G11 <br> (GNA11)</th>
+                    <th title="GNA14">G14 <br> (GNA14)</th>
+                    <th title="GNA15" class='rightborder'>G15 <br> (GNA15)</th>
+                    <th title="GNAQ">G1 <br> (GNAQ)</th>
+                    <th title="GNA11">G11 <br> (GNA11)</th>
+                    <th title="GNA14">G14 <br> (GNA14)</th>
+                    <th title="GNA15" class='rightborder'>G15 <br> (GNA15)</th>
+                    {# G12/G13 #}
+                    <th title="GNA12">G12 <br> (GNA12)</th>
+                    <th title="GNA13" class='rightborder'>G13 <br> (GNA13)</th>
+                    <th title="GNA12">G12 <br> (GNA12)</th>
+                    <th title="GNA13" class='rightborder'>G13 <br> (GNA13)</th>
                     {# Arrestin #}
-                    <th title="BARR1/GRK2"></th>
-                    <th title="BARR2/GRK2"></th>
+                    <th title="BARR1/GRK2">BARR1/GRK2</th>
+                    <th title="BARR2/GRK2">BARR2/GRK2</th>
                 </tr>
 
                 </thead>
@@ -508,7 +383,8 @@
                     <input class="btn btn-default btn-s" type="button"
                            onclick="tableToExcel('bouviertabletab', 'Bouvier data', 'bouvier_coupling.xls')"
                            value="Export Excel">
-                    <input class="btn btn-default btn-s" type="button" id="reset_tab1"
+                    <input class="btn btn-default btn-s" type="button"
+                           onclick="reset_tab1()"
                            value="Reset All">
                 </div>
             </div>
@@ -575,89 +451,89 @@
                     <th title="IUPHAR" class='rightborder'></th>
 
                     {# Max Double-Normalized Emax #}
-                    <th title="Gs"></th>
-                    <th title="Gi/o"></th>
-                    <th title="Gq/11"></th>
-                    <th title="G12/13"></th>
-                    <th title="Arrestin" class="rightborder"></th>
+                    <th title="Gs">Gs</th>
+                    <th title="Gi/Go">Gi/Go</th>
+                    <th title="Gq/G11">Gq/G11</th>
+                    <th title="G12/G13">G12/G13</th>
+                    <th title="Arrestin" class="rightborder">Arrestin</th>
 
                     {# pec50dn #}
-                    <th title="GNAS2"></th>
-                    <th title="GNAI1"></th>
-                    <th title="GNAI2"></th>
-                    <th title="GNAO"></th>
-                    <th title="GNAZ"></th>
-                    <th title="GNAQ"></th>
-                    <th title="GNA11"></th>
-                    <th title="GNA14"></th>
-                    <th title="GNA15"></th>
-                    <th title="GNA12"></th>
-                    <th title="GNA13" class="rightborder"></th>
+                    <th title="GNAS2">Gs <br> (GNAS)</th>
+                    <th title="GNAI1">Gi1 <br> (GNAI1)</th>
+                    <th title="GNAI2">Gi2 <br> (GNAI2)</th>
+                    <th title="GNAO">Go1 <br> (GNAO1)</th>
+                    <th title="GNAZ">Gz <br> (GNAZ)</th>
+                    <th title="GNAQ">Gq <br> (GNAQ)</th>
+                    <th title="GNA11">G11 <br> (GNA11)</th>
+                    <th title="GNA14">G14 <br> (GNA14)</th>
+                    <th title="GNA15">G15 <br> (GNA15)</th>
+                    <th title="GNA12">G12 <br> (GNA12)</th>
+                    <th title="GNA13" class="rightborder">G13 <br> (GNA13)</th>
 
                     {# emaxdn #}
-                    <th title="GNAS2"></th>
-                    <th title="GNAI1"></th>
-                    <th title="GNAI2"></th>
-                    <th title="GNAO"></th>
-                    <th title="GNAZ"></th>
-                    <th title="GNAQ"></th>
-                    <th title="GNA11"></th>
-                    <th title="GNA14"></th>
-                    <th title="GNA15"></th>
-                    <th title="GNA12"></th>
-                    <th title="GNA13" class="rightborder"></th>
+                    <th title="GNAS2">Gs <br> (GNAS)</th>
+                    <th title="GNAI1">Gi1 <br> (GNAI1)</th>
+                    <th title="GNAI2">Gi2 <br> (GNAI2)</th>
+                    <th title="GNAO">Go1 <br> (GNAO1)</th>
+                    <th title="GNAZ">Gz <br> (GNAZ)</th>
+                    <th title="GNAQ">Gq <br> (GNAQ)</th>
+                    <th title="GNA11">G11 <br> (GNA11)</th>
+                    <th title="GNA14">G14 <br> (GNA14)</th>
+                    <th title="GNA15">G15 <br> (GNA15)</th>
+                    <th title="GNA12">G12 <br> (GNA12)</th>
+                    <th title="GNA13" class="rightborder">G13 <br> (GNA13)</th>
 
                     {# pec50mean #}
-                    <th title="GNAS2"></th>
-                    <th title="GNAI1"></th>
-                    <th title="GNAI2"></th>
-                    <th title="GNAO"></th>
-                    <th title="GNAZ"></th>
-                    <th title="GNAQ"></th>
-                    <th title="GNA11"></th>
-                    <th title="GNA14"></th>
-                    <th title="GNA15"></th>
-                    <th title="GNA12"></th>
-                    <th title="GNA13" class="rightborder"></th>
+                    <th title="GNAS2">Gs <br> (GNAS)</th>
+                    <th title="GNAI1">Gi1 <br> (GNAI1)</th>
+                    <th title="GNAI2">Gi2 <br> (GNAI2)</th>
+                    <th title="GNAO">Go1 <br> (GNAO1)</th>
+                    <th title="GNAZ">Gz <br> (GNAZ)</th>
+                    <th title="GNAQ">Gq <br> (GNAQ)</th>
+                    <th title="GNA11">G11 <br> (GNA11)</th>
+                    <th title="GNA14">G14 <br> (GNA14)</th>
+                    <th title="GNA15">G15 <br> (GNA15)</th>
+                    <th title="GNA12">G12 <br> (GNA12)</th>
+                    <th title="GNA13" class="rightborder">G13 <br> (GNA13)</th>
 
                     {# emmean #}
-                    <th title="GNAS2"></th>
-                    <th title="GNAI1"></th>
-                    <th title="GNAI2"></th>
-                    <th title="GNAO"></th>
-                    <th title="GNAZ"></th>
-                    <th title="GNAQ"></th>
-                    <th title="GNA11"></th>
-                    <th title="GNA14"></th>
-                    <th title="GNA15"></th>
-                    <th title="GNA12"></th>
-                    <th title="GNA13" class="rightborder"></th>
+                    <th title="GNAS2">Gs <br> (GNAS)</th>
+                    <th title="GNAI1">Gi1 <br> (GNAI1)</th>
+                    <th title="GNAI2">Gi2 <br> (GNAI2)</th>
+                    <th title="GNAO">Go1 <br> (GNAO1)</th>
+                    <th title="GNAZ">Gz <br> (GNAZ)</th>
+                    <th title="GNAQ">Gq <br> (GNAQ)</th>
+                    <th title="GNA11">G11 <br> (GNA11)</th>
+                    <th title="GNA14">G14 <br> (GNA14)</th>
+                    <th title="GNA15">G15 <br> (GNA15)</th>
+                    <th title="GNA12">G12 <br> (GNA12)</th>
+                    <th title="GNA13" class="rightborder">G13 <br> (GNA13)</th>
 
                     {# pec50sem #}
-                    <th title="GNAS2"></th>
-                    <th title="GNAI1"></th>
-                    <th title="GNAI2"></th>
-                    <th title="GNAO"></th>
-                    <th title="GNAZ"></th>
-                    <th title="GNAQ"></th>
-                    <th title="GNA11"></th>
-                    <th title="GNA14"></th>
-                    <th title="GNA15"></th>
-                    <th title="GNA12"></th>
-                    <th title="GNA13" class="rightborder"></th>
+                    <th title="GNAS2">Gs <br> (GNAS)</th>
+                    <th title="GNAI1">Gi1 <br> (GNAI1)</th>
+                    <th title="GNAI2">Gi2 <br> (GNAI2)</th>
+                    <th title="GNAO">Go1 <br> (GNAO1)</th>
+                    <th title="GNAZ">Gz <br> (GNAZ)</th>
+                    <th title="GNAQ">Gq <br> (GNAQ)</th>
+                    <th title="GNA11">G11 <br> (GNA11)</th>
+                    <th title="GNA14">G14 <br> (GNA14)</th>
+                    <th title="GNA15">G15 <br> (GNA15)</th>
+                    <th title="GNA12">G12 <br> (GNA12)</th>
+                    <th title="GNA13" class="rightborder">G13 <br> (GNA13)</th>
 
                     {# emsem #}
-                    <th title="GNAS2"></th>
-                    <th title="GNAI1"></th>
-                    <th title="GNAI2"></th>
-                    <th title="GNAO"></th>
-                    <th title="GNAZ"></th>
-                    <th title="GNAQ"></th>
-                    <th title="GNA11"></th>
-                    <th title="GNA14"></th>
-                    <th title="GNA15"></th>
-                    <th title="GNA12"></th>
-                    <th title="GNA13" class="rightborder"></th>
+                    <th title="GNAS2">Gs <br> (GNAS)</th>
+                    <th title="GNAI1">Gi1 <br> (GNAI1)</th>
+                    <th title="GNAI2">Gi2 <br> (GNAI2)</th>
+                    <th title="GNAO">Go1 <br> (GNAO1)</th>
+                    <th title="GNAZ">Gz <br> (GNAZ)</th>
+                    <th title="GNAQ">Gq <br> (GNAQ)</th>
+                    <th title="GNA11">G11 <br> (GNA11)</th>
+                    <th title="GNA14">G14 <br> (GNA14)</th>
+                    <th title="GNA15">G15 <br> (GNA15)</th>
+                    <th title="GNA12">G12 <br> (GNA12)</th>
+                    <th title="GNA13" class="rightborder">G13 <br> (GNA13)</th>
                 </tr>
 
                 </thead>
@@ -803,43 +679,43 @@
                     </th>
                     <th colspan=4 class="over_header flexible_over_header" style='text-align:left;'>
                         Emax DNorm Families
-                        <button type="button" class="close hide_columns3" columns="5,6,7,8"
+                        <button type="button" class="close hide_columns4" columns="5,6,7,8"
                                 style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                         </button>
                     </th>
                     <th colspan=11 class="over_header flexible_over_header" style='text-align:left;'>
                         pEC50 (dNorm)
-                        <button type="button" class="close hide_columns3" columns="9,10,11,12,13,14,15,16,17,18,19"
+                        <button type="button" class="close hide_columns4" columns="9,10,11,12,13,14,15,16,17,18,19"
                                 style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                         </button>
                     </th>
                     <th colspan=11 class="over_header flexible_over_header" style='text-align:left;'>
                         Emax (dNorm)
-                        <button type="button" class="close hide_columns3" columns="20,21,22,23,24,25,26,27,28,29,30"
+                        <button type="button" class="close hide_columns4" columns="20,21,22,23,24,25,26,27,28,29,30"
                                 style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                         </button>
                     </th>
                     <th colspan=11 class="over_header flexible_over_header" style='text-align:left;'>
                         pEC50 (raw)
-                        <button type="button" class="close hide_columns3" columns="31,32,33,34,35,36,37,38,39,40,41"
+                        <button type="button" class="close hide_columns4" columns="31,32,33,34,35,36,37,38,39,40,41"
                                 style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                         </button>
                     </th>
                     <th colspan=11 class="over_header flexible_over_header" style='text-align:left;'>
                         Emax (raw)
-                        <button type="button" class="close hide_columns3" columns="42,43,44,45,46,47,48,49,50,51,52"
+                        <button type="button" class="close hide_columns4" columns="42,43,44,45,46,47,48,49,50,51,52"
                                 style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                         </button>
                     </th>
                     <th colspan=11 class="over_header flexible_over_header" style='text-align:left;'>
                         pEC50 (SEM)
-                        <button type="button" class="close hide_columns3" columns="53,54,55,56,57,58,59,60,61,62,63"
+                        <button type="button" class="close hide_columns4" columns="53,54,55,56,57,58,59,60,61,62,63"
                                 style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                         </button>
                     </th>
                     <th colspan=11 class="over_header flexible_over_header" style='text-align:left;'>
                         Emax (SEM)
-                        <button type="button" class="close hide_columns3" columns="64,65,66,67,68,69,70,71,72,73,74"
+                        <button type="button" class="close hide_columns4" columns="64,65,66,67,68,69,70,71,72,73,74"
                                 style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                         </button>
                     </th>
@@ -855,88 +731,88 @@
                     <th title="IUPHAR" class='rightborder'></th>
 
                     {# Max Double-Normalized Emax #}
-                    <th title="Gs"></th>
-                    <th title="Gi/o"></th>
-                    <th title="Gq/G11"></th>
-                    <th title="G12/G13"class="rightborder"></th>
+                    <th title="Gs">Gs</th>
+                    <th title="Gi/Go">Gi/Go</th>
+                    <th title="Gq/G11">Gq/G11</th>
+                    <th title="G12/G13"class="rightborder">G12/G13</th>
 
                     {# pec50dn #}
-                    <th title="GNAS2"></th>
-                    <th title="GNAL"></th>
-                    <th title="GNAI1"></th>
-                    <th title="GNAI3"></th>
-                    <th title="GNAO"></th>
-                    <th title="GNAZ"></th>
-                    <th title="GNAQ"></th>
-                    <th title="GNA14"></th>
-                    <th title="GNA15"></th>
-                    <th title="GNA12"></th>
-                    <th title="GNA13" class="rightborder"></th>
+                    <th title="GNAS2">Gs <br>(GNAS)</th>
+                    <th title="GNAL">Golf <br>(GNAL)</th>
+                    <th title="GNAI1">Gi1 <br>(GNAI1)</th>
+                    <th title="GNAI3">Gi3 <br>(GNAI3)</th>
+                    <th title="GNAO">Go1 <br>(GNAO1)</th>
+                    <th title="GNAZ">Gz <br>(GNAZ)</th>
+                    <th title="GNAQ">Gq <br>(GNAQ)</th>
+                    <th title="GNA14">G14 <br>(GNA14)</th>
+                    <th title="GNA15">G15 <br>(GNA15)</th>
+                    <th title="GNA12">G12 <br>(GNA12)</th>
+                    <th title="GNA13" class="rightborder">G13 <br>(GNA13)</th>
 
                     {# emaxdn #}
-                    <th title="GNAS2"></th>
-                    <th title="GNAL"></th>
-                    <th title="GNAI1"></th>
-                    <th title="GNAI3"></th>
-                    <th title="GNAO"></th>
-                    <th title="GNAZ"></th>
-                    <th title="GNAQ"></th>
-                    <th title="GNA14"></th>
-                    <th title="GNA15"></th>
-                    <th title="GNA12"></th>
-                    <th title="GNA13" class="rightborder"></th>
+                    <th title="GNAS2">Gs <br>(GNAS)</th>
+                    <th title="GNAL">Golf <br>(GNAL)</th>
+                    <th title="GNAI1">Gi1 <br>(GNAI1)</th>
+                    <th title="GNAI3">Gi3 <br>(GNAI3)</th>
+                    <th title="GNAO">Go1 <br>(GNAO1)</th>
+                    <th title="GNAZ">Gz <br>(GNAZ)</th>
+                    <th title="GNAQ">Gq <br>(GNAQ)</th>
+                    <th title="GNA14">G14 <br>(GNA14)</th>
+                    <th title="GNA15">G15 <br>(GNA15)</th>
+                    <th title="GNA12">G12 <br>(GNA12)</th>
+                    <th title="GNA13" class="rightborder">G13 <br>(GNA13)</th>
 
                     {# pec50mean #}
-                    <th title="GNAS2"></th>
-                    <th title="GNAL"></th>
-                    <th title="GNAI1"></th>
-                    <th title="GNAI3"></th>
-                    <th title="GNAO"></th>
-                    <th title="GNAZ"></th>
-                    <th title="GNAQ"></th>
-                    <th title="GNA14"></th>
-                    <th title="GNA15"></th>
-                    <th title="GNA12"></th>
-                    <th title="GNA13" class="rightborder"></th>
+                    <th title="GNAS2">Gs <br>(GNAS)</th>
+                    <th title="GNAL">Golf <br>(GNAL)</th>
+                    <th title="GNAI1">Gi1 <br>(GNAI1)</th>
+                    <th title="GNAI3">Gi3 <br>(GNAI3)</th>
+                    <th title="GNAO">Go1 <br>(GNAO1)</th>
+                    <th title="GNAZ">Gz <br>(GNAZ)</th>
+                    <th title="GNAQ">Gq <br>(GNAQ)</th>
+                    <th title="GNA14">G14 <br>(GNA14)</th>
+                    <th title="GNA15">G15 <br>(GNA15)</th>
+                    <th title="GNA12">G12 <br>(GNA12)</th>
+                    <th title="GNA13" class="rightborder">G13 <br>(GNA13)</th>
 
                     {# emmean #}
-                    <th title="GNAS2"></th>
-                    <th title="GNAL"></th>
-                    <th title="GNAI1"></th>
-                    <th title="GNAI3"></th>
-                    <th title="GNAO"></th>
-                    <th title="GNAZ"></th>
-                    <th title="GNAQ"></th>
-                    <th title="GNA14"></th>
-                    <th title="GNA15"></th>
-                    <th title="GNA12"></th>
-                    <th title="GNA13" class="rightborder"></th>
+                    <th title="GNAS2">Gs <br>(GNAS)</th>
+                    <th title="GNAL">Golf <br>(GNAL)</th>
+                    <th title="GNAI1">Gi1 <br>(GNAI1)</th>
+                    <th title="GNAI3">Gi3 <br>(GNAI3)</th>
+                    <th title="GNAO">Go1 <br>(GNAO1)</th>
+                    <th title="GNAZ">Gz <br>(GNAZ)</th>
+                    <th title="GNAQ">Gq <br>(GNAQ)</th>
+                    <th title="GNA14">G14 <br>(GNA14)</th>
+                    <th title="GNA15">G15 <br>(GNA15)</th>
+                    <th title="GNA12">G12 <br>(GNA12)</th>
+                    <th title="GNA13" class="rightborder">G13 <br>(GNA13)</th>
 
                     {# pec50sem #}
-                    <th title="GNAS2"></th>
-                    <th title="GNAL"></th>
-                    <th title="GNAI1"></th>
-                    <th title="GNAI3"></th>
-                    <th title="GNAO"></th>
-                    <th title="GNAZ"></th>
-                    <th title="GNAQ"></th>
-                    <th title="GNA14"></th>
-                    <th title="GNA15"></th>
-                    <th title="GNA12"></th>
-                    <th title="GNA13" class="rightborder"></th>
+                    <th title="GNAS2">Gs <br>(GNAS)</th>
+                    <th title="GNAL">Golf <br>(GNAL)</th>
+                    <th title="GNAI1">Gi1 <br>(GNAI1)</th>
+                    <th title="GNAI3">Gi3 <br>(GNAI3)</th>
+                    <th title="GNAO">Go1 <br>(GNAO1)</th>
+                    <th title="GNAZ">Gz <br>(GNAZ)</th>
+                    <th title="GNAQ">Gq <br>(GNAQ)</th>
+                    <th title="GNA14">G14 <br>(GNA14)</th>
+                    <th title="GNA15">G15 <br>(GNA15)</th>
+                    <th title="GNA12">G12 <br>(GNA12)</th>
+                    <th title="GNA13" class="rightborder">G13 <br>(GNA13)</th>
 
                     {# emsem #}
-                    <th title="GNAS2"></th>
-                    <th title="GNAL"></th>
-                    <th title="GNAI1"></th>
-                    <th title="GNAI3"></th>
-                    <th title="GNAO"></th>
-                    <th title="GNAZ"></th>
-                    <th title="GNAQ"></th>
-                    <th title="GNA14"></th>
-                    <th title="GNA15"></th>
-                    <th title="GNA12"></th>
-                    <th title="GNA13" class="rightborder"></th>
+                    <th title="GNAS2">Gs <br>(GNAS)</th>
+                    <th title="GNAL">Golf <br>(GNAL)</th>
+                    <th title="GNAI1">Gi1 <br>(GNAI1)</th>
+                    <th title="GNAI3">Gi3 <br>(GNAI3)</th>
+                    <th title="GNAO">Go1 <br>(GNAO1)</th>
+                    <th title="GNAZ">Gz <br>(GNAZ)</th>
+                    <th title="GNAQ">Gq <br>(GNAQ)</th>
+                    <th title="GNA14">G14 <br>(GNA14)</th>
+                    <th title="GNA15">G15 <br>(GNA15)</th>
+                    <th title="GNA12">G12 <br>(GNA12)</th>
+                    <th title="GNA13" class="rightborder">G13 <br>(GNA13)</th>
                 </tr>
 
                 </thead>
@@ -1055,8 +931,8 @@
 {% endblock %}
 
 {% block addon_js %}
-{#    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"></script> #}
-    <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"></script>
+{#  SAAS  <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script> #}
     <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"></script>
     <script src="{% static 'home/js/select2.js' %}"></script>
     <script src="{% static 'home/js/datatables.min.js' %}"></script>
