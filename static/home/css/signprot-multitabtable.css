@@ -1,5 +1,5 @@
 .select2-result-label {
-    font-size: 10px;
+    font-size: 12px;
 }
 
 #filters {
@@ -28,11 +28,12 @@ word-wrap:break-word;
 }
 */
 
+
 table.dataTable.compact thead th.over_header {
     border-right: 1px solid;
     border-left: 0px solid;
     text-align: center;
-    padding: 4px 4px 4px 4px;
+    /*padding: 4px 4px 4px 4px;*/
 }
 
 table.dataTable.compact thead tr.over_header th {
@@ -55,6 +56,14 @@ table.dataTable.compact thead th.checkbox_tr {
 table.dataTable.compact thead th {
     padding: 4px 16px 4px 2px;
 }
+
+/*thead.bottomborder {*/
+/*    border-right: 1px solid;*/
+/*    border-left: 0px solid;*/
+/*    text-align: center;*/
+/*    padding: 4px 4px 4px 4px;*/
+/*    border-bottom: 10px solid coral;*/
+/*}*/
 
 .yadcf-filter-wrapper {
     margin-top: 0px;
@@ -171,4 +180,17 @@ div.dataTables_wrapper {
 /*    width: 100%;*/
     margin: 0 auto;
 }
-tr { height: 40px; }
+
+#subtypestabletab tr {
+    height: 40px;
+}
+
+#bouviertabletab tr {
+    height: 40px;
+}
+
+#inouetabletab tr {
+    height: 40px;
+}
+
+

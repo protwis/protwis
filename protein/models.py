@@ -383,6 +383,8 @@ class ProteinGProteinPair(models.Model):
 
 
     def __str__(self):
+        # NOTE: The following return breaks when there's no data for transduction since a null
+        # can't be concatenated with strings.
         return self.protein.entry_name + ", " + self.g_protein.name + ", " + self.transduction
 
     class Meta():

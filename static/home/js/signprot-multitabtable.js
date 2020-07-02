@@ -116,29 +116,28 @@ function resetHidden4() {
 
 function reset_tab1() {
 // Just a button to go back to the main page.
-    window.location.href = '/signprot/couplings/#table_1';
+    window.location.href = '/signprot/couplings#table_1';
 }
 
 function reset_tab2() {
 // Just a button to go back to the main page.
-    window.location.href = '/signprot/couplings/#table_2';
+    window.location.href = '/signprot/couplings#table_2';
 }
 
 //this.element.addEventListener(t, e, { passive: true} )
 //$(document.addEventListener('touchstart', null, { passive: true})).ready(function () {
 $(document).ready(function () {
 
-   $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-       console.log( 'show tab' );
-       $($.fn.dataTable.tables(true)).DataTable()
-           .columns.adjust()
-//            .responsive.recalc();
-   });
-
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+//      console.log( 'show tab' );
+        $($.fn.dataTable.tables(true)).DataTable()
+            .columns.adjust().responsive.recalc();
+    });
 
     console.time("table1load");
     oTable1 = $("#familiestabletab").DataTable({
 //        data: table1data,
+//        serverSide: true,
         deferRender: true,
         scrollY: '50vh',
         scrollX: true,
@@ -150,7 +149,41 @@ $(document).ready(function () {
         aaSorting: [],
         autoWidth: false,
 //        pageLength: -1,
-        bInfo: true
+        bInfo: true,
+        columnDefs: [
+            {
+                targets: [6,8,10,12],
+                visible: false
+            }
+        ],
+        // columns: [
+        //     null,
+        //     null,
+        //     null,
+        //     null,
+        //     null, // 4
+        //     {width: "20%"}, // 5
+        //     null, // 6
+        //     null, // 7
+        //     null, // 8
+        //     null, // 9
+        //     null, // 10
+        //     null, // 11
+        //     null,
+        //     null,
+        //     null,
+        //     null,
+        //     null,
+        //     null,
+        //     null,
+        //     null,
+        //     null,
+        //     null,
+        //     null,
+        //     null,
+        //     null,
+        //     null
+        // ],
     });
 
     yadcf.init(oTable1,
@@ -188,9 +221,6 @@ $(document).ready(function () {
                 filter_default_label: "IUPHAR",
                 filter_match_mode : "exact",
                 filter_reset_button_text: false,
-                select_type_options: {
-                    width: '95px',
-                },
             },
 
             {
@@ -200,9 +230,14 @@ $(document).ready(function () {
             },
 
             {
-                column_number : 6,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
+                column_number: 6,
+                filter_type: "multi_select",
+                filter_container_id: "gs_drop",
+                select_type: 'select2',
+                filter_default_label: "Gs",
+                select_type_options: {
+                    width: '55%'
+                },
             },
 
             {
@@ -212,9 +247,14 @@ $(document).ready(function () {
             },
 
             {
-                column_number : 8,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
+                column_number: 8,
+                filter_type: "multi_select",
+                filter_container_id: "gio_drop",
+                select_type: 'select2',
+                filter_default_label: "Gi/Go",
+                select_type_options: {
+                    width: '55%'
+                },
             },
 
             {
@@ -224,11 +264,15 @@ $(document).ready(function () {
             },
 
             {
-                column_number : 10,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
+                column_number: 10,
+                filter_type: "multi_select",
+                filter_container_id: "gq11_drop",
+                select_type: 'select2',
+                filter_default_label: "Gq/G11",
+                select_type_options: {
+                    width: '55%'
+                },
             },
-
 
             {
                 column_number : 11,
@@ -237,9 +281,14 @@ $(document).ready(function () {
             },
 
             {
-                column_number : 12,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
+                column_number: 12,
+                filter_type: "multi_select",
+                filter_container_id: "g1213_drop",
+                select_type: 'select2',
+                filter_default_label: "G12/13",
+                select_type_options: {
+                    width: '55%'
+                },
             },
 
             {
@@ -255,7 +304,7 @@ $(document).ready(function () {
             },
 
             {
-                column_number :15,
+                column_number : 15,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
             },
@@ -279,7 +328,7 @@ $(document).ready(function () {
             },
 
             {
-                column_number : 19,
+                column_number :19,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
             },
@@ -296,22 +345,49 @@ $(document).ready(function () {
                 filter_default_label: ["Min", "Max"],
             },
 
+            {
+                column_number : 22,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+            },
+
+            {
+                column_number : 23,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+            },
+
+            {
+                column_number : 24,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+            },
+
+            {
+                column_number : 25,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+            },
+
         ],
+
         {filters_tr_index: 1},
+
         {
             cumulative_filtering: true
         }
     );
 
     yadcf.exResetAllFilters(oTable1);
-    setTimeout(() => {
-        console.timeEnd("table1load");
-    }, );
-
+//    setTimeout(() => {
+//        console.timeEnd("table1load");
+//    }, );
+    console.timeEnd("table1load");
 
     console.time("table2load");
     oTable2 = $("#subtypestabletab").DataTable({
 //        data: table2data,
+//        serverSide: true,
         deferRender: true,
         scrollY: '50vh',
         scrollX: true,
@@ -525,16 +601,17 @@ $(document).ready(function () {
 
         ],
         {filters_tr_index: 2},
+
         {
             cumulative_filtering: false
         }
     );
 
     yadcf.exResetAllFilters(oTable2);
-    setTimeout(() => {
-        console.timeEnd("table2load");
-    }, );
-
+//    setTimeout(() => {
+//        console.timeEnd("table2load");
+//    }, );
+    console.timeEnd("table2load");
 
     console.time("table3load");
     oTable3 = $("#bouviertabletab").DataTable({
@@ -1190,9 +1267,10 @@ $(document).ready(function () {
     );
 
     yadcf.exResetAllFilters(oTable3);
-    setTimeout(() => {
-        console.timeEnd("table3load");
-    }, );
+//    setTimeout(() => {
+//        console.timeEnd("table3load");
+//    }, );
+    console.timeEnd("table3load");
 
     console.time("table4load");
     oTable4 = $("#inouetabletab").DataTable({
@@ -1852,9 +1930,10 @@ $(document).ready(function () {
 
     yadcf.exResetAllFilters(oTable4);
 
-    setTimeout(() => {
-        console.timeEnd("table4load");
-    }, );
+//    setTimeout(() => {
+//        console.timeEnd("table4load");
+//    }, );
+    console.timeEnd("table4load");
 
 // By default display the first tab. If this is not ON, one has to click on the tab for display.
     $('#myTab a:first').tab('show');
@@ -1924,7 +2003,7 @@ $(document).ready(function () {
 
 // Put top scroller
 // https://stackoverflow.com/questions/35147038/how-to-place-the-datatables-horizontal-scrollbar-on-top-of-the-table
-    console.time("scroll to top");
+//    console.time("scroll to top");
     $('.dataTables_scrollHead').css({
         'overflow-x':'scroll'
     }).on('scroll', function(e){
@@ -1932,7 +2011,7 @@ $(document).ready(function () {
         scrollBody.scrollLeft = this.scrollLeft;
         $(scrollBody).trigger('scroll');
     });
-    console.timeEnd("scroll to top");
+//    console.timeEnd("scroll to top");
 
 
 
