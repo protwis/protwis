@@ -267,29 +267,45 @@ class CouplingBrowser(TemplateView):
         for p, v in data.items():
             fd[p] = [v['class'], v['family'], v['accession'], v['entryname'], p, v['pretty']]
             s = 'GuideToPharma'
-            # Merge
+            # MERGED CRITERIA FOR COUPLING
+            # merge primary, secondary, coupling, no coupling classificationm currently from
+            # three sources, GtP, Inoue, Bouvier. Exact rules being worked on.
             for gf in distinct_g_families:
                 values = []
                 if 'GuideToPharma' in v and gf in v['GuideToPharma']:
                     values.append(v['GuideToPharma'][gf])
+                else:
+                    values.append('na gtf')
                 if 'Aska' in v and gf in v['Aska']:
                     max = v['Aska'][gf]['max']
                     if max > threshold_primary_inoue:
                         values.append('primary')
                     elif max > threshold_secondary_inoue:
                         values.append('secondary')
+                    elif max == 0:
+                        values.append('NCI')
+                else:
+                    values.append('na inoue')
                 if 'Bouvier' in v and gf in v['Bouvier']:
                     max = v['Bouvier'][gf]['max']
                     if max > threshold_primary_bouvier:
                         values.append('primary')
                     elif max > threshold_secondary_bouvier:
                         values.append('secondary')
+                    elif max == 0:
+                        values.append('NCB')
+                else:
+                    values.append('na bouvier')
                 if 'primary' in values:
                     fd[p].append('primary')
                 elif 'secondary' in values:
                     fd[p].append('secondary')
+#                elif 'NCI' or 'NCB' in values:
+#                    fd[p].append('no coupling')
                 else:
                     fd[p].append('NA')  # Should this be NA of no-coupling? What's the GtP meaning?
+                # if (len(values) >= 2):
+                #     print(values, gf, p)
 
             # Loop over GuideToPharma
             s = 'GuideToPharma'
@@ -305,13 +321,13 @@ class CouplingBrowser(TemplateView):
             for gf in distinct_g_families:
                 if gf in v[s]:
                     if v[s][gf]['max'] > threshold_primary_inoue:
-                        fd[p].append("primary")
+                        fd[p].append("primaryino")
                     elif v[s][gf]['max'] > threshold_secondary_inoue:
-                        fd[p].append("secondary")
+                        fd[p].append("secondaryino")
                     else:
-                        fd[p].append("No coupling")
+                        fd[p].append("No coup. Ino")
                 else:
-                    fd[p].append('')  # This last empty one means not-available, NOT no-coupling
+                    fd[p].append('NAino')  # This last empty one means not-available, NOT no-coupling
 
             # Last bit adds values in subfamilies (i.e. subtypes)
             for gf, sfs in distinct_g_subunit_families.items():
@@ -385,9 +401,9 @@ class CouplingBrowser(TemplateView):
                     elif v[s][gf]['max'] > threshold_secondary_bouvier:
                         fd[p].append("secondary")
                     else:
-                        fd[p].append("No coupling")
+                        fd[p].append("NC")
                 else:
-                    fd[p].append('')  # This last empty one means not-available, NOT no-coupling
+                    fd[p].append('NA')  # This last empty one means not-available, NOT no-coupling
 
             # Last bit adds values to subfamilies (i.e. subtypes)
             for gf, sfs in distinct_g_subunit_families.items():
