@@ -456,7 +456,8 @@ def PdbTableData(request):
             if len(r['ligand'])>20:
                 r['ligand'] = r['ligand'][:20] + ".."
             r['ligand_function'] = l.ligand_role.name
-            r['ligand_type'] = l.ligand.properities.ligand_type.name
+            if l.ligand.properities.ligand_type != None:
+                r['ligand_type'] = l.ligand.properities.ligand_type.name
 
 
         data_dict[pdb_id] = r
