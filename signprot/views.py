@@ -111,7 +111,7 @@ class CouplingBrowser(TemplateView):
 
         protobj = Protein.objects.filter(sequence_type__slug='wt',
                                          family__slug__startswith='00',
-                                         species__common_name='Human').all().prefetch_related(
+                                         species__common_name='Human').prefetch_related(
             "family",
             "parent",
             "source")
@@ -120,8 +120,8 @@ class CouplingBrowser(TemplateView):
                                                                      'g_protein_subunit',
                                                                      'g_protein')
 
-        context['proteins'] = protobj
-        context['couplings'] = coupobj
+#        context['proteins'] = protobj
+#        context['couplings'] = coupobj
         context['famtab'] = fam_tab
 
         return context
@@ -166,9 +166,9 @@ class CouplingBrowser(TemplateView):
 
         distinct_g_families = []
         distinct_g_subunit_families = {}
-        couplings = ProteinGProteinPair.objects.all().prefetch_related('protein',
-                                                                       'g_protein_subunit',
-                                                                       'g_protein')
+        couplings = ProteinGProteinPair.objects.prefetch_related('protein',
+                                                                 'g_protein_subunit',
+                                                                 'g_protein')
         for c in couplings:
             p = c.protein.entry_short()
             s = c.source
@@ -267,48 +267,68 @@ class CouplingBrowser(TemplateView):
         for p, v in data.items():
             fd[p] = [v['class'], v['family'], v['accession'], v['entryname'], p, v['pretty']]
             s = 'GuideToPharma'
-            # Merge
+            # MERGED CRITERIA FOR COUPLING
+            # merge primary, secondary, coupling, no coupling classificationm currently from
+            # three sources, GtP, Inoue, Bouvier. Exact rules being worked on.
             for gf in distinct_g_families:
                 values = []
                 if 'GuideToPharma' in v and gf in v['GuideToPharma']:
                     values.append(v['GuideToPharma'][gf])
+                else:
+                    values.append('na gtf')
                 if 'Aska' in v and gf in v['Aska']:
                     max = v['Aska'][gf]['max']
                     if max > threshold_primary_inoue:
                         values.append('primary')
                     elif max > threshold_secondary_inoue:
                         values.append('secondary')
+                    elif max == 0:
+                        values.append('NCI')
+                else:
+                    values.append('na inoue')
                 if 'Bouvier' in v and gf in v['Bouvier']:
                     max = v['Bouvier'][gf]['max']
                     if max > threshold_primary_bouvier:
                         values.append('primary')
                     elif max > threshold_secondary_bouvier:
                         values.append('secondary')
+                    elif max == 0:
+                        values.append('NCB')
+                else:
+                    values.append('na bouvier')
                 if 'primary' in values:
                     fd[p].append('primary')
                 elif 'secondary' in values:
                     fd[p].append('secondary')
+#                elif 'NCI' or 'NCB' in values:
+#                    fd[p].append('no coupling')
                 else:
-                    fd[p].append('NA')
+                    fd[p].append('NA')  # Should this be NA of no-coupling? What's the GtP meaning?
+                # if (len(values) >= 2):
+                #     print(values, gf, p)
+
             # Loop over GuideToPharma
             s = 'GuideToPharma'
             for gf in distinct_g_families:
                 if gf in v[s]:
                     fd[p].append(v[s][gf])
                 else:
-                    fd[p].append("NAg")
+                    #fd[p].append("NAg")
+                    fd[p].append('')
+
             # Loop over Aska
             s = 'Aska'
             for gf in distinct_g_families:
                 if gf in v[s]:
                     if v[s][gf]['max'] > threshold_primary_inoue:
-                        fd[p].append("primary")
+                        fd[p].append("primaryino")
                     elif v[s][gf]['max'] > threshold_secondary_inoue:
-                        fd[p].append("secondary")
+                        fd[p].append("secondaryino")
                     else:
-                        fd[p].append("NAi")
+                        fd[p].append("No coup. Ino")
                 else:
-                    fd[p].append("")
+                    fd[p].append('NAino')  # This last empty one means not-available, NOT no-coupling
+
             # Last bit adds values in subfamilies (i.e. subtypes)
             for gf, sfs in distinct_g_subunit_families.items():
                 for sf in sfs:
@@ -316,49 +336,61 @@ class CouplingBrowser(TemplateView):
                         if sf in v[s][gf]['emdn']:
                             fd[p].append(v[s][gf]['emdn'][sf])
                         else:
-                            fd[p].append("NAi1")
+                            #fd[p].append("NAi1")
+                            fd[p].append('')
                     else:
-                        fd[p].append("emdn nai")
+                        #fd[p].append("emdn nai")
+                        fd[p].append('')
 
                     if gf in v[s]:
                         if sf in v[s][gf]['pec50dn']:
                             fd[p].append(v[s][gf]['pec50dn'][sf])
                         else:
-                            fd[p].append("NAi1")
+                            #fd[p].append("NAi1")
+                            fd[p].append('')
                     else:
-                        fd[p].append("pec50dn nai")
+                        #fd[p].append("pec50dn nai")
+                        fd[p].append('')
 
                     if gf in v[s]:
                         if sf in v[s][gf]['emmean']:
                             fd[p].append(v[s][gf]['emmean'][sf])
                         else:
-                            fd[p].append("NAi1")
+                            #fd[p].append("NAi1")
+                            fd[p].append('')
                     else:
-                        fd[p].append("emmean nai")
+                        #fd[p].append("emmean nai")
+                        fd[p].append('')
 
                     if gf in v[s]:
                         if sf in v[s][gf]['pec50mean']:
                             fd[p].append(v[s][gf]['pec50mean'][sf])
                         else:
-                            fd[p].append("NAi1")
+                            #fd[p].append("NAi1")
+                            fd[p].append('')
                     else:
-                        fd[p].append("pec50mean nai")
+                        #fd[p].append("pec50mean nai")
+                        fd[p].append('')
 
                     if gf in v[s]:
                         if sf in v[s][gf]['emsem']:
                             fd[p].append(v[s][gf]['emsem'][sf])
                         else:
-                            fd[p].append("NAi1")
+                           #fd[p].append("NAi1")
+                           fd[p].append('')
                     else:
-                        fd[p].append("emsem nai")
+                        #fd[p].append("emsem nai")
+                        fd[p].append('')
 
                     if gf in v[s]:
                         if sf in v[s][gf]['pec50sem']:
                             fd[p].append(v[s][gf]['pec50sem'][sf])
                         else:
-                            fd[p].append("NAi1")
+                            #fd[p].append("NAi1")
+                            fd[p].append('')
                     else:
-                        fd[p].append("pec50sem nai")
+                        #fd[p].append("pec50sem nai")
+                        fd[p].append('')
 
             # Loop over Bouvier
             s = 'Bouvier'
@@ -369,9 +401,10 @@ class CouplingBrowser(TemplateView):
                     elif v[s][gf]['max'] > threshold_secondary_bouvier:
                         fd[p].append("secondary")
                     else:
-                        fd[p].append("No coupling")
+                        fd[p].append("NC")
                 else:
-                    fd[p].append("")
+                    fd[p].append('NA')  # This last empty one means not-available, NOT no-coupling
+
             # Last bit adds values to subfamilies (i.e. subtypes)
             for gf, sfs in distinct_g_subunit_families.items():
                 for sf in sfs:
@@ -379,65 +412,81 @@ class CouplingBrowser(TemplateView):
                         if sf in v[s][gf]['emdn']:
                             fd[p].append(v[s][gf]['emdn'][sf])
                         else:
-                            fd[p].append("NAb1")
+                            #fd[p].append("NAb1")
+                            fd[p].append('')
                     else:
-                        fd[p].append("emdn nab")
+                        #fd[p].append("emdn nab")
+                        fd[p].append('')
 
                     if gf in v[s]:
                         if sf in v[s][gf]['pec50dn']:
                             fd[p].append(v[s][gf]['pec50dn'][sf])
                         else:
-                            fd[p].append("NAb1")
+                            #fd[p].append("NAb1")
+                            fd[p].append('')
                     else:
-                        fd[p].append("pec50dn nab")
+                        #fd[p].append("pec50dn nab")
+                        fd[p].append('')
 
                     if gf in v[s]:
                         if sf in v[s][gf]['emmean']:
                             fd[p].append(v[s][gf]['emmean'][sf])
                         else:
-                            fd[p].append("NAb1")
+                            #fd[p].append("NAb1")
+                            fd[p].append('')
                     else:
-                        fd[p].append("emmean nab")
+                        #fd[p].append("emmean nab")
+                        fd[p].append('')
 
                     if gf in v[s]:
                         if sf in v[s][gf]['pec50mean']:
                             fd[p].append(v[s][gf]['pec50mean'][sf])
                         else:
-                            fd[p].append("NAb1")
+                            #fd[p].append("NAb1")
+                            fd[p].append('')
                     else:
-                        fd[p].append("pec50mean nab")
+                        #fd[p].append("pec50mean nab")
+                        fd[p].append('')
 
                     if gf in v[s]:
                         if sf in v[s][gf]['emsem']:
                             fd[p].append(v[s][gf]['emsem'][sf])
                         else:
-                            fd[p].append("NAb1")
+                            #fd[p].append("NAb1")
+                            fd[p].append('')
                     else:
-                        fd[p].append("emsem nab")
+                        #fd[p].append("emsem nab")
+                        fd[p].append('')
 
                     if gf in v[s]:
                         if sf in v[s][gf]['pec50sem']:
                             fd[p].append(v[s][gf]['pec50sem'][sf])
                         else:
-                            fd[p].append("NAb1")
+                            #fd[p].append("NAb1")
+                            fd[p].append('')
                     else:
-                        fd[p].append("pec50sem nab")
+                        #fd[p].append("pec50sem nab")
+                        fd[p].append('')
 
             # max Values for Gs, Gi/Go, Gq/G11, G12/13 and source Inoue
             s = 'Aska'
             for gf in distinct_g_families:
                 if gf in v[s]:
-                    fd[p].append(v[s][gf]['max']+100)
+                    # fd[p].append(v[s][gf]['max'] + 100)
+                    fd[p].append(v[s][gf]['max'])
                 else:
-                    fd[p].append("NAi max")
+                    #fd[p].append("NAi max")
+                    fd[p].append('')
 
             # max Values for Gs, Gi/Go, Gq/G11, G12/13 and source Bouvier
             s = 'Bouvier'
             for gf in distinct_g_families:
                 if gf in v[s]:
-                    fd[p].append(v[s][gf]['max']+200)
+                    #fd[p].append(v[s][gf]['max'] + 200)
+                    fd[p].append(v[s][gf]['max'])
                 else:
-                    fd[p].append("NAb max")
+                    #fd[p].append("NAb max")
+                    fd[p].append('')
 
         return fd
 

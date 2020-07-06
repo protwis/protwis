@@ -1339,7 +1339,7 @@ function renderBrowser(data) {
                           <th colspan="2" rowspan="2">Position presence %</th> \
                           <th colspan="2">Secondary structure</th> \
                           <th colspan="2"></th> \
-                          <th colspan="4" rowspan="1">Missing in receptor or structure (%)</th> \
+                          <th colspan="4" rowspan="1">Absence in receptor or structure (%)</th> \
                           <th rowspan="2" colspan="3">Contact AA pair sequence conservation in class (%)</th> \
                         </tr> \
                         <tr> \
@@ -1621,7 +1621,7 @@ function renderBrowser(data) {
                           <th colspan="2" rowspan="2">Position presence %</th> \
                           <th colspan="2">Secondary structure</th> \
                           <th colspan="2"></th> \
-                          <th colspan="4" rowspan="1">Missing in receptor or structure (%)</th> \
+                          <th colspan="4" rowspan="1">Absence in receptor or structure (%)</th> \
                           <th rowspan="2">Class Seq Cons(%)</th> \
                         </tr> \
                         <tr> \
@@ -1992,7 +1992,7 @@ function renderBrowser_2(data) {
                           <th colspan="6">Sidechain differences</th> \
                           <th colspan="2" rowspan="2">Position presence %</th> \
                           <th colspan="4">Secondary structure</th> \
-                          <th colspan="4" rowspan="1">Missing in receptor or structure (%)</th> \
+                          <th colspan="4" rowspan="1">Absence in receptor or structure (%)</th> \
                         </tr> \
                         <tr> \
                           <th colspan="3">AA1</th> \
@@ -2281,7 +2281,7 @@ function renderBrowser_2(data) {
                           <th colspan="6">Sidechain differences</th> \
                           <th colspan="2" rowspan="2">Position presence %</th> \
                           <th colspan="4">Secondary structure</th> \
-                          <th colspan="4" rowspan="1">Missing in receptor or structure (%)</th> \
+                          <th colspan="4" rowspan="1">Absence in receptor or structure (%)</th> \
                         </tr> \
                         <tr> \
                           <th colspan="1">AA1</th> \
@@ -2507,7 +2507,7 @@ function renderBrowser_2(data) {
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="6">Sidechain differences</th> \
                           <th colspan="2">Secondary structure</th> \
-                          <th colspan="4" rowspan="1">Missing in receptor or structure (%)</th> \
+                          <th colspan="4" rowspan="1">Absence in receptor or structure (%)</th> \
                         </tr> \
                         <tr> \
                           <th colspan="2">Distance to<br/>7TM axis (Å)</th> \
@@ -3022,7 +3022,7 @@ function renderBrowser_4(data) {
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Pos</th> \
                           <th colspan="5" rowspan="1">Secondary structure</th> \
-                          <th colspan="4" rowspan="1">Missing in receptor or structure (%)</th> \
+                          <th colspan="4" rowspan="1">Absence in receptor or structure (%)</th> \
                           <th colspan="9" rowspan="1">Residue angles and dihedrals</th> \
                           <th colspan="9" rowspan="1">Helix turn angles and dihedrals</th> \
                           <th colspan="5" rowspan="1">Seq consensus</th> \

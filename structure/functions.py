@@ -805,7 +805,6 @@ class PossibleKnots():
                 for r in values[1]:
                     region2 = Residue.objects.get(protein_conformation__protein=self.signprot, display_generic_number__label=r)
                     self.output.append([[chain2,region2.sequence_number],[chain1,region1]])
-        # print(self.output)
         return self.output
 
 
