@@ -202,7 +202,7 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
         }).then(function() {
         // TODO: cleanup and reduce redundancy
         if (pdbs_set2) {
-            $.getJSON("pdb/" + pdb2,
+            $.getJSON("/contactnetwork/pdb/" + pdb2,
                 function(data) {
                     var highlight = ['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8'];
                     var segments_sets = {}
