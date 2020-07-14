@@ -101,11 +101,16 @@
             svgClone.find('.svg-pan-zoom_viewport').removeAttr('transform');
 
           }
+
           // svgClone.css('background-color','white');
 
           // Get styles
           generateStyleDefs(svgClone.get(0));
           var escapedSVG = new XMLSerializer().serializeToString(svgClone.get(0));
+
+          // Escape special characters
+          escapedSVG = escapedSVG.replace(/°/g,"&#176;");
+          escapedSVG = escapedSVG.replace(/Å/g,"&#197;");
 
           downloadURI('data:image/svg+xml;base64,' + window.btoa(escapedSVG), 'distances_'+svg_class+'.svg');
 

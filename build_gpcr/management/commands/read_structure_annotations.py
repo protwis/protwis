@@ -111,7 +111,7 @@ class Command(BaseCommand):
             existing_data = {}
             if os.path.isfile(old_file_path):
                 with open(old_file_path, 'r') as f:
-                    existing_data = yaml.load(f)
+                    existing_data = yaml.load(f, Loader=yaml.FullLoader)
                 sd = OrderedDict()
                 cols_to_extract = ['construct', 'pdb', 'representative', 'preferred_chain', 'state',
                     'endogenous_ligand', 'ligand', 'auxiliary_protein', 'signaling_protein']

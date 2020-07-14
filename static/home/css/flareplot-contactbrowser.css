@@ -641,3 +641,12 @@ svg text::selection {
     background: inherit;
     left: 20px;
 }
+
+.snakeplot-legend {
+    position: absolute;
+    right: 25px;
+    top: 45px;
+    padding: 5px;
+    border: 1px dashed;
+    background-color: white;
+}

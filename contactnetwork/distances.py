@@ -351,9 +351,21 @@ class Distances():
                 self.data[label] = []
             self.data[label].append(d[0]/distance_scaling_factor)
 
-    def fetch_distances_tm(self):
+    def fetch_distances_tm(self, distance_type = "CA"):
 #                .filter(gn1__in=self.filter_gns).filter(gn2__in=self.filter_gns) \
-        ds = Distance.objects.filter(structure__in=self.structures) \
+        # ds = Distance.objects.filter(structure__in=self.structures) \
+        #         .exclude(gns_pair__contains='8x').exclude(gns_pair__contains='12x').exclude(gns_pair__contains='23x').exclude(gns_pair__contains='34x').exclude(gns_pair__contains='45x')
+
+        if distance_type == "HC":
+            ds = Distance.objects.filter(structure__in=self.structures) \
+                .exclude(gns_pair__contains='8x').exclude(gns_pair__contains='12x').exclude(gns_pair__contains='23x').exclude(gns_pair__contains='34x').exclude(gns_pair__contains='45x') \
+                .values_list('distance_helix_center','gns_pair')
+        elif distance_type == "CB":
+            ds = Distance.objects.filter(structure__in=self.structures) \
+                .exclude(gns_pair__contains='8x').exclude(gns_pair__contains='12x').exclude(gns_pair__contains='23x').exclude(gns_pair__contains='34x').exclude(gns_pair__contains='45x') \
+                .values_list('distance_cb','gns_pair')
+        else:
+            ds = Distance.objects.filter(structure__in=self.structures) \
                 .exclude(gns_pair__contains='8x').exclude(gns_pair__contains='12x').exclude(gns_pair__contains='23x').exclude(gns_pair__contains='34x').exclude(gns_pair__contains='45x') \
                 .values_list('distance','gns_pair')
 
@@ -484,7 +496,6 @@ class Distances():
 
                 # Get distance between cells that have both GNs.
                 distance = np.sum(np.absolute(pdb_distance_maps[pdb1][gn_indices,:][:, gn_indices] - pdb_distance_maps[pdb2][gn_indices,:][:, gn_indices]))
-                distance_matrix[i, j] = pow(distance,2)/(len(gn_indices)*len(gn_indices))
-                distance_matrix[j, i] = distance_matrix[i, j]
+                distance_matrix[i, j] = distance_matrix[j, i] = distance * distance/(len(gn_indices)*len(gn_indices))
 
         return distance_matrix

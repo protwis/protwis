@@ -760,9 +760,16 @@ function drawPlotPanel(plot_type, plot_div) {
     plot_div.find('.plot-container').attr('class', 'plot-container');
     var mode = get_current_mode();
 
-    plot_div.find('.plot-title').html( "&nbsp;" + plot_type);
+    plot_div.find('.plot-title').html("&nbsp;" + display_plot_names[plot_type]);
 
-    console.log("SET UP PLOT", plot_type, plot_id, mode);
+    ngl_color_mode = false;
+
+    if (plot_type.startsWith("ngl") && plot_type.includes("_")) {
+        ngl_color_mode = plot_type.split("_")[1];
+        plot_type = "ngl";
+    }
+
+    console.log("SET UP PLOT", plot_type, plot_id, mode,'ngl_mode',ngl_color_mode);
     switch (mode) {
         case "two-crystal-groups":
             raw_data = two_sets_data;
@@ -802,6 +809,14 @@ function drawPlotPanel(plot_type, plot_div) {
             plot_div.find('.plot-container').html('<svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin" id="heatmap-' + plot_id + '" style="height: 500px;"></svg>');
 
             renderHeatmap(raw_data, '#heatmapcontainer-' + plot_id);
+            break;
+        case "heatmap_distances":
+            plot_div.find('.plot-container').removeClass('none');
+            plot_div.find('.plot-container').addClass('heatmap_distances-container');
+            plot_div.find('.plot-container').attr('id', "heatmap_distancescontainer-" + plot_id);
+            plot_div.find('.plot-container').html('<svg class="heatmap_distances" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin" id="heatmap_distances-' + plot_id + '" style="height: 500px;"></svg>');
+
+            renderHeatmap_distances(raw_data, '#heatmap_distancescontainer-' + plot_id);
             break;
         case "flareplot":
             plot_div.find('.plot-container').removeClass('none');
@@ -886,6 +901,12 @@ function drawPlotPanel(plot_type, plot_div) {
             plot_div.find('.plot-container').attr('id', 'tm_movment-' + plot_id);
             tm7_plot('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["classA_ligands"],raw_data["tm_movement_2D"]["viewbox_size"]);
             break;
+        case "tm7_plot_middle":
+            plot_div.find('.plot-container').removeClass('none');
+            plot_div.find('.plot-container').addClass('tm_movment-container');
+            plot_div.find('.plot-container').attr('id', 'tm_movment-' + plot_id);
+            tm7_plot('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["membrane_mid"],raw_data["tm_movement_2D"]["viewbox_size"]);
+            break;
         case "tm7_plot_intra":
             plot_div.find('.plot-container').removeClass('none');
             plot_div.find('.plot-container').addClass('tm_movment-container');
@@ -904,6 +925,12 @@ function drawPlotPanel(plot_type, plot_div) {
             plot_div.find('.plot-container').attr('id', 'tm_movment-' + plot_id);
             tm7_plot_3d('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["classA_ligands"]);
             break;
+        case "tm7_plot_3d_middle":
+            plot_div.find('.plot-container').removeClass('none');
+            plot_div.find('.plot-container').addClass('tm_movment-container');
+            plot_div.find('.plot-container').attr('id', 'tm_movment-' + plot_id);
+            tm7_plot_3d('#tm_movment-' + plot_id, raw_data["tm_movement_2D"]["membrane_mid"]);
+            break;
         case "tm7_plot_3d_intra":
             plot_div.find('.plot-container').removeClass('none');
             plot_div.find('.plot-container').addClass('tm_movment-container');
@@ -921,45 +948,56 @@ function drawPlotPanel(plot_type, plot_div) {
 }
 
 var plotting_options = {
-    'TM1-7 segment' : {
-        'extracellular': [
-            ['tm7_plot_extra', '2D plot'],
-            ['tm7_plot_3d_extra','3D plot'],
-            ['tm7_heatmap_extra','Heatmap']
-        ],
-        'class A major pocket': [
-            ['tm7_plot_major', '2D plot'],
-            ['tm7_plot_3d_major','3D plot'],
-            ['tm7_heatmap_major','Heatmap']
-        ],
+    'TM1-7 segment movement' : {
         'cytosolic': [
-            ['tm7_plot_intra', '2D plot'],
-            ['tm7_plot_3d_intra','3D plot'],
-            ['tm7_heatmap_intra','Heatmap']
-    ]},
+            ['tm7_heatmap_intra','Heatmap'],
+            ['tm7_plot_intra', 'Segment plot (2D)'],
+            ['tm7_plot_3d_intra', 'Segment plot (3D)']
+        ],
+        'extracellular': [
+            ['tm7_heatmap_extra','Heatmap'],
+            ['tm7_plot_extra', 'Segment plot (2D)'],
+            ['tm7_plot_3d_extra','Segment plot (3D)']
+        ],
+        // 'class A major pocket': [
+        //     ['tm7_plot_major', '2D plot'],
+        //     ['tm7_plot_3d_major','3D plot'],
+        //     ['tm7_heatmap_major','Heatmap']
+        // ],
+        'Middle of membrane': [
+            ['tm7_heatmap_middle','Heatmap'],
+            ['tm7_plot_middle', 'Segment plot (2D)'],
+            ['tm7_plot_3d_middle','Segment plot (3D)']
+        ],
+    },
     'Contacts between generic residue positions': [
-        ['ngl', '3D structure'],
-        ['flareplot', 'Flare Plot'],
-        ['flareplot_subset', 'Flare Plot (filtered positions)'],
-        ['force_network', 'Network'],
-        ['force_network_3d', 'Network 3D'],
-        ['heatmap', 'Heatmap']
+        ['flareplot', 'Flare Plot (kept+filtered out contacts)'],
+        ['flareplot_subset', 'Flare Plot (kept contacts)'],
+        ['heatmap', 'Heatmap'],
+        ['force_network', 'Network (2D)'],
+        ['force_network_3d', 'Network (3D)'],
+        ['ngl', 'Structure (3D)'],
         // ['schematic_non', 'Schematic (Non-consecutive)'],
         // ['schematic_con', 'Schematic (Consecutive)'],
     ],
-    'Contacts between segments (TM1-7, H8 and loops)': [
+    'Contacts between segments (TM1-7, H8 & loops)': [
         ['flareplot_segments', 'Flare Plot'],
-        ['force_network_segment', 'Network'],
-        ['force_network_3d_segment', 'Network 3D'],
+        ['force_network_segment', 'Network (2D)'],
+        ['force_network_3d_segment', 'Network (3D)'],
     ],
     'Contact frequencies': [
         ['boxplot', 'Box plot'],
     ],
     'Residue Properties': [
-        ['snakeplot', 'Snake plot'],
-        ['scatterplot', 'Scatter-plot'],
-        ['boxplot_angles', 'Box plot '],],
+        ['boxplot_angles', 'Box plot (distribution)'],
+        ['heatmap_distances', 'Heatmap (distance)'],
+        ['scatterplot', 'Scatter plot (correlation)'],
+        ['snakeplot', 'Snakeplot (2D, topology)'],
+        ['ngl_distances', 'Structure (3D, movement)']],
+    // '3D structure': { '3D structures': [['ngl_distances', 'Distances'], ['ngl_angles', 'Angles']] },
 };
+
+display_plot_names = {}
 
 
 
@@ -975,6 +1013,7 @@ function generate_display_options() {
         if ($.isArray(plotting_options[key])) {
             dropdown_html += '<li class="dropdown-header text-uppercase"><strong>' + key + '</strong></li>'
             plotting_options[key].forEach(function (opt) {
+                display_plot_names[opt[0]] = '<span class="text-uppercase"><strong>'+key + '</strong></span> - ' + opt[1];
                 dropdown_html += '<li><a class="plot_selection" href="#" plot_type="' + opt[0] + '">' + opt[1] + '</a></li>'
             });
         } else {
@@ -983,6 +1022,7 @@ function generate_display_options() {
             for (let key2 in plotting_options[key]) {
                 dropdown_html += '<li class="dropdown-header text-uppercase"><strong>' + key2 + '</strong></li>'
                 plotting_options[key][key2].forEach(function (opt) {
+                    display_plot_names[opt[0]] = '<span class="text-uppercase"><strong>'+key + '</strong></span> - <span class="text-uppercase"><strong>'+ key2 + '</strong></span> - ' + opt[1];
                     dropdown_html += '<li><a class="plot_selection" href="#" plot_type="' + opt[0] + '">' + opt[1] + '</a></li>'
                 });
             }
@@ -1156,7 +1196,8 @@ function initilizeInitialPlots() {
     var mode = get_current_mode();
     // if single structure - use interaction coloring
     if (mode == "two-crystal-groups") {
-        default_plot_types = ['tm7_plot_extra', 'tm7_plot_major', 'tm7_plot_intra'];
+        default_plot_types = ['tm7_plot_extra', 'tm7_plot_middle', 'tm7_plot_intra'];
+        // default_plot_types = ['scatterplot', 'snakeplot', ''];
     }
 
     $(".plot_row:visible").find(".panel").each(function (i) {
@@ -1188,6 +1229,8 @@ function initializeFullscreenButton(selector) {
         } else {
             fullScreenElement = $(this).closest(".panel-default").find(".plot-container");
             fullScreenElement.css('background-color', 'white');
+            var cp = fullScreenElement.find(".controls-panel");
+            cp.toggleClass("fullscreen");
         }
 
         toggleFullScreen(fullScreenElement.get(0));
@@ -1890,12 +1933,40 @@ function updateInteractionSettings() {
     var classtooltip = '<span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="When enabled, generic numbers will be in Class A regardless of class of selection"></span>';
     option_content += '<li class="list-group-item">' + classtooltip + ' Class A numbering<div class="material-switch pull-right"><input id="option-classa" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-classa" class="label-primary"></label></div></li>';
 
-
     // Only between helices
-    checked = currentSettings[currentTab]["options"].indexOf("intrahelical") >= 0 ? "checked" : "";
-    var heltooltip = '<span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="When enabled, interactions between residues within the same segment (i.e. TM1-7, H8 or a loop) are also included in the analysis."></span>';
-    option_content += '<li class="list-group-item">' + heltooltip + ' Intrasegment contacts<div class="material-switch pull-right"><input id="option-intrahelical" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-intrahelical" class="label-primary"></label></div></li>';
+    //checked = currentSettings[currentTab]["options"].indexOf("intrahelical") >= 0 ? "checked" : "";
+    //var heltooltip = '<span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="When enabled, interactions between residues within the same segment (i.e. TM1-7, H8 or a loop) are also included in the analysis."></span>';
+    //option_content += '<li class="list-group-item">' + heltooltip + ' Intrasegment contacts<div class="material-switch pull-right"><input id="option-intrahelical" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-intrahelical" class="label-primary"></label></div></li>';
 
+    // Toggle backbone interactions
+    //checked = currentSettings[currentTab]["options"].indexOf("backbone") >= 0 ? "checked" : "";
+    //var bbtooltip = '<span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="When enabled, interactions with and between backbone atoms are also included in the analysis."></span>';
+    //option_content += '<li class="list-group-item">' + bbtooltip + ' Backbone contacts<div class="material-switch pull-right"><input id="option-backbone" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-backbone" class="label-primary"></label></div></li>';
+
+    option_content += "</ul>"
+    $("#interaction_settings").append(option_content);
+
+    // Setup for splitting all interactions
+    $("#interaction_settings").append('<h5 class="border-bottom">Intersegment contacts</h5>')
+    var option_content = '<ul class="list-group">'
+    checked = currentSettings[currentTab]["options"].indexOf("inter_scsc") >= 0 ? "checked" : "";
+    option_content += '<li class="list-group-item">Sidechain-sidechain<div class="material-switch pull-right"><input id="option-inter_scsc" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-inter_scsc" class="label-primary"></label></div></li>';
+    checked = currentSettings[currentTab]["options"].indexOf("inter_scbb") >= 0 ? "checked" : "";
+    option_content += '<li class="list-group-item">Sidechain-backbone<div class="material-switch pull-right"><input id="option-inter_scbb" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-inter_scbb" class="label-primary"></label></div></li>';
+    checked = currentSettings[currentTab]["options"].indexOf("inter_bbbb") >= 0 ? "checked" : "";
+    option_content += '<li class="list-group-item">Backbone-backbone<div class="material-switch pull-right"><input id="option-inter_bbbb" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-inter_bbbb" class="label-primary"></label></div></li>';
+    option_content += "</ul>"
+    $("#interaction_settings").append(option_content);
+
+    // Setup for splitting all interactions
+    $("#interaction_settings").append('<h5 class="border-bottom">Intrasegment contacts</h5>')
+    var option_content = '<ul class="list-group">'
+    checked = currentSettings[currentTab]["options"].indexOf("intra_scsc") >= 0 ? "checked" : "";
+    option_content += '<li class="list-group-item">Sidechain-sidechain<div class="material-switch pull-right"><input id="option-intra_scsc" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-intra_scsc" class="label-primary"></label></div></li>';
+    checked = currentSettings[currentTab]["options"].indexOf("intra_scbb") >= 0 ? "checked" : "";
+    option_content += '<li class="list-group-item">Sidechain-backbone<div class="material-switch pull-right"><input id="option-intra_scbb" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-intra_scbb" class="label-primary"></label></div></li>';
+    checked = currentSettings[currentTab]["options"].indexOf("intra_bbbb") >= 0 ? "checked" : "";
+    option_content += '<li class="list-group-item">Backbone-backbone<div class="material-switch pull-right"><input id="option-intra_bbbb" name="option-toggles" ' + checked + ' type="checkbox"/><label for="option-intra_bbbb" class="label-primary"></label></div></li>';
     option_content += "</ul>"
     $("#interaction_settings").append(option_content);
 

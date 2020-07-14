@@ -1,10 +1,14 @@
 var filtered_gn_pairs = [];
 var filtered_cluster_groups = [];
 var filtered_gns = [];
+var filtered_gns_abs_diff_values = {};
+var filtered_cluster_groups_set = {};
 function filter_browser() {
     old_filtered_gn_pairs = filtered_gn_pairs;
     filtered_gn_pairs = [];
     filtered_gns = [];
+    filtered_gns_abs_diff_values = {};
+    filtered_gns_presence = {}; // Whether a filtered gn takes part in contacts only in set1,set2 or in both
     pos_contacts_count = {};
     filtered_cluster_groups = [];
     const selector = "#" + $('.main_option:visible').attr('id');
@@ -19,6 +23,17 @@ function filter_browser() {
             gns = separatePair(i['DT_RowId']);
             filtered_gns.push(gns[0]);
             filtered_gns.push(gns[1]);
+
+
+
+            if (analys_mode == "#two-crystal-groups") {
+                if (!(gns[0] in filtered_gns_abs_diff_values)) filtered_gns_abs_diff_values[gns[0]] = [];
+                if (!(gns[1] in filtered_gns_abs_diff_values)) filtered_gns_abs_diff_values[gns[1]] = [];
+                // BEWARE this 4th index can change if the column changes.. only on relevant in 2 group
+                diff_value = i['2'] - i['3'];
+                filtered_gns_abs_diff_values[gns[0]].push(diff_value);
+                filtered_gns_abs_diff_values[gns[1]].push(diff_value);
+            }
 
             // see if there is a key for gns1
             if (!(gns[0] in pos_contacts_count)) pos_contacts_count[gns[0]] = 0;
@@ -50,6 +65,47 @@ function filter_browser() {
             }
 
         })
+        filtered_gns_presence = {};
+        filtered_cluster_groups_set = {};
+        if (analys_mode == "#two-crystal-groups") {
+            $.each(filtered_gns_abs_diff_values, function (i, v) {
+                // Go through all the diff values. If both negative and positive diff numbers exist
+                // then label position as "both". Otherwise the correct set. This gives information whether 
+                // the position is only participating in interactions in one set or the other..
+                let max = Math.max.apply(null, v);
+                let min = Math.min.apply(null, v);
+                var in_set_1 = true ? max >= 0 : false;
+                var in_set_2 = true ? min <= 0 : false;
+                if (in_set_1 && in_set_2) {
+                    filtered_gns_presence[i] = 0.5; //both, middle
+                } else if (in_set_1) {
+                    filtered_gns_presence[i] = 0; //set1
+                } else if (in_set_2) {
+                    filtered_gns_presence[i] = 1; //set2
+                }
+
+            })
+
+            $.each(filtered_cluster_groups, function (i, gns) {
+    
+                // console.log('filter id', i);
+                var sum = 0;
+                for (var ii = 0; ii < gns.length; ii++){
+                    // console.log(ii, gns[ii],filtered_gns_presence[gns[ii]]);
+                    sum += filtered_gns_presence[gns[ii]];
+                }
+                var avg = sum / gns.length;
+                group_set = "both";
+                if (avg == 0) {
+                    group_set = "set1";
+                } else if (avg == 1) {
+                    group_set = "set2";
+                }
+                // console.log('filter id', i, avg, group_set);
+                filtered_cluster_groups_set[i] = group_set;
+            })
+        }
+
         console.time('Update network');
         if (old_filtered_gn_pairs.sort().join(',') !== filtered_gn_pairs.sort().join(',')) {
             // only update this if there are new filtered things..
@@ -150,9 +206,10 @@ function renderDataTablesYadcf(element) {
     const analys_mode = selector.replace('-tab', '');
     var table = $(selector + " .browser-table-" + tab_number);
     var heading = $(selector + " .tab-content .panel-title:visible");
-    if (!heading.hasClass("button_added") && analys_mode == "#two-crystal-groups") {
-        heading.append(' <button type="button"  onclick="make_abs_values(\''+selector + " .browser-table-" + tab_number+'\');" class="btn btn-primary btn-xs">Toggle if difference values are absolute</button>');
-        heading.addClass("button_added");
+    if (analys_mode == "#two-crystal-groups") {
+        heading.find(".abs_button").remove();
+        heading.append(' <button type="button"  onclick="make_abs_values(this,\''+selector + " .browser-table-" + tab_number+'\');" class="btn btn-primary btn-xs abs_button" changed=0>Change negative to absolute values</button>');
+        //heading.addClass("button_added");
     }
     // If table is without tbody, then do not init further.
     if (!(table.find("thead").length)) {
@@ -189,7 +246,29 @@ function renderDataTablesYadcf(element) {
                 pageLength: 200,
                 "bLengthChange": false,
                 "bPaginate": false,
-                "bInfo": false,
+                "bInfo": true,
+                "fnInfoCallback": function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
+                    filtered = iMax - iTotal;
+                    filtered_text = filtered ? " (" + filtered + " contact-pairs filtered out)" : "";
+                    var cols = []
+                    var table = $(selector + ' .dataTables_scrollBody');
+                    cols_of_interest = [0, 1];
+                    for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
+                        for (let [j, cell] of [...row.cells].entries()) {
+                            if (cols_of_interest.includes(j)) {
+                                cols[j] = cols[j] || [];
+                                cols[j].push(cell.innerText)
+                            }
+                        }
+                    }
+                    distinctPositions = [...new Set(cols[1].map((val, i) => val.split("-")).flat())]
+                    //console.log(cols);
+                    // distinctReceptors = [...new Set(cols[1])];
+                    // distinctReceptorState = [...new Set(cols[1].map((val, i) => [cols[11]].reduce((a, arr) => [...a, arr[i]], [val])))];
+                    // distinctReceptorState = [...new Set(distinctReceptorState.map(x => x[0] + "_" + x[1]))]
+                    //console.log(iStart, iEnd, iMax, iTotal, sPre)
+                    return "Showing " + iTotal + " contact-pairs covering "+distinctPositions.length+" positions"+filtered_text;
+                  },
                 "order": [],
                 columnDefs: [{
                         type: "string",
@@ -422,7 +501,29 @@ function renderDataTablesYadcf(element) {
                 // "sDom": 't', // To disable the pages on the button..
                 "bLengthChange": false,
                 "bPaginate": false,
-                "bInfo": false,
+                "bInfo": true,
+                "fnInfoCallback": function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
+                    filtered = iMax - iTotal;
+                    filtered_text = filtered ? " (" + filtered + " contact-pairs filtered out)" : "";
+                    var cols = []
+                    var table = $(selector + ' .dataTables_scrollBody');
+                    cols_of_interest = [0, 1];
+                    for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
+                        for (let [j, cell] of [...row.cells].entries()) {
+                            if (cols_of_interest.includes(j)) {
+                                cols[j] = cols[j] || [];
+                                cols[j].push(cell.innerText)
+                            }
+                        }
+                    }
+                    distinctPositions = [...new Set(cols[1].map((val, i) => val.split("-")).flat())]
+                    //console.log(cols);
+                    // distinctReceptors = [...new Set(cols[1])];
+                    // distinctReceptorState = [...new Set(cols[1].map((val, i) => [cols[11]].reduce((a, arr) => [...a, arr[i]], [val])))];
+                    // distinctReceptorState = [...new Set(distinctReceptorState.map(x => x[0] + "_" + x[1]))]
+                    //console.log(iStart, iEnd, iMax, iTotal, sPre)
+                    return "Showing " + iTotal + " contact-pairs covering "+distinctPositions.length+" positions"+filtered_text;
+                  },
                 paging: true,
                 pageLength: 200,
                 "order": [],
@@ -688,7 +789,29 @@ function renderDataTablesYadcf(element) {
                 // "sDom": 't', // To disable the pages on the button..
                 "bLengthChange": false,
                 "bPaginate": false,
-                "bInfo": false,
+                "bInfo": true,
+                "fnInfoCallback": function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
+                    filtered = iMax - iTotal;
+                    filtered_text = filtered ? " (" + filtered + " positions filtered out)" : "";
+                    var cols = []
+                    var table = $(selector + ' .dataTables_scrollBody');
+                    cols_of_interest = [0, 1];
+                    for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
+                        for (let [j, cell] of [...row.cells].entries()) {
+                            if (cols_of_interest.includes(j)) {
+                                cols[j] = cols[j] || [];
+                                cols[j].push(cell.innerText)
+                            }
+                        }
+                    }
+                    distinctPositions = [...new Set(cols[1])]
+                    //console.log(cols);
+                    // distinctReceptors = [...new Set(cols[1])];
+                    // distinctReceptorState = [...new Set(cols[1].map((val, i) => [cols[11]].reduce((a, arr) => [...a, arr[i]], [val])))];
+                    // distinctReceptorState = [...new Set(distinctReceptorState.map(x => x[0] + "_" + x[1]))]
+                    //console.log(iStart, iEnd, iMax, iTotal, sPre)
+                    return "Showing " + iTotal + " positions"+filtered_text;
+                  },
                 paging: true,
                 pageLength: 200,
                 "order": [],
@@ -793,7 +916,29 @@ function renderDataTablesYadcf(element) {
                 // "sDom": 't', // To disable the pages on the button..
                 "bLengthChange": false,
                 "bPaginate": false,
-                "bInfo": false,
+                "bInfo": true,
+                "fnInfoCallback": function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
+                    filtered = iMax - iTotal;
+                    filtered_text = filtered ? " (" + filtered + " positions filtered out)" : "";
+                    var cols = []
+                    var table = $(selector + ' .dataTables_scrollBody');
+                    cols_of_interest = [0, 1];
+                    for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
+                        for (let [j, cell] of [...row.cells].entries()) {
+                            if (cols_of_interest.includes(j)) {
+                                cols[j] = cols[j] || [];
+                                cols[j].push(cell.innerText)
+                            }
+                        }
+                    }
+                    distinctPositions = [...new Set(cols[1])]
+                    //console.log(cols);
+                    // distinctReceptors = [...new Set(cols[1])];
+                    // distinctReceptorState = [...new Set(cols[1].map((val, i) => [cols[11]].reduce((a, arr) => [...a, arr[i]], [val])))];
+                    // distinctReceptorState = [...new Set(distinctReceptorState.map(x => x[0] + "_" + x[1]))]
+                    //console.log(iStart, iEnd, iMax, iTotal, sPre)
+                    return "Showing " + iTotal + " positions"+filtered_text;
+                  },
                 paging: true,
                 pageLength: 200,
                 "order": [],
@@ -1027,7 +1172,29 @@ function renderDataTablesYadcf(element) {
                 // "sDom": 't', // To disable the pages on the button..
                 "bLengthChange": false,
                 "bPaginate": false,
-                "bInfo": false,
+                "bInfo": true,
+                "fnInfoCallback": function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
+                    filtered = iMax - iTotal;
+                    filtered_text = filtered ? " (" + filtered + " positions filtered out)" : "";
+                    var cols = []
+                    var table = $(selector + ' .dataTables_scrollBody');
+                    cols_of_interest = [0, 1];
+                    for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
+                        for (let [j, cell] of [...row.cells].entries()) {
+                            if (cols_of_interest.includes(j)) {
+                                cols[j] = cols[j] || [];
+                                cols[j].push(cell.innerText)
+                            }
+                        }
+                    }
+                    distinctPositions = [...new Set(cols[1])]
+                    //console.log(cols);
+                    // distinctReceptors = [...new Set(cols[1])];
+                    // distinctReceptorState = [...new Set(cols[1].map((val, i) => [cols[11]].reduce((a, arr) => [...a, arr[i]], [val])))];
+                    // distinctReceptorState = [...new Set(distinctReceptorState.map(x => x[0] + "_" + x[1]))]
+                    //console.log(iStart, iEnd, iMax, iTotal, sPre)
+                    return "Showing " + iTotal + " positions"+filtered_text;
+                  },
                 paging: true,
                 pageLength: 200,
                 "order": [],
@@ -1164,19 +1331,19 @@ function renderBrowser(data) {
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="3" rowspan="2">Contact Frequency (%)</th> \
                           <th colspan="2" rowspan="2">Position no. contacts (in filtered rows)</th> \
-                          <th colspan="1" rowspan="2">Distinct network group</th> \
-                          <th colspan="5" rowspan="2">Interactions</th> \
-                          <th rowspan="2">Distance (Ca, Å)</th> \
+                          <th colspan="1" rowspan="2">Net-<br>work no.</th> \
+                          <th colspan="5" rowspan="2">Interaction types (%)</th> \
+                          <th rowspan="2">Contact Ca distance (Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="6">Sidechain differences</th> \
                           <th colspan="2" rowspan="2">Position presence %</th> \
                           <th colspan="2">Secondary structure</th> \
                           <th colspan="2"></th> \
-                          <th colspan="4" rowspan="1">Missing in receptor or structure (%)</th> \
+                          <th colspan="4" rowspan="1">Absence in receptor or structure (%)</th> \
                           <th rowspan="2" colspan="3">Contact AA pair sequence conservation in class (%)</th> \
                         </tr> \
                         <tr> \
-                          <th colspan="2">Distance to<br/>7TM axis (Å)</th> \
+                          <th colspan="2">Distance to all other pos.</th> \
                           <th colspan="2">Angle to helix<br/>and 7TM axes</th> \
                           <th colspan="2">Rotamer</th> \
                           <th colspan="2">SASA</th> \
@@ -1194,12 +1361,12 @@ function renderBrowser(data) {
                           <th class="narrow_col">Diff<br></th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
-                          <th class="narrow_col">Group#</th> \
-                          <th style="writing-mode: sideways-lr;">Ion</th> \
-                          <th style="writing-mode: sideways-lr;">Pol</th> \
-                          <th style="writing-mode: sideways-lr;">Aro</th> \
-                          <th style="writing-mode: sideways-lr;">Hyd</th> \
-                          <th style="writing-mode: sideways-lr;">vdW</th> \
+                          <th class="narrow_col">No.</th> \
+                          <th style="narrow_col">Ion</th> \
+                          <th style="narrow_col">Pol</th> \
+                          <th style="narrow_col">Aro</th> \
+                          <th style="narrow_col">Hyd</th> \
+                          <th style="narrow_col">vdW</th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
@@ -1387,6 +1554,17 @@ function renderBrowser(data) {
             // 7 'rsa',
             // 8 'theta',
             // 9 'hse'
+
+            // avg distance ''
+            distance_all_gn1 = '';
+            if (gn1 in data['distances']) {
+                distance_all_gn1 = data['distances'][gn1]['avg'];
+            } 
+            distance_all_gn2 = '';
+            if (gn2 in data['distances']) {
+                distance_all_gn2 = data['distances'][gn2]['avg'];
+            } 
+
             tr = `
                     <tr class="clickable-row filter_rows" id="${i}">
                       <td class="dt-center">${seg1}-${seg2}</td>
@@ -1403,8 +1581,8 @@ function renderBrowser(data) {
                       <td class="dt-center angles_tooltip" data-set1="${types_count['hydrophobic'][0]}" data-set2="${types_count['hydrophobic'][1]}">${types_count['hydrophobic'][2]}</td>
                       <td class="dt-center angles_tooltip" data-set1="${types_count['van-der-waals'][0]}" data-set2="${types_count['van-der-waals'][1]}">${types_count['van-der-waals'][2]}</td>
                       <td class="narrow_col">${distance}</td>
-                      <td class="narrow_col angles_modal angles_tooltip" data-type="core_distance" data-pos="0" data-set1="${angles_1[0][1]}" data-set2="${angles_1[0][2]}">${angles_1[0][0]}</td>
-                      <td class="narrow_col angles_modal angles_tooltip" data-type="core_distance" data-pos="1" data-set1="${angles_2[0][1]}" data-set2="${angles_2[0][2]}">${angles_2[0][0]}</td>
+                      <td class="narrow_col" data-type="distance_all_avg">${distance_all_gn1}</td>
+                      <td class="narrow_col" data-type="distance_all_avg">${distance_all_gn2}</td>
                       <td class="narrow_col angles_modal angles_tooltip" data-type="a_angle" data-pos="0" data-set1="${angles_1[1][1]}" data-set2="${angles_1[1][2]}">${angles_1[1][0]}</td>
                       <td class="narrow_col angles_modal angles_tooltip" data-type="a_angle" data-pos="1" data-set1="${angles_2[1][1]}" data-set2="${angles_2[1][2]}">${angles_2[1][0]}</td>
                       <td class="narrow_col angles_modal angles_tooltip" data-type="outer_angle" data-pos="0" data-set1="${angles_1[2][1]}" data-set2="${angles_1[2][2]}">${angles_1[2][0]}</td>
@@ -1429,25 +1607,25 @@ function renderBrowser(data) {
                     </tr>`;
             tbody.append(tr);
         });
-    } else if (data['proteins'].length > 1) {
+    } else if ((data['proteins'].length > 1 && normalized) || (data['pdbs'].length > 1 && !normalized)) {
         thead = '<tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="1" rowspan="2">Contact Frequency (%)</th> \
                           <th colspan="2" rowspan="2">Position no. contacts (in filtered rows)</th> \
-                          <th colspan="1" rowspan="2">Distinct network group</th> \
-                          <th rowspan="2" colspan="5">Interactions</th> \
-                          <th rowspan="2">Distance (Ca, Å)</th> \
+                          <th colspan="1" rowspan="2">Net-<br>work no.</th> \
+                          <th rowspan="2" colspan="5">Interaction types (%)</th> \
+                          <th rowspan="2">Contact Ca distance (Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="6">Sidechain differences</th> \
                           <th colspan="2" rowspan="2">Position presence %</th> \
                           <th colspan="2">Secondary structure</th> \
                           <th colspan="2"></th> \
-                          <th colspan="4" rowspan="1">Missing in receptor or structure (%)</th> \
+                          <th colspan="4" rowspan="1">Absence in receptor or structure (%)</th> \
                           <th rowspan="2">Class Seq Cons(%)</th> \
                         </tr> \
                         <tr> \
-                          <th colspan="2">Distance to<br/>7TM axis (Å)</th> \
+                          <th colspan="2">Distance to all other pos.</th> \
                           <th colspan="2">Angle to helix<br/>and 7TM axes</th> \
                           <th colspan="2">Rotamer</th> \
                           <th colspan="2">SASA</th> \
@@ -1463,12 +1641,12 @@ function renderBrowser(data) {
                           <th class="narrow_col">Set<br></th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
-                          <th class="narrow_col">Group#</th> \
-                          <th style="writing-mode: sideways-lr;">Ion</th> \
-                          <th style="writing-mode: sideways-lr;">Pol</th> \
-                          <th style="writing-mode: sideways-lr;">Aro</th> \
-                          <th style="writing-mode: sideways-lr;">Hyd</th> \
-                          <th style="writing-mode: sideways-lr;">vdW</th> \
+                          <th class="narrow_col">No.</th> \
+                          <th style="narrow_col">Ion</th> \
+                          <th style="narrow_col">Pol</th> \
+                          <th style="narrow_col">Aro</th> \
+                          <th style="narrow_col">Hyd</th> \
+                          <th style="narrow_col">vdW</th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
@@ -1636,16 +1814,16 @@ function renderBrowser(data) {
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="1" rowspan="2">Positions GN</th> \
                           <th colspan="2" rowspan="2">Position no. contacts (in filtered rows)</th> \
-                          <th colspan="1" rowspan="2">Distinct network group</th> \
-                          <th rowspan="2">Interaction</th> \
-                          <th rowspan="2">Distance (Ca, Å)</th> \
+                          <th colspan="1" rowspan="2">Net-<br>work no.</th> \
+                          <th rowspan="2">Interaction types (%)</th> \
+                          <th rowspan="2">Contact Ca distance (Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="6">Sidechain differences</th> \
                           <th colspan="2">Secondary structure</th> \
                           <th rowspan="2">Class Seq Cons(%)</th> \
                         </tr> \
                         <tr> \
-                          <th colspan="2">Distance to<br/>7TM axis (Å)</th> \
+                          <th colspan="2">Distance to all other pos.</th> \
                           <th colspan="2">Angle to helix<br/>and 7TM axes</th> \
                           <th colspan="2">Rotamer</th> \
                           <th colspan="2">SASA</th> \
@@ -1658,7 +1836,7 @@ function renderBrowser(data) {
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
-                          <th class="narrow_col">Group#</th> \
+                          <th class="narrow_col">No.</th> \
                           <th></th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
@@ -1808,13 +1986,13 @@ function renderBrowser_2(data) {
                           <th colspan="2" rowspan="2">Amino acids</th> \
                           <th colspan="9" rowspan="1">AA occurrence in structure sets (%)</th> \
                           <th colspan="3" rowspan="2">Sequence conservation in class (%)</th> \
-                          <th rowspan="2" colspan="5">Interactions</th> \
+                          <th rowspan="2" colspan="5">Interaction types (%)</th> \
                           <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="6">Sidechain differences</th> \
                           <th colspan="2" rowspan="2">Position presence %</th> \
                           <th colspan="4">Secondary structure</th> \
-                          <th colspan="4" rowspan="1">Missing in receptor or structure (%)</th> \
+                          <th colspan="4" rowspan="1">Absence in receptor or structure (%)</th> \
                         </tr> \
                         <tr> \
                           <th colspan="3">AA1</th> \
@@ -1853,11 +2031,11 @@ function renderBrowser_2(data) {
                           <th class="narrow_col">AA1<br></th> \
                           <th class="narrow_col">AA2<br></th> \
                           <th class="narrow_col">Pair<br></th> \
-                          <th style="writing-mode: sideways-lr;">Ion</th> \
-                          <th style="writing-mode: sideways-lr;">Pol</th> \
-                          <th style="writing-mode: sideways-lr;">Aro</th> \
-                          <th style="writing-mode: sideways-lr;">Hyd</th> \
-                          <th style="writing-mode: sideways-lr;">vdW</th> \
+                          <th style="narrow_col">Ion</th> \
+                          <th style="narrow_col">Pol</th> \
+                          <th style="narrow_col">Aro</th> \
+                          <th style="narrow_col">Hyd</th> \
+                          <th style="narrow_col">vdW</th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
@@ -2097,13 +2275,13 @@ function renderBrowser_2(data) {
                           <th colspan="2" rowspan="2">Amino acids</th> \
                           <th colspan="3" rowspan="1">AA occurrence in set (%)</th> \
                           <th colspan="3" rowspan="2">Sequence conservation in class (%)</th> \
-                          <th rowspan="2" colspan="5">Interactions</th> \
+                          <th rowspan="2" colspan="5">Interaction types (%)</th> \
                           <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="6">Sidechain differences</th> \
                           <th colspan="2" rowspan="2">Position presence %</th> \
                           <th colspan="4">Secondary structure</th> \
-                          <th colspan="4" rowspan="1">Missing in receptor or structure (%)</th> \
+                          <th colspan="4" rowspan="1">Absence in receptor or structure (%)</th> \
                         </tr> \
                         <tr> \
                           <th colspan="1">AA1</th> \
@@ -2132,11 +2310,11 @@ function renderBrowser_2(data) {
                           <th class="narrow_col">AA1<br></th> \
                           <th class="narrow_col">AA2<br></th> \
                           <th class="narrow_col">Pair<br></th> \
-                          <th style="writing-mode: sideways-lr;">Ion</th> \
-                          <th style="writing-mode: sideways-lr;">Pol</th> \
-                          <th style="writing-mode: sideways-lr;">Aro</th> \
-                          <th style="writing-mode: sideways-lr;">Hyd</th> \
-                          <th style="writing-mode: sideways-lr;">vdW</th> \
+                          <th style="narrow_col">Ion</th> \
+                          <th style="narrow_col">Pol</th> \
+                          <th style="narrow_col">Aro</th> \
+                          <th style="narrow_col">Hyd</th> \
+                          <th style="narrow_col">vdW</th> \
                           <th class="narrow_col">Pos1-Pos2</th> \
                           <th class="narrow_col">Pos1</th> \
                           <th class="narrow_col">Pos2</th> \
@@ -2324,12 +2502,12 @@ function renderBrowser_2(data) {
                           <th colspan="1" rowspan="2">Positions</th> \
                           <th colspan="2" rowspan="2">Amino acids</th> \
                           <th colspan="3" rowspan="2">Conservation in class (%)</th> \
-                          <th rowspan="2">Interactions</th> \
+                          <th rowspan="2">Interaction types (%)</th> \
                           <th rowspan="2">Distance (Ca, Å)</th> \
                           <th colspan="4">Backbone Ca movement</th> \
                           <th colspan="6">Sidechain differences</th> \
                           <th colspan="2">Secondary structure</th> \
-                          <th colspan="4" rowspan="1">Missing in receptor or structure (%)</th> \
+                          <th colspan="4" rowspan="1">Absence in receptor or structure (%)</th> \
                         </tr> \
                         <tr> \
                           <th colspan="2">Distance to<br/>7TM axis (Å)</th> \
@@ -2844,7 +3022,7 @@ function renderBrowser_4(data) {
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Pos</th> \
                           <th colspan="5" rowspan="1">Secondary structure</th> \
-                          <th colspan="4" rowspan="1">Missing in receptor or structure (%)</th> \
+                          <th colspan="4" rowspan="1">Absence in receptor or structure (%)</th> \
                           <th colspan="9" rowspan="1">Residue angles and dihedrals</th> \
                           <th colspan="9" rowspan="1">Helix turn angles and dihedrals</th> \
                           <th colspan="5" rowspan="1">Seq consensus</th> \
@@ -2952,7 +3130,7 @@ function renderBrowser_4(data) {
 
             missing_1 = Math.round(100*dssp_set1.filter(x => data['missing'][i]['present'].includes(x)).length / dssp_set1.length);
             missing_2 = Math.round(100 * dssp_set2.filter(x => data['missing'][i]['present'].includes(x)).length / dssp_set2.length);
-            
+
 
             all_angles_1_set1 = data['all_angles_set1'][i];
             all_angles_1_set2 = data['all_angles_set2'][i];
@@ -3330,14 +3508,14 @@ function renderBrowser_5(data) {
         thead += '<tr> \
                         <th colspan="1" rowspan="2">Seg-<br>ment</th> \
                         <th colspan="1" rowspan="2">Pos</th> \
-                        <th colspan="1" rowspan="2">Pair movement</th> \
-                        <th colspan="2">Backbone Ca movement</th> \
+                        <th colspan="3">Backbone Ca movement</th> \
                         <th colspan="1" rowspan="2">Ca half-sphere exposure (Å&sup2;)</th> \
                         <th colspan="3">Sidechain differences</th> \
                         <th colspan="5" rowspan="1">Seq consensus</th> \
                         <th colspan="2" rowspan="1">Class seq consensus</th> \
                         </tr> \
                         <tr> \
+                        <th colspan="1">Avg distance to<br/>residues</th> \
                         <th colspan="1">Distance to<br/>7TM axis (Å)</th> \
                         <th colspan="1">Angle to helix<br/>and 7TM axes</th> \
                         <th colspan="1">Rotamer</th> \
@@ -3370,14 +3548,14 @@ function renderBrowser_5(data) {
         thead += '<tr> \
                 <th colspan="1" rowspan="2">Seg-<br>ment</th> \
                 <th colspan="1" rowspan="2">Pos</th> \
-                <th colspan="1" rowspan="2">Pair movement</th> \
-                <th colspan="2">Backbone Ca movement</th> \
+                <th colspan="3">Backbone Ca movement</th> \
                 <th colspan="1" rowspan="2">Ca half-sphere exposure (Å&sup2;)</th> \
                 <th colspan="3">Sidechain differences</th> \
                 <th colspan="2" rowspan="1">Seq consensus</th> \
                 <th colspan="2" rowspan="1">Class seq consensus</th> \
                 </tr> \
                 <tr> \
+                <th colspan="1">Avg distance to<br/>residues</th> \
                 <th colspan="1">Distance to<br/>7TM axis (Å)</th> \
                 <th colspan="1">Angle to helix<br/>and 7TM axes</th> \
                 <th colspan="1">Rotamer</th> \
@@ -3582,9 +3760,18 @@ function gray_scale_table(table) {
     console.timeEnd('Greyscale');
 }
 
-function make_abs_values(table) {
+function make_abs_values(e,table) {
     $(".main_loading_overlay").show();
     console.time('Abs values')
+
+    if ($(e).attr('changed') == '0') {
+        $(e).html('Change back to original values');
+        $(e).attr('changed','1')
+    } else {
+        $(e).html('Change negative to absolute values');
+        $(e).attr('changed','0')
+
+    }
     console.log(table);
 
     myVar = setTimeout(function () {
@@ -3799,7 +3986,7 @@ function numberToColorGradient(value, max, palette, neg_and_pos = false) {
     var yellow = {red:255, green:255, blue: 0}
     var yellow = {red:255, green:255, blue: 0}
     var black = {red:0, green:0, blue: 0}
-    
+
     switch(palette){
         case "rwb": // red-white-blue
           return colorGradient(value/max, red, white, blue)

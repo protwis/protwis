@@ -4,16 +4,20 @@ import time
 from collections import Counter, OrderedDict
 from decimal import Decimal
 
+from pprint import pprint
+
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.core.cache import cache
 from django.db.models import F, Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views.decorators.cache import cache_page
+from django.views.generic import TemplateView
 
 from common import definitions
 from common.diagrams_gpcr import DrawSnakePlot
 from common.diagrams_gprotein import DrawGproteinPlot
+from common.tools import fetch_from_web_api
 from common.views import AbsTargetSelection
 from contactnetwork.models import InteractingResiduePair
 from mutation.models import MutationExperiment
@@ -91,6 +95,401 @@ class TargetSelection(AbsTargetSelection):
     }
 
 
+class CouplingBrowser(TemplateView):
+    """
+    Class based generic view which serves coupling data between Receptors and G-proteins.
+    Data coming from Guide to Pharmacology, Asuka Inuoue and Michel Bouvier.
+    More data might come later from Roth and Strachan TRUPATH biosensor.
+    :param dataset: ProteinGProteinPair (see build/management/commands/build_g_proteins.py)
+    :return: context
+    """
+    template_name = "signprot/coupling_browser.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        fam_tab = self.fams_tab()
+
+        protobj = Protein.objects.filter(sequence_type__slug='wt',
+                                         family__slug__startswith='00',
+                                         species__common_name='Human').prefetch_related(
+            "family",
+            "parent",
+            "source")
+
+        coupobj = ProteinGProteinPair.objects.all().prefetch_related('protein',
+                                                                     'g_protein_subunit',
+                                                                     'g_protein')
+
+#        context['proteins'] = protobj
+#        context['couplings'] = coupobj
+        context['famtab'] = fam_tab
+
+        return context
+
+    @staticmethod
+    def fams_tab():
+        """
+        This function returns what is needed in the families (maybe others - needs refactoring) tab of the coupling
+        browser.
+        :return: key.value pairs from fd dictionary
+        keys = gene names of proteins
+        values = gpcrDB general values and emax-double-normalized, pec50-double-normalized, emax-mean, pec50-mean
+        emax-sem, pec50sem.
+        """
+        threshold_primary_inoue = 0.5  # -0.1
+        threshold_secondary_inoue = 0.01  # -1
+        threshold_primary_bouvier = 0.5  # -0.1
+        threshold_secondary_bouvier = 0.01  # -1
+        proteins = Protein.objects.filter(sequence_type__slug='wt',
+                                          family__slug__startswith='00',
+                                          species__common_name='Human').all().prefetch_related('family')
+        data = {}
+        class_names = {}
+        family_names = {}
+        for p in proteins:
+            p_class = p.family.slug.split('_')[0]
+            if p_class not in class_names:
+                class_names[p_class] = p.family.parent.parent.parent.name
+                family_names[p_class] = p.family.parent.name
+            p_class_name = class_names[p_class].replace('Class', '').strip()
+            p_family_name = family_names[p_class].replace('receptors', '').strip()
+            p_accession = p.accession
+            p_entryname = p.entry_name
+            data[p.entry_short()] = {'class': p_class_name,
+                                     'family': p_family_name,
+                                     'accession': p_accession,
+                                     'entryname': p_entryname,
+                                     'pretty': p.short(),
+                                     'GuideToPharma': {},
+                                     'Aska': {},
+                                     'Bouvier': {}}
+
+        distinct_g_families = []
+        distinct_g_subunit_families = {}
+        couplings = ProteinGProteinPair.objects.prefetch_related('protein',
+                                                                 'g_protein_subunit',
+                                                                 'g_protein')
+        for c in couplings:
+            p = c.protein.entry_short()
+            s = c.source
+            t = c.transduction
+            emdn = c.emax_dnorm
+            pec50dn = c.pec50_dnorm
+            emmean = c.emax_mean
+            pec50mean = c.pec50_mean
+            emsem = c.emax_sem
+            pec50sem = c.pec50_sem
+            gf = c.g_protein.name
+            gf = gf.replace(" family", "")
+
+            if gf not in distinct_g_families:
+                distinct_g_families.append(gf)
+                distinct_g_subunit_families[gf] = []
+
+            if c.g_protein_subunit:
+                g = c.g_protein_subunit.entry_name
+                g = g.replace("_human", "")
+                if g not in distinct_g_subunit_families[gf]:
+                    distinct_g_subunit_families[gf].append(g)
+                    distinct_g_subunit_families[gf] = sorted(distinct_g_subunit_families[gf])
+
+            if s not in data[p]:
+                data[p][s] = {}
+
+            if gf not in data[p][s]:
+                data[p][s][gf] = {}
+
+            # If transduction (primary, secondary) in Guide To Pharmacology data
+            if t:
+                data[p][s][gf] = t
+
+            # Else t (primary secondary classification) doesn't exist, such as
+            # source [s]  Aska (Inoue) or Bouvier.
+            else:
+                if 'emdn' not in data[p][s][gf]:
+                    data[p][s][gf] = {'emdn': {}, 'max': 0.00, 'maxid': str()}
+                if emdn is None:
+                    data[p][s][gf]['emdn'][g] = round(Decimal(0), 2)
+                    continue
+                data[p][s][gf]['emdn'][g] = round(Decimal(emdn), 2)
+                # get the highest number into 'max'
+                # TODO: Who is max? It will eventually be needed, count on it!
+                if emdn > data[p][s][gf]['max']:
+                    data[p][s][gf]['max'] = round(Decimal(emdn), 2)
+                    data[p][s][gf]['maxid'] = g
+                # pec50dn
+                if 'pec50dn' not in data[p][s][gf]:
+                    data[p][s][gf]['pec50dn'] = {}
+                if pec50dn is None:
+                    data[p][s][gf]['pec50dn'][g] = round(Decimal(0), 2)
+                    continue
+                data[p][s][gf]['pec50dn'][g] = round(Decimal(pec50dn), 2)
+                # emmean
+                if 'emmean' not in data[p][s][gf]:
+                    data[p][s][gf]['emmean'] = {}
+                if emmean is None:
+                    data[p][s][gf]['emmean'][g] = round(Decimal(0), 2)
+                    continue
+                data[p][s][gf]['emmean'][g] = round(Decimal(emmean), 2)
+                # pec50mean
+                if 'pec50mean' not in data[p][s][gf]:
+                    data[p][s][gf]['pec50mean'] = {}
+                if pec50mean is None:
+                    data[p][s][gf]['pec50mean'][g] = round(Decimal(0), 2)
+                    continue
+                data[p][s][gf]['pec50mean'][g] = round(Decimal(pec50mean), 2)
+                # emsem
+                if 'emsem' not in data[p][s][gf]:
+                    data[p][s][gf]['emsem'] = {}
+                if emsem is None:
+                    data[p][s][gf]['emsem'][g] = round(Decimal(0), 2)
+                    continue
+                data[p][s][gf]['emsem'][g] = round(Decimal(emsem), 2)
+                # pec50sem
+                if 'pec50sem' not in data[p][s][gf]:
+                    data[p][s][gf]['pec50sem'] = {}
+                if pec50sem is None:
+                    data[p][s][gf]['pec50sem'][g] = round(Decimal(0), 2)
+                    continue
+                data[p][s][gf]['pec50sem'][g] = round(Decimal(pec50sem), 2)
+
+
+        fd = {}  # final data
+        distinct_g_families = ['Gs', 'Gi/Go', 'Gq/G11', 'G12/G13']
+        distinct_g_subunit_families = OrderedDict(
+            [('Gs', ['gnas2', 'gnal']),
+             ('Gi/Go', ['gnai1', 'gnai2', 'gnai3', 'gnat1', 'gnat2', 'gnat3', 'gnao', 'gnaz']),
+             ('Gq/G11', ['gnaq', 'gna11', 'gna14', 'gna15']),
+             ('G12/G13', ['gna12', 'gna13'])])
+
+        # This for loop, does the job of putting together
+        # data-sets, GuideToPharma, Asuka's and Bouvier.
+        for p, v in data.items():
+            fd[p] = [v['class'], v['family'], v['accession'], v['entryname'], p, v['pretty']]
+            s = 'GuideToPharma'
+            # MERGED CRITERIA FOR COUPLING
+            # merge primary, secondary, coupling, no coupling classificationm currently from
+            # three sources, GtP, Inoue, Bouvier. Exact rules being worked on.
+            for gf in distinct_g_families:
+                values = []
+                if 'GuideToPharma' in v and gf in v['GuideToPharma']:
+                    values.append(v['GuideToPharma'][gf])
+                else:
+                    values.append('na gtf')
+                if 'Aska' in v and gf in v['Aska']:
+                    max = v['Aska'][gf]['max']
+                    if max > threshold_primary_inoue:
+                        values.append('primary')
+                    elif max > threshold_secondary_inoue:
+                        values.append('secondary')
+                    elif max == 0:
+                        values.append('NCI')
+                else:
+                    values.append('na inoue')
+                if 'Bouvier' in v and gf in v['Bouvier']:
+                    max = v['Bouvier'][gf]['max']
+                    if max > threshold_primary_bouvier:
+                        values.append('primary')
+                    elif max > threshold_secondary_bouvier:
+                        values.append('secondary')
+                    elif max == 0:
+                        values.append('NCB')
+                else:
+                    values.append('na bouvier')
+                if 'primary' in values:
+                    fd[p].append('primary')
+                elif 'secondary' in values:
+                    fd[p].append('secondary')
+#                elif 'NCI' or 'NCB' in values:
+#                    fd[p].append('no coupling')
+                else:
+                    fd[p].append('NA')  # Should this be NA of no-coupling? What's the GtP meaning?
+                # if (len(values) >= 2):
+                #     print(values, gf, p)
+
+            # Loop over GuideToPharma
+            s = 'GuideToPharma'
+            for gf in distinct_g_families:
+                if gf in v[s]:
+                    fd[p].append(v[s][gf])
+                else:
+                    #fd[p].append("NAg")
+                    fd[p].append('')
+
+            # Loop over Aska
+            s = 'Aska'
+            for gf in distinct_g_families:
+                if gf in v[s]:
+                    if v[s][gf]['max'] > threshold_primary_inoue:
+                        fd[p].append("primaryino")
+                    elif v[s][gf]['max'] > threshold_secondary_inoue:
+                        fd[p].append("secondaryino")
+                    else:
+                        fd[p].append("No coup. Ino")
+                else:
+                    fd[p].append('NAino')  # This last empty one means not-available, NOT no-coupling
+
+            # Last bit adds values in subfamilies (i.e. subtypes)
+            for gf, sfs in distinct_g_subunit_families.items():
+                for sf in sfs:
+                    if gf in v[s]:
+                        if sf in v[s][gf]['emdn']:
+                            fd[p].append(v[s][gf]['emdn'][sf])
+                        else:
+                            #fd[p].append("NAi1")
+                            fd[p].append('')
+                    else:
+                        #fd[p].append("emdn nai")
+                        fd[p].append('')
+
+                    if gf in v[s]:
+                        if sf in v[s][gf]['pec50dn']:
+                            fd[p].append(v[s][gf]['pec50dn'][sf])
+                        else:
+                            #fd[p].append("NAi1")
+                            fd[p].append('')
+                    else:
+                        #fd[p].append("pec50dn nai")
+                        fd[p].append('')
+
+                    if gf in v[s]:
+                        if sf in v[s][gf]['emmean']:
+                            fd[p].append(v[s][gf]['emmean'][sf])
+                        else:
+                            #fd[p].append("NAi1")
+                            fd[p].append('')
+                    else:
+                        #fd[p].append("emmean nai")
+                        fd[p].append('')
+
+                    if gf in v[s]:
+                        if sf in v[s][gf]['pec50mean']:
+                            fd[p].append(v[s][gf]['pec50mean'][sf])
+                        else:
+                            #fd[p].append("NAi1")
+                            fd[p].append('')
+                    else:
+                        #fd[p].append("pec50mean nai")
+                        fd[p].append('')
+
+                    if gf in v[s]:
+                        if sf in v[s][gf]['emsem']:
+                            fd[p].append(v[s][gf]['emsem'][sf])
+                        else:
+                           #fd[p].append("NAi1")
+                           fd[p].append('')
+                    else:
+                        #fd[p].append("emsem nai")
+                        fd[p].append('')
+
+                    if gf in v[s]:
+                        if sf in v[s][gf]['pec50sem']:
+                            fd[p].append(v[s][gf]['pec50sem'][sf])
+                        else:
+                            #fd[p].append("NAi1")
+                            fd[p].append('')
+                    else:
+                        #fd[p].append("pec50sem nai")
+                        fd[p].append('')
+
+            # Loop over Bouvier
+            s = 'Bouvier'
+            for gf in distinct_g_families:
+                if gf in v[s]:
+                    if v[s][gf]['max'] > threshold_primary_bouvier:
+                        fd[p].append("primary")
+                    elif v[s][gf]['max'] > threshold_secondary_bouvier:
+                        fd[p].append("secondary")
+                    else:
+                        fd[p].append("NC")
+                else:
+                    fd[p].append('NA')  # This last empty one means not-available, NOT no-coupling
+
+            # Last bit adds values to subfamilies (i.e. subtypes)
+            for gf, sfs in distinct_g_subunit_families.items():
+                for sf in sfs:
+                    if gf in v[s]:
+                        if sf in v[s][gf]['emdn']:
+                            fd[p].append(v[s][gf]['emdn'][sf])
+                        else:
+                            #fd[p].append("NAb1")
+                            fd[p].append('')
+                    else:
+                        #fd[p].append("emdn nab")
+                        fd[p].append('')
+
+                    if gf in v[s]:
+                        if sf in v[s][gf]['pec50dn']:
+                            fd[p].append(v[s][gf]['pec50dn'][sf])
+                        else:
+                            #fd[p].append("NAb1")
+                            fd[p].append('')
+                    else:
+                        #fd[p].append("pec50dn nab")
+                        fd[p].append('')
+
+                    if gf in v[s]:
+                        if sf in v[s][gf]['emmean']:
+                            fd[p].append(v[s][gf]['emmean'][sf])
+                        else:
+                            #fd[p].append("NAb1")
+                            fd[p].append('')
+                    else:
+                        #fd[p].append("emmean nab")
+                        fd[p].append('')
+
+                    if gf in v[s]:
+                        if sf in v[s][gf]['pec50mean']:
+                            fd[p].append(v[s][gf]['pec50mean'][sf])
+                        else:
+                            #fd[p].append("NAb1")
+                            fd[p].append('')
+                    else:
+                        #fd[p].append("pec50mean nab")
+                        fd[p].append('')
+
+                    if gf in v[s]:
+                        if sf in v[s][gf]['emsem']:
+                            fd[p].append(v[s][gf]['emsem'][sf])
+                        else:
+                            #fd[p].append("NAb1")
+                            fd[p].append('')
+                    else:
+                        #fd[p].append("emsem nab")
+                        fd[p].append('')
+
+                    if gf in v[s]:
+                        if sf in v[s][gf]['pec50sem']:
+                            fd[p].append(v[s][gf]['pec50sem'][sf])
+                        else:
+                            #fd[p].append("NAb1")
+                            fd[p].append('')
+                    else:
+                        #fd[p].append("pec50sem nab")
+                        fd[p].append('')
+
+            # max Values for Gs, Gi/Go, Gq/G11, G12/13 and source Inoue
+            s = 'Aska'
+            for gf in distinct_g_families:
+                if gf in v[s]:
+                    # fd[p].append(v[s][gf]['max'] + 100)
+                    fd[p].append(v[s][gf]['max'])
+                else:
+                    #fd[p].append("NAi max")
+                    fd[p].append('')
+
+            # max Values for Gs, Gi/Go, Gq/G11, G12/13 and source Bouvier
+            s = 'Bouvier'
+            for gf in distinct_g_families:
+                if gf in v[s]:
+                    #fd[p].append(v[s][gf]['max'] + 200)
+                    fd[p].append(v[s][gf]['max'])
+                else:
+                    #fd[p].append("NAb max")
+                    fd[p].append('')
+
+        return fd
+
 # @cache_page(60*60*24*2) # 2 days caching
 def GProtein(request, dataset="GuideToPharma"):
     name_of_cache = 'gprotein_statistics_{}'.format(dataset)
@@ -130,22 +529,24 @@ def GProtein(request, dataset="GuideToPharma"):
 
     cache.set(name_of_cache, context, 60 * 60 * 24 * 2)  # two days timeout on cache
 
-    return render(request, 'signprot/gprotein.html', context)
-
+    return render(request,
+                  'signprot/gprotein.html',
+                  context
+    )
 
 # @cache_page(60*60*24*2) # 2 days caching
-def Couplings(request):
+def couplings(request, template_name='signprot/coupling_browser.html'):
     """
     Presents coupling data between Receptors and G-proteins.
     Data coming from Guide to Pharmacology, Asuka Inuoue and Michel Bouvier
     """
     context = OrderedDict()
-    threshold_primary = -0.1
-    threshold_secondary = -1
-    proteins = Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith='00',
+    threshold_primary = 0.5 # -0.1
+    threshold_secondary = 0.01 # -1
+    proteins = Protein.objects.filter(sequence_type__slug='wt',
+                                      family__slug__startswith='00',
                                       species__common_name='Human').all().prefetch_related('family')
     data = {}
-    uniprot_accession = {}
     class_names = {}
     family_names = {}
 
@@ -154,21 +555,28 @@ def Couplings(request):
         if p_class not in class_names:
             class_names[p_class] = p.family.parent.parent.parent.name
             family_names[p_class] = p.family.parent.name
-            uniprot_accession[p_class] = p.accession
         p_class_name = class_names[p_class].replace('Class','').strip()
         p_family_name = family_names[p_class].replace('receptors','').strip()
-        p_accession = uniprot_accession[p_class]
-        data[p.entry_short()] = {'class': p_class_name, 'family': p_family_name, 'accession': p_accession, 'pretty': p.short(), 'GuideToPharma': {}, 'Aska': {}, 'Bouvier':{}}
+        p_accession = p.accession
+        data[p.entry_short()] = {'class': p_class_name,
+                                 'family': p_family_name,
+                                 'accession': p_accession,
+                                 'pretty': p.short(),
+                                 'GuideToPharma': {},
+                                 'Aska': {},
+                                 'Bouvier': {}}
     distinct_g_families = []
     distinct_g_subunit_families = {}
     distinct_sources = ['GuideToPharma', 'Aska', 'Bouvier']
-    couplings = ProteinGProteinPair.objects.all().prefetch_related('protein', 'g_protein_subunit', 'g_protein')
+    couplings = ProteinGProteinPair.objects.all().prefetch_related('protein',
+                                                                   'g_protein_subunit',
+                                                                   'g_protein')
 
     for c in couplings:
         p = c.protein.entry_short()
         s = c.source
         t = c.transduction
-        m = c.log_rai_mean
+        m = c.emax_dnorm
         gf = c.g_protein.name
         gf = gf.replace(" family", "")
 
@@ -194,7 +602,9 @@ def Couplings(request):
             data[p][s][gf] = t
         else:
             if 'subunits' not in data[p][s][gf]:
-                data[p][s][gf] = {'subunits': {}, 'best': -2.00}
+                data[p][s][gf] = {'subunits': {}, 'best': 0.00}
+            if m is None:
+                continue
             data[p][s][gf]['subunits'][g] = round(Decimal(m), 2)
             if round(Decimal(m), 2) == -0.00:
                 data[p][s][gf]['subunits'][g] = 0.00
@@ -202,13 +612,16 @@ def Couplings(request):
             if m > data[p][s][gf]['best']:
                 data[p][s][gf]['best'] = round(Decimal(m), 2)
     fd = {}  # final data
-    distinct_g_families = sorted(distinct_g_families)
-    distinct_g_families = ['Gs', 'Gi/Go', 'Gq/G11', 'G12/G13', ]
-    distinct_g_subunit_families = OrderedDict([('Gs', ['gnas2', 'gnal']), ('Gi/Go', ['gnai1', 'gnai3', 'gnao', 'gnaz']),
-                                               ('Gq/G11', ['gnaq', 'gna14', 'gna15']), ('G12/G13', ['gna12', 'gna13'])])
+#    distinct_g_families = sorted(distinct_g_families)
+    distinct_g_families = ['Gs', 'Gi/Go', 'Gq/G11', 'G12/G13']
+    distinct_g_subunit_families = OrderedDict(
+        [('Gs', ['gnas2', 'gnal']),
+         ('Gi/Go', ['gnai1', 'gnai2', 'gnai3', 'gnao', 'gnaz']),
+         ('Gq/G11', ['gnaq', 'gna11', 'gna14', 'gna15']),
+         ('G12/G13', ['gna12', 'gna13'])])
 
     # This for loop, which perhaps should be a function in itself, perhaps an instance of a Couplings class, does
-    # the job of merging together two data-sets, that of the GuideToPharma and Aska's results.
+    # the job of merging together two data-sets, that of the GuideToPharma and Asuka's results.
     for p, v in data.items():
         fd[p] = [v['class'], v['family'], v['accession'], p, v['pretty']]
         s = 'GuideToPharma'
@@ -219,6 +632,12 @@ def Couplings(request):
                 values.append(v['GuideToPharma'][gf])
             if 'Aska' in v and gf in v['Aska']:
                 best = v['Aska'][gf]['best']
+                if best > threshold_primary:
+                    values.append('primary')
+                elif best > threshold_secondary:
+                    values.append('secondary')
+            if 'Bouvier' in v and gf in v['Bouvier']:
+                best = v['Bouvier'][gf]['best']
                 if best > threshold_primary:
                     values.append('primary')
                 elif best > threshold_secondary:
@@ -247,6 +666,17 @@ def Couplings(request):
                     fd[p].append("No coupling")
             else:
                 fd[p].append("")
+        s = 'Bouvier'
+        for gf in distinct_g_families:
+            if gf in v[s]:
+                if v[s][gf]['best'] > threshold_primary:
+                    fd[p].append("primary")
+                elif v[s][gf]['best'] > threshold_secondary:
+                    fd[p].append("secondary")
+                else:
+                    fd[p].append("No coupling")
+            else:
+                fd[p].append("")
         for gf, sfs in distinct_g_subunit_families.items():
             for sf in sfs:
                 if gf in v[s]:
@@ -256,14 +686,14 @@ def Couplings(request):
                         fd[p].append("")
                 else:
                     fd[p].append("")
-        #print(v)
-    #print(data['5HT1A'])
-    #print(fd['5HT1A'])
+
     context['data'] = fd
     context['distinct_gf'] = distinct_g_families
     context['distinct_sf'] = distinct_g_subunit_families
-    return render(request, 'signprot/browser.html', context)
 
+    return render(request,
+                  template_name, context
+    )
 
 @cache_page(60 * 60 * 24 * 2)
 def familyDetail(request, slug):
@@ -366,8 +796,10 @@ def familyDetail(request, slug):
                'no_of_human_proteins': no_of_human_proteins, 'mutations': mutations, 'r_chunks': r_chunks,
                'chunk_size': chunk_size}
 
-    return render(request, 'signprot/family_details.html', context)
-
+    return render(request,
+                  'signprot/family_details.html',
+                  context
+    )
 
 @cache_page(60 * 60 * 24 * 2)
 def Ginterface(request, protein=None):
@@ -484,14 +916,21 @@ def Ginterface(request, protein=None):
                     "G13", "G<sub>13</sub>").replace("Gq", "G<sub>q</sub>").replace("G", "G&alpha;"),
                 entry.g_protein.slug))
 
-    return render(request, 'signprot/ginterface.html',
-                  {'pdbname': '3SN6', 'snakeplot': SnakePlot, 'gproteinplot': gproteinplot, 'crystal': crystal,
+    return render(request,
+                  'signprot/ginterface.html',
+                  {'pdbname': '3SN6',
+                   'snakeplot': SnakePlot,
+                   'gproteinplot': gproteinplot,
+                   'crystal': crystal,
                    'interacting_equivalent': GS_equivalent_interacting_pos,
-                   'interacting_none_equivalent': GS_none_equivalent_interacting_pos, 'accessible': accessible_pos,
-                   'residues': residues_browser, 'mapped_protein': protein,
-                   'interacting_gn': GS_none_equivalent_interacting_gn, 'primary_Gprotein': set(primary),
-                   'secondary_Gprotein': set(secondary)})
-
+                   'interacting_none_equivalent': GS_none_equivalent_interacting_pos,
+                   'accessible': accessible_pos,
+                   'residues': residues_browser,
+                   'mapped_protein': protein,
+                   'interacting_gn': GS_none_equivalent_interacting_gn,
+                   'primary_Gprotein': set(primary),
+                   'secondary_Gprotein': set(secondary)}
+    )
 
 def ajaxInterface(request, slug, **response_kwargs):
     name_of_cache = 'ajaxInterface_' + slug
@@ -525,7 +964,6 @@ def ajaxInterface(request, slug, **response_kwargs):
     response_kwargs['content_type'] = 'application/json'
 
     return HttpResponse(jsondata, **response_kwargs)
-
 
 def ajaxBarcode(request, slug, cutoff, **response_kwargs):
     name_of_cache = 'ajaxBarcode_' + slug + cutoff
@@ -569,7 +1007,6 @@ def ajaxBarcode(request, slug, cutoff, **response_kwargs):
 
     return HttpResponse(jsondata, **response_kwargs)
 
-
 @cache_page(60 * 60 * 24 * 2)
 def StructureInfo(request, pdbname):
     """
@@ -579,8 +1016,12 @@ def StructureInfo(request, pdbname):
 
     crystal = SignprotStructure.objects.get(PDB_code=pdbname)
 
-    return render(request, 'signprot/structure_info.html', {'pdbname': pdbname, 'protein': protein, 'crystal': crystal})
-
+    return render(request,
+                  'signprot/structure_info.html',
+                  {'pdbname': pdbname,
+                   'protein': protein,
+                   'crystal': crystal}
+    )
 
 # @cache_page(60*60*24*2)
 def signprotdetail(request, slug):
@@ -656,8 +1097,10 @@ def signprotdetail(request, slug):
                'gene': gene, 'alt_genes': alt_genes, 'structures': structures, 'complex_structures': complex_structures,
                'mutations': mutations}
 
-    return render(request, 'signprot/signprot_details.html', context)
-
+    return render(request,
+                  'signprot/signprot_details.html',
+                  context
+    )
 
 def sort_a_by_b(a, b, remove_invalid=False):
     '''Sort one list based on the order of elements from another list'''
@@ -668,7 +1111,6 @@ def sort_a_by_b(a, b, remove_invalid=False):
     if remove_invalid:
         a = [a_elem for a_elem in a if a_elem in b]
     return sorted(a, key=lambda x: b.index(x))
-
 
 def interface_dataset():
     # correct receptor entry names - the ones with '_a' appended
@@ -740,7 +1182,6 @@ def interface_dataset():
 
     return list(conf_ids), list(interactions)
 
-
 # @cache_page(60*60*24*2)
 def InteractionMatrix(request):
     prot_conf_ids, dataset = interface_dataset()
@@ -807,8 +1248,10 @@ def InteractionMatrix(request):
     request.session['signature'] = None
     request.session.modified = True
 
-    return render(request, 'signprot/matrix.html', context)
-
+    return render(request,
+                  'signprot/matrix.html',
+                  context
+    )
 
 def IMSequenceSignature(request):
     """Accept set of proteins + generic numbers and calculate the signature for those"""
@@ -870,7 +1313,6 @@ def IMSequenceSignature(request):
 
     return JsonResponse(res, safe=False)
 
-
 def IMSignatureMatch(request):
     '''Take the signature stored in the session and query the db'''
     signature_data = request.session.get('signature')
@@ -915,7 +1357,6 @@ def IMSignatureMatch(request):
     signature_match = prepare_signature_match(signature_match)
     return JsonResponse(signature_match, safe=False)
 
-
 def render_IMSigMat(request):
     # signature_match = request.session.get('signature_match')
     signature_data = request.session.get('signature')
@@ -942,7 +1383,7 @@ def render_IMSigMat(request):
 
     response = render(
         request,
-        'signature_match.html',
+        'signprot/signature_match.html',
         {'scores': signature_match}
     )
     return response

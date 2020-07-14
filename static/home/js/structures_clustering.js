@@ -11,7 +11,7 @@ var couplingAnnotations = [];
 var typeClasses = ["Receptor activation state", "", "", "Receptor family", "Ligand type", "GPCR class", "Structure determination method", "Ligand function", "G-protein coupling", "Primary G proteins", "Secondary G proteins", "TM6 opening", "G-prot bound likeness"]
 var dataClasses, colorClasses;
 function renderTree(data) {
-    dataClasses = [["active", "inactive", "intermediate", "unknown"],0,0];
+    dataClasses = [["active", "inactive", "intermediate", "other"],0,0];
     colorClasses = [["#0F0", "#F00", "#F80", "#888"], 0, 0];
     treedata = data // store globally
     var tree = data["tree"]; // contains tree in Newick format

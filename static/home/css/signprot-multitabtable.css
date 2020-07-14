@@ -1,0 +1,196 @@
+.select2-result-label {
+    font-size: 12px;
+}
+
+#filters {
+    font-size: 10px;
+    padding: 7px 15px;
+}
+
+@media (min-width: 1600px) {
+    #content {
+        width: 1570px;
+    }
+}
+
+@media (min-width: 1800px) {
+    #content {
+        width: 1770px;
+    }
+}
+
+/*
+#overlay_table1 tbody > tr > td {
+white-space: nowrap;
+height:28px;
+overflow:hidden;
+word-wrap:break-word;
+}
+*/
+
+
+table.dataTable.compact thead th.over_header {
+    border-right: 1px solid;
+    border-left: 0px solid;
+    text-align: center;
+    /*padding: 4px 4px 4px 4px;*/
+}
+
+table.dataTable.compact thead tr.over_header th {
+    border-bottom: 1px solid #ccc;
+}
+
+table.dataTable.compact thead th.leftborder {
+    border-left: 1px solid;
+}
+
+table.dataTable.compact thead th.rightborder {
+    border-right: 1px solid;
+}
+
+table.dataTable.compact thead th.checkbox_tr {
+    text-align: left;
+    padding: 4px 4px 4px 4px;
+}
+
+table.dataTable.compact thead th {
+    padding: 4px 16px 4px 2px;
+}
+
+/*thead.bottomborder {*/
+/*    border-right: 1px solid;*/
+/*    border-left: 0px solid;*/
+/*    text-align: center;*/
+/*    padding: 4px 4px 4px 4px;*/
+/*    border-bottom: 10px solid coral;*/
+/*}*/
+
+.yadcf-filter-wrapper {
+    margin-top: 0px;
+}
+
+input.yadcf-filter {
+    width: 100px;
+    font-family: sans-serif;
+    font-size: 100%;
+    font-weight: bold;
+}
+
+.yadcf-filter-range-date, .yadcf-filter-range-number {
+    width: 30px;
+    font-family: sans-serif;
+    font-size: 100%;
+    font-weight: bold;
+}
+
+.clicked_button {
+    background-color: rgb(215, 215, 215);
+}
+
+/*
+.wrapper {
+    overflow-x: scroll;
+    overflow-y: hidden;
+}
+*/
+
+#overlay1 {
+    top: 0px;
+    position: absolute;
+    background: #f8f8f8;
+    /*border: 1px solid #333;*/
+    -webkit-box-shadow: 5px 0 2px -2px #888;
+    box-shadow: 5px 0 2px -2px #888;
+}
+
+#overlay1 tbody tr {
+    background-color: #f8f8f8;
+}
+
+#overlay2 {
+    top: 0px;
+    position: absolute;
+    background: #f8f8f8;
+    /*border: 1px solid #333;*/
+    -webkit-box-shadow: 5px 0 2px -2px #888;
+    box-shadow: 5px 0 2px -2px #888;
+}
+
+#overlay2 tbody tr {
+    background-color: #f8f8f8;
+}
+
+#overlay3 {
+    top: 0px;
+    position: absolute;
+    background: #f8f8f8;
+    /*border: 1px solid #333;*/
+    -webkit-box-shadow: 5px 0 2px -2px #888;
+    box-shadow: 5px 0 2px -2px #888;
+}
+
+#overlay3 tbody tr {
+    background-color: #f8f8f8;
+}
+
+.highlight {
+    background-color: rgb(204, 229, 255);
+}
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f1f1f1;
+    width: 100%;
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+}
+
+.dropdown-content p {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    width: 100%;
+    display: block;
+}
+
+.show {
+    display: block;
+}
+
+::-webkit-scrollbar {
+    width: auto;
+    height: 12px;
+}
+/*
+        .dataTables_scrollBody table {
+            transform:rotateX(180deg);
+}
+ */
+
+
+/* NOTE -- THIS HAS TO GO LAST SO THAT IT OVERRIDES ALL */
+th, td { white-space: nowrap; }
+div.dataTables_wrapper {
+/*    width: 100%;*/
+    margin: 0 auto;
+}
+
+#subtypestabletab tr {
+    height: 40px;
+}
+
+#bouviertabletab tr {
+    height: 40px;
+}
+
+#inouetabletab tr {
+    height: 40px;
+}
+
+

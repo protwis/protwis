@@ -53,7 +53,7 @@ class Command(BaseCommand):
             ref_file_path = os.sep.join([self.export_dir_path, pc.protein.entry_name + '.yaml'])
             try:
                 with open(ref_file_path) as ref_file:
-                    export_data = yaml.load(ref_file)
+                    export_data = yaml.load(ref_file, Loader=yaml.FullLoader)
             except:
                 print('Error opening file {}'.format(ref_file_path))
                 continue

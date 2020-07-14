@@ -112,7 +112,7 @@ function tm7_plot(containerSelector, plot_data, viewBox) {
     console.log('viewBox', viewBox)
     viewBox_x = viewBox['diff_x']*scaling_factor+2*padding
     viewBox_y = viewBox['diff_y'] * scaling_factor + 2 * padding
-    
+
     // fix min_x,min_y to reflect the viewBox from input
     min_y = min_y - (viewBox_y-(max_y-min_y))/2
     min_x = min_x - (viewBox_x-(max_x-min_x))/2
@@ -125,7 +125,7 @@ function tm7_plot(containerSelector, plot_data, viewBox) {
     values_font_size_hiding = 6;
     tm_font_size = 8;
 
-    minimum_angle_to_show = 30;
+    minimum_angle_to_show = 10;
     minimum_distance_to_show = 1;
 
     for (var i of Object.keys(set1_data)) {

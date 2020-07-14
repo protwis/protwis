@@ -425,8 +425,8 @@ function createBoxPlotResidue(gn, element, plottype, data_type, limit_pdbs = fal
 
                     if (aa) pos = pos + " " + aa;
 
-                    names = [['core_distance', false], ['a_angle', true], ['outer_angle', true], ['tau', true], ['phi', true], ['psi', true], ['sasa', false], ['rsa', false], ['theta', true], ['hse', false], ['dssp', false], ['tau_angle', true]]
-
+                    names = [['core_distance', false], ['a_angle', true], ['outer_angle', true], ['tau', true], ['phi', true], ['psi', true], ['sasa', false], ['rsa', false], ['theta', true], ['hse', false], ['dssp', false], ['tau_angle', true],['rotation_angle',true]]
+                   
                     // name_index = Math.floor((cell_index - 6) / 2);
                     name_index = {
                         7: 'core_distance',
@@ -695,8 +695,8 @@ function createBoxPlotResidue(gn, element, plottype, data_type, limit_pdbs = fal
 
                     if (aa) pos = pos + " " + aa;
 
-                    names = [['core_distance', false], ['a_angle', true], ['outer_angle', true], ['tau', true], ['phi', true], ['psi', true], ['sasa', false], ['rsa', false], ['theta', true], ['hse', false], ['dssp', false], ['tau_angle', true]]
 
+                    names = [['core_distance', false], ['a_angle', true], ['outer_angle', true], ['tau', true], ['phi', true], ['psi', true], ['sasa', false], ['rsa', false], ['theta', true], ['hse', false], ['dssp', false], ['tau_angle', true],['rotation_angle',true]]
                     // name_index = Math.floor((cell_index - 6) / 2);
                     name_index = {
                         7: 'core_distance',

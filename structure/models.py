@@ -4,6 +4,7 @@ from django.core.cache import cache
 from io import StringIO
 from Bio.PDB import PDBIO
 import re
+from protein.models import ProteinGProteinPair
 
 class Structure(models.Model):
     # linked onto the Xtal ProteinConformation, which is linked to the Xtal protein
@@ -172,7 +173,7 @@ class StructureComplexModel(models.Model):
     main_template = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
     pdb_data = models.ForeignKey('PdbData', null=True, on_delete=models.CASCADE)
     version = models.DateField()
-    prot_signprot_pair = models.ForeignKey('protein.ProteinGProteinPair', related_name='+', on_delete=models.CASCADE, null=True)
+    # prot_signprot_pair = models.ForeignKey('protein.ProteinGProteinPair', related_name='+', on_delete=models.CASCADE, null=True)
     stats_text = models.ForeignKey('StatsText', on_delete=models.CASCADE)
 
     def __repr__(self):
@@ -186,6 +187,13 @@ class StructureComplexModel(models.Model):
 
     def get_cleaned_pdb(self):
         return self.pdb_data.pdb
+
+    def get_prot_gprot_pair(self):
+        pgp = ProteinGProteinPair.objects.filter(protein=self.receptor_protein, g_protein__slug=self.sign_protein.family.parent.slug, source='GuideToPharma')
+        if len(pgp)>0:
+            return pgp[0].transduction
+        else:
+            return 'no evidence'
 
 
 class StatsText(models.Model):
@@ -330,7 +338,7 @@ class StructureExtraProteins(models.Model):
     note = models.CharField(max_length=50, null=True)
     chain = models.CharField(max_length=1)
     category = models.CharField(max_length=20)
-    wt_coverage = models.IntegerField()
+    wt_coverage = models.IntegerField(null=True)
 
     def __str__(self):
         return self.display_name

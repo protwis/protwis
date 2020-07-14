@@ -328,7 +328,7 @@ class Command(BaseBuild):
                     rows, old = self.loaddatafromexcel(source_file_path)
                     rows = self.analyse_rows(rows,source_file, old)
                 elif source_file[-4:]=='yaml':
-                    rows = yaml.load(open(source_file_path, 'r'))
+                    rows = yaml.load(open(source_file_path, 'r'), Loader=yaml.FullLoader)
                     temp = []
                     for i,r in enumerate(rows):
                         d = {}

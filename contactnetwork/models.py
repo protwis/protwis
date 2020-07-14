@@ -30,8 +30,8 @@ class Interaction(models.Model):
 
     # interaction_level -> 0 - normal definition, 1 - loosened definition
     interaction_level = models.IntegerField(null=False, default=0)
-    atomname_residue1 = models.CharField(max_length=10, null=True)
-    atomname_residue2 = models.CharField(max_length=10, null=True)
+    atomname_residue1 = models.CharField(max_length=10, null=True, db_index=True)
+    atomname_residue2 = models.CharField(max_length=10, null=True, db_index=True)
 
     @classmethod
     def truncate(cls):
@@ -62,7 +62,9 @@ class Distance(models.Model):
     gn1 = models.CharField(max_length=100, null=True)
     gn2 = models.CharField(max_length=100, null=True)
     gns_pair = models.CharField(db_index=True, max_length=100, null=True)
-    distance = models.IntegerField()
+    distance = models.IntegerField(null=True)
+    distance_cb = models.IntegerField(null=True)
+    distance_helix_center = models.IntegerField(null=True)
 
     @classmethod
     def truncate(cls):
@@ -86,7 +88,7 @@ def get_distance_averages(pdbs,s_lookup, interaction_keys,normalized = False, st
                          .values('gns_pair','distance','res1__amino_acid','res2__amino_acid','structure__pk'))
     if not normalized:
         for d in ds:
-            if split_by_amino_acid: 
+            if split_by_amino_acid:
                 key = '{}{}{}'.format(d['gns_pair'],d['res1__amino_acid'],d['res2__amino_acid']).replace("_",",")
             else:
                 key = d['gns_pair']
@@ -107,7 +109,7 @@ def get_distance_averages(pdbs,s_lookup, interaction_keys,normalized = False, st
     else:
         # NORMALIZE CODE
         for d in ds:
-            if split_by_amino_acid: 
+            if split_by_amino_acid:
                 key = '{}{}{}'.format(d['gns_pair'],d['res1__amino_acid'],d['res2__amino_acid']).replace("_",",")
             else:
                 key = d['gns_pair']

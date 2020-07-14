@@ -394,7 +394,7 @@ def updateall(request):
 def runcalculation(pdbname, peptide=""):
     calc_script = os.sep.join(
         [os.path.dirname(__file__), 'legacy_functions.py'])
-    call(["python", calc_script, "-p", pdbname, "-c", peptide],
+    call(["python2.7", calc_script, "-p", pdbname, "-c", peptide],
          stdout=open(devnull, 'wb'), stderr=open(devnull, 'wb'))
     return None
 
@@ -480,7 +480,7 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
             if os.path.isfile(os.path.join(mypath, f)):
                 annotated = 0
                 #print(mypath + "/" +f)
-                result = yaml.load(open(mypath + "/" + f, 'rb'))
+                result = yaml.load(open(mypath + "/" + f, 'rb'), Loader=yaml.FullLoader)
                 output = result
                 temp = f.replace('.yaml', '').split("_")
                 temp.append([output])
@@ -590,7 +590,7 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
             logger.info("Structure not in DB?!??!")
         for f in listdir(mypath):
             if os.path.isfile(os.path.join(mypath, f)):
-                result = yaml.load(open(mypath + "/" + f, 'rb'))
+                result = yaml.load(open(mypath + "/" + f, 'rb'), Loader=yaml.FullLoader)
                 output = result
 
                 temp = f.replace('.yaml', '').split("_")
@@ -608,7 +608,7 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
 def runusercalculation(filename, session):
     calc_script = os.sep.join(
         [os.path.dirname(__file__), 'legacy_functions.py'])
-    call(["python", calc_script, "-p", filename, "-s", session])
+    call(["python2.7", calc_script, "-p", filename, "-s", session])
     return None
 
 
@@ -621,7 +621,7 @@ def parseusercalculation(pdbname, session, debug=True, ignore_ligand_preset=Fals
 
     for f in listdir(mypath):
         if os.path.isfile(os.path.join(mypath, f)):
-            result = yaml.load(open(mypath + "/" + f, 'rb'))
+            result = yaml.load(open(mypath + "/" + f, 'rb'), Loader=yaml.FullLoader)
             output = result
 
             temp = f.replace('.yaml', '').split("_")

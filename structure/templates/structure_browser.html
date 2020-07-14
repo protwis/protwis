@@ -10,6 +10,7 @@
     <link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet">
     <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
     <link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{% static 'home/css/jquery.powertip.css' %}" />
     <style type="text/css">
         .select2-result-label{
             font-size:x-small;
@@ -36,7 +37,7 @@
         table.dataTable.compact thead th.over_header {
             border-right: 1px solid;
             border-left: 0px solid;
-            text-align: center;
+            text-align: left;
             padding: 4px 4px 4px 4px;
         }
 
@@ -104,8 +105,52 @@
         #overlay tbody tr {
              background-color: #f8f8f8; 
         }
+        div.overhead_text {
+            float:left;
+            display:inline;
+            padding: 8px 0px;
+            width:90%; 
+        }
+        div.overhead_close {
+            float:right;
+            display:inline;
+            width:10%; 
+        }
+        .icon-button {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            outline: none;
+            border: 0;
+            background: transparent;
+            padding: 2px 0px 2px 0px;
+        }
         .highlight {
             background-color: rgb(204,229,255);
+        }
+        .tooltip {
+          position: relative;
+          display: inline-block;
+          border-bottom: 1px dotted black; /* If you want dots under the hoverable text */
+        }
+        .tooltip .tooltiptext {
+          visibility: hidden;
+          width: 120px;
+          background-color: black;
+          color: #fff;
+          text-align: center;
+          padding: 5px 0;
+          border-radius: 6px;
+         
+          /* Position the tooltip text - see examples below! */
+          position: absolute;
+          z-index: 1;
+        }
+        .tooltip:hover .tooltiptext {
+          visibility: visible;
+        }
+        .glyphicon.glyphicon-export {
+            font-size: 20px;
         }
         .dropdown {
             position: relative;
@@ -137,6 +182,7 @@
     <script src="{% static 'home/js/select2.js' %}"> </script>
     <script src="{% static 'home/js/alignment.js' %}"> </script>
     <script src="{% static 'home/js/browser_functions.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.powertip.js' %}"></script>
 
 
     <script type="text/javascript" charset="utf-8">
@@ -308,10 +354,10 @@
                         column_number : 10,
                         filter_type: "multi_select",
                         select_type: 'select2',
-                        filter_default_label: "Select",
+                        filter_default_label: "",
                         filter_reset_button_text: false,
                         select_type_options: {
-                            width: '50px',
+                            width: '30px',
                         }
                     },
                     {
@@ -418,7 +464,7 @@
                         column_number : 21,
                         filter_type: "multi_select",
                         select_type: 'select2',
-                        filter_default_label: "Ligand function",
+                        filter_default_label: "Modality",
                         filter_match_mode : "exact",
                         filter_reset_button_text: false,
                         select_type_options: {
@@ -469,7 +515,7 @@
                         column_number : 26,
                         filter_type: "multi_select",
                         select_type: 'select2',
-                        filter_default_label: "Senior author",
+                        filter_default_label: "Last author",
                         filter_reset_button_text: false,
                         select_type_options: {
                             width: '100px',
@@ -597,7 +643,7 @@
                 }
                 else {
                     $("#representative_btn").removeClass('clicked_button');
-                    $("#representative_btn").attr('value','Representative structures');
+                    $("#representative_btn").attr('value','Representative structures (state & receptor)');
                 }
                 oTable2.draw();
             });
@@ -649,11 +695,24 @@
                 window.location.href = '/structure/pdb_download_index';
             });
             
+            // $('.glyphicon-export').mouseover(function() {
+            //     window.alert($(this));
+            // })
+            $('.uniprot-export').data('powertipjq', $([
+                '<p>Export UniProt IDs</p>'
+                ].join('\n')));
+            $('.pdb-export').data('powertipjq', $([
+                '<p>Export PDB IDs</p>'
+                ].join('\n')));
+            $('.glyphicon-export').powerTip({
+                placement: 'n',
+                smartPlacement: true
+            });
             $('#uniprot_copy').click(function () {
-                copyToClipboard('uniprot');
+                copyToClipboard($('.alt_selected > .uniprot > a'), '\n', 'UniProt IDs', $('.uniprot-export'));
             });
             $('#pdb_copy').click(function () {
-                copyToClipboard('pdb');
+                copyToClipboard($('.alt_selected > .pdb > a'), '\n', 'PDB IDs', $('.pdb-export'));
             });
             
             $('#reset_filters_btn').click(function () {
@@ -761,14 +820,13 @@
             }
         }
 
-        function copyToClipboard(data) {
-            var link = $('.alt_selected > .'+data+' > a');
-            var out = [];
+        function copyToClipboard(array, delimiter, data_name, powertip_object=false) {
+            var link = array;
+            var out = '';
             link.each(function() {
                 var ele = $(this).attr('href').split('/');
-                out.push(ele[ele.length-1])
+                out+=ele[ele.length-1]+delimiter;
             });
-            console.log(out);
             if (out.length===0) {
                 window.alert('No entries selected for copying')
                 return 0
@@ -778,7 +836,24 @@
             document.body.appendChild(textArea);
             textArea.focus();
             textArea.select();
-            var successful = document.execCommand('copy');
+            try {
+                var successful = document.execCommand('copy');
+                var msg = successful ? 'Successful' : 'Unsuccessful';
+                if (powertip_object!==false) {
+                    $.powerTip.hide();
+                    powertip_object.data('powertipjq', $([
+                        '<p>Copied to clipboard!</p>'
+                        ].join('\n')))
+                    powertip_object.powerTip('show');
+                    setTimeout(function() {
+                    powertip_object.data('powertipjq', $([
+                        '<p>Export '+data_name+'</p>'
+                        ].join('\n')))
+                    },1000);
+                }
+            } catch (err) {
+                window.alert('Oops, unable to copy');
+            }
             document.body.removeChild(textArea);
         }
 
@@ -794,7 +869,7 @@
         <div style="float:left; padding:4px 0px 0px 6px;">
             <div style="font-size: 10px; ">
                 <a href="https://academic.oup.com/nar/article/44/D1/D356/2502664"> read article</a><br>
-                <a href="https://academic.oup.com/nar/article/44/D1/D356/2502664"> latest GPCRdb article</a>
+                <a href="https://academic.oup.com/nar/article/46/D1/D440/4634004"> latest GPCRdb article</a>
             </div>
         </div>
     </div>
@@ -806,7 +881,7 @@
             <div id="excel_table"  style2="display:none;"></div>
             <!-- <input class="btn btn-default btn-s" type="button" id="toggle_fixed_btn" value="Disable fixed columns" href="javascript:void(0)" data-toggle="buttons"></input> -->
             <input class="btn btn-default btn-s" type="button" id="toggle_columns_btn" value="Show hidden columns" href="javascript:void(0)">
-            <input class="btn btn-default btn-s" type="button" id="representative_btn" value="Representative structures" href="javascript:void(0)" data-toggle="buttons"></input>
+            <input class="btn btn-default btn-s" type="button" id="representative_btn" value="Representative structures (state & receptor)" href="javascript:void(0)" data-toggle="buttons"></input>
         </div>
         <div class="btn-group" style='padding-left:10px;'>
             <label class="btn btn-default btn-s" id="align_btn" href="javascript:void(0)">
@@ -853,87 +928,143 @@
             <table class="display compact text-nowrap" id='structures_scrollable'>
                 <thead>
                     <tr class='over_header over_header_row'>
-                        <th colspan=6 class="over_header" style='height:35px; text-align:left;'>RECEPTOR</th>
-                        <th colspan=7 class="over_header flexible_over_header" id='structure_over_header'>
-                            <!-- <label class="btn btn-default btn-xs" style="border-radius:50%;"> - </label> -->
-                            STRUCTURE
-                            <!-- <div class="hide_columns" columns="6,7,8,9,10,11,12" style="float:right;display:inline;"> -->
-                                <button type="button" class="close hide_columns" columns="6,7,8,9,10,11,12" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                            <!-- </div> -->
+                        <th colspan=6 class="over_header">
+                            <div>
+                                <div class='overhead_text'>RECEPTOR</div>
+                            </div>
+                        </th>
+                        <th colspan=7 class="over_header flexible_over_header" id='structure_over_header' >
+                            <div>
+                                <div class='overhead_text'>STRUCTURE</div>
+                                <div class='overhead_close'>
+                                    <button type="button" class="close hide_columns" columns="6,7,8,9,10,11,12"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                </div>
+                            </div>
                         </th>
                         <th colspan=4 class="over_header flexible_over_header" id='sign_prot_over_header'>
-                            SIGNAL PROTEIN
-                            <!-- <div class="hide_columns" columns="13,14" style="float:right;display:inline;"> -->
-                                <button type="button" class="close hide_columns" columns="13,14,15,16" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                            <!-- </div> -->
+                            <div>
+                                <div class='overhead_text'>SIGNAL PROTEIN</div>
+                                <div class='overhead_close'>
+                                    <button type="button" class="close hide_columns" columns="13,14,15,16" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                </div>
+                            </div>
                         </th>
                         <th colspan=2 class="over_header flexible_over_header" id='aux_prot_over_header'>
-                            AUXILIARY PROTEIN
-                            <!-- <div class="hide_columns" columns="15,16" style="float:right;display:inline;"> -->
-                                <button type="button" class="close hide_columns" columns="17,18" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                            <!-- </div> -->
+                            <div>
+                                <div class='overhead_text'>AUXILIARY PROTEIN</div>
+                                <div class='overhead_close'>
+                                    <button type="button" class="close hide_columns" columns="17,18" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                </div>
+                            </div>
                         </th>
                         <th colspan=3 class="over_header flexible_over_header" id='structure_ligand_over_header'>
-                            STRUCTURE LIGAND
-                            <!-- <div class="hide_columns" columns="17,18,19" style="float:right;display:inline;"> -->
-                                <button type="button" class="close hide_columns" columns="19,20,21" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                            <!-- </div> -->
+                            <div class='overhead_text'>STRUCTURE LIGAND</div>
+                                <div class='overhead_close'>
+                                    <button type="button" class="close hide_columns" columns="19,20,21" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                </div>
+                            </div>
                         </th>
                         <th colspan=2 class="over_header flexible_over_header" id='endo_ligand_over_header'>
-                            ENDOGENOUS LIGAND
-                            <!-- <div class="hide_columns" columns="19,20" style="float:right;display:inline;"> -->
-                                <button type="button" class="close hide_columns" columns="22,23" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                            <!-- </div> -->
+                            <div class='overhead_text'>ENDOGENOUS LIGAND</div>
+                                <div class='overhead_close'>
+                                    <button type="button" class="close hide_columns" columns="22,23" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                </div>
+                            </div>
                         </th>
                         <th colspan=2 class="over_header flexible_over_header" id='sodium_over_header'>
-                            SODIUM ION SITE
-                            <!-- <div class="hide_columns" columns="22,23" style="float:right;display:inline;"> -->
-                                <button type="button" class="close hide_columns" columns="24,25" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                            <!-- </div> -->
+                            <div class='overhead_text'>SODIUM ION SITE</div>
+                                <div class='overhead_close'>
+                                    <button type="button" class="close hide_columns" columns="24,25" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                </div>
+                            </div>
                         </th>
                         <th colspan=3 class="over_header flexible_over_header" id='reference_over_header'>
-                            REFERENCE
-                            <!-- <div class="hide_columns" columns="24,25,26" style="float:right;display:inline;"> -->
-                                <button type="button" class="close hide_columns" columns="26,27,28" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                            <!-- </div> -->
+                            <div class='overhead_text'>REFERENCE</div>
+                                <div class='overhead_close'>
+                                    <button type="button" class="close hide_columns" columns="26,27,28" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                </div>
+                            </div>
                         </th>
                         <th colspan=1 class="over_header flexible_over_header" id='annotated_over_header'>
-                            ANNOTATED
-                            <!-- <div class="hide_columns" columns="27" style="float:right;display:inline;"> -->
-                                <button type="button" class="close hide_columns" columns="29," style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                            <!-- </div> -->
+                            <div class='overhead_text'>ANNOTATED</div>
+                                <div class='overhead_close'>
+                                    <button type="button" class="close hide_columns" columns="29," style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                </div>
+                            </div>
                         </th>
                     </tr>
-                    <tr>
-                        <th class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
-                        <th style='height: 70px;'></th>
+                    <tr class='over_header'>
                         <th></th>
-                        <th></th>
-                        <th></th>
-                        <th class='rightborder'></th>
-                        <th></th>
-                        <th>PDB</th>
+                        <th>
+                            <div>
+                                <div>UniProt</div>
+                                <div><button class='icon-button' type='button'><i id='uniprot_copy' class="glyphicon glyphicon-export uniprot-export"></i></button></div>
+                            </div>
+                        </th>
+                        <th>IUPHAR</th>
+                        <th>Receptor family</th>
+                        <th>Class</th>
+                        <th class='rightborder'>Species</th>
+                        <th>Method</th>
+                        <th>
+                            <div>
+                                <div>PDB</div>
+                                <div><button class='icon-button' type='button'><i id='pdb_copy' class="glyphicon glyphicon-export pdb-export"></i></button></div>
+                            </div>
+                        </th>
                         <th><a href="https://academic.oup.com/nar/article/44/D1/D356/2502664" target="_blank">Refined<br>structure</a></th>
                         <th>Resolution</th>
                         <th>Preferred<br>chain</th>
-                        <th></th>
-                        <th class='rightborder'><a href="http://docs.gpcrdb.org/structures.html" target="_blank">7TM Open IC (Å)</a></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
+                        <th>State</th>
+                        <th class='rightborder'>G protein bound<br>likeness</th>
+                        <th>Family</th>
+                        <th>Subtype</th>
+                        <th>Note</th>
                         <th class='rightborder'>% of Seq</th>
-                        <th></th>
-                        <th class='rightborder'></th>
-                        <th></th>
-                        <th></th>
-                        <th class='rightborder'></th>
-                        <th></th>
-                        <th class='rightborder'></th>
-                        <th></th>
-                        <th class='rightborder'></th>
-                        <th></th>
-                        <th></th>
+                        <th>Fusion</th>
+                        <th class='rightborder'>Antibodies</th>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th class='rightborder'>Function</th>
+                        <th>Name</th>
+                        <th class='rightborder'>Type</th>
+                        <th>D2x50-S3x39</th>
+                        <th class='rightborder'>Sodium in structure</th>
+                        <th>Last author</th>
+                        <th>Reference</th>
                         <th class='rightborder'>PDB Date</th>
+                        <th class='rightborder'></th>
+                    </tr>
+                    <tr>
+                        <th class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th class='rightborder'></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th class='rightborder'></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th class='rightborder'></th>
+                        <th></th>
+                        <th class='rightborder'></th>
+                        <th></th>
+                        <th></th>
+                        <th class='rightborder'></th>
+                        <th></th>
+                        <th class='rightborder'></th>
+                        <th></th>
+                        <th class='rightborder'></th>
+                        <th></th>
+                        <th></th>
+                        <th class='rightborder'></th>
                         <th class='rightborder'></th>
                     </tr>
 
@@ -949,7 +1080,7 @@
                         <td><span><a href="http://www.uniprot.org/uniprot/{{ structure.protein_conformation.protein.parent.accession }}">{{ structure.protein_conformation.protein.parent.entry_short|safe }}</a></span></td>
                         <td class='uniprot'><a href="/protein/{{ structure.protein_conformation.protein.parent.entry_name }}">{{ structure.protein_conformation.protein.parent.short|safe }}</a></td>
                         <td><span>{{ structure.protein_conformation.protein.family.parent.short|safe }}</span></td>
-                        <td><span>{{ structure.protein_conformation.protein.family.parent.parent.parent.name|cut_classname }}</span></td>
+                        <td><span>{{ structure.protein_conformation.protein.family.parent.parent.parent.short|safe }}</span></td>
                         <td>{{ structure.protein_conformation.protein.species.common_name }}</td>
                         <td>
                             {{ structure.structure_type.type_short|escape }}
@@ -967,7 +1098,7 @@
                         <td class="text-center">{{ structure.resolution|floatformat:"1" }}</td>
                         <td class="text-center">{{ structure.preferred_chain }}</td>
                         <td>{{ structure.state.name }}</td>
-                        <td class="text-center">{{ structure.distance|floatformat:"1" }}</td>
+                        <td class="text-center">{{ structure.gprot_bound_likeness|floatformat }}</td>
                         <td>
                             {% for ep in structure.extra_proteins.all %}
                                 {% if ep.category == "Arrestin" %}
@@ -1003,7 +1134,11 @@
                         </td>
                         <td>
                             {% for ep in structure.extra_proteins.all %}
-                                {{ ep.wt_coverage}}
+                                {% if ep.wt_coverage != None %}
+                                    {{ ep.wt_coverage}}
+                                {% else %}
+                                    -
+                                {% endif %}
                                 {% empty %}
                                     -
                             {% endfor %}
@@ -1036,11 +1171,13 @@
                             {{ structure.ligands.all|ligandrole|linebreaksbr }}
                         </td>
                         <td>
+                            {% autoescape off %}
                             {% if structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat|length > 20 %}
-                                <span title="{{ structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat }}">{{ structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat|cut_at_20 }}...</span>
+                                <span title="{% autoescape off %}{{ structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat }}{% endautoescape %}">{{ structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat|cut_at_20 }}...</span>
                             {% else %}
                                 {{ structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat }}
                             {% endif %}
+                            {% endautoescape %}
                         </td>
                         <td>{{ structure.protein_conformation.protein.parent.endogenous_ligands.all.0.properities.ligand_type }}</td>
                         <td>
@@ -1058,7 +1195,7 @@
                             {% endif %}
                         </td>
                         <td>
-                            {{ structure.publication.authors|senior_author}}
+                            {{ structure.publication.authors|last_author}}
                         </td>
                         <td>
                             <a href="{{ structure.publication.web_link }}">

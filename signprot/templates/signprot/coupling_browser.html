@@ -1,0 +1,984 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css"/>
+    {# SAAS  <link rel="stylesheet" href="https://cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css"> #}
+    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'home/css/signprot-multitabtable.css' %}" type="text/css"/>
+
+{% endblock %}
+
+{% block content %}
+
+    <div style="display:block;">
+        <div style="display:inline; float:left;">
+            <h2 style="width:auto; display:inline;">G-Protein Couplings</h2>
+        </div>
+    </div>
+    <br><br>
+
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="table1-tab" data-toggle="tab" href="#table_1" role="tab"
+               aria-controls="table_1" aria-selected="true">Families</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="table2-tab" data-toggle="tab" href="#table_2" role="tab"
+               aria-controls="table_2" aria-selected="false">Subtypes</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="table3-tab" data-toggle="tab" href="#table_3" role="tab"
+               aria-controls="table_3" aria-selected="false">Bouvier</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="table4-tab" data-toggle="tab" href="#table_4" role="tab"
+               aria-controls="table_4" aria-selected="false">Inoue</a>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="myTabContent">
+
+        {# ====================================================================== #}
+        {# FAMILIES TAB STARTS HERE id='familiestabletab' connects to js #}
+        {# ====================================================================== #}
+        <div class="tab-pane fade active" id="table_1" role="tabpanel" aria-labelledby="table1-tab">
+            <br>
+            <div style='width:100%; display:inline;'>
+                <div class="btn-group">
+                    <a id="dlink" style="display:none;"></a>
+                    <div id="excel_table" style2="display:none;"></div>
+                    {#  <input class="btn btn-default btn-s" type="button" id="toggle_fixed_btn" value="Disable #}
+                    {#  fixed columns" href="javascript:void(0)" data-toggle="buttons"> #}
+                    <input class="btn btn-default btn-s" type="button" onclick="resetHidden1()" id="toggle"
+                           value="Show hidden columns">
+                    <!--<input class="btn btn-default btn-s" type="button" id="toggle_columns_btn" value="Show hidden
+                    columns"
+                           href="javascript:void(0)"> -->
+                </div>
+                <div class="btn-group" style='padding-left:10px;'>
+                    <input class="btn btn-default btn-s" type="button"
+                           onclick="tableToExcel('familiestabletab', 'Families data', 'families_coupling.xls')"
+                           value="Export Excel">
+                    <input class="btn btn-default btn-s" type="button"
+                           onclick="reset_tab1()"
+                           value="Reset All">
+                </div>
+            </div>
+
+            <table class="compact dataTable no-footer display" id="familiestabletab" >
+
+                <thead>
+                <tr>
+                    <th colspan=5 class="over_header" style='height:35px; text-align:left;'>
+                        RECEPTOR
+                    </th>
+
+                    <th colspan=8 class="over_header flexible_over_header" style='text-align:left;'>
+                        Max <br> Emax DNorm
+                        <button type="button" class="close hide_columns1" columns="5,6,7,8,9,10,11,12"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+
+                    <th colspan=3 class="over_header flexible_over_header" style='text-align:left;'>
+                        Gs
+                        <button type="button" class="close hide_columns1" columns="13,14,15"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=3 class="over_header flexible_over_header" style='text-align:left;'>
+                        Gi/o
+                        <button type="button" class="close hide_columns1" columns="16,17,18"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=3 class="over_header flexible_over_header" style='text-align:left;'>
+                        Gq/11
+                        <button type="button" class="close hide_columns1" columns="19,20,21"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=3 class="over_header flexible_over_header" style='text-align:left;'>
+                        G12/13
+                        <button type="button" class="close hide_columns1" columns="22,23,24"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=1 class="over_header flexible_over_header" id='annotated_over_header'>
+                        Arrestin
+                        <button type="button" class="close hide_columns1" columns="25," style="float:right;
+                                display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    </th>
+                </tr>
+
+                <tr>
+                    <th title="" class='checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
+                    <th title="Class" style="height: 70px;"></th>
+                    <th title="Family"></th>
+                    <th title="uniprot"></th>
+                    <th title="IUPHAR" class='rightborder'></th>
+
+                    <th title="Gs">Gs</th>
+                    <th></th> {# Hidden via datatables frontendish #}
+                    <th title="Gi/Go">Gi/Go</th>
+                    <th></th> {# Hidden via datatables frontendish #}
+                    <th title="Gq/G11">Gq/G11</th>
+                    <th></th> {# Hidden via datatables frontendish #}
+                    <th title="G12/G13" class='rightborder'>G12/G13</th>
+                    <th></th> {# Hidden via datatables frontendish #}
+
+                    <th title="Bouvier">Bouvier</th>
+                    <th title="Inoue">Inoue</th>
+                    <th title="GtP" class='rightborder'>GtP</th>
+
+                    <th title="Bouvier">Bouvier</th>
+                    <th title="Inoue">Inoue</th>
+                    <th title="GtP" class='rightborder'>GtP</th>
+
+                    <th title="Bouvier">Bouvier</th>
+                    <th title="Inoue">Inoue</th>
+                    <th title="GtP" class='rightborder'>GtP</th>
+
+                    <th title="Bouvier">Bouvier</th>
+                    <th title="Inoue">Inoue</th>
+                    <th title="GtP" class='rightborder'>GtP</th>
+
+                    <th title="Bouvier">Bouvier</th>
+                </tr>
+                </thead>
+
+                <thead>
+                <tr>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+
+                    <th id="gs_drop"></th>
+                    <th id="gio_drop"></th>
+                    <th id="gq11_drop"></th>
+                    <th id="g1213_drop"></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+
+                    <th></th>
+                    <th></th>
+                    <th></th>
+
+                    <th></th>
+                    <th></th>
+                    <th></th>
+
+                    <th></th>
+                    <th></th>
+                    <th></th>
+
+                    <th></th>
+                    <th></th>
+                    <th></th>
+
+                    <th></th>
+                </tr>
+
+                </thead>
+
+                <br>
+                <br>
+
+                <tbody>
+                {% for p, vals in famtab.items %}
+                    <tr>
+                        <td class="text-center"><input class="alt" type="checkbox" id="{{ vals.pk }}"></td>
+                        <td class="text-left">{{ vals.0 }}</td>
+                        <td class="text-left">{{ vals.1 }}</td>
+                        <td class="uniprot">
+                            <span><a href="https://www.uniprot.org/uniprot/{{ vals.2 }}">{{ vals.4|safe }}</a></span>
+                        </td>
+                        <td class="text-left">
+                            <a href="https://gpcrdb.org/protein/{{ vals.3 }}">{{ vals.5|safe }}</a>
+                        </td>
+                        <td class="text-center">{{ vals.218 }}</td> {# Gs max Emax Bouvier #}
+                        <td class="text-center">{{ vals.114 }}</td> {# invisible pri, sec, nc, na #}
+                        <td class="text-center">{{ vals.219 }}</td> {# Gi/o max Emax Bouvier #}
+                        <td class="text-center">{{ vals.115 }}</td> {# invisible pri, sec, nc, na #}
+                        <td class="text-center">{{ vals.220 }}</td> {# G12/13 max Emax Bouvier #}
+                        <td class="text-center">{{ vals.116 }}</td> {# invisible pri, sec, nc, na #}
+                        <td class="text-center">{{ vals.221 }}</td> {# Gq11 max Emax Bouvier #}
+                        <td class="text-center">{{ vals.117 }}</td> {# invisible pri, sec, nc, na #}
+                        <td class="text-center">{{ vals.218 }}</td> {# Gs Bouvier #}
+                        <td class="text-center">{{ vals.214 }}</td> {# Gs Inoue #}
+                        <td class="text-center">{{ vals.10 }}</td>  {# Gs Gtp #}
+                        <td class="text-center">{{ vals.219 }}</td> {# Gi/o Bouvier #}
+                        <td class="text-center">{{ vals.215 }}</td> {# Gi/o Inoue #}
+                        <td class="text-center">{{ vals.11 }}</td>  {# Gi/o Gtp #}
+                        <td class="text-center">{{ vals.220 }}</td> {# Gq/11 Bouvier #}
+                        <td class="text-center">{{ vals.216 }}</td> {# Gq/11 Inoue #}
+                        <td class="text-center">{{ vals.12 }}</td>  {# Gq/11 Gtp #}
+                        <td class="text-center">{{ vals.221 }}</td> {# G12/13 Bouvier #}
+                        <td class="text-center">{{ vals.217 }}</td> {# G12/13 Inoue #}
+                        <td class="text-center">{{ vals.13 }}</td>  {# G12/13 Gtp #}
+                        <td class="text-center"> soon </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+
+            </table>
+            {#            <div id=overlay>#}
+            {#                <table id="overlay_table" class="row-border text-center compact dataTable no-footer text-nowrap">#}
+            {#                    <tbody></tbody>#}
+            {#                </table>#}
+            {#            </div>#}
+
+        </div>
+
+
+        {# ====================================================================== #}
+        {# SUBTYPES TAB STARTS HERE id='subtypestabletab' connects to js #}
+        {# ====================================================================== #}
+        <div class="tab-pane fade" id="table_2" role="tabpanel" aria-labelledby="table2-tab">
+            <br>
+            <div style='width:100%; display:inline;'>
+                <div class="btn-group">
+                    <a id="dlink" style="display:none;"></a>
+                    <div id="excel_table" style2="display:none;"></div>
+                    <input class="btn btn-default btn-s" type="button" id="toggle_fixed_btn" value="Disable fixed columns"
+                           href="javascript:void(0)" data-toggle="buttons">
+                    <input class="btn btn-default btn-s" type="button" onclick="resetHidden2()" id="toggle"
+                           value="Show hidden columns">
+                    <!--<input class="btn btn-default btn-s" type="button" id="toggle_columns_btn" value="Show hidden
+                    columns"
+                           href="javascript:void(0)"> -->
+                </div>
+                <div class="btn-group" style='padding-left:10px;'>
+                    <input class="btn btn-default btn-s" type="button"
+                           onclick="tableToExcel('subtypestabletab', 'Subtypes data', 'subtypes_coupling.xls')"
+                           value="Export Excel">
+                    <input class="btn btn-default btn-s" type="button"
+                           onclick="reset_tab2()"
+                           value="Reset All">
+                </div>
+            </div>
+
+            <table width="100%" class="display compact text-nowrap" id="subtypestabletab" >
+
+                <thead>
+                <tr>
+                    <th colspan=5 class="over_header" style='height:35px; text-align:left;'>
+
+                    </th>
+                    <th colspan=3 class="over_header flexible_over_header" style='text-align:left;'>
+                        Gs
+                        <button type="button" class="close hide_columns2" columns="5,6,7"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=9 class="over_header flexible_over_header" style='text-align:left;'>
+                        Gi/Go
+                        <button type="button" class="close hide_columns2" columns="8,9,10,11,12,13,14,15,16"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=8 class="over_header flexible_over_header" style='text-align:left;'>
+                        Gq/G11
+                        <button type="button" class="close hide_columns2" columns="17,18,19,20,21,22,23,24"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=4 class="over_header flexible_over_header" style='text-align:left;'>
+                        G12/G13
+                        <button type="button" class="close hide_columns2" columns="25,26,27,28"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=2 style='text-align:left;'>
+                        Arrestin
+                        <button type="button" class="close hide_columns2" columns="29,30"
+                                aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                </tr>
+
+                <tr>
+                    <th colspan=5 class="over_header rightborder" style='text-align:left'>RECEPTOR</th>
+                    <th colspan=1 class="over_header rightborder">Bouvier</th>
+                    <th colspan=2 class="over_header rightborder">Inoue</th>
+                    <th colspan=4 class="over_header rightborder">Bouvier</th>
+                    <th colspan=5 class="over_header rightborder">Inoue</th>
+                    <th colspan=4 class="over_header rightborder">Bouvier</th>
+                    <th colspan=4 class="over_header rightborder">Inoue</th>
+                    <th colspan=2 class="over_header rightborder">Bouvier</th>
+                    <th colspan=2 class="over_header rightborder">Inoue</th>
+                    <th colspan=2 class="over_header">Bouvier</th>
+                </tr>
+
+                <tr>
+                    <th class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
+                    <th title="Class" style='height: 70px;'></th>
+                    <th title="Family"></th>
+                    <th title="UniProt"></th>
+                    <th title="IUPHAR" class='rightborder'></th>
+                    {# Gs #}
+                    <th title="GNAS2" class='rightborder'>Gs <br> (GNAS)</th>
+                    <th title="GNAS2">Gs <br> (GNAS)</th>
+                    <th title="GNAL" class='rightborder'>Golf <br> (GNAL)</th>
+                    {# Gi/Go #}
+                    <th title="GNAI1">Gi1 <br> (GNAI1)</th>
+                    <th title="GNAI2">Gi2 <br> (GNAI2)</th>
+                    <th title="GNAO">Go1 <br> (GNAO1)</th>
+                    <th title="GNAZ" class='rightborder'>Gz <br> (GNAZ)</th>
+                    <th title="GNAI1">Gi1 <br> (GNAI1)</th>
+                    <th title="GNAI2">Gi2 <br> (GNAI2)</th>
+                    <th title="GNAI3">Gi3 <br> (GNAI3)</th>
+                    <th title="GNAO">Go1 <br> (GNAO1)</th>
+                    <th title="GNAZ" class='rightborder'>Gz <br> (GNAz)</th>
+                    {# Gq/G11 #}
+                    <th title="GNAQ">Gq <br> (GNAQ)</th>
+                    <th title="GNA11">G11 <br> (GNA11)</th>
+                    <th title="GNA14">G14 <br> (GNA14)</th>
+                    <th title="GNA15" class='rightborder'>G15 <br> (GNA15)</th>
+                    <th title="GNAQ">G1 <br> (GNAQ)</th>
+                    <th title="GNA11">G11 <br> (GNA11)</th>
+                    <th title="GNA14">G14 <br> (GNA14)</th>
+                    <th title="GNA15" class='rightborder'>G15 <br> (GNA15)</th>
+                    {# G12/G13 #}
+                    <th title="GNA12">G12 <br> (GNA12)</th>
+                    <th title="GNA13" class='rightborder'>G13 <br> (GNA13)</th>
+                    <th title="GNA12">G12 <br> (GNA12)</th>
+                    <th title="GNA13" class='rightborder'>G13 <br> (GNA13)</th>
+                    {# Arrestin #}
+                    <th title="BARR1/GRK2">BARR1/GRK2</th>
+                    <th title="BARR2/GRK2">BARR2/GRK2</th>
+                </tr>
+
+                </thead>
+
+                <br>
+                <br>
+
+                <tbody>
+                {% for p, vals in famtab.items %}
+                    <tr>
+                        <td class="text-center"><input class="alt" type="checkbox" id="{{ vals.pk }}"></td>
+                        <td class="text-left">{{ vals.0 }}</td>
+                        <td class="text-left">{{ vals.1 }}</td>
+                        <td class="uniprot">
+                            <span><a href="https://www.uniprot.org/uniprot/{{ vals.2 }}">{{ vals.4 }}</a></span>
+                        </td>
+                        <td class="text-left"><a href="https://gpcrdb.org/protein/{{ vals.3 }}">{{ vals.5|safe }}</a></td>
+                        <td class="text-center">{{ vals.118 }}</td> {# gnas2 bou #}
+                        <td class="text-center">{{ vals.18 }}</td>  {# gnas2 ino #}
+                        <td class="text-center">{{ vals.24 }}</td>  {# gnal ino #}
+                        <td class="text-center">{{ vals.130 }}</td> {# gnai1 bou #}
+                        <td class="text-center">{{ vals.136 }}</td> {# gnai2 bou#}
+                        <td class="text-center">{{ vals.166 }}</td> {# gnao bou #}
+                        <td class="text-center">{{ vals.172 }}</td> {# gnaz bou #}
+                        <td class="text-center">{{ vals.30 }}</td>  {# gnai1 ino #}
+                        <td class="text-center">{{ vals.30 }}</td>  {# gnai2 ino #}
+                        <td class="text-center">{{ vals.42 }}</td>  {# gnai3 ino #}
+                        <td class="text-center">{{ vals.66 }}</td>  {# gnao ino #}
+                        <td class="text-center">{{ vals.72 }}</td>  {# gnaz ino #}
+                        <td class="text-center">{{ vals.178 }}</td> {# gnaq bou #}
+                        <td class="text-center">{{ vals.184 }}</td> {# gna11 bou #}
+                        <td class="text-center">{{ vals.190 }}</td> {# gna14 bou #}
+                        <td class="text-center">{{ vals.196 }}</td> {# gna15 bou #}
+                        <td class="text-center">{{ vals.78 }}</td>  {# gnaq ino #}
+                        <td class="text-center">{{ vals.78 }}</td>  {# gna11 ino #}
+                        <td class="text-center">{{ vals.90 }}</td>  {# gna14 ino #}
+                        <td class="text-center">{{ vals.96 }}</td>  {# gna 15 ino #}
+                        <td class="text-center">{{ vals.202 }}</td> {# gna12 bou #}
+                        <td class="text-center">{{ vals.208 }}</td> {# gna13 bou #}
+                        <td class="text-center">{{ vals.102 }}</td> {# gna12 ino #}
+                        <td class="text-center">{{ vals.108 }}</td> {# gna13 ino #}
+                        <td class="text-center">soon</td> {# barr1/GRK2 #}
+                        <td class="text-center">soon</td> {# barr2/GRK2 #}
+                    </tr>
+                {% endfor %}
+
+                </tbody>
+
+            </table>
+        </div>
+
+
+        {# ====================================================================== #}
+        {# BOUVIER TAB STARTS HERE id='bouviertabletab' connects to js #}
+        {# ====================================================================== #}
+        <div class="tab-pane fade" id="table_3" role="tabpanel" aria-labelledby="table3-tab">
+            <br>
+            <div style='width:100%; display:inline;'>
+                <div class="btn-group">
+                    <a id="dlink" style="display:none;"></a>
+                    <div id="excel_table" style2="display:none;"></div>
+                    <input class="btn btn-default btn-s" type="button" id="toggle_fixed_btn" value="Disable fixed columns"
+                           href="javascript:void(0)" data-toggle="buttons">
+                    <input class="btn btn-default btn-s" type="button" onclick="resetHidden3()" id="toggle"
+                           value="Show hidden columns">
+                    <!--<input class="btn btn-default btn-s" type="button" id="toggle_columns_btn" value="Show hidden
+                    columns"
+                           href="javascript:void(0)"> -->
+                </div>
+                <div class="btn-group" style='padding-left:10px;'>
+                    <input class="btn btn-default btn-s" type="button"
+                           onclick="tableToExcel('bouviertabletab', 'Bouvier data', 'bouvier_coupling.xls')"
+                           value="Export Excel">
+                    <input class="btn btn-default btn-s" type="button"
+                           onclick="reset_tab1()"
+                           value="Reset All">
+                </div>
+            </div>
+
+
+            <table width="100%" class="display compact text-nowrap" id="bouviertabletab" >
+
+                <thead>
+                <tr class='over_header over_header_row'>
+                    <th colspan=5 class="over_header" style='height:35px; text-align:left;'>
+                        RECEPTOR
+                    </th>
+                    <th colspan=5 class="over_header flexible_over_header" style='text-align:left;'>
+                        Emax DNorm Families
+                        <button type="button" class="close hide_columns3" columns="5,6,7,8,9"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=11 class="over_header flexible_over_header" style='text-align:left;'>
+                        pEC50 (dNorm)
+                        <button type="button" class="close hide_columns3" columns="10,11,12,13,14,15,16,17,18,19,20"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=11 class="over_header flexible_over_header" style='text-align:left;'>
+                        Emax (dNorm)
+                        <button type="button" class="close hide_columns3" columns="21,22,23,24,25,26,27,28,29,30,31"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=11 class="over_header flexible_over_header" style='text-align:left;'>
+                        pEC50 (raw)
+                        <button type="button" class="close hide_columns3" columns="32,33,34,35,36,37,38,39,40,41,42"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=11 class="over_header flexible_over_header" style='text-align:left;'>
+                        Emax (raw)
+                        <button type="button" class="close hide_columns3" columns="43,44,45,46,47,48,49,50,51,52,53"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=11 class="over_header flexible_over_header" style='text-align:left;'>
+                        pEC50 (SEM)
+                        <button type="button" class="close hide_columns3" columns="54,55,56,57,58,59,60,61,62,63,64"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=11 class="over_header flexible_over_header" style='text-align:left;'>
+                        Emax (SEM)
+                        <button type="button" class="close hide_columns3" columns="65,66,67,68,69,70,71,72,73,74,75"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                </tr>
+
+
+                <tr class='over_header over_header_row'>
+                    <th title="" class='checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)
+"></th>
+                    <th title="Class" style="height: 70px;"></th>
+                    <th title="Family"></th>
+                    <th title="uniprot"></th>
+                    <th title="IUPHAR" class='rightborder'></th>
+
+                    {# Max Double-Normalized Emax #}
+                    <th title="Gs">Gs</th>
+                    <th title="Gi/Go">Gi/Go</th>
+                    <th title="Gq/G11">Gq/G11</th>
+                    <th title="G12/G13">G12/G13</th>
+                    <th title="Arrestin" class="rightborder">Arrestin</th>
+
+                    {# pec50dn #}
+                    <th title="GNAS2">Gs <br> (GNAS)</th>
+                    <th title="GNAI1">Gi1 <br> (GNAI1)</th>
+                    <th title="GNAI2">Gi2 <br> (GNAI2)</th>
+                    <th title="GNAO">Go1 <br> (GNAO1)</th>
+                    <th title="GNAZ">Gz <br> (GNAZ)</th>
+                    <th title="GNAQ">Gq <br> (GNAQ)</th>
+                    <th title="GNA11">G11 <br> (GNA11)</th>
+                    <th title="GNA14">G14 <br> (GNA14)</th>
+                    <th title="GNA15">G15 <br> (GNA15)</th>
+                    <th title="GNA12">G12 <br> (GNA12)</th>
+                    <th title="GNA13" class="rightborder">G13 <br> (GNA13)</th>
+
+                    {# emaxdn #}
+                    <th title="GNAS2">Gs <br> (GNAS)</th>
+                    <th title="GNAI1">Gi1 <br> (GNAI1)</th>
+                    <th title="GNAI2">Gi2 <br> (GNAI2)</th>
+                    <th title="GNAO">Go1 <br> (GNAO1)</th>
+                    <th title="GNAZ">Gz <br> (GNAZ)</th>
+                    <th title="GNAQ">Gq <br> (GNAQ)</th>
+                    <th title="GNA11">G11 <br> (GNA11)</th>
+                    <th title="GNA14">G14 <br> (GNA14)</th>
+                    <th title="GNA15">G15 <br> (GNA15)</th>
+                    <th title="GNA12">G12 <br> (GNA12)</th>
+                    <th title="GNA13" class="rightborder">G13 <br> (GNA13)</th>
+
+                    {# pec50mean #}
+                    <th title="GNAS2">Gs <br> (GNAS)</th>
+                    <th title="GNAI1">Gi1 <br> (GNAI1)</th>
+                    <th title="GNAI2">Gi2 <br> (GNAI2)</th>
+                    <th title="GNAO">Go1 <br> (GNAO1)</th>
+                    <th title="GNAZ">Gz <br> (GNAZ)</th>
+                    <th title="GNAQ">Gq <br> (GNAQ)</th>
+                    <th title="GNA11">G11 <br> (GNA11)</th>
+                    <th title="GNA14">G14 <br> (GNA14)</th>
+                    <th title="GNA15">G15 <br> (GNA15)</th>
+                    <th title="GNA12">G12 <br> (GNA12)</th>
+                    <th title="GNA13" class="rightborder">G13 <br> (GNA13)</th>
+
+                    {# emmean #}
+                    <th title="GNAS2">Gs <br> (GNAS)</th>
+                    <th title="GNAI1">Gi1 <br> (GNAI1)</th>
+                    <th title="GNAI2">Gi2 <br> (GNAI2)</th>
+                    <th title="GNAO">Go1 <br> (GNAO1)</th>
+                    <th title="GNAZ">Gz <br> (GNAZ)</th>
+                    <th title="GNAQ">Gq <br> (GNAQ)</th>
+                    <th title="GNA11">G11 <br> (GNA11)</th>
+                    <th title="GNA14">G14 <br> (GNA14)</th>
+                    <th title="GNA15">G15 <br> (GNA15)</th>
+                    <th title="GNA12">G12 <br> (GNA12)</th>
+                    <th title="GNA13" class="rightborder">G13 <br> (GNA13)</th>
+
+                    {# pec50sem #}
+                    <th title="GNAS2">Gs <br> (GNAS)</th>
+                    <th title="GNAI1">Gi1 <br> (GNAI1)</th>
+                    <th title="GNAI2">Gi2 <br> (GNAI2)</th>
+                    <th title="GNAO">Go1 <br> (GNAO1)</th>
+                    <th title="GNAZ">Gz <br> (GNAZ)</th>
+                    <th title="GNAQ">Gq <br> (GNAQ)</th>
+                    <th title="GNA11">G11 <br> (GNA11)</th>
+                    <th title="GNA14">G14 <br> (GNA14)</th>
+                    <th title="GNA15">G15 <br> (GNA15)</th>
+                    <th title="GNA12">G12 <br> (GNA12)</th>
+                    <th title="GNA13" class="rightborder">G13 <br> (GNA13)</th>
+
+                    {# emsem #}
+                    <th title="GNAS2">Gs <br> (GNAS)</th>
+                    <th title="GNAI1">Gi1 <br> (GNAI1)</th>
+                    <th title="GNAI2">Gi2 <br> (GNAI2)</th>
+                    <th title="GNAO">Go1 <br> (GNAO1)</th>
+                    <th title="GNAZ">Gz <br> (GNAZ)</th>
+                    <th title="GNAQ">Gq <br> (GNAQ)</th>
+                    <th title="GNA11">G11 <br> (GNA11)</th>
+                    <th title="GNA14">G14 <br> (GNA14)</th>
+                    <th title="GNA15">G15 <br> (GNA15)</th>
+                    <th title="GNA12">G12 <br> (GNA12)</th>
+                    <th title="GNA13" class="rightborder">G13 <br> (GNA13)</th>
+                </tr>
+
+                </thead>
+
+                <br>
+                <br>
+
+                <tbody>
+                {% for p, vals in famtab.items %}
+                    <tr>
+                        <td class="text-center"><input class="alt" type="checkbox" id="{{ vals.pk }}"></td>
+                        <td class="text-left">{{ vals.0 }}</td>
+                        <td class="text-left">{{ vals.1 }}</td>
+                        <td class="uniprot">
+                            <span><a href="https://www.uniprot.org/uniprot/{{ vals.2 }}">{{ vals.4 }}</a></span>
+                        </td>
+                        <td class="text-left"><a href="https://gpcrdb.org/protein/{{ vals.3 }}">{{ vals.5|safe }}</a></td>
+                        <td class="text-center">{{ vals.218 }}</td> {# Gs #}
+                        <td class="text-center">{{ vals.219 }}</td> {# Gi/Go #}
+                        <td class="text-center">{{ vals.220 }}</td> {# Gq/G11 #}
+                        <td class="text-center">{{ vals.221 }}</td> {# G12/13 #}
+                        <td class="text-center">soon</td> {# Arrestin #}
+
+                        {# pec50dn #}
+                        <td class="text-center">{{ vals.119 }}</td> {# GNAS2 #}
+                        <td class="text-center">{{ vals.131 }}</td> {# GNAI1 #}
+                        <td class="text-center">{{ vals.137 }}</td> {# GNAI2 #}
+                        <td class="text-center">{{ vals.167 }}</td> {# GNAO #}
+                        <td class="text-center">{{ vals.173 }}</td> {# GNAZ #}
+                        <td class="text-center">{{ vals.179 }}</td> {# GNAQ #}
+                        <td class="text-center">{{ vals.185 }}</td> {# GNA11 #}
+                        <td class="text-center">{{ vals.191 }}</td> {# GNA14 #}
+                        <td class="text-center">{{ vals.197 }}</td> {# GNA15 #}
+                        <td class="text-center">{{ vals.203 }}</td> {# GNA12 #}
+                        <td class="text-center">{{ vals.209 }}</td> {# GNA13 #}
+
+                        {# emdn #}
+                        <td class="text-center">{{ vals.118 }}</td> {# GNAS2 #}
+                        <td class="text-center">{{ vals.130 }}</td> {# GNAI1 #}
+                        <td class="text-center">{{ vals.136 }}</td> {# GNAI2 #}
+                        <td class="text-center">{{ vals.166 }}</td> {# GNAO #}
+                        <td class="text-center">{{ vals.172 }}</td> {# GNAZ #}
+                        <td class="text-center">{{ vals.178 }}</td> {# GNAQ #}
+                        <td class="text-center">{{ vals.184 }}</td> {# GNA11 #}
+                        <td class="text-center">{{ vals.190 }}</td> {# GNA14 #}
+                        <td class="text-center">{{ vals.196 }}</td> {# GNA15 #}
+                        <td class="text-center">{{ vals.202 }}</td> {# GNA12 #}
+                        <td class="text-center">{{ vals.208 }}</td> {# GNA13 #}
+
+                        {# pec50mean #}
+                        <td class="text-center">{{ vals.121 }}</td> {# GNAS2 #}
+                        <td class="text-center">{{ vals.133 }}</td> {# GNAI1 #}
+                        <td class="text-center">{{ vals.139 }}</td> {# GNAI2 #}
+                        <td class="text-center">{{ vals.169 }}</td> {# GNAO #}
+                        <td class="text-center">{{ vals.175 }}</td> {# GNAZ #}
+                        <td class="text-center">{{ vals.181 }}</td> {# GNAQ #}
+                        <td class="text-center">{{ vals.187 }}</td> {# GNA11 #}
+                        <td class="text-center">{{ vals.193 }}</td> {# GNA14 #}
+                        <td class="text-center">{{ vals.199 }}</td> {# GNA15 #}
+                        <td class="text-center">{{ vals.205 }}</td> {# GNA12 #}
+                        <td class="text-center">{{ vals.211 }}</td> {# GNA13 #}
+
+                        {# emmean #}
+                        <td class="text-center">{{ vals.120 }}</td> {# GNAS2 #}
+                        <td class="text-center">{{ vals.132 }}</td> {# GNAI1 #}
+                        <td class="text-center">{{ vals.138 }}</td> {# GNAI2 #}
+                        <td class="text-center">{{ vals.168 }}</td> {# GNAO #}
+                        <td class="text-center">{{ vals.174 }}</td> {# GNAZ #}
+                        <td class="text-center">{{ vals.180 }}</td> {# GNAQ #}
+                        <td class="text-center">{{ vals.186 }}</td> {# GNA11 #}
+                        <td class="text-center">{{ vals.192 }}</td> {# GNA14 #}
+                        <td class="text-center">{{ vals.198 }}</td> {# GNA15 #}
+                        <td class="text-center">{{ vals.204 }}</td> {# GNA12 #}
+                        <td class="text-center">{{ vals.210 }}</td> {# GNA13 #}
+
+                        {# pec50sem #}
+                        <td class="text-center">{{ vals.123 }}</td> {# GNAS2 #}
+                        <td class="text-center">{{ vals.135 }}</td> {# GNAI1 #}
+                        <td class="text-center">{{ vals.141 }}</td> {# GNAI2 #}
+                        <td class="text-center">{{ vals.171 }}</td> {# GNAO #}
+                        <td class="text-center">{{ vals.177 }}</td> {# GNAZ #}
+                        <td class="text-center">{{ vals.183 }}</td> {# GNAQ #}
+                        <td class="text-center">{{ vals.189 }}</td> {# GNA11 #}
+                        <td class="text-center">{{ vals.195 }}</td> {# GNA14 #}
+                        <td class="text-center">{{ vals.201 }}</td> {# GNA15 #}
+                        <td class="text-center">{{ vals.207 }}</td> {# GNA12 #}
+                        <td class="text-center">{{ vals.213 }}</td> {# GNA13 #}
+
+                        {# emsem #}
+                        <td class="text-center">{{ vals.122 }}</td> {# GNAS2 #}
+                        <td class="text-center">{{ vals.134 }}</td> {# GNAI1 #}
+                        <td class="text-center">{{ vals.140 }}</td> {# GNAI2 #}
+                        <td class="text-center">{{ vals.170 }}</td> {# GNAO #}
+                        <td class="text-center">{{ vals.176 }}</td> {# GNAZ #}
+                        <td class="text-center">{{ vals.182 }}</td> {# GNAQ #}
+                        <td class="text-center">{{ vals.188 }}</td> {# GNA11 #}
+                        <td class="text-center">{{ vals.194 }}</td> {# GNA14 #}
+                        <td class="text-center">{{ vals.200 }}</td> {# GNA15 #}
+                        <td class="text-center">{{ vals.206 }}</td> {# GNA12 #}
+                        <td class="text-center">{{ vals.212 }}</td> {# GNA13 #}
+
+                    </tr>
+                {% endfor %}
+                </tbody>
+
+            </table>
+        </div>
+
+
+        {# ====================================================================== #}
+        {# INOUE TAB STARTS HERE id='inouetabletab' connects to js #}
+        {# ====================================================================== #}
+        <div class="tab-pane fade" id="table_4" role="tabpanel" aria-labelledby="table4-tab">
+            <br>
+            <div style='width:100%; display:inline;'>
+                <div class="btn-group">
+                    <a id="dlink" style="display:none;"></a>
+                    <div id="excel_table" style2="display:none;"></div>
+                    <input class="btn btn-default btn-s" type="button" id="toggle_fixed_btn" value="Disable fixed columns"
+                           href="javascript:void(0)" data-toggle="buttons">
+                    <input class="btn btn-default btn-s" type="button" onclick="resetHidden4()" id="toggle"
+                           value="Show hidden columns">
+                    <!--<input class="btn btn-default btn-s" type="button" id="toggle_columns_btn" value="Show hidden
+                    columns"
+                           href="javascript:void(0)"> -->
+                </div>
+                <div class="btn-group" style='padding-left:10px;'>
+                    <input class="btn btn-default btn-s" type="button"
+                           onclick="tableToExcel('inouetabletab', 'Inoue data', 'inoue_coupling.xls')"
+                           value="Export Excel">
+                    <input class="btn btn-default btn-s" type="button"
+                           onclick="reset_tab1()"
+                           value="Reset All">
+                </div>
+            </div>
+
+            <table width="100%" class="display compact text-nowrap" id="inouetabletab" >
+
+                <thead>
+                <tr class='over_header over_header_row'>
+                    <th colspan=5 class="over_header" style='height:35px; text-align:left;'>
+                        RECEPTOR
+                    </th>
+                    <th colspan=4 class="over_header flexible_over_header" style='text-align:left;'>
+                        Emax DNorm Families
+                        <button type="button" class="close hide_columns4" columns="5,6,7,8"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=11 class="over_header flexible_over_header" style='text-align:left;'>
+                        pEC50 (dNorm)
+                        <button type="button" class="close hide_columns4" columns="9,10,11,12,13,14,15,16,17,18,19"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=11 class="over_header flexible_over_header" style='text-align:left;'>
+                        Emax (dNorm)
+                        <button type="button" class="close hide_columns4" columns="20,21,22,23,24,25,26,27,28,29,30"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=11 class="over_header flexible_over_header" style='text-align:left;'>
+                        pEC50 (raw)
+                        <button type="button" class="close hide_columns4" columns="31,32,33,34,35,36,37,38,39,40,41"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=11 class="over_header flexible_over_header" style='text-align:left;'>
+                        Emax (raw)
+                        <button type="button" class="close hide_columns4" columns="42,43,44,45,46,47,48,49,50,51,52"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=11 class="over_header flexible_over_header" style='text-align:left;'>
+                        pEC50 (SEM)
+                        <button type="button" class="close hide_columns4" columns="53,54,55,56,57,58,59,60,61,62,63"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                    <th colspan=11 class="over_header flexible_over_header" style='text-align:left;'>
+                        Emax (SEM)
+                        <button type="button" class="close hide_columns4" columns="64,65,66,67,68,69,70,71,72,73,74"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                </tr>
+
+
+                <tr class='over_header over_header_row'>
+                    <th title="" class='checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)
+"></th>
+                    <th title="Class" style="height: 70px;"></th>
+                    <th title="Family"></th>
+                    <th title="uniprot"></th>
+                    <th title="IUPHAR" class='rightborder'></th>
+
+                    {# Max Double-Normalized Emax #}
+                    <th title="Gs">Gs</th>
+                    <th title="Gi/Go">Gi/Go</th>
+                    <th title="Gq/G11">Gq/G11</th>
+                    <th title="G12/G13"class="rightborder">G12/G13</th>
+
+                    {# pec50dn #}
+                    <th title="GNAS2">Gs <br>(GNAS)</th>
+                    <th title="GNAL">Golf <br>(GNAL)</th>
+                    <th title="GNAI1">Gi1 <br>(GNAI1)</th>
+                    <th title="GNAI3">Gi3 <br>(GNAI3)</th>
+                    <th title="GNAO">Go1 <br>(GNAO1)</th>
+                    <th title="GNAZ">Gz <br>(GNAZ)</th>
+                    <th title="GNAQ">Gq <br>(GNAQ)</th>
+                    <th title="GNA14">G14 <br>(GNA14)</th>
+                    <th title="GNA15">G15 <br>(GNA15)</th>
+                    <th title="GNA12">G12 <br>(GNA12)</th>
+                    <th title="GNA13" class="rightborder">G13 <br>(GNA13)</th>
+
+                    {# emaxdn #}
+                    <th title="GNAS2">Gs <br>(GNAS)</th>
+                    <th title="GNAL">Golf <br>(GNAL)</th>
+                    <th title="GNAI1">Gi1 <br>(GNAI1)</th>
+                    <th title="GNAI3">Gi3 <br>(GNAI3)</th>
+                    <th title="GNAO">Go1 <br>(GNAO1)</th>
+                    <th title="GNAZ">Gz <br>(GNAZ)</th>
+                    <th title="GNAQ">Gq <br>(GNAQ)</th>
+                    <th title="GNA14">G14 <br>(GNA14)</th>
+                    <th title="GNA15">G15 <br>(GNA15)</th>
+                    <th title="GNA12">G12 <br>(GNA12)</th>
+                    <th title="GNA13" class="rightborder">G13 <br>(GNA13)</th>
+
+                    {# pec50mean #}
+                    <th title="GNAS2">Gs <br>(GNAS)</th>
+                    <th title="GNAL">Golf <br>(GNAL)</th>
+                    <th title="GNAI1">Gi1 <br>(GNAI1)</th>
+                    <th title="GNAI3">Gi3 <br>(GNAI3)</th>
+                    <th title="GNAO">Go1 <br>(GNAO1)</th>
+                    <th title="GNAZ">Gz <br>(GNAZ)</th>
+                    <th title="GNAQ">Gq <br>(GNAQ)</th>
+                    <th title="GNA14">G14 <br>(GNA14)</th>
+                    <th title="GNA15">G15 <br>(GNA15)</th>
+                    <th title="GNA12">G12 <br>(GNA12)</th>
+                    <th title="GNA13" class="rightborder">G13 <br>(GNA13)</th>
+
+                    {# emmean #}
+                    <th title="GNAS2">Gs <br>(GNAS)</th>
+                    <th title="GNAL">Golf <br>(GNAL)</th>
+                    <th title="GNAI1">Gi1 <br>(GNAI1)</th>
+                    <th title="GNAI3">Gi3 <br>(GNAI3)</th>
+                    <th title="GNAO">Go1 <br>(GNAO1)</th>
+                    <th title="GNAZ">Gz <br>(GNAZ)</th>
+                    <th title="GNAQ">Gq <br>(GNAQ)</th>
+                    <th title="GNA14">G14 <br>(GNA14)</th>
+                    <th title="GNA15">G15 <br>(GNA15)</th>
+                    <th title="GNA12">G12 <br>(GNA12)</th>
+                    <th title="GNA13" class="rightborder">G13 <br>(GNA13)</th>
+
+                    {# pec50sem #}
+                    <th title="GNAS2">Gs <br>(GNAS)</th>
+                    <th title="GNAL">Golf <br>(GNAL)</th>
+                    <th title="GNAI1">Gi1 <br>(GNAI1)</th>
+                    <th title="GNAI3">Gi3 <br>(GNAI3)</th>
+                    <th title="GNAO">Go1 <br>(GNAO1)</th>
+                    <th title="GNAZ">Gz <br>(GNAZ)</th>
+                    <th title="GNAQ">Gq <br>(GNAQ)</th>
+                    <th title="GNA14">G14 <br>(GNA14)</th>
+                    <th title="GNA15">G15 <br>(GNA15)</th>
+                    <th title="GNA12">G12 <br>(GNA12)</th>
+                    <th title="GNA13" class="rightborder">G13 <br>(GNA13)</th>
+
+                    {# emsem #}
+                    <th title="GNAS2">Gs <br>(GNAS)</th>
+                    <th title="GNAL">Golf <br>(GNAL)</th>
+                    <th title="GNAI1">Gi1 <br>(GNAI1)</th>
+                    <th title="GNAI3">Gi3 <br>(GNAI3)</th>
+                    <th title="GNAO">Go1 <br>(GNAO1)</th>
+                    <th title="GNAZ">Gz <br>(GNAZ)</th>
+                    <th title="GNAQ">Gq <br>(GNAQ)</th>
+                    <th title="GNA14">G14 <br>(GNA14)</th>
+                    <th title="GNA15">G15 <br>(GNA15)</th>
+                    <th title="GNA12">G12 <br>(GNA12)</th>
+                    <th title="GNA13" class="rightborder">G13 <br>(GNA13)</th>
+                </tr>
+
+                </thead>
+
+                <br>
+                <br>
+
+                <tbody>
+                {% for p, vals in famtab.items %}
+                    <tr>
+                        <td class="text-center"><input class="alt" type="checkbox" id="{{ vals.pk }}"></td>
+                        <td class="text-left">{{ vals.0 }}</td>
+                        <td class="text-left">{{ vals.1 }}</td>
+
+                        <td class="uniprot">
+                            <span><a href="https://www.uniprot.org/uniprot/{{ vals.2 }}">{{ p }}</a></span>
+                        </td>
+                        <td class="text-left">
+                            <a href="https://gpcrdb.org/protein/{{ vals.3 }}">{{ vals.5|safe }}</a>
+                        </td>
+
+                        <td class="text-center">{{ vals.214 }}</td> {# Gs #}
+                        <td class="text-center">{{ vals.215 }}</td> {# Gi/Go #}
+                        <td class="text-center">{{ vals.216 }}</td> {# Gq/G11 #}
+                        <td class="text-center">{{ vals.217 }}</td> {# G12/G13 #}
+
+                        {# pec50dn #}
+                        <td class="text-center">{{ vals.19 }}</td> {# GNAS2 #}
+                        <td class="text-center">{{ vals.25 }}</td> {# GNAL #}
+                        <td class="text-center">{{ vals.31 }}</td> {# GNAI1 #}
+                        <td class="text-center">{{ vals.43 }}</td> {# GNAI3 #}
+                        <td class="text-center">{{ vals.67 }}</td> {# GNAO #}
+                        <td class="text-center">{{ vals.73 }}</td> {# GNAZ #}
+                        <td class="text-center">{{ vals.79 }}</td> {# GNAQ #}
+                        <td class="text-center">{{ vals.91 }}</td> {# GNA14 #}
+                        <td class="text-center">{{ vals.97  }}</td> {# GNA15 #}
+                        <td class="text-center">{{ vals.103 }}</td> {# GNA12 #}
+                        <td class="text-center">{{ vals.109 }}</td> {# GNA13 #}
+
+                        {# emdn #}
+                        <td class="text-center">{{ vals.18 }}</td> {# GNAS2 #}
+                        <td class="text-center">{{ vals.24 }}</td> {# GNAL #}
+                        <td class="text-center">{{ vals.30 }}</td> {# GNAI1 #}
+                        <td class="text-center">{{ vals.42 }}</td> {# GNAI3 #}
+                        <td class="text-center">{{ vals.66 }}</td> {# GNAO #}
+                        <td class="text-center">{{ vals.72 }}</td> {# GNAZ #}
+                        <td class="text-center">{{ vals.78 }}</td> {# GNAQ #}
+                        <td class="text-center">{{ vals.90 }}</td> {# GNA14 #}
+                        <td class="text-center">{{ vals.96 }}</td> {# GNA15 #}
+                        <td class="text-center">{{ vals.102 }}</td> {# GNA12 #}
+                        <td class="text-center">{{ vals.108 }}</td> {# GNA13 #}
+
+                        {# pec50mean #}
+                        <td class="text-center">{{ vals.21 }}</td> {# GNAS2 #}
+                        <td class="text-center">{{ vals.27 }}</td> {# GNAL #}
+                        <td class="text-center">{{ vals.33 }}</td> {# GNAI1 #}
+                        <td class="text-center">{{ vals.45 }}</td> {# GNAI3 #}
+                        <td class="text-center">{{ vals.69 }}</td> {# GNAO #}
+                        <td class="text-center">{{ vals.75 }}</td> {# GNAZ #}
+                        <td class="text-center">{{ vals.81 }}</td> {# GNAQ #}
+                        <td class="text-center">{{ vals.93 }}</td> {# GNA14 #}
+                        <td class="text-center">{{ vals.99 }}</td> {# GNA15 #}
+                        <td class="text-center">{{ vals.105 }}</td> {# GNA12 #}
+                        <td class="text-center">{{ vals.111 }}</td> {# GNA13 #}
+
+                        {# emmean #}
+                        <td class="text-center">{{ vals.20 }}</td> {# GNAS2 #}
+                        <td class="text-center">{{ vals.26 }}</td> {# GNAL #}
+                        <td class="text-center">{{ vals.32 }}</td> {# GNAI1 #}
+                        <td class="text-center">{{ vals.44 }}</td> {# GNAI3 #}
+                        <td class="text-center">{{ vals.68 }}</td> {# GNAO #}
+                        <td class="text-center">{{ vals.74 }}</td> {# GNAZ #}
+                        <td class="text-center">{{ vals.80 }}</td> {# GNAQ #}
+                        <td class="text-center">{{ vals.92 }}</td> {# GNA14 #}
+                        <td class="text-center">{{ vals.98 }}</td> {# GNA15 #}
+                        <td class="text-center">{{ vals.104 }}</td> {# GNA12 #}
+                        <td class="text-center">{{ vals.110 }}</td> {# GNA13 #}
+
+                        {# pec50sem #}
+                        <td class="text-center">{{ vals.23 }}</td> {# GNAS2 #}
+                        <td class="text-center">{{ vals.29 }}</td> {# GNAL #}
+                        <td class="text-center">{{ vals.35 }}</td> {# GNAI1 #}
+                        <td class="text-center">{{ vals.47 }}</td> {# GNAI3 #}
+                        <td class="text-center">{{ vals.71 }}</td> {# GNAO #}
+                        <td class="text-center">{{ vals.77 }}</td> {# GNAZ #}
+                        <td class="text-center">{{ vals.83 }}</td> {# GNAQ #}
+                        <td class="text-center">{{ vals.95 }}</td> {# GNA14 #}
+                        <td class="text-center">{{ vals.101 }}</td> {# GNA15 #}
+                        <td class="text-center">{{ vals.107 }}</td> {# GNA12 #}
+                        <td class="text-center">{{ vals.113 }}</td> {# GNA13 #}
+
+                        {# emsem #}
+                        <td class="text-center">{{ vals.22 }}</td> {# GNAS2 #}
+                        <td class="text-center">{{ vals.28 }}</td> {# GNAL #}
+                        <td class="text-center">{{ vals.34 }}</td> {# GNAI1 #}
+                        <td class="text-center">{{ vals.46 }}</td> {# GNAI3 #}
+                        <td class="text-center">{{ vals.70 }}</td> {# GNAO #}
+                        <td class="text-center">{{ vals.76 }}</td> {# GNAZ #}
+                        <td class="text-center">{{ vals.82 }}</td> {# GNAQ #}
+                        <td class="text-center">{{ vals.94 }}</td> {# GNA14 #}
+                        <td class="text-center">{{ vals.100 }}</td> {# GNA15 #}
+                        <td class="text-center">{{ vals.106 }}</td> {# GNA12 #}
+                        <td class="text-center">{{ vals.112 }}</td> {# GNA13 #}
+
+                    </tr>
+                {% endfor %}
+                </tbody>
+
+
+            </table>
+        </div>
+
+    </div>
+
+
+{% endblock %}
+
+{% block addon_js %}
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"></script>
+    {#  SAAS  <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script> #}
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"></script>
+    <script src="{% static 'home/js/select2.js' %}"></script>
+    <script src="{% static 'home/js/datatables.min.js' %}"></script>
+    <script src="{% static 'home/js/signprot-multitabtable.js' %}"></script>
+{% endblock %}
