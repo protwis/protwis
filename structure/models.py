@@ -63,17 +63,25 @@ class Structure(models.Model):
         for line in self.pdb_data.pdb.split('\n'):
             save_line = False
             if pref_chain:
+                # or 'refined' bit needs rework, it fucks up the extraction
                 if (line.startswith('ATOM') or line.startswith('HET')) and (line[21] == self.preferred_chain[0] or 'refined' in self.pdb_code.index):
+                # if (line.startswith('ATOM') or line.startswith('HET')) and (line[21] == self.preferred_chain[0]):
                     save_line = True
             else:
                 save_line = True
             if remove_waters and line.startswith('HET') and line[17:20] == 'HOH':
                 save_line = False
             if ligands_to_keep and line.startswith('HET'):
-                if line[17:20] != 'HOH' and line[17:20] in ligands_to_keep:
-                    save_line = True
-                elif line[17:20] != 'HOH':
-                    save_line=False
+                if pref_chain:
+                    if line[17:20] != 'HOH' and line[17:20] in ligands_to_keep and line[21] == self.preferred_chain[0]:
+                        save_line = True
+                    elif line[17:20] != 'HOH':
+                        save_line=False
+                else:
+                    if line[17:20] != 'HOH' and line[17:20] in ligands_to_keep:
+                        save_line = True
+                    elif line[17:20] != 'HOH':
+                        save_line=False
             if save_line:
                 tmp.append(line)
 
