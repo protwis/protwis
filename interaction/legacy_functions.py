@@ -832,6 +832,7 @@ def find_interactions():
                                 hydrophobic_count += 1
                                 hydrophobic_check = 0
 
+                            # If within 5Å and not a backbone atom (name C, O, N), then indicate as a residue in vicinity of the ligand
                             if d.norm() < 5 and (aa_atom!='C' and aa_atom!='O' and aa_atom!='N'):
                                 #print(aa_atom)
                                 accesible_check = 1
