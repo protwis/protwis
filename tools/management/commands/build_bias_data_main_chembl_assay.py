@@ -142,35 +142,35 @@ class Command(BaseBuild):
                 if bool(Barr) == False:
                     Barr = i
                 else:
-                    if i['quantitive_activity'] > Barr['quantitive_activity']:
+                    if i['quantitive_activity'] < Barr['quantitive_activity']:
                         Barr = i
 
             if i['signalling_protein'] == 'G12':
                 if bool(G12) == False:
                     G12 = i
                 else:
-                    if i['quantitive_activity'] > G12['quantitive_activity']:
+                    if i['quantitive_activity'] < G12['quantitive_activity']:
                         G12 = i
 
             if i['signalling_protein'] == 'Gio':
                 if bool(Gio) == False:
                     Gio = i
                 else:
-                    if i['quantitive_activity'] > Gio['quantitive_activity']:
+                    if i['quantitive_activity'] < Gio['quantitive_activity']:
                         Gio = i
 
             if i['signalling_protein'] == 'Gq':
                 if bool(Gq) == False:
                     Gq = i
                 else:
-                    if i['quantitive_activity'] > Gq['quantitive_activity']:
+                    if i['quantitive_activity'] < Gq['quantitive_activity']:
                         Gq = i
 
             if i['signalling_protein'] == 'GS':
                 if bool(GS) == False:
                     GS = i
                 else:
-                    if i['quantitive_activity'] > GS['quantitive_activity']:
+                    if i['quantitive_activity'] < GS['quantitive_activity']:
                         GS = i
 
         if Barr:
@@ -184,8 +184,6 @@ class Command(BaseBuild):
         if GS:
             families.append(GS)
         return families
-
-
 
 
     def fetch_chembl(self,ligand):
@@ -254,6 +252,7 @@ class Command(BaseBuild):
 
                 experiment_assay = AnalyzedAssay(experiment=experiment_entry,
                                                  order_no=ex['order_no'],
+                                                 assay_type= ex['assay_type'],
                                                  signalling_protein= ex['signalling_protein'],
                                                  quantitive_measure_type=ex['quantitive_measure_type'],
                                                  quantitive_activity=ex['quantitive_activity'],
@@ -271,7 +270,7 @@ class Command(BaseBuild):
             #     continue
 
     def family_reduction(self, combined):
-        for i in combined.items():            
+        for i in combined.items():
             i[1]['biasdata'] = self.limit_family(i[1]['biasdata'])
 
 
@@ -319,7 +318,8 @@ class Command(BaseBuild):
             temp_dict['assay_description'] = j['main'].assay_description
             temp_dict['quantitive_measure_type'] = j['main'].standard_type
             temp_dict['quantitive_unit'] = j['main'].standard_units
-            temp_dict['assay_type'] = j['main'].assay_type
+            if j['main'].publication:
+                temp_dict['assay_type'] = j['main'].publication.web_link.index
             temp_dict['potency'] = None
             if j['main'].standard_value:
                 temp_dict['quantitive_activity'] = float(j['main'].standard_value)

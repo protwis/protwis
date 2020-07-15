@@ -297,6 +297,37 @@
                     filter_default_label: ["From", "To"],
                     filter_reset_button_text: false,
                 },
+                //DOI
+                {
+                    column_number: 24,
+                    filter_type: "range_number",
+                    filter_default_label: ["From", "To"],
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 25,
+                    filter_type: "range_number",
+                    filter_default_label: ["From", "To"],
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 26,
+                    filter_type: "range_number",
+                    filter_default_label: ["From", "To"],
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 27,
+                    filter_type: "range_number",
+                    filter_default_label: ["From", "To"],
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 28,
+                    filter_type: "range_number",
+                    filter_default_label: ["From", "To"],
+                    filter_reset_button_text: false,
+                },
 
             ], {
                 cumulative_filtering: true
@@ -496,12 +527,14 @@
                 <thead id="headers">
                     <tr>
                         <th colspan="1">Details</th>
-                        <th style="border-left: 1px solid black;" id="col_Receptor" colspan="6" style="text-align:left">Receptor</th>
-                        <th style="border-left: 1px solid black;" id="col_Ligand" colspan="1" style="text-align:left">Tested Ligand</th>
+                        <th style="border-left: 1px solid black;" colspan="6" style="text-align:left">Receptor</th>
+                        <th style="border-left: 1px solid black;" colspan="1" style="text-align:left">Tested Ligand</th>
                         <th style="border-left: 1px solid black;" colspan="2" style="text-align:left">Receptor transducers</th>
-                        <th style="border-left: 1px solid black;" id="col_Pathway" colspan="5">Pathway Bias Rank Order </th>
-                        <th style="border-left: 1px solid black;" id="col_Potency" colspan="4">Potency ratio</th>
-                        <th style="border-left: 1px solid black;" id="col_ec50" colspan="5">Potency EC50 or <font color="#FF0000">IC50</font>
+                        <th style="border-left: 1px solid black;" colspan="5">Pathway Bias Rank Order </th>
+                        <th style="border-left: 1px solid black;" colspan="4">Potency ratio</th>
+                        <th style="border-left: 1px solid black;" colspan="5">Potency EC50 or <font color="#FF0000">IC50</font>
+                        <th style="border-left: 1px solid black;" colspan="5">DOI</font>
+                        <th style="border-left: 1px solid black;" colspan="5">Assay description</font>
                         </th>
                         <th colspan="1" style="display:none">ligand_id</th>
                     </tr>
@@ -531,6 +564,18 @@
                         <th class='potency'>P 4</th>
                         <th class="potency">P 5</th>
                         <!-- Potency -->
+                        <th class='ec50' style="border-left: 1px solid black;">P 1</th>
+                        <th class='ec50'>P 2</th>
+                        <th class='ec50'>P 3</th>
+                        <th class='ec50'>P 4</th>
+                        <th class="ec50">P 5</th>
+                        <!-- DOI -->
+                        <th class='ec50' style="border-left: 1px solid black;">P 1</th>
+                        <th class='ec50'>P 2</th>
+                        <th class='ec50'>P 3</th>
+                        <th class='ec50'>P 4</th>
+                        <th class="ec50">P 5</th>
+                        <!-- assay description -->
                         <th class='ec50' style="border-left: 1px solid black;">P 1</th>
                         <th class='ec50'>P 2</th>
                         <th class='ec50'>P 3</th>
@@ -620,6 +665,17 @@
                         {%endif%}
                         {%endfor%}
 
+                        {% for ex in e.1.biasdata|dictsort:"order_no" %}
+
+                        <td title="{{ex.assay}}">{{ex.assay}}</td>
+
+                        {%endfor%}
+
+                        {% for ex in e.1.biasdata|dictsort:"order_no" %}
+
+                        <td title="{{ex.assay_description}}">{{ex.assay_description}}</td>
+
+                        {%endfor%}
                         <td style="display:none">{{e.1.ligand.id}}</td>
 
                     </tr>

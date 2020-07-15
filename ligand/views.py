@@ -829,6 +829,8 @@ class BiasBrowserChembl(TemplateView):
                 if entry.order_no < 5:
                     temp_dict = dict()
                     temp_dict['family'] = entry.family
+                    temp_dict['assay'] = entry.assay_type
+                    temp_dict['assay_description'] = entry.assay_description
                     temp_dict['show_family'] = entry.signalling_protein
                     temp_dict['signalling_protein'] = entry.signalling_protein
                     temp_dict['quantitive_measure_type'] = entry.quantitive_measure_type

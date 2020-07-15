@@ -302,8 +302,6 @@ class ChemblAssay(models.Model):
     web_links = models.ManyToManyField('common.WebLink')
     assay_id = models.CharField(max_length=50, unique = True)
 
-
-
     def __str__(self):
         return self.assay_id
 
