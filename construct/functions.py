@@ -398,7 +398,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     # Parsing
 
     #ftp://ftp.ebi.ac.uk/pub/databases/msd/sifts/xml/1xyz.xml.gz
-    # Alternative : url = 'http://www.rcsb.org/pdb/files/$index.sifts.xml'
+    # Alternative : url = 'https://www.rcsb.org/pdb/files/$index.sifts.xml'
     url = 'ftp://ftp.ebi.ac.uk/pub/databases/msd/sifts/xml/$index.xml.gz'
     sifts = fetch_from_web_api(url, pdbname.lower(), cache_dir, xml = True)
     d['links'].append(Template(url).substitute(index=quote(str(pdbname.lower()), safe='')))
@@ -417,14 +417,14 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
         msg_2 = 0
         # for elem in sifts:
         #     print(elem)
-        for elem in sifts.findall('.//{http://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}segment'):
+        for elem in sifts.findall('.//{https://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}segment'):
             receptor = False
             chain = elem.attrib['segId'].split('_')[1]
             for res in elem[0]: #first element is residuelist
                 if receptor_chain!='':
                     break #break if found
                 for node in res:
-                    if node.tag == '{http://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}crossRefDb':
+                    if node.tag == '{https://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}crossRefDb':
                         source = node.attrib['dbSource']
                         if source=='UniProt':
                             u_id = node.attrib['dbAccessionId']
@@ -435,7 +435,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
         prev_elem_name = ""
         pdb_resid_total = []
         pdb_resid_total_accounted = []
-        for elem in sifts.findall('.//{http://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}segment'):
+        for elem in sifts.findall('.//{https://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}segment'):
             if 'segId' not in elem.attrib:
                 continue #not receptor
             if elem.attrib['segId']==prev_elem_name:
@@ -473,7 +473,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                     if raw_u_id!=prev_raw_u_id:
                         # print("New u_id",raw_u_id,u_id)
                         prev_raw_u_id = raw_u_id
-                    if node.tag == '{http://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}crossRefDb':
+                    if node.tag == '{https://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}crossRefDb':
                         source = node.attrib['dbSource']
                         if source=='UniProt':
                             u_id = node.attrib['dbAccessionId']
@@ -600,7 +600,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                             else:
                                 pdb_aa ="X"
 
-                    elif pdb_aa and node.tag == '{http://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}residueDetail':
+                    elif pdb_aa and node.tag == '{https://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}residueDetail':
                         # print(node.text)
                         if u_id!='N/A' and u_id not in d['construct_sequences']:
                             d['construct_sequences'][u_id] = OrderedDict()
@@ -892,10 +892,10 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
             v['position'] = "C-term"
         # print(max(receptor_seq_ids))
 
-    #http://www.ebi.ac.uk/pdbe/api/pdb/entry/experiment/2RH1
+    #https://www.ebi.ac.uk/pdbe/api/pdb/entry/experiment/2RH1
     ## experiment data
     cache_dir = ['pdbe', 'experiment']
-    url = 'http://www.ebi.ac.uk/pdbe/api/pdb/entry/experiment/$index'
+    url = 'https://www.ebi.ac.uk/pdbe/api/pdb/entry/experiment/$index'
     pdbe = fetch_from_web_api(url, pdbname, cache_dir)
     d['links'].append(Template(url).substitute(index=quote(str(pdbname), safe='')))
     if pdbe: #success
@@ -908,10 +908,10 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
         pass
         # print('failed pdbe')
 
-    # #http://www.ebi.ac.uk/pdbe/api/pdb/entry/modified_AA_or_NA/2RH1
+    # #https://www.ebi.ac.uk/pdbe/api/pdb/entry/modified_AA_or_NA/2RH1
     # ## modified AA (empty on 2RH1)
     # cache_dir = ['pdbe', 'modified_AA_or_NA']
-    # url = 'http://www.ebi.ac.uk/pdbe/api/pdb/entry/modified_AA_or_NA/$index'
+    # url = 'https://www.ebi.ac.uk/pdbe/api/pdb/entry/modified_AA_or_NA/$index'
     # pdbe_mod = fetch_from_web_api(url, pdbname, cache_dir)
     # d['links'].append(Template(url).substitute(index=quote(str(pdbname), safe='')))
 
@@ -925,7 +925,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     ## modifications for their jmol -- "hacky" way to get it
     try:
         cache_dir = ['rcsb', 'jmol_modifications']
-        url = 'http://www.rcsb.org/pdb/explore/jmol.do?structureId=$index&json=true'
+        url = 'https://www.rcsb.org/pdb/explore/jmol.do?structureId=$index&json=true'
         rcsb_mod = fetch_from_web_api(url, pdbname, cache_dir)
         d['links'].append(Template(url).substitute(index=quote(str(pdbname), safe='')))
         # print(Template(url).substitute(index=quote(str(pdbname), safe='')))
@@ -959,9 +959,9 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
         d['modifications2'] = 'None'
         # print('failed pdbe_mod')
 
-    #http://www.ebi.ac.uk/pdbe/api/pdb/entry/ligand_monomers/2RH1
+    #https://www.ebi.ac.uk/pdbe/api/pdb/entry/ligand_monomers/2RH1
     cache_dir = ['pdbe', 'ligands']
-    url = 'http://www.ebi.ac.uk/pdbe/api/pdb/entry/ligand_monomers/$index'
+    url = 'https://www.ebi.ac.uk/pdbe/api/pdb/entry/ligand_monomers/$index'
     pdbe_ligands = fetch_from_web_api(url, pdbname, cache_dir)
     d['links'].append(Template(url).substitute(index=quote(str(pdbname), safe='')))
     # print(Template(url).substitute(index=quote(str(pdbname), safe='')))
@@ -982,11 +982,11 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
 
     ## NOT NEED - FETCH MUT FROM XML
 
-    # #http://www.ebi.ac.uk/pdbe/api/pdb/entry/mutated_AA_or_NA/2RH1
+    # #https://www.ebi.ac.uk/pdbe/api/pdb/entry/mutated_AA_or_NA/2RH1
     # ## mutated AA
     # ### got conflicts, engerineered mutation and expression tag examples
     # cache_dir = ['pdbe', 'mutated_AA_or_NA']
-    # url = 'http://www.ebi.ac.uk/pdbe/api/pdb/entry/mutated_AA_or_NA/$index'
+    # url = 'https://www.ebi.ac.uk/pdbe/api/pdb/entry/mutated_AA_or_NA/$index'
     # pdbe_mut = fetch_from_web_api(url, pdbname, cache_dir)
     # d['links'].append(Template(url).substitute(index=quote(str(pdbname), safe='')))
 
@@ -1005,12 +1005,12 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     #     print('failed pdbe_mut')
 
 
-    #http://www.rcsb.org/pdb/rest/das/pdb_uniprot_mapping/alignment?query=2RH1
+    #https://www.rcsb.org/pdb/rest/das/pdb_uniprot_mapping/alignment?query=2RH1
     ## uniprot mappings
     ### seems to be IDs of stuff then use:
     # http://www.uniprot.org/uniprot/P00720.xml
     cache_dir = ['rcsb', 'pdb_uniprot_mapping']
-    url = 'http://www.rcsb.org/pdb/rest/das/pdb_uniprot_mapping/alignment?query=$index'
+    url = 'https://www.rcsb.org/pdb/rest/das/pdb_uniprot_mapping/alignment?query=$index'
     uniprot_map = fetch_from_web_api(url, pdbname, cache_dir, xml = True)
     d['links'].append(Template(url).substitute(index=quote(str(pdbname), safe='')))
 

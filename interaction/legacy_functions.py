@@ -66,7 +66,7 @@ debug = False
 
 
 def fetch_pdb(id):
-    url = 'http://www.rcsb.org/pdb/files/%s.pdb' % id
+    url = 'https://www.rcsb.org/pdb/files/%s.pdb' % id
     return urllib.urlopen(url).read()
 
 
