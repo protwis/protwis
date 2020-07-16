@@ -1076,13 +1076,18 @@ class Command(BaseBuild):
 
                     # pdb code
                     if 'pdb' in sd:
-                        try:
-                            web_resource = WebResource.objects.get(slug='pdb')
-                        except:
-                            # abort if pdb resource is not found
-                            raise Exception('PDB resource not found, aborting!')
-                        s.pdb_code, created = WebLink.objects.get_or_create(index=sd['pdb'],
-                            web_resource=web_resource)
+                        # Workaround for custom PDB-codes (not starting with a number)
+                        if sd['pdb'][0].isnumeric():
+                            try:
+                                web_resource = WebResource.objects.get(slug='pdb')
+                            except:
+                                # abort if pdb resource is not found
+                                raise Exception('PDB resource not found, aborting!')
+                        else:
+                            # Empty resource
+                            web_resource = 0
+
+                        s.pdb_code, created = WebLink.objects.get_or_create(index=sd['pdb'], web_resource=web_resource)
                     else:
                         self.logger.error('PDB code not specified for structure {}, skipping!'.format(sd['pdb']))
                         continue
