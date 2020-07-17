@@ -105,7 +105,9 @@ def compute_interactions(pdb_name,save_to_db = False):
                             for match_res in ns_sign.search(gpcr_atom.coord, 4.5, "R")}
 
             # For each pair of interacting residues, determine the type of interaction
-            residues_sign = ProteinConformation.objects.get(protein__entry_name=pdb_name+"_"+complex.alpha.lower()).residue_set.exclude(generic_number=None).all().prefetch_related('generic_number')
+            #residues_sign = ProteinConformation.objects.get(protein__entry_name=pdb_name+"_"+complex.alpha.lower()).residue_set.exclude(generic_number=None).all().prefetch_related('generic_number')
+            # Current workaround is forcing _a to pdb for indicating alpha-subunit
+            residues_sign = ProteinConformation.objects.get(protein__entry_name=pdb_name+"_a").residue_set.exclude(generic_number=None).all().prefetch_related('generic_number')
 
             # grab labels from sign protein
             dbres_sign = {}
