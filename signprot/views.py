@@ -1115,8 +1115,13 @@ def sort_a_by_b(a, b, remove_invalid=False):
 def interface_dataset():
     # correct receptor entry names - the ones with '_a' appended
     complex_objs = SignprotComplex.objects.prefetch_related('structure__protein_conformation__protein')
-    complex_names = [complex_obj.structure.protein_conformation.protein.entry_name + '_' + complex_obj.alpha.lower() for
+
+    # TOFIX: Current workaround is forcing _a to pdb for indicating alpha-subunit
+    #complex_names = [complex_obj.structure.protein_conformation.protein.entry_name + '_' + complex_obj.alpha.lower() for
+    #                 complex_obj in complex_objs]
+    complex_names = [complex_obj.structure.protein_conformation.protein.entry_name + '_a' for
                      complex_obj in complex_objs]
+
     complex_struc_ids = [co.structure_id for co in complex_objs]
     # protein conformations for those
     prot_conf = ProteinConformation.objects.filter(protein__entry_name__in=complex_names).values_list('id', flat=True)
