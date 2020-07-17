@@ -93,7 +93,7 @@ canvas {
         <div style="float: left; width: 60%;">
             <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
             <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
-                <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><button id="fullscreen">Full Screen</button><a href="https://github.com/arose/ngl"> NGL</a> is a WebGL based 3D viewer powered by <a href="http://mmtf.rcsb.org">MMTF</a>.</p>
+                <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><button id="fullscreen">Full Screen</button><a href="https://github.com/arose/ngl"> NGL</a> is a WebGL based 3D viewer powered by <a href="https://mmtf.rcsb.org">MMTF</a>.</p>
             </div>
 
             <br>
@@ -112,7 +112,7 @@ canvas {
             <!-- <div class="btn-group">
                 <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>
             </div> -->
-            
+
         </div>
     </div>
 </div>
@@ -123,7 +123,7 @@ canvas {
     </div>
     <div class="col-md-9">
         <a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a> (sequence similarity: {{ main_template_seqsim }}%) PDB: <a href="../{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index }}</a>
-        
+
         <div class="btn-group", style="padding: 0px 0px 5px 5px;">
             <a id="align_btn1" class="btn btn-primary btn-mini " href="javascript:void(0)" style="padding: 2px 5px;">Align</a>
         </div>
@@ -163,8 +163,8 @@ canvas {
                     {% for bt in bts %}
                         <div class="graphcolor" style="background-color:{{ bt.color }}; width: 20px; height: 10px; margin-top: 5px;"></div>
                         {{ bt.pdb_code.index }} ({{ bt.protein_conformation.protein.parent.name|safe}}) <br>
-                        
-                        
+
+
                     {% endfor %}
                 {% endfor %}
                         <div class="graphcolor" style="background-color:white; width: 20px; height: 10px;"></div>
@@ -487,7 +487,7 @@ canvas {
                 ClearSelection('targets');
                 ClearSelection('reference');
                 var div = document.createElement("div");
-                
+
                 div.innerHTML = "{{model.receptor_protein.entry_name}}";
                 if (typeof div.innerText !== "undefined") {
                     AddToSelection('reference', 'structure_complex_receptor', div.innerText.replace(/\s+/g, '').replace('[','').replace(']',''));

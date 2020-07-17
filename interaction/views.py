@@ -453,7 +453,7 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
     module_dir = '/tmp/interactions'
     results = []
     web_resource, created = WebResource.objects.get_or_create(
-        slug='pdb', url='http://www.rcsb.org/pdb/explore/explore.do?structureId=$index')
+        slug='pdb', url='https://www.rcsb.org/pdb/explore/explore.do?structureId=$index')
     web_link, created = WebLink.objects.get_or_create(
         web_resource=web_resource, index=pdbname)
 
@@ -687,7 +687,7 @@ def calculate(request, redirect=None):
                 temp_path = module_dir + '/pdbs/' + pdbname + '.pdb'
 
                 if not os.path.isfile(temp_path):
-                    url = 'http://www.rcsb.org/pdb/files/%s.pdb' % pdbname
+                    url = 'https://www.rcsb.org/pdb/files/%s.pdb' % pdbname
                     pdbdata = urllib.request.urlopen(
                         url).read().decode('utf-8')
                     f = open(temp_path, 'w')
@@ -1192,7 +1192,7 @@ def pdb(request):
         response = HttpResponse(pdbdata, content_type='text/plain')
     else:
         web_resource, created = WebResource.objects.get_or_create(
-            slug='pdb', url='http://www.rcsb.org/pdb/explore/explore.do?structureId=$index')
+            slug='pdb', url='https://www.rcsb.org/pdb/explore/explore.do?structureId=$index')
         web_link, created = WebLink.objects.get_or_create(
             web_resource=web_resource, index=pdbname)
 
@@ -1208,4 +1208,3 @@ def pdb(request):
         response = HttpResponse(structure.pdb_data.pdb,
                                 content_type='text/plain')
     return response
-    

@@ -22,6 +22,7 @@ class Command(BaseCommand):
 
     # source file directory
     mutation_data_path = os.sep.join([settings.DATA_DIR, 'mutational_landscape'])
+    proteins_not_found = []
 
     logger = logging.getLogger(__name__)
 
