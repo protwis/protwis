@@ -128,20 +128,28 @@ class Command(BaseBuild):
     def get_chembl_assay(self):
         print('---get_chembl_assay---')
 
+                        # new_test = new_client.activity.filter(standard_units = 'nM' ).filter(standard_units = 'um' ).filter(standard_units = 'M'
+                        # ).filter(standard_units = 'pmol' ).filter(standard_units = 'mM' ).filter(standard_units = 'fmol'
+                        # ).filter(standard_units = 'pM' ).filter(standard_units = 'nmol' ).filter(standard_units = 'fM'
+                        # ).filter(pchembl_value__isnull=False
+                        # ).filter(data_validity_comment__isnull=True
+                        # ).filter(standard_value__isnull = False
+                        # ).only(['molecule_chembl_id', 'target_chembl_id' ,'standard_type',
+                        #                                 'standard_value','standard_units','standard_relation','activity_comment',
+                        #                                 'assay_description','assay_type',
+                        #                                 'document_chembl_id','pchembl_value',
+                        #                                 'activity_id','canonical_smiles','assay_chembl_id'])[:10]
 
-        new_test = new_client.activity.filter(pchembl_value__isnull=False).filter(data_validity_comment__isnull=True
-                                        ).filter(standard_value__isnull = False
-                                        ).filter(standard_units__isnull = False
-                                        ).only(['molecule_chembl_id', 'target_chembl_id' ,'standard_type',
-                                        'standard_value','standard_units','standard_relation','activity_comment',
+        new_test = new_client.activity.filter(pchembl_value__isnull=False).filter(standard_value__isnull = False).filter(data_validity_comment__isnull=True).only(['molecule_chembl_id', 'target_chembl_id','standard_type',
+                                        'standard_value','standard_units','standard_relation',
                                         'assay_description','assay_type',
                                         'document_chembl_id','pchembl_value',
-                                        'activity_id','canonical_smiles','assay_chembl_id'])[:100]
+                                        'activity_id','canonical_smiles','assay_chembl_id'])[:2]
 
 
 
-        print('--cheml len---', len(new_test))
-
+        # print('--cheml len---', len(new_test))
+        print('--cheml len---', new_test)
         return new_test
 
 
@@ -152,6 +160,7 @@ class Command(BaseBuild):
             q.put(doi)
         else:
             q.put(None)
+
 
     def get_cell_line(self, assay_id, q):
         new_test = new_client.assay.filter(assay_chembl_id = assay_id).only('assay_cell_type')
@@ -170,64 +179,54 @@ class Command(BaseBuild):
         target_list = targets
         for i in chembl_assays:
             temp_increment = temp_increment+1
-            #add Tsonko filter
-            if(i['standard_units'] == 'nM' or i['standard_units'] == 'um' or i['standard_units'] == 'M'
-            or i['standard_units'] == 'pmol' or i['standard_units'] == 'mM' or i['standard_units'] == 'fmol'
-            or i['standard_units'] == 'pM' or i['standard_units'] == 'nmol' or i['standard_units'] == 'fM'):
-                if ( i['assay_type'] != 'U' and i['assay_type'] != 'A'):
-                    if( i['activity_comment'] != 'inconclusive'  and i['activity_comment'] != 'Inconclusive'):
-                        if(i['target_chembl_id'] in target_list):
-                            temp_dict = dict()
-                            temp_dict['receptor'] = self.fetch_protein( i['target_chembl_id'])
-                            temp_dict['doi']=None
-                            res = []
-                            if temp_dict['receptor'] and temp_dict['receptor'] != None:
-                                temp_dict['smiles'] = i['canonical_smiles']
-                                temp_dict['ligand'] = self.fetch_ligand(i['molecule_chembl_id'],i['canonical_smiles'])
-                                if temp_dict['ligand']:
-                                    q = queue.Queue()
-                                    x=threading.Thread(target=self.get_cell_line, args=(i['assay_chembl_id'], q)).start()
-                                    cell_line = q.get()
+            if(i['target_chembl_id'] in target_list):
+                temp_dict = dict()
+                temp_dict['receptor'] = self.fetch_protein( i['target_chembl_id'])
+                temp_dict['doi']=None
+                res = []
 
-                                    pub_q = queue.Queue
-                                    y=threading.Thread(target=self.get_dois, args=(i['document_chembl_id'], q)).start()
-                                    pub = q.get()
-                                    if pub is not None:
-                                        temp_dict['doi'] = self.fetch_publication(pub)
 
-                                    temp_dict['activity_id'] = i['activity_id']
-                                    temp_dict['standard_type'] = i['standard_type']
-                                    temp_dict['standard_value'] = i['standard_value']
-                                    temp_dict['standard_units'] = i['standard_units']
-                                    temp_dict['standard_relation'] = i['standard_relation']
-                                    temp_dict['assay_description'] = i['assay_description']
-                                    temp_dict['assay_type'] = i['assay_type']
-                                    temp_dict['cell_line'] = cell_line
-                                    temp_dict['pchembl_value'] = i['pchembl_value']
-                                    temp_dict['document_chembl_id'] = i['document_chembl_id']
-                                    temp_dict['chembl_id'] = i['molecule_chembl_id']
-                                    temp_dict['assay_id'] = i['assay_chembl_id']
-                                    chembl_data[increment] = temp_dict
-                                    if x is not None:
-                                        x.join()
-                                    if y is not None:
-                                        y.join()
-                                    increment=increment+1
-                                    if increment%50==0:
-                                        self.upload_to_db(chembl_data)
-                                        # x = threading.Thread(target=self.upload_to_db, args=(chembl_data,))
-                                        # x.start()
-                                        # x.join()
+                if temp_dict['receptor'] and temp_dict['receptor'] != None:
+                    temp_dict['smiles'] = i['canonical_smiles']
+                    temp_dict['ligand'] = self.fetch_ligand(i['molecule_chembl_id'],i['canonical_smiles'])
+                    if temp_dict['ligand']:
+                        q = queue.Queue()
+                        x=threading.Thread(target=self.get_cell_line, args=(i['assay_chembl_id'], q)).start()
+                        cell_line = q.get()
 
-                                    print('--status--', temp_increment)
-                                    increment = 0
-                                    chembl_data = dict()
-                                else:
-                                    pass
-                            else:
-                                pass
-                        else:
-                            pass
+                        pub_q = queue.Queue
+                        y=threading.Thread(target=self.get_dois, args=(i['document_chembl_id'], q)).start()
+                        pub = q.get()
+                        if pub is not None:
+                            temp_dict['doi'] = self.fetch_publication(pub)
+                        temp_dict['activity_id'] = i['activity_id']
+                        temp_dict['standard_type'] = i['standard_type']
+                        temp_dict['standard_value'] = i['standard_value']
+                        temp_dict['standard_units'] = i['standard_units']
+                        temp_dict['standard_relation'] = i['standard_relation']
+                        temp_dict['assay_description'] = i['assay_description']
+                        temp_dict['assay_type'] = i['assay_type']
+                        temp_dict['cell_line'] = cell_line
+                        temp_dict['pchembl_value'] = i['pchembl_value']
+                        temp_dict['document_chembl_id'] = i['document_chembl_id']
+                        temp_dict['chembl_id'] = i['molecule_chembl_id']
+                        temp_dict['assay_id'] = i['assay_chembl_id']
+                        chembl_data[increment] = temp_dict
+                        if x is not None:
+                            x.join()
+                        if y is not None:
+                            y.join()
+                        increment=increment+1
+                        if increment%100==0:
+                            self.upload_to_db(chembl_data)
+                            # x = threading.Thread(target=self.upload_to_db, args=(chembl_data,))
+                            # x.start()
+                            # x.join()
+
+                            print('--status--', temp_increment)
+                            increment = 0
+                            chembl_data = dict()
+
                     else:
                         pass
                 else:
@@ -263,7 +262,7 @@ class Command(BaseBuild):
 
     def check_dublicates(self, ligand, pub, receptor, assay_description, chembl,standard_value,standard_units, pchembl_value ):
         try:
-            experiment = AssayExperiment.objects.filter(
+            experiment = ChemblAssays.objects.filter(
                 publication=pub, ligand=ligand, receptor=receptor, assay_description=assay_description,
                 chembl=chembl,standard_value=standard_value,standard_units=standard_units,pchembl_value=pchembl_value )
             experiment = experiment.get()
@@ -282,7 +281,7 @@ class Command(BaseBuild):
         for i in chembl.items():
             if( self.check_dublicates(i[1]["ligand"], i[1]["doi"], i[1]["receptor"], i[1]["assay_description"],
                                    i[1]["chembl_id"],i[1]["standard_value"],i[1]["standard_units"], i[1]["pchembl_value"]) == False):
-                chembl_data = AssayExperiment(ligand = i[1]["ligand"],
+                chembl_data = ChemblAssays(ligand = i[1]["ligand"],
                                             publication = i[1]["doi"],
                                             receptor = i[1]["receptor"],
                                             chembl = i[1]["chembl_id"],

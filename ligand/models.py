@@ -313,21 +313,27 @@ class AssayExperiment(models.Model):
 
     ligand = models.ForeignKey('Ligand', on_delete=models.CASCADE)
     protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
-    assay = models.ForeignKey('ChemblAssay', on_delete=models.CASCADE)
+    assay = models.ForeignKey('ChemblAssay', on_delete=models.CASCADE, null= True)
     assay_type = models.CharField(max_length=10)
     assay_description = models.TextField(max_length=1000)
     pchembl_value = models.DecimalField(max_digits=9, decimal_places=3)
 
-    published_value = models.DecimalField(max_digits=9, decimal_places=3)
-    published_relation = models.CharField(max_length=10)
-    published_type = models.CharField(max_length=20)
-    published_units = models.CharField(max_length=20)
+    published_value = models.DecimalField(max_digits=9, decimal_places=3, null= True)
+    published_relation = models.CharField(max_length=10, null= True)
+    published_type = models.CharField(max_length=20, null= True)
+    published_units = models.CharField(max_length=20, null= True)
 
     standard_value = models.DecimalField(max_digits=9, decimal_places=3)
     standard_relation = models.CharField(max_length=10)
     standard_type = models.CharField(max_length=20)
     standard_units = models.CharField(max_length=20)
 
+    publication = models.ForeignKey(Publication, on_delete = models.CASCADE, null= True)
+    chembl = models.CharField(max_length=100,null = True)
+    smiles = models.TextField(null = True)
+    activity = models.CharField(max_length=50,null = True)
+    document_chembl_id = models.CharField(max_length=50,null = True)
+    cell_line = models.TextField(null = True)
 
 
     class Meta():
