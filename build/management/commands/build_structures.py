@@ -996,7 +996,7 @@ class Command(BaseBuild):
                     pdb_path = os.sep.join([self.pdb_data_dir, sd['pdb'] + '.pdb'])
                     if not os.path.isfile(pdb_path):
                         self.logger.info('Fetching PDB file {}'.format(sd['pdb']))
-                        url = 'https://www.rcsb.org/pdb/files/%s.pdb' % sd['pdb']
+                        url = 'http://www.rcsb.org/pdb/files/%s.pdb' % sd['pdb']
                         pdbdata_raw = urlopen(url).read().decode('utf-8')
                         with open(pdb_path, 'w') as f:
                             f.write(pdbdata_raw)
@@ -1528,7 +1528,7 @@ class Command(BaseBuild):
                                 mypath = '/tmp/interactions/results/' + sd['pdb'] + '/output'
                                 # if not os.path.isdir(mypath):
                                 #     #Only run calcs, if not already in temp
-                                runcalculation(sd['pdb'],peptide_chain)
+                                runcalculation(sd['pdb'], peptide_chain)
 
                                 parsecalculation(sd['pdb'],False)
                                 end = time.time()
