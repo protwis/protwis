@@ -2669,7 +2669,7 @@ def coreMatrix(pdbs, core = True, middle = False):
 
 def stableResMatrix(pdbs):
     # all classes
-    # classes = ['001', '002', '003', '004', '005']
+    # classes = ['001', '002', '003', '004', '006']
     # results = []
     # for selclass in classes:
     #     numStructs = Distance.objects.filter(structure__protein_conformation__protein__family__slug__startswith=selclass).values('structure_id').distinct().count()
@@ -2726,12 +2726,12 @@ def stableResMatrix(pdbs):
 
 
     # Most stable residues from each class
-    # stable_residues = {'001':'3x53', '002':'1x44', '003':'', '004':'5x42', '005':'1x29'}
-    stable_residues = {'001':'4x50', '002':'1x44', '003':'', '004':'5x42', '005':'1x29'}
+    # stable_residues = {'001':'3x53', '002':'1x44', '003':'', '004':'5x42', '006':'1x29'}
+    stable_residues = {'001':'4x50', '002':'1x44', '003':'', '004':'5x42', '006':'1x29'}
 
     stable_distances = {}
     pdb_classes = {}
-    for selclass in ['001', '002', '003', '004', '005']:
+    for selclass in ['001', '002', '003', '004', '006']:
         # select all distances to selected residue
         reference = stable_residues[selclass]
         ds = list(Distance.objects.filter(structure__pdb_code__index__in=pdbs) \

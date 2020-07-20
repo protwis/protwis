@@ -1248,9 +1248,11 @@ class ConstructTable(TemplateView):
 
             if c =='001':
                 residue_set_name = 'Class A binding pocket'
+            elif c=='002':
+                residue_set_name = 'Class B1 binding pocket'
             elif c=='004':
                 residue_set_name = 'Class C binding pocket'
-            elif c=='005':
+            elif c=='006':
                 residue_set_name = 'Class F binding pocket'
             else:
                 residue_set_name = ''
@@ -1492,7 +1494,7 @@ def stabilisation_browser(request):
     ''' View to display and summarise mutation data for thermostabilising mutational constructs. '''
 
 
-    gpcr_class = ['001','002','003','004','005','006','007']
+    gpcr_class = ['001','002','003','004','005','006','007', '008']
     class_interactions_list = {}
     for c in gpcr_class:
         class_interactions = ResidueFragmentInteraction.objects.filter(
@@ -1514,6 +1516,8 @@ def stabilisation_browser(request):
 
         class_interactions_list[c]=generic
 
+
+    # TOFIX: change code to perform query and dynamically generate these lists
     arrestin_data = {'001':
         {"12.49x49": {"001_009_001_001"},
         "2.37x37": {"001_009_001_001"},
@@ -2181,7 +2185,7 @@ def fetch_pdb(request, slug):
         protein = Protein.objects.filter(entry_name=slug.lower()).get()
     except:
         protein = False
-    
+
     d = fetch_pdb_info(slug,protein, ignore_gasper_annotation=True)
 
 

@@ -1844,6 +1844,9 @@ class ClosestReceptorHomolog():
         self.protein = protein
         self.protein_segments = protein_segments
         self.normalized = normalized
+
+        # TOFIX this is a bad workaround to select similar receptor family
+        # slugs can change and the selection updates based on the available structures
         self.family_mapping = {'001':'001','002':'002','003':'002','004':'004','005':'005','006':'006','007':'001','008':['001','002','004','005']}
         self.all_proteins = []
 
