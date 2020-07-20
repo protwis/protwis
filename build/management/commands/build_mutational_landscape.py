@@ -35,7 +35,8 @@ class Command(BaseCommand):
             filenames = options['filename']
         else:
             filenames = False
-        proteins_not_found = []
+
+        self.proteins_not_found = []
 
         try:
             self.purge_data()

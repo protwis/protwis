@@ -415,16 +415,23 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
         insert_start = 0
         msg_1 = 0
         msg_2 = 0
-        # for elem in sifts:
-        #     print(elem)
-        for elem in sifts.findall('.//{https://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}segment'):
+        sifts_https = False
+        for elem in sifts:
+            if "https" in elem:
+                sifts_https = True
+        if sifts_https == True:
+            sfits_https = "https"
+        else:
+            sfits_https = "http"
+
+        for elem in sifts.findall('.//{'+sfits_https+'://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}segment'):
             receptor = False
             chain = elem.attrib['segId'].split('_')[1]
             for res in elem[0]: #first element is residuelist
                 if receptor_chain!='':
                     break #break if found
                 for node in res:
-                    if node.tag == '{https://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}crossRefDb':
+                    if node.tag == '{'+sfits_https+'://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}crossRefDb':
                         source = node.attrib['dbSource']
                         if source=='UniProt':
                             u_id = node.attrib['dbAccessionId']
@@ -435,14 +442,13 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
         prev_elem_name = ""
         pdb_resid_total = []
         pdb_resid_total_accounted = []
-        for elem in sifts.findall('.//{https://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}segment'):
+        for elem in sifts.findall('.//{'+sfits_https+'://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}segment'):
             if 'segId' not in elem.attrib:
                 continue #not receptor
             if elem.attrib['segId']==prev_elem_name:
                 # pass
                 # print("skip ",elem.attrib['segId'])
                 continue
-            # print(elem.attrib['segId'])
             prev_elem_name = elem.attrib['segId']
             seg_uniprot_ids = []
             max_pos = 0
@@ -473,7 +479,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                     if raw_u_id!=prev_raw_u_id:
                         # print("New u_id",raw_u_id,u_id)
                         prev_raw_u_id = raw_u_id
-                    if node.tag == '{https://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}crossRefDb':
+                    if node.tag == '{'+sfits_https+'://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}crossRefDb':
                         source = node.attrib['dbSource']
                         if source=='UniProt':
                             u_id = node.attrib['dbAccessionId']
@@ -600,7 +606,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                             else:
                                 pdb_aa ="X"
 
-                    elif pdb_aa and node.tag == '{https://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}residueDetail':
+                    elif pdb_aa and node.tag == '{'+sfits_https+'://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}residueDetail':
                         # print(node.text)
                         if u_id!='N/A' and u_id not in d['construct_sequences']:
                             d['construct_sequences'][u_id] = OrderedDict()
@@ -1078,7 +1084,6 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     else:
         pass
         # print('failed uniprot_map')
-
     return d
 
 
