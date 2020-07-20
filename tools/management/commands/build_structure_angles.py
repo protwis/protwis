@@ -259,6 +259,14 @@ class Command(BaseCommand):
         for p in procs:
             p.join()
 
+    def add_arguments(self, parser):
+        parser.add_argument('-p', '--proc',
+            type=int,
+            action='store',
+            dest='proc',
+            default=2,
+            help='Number of processes to run')
+
     def load_pdb_var(self, pdb_code, var):
         """
         load string of pdb as pdb with a file handle. Would be nicer to do this
@@ -283,6 +291,9 @@ class Command(BaseCommand):
 
         # DEBUG for a specific PDB
         # self.references = Structure.objects.filter(pdb_code__index="4OO9").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+
+        if 'proc' in options and options['proc']>0:
+            self.processes = options['proc']
 
         print(len(self.references),'structures')
         self.references = list(self.references)
