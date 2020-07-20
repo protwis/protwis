@@ -171,6 +171,11 @@ class CouplingBrowser(TemplateView):
                                                                  'g_protein')
         for c in couplings:
             p = c.protein.entry_short()
+            
+            # Skip entries without any annotation
+            if p not in data:
+                continue
+
             s = c.source
             t = c.transduction
             emdn = c.emax_dnorm

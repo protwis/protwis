@@ -203,6 +203,9 @@ class ConstructStatistics(TemplateView):
         truncations_new['icl3_start'] = OrderedDict()
         truncations_new['icl3_end'] = OrderedDict()
 
+        truncations_new['icl2_start'] = OrderedDict()
+        truncations_new['icl2_end'] = OrderedDict()
+
         truncations_new['icl3_fusion_start'] = OrderedDict()
         truncations_new['icl3_fusion_end'] = OrderedDict()
         truncations_new['icl2_fusion_start'] = OrderedDict()
