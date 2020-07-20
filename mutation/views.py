@@ -920,7 +920,7 @@ def pocket(request):
 
     context = {}
 
-    gpcr_class = '005' #class a 1 , c 4, f 5
+    gpcr_class = '006' #class a 1 , c 4, f 6
 
     class_interactions = ResidueFragmentInteraction.objects.filter(
         structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=gpcr_class, structure_ligand_pair__annotated=True).prefetch_related(

@@ -328,7 +328,7 @@ class LigandStatistics(TemplateView):
         for pf in proteins_count:
             prot_count_dict[pf['family__parent__parent__parent__name']] = pf['c']
 
-        classes = ProteinFamily.objects.filter(slug__in=['001', '002', '003', '004', '005', '006']) #ugly but fast
+        classes = ProteinFamily.objects.filter(slug__in=['001', '002', '003', '004', '005', '006', '007']) #ugly but fast
         proteins = Protein.objects.all().prefetch_related('family__parent__parent__parent')
         ligands = []
 

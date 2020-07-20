@@ -158,7 +158,7 @@ class Command(BaseCommand):
                         #    structure_state = "intermediate"
                         #elif slug=="004" and score > 0:
                         #    structure_state = "intermediate"
-                        #elif slug=="005" and score > 0 :
+                        #elif slug=="006" and score > 0 :
                         #    structure_state = "intermediate"
 
                     # UGLY: knowledge-based hardcoded corrections

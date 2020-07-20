@@ -49,7 +49,7 @@ from smtplib import SMTP
 import smtplib
 import sys
 
-class_tree = {'001':'A','002':'B1','003':'B2','004':'C','005':'F','006':'T'}
+class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'D1','006':'F','007':'T','008':'O'}
 
 class StructureBrowser(TemplateView):
 	"""
@@ -506,7 +506,7 @@ class StructureStatistics(TemplateView):
 	def count_by_class(self, queryset, lookup):
 
 		#Ugly walkaround
-		classes = [lookup[x] for x in reversed(['001', '002', '003', '004', '005', '006'])]
+		classes = [lookup[x] for x in reversed(['001', '002', '003', '004', '005', '006', '007'])]
 		records = []
 		for s in queryset:
 			fid = s.protein_conformation.protein.family.slug.split("_")
@@ -529,7 +529,7 @@ class StructureStatistics(TemplateView):
 		"""
 		Prepare data for multiBarGraph of unique crystallized receptors grouped by class. Returns data series for django-nvd3 wrapper.
 		"""
-		classes = [lookup[x] for x in ['001', '002', '003', '004', '005', '006']]
+		classes = [lookup[x] for x in ['001', '002', '003', '004', '005', '006', '007']]
 		series = []
 		data = {}
 		for year in years:
@@ -585,7 +585,7 @@ class StructureStatistics(TemplateView):
 		"""
 		Prepare data for multiBarGraph of unique crystallized receptors. Returns data series for django-nvd3 wrapper.
 		"""
-		classes =  [lookup[x] for x in ['001', '002', '003', '004', '005', '006']]
+		classes =  [lookup[x] for x in ['001', '002', '003', '004', '005', '006', '007']]
 		series = []
 		data = {}
 		for year in years:
@@ -1288,7 +1288,7 @@ class SuperpositionWorkflowResults(TemplateView):
 				if x.type=='structure':
 					alt_file_names.append('{}_{}.pdb'.format(x.item.protein_conformation.protein.entry_name, x.item.pdb_code.index))
 				elif x.type=='structure_model' or x.type=='structure_model_Inactive' or x.type=='structure_model_Intermediate' or x.type=='structure_model_Active':
-					alt_file_names.append('Class{}_{}_{}_{}_GPCRdb.pdb'.format(class_tree[x.item.protein.family.slug[:3]], x.item.protein.entry_name, x.item.state.name, x.item.main_template.pdb_code.index))
+					alt_file_names.append('Class{}_{}_{}_{}_GPCRdb.pdb'.format(class_dict[x.item.protein.family.slug[:3]], x.item.protein.entry_name, x.item.state.name, x.item.main_template.pdb_code.index))
 		if len(out_structs) == 0:
 			self.success = False
 		elif len(out_structs) >= 1:
@@ -1342,7 +1342,7 @@ class SuperpositionWorkflowDownload(View):
 			if selection.reference[0].type=='structure':
 				ref_name = '{}_{}_ref.pdb'.format(selection.reference[0].item.protein_conformation.protein.entry_name, selection.reference[0].item.pdb_code.index)
 			elif selection.reference[0].type=='structure_model' or selection.reference[0].type=='structure_model_Inactive' or selection.reference[0].type=='structure_model_Intermediate' or selection.reference[0].type=='structure_model_Active':
-				ref_name = 'Class{}_{}_{}_{}_GPCRdb_ref.pdb'.format(class_tree[selection.reference[0].item.protein.family.slug[:3]], selection.reference[0].item.protein.entry_name,
+				ref_name = 'Class{}_{}_{}_{}_GPCRdb_ref.pdb'.format(class_dict[selection.reference[0].item.protein.family.slug[:3]], selection.reference[0].item.protein.entry_name,
 																	selection.reference[0].item.state.name, selection.reference[0].item.main_template.pdb_code.index)
 
 		alt_structs = {}
@@ -1672,8 +1672,6 @@ class PDBClean(TemplateView):
 	def post(self, request, *args, **kwargs):
 		context = super(PDBClean, self).get_context_data(**kwargs)
 
-		class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'F','006':'T','007':'O'}
-
 		self.posted = True
 		pref = True
 		water = False
@@ -1962,7 +1960,7 @@ def ConvertStructureComplexSignprotToProteins(request):
 def HommodDownload(request):
 	"Download selected homology models in zip file"
 	pks = request.GET['ids'].split(',')
-	class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'F','006':'T','007':'O'}
+
 	hommodels = []
 	for pk in pks:
 		if 'r' in pk:
@@ -1998,7 +1996,7 @@ def HommodDownload(request):
 def ComplexmodDownload(request):
 	"Download selected complex homology models in zip file"
 	pks = request.GET['ids'].split(',')
-	class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'F','006':'T','007':'O'}
+
 	hommodels = StructureComplexModel.objects.filter(pk__in=pks).prefetch_related('receptor_protein__family','main_template__pdb_code').all()
 	zip_io = BytesIO()
 	with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as backup_zip:
@@ -2018,7 +2016,7 @@ def ComplexmodDownload(request):
 
 def SingleModelDownload(request, modelname, state, csv=False):
 	"Download single homology model"
-	class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'F','006':'T','007':'O'}
+
 	zip_io = BytesIO()
 	if state=='refined':
 		hommod = Structure.objects.get(pdb_code__index=modelname+'_refined')
@@ -2048,7 +2046,7 @@ def SingleModelDownload(request, modelname, state, csv=False):
 
 def SingleComplexModelDownload(request, modelname, signprot, csv=False):
 	"Download single homology model"
-	class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'F','006':'T','007':'O'}
+
 	zip_io = BytesIO()
 	hommod = StructureComplexModel.objects.get(receptor_protein__entry_name=modelname, sign_protein__entry_name=signprot)
 	mod_name = 'Class{}_{}-{}_{}_{}_GPCRdb.pdb'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name,

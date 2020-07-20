@@ -490,7 +490,6 @@ class CouplingBrowser(TemplateView):
 
         return fd
 
-# @cache_page(60*60*24*2) # 2 days caching
 def GProtein(request, dataset="GuideToPharma"):
     name_of_cache = 'gprotein_statistics_{}'.format(dataset)
 
@@ -500,10 +499,10 @@ def GProtein(request, dataset="GuideToPharma"):
         context = OrderedDict()
         i = 0
         gproteins = ProteinGProtein.objects.all().prefetch_related('proteingproteinpair_set')
-        slugs = ['001', '002', '004', '005']
-        slug_translate = {'001': "ClassA", '002': "ClassB1", '004': "ClassC", '005': "ClassF"}
+
+        slug_translate = {'001': "ClassA", '002': "ClassB1", '004': "ClassC", '006': "ClassF"}
         selectivitydata = {}
-        for slug in slugs:
+        for slug in slug_translate.keys():
             jsondata = {}
             for gp in gproteins:
                 # ps = gp.proteingproteinpair_set.all()
@@ -527,7 +526,7 @@ def GProtein(request, dataset="GuideToPharma"):
 
         context["selectivitydata"] = selectivitydata
 
-    cache.set(name_of_cache, context, 60 * 60 * 24 * 2)  # two days timeout on cache
+    cache.set(name_of_cache, context, 60 * 60 * 24 * 7)  # seven days timeout on cache
 
     return render(request,
                   'signprot/gprotein.html',
