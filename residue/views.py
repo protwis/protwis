@@ -3,6 +3,7 @@ from django.core.cache import cache
 from django.db.models import Count, F, Q
 from django.shortcuts import render
 from django.views.generic import TemplateView
+from django.http import HttpResponse
 
 
 from common.views import AbsTargetSelection
@@ -26,8 +27,11 @@ from residue.models import Residue,ResidueNumberingScheme, ResiduePositionSet, R
 
 from collections import OrderedDict
 
+import html
 import re
 import time
+from io import BytesIO
+import xlsxwriter
 
 class TargetSelection(AbsTargetSelection):
     pass
@@ -128,7 +132,10 @@ class ResidueTablesDisplay(TemplateView):
         numbering_schemes = [x.item for x in selection.numbering_schemes]
 
         # # get the helices (TMs only at first)
-        segments = ProteinSegment.objects.filter(category='helix', proteinfamily='GPCR')
+        # segments = ProteinSegment.objects.filter(category='helix', proteinfamily='GPCR')
+
+        # Get all the segments
+        segments = ProteinSegment.objects.filter(proteinfamily='GPCR')
 
         if ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME) in numbering_schemes:
             default_scheme = ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME)
@@ -136,13 +143,13 @@ class ResidueTablesDisplay(TemplateView):
             default_scheme = numbering_schemes[0]
 
         # prepare the dictionary
-        # each helix has a dictionary of positions
+        # each segment has a dictionary of positions
         # default_generic_number or first scheme on the list is the key
         # value is a dictionary of other gn positions and residues from selected proteins
         data = OrderedDict()
         for segment in segments:
             data[segment.slug] = OrderedDict()
-            residues = Residue.objects.filter(protein_segment=segment, protein_conformation__protein__in=proteins).prefetch_related('protein_conformation__protein', 'protein_conformation__state', 'protein_segment',
+            residues = Residue.objects.filter(protein_segment=segment, protein_conformation__protein__in=proteins, generic_number__isnull=False).prefetch_related('protein_conformation__protein', 'protein_conformation__state', 'protein_segment',
                 'generic_number__scheme', 'display_generic_number__scheme', 'alternative_generic_numbers__scheme')
             for scheme in numbering_schemes:
                 if scheme == default_scheme and scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
@@ -180,9 +187,18 @@ class ResidueTablesDisplay(TemplateView):
         for s in iter(flattened_data):
             flattened_data[s] = [[data[s][x][y.slug] for y in numbering_schemes]+data[s][x]['seq'] for x in sorted(data[s])]
 
+        #Purging the empty segments
+        clean_dict = OrderedDict()
+        clean_segments = []
+        for s in iter(flattened_data):
+            if flattened_data[s] != []:
+                clean_dict[s] = flattened_data[s]
+                clean_segments.append(s)
+
+
         context['header'] = zip([x.short_name for x in numbering_schemes] + [x.name+" "+species_list[x.species.common_name] for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins])
-        context['segments'] = [x.slug for x in segments]
-        context['data'] = flattened_data
+        context['segments'] = clean_segments
+        context['data'] = clean_dict
         context['number_of_schemes'] = len(numbering_schemes)
         context['longest_name'] = {'div' : longest_name*2, 'height': longest_name*2+80}
 
@@ -598,3 +614,188 @@ class ResidueFunctionBrowser(TemplateView):
 
         # Human Class A alignment - consensus/conservation
         return context
+
+
+def render_residue_table_excel(request):
+
+    simple_selection = request.session.get('selection', False)
+
+    # local protein list
+    proteins = []
+
+    # flatten the selection into individual proteins
+    for target in simple_selection.targets:
+        if target.type == 'protein':
+            proteins.append(target.item)
+        elif target.type == 'family':
+            # species filter
+            species_list = []
+            for species in simple_selection.species:
+                species_list.append(species.item)
+
+            # annotation filter
+            protein_source_list = []
+            for protein_source in simple_selection.annotation:
+                protein_source_list.append(protein_source.item)
+
+            if species_list:
+                family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
+                    species__in=(species_list),
+                    source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
+            else:
+                family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
+                    source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
+
+            for fp in family_proteins:
+                proteins.append(fp)
+
+        longest_name = 0
+        species_list = {}
+        for protein in proteins:
+            if protein.species.common_name not in species_list:
+                if len(protein.species.common_name)>10 and len(protein.species.common_name.split())>1:
+                    name = protein.species.common_name.split()[0][0]+". "+" ".join(protein.species.common_name.split()[1:])
+                    if len(" ".join(protein.species.common_name.split()[1:]))>11:
+                        name = protein.species.common_name.split()[0][0]+". "+" ".join(protein.species.common_name.split()[1:])[:8]+".."
+                else:
+                    name = protein.species.common_name
+                species_list[protein.species.common_name] = name
+            else:
+                name = species_list[protein.species.common_name]
+
+            if len(re.sub('<[^>]*>', '', protein.name)+" "+name)>longest_name:
+                longest_name = len(re.sub('<[^>]*>', '', protein.name)+" "+name)
+
+    # get the selection from session
+    selection = Selection()
+    if simple_selection:
+            selection.importer(simple_selection)
+    # # extract numbering schemes and proteins
+    numbering_schemes = [x.item for x in selection.numbering_schemes]
+
+    segments = ProteinSegment.objects.filter(proteinfamily='GPCR')
+
+    if ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME) in numbering_schemes:
+        default_scheme = ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME)
+    else:
+        default_scheme = numbering_schemes[0]
+
+    # prepare the dictionary
+    # each helix has a dictionary of positions
+    # default_generic_number or first scheme on the list is the key
+    # value is a dictionary of other gn positions and residues from selected proteins
+    data = OrderedDict()
+    for segment in segments:
+        data[segment.slug] = OrderedDict()
+        residues = Residue.objects.filter(protein_segment=segment, protein_conformation__protein__in=proteins, generic_number__isnull=False).prefetch_related('protein_conformation__protein', 'protein_conformation__state', 'protein_segment',
+            'generic_number__scheme', 'display_generic_number__scheme', 'alternative_generic_numbers__scheme')
+        for scheme in numbering_schemes:
+            if scheme == default_scheme and scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
+                for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
+                    data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
+            elif scheme == default_scheme:
+                for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
+                        data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
+
+        for residue in residues:
+            alternatives = residue.alternative_generic_numbers.all()
+            pos = residue.generic_number
+            for alternative in alternatives:
+                scheme = alternative.scheme
+                if default_scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
+                    pos = residue.generic_number
+                    if scheme == pos.scheme:
+                        data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
+                    else:
+                        if scheme.slug not in data[segment.slug][pos.label].keys():
+                            data[segment.slug][pos.label][scheme.slug] = alternative.label
+                        if alternative.label not in data[segment.slug][pos.label][scheme.slug]:
+                            data[segment.slug][pos.label][scheme.slug] += " "+alternative.label
+                        data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
+                else:
+                    if scheme.slug not in data[segment.slug][pos.label].keys():
+                        data[segment.slug][pos.label][scheme.slug] = alternative.label
+                    if alternative.label not in data[segment.slug][pos.label][scheme.slug]:
+                        data[segment.slug][pos.label][scheme.slug] += " "+alternative.label
+                    data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
+
+    # Preparing the dictionary of list of lists. Dealing with tripple nested dictionary in django templates is a nightmare
+    flattened_data = OrderedDict.fromkeys([x.slug for x in segments], [])
+
+    for s in iter(flattened_data):
+        flattened_data[s] = [[data[s][x][y.slug] for y in numbering_schemes]+data[s][x]['seq'] for x in sorted(data[s])]
+    #Purging the empty segments
+    clean_dict = OrderedDict()
+    clean_segments = []
+    for s in iter(flattened_data):
+        if flattened_data[s] != []:
+            clean_dict[s] = flattened_data[s]
+            clean_segments.append(s)
+
+    segments = clean_segments
+    flattened_data = clean_dict
+
+    header = [x.short_name for x in numbering_schemes] + [x.name+" "+species_list[x.species.common_name] for x in proteins]
+
+
+    # Now excel time
+
+
+    outstream = BytesIO()
+    wb = xlsxwriter.Workbook(outstream, {'in_memory': True})
+    sub = wb.add_format({'font_script': 2})
+    bold = wb.add_format({'bold': True})
+
+    worksheet = wb.add_worksheet('Residue table')
+
+    row_offset = 0
+
+    #Header row
+
+    #Numbering schemes
+    for i, x in enumerate(numbering_schemes):
+        worksheet.write(0, i, x.short_name)
+
+    #Protein names
+    col_offset = len(numbering_schemes)
+
+    for i, x in enumerate(proteins):
+        t = html_to_rich_format_string(x.name + " " + species_list[x.species.common_name], sub)
+        if len(t) < 2:
+            worksheet.write(0, col_offset + i, html.unescape(x.name + " " + species_list[x.species.common_name]))
+        else:
+            worksheet.write_rich_string(0, col_offset + i, *t)
+    row_offset += 1
+
+    for segment in segments:
+        worksheet.write(row_offset, 0, segment, bold)
+        row_offset += 1
+
+        for j, data_row in enumerate(flattened_data[segment]):
+            worksheet.write_row(row_offset + j, 0, data_row)
+        row_offset += len(flattened_data[segment])
+
+
+    wb.close()
+    outstream.seek(0)
+    response = HttpResponse(
+        outstream.read(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    response['Content-Disposition'] = "attachment; filename=sequence_signature_protein_scores.xlsx"
+
+    return response
+
+
+def html_to_rich_format_string(input_text, wb_format):
+
+    ucode_str = html.unescape(input_text)
+    tmp =[]
+    for chunk in ucode_str.split('</sub>'):
+        if '<sub>' not in chunk:
+            tmp.append(chunk)
+            continue
+        t = chunk.split('<sub>')
+        tmp.extend([t[0], wb_format, t[1]])
+
+    return tmp
