@@ -782,7 +782,7 @@ def render_residue_table_excel(request):
         outstream.read(),
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-    response['Content-Disposition'] = "attachment; filename=sequence_signature_protein_scores.xlsx"
+    response['Content-Disposition'] = "attachment; filename=residue_table.xlsx"
 
     return response
 
