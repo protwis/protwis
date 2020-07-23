@@ -58,6 +58,7 @@ warnings.filterwarnings("ignore")
 
 class Command(BaseBuild):  
     help = 'Build automated chimeric GPCR homology models'
+    class_code = {'A':'Class A (Rhodopsin)', 'B1':'Class B1 (Secretin)', 'F':'Class F (Frizzled)'}
     
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser=parser)
@@ -66,6 +67,7 @@ class Command(BaseBuild):
         parser.add_argument('-r', help='''Run program for specific receptor(s) by giving UniProt common name as 
                                           argument (e.g. 5ht2a_human)''', 
                             default=False, type=str, nargs='+')
+        parser.add_argument('-c', help='''Run for only specific receptor class''', default=False, type=str, nargs='+')
         parser.add_argument('--purge', help='Purge all existing db records', default=False, action='store_true')
         parser.add_argument('--purge_zips', help='Purge all existing local model zips', default=False, action='store_true')
         parser.add_argument('--test_run', action='store_true', help='Build only one complex model', default=False)
@@ -106,10 +108,7 @@ class Command(BaseBuild):
 
         self.update = options['update']
         self.complex = True
-        if not options['signprot']:
-            self.signprot = False
-        else:
-            self.signprot = options['signprot']
+        self.signprot = options['signprot']
         self.force_main_temp = options['force_main_temp']
         self.no_remodeling = options['no_remodeling']
         self.skip_existing = options['skip_existing']
@@ -122,47 +121,67 @@ class Command(BaseBuild):
                     self.existing_list.append(split[1]+'_'+split[2]+'_'+split[3])
 
         sf = SignprotFunctions()
+        receptor_families = sf.get_receptor_families_with_templates()
+        if options['c']:
+            classes_to_do = []
+            for c in options['c']:
+                if c in self.class_code:
+                    classes_to_do.append(self.class_code[c])
+                elif c in receptor_families:
+                    classes_to_do.append(c)
+                else:
+                    raise AssertionError('{} is not a viable class name for -c'.format(c))
+            receptor_families = classes_to_do
 
-        gprots_with_structures = sf.get_subtypes_with_templates()
         if options['r']:
             self.receptor_list = Protein.objects.filter(entry_name__in=options['r'])
         else:
             self.receptor_list = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species__common_name='Human', 
-                                                        family__parent__parent__parent__name='Class A (Rhodopsin)')
-        
+                                                        family__parent__parent__parent__name__in=receptor_families)
+
         if options['signprot']:
             self.gprotein_targets = {'custom':options['signprot']}
         else:
-            subfams = sf.get_subfamilies_with_templates()
-            self.gprotein_targets = sf.get_subfam_subtype_dict(subfams)
+            self.gprotein_targets = OrderedDict()
+            for rf in receptor_families:
+                subfams = sf.get_subfamilies_with_templates(rf)
+                self.gprotein_targets[rf] = sf.get_subfam_subtype_dict(subfams, rf)
 
         if options['test_run']:
             break_loop = False
             for receptor in self.receptor_list:
-                for i,j in self.gprotein_targets.items():
+                for i,j in self.gprotein_targets[receptor.get_protein_class()].items():
                     for target in j:
                         if len(SignprotComplex.objects.filter(structure__protein_conformation__protein__parent__entry_name=receptor.entry_name, protein__entry_name=target))==0:
                             self.receptor_list = [receptor]
-                            self.gprotein_targets = {i:[target]}
+                            self.gprotein_targets = {receptor.get_protein_class():{i:[target]}}
                             break_loop = True
                             break
                     if break_loop: break
                 if break_loop: break
 
         ###
-        # del self.gprotein_targets['Gs']
-        # del self.gprotein_targets['Gq/11']
-        # self.gprotein_targets['Gi/o'] = ['gnat1_human']
-        # self.receptor_list = self.receptor_list[:12]
+        # Customize here
+        # del self.gprotein_targets['Class F (Frizzled)']
         ###
 
-        s_c = 0
+        models_to_run = OrderedDict()
         for i,j in self.gprotein_targets.items():
-            for s in j:
-                s_c+=1
+            subtype_count = 0
+            for k,l in j.items():
+                subtype_count+=len(l)
+            models_to_run[i] = [0, subtype_count]
+        for r in self.receptor_list:
+            r_fam = r.get_protein_class()
+            if r_fam in self.gprotein_targets:
+                models_to_run[r_fam][0]+=1
+        count = 0
+        for i,j in models_to_run.items():
+            count+=j[0]*j[1]
 
-        print('receptors to model: {}'.format(len(self.receptor_list)))
-        print('signaling proteins per receptor: {}'.format(s_c))
+        print('Receptors to model: {}'.format(len(self.receptor_list)))
+        print('G protein targets: {}'.format(self.gprotein_targets))
+        print('Approx num models to build in total: {}'.format(count))
         
         self.processors = options['proc']
         self.prepare_input(self.processors, self.receptor_list)
@@ -198,7 +217,7 @@ class Command(BaseBuild):
                                                                                                     processor_id,i,datetime.now() - mod_startTime))
 
     def build_all_complex_models_for_receptor(self, receptor, count, i, processor_id):
-        for gprotein_subfam, targets in self.gprotein_targets.items():
+        for gprotein_subfam, targets in self.gprotein_targets[receptor.get_protein_class()].items():
             first_in_subfam = True
             # print(gprotein_subfam, targets)
             for target in targets:

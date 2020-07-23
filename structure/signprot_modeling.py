@@ -121,7 +121,7 @@ class SignprotModeling():
         segs_for_alt_complex_struct = []
         alt_templates_H_domain = self.get_full_alpha_templates()
 
-        if self.main_structure not in alt_templates_H_domain[1]:
+        if self.main_structure.id not in alt_templates_H_domain[1]:
             segs_for_alt_complex_struct = ['H1', 'h1ha', 'HA', 'hahb', 'HB', 'hbhc', 'HC', 'hchd', 'HD', 'hdhe', 'HE', 'hehf', 'HF', 'hfs2']
             alt_complex_struct = self.find_h_domain_template(self.target_signprot, alt_templates_H_domain[0]) #Structure.objects.get(pdb_code__index='3SN6')
             io = StringIO(alt_complex_struct.pdb_data.pdb)
