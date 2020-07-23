@@ -32,9 +32,10 @@ class Command(BaseCommand):
             print("Processing class {}".format(slug[0]))
 
             # grab all PDB-codes for this class
-            structure_ids = list(Structure.objects.filter(protein_conformation__protein__family__slug__startswith=slug[0]) \
+            structure_ids = list(Structure.objects.exclude(refined=True).filter(protein_conformation__protein__family__slug__startswith=slug[0]) \
                                 .values_list("pdb_code__index"))
             structure_ids = [x[0] for x in structure_ids]
+            # print(structure_ids)
 
 #            print("Selected the following PDBs for this class")
 #            print(structure_ids)
@@ -46,18 +47,20 @@ class Command(BaseCommand):
                                 .values_list("structure__pdb_code__index"))
             active_ids = [x[0] for x in active_ids] # flatten
             # print("The following PDBs are G-prot complex structures:")
-            # print(active_ids)
+            # print(slug[0], active_ids)
 
 
             # V1: Grab most inactive PDB per ligandType -> 2x46 - 6x37 distance should be present and < 13Å (all classes)
             # V2: Grab most inactive PDB per Receptor family -> 2x46 - 6x37 distance should be present and < 13Å (cut-off valid for all classes)
-            # V3: Just grab most inactive PDBs -> 2x46 - 6x37 distance should be present and < 13Å (cut-off valid for all classes)
+            # V3: Just grab most inactive PDBs -> 2x46 - 6x37 distance should be present and < 13Å (cut-off valid for all classes at this point 10-01-2020)
             inactive_ids = list(Distance.objects.filter(distance__lt=13*distance_scaling_factor) \
                                 .filter(gn1="2x46").filter(gn2="6x37") \
                                 .filter(structure__pdb_code__index__in=structure_ids) \
+                                .exclude(structure__pdb_code__index__in=active_ids) \
 #                                .order_by("structure__protein_conformation__protein__family__parent__name", "distance") \
 #                                .distinct("structure__protein_conformation__protein__family__parent__name") \
                                 .values_list("structure__pdb_code__index"))
+
             inactive_ids = [x[0] for x in inactive_ids]
             # print(inactive_ids)
 
@@ -93,24 +96,26 @@ class Command(BaseCommand):
 
                 # Calculate score per pdbs
                 scoring_results = {}
+                all_scoring_results = {}
                 for pdb in dis.pdbs:
-                    min_active_distance = mean([ finalMap[pdb+"_"+x] for x in active_ids ])
-                    min_inactive_distance = mean([ finalMap[pdb+"_"+x] for x in inactive_ids ])
+                    min_active_distance = mean([ abs(finalMap[pdb+"_"+x]) for x in active_ids ])
+                    min_inactive_distance = mean([ abs(finalMap[pdb+"_"+x]) for x in inactive_ids ])
                     scoring_results[pdb] = min_active_distance-min_inactive_distance
+                    all_scoring_results[pdb] = [min_active_distance-min_inactive_distance, min_active_distance, min_inactive_distance]
+                    # print("{}|{}|{}|{}".format(pdb, scoring_results[pdb], min_active_distance, min_inactive_distance))
 
-#                    print("{}|{}|{}|{}".format(pdb, scoring_results[pdb], min_active_distance, min_inactive_distance))
+                min_score = min(scoring_results.items(), key=lambda x: x[1])[1]
+                max_score = max(scoring_results.items(), key=lambda x: x[1])[1]
 
                 # Hardcoded annotations
                 hardcoded = {
                     "6CMO" : "active", # Complex with G prot - irregular conformation
-                    "5ZKP" : "unknown" # Unknown state (auto-inhibited with H8?)
+                    "5ZKP" : "other", # Unknown/other activation states (in this case auto-inhibited with H8?)
+                    "5LWE" : "inactive", # Cannot be determined using this method because of missing TM in annotation
+                    "5NX2" : "intermediate", # Closer to active + groups together but internally more inactive
                 }
 
-                distances = list(Distance.objects.filter(gn1="2x46").filter(gn2="6x37") \
-                                    .filter(structure__pdb_code__index__in=structure_ids) \
-                                    .distinct("gns_pair", "structure") \
-                                    .values_list("structure__pdb_code__index", "distance"))
-
+                # Percentage score for TM2-TM6 opening
                 range_distance = Distance.objects.filter(gn1="2x46").filter(gn2="6x37") \
                                     .filter(structure__pdb_code__index__in=structure_ids) \
                                     .aggregate(Max('distance'), Min('distance'))
@@ -118,37 +123,69 @@ class Command(BaseCommand):
                 min_open = range_distance['distance__min']
                 max_open = range_distance['distance__max']
 
-                min_score = min(scoring_results.items(), key=lambda x: x[1])[1]
-                max_score = max(scoring_results.items(), key=lambda x: x[1])[1]
+                distances = list(Distance.objects.filter(gn1="2x46").filter(gn2="6x37") \
+                                    .filter(structure__pdb_code__index__in=structure_ids) \
+                                    .distinct("gns_pair", "structure") \
+                                    .values_list("structure__pdb_code__index", "distance"))
 
-                # find smallest distance between any active structure and any inactive structure
-                lowest_inactive_distance = min([ finalMap[y+"_"+x] for y in inactive_ids for x in active_ids ])
+                opening_percentage = {}
                 for entry in distances:
-                    # Percentage score for TM2-TM6 opening
                     percentage = int(round((entry[1]-min_open)/(max_open-min_open)*100))
                     if percentage < 0:
                         percentage = 0
                     elif percentage > 100:
                         percentage = 100
+                    opening_percentage[entry[0]] = percentage
+
+                # find smallest distance between any active structure and any inactive structure
+                # lowest_inactive_distance = min([ finalMap[y+"_"+x] for y in inactive_ids for x in active_ids ])
+                for pdb in structure_ids:
+                    #if entry[1] >= 13: # below this distance always inactive structure
+                    #    if score < -0.95*lowest_inactive_distance:
+                    #        structure_state = "active"
+                    #    elif score < 0:
+                    #        structure_state = "intermediate"
 
                     # Classification
-                    score = scoring_results[entry[0]]
+                    score = scoring_results[pdb]
                     structure_state = "inactive"
-                    if entry[1] >= 13: # below this distance always inactive structure
-                        if score < -0.95*lowest_inactive_distance:
-                            structure_state = "active"
-                        elif score < 0:
+                    if score < 0: # above this score always inactive structure
+                        structure_state = "active"
+                        if slug[0] == "001" and score > -60:
                             structure_state = "intermediate"
+                            #print(slug[0], entry[0], structure_state, score)
+                        #if slug=="002" and score > -20:
+                        #    structure_state = "intermediate"
+                        #elif slug=="004" and score > 0:
+                        #    structure_state = "intermediate"
+                        #elif slug=="006" and score > 0 :
+                        #    structure_state = "intermediate"
 
                     # UGLY: knowledge-based hardcoded corrections
-                    if entry[0] in hardcoded:
-                        structure_state = hardcoded[entry[0]]
+                    if pdb in hardcoded:
+                        structure_state = hardcoded[pdb]
+
+                    # Percentage score for TM2-TM6 opening
+                    percentage = None
+                    if pdb in opening_percentage:
+                        percentage = opening_percentage[pdb]
 
                     # Percentage Gprot-bound likeness
                     gprot_likeness = 100 - int(round((score-min_score)/(max_score-min_score)*100))
+                    #print(slug[0], pdb, score, min_score, max_score, gprot_likeness, all_scoring_results[pdb])
+
+                    if pdb in active_ids:
+                        gprot_likeness = 100
+                        structure_state = "active"
+                    elif pdb in inactive_ids and structure_state=="inactive":
+                        gprot_likeness = 0
+                        #structure_state = "inactive"
+                    # elif entry[0] in inactive_ids:
+                    #     gprot_likeness = 0
+                    #     structure_state = "inactive"
 
                     # Store for structure
-                    struct = Structure.objects.get(pdb_code__index=entry[0])
+                    struct = Structure.objects.get(pdb_code__index=pdb)
                     struct.state, created = ProteinState.objects.get_or_create(slug=structure_state, defaults={'name': structure_state.capitalize()})
                     struct.tm6_angle = percentage
                     struct.gprot_bound_likeness = gprot_likeness

@@ -9,7 +9,7 @@ from django.views.decorators.cache import cache_page
 
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from protein.models import Gene, ProteinSegment, IdentifiedSites, ProteinGProteinPair
-from structure.models import (Structure, StructureModel, StructureComplexModel, StructureModelStatsRotamer, StructureComplexModelStatsRotamer, 
+from structure.models import (Structure, StructureModel, StructureComplexModel, StructureModelStatsRotamer, StructureComplexModelStatsRotamer,
 							 StructureModelSeqSim, StructureComplexModelSeqSim, StructureRefinedStatsRotamer, StructureRefinedSeqSim, StructureExtraProteins)
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn, PdbStateIdentifier
 from structure.assign_generic_numbers_gpcr import GenericNumbering
@@ -49,7 +49,7 @@ from smtplib import SMTP
 import smtplib
 import sys
 
-class_tree = {'001':'A','002':'B1','003':'B2','004':'C','005':'F','006':'T'}
+class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'D1','006':'F','007':'T','008':'O'}
 
 class StructureBrowser(TemplateView):
 	"""
@@ -136,7 +136,7 @@ def HomologyModelDetails(request, modelname, state):
 	modelname = modelname
 
 	color_palette = ["orange","cyan","yellow","lime","fuchsia","green","teal","olive","thistle","grey","chocolate","blue","red","pink","maroon",]
-	
+
 	if state=='refined':
 		model = Structure.objects.get(pdb_code__index=modelname+'_refined')
 		model_main_template = Structure.objects.get(pdb_code__index=modelname)
@@ -190,14 +190,14 @@ def ComplexModelDetails(request, modelname, signprot):
 
 	main_template_seqsim = StructureComplexModelSeqSim.objects.get(homology_model=model, template=model_main_template).similarity
 	loop_segments = ProteinSegment.objects.filter(category='loop', proteinfamily='Alpha')
-	
+
 
 	signprot_template = SignprotComplex.objects.get(structure=model_main_template).protein
 	bb_temps, backbone_templates, r_temps, rotamer_templates, segments_out, bb_main, bb_alt, bb_none, sc_main, sc_alt, sc_none, template_list, colors = format_model_details(receptor_rotamers, model_main_template, color_palette, chain='R')
 	signprot_color_palette = [i for i in color_palette if i not in list(colors.values())]
 
 	bb_temps2, backbone_templates2, r_temps2, rotamer_templates2, segments_out2, bb_main2, bb_alt2, bb_none2, sc_main2, sc_alt2, sc_none2, template_list2, colors2 = format_model_details(signprot_rotamers, model_main_template, signprot_color_palette, chain='A', used_colors=colors)
- 
+
 	gp = GProteinAlignment()
 	gp.run_alignment(model.sign_protein, signprot_template, calculate_similarity=True)
 
@@ -211,8 +211,8 @@ def ComplexModelDetails(request, modelname, signprot):
 					break
 	return render(request,'complex_models_details.html',{'model': model, 'modelname': modelname, 'signprot': signprot, 'signprot_template': signprot_template, 'receptor_rotamers': receptor_rotamers, 'signprot_rotamers': signprot_rotamers, 'backbone_templates': bb_temps, 'backbone_templates_number': len(backbone_templates),
 														 'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_residues': json.dumps(segments_out), 'bb_main': round(bb_main/len(receptor_rotamers)*100, 1),
-														 'bb_alt': round(bb_alt/len(receptor_rotamers)*100, 1), 'bb_none': round(bb_none/len(receptor_rotamers)*100, 1), 'sc_main': round(sc_main/len(receptor_rotamers)*100, 1), 
-														 'sc_alt': round(sc_alt/len(receptor_rotamers)*100, 1), 'sc_none': round(sc_none/len(receptor_rotamers)*100, 1), 'main_template_seqsim': main_template_seqsim, 
+														 'bb_alt': round(bb_alt/len(receptor_rotamers)*100, 1), 'bb_none': round(bb_none/len(receptor_rotamers)*100, 1), 'sc_main': round(sc_main/len(receptor_rotamers)*100, 1),
+														 'sc_alt': round(sc_alt/len(receptor_rotamers)*100, 1), 'sc_none': round(sc_none/len(receptor_rotamers)*100, 1), 'main_template_seqsim': main_template_seqsim,
 														 'template_list': template_list, 'model_main_template': model_main_template, 'state': None, 'signprot_sim': int(gp.proteins[1].similarity),
 														 'signprot_color_residues': json.dumps(segments_out2), 'loop_segments': loop_segments})#, 'delta_distance': delta_distance})
 
@@ -405,10 +405,10 @@ class StructureStatistics(TemplateView):
 		all_complexes = all_structs.exclude(ligands=None)
 		#FIXME G protein list is hard-coded for now. Table structure needs to be expanded for fully automatic approach.
 		all_gprots = all_structs.filter(stabilizing_agents__slug='gs')
-		all_active = all_structs.filter(protein_conformation__state__slug = 'active')        
+		all_active = all_structs.filter(protein_conformation__state__slug = 'active')
 
 		years = self.get_years_range(list(set([x.publication_date.year for x in all_structs])))
-		
+
 		unique_structs = Structure.objects.order_by('protein_conformation__protein__family__name', 'state',
 			'publication_date', 'resolution').distinct('protein_conformation__protein__family__name').prefetch_related('protein_conformation__protein__family')
 		# unique_complexes = all_complexes.distinct('ligands', 'protein_conformation__protein__family__name')
@@ -417,11 +417,11 @@ class StructureStatistics(TemplateView):
 		#FIXME G protein list is hard-coded for now. Table structure needs to be expanded for fully automatic approach.
 		unique_gprots = unique_structs.filter(stabilizing_agents__slug='gs')
 		unique_active = unique_structs.filter(protein_conformation__state__slug = 'active')
-		
+
 		#Stats
 		struct_count = Structure.objects.all().annotate(Count('id'))
 		struct_lig_count = Structure.objects.exclude(ligands=None)
-				
+
 		context['all_structures'] = len(all_structs)
 		context['all_structures_by_class'] = self.count_by_class(all_structs, lookup)
 		context['all_complexes'] = len(all_complexes)
@@ -484,7 +484,7 @@ class StructureStatistics(TemplateView):
 		context['class_f_options']['label_free'] = [1,]
 		#json.dump(class_f_data.get_nodes_dict('crystalized'), open('tree_test.json', 'w'), indent=4)
 		context['class_f'] = json.dumps(class_f_data.get_nodes_dict('crystals'))
-		class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name='Taste 2'))
+		class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class T (Taste 2)'))
 		context['class_t2_options'] = deepcopy(tree.d3_options)
 		context['class_t2_options']['anchor'] = 'class_t2'
 		context['class_t2_options']['label_free'] = [1,]
@@ -506,7 +506,7 @@ class StructureStatistics(TemplateView):
 	def count_by_class(self, queryset, lookup):
 
 		#Ugly walkaround
-		classes = [lookup[x] for x in reversed(['001', '002', '003', '004', '005', '006'])]
+		classes = [lookup[x] for x in reversed(['001', '002', '003', '004', '005', '006', '007'])]
 		records = []
 		for s in queryset:
 			fid = s.protein_conformation.protein.family.slug.split("_")
@@ -529,7 +529,7 @@ class StructureStatistics(TemplateView):
 		"""
 		Prepare data for multiBarGraph of unique crystallized receptors grouped by class. Returns data series for django-nvd3 wrapper.
 		"""
-		classes = [lookup[x] for x in ['001', '002', '003', '004', '005', '006']]
+		classes = [lookup[x] for x in ['001', '002', '003', '004', '005', '006', '007']]
 		series = []
 		data = {}
 		for year in years:
@@ -585,7 +585,7 @@ class StructureStatistics(TemplateView):
 		"""
 		Prepare data for multiBarGraph of unique crystallized receptors. Returns data series for django-nvd3 wrapper.
 		"""
-		classes =  [lookup[x] for x in ['001', '002', '003', '004', '005', '006']]
+		classes =  [lookup[x] for x in ['001', '002', '003', '004', '005', '006', '007']]
 		series = []
 		data = {}
 		for year in years:
@@ -756,7 +756,7 @@ class StructureStatistics(TemplateView):
 				children_rf = []
 				for rf,rf_v in lt_v['children'].items():
 					rf_v['name'] = rf_v['name'].split("<")[0]
-					if rf_v['name'].strip() == 'Taste 2':
+					if rf_v['name'].strip() == 'Class T (Taste 2)':
 						continue
 					children_r = []
 					for r,r_v in rf_v['children'].items():
@@ -869,7 +869,7 @@ class StructureStatistics(TemplateView):
 				children_rf = []
 				for rf,rf_v in lt_v['children'].items():
 					rf_v['name'] = rf_v['name'].split("<")[0]
-					if rf_v['name'].strip() == 'Taste 2':
+					if rf_v['name'].strip() == 'Class T (Taste 2)':
 						continue
 					children_r = []
 					for r,r_v in rf_v['children'].items():
@@ -1191,7 +1191,7 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
 		selection = Selection()
 		if simple_selection:
 			selection.importer(simple_selection)
-		
+
 		if 'ref_file' in request.FILES:
 			request.session['ref_file'] = request.FILES['ref_file']
 		if 'alt_files' in request.FILES:
@@ -1288,7 +1288,7 @@ class SuperpositionWorkflowResults(TemplateView):
 				if x.type=='structure':
 					alt_file_names.append('{}_{}.pdb'.format(x.item.protein_conformation.protein.entry_name, x.item.pdb_code.index))
 				elif x.type=='structure_model' or x.type=='structure_model_Inactive' or x.type=='structure_model_Intermediate' or x.type=='structure_model_Active':
-					alt_file_names.append('Class{}_{}_{}_{}_GPCRdb.pdb'.format(class_tree[x.item.protein.family.slug[:3]], x.item.protein.entry_name, x.item.state.name, x.item.main_template.pdb_code.index))
+					alt_file_names.append('Class{}_{}_{}_{}_GPCRdb.pdb'.format(class_dict[x.item.protein.family.slug[:3]], x.item.protein.entry_name, x.item.state.name, x.item.main_template.pdb_code.index))
 		if len(out_structs) == 0:
 			self.success = False
 		elif len(out_structs) >= 1:
@@ -1342,7 +1342,7 @@ class SuperpositionWorkflowDownload(View):
 			if selection.reference[0].type=='structure':
 				ref_name = '{}_{}_ref.pdb'.format(selection.reference[0].item.protein_conformation.protein.entry_name, selection.reference[0].item.pdb_code.index)
 			elif selection.reference[0].type=='structure_model' or selection.reference[0].type=='structure_model_Inactive' or selection.reference[0].type=='structure_model_Intermediate' or selection.reference[0].type=='structure_model_Active':
-				ref_name = 'Class{}_{}_{}_{}_GPCRdb_ref.pdb'.format(class_tree[selection.reference[0].item.protein.family.slug[:3]], selection.reference[0].item.protein.entry_name, 
+				ref_name = 'Class{}_{}_{}_{}_GPCRdb_ref.pdb'.format(class_dict[selection.reference[0].item.protein.family.slug[:3]], selection.reference[0].item.protein.entry_name,
 																	selection.reference[0].item.state.name, selection.reference[0].item.main_template.pdb_code.index)
 
 		alt_structs = {}
@@ -1384,7 +1384,7 @@ class SuperpositionWorkflowDownload(View):
 			io.set_structure(ref_struct)
 			tmp = StringIO()
 			io.save(tmp, SubstructureSelector(self.ref_substructure_mapping, parsed_selection=SelectionParser(selection)))
-			
+
 			zipf.writestr(ref_name, tmp.getvalue())
 			for alt_name in self.request.session['alt_structs']:
 				tmp = StringIO()
@@ -1405,7 +1405,7 @@ class SuperpositionWorkflowDownload(View):
 
 		return response
 
-
+# DEPRECATED FUNCTION
 class FragmentSuperpositionIndex(TemplateView):
 
 	template_name = 'common_structural_tools.html'
@@ -1470,7 +1470,7 @@ class FragmentSuperpositionIndex(TemplateView):
 		return context
 
 
-
+# DEPRECATED FUNCTION
 class FragmentSuperpositionResults(TemplateView):
 
 	template_name = "common_structural_tools.html"
@@ -1672,8 +1672,6 @@ class PDBClean(TemplateView):
 	def post(self, request, *args, **kwargs):
 		context = super(PDBClean, self).get_context_data(**kwargs)
 
-		class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'F','006':'T','007':'O'}
-
 		self.posted = True
 		pref = True
 		water = False
@@ -1714,7 +1712,7 @@ class PDBClean(TemplateView):
 					selection.remove('targets', 'structure', struct.item.id)
 			elif selection.targets != [] and selection.targets[0].type in ['structure_model', 'structure_model_Inactive', 'structure_model_Intermediate', 'structure_model_Active']:
 				for hommod in [x for x in selection.targets if x.type in ['structure_model', 'structure_model_Inactive', 'structure_model_Intermediate', 'structure_model_Active']]:
-					mod_name = 'Class{}_{}_{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.item.protein.family.slug[:3]], hommod.item.protein.entry_name, 
+					mod_name = 'Class{}_{}_{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.item.protein.family.slug[:3]], hommod.item.protein.entry_name,
 																				  hommod.item.state.name, hommod.item.main_template.pdb_code.index, hommod.item.version)
 					tmp = StringIO(hommod.item.pdb)
 					request.session['substructure_mapping'] = 'full'
@@ -1962,20 +1960,20 @@ def ConvertStructureComplexSignprotToProteins(request):
 def HommodDownload(request):
 	"Download selected homology models in zip file"
 	pks = request.GET['ids'].split(',')
-	class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'F','006':'T','007':'O'}
+
 	hommodels = []
 	for pk in pks:
 		if 'r' in pk:
 			hommodels.append(Structure.objects.get(pk=int(pk[:-1])))
 		else:
 			hommodels.append(StructureModel.objects.get(pk=pk))
-	
+
 	zip_io = BytesIO()
 	with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as backup_zip:
 		for hommod in hommodels:
 			io = StringIO(hommod.pdb_data.pdb)
 			stats_text = StringIO(hommod.stats_text.stats_text)
-			try: 
+			try:
 				hommod.refined
 				version = hommod.pdb_data.pdb.split('\n')[0][-10:]
 				mod_name = 'Class{}_{}_{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein_conformation.protein.family.slug[:3]], hommod.protein_conformation.protein.entry_name,
@@ -1983,9 +1981,9 @@ def HommodDownload(request):
 				stat_name = 'Class{}_{}_{}_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.protein_conformation.protein.family.slug[:3]], hommod.protein_conformation.protein.entry_name,
 																   hommod.pdb_code.index, hommod.state.name, version)
 			except:
-				mod_name = 'Class{}_{}_{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name, 
+				mod_name = 'Class{}_{}_{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name,
 																		  hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
-				stat_name = 'Class{}_{}_{}_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name, 
+				stat_name = 'Class{}_{}_{}_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name,
 																		  hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
 			backup_zip.writestr(mod_name, io.getvalue())
 			backup_zip.writestr(stat_name, stats_text.getvalue())
@@ -1998,16 +1996,16 @@ def HommodDownload(request):
 def ComplexmodDownload(request):
 	"Download selected complex homology models in zip file"
 	pks = request.GET['ids'].split(',')
-	class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'F','006':'T','007':'O'}
+
 	hommodels = StructureComplexModel.objects.filter(pk__in=pks).prefetch_related('receptor_protein__family','main_template__pdb_code').all()
 	zip_io = BytesIO()
 	with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as backup_zip:
 		for hommod in hommodels:
 			io = StringIO(hommod.pdb_data.pdb)
 			stats_text = StringIO(hommod.stats_text.stats_text)
-			mod_name = 'Class{}_{}-{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name, 
+			mod_name = 'Class{}_{}-{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name,
 															   hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
-			stat_name = 'Class{}_{}-{}_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name, 
+			stat_name = 'Class{}_{}-{}_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name,
 															   hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
 			backup_zip.writestr(mod_name, io.getvalue())
 			backup_zip.writestr(stat_name, stats_text.getvalue())
@@ -2018,7 +2016,7 @@ def ComplexmodDownload(request):
 
 def SingleModelDownload(request, modelname, state, csv=False):
 	"Download single homology model"
-	class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'F','006':'T','007':'O'}
+
 	zip_io = BytesIO()
 	if state=='refined':
 		hommod = Structure.objects.get(pdb_code__index=modelname+'_refined')
@@ -2031,9 +2029,9 @@ def SingleModelDownload(request, modelname, state, csv=False):
 		stat_name = 'Class{}_{}_{}_{}_{}_GPCRdb.templates.csv'.format(class_dict[hommod.protein_conformation.protein.family.slug[:3]], hommod.protein_conformation.protein.entry_name,
 																 hommod.pdb_code.index, hommod.state.name, version)
 	else:
-		mod_name = 'Class{}_{}_{}_{}_{}_GPCRdb.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name, 
+		mod_name = 'Class{}_{}_{}_{}_{}_GPCRdb.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name,
 																	   hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
-		stat_name = 'Class{}_{}_{}_{}_{}_GPCRdb.templates.csv'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name, 
+		stat_name = 'Class{}_{}_{}_{}_{}_GPCRdb.templates.csv'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name,
 																	   hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
 	io = StringIO(hommod.pdb_data.pdb)
 	stats_text = StringIO(hommod.stats_text.stats_text)
@@ -2048,12 +2046,12 @@ def SingleModelDownload(request, modelname, state, csv=False):
 
 def SingleComplexModelDownload(request, modelname, signprot, csv=False):
 	"Download single homology model"
-	class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'F','006':'T','007':'O'}
+
 	zip_io = BytesIO()
 	hommod = StructureComplexModel.objects.get(receptor_protein__entry_name=modelname, sign_protein__entry_name=signprot)
-	mod_name = 'Class{}_{}-{}_{}_{}_GPCRdb.pdb'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name, 
+	mod_name = 'Class{}_{}-{}_{}_{}_GPCRdb.pdb'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name,
 														hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
-	stat_name = 'Class{}_{}-{}_{}_{}_GPCRdb.templates.csv'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name, 
+	stat_name = 'Class{}_{}-{}_{}_{}_GPCRdb.templates.csv'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name,
 														hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
 	io = StringIO(hommod.pdb_data.pdb)
 	stats_text = StringIO(hommod.stats_text.stats_text)
@@ -2248,7 +2246,7 @@ def webformdata(request) :
 				if 'chemical_components' not in crystallization:
 					crystallization['chemical_components'] = []
 
-				# print(key)    
+				# print(key)
 				if key!='chemical_comp': #not first
 					comp_id = key.replace('chemical_comp','')
 				else:

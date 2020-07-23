@@ -351,8 +351,6 @@ class LigandVendorLink(models.Model):
     vendor_external_id = models.CharField(max_length=300) #RegistryID
     sid = models.CharField(max_length=200, unique=True) #SID
 
-
-
 #Biased Signalling - start
 class BiasedExperiment(models.Model):
     submission_author = models.CharField(max_length=50)

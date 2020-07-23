@@ -40,7 +40,7 @@ class Command(BaseCommand):
             ['build_construct_proteins'],
             ['build_structures', {'proc': options['proc']}],
             ['build_endogenous_ligands'],
-            ['build_structure_angles'],
+            ['build_structure_angles', {'proc': options['proc']}],
             ['build_distance_representative'],
             ['build_contact_representative'],
             ['build_construct_data'],

@@ -68,12 +68,7 @@ class Command(BaseBuild):
 
     def get_all_GPCR_uniprots(self):
         try:
-            uniprots = [i.accession for i in Protein.objects.filter(accession__isnull=False).filter(Q(family__slug__istartswith='001') |
-                                                                                                    Q(family__slug__istartswith='002') |
-                                                                                                    Q(family__slug__istartswith='003') |
-                                                                                                    Q(family__slug__istartswith='004') |
-                                                                                                    Q(family__slug__istartswith='005') |
-                                                                                                    Q(family__slug__istartswith='006'))]
+            uniprots = [i.accession for i in Protein.objects.filter(accession__isnull=False).filter(family__slug__istartswith='00')]
             if len(uniprots)<100:
                 raise Exception()
         except:
@@ -297,7 +292,7 @@ class QueryPDB():
 
 
     def pdb_request_by_uniprot(self, uniprot_id):
-        url = 'http://www.rcsb.org/pdb/rest/search'
+        url = 'https://www.rcsb.org/pdb/rest/search'
 
         queryText = """
 <orgPdbQuery>
@@ -314,8 +309,8 @@ class QueryPDB():
         return structures
 
     def pdb_request_by_pdb(self, pdb_code):
-        response = urllib.request.urlopen('http://www.rcsb.org/pdb/rest/describePDB?structureId={}'.format(pdb_code.lower()))
-        response_mol = urllib.request.urlopen('http://www.rcsb.org/pdb/rest/describeMol?structureId={}'.format(pdb_code.lower()))
+        response = urllib.request.urlopen('https://www.rcsb.org/pdb/rest/describePDB?structureId={}'.format(pdb_code.lower()))
+        response_mol = urllib.request.urlopen('https://www.rcsb.org/pdb/rest/describeMol?structureId={}'.format(pdb_code.lower()))
         str_des = str(response.read())
         dic = xmltodict.parse(response_mol.read())
         if 'NMR' in str_des or 'extracellular' in str_des:
@@ -381,7 +376,7 @@ class QueryPDBClassifiedGPCR():
     def list_xtals(self, verbose=True):
         ''' Lists structures and matching receptors from PDB that are not on GPCRdb yet. '''
 
-        url = 'http://www.rcsb.org/pdb/rest/search'
+        url = 'https://www.rcsb.org/pdb/rest/search'
 
         queryText = """
 <orgPdbQuery>
@@ -405,8 +400,8 @@ class QueryPDBClassifiedGPCR():
         new_struct = []
         new_unique = []
         for i in structures:
-            response = urllib.request.urlopen('http://www.rcsb.org/pdb/rest/describeMol?structureId={}'.format(i.lower()))
-            response_des = urllib.request.urlopen('http://www.rcsb.org/pdb/rest/describePDB?structureId={}'.format(i.lower()))
+            response = urllib.request.urlopen('https://www.rcsb.org/pdb/rest/describeMol?structureId={}'.format(i.lower()))
+            response_des = urllib.request.urlopen('https://www.rcsb.org/pdb/rest/describePDB?structureId={}'.format(i.lower()))
             str_text = str(response.read())
             str_des = str(response_des.read())
             if 'NMR' in str_des:

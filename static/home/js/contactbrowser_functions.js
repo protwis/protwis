@@ -949,10 +949,15 @@ function drawPlotPanel(plot_type, plot_div) {
 
 var plotting_options = {
     'TM1-7 segment movement' : {
+        'cytosolic': [
+            ['tm7_heatmap_intra','Heatmap'],
+            ['tm7_plot_intra', 'Segment plot (2D)'],
+            ['tm7_plot_3d_intra', 'Segment plot (3D)']
+        ],
         'extracellular': [
-            ['tm7_plot_extra', '2D plot'],
-            ['tm7_plot_3d_extra','3D plot'],
-            ['tm7_heatmap_extra','Heatmap']
+            ['tm7_heatmap_extra','Heatmap'],
+            ['tm7_plot_extra', 'Segment plot (2D)'],
+            ['tm7_plot_3d_extra','Segment plot (3D)']
         ],
         // 'class A major pocket': [
         //     ['tm7_plot_major', '2D plot'],
@@ -960,39 +965,35 @@ var plotting_options = {
         //     ['tm7_heatmap_major','Heatmap']
         // ],
         'Middle of membrane': [
-            ['tm7_plot_middle', '2D plot'],
-            ['tm7_plot_3d_middle','3D plot'],
-            ['tm7_heatmap_middle','Heatmap']
+            ['tm7_heatmap_middle','Heatmap'],
+            ['tm7_plot_middle', 'Segment plot (2D)'],
+            ['tm7_plot_3d_middle','Segment plot (3D)']
         ],
-        'cytosolic': [
-            ['tm7_plot_intra', '2D plot'],
-            ['tm7_plot_3d_intra','3D plot'],
-            ['tm7_heatmap_intra','Heatmap']
-    ]},
+    },
     'Contacts between generic residue positions': [
-        ['ngl', '3D structure'],
-        ['flareplot', 'Flare Plot'],
-        ['flareplot_subset', 'Flare Plot (filtered positions)'],
-        ['force_network', 'Network'],
-        ['force_network_3d', 'Network 3D'],
-        ['heatmap', 'Heatmap']
+        ['flareplot', 'Flare Plot (kept+filtered out contacts)'],
+        ['flareplot_subset', 'Flare Plot (kept contacts)'],
+        ['heatmap', 'Heatmap'],
+        ['force_network', 'Network (2D)'],
+        ['force_network_3d', 'Network (3D)'],
+        ['ngl', 'Structure (3D)'],
         // ['schematic_non', 'Schematic (Non-consecutive)'],
         // ['schematic_con', 'Schematic (Consecutive)'],
     ],
-    'Contacts between segments (TM1-7, H8 and loops)': [
+    'Contacts between segments (TM1-7, H8 & loops)': [
         ['flareplot_segments', 'Flare Plot'],
-        ['force_network_segment', 'Network'],
-        ['force_network_3d_segment', 'Network 3D'],
+        ['force_network_segment', 'Network (2D)'],
+        ['force_network_3d_segment', 'Network (3D)'],
     ],
     'Contact frequencies': [
         ['boxplot', 'Box plot'],
     ],
     'Residue Properties': [
-        ['snakeplot', 'Snake plot'],
-        ['scatterplot', 'Scatter-plot'],
-        ['boxplot_angles', 'Box plot '],
-        ['heatmap_distances', 'Heatmap of distances'],
-        ['ngl_distances', '3D representation of distances']],
+        ['boxplot_angles', 'Box plot (distribution)'],
+        ['heatmap_distances', 'Heatmap (distance)'],
+        ['scatterplot', 'Scatter plot (correlation)'],
+        ['snakeplot', 'Snakeplot (2D, topology)'],
+        ['ngl_distances', 'Structure (3D, movement)']],
     // '3D structure': { '3D structures': [['ngl_distances', 'Distances'], ['ngl_angles', 'Angles']] },
 };
 

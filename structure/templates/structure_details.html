@@ -99,7 +99,7 @@ canvas {
     <div class="col-md-9">
     <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
     <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
-        <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a> is a WebGL based 3D viewer powered by <a href="http://mmtf.rcsb.org">MMTF</a>.</p>
+        <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a> is a WebGL based 3D viewer powered by <a href="https://mmtf.rcsb.org">MMTF</a>.</p>
     </div>
     <div> <button id=fullscreen>Full Screen</button></div>
 
@@ -183,8 +183,8 @@ canvas {
             ] );
             //var stringBlob = new Blob( [ "pdb/{{pdbname}}" ], { type: 'text/plain'} );
             // stage.loadFile( "http://localhost:8000/structure/pdb/{{pdbname}}", { ext: "pdb" } );
-            // NGL.autoLoad( "http://files.rcsb.org/download/5IOS.cif" );
-            //stage.loadFile( "http://files.rcsb.org/download/{{pdbname}}.pdb", { ext: "pdb" } );
+            // NGL.autoLoad( "https://files.rcsb.org/download/5IOS.cif" );
+            //stage.loadFile( "https://files.rcsb.org/download/{{pdbname}}.pdb", { ext: "pdb" } );
             stage.loadFile( "pdb/{{pdbname}}", { ext: "pdb" }  ).then( function( o ){
                 o.addRepresentation( "cartoon");  // pass schemeId here ,{ color: schemeId }
                 o.centerView();

@@ -36,6 +36,7 @@ class Command(BaseCommand):
                             help='Filename to import. Can be used multiple times')
 
     def handle(self, *args, **options):
+        self.options = options
         if options['filename']:
             filenames = options['filename']
         else:
@@ -84,14 +85,18 @@ class Command(BaseCommand):
         # Loop over data table, but skip "CAN_posand" and "CAN_id" from current input file
         for index, row in residue_data[2:].iterrows():
 
-            # for now only allow for ortholog with uniprot entries:
-            if not row['AccessionID'].startswith('ENS'):
-                # fetch protein for protein conformation
-                pr, c = Protein.objects.get_or_create(accession=row['AccessionID'])
+            try:
+                # for now only allow for ortholog with uniprot entries:
+                if not row['AccessionID'].startswith('ENS'):
+                    # fetch protein for protein conformation
+                    pr, c = Protein.objects.get_or_create(accession=row['AccessionID'])
 
-                # fetch protein conformation
-                pc, c = ProteinConformation.objects.get_or_create(protein_id=pr)
-            else:
+                    # fetch protein conformation
+                    pc, c = ProteinConformation.objects.get_or_create(protein_id=pr)
+                else:
+                    continue
+            except:
+                print('error making/getting protein',row['AccessionID'])
                 continue
 
             # loop over residue generic number
@@ -168,6 +173,14 @@ class Command(BaseCommand):
                 # only allow uniprot accession:
                 if not accession.startswith('ENS'):
                     up = self.parse_uniprot_file(accession)
+                    if len(up['genes']) == 0:
+                        print('Accession not found on uniprot!', accession)
+                        self.logger.error('Accession not found on uniprot! {}'.format(accession))
+                        continue
+                    if not 'source' in up:
+                        print('Accession not found on uniprot!', accession)
+                        self.logger.error('Accession not found on uniprot! {}'.format(accession))
+                        continue
 
                     # Create new Protein
                     self.can_create_arrestins(pfm, rns, accession, up)
@@ -183,7 +196,6 @@ class Command(BaseCommand):
 
     def can_create_arrestins(self, family, residue_numbering_scheme, accession, uniprot):
         # get/create protein source
-
         try:
             source, created = ProteinSource.objects.get_or_create(name=uniprot['source'],
                 defaults={'name': uniprot['source']})

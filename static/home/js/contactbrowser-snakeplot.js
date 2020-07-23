@@ -606,38 +606,47 @@ function createSnakeplot(data, containerSelector) {
             '<tr><td>Residue fill:</td><td><select id="snakeplot_color" class="residue_fill snakeplot_property_select">' +
             '<option value="none">None</option>' +
             select_data_options +
-            '</select></td><td>' +
-            '<select id=fill_color1 class="fill_color residue_fill snakeplot_color_select">' +
-            select_color_options_white +
-            '</select></td><td>' +
-            '<select id=fill_color2 class="fill_color residue_fill snakeplot_color_select">' +
-            select_color_options_red +
-            '</select></td><td>' +
-            '<select id=fill_color3 class="fill_color residue_fill snakeplot_color_select">' +
-            '<option value="none">None</option>' +
-            select_color_options +
             '</select></td>' +
+            '<td><input type="text" id="fill_color1" class="togglePaletteOnly_red residue_fill snakeplot_color_select" value="red" /></td>' +
+            '<td><input type="text" id="fill_color2" class="togglePaletteOnly_blue residue_fill snakeplot_color_select" value="blue" /></td>' +
+            '<td><input type="text" id="fill_color3" class="togglePaletteOnly_empty residue_fill snakeplot_color_select" value="" /></td>' +
+            // '<td>' +
+            // '<select id=fill_color1 class="fill_color residue_fill snakeplot_color_select">' +
+            // select_color_options_white +
+            // '</select></td><td>' +
+            // '<select id=fill_color2 class="fill_color residue_fill snakeplot_color_select">' +
+            // select_color_options_red +
+            // '</select></td><td>' +
+            // '<select id=fill_color3 class="fill_color residue_fill snakeplot_color_select">' +
+            // '<option value="none">None</option>' +
+            // select_color_options +
+            // '</select></td>' +
             '<td>' + 
             '<div class="btn-group btn-toggle residue_fill" id="fill_filtered">' +
             '    <button class="btn btn-xs btn-primary active" value="true">Kept</button>' +
             '    <button class="btn btn-xs btn-default" value="false">All</button>' +
             '</div>' +
-            '</td></tr > '
+            '</td></tr> '
             ;
         content += '<tr><td>Residue border:</td><td><select id="snakeplot_color_border" class="residue_border snakeplot_property_select">' +
             '<option value="none">None</option>' +
             select_data_options +
-            '</select></td><td>' +
-            '<select id=border_color1 class="border_color residue_border snakeplot_color_select">' +
-            select_color_options_white +
-            '</select></td><td>' +
-            '<select id=border_color2 class="border_color residue_border snakeplot_color_select">' +
-            select_color_options_red +
-            '</select></td><td>' +
-            '<select id=border_color3 class="border_color residue_border snakeplot_color_select">' +
-            '<option value="none">None</option>' +
-            select_color_options +
             '</select></td>' +
+
+            '<td><input type="text" id="border_color1" class="togglePaletteOnly_red border_color residue_border snakeplot_color_select" value="red" /></td>' +
+            '<td><input type="text" id="border_color2" class="togglePaletteOnly_blue border_color residue_border snakeplot_color_select" value="blue" /></td>' +
+            '<td><input type="text" id="border_color3" class="togglePaletteOnly_empty border_color residue_border snakeplot_color_select" value="" /></td>' +
+            // '<td>' +
+            // '<select id=border_color1 class="border_color residue_border snakeplot_color_select">' +
+            // select_color_options_white +
+            // '</select></td><td>' +
+            // '<select id=border_color2 class="border_color residue_border snakeplot_color_select">' +
+            // select_color_options_red +
+            // '</select></td><td>' +
+            // '<select id=border_color3 class="border_color residue_border snakeplot_color_select">' +
+            // '<option value="none">None</option>' +
+            // select_color_options +
+            // '</select></td>' +
             '<td>' + 
             '<div class="btn-group btn-toggle residue_border" id="border_filtered">' +
             '    <button class="btn btn-xs btn-primary active" value="true">Kept</button>' +
@@ -655,17 +664,22 @@ function createSnakeplot(data, containerSelector) {
         content += '<tr><td>Residue text:</td><td><select id="snakeplot_color_text" class="residue_text snakeplot_property_select">' +
                 '<option value="none">None</option>' +
                 select_data_options +
-                '</select></td><td>' +
-                '<select id=text_color1 class="text_color residue_text snakeplot_color_select">' +
-                select_color_options_white +
-                '</select></td><td>' +
-                '<select id=text_color2 class="text_color residue_text snakeplot_color_select">' +
-                select_color_options_red +
-                '</select></td><td>' +
-                '<select id=text_color3 class="text_color residue_text snakeplot_color_select">' +
-                '<option value="none">None</option>' +
-                select_color_options +
                 '</select></td>' +
+
+                '<td><input type="text" id="text_color1" class="togglePaletteOnly_red text_color residue_border snakeplot_color_select" value="red" /></td>' +
+                '<td><input type="text" id="text_color2" class="togglePaletteOnly_blue text_color residue_border snakeplot_color_select" value="blue" /></td>' +
+                '<td><input type="text" id="text_color3" class="togglePaletteOnly_empty text_color residue_border snakeplot_color_select" value="" /></td>' +
+                // '<td>' +
+                // '<select id=text_color1 class="text_color residue_text snakeplot_color_select">' +
+                // select_color_options_white +
+                // '</select></td><td>' +
+                // '<select id=text_color2 class="text_color residue_text snakeplot_color_select">' +
+                // select_color_options_red +
+                // '</select></td><td>' +
+                // '<select id=text_color3 class="text_color residue_text snakeplot_color_select">' +
+                // '<option value="none">None</option>' +
+                // select_color_options +
+                // '</select></td>' +
                 '<td>' + 
                 '<div class="btn-group btn-toggle residue_text" id="text_filtered">' +
                 '    <button class="btn btn-xs btn-primary active" value="true">Kept</button>' +
@@ -686,17 +700,23 @@ function createSnakeplot(data, containerSelector) {
         content += '<tr><td colspan=6><hr></td></tr><tr><td>Backbone line:</td><td><select id="snakeplot_color_backbone" class="snakeplot_property_select">' +
                 '<option value="none">None</option>' +
                 select_data_options_backbone +
-                '</select></td><td>' +
-                '<select id=backbone_color1 class="backbone_color snakeplot_color_select">' +
-                select_color_options +
-                '</select></td><td>' +
-                '<select id=backbone_color2 class="backbone_color snakeplot_color_select">' +
-                select_color_options_black +
-                '</select></td><td>' +
-                '<select id=backbone_color3 class="backbone_color snakeplot_color_select">' +
-                '<option value="none">None</option>' +
-                select_color_options +
-                '</select></td></tr>'
+                '</select></td>' +
+
+                '<td><input type="text" id="backbone_color1" class="togglePaletteOnly_red backbone_color snakeplot_color_select" value="red" /></td>' +
+                '<td><input type="text" id="backbone_color2" class="togglePaletteOnly_blue backbone_color snakeplot_color_select" value="blue" /></td>' +
+                '<td><input type="text" id="backbone_color3" class="togglePaletteOnly_empty backbone_color snakeplot_color_select" value="" /></td>' +
+                // '<td>' +
+                // '<select id=backbone_color1 class="backbone_color snakeplot_color_select">' +
+                // select_color_options +
+                // '</select></td><td>' +
+                // '<select id=backbone_color2 class="backbone_color snakeplot_color_select">' +
+                // select_color_options_black +
+                // '</select></td><td>' +
+                // '<select id=backbone_color3 class="backbone_color snakeplot_color_select">' +
+                // '<option value="none">None</option>' +
+                // select_color_options +
+                // '</select></td>' +
+                '</tr>'
                 ;
         content += '<tr><td>Backbone shift:</td><td><select id="snakeplot_move_circle" class="snakeplot_property_select">' +
                 '<option value="none">None</option>' +
@@ -708,6 +728,49 @@ function createSnakeplot(data, containerSelector) {
         newDiv.innerHTML = content;
 
         $(containerSelector).prepend(newDiv);
+
+        
+        color_palette = [
+            ["#000", "#444", "#666", "#999", "#ccc", "#eee", "#f3f3f3", "#fff"],
+            ["#f00", "#f90", "#ff0", "#0f0", "#0ff", "#00f", "#90f", "#f0f"],
+            ["#f4cccc", "#fce5cd", "#fff2cc", "#d9ead3", "#d0e0e3", "#cfe2f3", "#d9d2e9", "#ead1dc"],
+            ["#ea9999", "#f9cb9c", "#ffe599", "#b6d7a8", "#a2c4c9", "#9fc5e8", "#b4a7d6", "#d5a6bd"],
+            ["#e06666", "#f6b26b", "#ffd966", "#93c47d", "#76a5af", "#6fa8dc", "#8e7cc3", "#c27ba0"],
+            ["#c00", "#e69138", "#f1c232", "#6aa84f", "#45818e", "#3d85c6", "#674ea7", "#a64d79"],
+            ["#900", "#b45f06", "#bf9000", "#38761d", "#134f5c", "#0b5394", "#351c75", "#741b47"],
+            ["#600", "#783f04", "#7f6000", "#274e13", "#0c343d", "#073763", "#20124d", "#4c1130"] //
+        ];
+
+
+
+        $(containerSelector+" .togglePaletteOnly_red").spectrum({
+            showPaletteOnly: true,
+            togglePaletteOnly: true,
+            hideAfterPaletteSelect:true,
+            togglePaletteMoreText: 'more',
+            togglePaletteLessText: 'less',
+            color: 'red',
+            palette: color_palette
+        });
+        $(containerSelector+" .togglePaletteOnly_blue").spectrum({
+            showPaletteOnly: true,
+            togglePaletteOnly: true,
+            hideAfterPaletteSelect:true,
+            togglePaletteMoreText: 'more',
+            togglePaletteLessText: 'less',
+            color: 'blue',
+            palette: color_palette
+        });
+        $(containerSelector+" .togglePaletteOnly_empty").spectrum({
+            showPalette: true,
+            togglePaletteOnly: true,
+            hideAfterPaletteSelect:true,
+            togglePaletteMoreText: 'more',
+            togglePaletteLessText: 'less',
+            allowEmpty:true,
+            palette: color_palette
+        });
+
         $(containerSelector).find(".options").toggle();
 
         $(containerSelector + ' .btn-toggle').click(function() {
@@ -899,10 +962,31 @@ function createSnakeplot(data, containerSelector) {
             color_filtered = ($(containerSelector + " #fill_filtered").find(".active").attr('value') == 'true');
             console.log('change fill color to!', fill_color,'color_filtered',color_filtered);
 
-            color_id1  = $(containerSelector+" #fill_color1").val();
-            color_id2  = $(containerSelector+" #fill_color2").val();
-            color_id3  = $(containerSelector+" #fill_color3").val();
-
+            // color_id1  = $(containerSelector+" #fill_color1").val();
+            // color_id2  = $(containerSelector+" #fill_color2").val();
+            // color_id3  = $(containerSelector+" #fill_color3").val();
+            color_id1  = $(containerSelector+" #fill_color1").spectrum("get").toHexString();
+            if ($(containerSelector + " #fill_color2").spectrum("get") && $(containerSelector + " #fill_color2").length) {
+                color_id2 = $(containerSelector + " #fill_color2").spectrum("get").toHexString();
+            } else {
+                color_id2 = false;
+            }
+            if ($(containerSelector + " #fill_color3").spectrum("get") && $(containerSelector + " #fill_color3").length) {
+                color_id3 = $(containerSelector + " #fill_color3").spectrum("get").toHexString();
+            } else {
+                color_id3 = false;
+            }
+            console.log('change fill color to!', fill_color, color_id1, color_id2, color_id3);
+            // if no color 3 make only linear between two colors.
+            if (color_id3) {
+                var color_range = d3v4.scaleLinear()
+                    .domain([0, 0.5, 1])
+                    .range([color_id1, color_id2, color_id3]);
+            } else {
+                var color_range = d3v4.scaleLinear()
+                    .domain([0, 1])
+                    .range([color_id1, color_id2]);
+            }
             $(containerSelector).find('.rcircle').each(function () {
 
                 pos_id = $(this).attr('id');
@@ -933,7 +1017,7 @@ function createSnakeplot(data, containerSelector) {
                         // Network is more of a 'categorical' color scale, so needs different code
                         $(this).attr("fill", color_by_category(colors[fill_color][pos_id][0],colors[fill_color][pos_id][2]));
                     } else {
-                        $(this).attr("fill", color_by_scale(scale,color_id1,color_id2,color_id3));
+                        $(this).attr("fill", color_range(scale)); //color_by_scale(scale,color_id1,color_id2,color_id3));
                     }
                 } else {
 
@@ -948,7 +1032,7 @@ function createSnakeplot(data, containerSelector) {
                     if (closest == 'not_found') {
                         $(this).attr("fill", "#fff"); 
                     } else {
-                        $(this).attr("fill", color_by_scale(scale,color_id1,color_id2,color_id3));
+                        $(this).attr("fill", color_range(scale)); //color_by_scale(scale,color_id1,color_id2,color_id3));
                     }
                 }
                 // console.log(pos_id,color[1],color_by_scale(color_id,color[1]))
@@ -972,13 +1056,34 @@ function createSnakeplot(data, containerSelector) {
 
         function change_stroke() {
             fill_color = $(containerSelector + " #snakeplot_color_border").val();
-            color_id1  = $(containerSelector+" #border_color1").val();
-            color_id2  = $(containerSelector+" #border_color2").val();
-            color_id3  = $(containerSelector+" #border_color3").val();
+            // color_id1  = $(containerSelector+" #border_color1").val();
+            // color_id2  = $(containerSelector+" #border_color2").val();
+            // color_id3  = $(containerSelector+" #border_color3").val();
             color_filtered = d3.select(containerSelector).select("#border_filtered").property("checked");
             color_filtered = ($(containerSelector + " #border_filtered").find(".active").attr('value') == 'true');
             var stroke_width = $(containerSelector + " #snakeplot_border_stroke").val();
             console.log('change stroke color to!');
+            color_id1  = $(containerSelector+" #border_color1").spectrum("get").toHexString();
+            if ($(containerSelector + " #border_color2").spectrum("get") && $(containerSelector + " #border_color2").length) {
+                color_id2 = $(containerSelector + " #border_color2").spectrum("get").toHexString();
+            } else {
+                color_id2 = false;
+            }
+            if ($(containerSelector + " #border_color3").spectrum("get") && $(containerSelector + " #border_color3").length) {
+                color_id3 = $(containerSelector + " #border_color3").spectrum("get").toHexString();
+            } else {
+                color_id3 = false;
+            }
+            // if no color 3 make only linear between two colors.
+            if (color_id3) {
+                var color_range = d3v4.scaleLinear()
+                    .domain([0, 0.5, 1])
+                    .range([color_id1, color_id2, color_id3]);
+            } else {
+                var color_range = d3v4.scaleLinear()
+                    .domain([0, 1])
+                    .range([color_id1, color_id2]);
+            }
 
             $(containerSelector).find('.rcircle').each(function () {
                 original_title = $(this).attr('original_title');
@@ -1010,7 +1115,7 @@ function createSnakeplot(data, containerSelector) {
                         // Network is more of a 'categorical' color scale, so needs different code
                         $(this).attr("stroke", color_by_category(colors[fill_color][pos_id][0],colors[fill_color][pos_id][2]));
                     } else {
-                        $(this).attr("stroke", color_by_scale(scale,color_id1,color_id2,color_id3));
+                        $(this).attr("stroke", color_range(scale));
                     }
                     $(this).attr("stroke-width", stroke_width); 
                 } else {
@@ -1025,7 +1130,7 @@ function createSnakeplot(data, containerSelector) {
                         $(this).attr("stroke", "#ccc");
                         $(this).attr("stroke-width", 1); 
                     } else {
-                        $(this).attr("stroke", color_by_scale(scale,color_id1,color_id2,color_id3));
+                        $(this).attr("stroke", color_range(scale));
                         $(this).attr("stroke-width", stroke_width); 
                     }
                 }
@@ -1047,12 +1152,34 @@ function createSnakeplot(data, containerSelector) {
 
         function change_text() {
             fill_color = $(containerSelector + " #snakeplot_color_text").val();
-            color_id1  = $(containerSelector+" #text_color1").val();
-            color_id2  = $(containerSelector+" #text_color2").val();
-            color_id3  = $(containerSelector+" #text_color3").val();
+            // color_id1  = $(containerSelector+" #text_color1").val();
+            // color_id2  = $(containerSelector+" #text_color2").val();
+            // color_id3  = $(containerSelector+" #text_color3").val();
             color_filtered = d3.select(containerSelector).select("#text_filtered").property("checked");
             color_filtered = ($(containerSelector + " #text_filtered").find(".active").attr('value') == 'true');
             console.log('change text color to!', fill_color, 'color_filtered', color_filtered);
+            color_id1  = $(containerSelector+" #text_color1").spectrum("get").toHexString();
+            if ($(containerSelector + " #text_color2").spectrum("get") && $(containerSelector + " #text_color2").length) {
+                color_id2 = $(containerSelector + " #text_color2").spectrum("get").toHexString();
+            } else {
+                color_id2 = false;
+            }
+            if ($(containerSelector + " #text_color3").spectrum("get") && $(containerSelector + " #text_color3").length) {
+                color_id3 = $(containerSelector + " #text_color3").spectrum("get").toHexString();
+            } else {
+                color_id3 = false;
+            }
+            console.log('change fill color to!', fill_color, color_id1, color_id2, color_id3);
+            // if no color 3 make only linear between two colors.
+            if (color_id3) {
+                var color_range = d3v4.scaleLinear()
+                    .domain([0, 0.5, 1])
+                    .range([color_id1, color_id2, color_id3]);
+            } else {
+                var color_range = d3v4.scaleLinear()
+                    .domain([0, 1])
+                    .range([color_id1, color_id2]);
+            }
             console.log(color_id1, color_id2, color_id3);
 
             $(containerSelector).find('.rcircle').each(function () {
@@ -1084,7 +1211,7 @@ function createSnakeplot(data, containerSelector) {
                         // Network is more of a 'categorical' color scale, so needs different code
                         $(containerSelector).find('#' + pos_id + 't').attr("fill", color_by_category(colors[fill_color][pos_id][0],colors[fill_color][pos_id][2]));
                     } else {
-                        $(containerSelector).find('#' + pos_id + 't').attr("fill", color_by_scale(scale,color_id1,color_id2,color_id3));
+                        $(containerSelector).find('#' + pos_id + 't').attr("fill", color_range(scale));
                     }
                     $(containerSelector).find('#' + pos_id + 't').attr("font-weight", 1000);
                     // $(containerSelector).find('#' + pos_id + 't').attr("stroke", "#000");
@@ -1102,7 +1229,7 @@ function createSnakeplot(data, containerSelector) {
                         $(containerSelector).find('#' + pos_id + 't').attr("fill", "#000");
                         $(containerSelector).find('#' + pos_id + 't').attr("font-weight", 0);
                     } else {
-                        $(containerSelector).find('#' + pos_id + 't').attr("fill", color_by_scale(scale,color_id1,color_id2,color_id3));
+                        $(containerSelector).find('#' + pos_id + 't').attr("fill", color_range(scale));
                         $(containerSelector).find('#' + pos_id + 't').attr("font-weight", 1000);
                     }
                     
@@ -1171,9 +1298,30 @@ function createSnakeplot(data, containerSelector) {
 
         function change_backbone() {
             fill_color = $(containerSelector + " #snakeplot_color_backbone").val();
-            color_id1  = $(containerSelector+" #backbone_color1").val();
-            color_id2  = $(containerSelector+" #backbone_color2").val();
-            color_id3  = $(containerSelector+" #backbone_color3").val();
+            // color_id1  = $(containerSelector+" #backbone_color1").val();
+            // color_id2  = $(containerSelector+" #backbone_color2").val();
+            // color_id3  = $(containerSelector+" #backbone_color3").val();
+            color_id1  = $(containerSelector+" #backbone_color1").spectrum("get").toHexString();
+            if ($(containerSelector + " #backbone_color2").spectrum("get") && $(containerSelector + " #backbone_color2").length) {
+                color_id2 = $(containerSelector + " #backbone_color2").spectrum("get").toHexString();
+            } else {
+                color_id2 = false;
+            }
+            if ($(containerSelector + " #backbone_color3").spectrum("get") && $(containerSelector + " #backbone_color3").length) {
+                color_id3 = $(containerSelector + " #backbone_color3").spectrum("get").toHexString();
+            } else {
+                color_id3 = false;
+            }
+            // if no color 3 make only linear between two colors.
+            if (color_id3) {
+                var color_range = d3v4.scaleLinear()
+                    .domain([0, 0.5, 1])
+                    .range([color_id1, color_id2, color_id3]);
+            } else {
+                var color_range = d3v4.scaleLinear()
+                    .domain([0, 1])
+                    .range([color_id1, color_id2]);
+            }
             console.log('change backbone color to!', fill_color);
             var path_max = 0;
             $(containerSelector).find('.helix_path').each(function () {
@@ -1203,7 +1351,7 @@ function createSnakeplot(data, containerSelector) {
                 const fill_sum = fill_scale.reduce((a, b) => a + b, 0);
                 const fill_avg = (fill_sum / fill_scale.length) || 0;
                 if (fill_color != 'none' && fill_scale.length!=0) {
-                        $(this).attr("stroke", color_by_scale(fill_avg/path_max,color_id1,color_id2,color_id3));
+                        $(this).attr("stroke", color_range(scale));
                         $(this).attr("stroke-width", 6);
                 } 
                 
@@ -1296,9 +1444,9 @@ function createSnakeplot(data, containerSelector) {
         fill_color = $(containerSelector + " #snakeplot_color").val();
         if (fill_color != "none" && fill_color) {
 
-            var color1  = $(containerSelector+" #fill_color1").val();
-            var color2  = $(containerSelector+" #fill_color2").val();
-            var color3  = $(containerSelector+" #fill_color3").val();
+            var color1  = $(containerSelector+" #fill_color1").spectrum("get").toHexString();
+            var color2  = $(containerSelector+" #fill_color2").spectrum("get").toHexString();
+            var color3  = $(containerSelector+" #fill_color3").val() == "" ? 'none' : $(containerSelector+" #fill_color3").spectrum("get").toHexString();
             var colors = [color1,color2,color3].filter(item => !(item == 'none'));
             legends.push({ icon: 'fill', value: nice_index_names[fill_color],colors:colors })
         }
@@ -1308,7 +1456,7 @@ function createSnakeplot(data, containerSelector) {
             var color1  = $(containerSelector+" #border_color1").val();
             var color2  = $(containerSelector+" #border_color2").val();
             var color3  = $(containerSelector+" #border_color3").val();
-            var colors = [color1,color2,color3].filter(item => !(item == 'none'));
+            var colors = [color1,color2,color3].filter(item => !(item == ''));
             legends.push({ icon: 'border', value: nice_index_names[fill_color],colors:colors })
         }
         fill_color = $(containerSelector + " #snakeplot_color_text").val();
@@ -1317,7 +1465,7 @@ function createSnakeplot(data, containerSelector) {
             var color1  = $(containerSelector+" #text_color1").val();
             var color2  = $(containerSelector+" #text_color2").val();
             var color3  = $(containerSelector+" #text_color3").val();
-            var colors = [color1, color2, color3].filter(item => !(item == 'none'));
+            var colors = [color1, color2, color3].filter(item => !(item == ''));
             legends.push({ icon: 'text', value: nice_index_names[fill_color],colors:colors })
         }
         fill_color = $(containerSelector + " #snakeplot_color_rotation").val();
@@ -1328,13 +1476,13 @@ function createSnakeplot(data, containerSelector) {
                 var color1 = $(containerSelector + " #backbone_color1").val();
                 var color2 = $(containerSelector + " #backbone_color2").val();
                 var color3 = $(containerSelector + " #backbone_color3").val();
-                var colors = [color1, color2, color3].filter(item => !(item == 'none'));
+                var colors = [color1, color2, color3].filter(item => !(item == ''));
                 legends.push({ icon: 'backbone_line', value: nice_index_names[fill_color],colors:colors })
             }
         fill_color = $(containerSelector + " #snakeplot_move_circle").val();
         if (fill_color!="none" && fill_color) legends.push({ icon: 'backbone', value: nice_index_names[fill_color]})
 
-        // console.log(legends);
+        console.log(legends);
         // legends = [{ icon: 'fill', value: 'rotamer' },
         //            { icon: 'border', value: 'distance' },
         //            { icon: 'text', value: 'distance' },
@@ -1401,20 +1549,26 @@ function createSnakeplot(data, containerSelector) {
             var data_legend = d3.range(48);
             range_colors = []
             d.colors.forEach(c => {
-                var rgb = color_scale_colors[c]
-                var hex = rgb2hex(rgb.red, rgb.green, rgb.blue);
-                range_colors.push(hex);
+                // var rgb = color_scale_colors[c]
+                // var hex = rgb2hex(rgb.red, rgb.green, rgb.blue);
+                range_colors.push(c);
             });
             
             if (d.value == nice_index_names['network']) {
                 var colors = d3v4.scaleSequential(d3v4.interpolateSpectral)
                     .domain([0, 48]);
             } else {
-                var colors = d3v4.scaleLinear()
-                    .domain(d3v4.ticks(0, 48, range_colors.length))
-                    .range(range_colors);
+                if (range_colors.length == 2) {
+                    var colors = d3v4.scaleLinear()
+                        .domain([0,48])
+                        .range(range_colors);
+                } else { // three colors
+                    var colors = d3v4.scaleLinear()
+                        .domain([0,24,48])
+                        .range(range_colors);
+                }
             }
-            
+            console.log(colors, range_colors);
             var rects = test.selectAll(".colorinterval")
                 .data(data_legend)
                 .enter()
@@ -1423,7 +1577,8 @@ function createSnakeplot(data, containerSelector) {
                 .attr("height", 6)
                 .attr("x", (d,i)=>26 + i)
                 .attr("width", 1)
-                .attr("fill", d=>colors(d))
+                .attr("fill", d => colors(d))
+                .attr("id", d => d)
                 .attr("stroke-width", 0);
                             
           });

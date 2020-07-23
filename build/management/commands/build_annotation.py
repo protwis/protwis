@@ -465,7 +465,17 @@ class Command(BaseBuild):
 
                 al.append(res)
 
-            bulked = Residue.objects.bulk_create(bulk)
+            try:
+                bulked = Residue.objects.bulk_create(bulk)
+            except Exception as msg:
+                print('Error saving residues for ',pconf)
+                print(msg)
+                try:
+                    bulked = Residue.objects.bulk_create(bulk)
+                except:
+                    print('failed 2nd try')
+                self.logger.error('Error saving residues for {}'.format(pconf))
+                    
             rs = Residue.objects.filter(protein_conformation=pconf).order_by('sequence_number')
 
             ThroughModel = Residue.alternative_generic_numbers.through

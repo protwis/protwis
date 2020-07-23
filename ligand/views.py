@@ -328,7 +328,7 @@ class LigandStatistics(TemplateView):
         for pf in proteins_count:
             prot_count_dict[pf['family__parent__parent__parent__name']] = pf['c']
 
-        classes = ProteinFamily.objects.filter(slug__in=['001', '002', '003', '004', '005', '006']) #ugly but fast
+        classes = ProteinFamily.objects.filter(slug__in=['001', '002', '003', '004', '005', '006', '007']) #ugly but fast
         proteins = Protein.objects.all().prefetch_related('family__parent__parent__parent')
         ligands = []
 
@@ -407,7 +407,7 @@ class LigandStatistics(TemplateView):
         context['class_f_options']['anchor'] = 'class_f'
         context['class_f_options']['label_free'] = [1,]
         context['class_f'] = json.dumps(class_f_data.get_nodes_dict('ligands'))
-        class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name='Taste 2'))
+        class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class T (Taste 2)'))
         context['class_t2_options'] = deepcopy(tree.d3_options)
         context['class_t2_options']['anchor'] = 'class_t2'
         context['class_t2_options']['label_free'] = [1,]

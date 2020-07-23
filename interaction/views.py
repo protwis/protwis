@@ -394,7 +394,7 @@ def updateall(request):
 def runcalculation(pdbname, peptide=""):
     calc_script = os.sep.join(
         [os.path.dirname(__file__), 'legacy_functions.py'])
-    call(["python", calc_script, "-p", pdbname, "-c", peptide],
+    call(["python2.7", calc_script, "-p", pdbname, "-c", peptide],
          stdout=open(devnull, 'wb'), stderr=open(devnull, 'wb'))
     return None
 
@@ -608,7 +608,7 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
 def runusercalculation(filename, session):
     calc_script = os.sep.join(
         [os.path.dirname(__file__), 'legacy_functions.py'])
-    call(["python", calc_script, "-p", filename, "-s", session])
+    call(["python2.7", calc_script, "-p", filename, "-s", session])
     return None
 
 
@@ -1208,4 +1208,3 @@ def pdb(request):
         response = HttpResponse(structure.pdb_data.pdb,
                                 content_type='text/plain')
     return response
-    
