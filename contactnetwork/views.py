@@ -273,7 +273,7 @@ def PdbTableData(request):
             <th></th> \
             <th></th> \
             <th></th> \
-            <th>Cytosolic<br> opening (%)</th> \
+            <th>Degree<br> active (%)</th> \
             <th>TM6 tilt</th>"
 #            <th><a href=\"http://docs.gpcrdb.org/structures.html\" target=\"_blank\">Cytosolic</br> opening</a></th>"
 #            <th><a href=\"http://docs.gpcrdb.org/structures.html\" target=\"_blank\">7TM Open IC (Å)</a></th> \
