@@ -351,7 +351,7 @@ function showPDBtable(element) {
         } else {
           $(element + ' .modal-header').append('PDB code: <span><input type=text class="pastePDBs" placeholder="Paste PDB"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Import</button></span>');
         }
-        
+
         $(element + ' .modal-header .pastePDBs').keypress(function(event) {
             var keycode = (event.keyCode ? event.keyCode : event.which);
             if(keycode == '13'){
@@ -362,12 +362,12 @@ function showPDBtable(element) {
 
         $(element + ' .modal-header').append(' | <span><button type="button" onclick="exportPDBs();" class="btn btn-xs btn-primary export_pdbs">Export</button></span>');
         // $(element + ' .modal-header').append(' | <span><button type="button" onclick="toggle_best(\''+mode+'\',7);" class="btn btn-xs btn-primary">Best</button></span>');
-        if (window.location.href.endsWith("contactnetwork/clustering") || window.location.href.endsWith("contactnetwork/clustering#"))
+        /*if (window.location.href.endsWith("contactnetwork/clustering") || window.location.href.endsWith("contactnetwork/clustering#"))
           $(element + ' .modal-header').append(' | <span>Structure shortest distance to all other structures of the same receptor and same state: <button type="button" onclick="check_all_distance_representatives();" class="btn btn-xs btn-primary">Distance Representative</button></span>');
         else {
           // a$(element + ' .tableview').before(' | <span>Structure with highest % identity to GPCR’s contact consensus: <button type="button" onclick="check_all_representatives();" class="btn btn-xs btn-primary">Contact Representative</button></span>');
           // $(element + ' .tableview').before(' | <span>Structure sharing either highest/lowest diff between fraction of active/inactive class consensus contacts, or for intermediate the one closes to a 0 diff: <button type="button" onclick="check_all_class_representatives();" class="btn btn-xs btn-primary">New Representative</button></span>');
-        }
+        }*/
         // $(element + ' .modal-header').append(' | <div class="externalfilters" style="display: inline-block;"><span id="'+mode_without_space+'_external_filter_container_0"></span></div>');
         // $(element + ' .tableview').before('<div class="externalfilters" style="display: inline-block;"><span id="'+mode_without_space+'_external_filter_container_1"></span></div>');
 

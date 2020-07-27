@@ -225,10 +225,12 @@ class Command(BaseBuild):
             removed = removed+[1001]
         elif structure.pdb_code.index=='6QZH':
             removed = list(range(248,252))+list(range(1001,1473))+list(range(255,260))
+
+
         # print('removed',removed)
         # removed = []
         if len(deletions)>len(d['wt_seq'])*0.9:
-            #if too many deltions
+            #if too many deletions
             removed = []
             deletions = []
 
@@ -1076,17 +1078,7 @@ class Command(BaseBuild):
 
                     # pdb code
                     if 'pdb' in sd:
-                        # Workaround for custom PDB-codes (not starting with a number)
-                        if sd['pdb'][0].isnumeric():
-                            try:
-                                web_resource = WebResource.objects.get(slug='pdb')
-                            except:
-                                # abort if pdb resource is not found
-                                raise Exception('PDB resource not found, aborting!')
-                        else:
-                            # Empty resource
-                            web_resource = 0
-
+                        web_resource = WebResource.objects.get(slug='pdb')
                         s.pdb_code, created = WebLink.objects.get_or_create(index=sd['pdb'], web_resource=web_resource)
                     else:
                         self.logger.error('PDB code not specified for structure {}, skipping!'.format(sd['pdb']))

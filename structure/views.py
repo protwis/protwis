@@ -6,6 +6,7 @@ from django.db.models import Count, Q, Prefetch
 from django import forms
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page
+from django.shortcuts import redirect
 
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from protein.models import Gene, ProteinSegment, IdentifiedSites, ProteinGProteinPair
@@ -128,6 +129,10 @@ class ServeComplexModels(TemplateView):
 
 		return context
 
+
+def RedirectBrowser(request):
+    response = redirect("/structure/")
+    return response
 
 def HomologyModelDetails(request, modelname, state):
 	"""
