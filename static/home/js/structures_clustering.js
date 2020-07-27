@@ -8,7 +8,7 @@ var hidePDBs = false;
 var labelReorder = false;
 var treeAnnotations = [];
 var couplingAnnotations = [];
-var typeClasses = ["Receptor activation state", "", "", "Receptor family", "Ligand type", "GPCR class", "Structure determination method", "Ligand function", "G-protein coupling", "Primary G proteins", "Secondary G proteins", "TM6 opening", "G-prot bound likeness"]
+var typeClasses = ["Receptor activation state", "", "", "Receptor family", "Ligand type", "GPCR class", "Structure determination method", "Ligand function", "G-protein coupling", "Primary G proteins", "Secondary G proteins", "TM6 opening", "Degree active"]
 var dataClasses, colorClasses;
 function renderTree(data) {
     dataClasses = [["active", "inactive", "intermediate", "other"],0,0];
@@ -623,6 +623,7 @@ function menuItem(dataName){
       case "Receptor cytosolic opening (%)":
       case "TM6 opening (%)":
         return 11
+      case "Degree active (%)":
       case "G-protein bound likeness (%)":
         return 12
       case "Ligand function":
