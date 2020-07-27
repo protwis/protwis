@@ -7,7 +7,7 @@
 
         <!-- Carousel -->
         <div class='col-md-12'>
-            <div id="carousel-example-generic" class="carousel slide" data-ride="carousel">
+            <div id="carousel-example-generic" class="carousel slide" data-ride="carousel" data-interval="30000">
                 <!-- Indicators -->
                 <ol class="carousel-indicators">
                     <li data-target="#carousel-example-generic" data-slide-to="0" class="active"></li>
@@ -19,200 +19,208 @@
 
                 <!-- Wrapper for slides -->
                 <div class="carousel-inner" role="listbox">
-                <div class="item active">
-                    <img src="{% static 'home/carousel/alignment.png' %}">
-                    <div class="carousel-caption">
-                        <h2>Build alignments</h2>
-                        <p>Select proteins to align individually or by family. Choose custom sequence segments to
-                        include in your alignment.</p>
+                    <div class="item active">
+                        <img src="{% static 'home/carousel/alignment.png' %}">
+                        <div class="carousel-caption">
+                            <h2>Build alignments</h2>
+                            <p>Select proteins to align individually or by family. Choose custom sequence segments to
+                                include in your alignment.</p>
+                        </div>
                     </div>
-                </div>
-                <div class="item">
-                    <img src="{% static 'home/carousel/helix_box.png' %}">
-                    <div class="carousel-caption">
-                        <h2>Build diagrams</h2>
-                        <p>Get helix box and/or snake diagrams with custom coloring for you publications.</p>
+                    <div class="item">
+                        <img src="{% static 'home/carousel/helix_box.png' %}">
+                        <div class="carousel-caption">
+                            <h2>Build diagrams</h2>
+                            <p>Get helix box and/or snake diagrams with custom coloring for you publications.</p>
+                        </div>
                     </div>
-                </div>
-                <div class="item">
-                    <img src="{% static 'home/carousel/pdb_numbering.png' %}">
-                    <div class="carousel-caption">
-                        <h2>Automatically add generic numbers to PDB files</h2>
-                        <p>Upload PDB files and apply GPCRdb generic numbers.</p>
+                    <div class="item">
+                        <img src="{% static 'home/carousel/pdb_numbering.png' %}">
+                        <div class="carousel-caption">
+                            <h2>Automatically add generic numbers to PDB files</h2>
+                            <p>Upload PDB files and apply GPCRdb generic numbers.</p>
+                        </div>
                     </div>
-                </div>
-                <div class="item">
-                    <img src="{% static 'home/carousel/snake_plot.png' %}">
-                    <div class="carousel-caption">
-                        <h2>Plot experimental values onto diagrams</h2>
-                        <p>Highlight residues with available mutant and/or ligand interaction data.</p>
+                    <div class="item">
+                        <img src="{% static 'home/carousel/snake_plot.png' %}">
+                        <div class="carousel-caption">
+                            <h2>Plot experimental values onto diagrams</h2>
+                            <p>Highlight residues with available mutant and/or ligand interaction data.</p>
+                        </div>
                     </div>
-                </div>
-                <div class="item">
-                    <img src="{% static 'home/carousel/tree.png' %}">
-                    <div class="carousel-caption">
-                        <h2>Build phylogenetic trees</h2>
-                        <p>Customise the sequence segments to use for generating the trees.</p>
+                    <div class="item">
+                        <img src="{% static 'home/carousel/tree.png' %}">
+                        <div class="carousel-caption">
+                            <h2>Build phylogenetic trees</h2>
+                            <p>Customise the sequence segments to use for generating the trees.</p>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Controls -->
-                <a class="left carousel-control" href="#carousel-example-generic" role="button" data-slide="prev">
-                    <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
-                    <span class="sr-only">Previous</span>
-                </a>
-                <a class="right carousel-control" href="#carousel-example-generic" role="button" data-slide="next">
-                    <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
-                    <span class="sr-only">Next</span>
-                </a>
-            </div>
-        </div>
-
-    </div>
-
-    <div class="row"><div class="col-md-12">&nbsp;</div></div>
-
-    <!-- GPCRdb into -->
-    <div class="row">
-
-        <div class="col-md-12">
-            <div class="panel panel-primary">
-                <div class="panel-body">
-                    <div class='col-md-1 text-center'>
-                        <img src="{% static 'home/logo/gpcr/main.png' %}" style="height:80px;width:80px;">
-                    </div>
-                    <div class='col-md-11'>
-                        <p><strong>GPCRdb</strong> contains data, diagrams and web tools for G protein-coupled
-                        receptors (GPCRs). Users can browse all GPCR  structures and the largest collections of
-                        receptor mutants. Diagrams can be produced and downloaded to illustrate receptor residues
-                        (snake-plot and helix box diagrams) and relationships (phylogenetic trees). Reference (structure)
-                        structure-based sequence alignments take into account helix bulges and constrictions, display
-                        statistics of amino acid conservation and have been assigned generic residue numbering for
-                        equivalent residues in different receptors. For an overview read the GPCRdb
-                        <a href="http://files.gpcrdb.org/GPCRdb_Poster.pdf">poster</a>,
-                        <a href="http://docs.gpcrdb.org/citing.html">articles</a> or <a href="http://docs.gpcrdb.org/">documentation</a>.</p>
-                    </div>
+                    <!-- Controls -->
+                    <a class="left carousel-control" href="#carousel-example-generic" role="button" data-slide="prev">
+                        <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
+                        <span class="sr-only">Previous</span>
+                    </a>
+                    <a class="right carousel-control" href="#carousel-example-generic" role="button" data-slide="next">
+                        <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+                        <span class="sr-only">Next</span>
+                    </a>
                 </div>
             </div>
+
         </div>
 
-    </div>
+        <div class="row"><div class="col-md-12">&nbsp;</div></div>
 
-    <!-- Highlighted news -->
-<!--     <div class="row">
+        <!-- GPCRdb intro -->
+        <div class="row">
 
-        <div class="col-md-12">
-            <div class="panel panel-primary">
-                <div class="panel-body">
-                    <div class='col-md-10'>
-                        <h4>GPCR-G protein selectivity</h4>
-                        The selective coupling of G-protein-coupled receptors (GPCRs) to specific G proteins is critical to trigger the appropriate physiological response. However, the determinants of selective binding have remained elusive. Here we reveal the existence of a selectivity barcode (that is, patterns of amino acids) on each of the 16 human G proteins that is recognized by distinct regions on the approximately 800 human receptors. Although universally conserved positions in the barcode allow the receptors to bind and activate G proteins in a similar manner, different receptors ...<a href="/news">Read more</a><br>
-                        Nature: <a href="http://dx.doi.org/10.1038/nature22070">10.1038/nature22070</a><br>
-                        <a href="http://healthsciences.ku.dk/news/2017/05/researchers-show-how-cell-receptors-regulate-specific-physiological-effects/">Press release</a>
-                    </div>
-                    <div class='col-md-2 text-left'>
-                        <img src="{% static 'home/images/news/naturecover.png' %}" style="height:170px;width:170px;">
-                        <p class="text-muted small">Photo: MRC Laboratory of Molecular Biology in Cambridge</p>
+            <div class="col-md-12">
+                <div class="panel panel-primary">
+                    <div class="panel-body">
+                        <div class='col-md-1 text-center'>
+                            <img src="{% static 'home/logo/gpcr/main.png' %}" style="height:80px;width:80px;">
+                        </div>
+                        <div class='col-md-11'>
+                            <p>The GPCR database (<strong>GPCRdb</strong>) contains data, diagrams and web tools
+                                to help researchers understand G protein-coupled receptors (GPCRs). Users can browse up
+                                to date curated GPCR structures and the largest collections of receptor mutants.
+                                Diagrams can be produced and downloaded to illustrate receptor residues (snake-plot and helix box diagrams) and
+                                relationships (phylogenetic trees). Reference (structure) structure-based sequence
+                                alignments take into account helix bulges and constrictions, display statistics of
+                                amino acid conservation and have been assigned generic residue numbering for
+                                equivalent residues in different receptors. For an overview read the GPCRdb
+                                <a href="https://files.gpcrdb.org/GPCRdb_Poster.pdf">poster</a>,
+                                <a href="https://docs.gpcrdb.org/citing.html">articles</a> or
+                                <a href="https://docs.gpcrdb.org/">documentation</a>.</p>
+                        </div>
                     </div>
                 </div>
             </div>
+
         </div>
 
-    </div> -->
+{#        <!-- Highlighted news -->#}
+{#        <div class="row">#}
+{##}
+{#            <div class="col-md-12">#}
+{#                <div class="panel panel-primary">#}
+{#                    <div class="panel-body">#}
+{#                        <div class='col-md-10'>#}
+{#                            <h4>GPCR-G protein selectivity</h4>#}
+{#                            The selective coupling of G-protein-coupled receptors (GPCRs) to specific G proteins is critical to trigger the appropriate physiological response. However, the determinants of selective binding have remained elusive. Here we reveal the existence of a selectivity barcode (that is, patterns of amino acids) on each of the 16 human G proteins that is recognized by distinct regions on the approximately 800 human receptors. Although universally conserved positions in the barcode allow the receptors to bind and activate G proteins in a similar manner, different receptors ...<a href="/news">Read more</a><br>#}
+{#                            Nature: <a href="http://dx.doi.org/10.1038/nature22070">10.1038/nature22070</a><br>#}
+{#                            <a href="http://healthsciences.ku.dk/news/2017/05/researchers-show-how-cell-receptors-regulate-specific-physiological-effects/">Press release</a>#}
+{#                        </div>#}
+{#                        <div class='col-md-2 text-left'>#}
+{#                            <img src="{% static 'home/images/news/naturecover.png' %}" style="height:170px;width:170px;">#}
+{#                            <p class="text-muted small">Photo: MRC Laboratory of Molecular Biology in Cambridge</p>#}
+{#                        </div>#}
+{#                    </div>#}
+{#                </div>#}
+{#            </div>#}
+{##}
+{#        </div>#}
 
-    <div class="row">
+        <div class="row">
 
-        <!-- Twitter feed -->
-        <div class="col-md-4">
-            <a class="twitter-timeline" data-height="400" data-theme="light" href="https://twitter.com/gpcrdb?ref_src=twsrc%5Etfw">Tweets by gpcrdb</a> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-        </div>
-<!--
-
-        <div class="col-md-3">
-            <div class="panel panel-primary">
-                <div class="panel-body">
-                    <h3>Latest <a href="/news">news</a></h3>
-                    <ul>
-                        {% for item in news %}
-                        <li><small>{{ item.html|safe }}</small></li>
-                        {% endfor %}
-                    </ul>
+            <!-- Twitter feed -->
+            <div class="col-md-4">
+                <div class="panel panel-primary">
+                    <div class="panel-body">
+                        <h3>
+                            <a class="twitter-timeline" data-height="400" data-theme="light" href="https://twitter.com/gpcrdb"></a>
+                        </h3>
+                        <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+                    </div>
                 </div>
             </div>
-        </div> -->
 
-        <!-- What's new -->
-        <div class="col-md-4">
-            <div class="panel panel-primary">
-                <div class="panel-body">
-                    <h3>Latest <a href="/pages/releasenotes">release</a></h3>
-                    <strong>{{ release_notes.date }}</strong>
-                    {{ release_notes.html|safe }}
+            {#        <div class="col-md-3">#}
+            {#            <div class="panel panel-primary">#}
+            {#                <div class="panel-body">#}
+            {#                    <h3>Latest <a href="/news">news</a></h3>#}
+            {#                    <ul>#}
+            {#                        {% for item in news %}#}
+            {#                        <li><small>{{ item.html|safe }}</small></li>#}
+            {#                        {% endfor %}#}
+            {#                    </ul>#}
+            {#                </div>#}
+            {#            </div>#}
+            {#        </div> #}
+
+            <!-- What's new -->
+            <div class="col-md-4">
+                <div class="panel panel-primary">
+                    <div class="panel-body">
+                        <h3>Latest <a href="/pages/releasenotes">release</a></h3>
+                        <strong>{{ release_notes.date }}</strong>
+                        {{ release_notes.html|safe }}
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Stats -->
-        <div class="col-md-4">
-            <div class="panel panel-primary">
-                <div class="panel-body">
-                    <h3>GPCRdb statistics</h3>
-                    <ul>
-                    {% for stat in release_statistics %}
-                        <li>
-                        {{ stat.statistics_type }}: {{ stat.value|intcomma }}
-                        <!-- FIXME -->
-                        {% if stat.statistics_type|safe == "Human proteins" %} (all non-olfactory){% endif %}
-                        </li>
-                    {% endfor %}
-                    </ul>
-                    {% if users %}
-                        {{users|safe}}
-                    {% endif %}
+            <!-- Stats -->
+            <div class="col-md-4">
+                <div class="panel panel-primary">
+                    <div class="panel-body">
+                        <h3>GPCRdb statistics</h3>
+                        <ul>
+                            {% for stat in release_statistics %}
+                                <li>
+                                    {{ stat.statistics_type }}: {{ stat.value|intcomma }}
+                                    {# FIXME #}
+                                    {% if stat.statistics_type|safe == "Human proteins" %} (all non-olfactory){% endif %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                        {% if users %}
+                            {{users|safe}}
+                        {% endif %}
+                    </div>
                 </div>
             </div>
+
         </div>
 
-    </div>
+        <div class="row">
+            <!-- Partner databases -->
+            <div class='col-md-4'>
+                <h4 class="text-center">Partner GPCR databases</h4>
+                <p class="text-center">
+                    <a href='https://www.guidetopharmacology.org'>GuideToPharmacology</a> (IUPHAR),
+                    {#            <a href='http://www.cmbi.ru.nl/tinygrap/credits'>tinyGRAP</a> (Tromsø, Norway)<br>#}
+                    <a href='https://campagnelab.org/software/gpcr-okb'>GPCR-OKB</a> (Weill Medical College),
+                    <a href='http://nava.liacs.nl/'>NaVa</a> (Leiden Uni.),
+                    and <a href='https://web.expasy.org/docs/swiss-prot_guideline.html'>Swiss-Prot</a>
+                </p>
+            </div>
 
-    <div class="row">
-        <!-- Partner databases -->
-        <div class='col-md-3'>
-            <h4>Partner GPCR databases</h4>
-            <p>
-                <a href='http://legacy.gpcrdb.org'>Legacy GPCRdb database</a>(Radboudumc Nijmegen),
-                <a href='http://www.guidetopharmacology.org'>GuideToPharmacology</a> (IUPHAR),
-                <a href='http://www.cmbi.ru.nl/tinygrap/credits'>tinyGRAP</a> (Tromsø, Norway),
-                <a href='http://www.gpcr-okb.org/'>GPCR-OKB</a> (Weill Medical College),
-                <a href='http://nava.liacs.nl/'>NaVa</a> (Leiden Uni.)
-                and <a href='http://web.expasy.org/docs/swiss-prot_guideline.html'>Swiss-Prot</a>.
-            </p>
-        </div>
+            {#        <div class='col-md-3'>#}
+            {#            <p class="text-center"><a href='http://gloriamgroup.org'>University of Copenhagen</p>#}
+            {#            <p class="text-center"><img src="{% static 'home/logo/uni_cph.png' %}" style="height:100px;width:100px;"></a></p>#}
+            {#        </div>#}
 
-        <div class='col-md-3'>
-            <p class="text-center"><a href='http://gloriamgroup.org'>University of Copenhagen</p>
-            <p class="text-center"><img src="{% static 'home/logo/uni_cph.png' %}" style="height:100px;width:100px;"></a></p>
-        </div>
+            <div class='col-md-4'>
+                <p class="text-center">Supported by <a href='https://ernest-gpcr.eu/'>ERNEST</a> (COST Action CA18133)</p>
+                <p class="text-center"><a href='https://ernest-gpcr.eu/'><img src="{% static 'home/logo/ernest.png' %}"
+                                                                              style="width:200px;"></a></p>
+            </div>
 
-        <div class='col-md-3'>
-            <p>Supported by <a href='https://ernest-gpcr.eu/'>ERNEST</a> (COST Action CA18133)</p>
-            <p><a href='https://ernest-gpcr.eu/'><img src="{% static 'home/logo/ernest.png' %}" style="width:200px;"></a></p>
-        </div>
-
-        <!-- Partner servers -->
-        <div class='col-md-3'>
-            <h4 class="text-center">
-                <a href="{{ documentation_url }}external_servers.html">Partner GPCR servers/tools</a>
-            </h4>
-            <p class="text-center">
-                <a href='https://www.esciencecenter.nl/project/3d-e-chem'>3D-e-Chem</a> (VU University Amsterdam),
-                <a href='http://gpcrm.biomodellab.eu/'>GPCRM</a> (Uni. Warsaw),
-                <a href='http://cheminfo.u-strasbg.fr/scPDB/'>scPDB</a> (Uni. Strasbourg),
-                <a href='http://www.ssfa-7tmr.de/ssfe/'>GPCR-SSFE</a> (Leibniz-Institut, Berlin),
-                <a href='http://molsim.sci.univr.it/cgi-bin/cona/begin.php'>GoMoDo</a> (Uni. Verona),
-                <a href='http://gpcr-modsim.org/'>GPCR-ModSim</a> (Uppsala Uni.).
-            </p>
-        </div>
+            <!-- Partner servers -->
+            <div class='col-md-4'>
+                <h4 class="text-center">
+                    <a href="{{ documentation_url }}external_servers.html">Partner GPCR servers/tools</a>
+                </h4>
+                <p class="text-center">
+                    <a href='https://www.esciencecenter.nl/project/3d-e-chem'>3D-e-Chem</a> (VU University Amsterdam),
+                    <a href='https://gpcrm.biomodellab.eu/'>GPCRM</a> (Uni. Warsaw),
+                    <a href='http://bioinfo-pharma.u-strasbg.fr/scPDB/'>scPDB</a> (Uni. Strasbourg),
+                    <a href='http://www.ssfa-7tmr.de/ssfe/'>GPCR-SSFE</a> (Leibniz-Institut, Berlin),
+                    <a href='http://molsim.sci.univr.it/cgi-bin/cona/begin.php'>GoMoDo</a> (Uni. Verona),
+                    <a href='http://gpcr-modsim.org/'>GPCR-ModSim</a> (Uppsala Uni.).
+                </p>
+            </div>
         </div>
     </div>
 {% endblock %}

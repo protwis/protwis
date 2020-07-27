@@ -1,11 +1,3 @@
-import json
-import re
-import time
-from collections import Counter, OrderedDict
-from decimal import Decimal
-
-from pprint import pprint
-
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.core.cache import cache
 from django.db.models import F, Q
@@ -29,6 +21,13 @@ from signprot.interactions import (get_entry_names, get_generic_numbers, get_ign
                                    get_signature_features, group_signature_features, prepare_signature_match)
 from signprot.models import (SignprotBarcode, SignprotComplex, SignprotStructure)
 from structure.models import Structure
+
+import json
+import re
+import time
+from collections import Counter, OrderedDict
+from decimal import Decimal
+from pprint import pprint
 
 
 class BrowseSelection(AbsTargetSelection):
