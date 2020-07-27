@@ -24,7 +24,7 @@ class Command(BaseCommand):
     logger = logging.getLogger(__name__)
 
     def handle(self, *args, **options):
-        self.logger.info('ASSIGINING the "Degree Active" levels and activation states')
+        self.logger.info('ASSIGNING the "Degree Active" levels and activation states')
         # Loop over classes
         class_slugs = list(ProteinFamily.objects.filter(parent__slug="000") \
                             .filter(slug__startswith="00").values_list("slug"))
@@ -49,10 +49,8 @@ class Command(BaseCommand):
 
                 if slug[0] == "001":
                     active_ids.extend(["6LI3"])
-                elif slug[0] == "002": # hardcoded custom DW series as active
-                    active_ids.extend(["DW01","DW02","DW03","DW04","DW05","DW06","DW07","DW08","DW09","DW10"])
                 elif slug[0] == "004": # hardcoded custom YZ03 as active
-                    active_ids = ["YZ03", "6N51"]
+                    active_ids = ["6N51"]
 
                 # print("The following PDBs are G-prot complex structures:")
                 # print(slug[0], active_ids)
@@ -64,9 +62,9 @@ class Command(BaseCommand):
                 class_pair_inactives = {}
                 class_pair_inactives['001'] = ["2x46_6x37", 11.9] #A
                 class_pair_inactives['002'] = ["2x46_6x37", 13] #B1
-                class_pair_inactives['003'] = ["2x47_6x37", 14] #B2 PLACEHOLDER
+                class_pair_inactives['003'] = ["2x47_6x37", 1000] #B2 PLACEHOLDER
                 class_pair_inactives['004'] = ["2x47_6x37", 14.3] #C
-                class_pair_inactives['005'] = ["2x47_6x37", 14] #D PLACEHOLDER
+                class_pair_inactives['005'] = ["2x47_6x37", 1000] #D PLACEHOLDER
                 class_pair_inactives['006'] = ["2x44_6x31", 13] #F
 
                 inactive_ids = list(Distance.objects.filter(distance__lt=class_pair_inactives[slug[0]][1]*distance_scaling_factor) \
