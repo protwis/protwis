@@ -63,6 +63,7 @@ class Command(BaseCommand):
             ['build_blast_database'],
             ['build_complex_interactions'],
             ['assign_structure_states'],
+            ['build_mammalian_representative'],
             # ['build_homology_models', ['--update', '-z'], {'proc': options['proc'], 'test_run': options['test']}],
             ['build_text'],
             ['build_release_notes'],
