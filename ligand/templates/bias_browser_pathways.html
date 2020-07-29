@@ -540,7 +540,7 @@
                         <td>
                             <span style='display: none'> {{e.1.ligand.id}}</span>
                             <a href="#">
-                                <span class="glyphicon glyphicon-info-sign" onclick="myFunction('pathwaydata/{{e.1.experiment_id}}/detail', 'Detail View', window, 1500, 1000)"> Details</span>
+                                <span class="glyphicon glyphicon-info-sign" onclick="myFunction('pathwaydata/{{e.1.experiment_id}}/detail', 'Detail View', window, 1500, 1000)"></span> Details
                             </a>
                         </td>
                         <td>{{e.1.receptor.family.parent.parent.parent.name}}</td>
@@ -613,7 +613,7 @@ document.getElementById("loadingSpinner").style.display = "none";
 
 <!-- configure radio buttons style -->
 <style>
-    ul li {
+    div#content ul li {
         display: inline-block;
     }
 </style>
