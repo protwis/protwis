@@ -21,12 +21,15 @@ from Bio.PDB import PDBParser,PPBuilder
 from Bio import pairwise2
 import pprint
 
+import traceback
+import sys
+
 
 AA = {'ALA':'A', 'ARG':'R', 'ASN':'N', 'ASP':'D',
      'CYS':'C', 'GLN':'Q', 'GLU':'E', 'GLY':'G',
      'HIS':'H', 'ILE':'I', 'LEU':'L', 'LYS':'K',
      'MET':'M', 'PHE':'F', 'PRO':'P', 'SER':'S',
-     'THR':'T', 'TRP':'W', 'TYR':'Y', 'VAL':'V', 
+     'THR':'T', 'TRP':'W', 'TYR':'Y', 'VAL':'V',
      'YCM':'C', 'CSD':'C', 'TYS':'Y', 'SEP':'S'} #non-standard AAs
 
 
@@ -79,7 +82,7 @@ class Command(BaseBuild):
 						nums.append(res.get_id()[1])
 					except:
 						pass
-				
+
 				resis = Residue.objects.filter(protein_conformation__protein=sc.protein)
 				num_i = 0
 				temp_seq2 = ''
@@ -180,17 +183,23 @@ class Command(BaseBuild):
 				bulked_residues = []
 				for key, val in pdb_num_dict.items():
 					# print(key, val) # sanity check
-					res_obj = Residue()
-					res_obj.sequence_number = val[0].get_id()[1]
-					res_obj.amino_acid = AA[val[0].get_resname()]
-					res_obj.display_generic_number = val[1].display_generic_number
-					res_obj.generic_number = val[1].generic_number
-					res_obj.protein_conformation = alpha_protconf
-					res_obj.protein_segment = val[1].protein_segment
-					bulked_residues.append(res_obj)
+					if not isinstance(val[1], int):
+					 res_obj = Residue()
+					 res_obj.sequence_number = val[0].get_id()[1]
+					 res_obj.amino_acid = AA[val[0].get_resname()]
+					 res_obj.display_generic_number = val[1].display_generic_number
+					 res_obj.generic_number = val[1].generic_number
+					 res_obj.protein_conformation = alpha_protconf
+					 res_obj.protein_segment = val[1].protein_segment
+					 bulked_residues.append(res_obj)
+					else:
+					 self.logger.info('Skipped {} as no annotation was present, while building for alpha subunit of {}'.format(val[1], sc))
+
 				Residue.objects.bulk_create(bulked_residues)
 				self.logger.info('Protein, ProteinConformation and Residue build for alpha subunit of {} is finished'.format(sc))
 			except Exception as msg:
-				print('Protein, ProteinConformation and Residue build for alpha subunit of {} has failed'.format(sc))
-				print(msg)
+				#print('Protein, ProteinConformation and Residue build for alpha subunit of {} has failed'.format(sc))
+				#print(msg)
+				#print(traceback.format_exc())
+				#exit(0)
 				self.logger.info('Protein, ProteinConformation and Residue build for alpha subunit of {} has failed'.format(sc))

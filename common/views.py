@@ -240,7 +240,7 @@ class AbsSegmentSelection(TemplateView):
                 elif f.item.family.parent.parent.parent.name.startswith('Class B'):
                     self.ss = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(name__startswith='Class D1').prefetch_related('generic_numbers')
                     self.ss_cats = self.ss.values_list('category').order_by('category').distinct('category')
-            
+
         # get attributes of this class and add them to the context
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         for a in attributes:
@@ -1452,7 +1452,10 @@ def ReadTargetInput(request):
         try:
             o.append(Protein.objects.get(entry_name=up_name.strip().lower()))
         except:
-            continue
+            try:
+                o.append(Protein.objects.get(accession=up_name.strip().upper()))
+            except:
+                continue
 
     for obj in o:
         # add the selected item to the selection

@@ -7,6 +7,7 @@ from django.views.decorators.cache import cache_page
 
 urlpatterns = [
     url(r'^$', cache_page(60*60*24)(StructureBrowser.as_view()), name='structure_browser'),
+    url(r'^browser$', RedirectBrowser, name='redirect_browser'),
     url(r'^selection_convert$', ConvertStructuresToProteins, name='convert'),
     url(r'^selection_convert_model$', ConvertStructureModelsToProteins, name='convert_mod'),
     url(r'^selection_convert_signprot_model$', ConvertStructureComplexSignprotToProteins, name='convert_signprot'),

@@ -20,7 +20,7 @@
         #filters{
 
             font-size: 10px;
-            padding:  7px 15px; 
+            padding:  7px 15px;
         }
 
         @media (min-width: 1600px){
@@ -103,18 +103,18 @@
                   box-shadow: 5px 0 2px -2px #888;
         }
         #overlay tbody tr {
-             background-color: #f8f8f8; 
+             background-color: #f8f8f8;
         }
         div.overhead_text {
             float:left;
             display:inline;
             padding: 8px 0px;
-            width:90%; 
+            width:90%;
         }
         div.overhead_close {
             float:right;
             display:inline;
-            width:10%; 
+            width:10%;
         }
         .icon-button {
             appearance: none;
@@ -141,7 +141,7 @@
           text-align: center;
           padding: 5px 0;
           border-radius: 6px;
-         
+
           /* Position the tooltip text - see examples below! */
           position: absolute;
           z-index: 1;
@@ -290,7 +290,7 @@
                         select_type_options: {
                             width: '120px',
                         }
-                    }, 
+                    },
                     {
                         column_number: 4,
                         filter_type: "multi_select",
@@ -333,7 +333,7 @@
                         select_type_options: {
                             width: '50px',
                         }
-                    }, 
+                    },
                     {
                         column_number : 8,
                         filter_type: "multi_select",
@@ -371,7 +371,7 @@
                             width: '70px',
                         }
                     },
-                    
+
                     {
                         column_number : 12,
                         filter_type: "range_number",
@@ -565,7 +565,7 @@
             //         $(".wrapper").scrollLeft($(".dataTables_scrollBody").eq(0).scrollLeft());
             //     });
             // });
-            
+
             $('#structures_scrollable'+' > tbody > tr').click(function(event) {
                 if (event.target.type !== 'checkbox') {
                     $(':checkbox', this).trigger('click');
@@ -694,7 +694,7 @@
                 }
                 window.location.href = '/structure/pdb_download_index';
             });
-            
+
             // $('.glyphicon-export').mouseover(function() {
             //     window.alert($(this));
             // })
@@ -714,7 +714,7 @@
             $('#pdb_copy').click(function () {
                 copyToClipboard($('.alt_selected > .pdb > a'), '\n', 'PDB IDs', $('.pdb-export'));
             });
-            
+
             $('#reset_filters_btn').click(function () {
                 window.location.href = '/structure/'
             });
@@ -728,7 +728,7 @@
 
             function create_overlay() {
                 // This function fires upon filtering, to update what rows to show as an overlay
-                $("#overlay_table tbody tr").remove(); 
+                $("#overlay_table tbody tr").remove();
                 var $target = $("#overlay_table tbody");
                 $("#structures_scrollable tbody tr").each(function() {
                     var $tds = $(this).children(),
@@ -764,7 +764,7 @@
             // console.log($('#yadcf-filter--structures_scrollable-from-12').width());
             // $('#yadcf-filter--structures_scrollable-from-12').width(10);
             // console.log($('#yadcf-filter--structures_scrollable-from-12').width());
-            
+
         });
 
         var tableToExcel = (function () {
@@ -790,7 +790,7 @@
                     // reattach th titles
                     tr.find('th').each (function( column, th) {
                       if ($(th).attr('title')) $(th).html($(th).attr('title'));
-                    });     
+                    });
 
                 var ctx = {
                     worksheet: name || 'Worksheet',
@@ -857,7 +857,7 @@
             document.body.removeChild(textArea);
         }
 
-    </script> 
+    </script>
 {% endblock %}
 
 {% block content %}
@@ -865,12 +865,6 @@
     <div style="display:block;">
         <div style="display:inline; float:left;">
             <h2 style="width:auto; display:inline;">Structures</h2>
-        </div>
-        <div style="float:left; padding:4px 0px 0px 6px;">
-            <div style="font-size: 10px; ">
-                <a href="https://academic.oup.com/nar/article/44/D1/D356/2502664"> read article</a><br>
-                <a href="https://academic.oup.com/nar/article/46/D1/D440/4634004"> latest GPCRdb article</a>
-            </div>
         </div>
     </div>
     <br><br>
@@ -1016,7 +1010,7 @@
                         <th>Resolution</th>
                         <th>Preferred<br>chain</th>
                         <th>State</th>
-                        <th class='rightborder'>G protein bound<br>likeness</th>
+                        <th class='rightborder'>Degree<br>active (%)</th>
                         <th>Family</th>
                         <th>Subtype</th>
                         <th>Note</th>
@@ -1246,5 +1240,3 @@
     </div>
 </div>
 {% endblock %}
-
-

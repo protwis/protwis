@@ -1351,7 +1351,7 @@ function createSnakeplot(data, containerSelector) {
                 const fill_sum = fill_scale.reduce((a, b) => a + b, 0);
                 const fill_avg = (fill_sum / fill_scale.length) || 0;
                 if (fill_color != 'none' && fill_scale.length!=0) {
-                        $(this).attr("stroke", color_range(scale));
+                        $(this).attr("stroke", color_range(fill_avg));
                         $(this).attr("stroke-width", 6);
                 } 
                 
