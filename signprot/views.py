@@ -65,6 +65,38 @@ class BrowseSelection(AbsTargetSelection):
         pass
 
 
+class ArrestinSelection(AbsTargetSelection):
+    step = 1
+    number_of_steps = 1
+    psets = False
+    filters = True
+    filter_gprotein = True
+
+    type_of_selection = 'browse_gprot'
+
+    description = 'Select an Arrestin (family) by searching or browsing in the middle. The selection is viewed to' \
+                  + ' the right.'
+    docs = 'signalproteins.html'
+    target_input = False
+
+    selection_boxes = OrderedDict([
+        ('reference', False), ('targets', True),
+        ('segments', False),
+    ])
+    try:
+        if ProteinFamily.objects.filter(slug="200_000").exists():
+            ppf = ProteinFamily.objects.get(slug="200_000")
+            pfs = ProteinFamily.objects.filter(parent=ppf.id)
+            ps = Protein.objects.filter(family=ppf)
+
+            tree_indent_level = []
+            action = 'expand'
+            # remove the parent family (for all other families than the root of the tree, the parent should be shown)
+            del ppf
+    except Exception as e:
+        pass
+
+
 class TargetSelection(AbsTargetSelection):
     step = 1
     number_of_steps = 1
@@ -742,13 +774,16 @@ def familyDetail(request, slug):
         mutations_list[mutation.residue.generic_number.label].append(
             [mutation.foldchange, ligand.replace("'", "\\'"), qual])
 
-    # Update to consensus sequence in protein confirmation!
+    interaction_list = {} ###FIXME - always empty
     try:
-        pc = ProteinConformation.objects.filter(protein__family__slug=slug, protein__sequence_type__slug='consensus')
+        pc = ProteinConformation.objects.get(protein__family__slug=slug, protein__sequence_type__slug='consensus')
     except ProteinConformation.DoesNotExist:
-        pc = ProteinConformation.objects.get(protein__family__slug=slug, protein__species_id=1,
-                                             protein__sequence_type__slug='wt')
-
+        try:
+            pc = ProteinConformation.objects.get(protein__family__slug=slug, protein__species_id=1,
+                                                 protein__sequence_type__slug='wt')
+        except:
+            pc = None
+    
     residues = Residue.objects.filter(protein_conformation=pc).order_by('sequence_number').prefetch_related(
         'protein_segment', 'generic_number', 'display_generic_number')
 
