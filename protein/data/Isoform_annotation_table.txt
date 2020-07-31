@@ -209,7 +209,7 @@ OPN4	1	1	ENST00000372071	truncated	13	Breast, Muscle, Brain, Pituitary, Skin, Ne
 OPN5	1	1	ENST00000489301	preserved	1	Testis	C-term	Altered signalling properties / Altered internalisation	0	D6RDV4	https://www.proteomicsdb.org/proteomicsdb/#protein/proteinDetails/D6RDV4/summary
 OPN5	2	1	ENST00000393699	preserved	1	Testis	C-term	Altered signalling properties / Altered internalisation	0	0	0
 OPRK	1	1	ENST00000524278	truncated	1	Testis	N-term, TM1, ICL1	Altered ligand binding / efficacy	0	0	0
-OPRM	1	1	ENST00000229768	preserved	1	Testis	C-term	Altered signalling properties	28299348	0	0
+OPRM	1	1	ENST00000229768	preserved	1	Testis	C-term	Altered signalling properties	26529364	0	0
 OPRM	2	1	ENST00000518759	truncated	1	Testis	N-term, TM1	0	0	0	0
 OPRM	3	1	ENST00000522555	truncated	2	Testis, Brain	N-term, TM1, ICL1	Altered ligand binding / efficacy	26976581	0	0
 OXGR1	1	1	ENST00000541518	truncated	3	Skin, Lung, Blood Vessel	TM2, ECL1, TM3, ICL2, TM4, ECL2, TM5, ICL3, TM6, ECL3, TM7, H8, C-term	0	0	0	0

@@ -45,7 +45,8 @@ class Command(BaseCommand):
 
         for c, i in enumerate(isoforms[1:]):
             
-            p = '{}_human'.format(i[1].lower())
+            p = '{}_human'.format(i[0].lower())
+            print(p)
             protein = Protein.objects.get(entry_name=p, sequence_type__slug='wt', species__common_name='Human')
             wt_seq = protein.sequence
             rs = Residue.objects.filter(protein_conformation__protein=protein).prefetch_related('protein_segment','display_generic_number','generic_number')
@@ -65,15 +66,15 @@ class Command(BaseCommand):
 
             wt_seq2=fasta[1]
 
-            es = i[4].split(", ")
-            isoform_id = i[2]
+            es = i[3].split(", ")
+            isoform_id = i[1]
 
             print(c, len(isoforms), p,isoform_id,es)
 
             wt_check = wt_seq==wt_seq2.replace("-","")
             if not wt_check:
                 print(p, 'WT SEQ NO MATCH!!')
-                continue
+                # continue
             # print('WT SEQ',wt_seq==wt_seq2.replace("-",""))
             ranges = {}
             for e in es:
