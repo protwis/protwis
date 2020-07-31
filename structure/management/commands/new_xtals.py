@@ -57,11 +57,14 @@ class Command(BaseBuild):
         else:
             uniprot_list = self.uniprots[positions[0]:positions[1]]
         q = QueryPDB(self.uniprots, self.yamls)
+        consider_list = []
         for uni in uniprot_list:
             q.new_xtals(uni)
+            consider_list+=q.consider_list
         if self.verbose:
             print('Missing from db: ', q.db_list)
             print('Missing yamls: ', q.yaml_list)
+            print('Structures with missing x50s: {}'.format(consider_list))
 
     def fetch_accession_from_entryname(self, listof_entrynames):
         return [i.accession for i in Protein.objects.filter(entry_name__in=listof_entrynames)]
@@ -90,12 +93,12 @@ class QueryPDB():
         self.db_list, self.yaml_list = [], []
         self.missing_x50_list = ['4KNG','3N7P','3N7R','3N7S','4HJ0','6DKJ','5OTT','5OTU','5OTV','5OTX','6GB1']
         self.missing_x50_exceptions = ['6TPG','6TPJ']
+        self.consider_list = []
 
     def new_xtals(self, uniprot):
         ''' List GPCR crystal structures missing from GPCRdb and the yaml files. Adds missing structures to DB.
         '''
         structs = self.pdb_request_by_uniprot(uniprot)
-        consider_list = []
         try:
             protein = Protein.objects.get(accession=uniprot)
         except:
@@ -142,7 +145,7 @@ class QueryPDB():
                             # Filter out ones without all 7 x50 positions present in the xtal
                             if len(presentx50s)!=7:
                                 if s not in self.missing_x50_list:
-                                    consider_list.append(s)
+                                    self.consider_list.append(s)
                                 if s not in self.missing_x50_exceptions:
                                     try:
                                         del self.db_list[self.db_list.index(s)]
@@ -288,7 +291,7 @@ class QueryPDB():
                         print('{} added to db (preferred_chain chain: {})'.format(s, preferred_chain))
                 except Exception as msg:
                     print(s, msg)
-        print('Structures with missing x50s: {}'.format(consider_list))
+        
 
 
     def pdb_request_by_uniprot(self, uniprot_id):

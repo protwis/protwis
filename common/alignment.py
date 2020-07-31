@@ -1300,7 +1300,7 @@ class AlignedReferenceTemplate(Alignment):
         self.force_main_temp = force_main_temp
         self.core_alignment = core_alignment
         self.main_temp_ban_list = ['opsd_todpa', 'adrb1_melga']
-        self.gpcr_class = reference_protein.get_protein_class()
+        self.gpcr_class = ProteinFamily.objects.get(name=reference_protein.get_protein_class())
         if len(str(reference_protein))==4:
             self.reference_protein = Protein.objects.get(entry_name=reference_protein.parent)
             self.revise_xtal = str(reference_protein)
@@ -1412,10 +1412,10 @@ class AlignedReferenceTemplate(Alignment):
 
     def get_template_from_gprotein(self, signprot):
         gprotein = Protein.objects.get(entry_name=signprot)
-        templates = SignprotComplex.objects.filter(protein=gprotein, structure__protein_conformation__protein__parent__family__parent__parent__parent__name=self.gpcr_class).exclude(beta_protein__isnull=True).values_list('structure__pdb_code__index', flat=True)
+        templates = SignprotComplex.objects.filter(protein=gprotein, structure__protein_conformation__protein__family__slug__startswith=self.gpcr_class.slug).exclude(beta_protein__isnull=True).values_list('structure__pdb_code__index', flat=True)
         if len(templates)==0:
             subfamily = Protein.objects.filter(family__parent=gprotein.family.parent).exclude(entry_name=gprotein.entry_name)
-            templates = SignprotComplex.objects.filter(protein__in=subfamily, structure__protein_conformation__protein__parent__family__parent__parent__parent__name=self.gpcr_class).exclude(beta_protein__isnull=True).values_list('structure__pdb_code__index', flat=True)
+            templates = SignprotComplex.objects.filter(protein__in=subfamily, structure__protein_conformation__protein__family__slug__startswith=self.gpcr_class.slug).exclude(beta_protein__isnull=True).values_list('structure__pdb_code__index', flat=True)
         if len(templates)==0:
             templates = SignprotComplex.objects.all().exclude(beta_protein__isnull=True).values_list('structure__pdb_code__index', flat=True)
         return templates

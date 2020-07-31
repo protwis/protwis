@@ -138,14 +138,10 @@ class Command(BaseBuild):
         else:
             self.receptor_list = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species__common_name='Human', 
                                                         family__parent__parent__parent__name__in=receptor_families)
-
-        if options['signprot']:
-            self.gprotein_targets = {'custom':options['signprot']}
-        else:
-            self.gprotein_targets = OrderedDict()
-            for rf in receptor_families:
-                subfams = sf.get_subfamilies_with_templates(rf)
-                self.gprotein_targets[rf] = sf.get_subfam_subtype_dict(subfams, rf)
+        self.gprotein_targets = OrderedDict()
+        for rf in receptor_families:
+            subfams = sf.get_subfamilies_with_templates(rf)
+            self.gprotein_targets[rf] = sf.get_subfam_subtype_dict(subfams, rf)
 
         if options['test_run']:
             break_loop = False
