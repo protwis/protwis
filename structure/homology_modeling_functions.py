@@ -39,14 +39,17 @@ class SignprotFunctions(object):
     def get_subtypes_with_templates(self):
         return SignprotComplex.objects.all().values_list('protein__entry_name', flat=True)
 
-    def get_subfamilies_with_templates(self):
+    def get_subfamilies_with_templates(self, receptor_family):
         subfams = []
-        for i in SignprotComplex.objects.all():
+        for i in SignprotComplex.objects.filter(structure__protein_conformation__protein__family__parent__parent__parent__name=receptor_family):
             if i.protein.family.parent.name not in subfams:
                 subfams.append(i.protein.family.parent.name)
         return subfams
 
-    def get_subfam_subtype_dict(self, subfamilies):
+    def get_receptor_families_with_templates(self):
+        return SignprotComplex.objects.all().values_list('structure__protein_conformation__protein__family__parent__parent__parent__name', flat=True).distinct()
+
+    def get_subfam_subtype_dict(self, subfamilies, receptor_family):
         d = {}
         for s in subfamilies:
             ordered_prots, non_ordered_prots = [], []
@@ -54,7 +57,7 @@ class SignprotFunctions(object):
             for p in prots:
                 if p=='gnal_human':
                     continue
-                if len(SignprotComplex.objects.filter(protein__entry_name=p))>0:
+                if len(SignprotComplex.objects.filter(protein__entry_name=p, structure__protein_conformation__protein__family__parent__parent__parent__name=receptor_family))>0:
                     ordered_prots.append(p)
                 else:
                     non_ordered_prots.append(p)

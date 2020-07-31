@@ -6,6 +6,7 @@ from signprot.views import *
 
 urlpatterns = [
     url(r'^$', views.BrowseSelection.as_view(), name='index'),
+    url(r'^arrestin$', views.ArrestinSelection.as_view(), name='arrestin'),
     url(r'^statistics/(?P<dataset>[^/]*?)/$',  views.GProtein, name='gprotein'),
     url(r'^statistics',  views.GProtein, name='gprotein'),
 #    url(r'^couplings',  views.couplings, name='couplings'),

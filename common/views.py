@@ -224,20 +224,21 @@ class AbsSegmentSelection(TemplateView):
                 context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
 
         for f in selection.targets:
+            print(f)
             if f.type=='family':
                 family = get_gpcr_class(f.item)
-                if family.name.startswith('Class D'):
+                if family.name.startswith('Class D1'):
                     self.ss = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(name__startswith='ECD').prefetch_related('generic_numbers')
                     self.ss_cats = self.ss.values_list('category').order_by('category').distinct('category')
                 elif family.name.startswith('Class B'):
-                    self.ss = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(name__startswith='Fungal').prefetch_related('generic_numbers')
+                    self.ss = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(name__startswith='Class D1').prefetch_related('generic_numbers')
                     self.ss_cats = self.ss.values_list('category').order_by('category').distinct('category')
             elif f.type=='protein':
-                if f.item.family.parent.parent.parent.name.startswith('Class D'):
+                if f.item.family.parent.parent.parent.name.startswith('Class D1'):
                     self.ss = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(name__startswith='ECD').prefetch_related('generic_numbers')
                     self.ss_cats = self.ss.values_list('category').order_by('category').distinct('category')
                 elif f.item.family.parent.parent.parent.name.startswith('Class B'):
-                    self.ss = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(name__startswith='Fungal').prefetch_related('generic_numbers')
+                    self.ss = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(name__startswith='Class D1').prefetch_related('generic_numbers')
                     self.ss_cats = self.ss.values_list('category').order_by('category').distinct('category')
 
         # get attributes of this class and add them to the context
@@ -541,24 +542,23 @@ def SelectFullSequence(request):
     else:
         add_class_b, add_class_d = False, False
         for f in selection.targets:
-            print(f)
             if f.type=='family':
                 family = get_gpcr_class(f.item)
-                if family.name.startswith('Class D'):
+                if family.name.startswith('Class D1'):
                     add_class_d = True
-                elif family.name.startswith('Class B'):
+                elif family.name.startswith('Class B1'):
                     add_class_b = True
             elif f.type=='protein':
-                if f.item.family.parent.parent.parent.name.startswith('Class D'):
+                if f.item.family.parent.parent.parent.name.startswith('Class D1'):
                     add_class_d = True
-                elif f.item.family.parent.parent.parent.name.startswith('Class B'):
+                elif f.item.family.parent.parent.parent.name.startswith('Class B1'):
                     add_class_b = True
         if add_class_d:
             segments = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(name__startswith='ECD')
         elif add_class_b:
-            segments = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(name__startswith='Fungal')
+            segments = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(name__startswith='Class D1')
         else:
-            segments = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(name__startswith='Fungal').exclude(name__startswith='ECD')
+            segments = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(name__startswith='Class D1').exclude(name__startswith='ECD')
 
     for segment in segments:
         selection_object = SelectionItem(segment.category, segment)

@@ -1963,7 +1963,7 @@ class HomologyModeling(object):
             ref_prot = self.reference_protein.parent
         else:
             ref_prot = self.reference_protein
-        if ref_prot==self.main_structure.protein_conformation.protein.parent or self.keep_hetatoms:
+        if (self.revise_xtal and ref_prot==self.main_structure.protein_conformation.protein.parent) or self.keep_hetatoms:
             pdb = PDB.PDBList()
             pdb.retrieve_pdb_file(str(self.main_structure), pdir='./', file_format='pdb')
             self.alternate_water_positions = OrderedDict()
@@ -2836,7 +2836,6 @@ class HomologyMODELLER(automodel):
         for seg_id, segment in self.atom_dict.items():
             for gn, atom in segment.items():
                 chain = self.identify_chain(atom)
-                print(seg_id, chain, gn, atom)
                 selection_out.append(self.residues[str(atom)+':{}'.format(chain)])
         return selection(selection_out)
     
