@@ -616,8 +616,13 @@ def statistics(request):
     total_receptors = NaturalMutations.objects.filter(type='missense').values('protein_id').distinct().count()
     total_mv = len(NaturalMutations.objects.filter(type='missense'))
     total_lof = len(NaturalMutations.objects.exclude(type='missense'))
-    total_av_rv = round(len(NaturalMutations.objects.filter(type='missense', allele_frequency__lt=0.001))/ total_receptors,1)
-    total_av_cv = round(len(NaturalMutations.objects.filter(type='missense', allele_frequency__gte=0.001))/ total_receptors,1)
+    if total_receptors > 0:
+        total_av_rv = round(len(NaturalMutations.objects.filter(type='missense', allele_frequency__lt=0.001))/ total_receptors,1)
+        total_av_cv = round(len(NaturalMutations.objects.filter(type='missense', allele_frequency__gte=0.001))/ total_receptors,1)
+    else:
+        total_av_rv = 0
+        total_av_cv = 0
+
     context['stats'] = {'total_mv':total_mv,'total_lof':total_lof,'total_av_rv':total_av_rv, 'total_av_cv':total_av_cv}
 
     return render(request, 'variation_statistics.html', context)

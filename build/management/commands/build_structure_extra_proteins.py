@@ -19,10 +19,10 @@ class Command(BaseBuild):
 				   'GNAI1':'Gi1', 'GNAI2':'Gi2', 'GNAI3':'Gi3', 'GNAT1':'Gt1', 'GNAT2':'Gt2', 'GNAT3':'Gt3', 'GNAZ':'Gz', 'GNAO':'Go',
 				   'GNAQ':'Gq', 'GNA11':'G11', 'GNA14':'G14', 'GNA15':'G15',
 				   'GNA12':'G12', 'GNA13':'G13'}
-	arrestin_dict = {'arrs_mouse':'S-arrestin', 'arrs_bovin':'S-arrestin'}
+	arrestin_dict = {'arrs_mouse':'S-arrestin', 'arrs_bovin':'S-arrestin', 'arrb1_human':'Beta-arrestin-1'}
 
 	with open(os.sep.join([settings.DATA_DIR, 'structure_data','extra_protein_notes.yaml']), 'r') as note_file:
-		notes = yaml.load(note_file)
+		notes = yaml.load(note_file, Loader=yaml.FullLoader)
 
 	def add_arguments(self, parser):
 		super(Command, self).add_arguments(parser=parser)
@@ -68,6 +68,9 @@ class Command(BaseBuild):
 				elif vals['category']=='Arrestin':
 					wt_protein = Protein.objects.get(entry_name=vals['prot'].lower())
 					sep.display_name = self.arrestin_dict[vals['prot']]
+				elif vals['category']=='Antibody':
+					wt_protein = None
+					sep.display_name = 'Antibody'
 
 				sep.wt_protein = wt_protein
 				sep.structure = Structure.objects.get(pdb_code__index=struct)
@@ -75,8 +78,11 @@ class Command(BaseBuild):
 				sep.note = vals['note']
 				sep.chain = vals['chain']
 				sep.category = vals['category']
-				wt_resis = Residue.objects.filter(protein_conformation__protein=wt_protein)
-				sep.wt_coverage = round(vals['length']/len(wt_resis)*100)
+				if vals['category']=='Antibody':
+					sep.wt_coverage = None
+				else:
+					wt_resis = Residue.objects.filter(protein_conformation__protein=wt_protein)
+					sep.wt_coverage = round(vals['length']/len(wt_resis)*100)
 
 				sep.save()
 				sep.structure.extra_proteins.add(sep)

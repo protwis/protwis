@@ -5,14 +5,12 @@ env
 /data
 /Archive
 empty_db.txt
-
 *.sh
 .DS_Store
 .idea/
 static/home/js/node_modules
 static/home/js/package-lock.json
 static/home/js/package.json
-signprot/thesis_steven
 .vscode
 tsconfig.json
 tags

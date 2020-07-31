@@ -16,6 +16,7 @@ class Ligand(models.Model):
     name = models.TextField()
     canonical = models.NullBooleanField()
     ambigious_alias = models.NullBooleanField() #required to flag 'safe' alias, eg one parent
+    endogenous = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
@@ -258,6 +259,7 @@ class LigandProperities(models.Model):
     #vendor_links = models.ManyToManyField('common.WebLink', related_name='vendors')
     smiles = models.TextField(null=True)
     inchikey = models.CharField(max_length=50, null=True, unique=True)
+    sequence = models.CharField(max_length=1000, null=True)
     #vendors = models.ManyToManyField('LigandVenderLink')
 
     mw = models.DecimalField(max_digits=15, decimal_places=3, null=True)
@@ -349,23 +351,6 @@ class LigandVendorLink(models.Model):
     vendor_external_id = models.CharField(max_length=300) #RegistryID
     sid = models.CharField(max_length=200, unique=True) #SID
 
-
-
-
-class LigandVendors(models.Model):
-    slug = models.SlugField(max_length=100, unique=True)
-    name = models.CharField(max_length=200, default='')
-    url = models.TextField(null=True)
-
-class LigandVendorLink(models.Model):
-    vendor = models.ForeignKey('LigandVendors', on_delete=models.CASCADE)
-    lp = models.ForeignKey('LigandProperities', related_name='vendors', on_delete=models.CASCADE)
-    url = models.CharField(max_length=300)  #SourceRecordURL
-    vendor_external_id = models.CharField(max_length=300) #RegistryID
-    sid = models.CharField(max_length=200, unique=True) #SID
-
-
-
 #Biased Signalling - start
 class BiasedExperiment(models.Model):
     submission_author = models.CharField(max_length=50)
@@ -433,8 +418,8 @@ class AnalyzedExperiment(models.Model):
     labs_quantity = models.CharField(max_length=5)
     residue = models.CharField(max_length=5,null = True)
     mutation = models.CharField(max_length=5,null = True)
-    primary= models.CharField(max_length=40,null = True)
-    secondary= models.CharField(max_length=40,null = True)
+    primary= models.CharField(max_length=100,null = True)
+    secondary= models.CharField(max_length=100,null = True)
 
 class AnalyzedAssay(models.Model):
     experiment = models.ForeignKey(

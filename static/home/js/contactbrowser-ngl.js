@@ -23,12 +23,15 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
     pdb_data[mode] = [];
     int_labels[mode] = []
 
+    forced_class_a = raw_data['forced_class_a'];
+    gn_label_to_use = forced_class_a ? 'gn_map_classa' : 'gn_map';
+
     var first_structure;
     var num_set1;
     var gn_num_set1;
     var two_structures = false;
 
-    $.getJSON("pdb/" + pdb,
+    $.getJSON("/contactnetwork/pdb/" + pdb,
         function(data) {
             var highlight = ['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8'];
             var segments_sets = {}
@@ -77,7 +80,7 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
 
             chain_set1 = pdb_data[mode][0]['chain'];
             num_set1 = pdb_data[mode][0]['only_gn'];
-            gn_num_set1 = pdb_data[mode][0]['gn_map'];
+            gn_num_set1 = pdb_data[mode][0][gn_label_to_use];
 
             var stringBlob = new Blob([pdb_data[mode][0]['pdb']], {
                 type: 'text/plain'
@@ -108,8 +111,9 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
                 stage[mode].mouseControls.remove("hoverPick")
 
                 // Add residue labels for GN residues
-                pdb_data[mode][0]['only_gn'].forEach(function(resNo, index) {
-                    var genNo = pdb_data[mode][0]['gn_map'][index]
+                pdb_data[mode][0]['only_gn'].forEach(function (resNo, index) {
+
+                    var genNo = pdb_data[mode][0][gn_label_to_use][index]
                     int_labels[mode][0][o.structure.id + "|" + resNo] = genNo
                 })
 
@@ -169,7 +173,7 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
 
                     // calculate H8 position (based on TM1)
                     var tm1_vector
-                    var ref_tm1 = pdb_data[mode][0]["only_gn"][pdb_data[mode][0]["gn_map"].indexOf("1x46")]
+                    var ref_tm1 = pdb_data[mode][0]["only_gn"][pdb_data[mode][0][gn_label_to_use].indexOf("1x46")]
                     o.structure.eachAtom(function(ap) {
                         tm1_vector = new NGL.Vector3(ap.x, ap.y, ap.z)
                         tm1_vector.applyMatrix4(o.matrix)
@@ -198,7 +202,7 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
         }).then(function() {
         // TODO: cleanup and reduce redundancy
         if (pdbs_set2) {
-            $.getJSON("pdb/" + pdb2,
+            $.getJSON("/contactnetwork/pdb/" + pdb2,
                 function(data) {
                     var highlight = ['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8'];
                     var segments_sets = {}
@@ -210,7 +214,7 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
 
                     pdb_data[mode][1] = data;
                     num_set2 = pdb_data[mode][1]['only_gn'];
-                    gn_num_set2 = pdb_data[mode][1]['gn_map'];
+                    gn_num_set2 = pdb_data[mode][1][gn_label_to_use];
 
                     // intersect GN-numbering
                     var matching_TM_residues = [];
@@ -309,13 +313,16 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
 
                         // Add residue labels for GN residues
                         pdb_data[mode][1]['only_gn'].forEach(function(resNo, index) {
-                            var genNo = pdb_data[mode][1]['gn_map'][index]
+                            var genNo = pdb_data[mode][0][gn_label_to_use][index]
                             int_labels[mode][1][o.structure.id + "|" + resNo] = genNo
                         })
 
                         reps[mode][1].structureComponent = o
                         createNGLRepresentations(mode, 1, false)
                         o.autoView(selectionTwo);
+                        if (ngl_color_mode) {
+                            ColorNGLbyDistances(mode.replace("ngl-",""));
+                        }
                     });
                 });
         }
@@ -367,23 +374,35 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
         controls += '<p>Colors: <select id="ngl_color2"><option value="red">red</option><option value="rainbow">rainbow</option><option value="grey">greys</option></select></p><br/>';
     }
 
-    controls += '<p>Only GNs: <input type=checkbox id="ngl_only_gns" checked></p>' +
-        '<p>Highlight interacting res: <input type=checkbox id="highlight_res" checked></p>' +
-        '<p>Hide interaction lines: <input type=checkbox id="toggle_interactions"></p>'
+    movement = ""
+    if (two_structures)
+      movement = '<p>Show segment references: <input type=checkbox id="toggle_movement"></p>'
+
+    controls += '<p>Only GNs: <input type=checkbox id="ngl_only_gns" checked></p>'
+        + '<p>Highlight interacting res: <input type=checkbox id="highlight_res" checked></p>'
+        + '<p>Show interaction lines: <input type=checkbox id="toggle_interactions" checked></p>'
         //                              +'<p>Show all side-chains: <input type=checkbox id="toggle_sidechains"></p>'
-        +
-        '<p>Show interacting side-chains: <input type=checkbox id="toggle_sidechains_int"></p>'
+        + '<p>Show interacting side-chains: <input type=checkbox id="toggle_sidechains_int"></p>'
+        + movement
         //                              +'<p>Show NGL derived contacts: <input type=checkbox id="ngl_contacts"></p>'
-        +
-        '</div>';
+        + '</div>';
     controls += '</span>';
     newDiv.innerHTML = controls;
 
     $("#ngl-" + mode).append(newDiv);
     $("#ngl-" + mode + " .ngl_control").hide();
     $('.ngl_controls_toggle').css('cursor', 'pointer');
-    $("#ngl-" + mode + " .ngl_controls_toggle").click(function() {
-        $("#ngl-" + mode + " .ngl_control").toggle();
+    $("#ngl-" + mode + " .ngl_controls_toggle").click(function(e) {
+      e.stopPropagation();
+      if ($("#ngl-" + mode + " .ngl_control").is(":hidden")) {
+          $("#ngl-" + mode + " .ngl_control").show();
+
+          // close when click outside of div
+          $(document).on("mousedown", {ngl_mode : mode}, hideNGLSettings);
+      } else {
+        $("#ngl-" + mode + " .ngl_control").hide();
+        $(document).off("mousedown", hideNGLSettings);
+      }
     });
 
     if (two_structures) {
@@ -430,6 +449,10 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
     });
 
     $("#ngl-" + mode + " #toggle_interactions").change(function(e) {
+        updateStructureRepresentations(mode);
+    });
+
+    $("#ngl-" + mode + " #toggle_movement").change(function(e) {
         updateStructureRepresentations(mode);
     });
 
@@ -481,6 +504,17 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
     };
 }
 
+function hideNGLSettings(e) {
+  var mode = e.data.ngl_mode;
+  var container = $("#ngl-" + mode + " .ngl_control");
+  var toggle = $("#ngl-" + mode + " .ngl_controls_toggle");
+  if ((!container.is(e.target) && container.has(e.target).length === 0)){
+    e.stopPropagation();
+    $(document).off("mousedown", hideNGLSettings);
+    container.hide();
+  }
+}
+
 function linkNGLMouseControls(origin) {
     var mode = origin.substring(0, origin.length - 1)
 
@@ -508,6 +542,7 @@ function createNGLRepresentations(mode, structureNumber, update = false) {
 
     var links = []
     var res_int = []
+    var res_movement = []
     if (mode in reps && structureNumber in reps[mode] && reps[mode][structureNumber].structureComponent)
         var o = reps[mode][structureNumber].structureComponent;
     else
@@ -595,8 +630,8 @@ function createNGLRepresentations(mode, structureNumber, update = false) {
             }
 
             // Adjust GN numbering to the shown structure
-            var resNo1 = pdb_data[mode][structureNumber]['only_gn'][pdb_data[mode][structureNumber]['gn_map'].indexOf(genNo1)];
-            var resNo2 = pdb_data[mode][structureNumber]['only_gn'][pdb_data[mode][structureNumber]['gn_map'].indexOf(genNo2)];
+            var resNo1 = pdb_data[mode][structureNumber]['only_gn'][pdb_data[mode][structureNumber][gn_label_to_use].indexOf(genNo1)];
+            var resNo2 = pdb_data[mode][structureNumber]['only_gn'][pdb_data[mode][structureNumber][gn_label_to_use].indexOf(genNo2)];
 
             if ((typeof resNo1 == 'undefined') || (typeof resNo2 == 'undefined')) return
 
@@ -626,8 +661,8 @@ function createNGLRepresentations(mode, structureNumber, update = false) {
             if ((genNo1 == '-') || (genNo2 == '-')) return
 
             // Link GN numbering to the shown structure
-            var resNo1 = pdb_data[mode][structureNumber]['only_gn'][pdb_data[mode][structureNumber]['gn_map'].indexOf(genNo1)];
-            var resNo2 = pdb_data[mode][structureNumber]['only_gn'][pdb_data[mode][structureNumber]['gn_map'].indexOf(genNo2)];
+            var resNo1 = pdb_data[mode][structureNumber]['only_gn'][pdb_data[mode][structureNumber][gn_label_to_use].indexOf(genNo1)];
+            var resNo2 = pdb_data[mode][structureNumber]['only_gn'][pdb_data[mode][structureNumber][gn_label_to_use].indexOf(genNo2)];
             if ((typeof resNo1 == 'undefined') || (typeof resNo2 == 'undefined')) return
 
             var f1 = Math.round(100 * v['pdbs1'].length / pdbs_1);
@@ -667,6 +702,27 @@ function createNGLRepresentations(mode, structureNumber, update = false) {
         });
     }
 
+    // Add list of segment movement residues when present
+    if (mode_short == 'two-groups'){
+      if (interactions_data["tm_movement_2D"] !== undefined) {
+        if (interactions_data["tm_movement_2D"]["intracellular"] !== undefined) {
+          var gns_used = interactions_data["tm_movement_2D"]["intracellular"]["gns_used"].flat()
+          for (genI in gns_used) {
+            var resNo = pdb_data[mode][structureNumber]['only_gn'][pdb_data[mode][structureNumber][gn_label_to_use].indexOf(gns_used[genI])];
+            res_movement.push(resNo);
+          }
+        }
+
+        if (interactions_data["tm_movement_2D"]["extracellular"] !== undefined) {
+          var gns_used = interactions_data["tm_movement_2D"]["extracellular"]["gns_used"].flat()
+          for (genI in gns_used) {
+            var resNo = pdb_data[mode][structureNumber]['only_gn'][pdb_data[mode][structureNumber][gn_label_to_use].indexOf(gns_used[genI])];
+            res_movement.push(resNo);
+          }
+        }
+      }
+    }
+
     links.forEach(function(link) {
         linkMap[mode][structureNumber][link.resID] = link
     })
@@ -698,6 +754,7 @@ function createNGLRepresentations(mode, structureNumber, update = false) {
 
     // Empty? Update selection with a fake residue -> hide everything
     if (res_int.length == 0) res_int.push("9999999")
+    if (res_movement.length == 0) res_movement.push("9999999")
 
     if (update) {
         reps[mode][structureNumber].int_res.setSelection(":" + pdb_data[mode][structureNumber]['chain'] + " and (" + res_int.join(", ") + ") and (.CA)")
@@ -717,6 +774,16 @@ function createNGLRepresentations(mode, structureNumber, update = false) {
             colorValue: (structureNumber == 0 ? "#99B5CC" : "#DDA8BC"),
             visible: false
         })
+
+        if (mode_short == 'two-groups') {
+          reps[mode][structureNumber].movement_spheres = o.addRepresentation("spacefill", {
+            sele: ":" + pdb_data[mode][structureNumber]['chain'] + " and (" + res_movement.join(", ") + ") and (.CA)",
+            color: (structureNumber == 0 ? "#084081" : "#811808"),
+            radiusScale: 1,
+            name: "res",
+            visible: false
+          });
+        }
     }
 
     // update show/hide when updating representations
@@ -732,7 +799,7 @@ function colorNGLByData(mode, residue_positions, residue_colors, defaultColor){
   // Create gradient scaled by data type
   for (var i = 0; i < residue_positions.length; i++) {
     // Find X-ray residue number
-    gn = pdb_data[mode][structureKey]["gn_map"].indexOf(residue_positions[i])
+    gn = pdb_data[mode][structureKey][gn_label_to_use].indexOf(residue_positions[i])
 
     if (gn >= 0) {
       // create residue selector
@@ -754,4 +821,42 @@ function colorNGLByData(mode, residue_positions, residue_colors, defaultColor){
   gpcr_rep[mode][structureKey].setParameters({
       color: color_schemes[mode]['feature']
   });
+}
+
+function ColorNGLbyDistances(mode) {
+
+    // hide set 2
+    $("#ngl-" + mode + " #hide_pdb2").prop('checked', true);
+    // hide interactions and other things irrelevant to color
+    $("#ngl-" + mode + " #highlight_res").prop('checked', false);
+    $("#ngl-" + mode + " #toggle_interactions").prop('checked', false);
+
+    updateStructureRepresentations(mode);
+
+    if (mode.startsWith("single_group")) {
+        var distances = single_set_data['distances'];
+    } else if (mode.startsWith("single")) {
+        var distances = single_crystal_data['distances'];
+    } else if (mode.startsWith("two_sets")) {
+        var distances = two_sets_data['distances'];
+    }
+
+    var dis_min = 0, dis_max = 0;
+
+    var gns = [];
+    var values = [];
+    var colors = [];
+
+    $.each(distances, function (gn, vals) {
+        gns.push(gn);
+        values.push(vals['avg']);
+        dis_min = vals['avg'] < dis_min ? vals['avg'] : dis_min;
+        dis_max = vals['avg'] > dis_max ? vals['avg'] : dis_max;
+    })
+    c = d3.scale.linear().domain([dis_min, 0, dis_max]).range(['red', 'white', 'blue']);
+    $.each(values, function (i, v) {
+        colors.push(c(v));
+    })
+
+    colorNGLByData(mode.replace("ngl-",""), gns, colors, "#ccc");
 }

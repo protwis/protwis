@@ -86,7 +86,7 @@ class TreeSettings(AbsMiscSelection):
 
 class Treeclass:
     family = {}
-    
+
     def __init__(self):
         self.Additional_info={"crystal": {"include":"False", "order":6, "colours":{"crystal_true":"#6dcde1","crystal_false":"#EEE"}, "color_type":"single", "proteins":[], "parent":None, "child": None, "name":"Crystals"},
                 "class": {"include":"True", "order":0, "colours":{}, "proteins":[], "color_type":"grayscale", "parent":[], "child": ["family,ligand"], "name":"Class"},
@@ -115,7 +115,7 @@ class Treeclass:
                 for prot in n.proteins.all():
                     crysts.append(prot.entry_name)
 
-            
+
         #############################
         # get the user selection from session
         if build != False:
@@ -197,7 +197,7 @@ class Treeclass:
                     sequence += residue[2].replace('_','-')
             infile.write(acc+' '*9+sequence+'\n')
         infile.close()
-        
+
         ####Run bootstrap
         if self.bootstrap:
         ### Write phylip input options
@@ -206,7 +206,7 @@ class Treeclass:
             inp.close()
         ###
             try:
-                subprocess.check_output(['phylip seqboot<temp'], shell=True, cwd = '/tmp/%s' %dirname, timeout=60)
+                subprocess.check_output(['phylip seqboot<temp'], shell=True, cwd = '/tmp/%s' %dirname, timeout=300)
                 os.rename('/tmp/%s/outfile' %dirname, '/tmp/%s/infile' %dirname)
             except:
                 kill_phylo() #FIXME, needs better way of handling this!
@@ -221,7 +221,7 @@ class Treeclass:
         inp.close()
         ###
         try:
-            subprocess.check_output(['phylip protdist<temp>>log'], shell=True, cwd = '/tmp/%s' %dirname, timeout=60)
+            subprocess.check_output(['phylip protdist<temp>>log'], shell=True, cwd = '/tmp/%s' %dirname, timeout=300)
         except:
             kill_phylo() #FIXME, needs better way of handling this!
             return "too big","too big","too big","too big","too big","too big","too big","too big","too big"
@@ -241,8 +241,8 @@ class Treeclass:
                 inp.write('y\n')
         inp.close()
         ###
-        try: 
-            subprocess.check_output(['phylip neighbor<temp'], shell=True, cwd = '/tmp/%s' %dirname, timeout=60)
+        try:
+            subprocess.check_output(['phylip neighbor<temp'], shell=True, cwd = '/tmp/%s' %dirname, timeout=300)
         except:
             kill_phylo() #FIXME, needs better way of handling this!
             return "too big","too big","too big","too big","too big","too big","too big","too big"
@@ -255,7 +255,7 @@ class Treeclass:
             inp.close()
         ###
             try:
-                subprocess.check_output(['phylip consense<temp'], shell=True, cwd = '/tmp/%s' %dirname, timeout=60)
+                subprocess.check_output(['phylip consense<temp'], shell=True, cwd = '/tmp/%s' %dirname, timeout=300)
             except:
                 kill_phylo() #FIXME, needs better way of handling this!
                 return "too big","too big","too big","too big","too big","too big","too big","too big"
@@ -266,29 +266,29 @@ class Treeclass:
         self.outtree = open('/tmp/%s/outfile' %dirname).read().lstrip()
         phylogeny_input = self.get_phylogeny('/tmp/%s/' %dirname)
         shutil.rmtree('/tmp/%s' %dirname)
-        
+
         if build != False:
             open('static/home/images/'+build+'_legend.svg','w').write(str(self.Tree.legend))
             open('static/home/images/'+build+'_tree.xml','w').write(phylogeny_input)
         else:
             return phylogeny_input, self.branches, self.ttype, self.total, str(self.Tree.legend), self.Tree.box, self.Additional_info, self.buttons, a.proteins
-        
+
     def get_phylogeny(self, dirname):
 
         self.Tree.treeDo(dirname, self.phylip,self.branches,self.family,self.Additional_info, self.famdict)
         phylogeny_input = open('%s/out.xml' %dirname,'r').read().replace('\n','')
         return phylogeny_input
-    
+
     def get_data(self):
         return self.branches, self.ttype, self.total, str(self.Tree.legend), self.Tree.box, self.Additional_info, self.buttons
 
- 
+
 def get_buttons(request):
     Tree_class=request.session['Tree']
     buttons = [(x[1]['order'],x[1]['name']) for x in sorted(Tree_class.Additional_info.items(), key= lambda x: x[1]['order']) if x[1]['include']=='True']
     return render(request, 'phylogenetic_trees/ring_buttons.html', {'but':buttons })
-   
-        
+
+
 
 def modify_tree(request):
     try:
@@ -320,12 +320,12 @@ def render_tree(request):
 
     if phylogeny_input == 'More_prots':
         return render(request, 'phylogenetic_trees/warning.html')
-    
+
     if ttype == '1':
         float(total)/4*100
     else:
         count = 1900 - 1400/math.sqrt(float(total))
-    
+
     request.session['Tree']=Tree_class
     return render(request, 'phylogenetic_trees/alignment.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':count, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons, 'phylip':Tree_class.phylip, 'outtree':Tree_class.outtree })
 
@@ -338,12 +338,12 @@ def render_tree_new(request):
 
     if phylogeny_input == 'More_prots':
         return render(request, 'phylogenetic_trees/warning.html')
-    
+
     if ttype == '1':
         float(total)/4*100
     else:
         count = 1900 - 1400/math.sqrt(float(total))
-    
+
 
     protein_data = []
 
@@ -367,5 +367,3 @@ def render_tree_new(request):
     context['phylip'] = Tree_class.phylip.replace('\n', '')
     context['protein_data'] = protein_data
     return render(request, 'phylogenetic_trees/display.html', context)
-
-

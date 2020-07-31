@@ -28,6 +28,7 @@ urlpatterns = [
     url(r'^ligand/',include('ligand.urls')),
     url(r'^mutational_landscape/',include('mutational_landscape.urls')),
     url(r'^contactnetwork/', include('contactnetwork.urls')),
+    url(r'^structure_comparison/', include('contactnetwork.urls')), # Remapping this url to the contact network
     url(r'^seqsign/', include('seqsign.urls')),
     url(r'^angles/', include('angles.urls')),
     url(r'^hotspots/', include('hotspots.urls')),

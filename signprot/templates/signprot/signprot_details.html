@@ -1,5 +1,5 @@
 {% extends "home/base.html" %}
-{% load staticfiles %}
+{% load static %}
 
 {% block addon_css %}
 <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
@@ -49,15 +49,15 @@
             </button>
             <ul class="dropdown-menu">
             <li>
-                <a href="javascript:saveSvgAsPng(document.getElementById('GproteinPlot'), 'plot_{{ p.entry_name }}.png',
+                <a href="javascript:saveSvgAsPng(document.getElementById('snakeplot'), 'plot_{{ p.entry_name }}.png',
                 {scale: 3});">PNG</a>
             </li>
             <li>
-                <a href="javascript:saveSvgAsJpg(document.getElementById('GproteinPlot'), 'plot_{{ p.entry_name }}.jpg',
+                <a href="javascript:saveSvgAsJpg(document.getElementById('snakeplot'), 'plot_{{ p.entry_name }}.jpg',
                 {scale: 3});">JPG</a>
             </li>
             <li>
-                <a href="javascript:saveSvgAsTiff(document.getElementById('GproteinPlot'), 'plot_{{ p.entry_name }}.tiff',
+                <a href="javascript:saveSvgAsTiff(document.getElementById('snakeplot'), 'plot_{{ p.entry_name }}.tiff',
                 {scale: 3});">TIFF</a>
                 </a>
             </li>
@@ -91,15 +91,15 @@
           </button>
           <ul class="dropdown-menu">
           <li>
-              <a href="javascript:saveSvgAsPng(document.getElementById('ArrestinPlot'), 'plot_{{ p.entry_name }}.png',
+              <a href="javascript:saveSvgAsPng(document.getElementById('snakeplot'), 'plot_{{ p.entry_name }}.png',
               {scale: 3});">PNG</a>
           </li>
           <li>
-              <a href="javascript:saveSvgAsJpg(document.getElementById('ArrestinPlot'), 'plot_{{ p.entry_name }}.jpg',
+              <a href="javascript:saveSvgAsJpg(document.getElementById('snakeplot'), 'plot_{{ p.entry_name }}.jpg',
               {scale: 3});">JPG</a>
           </li>
           <li>
-              <a href="javascript:saveSvgAsTiff(document.getElementById('ArrestinPlot'), 'plot_{{ p.entry_name }}.tiff',
+              <a href="javascript:saveSvgAsTiff(document.getElementById('snakeplot'), 'plot_{{ p.entry_name }}.tiff',
               {scale: 3});">TIFF</a>
               </a>
           </li>

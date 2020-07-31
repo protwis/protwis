@@ -5,6 +5,7 @@ import contactnetwork.pdb as pdb
 from structure.models import Structure, StructureVectors
 from residue.models import Residue
 from angles.models import ResidueAngle as Angle
+from contactnetwork.models import Distance, distance_scaling_factor
 
 import Bio.PDB
 import copy
@@ -14,11 +15,13 @@ import logging
 import math
 import subprocess
 import os
+import re
 import traceback
 
 import numpy as np
 import scipy.stats as stats
 
+from scipy.spatial.transform import Rotation as R
 from collections import OrderedDict
 from sklearn.decomposition import PCA
 from numpy.core.umath_tests import inner1d
@@ -30,6 +33,106 @@ SASA = True
 HSE  = True
 extra_pca = True
 print_pdb = False
+GN_only = False
+incremental_update = False
+
+# atom name dictionary
+# Based on https://github.com/fomightez/structurework/blob/master/spartan_fixer/SPARTAN08_Fixer_standalone.py
+residue_atom_names = {
+    'ALA': ['N', 'CA', 'C', 'O', 'CB'],
+    'ARG': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD', 'NE', 'CZ', 'NH1', 'NH2'],
+    'ASN': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'OD1', 'ND2'],
+    'ASP': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'OD1', 'OD2'],
+    'CYS': ['N', 'CA', 'C', 'O', 'CB', 'SG'],
+    'GLU': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD', 'OE1', 'OE2'],
+    'GLN': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD', 'OE1', 'NE2'],
+    'GLY': ['N', 'CA', 'C', 'O'],
+    'HIS': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'ND1', 'CD2', 'CE1', 'NE2'],
+    'ILE': ['N', 'CA', 'C', 'O', 'CB', 'CG1', 'CG2', 'CD1'],
+    'LEU': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD1', 'CD2'],
+    'LYS': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD', 'CE', 'NZ'],
+    'MET': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'SD', 'CE'],
+    'PHE': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD1', 'CD2', 'CE1', 'CE2', 'CZ'],
+    'PRO': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD'],
+    'SER': ['N', 'CA', 'C', 'O', 'CB', 'OG'],
+    'THR': ['N', 'CA', 'C', 'O', 'CB', 'OG1', 'CG2'],
+    'TRP': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD1', 'CD2', 'NE1', 'CE2', 'CE3', 'CZ2', 'CZ3', 'CH2'],
+    'TYR': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD1', 'CD2', 'CE1', 'CE2', 'CZ', 'OH'],
+    'VAL': ['N', 'CA', 'C', 'O', 'CB', 'CG1', 'CG2']
+}
+residue_atom_names['YCM'] = residue_atom_names['CYS']
+residue_atom_names['CSD'] = residue_atom_names['ALA']
+residue_atom_names['TYS'] = residue_atom_names['TYR']
+residue_atom_names['SEP'] = residue_atom_names['SER']
+
+# sidechain torsion angles - chi dihedrals
+# From https://gist.github.com/lennax/0f5f65ddbfa278713f58
+chi_atoms = dict(
+    chi1=dict(
+        ARG=['N', 'CA', 'CB', 'CG'],
+        ASN=['N', 'CA', 'CB', 'CG'],
+        ASP=['N', 'CA', 'CB', 'CG'],
+        CYS=['N', 'CA', 'CB', 'SG'],
+        GLN=['N', 'CA', 'CB', 'CG'],
+        GLU=['N', 'CA', 'CB', 'CG'],
+        HIS=['N', 'CA', 'CB', 'CG'],
+        ILE=['N', 'CA', 'CB', 'CG1'],
+        LEU=['N', 'CA', 'CB', 'CG'],
+        LYS=['N', 'CA', 'CB', 'CG'],
+        MET=['N', 'CA', 'CB', 'CG'],
+        PHE=['N', 'CA', 'CB', 'CG'],
+        PRO=['N', 'CA', 'CB', 'CG'],
+        SER=['N', 'CA', 'CB', 'OG'],
+        THR=['N', 'CA', 'CB', 'OG1'],
+        TRP=['N', 'CA', 'CB', 'CG'],
+        TYR=['N', 'CA', 'CB', 'CG'],
+        VAL=['N', 'CA', 'CB', 'CG1'],
+        YCM=['N', 'CA', 'CB', 'SG'],
+        TYS=['N', 'CA', 'CB', 'CG'],
+        SEP=['N', 'CA', 'CB', 'OG'],
+    ),
+    altchi1=dict(
+        VAL=['N', 'CA', 'CB', 'CG2'],
+    ),
+    chi2=dict(
+        ARG=['CA', 'CB', 'CG', 'CD'],
+        ASN=['CA', 'CB', 'CG', 'OD1'],
+        ASP=['CA', 'CB', 'CG', 'OD1'],
+        GLN=['CA', 'CB', 'CG', 'CD'],
+        GLU=['CA', 'CB', 'CG', 'CD'],
+        HIS=['CA', 'CB', 'CG', 'ND1'],
+        ILE=['CA', 'CB', 'CG1', 'CD1'],
+        LEU=['CA', 'CB', 'CG', 'CD1'],
+        LYS=['CA', 'CB', 'CG', 'CD'],
+        MET=['CA', 'CB', 'CG', 'SD'],
+        PHE=['CA', 'CB', 'CG', 'CD1'],
+        PRO=['CA', 'CB', 'CG', 'CD'],
+        TRP=['CA', 'CB', 'CG', 'CD1'],
+        TYR=['CA', 'CB', 'CG', 'CD1'],
+        TYS=['CA', 'CB', 'CG', 'CD1'],
+    ),
+    altchi2=dict(
+        ASP=['CA', 'CB', 'CG', 'OD2'],
+        LEU=['CA', 'CB', 'CG', 'CD2'],
+        PHE=['CA', 'CB', 'CG', 'CD2'],
+        TYR=['CA', 'CB', 'CG', 'CD2'],
+        TYS=['CA', 'CB', 'CG', 'CD2'],
+    ),
+    chi3=dict(
+        ARG=['CB', 'CG', 'CD', 'NE'],
+        GLN=['CB', 'CG', 'CD', 'OE1'],
+        GLU=['CB', 'CG', 'CD', 'OE1'],
+        LYS=['CB', 'CG', 'CD', 'CE'],
+        MET=['CB', 'CG', 'SD', 'CE'],
+    ),
+    chi4=dict(
+        ARG=['CG', 'CD', 'NE', 'CZ'],
+        LYS=['CG', 'CD', 'CE', 'NZ'],
+    ),
+    chi5=dict(
+        ARG=['CD', 'NE', 'CZ', 'NH1'],
+    ),
+)
 
 # Empirical values as defined by Tien et al. Plos ONE 2013
 maxSASA = {
@@ -74,6 +177,11 @@ maxSASA = {
     "TRP": 264,
     "TYR": 255
 }
+# TODO adjust to capture actual SASA of modified residue
+maxSASA['YCM'] = maxSASA['CYS']
+maxSASA['CSD'] = maxSASA['ALA']
+maxSASA['TYS'] = maxSASA['TYR']
+maxSASA['SEP'] = maxSASA['SER']
 
 # Most outer residue atom
 outerAtom = {
@@ -98,6 +206,10 @@ outerAtom = {
     "TRP": 'CZ3', # second ring - capture rotation
     "TYR": 'OH' # endpoint
 }
+outerAtom['YCM'] = outerAtom['CYS']
+outerAtom['CSD'] = outerAtom['ALA']
+outerAtom['TYS'] = outerAtom['TYR']
+outerAtom['SEP'] = outerAtom['SER']
 
 
 class NonHetSelect(Bio.PDB.Select):
@@ -147,6 +259,14 @@ class Command(BaseCommand):
         for p in procs:
             p.join()
 
+    def add_arguments(self, parser):
+        parser.add_argument('-p', '--proc',
+            type=int,
+            action='store',
+            dest='proc',
+            default=2,
+            help='Number of processes to run')
+
     def load_pdb_var(self, pdb_code, var):
         """
         load string of pdb as pdb with a file handle. Would be nicer to do this
@@ -158,11 +278,22 @@ class Command(BaseCommand):
 
 
     def handle(self, *args, **options):
+        if incremental_update:
+            done_structures = Angle.objects.values('structure_id').distinct()
+            # TODO add filter here for non-processed structures
+            self.references = Structure.objects.all().exclude(refined=True).exclude(id__in=done_structures).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+        else:
+            Angle.objects.all().delete()
+            Distance.objects.all().delete()
+            StructureVectors.objects.all().delete()
+            print("All Angle, Distance, and StructureVector data cleaned")
+            self.references = Structure.objects.all().exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
 
-        Angle.objects.all().delete()
-        self.references = Structure.objects.all().exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
         # DEBUG for a specific PDB
-        #self.references = Structure.objects.filter(pdb_code__index="6OT0").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+        # self.references = Structure.objects.filter(pdb_code__index="4OO9").exclude(refined=True).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+
+        if 'proc' in options and options['proc']>0:
+            self.processes = options['proc']
 
         print(len(self.references),'structures')
         self.references = list(self.references)
@@ -229,17 +360,98 @@ class Command(BaseCommand):
             """
             return np.sqrt(np.sum(np.power(pca.transform(ca)[:,1:],2), axis = 1))
 
+        def center_coordinates(h, p, pca):
+            """
+            Calculate the orthogonal projection of the CA to the helix axis
+            which is moved to the mean of seven consecutive amino acids
+            """
+            h_middle = np.transpose(np.stack((moving_average(h[:,0], 7), moving_average(h[:,1], 7), moving_average(h[:,2], 7))))
+            a = np.concatenate((h_middle[(0,0,0),:], h_middle, h_middle[(-1,-1,-1),:]))
+
+            # b = p.transform(h)
+            # b[:,1:] = p.transform(a)[:,1:]
+            # b = p.inverse_transform(b)
+
+            # TODO cleanup
+            helper_lines = a - np.roll(a,-1,0)
+            helper_lines[-1] = a[-1] - a[-5]
+            helper_lines[-2] = helper_lines[-1]
+            helper_lines[-3] = helper_lines[-1]
+            helper_lines[-4] = helper_lines[-1]
+            helper_lines[0] = a[0] - a[4]
+            helper_lines[1] = helper_lines[0]
+            helper_lines[2] = helper_lines[0]
+            helper_lines[3] = helper_lines[0]
+            helper_lines = np.array([ line/np.linalg.norm(line) for line in helper_lines])
+
+            # loop over points
+            #c = np.round([ a[idx] + np.dot(h_ca - a[idx], helper_lines[idx]) * helper_lines[idx] for idx, h_ca in enumerate(h)],3)
+            c = [ a[idx] + np.dot(h_ca - a[idx], helper_lines[idx]) * helper_lines[idx] for idx, h_ca in enumerate(h)]
+
+
+            # return b
+            return c
+
         def axes_calc(h,p,pca):
             """
             Calculate the orthogonal projection of the CA to the helix axis
             which is moved to the mean of three consecutive amino acids
             """
-            a = (np.roll(np.vstack((h,h[0])),1,axis=0)[:-1] + h + np.roll(np.vstack((h,h[-1])),-1,axis=0)[:-1])/3
-            b = p.transform(h)
-            b[:,1:] = p.transform(a)[:,1:]
-            b = p.inverse_transform(b)
+
+            # Running average - over 3 residues at a same time
+            #a = (np.roll(np.vstack((h,h[0])),1,axis=0)[:-1] + h + np.roll(np.vstack((h,h[-1])),-1,axis=0)[:-1])/3
+
+            # Running average - over 7 residues at a same time
+            h_middle = np.transpose(np.stack((moving_average(h[:,0], 7), moving_average(h[:,1], 7), moving_average(h[:,2], 7))))
+            a = np.concatenate((h_middle[(0,0,0),:], h_middle, h_middle[(-1,-1,-1),:]))
+
+            # PCA transform moved to running average
+            # b = p.transform(h)
+            # b[:,1:] = p.transform(a)[:,1:]
+            # b = p.inverse_transform(b)
+
+            # Use reference of 7 average as placement point
+            # TODO cleanup
+            helper_lines = a - np.roll(a,-1,0)
+            helper_lines[-1] = a[-1] - a[-5]
+            helper_lines[-2] = helper_lines[-1]
+            helper_lines[-3] = helper_lines[-1]
+            helper_lines[-4] = helper_lines[-1]
+            helper_lines[0] = a[0] - a[4]
+            helper_lines[1] = helper_lines[0]
+            helper_lines[2] = helper_lines[0]
+            helper_lines[3] = helper_lines[0]
+            helper_lines = np.array([ line/np.linalg.norm(line) for line in helper_lines])
+
+            # loop over points
+            # b = np.round([ a[idx] + np.dot(h_ca - a[idx], helper_lines[idx]) * helper_lines[idx] for idx, h_ca in enumerate(h)],3)
+            b = [ a[idx] + np.dot(h_ca - a[idx], helper_lines[idx]) * helper_lines[idx] for idx, h_ca in enumerate(h)]
+
+            # count=0
+            # for row in h:
+            #     count += 1
+            #     print("pseudo orig" + str(count) ,", pos=[", row[0], ",", row[1], ",", row[2] ,"];")
+            #
+            # count=0
+            # for row in b:
+            #     count += 1
+            #     print("pseudo line" + str(count) ,", pos=[", row[0], ",", row[1], ",", row[2] ,"];")
+            #
+            # print("hide everything")
+            # print("set sphere_scale, .5")
+            # print("show spheres, fake*")
+            # print("show spheres, orig*")
+            # print("show spheres, line*")
+            # print("color red, line*")
+            # print("color cyan, fake*")
+            # exit(0)
 
             return calc_angle(pca.transform(b),pca.transform(h))
+
+        def moving_average(a, n=3) :
+            ret = np.cumsum(a, dtype=float)
+            ret[n:] = ret[n:] - ret[:-n]
+            return ret[n - 1:] / n
 
         def set_bfactor(chain,angles):
             """
@@ -266,6 +478,40 @@ class Command(BaseCommand):
             del qset[start+1:]
             return qset
 
+
+        def calculate_missing_atoms(poly):
+            """
+            Helper function to calculate missing atoms for all residues in poly
+            """
+            # loop over each residue
+            for r in poly:
+                # store missing atoms in residue annotations
+                if r.resname in residue_atom_names:
+                    r.xtra["MISSING"] = sum([0 if atom in r else 1 for atom in residue_atom_names[r.resname]])
+
+        def calculate_chi_angles(poly):
+            """
+            Helper function to calculate all chi angles for all residues in poly
+            """
+            # loop over each residue
+            for r in poly:
+                # check for all chi_atoms if residue is present -
+                chi_angles = [None] * 5
+                for chi_index in range(1,6):
+                    if r.resname in chi_atoms["chi" + str(chi_index)]:
+                        try:
+                            atom_list = chi_atoms["chi" + str(chi_index)][r.resname]
+                            vec_atoms = [r[a] for a in atom_list]
+                        except KeyError:
+                            continue
+
+                        vectors = [a.get_vector() for a in vec_atoms]
+                        chi_angles[chi_index-1] = round(np.rad2deg(Bio.PDB.vectors.calc_dihedral(*vectors)),3)
+
+                # store in residue annotations
+                r.xtra["CHI"] = chi_angles.copy()
+
+
         #######################################################################
         ######################### Start of main loop ##########################
         #######################################################################
@@ -285,13 +531,16 @@ class Command(BaseCommand):
         pids = [ref.protein_conformation.protein.id for ref in references]
 
         qset = Residue.objects.filter(protein_conformation__protein__id__in=pids)
-        qset = qset.filter(generic_number__label__regex=r'^[1-7]x[0-9]+').order_by('-protein_conformation__protein','-generic_number__label')
+        if GN_only:
+            qset = qset.filter(generic_number__label__regex=r'^[1-7]x[0-9]+').order_by('-protein_conformation__protein','-generic_number__label')
+        else:
+            qset = qset.order_by('-protein_conformation__protein','-generic_number__label')
         qset = list(qset.prefetch_related('generic_number', 'protein_conformation__protein','protein_conformation__state'))
 
         res_dict = {ref.pdb_code.index:qgen(ref.protein_conformation.protein,qset) for ref in references}
 
         # clean structure vectors table
-        StructureVectors.objects.all().delete()
+        # StructureVectors.objects.all().delete()
 
         #######################################################################
         ######################### Start of main loop ##########################
@@ -326,7 +575,7 @@ class Command(BaseCommand):
                 elif os.path.exists("/env/bin/mkdssp"):
                     dssp = Bio.PDB.DSSP(structure[0], filename, dssp='/env/bin/mkdssp')
 
-                # DISABLED STRIDE - selected DSSP over STRIDE
+                # DISABLED STRIDE - selected DSSP 3 over STRIDE
 #                try:
 #                    if os.path.exists("/env/bin/stride"):
 #                       stride = subprocess.Popen(['/env/bin/stride', filename], stdout=subprocess.PIPE)
@@ -347,46 +596,69 @@ class Command(BaseCommand):
                 ###################### prepare and evaluate query #####################
 
                 db_reslist = res_dict[pdb_code]
-                #print(db_reslist)
+                gn_reslist = []
+                tm_reslist = []
+                for i in db_reslist:
+                    if i.generic_number:
+                        gn_reslist.append(i)
+                        if re.match(r'^[1-7]x[0-9]+', i.generic_number.label):
+                            tm_reslist.append(i)
+
+
+                full_resdict = {str(r.sequence_number):r for r in db_reslist}
 
                 #######################################################################
                 ######################### filter data from db #########################
 
                 def reslist_gen(x):
                     try:
-                        while db_reslist[-1].generic_number.label[0] == x:
-                            yield db_reslist.pop()
+                        while tm_reslist[-1].generic_number.label[0] == x:
+                            yield tm_reslist.pop()
                     except IndexError:
                         pass
+
+                # Fix IDs matching for handling PTM-ed residues
+                ids_in_pchain = []
+                for residue in pchain:
+                    if residue.id[1] not in pchain:
+                        residue.id = (' ', residue.id[1], ' ')
 
                 # when gdict is not needed the helper can be removed
                 db_helper = [[(r,r.sequence_number) for r in reslist_gen(x) if r.sequence_number in pchain] for x in ["1","2","3","4","5","6","7"]]
                 gdict = {r[1]:r[0] for hlist in db_helper for r in hlist}
+                tm_keys = [r[1] for hlist in db_helper for r in hlist]
+                tm_keys_str = [str(i) for i in tm_keys]
+                tm_keys_int = [int(i) for i in tm_keys]
                 db_tmlist = [[(' ',r[1],' ') for r in sl] for sl in db_helper]
                 db_set = set(db_tmlist[0]+db_tmlist[1]+db_tmlist[2]+db_tmlist[3]+db_tmlist[4]+db_tmlist[5]+db_tmlist[6])
 
                 #######################################################################
                 ##################### Angles/dihedrals residues #######################
 
-                polychain = [ residue for residue in pchain if Bio.PDB.Polypeptide.is_aa(residue) and "CA" in residue]
+                #for line in pdblines_temp: #Get rid of all odd records
+                #polychain = [ residue for residue in pchain if Bio.PDB.Polypeptide.is_aa(residue) and "CA" in residue]
+                polychain = [ residue for residue in pchain if (Bio.PDB.Polypeptide.is_aa(residue) or residue.resname in ['YCM','CSD','TYS','SEP']) and "CA" in residue]
                 poly = Bio.PDB.Polypeptide.Polypeptide(polychain)
+
+                # Calculate backbone and sidechain dihedrals + missing atoms
                 poly.get_phi_psi_list() # backbone dihedrals
+                calculate_chi_angles(poly) # calculate chi1-chi5
+                calculate_missing_atoms(poly) # calculate missing
 
-                #poly.get_theta_list() # angle three consecutive Ca atoms
-                #poly.get_tau_list() # dihedral four consecutive Ca atoms
-
-                # TODO: extend with Chi1-5?
-                # https://gist.github.com/lennax/0f5f65ddbfa278713f58
-                # Definition http://www.ccp14.ac.uk/ccp/web-mirrors/garlic/garlic/commands/dihedrals.html
-                # http://biopython.org/DIST/docs/api/Bio.PDB.Polypeptide-pysrc.html#Polypeptide.get_phi_psi_list
-
-                ### clean the structure to solely the 7TM bundle
-                recurse(structure, [[0], preferred_chain, db_set])
+                # Possibly only relevant for helices?
                 poly.get_theta_list() # angle three consecutive Ca atoms
                 poly.get_tau_list() # dihedral four consecutive Ca atoms
+
+                ### DEPRECATED: clean the structure to solely the 7TM bundle
+                #recurse(structure, [[0], preferred_chain, db_set])
+
+                ### NEW: clean the structure to all protein residues in DB
+                db_fullset = set([(' ',r.sequence_number,' ') for r in db_reslist])
+                recurse(structure, [[0], preferred_chain, db_fullset])
+
                 dihedrals = {}
                 for r in poly:
-                  angle_list = ["PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE"]
+                  angle_list = ["PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE", "CHI", "MISSING"]
                   for angle in angle_list:
                       if angle not in r.xtra:
                           r.xtra[angle] = None
@@ -396,8 +668,9 @@ class Command(BaseCommand):
                   try:
                       angle_atoms = [r[a].get_vector() for a in ['N','CA', outerAtom[r.resname]]]
 
-                      # use pseudo CB placement when glycine
-                      if r.resname == 'GLY':
+                      # use pseudo CB placement when glycine (or in case of missing CB)
+                      #if r.resname == 'GLY':
+                      if 'CB' not in r:
                           angle_atoms[2] = Bio.PDB.vectors.Vector(*cal_pseudo_CB(r))
 
                       outer = Bio.PDB.calc_angle(*angle_atoms)
@@ -415,17 +688,46 @@ class Command(BaseCommand):
 #                      print(pdb_code, " - TAU ANGLE ERROR - ", e)
                       tau_angles = None
 
-
-                  dihedrals[r.id[1]] = [r.xtra["PHI"], r.xtra["PSI"], r.xtra["THETA"], r.xtra["TAU"], r.xtra["SS_DSSP"], r.xtra["SS_STRIDE"], outer, tau_angles]
+                  dihedrals[str(r.id[1])] = [r.xtra["PHI"], r.xtra["PSI"], r.xtra["THETA"], r.xtra["TAU"], r.xtra["SS_DSSP"], r.xtra["SS_STRIDE"], outer, tau_angles, r.xtra["CHI"], r.xtra["MISSING"]]
 
                 # Extra: remove hydrogens from structure (e.g. 5VRA)
                 for residue in structure[0][preferred_chain]:
                     for id in [atom.id for atom in residue if atom.element == "H"]:
                         residue.detach_child(id)
 
+                # List of CA coordinates for all residues with GN for distances
+                gn_res_gns = [res.generic_number.label for res in gn_reslist]
+                gn_res_ids = [res.sequence_number for res in gn_reslist]
+
+                # Order by GNs
+                # QUICK HACK: to be cleaned up and simplified
+                gns_order = []
+                for gn in gn_res_gns:
+                    part1, part2 = gn.split("x")
+                    multiply1 = 10000
+                    if len(part1)>=2:
+                        multiply1 = 1000
+
+                    multiply2 = 1
+                    if (len(part2))<=2:
+                        multiply2 = 10
+
+                    gns_order.append(int(part1)*multiply1 + int(part2)*multiply2)
+
+
+                gns_ids_list = [gn_res_ids[key] for key in np.argsort(gns_order)]
+
+                #gn_res_gns = [gn_res_gns[key] for key in np.argsort(gns_order)]
+
+                #gns_ca_list = {resid:pchain[resid]["CA"].get_coord() for resid in gns_ids_list if resid in pchain}
+                gns_ca_list = {residue.id[1]:residue["CA"].get_coord() for residue in poly if residue.id[1] in gns_ids_list}
+                #gns_cb_list = {resid:np.asarray(pchain[resid]["CB"].get_coord() if "CB" in pchain[resid] else cal_pseudo_CB(pchain[resid]), dtype=float) for resid in gns_ids_list if resid in pchain}
+                gns_cb_list = {residue.id[1]:np.asarray(residue["CB"].get_coord() if "CB" in residue else cal_pseudo_CB(residue), dtype=float) for residue in poly if residue.id[1] in gns_ids_list}
+
                 ### AXES through each of the TMs and the TM bundle (center axis)
                 hres_list = [np.asarray([pchain[r]["CA"].get_coord() for r in sl], dtype=float) for sl in db_tmlist]
-                h_cb_list = [np.asarray([pchain[r]["CB"].get_coord() if "CB" in pchain[r] else cal_pseudo_CB(pchain[r]) for r in sl], dtype=float) for sl in db_tmlist]
+                #h_cb_list = [np.asarray([pchain[r]["CB"].get_coord() if "CB" in pchain[r] else cal_pseudo_CB(pchain[r]) for r in sl], dtype=float) for sl in db_tmlist]
+                h_cb_list = [[gns_cb_list[r[1]] for r in sl] for sl in db_tmlist]
 
                 # fast and fancy way to take the average of N consecutive elements
                 N = 3
@@ -448,7 +750,7 @@ class Command(BaseCommand):
                         minlength = 6
 
                     # create PCA per helix using extracellular half
-                    # Exlude the first turn if possible (often still part of loop)
+                    # Exclude the first turn if possible (often still part of loop)
                     for i,h in enumerate(hres_three):
                         if i%2: # reverse directionality of even helices (TM2, TM4, TM6)
                             h = np.flip(h, 0)
@@ -460,7 +762,7 @@ class Command(BaseCommand):
 
 
                     # create fake coordinates along each helix PCA to create center PCA
-                    # UGLY hack - should be cleand up
+                    # UGLY hack - should be cleaned up
                     coord_list = []
                     for pos in pos_list:
                         start = pos[0]
@@ -472,7 +774,8 @@ class Command(BaseCommand):
                         coord_list.append(line_points)
                     center_vector = pca_line(pca, np.vstack(coord_list))
                 else:
-                    # Less robust with differing TM lengths
+                    # Create PCA line through whole helix
+                    # NOTE: much less robust with differing TM lengths, bends, kinks, etc.
                     center_vector = pca_line( pca, np.vstack(hres_three))
 
                 # DEBUG print arrow for PyMol
@@ -483,41 +786,41 @@ class Command(BaseCommand):
                 # Measure level of activation by TM6 tilt
                 # Residue most often found at kink start
                 # TODO: check for numbering at other classes
-                kink_start = 44 #  general class A number 6x44 seems quite conserved to be the kink start
+                # kink_start = 44 #  general class A number 6x44 seems quite conserved to be the kink start
 
                 # Select all residues before indicated residue
-                lower_tm6 = []
-                kink_start_res = None
-                kink_measure = None
-                for res in db_tmlist[5]:
-                    gnlabel = gdict[res[1]].generic_number.label
-                    if int(gnlabel.replace("6x","")) <= kink_start:
-                        lower_tm6.append(pchain[res]["CA"].get_coord())
-                        if int(gnlabel.replace("6x","")) == kink_start:
-                            kink_start_res = pchain[res]["CA"].get_coord()
-                        if int(gnlabel.replace("6x","")) == 38:
-                            kink_measure = pchain[res]["CA"].get_coord()
-
-                lower_tm6 = np.asarray(lower_tm6)
+                # lower_tm6 = []
+                # kink_start_res = None
+                # kink_measure = None
+                # for res in db_tmlist[5]:
+                #     gnlabel = gdict[res[1]].generic_number.label
+                #     if int(gnlabel.replace("6x","")) <= kink_start:
+                #         lower_tm6.append(pchain[res]["CA"].get_coord())
+                #         if int(gnlabel.replace("6x","")) == kink_start:
+                #             kink_start_res = pchain[res]["CA"].get_coord()
+                #         if int(gnlabel.replace("6x","")) == 38:
+                #             kink_measure = pchain[res]["CA"].get_coord()
+                #
+                # lower_tm6 = np.asarray(lower_tm6)
 
                 # TM2 intracellular for comparison
-                lower_tm2 = []
-                ref_tm2 = None
-                for res in db_tmlist[1]:
-                    gnlabel = gdict[res[1]].generic_number.label
-                    gn_id = int(gnlabel.replace("2x",""))
-                    if gn_id >= 40 and gn_id <= 50: # Lower well-defined half of TM2
-                        lower_tm2.append(pchain[res]["CA"].get_coord())
-                        if gn_id == 41:
-                            ref_tm2 = pchain[res]["CA"].get_coord()
-                lower_tm2 = np.asarray(lower_tm2)
+                # lower_tm2 = []
+                # ref_tm2 = None
+                # for res in db_tmlist[1]:
+                #     gnlabel = gdict[res[1]].generic_number.label
+                #     gn_id = int(gnlabel.replace("2x",""))
+                #     if gn_id >= 40 and gn_id <= 50: # Lower well-defined half of TM2
+                #         lower_tm2.append(pchain[res]["CA"].get_coord())
+                #         if gn_id == 41:
+                #             ref_tm2 = pchain[res]["CA"].get_coord()
+                # lower_tm2 = np.asarray(lower_tm2)
 
-                posb_list = []
-                # create PCA per helix using full helix
-                for i,h in enumerate(hres_three):
-                    if i%2: # reverse directionality of even helices (TM2, TM4, TM6)
-                        h = np.flip(h, 0)
-                    posb_list.append(pca_line(PCA(), h))
+                # posb_list = []
+                # # create PCA per helix using full helix
+                # for i,h in enumerate(hres_three):
+                #     if i%2: # reverse directionality of even helices (TM2, TM4, TM6)
+                #         h = np.flip(h, 0)
+                #     posb_list.append(pca_line(PCA(), h))
 
 
                 # NOTE: Slight variations between the mid membrane residues can have a strong affect on the plane
@@ -867,8 +1170,82 @@ class Command(BaseCommand):
                 c_vector = np.array2string(center_vector[0] - center_vector[1], separator=',')
                 translation = np.array2string(-1*center_vector[0], separator=',')
 
+                StructureVectors.objects.filter(structure = reference).all().delete()
                 sv = StructureVectors(structure = reference, translation = str(translation), center_axis = str(c_vector))
                 sv.save()
+
+                # TODO:
+                # FIX RESIDUE ORDER
+                # FIX requirement checking
+
+                ### DISTANCES - moved here from cube
+                # REMOVE OLD distances
+                # Distance.objects.filter(structure=reference).all().delete()
+
+                # Perpendicular projection of Ca onto helical PCA
+                h_center_list = np.concatenate([center_coordinates(h,p,pca) for h,p in zip(hres_list,helix_pcas)])
+                gns_center_list = dict(zip(tm_keys_int, h_center_list))
+
+                # New rotation angle
+                # Angle between normal from center axis to 1x46 and normal from helix axis to CA
+                key_tm1 = gn_res_ids[gn_res_gns.index("1x46")]
+                ref_tm1 = gns_center_list[key_tm1]
+                # print(gns_order)
+                # print(np.argsort(gns_order))
+                # print(gn_res_gns)
+                # print(gn_res_ids)
+                # print(key_tm1)
+
+                # Project 1x46 onto center axis
+                axis_vector = (center_vector[0] - center_vector[1])/np.linalg.norm(center_vector[0] - center_vector[1])
+                center_tm1 = center_vector[0] + np.dot(ref_tm1 - center_vector[0], axis_vector) * axis_vector
+                tm1_vector = (center_tm1 - ref_tm1)/np.linalg.norm(center_tm1 - ref_tm1)
+
+                # Calculate CA to helix center vectors
+                ca_center_vectors = {resid:(gns_ca_list[resid] - gns_center_list[resid])/np.linalg.norm(gns_ca_list[resid] - gns_center_list[resid]) for resid in gns_center_list }
+
+                # Calculate rotation angles
+                rotation_angles = { resid:np.rad2deg(np.arccos(np.dot(tm1_vector, ca_center))) for resid, ca_center in ca_center_vectors.items() }
+
+                # Rotate tm1_vector by 90 degrees and then check the angles again  - if angle gets larger -> 360 - angle otherwise ok
+                rotation_vector = np.radians(90) * axis_vector
+                rotation = R.from_rotvec(rotation_vector)
+                rotated_tm1_vector = rotation.apply(tm1_vector)
+                rotation_angles_ref = { resid:np.rad2deg(np.arccos(np.dot(rotated_tm1_vector, ca_center))) for resid, ca_center in ca_center_vectors.items() }
+                # Make key a string to match with other dictionaries
+                rotation_angles = {str(resid):(round(rotation_angles[resid],3) if rotation_angles_ref[resid] - rotation_angles[resid] < 0 else round(360 - rotation_angles[resid],3)) for resid in rotation_angles }
+                # Making the rotation angle compliant with the other angles (-180 to 180 degrees)
+                rotation_angles = {resid:rotation_angles[resid]-180 for resid in rotation_angles }
+                # print(pdb_code, "1x45", rotation_angles[str(gn_res_ids[gn_res_gns.index("1x45")])], "and 1x47", rotation_angles[str(gn_res_ids[gn_res_gns.index("1x47")])])
+
+
+                # print("pseudo center, pos=[", ref_tm1[0], ",", ref_tm1[1], ",", ref_tm1[2] ,"];")
+                # print("pseudo ca, pos=[", gns_ca_list[key_tm1][0], ",", gns_ca_list[key_tm1][1], ",", gns_ca_list[key_tm1][2] ,"];")
+                # print("pseudo mid, pos=[", center_tm1[0], ",", center_tm1[1], ",", center_tm1[2] ,"];")
+                # print(rotation_angles[key_tm1])
+
+                # triangular matrix for distances
+                up_ind = np.triu_indices(len(gns_ca_list), 1)
+                bulk_distances = []
+
+                for i1, i2 in zip(up_ind[0], up_ind[1]):
+                    key1 = gns_ids_list[i1]
+                    key2 = gns_ids_list[i2]
+                    res1 = full_resdict[str(key1)]
+                    res2 = full_resdict[str(key2)]
+
+                    ca_dist = int(np.linalg.norm(gns_ca_list[key1] - gns_ca_list[key2])*distance_scaling_factor)
+                    cb_dist = int(np.linalg.norm(gns_cb_list[key1] - gns_cb_list[key2])*distance_scaling_factor)
+                    center_dist = None
+                    if key1 in gns_center_list and key2 in gns_center_list:
+                        center_dist = int(np.linalg.norm(gns_center_list[key1] - gns_center_list[key2])*distance_scaling_factor)
+
+                    # residues in gn_reslist, structure in structure
+                    distance = Distance(distance = ca_dist, distance_cb = cb_dist, distance_helix_center = center_dist, res1=res1, res2=res2, gn1=res1.generic_number.label, gn2=res2.generic_number.label, gns_pair='_'.join([res1.generic_number.label, res2.generic_number.label]), structure=reference)
+                    bulk_distances.append(distance)
+
+                # Bulk insert
+                Distance.objects.bulk_create(bulk_distances, batch_size=5000)
 
                 ### ANGLES
                 # Center axis to helix axis to CA
@@ -878,18 +1255,29 @@ class Command(BaseCommand):
                 b_angle = np.concatenate([ca_cb_calc(ca,cb,pca) for ca,cb in zip(hres_list,h_cb_list)]).round(3)
 
                 # Distance from center axis to CA
-                core_distance = np.concatenate([ca_distance_calc(ca,pca) for ca in hres_list]).round(3)
+                core_distances = np.concatenate([ca_distance_calc(ca,pca) for ca in hres_list]).round(3)
 
                 ### freeSASA (only for TM bundle)
                 # SASA calculations - results per atom
-                res, trash = freesasa.calcBioPDB(structure)
+                clean_structure = self.load_pdb_var(pdb_code,reference.pdb_data.pdb)
+                clean_pchain = clean_structure[0][preferred_chain]
+
+                # PTM residues give an FreeSASA error - remove
+                db_fullset = set([(' ',r.sequence_number,' ') for r in db_reslist])
+                recurse(clean_structure, [[0], preferred_chain, db_fullset])
+                # Remove hydrogens from structure (e.g. 5VRA)
+                for residue in clean_structure[0][preferred_chain]:
+                    for id in [atom.id for atom in residue if atom.element == "H"]:
+                        residue.detach_child(id)
+
+                res, trash = freesasa.calcBioPDB(clean_structure)
 
                 # create results dictionary per residue
                 asa_list = {}
                 rsa_list = {}
-                atomlist = list(pchain.get_atoms())
+                atomlist = list(clean_pchain.get_atoms())
                 for i in range(res.nAtoms()):
-                    resnum = atomlist[i].get_parent().id[1]
+                    resnum = str(atomlist[i].get_parent().id[1])
                     if resnum not in asa_list:
                         asa_list[resnum] = 0
                         rsa_list[resnum] = 0
@@ -911,14 +1299,15 @@ class Command(BaseCommand):
                 hse = pdb.HSExposure.HSExposureCB(structure[0][preferred_chain])
 
                 # x[1] contains HSE - 0 outer half, 1 - inner half, 2 - ?
-                hselist = dict([ (x[0].id[1], x[1][0]) if x[1][0] > 0 else (x[0].id[1], 0) for x in hse ])
+                hselist = dict([ (str(x[0].id[1]), x[1][0]) if x[1][0] > 0 else (str(x[0].id[1]), 0) for x in hse ])
 
                 # Few checks
-                if len(pchain) != len(a_angle):
-                    raise Exception("\033[91mLength mismatch a-angles " + pdb_code + "\033[0m")
+                if GN_only:
+                    if len(pchain) != len(a_angle):
+                        raise Exception("\033[91mLength mismatch a-angles " + pdb_code + "\033[0m")
 
-                if len(pchain) != len(b_angle):
-                    raise Exception("\033[91mLength mismatch b-angles " + pdb_code + "\033[0m")
+                        if len(pchain) != len(b_angle):
+                            raise Exception("\033[91mLength mismatch b-angles " + pdb_code + "\033[0m")
 
                 ### Collect all data in database list
                 #print(a_angle) # only TM
@@ -927,24 +1316,12 @@ class Command(BaseCommand):
                 #print(hselist) # only TM
                 #print(dihedrals) # HUSK: contains full protein!
 
-                # Correct for missing values
-                for res in pchain:
-                    residue_id = res.id[1]
-                    if not residue_id in rsa_list:
-                        rsa_list[residue_id] = None
-                    if not residue_id in hselist:
-                        hselist[residue_id] = None
-                    if not residue_id in dihedrals:
-                        dihedrals[residue_id] = None
-                    if not residue_id in asa_list:
-                        asa_list[residue_id] = None
-
                 ### PCA space can be upside down - in that case invert the results
                 # Check rotation of 1x49 - 1x50
                 inversion_ref = -1
-                for res in pchain:
+                for res in tm_keys:
                     inversion_ref += 1
-                    if gdict[res.id[1]].generic_number.label == "1x49":
+                    if gdict[res].generic_number.label == "1x49":
                         break
 
                 signed_diff = (a_angle[inversion_ref + 1] - a_angle[inversion_ref] + 540 ) % 360 - 180
@@ -955,16 +1332,49 @@ class Command(BaseCommand):
 #                else:
 #                    print("{} Rotating the right way  {}".format(pdb_code, signed_diff))
 
+                # tm_keys_str = [str(i) for i in tm_keys]
+                a_angle = dict(zip(tm_keys_str, a_angle))
+                b_angle = dict(zip(tm_keys_str, b_angle))
+                core_distances = dict(zip(tm_keys_str, core_distances))
+                midpoint_distances = dict(zip(tm_keys_str, midpoint_distances))
+                mid_membrane_distances = dict(zip(tm_keys_str, mid_membrane_distances))
 
-                for res, angle1, angle2, distance, midpoint_distance, mid_membrane_distance in zip(pchain, a_angle, b_angle, core_distance, midpoint_distances, mid_membrane_distances):
-                    residue_id = res.id[1]
-                    # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE", "OUTER", "TAU_ANGLE", "ASA", "DISTANCE"
-                    dblist.append([reference, gdict[residue_id], angle1, angle2, \
-                        rsa_list[residue_id], \
-                        hselist[residue_id]] + \
-                        dihedrals[residue_id] + \
-                        [asa_list[residue_id], distance, midpoint_distance, mid_membrane_distance])
+                # Correct for missing values
+                for res in polychain:
+                    residue_id = str(res.id[1])
 
+                    if not residue_id in a_angle:
+                        a_angle[residue_id] = None
+                    if not residue_id in b_angle:
+                        b_angle[residue_id] = None
+                    if not residue_id in core_distances:
+                        core_distances[residue_id] = None
+                    if not residue_id in midpoint_distances:
+                        midpoint_distances[residue_id] = None
+                    if not residue_id in mid_membrane_distances:
+                        mid_membrane_distances[residue_id] = None
+                    if not residue_id in rsa_list:
+                        rsa_list[residue_id] = None
+                    if not residue_id in hselist:
+                        hselist[residue_id] = None
+                    if not residue_id in dihedrals:
+                        dihedrals[residue_id] = None
+                    if not residue_id in asa_list:
+                        asa_list[residue_id] = None
+                    if not residue_id in rotation_angles:
+                        rotation_angles[residue_id] = None
+
+                #for res, angle1, angle2, distance, midpoint_distance, mid_membrane_distance in zip(pchain, a_angle, b_angle, core_distances, midpoint_distances, mid_membrane_distances):
+                for res in polychain:
+                    residue_id = str(res.id[1])
+
+                    # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE", "OUTER", "TAU_ANGLE", "CHI", "MISSING", "ASA", "DISTANCE", "ROTATION_ANGLE"
+                    if residue_id in full_resdict:
+                        dblist.append([reference, full_resdict[residue_id], a_angle[residue_id], b_angle[residue_id], \
+                            rsa_list[residue_id], \
+                            hselist[residue_id]] + \
+                            dihedrals[residue_id] + \
+                            [asa_list[residue_id], core_distances[residue_id], midpoint_distances[residue_id], mid_membrane_distances[residue_id], rotation_angles[residue_id]])
             except Exception as e:
                 print(pdb_code, " - ERROR - ", e)
                 failed.append(pdb_code)
@@ -991,24 +1401,29 @@ class Command(BaseCommand):
 #            std = stats.t.cdf(std_test, df=std_len)
 #            dblist[i].append(0.501 if np.isnan(std) else std)
 
-        # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE", "OUTER", "ASA", "DISTANCE"
+        # structure, residue, A-angle, B-angle, RSA, HSE, "PHI", "PSI", "THETA", "TAU", "SS_DSSP", "SS_STRIDE", "OUTER", "TAU_ANGLE", "CHI", "MISSING", "ASA", "DISTANCE", "ROTATION_ANGLE"
         object_list = []
-        for ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,ss_dssp,ss_stride,outer,tau_angle,asa,distance,midpoint_distance,mid_membrane_distance in dblist:
+        for ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,ss_dssp,ss_stride,outer,tau_angle,chi_angles,missing,asa,distance,midpoint_distance,mid_membrane_distance,rotation_angle in dblist:
             try:
+                if asa != None:
+                    asa = round(asa,1)
+                if outer != None:
+                    outer = round(np.rad2deg(outer),3)
                 if phi != None:
                     phi = round(np.rad2deg(phi),3)
                 if psi != None:
                     psi = round(np.rad2deg(psi),3)
+                if rsa != None:
+                    rsa = round(rsa,1)
                 if theta != None:
                     theta = round(np.rad2deg(theta),3)
                 if tau != None:
                     tau = round(np.rad2deg(tau),3)
-                if outer != None:
-                    outer = round(np.rad2deg(outer),3)
                 if tau_angle != None:
                     tau_angle = round(np.rad2deg(tau_angle),3)
-                object_list.append(Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=round(asa,1), rsa=round(rsa,1), hse=hse, phi=phi, psi=psi, theta=theta, tau=tau, tau_angle=tau_angle, ss_dssp=ss_dssp, ss_stride=ss_stride, outer_angle=outer, core_distance=distance, mid_distance=midpoint_distance, midplane_distance=mid_membrane_distance))
+                object_list.append(Angle(residue=res, a_angle=a1, b_angle=a2, structure=ref, sasa=asa, rsa=rsa, hse=hse, phi=phi, psi=psi, theta=theta, tau=tau, tau_angle=tau_angle, chi1=chi_angles[0], chi2=chi_angles[1], chi3=chi_angles[2], chi4=chi_angles[3], chi5=chi_angles[4], missing_atoms=missing, ss_dssp=ss_dssp, ss_stride=ss_stride, outer_angle=outer, core_distance=distance, mid_distance=midpoint_distance, midplane_distance=mid_membrane_distance, rotation_angle=rotation_angle))
             except Exception as e:
+                print(e)
                 print([ref,res,a1,a2,rsa,hse,phi,psi,theta,tau,ss_dssp,ss_stride,outer,tau_angle,asa,distance,midpoint_distance,mid_membrane_distance])
 
         print("created list")

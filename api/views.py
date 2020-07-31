@@ -788,7 +788,8 @@ class StructureLigandInteractions(generics.ListAPIView):
                                              'fragment__residue__generic_number',
                                              'fragment__residue__display_generic_number',
                                              )
-        queryset = queryset.exclude(interaction_type__type='hidden').order_by('fragment__residue__sequence_number')
+        #queryset = queryset.exclude(interaction_type__type='hidden').order_by('fragment__residue__sequence_number')
+        queryset = queryset.order_by('fragment__residue__sequence_number')
         slug = self.kwargs.get('pdb_code')
         return queryset.filter(structure_ligand_pair__structure__pdb_code__index=slug,
                                structure_ligand_pair__annotated=True)

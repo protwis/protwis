@@ -1,5 +1,5 @@
 {% extends "home/base.html" %}
-{% load staticfiles %}
+{% load static %}
 {% block addon_css %}
 <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
@@ -23,7 +23,7 @@ canvas {
 #viewport_full, #viewport {
     /*border: 1px solid #888888;*/
     position: relative;
-    margin: 0 auto; 
+    margin: 0 auto;
     text-align: left;
 
     }
@@ -33,7 +33,7 @@ canvas {
 {% endblock %}
 {% block content %}
 <h2>Structure information</h2>
- <script src="http://cdn.jsdelivr.net/3dmol.js/latest/3Dmol-min.js"></script> 
+ <script src="http://cdn.jsdelivr.net/3dmol.js/latest/3Dmol-min.js"></script>
  <div class="row">
     <table width="100%">
       <tr>
@@ -110,12 +110,12 @@ canvas {
     </td>
     <td style="border:0px;text-align:left">
 
-       <!--      <div style="height: 300px; width: 500px; position: relative;" class='viewer_3Dmoljs'  data-backgroundcolor='0xffffff' data-href='pdb?pdb={{ pdbname }}' data-type='pdb' data-backgroundcolor='0xffffff' data-labelres2='fontSize:12;opacity:.2;color:black' data-select1='{"hetflag":false}'  data-style1='{"cartoon":{"color":"spectrum"}}' data-select2='{"resn":["test","{{ mainligand}}"]}' data-style2='{"stick":{"colorscheme":"greenCarbon"}}'></div> 
+       <!--      <div style="height: 300px; width: 500px; position: relative;" class='viewer_3Dmoljs'  data-backgroundcolor='0xffffff' data-href='pdb?pdb={{ pdbname }}' data-type='pdb' data-backgroundcolor='0xffffff' data-labelres2='fontSize:12;opacity:.2;color:black' data-select1='{"hetflag":false}'  data-style1='{"cartoon":{"color":"spectrum"}}' data-select2='{"resn":["test","{{ mainligand}}"]}' data-style2='{"stick":{"colorscheme":"greenCarbon"}}'></div>
                  -->
             <div id="viewport_full" style="width:100%; height:300px;">
             </div>
             <div style="width:100%; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
-                <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a> is a WebGL based 3D viewer powered by <a href="http://mmtf.rcsb.org">MMTF</a>.</p>
+                <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a> is a WebGL based 3D viewer powered by <a href="https://mmtf.rcsb.org">MMTF</a>.</p>
             </div>
             <button id=fullscreen_full>Full Screen</button>
              <a href="pdb?pdb={{ pdbname }}">Download PDB file</a>
@@ -127,7 +127,7 @@ canvas {
 <a href="excel/{{pdbname}}">Download list in excel</a>
 <div class="row">
     <div class="col-md-11 text-center">
-        {% if residues %}              
+        {% if residues %}
         <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
             <table width="100%" class="display" id="residues">
 
@@ -190,12 +190,12 @@ canvas {
         <div class="row">
             <div class="col-md-5 text-center text-info">
                 3D interaction viewer
-<!--                  <div style="height: 380px; width: 400px; position: relative;" class='viewer_3Dmoljs'  data-backgroundcolor='0xffffff' data-href='download?ligand={{ ligand }}&pdb={{ pdbname }}' data-type='pdb' data-backgroundcolor='0xffffff' data-labelres1='fontSize:10;opacity:1;color:white;backgroundOpacity:0.8' data-select1='{"hetflag":false}' data-style1='stick' data-select2='{"hetflag":true}' data-style2='{"stick":{"colorscheme":"greenCarbon"}}'></div> 
+<!--                  <div style="height: 380px; width: 400px; position: relative;" class='viewer_3Dmoljs'  data-backgroundcolor='0xffffff' data-href='download?ligand={{ ligand }}&pdb={{ pdbname }}' data-type='pdb' data-backgroundcolor='0xffffff' data-labelres1='fontSize:10;opacity:1;color:white;backgroundOpacity:0.8' data-select1='{"hetflag":false}' data-style1='stick' data-select2='{"hetflag":true}' data-style2='{"stick":{"colorscheme":"greenCarbon"}}'></div>
  -->
                  <a href="download?ligand={{ ligand }}&pdb={{ pdbname }}">Download PDB file</a>
                  <div id="viewport" style="width:100%; height:300px;"></div>
                  <div style="width:100%; background-color:#eaeaea; border-radius: 0px 0px 5px 5px; text-align: left;">
-                    <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a><font color='black'> is a WebGL based 3D viewer powered by </font><a href="http://mmtf.rcsb.org">MMTF</a>.</p>
+                    <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a><font color='black'> is a WebGL based 3D viewer powered by </font><a href="https://mmtf.rcsb.org">MMTF</a>.</p>
                  </div>
                  <div> <button id=fullscreen>Full Screen</button></div>
             </div>
@@ -218,9 +218,9 @@ canvas {
     <div class="col-md-10 text-center">
         {{ helixbox }}
         <br>
-        Download: 
-        <a href="javascript:saveSvgAsPng(document.getElementById('helixbox'), 'helixbox{{ pdbname }}.png', {scale: 3});">PNG</a> | 
-        <a id=helix_svg_link href-lang="image/svg+xml" href="" download="helixbox{{ p.pdbname }}">SVG</a>   
+        Download:
+        <a href="javascript:saveSvgAsPng(document.getElementById('helixbox'), 'helixbox{{ pdbname }}.png', {scale: 3});">PNG</a> |
+        <a id=helix_svg_link href-lang="image/svg+xml" href="" download="helixbox{{ p.pdbname }}">SVG</a>
     </div>
 </div>
 
@@ -228,8 +228,8 @@ canvas {
 <div class="col-md-10 text-center">
     {{ snakeplot }}
     <br>
-    Download: 
-    <a href="javascript:saveSvgAsPng(document.getElementById('snakeplot'), 'snake_{{ pdbname }}.png', {scale: 3});">PNG</a> | 
+    Download:
+    <a href="javascript:saveSvgAsPng(document.getElementById('snakeplot'), 'snake_{{ pdbname }}.png', {scale: 3});">PNG</a> |
     <a id=snake_svg_link href-lang="image/svg+xml" href="" download="snake_{{ p.pdbname }}">SVG</a>
     </div>
 </div>
@@ -281,7 +281,7 @@ canvas {
                 }
             });
 
-            $('[data-toggle="tooltip"]').tooltip(); 
+            $('[data-toggle="tooltip"]').tooltip();
             //$('[data-toggle="tooltip"]').tooltip({html:true});
 
 
@@ -290,7 +290,7 @@ canvas {
                 interactions = {{ residues|safe }};
                 count = [];
                 output = [];
-                
+
                   $.each( interactions, function( index, val ) {
 
                     console.log(val);
@@ -316,7 +316,7 @@ canvas {
                     //     flags[val[i][0]] = true;
                     //     outputAA.push(val[i][0]);
                     // }
-                     
+
                       extra = "\n" + String(count[key]) + " interactions | Type: "+ output[key];
 
 
@@ -335,14 +335,14 @@ canvas {
                 $("circle").tooltip('fixTitle');
                 $("text").tooltip('fixTitle');
 
-                
+
             }
             ajaxInteractions('snakeplot')
             ajaxInteractions('helixbox')
 
 
             });
-    </script> 
+    </script>
         <script src="{% static 'home/js/ngl.js' %}"> </script>
         <script>
         // http://proteinformatics.charite.de/ngl/doc/#User_manual/Usage/Molecular_representations
@@ -398,7 +398,7 @@ canvas {
                     color: "residueindex", visible: false
                 } );
 
-                {% if main_ligand != 'none' %} 
+                {% if main_ligand != 'none' %}
                 o.addRepresentation("ball+stick", { sele: "{{ main_ligand}}", scale: 1, aspectRatio: 1 } );
                 o.addRepresentation("surface", { sele: "{{ main_ligand}}", opacity: 0.4,
                                                 useWorker: false } );
@@ -451,7 +451,7 @@ canvas {
             } );
 
             // stage.setSpin( [ 0, 1, 0 ], 0.005 );
-        
+
             $( "#fullscreen" ).click(function() {
                 stage.toggleFullscreen();
             });

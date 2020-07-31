@@ -78,6 +78,8 @@ class StructureAnomalyRecognition(object):
 			else:
 				for t in ProteinSegment.objects.filter(proteinfamily='GPCR',category='helix'):
 					resis = Residue.objects.filter(protein_conformation__protein=self.structure.protein_conformation.protein.parent, protein_segment=t)
+					if len(resis)==0:
+						continue
 					self.range.append([resis[0].sequence_number, resis.reverse()[0].sequence_number])
 
 	def run_recog(self):

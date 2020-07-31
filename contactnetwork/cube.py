@@ -15,11 +15,11 @@ from signprot.models import SignprotComplex
 import copy
 
 # Distance between residues in peptide
-NUM_SKIP_RESIDUES = 4
+NUM_SKIP_RESIDUES = 0
 
 def compute_interactions(pdb_name,save_to_db = False):
 
-    do_distances = True
+    do_distances = False ## Distance calculation moved to build_structure_angles
     do_interactions = True
     do_complexes = True
     distances = []
@@ -55,14 +55,14 @@ def compute_interactions(pdb_name,save_to_db = False):
     for i in ids_to_remove:
         chain.detach_child(i)
 
-    if do_distances:
-        for i1,res1 in enumerate(chain,1):
-            if not is_water(res1):
-                for i2,res2 in enumerate(chain,1):
-                    if i2>i1 and not is_water(res2):
-                        # Do not calculate twice.
-                        distance = res1['CA']-res2['CA']
-                        distances.append((dbres[res1.id[1]],dbres[res2.id[1]],distance,dblabel[res1.id[1]],dblabel[res2.id[1]]))
+    # if do_distances:
+    #     for i1,res1 in enumerate(chain,1):
+    #         if not is_water(res1):
+    #             for i2,res2 in enumerate(chain,1):
+    #                 if i2>i1 and not is_water(res2):
+    #                     # Do not calculate twice.
+    #                     distance = res1['CA']-res2['CA']
+    #                     distances.append((dbres[res1.id[1]],dbres[res2.id[1]],distance,dblabel[res1.id[1]],dblabel[res2.id[1]]))
 
     if do_interactions:
         atom_list = Selection.unfold_entities(s[preferred_chain], 'A')
@@ -105,7 +105,9 @@ def compute_interactions(pdb_name,save_to_db = False):
                             for match_res in ns_sign.search(gpcr_atom.coord, 4.5, "R")}
 
             # For each pair of interacting residues, determine the type of interaction
-            residues_sign = ProteinConformation.objects.get(protein__entry_name=pdb_name+"_"+complex.alpha.lower()).residue_set.exclude(generic_number=None).all().prefetch_related('generic_number')
+            #residues_sign = ProteinConformation.objects.get(protein__entry_name=pdb_name+"_"+complex.alpha.lower()).residue_set.exclude(generic_number=None).all().prefetch_related('generic_number')
+            # TOFIX: Current workaround is forcing _a to pdb for indicating alpha-subunit
+            residues_sign = ProteinConformation.objects.get(protein__entry_name=pdb_name+"_a").residue_set.exclude(generic_number=None).all().prefetch_related('generic_number')
 
             # grab labels from sign protein
             dbres_sign = {}
@@ -231,15 +233,15 @@ def compute_interactions(pdb_name,save_to_db = False):
             for pair in classified_complex:
                 pair.save_into_database()
 
-        if do_distances:
-            # Distance.objects.filter(structure=struc).all().delete()
-            bulk_distances = []
-            for i,d in enumerate(distances):
-                distance = Distance(distance=int(100*d[2]),res1=d[0], res2=d[1],gn1=d[3], gn2=d[4], gns_pair='_'.join([d[3],d[4]]), structure=struc)
-                bulk_distances.append(distance)
-                if len(bulk_distances)>1000:
-                    pairs = Distance.objects.bulk_create(bulk_distances)
-                    bulk_distances = []
-
-            pairs = Distance.objects.bulk_create(bulk_distances)
+        # if do_distances:
+        #     # Distance.objects.filter(structure=struc).all().delete()
+        #     bulk_distances = []
+        #     for i,d in enumerate(distances):
+        #         distance = Distance(distance=int(10000*d[2]),res1=d[0], res2=d[1],gn1=d[3], gn2=d[4], gns_pair='_'.join([d[3],d[4]]), structure=struc)
+        #         bulk_distances.append(distance)
+        #         if len(bulk_distances)>1000:
+        #             pairs = Distance.objects.bulk_create(bulk_distances)
+        #             bulk_distances = []
+        #
+        #     pairs = Distance.objects.bulk_create(bulk_distances)
     return classified, distances

@@ -1,28 +1,28 @@
-﻿input.form-control, select.form-control {
+table input.form-control, table select.form-control {
     width: 50px;
-	height: 20px;
-	font-size: 9px;
-	padding: 2px 2px;
+    height: 20px;
+    font-size: 9px;
+    padding: 2px 2px;
 }
-input.number_range_filter, input.date_range_filter {
+table input.number_range_filter, table input.date_range_filter {
     width: 20px;
     font-size: 8px;
 }
-.general-th {
+table .general-th {
     background-color: #98df8a;
 }
-.activity-th {
+table .activity-th {
     background-color: #aec7e8;
 }
-.chemical-th {
+table .chemical-th {
     background-color: #ff9896;
 }
-table {
+div.container table {
     min-width: 100%;
 }
-.display td,th {
+div.container .display td,th {
     text-align: center;
 }
-.dt-left {
+div.container .dt-left {
     text-align: left;
 }

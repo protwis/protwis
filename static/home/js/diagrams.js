@@ -154,13 +154,14 @@ function hideToolTip(plotid) {
     tipElement.setAttribute('visibility', 'hidden');
 }
 
-function toggleLoop(id,type, skipmaxmin) {
+function toggleLoop(id, type, skipmaxmin, el) {
+  svg = $(el).closest('svg');
     if (type=='long') {
-      $(id+".long").hide();
-      $(id+".short").show();
+      svg.find(id+".long").hide();
+      svg.find(id+".short").show();
     } else {
-      $(id+".long").show();
-      $(id+".short").hide();
+      svg.find(id+".long").show();
+      svg.find(id+".short").hide();
     }
     // $(id+".long").each(function () {
     //     curr = $(this).css("display");
@@ -393,6 +394,7 @@ function maxmin() {
     classmax = '';
     classmin = '';
     counter = 0;
+    if (!$('#snake').length) return
     // console.log("temp",y_max,y_min);
     $('#snake').children('.rtext').each(function () {
         counter += 1;

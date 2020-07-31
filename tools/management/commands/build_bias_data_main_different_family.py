@@ -356,7 +356,6 @@ class Command(BaseBuild):
         for i in biasdata:
             if i['order_no'] > 0:
                 if i['quantitive_measure_type'].lower() == 'ec50' or i['quantitive_measure_type'].lower() == 'ic50' :
-
                     if i['quantitive_activity'] is not None and i['quantitive_activity'] != 0 and most_potent['quantitive_activity'] is not None:
                         i['potency'] = round(
                             i['quantitive_activity']/most_potent['quantitive_activity'], 1)

@@ -323,6 +323,7 @@ class Command(BaseBuild):
                         b = math.log10(most_potent['reference_quantitive_efficacy'] / most_potent['reference_quantitive_activity'])
                         c = math.log10(i['quantitive_efficacy'] / i['quantitive_activity'])
                         d = math.log10(i['reference_quantitive_efficacy'] / i['reference_quantitive_activity'])
+
                         temp_calculation = self.caclulate_bias_factor_variables(a,b,c,d)
                         # if temp_calculation < 0:
                         #     temp_calculation = self.caclulate_bias_factor_variables(c,d,a,b)

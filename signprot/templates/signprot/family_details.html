@@ -1,5 +1,5 @@
 {% extends "home/base.html" %}
-{% load staticfiles %}
+{% load static %}
 
 {% block addon_css %}
 <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
@@ -41,6 +41,8 @@
     <a href="/alignment/fasta/{{ pf.slug }}/" class="btn btn-primary btn-xs">Download</a>
     </div>
 </div>
+
+{% include "protein/sequence_viewer.html" %}
 
 <div class="row">
     <div class="col-md-2 text-right text-info">

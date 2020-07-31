@@ -1,5 +1,5 @@
 ﻿{% extends "home/base.html" %}
-{% load staticfiles %}
+{% load static %}
 {% block addon_css %}
 <link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/nvd3-update.css' %}" type="text/css" />
@@ -93,7 +93,7 @@ body {
             <td><b>Class (Family)</b></td>
             <td align="center"><b>Total</b></td>
             {% for class in all_structures_by_class.items %}
-            <td align="center"><b>{% if class.0 == "Taste 2" %}Taste&nbsp;2{% else %}{{ class.0 }}{% endif %}</b></td>
+            <td align="center"><b>{% if class.0 == "Class T (Taste 2)" %}Taste&nbsp;2{% else %}{{ class.0 }}{% endif %}</b></td>
             {% endfor %}
         </tr>
     </thead>
@@ -139,7 +139,7 @@ body {
             <td><b>Class (Family)</b></td>
             <td align="center">Total</td>
             {% for class in unique_structures_by_class.items %}
-            <td align="center"><b>{% if class.0 == "Taste 2" %}Taste&nbsp;2{% else %}{{ class.0 }}{% endif %}</b></td>
+            <td align="center"><b>{% if class.0 == "Class T (Taste 2)" %}Taste&nbsp;2{% else %}{{ class.0 }}{% endif %}</b></td>
             {% endfor %}
         </tr>
     </thead>
@@ -559,7 +559,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
                 <h4>Class F<br />(Frizzled)</h4>
             </td>
             <td width="50%" align="center">
-                <h4>Taste 2</h4>
+                <h4>Class T (Taste 2)</h4>
             </td>
         </tr>
         <tr>

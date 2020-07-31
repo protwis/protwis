@@ -12,10 +12,10 @@ from Bio.PDB import parse_pdb_header
 import logging, os, urllib, yaml
 
 class Command(BaseCommand):
-     
+
     logger = logging.getLogger(__name__)
 
-    # source file directory   
+    # source file directory
     structure_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'structures'])
     structure_build_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data'])
     pdb_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs'])
@@ -37,18 +37,18 @@ class Command(BaseCommand):
 
     def download_pdb(self, pdb_code):
 
-        url = "http://www.rcsb.org/pdb/files/{}.pdb".format(pdb_code)
+        url = "https://www.rcsb.org/pdb/files/{}.pdb".format(pdb_code)
         urllib.request.urlretrieve(url, os.sep.join([self.pdb_data_dir, "{}.pdb".format(pdb_code)]))
 
 
     def create_yaml(self, pdb_code, prot_name, data):
 
         yaml_pdb_data = {
-            'pdb' : pdb_code, 
+            'pdb' : pdb_code,
             'resolution' : data['resolution'],
             'publication_date' : data['release_date'][:10],
             #PDB header contains full citation
-            #'pubmed_id' : data['journal_reference'],                       
+            #'pubmed_id' : data['journal_reference'],
             }
         yaml_struct_annotations = {
             'fusion_proteins' : { x : [y[0], y[1]] for x,y in enumerate(self.parser.fusions) }
@@ -56,7 +56,7 @@ class Command(BaseCommand):
         yaml_other_data = {
             'construct' : pdb_code.lower(),
             'segments' : self.get_segments_data(prot_name),
-            'segments_in_structure' : self.parser.get_segments(), 
+            'segments_in_structure' : self.parser.get_segments(),
             }
 
         out_fh = open('{}.yaml'.format(os.sep.join([self.structure_build_data_dir, 'structures', pdb_code])), 'w')
