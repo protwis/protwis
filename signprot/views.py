@@ -734,7 +734,6 @@ def couplings(request, template_name='signprot/coupling_browser.html'):
 def familyDetail(request, slug):
     # get family
     pf = ProteinFamily.objects.get(slug=slug)
-
     # get family list
     ppf = pf
     families = [ppf.name]
@@ -782,7 +781,8 @@ def familyDetail(request, slug):
                                                  protein__sequence_type__slug='wt')
         except:
             pc = None
-    
+            p = None
+    p = pc.protein
     residues = Residue.objects.filter(protein_conformation=pc).order_by('sequence_number').prefetch_related(
         'protein_segment', 'generic_number', 'display_generic_number')
 
@@ -829,10 +829,10 @@ def familyDetail(request, slug):
             title_cell_skip -= 1
     if r_buffer:
         r_chunks.append(r_buffer)
-
+    
     context = {'pf': pf, 'families': families, 'structures': structures, 'no_of_proteins': no_of_proteins,
                'no_of_human_proteins': no_of_human_proteins, 'mutations': mutations, 'r_chunks': r_chunks,
-               'chunk_size': chunk_size}
+               'chunk_size': chunk_size, 'p': p}
 
     return render(request,
                   'signprot/family_details.html',
