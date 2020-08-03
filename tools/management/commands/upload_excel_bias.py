@@ -214,13 +214,10 @@ class Command(BaseBuild):
 																	     d['protein_mtype'],
 																	     d['protein_activity_quantity_unit'])
 
-
             if not isinstance(d['pathway_bias_initial'], (int, float)):
                 d['pathway_bias_initial'] = None
             if not isinstance(d['pathway_bias'], (int, float)):
                 bias_value=d['pathway_bias'] = None
-
-
 
 
             with concurrent.futures.ThreadPoolExecutor() as executor:

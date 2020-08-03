@@ -212,7 +212,6 @@ class Command(BaseBuild):
 
         return send
 
-
     def process_dublicates(self, context):
         '''
         Recieve data from "process_data"
@@ -298,11 +297,9 @@ class Command(BaseBuild):
 
             self.calc_potency(i[1]['biasdata'])
 
-    # TODO: done
     def caclulate_bias_factor_variables(self,a,b,c,d):
         lgb = (a-b)-(c-d)
         return lgb
-
 
     def calc_bias_factor(self, biasdata):
         most_reference = dict()
@@ -352,7 +349,6 @@ class Command(BaseBuild):
                     i['log_bias_factor'] = None
             except:
                 i['log_bias_factor'] = None
-
 
     def calc_t_coefficient(self, biasdata):
         for i in biasdata:

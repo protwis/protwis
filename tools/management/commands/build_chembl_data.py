@@ -218,7 +218,6 @@ class Command(BaseBuild):
             increment=increment+1
             self.upload_to_db(chembl_data)
 
-
     def analyse_rows(self):
         """
         Fetch data to models
@@ -236,13 +235,13 @@ class Command(BaseBuild):
         #range should be set to number of total objects/20 (API batch size)
         #555200 is the last id saved before session was aborted
         for i in range(30578):
-            current_id =  555200 + ((i+1) * 20)
-            prev_id =  555200 + (i *20)
+            current_id =  591900 + ((i+1) * 20)
+            prev_id =  591900 + (i *20)
             chembl_assays = self.get_chembl_assay(target_list_list, prev_id, current_id)
             chembl_assays=list(chembl_assays)
             self.process_chembl(chembl_assays,current_id)
             # control the flow
-            if(current_id%1000==0):
+            if(current_id%100==0):
                 end = time.time()
                 print('---temp_increment time---',current_id,  end - start)
 
