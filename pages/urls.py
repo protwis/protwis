@@ -1,7 +1,7 @@
-from django.conf.urls import url
+from django.urls import path
 
-from pages import views
+from . import views
 
 urlpatterns = [
-	url(r'^releasenotes', views.releasenotes, name='releasenotes'), 
+    path('releasenotes/', views.releasenotes, name='releasenotes'),
 ]
