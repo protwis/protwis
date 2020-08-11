@@ -1049,13 +1049,15 @@ function downloadNewick(name){
   }
 }
 
-function download(filename, text) {
+async function download(filename, text) {
   var element = document.createElement('a');
   element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
   element.setAttribute('download', filename);
 
   element.style.display = 'none';
   document.body.appendChild(element);
+  // await addition before click - in some cases otherwise there is no download
+  await new Promise(r => setTimeout(r, 500));
   element.click();
 
   document.body.removeChild(element);
@@ -1359,8 +1361,9 @@ $(document).ready(function() {
     });
 
     // Single group of PDB files
-    initializeButtons('#single-crystal-group-tab', renderTree);
-    initializeTopButtons('#single-crystal-group-tab');
+    //initializeButtons('#single-crystal-group-tab', renderTree);
+    //initializeTopButtons('#single-crystal-group-tab');
+    renderTree();
 
     // init tree toggles
     // Button Toggles
