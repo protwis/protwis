@@ -43,39 +43,39 @@
         <!-- <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;"> -->
             <table class="display compact text-nowrap" id='structures_scrollable'>
                 <thead id="headers">
-                    <tr>
-                        <th><a href="#"><span class="glyphicon glyphicon-info-sign"></span></a></th>
-                        <th style="text-align:left" colspan="6" >
-                            Receptor</th>
-                        <th style="border-left: 1px solid black; text-align:left" colspan="5" style="">
-                            Tested Ligand Pair </th>
-                        <th style="border-left: 1px solid black; text-align:left" colspan="2" style="">
-                            Receptor transducers</th>
-                        <th style="border-left: 1px solid black; text-align:left" colspan="5">
-                            Pathway Bias Rank Order </th>
-                        <th class="shade" style="border-left: 1px solid black; text-align:left" colspan="4">
-                            Operational model <br> &#916;&#916;(Tau/Ka)</th>
-                        <th class="shade" style="border-left: 1px solid black; text-align:left" colspan="4" >
-                            Intrinsic relative<br>activity<br>(&#916;&#916;Log(Emax/EC50))</th>
-                        <th class="shade" style="border-left: 1px solid black; text-align:left" colspan="4" >
-                            Potency ratio</th>
-                        <th class="shade" style="border-left: 1px solid black; text-align:left" colspan="5" >
-                            Potency (pEC50 or<br><font color="#FF0000">IC50)</font></th>
-                        <th class="shade" style="border-left: 1px solid black; text-align:left" colspan="5" >
-                            Emax (% of ref ligand)</th>
-                        <th class="shade" style="border-left: 1px solid black; text-align:left" colspan="5">
-                            Transduction coefficient</th>
-                        <th style="border-left: 1px solid black; text-align:left" colspan="5">
-                            Assay</th>
-                        <th style="border-left: 1px solid black; text-align:left" colspan="5">
-                            Cell line</th>
-                        <th style="border-left: 1px solid black; text-align:left" colspan="5">
-                            Time resolved</th>
-                        <th style="border-left: 1px solid black; text-align:left; overflow: hidden;
-                                  white-space: nowrap;
-                                  text-overflow: ellipsis;
-                          max-width: 250px;" colspan="2">Reference</th>
-                    </tr>
+                <tr>
+                    <th><a href="#"><span class="glyphicon glyphicon-info-sign"></span></a></th>
+                    <th id="receptor" style="text-align:left" colspan="6" >
+                        Receptor</th>
+                    <th style="border-left: 1px solid black; text-align:left" colspan="5" style="">
+                        Tested Ligand Pair </th>
+                    <th id="transducers" style="border-left: 1px solid black; text-align:left" colspan="2" style="">
+                        Receptor transducers</th>
+                    <th id="signal" style="border-left: 1px solid black; text-align:left" colspan="5">
+                        Pathway Bias Rank Order </th>
+                    <th id="opmodel" class="shade" style="border-left: 1px solid black; text-align:left" colspan="4">
+                        Operational model <br> &#916;&#916;(Tau/Ka)</th>
+                    <th id="lbf" class="shade" style="border-left: 1px solid black; text-align:left" colspan="4" >
+                        Intrinsic relative<br>activity<br>(&#916;&#916;Log(Emax/EC50))</th>
+                    <th id="potency" class="shade" style="border-left: 1px solid black; text-align:left" colspan="4" >
+                        Potency ratio</th>
+                    <th id="activity" class="shade" style="border-left: 1px solid black; text-align:left" colspan="5" >
+                        Potency (pEC50 or<br><font color="#FF0000">IC50)</font></th>
+                    <th id="emax" class="shade" style="border-left: 1px solid black; text-align:left" colspan="5" >
+                        Emax (% of ref ligand)</th>
+                    <th id="tfactor" class="shade" style="border-left: 1px solid black; text-align:left" colspan="5">
+                        Transduction coefficient</th>
+                    <th id="assay" style="border-left: 1px solid black; text-align:left" colspan="5">
+                        Assay</th>
+                    <th id="cell" style="border-left: 1px solid black; text-align:left" colspan="5">
+                        Cell line</th>
+                    <th id="time" style="border-left: 1px solid black; text-align:left" colspan="5">
+                        Time resolved</th>
+                    <th style="border-left: 1px solid black; text-align:left; overflow: hidden;
+                              white-space: nowrap;
+                              text-overflow: ellipsis;
+                      max-width: 250px;" colspan="2">Reference</th>
+                </tr>
                     <tr>
                         <!-- Receptor -->
                         <th><a href="#"><span class="glyphicon glyphicon-info-sign"></a></span></th>
@@ -101,7 +101,7 @@
                         <th>P 4</th>
                         <th>P 5</th>
                         <!-- operational model -->
-                        <th class="shade" id='column0' style="border-left: 1px solid black;">P 2 /  P 1 </th>
+                        <th class="shade"  style="border-left: 1px solid black;">P 2 /  P 1 </th>
                         <th class="shade" id='column1'>P 3 /  P 1</th>
                         <th class="shade" id='column2'>P 4 /  P 1</th>
                         <th class="shade" id='column3'>P 5 /  P 1</th>
@@ -134,25 +134,25 @@
                         <th class="shade" id='column27'>P 4</th>
                         <th class="shade" id='column28'>P 5</th>
                         <!-- Assay type -->
-                        <th class="skip" style="border-left: 1px solid black;">P 1</th>
-                        <th class="skip" >P 2</th>
-                        <th class="skip" >P 3</th>
-                        <th class="skip" >P 4</th>
-                        <th class="skip" >P 5</th>
+                        <th style="border-left: 1px solid black;">P 1</th>
+                        <th >P 2</th>
+                        <th >P 3</th>
+                        <th >P 4</th>
+                        <th >P 5</th>
                         <!-- Cell Line -->
-                        <th  class="skip" style="border-left: 1px solid black;">P 1</th>
-                        <th class="skip" >P 2</th>
-                        <th class="skip" >P 3</th>
-                        <th class="skip" >P 4</th>
-                        <th class="skip" >P 5</th>
+                        <th  style="border-left: 1px solid black;">P 1</th>
+                        <th >P 2</th>
+                        <th >P 3</th>
+                        <th >P 4</th>
+                        <th >P 5</th>
                         <!-- Time resolved -->
-                        <th  class="skip" style="border-left: 1px solid black;">P 1</th>
-                        <th class="skip" >P 2</th>
-                        <th class="skip" >P 3</th>
-                        <th class="skip" >P 4</th>
-                        <th class="skip" >P 5</th>
+                        <th  style="border-left: 1px solid black;">P 1</th>
+                        <th >P 2</th>
+                        <th >P 3</th>
+                        <th >P 4</th>
+                        <th >P 5</th>
                         <!-- Authors -->
-                        <th  class="skip"  style="overflow: hidden;
+                        <th   style="overflow: hidden;
           white-space: nowrap;
           text-overflow: ellipsis;
           max-width: 100px; border-left: 1px solid black;">Authors</th>
@@ -199,9 +199,9 @@
                         <!-- pathways -->
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
                         {% if forloop.first %}
-                        <td class="pathway" style="border-left: 1px solid black;">{{ex.family}}</td>
+                        <td  style="border-left: 1px solid black;">{{ex.family}}</td>
                         {% else %}
-                        <td class="pathway">{{ex.family}}</td>
+                        <td >{{ex.family}}</td>
                         {%endif%}
                         {%endfor%}
 
@@ -258,21 +258,21 @@
                         <!-- Assay -->
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
 
-                        <td class="donotshade" title='{{ex.assay_type}}' >{{ex.assay_type }}</td>
+                        <td  title='{{ex.assay_type}}' >{{ex.assay_type }}</td>
 
                         {%endfor%}
 
                         <!-- Cell line -->
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
 
-                        <td class="donotshade">{{ex.cell_line }}</td>
+                        <td >{{ex.cell_line }}</td>
 
                         {%endfor%}
 
                         <!-- Time resolved -->
                         {% for ex in e.1.biasdata|dictsort:"order_no" %}
 
-                        <td class="donotshade">{{ex.assay_time_resolved }}</td>
+                        <td >{{ex.assay_time_resolved }}</td>
 
                         {%endfor%}
 
@@ -312,6 +312,104 @@ document.getElementById("loadingSpinner").style.display = "none";
 <script src="{% static 'home/js/shading.js' %}"></script>
 
 <script type="text/javascript" charset="utf-8">
+    function calculate_header(ids){
+
+        $.each(ids, function( index, value ) {
+
+              if (value >= 1 && value <= 6){
+                 var initial = $("#receptor").prop("colspan");
+                 initial = initial - 1;
+                 $("#receptor").attr("colspan", initial);
+             }
+             else if(value >= 7 && value <= 11){
+                 var initial = $("#ligand").prop("colspan");
+                 initial = initial - 1;
+                 $("#ligand").attr("colspan", initial);
+             }
+             else if(value >= 12 && value <= 13){
+                 var initial = $("#transducers").prop("colspan");
+                 initial = initial - 1;
+                 $("#transducers").attr("colspan", initial);
+
+             }else if(value >= 14 && value <= 18){
+                 var initial = $("#signal").prop("colspan");
+                 initial = initial - 1;
+                 $("#signal").attr("colspan", initial);
+             }
+             else if(value >= 19 && value <= 22){
+                 var initial = $("#opmodel").prop("colspan");
+                 initial = initial - 1;
+                 $("#opmodel").attr("colspan", initial);
+             }
+             else if(value >= 23 && value <= 26){
+                 var initial = $("#lbf").prop("colspan");
+                 initial = initial - 1;
+                 $("#lbf").attr("colspan", initial);
+             }
+             else if(value >= 27 && value <= 30){
+                 var initial = $("#potency").prop("colspan");
+                 initial = initial - 1;
+                 $("#potency").attr("colspan", initial);
+             }
+             else if(value >= 31 && value <= 35){
+                 var initial = $("#activity").prop("colspan");
+                 initial = initial - 1;
+                 $("#activity").attr("colspan", initial);
+             }
+             else if(value >= 36 && value <= 40){
+                 var initial = $("#emax").prop("colspan");
+                 initial = initial - 1;
+                 $("#emax").attr("colspan", initial);
+
+             }
+             else if(value >= 41 && value <= 45){
+                 var initial = $("#tfactor").prop("colspan");
+                 initial = initial - 1;
+                 $("#tfactor").attr("colspan", initial);
+
+             }
+             else if(value >= 46 && value <= 50){
+                 var initial = $("#assay").prop("colspan");
+                 initial = initial - 1;
+                 $("#assay").attr("colspan", initial);
+             }
+              else if(value >= 51 && value <= 55){
+                  var initial = $("#cell").prop("colspan");
+                  initial = initial - 1;
+                  $("#cell").attr("colspan", initial);
+              }
+               else if(value >= 56 && value < 61){
+                   var initial = $("#time").prop("colspan");
+                   initial = initial - 1;
+                   $("#time").attr("colspan", initial);
+               }
+            });
+    }
+
+    function catch_none() {
+        var a = $("#transducers").prop("colspan") ;
+        var b = $("#opmodel").prop("colspan");
+        var c = $("#lbf").prop("colspan");
+        var d = $("#tfactor").prop("colspan");
+
+        console.log('points',a,b,c,d);
+        if(a == 0){
+           $("#transducers").addClass( 'highlight' );
+        }
+        if(b == 1){
+           $("#opmodel").addClass( 'highlight' );
+        }
+        if(c == 0){
+           $("#lbf").addClass( 'highlight' );
+        }
+        if(d == 1){
+           $("#tfactor").addClass( 'highlight' );
+        }
+
+    }
+
+
+
     function getCookie(c_name) {
         if (document.cookie.length > 0) {
             c_start = document.cookie.indexOf(c_name + "=");
@@ -397,59 +495,27 @@ document.getElementById("loadingSpinner").style.display = "none";
                 $('#loadingSpinner').show();
                 $('#structures_scrollable_body').hide();
                 setTimeout(function() {
-                    oTable.columns().flatten().each(function(colIdx) {
-                        var columnData = [];
-                        oTable.rows({
-                            filter: 'applied'
-                        }).data().each(function(i) {
-                            columnData.push(i[colIdx]);
-                        })
-                        if (columnData.join('').length == 0 && colIdx != 0) {
-                            oTable.column(colIdx).visible(false);
-                        }
-                    });
-                    oTable.columns.adjust();
-                        var ligand_counter = read_unique_ids();
-                        var receptor_counter = read_unique_ids_receptor()
-                        document.getElementById("ligand_counter").innerHTML = ligand_counter;
-                        document.getElementById("receptor_counter").innerHTML = receptor_counter;
-                        // document.getElementById("Publications").innerHTML = 5;
                     $('#loadingSpinner').hide();
                     $('#structures_scrollable_body').show();
                 }, 1);
             },
 
             "fnDrawCallback": function() {
+
                 var ligand_counter = read_unique_ids();
-                var receptor_counter = read_unique_ids_receptor()
+                var receptor_counter = read_unique_ids_receptor();
                 $('#loadingSpinner').show();
                 $('#structures_scrollable_body').hide();
+
                 setTimeout(function() {
                     $('#loadingSpinner').hide();
                     $('#structures_scrollable_body').show();
                 }, 1);
-                setTimeout(function() {
-                    oTable.columns().flatten().each(function(colIdx) {
 
-                        var columnData = [];
-                        oTable.rows({
-                            filter: 'applied'
-                        }).data().each(function(i) {
-                            columnData.push(i[colIdx]);
-                        })
-                        if (columnData.join('').length == 0 && colIdx != 0) {
-                            oTable.column(colIdx).visible(false);
-                        }
-                    });
-                        var ligand_counter = read_unique_ids();
-                        var receptor_counter = read_unique_ids_receptor()
-                        document.getElementById("ligand_counter").innerHTML = ligand_counter;
-                        document.getElementById("receptor_counter").innerHTML = receptor_counter;
-                        // document.getElementById("Publications").innerHTML = 5;
-                    oTable.columns.adjust();
-                }, 1);
             }
+
         });
+
             yadcf.init(oTable,
             [{
                     column_number: 1,
@@ -889,6 +955,35 @@ document.getElementById("loadingSpinner").style.display = "none";
                 cumulative_filtering: true
             }
         );
+        oTable.on( 'draw', function () {
+            console.log( 'Redraw occurred at: '+new Date().getTime() );
+            var column_ids = [];
+            var columnData = [];
+            oTable.columns().flatten().each(function(colIdx) {
+                var columnData = [];
+                oTable.rows({
+                    filter: 'applied'
+                }).data().each(function(i) {
+                    columnData.push(i[colIdx]);
+                })
+                if (columnData.join('').length == 0 && colIdx != 0) {
+                    $( oTable.column(colIdx).nodes() ).addClass('highlight');
+                    $( oTable.column(colIdx).header()).addClass('highlight');
+                    column_ids.push(colIdx);
+                }
+            });
+
+            console.log('---final data---',column_ids)
+            calculate_header(column_ids);
+            catch_none();
+            shadeTable(oTable, [".shade"], 120, 200);
+            var ligand_counter = read_unique_ids();
+            var receptor_counter = read_unique_ids_receptor();
+            document.getElementById("ligand_counter").innerHTML = ligand_counter;
+            document.getElementById("receptor_counter").innerHTML = receptor_counter;
+            oTable.columns.adjust();
+
+        } );
 
         function reset_filters() {
             $('#loadingSpinner').show();
@@ -899,6 +994,8 @@ document.getElementById("loadingSpinner").style.display = "none";
         $('.dataTables_scrollBody #structures_scrollable').addClass("pull-left");
 
         $('.dataTables_scrollBody').append('<div id=overlay><table id="overlay_table" class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
+
+
 
         function create_overlay() {
             // This function fires upon filtering, to update what rows to show as an overlay
@@ -1007,6 +1104,8 @@ document.getElementById("loadingSpinner").style.display = "none";
 </script>
 
 <script type="text/javascript">
+
+
     function myFunction(url, title, win, w, h) {
         const y = win.top.outerHeight / 2 + win.top.screenY - (h / 2);
         const x = win.top.outerWidth / 2 + win.top.screenX - (w / 2);
@@ -1073,6 +1172,10 @@ document.getElementById("loadingSpinner").style.display = "none";
 <style>
     ul li {
         display: inline-block;
+    }
+    .highlight{
+        /* background-color: red */
+        display:none;
     }
 </style>
 
