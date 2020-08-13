@@ -1361,9 +1361,8 @@ $(document).ready(function() {
     });
 
     // Single group of PDB files
-    //initializeButtons('#single-crystal-group-tab', renderTree);
-    //initializeTopButtons('#single-crystal-group-tab');
-    renderTree();
+    initializeButtons('#single-crystal-group-tab', renderTree);
+    initializeTopButtons('#single-crystal-group-tab');
 
     // init tree toggles
     // Button Toggles
