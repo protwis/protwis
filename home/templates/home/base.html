@@ -12,6 +12,9 @@
     <!-- Bootstrap -->
     <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
     <link href="{% static 'bootstrap/css/bootstrap-submenu.min.css' %}" rel="stylesheet">
+    <!-- jQueryUI -->
+    <link rel="stylesheet" href="{% static 'home/css/jquery-ui.min.css' %}" type="text/css" media="all"/>
+    <link rel="stylesheet" href="{% static 'home/css/jquery-ui.theme.min.css' %}" type="text/css" media="all"/>
     <!-- TreeView -->
     <link href="{% static 'home/css/bootstrap-treeview.min.css' %}" rel="stylesheet">
     <!-- Custom styles -->
@@ -33,21 +36,21 @@
     <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
     <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
-
 </head>
+
+
 <body>
 {% mainmenu %}
 
 <div class="container" id="content">
     {% block content %}{% endblock %}
 </div>
+
+{# outcontent block only used in isoforms #}
 {% block outcontent %}{% endblock %}
 
 <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
 <script src="{% static 'home/js/jquery-3.1.1.min.js' %}"></script>
-<!-- jQueryUI -->
-<link rel="stylesheet" href="{% static 'home/css/jquery-ui.min.css' %}" type="text/css" media="all"/>
-<link rel="stylesheet" href="{% static 'home/css/jquery-ui.theme.min.css' %}" type="text/css" media="all"/>
 <script src="{% static 'home/js/jquery-ui.min.js' %}"></script>
 <script src="{% static 'bootstrap/js/bootstrap.min.js' %}"></script>
 <script src="{% static 'bootstrap/js/bootstrap-submenu.js' %}"></script>
@@ -55,14 +58,13 @@
 <script src="{% static 'home/js/svg-pan-zoom.min.js' %}"></script>
 <script src="{% static 'home/js/bootstrap-treeview.min.js' %}"></script>
 <script src="{% static 'home/js/papaparse.min.js' %}"></script>
-
 <!-- 3. flowplayer -->
 <script src="{% static 'flowplayer/flowplayer.min.js' %}"></script>
 <!-- the overlay plugin -->
 <script src="{% static 'flowplayer/flowplayer.overlay.min.js' %}"></script>
 <!-- the bootstrap vendor overlay wrapper -->
 <script src="{% static 'flowplayer/flowplayer.overlay.bootstrap.js' %}"></script>
-    <!-- Comply with GDPR Minified Cookie Consent from https://github.com/osano/cookieconsent -->
+<!-- Comply with GDPR Minified Cookie Consent from https://github.com/osano/cookieconsent -->
 <script src="{% static 'home/js/cookieconsent.min.js' %}" data-cfasync="false"></script>
 
 <script type="text/javascript">
@@ -70,8 +72,8 @@
         $('[data-submenu]').submenupicker();
     });
 </script>
-<script>
 
+<script>
     $('.videoLink').click(function (e) {
         e.preventDefault();
 
@@ -88,7 +90,12 @@
                 title: mp4,
                 size: "lg"
             },
-            clip: {sources: [{type: "video/mp4", src: mp4}]}
+            clip: {
+                sources: [{
+                    type: "video/mp4",
+                    src: mp4
+                }]
+            }
         });
         $("#fp-modal").click();
     });
@@ -101,21 +108,27 @@
 
     $('.refLink').tooltip();
 </script>
+
 <!-- Include custom ajax functions -->
 {% block addon_js %}{% endblock %}
 
+<!-- GDPR Banner Customize -->
 <script>
     window.cookieconsent.initialise({
-        "palette": {
-            "popup": {
-                "background": "#edeff5",
-                "text": "#838391"
+        palette: {
+            popup: {
+                background: "#edeff5",
+                text: "#838391"
             },
-            "button": {
-                "background": "#4b81e8"
-            }
+            button: {
+                background: "#4b81e8"
+            },
+        },
+        content: {
+            href: "https://docs.gpcrdb.org/legal_notice.html"
         }
     });
 </script>
+
 </body>
 </html>

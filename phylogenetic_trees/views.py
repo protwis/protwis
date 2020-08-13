@@ -1,16 +1,18 @@
 ﻿from django.shortcuts import render
 from django.conf import settings
 from django.core.files import File
+
 from protein.models import ProteinFamily, ProteinAlias, ProteinSet, Protein, ProteinSegment
 from common.views import AbsTargetSelection
 from common.views import AbsSegmentSelection
 from common.views import AbsMiscSelection
 from common.selection import SelectionItem
 from mutation.models import *
+from phylogenetic_trees.PrepareTree import *
+
 import math
 import os, shutil, subprocess, signal
 import uuid
-from phylogenetic_trees.PrepareTree import *
 from collections import OrderedDict
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
@@ -101,7 +103,6 @@ class Treeclass:
         self.phylip = None
         self.outtree = None
         self.dir = ''
-
 
     def Prepare_file(self, request,build=False):
         self.Tree = PrepareTree(build)
@@ -288,8 +289,6 @@ def get_buttons(request):
     buttons = [(x[1]['order'],x[1]['name']) for x in sorted(Tree_class.Additional_info.items(), key= lambda x: x[1]['order']) if x[1]['include']=='True']
     return render(request, 'phylogenetic_trees/ring_buttons.html', {'but':buttons })
 
-
-
 def modify_tree(request):
     try:
         shutil.rmtree('/tmp/modify')
@@ -328,7 +327,6 @@ def render_tree(request):
 
     request.session['Tree']=Tree_class
     return render(request, 'phylogenetic_trees/alignment.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':count, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons, 'phylip':Tree_class.phylip, 'outtree':Tree_class.outtree })
-
 
 def render_tree_new(request):
     Tree_class=Treeclass()
