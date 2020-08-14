@@ -569,7 +569,7 @@ function refreshLegend(div_class, selectData){
         .attr("x", 20)
         .attr("y", 30)
         .text(function (d) {
-            return (d)
+            return (d.replace(new RegExp(" receptors$"), "").replace("/neuropeptide "," / "))
         })
         .style("text-anchor", "start")
         .style("font-size", 13);
@@ -1273,7 +1273,8 @@ function submitToPage(destination){
   var form = $('<form action="' + url + '" method="post">' +
       '<textarea name="pdbs1" id="submit-pdbs1" />' +
       '<textarea name="pdbs2" id="submit-pdbs2" />' +
-      csrf_token + '</form>');
+      '<input type="hidden" name="csrfmiddlewaretoken" value="' + csrf_token + '" />' +
+      '</form>');
 
   $('body').append(form);
 
