@@ -1,15 +1,18 @@
-﻿from django.shortcuts import render
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.conf import settings
 from django.core.files import File
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt
 
-from protein.models import ProteinFamily, ProteinAlias, ProteinSet, Protein, ProteinSegment, ProteinGProteinPair
 from common.views import AbsTargetSelection
 from common.views import AbsSegmentSelection
 from common.views import AbsMiscSelection
-from common.selection import SelectionItem
+from common.selection import SimpleSelection, Selection, SelectionItem
 from mutation.models import *
+from protein.models import ProteinFamily, ProteinAlias, ProteinSet, Protein, ProteinSegment, ProteinGProteinPair
 
+from copy import deepcopy
 import json
 import math
 import os, shutil, subprocess, signal
@@ -61,7 +64,6 @@ class SegmentSelection(AbsSegmentSelection):
         },
     }
 
-
 class TreeSettings(AbsMiscSelection):
     step = 3
     number_of_steps = 3
@@ -74,23 +76,31 @@ class TreeSettings(AbsMiscSelection):
         ('targets', True),
         ('segments', True),
     ])
-    buttons = OrderedDict({
-        'continue_v3': {
-            'label': 'Draw tree using v3 code',
+
+    buttons = {
+        'continue': {
+            'label': 'Calculate & draw tree',
             'url': '/phylogenetic_trees/render_v3',
             'color': 'success',
         },
-        'continue_new': {
-            'label': 'Draw tree using new code',
-            'url': '/phylogenetic_trees/render_new',
-            'color': 'success',
-        },
-        'continue': {
-            'label': 'Draw tree using previous code',
-            'url': '/phylogenetic_trees/render',
-            'color': 'success',
-        }
-    })
+    }
+    # buttons = OrderedDict({
+    #     'continue_v3': {
+    #         'label': 'Draw tree using v3 code',
+    #         'url': '/phylogenetic_trees/render_v3',
+    #         'color': 'success',
+    #     },
+    #     'continue_new': {
+    #         'label': 'Draw tree using new code',
+    #         'url': '/phylogenetic_trees/render_new',
+    #         'color': 'success',
+    #     },
+    #     'continue': {
+    #         'label': 'Draw tree using previous code',
+    #         'url': '/phylogenetic_trees/render',
+    #         'color': 'success',
+    #     }
+    # })
     tree_settings = True
 
 
@@ -378,6 +388,44 @@ def render_tree_new(request):
     context['protein_data'] = protein_data
     return render(request, 'phylogenetic_trees/display.html', context)
 
+@csrf_exempt
+def signature_selection(request):
+    # create full selection and import simple selection (if it exists)
+    simple_selection = request.session.get('selection', False)
+    selection_pos = Selection()
+    selection_pos.importer(deepcopy(simple_selection))
+    selection_pos.clear('targets')
+
+    selection_neg = Selection()
+    selection_neg.importer(deepcopy(simple_selection))
+    selection_neg.clear('targets')
+
+    if 'group1' in request.POST and 'group2' in request.POST:
+        up_names = request.POST['group1'].split('\r')
+        for up_name in up_names:
+            try:
+                selection_object = SelectionItem('protein', Protein.objects.get(entry_name=up_name.strip().lower()))
+                selection_pos.add('targets', 'protein', selection_object)
+            except:
+                continue
+
+        down_names = request.POST['group2'].split('\r')
+        for down_name in down_names:
+            try:
+                selection_object = SelectionItem('protein', Protein.objects.get(entry_name=down_name.strip().lower()))
+                selection_neg.add('targets', 'protein', selection_object)
+            except:
+                continue
+
+        # Set both the positive and negative target selections
+        request.session['targets_pos'] = selection_pos.exporter()
+
+        request.session['selection'] = selection_neg.exporter()
+
+        return JsonResponse({"response": "ok"})
+    else:
+        return JsonResponse({"response": "error"})
+
 def render_tree_v3(request):
     Tree_class=Treeclass()
 
@@ -430,7 +478,7 @@ def render_tree_v3(request):
     # Grab all annotations and all the ligand role when present in aggregates
     # NOTE: we can probably remove the parent step and go directly via family in the query
     annotations = Protein.objects.filter(entry_name__in=protein_entries) \
-                    .values_list('entry_name', 'name', 'family__parent__name', 'family__parent__parent__name', 'family__parent__parent__parent__name', 'family__slug')
+                    .values_list('entry_name', 'name', 'family__parent__name', 'family__parent__parent__name', 'family__parent__parent__parent__name', 'family__slug', 'name')
 
     protein_slugs = set()
     for an in annotations:

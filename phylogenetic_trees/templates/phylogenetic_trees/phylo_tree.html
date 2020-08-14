@@ -1,5 +1,8 @@
 {% extends "home/base.html" %}
+
 {% load static %}
+
+
 
 {% block content %}
 
@@ -27,8 +30,8 @@
               <div class="row nav-row">
                 <div class="col-md-2">
                   <div class="hidden" id="submit-group">
-                    <div class="btn btn-success CN-button disabled" id="CN-button">Sequence alignment<br>(set 1)</div>
-                    <div class="btn btn-success CN-button disabled" id="CN-button">Sequence signature<br>(set 1 & 2) </div>
+                    <div class="btn btn-success CN-button disabled" id="SeqAln-button">Sequence alignment<br>(set 1)</div>
+                    <div class="btn btn-success CN-button disabled" id="SeqSig-button">Sequence signature<br>(set 1 & 2) </div>
                     <!--                        <div class="btn btn-success pull-left DN-button disabled" id="DN-button">Distance Network</div>-->
                   </div>
                 </div>
@@ -63,7 +66,9 @@
                       Receptor names <span class="caret"></span>
                     </button>
                     <ul class="dropdown-menu names" role="menu">
-                      <li class="active"><a href="#">UniProt accession code</a></li>
+                      <li><a href="#">IUPHAR</a></li>
+                      <li class="active"><a href="#">UniProt (short)</a></li>
+                      <li><a href="#">UniProt (full)</a></li>
                     </ul>
                   </div>
                   <div class="btn-group tree-toggles hidden">
@@ -154,7 +159,6 @@
     {% block addon_js %}
 
     <script type="text/javascript">
-      var csrf_token = '{{ csrf_token }}';
       var data = JSON.parse('{{ data | safe }}');
     </script>
 
@@ -183,6 +187,8 @@
 
     {% endblock %}
     {% block addon_css %}
+    <meta name="csrf-token" content="{{ csrf_token }}">
+
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
     <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
     <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />

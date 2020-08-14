@@ -8,7 +8,7 @@ var hidePDBs = false;
 var labelReorder = false;
 var treeAnnotations = [];
 var couplingAnnotations = [];
-var typeClasses = ["Name", "Receptor family", "Ligand type", "GPCR class", "G-protein coupling", "Primary G proteins", "Secondary G proteins"]
+var typeClasses = ["Name", "Receptor family", "Ligand type", "GPCR class", "Slug", "IUPHAR", "G-protein coupling", "Primary G proteins", "Secondary G proteins"]
 var dataClasses, colorClasses;
 function renderTree(data) {
     dataClasses = [0];
@@ -19,16 +19,17 @@ function renderTree(data) {
     // data annotations
     treeAnnotations = data["annotations"];
 
-    // Annotations: 0 fullname, 1 family, 2 ligand type, 3 class, 4 Slug, 5 Coupling, 6 Primary, 7 Secondary
-    for (var i = dataClasses.length; i < 5; i++){
+    // Annotations: 0 fullname, 1 family, 2 ligand type, 3 class, 4 Slug, 5 IUPHAR, 6 Coupling, 7 Primary, 8 Secondary
+    var GP_start = typeClasses.indexOf("G-protein coupling");
+    for (var i = dataClasses.length; i < GP_start; i++){
         dataClasses[i] = new Set()
         for (key in treeAnnotations)
           dataClasses[i].add(treeAnnotations[key][i])
         dataClasses[i] = Array.from(dataClasses[i]).sort();
     }
-    dataClasses[5] = ['Gi/Go family', 'Gq/G11 family', 'Gs family', 'G12/G13 family']
-    dataClasses[6] = dataClasses[5]
-    dataClasses[7] = dataClasses[5]
+    dataClasses[GP_start] = ['Gi/Go family', 'Gq/G11 family', 'Gs family', 'G12/G13 family']
+    dataClasses[GP_start+1] = dataClasses[GP_start]
+    dataClasses[GP_start+2] = dataClasses[GP_start]
 
     // Receptor family coloring
     var rec_family_index = 1;
@@ -42,9 +43,9 @@ function renderTree(data) {
       // SPF 80 palette: https://lospec.com/palette-list/spf-80
       colorClasses[1] = ["#d2ccf3", "#a392d4", "#615476", "#332f3a", "#3f0d76", "#611894", "#8f4bec", "#d291ff", "#edcaff", "#ffaffc", "#f276ff", "#d63be9", "#951cbc", "#680b76", "#30201a", "#473513", "#67541f", "#a79a5f", "#ffe22c", "#fda414", "#ff8d3e", "#f16e03", "#c3680a", "#e0a186", "#db8060", "#c37053", "#a65133", "#88512b", "#6d4734", "#452d25", "#600119", "#900c47", "#974c7a", "#c02214", "#dd3939", "#ff7693", "#ffb7b7", "#fffcdb", "#ffd887", "#f7a357", "#d7863d", "#cc7037", "#b24e2c", "#823314", "#5a260b", "#3a1603", "#0a2563", "#0d396f", "#1c8393", "#42c39c", "#4cd494", "#aaffd8", "#dafffe", "#d1ffcc", "#b6ff8c", "#5bbe61", "#4dae53", "#118448", "#1b744a", "#10594c", "#084339", "#033017", "#221478", "#2c17a5", "#321cbd", "#343af1", "#2274ff", "#39aeff", "#96daff", "#acdecd", "#90d5bd", "#4e9884", "#26795f", "#a2bcc5", "#69849c", "#435655", "#2c3233", "#101010"]
 
-    for (var i = colorClasses.length; i <= 5; i++) {
+    for (var i = colorClasses.length; i <= GP_start; i++) {
         colorClasses[i] = []
-        if (i != 7) {
+        //if (i != 7) {
           var class_colors;
           if (dataClasses[i].length > 10) {
             class_colors = d3.scale.category20().domain(dataClasses[i])
@@ -54,11 +55,10 @@ function renderTree(data) {
           for (var j = 0; j < dataClasses[i].length; j++) {
             colorClasses[i].push(class_colors(dataClasses[i][j]))
           }
-        }
+        //}
     }
-    //colorClasses[5] = ["#0F0", "#0F0", "#0F0", "#F00", "#F00", "#F00"]
-    colorClasses[6] = colorClasses[5]
-    colorClasses[7] = colorClasses[5]
+    colorClasses[GP_start+1] = colorClasses[GP_start]
+    colorClasses[GP_start+2] = colorClasses[GP_start]
 
     // G-protein coupling
     couplingAnnotations = data["Gprot_coupling"];
@@ -82,18 +82,18 @@ function renderTree(data) {
     // Annotate and order coupling data
     for (name in treeAnnotations){
       var slug = treeAnnotations[name][4]
-      treeAnnotations[name][5] = []
-      treeAnnotations[name][6] = []
-      treeAnnotations[name][7] = []
-      var gproteins = dataClasses[5]
+      treeAnnotations[name][GP_start] = []
+      treeAnnotations[name][GP_start+1] = []
+      treeAnnotations[name][GP_start+2] = []
+      var gproteins = dataClasses[GP_start]
       for (g = 0; g < gproteins.length; g++) {
         if (slug in couplingAnnotations){
           if ("primary" in couplingAnnotations[slug] && couplingAnnotations[slug]["primary"].includes(gproteins[g])) {
-            treeAnnotations[name][5].push(gproteins[g])
-            treeAnnotations[name][6].push(gproteins[g])
+            treeAnnotations[name][GP_start].push(gproteins[g])
+            treeAnnotations[name][GP_start+1].push(gproteins[g])
           } else if ("secondary" in couplingAnnotations[slug] && couplingAnnotations[slug]["secondary"].includes(gproteins[g])){
-            treeAnnotations[name][5].push(gproteins[g])
-            treeAnnotations[name][7].push(gproteins[g])
+            treeAnnotations[name][GP_start].push(gproteins[g])
+            treeAnnotations[name][GP_start+2].push(gproteins[g])
           }
         }
       }
@@ -111,7 +111,6 @@ function renderTree(data) {
       plotsize = document.getElementById('tree-container').offsetWidth*0.9
 
     plotsize = [plotsize, plotsize]
-
 
 
     // TODO: dynamic setting of the inner_spacing option
@@ -313,9 +312,11 @@ function addGroup(selector, node) {
   group2.sort()
 
   // Toggle buttons
-  if (group1.length > 0 || group2.length > 0){
-    $("#CN-button").removeClass("disabled");
-//            $("#DN-button").removeClass("disabled");
+  if (group1.length > 0 && group2.length > 0){
+    $("#SeqAln-button").removeClass("disabled");
+    $("#SeqSig-button").removeClass("disabled");
+  } else if (group1.length > 0) {
+    $("#SeqAln-button").removeClass("disabled");
   }
 
   // update selection with PDB codes
@@ -400,45 +401,18 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-var displayName = 0
+var displayName = 1
 function toggleNames(event){
   switch(event.target.innerText){
-      case "IUPHAR":
-        displayName = 1
-        hidePDBs = true
-        labelReorder = true
-        break;
-      case "IUPHAR (PDB)":
-        displayName = 1
-        hidePDBs = false
-        labelReorder = true
-        break;
-      case "IUPHAR [inner] (PDB) [outer]":
-        displayName = 1
-        hidePDBs = false
-        labelReorder = false
-        break;
       case "UniProt":
         displayName = 0
-        hidePDBs = true
-        labelReorder = true
         break;
-      case "UniProt (PDB)":
-        displayName = 0
-        hidePDBs = false
-        labelReorder = true
+      case "UniProt (short)":
+        displayName = 1
         break;
-      default:
-      case "UniProt [inner] (PDB) [outer]":
-        displayName = 0
-        hidePDBs = false
-        labelReorder = false
-        break;
-      case "PDB":
+      case "IUPHAR":
         displayName = 2
-        hidePDBs = false
-        labelReorder = true
-      break;
+        break;
   }
 
   // update active label on menu items
@@ -451,7 +425,7 @@ function toggleNames(event){
   maximumLeafSize();
 }
 
-var displayData = 5
+var displayData = 6
 function toggleDataOuter(event){
   var dataName = event.target.innerText
 
@@ -559,7 +533,7 @@ function refreshLegend(div_class, selectData){
         .attr("x", 20)
         .attr("y", 30)
         .text(function (d) {
-            return (d)
+            return (d.replace(new RegExp(" receptors$"), "").replace("/neuropeptide "," / "))
         })
         .style("text-anchor", "start")
         .style("font-size", 13);
@@ -601,11 +575,11 @@ function menuItem(dataName){
       case "GPCR class":
         return 3
       case "All G proteins":
-        return 5
-      case "Primary G proteins":
         return 6
-      case "Secondary G proteins":
+      case "Primary G proteins":
         return 7
+      case "Secondary G proteins":
+        return 8
       default:
         return -1
   }
@@ -671,9 +645,11 @@ function removeGroup(selector, node) {
   group2.sort()
 
   // Toggle buttons
-  if (group1.length == 0 && group2.length == 0){
-    $("#CN-button").addClass("disabled");
-//            $("#DN-button").addClass("disabled");
+  if (group1.length == 0){
+    $("#SeqAln-button").addClass("disabled");
+    $("#SeqSig-button").addClass("disabled");
+  } else if (group2.length == 0){
+    $("#SeqSig-button").addClass("disabled");
   }
 
   // update selection with PDB codes
@@ -730,6 +706,9 @@ function nodeStyler(element, node){
                         .style("left", (d3.event.pageX) + "px")
                         .style("top", (d3.event.pageY - 28) + "px");
                     })
+                  .on("click", function(d) {
+                      // blah
+                   })
                   .on("mouseout", function() {
                       class_tooltip.transition().duration(100)
                           .style("opacity", 0);
@@ -777,20 +756,7 @@ function nodeStyler(element, node){
               tracer.setAttribute("stroke", "#888");
             }
 
-            /*var labelName
-            if (displayName == 1) {
-              // fix italics and subscript annotations
-              labelNameName = treeAnnotations[node.name][2].replace(new RegExp(" receptor$"), "")
-              labelName = labelName.replace("-adrenoceptor", '')
-              labelName = labelName.replace(" receptor-", '-')
-
-              labelName = labelName.replace("<sub>", '</tspan><tspan baseline-shift = "sub">')
-              labelName = labelName.replace("</sub>", '</tspan><tspan>')
-              labelName = labelName.replace("<i>", '</tspan><tspan font-style = "italic">')
-              labelName = labelName.replace("</i>", '</tspan><tspan>')
-            } else
-              labelName = treeAnnotations[node.name][1].split("_")[0].toUpperCase()*/
-
+            var labelName = node.name;
             label = node_label[0][0]
 
             // Space left and right of the label (instead of &nbsp/&#160 which breaks SVG)
@@ -807,20 +773,22 @@ function nodeStyler(element, node){
             else if (dx_label != null && dx_label > 0)
               label.setAttribute("dx", font_size/2 + "px")*/
 
-            label.innerHTML = "<tspan>" + node.name + " </tspan>"
-            /*if (hidePDBs){
-              label.innerHTML = "<tspan>" + labelName + "</tspan>"
-            } else if (displayName == 2) {
-              label.innerHTML = "<tspan>" + node.name + "</tspan>"
-            } else {
-              label.innerHTML = "<tspan>" + labelName + " (" + node.name + ")" + "</tspan>"
-              // Extra: rotate labels when on the left half
-              if (!labelReorder && label.getAttribute("dx") != null && label.getAttribute("dx") < 0)
-                label.innerHTML = "<tspan>" + "(" + node.name + ") " + labelName + "</tspan>"
-            }*/
+            if (displayName == 2) { // IUPHAR
+              labelName = treeAnnotations[node.name][5].replace(new RegExp(" receptor$"), "")
+              labelName = labelName.replace("-adrenoceptor", '')
+              labelName = labelName.replace(" receptor-", '-')
 
-
-
+              labelName = labelName.replace("<sub>", '</tspan><tspan baseline-shift = "sub">')
+              labelName = labelName.replace("</sub>", '</tspan><tspan>')
+              labelName = labelName.replace("<i>", '</tspan><tspan font-style = "italic">')
+              labelName = labelName.replace("</i>", '</tspan><tspan>')
+            } else if (displayName == 1) { // short UniProt
+              labelName = node.name;
+              labelName = labelName.split("_")[0].toUpperCase();
+            } else { // UniProt
+              labelName = node.name;
+            }
+            label.innerHTML = "<tspan>" + labelName + " </tspan>"
 
             // color labels
             if ( 'group0' in node && node['group0'] && 'group1' in node && node['group1'])
@@ -1194,6 +1162,19 @@ $('#single-crystal-group-pdbs-modal-table').on('shown.bs.modal', function (e) {
   showPDBtable('#single-crystal-group-pdbs-modal-table');
 })
 
+function getCookie(c_name) {
+    if (document.cookie.length > 0) {
+        c_start = document.cookie.indexOf(c_name + "=");
+        if (c_start != -1) {
+            c_start = c_start + c_name.length + 1;
+            c_end = document.cookie.indexOf(";", c_start);
+            if (c_end == -1) c_end = document.cookie.length;
+            return unescape(document.cookie.substring(c_start, c_end));
+        }
+    }
+    return "";
+}
+
 $(document).ready(function() {
     renderTree(data);
 
@@ -1227,11 +1208,48 @@ $(document).ready(function() {
     $("#output-group1").removeClass("hidden");
     $("#input-targets-1").val("");
     $("#submit-group").removeClass("hidden");
-    $("#CN-button").addClass("disabled");
+    $("#SeqAln-button").addClass("disabled");
+    $("#SeqSig-button").addClass("disabled");
     $(".zoombutton-container").removeClass("hidden");
     $(".tree-toggles").removeClass("hidden");
 
     initializeTopButtons('#single-crystal-group-tab');
+
+
+    // Enable sequence alignment and signature functions
+    $("#SeqAln-button").on("click", function(e) {
+      if (group1.length > 0){
+        // set CSRF csrf_token
+        $.ajaxSetup({
+            headers:
+            { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') }
+        });
+
+        // 1. Clear current selections
+        $.get("/common/clearselection?selection_type=targets", function(data) {
+          // Submit proteins to target selection
+          $.post('/common/targetformread', { "input-targets": group1.join("\r") },  function (data) {
+            // On success go to alignment page
+            window.location.href = "/alignment/render";
+          });
+        });
+      }
+    });
+    $("#SeqSig-button").on("click", function(e) {
+      if (group1.length > 0 && group2.length > 0){
+        // set CSRF csrf_token
+        $.ajaxSetup({
+            headers:
+            { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') }
+        });
+
+        // Submit proteins to target selection
+        $.post('signatureselection', { "group1": group1.join("\r"), "group2": group2.join("\r") },  function (data) {
+          // On success go to alignment page
+          window.location.href = "/seqsign/render_signature";
+        });
+      }
+    });
 
 
     $("#colored-edges").on("click", function(e) {
