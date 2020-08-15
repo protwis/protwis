@@ -168,3 +168,7 @@ text.segment {
     -webkit-transform: translateZ(0);
     -webkit-backface-visibility: hidden;
 }
+
+.panel-primary {
+    border-color: rgba(0,0,0,0.2);
+}

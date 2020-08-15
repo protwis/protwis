@@ -10,6 +10,7 @@ from common.views import AbsSegmentSelection
 from common.views import AbsMiscSelection
 from common.selection import SimpleSelection, Selection, SelectionItem
 from mutation.models import *
+from phylogenetic_trees.PrepareTree import *
 from protein.models import ProteinFamily, ProteinAlias, ProteinSet, Protein, ProteinSegment, ProteinGProteinPair
 
 from copy import deepcopy
@@ -18,7 +19,6 @@ import math
 import os, shutil, subprocess, signal
 import uuid
 
-from phylogenetic_trees.PrepareTree import *
 from collections import OrderedDict
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
@@ -121,7 +121,6 @@ class Treeclass:
         self.phylip = None
         self.outtree = None
         self.dir = ''
-
 
     def Prepare_file(self, request,build=False):
         self.Tree = PrepareTree(build)
@@ -307,8 +306,6 @@ def get_buttons(request):
     Tree_class=request.session['Tree']
     buttons = [(x[1]['order'],x[1]['name']) for x in sorted(Tree_class.Additional_info.items(), key= lambda x: x[1]['order']) if x[1]['include']=='True']
     return render(request, 'phylogenetic_trees/ring_buttons.html', {'but':buttons })
-
-
 
 def modify_tree(request):
     try:
