@@ -90,9 +90,9 @@ class TreeSettings(AbsMiscSelection):
     #         'url': '/phylogenetic_trees/render_v3',
     #         'color': 'success',
     #     },
-    #     'continue_new': {
+    #     'continue_v2': {
     #         'label': 'Draw tree using new code',
-    #         'url': '/phylogenetic_trees/render_new',
+    #         'url': '/phylogenetic_trees/render_v2',
     #         'color': 'success',
     #     },
     #     'continue': {
@@ -329,9 +329,10 @@ def modify_tree(request):
         float(total)/4*100
     else:
         count = 1900 - 1400/math.sqrt(float(total))
-    print(count)
+
     return render(request, 'phylogenetic_trees/main.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':count, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons, 'phylip':Tree_class.phylip, 'outtree':Tree_class.outtree})
 
+# DEPRECATED CODE - can be cleaned up
 def render_tree(request):
     Tree_class=Treeclass()
     phylogeny_input, branches, ttype, total, legend, box, Additional_info, buttons, proteins=Tree_class.Prepare_file(request)
@@ -349,8 +350,8 @@ def render_tree(request):
     request.session['Tree']=Tree_class
     return render(request, 'phylogenetic_trees/alignment.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':count, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons, 'phylip':Tree_class.phylip, 'outtree':Tree_class.outtree })
 
-
-def render_tree_new(request):
+# DEPRECATED CODE - can be cleaned up
+def render_tree_v2(request):
     Tree_class=Treeclass()
     phylogeny_input, branches, ttype, total, legend, box, Additional_info, buttons, proteins=Tree_class.Prepare_file(request)
     if phylogeny_input == 'too big':
@@ -436,10 +437,10 @@ def render_tree_v3(request):
     if phylogeny_input == 'More_prots':
         return render(request, 'phylogenetic_trees/warning.html')
 
-    if ttype == '1':
-        float(total)/4*100
-    else:
-        count = 1900 - 1400/math.sqrt(float(total))
+    # if ttype == '1':
+    #     float(total)/4*100
+    # else:
+    #     count = 1900 - 1400/math.sqrt(float(total))
 
     #protein_data = []
     #
@@ -457,8 +458,8 @@ def render_tree_v3(request):
     #     print(v)
     #     protein_data.append(v)
 
+    request.session['Tree'] = Tree_class
 
-    request.session['Tree']=Tree_class
     # output dictionary
     data = {}
     data['tree'] = Tree_class.phylip.replace('\n', '')
