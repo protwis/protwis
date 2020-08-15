@@ -215,7 +215,7 @@ function maximumLeafSize(refresh = true) {
   // Find longest label
   d3.select("#clustering-tree").selectAll("text")[0].forEach(
     function(node_label){
-      labelSize = node_label.getBBox().width*1.05
+      labelSize = node_label.getBBox().width*1.05 + 0.5 * referenceFontSize
       if (labelSize > maxLeafNodeLenght){
         maxLeafNodeLenght = labelSize
       }
@@ -404,7 +404,7 @@ function sleep(ms) {
 var displayName = 1
 function toggleNames(event){
   switch(event.target.innerText){
-      case "UniProt":
+      case "UniProt (full)":
         displayName = 0
         break;
       case "UniProt (short)":
