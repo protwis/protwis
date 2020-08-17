@@ -1,18 +1,24 @@
-﻿from django.shortcuts import render
+from django.contrib.postgres.aggregates import ArrayAgg
 from django.conf import settings
 from django.core.files import File
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt
 
-from protein.models import ProteinFamily, ProteinAlias, ProteinSet, Protein, ProteinSegment
 from common.views import AbsTargetSelection
 from common.views import AbsSegmentSelection
 from common.views import AbsMiscSelection
-from common.selection import SelectionItem
+from common.selection import SimpleSelection, Selection, SelectionItem
 from mutation.models import *
 from phylogenetic_trees.PrepareTree import *
+from protein.models import ProteinFamily, ProteinAlias, ProteinSet, Protein, ProteinSegment, ProteinGProteinPair
 
+from copy import deepcopy
+import json
 import math
 import os, shutil, subprocess, signal
 import uuid
+
 from collections import OrderedDict
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
@@ -58,7 +64,6 @@ class SegmentSelection(AbsSegmentSelection):
         },
     }
 
-
 class TreeSettings(AbsMiscSelection):
     step = 3
     number_of_steps = 3
@@ -71,18 +76,31 @@ class TreeSettings(AbsMiscSelection):
         ('targets', True),
         ('segments', True),
     ])
-    buttons = OrderedDict({
-        'continue_new': {
-            'label': 'Draw tree using new code',
-            'url': '/phylogenetic_trees/render_new',
+
+    buttons = {
+        'continue': {
+            'label': 'Calculate & draw tree',
+            'url': '/phylogenetic_trees/render_v3',
             'color': 'success',
         },
-        'continue': {
-            'label': 'Draw tree using previous code',
-            'url': '/phylogenetic_trees/render',
-            'color': 'success',
-        }
-    })
+    }
+    # buttons = OrderedDict({
+    #     'continue_v3': {
+    #         'label': 'Draw tree using v3 code',
+    #         'url': '/phylogenetic_trees/render_v3',
+    #         'color': 'success',
+    #     },
+    #     'continue_v2': {
+    #         'label': 'Draw tree using new code',
+    #         'url': '/phylogenetic_trees/render_v2',
+    #         'color': 'success',
+    #     },
+    #     'continue': {
+    #         'label': 'Draw tree using previous code',
+    #         'url': '/phylogenetic_trees/render',
+    #         'color': 'success',
+    #     }
+    # })
     tree_settings = True
 
 
@@ -308,9 +326,10 @@ def modify_tree(request):
         float(total)/4*100
     else:
         count = 1900 - 1400/math.sqrt(float(total))
-    print(count)
+
     return render(request, 'phylogenetic_trees/main.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':count, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons, 'phylip':Tree_class.phylip, 'outtree':Tree_class.outtree})
 
+# DEPRECATED CODE - can be cleaned up
 def render_tree(request):
     Tree_class=Treeclass()
     phylogeny_input, branches, ttype, total, legend, box, Additional_info, buttons, proteins=Tree_class.Prepare_file(request)
@@ -328,7 +347,8 @@ def render_tree(request):
     request.session['Tree']=Tree_class
     return render(request, 'phylogenetic_trees/alignment.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':count, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons, 'phylip':Tree_class.phylip, 'outtree':Tree_class.outtree })
 
-def render_tree_new(request):
+# DEPRECATED CODE - can be cleaned up
+def render_tree_v2(request):
     Tree_class=Treeclass()
     phylogeny_input, branches, ttype, total, legend, box, Additional_info, buttons, proteins=Tree_class.Prepare_file(request)
     if phylogeny_input == 'too big':
@@ -365,3 +385,122 @@ def render_tree_new(request):
     context['phylip'] = Tree_class.phylip.replace('\n', '')
     context['protein_data'] = protein_data
     return render(request, 'phylogenetic_trees/display.html', context)
+
+@csrf_exempt
+def signature_selection(request):
+    # create full selection and import simple selection (if it exists)
+    simple_selection = request.session.get('selection', False)
+    selection_pos = Selection()
+    selection_pos.importer(deepcopy(simple_selection))
+    selection_pos.clear('targets')
+
+    selection_neg = Selection()
+    selection_neg.importer(deepcopy(simple_selection))
+    selection_neg.clear('targets')
+
+    if 'group1' in request.POST and 'group2' in request.POST:
+        up_names = request.POST['group1'].split('\r')
+        for up_name in up_names:
+            try:
+                selection_object = SelectionItem('protein', Protein.objects.get(entry_name=up_name.strip().lower()))
+                selection_pos.add('targets', 'protein', selection_object)
+            except:
+                continue
+
+        down_names = request.POST['group2'].split('\r')
+        for down_name in down_names:
+            try:
+                selection_object = SelectionItem('protein', Protein.objects.get(entry_name=down_name.strip().lower()))
+                selection_neg.add('targets', 'protein', selection_object)
+            except:
+                continue
+
+        # Set both the positive and negative target selections
+        request.session['targets_pos'] = selection_pos.exporter()
+
+        request.session['selection'] = selection_neg.exporter()
+
+        return JsonResponse({"response": "ok"})
+    else:
+        return JsonResponse({"response": "error"})
+
+def render_tree_v3(request):
+    Tree_class=Treeclass()
+
+    phylogeny_input, branches, ttype, total, legend, box, Additional_info, buttons, proteins=Tree_class.Prepare_file(request)
+    if phylogeny_input == 'too big':
+        return render(request, 'phylogenetic_trees/too_big.html')
+
+    if phylogeny_input == 'More_prots':
+        return render(request, 'phylogenetic_trees/warning.html')
+
+    # if ttype == '1':
+    #     float(total)/4*100
+    # else:
+    #     count = 1900 - 1400/math.sqrt(float(total))
+
+    #protein_data = []
+    #
+    #FIXME remove
+    # import random
+    # for pc in proteins:
+    #     v = {}
+    #     p = pc.protein
+    #     v['name'] = p.entry_name
+    #     v['GPCR_class'] = p.family.parent.parent.parent.name
+    #     v['selectivity'] = ["Gq/G11 family"]
+    #     v['ligand_type'] = p.family.parent.parent.name
+    #     v['coverage'] = random.uniform(0, 1)
+    #     v['receptor_page'] = ''
+    #     print(v)
+    #     protein_data.append(v)
+
+    request.session['Tree'] = Tree_class
+
+    # output dictionary
+    data = {}
+    data['tree'] = Tree_class.phylip.replace('\n', '')
+    # context['protein_data'] = protein_data
+
+
+    protein_entries = []
+    for pc in proteins:
+        protein_entries.append(pc.protein.entry_name)
+
+    # load all
+    cluster_method = 0
+
+    # Collect structure annotations
+    protein_annotations = {}
+
+    # Grab all annotations and all the ligand role when present in aggregates
+    # NOTE: we can probably remove the parent step and go directly via family in the query
+    annotations = Protein.objects.filter(entry_name__in=protein_entries) \
+                    .values_list('entry_name', 'name', 'family__parent__name', 'family__parent__parent__name', 'family__parent__parent__parent__name', 'family__slug', 'name')
+
+    protein_slugs = set()
+    for an in annotations:
+        protein_annotations[an[0]] = list(an[1:])
+
+        # add slug to lists
+        slug = protein_annotations[an[0]][4]
+        protein_slugs.add(slug)
+
+    data['annotations'] = protein_annotations
+
+    # Grab G-protein coupling profile for all receptors covered by the selection
+    # TODO: make general cache(s) for these kinds of data
+    selectivitydata = {}
+    coupling = ProteinGProteinPair.objects.filter(protein__family__slug__in=protein_slugs, source="GuideToPharma").values_list('protein__family__slug', 'transduction').annotate(arr=ArrayAgg('g_protein__name'))
+
+    for pairing in coupling:
+        if pairing[0] not in selectivitydata:
+            selectivitydata[pairing[0]] = {}
+        selectivitydata[pairing[0]][pairing[1]] = pairing[2]
+
+    data['Gprot_coupling'] = selectivitydata
+
+    context = {}
+    context["data"] = json.dumps(data)
+
+    return render(request, 'phylogenetic_trees/phylo_tree.html', context)
