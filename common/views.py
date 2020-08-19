@@ -201,6 +201,10 @@ class AbsSegmentSelection(TemplateView):
     amino_acid_groups = definitions.AMINO_ACID_GROUPS
     amino_acid_group_names = definitions.AMINO_ACID_GROUP_NAMES
 
+    # Necessary for the site search functionality
+    amino_acid_groups_old = definitions.AMINO_ACID_GROUPS_OLD
+    amino_acid_group_names_old = definitions.AMINO_ACID_GROUP_NAMES_OLD
+
     def get_context_data(self, **kwargs):
         """get context from parent class (really only relevant for child classes of this class, as TemplateView does
         not have any context variables)"""
@@ -415,8 +419,8 @@ def AddToSelection(request):
     if selection_subtype == 'site_residue':
         template = 'common/selection_lists_sitesearch.html'
         amino_acid_groups = {
-            'amino_acid_groups': definitions.AMINO_ACID_GROUPS,
-            'amino_acid_group_names': definitions.AMINO_ACID_GROUP_NAMES }
+            'amino_acid_groups_old': definitions.AMINO_ACID_GROUPS_OLD,
+            'amino_acid_group_names_old': definitions.AMINO_ACID_GROUP_NAMES_OLD}
         context.update(amino_acid_groups)
     else:
         template = 'common/selection_lists.html'
@@ -459,8 +463,8 @@ def RemoveFromSelection(request):
     if selection_subtype == 'site_residue':
         template = 'common/selection_lists_sitesearch.html'
         amino_acid_groups = {
-            'amino_acid_groups': definitions.AMINO_ACID_GROUPS,
-            'amino_acid_group_names': definitions.AMINO_ACID_GROUP_NAMES }
+            'amino_acid_groups_old': definitions.AMINO_ACID_GROUPS_OLD,
+            'amino_acid_group_names_old': definitions.AMINO_ACID_GROUP_NAMES_OLD}
         context.update(amino_acid_groups)
     else:
         template = 'common/selection_lists.html'
@@ -1175,7 +1179,7 @@ def SelectResidueFeature(request):
         for obj in selection.segments:
             if int(obj.item.id) == selection_id:
                 obj.properties['feature'] = feature
-                obj.properties['amino_acids'] = ','.join(definitions.AMINO_ACID_GROUPS[feature])
+                obj.properties['amino_acids'] = ','.join(definitions.AMINO_ACID_GROUPS_OLD[feature])
                 break
 
     # export simple selection that can be serialized
@@ -1189,8 +1193,8 @@ def SelectResidueFeature(request):
 
     # amino acid groups
     amino_acid_groups = {
-        'amino_acid_groups': definitions.AMINO_ACID_GROUPS,
-        'amino_acid_group_names': definitions.AMINO_ACID_GROUP_NAMES }
+        'amino_acid_groups_old': definitions.AMINO_ACID_GROUPS_OLD,
+        'amino_acid_group_names_old': definitions.AMINO_ACID_GROUP_NAMES_OLD }
     context.update(amino_acid_groups)
 
     # template to load
@@ -1228,6 +1232,8 @@ def AddResidueGroup(request):
 
     # amino acid groups
     amino_acid_groups = {
+        'amino_acid_groups_old': definitions.AMINO_ACID_GROUPS_OLD,
+        'amino_acid_group_names_old': definitions.AMINO_ACID_GROUP_NAMES_OLD,
         'amino_acid_groups': definitions.AMINO_ACID_GROUPS,
         'amino_acid_group_names': definitions.AMINO_ACID_GROUP_NAMES }
     context.update(amino_acid_groups)
@@ -1264,6 +1270,8 @@ def SelectResidueGroup(request):
 
     # amino acid groups
     amino_acid_groups = {
+        'amino_acid_groups_old': definitions.AMINO_ACID_GROUPS_OLD,
+        'amino_acid_group_names_old': definitions.AMINO_ACID_GROUP_NAMES_OLD,
         'amino_acid_groups': definitions.AMINO_ACID_GROUPS,
         'amino_acid_group_names': definitions.AMINO_ACID_GROUP_NAMES }
     context.update(amino_acid_groups)
@@ -1306,6 +1314,8 @@ def RemoveResidueGroup(request):
 
     # amino acid groups
     amino_acid_groups = {
+        'amino_acid_groups_old': definitions.AMINO_ACID_GROUPS_OLD,
+        'amino_acid_group_names_old': definitions.AMINO_ACID_GROUP_NAMES_OLD,
         'amino_acid_groups': definitions.AMINO_ACID_GROUPS,
         'amino_acid_group_names': definitions.AMINO_ACID_GROUP_NAMES }
     context.update(amino_acid_groups)
@@ -1343,6 +1353,8 @@ def SetGroupMinMatch(request):
 
     # amino acid groups
     amino_acid_groups = {
+        'amino_acid_groups_old': definitions.AMINO_ACID_GROUPS_OLD,
+        'amino_acid_group_names_old': definitions.AMINO_ACID_GROUP_NAMES_OLD,
         'amino_acid_groups': definitions.AMINO_ACID_GROUPS,
         'amino_acid_group_names': definitions.AMINO_ACID_GROUP_NAMES }
     context.update(amino_acid_groups)
