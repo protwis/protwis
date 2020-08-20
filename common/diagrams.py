@@ -102,7 +102,7 @@ class Diagram:
         output += '<br><button style="width:120px;" onclick="applyPresentColors(\''+self.type+'\')">Properties</button> <button style="width:120px;" onclick="resetColors(\''+self.type+'\')">Clear</button>'
         if str(self.receptorId)=='family_diagram_preloaded_data':
             output += '<br><button style="width:220px;" onclick="ajaxMutantsPos(\''+self.type+'\');">Show Invitro Mutants</button>'
-            output += ' <button style="width:220px;" onclick="ajaxInteractionsPos(\''+self.type+'\')">Show Interactions from Crystals</button>'
+            output += ' <button style="width:220px;" onclick="ajaxInteractionsPos(\''+self.type+'\')">Show Interactions from structures</button>'
             output += '<br><button style="width:220px;" onclick="ajaxNaturalMutationPos(\''+self.type+'\')">Show Natural Genetic Variations</button>'
             output += ' <button style="width:120px;" onclick="ajaxPTMPos(\''+self.type+'\')">Show PTM sites</button>'
             # output += ' <button style="width:220px;" onclick="ajaxCancerMutationPos(\''+self.type+'\')">Show Cancer Mutations</button>'
