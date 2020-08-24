@@ -17,6 +17,7 @@ from residue.models import (Residue, ResidueGenericNumber,
                             ResidueGenericNumberEquivalent,
                             ResidueNumberingScheme)
 from signprot.models import SignprotStructure
+from structure.models import Structure
 
 
 class Command(BaseCommand):
@@ -283,9 +284,18 @@ class Command(BaseCommand):
             if res == '-':
                 res = 0
 
-            structure, created = SignprotStructure.objects.get_or_create(PDB_code=structure[0], resolution=res, protein = p)
+            structure, created = SignprotStructure.objects.get_or_create(PDB_code=structure[0], resolution=res, protein = p, id=self.signprot_struct_ids())
             if created:
                 self.logger.info('Created structure ' + structure.PDB_code + ' for protein ' + p.name)
+
+    def signprot_struct_ids(self):
+        structs = Structure.objects.count()
+        s_structs = SignprotStructure.objects.count()
+        offset = 1000
+        if s_structs == None:
+            return structs+1+offset
+        else:
+            return structs+s_structs+1+offset
 
     def create_can_rns(self):
         """Add new numbering scheme entry_name."""

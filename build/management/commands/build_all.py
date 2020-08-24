@@ -31,6 +31,7 @@ class Command(BaseCommand):
 
         commands = [
             ['build_common'],
+            ['build_citations'],
             ['build_human_proteins'],
             ['build_blast_database'],
             ['build_other_proteins', {'constructs_only': options['test'] ,'proc': options['proc']}], # build only constructs in test mode

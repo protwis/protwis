@@ -11,6 +11,21 @@ import logging
 import re
 
 
+class Citation(models.Model):
+    publication = models.ForeignKey('Publication', on_delete=models.CASCADE)
+    url = models.TextField()
+    video = models.TextField(null=True)
+    docs = models.TextField(null=True)
+    main = models.BooleanField()
+    page_name = models.TextField()
+
+    def __str__(self):
+        return self.url
+
+    class Meta():
+        db_table = 'citation'
+
+
 class WebResource(models.Model):
     slug = models.SlugField(max_length=20)
     name = models.CharField(max_length=200, default='')

@@ -16,7 +16,7 @@ from structure.functions import CASelector, SelectionParser, GenericNumbersSelec
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
 from structure.forms import *
-from signprot.models import SignprotComplex
+from signprot.models import SignprotComplex, SignprotStructure
 from interaction.models import ResidueFragmentInteraction,StructureLigandInteraction
 from protein.models import Protein, ProteinFamily
 from construct.models import Construct
@@ -79,6 +79,48 @@ class StructureBrowser(TemplateView):
 		except Structure.DoesNotExist as e:
 			pass
 
+		return context
+
+
+class GProteinStructureBrowser(TemplateView):
+	"""
+	Fetching Structure data for browser
+	"""
+	template_name = "g_protein_structure_browser.html"
+
+	def get_context_data (self, **kwargs):
+		# Fetch g prot - receptor compleces
+		context = super(GProteinStructureBrowser, self).get_context_data(**kwargs)
+		complexstructs = SignprotComplex.objects.filter(protein__family__slug__startswith='100')
+		try:
+			context['structures'] = Structure.objects.filter(refined=False, id__in=complexstructs.values_list('structure', flat=True)).select_related(
+				"state",
+				"pdb_code__web_resource",
+				"protein_conformation__protein__species",
+				"protein_conformation__protein__source",
+				"protein_conformation__protein__family__parent__parent__parent",
+				"publication__web_link__web_resource").prefetch_related(
+				"stabilizing_agents", "construct__crystallization__crystal_method",
+				"protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
+				"protein_conformation__site_protein_conformation__site",
+				Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
+				annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role','ligand__properities__web_links__web_resource')),
+				Prefetch("extra_proteins", queryset=StructureExtraProteins.objects.all().prefetch_related(
+					'protein_conformation','wt_protein')))
+		except Structure.DoesNotExist as e:
+			pass
+		# Fetch non-complex g prot structures and filter for overlaps preferring SignprotComplex
+		ncstructs = SignprotStructure.objects.filter(protein__family__slug__startswith='100')
+		pdbs = []
+		filtered_ncstructs = []
+		for i in context['structures']:
+			if i.pdb_code.index not in pdbs:
+				pdbs.append(i.pdb_code.index)
+		for i in ncstructs:
+			if i.PDB_code not in pdbs:
+				pdbs.append(i.PDB_code)
+				filtered_ncstructs.append(i)
+		context['structures'] = list(context['structures'])+list(filtered_ncstructs)
 		return context
 
 

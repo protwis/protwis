@@ -250,6 +250,16 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     if pdbname.upper()=='6NIY':
         pdb_range = list(range(1,475))
 
+    # Maybe this messes with construct build, temp fix
+    if pdbname.upper()=='6K41':
+        pdb_range = list(range(11,79))+list(range(85,150))+list(range(164,167))+list(range(170,204))+list(range(361,394))+list(range(404,442))
+    if pdbname.upper()=='6K42':
+        pdb_range = list(range(11,152))+list(range(162,205))+list(range(358,399))+list(range(401,446))
+    if pdbname.upper()=='6KUY':
+        pdb_range = list(range(33,173))+list(range(184,228))+list(range(365,444))
+    if pdbname.upper()=='6KUX':
+        pdb_range = list(range(29,174))+list(range(183,228))+list(range(365,444))
+
     if not ignore_gasper_annotation:
         ## THIS BLOCK IS DONE BY GASPAR -- IT ALSO REMOVES MISSING RESIDUES, NOT TO BE USED TO WRITE CONSTRUCTS
         # Misannotated DBREF in PDB file
@@ -344,7 +354,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
         chain_over_ride = 'E'
     # elif pdbname=='5VBL': # fixed by pdb_range
     #     chain_over_ride = 'B'
-
+    # print(pdb_range)
     #http://files.gpcrdb.org/uniprot_mapping.txt
     ## get uniprot to name mapping
     uniprot_mapping = cache.get('gpcrdb_uniprot_mapping')
@@ -696,7 +706,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                     if receptor:
                             if not uniprot_pos:
                                 uniprot_pos = pos
-                            #print(pos,uniprot_pos)
+                            # print(pos,uniprot_pos)
                             wt_aa = d['wt_seq'][uniprot_pos-1]
                             prev_receptor = True
                             # if pos==250 or uniprot_pos==250:

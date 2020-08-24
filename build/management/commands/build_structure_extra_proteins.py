@@ -63,7 +63,10 @@ class Command(BaseBuild):
 					try:
 						wt_protein = Protein.objects.get(entry_name=vals['prot'].lower()+'_bovin')
 					except Protein.DoesNotExist:
-						wt_protein = Protein.objects.get(entry_name=vals['prot'].lower()+'_human')
+						try:
+							wt_protein = Protein.objects.get(entry_name=vals['prot'].lower()+'_human')
+						except Protein.DoesNotExist:
+							wt_protein = vals['prot']
 					sep.display_name = self.g_prot_dict[vals['prot']]
 				elif vals['category']=='Arrestin':
 					wt_protein = Protein.objects.get(entry_name=vals['prot'].lower())
@@ -81,8 +84,11 @@ class Command(BaseBuild):
 				if vals['category']=='Antibody':
 					sep.wt_coverage = None
 				else:
-					wt_resis = Residue.objects.filter(protein_conformation__protein=wt_protein)
-					sep.wt_coverage = round(vals['length']/len(wt_resis)*100)
+					try:
+						wt_resis = Residue.objects.filter(protein_conformation__protein=wt_protein)
+						sep.wt_coverage = round(vals['length']/len(wt_resis)*100)
+					except Protein.DoesNotExist:
+						sep.wt_coverage = None
 
 				sep.save()
 				sep.structure.extra_proteins.add(sep)

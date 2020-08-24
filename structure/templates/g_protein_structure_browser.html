@@ -2,140 +2,90 @@
 {% load static %}
 {% load structure_extras %}
 
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
+    <link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet">
+    <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
+    <link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{% static 'home/css/jquery.powertip.css' %}" />
+{% endblock %}
+    
+{% block addon_js %}
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+    <script src="{% static 'home/js/select2.js' %}"> </script>
+    <script src="{% static 'home/js/alignment.js' %}"> </script>
+    <script src="{% static 'home/js/browser_functions.js' %}"> </script>
+    <script src="{% static 'home/js/structure_browser.js' %}"> </script> <!-- Structure browser -->
+    <script src="{% static 'home/js/jquery.powertip.js' %}"></script>
+
+<script type="text/javascript" charset="utf-8">
+    $(document).ready(function() {
+        structurebrowser();
+    });
+</script>
+
+{% endblock %}
+
 
 {% block content %}
 
-{% if protein_no_found %}
-<br><br>
-<div class="row text-success">
-    <div class="text-center">
-        <h2>{{ protein_no_found|safe }} not in GPCRdb - contact us if it should be.</h2>
+<div id="browser">
+    <!-- <div style="display:block;">
+        <div style="display:inline; float:left;">
+            <h2 style="width:auto; display:inline;">Structures</h2>
+        </div>
     </div>
-</div>
-{% else %}
+    <br><br>
+ -->
+    <div style='width:100%; display:inline;'>
+        <div class="btn-group">
+            <a id="dlink"  style="display:none;"></a>
+            <div id="excel_table"  style2="display:none;"></div>
+            <!-- <input class="btn btn-default btn-s" type="button" id="toggle_fixed_btn" value="Disable fixed columns" href="javascript:void(0)" data-toggle="buttons"></input> -->
+            <input class="btn btn-default btn-s" type="button" id="toggle_columns_btn" value="Show hidden columns" href="javascript:void(0)">
+            <!-- <input class="btn btn-default btn-s" type="button" id="representative_btn" value="Representative structures (state & receptor)" href="javascript:void(0)" data-toggle="buttons"></input> -->
+        </div>
+        <div class="btn-group" style='padding-left:10px;'>
+            <label class="btn btn-default btn-s" id="align_btn" href="javascript:void(0)">
+                Align seqs
+            </label>
+            <label class="btn btn-default btn-s" id="download_btn" href="javascript:void(0)">
+                Download PDBs
+            </label>
+            <!-- <label class="btn btn-default btn-s" id="superpose_btn" href="javascript:void(0)">
+                Superposition
+            </label> -->
+            <input class="btn btn-default btn-s" type="button" onclick="tableToExcel('structures_scrollable', 'Structure data', 'GPCRdb_structures.xls')" value="Export Excel"></input>
+            <!-- <div class="dropdown">
+                <button onclick="copyDropdown()" class="dropbtn btn btn-default btn-s">Copy Selected</button>
+                <div id="Dropdown" class="dropdown-content">
+                    <p class="btn btn_default btn-s" type="button" id="uniprot_copy">UniProts</p>
+                    <p class="btn btn_default btn-s" type="button" id="pdb_copy">PDBs</p>
+                </div>
+            </div> -->
+            <!-- <label class="btn btn-default btn-s" id="reset_filters_btn" href="javascript:void(0)">
+                Reset All
+            </label> -->
 
-<div class="row text-success">
-    <div class="text-center">
-        <h2>{{ p.name|safe }} ({{ p.entry_name }})</h2>
+            <!-- <div style="float:right;">
+                <input id="filter_input" placeholder="PDBs/UniProts..."></input>
+                <label class="btn btn-default btn-s" id="filter_button" href="javascript:void(0)">
+                    <i class="glyphicon glyphicon-search"></i>
+                </label>
+            </div> -->
+        </div>
     </div>
-</div>
+    <br />
 
-{% include "protein/protein_info.html" %}
-
-{% include "protein/sequence_viewer.html" %}
-
-<div class="row">
-    <div class="col-md-2 text-right text-info">
-        <h4>LINKS</h4>
-    </div>
-    <div class="col-md-10">
-        {% for link in protein_links %}
-        <p><a href="{{ link }}">{{ link.web_resource.name }}</a></p>
-        {% empty %}
-        No links available
-        {% endfor %}
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-2 text-right text-info">
-        <h4>DIAGRAMS</h4>
-    </div>
-    <div class="col-md-10">
-    {{ p.get_helical_box }}
-    <p><div class="btn-group">
-        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-        aria-haspopup="true" aria-expanded="false">
-        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-        </button>
-        <ul class="dropdown-menu">
-        <li>
-            <a href="javascript:saveSvgAsPng(document.getElementById('helixbox'), 'helixbox_{{ p.entry_name }}.png',
-            {scale: 3});">PNG</a>
-        </li>
-        <li>
-            <a href="javascript:saveSvgAsJpg(document.getElementById('helixbox'), 'helixbox_{{ p.entry_name }}.jpg',
-            {scale: 3});">JPG</a>
-        </li>
-        <li>
-            <a href="javascript:saveSvgAsTiff(document.getElementById('helixbox'), 'helixbox_{{ p.entry_name }}.tiff',
-            {scale: 3});">TIFF</a>
-            </a>
-        </li>
-        <li>
-        <a id=helix_svg_link href-lang="image/svg+xml" href="" download="helixbox_{{ p.entry_name }}">SVG</a>
-        </li>
-        </ul>
-    </div></p>
-    {{ p.get_snake_plot }}
-    <p><div class="btn-group">
-        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-        aria-haspopup="true" aria-expanded="false">
-        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-        </button>
-        <ul class="dropdown-menu">
-        <li>
-            <a href="javascript:saveSvgAsPng(document.getElementById('snakeplot'), 'snake_{{ p.entry_name }}.png',
-            {scale: 3});">PNG</a>
-        </li>
-        <li>
-            <a href="javascript:saveSvgAsJpg(document.getElementById('snakeplot'), 'snake_{{ p.entry_name }}.jpg',
-            {scale: 3});">JPG</a>
-        </li>
-        <li>
-            <a href="javascript:saveSvgAsTiff(document.getElementById('snakeplot'), 'snake_{{ p.entry_name }}.tiff',
-            {scale: 3});">TIFF</a>
-            </a>
-        </li>
-        <li>
-        <a id=snake_svg_link href-lang="image/svg+xml" href="" download="snake_{{ p.entry_name }}">SVG</a>
-        </li>
-        </ul>
-    </div></p>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-2 text-right text-info">
-        <h4>MUTATIONS</h4>
-    </div>
-    <div class="col-md-10">
-    <a href="/mutations/protein/{{ p }}">{{ mutations|length }} mutation data points available.</a>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-2 text-right text-info">
-        <h4>ENDOGENOUS LIGANDS</h4>
-    </div>
-    <div class="col-md-10">
-        {% for e in p.endogenous_ligands.all %}
-        <p style="display: inline;">{{ e.name|safe }}{% if forloop.last %}{% else %}, {% endif %}</p>
-        {% empty %}
-        No endogenous ligands available
-        {% endfor %}
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-2 text-right text-info">
-        <h4>HOMOLOGY MODELS</h4>
+    <div style="padding-top: 0px; font-size: 15px; white-space: nowrap;" id="loading_div">
+    <br>Loading...
     </div>
 
-    <div class="col-md-10">
-        {% for hommod in homology_models %}
-            <p style="display: inline;"><a href="/structure/homology_models/{{ hommod.protein.entry_name }}_{{ hommod.state.slug }}">{{ hommod.protein.entry_name }} {{ hommod.state.slug }}</a>{% if forloop.last %} {% else %}, {% endif %}</p>
-        {% empty %}
-        No homology models available. Check the Archive on <a href="/structure/homology_models">Structure models</a> for earlier releases.
-        {% endfor %}
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-2 text-right text-info">
-        <h4>STRUCTURES</h4>
-    </div>
-    {% if structures|length > 0 %}
     <!-- scrollable column -->
     <div style='padding-top: 0px; font-size: 10px; white-space: nowrap; width:100%; overflow-y:hidden; display:inline-block; width:100%;'>
         <!-- <div class='wrapper' style='height:20px;width:100%;'>
@@ -287,7 +237,7 @@
 
                 </thead>
                 <tbody>
-                {% for structure in structures.all %}
+                {% for structure in structures %}
                     {% if structure.representative %}
                         <tr class="repr-st" model_id='{{structure.pk}}'>
                     {% else %}
@@ -433,53 +383,33 @@
             </table>
         </div>
     </div>
-    {% else %}
-    <div class="col-md-10">
-       <!--  {% for structure in structures %}
-        <p style="display: inline;"><a href="/structure/{{ structure.pdb_code.index }}">{{ structure.pdb_code.index }}</a>{% if forloop.last %} {% else %}, {% endif %}</p>
-        {% empty %} -->
-        No structures available
-        <!-- {% endfor %} -->
-    </div>
-    {% endif %}
+    <!-- </div> -->
 </div>
-
-{% endif %}
+<div id="myModal" class="modal">
+  <!-- Modal content -->
+    <div class="modal-content">
+        <button style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close close_modal" href="javascript:void(0)">&times;</button>
+        <h3>Pick template from selection</h3>
+        <p>Superpositions structures selected in the browser to the template checked in this table</p>
+        <br>
+        <table id="modal_table" class="display compact" width="100%">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>PDB</th>
+                    <th>UniProt</th>
+                    <th>IUPHAR</th>
+                    <th>Rec. family</th>
+                    <th>Class</th>
+                    <th>Species</th>
+                    <th>State</th>
+                    <th>PDB Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Javascript populates the table from selected rows -->
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}
-
-
-{% block addon_css %}
-    <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
-    <link href="{% static 'home/css/color_picker.css' %}" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
-    <link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
-    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
-    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
-    <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
-    <link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet">
-    <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
-    <link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="{% static 'home/css/jquery.powertip.css' %}" />
-{% endblock %}
-
-{% block addon_js %}
-    <script src="{% static 'home/js/sequenceviewer.js' %}"></script>
-    <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
-    <script src="{% static 'home/js/diagrams.js' %}"></script>
-    <script src="{% static 'home/js/color_picker.js' %}"></script>
-    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
-    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
-    <script src="{% static 'home/js/select2.js' %}"> </script>
-    <script src="{% static 'home/js/alignment.js' %}"> </script>
-    <script src="{% static 'home/js/browser_functions.js' %}"> </script>
-    <script src="{% static 'home/js/structure_browser.js' %}"> </script> <!-- Structure browser-->
-    <script src="{% static 'home/js/jquery.powertip.js' %}"></script>
-
-<script type="text/javascript" charset="utf-8">
-    $(document).ready(function() {
-        structurebrowser();
-    });
-</script>
-
-{% endblock %}
-

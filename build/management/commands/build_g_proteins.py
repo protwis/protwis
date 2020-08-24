@@ -34,6 +34,7 @@ from residue.models import (Residue, ResidueGenericNumber,
                             ResidueGenericNumberEquivalent,
                             ResidueNumberingScheme)
 from signprot.models import SignprotBarcode, SignprotComplex, SignprotStructure
+from structure.models import Structure
 
 
 class Command(BaseCommand):
@@ -1343,7 +1344,7 @@ class Command(BaseCommand):
                     res = 0
 
                 structure, created = SignprotStructure.objects.get_or_create(PDB_code=structure[0], resolution=res,
-                                                                             protein=p)
+                                                                             protein=p, id=self.signprot_struct_ids())
                 if created:
                     self.logger.info('Created structure ' + structure.PDB_code + ' for protein ' + p.name)
             except IntegrityError:
@@ -1353,6 +1354,15 @@ class Command(BaseCommand):
                 pcgn = Protein.objects.get(entry_name=uniprot['entry_name'].lower())
                 structure.protein = p
                 structure.save()
+
+    def signprot_struct_ids(self):
+        structs = Structure.objects.count()
+        s_structs = SignprotStructure.objects.count()
+        offset = 1000
+        if s_structs == None:
+            return structs+1+offset
+        else:
+            return structs+s_structs+1+offset
 
     def cgn_parent_protein_family(self):
 
