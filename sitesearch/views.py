@@ -48,7 +48,7 @@ class SegmentSelection(AbsSegmentSelection):
         ('targets', True),
         ('segments', True),
     ])
-    
+
     rsets = False
     buttons = {
         'continue': {
@@ -138,8 +138,8 @@ def site_download(request):
             #Values saved into the file come in the following order:
             # id    min_match   generic_number  numbering_scheme    feature     amino_acids
             #List of amino acids is not necessary, it is just for easy visual identification
-            worksheet.write_row(row_count, 0, [group_id, simple_selection.site_residue_groups[group_id -1][0], position.item.label, position.item.scheme.slug, position.properties['feature'], ','.join(definitions.AMINO_ACID_GROUPS[position.properties['feature']])])
-            row_count += 1 
+            worksheet.write_row(row_count, 0, [group_id, simple_selection.site_residue_groups[group_id -1][0], position.item.label, position.item.scheme.slug, position.properties['feature'], ','.join(definitions.AMINO_ACID_GROUPS_OLD[position.properties['feature']])])
+            row_count += 1
     wb.close()
     outstream.seek(0)
     response = HttpResponse(outstream.read(), content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
@@ -149,10 +149,10 @@ def site_download(request):
 
 
 def site_upload(request):
-    
+
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create full selection and import simple selection (if it exists)
     selection = Selection()
     if simple_selection:
@@ -197,7 +197,7 @@ def site_upload(request):
             properties = {}
             properties['feature'] = feature
             properties['site_residue_group'] = selection.active_site_residue_group
-            properties['amino_acids'] = ','.join(definitions.AMINO_ACID_GROUPS[feature]) if feature != 'custom' else row[5].value
+            properties['amino_acids'] = ','.join(definitions.AMINO_ACID_GROUPS_OLD[feature]) if feature != 'custom' else row[5].value
             selection_object = SelectionItem(selection_subtype, position, properties)
             selection.add(selection_type, selection_subtype, selection_object)
             selection.site_residue_groups[group_id - 1][0] = min_match
@@ -207,11 +207,11 @@ def site_upload(request):
     request.session['selection'] = simple_selection
 
     context = selection.dict(selection_type)
+
     # amino acid groups
     amino_acid_groups = {
-        'amino_acid_groups': definitions.AMINO_ACID_GROUPS,
-        'amino_acid_group_names': definitions.AMINO_ACID_GROUP_NAMES }
-    context.update(amino_acid_groups)
+        'amino_acid_groups_old': definitions.AMINO_ACID_GROUPS_OLD,
+        'amino_acid_group_names_old': definitions.AMINO_ACID_GROUP_NAMES_OLD }
 
     return render(request, 'common/selection_lists_sitesearch.html', context)
 
@@ -219,7 +219,7 @@ def site_upload(request):
 def render_alignment(request):
     # get the user selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create an alignment object
     a = Alignment()
 
@@ -249,7 +249,7 @@ def render_alignment(request):
 def render_fasta_alignment(request):
     # get the user selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create an alignment object
     a = Alignment()
     a.show_padding = False
@@ -268,7 +268,7 @@ def render_fasta_alignment(request):
     num_of_sequences = len(a.proteins)
     num_of_non_matching_sequences = len(a.non_matching_proteins)
     num_residue_columns = len(a.positions) + len(a.segments)
-    
+
     context = {'a': a, 'num_of_sequences': num_of_sequences,
         'num_of_non_matching_sequences': num_of_non_matching_sequences, 'num_residue_columns': num_residue_columns}
 
@@ -279,7 +279,7 @@ def render_fasta_alignment(request):
 def render_csv_alignment(request):
     # get the user selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create an alignment object
     a = Alignment()
     a.show_padding = False
@@ -300,7 +300,7 @@ def render_csv_alignment(request):
 
     num_of_sequences = len(a.proteins)
     num_residue_columns = len(a.positions) + len(a.segments)
-    
+
     response = render(request, 'alignment/alignment_csv.html', {'a': a, 'num_of_sequences': num_of_sequences,
         'num_residue_columns': num_residue_columns}, content_type='text/fasta')
     response['Content-Disposition'] = "attachment; filename=" + settings.SITE_TITLE + "_alignment.csv"
