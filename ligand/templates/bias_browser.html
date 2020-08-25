@@ -47,7 +47,7 @@
 	</div>
 	<div id='structures_scrollable_div'>
 		<!-- <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;"> -->
-		<table class="display compact text-nowrap" id='structures_scrollable'>
+		<table class="display compact text-nowrap" id='structures_scrollable' style="width: "100%"">
 			<thead id="headers">
 				<tr rowspan="2">
 					<th><a href="#"><span class="glyphicon glyphicon-info-sign"></span></a></th>
@@ -167,7 +167,7 @@
 					<th style="border-right: 1px solid black;">DOI/ <br>Reference</th>
 				</tr>
 			</thead>
-			<tbody id='structures_scrollable_body'>
+			<tbody id='structures_scrollable_body' style="display:none">
 				{%for e in data.items%}
 				<tr>
 					<td>
@@ -335,33 +335,38 @@
 		$("#cell").attr("colspan", 5);
 		$("#time").attr("colspan", 5);
 		setTimeout(function() {
-			$("#receptor").attr("colspan", 6 - document.getElementsByClassName("receptor highlight").length / 2);
-			$("#ligand").attr("colspan", 5 - document.getElementsByClassName("ligand highlight").length / 2);
-			$("#transducers").attr("colspan", 2 - document.getElementsByClassName("transducers highlight").length / 2);
-			$("#pathways").attr("colspan", 5 - document.getElementsByClassName("pathways highlight").length / 2);
-			$("#opmodel").attr("colspan", 4 - document.getElementsByClassName("operational highlight").length / 2);
-			$("#lbf").attr("colspan", 4 - document.getElementsByClassName("lbf highlight").length / 2);
-			$("#potency").attr("colspan", 4 - document.getElementsByClassName("potency highlight").length / 2);
-			$("#activity").attr("colspan", 5 - document.getElementsByClassName("activity highlight").length / 2);
-			$("#emax").attr("colspan", 5 - document.getElementsByClassName("emax highlight").length / 2);
-			$("#tfactor").attr("colspan", 5 - document.getElementsByClassName("tfactor highlight").length / 2);
-			$("#assay").attr("colspan", 5 - document.getElementsByClassName("assay highlight").length / 2);
-			$("#cell").attr("colspan", 5 - document.getElementsByClassName("cell highlight").length / 2);
-			$("#time").attr("colspan", 5 - document.getElementsByClassName("time highlight").length / 2);
-			var a = document.getElementsByClassName("operational highlight").length / 2;
-			var b = document.getElementsByClassName("lbf highlight").length / 2;
-			var c = document.getElementsByClassName("tfactor highlight").length / 2;
+			$("#receptor").attr("colspan", 6 - document.getElementsByClassName("receptor highlight").length );
+			$("#ligand").attr("colspan", 5 - document.getElementsByClassName("ligand highlight").length );
+			$("#transducers").attr("colspan", 2 - document.getElementsByClassName("transducers highlight").length );
+			$("#pathways").attr("colspan", 5 - document.getElementsByClassName("pathways highlight").length );
+			$("#opmodel").attr("colspan", 4 - document.getElementsByClassName("operational highlight").length );
+			$("#lbf").attr("colspan", 4 - document.getElementsByClassName("lbf highlight").length );
+			$("#potency").attr("colspan", 4 - document.getElementsByClassName("potency highlight").length );
+			$("#activity").attr("colspan", 5 - document.getElementsByClassName("activity highlight").length );
+			$("#emax").attr("colspan", 5 - document.getElementsByClassName("emax highlight").length );
+			$("#tfactor").attr("colspan", 5 - document.getElementsByClassName("tfactor highlight").length );
+			$("#assay").attr("colspan", 5 - document.getElementsByClassName("assay highlight").length );
+			$("#cell").attr("colspan", 5 - document.getElementsByClassName("cell highlight").length );
+			$("#time").attr("colspan", 5 - document.getElementsByClassName("time highlight").length );
 
-			if (a == 4) {
-				$("#opmodel").addClass('highlight');
-			}
-			if (b == 4) {
-				$("#lbf").addClass('highlight');
-			}
-			if (c == 5) {
-				$("#tfactor").addClass('highlight');
-			}
-		}, 2);
+		}, 200);
+        var a = document.getElementsByClassName("operational highlight").length;
+        var b = document.getElementsByClassName("lbf highlight").length ;
+        var c = document.getElementsByClassName("tfactor highlight").length ;
+        var d = document.getElementsByClassName("pathways highlight").length;
+
+        if (a%2===0 && a == 4) {
+            $("#opmodel").addClass('highlight');
+        }
+        if (b%2===0 &&  b == 4) {
+            $("#lbf").addClass('highlight');
+        }
+        if (c == 5) {
+            $("#tfactor").addClass('highlight');
+        }
+        if ( d == 5) {
+            $("#pathways").addClass('highlight');
+        }
 
 	}
 
@@ -381,13 +386,16 @@
 
 		var table = $('#structures_scrollable').DataTable({
 			dom: 'B<>ftrip',
+            StateSave: true,
 			scrollX: '100%',
-			scrollY: '60vh',
-			scrollCollapse: true,
+            scrollY: '60vh',
+            scrollCollapse: true,
+            AutoWidth: false,
 			pageLength: 75,
-			AutoWidth: false,
+            "order": [
+                [3, "desc"]
+            ],
 			"deferRender": true,
-			responsive: true,
 			buttons: [{
 					text: 'Excel',
 					className: 'btn btn-primary',
@@ -501,10 +509,11 @@
 					document.getElementById("ligand_counter").innerHTML = ligand_counter;
 					document.getElementById("receptor_counter").innerHTML = receptor_counter;
 					shadeTable(table, [".shade"], 120, 200);
-					table.columns.adjust();
+
 				}, 1);
 			}
 		});
+
 		yadcf.init(table,
 			[{
 					column_number: 1,
@@ -949,14 +958,14 @@
 			}
 		);
 		shadeTable(table, [".shade"], 120, 200);
-        table.columns.adjust();
+
 		function reset_filters() {
 			$('#loadingSpinner').show();
 			$('#structures_scrollable_body').hide();
 			location.reload()
 			//yadcf.exResetAllFilters(oTable);
 		}
-
+        table.columns.adjust();
 		$('.dataTables_scrollBody #structures_scrollable').addClass("pull-left");
 
 		$('.dataTables_scrollBody').append('<div id=overlay><table id="overlay_table" class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
@@ -1008,6 +1017,7 @@
 		// Function that detects filtering events
 		$('#structures_scrollable').on('draw.dt', function(e, oSettings) {
 			create_overlay();
+            table.columns.adjust();
 		});
 		create_overlay();
 		$("#overlay").hide();
