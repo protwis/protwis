@@ -778,7 +778,7 @@ class BiasBrowserChembl(TemplateView):
     template_name = 'bias_browser_chembl.html'
     #@cache_page(50000)
     def get_context_data(self, *args, **kwargs  ):
-        content = AnalyzedExperiment.objects.filter(source='chembl3').prefetch_related(
+        content = AnalyzedExperiment.objects.filter(source='chembl_data').prefetch_related(
             'analyzed_data', 'ligand','ligand__reference_ligand','reference_ligand',
             'endogenous_ligand' ,'ligand__properities','receptor','receptor__family',
             'receptor__family__parent','receptor__family__parent__parent__parent',
@@ -850,11 +850,8 @@ class BiasBrowserChembl(TemplateView):
                     increment_assay+=1
                 else:
                     continue
-
             rd[increment] = temp
             increment+=1
-
-
         return rd
 
     def multply_assay(self, data):
@@ -946,4 +943,3 @@ class BiasPathways(TemplateView):
     '''
     End  of Bias Browser
     '''
-
