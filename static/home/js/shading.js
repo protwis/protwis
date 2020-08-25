@@ -10,10 +10,8 @@ class MyShadingTable {
     }
 
     setColumns(columns) {
-        console.log(columns)
         this.columnsIndexes = new Set(columns.filter(word => typeof word === "number"));
         let columnsStrings = columns.filter(word => this.isValidSelector(word));
-        console.log('name2 '+columnsStrings)
         this.columnsClasses = columnsStrings.filter(word => word[0] == ".");
         this.columnsIds = columnsStrings.filter(word => word[0] == "#");
     }
@@ -23,19 +21,14 @@ class MyShadingTable {
 
         for (let i = 0; i < this.columnsIds.length; i++) {
             this.table.column(this.columnsIds[i]).every(function() {
-
                 indexes.add(this.index() + 1);
             });
         }
-
         for (let i = 0; i < this.columnsClasses.length; i++) {
             this.table.columns(this.columnsClasses[i]).every(function() {
-
                 indexes.add(this.index() + 1);
-                console.log(indexes)
             });
         }
-
         return indexes;
     }
 
@@ -146,11 +139,11 @@ class MyShadingTable {
 function shadeTable(table, columnIndexes, darkGrey, lightGrey)
 {   let myShadingTable = null;
      myShadingTable = new MyShadingTable(table, columnIndexes, darkGrey, lightGrey);
+     myShadingTable.shade(table.rows({page: "current"}));
+     table.on("draw.dt", function(e, settings) {
+        let api = new $.fn.dataTable.Api(settings);
+        myShadingTable.shade(api.rows({page: "current"}));
+    });
 
-    // table.on("draw.dt", function(e, settings) {
-    //     let api = new $.fn.dataTable.Api(settings);
-    //     myShadingTable.shade(api.rows({page: "current"}));
-    // });
 
-    myShadingTable.shade(table.rows({page: "current"}));
 }
