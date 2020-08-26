@@ -14,25 +14,12 @@ urlpatterns = [
     url(r'^statistics', cache_page(3600*24*7)(LigandStatistics.as_view()), name='ligand_statistics'),
     url(r'^experiment/(?P<pk>[-\w]+)/detail$', ExperimentEntryView.as_view()),
     url(r'^vendors$', test_link, name='test'),
-<<<<<<< HEAD
-
-    # url(r'^biasedbrowser$', cache_page(3600*24*7)(BiasBrowser.as_view()), name='bias_browser'),
-    # url(r'^biasedgbrowser$', cache_page(3600*24*7)(BiasBrowserGSubbtype.as_view()), name='bias_g_browser'),
-    url(r'^biasedbrowser$', BiasBrowser.as_view(), name='bias_browser'),
-    url(r'^biasedgbrowser$', BiasBrowserGSubbtype.as_view(), name='bias_g_browser'),
-
-=======
     url(r'^biasedbrowser$', cache_page(3600*24*7)(BiasBrowser.as_view()), name='bias_browser'),
     url(r'^biasedgbrowser$', cache_page(3600*24*7)(BiasBrowserGSubbtype.as_view()), name='bias_g_browser'),
     # url(r'^biasedbrowser$', BiasBrowser.as_view(), name='bias_browser'),
     # url(r'^biasedgbrowser$', BiasBrowserGSubbtype.as_view(), name='bias_g_browser'),
->>>>>>> upstream/dev
     url(r'^browserchembl$', BiasBrowserChembl.as_view(), name='bias_chembl_browser'),
     url(r'^browservendors$', BiasVendorBrowser.as_view(), name='browservendor'),
     url(r'^biasedpathways$', BiasPathways.as_view(), name='pathways'),
     url(r'^pathwaydata/(?P<pk>[-\w]+)/detail$', PathwayExperimentEntryView.as_view()),
-<<<<<<< HEAD
-    url(r'^biasedbacked$', GetBiasData.as_view(), name='BiasedBrowserBackEnd'),
-=======
->>>>>>> upstream/dev
 ]

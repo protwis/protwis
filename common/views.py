@@ -14,9 +14,9 @@ from residue.models import ResidueGenericNumber, ResidueNumberingScheme, Residue
 from interaction.forms import PDBform
 from construct.tool import FileUploadForm
 
-# from svglib.svglib import SvgRenderer
-# from reportlab.graphics import renderPDF
-# from lxml import etree
+from svglib.svglib import SvgRenderer
+from reportlab.graphics import renderPDF
+from lxml import etree
 
 import inspect
 import html

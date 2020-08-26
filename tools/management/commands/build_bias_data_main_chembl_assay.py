@@ -201,7 +201,7 @@ class Command(BaseBuild):
         print('i am in')
         context = {}
 
-        content = ChemblAssays.objects.filter(standard_units = 'nM').exclude(standard_value__isnull=True).prefetch_related(
+        content = AssayExperiment.objects.filter(standard_units = 'nM').exclude(standard_value__isnull=True).prefetch_related(
             'publication', 'ligand', 'receptor'
             ).order_by('protein').order_by('ligand')
         print(len(content))
