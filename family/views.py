@@ -90,7 +90,10 @@ def detail(request, slug):
 
 
     interactions = ResidueFragmentInteraction.objects.filter(
-        structure_ligand_pair__structure__protein_conformation__protein__parent__in=proteins, structure_ligand_pair__annotated=True).exclude(interaction_type__type ='hidden').order_by('rotamer__residue__sequence_number')
+        structure_ligand_pair__structure__protein_conformation__protein__parent__in=proteins,
+        structure_ligand_pair__annotated=True).exclude(interaction_type__type='hidden').prefetch_related(
+            'rotamer__residue__generic_number', 'interaction_type'
+            ).order_by('rotamer__residue__sequence_number')
     interaction_list = {}
     for interaction in interactions:
         if interaction.rotamer.residue.generic_number:

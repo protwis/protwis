@@ -6,7 +6,8 @@ from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 from django.urls import reverse
 
-from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene,ProteinGProteinPair,ProteinSegment
+from protein.models import (Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene, ProteinGProteinPair,
+                            ProteinSegment)
 from residue.models import Residue
 from structure.models import Structure, StructureModel
 from mutation.models import MutationExperiment
@@ -22,7 +23,7 @@ class BrowseSelection(AbsBrowseSelection):
     title = 'SELECT A RECEPTOR (FAMILY)'
     description = 'Select a target or family by searching or browsing in the right column.'
     description = 'Select a receptor (family) by searching or browsing in the middle. The selection is viewed to' \
-        + ' the right.'
+                  + ' the right.'
     docs = 'receptors.html'
     target_input=False
 
@@ -67,7 +68,7 @@ def detail(request, slug):
 
     # get structures of this protein
     structures = Structure.objects.filter(protein_conformation__protein__parent=p).order_by('-representative',
-        'resolution')
+                                                                                            'resolution')
 
     # get residues
     residues = Residue.objects.filter(protein_conformation=pc).order_by('sequence_number').prefetch_related(
@@ -115,7 +116,7 @@ def detail(request, slug):
     homology_models = StructureModel.objects.filter(protein=p)
 
     context = {'p': p, 'families': families, 'r_chunks': r_chunks, 'chunk_size': chunk_size, 'aliases': aliases,
-        'gene': gene, 'alt_genes': alt_genes, 'structures': structures, 'mutations': mutations, 'protein_links': protein_links,'homology_models': homology_models}
+               'gene': gene, 'alt_genes': alt_genes, 'structures': structures, 'mutations': mutations, 'protein_links': protein_links,'homology_models': homology_models}
 
     return render(request, 'protein/protein_detail.html', context)
 
@@ -153,11 +154,11 @@ def SelectionAutocomplete(request):
         # find proteins
         if type_of_selection!='navbar':
             ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q),
-                species__in=(species_list),
-                source__in=(protein_source_list)).exclude(family__slug__startswith=exclusion_slug)[:10]
+                                        species__in=(species_list),
+                                        source__in=(protein_source_list)).exclude(family__slug__startswith=exclusion_slug)[:10]
         else:
             ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q),
-                species__common_name='Human', source__name='SWISSPROT').exclude(family__slug__startswith=exclusion_slug)[:10]
+                                        species__common_name='Human', source__name='SWISSPROT').exclude(family__slug__startswith=exclusion_slug)[:10]
 
         # Try matching protein name after stripping html tags
         if ps.count() == 0:
@@ -166,7 +167,7 @@ def SelectionAutocomplete(request):
             # If count still 0 try searching for the full thing
             if ps.count() == 0:
                 ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q),
-                    source__name='SWISSPROT').exclude(family__slug__startswith=exclusion_slug)[:10]
+                                            source__name='SWISSPROT').exclude(family__slug__startswith=exclusion_slug)[:10]
 
                 # If count still 0 try searching outside of Swissprot
                 if ps.count() == 0:
@@ -179,22 +180,22 @@ def SelectionAutocomplete(request):
             p_json['label'] = p.name + " [" + p.species.common_name + "]"
             p_json['slug'] = p.entry_name
             p_json['type'] = 'protein'
-            p_json['category'] = 'Targets'
+            p_json['category'] = 'Receptors'
             results.append(p_json)
 
 
         if type_of_selection!='navbar':
             # find protein aliases
             pas = ProteinAlias.objects.prefetch_related('protein').filter(name__icontains=q,
-                protein__species__in=(species_list),
-                protein__source__in=(protein_source_list)).exclude(protein__family__slug__startswith=exclusion_slug)[:10]
+                                                                          protein__species__in=(species_list),
+                                                                          protein__source__in=(protein_source_list)).exclude(protein__family__slug__startswith=exclusion_slug)[:10]
             for pa in pas:
                 pa_json = {}
                 pa_json['id'] = pa.protein.id
                 pa_json['label'] = pa.protein.name  + " [" + pa.protein.species.common_name + "]"
                 pa_json['slug'] = pa.protein.entry_name
                 pa_json['type'] = 'protein'
-                pa_json['category'] = 'Targets'
+                pa_json['category'] = 'Receptors'
                 if pa_json not in results:
                     results.append(pa_json)
 
@@ -213,7 +214,7 @@ def SelectionAutocomplete(request):
                     pf_json['label'] = pf.name
                     pf_json['slug'] = pf.slug
                     pf_json['type'] = 'family'
-                    pf_json['category'] = 'Target families'
+                    pf_json['category'] = 'Receptor orthologues'
                     results.append(pf_json)
 
         data = json.dumps(results)
@@ -222,9 +223,8 @@ def SelectionAutocomplete(request):
     mimetype = 'application/json'
     return HttpResponse(data, mimetype)
 
-
 def g_proteins(request, **response_kwargs):
-    ''' Example of g_proteins '''
+    """ Example of g_proteins """
     proteins = Protein.objects.filter(source__name='SWISSPROT').prefetch_related('proteingproteinpair_set')
     jsondata = {}
     for p in proteins:
@@ -250,14 +250,14 @@ def isoforms(request):
     class_proteins = Protein.objects.filter(family__slug__startswith="00",source__name='SWISSPROT', species_id=1).prefetch_related('family').order_by('family__slug')
 
     temp = OrderedDict([
-                    ('name',''),
-                    ('number_of_variants', 0),
-                    ('avg_no_variants',0),
-                    ('number_of_children', 0),
-                    ('receptor_t',0),
-                    ('density_of_variants', 0),
-                    ('children', OrderedDict())
-                    ])
+        ('name',''),
+        ('number_of_variants', 0),
+        ('avg_no_variants',0),
+        ('number_of_children', 0),
+        ('receptor_t',0),
+        ('density_of_variants', 0),
+        ('children', OrderedDict())
+    ])
 
     coverage = OrderedDict()
 
@@ -390,12 +390,12 @@ def isoforms(request):
             if i>0:
                 c = row.split("\t")
                 try:
-                    lookup_entry = "{}_human_{}".format(c[1].lower(),c[2])
+                    lookup_entry = "{}_human_{}".format(c[0].lower(),c[1])
                     summary = isoform_summary[lookup_entry]
                     # print(lookup_entry,isoform_summary[lookup_entry])
                     c.append(summary)
                 except:
-                    print("something off with ",c[1])
+                    print("something off with ",c[0])
                     c.append(['error'])
                 table_data.append(c)
 
@@ -418,6 +418,7 @@ def AlignIsoformWildtype(request):
     for r in rs:
         data['res'][r.sequence_number] = [r.protein_segment.slug,str(r.display_generic_number), r.sequence_number]
 
+    # TODO: These import clearly shouldn't be here.
     from common.tools import fetch_from_web_api
     from Bio import pairwise2
     from Bio.pairwise2 import format_alignment

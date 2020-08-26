@@ -394,7 +394,7 @@ def updateall(request):
 def runcalculation(pdbname, peptide=""):
     calc_script = os.sep.join(
         [os.path.dirname(__file__), 'legacy_functions.py'])
-    call(["python", calc_script, "-p", pdbname, "-c", peptide],
+    call(["python2.7", calc_script, "-p", pdbname, "-c", peptide],
          stdout=open(devnull, 'wb'), stderr=open(devnull, 'wb'))
     return None
 
@@ -480,7 +480,7 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
             if os.path.isfile(os.path.join(mypath, f)):
                 annotated = 0
                 #print(mypath + "/" +f)
-                result = yaml.load(open(mypath + "/" + f, 'rb'))
+                result = yaml.load(open(mypath + "/" + f, 'rb'), Loader=yaml.FullLoader)
                 output = result
                 temp = f.replace('.yaml', '').split("_")
                 temp.append([output])
@@ -590,7 +590,7 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
             logger.info("Structure not in DB?!??!")
         for f in listdir(mypath):
             if os.path.isfile(os.path.join(mypath, f)):
-                result = yaml.load(open(mypath + "/" + f, 'rb'))
+                result = yaml.load(open(mypath + "/" + f, 'rb'), Loader=yaml.FullLoader)
                 output = result
 
                 temp = f.replace('.yaml', '').split("_")
@@ -608,7 +608,7 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
 def runusercalculation(filename, session):
     calc_script = os.sep.join(
         [os.path.dirname(__file__), 'legacy_functions.py'])
-    call(["python", calc_script, "-p", filename, "-s", session])
+    call(["python2.7", calc_script, "-p", filename, "-s", session])
     return None
 
 
@@ -621,7 +621,7 @@ def parseusercalculation(pdbname, session, debug=True, ignore_ligand_preset=Fals
 
     for f in listdir(mypath):
         if os.path.isfile(os.path.join(mypath, f)):
-            result = yaml.load(open(mypath + "/" + f, 'rb'))
+            result = yaml.load(open(mypath + "/" + f, 'rb'), Loader=yaml.FullLoader)
             output = result
 
             temp = f.replace('.yaml', '').split("_")
@@ -637,12 +637,14 @@ def parseusercalculation(pdbname, session, debug=True, ignore_ligand_preset=Fals
     results = sorted(results, key=itemgetter(3), reverse=True)
     return results
 
+# DEPRECATED
 def showcalculation(request):
 
     context = calculate(request)
 
     return render(request, 'interaction/diagram.html', context)
 
+# NOTE: this function is solely used by the sitesearch functionality
 def calculate(request, redirect=None):
     if request.method == 'POST':
         form = PDBform(request.POST, request.FILES)
@@ -763,11 +765,6 @@ def calculate(request, redirect=None):
                     r.segment_slug = seg
                     r.amino_acid = v[1]
                     residue_list.append(r)
-
-            HelixBox = DrawHelixBox(
-                residue_list, 'Class A', str('test'), nobuttons=1)
-            SnakePlot = DrawSnakePlot(
-                residue_list, 'Class A', str('test'), nobuttons=1)
 
             xtal = {}
             hetsyn = {}
@@ -975,7 +972,7 @@ def calculate(request, redirect=None):
                         # create a selection item
                         properties = {
                             'feature': interaction_name_dict[feature][1],
-                            'amino_acids': ','.join(definitions.AMINO_ACID_GROUPS[interaction_name_dict[feature][1]])
+                            'amino_acids': ','.join(definitions.AMINO_ACID_GROUPS_OLD[interaction_name_dict[feature][1]])
                         }
                         selection_item = SelectionItem(
                             'site_residue', rne, properties)
@@ -997,6 +994,12 @@ def calculate(request, redirect=None):
                 # re-direct to segment selection (with the extracted interactions already selected)
                 return HttpResponseRedirect(redirect)
             else:
+                # Only relevant when not redirecting - moved here
+                HelixBox = DrawHelixBox(
+                    residue_list, 'Class A', str('test'), nobuttons=1)
+                SnakePlot = DrawSnakePlot(
+                    residue_list, 'Class A', str('test'), nobuttons=1)
+
                 return {'result': "Looking at " + pdbname, 'outputs': results,
                                                                     'simple': simple, 'simple_generic_number': simple_generic_number, 'xtal': xtal, 'pdbname': pdbname, 'mainligand': mainligand, 'residues': residues_browser,
                                                                     'HelixBox': HelixBox, 'SnakePlot': SnakePlot, 'data': context['data'],
@@ -1208,4 +1211,3 @@ def pdb(request):
         response = HttpResponse(structure.pdb_data.pdb,
                                 content_type='text/plain')
     return response
-    

@@ -26,7 +26,7 @@ class Command(BaseBuild):
         # All human proteins and xtaled
         # self.proteins = list(set(list(Protein.objects.filter(sequence_type__slug='wt',species__common_name="Human").all())+list(ProteinSet.objects.get(name='All').proteins.all())))
         self.proteins = list(set(list(ProteinSet.objects.get(name='All').proteins.all())))
-        print(self.proteins)
+        # print(self.proteins)
 
         self.prepare_input(options['proc'], self.proteins)
         # self.logger.info('Finishing adding dynamine annotations')
@@ -104,5 +104,5 @@ class Command(BaseBuild):
             # if 'opsd_bovin'!=str(p):
             #     continue
             dynamine = self.save_dynamine_prediction(p)
-            print(p,dynamine)
+            # print(p,dynamine)
 

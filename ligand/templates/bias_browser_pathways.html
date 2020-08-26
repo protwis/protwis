@@ -12,6 +12,18 @@
 <script src="https://cdn.datatables.net/buttons/1.0.3/js/buttons.colVis.js"></script>
 
 <script type="text/javascript" charset="utf-8">
+    function getCookie(c_name) {
+        if (document.cookie.length > 0) {
+            c_start = document.cookie.indexOf(c_name + "=");
+            if (c_start != -1) {
+                c_start = c_start + c_name.length + 1;
+                c_end = document.cookie.indexOf(";", c_start);
+                if (c_end == -1) c_end = document.cookie.length;
+                return unescape(document.cookie.substring(c_start, c_end));
+            }
+        }
+        return "";
+    }
     // main table load
     $(document).ready(function() {
     var ligand_counter = read_unique_ids();
@@ -44,31 +56,35 @@
                         reset_filters()
                     },
                 },
-                {
-                    text: 'Get Vendors',
-                    className: 'btn btn-primary',
-                    titleAttr: 'Vendors info for top 20 ligands',
-                    init: function(api, node, config) {
-                        $(node).removeClass('dt-button buttons-excel buttons-html5');
-                    },
-                    action: function(e, dt, node, config) {
-                        var id = read_ids()
-                        var result
-                        $.ajax({
-                            type: 'POST',
-                            url: '/ligand/vendors',
-                            data: {
-                                data: id,
-                                csrfmiddlewaretoken: '{{csrf_token }}',
-                                action: 'post',
-                            },
-                            success: function() {
-
-                                myFunction('/ligand/browservendors', 'Detail View', window, 720, 1000)
-                            }
-                        });
-                    },
+            {
+                text: 'Get Vendors',
+                className: 'btn btn-primary',
+                titleAttr: 'Vendors info for top 20 ligands',
+                init: function(api, node, config) {
+                    $(node).removeClass('dt-button buttons-excel buttons-html5');
                 },
+                action: function(e, dt, node, config) {
+                    var id = read_ids()
+                    var result
+                    console.log('test' + id)
+                    $.ajaxSetup({
+                        headers: { "X-CSRFToken": getCookie("csrftoken") }
+                    });
+                    $.ajax({
+                        type: 'POST',
+                        url: '/ligand/vendors',
+                        data: {
+                            ids: id,
+                            csrfmiddlewaretoken: '{{csrf_token }}',
+                            action: 'post',
+                        },
+                        success: function() {
+
+                            myFunction('/ligand/browservendors', 'Detail View', window, 850, 1000)
+                        }
+                    });
+                },
+            },
             ],
             scrollX: '100%',
             scrollY: '70vh',
@@ -426,10 +442,10 @@
         return l
     }
 
+
     function countUnique(iterable) {
         return new Set(iterable).size;
     }
-
     function read_ids() {
         var ids = [];
         var table = document.getElementById("structures_scrollable")
@@ -456,18 +472,12 @@
     <div style="display:inline; float:left;">
         <h2 style="width:auto; display:inline;">Pathway effects</h2>
     </div>
-    <div style="float:left; padding:4px 0px 0px 6px;">
-        <div style="font-size: 10px; ">
-            <a href="https://academic.oup.com/nar/article/44/D1/D356/2502664"> read article</a><br>
-            <a href="https://academic.oup.com/nar/article/44/D1/D356/2502664"> latest GPCRdb article</a>
-        </div>
-    </div>
 </div>
 <br><br>
 
 <img id="loadingSpinner" style="position: absolute;
     left: 50%;
-    top: 50%;" src="{% static 'home/images/35.gif' %}" />
+    top: 50%;" src="{% static 'home/images/loading.gif' %}" />
 
 {% if data %}
 {% autoescape off %}
@@ -545,7 +555,7 @@
                         <td>
                             <span style='display: none'> {{e.1.ligand.id}}</span>
                             <a href="#">
-                                <span class="glyphicon glyphicon-info-sign" onclick="myFunction('pathwaydata/{{e.1.experiment_id}}/detail', 'Detail View', window, 1500, 1000)"> Details</span>
+                                <span class="glyphicon glyphicon-info-sign" onclick="myFunction('pathwaydata/{{e.1.experiment_id}}/detail', 'Detail View', window, 1500, 1000)"></span> Details
                             </a>
                         </td>
                         <td>{{e.1.receptor.family.parent.parent.parent.name}}</td>
@@ -555,7 +565,7 @@
                         <td>{{e.1.receptor.species.common_name}}</td>
 
                         <!-- ligand -->
-                        <td style="border-left: 1px solid black;" title='{{e.1.ligand}}'>
+                        <td title='{{e.1.ligand}}'>
                             {%if e.1.chembl%}
                             <a href='/ligand/{{e.1.chembl}}' target='blank'>
                                 {%else%}
@@ -618,7 +628,7 @@ document.getElementById("loadingSpinner").style.display = "none";
 
 <!-- configure radio buttons style -->
 <style>
-    ul li {
+    div#content ul li {
         display: inline-block;
     }
 </style>

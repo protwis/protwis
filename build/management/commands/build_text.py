@@ -42,7 +42,7 @@ class Command(BaseCommand):
 
             if source_file.endswith('.yaml'):
                 with open(source_file_path, 'r') as f:
-                    ds = yaml.load(f)
+                    ds = yaml.load(f, Loader=yaml.FullLoader)
                     doc, created = News.objects.get_or_create(image=ds['image'], date=ds['date'])
                     if created:
                         self.logger.info('Created news for ' + ds['date'])

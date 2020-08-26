@@ -19,7 +19,7 @@ class Command(BaseCommand):
 
     def create_signprot_complex(self):
         with open(self.signprot_complex_data_file, 'r') as f:
-            signprot_complex_data = yaml.load(f)
+            signprot_complex_data = yaml.load(f, Loader=yaml.FullLoader)
         for protein, data in signprot_complex_data.items():
             if type(data)==type([]):
                 for i in data:
@@ -40,7 +40,7 @@ class Command(BaseCommand):
                     else:
                         g_chain = i['gamma']['chain']
                     structure = Structure.objects.get(pdb_code__index=i['pdb'])
-                    signprot_complex, created = SignprotComplex.objects.get_or_create(protein=Protein.objects.get(entry_name=protein), 
+                    signprot_complex, created = SignprotComplex.objects.get_or_create(protein=Protein.objects.get(entry_name=protein),
                                                                                       structure=structure,
                                                                                       alpha=i['alpha'], beta_chain=b_chain, gamma_chain=g_chain,
                                                                                       beta_protein=b_protein, gamma_protein=g_protein)

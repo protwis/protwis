@@ -593,11 +593,7 @@
                     <td>{{ model.receptor_protein.species.common_name }}</td>
                     <td><a href="/signprot/{{ model.sign_protein.entry_name }}">{{ model.sign_protein.name|safe }}</a></td>
                     <td>{{ model.sign_protein.family.name|safe }}</td>
-                    {% if model.prot_signprot_pair %}
-                        <td>{{ model.prot_signprot_pair.transduction }}</td>
-                    {% else %}
-                        <td>no evidence</td>
-                    {% endif %}
+                    <td>{{ model.get_prot_gprot_pair }}</td>
                     <td><a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a></td>
                     <td><a href="/signprot/{{ model.main_template.signprot_complex.protein.entry_name }}">{{ model.main_template.signprot_complex.protein.name|safe }}</a></td>
                     <td><a href="{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index}}</a></td>

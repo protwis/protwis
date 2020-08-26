@@ -41,7 +41,7 @@ class Command(BaseBuild):
     help = 'Reads bias data and imports it'
     # source file directory
     # structure_data_dir = os.sep.join([settings.EXCEL_DATA, 'ligand_data', 'bias'])
-    structure_data_dir = '/protwis/sites/protwis/excel/'
+    structure_data_dir = 'excel/'
     publication_cache = {}
     ligand_cache = {}
     data_all = []
@@ -284,6 +284,7 @@ class Command(BaseBuild):
 
             self.calc_bias_factor(i[1]['biasdata'])
             #self.calc_t_coefficient(i[1]['biasdata'])
+<<<<<<< HEAD
 
             most_potent = dict()
             for x in i[1]['biasdata']:
@@ -294,6 +295,19 @@ class Command(BaseBuild):
                             x['order_no'] = 0
                     self.calc_bias_factor(i[1]['biasdata'])
 
+=======
+
+            most_potent = dict()
+            for x in i[1]['biasdata']:
+                if x['log_bias_factor'] and x['log_bias_factor'] < 0:
+                    for j in i[1]['biasdata']:
+                        if j['order_no'] == 0:
+                            j['order_no'] = x['order_no']
+                            x['order_no'] = 0
+                    self.calc_bias_factor(i[1]['biasdata'])
+
+
+>>>>>>> upstream/dev
             self.calc_potency(i[1]['biasdata'])
 
     # TODO: done
@@ -324,6 +338,10 @@ class Command(BaseBuild):
                         b = math.log10(most_potent['reference_quantitive_efficacy'] / most_potent['reference_quantitive_activity'])
                         c = math.log10(i['quantitive_efficacy'] / i['quantitive_activity'])
                         d = math.log10(i['reference_quantitive_efficacy'] / i['reference_quantitive_activity'])
+<<<<<<< HEAD
+=======
+
+>>>>>>> upstream/dev
                         temp_calculation = self.caclulate_bias_factor_variables(a,b,c,d)
                         # if temp_calculation < 0:
                         #     temp_calculation = self.caclulate_bias_factor_variables(c,d,a,b)

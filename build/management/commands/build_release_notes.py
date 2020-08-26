@@ -41,7 +41,7 @@ class Command(BaseCommand):
 
             if source_file.endswith('.yaml'):
                 with open(source_file_path, 'r') as f:
-                    ds = yaml.load(f)
+                    ds = yaml.load(f, Loader=yaml.FullLoader)
 
                     release_notes, created = ReleaseNotes.objects.get_or_create(date=ds['date'])
                     if created:

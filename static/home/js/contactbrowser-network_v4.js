@@ -29,8 +29,44 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
     var plot_specified_filtered = filtered_gn_pairs;
     var cluster_groups = filtered_cluster_groups;
     var stickyDrag = true;
-    var highlightNode = true;
+    var highlightNode = segment_view ? false : true;
     var max_freq = 0;
+    var colorLinks = true;
+
+    var filter_sets = 'all';
+
+    var nice_index_names = {
+        'solid': 'Color',
+        'conservation' : 'Conservation of set(s) consensus AA in class',
+        'outer_angle': 'Rotamer',
+        // 'rotation_angle': 'Rotation angle',
+        'phi': 'Phi',
+        'psi': 'Psi',
+        'tau': 'Tau',
+        'distance': 'Distance',
+        'distance_abs': 'Distance (abs)',
+        'core_distance': 'Distance to 7TM axis',
+        'core_distance_abs': 'Distance to 7TM axis (abs)',  
+        'a_angle' : 'Angle to helix&7TM axes',
+        'theta': 'Theta',
+        'tau_angle': 'Tau dihedral',
+        // 'sasa': 'SASA',
+        // 'sasa_abs': 'SASA (abs)',
+        // 'rsa': 'RSA',
+        // 'rsa_abs': 'RSA (abs)',
+        // 'hse': 'HSE',
+        // 'hse_abs': 'HSE (abs)',
+        // 'network' : 'Network group no.',
+        // 'set_presence' : 'Set specific presense',
+        // 'ligand' : 'Ligand interactions freq',
+        // 'complex' : 'G protein interactions',
+        // 'ligandcomplex' : 'Ligand and G protein interactions',
+        'mutations' : 'Mutations with >5 fold effect',
+        'cons_prop' : 'Consensus AA property ',
+    }
+
+
+
     function prepare_data(single_cluster = false) {
 
         console.log('PREPARE DATA',containerSelector,'cluster_groups',cluster_groups.length, plot_specified_filtered.length )
@@ -86,6 +122,8 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             if (!plot_specified_filtered.includes(i)) return;
             gns = separatePair(i);
             var freq = 0;
+            var sfreq1 = 0;
+            var sfreq2 = 0;
             if (raw_data['proteins2']) {
                 if (normalized) {
                     sfreq1 = Math.round(100 * v['pfs1'].length / pfs_1);
@@ -101,6 +139,8 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
                 } else {
                     freq = Math.round(100 * v['pdbs'].length / pdbs_counts);
                 }
+                sfreq1 = Math.round(freq / 2);
+                sfreq2 = freq - sfreq1;
             }
             seg1 = raw_data['segment_map'][gns[0]];
             seg2 = raw_data['segment_map'][gns[1]];
@@ -110,25 +150,29 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             cg = cluster_groups.filter(l => l.includes(gns[1]));
             cg_index2 = cluster_groups.indexOf(cg[0]);
 
-            if (single_cluster!==false && (cg_index1!=single_cluster || cg_index2!=single_cluster)) return;
+            set_type = filtered_cluster_groups_set[cg_index1];
+            if (filter_sets=='all' || filter_sets==set_type) {
+                if (single_cluster!==false && (cg_index1!=single_cluster || cg_index2!=single_cluster)) return;
 
-            if (!track_gns.includes(gns[0])) {
-                new_data["nodes"].push({ "name": gns[0], "group": seg1, "group2":cg_index1, "links":0 })
-                track_gns.push(gns[0]);
-            }
-            if (!track_gns.includes(gns[1])) {
-                new_data["nodes"].push({ "name": gns[1], "group": seg2, "group2":cg_index2, "links":0 })
-                track_gns.push(gns[1]);
-            }
+                if (!track_gns.includes(gns[0])) {
+                    new_data["nodes"].push({ "name": gns[0], "group": seg1, "group2":cg_index1, "group3":set_type, "links":0 })
+                    track_gns.push(gns[0]);
+                }
+                if (!track_gns.includes(gns[1])) {
+                    new_data["nodes"].push({ "name": gns[1], "group": seg2, "group2":cg_index2, "group3":set_type, "links":0 })
+                    track_gns.push(gns[1]);
+                }
 
-            source = new_data["nodes"].filter(obj => { return obj.name === gns[0] })[0];
-            source.links += 1;
-            target = new_data["nodes"].filter(obj => { return obj.name === gns[1] })[0];
-            target.links += 1;
-            new_data["links"].push({ "source": source, "target": target, "value": 1, "freq": freq })
-            if (Math.abs(freq) > max_freq) max_freq = Math.abs(freq);
+                source = new_data["nodes"].filter(obj => { return obj.name === gns[0] })[0];
+                source.links += 1;
+                target = new_data["nodes"].filter(obj => { return obj.name === gns[1] })[0];
+                target.links += 1;
+                new_data["links"].push({ "source": source, "target": target, "value": 1, "freq": freq, "sfreq1": sfreq1, "sfreq2": sfreq2 })
+                if (Math.abs(freq) > max_freq) max_freq = Math.abs(freq);
+            }
         })
 
+        // console.log(new_data["nodes"]);
         // console.log(cluster_groups);
             // console.log(graph);
         // new_data['nodes'].forEach(function (n) {
@@ -141,7 +185,6 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
 
         if (!segment_view) {
             // resize by number of nodes if not segments
-            console.log(new_data["nodes"].length, "nodes");
             width = original_width*Math.sqrt(new_data["nodes"].length/2);
         } else {
             width = original_width*1;
@@ -152,6 +195,9 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
 
     }
     prepare_data();
+
+    // See snakeplot for this code. Placed there since it reused alot of logic from the snakeplot coloring.
+    var colors_gn = prepare_residue_colors(raw_data);
 
 
 
@@ -169,7 +215,6 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
     
     var path, link, node, svg,labelText;
     function init() {
-        console.log('init',div, containerSelector);
         div = d3v4.select(containerSelector).select("div");
         div.select("svg").remove();
         // if (force) force.stop();
@@ -190,6 +235,13 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             // Group nodes into their "groups" (segments)
             graph = network(new_data, net, getGroup, expand);
 
+            // Ensure all segments are there..
+            $.each(['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8','ICL1','ICL2','ECL1','ECL2'], function (i, s) {
+                if (!(graph['nodes'].find(({ group }) => group === s))) {
+                    graph['nodes'].push({'group':s, nodes: [], link_count: 0, size:1})
+                }
+            })
+
             max_size = Math.max.apply(Math, graph['nodes'].map(function(v) {
                 return v.size;
             }));
@@ -199,12 +251,13 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             }));
 
             // normalize
+            total_links = 0;
             graph['links'].forEach(function (n) {
                 n.links = n.size;
+                total_links += n.links;
                 n.size = Math.max(1,Math.round(max_link_size*n.size/max_link));
             });
         }
-        
     
         // var link = svg.append("g")
         //     .attr("class", "links")
@@ -226,8 +279,20 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             .style("fill", "none")
             .style("stroke-width", function(d) { return d.size || 5; })
             .style("stroke", "#000")
-            .attr("id", function (d, i) { return containerSelector+"linkId_" + i; });
+            .attr("id", function (d, i) { return containerSelector + "linkId_" + i; });
         
+        if (segment_view) {
+            var link1 = svg.append("g")
+                .attr("class", "links")
+                .selectAll("line")
+                .data(graph.links)
+                .enter()
+                .append("path")
+                .attr("class", "link")
+                .style("fill", "none")
+                .style("stroke-width", function (d) { return 5 })
+                .style("stroke", "#F00");
+        }
             // .style("fill", "none")
             // // .style("stroke-width", "8")
             // .style("stroke-width", function(d) { return d.size || 5; })
@@ -241,12 +306,14 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             .attr("dy", function (d, i) { return d.size ? -d.size / 2 : -5 / 2; })
             .style("fill", "black")
             .style("opacity", 0.5)
+            .text(function(d,i) { return  d.links;})
+            .attr("text-anchor", "Middle")
             .attr("id", function (d, i) { return "labelText_" + i; });
         
         var labelText = labelParent.append("textPath")
-            .attr("xlink:href", function (d, i) { return "#"+containerSelector+"linkId_" + i; })
-            .attr("startOffset","50%").attr("text-anchor","Middle")
-            .text(function(d,i) { return  d.links;});
+            .attr("xlink:href", function (d, i) { return "#" + containerSelector + "linkId_" + i; })
+            .attr("startOffset", "50%").attr("text-anchor", "Middle");
+            // .text(function(d,i) { return  d.links;});
         
         var n = graph.nodes.length;
         var node = svg.selectAll(".node")
@@ -262,15 +329,17 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
                 .on("drag", dragged)
                 .on("end", dragended))
             .on("dblclick", dblclick)
-            .on('contextmenu', function(d){ 
-                    d3v4.event.preventDefault();
-                    if (selected_single_cluster) {
-                        console.log('already zoomed in')
-                        prepare_data(false);
-                    } else { 
-                        prepare_data(d.group2);
+            .on('contextmenu', function (d) { 
+                    if (!segment_view) {
+                        d3v4.event.preventDefault();
+                        if (selected_single_cluster) {
+                            console.log('already zoomed in')
+                            prepare_data(false);
+                        } else { 
+                            prepare_data(d.group2);
+                        }
+                        init();
                     }
-                    init();
             })
             .on("mouseover", (d) => {
                 if (!dragged && highlightNode) {
@@ -292,16 +361,52 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             .style("opacity", 1)
             .style("fill", function (d) { return assignRainbowColor(d.group); });
         
+        if (segment_view) {
+            node.select("circle").attr("visibility", function (d) { return d.group.startsWith("TM") ? "visible" : "hidden"; })
+            node.select("circle").style("stroke", "#000");
+
+            node.append("rect")
+                .attr("class", "node")
+                .attr("visibility", function (d) { return d.group.startsWith("TM") ? "hidden" : "visible" ; }) // H8 and loops are <20..
+                .attr("x", function (d) { return d.group=='H8' ? -15 : -13; })
+                .attr("y", function (d) { return d.group == 'H8' ? -13 : -6; })
+                .attr("rx", function (d) { return d.group=='H8' ? 0 : 6; })
+                .attr("ry", function (d) { return d.group=='H8' ? 0 : 6; })
+                .attr("width", function (d) { return d.group=='H8' ? 30 : 25; })
+                .attr("height", function (d) { return d.group=='H8' ? 26 : 12; })
+                .attr("stroke", "#000")
+                .attr("stroke-width",function (d) { return d.group=='H8' ? 2 : 1; })
+                .style("opacity", 1)
+                .style("fill", function (d) { return assignRainbowColor(d.group); });
+        }
+        
         node.append("text")
             .attr("dy", ".35em")
             .attr("text-anchor", 'middle')
             .attr("fill", "#000")
             .attr("cursor", "pointer")
-            .attr("font-size", function (d) { return d.size ? assignSize(d.group) - 6 : 12; })
+            .attr("font-size", function (d) { return d.size ? assignSize(d.group) - 6 : 14; })
             .text(function (d) { return d.size ? d.group : d.name });
         
+        if (segment_view) {
+            // Fix inital layout for segments
+            node.attr("transform", function (d) {
+                if (assignPosition(d.group)[0] != 0 ) {
+                    [d.x, d.y] = assignPosition(d.group);
+                }
+                d.fixed = true;
+                d.fx = d.x;
+                d.fy = d.y;
+                return "translate(" + d.x + "," + d.y + ")";
+            });
+        }
         
-        var ticked = function() {
+        var ticked = function () {
+            colorLinks = false;
+            if ($(containerSelector +" #colorLinks").length) {
+                colorLinks = d3.select(containerSelector).select("#colorLinks").property("checked");
+            }
+            
             node.attr("transform", function (d) {
                 size = d.size ? assignSize(d.group) : 20
                 size += 2;
@@ -309,22 +414,76 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
                 d.y = Math.max(size, Math.min(height - size, d.y));
                 return "translate(" + d.x + "," + d.y + ")";
             });
+            
+
             link
                 .attr("x1", function(d) { return d.source.x; })
                 .attr("y1", function(d) { return d.source.y; })
                 .attr("x2", function(d) { return d.target.x; })
                 .attr("y2", function (d) { return d.target.y; });
             
+            labelParent
+                .attr("x", function(d) { return (d.source.x+d.target.x)/2; })
+                .attr("y", function(d) { return (d.source.y+d.target.y)/2; })
+            
+            if (segment_view) {
+                link1
+                    .attr("x1", function (d) { return d.source.x; })
+                    .attr("y1", function (d) { return d.source.y; })
+                    .attr("x2", function (d) { return d.target.x; })
+                    .attr("y2", function (d) { return d.target.y; });
+
+                link1.attr("d", function(d, i) {
+                    var dx = d.target.x - d.source.x,
+                        dy = d.target.y - d.source.y,
+                        dr = Math.sqrt(dx * dx + dy * dy);
+                    
+                        offset_x = 0;
+                        offset_y = 0;
+                        
+                        if (segment_view && colorLinks) {
+                            offset = 10*d.sfreq2 / max_freq;
+                            var vector = dx / dy;
+                            //var atan = Math.atan(vector);
+                            var rad = Math.atan2(dy, dx);
+                            var degrees = -rad * (180 / Math.PI);
+                            degrees = degrees ? -degrees : 0;
+                            offset_x = offset * Math.cos(Math.PI/2 + rad);
+                            offset_y = offset * Math.sin(Math.PI/2 + rad);
+                            //console.log(d.source.group,d.target.group, vector,degrees,rad);
+                        }
+                        if (dx > 0) {
+                            return "M" + (d.source.x+offset_x) + " " + (d.source.y+offset_y) + " L " + (d.target.x+offset_x) + " " + (d.target.y+offset_y);
+                        } else {
+                            return "M" + (d.target.x-offset_x) + " " + (d.target.y-offset_y) + " L " + (d.source.x-offset_x) + " " + (d.source.y-offset_y);
+                        }
+                });
+                link1.attr("visibility", function(d,i) { return colorLinks ? "visible" : "hidden"})
+            }
+
             link.attr("d", function(d, i) {
                 var dx = d.target.x - d.source.x,
                     dy = d.target.y - d.source.y,
                     dr = Math.sqrt(dx * dx + dy * dy);
-                // return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
-
+                
+                offset_x = 0;
+                offset_y = 0;
+                
+                if (segment_view && colorLinks) {
+                    offset = 10*d.sfreq1 / max_freq;
+                    var vector = dx / dy;
+                    //var atan = Math.atan(vector);
+                    var rad = Math.atan2(dy, dx);
+                    var degrees = -rad * (180 / Math.PI);
+                    degrees = degrees ? -degrees : 0;
+                    offset_x = offset * Math.cos(Math.PI/2 + rad);
+                    offset_y = offset * Math.sin(Math.PI/2 + rad);
+                    //console.log(d.source.group,d.target.group, vector,degrees,rad);
+                }
                 if (dx > 0) {
-                    return "M" + d.source.x + " " + d.source.y + " L " + d.target.x + " " + d.target.y;
+                    return "M" + (d.source.x-offset_x) + " " + (d.source.y-offset_y) + " L " + (d.target.x-offset_x) + " " + (d.target.y-offset_y);
                 } else {
-                    return "M" + d.target.x + " " + d.target.y + " L " + d.source.x + " " + d.source.y;
+                    return "M" + (d.target.x+offset_x) + " " + (d.target.y+offset_y) + " L " + (d.source.x+offset_x) + " " + (d.source.y+offset_y);
                 }
             });
         }  
@@ -417,6 +576,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             //   .strength(groupingForce.getLinkStrength) // default link force will try to join nodes in the same group stronger than if they are in different groups
             ).on("tick", ticked);
         
+        // if (segment_view) simulation.stop();
           
         // https://bl.ocks.org/mbostock/3750558
         function dblclick(d) {
@@ -584,52 +744,265 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
 
         d3.select(containerSelector).select("#addAA").on("change", function () {
             addAA = d3.select(containerSelector).select("#addAA").property("checked");
-            node.select("circle").attr("r", function (d) { return addAA ? 24 : 20; })
-            node.select("text").text(
-                function (d) { return addAA ? raw_data["aa_map"][d.name]+d.name : d.name }
+            node.select("circle").attr("r", function (d) { return addAA ? 20 : 20; })
+            node.select("text").html(
+                function (d) { return addAA ? "<tspan x=0 dy=-3>"+raw_data["tab4"][d.name]["all_seq_cons"][0]+"</tspan><tspan x=0 dy=12>"+d.name+"</tspan>" : d.name }
             );
         });
+
+        d3.select(containerSelector).select("#change_to_freq").on("change", function () {
+            changeFreq = d3.select(containerSelector).select("#change_to_freq").property("checked");
+            // labelText.text(function (d) { return changeFreq ? (100*d.links / total_links).toFixed(0)+"%" :  d.links  });
+            labelParent.text(function (d) { return changeFreq ? (100*d.links / total_links).toFixed(0)+"%" :  d.links  });
+        });
+
+        $(containerSelector+ " .residue_rotation").on("change", function () {
+            change_rotation();
+        });
+        function change_rotation() {
+            fill_color = $(containerSelector + " #residue_rotation").val();
+            console.log('change rotation to!', fill_color);
+
+            if (fill_color == 'none') {
+                node.select("text").attr("transform", "");
+            } else {
+                // loop over nodes, find name
+                node.select("text").attr("transform", function (d) {
+                    var name = d.name;
+                    var scale = colors_gn[fill_color][name][1];
+                    var rotation_value = Math.round(scale * 180 - 90);
+                    if (fill_color == 'outer_angle' || fill_color == 'rotation_angle') {
+                        // For these 'actual' rotation values, use the 'true value' as the rotation.
+                        var rotation_value = Math.round(colors_gn[fill_color][name][0]);
+                    }
+
+                    return "rotate("+rotation_value+")";
+                })
+            }
+        }
+
+        d3.select(containerSelector).select(".residue_fill").on("change", function () {
+            change_fill();
+        });
+        function change_fill() {
+            fill_color = $(containerSelector + " #node_color").val();
+
+            color_id1  = $(containerSelector+" #fill_color1").spectrum("get").toHexString();
+            if ($(containerSelector + " #fill_color2").spectrum("get") && $(containerSelector + " #fill_color2").length) {
+                color_id2 = $(containerSelector + " #fill_color2").spectrum("get").toHexString();
+            } else {
+                color_id2 = false;
+            }
+            if ($(containerSelector + " #fill_color3").spectrum("get") && $(containerSelector + " #fill_color3").length) {
+                color_id3 = $(containerSelector + " #fill_color3").spectrum("get").toHexString();
+            } else {
+                color_id3 = false;
+            }
+            console.log('change fill color to!', fill_color, color_id1, color_id2, color_id3);
+            
+            // if no color 3 make only linear between two colors.
+            if (color_id3) {
+                var color_range = d3v4.scaleLinear()
+                    .domain([0, 0.5, 1])
+                    .range([color_id1, color_id2, color_id3]);
+            } else {
+                var color_range = d3v4.scaleLinear()
+                    .domain([0, 1])
+                    .range([color_id1, color_id2]);
+            }
+            if (fill_color == 'segment') {
+                node.select("circle").style("fill", function (d) { return assignRainbowColor(d.group); });
+                node.select("rect").style("fill", function (d) { return assignRainbowColor(d.group); });
+            } else if (fill_color == 'solid') {
+                node.select("rect").style("fill", color_id1);
+                node.select("circle").style("fill", color_id1);
+            } else {
+                // loop over nodes, find name
+                node.select("circle").style("fill", function (d) {
+                    name = d.name;
+                    if (colors_gn[fill_color][name]) {
+                        return color_range(colors_gn[fill_color][name][1])
+                    } else {
+                        return "#fff";
+                    }
+                })
+            }
+        }
+        $(containerSelector +" input.residue_fill").on('move.spectrum', function () { change_fill(); });
+
+        
+        d3.select(containerSelector).select(".residue_border").on("change", function () {
+            change_border();
+        });
+        function change_border() {
+            fill_color = $(containerSelector + " #residue_border").val();
+
+            color_id1  = $(containerSelector+" #border_color1").spectrum("get").toHexString();
+            color_id2 = $(containerSelector + " #border_color2").spectrum("get").toHexString();
+            if ($(containerSelector + " #border_color3").spectrum("get")) {
+                color_id3 = $(containerSelector + " #border_color3").spectrum("get").toHexString();
+            } else {
+                color_id3 = false;
+            }
+            console.log('change border color to!', fill_color, color_id1, color_id2, color_id3);
+            
+            // if no color 3 make only linear between two colors.
+            if (color_id3) {
+                var color_range = d3v4.scaleLinear()
+                    .domain([0, 0.5, 1])
+                    .range([color_id1, color_id2, color_id3]);
+            } else {
+                var color_range = d3v4.scaleLinear()
+                    .domain([0, 1])
+                    .range([color_id1, color_id2]);
+            }
+            if (fill_color == 'none') {
+                node.select("rect").style("stroke", "#000");
+                node.select("circle").style("stroke", "#000");
+            } else if (fill_color == 'solid') {
+                node.select("rect").style("stroke", color_id1);
+                node.select("circle").style("stroke", color_id1);
+            } else {
+                // loop over nodes, find name
+                node.select("circle").style("stroke", function (d) {
+                    name = d.name;
+                    if (colors_gn[fill_color][name]) {
+                        return color_range(colors_gn[fill_color][name][1]);
+                    } else {
+                        return color_range(0);
+                        // return "#000";
+                    }
+                })
+            }
+        }
+        $(containerSelector +" input.residue_border").on('move.spectrum', function () { change_border(); });
+
+        d3.select(containerSelector).select(".residue_text").on("change", function () {
+            change_text();
+        });
+        function change_text() {
+            fill_color = $(containerSelector + " #residue_text").val();
+
+            color_id1  = $(containerSelector+" #text_color1").spectrum("get").toHexString();
+            color_id2 = $(containerSelector + " #text_color2").spectrum("get").toHexString();
+            if ($(containerSelector + " #text_color3").spectrum("get")) {
+                color_id3 = $(containerSelector + " #text_color3").spectrum("get").toHexString();
+            } else {
+                color_id3 = false;
+            }
+            console.log('change text color to!', fill_color, color_id1, color_id2, color_id3);
+            
+            // if no color 3 make only linear between two colors.
+            if (color_id3) {
+                var color_range = d3v4.scaleLinear()
+                    .domain([0, 0.5, 1])
+                    .range([color_id1, color_id2, color_id3]);
+            } else {
+                var color_range = d3v4.scaleLinear()
+                    .domain([0, 1])
+                    .range([color_id1, color_id2]);
+            }
+            if (fill_color == 'none') {
+                node.select("text").style("fill", "#000");
+            } else if (fill_color == 'solid') {
+                node.select("text").style("fill", color_id1);
+            } else {
+                // loop over nodes, find name
+                node.select("text").style("fill", function (d) {
+                    name = d.name;
+                    if (colors_gn[fill_color][name]) {
+                        return color_range(colors_gn[fill_color][name][1]);
+                    } else {
+                        return color_range(0);
+                        // return "#000";
+                    }
+                })
+            }
+        }
+        $(containerSelector +" input.residue_text").on('move.spectrum', function () { change_text(); });
 
 
         d3.select(containerSelector).select("#colorLinks").on("change", function () {
             colorLinks = d3.select(containerSelector).select("#colorLinks").property("checked");
-            link.style("stroke", function (d) {
-                scale = 0.5 + Math.abs(d.freq)*0.5 / 100;
-                // scale = Math.abs(d.freq) / 100;
-                scale = 0.2 + Math.abs(d.freq) * 0.8 / max_freq;
-                console.log(max_freq, d.freq, d.links);
-                color = { r: 200, g: 200, b: 200 }; //grey
-                if (d.freq < 0) {
-                    // if the header is a set two, then make it red
-                    // color = { r: 255*scale, g: (153)*scale, b: (153)*scale }; //red
-                    color = { r: 255, g: 255-(255-153)*scale, b: 255-(255-153)*scale }; //red
-                } else if (d.freq > 0) {
-                    // Positive numbers are blue either cos they are set 1 or cos "set 1 has most"
-                    // This is also used for single set/structure
-                    // color = { r: (153)*scale, g: (204)*scale, b: 255*scale }; //blue
+            
+            if (!segment_view) {
+                link.style("stroke", function (d) {
+                    scale = 0.5 + Math.abs(d.freq)*0.5 / 100;
+                    // scale = Math.abs(d.freq) / 100;
+                    scale = 0.2 + Math.abs(d.freq) * 0.8 / max_freq;
+                    //console.log(max_freq, d.freq, d.links);
+                    color = { r: 200, g: 200, b: 200 }; //grey
+                    if (d.freq < 0) {
+                        // if the header is a set two, then make it red
+                        // color = { r: 255*scale, g: (153)*scale, b: (153)*scale }; //red
+                        color = { r: 255, g: 255-(255-153)*scale, b: 255-(255-153)*scale }; //red
+                    } else if (d.freq > 0) {
+                        // Positive numbers are blue either cos they are set 1 or cos "set 1 has most"
+                        // This is also used for single set/structure
+                        // color = { r: (153)*scale, g: (204)*scale, b: 255*scale }; //blue
+                        color = { r: 255-(255-153)*scale, g: 255-(255-204)*scale, b: 255 }; //blue
+                    }
+                    var hex = rgb2hex(color.r, color.g, color.b);
+                    
+                    return colorLinks ? hex : "#000";
+                });
+            } else {
+                link.style("stroke", function (d) {
+                    scale = 0.5 + Math.abs(d.freq)*0.5 / 100;
+                    // scale = Math.abs(d.freq) / 100;
+                    scale = Math.abs(d.sfreq1) / max_freq;
                     color = { r: 255-(255-153)*scale, g: 255-(255-204)*scale, b: 255 }; //blue
-                }
-                var hex = rgb2hex(color.r, color.g, color.b);
-                
-                return colorLinks ? hex : "#000";
-            });
+                    var hex = rgb2hex(color.r, color.g, color.b);
+                    return colorLinks ? hex : "#000";
+                });
+
+            }
             link.style("stroke-width", function (d) {
                 scale = 0.5 + Math.abs(d.freq)*0.5 / 100;
                 // scale = Math.abs(d.freq) / 100;
-                scale = Math.abs(d.freq) / max_freq;
+                scale = segment_view ? Math.abs(d.sfreq1) / max_freq : Math.abs(d.freq) / 100;
                 
-                return colorLinks ? Math.round(30*scale) : d.size || 5; ;
+                return colorLinks ? Math.round(20*scale) : d.size || 5;
             });
-            link.style("stroke-opacity", function (d) { return colorLinks ? 0.8 : 0.5; })
-            if (colorLinks) {
-                svg.style("background-color", "#fff");
-                labelParent.attr("dy",function(d,i) { stroke_width = Math.round(30*Math.abs(d.freq) / max_freq); return  stroke_width ? -stroke_width/2 : -5/2;})
-            } else {
-                svg.style("background-color", "#fff");
-                labelParent.attr("dy", function (d, i) { return d.size ? -d.size / 2 : -5 / 2; })
+            link.style("stroke-opacity", function (d) { return colorLinks ? 1 : 0.3; })
+
+            if (segment_view) {
+                link1.style("stroke", function (d) {
+                    scale = 0.5 + Math.abs(d.freq)*0.5 / 100;
+                    // scale = Math.abs(d.freq) / 100;
+                    scale = Math.abs(d.sfreq2) / max_freq;
+                    color = { r: 255, g: 255-(255-153)*scale, b: 255-(255-153)*scale }; //red
+                    var hex = rgb2hex(color.r, color.g, color.b);
+                    return colorLinks ? hex : "#000";
+                });
+                link1.style("stroke-width", function (d) {
+                    scale = 0.5 + Math.abs(d.freq)*0.5 / 100;
+                    // scale = Math.abs(d.freq) / 100;
+                    scale = Math.abs(d.sfreq2) / max_freq;
+                    
+                    return colorLinks ? Math.round(20*scale) : d.size || 5; ;
+                });
+                link1.style("stroke-opacity", function (d) { return colorLinks ? 1 : 0; })
+                if (colorLinks) {
+                    svg.style("background-color", "#fff");
+                    labelParent.attr("dy",function(d,i) { stroke_width = Math.round(20*Math.abs(d.sfreq1) / max_freq); return  stroke_width ? -stroke_width/2 : -5/2;})
+                    labelParent.attr("dy",5)
+                } else {
+                    svg.style("background-color", "#fff");
+                    labelParent.attr("dy", function (d, i) { return d.size ? -d.size / 2 : -5 / 2; })
+                    labelParent.attr("dy",5)
+                }
             }
+            simulation.alpha(1).restart();
         });
 
+        d3.select(containerSelector).select("#set_filter").on("change", function () {
+            // filter_sets = d3v4.select(containerSelector).select("#set_filter").val();
+            filter_sets = $(containerSelector+" #set_filter").val();
+            console.log('changing filtering!', filter_sets);
+            prepare_data(false);
+            init();
+        });
         // init option values
 
         // console.log("set link_strength_change to", link_strength);
@@ -642,9 +1015,13 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
         d3v4.select(containerSelector).select("#gravity_change").property("value", gravity);
         console.log("set collide to", collide);
         d3v4.select(containerSelector).select("#collide_change").property("value", gravity);
+        console.log("set set_filter to", filter_sets);
+        d3v4.select(containerSelector).select("#set_filter").property("value", filter_sets);
+        console.log("set colorLinks to", colorLinks);
+        d3.select(containerSelector).select("#colorLinks").property("checked",colorLinks);
 
-        
-              
+        // init colors from begining
+        d3v4.select(containerSelector).select("#colorLinks").dispatch("change");
 
     }
     // https://bl.ocks.org/mbostock/3750558
@@ -753,21 +1130,82 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             u = expand[u] ? nm[e.source.name] : nm[u];
             v = expand[v] ? nm[e.target.name] : nm[v];
             var i = (u<v ? u+"|"+v : v+"|"+u),
-                l = lm[i] || (lm[i] = {source:u, target:v, size:0, freq:0});
+                l = lm[i] || (lm[i] = {source:u, target:v, size:0, freq:0, sfreq1:0, sfreq2:0});
             l.size += 1;
             l.freq += e.freq;
+            l.sfreq1 += e.sfreq1>e.sfreq2 ? 1 : 0; // Change 1 to e.freq to 'nuance' the number
+            l.sfreq2 += e.sfreq2>e.sfreq1 ? 1 : 0;
         }
         for (i in lm) {
             // lm[i].freq /= lm[i].size; // Don't do this as the sum is more "meaningful"
-            if (Math.abs(lm[i].freq) > max_freq) max_freq = Math.abs(lm[i].freq);
+            // if (Math.abs(lm[i].freq) > max_freq) max_freq = Math.abs(lm[i].freq);
+            if (lm[i].sfreq1 > max_freq) max_freq = lm[i].sfreq1;
+            if (lm[i].sfreq2 > max_freq) max_freq = lm[i].sfreq2;
             links.push(lm[i]);
         }
+        console.log('max_freq', max_freq);
         return {nodes: nodes, links: links};
     }
         
     function getGroup(n) { return n.group; }
 
+    function assignPosition(segment) {
 
+        switch (segment) {
+        case "TM1":
+                x = 323;
+                y = 170;
+            break;
+        case "TM2":
+                x = 248;
+                y = 63;
+            break;
+        case "TM3":
+                x = 165;
+                y = 177;
+            break;
+        case "TM4":
+                x = 58;
+                y = 82;
+            break;
+        case "TM5":
+                x = 40;
+                y = 186;
+            break;
+        case "TM6":
+                x = 83;
+                y = 293;
+            break;
+        case "TM7":
+                x = 250;
+                y = 285;
+            break;
+        case "H8":
+                x = 358;
+                y = 292;
+            break;
+        case "ECL1":
+                x = 164;
+                y = 26;
+            break;
+        case "ECL2":
+                x = 17;
+                y = 125;
+            break;
+        case "ICL1":
+                x = 383;
+                y = 76;
+            break;
+        case "ICL2":
+                x = 95;
+                y = 35;
+            break;
+        default:
+            x = 0;
+            y = 0;
+        }
+        return [x,y];
+    }
 
     function assignSize(segment) {
 
@@ -794,7 +1232,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             size = 20;
             break;
         case "H8":
-            size = 18;
+            size = 20;
             break;
         default:
             size = 15;
@@ -856,6 +1294,10 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
         var content = '<div class="controls">'
         //                                  +'<h4>Controls</h4>';
 
+        var select_data_options = ''
+        $.each(nice_index_names, function (key, description) {
+            select_data_options += '<option value="' + key + '">' + description + '</option>';
+        });
 
         content += '<p>Line colors: <select id="flareplot_color">' +
             '<option value="none">None (gray)</option>' +
@@ -876,29 +1318,193 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             content += '<option value="frequency_2">Frequency group 2</option>';
         }
         content += '</select></p>';
-        content = '<span class="pull-right network_controls_toggle" style="cursor: pointer;"><span class="glyphicon glyphicon-option-horizontal btn-download png"></span></span><span class="options" style="display: block; min-width: 120px;">' +
-        // '<input id="checkCurved" type="checkbox" checked>' +
-        // '<span class="checkboxtext"> Curved links' +
-        // '</span>' +
-        // '</input>' +
-        // '<br><button class="btn btn-primary btn-xs" id="resetfixed">Release fixed</button>' +
-        // '<br><button class="btn btn-primary btn-xs" id="freeze">Freeze all</button>' +
-        'Link Label <input id="linkLabel" type="checkbox" checked><br>' +
-        'Stick drag <input id="stickyDrag" type="checkbox" checked><br>' +
-        'Highlight res <input id="highlightNode" type="checkbox" checked><br>' +
-        'Add consensus AA<input id="addAA" type="checkbox"><br>' +
-        'Color links by frequency <input id="colorLinks" type="checkbox"><br>' +
-        'Link Strength <input id="link_strength_change" style="width:80px;" type="range" min="0" max="1" step="any" value="0.5">' +
-        'Link Distance<input id="link_distance_change" style="width:80px;" type="range" min="0" max="200" step="any" value="40">' +
-        'Charge<input id="charge_change" style="width:80px;" type="range" min="0" max="1400" step="any" value="700">' +
-        'Gravity<input id="gravity_change" style="width:80px;" type="range" min="0" max="1" step="any" value="0.1"> ' +
-        'Collide<input id="collide_change" style="width:80px;" type="range" min="0" max="200" step="any" value="30"> ' +
-        'Space<input id="size_change" style="width:80px;" type="range" min="200" max="4000" step="any" value="'+w+'"> ' +
-        '</span>';
+        content = '<span class="pull-right network_controls_toggle" style="cursor: pointer;"><span class="glyphicon glyphicon-option-horizontal btn-download png"></span></span><span class="options" style="display: block; min-width: 120px;">';
+            // '<input id="checkCurved" type="checkbox" checked>' +
+            // '<span class="checkboxtext"> Curved links' +
+            // '</span>' +
+            // '</input>' +
+            // '<br><button class="btn btn-primary btn-xs" id="resetfixed">Release fixed</button>' +
+            // '<br><button class="btn btn-primary btn-xs" id="freeze">Freeze all</button>' +
+            
+            // 'Stick drag <input id="stickyDrag" type="checkbox" checked><br>' +
+            
+            
+            // 'Node color <select id="node_color"><option value="segment">Segment</option><option value="grey">Grey</option><option value="white">White</option></select><br>' +
+
+        content += '<Strong>Options</strong><br>';
+
+        // common options
+
+        content += 'Highlight res <input id="highlightNode" type="checkbox" ><br>';
+            
+        if (mode != "single-crystal") {
+            content += 'Color links by frequency <input id="colorLinks" type="checkbox" checked><br>' +
+            '% of kept contacts <input id="change_to_freq" type="checkbox"><br>';
+        }
+        
+        if (mode == "two-crystal-groups") {
+            content += 'Filter <select id="set_filter"><option value="all">All</option><option value="set1">Set1</option><option value="set2">Set2</option><option value="both">Both</option></select><br>';
+        }
+                   
+        if (segment_view) {
+            content += 'Link Label <input id="linkLabel" type="checkbox" checked><br>' +
+                'Segment fill:<select id="node_color" class="residue_fill snakeplot_property_select">' +
+                '<option value="segment">Segment</option><option value="solid">Color</option></select><input type="text" id="fill_color1" class="togglePaletteOnly_red residue_fill" value="red" /><br>';
+                
+        } else {
+            content += 'Add consensus AA<input id="addAA" type="checkbox"><br>';
+        
+            content += '<table><tr><th>Area</th><th>Property</th><th>Color1</th><th>Color2</th><th>Color3</th></tr>';
+
+            content += '<tr><td>Residue fill:</td><td><select id="node_color" class="residue_fill snakeplot_property_select">' +
+                '<option value="segment">Segment</option>' +
+                select_data_options +
+                '</select></td>' +
+                '<td><input type="text" id="fill_color1" class="togglePaletteOnly_red residue_fill" value="red" /></td>' +
+                '<td><input type="text" id="fill_color2" class="togglePaletteOnly_blue residue_fill" value="blue" /></td>' +
+                '<td><input type="text" id="fill_color3" class="togglePaletteOnly_empty residue_fill" value="" /></td>' +
+                '</tr>'
+                ;
+            
+            content += '<tr><td>Residue border:</td><td><select id="residue_border" class="residue_border snakeplot_property_select">' +
+                '<option value="none">None</option>' +
+                select_data_options +
+                '</select></td>' +
+                '<td><input type="text" id="border_color1" class="togglePaletteOnly_red residue_border" value="red" /></td>' +
+                '<td><input type="text" id="border_color2" class="togglePaletteOnly_blue residue_border" value="blue" /></td>' +
+                '<td><input type="text" id="border_color3" class="togglePaletteOnly_empty residue_border" value="" /></td>' +
+                '</tr>'
+                ;
+            
+            content += '<tr><td>Residue text:</td><td><select id="residue_text" class="residue_text snakeplot_property_select">' +
+                '<option value="none">None</option>' +
+                select_data_options +
+                '</select></td>' +
+                '<td><input type="text" id="text_color1" class="togglePaletteOnly_red residue_text" value="red" /></td>' +
+                '<td><input type="text" id="text_color2" class="togglePaletteOnly_blue residue_text" value="blue" /></td>' +
+                '<td><input type="text" id="text_color3" class="togglePaletteOnly_empty residue_text" value="" /></td>' +
+                '</tr>'
+                ;
+            content += '<tr><td>Residue rotation:</td><td colspan=4><select id="residue_rotation" class="residue_rotation snakeplot_property_select">' +
+                '<option value="none">None</option>' +
+                select_data_options +
+                '</select></td>' 
+                '</tr> '
+            // content += '<tr><td>Residue border:</td><td><select id="snakeplot_color_border" class="residue_border snakeplot_property_select">' +
+            //     '<option value="none">None</option>' +
+            //     select_data_options +
+            //     '</select></td><td>' +
+            //     '<select id=border_color1 class="border_color residue_border snakeplot_color_select">' +
+            //     select_color_options_white +
+            //     '</select></td><td>' +
+            //     '<select id=border_color2 class="border_color residue_border snakeplot_color_select">' +
+            //     select_color_options_red +
+            //     '</select></td><td>' +
+            //     '<select id=border_color3 class="border_color residue_border snakeplot_color_select">' +
+            //     '<option value="none">None</option>' +
+            //     select_color_options +
+            //     '</select></td>' +
+            //     '<td>' + 
+            //     '<div class="btn-group btn-toggle residue_border" id="border_filtered">' +
+            //     '    <button class="btn btn-xs btn-primary active" value="true">Kept</button>' +
+            //     '    <button class="btn btn-xs btn-default" value="false">All</button>' +
+            //     '</div>' +
+            //     '</td></tr> '
+            //     ;
+            // content += '<tr><td>Border thickness:</td><td><select id="snakeplot_border_stroke" class="residue_border">' +
+            //     '<option>1</option>' +
+            //     '<option>2</option>' +
+            //     '<option SELECTED>3</option>' +
+            //     '<option>4</option>' +
+            //     '<option>5</option>' +
+            //     '</td></tr>';
+            // content += '<tr><td>Residue text:</td><td><select id="snakeplot_color_text" class="residue_text snakeplot_property_select">' +
+            //         '<option value="none">None</option>' +
+            //         select_data_options +
+            //         '</select></td><td>' +
+            //         '<select id=text_color1 class="text_color residue_text snakeplot_color_select">' +
+            //         select_color_options_white +
+            //         '</select></td><td>' +
+            //         '<select id=text_color2 class="text_color residue_text snakeplot_color_select">' +
+            //         select_color_options_red +
+            //         '</select></td><td>' +
+            //         '<select id=text_color3 class="text_color residue_text snakeplot_color_select">' +
+            //         '<option value="none">None</option>' +
+            //         select_color_options +
+            //         '</select></td>' +
+            //         '<td>' + 
+            //         '<div class="btn-group btn-toggle residue_text" id="text_filtered">' +
+            //         '    <button class="btn btn-xs btn-primary active" value="true">Kept</button>' +
+            //         '    <button class="btn btn-xs btn-default" value="false">All</button>' +
+            //         '</div>' +
+            //         '</td></tr> '
+            //         ;
+            // content += '<tr><td>Residue rotation:</td><td colspan=4><select id="snakeplot_color_rotation" class="residue_rotation snakeplot_property_select">' +
+            //     '<option value="none">None</option>' +
+            //     select_data_options +
+            //     '</select></td>' +
+            //     '<td>' + 
+            //     '<div class="btn-group btn-toggle residue_rotation" id="rotation_filtered">' +
+            //     '    <button class="btn btn-xs btn-primary active" value="true">Kept</button>' +
+            //     '    <button class="btn btn-xs btn-default" value="false">All</button>' +
+            //     '</div>' +
+            //     '</td></tr> '
+
+            content += "</table>";     
+        
+        }    
+        content += '<strong>Network settings</strong> [TODO: Show/hide button]<br><table><tr><td>Link Strength</td><td><input id="link_strength_change" style="width:80px;" type="range" min="0" max="1" step="any" value="0.5"></td>' +
+            '<td>Link Distance</td><td><input id="link_distance_change" style="width:80px;" type="range" min="0" max="200" step="any" value="40"></td></tr>' +
+            '<tr><td>Charge</td><td><input id="charge_change" style="width:80px;" type="range" min="0" max="1400" step="any" value="700"></td>' +
+            '<td>Gravity</td><td><input id="gravity_change" style="width:80px;" type="range" min="0" max="1" step="any" value="0.1"></td></tr>' +
+            '<tr><td>Collide</td><td><input id="collide_change" style="width:80px;" type="range" min="0" max="200" step="any" value="30"></td> ' +
+            '<td>Space</td><td><input id="size_change" style="width:80px;" type="range" min="200" max="4000" step="any" value="'+w+'"></td></tr></table>' +
+            '</span>';
         // content = '';
         newDiv.innerHTML = content;
 
         $(containerSelector).append(newDiv);
+
+        color_palette = [
+            ["#000", "#444", "#666", "#999", "#ccc", "#eee", "#f3f3f3", "#fff"],
+            ["#f00", "#f90", "#ff0", "#0f0", "#0ff", "#00f", "#90f", "#f0f"],
+            ["#f4cccc", "#fce5cd", "#fff2cc", "#d9ead3", "#d0e0e3", "#cfe2f3", "#d9d2e9", "#ead1dc"],
+            ["#ea9999", "#f9cb9c", "#ffe599", "#b6d7a8", "#a2c4c9", "#9fc5e8", "#b4a7d6", "#d5a6bd"],
+            ["#e06666", "#f6b26b", "#ffd966", "#93c47d", "#76a5af", "#6fa8dc", "#8e7cc3", "#c27ba0"],
+            ["#c00", "#e69138", "#f1c232", "#6aa84f", "#45818e", "#3d85c6", "#674ea7", "#a64d79"],
+            ["#900", "#b45f06", "#bf9000", "#38761d", "#134f5c", "#0b5394", "#351c75", "#741b47"],
+            ["#600", "#783f04", "#7f6000", "#274e13", "#0c343d", "#073763", "#20124d", "#4c1130"] //
+        ];
+
+
+
+        $(containerSelector+" .togglePaletteOnly_red").spectrum({
+            showPaletteOnly: true,
+            togglePaletteOnly: true,
+            hideAfterPaletteSelect:true,
+            togglePaletteMoreText: 'more',
+            togglePaletteLessText: 'less',
+            color: 'red',
+            palette: color_palette
+        });
+        $(containerSelector+" .togglePaletteOnly_blue").spectrum({
+            showPaletteOnly: true,
+            togglePaletteOnly: true,
+            hideAfterPaletteSelect:true,
+            togglePaletteMoreText: 'more',
+            togglePaletteLessText: 'less',
+            color: 'blue',
+            palette: color_palette
+        });
+        $(containerSelector+" .togglePaletteOnly_empty").spectrum({
+            showPalette: true,
+            togglePaletteOnly: true,
+            hideAfterPaletteSelect:true,
+            togglePaletteMoreText: 'more',
+            togglePaletteLessText: 'less',
+            allowEmpty:true,
+            palette: color_palette
+        });
         $(containerSelector).find(".options").toggle();
 
         $(containerSelector).find(".network_controls_toggle").click(function() {

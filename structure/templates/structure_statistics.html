@@ -93,7 +93,7 @@ body {
             <td><b>Class (Family)</b></td>
             <td align="center"><b>Total</b></td>
             {% for class in all_structures_by_class.items %}
-            <td align="center"><b>{% if class.0 == "Taste 2" %}Taste&nbsp;2{% else %}{{ class.0 }}{% endif %}</b></td>
+            <td align="center"><b>{% if class.0 == "Class T (Taste 2)" %}Taste&nbsp;2{% else %}{{ class.0 }}{% endif %}</b></td>
             {% endfor %}
         </tr>
     </thead>
@@ -139,7 +139,7 @@ body {
             <td><b>Class (Family)</b></td>
             <td align="center">Total</td>
             {% for class in unique_structures_by_class.items %}
-            <td align="center"><b>{% if class.0 == "Taste 2" %}Taste&nbsp;2{% else %}{{ class.0 }}{% endif %}</b></td>
+            <td align="center"><b>{% if class.0 == "Class T (Taste 2)" %}Taste&nbsp;2{% else %}{{ class.0 }}{% endif %}</b></td>
             {% endfor %}
         </tr>
     </thead>
@@ -201,7 +201,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
         <text x="470" y="73" font-family="Verdana" font-size="10">The number of structures available.</text>
 
         <circle class="chart_type" id="unique_class" cx="10" cy="30" r="5" stroke="black" fill="white" stroke-width="2" />
-        <text x="20" y="33" font-family="Verdana" font-size="10">The number of unique crystallized receptors available.</text>
+        <text x="20" y="33" font-family="Verdana" font-size="10">The number of unique receptors with structures.</text>
 
         <circle class="chart_type" id="unique_class_y" cx="10" cy="50" r="5" stroke="black" fill="white" stroke-width="2" />
         <text x="20" y="53" font-family="Verdana" font-size="10">The number of unique GPCR-ligand complexes.</text>
@@ -559,7 +559,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
                 <h4>Class F<br />(Frizzled)</h4>
             </td>
             <td width="50%" align="center">
-                <h4>Taste 2</h4>
+                <h4>Class T (Taste 2)</h4>
             </td>
         </tr>
         <tr>
