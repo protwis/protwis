@@ -20,7 +20,9 @@ import os
 import json
 from collections import OrderedDict
 import datetime
-
+"""
+building ligads assays without vendor info
+"""
 class Command(BaseBuild):
     help = 'Reads source data and creates links to other databases'
 
