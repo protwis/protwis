@@ -4,8 +4,9 @@
 
 {% block content %}
 
+    <!-- Carousel -->
     <div class="row">
-        <!-- Carousel -->
+
         <div class='col-md-12'>
             <div id="carousel-example-generic" class="carousel slide" data-ride="carousel" data-interval="30000">
                 <!-- Indicators -->
@@ -20,39 +21,42 @@
                 <!-- Wrapper for carousel slides -->
                 <div class="carousel-inner" role="listbox">
                     <div class="item active">
-                        <img src="{% static 'home/carousel/alignment.png' %}">
+                        <img src="{% static 'home/carousel/seqali_phyltree.png' %}">
                         <div class="carousel-caption">
-                            <h2>Build alignments</h2>
-                            <p>Select proteins to align individually or by family. Choose custom sequence segments to
-                                include in your alignment.</p>
+                            <h3><a href="/alignment/targetselection" target="_blank">Alignments</a> and <a href="/phylogenetic_trees/targetselection" target="_blank">Trees</a></h3>
+                            <p>Segment and residue customized sequence alignments and phylogenetic trees.</p>
                         </div>
                     </div>
+
                     <div class="item">
-                        <img src="{% static 'home/carousel/helix_box.png' %}">
+                        <img src="{% static 'home/carousel/constructs.png' %}">
                         <div class="carousel-caption">
-                            <h2>Build diagrams</h2>
-                            <p>Get helix box and/or snake diagrams with custom coloring for you publications.</p>
+                            <h3>Structure <a href="/construct/design" target="_blank">Determination</a> Resource</h3>
+                            <p>Construct design tool and suggested thermostabilizing mutations.</p>
                         </div>
                     </div>
+
                     <div class="item">
-                        <img src="{% static 'home/carousel/pdb_numbering.png' %}">
+                        <img src="{% static 'home/carousel/strbrowser.png' %}">
                         <div class="carousel-caption">
-                            <h2>Automatically add generic numbers to PDB files</h2>
-                            <p>Upload PDB files and apply GPCRdb generic numbers.</p>
+                            <h3>Structure <a href="structure" target="_blank">Browser</a> and <a href="structure/statistics" target="_blank">Stats</a></h3>
+                            <p>Detailed browser for currently available GPCR structures and refinements.</p>
                         </div>
                     </div>
+
                     <div class="item">
-                        <img src="{% static 'home/carousel/snake_plot.png' %}">
+                        <img src="{% static 'home/carousel/homomodels.png' %}">
                         <div class="carousel-caption">
-                            <h2>Plot experimental values onto diagrams</h2>
-                            <p>Highlight residues with available mutant and/or ligand interaction data.</p>
+                            <h3>Homology <a href="structure/homology_models" target="_blank">Models</a></h3>
+                            <p>Multiple template homology models for the whole GPCRome.</p>
                         </div>
                     </div>
+
                     <div class="item">
-                        <img src="{% static 'home/carousel/tree.png' %}">
+                        <img src="{% static 'home/carousel/residplots.png' %}">
                         <div class="carousel-caption">
-                            <h2>Build phylogenetic trees</h2>
-                            <p>Customise the sequence segments to use for generating the trees.</p>
+                            <h3>Residue Plots</h3>
+                            <p>Customizable helix and snake plots for GPCR's, G-proteins and B-arrestins.</p>
                         </div>
                     </div>
 
@@ -125,6 +129,7 @@
     {#            </div>#}
     {#        </div>#}
 
+    <!-- Twitter, release notes, database stats.  -->
     <div class="row">
 
         <!-- Twitter feed -->
@@ -179,7 +184,7 @@
                         {% endfor %}
                     </ul>
                     {% if users %}
-                        {{users|safe}}
+                        {{ users|safe }}
                     {% endif %}
                 </div>
             </div>
@@ -187,6 +192,7 @@
 
     </div>
 
+    <!-- External partners and collaboration -->
     <div class="row">
 
         <!-- Partner databases -->

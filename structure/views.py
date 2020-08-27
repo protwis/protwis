@@ -489,7 +489,7 @@ class StructureStatistics(TemplateView):
 		context['class_f_options']['label_free'] = [1,]
 		#json.dump(class_f_data.get_nodes_dict('crystalized'), open('tree_test.json', 'w'), indent=4)
 		context['class_f'] = json.dumps(class_f_data.get_nodes_dict('crystals'))
-		class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class T (Taste 2)'))
+		class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name='Taste 2'))
 		context['class_t2_options'] = deepcopy(tree.d3_options)
 		context['class_t2_options']['anchor'] = 'class_t2'
 		context['class_t2_options']['label_free'] = [1,]

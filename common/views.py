@@ -135,6 +135,7 @@ class AbsTargetSelection(TemplateView):
                 context[a[0]] = a[1]
         return context
 
+
 class AbsReferenceSelection(AbsTargetSelection):
     type_of_selection = 'reference'
     step = 1
@@ -149,6 +150,7 @@ class AbsReferenceSelection(AbsTargetSelection):
     ])
     psets = [] # protein sets not applicable for this selection
 
+
 class AbsBrowseSelection(AbsTargetSelection):
     type_of_selection = 'browse'
     step = 1
@@ -156,6 +158,7 @@ class AbsBrowseSelection(AbsTargetSelection):
     title = 'SELECT A TARGET OR FAMILY'
     description = 'Select a target or family by searching or browsing in the right column.'
     psets = [] # protein sets not applicable for this selection
+
 
 class AbsSegmentSelection(TemplateView):
     """An abstract class for the segment selection page used in many apps. To use it in another app, create a class
@@ -253,7 +256,6 @@ class AbsSegmentSelection(TemplateView):
         return context
 
 
-
 class AbsMiscSelection(TemplateView):
     """An abstract class for selection pages of other types than target- and segmentselection"""
     template_name = 'common/miscselection.html'
@@ -302,6 +304,7 @@ class AbsMiscSelection(TemplateView):
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
         return context
+
 
 def AddToSelection(request):
     """Receives a selection request, adds the selected item to session, and returns the updated selection"""
