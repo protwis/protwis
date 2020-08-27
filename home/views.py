@@ -23,7 +23,6 @@ def index(request):
 
     if settings.GOOGLE_ANALYTICS_API:
         # Based on https://developers.google.com/analytics/devguides/reporting/core/v3/quickstart/service-py
-        # What in the HELL! were these two imports doing here?
         # from googleapiclient.discovery import build
         # from oauth2client.service_account import ServiceAccountCredentials
         # Define the auth scopes to request.
