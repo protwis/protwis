@@ -8,7 +8,7 @@ from googleapiclient.discovery import build
 from oauth2client.service_account import ServiceAccountCredentials
 
 
-# @cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24)
 def index(request):
     request.session.flush()
 
