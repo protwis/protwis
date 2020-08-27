@@ -1,5 +1,3 @@
-'''Common definitions to be used throughout the Django module.'''
-
 from collections import OrderedDict
 from decimal import Decimal
 

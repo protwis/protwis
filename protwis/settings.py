@@ -191,3 +191,8 @@ CACHES = {
         }
     }
 }
+
+# Note that https://www.django-rest-framework.org/community/3.10-announcement
+# So, have to switch from CoreAPI to OpenAPI. Next line will work for now.
+# Uncomment when needed.
+# REST_FRAMEWORK = { 'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema' }
