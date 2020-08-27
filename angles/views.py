@@ -18,7 +18,7 @@ import math
 import cmath
 from collections import OrderedDict
 import numpy as np
-from sklearn.decomposition import PCA
+# from sklearn.decomposition import PCA
 from numpy.core.umath_tests import inner1d
 import freesasa
 import scipy.stats as stats

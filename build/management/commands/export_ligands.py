@@ -21,7 +21,7 @@ class Command(BaseCommand):
             'export_vendors',
             'export_ligands',
         ]
-        
+
         # execute functions
         for f in functions:
             getattr(self, f)()
