@@ -737,7 +737,7 @@ class StructureAssignGenericNumbers(views.APIView):
 
     def post(self, request):
 
-        root, ext = os.path.splitext(request._request.FILES['pdb_file'].name)
+        # root, ext = os.path.splitext(request._request.FILES['pdb_file'].name)
         generic_numbering = GenericNumbering(StringIO(request._request.FILES['pdb_file'].file.read().decode('UTF-8',"ignore")))
         out_struct = generic_numbering.assign_generic_numbers()
         out_stream = StringIO()
@@ -760,7 +760,7 @@ class StructureSequenceParser(views.APIView):
     renderer_classes = (JSONRenderer, )
 
     def post(self, request):
-        root, ext = os.path.splitext(request._request.FILES['pdb_file'].name)
+        # root, ext = os.path.splitext(request._request.FILES['pdb_file'].name)
         pdb_file = StringIO(request._request.FILES['pdb_file'].file.read().decode('UTF-8',"ignore"))
         header = parse_pdb_header(pdb_file)
         parser = SequenceParser(pdb_file)
