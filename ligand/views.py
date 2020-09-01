@@ -75,20 +75,23 @@ def LigandDetails(request, ligand_id):
 
         #Flattened list of lists of dict values
         values = list(itertools.chain(*[itertools.chain(*tmp[x].values()) for x in tmp.keys()]))
+        # TEMPORARY workaround for handling string values
+        values = [float(item) for item in values if float(item) ]
 
-        ligand_data.append({
-            'protein_name': protein_details.entry_name,
-            'receptor_family': protein_details.family.parent.name,
-            'ligand_type': protein_details.get_protein_family(),
-            'class': protein_details.get_protein_class(),
-            'record_count': tmp_count,
-            'assay_type': ', '.join(tmp.keys()),
-            #Flattened list of lists of dict keys:
-            'value_types': ', '.join(itertools.chain(*(list(tmp[x]) for x in tmp.keys()))),
-            'low_value': min(values),
-            'average_value': sum(values)/len(values),
-            'standard_units': ', '.join(list(set([x.standard_units for x in per_target_data])))
-            })
+        if len(values) > 0:
+            ligand_data.append({
+                'protein_name': protein_details.entry_name,
+                'receptor_family': protein_details.family.parent.name,
+                'ligand_type': protein_details.get_protein_family(),
+                'class': protein_details.get_protein_class(),
+                'record_count': tmp_count,
+                'assay_type': ', '.join(tmp.keys()),
+                #Flattened list of lists of dict keys:
+                'value_types': ', '.join(itertools.chain(*(list(tmp[x]) for x in tmp.keys()))),
+                'low_value': min(values),
+                'average_value': sum(values)/len(values),
+                'standard_units': ', '.join(list(set([x.standard_units for x in per_target_data])))
+                })
 
     context = {'ligand_data': ligand_data, 'ligand':ligand_id}
 
@@ -163,26 +166,30 @@ def TargetDetailsCompact(request, **kwargs):
             for data_line in per_target_data:
                 tmp["Bind" if data_line.assay_type == 'b' else "Funct"].append(data_line.pchembl_value)
                 tmp_count += 1
-            values = list(itertools.chain(*tmp.values()))
-            ligand_data.append({
-                'ligand_id': chembl_id,
-                'protein_name': protein_details.entry_name,
-                'species': protein_details.species.common_name,
-                'record_count': tmp_count,
-                'assay_type': ', '.join(tmp.keys()),
-                'purchasability': purchasability,
-                #Flattened list of lists of dict keys:
-                'low_value': min(values),
-                'average_value': sum(values)/len(values),
-                'high_value': max(values),
-                'standard_units': ', '.join(list(set([x.standard_units for x in per_target_data]))),
-                'smiles': lig.properities.smiles,
-                'mw': lig.properities.mw,
-                'rotatable_bonds': lig.properities.rotatable_bonds,
-                'hdon': lig.properities.hdon,
-                'hacc': lig.properities.hacc,
-                'logp': lig.properities.logp,
-                })
+
+            # TEMPORARY workaround for handling string values
+            values = [float(item) for item in itertools.chain(*tmp.values()) if float(item) ]
+
+            if len(values)>0:
+                ligand_data.append({
+                    'ligand_id': chembl_id,
+                    'protein_name': protein_details.entry_name,
+                    'species': protein_details.species.common_name,
+                    'record_count': tmp_count,
+                    'assay_type': ', '.join(tmp.keys()),
+                    'purchasability': purchasability,
+                    #Flattened list of lists of dict keys:
+                    'low_value': min(values),
+                    'average_value': sum(values)/len(values),
+                    'high_value': max(values),
+                    'standard_units': ', '.join(list(set([x.standard_units for x in per_target_data]))),
+                    'smiles': lig.properities.smiles,
+                    'mw': lig.properities.mw,
+                    'rotatable_bonds': lig.properities.rotatable_bonds,
+                    'hdon': lig.properities.hdon,
+                    'hacc': lig.properities.hacc,
+                    'logp': lig.properities.logp,
+                    })
     context['ligand_data'] = ligand_data
 
     return render(request, 'target_details_compact.html', context)
