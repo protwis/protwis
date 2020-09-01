@@ -1,0 +1,351 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% load structure_extras %}
+
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
+    <link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet">
+    <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
+    <link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{% static 'home/css/jquery.powertip.css' %}" />
+{% endblock %}
+    
+{% block addon_js %}
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+    <script src="{% static 'home/js/select2.js' %}"> </script>
+    <script src="{% static 'home/js/alignment.js' %}"> </script>
+    <script src="{% static 'home/js/browser_functions.js' %}"> </script>
+    <script src="{% static 'home/js/g_protein_structure_browser.js' %}"> </script> <!-- Structure browser -->
+    <script src="{% static 'home/js/jquery.powertip.js' %}"></script>
+
+<script type="text/javascript" charset="utf-8">
+    $(document).ready(function() {
+        gproteinstructurebrowser();
+    });
+</script>
+
+{% endblock %}
+
+
+{% block content %}
+
+<div id="browser">
+    <!-- <div style="display:block;">
+        <div style="display:inline; float:left;">
+            <h2 style="width:auto; display:inline;">Structures</h2>
+        </div>
+    </div>
+    <br><br>
+ -->
+    <div style='width:100%; display:inline;'>
+        <div class="btn-group">
+            <a id="dlink"  style="display:none;"></a>
+            <div id="excel_table"  style2="display:none;"></div>
+            <!-- <input class="btn btn-default btn-s" type="button" id="toggle_fixed_btn" value="Disable fixed columns" href="javascript:void(0)" data-toggle="buttons"></input> -->
+            <input class="btn btn-default btn-s" type="button" id="toggle_columns_btn" value="Show hidden columns" href="javascript:void(0)">
+            <!-- <input class="btn btn-default btn-s" type="button" id="representative_btn" value="Representative structures (state & receptor)" href="javascript:void(0)" data-toggle="buttons"></input> -->
+        </div>
+        <div class="btn-group" style='padding-left:10px;'>
+            <label class="btn btn-default btn-s" id="align_btn" href="javascript:void(0)">
+                Align seqs
+            </label>
+            <label class="btn btn-default btn-s" id="download_btn" href="javascript:void(0)">
+                Download PDBs
+            </label>
+            <!-- <label class="btn btn-default btn-s" id="superpose_btn" href="javascript:void(0)">
+                Superposition
+            </label> -->
+            <input class="btn btn-default btn-s" type="button" onclick="tableToExcel('structures_scrollable', 'Structure data', 'GPCRdb_structures.xls')" value="Export Excel"></input>
+            <!-- <div class="dropdown">
+                <button onclick="copyDropdown()" class="dropbtn btn btn-default btn-s">Copy Selected</button>
+                <div id="Dropdown" class="dropdown-content">
+                    <p class="btn btn_default btn-s" type="button" id="uniprot_copy">UniProts</p>
+                    <p class="btn btn_default btn-s" type="button" id="pdb_copy">PDBs</p>
+                </div>
+            </div> -->
+            <!-- <label class="btn btn-default btn-s" id="reset_filters_btn" href="javascript:void(0)">
+                Reset All
+            </label> -->
+
+            <!-- <div style="float:right;">
+                <input id="filter_input" placeholder="PDBs/UniProts..."></input>
+                <label class="btn btn-default btn-s" id="filter_button" href="javascript:void(0)">
+                    <i class="glyphicon glyphicon-search"></i>
+                </label>
+            </div> -->
+        </div>
+    </div>
+    <br />
+
+    <div style="padding-top: 0px; font-size: 15px; white-space: nowrap;" id="loading_div">
+    <br>Loading...
+    </div>
+
+    <!-- scrollable column -->
+    <div style='padding-top: 0px; font-size: 10px; white-space: nowrap; width:100%; overflow-y:hidden; display:inline-block; width:100%;'>
+        <!-- <div class='wrapper' style='height:20px;width:100%;'>
+            <div style='height:20px;width:3000px;'></div>
+        </div> -->
+        <div id='structures_scrollable_div'>
+            <table class="display compact text-nowrap" id='structures_scrollable'>
+                <thead>
+                    <tr class='over_header over_header_row'>
+                        <th colspan=10 class="over_header flexible_over_header" id='sign_prot_over_header'>
+                            <div>
+                                <div class='overhead_text'>G PROTEIN</div>
+                                <div class='overhead_close'>
+                                    <button type="button" class="close hide_columns" columns="13,14,15,16" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                </div>
+                            </div>
+                        </th>
+                        <th colspan=5 class="over_header flexible_over_header" id='structure_over_header' >
+                            <div>
+                                <div class='overhead_text'>STRUCTURE</div>
+                                <div class='overhead_close'>
+                                    <button type="button" class="close hide_columns" columns="6,7,8,9,10,11,12"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                </div>
+                            </div>
+                        </th>
+                        <th colspan=5 class="over_header">
+                            <div>
+                                <div class='overhead_text'>RECEPTOR</div>
+                            </div>
+                        </th>
+                        <th colspan=2 class="over_header flexible_over_header" id='aux_prot_over_header'>
+                            <div>
+                                <div class='overhead_text'>AUXILIARY PROTEIN</div>
+                                <div class='overhead_close'>
+                                    <button type="button" class="close hide_columns" columns="17,18" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                </div>
+                            </div>
+                        </th>
+                        <th colspan=3 class="over_header flexible_over_header" id='structure_ligand_over_header'>
+                            <div class='overhead_text'>STRUCTURE LIGAND</div>
+                                <div class='overhead_close'>
+                                    <button type="button" class="close hide_columns" columns="19,20,21" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                </div>
+                            </div>
+                        </th>
+                        <th colspan=2 class="over_header flexible_over_header" id='endo_ligand_over_header'>
+                            <div class='overhead_text'>ENDOGENOUS LIGAND</div>
+                                <div class='overhead_close'>
+                                    <button type="button" class="close hide_columns" columns="22,23" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                </div>
+                            </div>
+                        </th>
+                        <th colspan=3 class="over_header flexible_over_header" id='reference_over_header'>
+                            <div class='overhead_text'>REFERENCE</div>
+                                <div class='overhead_close'>
+                                    <button type="button" class="close hide_columns" columns="26,27,28" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                </div>
+                            </div>
+                        </th>
+                    </tr>
+                    <tr class='over_header'>
+                        <th></th>
+                        <th>Fam.</th>
+                        <th>&alpha;</th>
+                        <th>Species</th>
+                        <th>Note</th>
+                        <th>% of Seq</th>
+                        <th>&beta;</th>
+                        <th>Species</th>
+                        <th>&gamma;</th>
+                        <th class='rightborder'>Species</th>
+                        <th>Method</th>
+                        <th>
+                            <div>
+                                <div>PDB</div>
+                                <div><button class='icon-button' type='button'><i id='pdb_copy' class="glyphicon glyphicon-export pdb-export"></i></button></div>
+                            </div>
+                        </th>
+                        <th><a href="https://academic.oup.com/nar/article/44/D1/D356/2502664" target="_blank">Refined<br>structure</a></th>
+                        <th>Resolution</th>
+                        <th class='rightborder'>Preferred<br>chain</th>
+                        <th>
+                            <div>
+                                <div>UniProt</div>
+                                <div><button class='icon-button' type='button'><i id='uniprot_copy' class="glyphicon glyphicon-export uniprot-export"></i></button></div>
+                            </div>
+                        </th>
+                        <th>IUPHAR</th>
+                        <th>Receptor family</th>
+                        <th>Class</th>
+                        <th class='rightborder'>Species</th>
+                        <th>Fusion</th>
+                        <th class='rightborder'>Antibodies</th>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th class='rightborder'>Function</th>
+                        <th>Name</th>
+                        <th class='rightborder'>Type</th>
+                        <th>Last author</th>
+                        <th>Reference</th>
+                        <th class='rightborder'>PDB Date</th>
+                    </tr>
+                    <tr>
+                        <th class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th class='rightborder'></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th class='rightborder'></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th class='rightborder'></th>
+                        <th></th>
+                        <th class='rightborder'></th>
+                        <th></th>
+                        <th></th>
+                        <th class='rightborder'></th>
+                        <th></th>
+                        <th class='rightborder'></th>
+                        <th></th>
+                        <th></th>
+                        <th class='rightborder'></th>
+                    </tr>
+
+                </thead>
+                <tbody>
+                {% for structure in structures %}
+                    {% if structure.representative %}
+                        <tr class="repr-st" model_id='{{structure.pk}}'>
+                    {% else %}
+                        <tr model_id='{{structure.pk}}'>
+                    {% endif %}
+                        <td class="text-center"><input class="alt" type="checkbox" id="{{ structure.pk }}"></td>
+                        
+                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha,family"|safe }}</td>
+                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha,name"|safe }}</td>
+                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha,species"|safe }}</td>
+                        
+                        <td>
+                            {% if ep.note|length > 20 %}
+                                <span title="{{ ep.note }}">{{ structure.extra_proteins.all|only_one_subunit:"Alpha,note"|safe|cut_at_20 }}...</span>
+                            {% else %}
+                                {{ structure.extra_proteins.all|only_one_subunit:"Alpha,note"|safe }}
+                            {% endif %}
+                        </td>
+                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha,coverage"|safe }}</td>
+                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Beta,name"|safe }}</td>
+                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Beta,species"|safe }}</td>
+                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Gamma,name"|safe }}</td>
+                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Gamma,species"|safe }}</td>
+                        <td>
+                            {{ structure.structure_type.type_short|escape }}
+                        </td>
+                        <td class="pdb text-left">
+                            <a href="{{ structure.pdb_code.index}}">{{ structure.pdb_code.index}}</a>
+                        </td>
+                        <td>
+                            {% if structure.is_refined %}
+                            <a href="homology_models/{{ structure.pdb_code.index }}_refined">{{structure.pdb_code.index}}_refined</a>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td class="text-center">{{ structure.resolution|floatformat:"1" }}</td>
+                        <td class="text-center">{{ structure.preferred_chain }}</td>
+                        <td><span><a href="http://www.uniprot.org/uniprot/{{ structure.protein_conformation.protein.parent.accession }}">{{ structure.protein_conformation.protein.parent.entry_short|safe }}</a></span></td>
+                        <td class='uniprot'><a href="/protein/{{ structure.protein_conformation.protein.parent.entry_name }}">{{ structure.protein_conformation.protein.parent.short|safe }}</a></td>
+                        <td><span>{{ structure.protein_conformation.protein.family.parent.short|safe }}</span></td>
+                        <td><span>{{ structure.protein_conformation.protein.family.parent.parent.parent.short|safe }}</span></td>
+                        <td>{{ structure.protein_conformation.protein.species.common_name }}</td>
+                        <td>
+                            {{ structure.stabilizing_agents.all|only_fusions|linebreaksbr }}
+                        </td>
+                        <td>
+                            {{ structure.stabilizing_agents.all|only_antibodies|linebreaksbr }}
+                        </td>
+                        <td>
+                            {% for ligand in structure.ligands.all %}
+                                {% if ligand.ligand.name|safe|length > 20 %}
+                                    <span title="{{ ligand.ligand.name|safe }}">{{ ligand.ligand.name|safe|cut_at_20 }}...</span>
+                                {% else %}
+                                    {{ ligand.ligand.name|safe }}
+                                {% endif %}
+                            {% for link in ligand.ligand.properities.web_links.all %}
+                                <a href="{{ link}}" target="_blank">{{link.web_resource.slug}}</a>
+                            {% endfor %}
+                                <br />
+                            {% empty %}
+                                N/A
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {{ structure.ligands.all|ligandtype|linebreaksbr }}
+                        </td>
+                        <td>
+                            {{ structure.ligands.all|ligandrole|linebreaksbr }}
+                        </td>
+                        <td>
+                            {% autoescape off %}
+                            {% if structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat|length > 20 %}
+                                <span title="{% autoescape off %}{{ structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat }}{% endautoescape %}">{{ structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat|cut_at_20 }}...</span>
+                            {% else %}
+                                {{ structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat }}
+                            {% endif %}
+                            {% endautoescape %}
+                        </td>
+                        <td>{{ structure.protein_conformation.protein.parent.endogenous_ligands.all.0.properities.ligand_type }}</td>
+                        <td>
+                            {{ structure.publication.authors|last_author}}
+                        </td>
+                        <td>
+                            <a href="{{ structure.publication.web_link }}">
+                            {{ structure.publication.web_link.index }}
+                            </a>
+                        </td>
+                        <td>{{ structure.publication_date|date:"Y-m-d" }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!-- </div> -->
+</div>
+<div id="myModal" class="modal">
+  <!-- Modal content -->
+    <div class="modal-content">
+        <button style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close close_modal" href="javascript:void(0)">&times;</button>
+        <h3>Pick template from selection</h3>
+        <p>Superpositions structures selected in the browser to the template checked in this table</p>
+        <br>
+        <table id="modal_table" class="display compact" width="100%">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>PDB</th>
+                    <th>UniProt</th>
+                    <th>IUPHAR</th>
+                    <th>Rec. family</th>
+                    <th>Class</th>
+                    <th>Species</th>
+                    <th>State</th>
+                    <th>PDB Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Javascript populates the table from selected rows -->
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

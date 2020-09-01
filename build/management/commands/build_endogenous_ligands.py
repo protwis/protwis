@@ -85,7 +85,11 @@ class EndogenousLigands():
                     pubchemid = None
                 else:
                     pubchemid = int(float(val[16]))
-                db_prot = Protein.objects.get(entry_name=protein)
+                try:
+                    db_prot = Protein.objects.get(entry_name=protein)
+                except Protein.DoesNotExist:
+                    print('Missing {} from Protein table'.format(protein))
+                    continue
                 if ligand_type=='Peptide':
                     if len(seq)>50:
                         ligand_type, created = LigandType.objects.get_or_create(slug='protein', name='protein')

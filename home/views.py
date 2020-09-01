@@ -1,11 +1,14 @@
 from django.shortcuts import render
 from django.conf import settings
 from django.views.decorators.cache import cache_page
+from django.http import JsonResponse
+
 
 from news.models import News
-from common.models import ReleaseNotes, ReleaseStatistics
+from common.models import ReleaseNotes, ReleaseStatistics, Citation
 from googleapiclient.discovery import build
 from oauth2client.service_account import ServiceAccountCredentials
+
 
 
 @cache_page(60 * 60 * 24)
@@ -55,3 +58,11 @@ def index(request):
         context['release_statistics'] = []
 
     return render(request, 'home/index_{}.html'.format(settings.SITE_NAME), context)
+
+# @cache_page(60 * 60 * 24)
+def citations_json(request):
+    context = {}
+    citations_q = Citation.objects.all().values_list("url", "video", "docs", "main", "page_name", "publication__title", "publication__authors", "publication__year", "publication__reference",
+                                                     "publication__journal__name", "publication__web_link__index").order_by("-publication__year", "page_name")
+    response = JsonResponse(list(citations_q), safe=False)
+    return response

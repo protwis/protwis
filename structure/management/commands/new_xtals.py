@@ -60,11 +60,13 @@ class Command(BaseBuild):
         consider_list = []
         for uni in uniprot_list:
             q.new_xtals(uni)
-            consider_list+=q.consider_list
+            for i in q.consider_list:
+                if i not in consider_list:
+                    consider_list.append(i)
         if self.verbose:
             print('Missing from db: ', q.db_list)
             print('Missing yamls: ', q.yaml_list)
-            print('Structures with missing x50s: {}'.format(consider_list))
+            print('Structures with missing x50s: {} structures {}'.format(len(consider_list), consider_list))
 
     def fetch_accession_from_entryname(self, listof_entrynames):
         return [i.accession for i in Protein.objects.filter(entry_name__in=listof_entrynames)]

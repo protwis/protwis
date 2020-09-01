@@ -1,31 +1,162 @@
-div.container ﻿input.form-control, select.form-control {
-    width: 50px;
-    height: 20px;
-    font-size: 9px;
-    padding: 2px 2px;
+.select2-result-label{
+    font-size:x-small;
+    font-size: 10px;
 }
-div.container input.number_range_filter, input.date_range_filter {
-    width: 20px;
-    font-size: 8px;
+
+#filters{
+
+    font-size: 10px;
+    padding:  7px 15px;
 }
-.protein-th {
-    background-color: #98df8a;
+
+
+@media (min-width: 1600px){
+    #content {
+        width: 1570px;
+    }
 }
-.pdb-th {
-    background-color: #aec7e8;
+@media (min-width: 1800px){
+    #content {
+        width: 1770px;
+    }
 }
-.ligand-th {
-    background-color: #ff9896;
+
+table.dataTable.compact thead th.over_header {
+    border-right: 1px solid;
+    border-left: 0px solid;
+    text-align: left;
+    padding: 4px 4px 4px 4px;
 }
-.pub-th {
-    background-color: #ffbb78;
+
+table.dataTable.compact thead tr.over_header th {
+    border-bottom: 1px solid #ccc;
 }
-.version-th {
-    background-color: #c2c2d6;
+
+table.dataTable.compact thead th.leftborder {
+    border-left: 1px solid;
 }
-.similarity-th {
-    background-color: gold;
+
+table.dataTable.compact thead th.rightborder {
+    border-right: 1px solid;
 }
-div.container .toggled, .toggled:hover, .toggled:visited, .toggled:active, .toggled:link {
-    background-color: #134B7D;
+
+table.dataTable.compact thead th.checkbox_tr {
+    text-align: left;
+    padding: 4px 4px 4px 4px;
 }
+
+table.dataTable.compact thead th {
+    padding: 4px 16px 4px 2px;
+}
+.yadcf-filter-wrapper {
+    margin-top: 0px;
+}
+input.yadcf-filter  {
+    width: 100px;
+    font-family: sans-serif;
+    font-size: 100%;
+    font-weight: bold;
+}
+.yadcf-filter-range-date, .yadcf-filter-range-number {
+    width: 30px;
+    font-family: sans-serif;
+    font-size: 100%;
+    font-weight: bold;
+}
+/*#yadcf-filter--structures_scrollable-from-12 {
+    width: 10px;
+}
+#yadcf-filter--structures_scrollable-to-12 {
+    width: 10px;
+}
+.yadcf-filter-wrapper-inner--structures_scrollable-12 {
+    width: 5px;
+}*/
+.clicked_button {
+    background-color: rgb(215,215,215);
+}
+.wrapper {
+  overflow-x: scroll;
+  overflow-y:hidden;
+}
+
+#overlay
+{
+    top: 0px;
+    position: absolute;
+    background: #f8f8f8;
+  /*border: 1px solid #333;*/
+  -webkit-box-shadow: 5px 0 2px -2px #888;
+          box-shadow: 5px 0 2px -2px #888;
+}
+#overlay tbody tr {
+     background-color: #f8f8f8;
+}
+div.overhead_text {
+    float:left;
+    display:inline;
+    padding: 8px 0px;
+    width:90%;
+}
+div.overhead_close {
+    float:right;
+    display:inline;
+    width:10%;
+}
+.icon-button {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    outline: none;
+    border: 0;
+    background: transparent;
+    padding: 2px 0px 2px 0px;
+}
+.highlight {
+    background-color: rgb(204,229,255);
+}
+/*.tooltip {
+  position: relative;
+  display: inline-block;
+  border-bottom: 1px dotted black; /* If you want dots under the hoverable text */
+/*}*/
+/*.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 120px;
+  background-color: black;
+  color: #fff;
+  text-align: center;
+  padding: 5px 0;
+  border-radius: 6px;
+*/
+  /* Position the tooltip text - see examples below! */
+ /* position: absolute;
+  z-index: 1;
+}*/
+/*.tooltip:hover .tooltiptext {
+  visibility: visible;
+}*/
+.glyphicon.glyphicon-export {
+    font-size: 20px;
+}
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f1f1f1;
+    width: 100%;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+}
+.dropdown-content p {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    width: 100%;
+    display: block;
+}
+.show {display:block;}
+

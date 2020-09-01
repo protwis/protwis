@@ -208,6 +208,7 @@
         <li><a href="/alignment/gproteinselection">G protein alignments</a></li>
         <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>Structures</a></li>
+        <li><a href="/structure/g_protein_structure_browser">G protein structures</a></li>
         <li><a href="/structure/complex_models">GPCR-G protein structure models</a></li>
         <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>Structure sites (interface)
@@ -256,7 +257,7 @@
         <li><a href="/alignment/arrestinselection">Arrestin alignments</a></li>
         <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>Structures</a></li>
-        <li><a href="/structure/">Structure browser</a></li>
+        <li><a href="/signprot/arrestin_structure_browser">Arrestin structures</a></li>
     </ul>
 </li>
 
@@ -367,6 +368,7 @@
         <li><a href="{{ documentation_url }}mutations.html#mutation-data-submission">Mutation data submission</a></li>
     </ul>
 </li>
+        
 
 
 
@@ -419,3 +421,43 @@
         <li><a href="/construct/analysis#mutations">Mutation substitution matrix</a></li>
     </ul>
 </li>
+
+<!-- Cite us -->
+<li>
+    <a class="dropdown-toggle" role="button" id='cite'>Cite Us</a>
+</li>
+<div id="myModal" class="modal">
+  <!-- Modal content -->
+    <div class="modal-content">
+        <button style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close close_modal" href="javascript:void(0)">&times;</button>
+        <h3>Cite us</h3>
+        <p>
+            Select tool:  
+            <select name='articles', id='dropdown_articles'></select>
+        </p>
+        <li id='article_list'>
+
+        </li>
+    </div>
+</div>
+        
+{% load static %}
+<link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
+<script src="{% static 'home/js/jquery-3.1.1.min.js' %}"></script>
+<script src="{% static 'home/js/citation_tool.js' %}"></script>
+<script type="text/javascript" charset="utf-8">
+    $(document).ready(function() {
+
+        $('#cite').click(function(){
+            citation_tool(window.location.href);
+        })
+        $('#dropdown_articles').change(function(){
+            highlight_article($(this).find('option:selected').attr('id'));
+        })
+    });
+</script>
+<style type="text/css">
+    .highlight_reference{
+        background-color: #DCDCDC;
+    }
+</style>

@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views import generic
 from django.http import JsonResponse, HttpResponse
-from django.db.models import Q, F, Func, Value
+from django.db.models import Q, F, Func, Value, Prefetch
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 from django.urls import reverse
@@ -9,7 +9,9 @@ from django.urls import reverse
 from protein.models import (Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene, ProteinGProteinPair,
                             ProteinSegment)
 from residue.models import Residue
-from structure.models import Structure, StructureModel
+from structure.models import Structure, StructureModel, StructureExtraProteins
+# from structure.views import StructureBrowser
+from interaction.models import ResidueFragmentInteraction,StructureLigandInteraction
 from mutation.models import MutationExperiment
 from common.selection import Selection
 from common.views import AbsBrowseSelection
@@ -67,8 +69,20 @@ def detail(request, slug):
     alt_genes = genes[1:]
 
     # get structures of this protein
-    structures = Structure.objects.filter(protein_conformation__protein__parent=p).order_by('-representative',
-                                                                                            'resolution')
+    structures = Structure.objects.filter(protein_conformation__protein__parent=p).select_related(
+                "state",
+                "pdb_code__web_resource",
+                "protein_conformation__protein__species",
+                "protein_conformation__protein__source",
+                "protein_conformation__protein__family__parent__parent__parent",
+                "publication__web_link__web_resource").prefetch_related(
+                "stabilizing_agents", "construct__crystallization__crystal_method",
+                "protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
+                "protein_conformation__site_protein_conformation__site",
+                Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
+                annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role','ligand__properities__web_links__web_resource')),
+                Prefetch("extra_proteins", queryset=StructureExtraProteins.objects.all().prefetch_related(
+                    'protein_conformation','wt_protein'))).order_by('-representative','resolution')
 
     # get residues
     residues = Residue.objects.filter(protein_conformation=pc).order_by('sequence_number').prefetch_related(
@@ -118,6 +132,9 @@ def detail(request, slug):
     context = {'p': p, 'families': families, 'r_chunks': r_chunks, 'chunk_size': chunk_size, 'aliases': aliases,
                'gene': gene, 'alt_genes': alt_genes, 'structures': structures, 'mutations': mutations, 'protein_links': protein_links,'homology_models': homology_models}
 
+    # sb = StructureBrowser()
+    # sb_context = sb.get_context_data(protein=p, refined=True)
+    # context['structures'] = sb_context['structures']
     return render(request, 'protein/protein_detail.html', context)
 
 def SelectionAutocomplete(request):
