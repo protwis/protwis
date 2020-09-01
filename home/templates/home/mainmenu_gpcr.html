@@ -7,6 +7,17 @@
         <li class="nav-header disabled"><a>INFORMATION</a></li>
         <li><a href="https://files.gpcrdb.org/GPCRdb_Poster.pdf">GPCRdb Poster</a></li>
         <li><a href="{{ documentation_url }}">Documentation</a></li>
+        <li class="dropdown-submenu">
+            <a tabindex="0" href="#">Tutorial</a>
+            <ul class="dropdown-menu">
+                <li class="nav-header disabled text-left"><a>General introduction</a></li>
+                <li><a href="http://docs.gpcrdb.org/index.html#tutorial">Tutorial</a></li>
+                <li class="nav-header disabled text-left"><a>Workshop materials</a></li>
+                <li><a href="http://files.gpcrdb.org/tutorial/GPCRdb_Workshop_Material.pdf">Workshop manual (PDF)</a></li>
+                <li><a href="http://files.gpcrdb.org/tutorial/GPCRdb_Workshop_Material.docx">Workshop manual (Word)</a></li>
+                <li><a href="http://files.gpcrdb.org/tutorial">Workshop videos</a></li>
+            </ul>
+        </li>
         <li class="divider"></li>
         <li class="nav-header disabled"><a>ABOUT GPCRdb</a></li>
         <li><a href="{{ documentation_url }}about.html">About</a></li>
@@ -85,12 +96,8 @@
                 <span class="glyphicon glyphicon-film"></span>
             </button>
         </a></li>
-        <li><a href="/residue/residuetable">Residue tables</a></li>
-        <li><a href="/phylogenetic_trees/targetselection">Phylogenetic trees
-{#            <button class="pull-right btn btn-xs btn-default">#}
-{#                <span class="glyphicon glyphicon-film"></span>#}
-{#            </button>#}
-        </a></li>
+        <li><a href="/seqsign">Sequence signature</a></li>
+        <li><a href="/phylogenetic_trees/targetselection">Phylogenetic trees</a></li>
         <li class="dropdown-submenu">
             <a tabindex="0" href="#">Similarity</a>
             <ul class="dropdown-menu">
@@ -110,8 +117,6 @@
 
                 <li><a href="/alignment/blastsearch">Similarity search-BLAST</a></li>
                 <li><a href="/similaritymatrix/targetselection">Similarity matrix</a></li>
-                <li class="divider"></li>
-                <li><a href="/seqsign">Sequence signature</a></li>
             </ul>
         </li>
         <li class="divider"></li>
@@ -140,7 +145,6 @@
         <!-- STRUCTURAL TOOLS -->
         <li class="nav-header disabled text-left"><a>STRUCTURAL TOOLS</a></li>
         <li><a href="/structure/superposition_workflow_index/true">Structure superposition</a></li>
-        <li><a href="/structure/generic_numbering_index">PDB file residue numbering</a></li>
         <li><a href="/structure/template_selection">Template selection</a></li>
         <li class="divider"></li>
 
@@ -157,7 +161,7 @@
         <li class="dropdown-submenu">
             <a tabindex="0" href="#">Site search</a>
             <ul class="dropdown-menu">
-                <li><a href="/sitesearch/targetselectionpdb">Site search from PDB complex
+                <li><a href="/sitesearch/targetselectionpdb">Site search from PDB file
                     <button mp4="https://files.gpcrdb.org/video/interactions2.mp4" type="button"
                             class="videoLink pull-right btn btn-xs btn-default">
                         <span class="glyphicon glyphicon-film"></span>
@@ -266,7 +270,7 @@
         <li><a href="/alignment/gproteinselection">G protein alignments</a></li>
         <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>Structures</a></li>
-        <li><a href="/structure/complex_models">GPCR - G protein structure models</a></li>
+        <li><a href="/structure/complex_models">GPCR-G protein structure models</a></li>
         <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>Structure sites (interface)
             <button
@@ -276,7 +280,7 @@
                 <span class="glyphicon glyphicon-book"></span>
             </button>
         </a></li>
-        <li><a href="/signprot/matrix">GPCR- G protein interactions</a></li>
+        <li><a href="/signprot/matrix">GPCR-G protein interactions</a></li>
         <!-- <li><a href="/signprot/ginterface">Interface mapping</a></li>
         <li><a href="/sitesearch/targetselection">Site search - manual</a></li> -->
         <li class="divider"></li>
@@ -475,22 +479,5 @@
         <li><a href="/construct/mutations">Mutation browser</a></li>
         <li><a href="/construct/stabilisation">StabMutAnalyser</a></li>
         <li><a href="/construct/analysis#mutations">Mutation substitution matrix</a></li>
-    </ul>
-</li>
-
-
-
-<!-- TUTORIAL -->
-<li class="dropdown">
-    <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-        Tutorial<span class="caret"></span>
-    </a>
-    <ul class="dropdown-menu" role="menu">
-        <li class="nav-header disabled text-left"><a>General</a></li>
-        <li><a href="https://docs.gpcrdb.org/index.html#tutorial">Tutorial</a></li>
-        <li class="nav-header disabled text-left"><a>Workshop</a></li>
-        <li><a href="https://files.gpcrdb.org/tutorial/GPCRdb_Workshop_Material.pdf">Workshop pdf</a></li>
-        <li><a href="https://files.gpcrdb.org/tutorial/GPCRdb_Workshop_Material.docx">Workshop word</a></li>
-        <li><a href="https://files.gpcrdb.org/tutorial">Workshop videos</a></li>
     </ul>
 </li>

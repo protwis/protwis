@@ -37,14 +37,14 @@ class PrepareTree:
         if itemlist:
             v_step = (range[1]-range[0])/len(itemlist)
         else:
-            v_step = 0    
+            v_step = 0
         v_count = 0
         for a in sorted(itemlist):
             colour = self.HSV_2_RGB((int(range[0]+v_step*v_count),127,200))
             v_count +=1
             colours_dict[a]='#'+colour
         return colours_dict
-        
+
     def drawColorPanel(self):
 
         boxstyle = """<style>
@@ -77,7 +77,7 @@ class PrepareTree:
                                     'Y': ['#18FF0B', '#000000'],'W': ['#0BCF00', '#000000'],
                                     'H': ['#0093DD', '#000000'],'P': ['#CC0099', '#FDFF7B'],
                                     'C': ['#B2B548', '#000000'],'G': ['#FF00F2', '#000000'],
-                                    '-': ['#000000', '#000000']    
+                                    '-': ['#000000', '#000000']
                                     }
         fillcolours = [['#EEEEEE', '#000000']]
         for key,value in presetColors.items():
@@ -87,7 +87,7 @@ class PrepareTree:
         colours = ""
         for color in fillcolours:
             colours += "<div class='pick-color selected' id='pick-"+color[0]+"-"+color[1]+"' style='background-color: "+color[0]+";'>&nbsp;</div>"
-            
+
         output = ("<br><b>Pick color:</b>" +
             colours )
 
@@ -119,24 +119,24 @@ class PrepareTree:
                 G = T
                 B = P
             elif region == 1:
-                R = Q 
-                G = V 
+                R = Q
+                G = V
                 B = P
             elif region == 2:
-                R = P 
-                G = V 
+                R = P
+                G = V
                 B = T
             elif region == 3:
-                R = P 
-                G = Q 
+                R = P
+                G = Q
                 B = V
             elif region == 4:
-                R = T 
-                G = P 
+                R = T
+                G = P
                 B = V
-            else: 
-                R = V 
-                G = P 
+            else:
+                R = V
+                G = P
                 B = Q
 
         R =hex(R).split('x')[-1]
@@ -249,7 +249,7 @@ class PrepareTree:
                 ring_no+=1
                 self.legend+='</g>'
         self.legend+='</g></svg>'
-        
+
     def get_styles(self):
         self.styles = ''
         for prot in self.prots:
@@ -271,7 +271,7 @@ class PrepareTree:
                         self.styles+='<%s fill=\'%s\' stroke=\'%s\' label=\'%s\' labelStyle=\'sectorHighlightText\' class=\'chart0\' id=\'%s\'/>' %(item,colour_dict[item],colour_dict[item],self.famdict[item],item)
                     else:
                         self.styles +='<%s fill=\'%s\' stroke=\'%s\' id=\'%s\' class=\'%s\'/>' %(item,colour_dict[item],colour_dict[item],item, 'chart'+str(self.rings[ring]['order']))
-  
+
 
 
 
@@ -345,10 +345,9 @@ class PrepareTree:
                     line = line.strip('\n')+' <annotation><desc>'+self.prots[flag2[0]]['desc']+' ('+self.prots[flag2[0]]['species']+')'+'</desc><uri>/protein/'+self.prots[flag2[0]]['link']+'</uri> </annotation>'+flag2[1]
                     flag2=''
             out.write(line)
-        
+
         self.box = self.drawColorPanel()
 
 if __name__ == '__main__':
     tree = PrepareTree(False)
     tree.treeDo(sys.argv[1],sys.argv[2])
-

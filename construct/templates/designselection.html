@@ -66,7 +66,7 @@
                 toggleButtonClass('selection-button');
               }
         };
-        
+
     </script>
     <script src="{% static 'home/js/selection.js' %}"></script>
     <script src="{% static 'home/js/selection-autocomplete.js' %}"></script>
@@ -77,7 +77,7 @@
 
 
 {% block middle_column %}
-    
+
 
 <!--             <div class="col-md-12 panel panel-primary">
                 <div class="panel-body">
@@ -122,7 +122,7 @@
         <li>Implemented a list of mutation suggestions from various sources
         <ul>
         <li>Some are rule based (devised by David)</li>
-        <li>Some are conservation based - e.g. Mutate to conserved residue in crystallised receptors.</li>
+        <li>Some are conservation based - e.g. Mutate to conserved residue in receptor structures.</li>
         <li>Some are from literature data set for thermostability.</li>
         <li>Some are from annotated structure mutations.&nbsp;</li>
         </ul>
@@ -186,7 +186,7 @@
                             <form action="calculate" id="form" method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                             <label for="pdbname">PDB code</label>
-                            {{ form.pdbname }} <br> or 
+                            {{ form.pdbname }} <br> or
                             <p>{{ form.file.label_tag }}  </p> {{ form.file }}
                         </form>
                     </div>

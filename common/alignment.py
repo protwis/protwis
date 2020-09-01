@@ -991,7 +991,7 @@ class Alignment:
             if 'feat_cons_tmp' in locals():
                 del feat_cons_tmp
 
-            self.calculate_zscales()
+            self.calculate_zscales(True)
             self.stats_done = True
 
     def calculate_aa_count_per_generic_number(self):
@@ -1087,42 +1087,42 @@ class Alignment:
                     color_class = str(value)[:-1]
                 self.similarity_matrix[protein_key]['values'][k] = [value, color_class]
 
-    def calculate_zscales(self):
+    def calculate_zscales(self, from_stats = False):
         """Calculate Z-scales distribution for current alignment set"""
 
         if not self.stats_done:
             # Check if alignment statistics need to be calculated
-            if len(self.aa_count) == 0:
+            if len(self.aa_count) == 0 and not from_stats:
                 self.calculate_statistics()
+            else:
+                # Prepare Z-scales per segment/GN position
+                self.zscales = OrderedDict([ (zscale, OrderedDict()) for zscale in ZSCALES ])
 
-            # Prepare Z-scales per segment/GN position
-            self.zscales = OrderedDict([ (zscale, OrderedDict()) for zscale in ZSCALES ])
-
-            # Calculates distribution per GN position
-            for segment in self.aa_count:
-                for zscale in ZSCALES:
-                    self.zscales[zscale][segment] = OrderedDict()
-                for generic_number in self.aa_count[segment]:
-                    zscale_position = { zscale: [] for zscale in ZSCALES }
-
-                    for amino_acid in self.aa_count[segment][generic_number]:
-                        if amino_acid != "-" and self.aa_count[segment][generic_number][amino_acid] > 0:
-                            for key in range(len(ZSCALES)):
-                                # Frequency AA at this position * value
-                                if amino_acid in AA_ZSCALES:
-                                    zscale_position[ZSCALES[key]].extend([AA_ZSCALES[amino_acid][key]] * self.aa_count[segment][generic_number][amino_acid])
-
-                    # store average + stddev + count + display
+                # Calculates distribution per GN position
+                for segment in self.aa_count:
                     for zscale in ZSCALES:
-                        if len(zscale_position[zscale]) == 1:
-                            display = tooltip = str(round(zscale_position[zscale][0], 2)) + " ± " + str(0) + " (1)"
-                            self.zscales[zscale][segment][generic_number] = [zscale_position[zscale][0], 0, 1, display]
-                        else:
-                            z_mean = np.mean(zscale_position[zscale])
-                            z_std = np.std(zscale_position[zscale], ddof=1)
-                            z_count = len(zscale_position[zscale])
-                            display = tooltip = str(round(z_mean,2)) + " ± " + str(round(z_std, 2)) + " (" + str(z_count) + ")"
-                            self.zscales[zscale][segment][generic_number] = [z_mean, z_std, z_count, display]
+                        self.zscales[zscale][segment] = OrderedDict()
+                    for generic_number in self.aa_count[segment]:
+                        zscale_position = { zscale: [] for zscale in ZSCALES }
+
+                        for amino_acid in self.aa_count[segment][generic_number]:
+                            if amino_acid != "-" and self.aa_count[segment][generic_number][amino_acid] > 0:
+                                for key in range(len(ZSCALES)):
+                                    # Frequency AA at this position * value
+                                    if amino_acid in AA_ZSCALES:
+                                        zscale_position[ZSCALES[key]].extend([AA_ZSCALES[amino_acid][key]] * self.aa_count[segment][generic_number][amino_acid])
+
+                        # store average + stddev + count + display
+                        for zscale in ZSCALES:
+                            if len(zscale_position[zscale]) == 1:
+                                display = tooltip = str(round(zscale_position[zscale][0], 2)) + " ± " + str(0) + " (1)"
+                                self.zscales[zscale][segment][generic_number] = [zscale_position[zscale][0], 0, 1, display]
+                            else:
+                                z_mean = np.mean(zscale_position[zscale])
+                                z_std = np.std(zscale_position[zscale], ddof=1)
+                                z_count = len(zscale_position[zscale])
+                                display = tooltip = str(round(z_mean,2)) + " ± " + str(round(z_std, 2)) + " (" + str(z_count) + ")"
+                                self.zscales[zscale][segment][generic_number] = [z_mean, z_std, z_count, display]
 
     def evaluate_sites(self, request):
         """Evaluate which user selected site definitions match each protein sequence"""

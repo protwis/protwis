@@ -25,7 +25,7 @@
                         <div class="modal-body">
                             <form id="xls-form" enctype="multipart/form-data" method="post" onsubmit="return ReadDefinitionFromFile(document.getElementById('xls-file').files[0], '/sitesearch/siteupload')" >
                                 <input id="xls-file" type="file" /> {% csrf_token %}
-                            </form>                
+                            </form>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-success" data-dismiss="modal">Cancel</button>
@@ -34,8 +34,8 @@
                     </div>
                 </div>
             </div>
-    
-            
+
+
             {% if selection.site_residue_groups %}
             <!-- Add interaction button -->
             <p><a onclick="AddResidueGroup('{{ selection_type }}')"
@@ -45,13 +45,13 @@
             {% endif %}
 
             {% for group in selection.site_residue_groups %}
-                
+
                 <!-- Interaction line -->
                 <p class="target-selection">
                 <a href="#" onclick="SelectResidueGroup('{{ selection_type }}', '{{ forloop.counter }}')">
-                    {% if selection.active_site_residue_group == forloop.counter %}<b>&raquo; {% endif %} 
+                    {% if selection.active_site_residue_group == forloop.counter %}<b>&raquo; {% endif %}
                     Interaction {{ forloop.counter }}
-                    {% if selection.active_site_residue_group == forloop.counter %}</b>{% endif %} 
+                    {% if selection.active_site_residue_group == forloop.counter %}</b>{% endif %}
                 </a>
 
                 Min. match: <select class="form-control" id="sel-min-match-{{ forloop.counter }}"
@@ -72,18 +72,18 @@
                     {% if selected_item.properties.site_residue_group == forloop.parentloop.counter %}
                 <div class="target-selection">
                         {{ selected_item.item.label|safe }}
-                    
-                    <select class="form-control" id="sel-feature-{{ forloop.counter }}" 
+
+                    <select class="form-control" id="sel-feature-{{ forloop.counter }}"
                         onchange="SelectResidueFeature('{{ selection_type }}', '{{ selected_item.type }}',
                         {{ selected_item.item.id }}, this.value)">
                         <option value='any'>Select feature..</option>
-                        {% for slug, name in amino_acid_group_names.items %}
+                        {% for slug, name in amino_acid_group_names_old.items %}
                         <option
                         {% if selected_item.properties.feature == slug %} selected {% endif %}value='{{ slug }}'>
                         {{ name }}</option>
                         {% endfor %}
                     </select>
-                    <a 
+                    <a
                     onclick="RemoveFromSelection('{{ selection_type }}', '{{ selected_item.type }}',
                     {{ selected_item.item.id }})" class="btn btn-danger btn-xs">
                         <span class="glyphicon glyphicon-remove"></span>
@@ -95,7 +95,7 @@
                     {% endif %}
                 {% endfor %}
                 </p>
-            
+
             {% empty %}
             None
             {% endfor %}
@@ -116,7 +116,7 @@
                 {% endif %}
 
                 ({{ selected_item.type_title }})
-                <a 
+                <a
                 onclick="RemoveFromSelection('{{ selection_type }}', '{{ selected_item.type }}',
                 {{ selected_item.item.id }})" class="btn btn-danger btn-xs">
                     <span class="glyphicon glyphicon-remove"></span>

@@ -2,7 +2,7 @@ from django.db.models import Count, Avg, Min, Max
 from collections import defaultdict
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
-from django.views.generic import TemplateView, View, DetailView
+from django.views.generic import TemplateView, View, DetailView, ListView
 
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
@@ -429,6 +429,8 @@ class PathwayExperimentEntryView(DetailView):
     model = BiasedPathways
     template_name = 'biased_pathways_data.html'
 
+
+@csrf_exempt
 def test_link(request):
     request.session['ids'] = ''
     # try:
@@ -445,6 +447,7 @@ def test_link(request):
     return HttpResponse(request)
     # except OSError as exc:
     #     raise
+
 
 
 class BiasVendorBrowser(TemplateView):
@@ -532,8 +535,9 @@ class BiasBrowser(TemplateView):
             temp['publication_quantity'] = instance.article_quantity
             temp['lab_quantity'] = instance.labs_quantity
             temp['reference_ligand'] = instance.reference_ligand
-            temp['primary'] =   instance.primary.replace('family','').strip()
-            temp['secondary'] = instance.secondary.replace('family','').strip()
+            temp['primary'] = instance.primary.replace(' family,','')
+            temp['secondary'] = instance.secondary.replace(' family,','')
+
             if instance.receptor:
                 temp['class'] = instance.receptor.family.parent.parent.parent.name.replace('Class','').strip()
                 temp['receptor'] = instance.receptor
@@ -773,7 +777,7 @@ class BiasBrowserChembl(TemplateView):
     template_name = 'bias_browser_chembl.html'
     #@cache_page(50000)
     def get_context_data(self, *args, **kwargs  ):
-        content = AnalyzedExperiment.objects.filter(source='chembl').prefetch_related(
+        content = AnalyzedExperiment.objects.filter(source='chembl_data').prefetch_related(
             'analyzed_data', 'ligand','ligand__reference_ligand','reference_ligand',
             'endogenous_ligand' ,'ligand__properities','receptor','receptor__family',
             'receptor__family__parent','receptor__family__parent__parent__parent',
@@ -824,6 +828,8 @@ class BiasBrowserChembl(TemplateView):
                 if entry.order_no < 5:
                     temp_dict = dict()
                     temp_dict['family'] = entry.family
+                    temp_dict['assay'] = entry.assay_type
+                    temp_dict['assay_description'] = entry.assay_description
                     temp_dict['show_family'] = entry.signalling_protein
                     temp_dict['signalling_protein'] = entry.signalling_protein
                     temp_dict['quantitive_measure_type'] = entry.quantitive_measure_type
@@ -843,11 +849,8 @@ class BiasBrowserChembl(TemplateView):
                     increment_assay+=1
                 else:
                     continue
-
             rd[increment] = temp
             increment+=1
-
-
         return rd
 
     def multply_assay(self, data):

@@ -88,8 +88,6 @@ class Command(BaseBuild):
             print('--error--', msg, '\n')
             self.logger.info("The error appeared in def handle")
 
-
-
     def fetch_experiment(self, publication, ligand, receptor, residue, mutation, source):
         """
         fetch receptor with Protein model
@@ -105,7 +103,6 @@ class Command(BaseBuild):
             self.mylog.exception(
                 "Protein AnalyzedExperiment error | module: AnalyzedExperiment.")
             return False
-
 
     def process_data(self, content):
         '''
@@ -150,6 +147,7 @@ class Command(BaseBuild):
             l = Ligand.objects.get(id = ligand_id)
         return l
 
+    #revise
     def fetch_ligand_cache(self, ligand_cache):
         """
         fetch ligands with Ligand model
@@ -170,7 +168,6 @@ class Command(BaseBuild):
         #     l = Ligand.objects.get(id = ligand_id)
         return ligand_list
 
-
     def fetch_vendor(self, ligand):
 
         links = LigandVendorLink.objects.filter(lp=ligand.properities.id)
@@ -180,7 +177,6 @@ class Command(BaseBuild):
             vendor_count = vendor_count + 1
 
         return vendor_count
-
 
     def define_protein(self, description):
         # if description exists
@@ -228,22 +224,11 @@ class Command(BaseBuild):
                             Gq = Gq+10
                 elif (word == 'arrestin'):
                     Barr = Barr+100
-
-            if G12 > max(Gio,Gq,GS,Barr):
-                signalling_protein = 'G12'
-            elif Gio > max(G12,Gq,GS,Barr):
-                signalling_protein = 'Gio'
-            elif Gq > max(G12,Gio,GS,Barr):
-                signalling_protein = 'Gq'
-            elif GS > max(G12,Gq,Gio,Barr):
-                signalling_protein = 'GS'
-            elif Barr > max(G12,Gq,GS,Gio):
-                signalling_protein = 'Barr'
-
-
+            signal_prot = list()
+            signal_prot.append(G12, Gio ,Gq ,GS ,Barr)
+            signalling_protein = str(max(signal_prot))
 
         return signalling_protein
-        # return signalling_protein
 
     def fetch_receptor_trunsducers(self, receptor):
         primary = ""
@@ -255,7 +240,6 @@ class Command(BaseBuild):
             elif x.transduction and x.transduction == 'secondary':
                 secondary += str(x.g_protein.name)
         return primary, secondary
-
 
     def change(self, rd, ligand_list):
         '''
@@ -297,7 +281,6 @@ class Command(BaseBuild):
             temp_dict['assay_type'] = j['main'].assay_type
             temp_dict['potency'] = None
 
-
             if not isinstance(temp_dict['quantitive_activity'], (int, float)):
                 temp_dict['quantitive_activity'] = None
             else:
@@ -311,7 +294,6 @@ class Command(BaseBuild):
                     temp_dict['quantitive_activity'] = temp_dict['quantitive_activity']* 10**(-6)
                 else:
                     pass
-
             doubles.append(temp_dict)
             temp['assay'] = doubles
             send[increment] = temp
@@ -320,7 +302,6 @@ class Command(BaseBuild):
 
         print('---counter of assays at change---', counter)
         return send
-
 
     def process_group(self, send):
         '''
@@ -333,7 +314,6 @@ class Command(BaseBuild):
         context = dict()
         counter = 0
         recep_residue = dict()
-
 
         for j in send.items():
 
@@ -354,13 +334,9 @@ class Command(BaseBuild):
             del context[x]
 
         self.process_calculation(context)
-        # for i in context.items():
-        #     print('---send[increment]---', i[1])
-
         for i in context.items():
             temp_obj = dict()
             name = str(i[1]['ligand'])
-
             if(name in recep_residue):
                 test1=0
                 test2=0
@@ -376,7 +352,6 @@ class Command(BaseBuild):
                     recep_residue[name] = i[1]
             temp_obj = i
             recep_residue[name] = temp_obj
-
         return recep_residue
 
     def process_calculation(self, context):
@@ -386,7 +361,6 @@ class Command(BaseBuild):
         for i in context.items():
             test = dict()
             temp_obj = list()
-
             # checking for dublicates
             for j in i[1]['assay']:
                 if j not in temp_obj:
@@ -394,18 +368,14 @@ class Command(BaseBuild):
                 else:
                     print('passing dublicate___-')
             i[1]['assay'] = temp_obj
-            # TODO: Change 9999999 to normal method that skips None value
-            # self.convert_activity(i[1]['assay'])
             test = sorted(i[1]['assay'], key=lambda k: k['quantitive_activity']
                           if k['quantitive_activity'] else 999999,  reverse=False)
 
             for x in enumerate(test):
                 x[1]['order_no'] = x[0]
-
             i[1]['biasdata'] = test
             i[1].pop('assay')
             self.calc_potency(i[1]['biasdata'])
-
 
     def calc_potency(self, biasdata):
         count = 0
@@ -517,7 +487,6 @@ class Command(BaseBuild):
         print('\n----chembl id---', chembl_id)
         return chembl_id
 
-
     def bias_list(self):
         print('i am in')
         context = {}
@@ -527,17 +496,12 @@ class Command(BaseBuild):
             'assay', 'ligand', 'protein'
             ).order_by('protein').order_by('ligand')
 
-
         # merge children
         pre_data = self.process_data(content)
         # # transform to combined dictionary
         combined = self.change(pre_data, ligand_list)
-
         context.update({'data': self.process_group(combined)})
-
-
         for i in context['data'].items():
-
             try:
                 # i[1].pop('reference')
                 # i[1].pop('biasdata')
