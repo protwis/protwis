@@ -96,7 +96,7 @@ class Command(ParseExcel):
 				pub.web_link = wl
 				pub.update_from_doi(doi=doi)
 				pub.save()
-				self.logger.info('Created Publication:'+pub)
+				self.logger.info('Created Publication:'+str(pub))
 			return pub
 		else:
 			return None

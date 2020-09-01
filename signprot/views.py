@@ -750,8 +750,7 @@ def familyDetail(request, slug):
     list_proteins = list(proteins.values_list('pk', flat=True))
 
     # get structures of this family
-    structures = SignprotStructure.objects.filter(protein__family__slug__startswith=slug
-                                                  )
+    structures = SignprotStructure.objects.filter(protein__family__slug__startswith=slug)
 
     mutations = MutationExperiment.objects.filter(protein__in=proteins).prefetch_related('residue__generic_number',
                                                                                          'exp_qual', 'ligand')
@@ -1050,7 +1049,7 @@ def StructureInfo(request, pdbname):
     """
     Show structure details
     """
-    protein = Protein.objects.get(signprotstructure__PDB_code=pdbname)
+    protein = Protein.objects.get(signprotstructure__pdb_code__index=pdbname)
 
     crystal = SignprotStructure.objects.get(PDB_code=pdbname)
 

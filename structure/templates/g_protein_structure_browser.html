@@ -20,12 +20,12 @@
     <script src="{% static 'home/js/select2.js' %}"> </script>
     <script src="{% static 'home/js/alignment.js' %}"> </script>
     <script src="{% static 'home/js/browser_functions.js' %}"> </script>
-    <script src="{% static 'home/js/structure_browser.js' %}"> </script> <!-- Structure browser -->
+    <script src="{% static 'home/js/g_protein_structure_browser.js' %}"> </script> <!-- Structure browser -->
     <script src="{% static 'home/js/jquery.powertip.js' %}"></script>
 
 <script type="text/javascript" charset="utf-8">
     $(document).ready(function() {
-        structurebrowser();
+        gproteinstructurebrowser();
     });
 </script>
 
@@ -95,12 +95,15 @@
             <table class="display compact text-nowrap" id='structures_scrollable'>
                 <thead>
                     <tr class='over_header over_header_row'>
-                        <th colspan=6 class="over_header">
+                        <th colspan=10 class="over_header flexible_over_header" id='sign_prot_over_header'>
                             <div>
-                                <div class='overhead_text'>RECEPTOR</div>
+                                <div class='overhead_text'>G PROTEIN</div>
+                                <div class='overhead_close'>
+                                    <button type="button" class="close hide_columns" columns="13,14,15,16" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                </div>
                             </div>
                         </th>
-                        <th colspan=7 class="over_header flexible_over_header" id='structure_over_header' >
+                        <th colspan=5 class="over_header flexible_over_header" id='structure_over_header' >
                             <div>
                                 <div class='overhead_text'>STRUCTURE</div>
                                 <div class='overhead_close'>
@@ -108,12 +111,9 @@
                                 </div>
                             </div>
                         </th>
-                        <th colspan=4 class="over_header flexible_over_header" id='sign_prot_over_header'>
+                        <th colspan=5 class="over_header">
                             <div>
-                                <div class='overhead_text'>SIGNAL PROTEIN</div>
-                                <div class='overhead_close'>
-                                    <button type="button" class="close hide_columns" columns="13,14,15,16" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                                </div>
+                                <div class='overhead_text'>RECEPTOR</div>
                             </div>
                         </th>
                         <th colspan=2 class="over_header flexible_over_header" id='aux_prot_over_header'>
@@ -138,13 +138,6 @@
                                 </div>
                             </div>
                         </th>
-                        <th colspan=2 class="over_header flexible_over_header" id='sodium_over_header'>
-                            <div class='overhead_text'>SODIUM ION SITE</div>
-                                <div class='overhead_close'>
-                                    <button type="button" class="close hide_columns" columns="24,25" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                                </div>
-                            </div>
-                        </th>
                         <th colspan=3 class="over_header flexible_over_header" id='reference_over_header'>
                             <div class='overhead_text'>REFERENCE</div>
                                 <div class='overhead_close'>
@@ -152,25 +145,17 @@
                                 </div>
                             </div>
                         </th>
-                        <th colspan=1 class="over_header flexible_over_header" id='annotated_over_header'>
-                            <div class='overhead_text'>ANNOTATED</div>
-                                <div class='overhead_close'>
-                                    <button type="button" class="close hide_columns" columns="29," style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                                </div>
-                            </div>
-                        </th>
                     </tr>
                     <tr class='over_header'>
                         <th></th>
-                        <th>
-                            <div>
-                                <div>UniProt</div>
-                                <div><button class='icon-button' type='button'><i id='uniprot_copy' class="glyphicon glyphicon-export uniprot-export"></i></button></div>
-                            </div>
-                        </th>
-                        <th>IUPHAR</th>
-                        <th>Receptor family</th>
-                        <th>Class</th>
+                        <th>Fam.</th>
+                        <th>&alpha;</th>
+                        <th>Species</th>
+                        <th>Note</th>
+                        <th>% of Seq</th>
+                        <th>&beta;</th>
+                        <th>Species</th>
+                        <th>&gamma;</th>
                         <th class='rightborder'>Species</th>
                         <th>Method</th>
                         <th>
@@ -181,13 +166,17 @@
                         </th>
                         <th><a href="https://academic.oup.com/nar/article/44/D1/D356/2502664" target="_blank">Refined<br>structure</a></th>
                         <th>Resolution</th>
-                        <th>Preferred<br>chain</th>
-                        <th>State</th>
-                        <th class='rightborder'>Degree<br>active (%)</th>
-                        <th>Family</th>
-                        <th>Subtype</th>
-                        <th>Note</th>
-                        <th class='rightborder'>% of Seq</th>
+                        <th class='rightborder'>Preferred<br>chain</th>
+                        <th>
+                            <div>
+                                <div>UniProt</div>
+                                <div><button class='icon-button' type='button'><i id='uniprot_copy' class="glyphicon glyphicon-export uniprot-export"></i></button></div>
+                            </div>
+                        </th>
+                        <th>IUPHAR</th>
+                        <th>Receptor family</th>
+                        <th>Class</th>
+                        <th class='rightborder'>Species</th>
                         <th>Fusion</th>
                         <th class='rightborder'>Antibodies</th>
                         <th>Name</th>
@@ -195,12 +184,9 @@
                         <th class='rightborder'>Function</th>
                         <th>Name</th>
                         <th class='rightborder'>Type</th>
-                        <th>D2x50-S3x39</th>
-                        <th class='rightborder'>Sodium in structure</th>
                         <th>Last author</th>
                         <th>Reference</th>
                         <th class='rightborder'>PDB Date</th>
-                        <th class='rightborder'></th>
                     </tr>
                     <tr>
                         <th class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
@@ -208,23 +194,19 @@
                         <th></th>
                         <th></th>
                         <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
                         <th class='rightborder'></th>
                         <th></th>
                         <th></th>
                         <th></th>
                         <th></th>
-                        <th></th>
-                        <th></th>
                         <th class='rightborder'></th>
                         <th></th>
                         <th></th>
                         <th></th>
-                        <th class='rightborder'></th>
-                        <th></th>
-                        <th class='rightborder'></th>
-                        <th></th>
-                        <th></th>
-                        <th class='rightborder'></th>
                         <th></th>
                         <th class='rightborder'></th>
                         <th></th>
@@ -232,6 +214,10 @@
                         <th></th>
                         <th></th>
                         <th class='rightborder'></th>
+                        <th></th>
+                        <th class='rightborder'></th>
+                        <th></th>
+                        <th></th>
                         <th class='rightborder'></th>
                     </tr>
 
@@ -244,11 +230,23 @@
                         <tr model_id='{{structure.pk}}'>
                     {% endif %}
                         <td class="text-center"><input class="alt" type="checkbox" id="{{ structure.pk }}"></td>
-                        <td><span><a href="http://www.uniprot.org/uniprot/{{ structure.protein_conformation.protein.parent.accession }}">{{ structure.protein_conformation.protein.parent.entry_short|safe }}</a></span></td>
-                        <td class='uniprot'><a href="/protein/{{ structure.protein_conformation.protein.parent.entry_name }}">{{ structure.protein_conformation.protein.parent.short|safe }}</a></td>
-                        <td><span>{{ structure.protein_conformation.protein.family.parent.short|safe }}</span></td>
-                        <td><span>{{ structure.protein_conformation.protein.family.parent.parent.parent.short|safe }}</span></td>
-                        <td>{{ structure.protein_conformation.protein.species.common_name }}</td>
+                        
+                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha,family"|safe }}</td>
+                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha,name"|safe }}</td>
+                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha,species"|safe }}</td>
+                        
+                        <td>
+                            {% if ep.note|length > 20 %}
+                                <span title="{{ ep.note }}">{{ structure.extra_proteins.all|only_one_subunit:"Alpha,note"|safe|cut_at_20 }}...</span>
+                            {% else %}
+                                {{ structure.extra_proteins.all|only_one_subunit:"Alpha,note"|safe }}
+                            {% endif %}
+                        </td>
+                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha,coverage"|safe }}</td>
+                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Beta,name"|safe }}</td>
+                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Beta,species"|safe }}</td>
+                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Gamma,name"|safe }}</td>
+                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Gamma,species"|safe }}</td>
                         <td>
                             {{ structure.structure_type.type_short|escape }}
                         </td>
@@ -264,52 +262,11 @@
                         </td>
                         <td class="text-center">{{ structure.resolution|floatformat:"1" }}</td>
                         <td class="text-center">{{ structure.preferred_chain }}</td>
-                        <td>{{ structure.state.name }}</td>
-                        <td class="text-center">{{ structure.gprot_bound_likeness|floatformat }}</td>
-                        <td>
-                            {% for ep in structure.extra_proteins.all %}
-                                {% if ep.category == "Arrestin" %}
-                                    {{ ep.wt_protein.family.parent.parent.name }}
-                                {% else %}
-                                    {{ ep.wt_protein.family.parent.name }}
-                                {% endif %}
-                                {% empty %}
-                                    -
-                            {% endfor %}
-                        </td>
-                        <td>
-                            {% for ep in structure.extra_proteins.all %}
-                                {{ ep.display_name}}
-                                {% empty %}
-                                    -
-                            {% endfor %}
-                        </td>
-                        <td>
-                            {% for ep in structure.extra_proteins.all %}
-                                {% if ep.note is None %}
-                                    -
-                                {% else %}
-                                    {% if ep.note|length > 20 %}
-                                        <span title="{{ ep.note }}">{{ ep.note|cut_at_20 }}...</span>
-                                    {% else %}
-                                    {{ ep.note }}
-                                    {% endif %}
-                                {% endif %}
-                                {% empty %}
-                                    -
-                            {% endfor %}
-                        </td>
-                        <td>
-                            {% for ep in structure.extra_proteins.all %}
-                                {% if ep.wt_coverage != None %}
-                                    {{ ep.wt_coverage}}
-                                {% else %}
-                                    -
-                                {% endif %}
-                                {% empty %}
-                                    -
-                            {% endfor %}
-                        </td>
+                        <td><span><a href="http://www.uniprot.org/uniprot/{{ structure.protein_conformation.protein.parent.accession }}">{{ structure.protein_conformation.protein.parent.entry_short|safe }}</a></span></td>
+                        <td class='uniprot'><a href="/protein/{{ structure.protein_conformation.protein.parent.entry_name }}">{{ structure.protein_conformation.protein.parent.short|safe }}</a></td>
+                        <td><span>{{ structure.protein_conformation.protein.family.parent.short|safe }}</span></td>
+                        <td><span>{{ structure.protein_conformation.protein.family.parent.parent.parent.short|safe }}</span></td>
+                        <td>{{ structure.protein_conformation.protein.species.common_name }}</td>
                         <td>
                             {{ structure.stabilizing_agents.all|only_fusions|linebreaksbr }}
                         </td>
@@ -348,20 +305,6 @@
                         </td>
                         <td>{{ structure.protein_conformation.protein.parent.endogenous_ligands.all.0.properities.ligand_type }}</td>
                         <td>
-                            {% if structure.protein_conformation.is_sodium %}
-                            Yes
-                            {% else %}
-                            No
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if structure.sodium %}
-                            Yes
-                            {% else %}
-                            No
-                            {% endif %}
-                        </td>
-                        <td>
                             {{ structure.publication.authors|last_author}}
                         </td>
                         <td>
@@ -370,13 +313,6 @@
                             </a>
                         </td>
                         <td>{{ structure.publication_date|date:"Y-m-d" }}</td>
-                        <td>
-                            {% if structure.annotated %}
-                            Yes
-                            {% else %}
-                            No
-                            {% endif %}
-                        </td>
                     </tr>
                 {% endfor %}
                 </tbody>

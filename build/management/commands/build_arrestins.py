@@ -278,15 +278,15 @@ class Command(BaseCommand):
                 g.proteins.add(pcan)
 
         # structures
-        for i, structure in enumerate(uniprot['structures']):
-            # try:
-            res = structure[1]
-            if res == '-':
-                res = 0
+        # for i, structure in enumerate(uniprot['structures']):
+        #     # try:
+        #     res = structure[1]
+        #     if res == '-':
+        #         res = 0
 
-            structure, created = SignprotStructure.objects.get_or_create(PDB_code=structure[0], resolution=res, protein = p, id=self.signprot_struct_ids())
-            if created:
-                self.logger.info('Created structure ' + structure.PDB_code + ' for protein ' + p.name)
+        #     structure, created = SignprotStructure.objects.get_or_create(PDB_code=structure[0], resolution=res, protein = p, id=self.signprot_struct_ids())
+        #     if created:
+        #         self.logger.info('Created structure ' + structure.PDB_code + ' for protein ' + p.name)
 
     def signprot_struct_ids(self):
         structs = Structure.objects.count()

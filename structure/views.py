@@ -16,7 +16,7 @@ from structure.functions import CASelector, SelectionParser, GenericNumbersSelec
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
 from structure.forms import *
-from signprot.models import SignprotComplex, SignprotStructure
+from signprot.models import SignprotComplex, SignprotStructure, SignprotStructureExtraProteins
 from interaction.models import ResidueFragmentInteraction,StructureLigandInteraction
 from protein.models import Protein, ProteinFamily
 from construct.models import Construct
@@ -110,15 +110,20 @@ class GProteinStructureBrowser(TemplateView):
 		except Structure.DoesNotExist as e:
 			pass
 		# Fetch non-complex g prot structures and filter for overlaps preferring SignprotComplex
-		ncstructs = SignprotStructure.objects.filter(protein__family__slug__startswith='100')
+		ncstructs = SignprotStructure.objects.filter(protein__family__slug__startswith='100').select_related(
+				"protein__family", 
+				"pdb_code__web_resource", 
+				"publication__web_link__web_resource").prefetch_related(
+				"stabilizing_agents",
+				Prefetch("extra_proteins", queryset=SignprotStructureExtraProteins.objects.all().prefetch_related('wt_protein')))
 		pdbs = []
 		filtered_ncstructs = []
 		for i in context['structures']:
 			if i.pdb_code.index not in pdbs:
 				pdbs.append(i.pdb_code.index)
 		for i in ncstructs:
-			if i.PDB_code not in pdbs:
-				pdbs.append(i.PDB_code)
+			if i.pdb_code.index not in pdbs:
+				pdbs.append(i.pdb_code.index)
 				filtered_ncstructs.append(i)
 		context['structures'] = list(context['structures'])+list(filtered_ncstructs)
 		return context

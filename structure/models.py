@@ -331,7 +331,7 @@ class StructureType(models.Model):
 
 
 class StructureExtraProteins(models.Model):
-    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE, null=True)
     wt_protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE, null=True)
     protein_conformation = models.ForeignKey('protein.ProteinConformation', on_delete=models.CASCADE, null=True)
     display_name = models.CharField(max_length=20)
@@ -348,7 +348,7 @@ class StructureExtraProteins(models.Model):
 
 
 class StructureStabilizingAgent(models.Model):
-    slug = models.SlugField(max_length=50, unique=True)
+    slug = models.SlugField(max_length=75, unique=True)
     name = models.CharField(max_length=100)
 
     def __str__(self):

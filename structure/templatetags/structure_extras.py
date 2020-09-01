@@ -49,6 +49,33 @@ def only_gproteins ( objs ):
         return '-'
 
 @register.filter
+def only_one_subunit ( objs, arg ):
+    protfam, value = arg.split(',')
+    if protfam=="Alpha":
+        print(objs)
+        elements = [element for element in objs if element.wt_protein.family.parent.parent.name==protfam]
+    else:
+        elements = [element for element in objs if element.wt_protein.family.parent.name==protfam]
+    if len(elements) > 0:
+        if value=='name':
+            return elements[0]
+        elif value=='species':
+            return elements[0].wt_protein.species.common_name
+        elif value=='note':
+            if elements[0].note:
+                return elements[0].note
+            else:
+                return '-'
+        elif value=='family':
+            return elements[0].wt_protein.family.parent.name
+        elif value=='coverage':
+            return elements[0].wt_coverage
+        else:
+            return '-'
+    else:
+        return '-'
+
+@register.filter
 def only_arrestins ( objs ):
     elements = [element for obj in objs for element in obj.name.split(',') if re.match(".*rrestin.*", element)]
     if len(elements) > 0:

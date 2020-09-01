@@ -24,12 +24,18 @@ class Command(BaseCommand):
         #                     dest='hommod',
         #                     default=False,
         #                     help='Include build of homology models')
+        parser.add_argument('--phase',
+                            type=int,
+                            action='store',
+                            dest='phase',
+                            default=None,
+                            help='Specify build phase to run (1 or 2, default: None)')
 
     def handle(self, *args, **options):
         if options['test']:
             print('Running in test mode')
 
-        commands = [
+        phase1 = [
             ['build_common'],
             ['build_citations'],
             ['build_human_proteins'],
@@ -41,15 +47,6 @@ class Command(BaseCommand):
             ['build_construct_proteins'],
             ['build_structures', {'proc': options['proc']}],
             ['build_endogenous_ligands'],
-            ['build_structure_angles', {'proc': options['proc']}],
-            ['build_distance_representative'],
-            ['build_contact_representative'],
-            ['build_construct_data'],
-            ['update_construct_mutations'],
-            ['build_ligands_from_cache', {'proc': options['proc'], 'test_run': options['test']}],
-            ['build_ligand_assays', {'proc': options['proc'], 'test_run': options['test']}],
-            ['build_mutant_data', {'proc': options['proc'], 'test_run': options['test']}],
-            ['build_protein_sets'],
             ['build_consensus_sequences', {'proc': options['proc']}],
             ['build_g_proteins'],
             ['build_consensus_sequences', {'proc': options['proc'], 'signprot': 'Alpha'}],
@@ -57,7 +54,18 @@ class Command(BaseCommand):
             ['build_consensus_sequences', {'proc': options['proc'], 'signprot': 'Arrestin'}],
             ['build_signprot_complex'],
             ['build_g_protein_structures'],
-            ['build_structure_extra_proteins'],
+            ['build_structure_extra_proteins']
+        ]
+        phase2 = [
+            ['build_structure_angles', {'proc': options['proc']}],
+            # ['build_distance_representative'],
+            ['build_contact_representative'],
+            ['build_construct_data'],
+            ['update_construct_mutations'],
+            ['build_ligands_from_cache', {'proc': options['proc'], 'test_run': options['test']}],
+            ['build_ligand_assays', {'proc': options['proc'], 'test_run': options['test']}],
+            ['build_mutant_data', {'proc': options['proc'], 'test_run': options['test']}],
+            ['build_protein_sets'],
             ['build_drugs'],
             ['build_nhs'],
             ['build_mutational_landscape'],
@@ -71,6 +79,14 @@ class Command(BaseCommand):
             ['build_text'],
             ['build_release_notes'],
         ]
+
+        if options['phase']:
+            if options['phase']==1:
+                commands = phase1
+            elif options['phase']==2:
+                commands = phase2
+        else:
+            commands = phase1+phase2
 
         for c in commands:
             print('{} Running {}'.format(

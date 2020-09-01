@@ -9,14 +9,16 @@ from collections import OrderedDict, defaultdict
 from itertools import islice
 from optparse import make_option
 from urllib.request import urlopen
+import xml.etree.ElementTree as ET
 
 import numpy as np
 import pandas as pd
 from pprint import pprint
 import requests
 import xlrd
-import xmltodict
+import xmltodict, json
 import yaml
+import pprint
 
 import Bio.PDB as PDB
 from Bio import SeqIO, pairwise2
@@ -33,8 +35,8 @@ from protein.models import (Gene, Protein, ProteinAlias, ProteinConformation,
 from residue.models import (Residue, ResidueGenericNumber,
                             ResidueGenericNumberEquivalent,
                             ResidueNumberingScheme)
-from signprot.models import SignprotBarcode, SignprotComplex, SignprotStructure
-from structure.models import Structure
+from signprot.models import SignprotBarcode, SignprotComplex, SignprotStructure, SignprotStructureExtraProteins
+from structure.models import Structure, StructureStabilizingAgent, StructureType, StructureExtraProteins
 
 
 class Command(BaseCommand):
@@ -59,6 +61,7 @@ class Command(BaseCommand):
     local_uniprot_beta_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot_beta'])
     local_uniprot_gamma_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot_gamma'])
     remote_uniprot_dir = 'https://www.uniprot.org/uniprot/'
+    
 
     logger = logging.getLogger(__name__)
 
@@ -1217,7 +1220,6 @@ class Command(BaseCommand):
 
         accessions_orth = df.loc[df['Uniprot_ID'].isin(orthologs)]
         accessions_orth = accessions_orth['Uniprot_ACC'].unique()
-
         for a in accessions_orth:
             up = self.parse_uniprot_file(a)
             # Fetch Protein Family for gproteins
@@ -1247,7 +1249,6 @@ class Command(BaseCommand):
         # all gproteins
         gprotein_list = cgn_proteins_list_lower + orthologs_lower
         accessions_all = list(accessions_orth) + list(accessions)
-
         return list(accessions_all)
 
     def cgn_creat_gproteins(self, family, residue_numbering_scheme, accession, uniprot):
@@ -1337,23 +1338,26 @@ class Command(BaseCommand):
                 g.proteins.add(pcgn)
 
         # structures
-        for i, structure in enumerate(uniprot['structures']):
-            try:
-                res = structure[1]
-                if res == '-':
-                    res = 0
-
-                structure, created = SignprotStructure.objects.get_or_create(PDB_code=structure[0], resolution=res,
-                                                                             protein=p, id=self.signprot_struct_ids())
-                if created:
-                    self.logger.info('Created structure ' + structure.PDB_code + ' for protein ' + p.name)
-            except IntegrityError:
-                self.logger.error('Failed creating structure ' + structure.PDB_code + ' for protein ' + p.name)
-
-            if g:
-                pcgn = Protein.objects.get(entry_name=uniprot['entry_name'].lower())
-                structure.protein = p
-                structure.save()
+        # for i, structure in enumerate(uniprot['structures']):
+        #     created = False
+        #     try:
+        #         res = structure[1]
+        #         if res == '-':
+        #             res = 0
+        #         print(structure[0], structure)
+        #         if len(SignprotStructure.objects.filter(PDB_code=structure[0]))==0:
+        #             wl, wl_created = WebLink.objects.get_or_create(web_resource=WebResource.objects.get(slug='pdb'), index=structure[0])
+        #             structure, created = SignprotStructure.objects.get_or_create(pdb_code=wl, resolution=res,
+        #                                                                          protein=p, id=self.signprot_struct_ids())
+        #             if created:
+        #                 self.logger.info('Created structure ' + structure.PDB_code + ' for protein ' + p.name)
+        #     except IntegrityError:
+        #         self.logger.error('Failed creating structure ' + structure.PDB_code + ' for protein ' + p.name)
+        #     if created:
+        #         if g:
+        #             pcgn = Protein.objects.get(entry_name=uniprot['entry_name'].lower())
+        #             structure.protein = p
+        #             structure.save()
 
     def signprot_struct_ids(self):
         structs = Structure.objects.count()

@@ -66,7 +66,7 @@ class Command(BaseBuild):
         if self.verbose:
             print('Missing from db: ', q.db_list)
             print('Missing yamls: ', q.yaml_list)
-            print('Structures with missing x50s: {}'.format(consider_list))
+            print('Structures with missing x50s: {} structures {}'.format(len(consider_list), consider_list))
 
     def fetch_accession_from_entryname(self, listof_entrynames):
         return [i.accession for i in Protein.objects.filter(entry_name__in=listof_entrynames)]
