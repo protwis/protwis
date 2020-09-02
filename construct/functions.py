@@ -37,8 +37,12 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     # ignore_gaspar_annotation skips PDB_RANGE edits that mark missing residues as deleted, which messes up constructs.
 
     if not protein:
-        url = 'https://www.rcsb.org/pdb/files/%s.pdb' % pdbname
-        pdbdata_raw = urlopen(url).read().decode('utf-8')
+        if pdbname=='6ORV':
+            with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs', '6ORV.pdb']), 'r') as pdb6orv:
+                pdbdata_raw = pdb6orv.read()
+        else:
+            url = 'https://www.rcsb.org/pdb/files/%s.pdb' % pdbname
+            pdbdata_raw = urlopen(url).read().decode('utf-8')
         # figure out what protein this is
         for line in pdbdata_raw.split('\n'):
             if line.startswith('DBREF'):
@@ -452,6 +456,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
         prev_elem_name = ""
         pdb_resid_total = []
         pdb_resid_total_accounted = []
+        # print(d['wt_seq'])
         for elem in sifts.findall('.//{'+sfits_https+'://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}segment'):
             if 'segId' not in elem.attrib:
                 continue #not receptor
@@ -591,12 +596,11 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                                         uniprot_pos = int(pos)
                                 else:
                                     receptor = False
-                            if pdbname in ['6KUX','6KUY']:
-                                if pos:
-                                    uniprot_pos = uniprot_pos-15
-                            # if pdbname == '6KUW':
+                            # if pdbname in ['6KUX','6KUY']:
+                            #     # Special fix for shift in annotation
                             #     if pos:
-                                    # print(pos, uniprot_pos, uniprot_aa)
+                            #         uniprot_pos = uniprot_pos-15
+
                             # if receptor:
                             #     print(receptor, uniprot_pos, pos,uniprot_aa, u_id,raw_u_id,chain,node.attrib['dbResNum'],d['wt_seq'][uniprot_pos-1])
                         elif source=='PDB' and node.attrib['dbResNum'].lstrip('-').isdigit(): #use instead of isinstance(node.attrib['dbResNum'], int):
@@ -712,7 +716,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                     if receptor:
                             if not uniprot_pos:
                                 uniprot_pos = pos
-                            # print(pos,uniprot_pos)
+                            # print(chain,pos,uniprot_pos,uniprot_aa)
                             wt_aa = d['wt_seq'][uniprot_pos-1]
                             prev_receptor = True
                             # if pos==250 or uniprot_pos==250:
@@ -848,6 +852,11 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                 seg_uniprot_ids = ['Uncharacterized protein']
             # elif pdbname in ['4LDE'] and min_pos==1029 and max_pos==1342:
             #     seg_uniprot_ids = ['adrb2_human']
+            if pdbname=='7BZ2' and chain=='E':
+                seg_uniprot_ids = ['adrb2_human']
+                receptor = [{'start': 30, 'end': 340, 'origin': 'user'}]
+            if pdbname=='6IQL' and chain in ['A','B'] and min_pos==304:
+                seg_uniprot_ids = ['drd4_mouse']
 
             # print([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,seg_had_receptor])
             d['xml_segments'].append([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,seg_had_receptor])
