@@ -192,7 +192,7 @@ function pastePDBs() {
     var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
     group = $('.tableview:visible').attr('group-number');
     if (group) mode = mode + group;
-    pdbs = $('.pastePDBs:visible').val().toUpperCase();
+    pdbs = $('.pastePDBs:visible').val().toUpperCase().trim();
     pdbs = pdbs.split(/[ ,]+/);
     resetselection(1);
     $('.pdb_selected', oTable[mode].cells().nodes()).each(function() {
@@ -207,14 +207,18 @@ function pastePDBs() {
         var popOverSettings = {
             placement: 'bottom',
             container: 'body',
-            title: 'PDBs not found', //Sepcify the selector here
+            title: 'One or more PDB(s) not found:', //Sepcify the selector here
             content: pdbs
         }
         $('.pastePDBs').popover(popOverSettings);
         $('.pastePDBs').popover('show');
-    } else {
+        $('.pastePDBs').on('shown.bs.popover',function() {
+         setTimeout(function() {
+          $('.pastePDBs').popover("destroy")}, 3000);
+        })
+    } /*else {
         $('.pastePDBs').popover('destroy');
-    }
+    }*/
     oTable[mode].order([
         [20, 'desc']
     ]);
@@ -290,6 +294,11 @@ function exportPDBs() {
 
 var oTable = [];
 
+function toggle_best(mode, index, value) {
+    filter_value = value == 'On' ? "Best" : "";
+    yadcf.exFilterColumn(oTable[mode], [[index, filter_value]]);
+}
+
 function showPDBtable(element) {
     var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
     group = $(element + ' .tableview').attr('group-number');
@@ -301,31 +310,102 @@ function showPDBtable(element) {
     if (!$.fn.DataTable.isDataTable(element + ' .tableview table')) {
         console.log(mode);
 
-        $(element + ' .tableview').before('<span><button type="button" onclick="check_all(this,1);" class="btn btn-xs btn-primary reset-selection">Select all displayed</button></span>');
-        $(element + ' .tableview').before(' | <span><input type=text class="pastePDBs" placeholder="Paste pdbs with comma- or space-separated"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Load PDB codes</button></span>');
-        $(element + ' .tableview').before(' | <span><button type="button" onclick="exportPDBs();" class="btn btn-xs btn-primary export_pdbs">Export selected PDB codes</button></span>');
-        if (window.location.href.endsWith("contactnetwork/clustering") || window.location.href.endsWith("contactnetwork/clustering#"))
-          $(element + ' .tableview').before(' | <span>Structure shortest distance to all other structures of the same receptor and same state: <button type="button" onclick="check_all_distance_representatives();" class="btn btn-xs btn-primary">Distance Representative</button></span>');
+        $(element + " #best_species").html('<div class2="pull-right">\
+                                            <div class="btn-group btn-toggle" column="7" mode="'+ mode +'"> \
+                                            <button class="btn btn-xs btn-default" value="On">&nbsp;</button> \
+                                            <button class="btn btn-xs btn-primary active" value="Off">Off</button> \
+                                            </div> \
+                                            <span class="pull-right glyphicon glyphicon-info-sign" title="Human or closest species (for each receptor and state)" style="font-size: 15px;cursor: pointer;"></span> \
+                                            </div>');
+
+        $(element + " #best_res").html('<div class2="pull-right"> \
+        <div class="btn-group btn-toggle" column="12" mode="'+ mode +'"> \
+                                            <button class="btn btn-xs btn-default" value="On">&nbsp;</button> \
+                                            <button class="btn btn-xs btn-primary active" value="Off">Off</button> \
+                                            </div> \
+                                            <span class="pull-right glyphicon glyphicon-info-sign" title="Highest resolution (for each receptor, species and state)" style="font-size: 15px;cursor: pointer;"></span> \
+                                            </div>');
+
+
+        $(element + ' .btn-toggle').click(function() {
+            $(this).find('.btn').toggleClass('active');
+            $(this).find('.btn').toggleClass('btn-primary');
+            $(this).find('.btn').toggleClass('btn-default');
+            $(this).find('.active').html($(this).find('.active').attr("value"));
+            $(this).find('.btn-default').html('&nbsp;');
+            toggle_best($(this).attr("mode"), $(this).attr("column"),$(this).find('.active').attr("value"))
+        })
+
+
+
+        $(element + " #species").prop('id', mode_without_space + "_species");
+        $(element + " #best_species").prop('id', mode_without_space + "_best_species");
+        $(element + " #best_res").prop('id', mode_without_space + "_best_res");
+
+        $(element + " .modal-title").css("display", "inline");
+        $(element + " .modal-title").hide();
+
+        if (mode!="Single structure"){
+          $(element + ' .modal-header').append('<span><button type="button" onclick="check_all(this,1);" class="btn btn-xs btn-primary reset-selection">Select all displayed</button></span>');
+          $(element + ' .modal-header').append(' | PDB code: <span><input type=text class="pastePDBs" placeholder="Paste PDBs with comma- or space-separated"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Import</button></span>');
+        } else {
+          $(element + ' .modal-header').append('PDB code: <span><input type=text class="pastePDBs" placeholder="Paste PDB"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Import</button></span>');
+        }
+
+        $(element + ' .modal-header .pastePDBs').keypress(function(event) {
+            var keycode = (event.keyCode ? event.keyCode : event.which);
+            if(keycode == '13'){
+               pastePDBs();
+            }
+        });
+
+
+        $(element + ' .modal-header').append(' | <span><button type="button" onclick="exportPDBs();" class="btn btn-xs btn-primary export_pdbs">Export</button></span>');
+        // $(element + ' .modal-header').append(' | <span><button type="button" onclick="toggle_best(\''+mode+'\',7);" class="btn btn-xs btn-primary">Best</button></span>');
+        /*if (window.location.href.endsWith("contactnetwork/clustering") || window.location.href.endsWith("contactnetwork/clustering#"))
+          $(element + ' .modal-header').append(' | <span>Structure shortest distance to all other structures of the same receptor and same state: <button type="button" onclick="check_all_distance_representatives();" class="btn btn-xs btn-primary">Distance Representative</button></span>');
         else {
           // a$(element + ' .tableview').before(' | <span>Structure with highest % identity to GPCR’s contact consensus: <button type="button" onclick="check_all_representatives();" class="btn btn-xs btn-primary">Contact Representative</button></span>');
           // $(element + ' .tableview').before(' | <span>Structure sharing either highest/lowest diff between fraction of active/inactive class consensus contacts, or for intermediate the one closes to a 0 diff: <button type="button" onclick="check_all_class_representatives();" class="btn btn-xs btn-primary">New Representative</button></span>');
-        }
-        $(element + ' .tableview').before(' | <div class="externalfilters" style="display: inline-block;"><span id="'+mode_without_space+'_external_filter_container_0"></span></div>');
+        }*/
+        // $(element + ' .modal-header').append(' | <div class="externalfilters" style="display: inline-block;"><span id="'+mode_without_space+'_external_filter_container_0"></span></div>');
         // $(element + ' .tableview').before('<div class="externalfilters" style="display: inline-block;"><span id="'+mode_without_space+'_external_filter_container_1"></span></div>');
 
+        console.time('DataTable');
         oTable[mode] = $(element + ' .tableview table').DataTable({
+            "fnInfoCallback": function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
+                filtered = iMax - iEnd;
+                filtered_text = filtered ? " (" + filtered + " structures filtered out)" : "";
+                var cols = []
+                var table = $(element + ' .dataTables_scrollBody .structure_selection');
+                cols_of_interest = [1, 11];
+                for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
+                    for (let [j, cell] of [...row.cells].entries()) {
+                        if (cols_of_interest.includes(j)) {
+                            cols[j] = cols[j] || [];
+                            cols[j].push(cell.innerText)
+                        }
+                    }
+                }
+                distinctReceptors = [...new Set(cols[1])];
+                distinctReceptorState = [...new Set(cols[1].map((val, i) => [cols[11]].reduce((a, arr) => [...a, arr[i]], [val])))];
+                distinctReceptorState = [...new Set(distinctReceptorState.map(x => x[0] + "_" + x[1]))]
+
+                return "Showing " + iEnd + " structures for "+distinctReceptors.length+" receptors and "+distinctReceptorState.length+" distinct receptor-state pairs"+filtered_text;
+              },
             'scrollX': true,
             // 'paging': true,
             // 'autoWidth': true,
 
-            scrollY: '75vh',
+            scrollY: '65vh',
             // scrollCollapse: true,
             paging: false,
+            "bSortCellsTop": true,
             columnDefs: [{
                 targets: 'no-sort',
                 orderable: false
             },
-                {"targets": [ -1, -2 ],
+                {"targets": [ 7, 12 ],
                 "visible": false}],
             "aaSorting": [],
             "columns": [
@@ -355,12 +435,10 @@ function showPDBtable(element) {
                 null,
                 null,
                 null,
-                null,
-                null,
-                null,
             ]
         });
-        console.log('done datatable');
+        console.timeEnd('DataTable');
+        console.time('yadcf');
         yadcf.init(oTable[mode],
             [{
                     column_number: 1,
@@ -375,7 +453,7 @@ function showPDBtable(element) {
                     select_type: 'select2',
                     column_data_type: "html",
                     html_data_type: "text",
-                    filter_default_label: "Receptor",
+                    filter_default_label: "IUPHAR",
                     filter_match_mode: "exact",
                     filter_reset_button_text: false,
                 },
@@ -395,7 +473,10 @@ function showPDBtable(element) {
                     column_number: 4,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Class",
+                    filter_default_label: "Cl",
+                    select_type_options: {
+                        width: '30px'
+                    },
                     filter_reset_button_text: false,
                 },
                 {
@@ -410,18 +491,21 @@ function showPDBtable(element) {
                 {
                     column_number: 6,
                     filter_type: "multi_select",
+                    filter_container_id: mode_without_space + '_species',
                     select_type: 'select2',
+                    column_data_type: "html",
                     filter_default_label: "Species",
                     filter_reset_button_text: false,
                 },
                 {
                     column_number: 7,
-                    filter_type: "multi_select",
+                    filter_type: "select",
                     select_type: 'select2',
-                    filter_default_label: "Best species",
                     select_type_options: {
-                        width: '70px'
+                        width: '90px',
+                        minimumResultsForSearch: -1 // remove search box
                     },
+                    filter_default_label: "All",
                     filter_reset_button_text: false,
                 },
                 {
@@ -438,6 +522,9 @@ function showPDBtable(element) {
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Method",
+                    select_type_options: {
+                        width: '70px'
+                    },
                     filter_reset_button_text: false,
                 },
                 {
@@ -459,14 +546,26 @@ function showPDBtable(element) {
                     filter_default_label: ["Res (Å)",""],
                     filter_reset_button_text: false,
                 },
+                // {
+                //     column_number: 12,
+                //     filter_type: "multi_select",
+                //     select_type: 'select2',
+                //     filter_default_label: "Best res.",
+                //     select_type_options: {
+                //         width: '70px'
+                //     },
+                //     filter_reset_button_text: false,
+                // },
                 {
                     column_number: 12,
-                    filter_type: "multi_select",
+                    // filter_container_id: mode_without_space + '_best_res',
+                    filter_type: "select",
                     select_type: 'select2',
-                    filter_default_label: "Best res.",
                     select_type_options: {
-                        width: '70px'
+                        width: '90px',
+                        minimumResultsForSearch: -1 // remove search box
                     },
+                    filter_default_label: "All",
                     filter_reset_button_text: false,
                 },
                 {
@@ -474,6 +573,9 @@ function showPDBtable(element) {
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "State",
+                    select_type_options: {
+                        width: '70px'
+                    },
                     filter_match_mode: "exact",
                     filter_reset_button_text: false,
 
@@ -498,25 +600,21 @@ function showPDBtable(element) {
                 // },
                 {
                     column_number: 14,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Contact rep.",
+                    filter_type: "range_number",
+                    select_type_options: {
+                        width: '70px'
+                    },
+                    filter_default_label: ["From","to"],
+                    // filter_default_label: "Gprot-bound likeness",
                     filter_reset_button_text: false,
-
                 },
                 {
                     column_number: 15,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Gprot-bound likeness",
-                    filter_reset_button_text: false,
-
-                },
-                {
-                    column_number: 16,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "TM6 tilt",
+                    filter_type: "range_number",
+                    select_type_options: {
+                        width: '70px'
+                    },
+                    filter_default_label: ["From","to"],
                     filter_reset_button_text: false,
 
                 },
@@ -528,78 +626,86 @@ function showPDBtable(element) {
                     filter_reset_button_text: false,
                 },*/
                 {
-                    column_number: 17,
+                    column_number: 16,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Sign Prot",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 18,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Family",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 20,
-                    filter_type: "range_number",
                     select_type_options: {
                         width: '70px'
                     },
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 17,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Family",
+                    select_type_options: {
+                        width: '70px'
+                    },
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 19,
+                    filter_type: "range_number",
+                    select_type_options: {
+                        width: '50px'
+                    },
+                    column_data_type: "html",
                     filter_default_label: ["From","to"],
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 21,
+                    column_number: 20,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Fusion",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 22,
+                    column_number: 21,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Antibody",
+                    column_data_type: "html",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 23,
+                    column_number: 22,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Ligand",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 24,
+                    column_number: 23,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Ligand function",
+                    filter_default_label: "Modality",
                     filter_match_mode: "exact",
                     filter_reset_button_text: false,
                 },
-                {
-                    column_number: 25,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Ligand type",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 26,
-                    filter_container_id: mode_without_space+'_external_filter_container_0',
-                    html_data_type: "text",
-                    select_type: 'select2',
-                    // filter_type: "multi_select",
-                    filter_default_label: "All species and structures",
-                    filter_reset_button_text: false,
-                    text_data_delimiter: ",",
-                    select_type_options: {
-                        width: '300px',
-                        minimumResultsForSearch: -1 // remove search box
-                    },
-                },
+                // {
+                //     column_number: 24,
+                //     filter_type: "multi_select",
+                //     select_type: 'select2',
+                //     filter_default_label: "Modality",
+                //     filter_reset_button_text: false,
+                // },
+                // {
+                //     column_number: 25,
+                //     filter_container_id: mode_without_space+'_external_filter_container_0',
+                //     html_data_type: "text",
+                //     select_type: 'select2',
+                //     // filter_type: "multi_select",
+                //     filter_default_label: "All species and structures",
+                //     filter_reset_button_text: false,
+                //     text_data_delimiter: ",",
+                //     select_type_options: {
+                //         width: '300px',
+                //         minimumResultsForSearch: -1 // remove search box
+                //     },
+                // },
                 // {
                 //     column_number: 23,
                 //     filter_container_id: mode_without_space+'_external_filter_container_1',
@@ -614,18 +720,27 @@ function showPDBtable(element) {
                 //     },
                 // },
             ], {
-                cumulative_filtering: false
+                cumulative_filtering: false,
+                // filters_tr_index: 1
             }
         );
-        yadcf.exResetAllFilters(oTable[mode]);
+        console.timeEnd('yadcf');
+        // console.time('yadcf_reset');
+        // yadcf.exResetAllFilters(oTable[mode]);
+        // console.timeEnd('yadcf_reset');
         // yadcf.exFilterColumn(oTable[mode], [
         //     [21, "*Only show mammalian structures and those from human or closest species"],
         //   ]);
-        console.log('done yadcf');
+
+
 
         oTable[mode].on('draw.dt', function(e, oSettings) {
+            console.time('create_overlay');
             create_overlay(element + ' .structure_selection');
+            console.timeEnd('create_overlay');
+            console.time('update_text_in_modal');
             update_text_in_modal();
+            console.timeEnd('update_text_in_modal');
         });
 
 

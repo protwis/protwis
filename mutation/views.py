@@ -839,7 +839,7 @@ def coverage(request):
     n = 0
     for c,c_v in coverage.items():
         c_v['name'] = c_v['name'].split("(")[0]
-        if c_v['name'].strip() in ['Other GPCRs','Taste 2','Class B2']:
+        if c_v['name'].strip() in ['Other GPCRs','Class T (Taste 2)','Class B2']:
             # i += 1
             continue
             # pass
@@ -851,7 +851,7 @@ def coverage(request):
             children_rf = []
             for rf,rf_v in lt_v['children'].items():
                 rf_v['name'] = rf_v['name'].split("<")[0]
-                if rf_v['name'].strip() == 'Taste 2':
+                if rf_v['name'].strip() == 'Class T (Taste 2)':
                     continue
                 children_r = []
                 for r,r_v in rf_v['children'].items():
@@ -920,7 +920,7 @@ def pocket(request):
 
     context = {}
 
-    gpcr_class = '005' #class a 1 , c 4, f 5
+    gpcr_class = '006' #class a 1 , c 4, f 6
 
     class_interactions = ResidueFragmentInteraction.objects.filter(
         structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=gpcr_class, structure_ligand_pair__annotated=True).prefetch_related(

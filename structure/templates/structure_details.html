@@ -99,7 +99,7 @@ canvas {
     <div class="col-md-9">
     <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
     <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
-        <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a> is a WebGL based 3D viewer powered by <a href="http://mmtf.rcsb.org">MMTF</a>.</p>
+        <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a> is a WebGL based 3D viewer powered by <a href="https://mmtf.rcsb.org">MMTF</a>.</p>
     </div>
     <div> <button id=fullscreen>Full Screen</button></div>
 
@@ -118,15 +118,46 @@ canvas {
     </div>
 </div>
 
+{% if refined %}
 <div class="row">
-    {% if refined %}
-        <div class="col-md-3 text-right text-info">
-            <h4>REFINED STRUCTURE MODEL</h4>
-        </div>
-        <div class="col-md-9">
-            <p style="display: inline;"><a href="/structure/homology_models/{{ refined.pdb_code.index }}">{{ refined.pdb_code.index }}</a></p>
-        </div>
-    {% endif %}
+    <div class="col-md-3 text-right text-info">
+        <h4>REFINED STRUCTURE MODEL</h4>
+    </div>
+    <div class="col-md-9">
+        <p style="display: inline;"><a href="/structure/homology_models/{{ refined.pdb_code.index }}">{{ refined.pdb_code.index }}</a></p>
+    </div>
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>LIGANDS</h4>
+    </div>
+    <div class="col-md-9">
+        {% for l in ligands %}
+            <p style="display: inline;">{{ l.ligand.name|safe }} - {{l.ligand_role.name|safe}}
+                {% for link in l.ligand.properities.web_links.all %}
+                    <a href="{{link}}" target="_blank">{{link.web_resource.slug}}</a>
+                {% endfor %}
+                {% if forloop.last %}{% else %}, {% endif %}
+            </p>
+        {% empty %}
+        No ligands
+        {% endfor %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>ENDOGENOUS LIGANDS</h4>
+    </div>
+    <div class="col-md-9">
+        {% for e in crystal.protein_conformation.protein.parent.endogenous_ligands.all %}
+        <p style="display: inline;">{{ e.name|safe }}{% if forloop.last %}{% else %}, {% endif %}</p>
+        {% empty %}
+        No endogenous ligands available
+        {% endfor %}
+    </div>
 </div>
 
 {% endblock %}
@@ -152,8 +183,8 @@ canvas {
             ] );
             //var stringBlob = new Blob( [ "pdb/{{pdbname}}" ], { type: 'text/plain'} );
             // stage.loadFile( "http://localhost:8000/structure/pdb/{{pdbname}}", { ext: "pdb" } );
-            // NGL.autoLoad( "http://files.rcsb.org/download/5IOS.cif" );
-            //stage.loadFile( "http://files.rcsb.org/download/{{pdbname}}.pdb", { ext: "pdb" } );
+            // NGL.autoLoad( "https://files.rcsb.org/download/5IOS.cif" );
+            //stage.loadFile( "https://files.rcsb.org/download/{{pdbname}}.pdb", { ext: "pdb" } );
             stage.loadFile( "pdb/{{pdbname}}", { ext: "pdb" }  ).then( function( o ){
                 o.addRepresentation( "cartoon");  // pass schemeId here ,{ color: schemeId }
                 o.centerView();

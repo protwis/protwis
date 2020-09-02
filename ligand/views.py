@@ -2,13 +2,15 @@ from django.db.models import Count, Avg, Min, Max
 from collections import defaultdict
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
-from django.views.generic import TemplateView, View, DetailView
+from django.views.generic import TemplateView, View, DetailView, ListView
 
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection, SelectionItem
 from ligand.models import *
 from protein.models import Protein, Species, ProteinFamily
+
+from django.views.decorators.csrf import csrf_exempt
 
 from copy import deepcopy
 import itertools
@@ -326,7 +328,7 @@ class LigandStatistics(TemplateView):
         for pf in proteins_count:
             prot_count_dict[pf['family__parent__parent__parent__name']] = pf['c']
 
-        classes = ProteinFamily.objects.filter(slug__in=['001', '002', '003', '004', '005', '006']) #ugly but fast
+        classes = ProteinFamily.objects.filter(slug__in=['001', '002', '003', '004', '005', '006', '007']) #ugly but fast
         proteins = Protein.objects.all().prefetch_related('family__parent__parent__parent')
         ligands = []
 
@@ -405,7 +407,7 @@ class LigandStatistics(TemplateView):
         context['class_f_options']['anchor'] = 'class_f'
         context['class_f_options']['label_free'] = [1,]
         context['class_f'] = json.dumps(class_f_data.get_nodes_dict('ligands'))
-        class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name='Taste 2'))
+        class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class T (Taste 2)'))
         context['class_t2_options'] = deepcopy(tree.d3_options)
         context['class_t2_options']['anchor'] = 'class_t2'
         context['class_t2_options']['label_free'] = [1,]
@@ -427,12 +429,13 @@ class PathwayExperimentEntryView(DetailView):
     model = BiasedPathways
     template_name = 'biased_pathways_data.html'
 
+
+@csrf_exempt
 def test_link(request):
     request.session['ids'] = ''
     # try:
     request.session['ids']
     if request.POST.get('action') == 'post':
-
         request.session.modified = True
         data = request.POST.get('ids')
         data = filter(lambda char: char not in " \"?.!/;:[]", data)
@@ -444,6 +447,7 @@ def test_link(request):
     return HttpResponse(request)
     # except OSError as exc:
     #     raise
+
 
 
 class BiasVendorBrowser(TemplateView):
@@ -531,8 +535,9 @@ class BiasBrowser(TemplateView):
             temp['publication_quantity'] = instance.article_quantity
             temp['lab_quantity'] = instance.labs_quantity
             temp['reference_ligand'] = instance.reference_ligand
-            temp['primary'] =   instance.primary.replace('family','').strip()
-            temp['secondary'] = instance.secondary.replace('family','').strip()
+            temp['primary'] = instance.primary.replace(' family,','')
+            temp['secondary'] = instance.secondary.replace(' family,','')
+
             if instance.receptor:
                 temp['class'] = instance.receptor.family.parent.parent.parent.name.replace('Class','').strip()
                 temp['receptor'] = instance.receptor
@@ -772,7 +777,7 @@ class BiasBrowserChembl(TemplateView):
     template_name = 'bias_browser_chembl.html'
     #@cache_page(50000)
     def get_context_data(self, *args, **kwargs  ):
-        content = AnalyzedExperiment.objects.filter(source='chembl').prefetch_related(
+        content = AnalyzedExperiment.objects.filter(source='chembl_data').prefetch_related(
             'analyzed_data', 'ligand','ligand__reference_ligand','reference_ligand',
             'endogenous_ligand' ,'ligand__properities','receptor','receptor__family',
             'receptor__family__parent','receptor__family__parent__parent__parent',
@@ -823,6 +828,8 @@ class BiasBrowserChembl(TemplateView):
                 if entry.order_no < 5:
                     temp_dict = dict()
                     temp_dict['family'] = entry.family
+                    temp_dict['assay'] = entry.assay_type
+                    temp_dict['assay_description'] = entry.assay_description
                     temp_dict['show_family'] = entry.signalling_protein
                     temp_dict['signalling_protein'] = entry.signalling_protein
                     temp_dict['quantitive_measure_type'] = entry.quantitive_measure_type
@@ -842,11 +849,8 @@ class BiasBrowserChembl(TemplateView):
                     increment_assay+=1
                 else:
                     continue
-
             rd[increment] = temp
             increment+=1
-
-
         return rd
 
     def multply_assay(self, data):

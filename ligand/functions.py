@@ -26,12 +26,12 @@ def get_or_make_ligand(ligand_id,type_id, name = None):
         try:
             # if this name is canonical and it has a ligand record already
             if (ligand_name==False):
-            
+
                 l = None
                 ls = Ligand.objects.filter(canonical=True,
                    properities__web_links__web_resource=web_resource,
                    properities__web_links__index=ligand_id)
-               
+
                 for ligand in ls:
                     l = ligand
                     #print (l)
@@ -40,12 +40,12 @@ def get_or_make_ligand(ligand_id,type_id, name = None):
                     l = Ligand.objects.get(canonical=True,
                     properities__web_links__web_resource=web_resource,
                     properities__web_links__index=ligand_id)
-                    
+
             else:
                l = Ligand.objects.get(name=ligand_name, canonical=True,
                    properities__web_links__web_resource=web_resource,
                    properities__web_links__index=ligand_id)
-            
+
             #l = Ligand.objects.get(name=ligand_name, canonical=True,
             #    properities__web_links__web_resource=web_resource,
             #    properities__web_links__index=ligand_id)
@@ -76,15 +76,15 @@ def get_or_make_ligand(ligand_id,type_id, name = None):
                         l = Ligand.objects.get(name=ligand_name, canonical=True,
                                                 properities__smiles=ligand_id)
                     except Ligand.DoesNotExist:
-                        try:   
+                        try:
                             l = Ligand.objects.get(name__startswith=ligand_name, canonical=True,properities__smiles=ligand_id) #if no properities exist
-                        except Ligand.DoesNotExist: 
-                            try:   
+                        except Ligand.DoesNotExist:
+                            try:
                                 l = Ligand.objects.get(name=ligand_name, canonical=True,properities__smiles=None) #if no properities exist
                                 l.properities.smiles = ligand_id
                                 l.properities.save()
                                 l.save()
-                            except Ligand.DoesNotExist: 
+                            except Ligand.DoesNotExist:
                                 ## now insert a new ligand, but first make sure name is unique
                                 if Ligand.objects.filter(name=ligand_name).exists():
                                     ls = Ligand.objects.filter(name__startswith=ligand_name, canonical=True).order_by("pk")
@@ -107,18 +107,18 @@ def get_or_make_ligand(ligand_id,type_id, name = None):
                                     l.save()
                                 except IntegrityError:
                                     l = Ligand.objects.get(name=ligand_name, canonical=True)
-            
+
     elif name:
-        
+
         # if this name is canonical and it has a ligand record already
         if Ligand.objects.filter(name=name, canonical=True).exists():
             l = Ligand.objects.get(name=name, canonical=True)
-        
+
         # if this matches an alias that only has "one" parent canonical name - eg distinct
         elif Ligand.objects.filter(name=name, canonical=False,
             ambigious_alias=False).exists():
             l = Ligand.objects.get(name=name, canonical=False, ambigious_alias=False)
-        
+
         # if this matches an alias that only has several canonical parents, must investigate, start
         # with empty.
         elif Ligand.objects.filter(name=name, canonical=False,
@@ -132,7 +132,7 @@ def get_or_make_ligand(ligand_id,type_id, name = None):
             l.ambigious_alias = True
             l.save()
             l.load_by_name(name)
-        
+
         # if neither a canonical or alias exists, create the records. Remember to check for
         # canonical / alias status.
         else:
@@ -150,7 +150,7 @@ def get_or_make_ligand(ligand_id,type_id, name = None):
                 l = Ligand.objects.get(name=str(name), canonical=True)
     else:
         l = None
-    
+
     return l
 
 #def fetch_chembl_refs(lig_chembl_id, target_accesion):
@@ -158,7 +158,7 @@ def get_or_make_ligand(ligand_id,type_id, name = None):
 #    target_id = new_client.target.filter(accession=target_accesion)
 
 #    assay = new_client.assay.filter(target_id=target_id, compound=lig_chembl_id)
-    
+
 #    refs = [x['document_chembl_id'] for x in assay]
 #    #https://www.ebi.ac.uk/chembl/doc/inspect/CHEMBL2766014
 

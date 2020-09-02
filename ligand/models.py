@@ -16,6 +16,7 @@ class Ligand(models.Model):
     name = models.TextField()
     canonical = models.NullBooleanField()
     ambigious_alias = models.NullBooleanField() #required to flag 'safe' alias, eg one parent
+    endogenous = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
@@ -258,6 +259,7 @@ class LigandProperities(models.Model):
     #vendor_links = models.ManyToManyField('common.WebLink', related_name='vendors')
     smiles = models.TextField(null=True)
     inchikey = models.CharField(max_length=50, null=True, unique=True)
+    sequence = models.CharField(max_length=1000, null=True)
     #vendors = models.ManyToManyField('LigandVenderLink')
 
     mw = models.DecimalField(max_digits=15, decimal_places=3, null=True)
@@ -302,8 +304,6 @@ class ChemblAssay(models.Model):
     web_links = models.ManyToManyField('common.WebLink')
     assay_id = models.CharField(max_length=50, unique = True)
 
-
-
     def __str__(self):
         return self.assay_id
 
@@ -315,41 +315,27 @@ class AssayExperiment(models.Model):
 
     ligand = models.ForeignKey('Ligand', on_delete=models.CASCADE)
     protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
-    assay = models.ForeignKey('ChemblAssay', on_delete=models.CASCADE)
+    assay = models.ForeignKey('ChemblAssay', on_delete=models.CASCADE, null= True)
     assay_type = models.CharField(max_length=10)
     assay_description = models.TextField(max_length=1000)
-    pchembl_value = models.DecimalField(max_digits=9, decimal_places=3)
+    pchembl_value = models.CharField(max_length=10, null=True)
 
-    published_value = models.DecimalField(max_digits=9, decimal_places=3)
-    published_relation = models.CharField(max_length=10)
-    published_type = models.CharField(max_length=20)
-    published_units = models.CharField(max_length=20)
+    published_value = models.DecimalField(max_digits=9, decimal_places=3, null= True)
+    published_relation = models.CharField(max_length=10, null= True)
+    published_type = models.CharField(max_length=20, null= True)
+    published_units = models.CharField(max_length=20, null= True)
 
-    standard_value = models.DecimalField(max_digits=9, decimal_places=3)
+    standard_value =  models.CharField(max_length=10, null=True)
     standard_relation = models.CharField(max_length=10)
     standard_type = models.CharField(max_length=20)
     standard_units = models.CharField(max_length=20)
 
-
-
-    class Meta():
-        unique_together = ('ligand', 'protein', 'assay')
-
-
-
-class LigandVendors(models.Model):
-    slug = models.SlugField(max_length=100, unique=True)
-    name = models.CharField(max_length=200, default='')
-    url = models.TextField(null=True)
-
-class LigandVendorLink(models.Model):
-    vendor = models.ForeignKey('LigandVendors', on_delete=models.CASCADE)
-    lp = models.ForeignKey('LigandProperities', related_name='vendors', on_delete=models.CASCADE)
-    url = models.CharField(max_length=300)  #SourceRecordURL
-    vendor_external_id = models.CharField(max_length=300) #RegistryID
-    sid = models.CharField(max_length=200, unique=True) #SID
-
-
+    publication = models.ForeignKey(Publication, on_delete = models.CASCADE, null= True)
+    chembl = models.CharField(max_length=100,null = True)
+    smiles = models.TextField(null = True)
+    activity = models.CharField(max_length=50,null = True)
+    document_chembl_id = models.CharField(max_length=50,null = True)
+    cell_line = models.TextField(null = True)
 
 
 class LigandVendors(models.Model):
@@ -363,8 +349,6 @@ class LigandVendorLink(models.Model):
     url = models.CharField(max_length=300)  #SourceRecordURL
     vendor_external_id = models.CharField(max_length=300) #RegistryID
     sid = models.CharField(max_length=200, unique=True) #SID
-
-
 
 #Biased Signalling - start
 class BiasedExperiment(models.Model):
@@ -420,7 +404,6 @@ class BiasedExperimentVendors(models.Model):
 
 
 class AnalyzedExperiment(models.Model):
-
     ligand = models.ForeignKey(Ligand, on_delete = models.CASCADE)
     publication = models.ForeignKey(Publication, on_delete = models.CASCADE, null = True)
     receptor = models.ForeignKey('protein.Protein', on_delete = models.CASCADE)
@@ -433,8 +416,8 @@ class AnalyzedExperiment(models.Model):
     labs_quantity = models.CharField(max_length=5)
     residue = models.CharField(max_length=5,null = True)
     mutation = models.CharField(max_length=5,null = True)
-    primary= models.CharField(max_length=40,null = True)
-    secondary= models.CharField(max_length=40,null = True)
+    primary= models.CharField(max_length=100,null = True)
+    secondary= models.CharField(max_length=100,null = True)
 
 class AnalyzedAssay(models.Model):
     experiment = models.ForeignKey(

@@ -30,7 +30,7 @@ class Command(BaseBuild):
 
     # default segment length
     with open(default_segment_length_file_path, 'r') as default_segment_length_file:
-        segment_length = yaml.load(default_segment_length_file)
+        segment_length = yaml.load(default_segment_length_file, Loader=yaml.FullLoader)
 
     def handle(self, *args, **options):
         try:

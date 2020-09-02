@@ -12,6 +12,7 @@ from alignment.models import AlignmentConsensus
 import os
 import yaml
 import pickle
+from collections import OrderedDict
 
 class Command(BuildHumanProteins):
     help = 'Builds consensus sequences for human proteins in all families'
@@ -29,9 +30,16 @@ class Command(BuildHumanProteins):
     # fetch families
     families = ProteinFamily.objects.filter(slug__startswith='00').all()
 
+    def add_arguments(self, parser):
+        parser.add_argument('-p', '--proc', type=int, action='store', dest='proc', default=1, help='Number of processes to run')
+        parser.add_argument('--g_prot', action='store_true', dest='g_prot', default=False, help='Only G proteins')
+        parser.add_argument('--purge', action='store_true', dest='purge', default=False, help='Purge all consensus data')
+
     def handle(self, *args, **options):        
         try:
-            self.purge_consensus_sequences()
+            self.g_prot = options['g_prot']
+            if options['purge']:
+                self.purge_consensus_sequences()
             self.logger.info('CREATING CONSENSUS SEQUENCES')
             self.prepare_input(options['proc'], self.families)
             self.logger.info('COMPLETED CREATING CONSENSUS SEQUENCES')
@@ -52,7 +60,10 @@ class Command(BuildHumanProteins):
         sequence_num = 1
         unaligned_prefixes = ['00', '01', 'zz']
         for segment_slug, s in consensus_sequence.items():
-            segment = ProteinSegment.objects.get(slug=segment_slug)
+            if self.g_prot:
+                segment = ProteinSegment.objects.get(slug=segment_slug, proteinfamily='Alpha')
+            else:
+                segment = ProteinSegment.objects.get(slug=segment_slug)
             i = 1
             for gn, aa in s.items():
                 if segment_slug in settings.REFERENCE_POSITIONS and gn[-2:] == '50':
@@ -84,7 +95,11 @@ class Command(BuildHumanProteins):
         #     families = self.families[positions[0]:]
         # else:
         #     families = self.families[positions[0]:positions[1]]
-        families = self.families
+        if self.g_prot:
+            families = ProteinFamily.objects.filter(slug__startswith='100_001').all()
+            self.segments = ProteinSegment.objects.filter(partial=False, proteinfamily='Alpha')
+        else:
+            families = self.families
         while count.value<len(families):
             with lock:
                 family = families[count.value]
@@ -190,12 +205,21 @@ class Command(BuildHumanProteins):
             segment_info = self.get_segment_residue_information(a.forced_consensus)
             ref_positions, segment_starts, segment_aligned_starts, segment_ends, segment_aligned_ends = segment_info
             for segment_slug, s in a.forced_consensus.items():
-                segment = ProteinSegment.objects.get(slug=segment_slug)
+                if self.g_prot:
+                    segment = ProteinSegment.objects.get(slug=segment_slug, proteinfamily='Alpha')
+                else:
+                    segment = ProteinSegment.objects.get(slug=segment_slug)
                 if segment_slug in consensus_pas:
                     protein_anomalies = consensus_pas[segment_slug]
                 else:
                     protein_anomalies = []
                 if segment_slug in segment_starts:
-                    create_or_update_residues_in_segment(pc, segment, segment_starts[segment_slug],
-                        segment_aligned_starts[segment_slug], segment_ends[segment_slug],
-                        segment_aligned_ends[segment_slug], self.schemes, ref_positions, protein_anomalies, True)
+                    if self.g_prot:
+                        create_or_update_residues_in_segment(pc, segment, segment_starts[segment_slug],
+                            segment_aligned_starts[segment_slug], segment_ends[segment_slug],
+                            segment_aligned_ends[segment_slug], self.schemes, ref_positions, protein_anomalies, True, True)
+                    else:
+                        create_or_update_residues_in_segment(pc, segment, segment_starts[segment_slug],
+                            segment_aligned_starts[segment_slug], segment_ends[segment_slug],
+                            segment_aligned_ends[segment_slug], self.schemes, ref_positions, protein_anomalies, True)
+

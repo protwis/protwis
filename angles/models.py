@@ -23,19 +23,30 @@ class ResidueAngle(models.Model):
     tau_angle           = models.FloatField(default=0, null=True)
     theta               = models.FloatField(default=0, null=True)
     tau                 = models.FloatField(default=0, null=True)
+    rotation_angle      = models.FloatField(default=0, null=True)
     core_distance       = models.FloatField(default=0, null=True)
     midplane_distance   = models.FloatField(default=0, null=True)
     mid_distance        = models.FloatField(default=0, null=True)
     ss_dssp             = models.CharField(max_length=1, null=True)
     ss_stride           = models.CharField(max_length=1, null=True)
+    chi1                = models.FloatField(default=0, null=True)
+    chi2                = models.FloatField(default=0, null=True)
+    chi3                = models.FloatField(default=0, null=True)
+    chi4                = models.FloatField(default=0, null=True)
+    chi5                = models.FloatField(default=0, null=True)
+    missing_atoms       = models.IntegerField(default=0, null=True)
 
     class Meta():
         db_table = 'residue_angles'
         unique_together = ("residue", "structure")
 
-def get_angle_averages(pdbs,s_lookup,normalized = False, standard_deviation = False, split_by_amino_acid = False):
+def get_angle_averages(pdbs,s_lookup,normalized = False, standard_deviation = False, split_by_amino_acid = False, forced_class_a = False):
     start_time = time.time()
     pdbs_upper = [pdb.upper() for pdb in pdbs]
+    if forced_class_a:
+        generic_label = 'residue__generic_number__label'
+    else:
+        generic_label = 'residue__display_generic_number__label'
 
     # Deduce class
     gpcr_class = Structure.objects.filter(pdb_code__index__in=pdbs_upper
@@ -67,18 +78,19 @@ def get_angle_averages(pdbs,s_lookup,normalized = False, standard_deviation = Fa
 
     ds = ResidueAngle.objects.filter(structure__pdb_code__index__in=pdbs_upper) \
                         .exclude(residue__generic_number=None) \
-                        .values_list('residue__display_generic_number__label','structure__pk','residue__amino_acid','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse', 'tau_angle') \
-                        .order_by('residue__display_generic_number__label','residue__amino_acid')
+                        .values_list(generic_label,'structure__pk','residue__amino_acid','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse', 'tau_angle', 'rotation_angle') \
+                        .order_by(generic_label,'residue__amino_acid')
                         #'core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse'
-    custom_angles = ['a_angle', 'outer_angle', 'phi', 'psi', 'theta', 'tau','tau_angle']
-    index_names = {0:'core_distance',1:'a_angle',2:'outer_angle',3:'tau',4:'phi',5:'psi',6: 'sasa',7: 'rsa',8:'theta',9:'hse', 10:'tau_angle'}
+    custom_angles = ['a_angle', 'outer_angle', 'phi', 'psi', 'theta', 'tau','tau_angle','rotation_angle']
+    index_names = {0:'core_distance',1:'a_angle',2:'outer_angle',3:'tau',4:'phi',5:'psi',6: 'sasa',7: 'rsa',8:'theta',9:'hse', 10:'tau_angle',11:'rotation_angle'}
     # First bin all those belonging to same receptor
     matrix = {}
     matrix_normalized = {}
     prev_key = ''
     for d in ds:
         d = list(d)
-        d[0] = re.sub(r'\.[\d]+', '', d[0])
+        if not forced_class_a:
+            d[0] = re.sub(r'\.[\d]+', '', d[0])
         gn = d[0]
         aa = d[2]
 
@@ -167,18 +179,24 @@ def radial_stddev(L):
     scipy = circstd(L, 360,0)
     return scipy
 
-def get_all_angles(pdbs,pfs,normalized):
+def get_all_angles(pdbs,pfs,normalized,forced_class_a = False):
     pdbs_upper = [pdb.upper() for pdb in pdbs]
-    custom_angles = ['a_angle', 'outer_angle', 'phi', 'psi', 'theta', 'tau','tau_angle']
-    index_names = {0:'core_distance',1:'a_angle',2:'outer_angle',3:'tau',4:'phi',5:'psi',6: 'sasa',7: 'rsa',8:'theta',9:'hse', 10:'ss_dssp', 11:'tau_angle'}
+    custom_angles = ['a_angle', 'outer_angle', 'phi', 'psi', 'theta', 'tau','tau_angle', 'rotation_angle']
+    index_names = {0:'core_distance',1:'a_angle',2:'outer_angle',3:'tau',4:'phi',5:'psi',6: 'sasa',7: 'rsa',8:'theta',9:'hse', 10:'ss_dssp', 11:'tau_angle', 12:'rotation_angle'}
     all_angles = {}
+    if forced_class_a:
+        generic_label = 'residue__generic_number__label'
+    else:
+        generic_label = 'residue__display_generic_number__label'
+    print("new test",forced_class_a,generic_label)
     if normalized:
         ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=pdbs_upper) \
             .exclude(residue__generic_number=None) \
-            .values_list('residue__display_generic_number__label','structure__protein_conformation__protein__parent__family__slug','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse','ss_dssp','tau_angle'))
+            .values_list(generic_label,'structure__protein_conformation__protein__parent__family__slug','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse','ss_dssp','tau_angle', 'rotation_angle'))
         for d in ds:
             d = list(d)
-            d[0] = re.sub(r'\.[\d]+', '', d[0])
+            if not forced_class_a:
+                d[0] = re.sub(r'\.[\d]+', '', d[0])
             if d[0] not in all_angles:
                 all_angles[d[0]] = {}
                 for pf in pfs:
@@ -204,7 +222,7 @@ def get_all_angles(pdbs,pfs,normalized):
                                 new_pf.append(0)
                                 continue
 
-                            # if there is something and it's a angle type, take the mean of the values in circular space
+                            # if there is something and it's an angle type, take the mean of the values in circular space
                             if index_names[i] in custom_angles:
                                 new_pf.append(radial_average(l))
                             # if it's the categorical then use the following code
@@ -237,10 +255,11 @@ def get_all_angles(pdbs,pfs,normalized):
     else:
         ds = list(ResidueAngle.objects.filter(structure__pdb_code__index__in=pdbs) \
             .exclude(residue__generic_number=None) \
-            .values_list('residue__display_generic_number__label','structure__pdb_code__index','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse','ss_dssp','tau_angle'))
+            .values_list(generic_label,'structure__pdb_code__index','core_distance','a_angle','outer_angle','tau','phi','psi', 'sasa', 'rsa','theta','hse','ss_dssp','tau_angle','rotation_angle'))
         for d in ds:
             d = list(d)
-            d[0] = re.sub(r'\.[\d]+', '', d[0])
+            if not forced_class_a:
+                d[0] = re.sub(r'\.[\d]+', '', d[0])
             if d[0] not in all_angles:
                 all_angles[d[0]] = {}
                 for pdb in pdbs:

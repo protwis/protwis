@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.db.models import Q, F, Prefetch, Avg, StdDev, IntegerField, Sum, Case, When, Min, Max
 from django.db.models.functions import Concat
 from django.views.decorators.cache import cache_page
+from django.views.decorators.csrf import csrf_exempt
 from django.core.cache import cache
 from django.db import connection
 
@@ -15,14 +16,16 @@ import copy
 
 from contactnetwork.models import *
 from contactnetwork.distances import *
+from contactnetwork.functions import *
 from structure.models import Structure, StructureVectors, StructureExtraProteins
 from structure.templatetags.structure_extras import *
 from construct.models import Construct
 from protein.models import Protein, ProteinSegment, ProteinGProtein, ProteinGProteinPair, ProteinConformation
 from residue.models import Residue, ResidueGenericNumber
 from signprot.models import SignprotComplex
-from interaction.models import StructureLigandInteraction
+from interaction.models import StructureLigandInteraction, ResidueFragmentInteraction
 from angles.models import ResidueAngle, get_angle_averages, get_all_angles
+from mutation.models import MutationExperiment
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
@@ -38,6 +41,7 @@ import scipy.spatial.distance as ssd
 import time
 import hashlib
 import operator
+
 
 def get_hash(data):
     # create unique hash key for alignment combo
@@ -190,7 +194,7 @@ def PdbTreeData(request):
 
     return JsonResponse(data_dict)
 
-# @cache_page(60*60*24*7)
+@cache_page(60*60)
 def PdbTableData(request):
     exclude_non_interacting = True if request.GET.get('exclude_non_interacting') == 'true' else False
 
@@ -218,7 +222,7 @@ def PdbTableData(request):
                 annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role')),
 				Prefetch("extra_proteins", queryset=StructureExtraProteins.objects.all().prefetch_related(
 					'protein_conformation','wt_protein'))).order_by('protein_conformation__protein__parent','state').annotate(res_count = Sum(Case(When(protein_conformation__residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
-    
+
     if exclude_non_interacting:
         complex_structure_ids = SignprotComplex.objects.values_list('structure', flat=True)
         data = data.filter(id__in=complex_structure_ids)
@@ -248,29 +252,29 @@ def PdbTableData(request):
     data_table = "<table id2='structure_selection' border=0 class='structure_selection row-border text-center compact text-nowrap' width='100%'> \
         <thead><tr> \
             <th rowspan=2> <input class ='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'> </th> \
-            <th colspan=8>Receptor</th> \
+            <th colspan=5>Receptor</th> \
+            <th colspan=3>Species</th> \
             <th colspan=4>Structure</th> \
-            <th colspan=4>Receptor state</th> \
+            <th colspan=3>Receptor state</th> \
             <th colspan=4>Signalling protein</th> \
             <th colspan=2>Auxiliary protein</th> \
-            <th colspan=3>Ligand</th><th></th> \
+            <th colspan=2>Ligand</th> \
         </tr> \
         <tr><th></th> \
             <th></th> \
             <th></th> \
             <th></th> \
             <th>% of Seq</th> \
+            <th id=species></th> \
             <th></th> \
-            <th></th> \
-            <th>Identity % to Human</th> \
-            <th></th> \
-            <th></th> \
+            <th>Identity %<br>to Human</th> \
             <th></th> \
             <th></th> \
             <th></th> \
             <th></th> \
             <th></th> \
-            <th></th>"
+            <th>Degree<br> active (%)</th> \
+            <th>TM6 tilt</th>"
 #            <th><a href=\"http://docs.gpcrdb.org/structures.html\" target=\"_blank\">Cytosolic</br> opening</a></th>"
 #            <th><a href=\"http://docs.gpcrdb.org/structures.html\" target=\"_blank\">7TM Open IC (Å)</a></th> \
 #            <th>TM6 tilt (%, inactive: 0-X, intermed: X-Y, active Y-Z)</th> \
@@ -282,8 +286,13 @@ def PdbTableData(request):
             <th></th> \
             <th></th> \
             <th></th> \
-            <th></th> \
-            <th></th> \
+        </tr> \
+        <tr> \
+            <th colspan=6></th> \
+            <th colspan=1 id=best_species class='text-center'></th> \
+            <th colspan=4></th> \
+            <th colspan=1 id=best_res class='text-center'></th> \
+            <th colspan=12></th> \
         </tr></thead><tbody>\n"
 
     identity_lookup = {}
@@ -301,11 +310,11 @@ def PdbTableData(request):
         r['contact_representative'] = 'Yes' if s.contact_representative else 'No'
         r['class_consensus_based_representative'] = 'Yes' if s.class_contact_representative else 'No'
 
-        r['contact_representative_score'] = "{:.0%}".format(s.contact_representative_score)
+        #r['contact_representative_score'] = "{:.0%}".format(s.contact_representative_score)
 
-        r['active_class_contacts_fraction'] = "{:.0%}".format(s.active_class_contacts_fraction)
-        r['inactive_class_contacts_fraction'] = "{:.0%}".format(s.inactive_class_contacts_fraction)
-        r['diff_class_contacts_fraction'] = "{:.0%}".format(s.inactive_class_contacts_fraction - s.active_class_contacts_fraction)
+        #r['active_class_contacts_fraction'] = "{:.0%}".format(s.active_class_contacts_fraction)
+        #r['inactive_class_contacts_fraction'] = "{:.0%}".format(s.inactive_class_contacts_fraction)
+        #r['diff_class_contacts_fraction'] = "{:.0%}".format(s.inactive_class_contacts_fraction - s.active_class_contacts_fraction)
 
         r['mammal'] = 'Only show mammalian receptor structures (even if the non-mammalian is the only)' if s.mammal else ''
         r['closest_to_human'] = 'Only show structures from human or the closest species (for each receptor and state)' if s.closest_to_human else ''
@@ -349,7 +358,7 @@ def PdbTableData(request):
         # residues_s = residues_wt
         #print(pdb,"residues",protein,residues_wt,residues_s,residues_s/residues_wt)
         r['fraction_of_wt_seq'] = int(100*residues_s/residues_wt)
- 
+
         a_list = []
         for a in s.stabilizing_agents.all():
             a_list.append(a)
@@ -364,6 +373,8 @@ def PdbTableData(request):
         r['signal_protein_seq_cons'] = ''
         r['signal_protein_seq_cons_color'] = ''
         for ep in s.extra_proteins.all():
+            if ep.category == "Antibody":
+                continue
             key = '{}_{}'.format(s.protein_conformation.protein.parent.pk,ep)
             if best_signal_p[key] == ep.wt_coverage:
                 # this is the best coverage
@@ -395,8 +406,8 @@ def PdbTableData(request):
         r['resolution_best'] = s.resolution==best_resolutions['{}_{}'.format(s.protein_conformation.protein.parent.pk, s.state.name)]
 
         r['7tm_distance'] = s.distance
-        r['tm6_angle'] = str(round(s.tm6_angle))+"%" if s.tm6_angle != None else '-'
-        r['gprot_bound_likeness'] = str(round(s.gprot_bound_likeness))+"%" if s.gprot_bound_likeness != None else '-'
+        r['tm6_angle'] = str(round(s.tm6_angle)) if s.tm6_angle != None else ''
+        r['gprot_bound_likeness'] = str(round(s.gprot_bound_likeness)) if s.gprot_bound_likeness != None else ''
 
         # DEBUGGING - overwrite with distance to 6x38
 #        tm6_distance = ResidueAngle.objects.filter(structure__pdb_code__index=pdb_id.upper(), residue__generic_number__label="6x38")
@@ -432,6 +443,8 @@ def PdbTableData(request):
         r['g_protein'] = g_protein
         r['arrestin']  = arrestin
         r['fusion'] = fusion
+        if len(antibody) > 20:
+            antibody = "<span title='{}'>{}</span>".format(antibody, antibody[:20] + "..")
         r['antibody'] = antibody
 
         r['ligand'] = "-"
@@ -443,7 +456,8 @@ def PdbTableData(request):
             if len(r['ligand'])>20:
                 r['ligand'] = r['ligand'][:20] + ".."
             r['ligand_function'] = l.ligand_role.name
-            r['ligand_type'] = l.ligand.properities.ligand_type.name
+            if l.ligand.properities.ligand_type != None:
+                r['ligand_type'] = l.ligand.properities.ligand_type.name
 
 
         data_dict[pdb_id] = r
@@ -454,6 +468,12 @@ def PdbTableData(request):
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
+                        <td><p class='no_margins' style='color:{}'>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td>{}</td> \
+                        <td><p class='no_margins' style='color:{}'>{}</p></td> \
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
@@ -461,16 +481,7 @@ def PdbTableData(request):
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td><p style='color:{}'>{}</p></td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
+                        <td><p class='no_margins' style='color:{}'>{}</p></td> \
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
@@ -486,15 +497,16 @@ def PdbTableData(request):
                                         r['protein_family'],
                                         r['class'],
                                         r['fraction_of_wt_seq'],
+                                        'green' if r['closest_to_human_raw'] else 'red',
                                         r['species'],
                                         'Best' if r['closest_to_human_raw'] else '',
                                         r['identity_to_human'],
                                         r['method'],
                                         pdb_id,
+                                        'green' if r['resolution_best'] else 'red',
                                         r['resolution'],
                                         'Best' if r['resolution_best'] else '',
                                         r['state'],
-                                        r['contact_representative_score'],
                                         r['gprot_bound_likeness'],
                                         r['tm6_angle'],
                                         r['signal_protein'],
@@ -506,14 +518,13 @@ def PdbTableData(request):
                                         r['antibody'],
                                         r['ligand'],
                                         r['ligand_function'],
-                                        r['ligand_type'],
-                                        ",".join(r['extra_filter']),
                                         )
     data_table += "</tbody></table>"
     return HttpResponse(data_table)
 
     # return render(request, 'contactnetwork/test.html', {'data_table':data_table})
 
+@csrf_exempt
 def InteractionBrowserData(request):
 
     start_time = time.time()
@@ -536,30 +547,27 @@ def InteractionBrowserData(request):
                 return 1
 
     mode = 'single'
-    # PDB files
-    try:
-        pdbs1 = request.GET.getlist('pdbs1[]')
-        pdbs2 = request.GET.getlist('pdbs2[]')
-    except IndexError:
-        pdbs1 = []
-    if pdbs1 and pdbs2:
+    request_method = request.GET
+    if request.POST and (request.POST.get("pdbs[]") or request.POST.get("pdbs1[]")):
+        request_method = request.POST
+
+    if request_method.get("pdbs[]"):
+        pdbs = request_method.getlist('pdbs[]')
+    elif request_method.get("pdbs1[]") and request_method.get("pdbs2[]"):
+        pdbs1 = request_method.getlist('pdbs1[]')
+        pdbs2 = request_method.getlist('pdbs2[]')
         mode = 'double'
-    # PDB files
-    try:
-        pdbs = request.GET.getlist('pdbs[]')
-    except IndexError:
-        pdbs = []
+    else:
+        return "No selection"
 
-    pdbs = [pdb.lower() for pdb in pdbs]
-
-    pdbs1 = [pdb.lower() for pdb in pdbs1]
-    pdbs2 = [pdb.lower() for pdb in pdbs2]
-
-    if pdbs1 and pdbs2:
+    if mode == 'double':
+        pdbs1 = [pdb.lower() for pdb in pdbs1]
+        pdbs2 = [pdb.lower() for pdb in pdbs2]
         pdbs = pdbs1 + pdbs2
-
-    if mode == 'single':
+    else:
+        pdbs = [pdb.lower() for pdb in pdbs]
         pdbs1 = pdbs
+        pdbs2 = []
 
     pdbs_upper = [pdb.upper() for pdb in pdbs]
 
@@ -574,13 +582,13 @@ def InteractionBrowserData(request):
 
     # Segment filters
     try:
-        segments = request.GET.getlist('segments[]')
+        segments = request_method.getlist('segments[]')
     except IndexError:
         segments = []
 
     # Interaction types
     try:
-        i_types = [x.lower() for x in request.GET.getlist('interaction_types[]')]
+        i_types = [x.lower() for x in request_method.getlist('interaction_types[]')]
         # Add unknown type, so no interactions are returned, otherwise all are returned
         if len(i_types) == 0:
             i_types = ["DOES_NOT_EXIST"]
@@ -589,7 +597,7 @@ def InteractionBrowserData(request):
 
     # Strict interaction settings
     try:
-        strict_interactions = [x.lower() for x in request.GET.getlist('strict_interactions[]')]
+        strict_interactions = [x.lower() for x in request_method.getlist('strict_interactions[]')]
     except IndexError:
         strict_interactions = []
 
@@ -610,45 +618,86 @@ def InteractionBrowserData(request):
 
     # Options settings
     try:
-        contact_options = [x.lower() for x in request.GET.getlist('options[]')]
+        contact_options = [x.lower() for x in request_method.getlist('options[]')]
     except IndexError:
         contact_options = []
-
-
 
     i_options_filter = Q()
     # Filter out contact within the same helix
     #if contact_options and len(contact_options) > 0:
-    if not contact_options or "intrahelical" not in contact_options:
-        i_options_filter = ~Q(interacting_pair__res1__protein_segment=F('interacting_pair__res2__protein_segment'))
+    # if not contact_options or "intrahelical" not in contact_options:
+    #    i_options_filter = ~Q(interacting_pair__res1__protein_segment=F('interacting_pair__res2__protein_segment'))
 
-    # Use normalized results Defaults to True.
-    #normalized = True
-    #try:
-    #    normalized_string = request.GET.get('normalized')
-    #    if normalized_string in ['false', 'False', 'FALSE', '0']:
-    #        normalized = False
-    #except IndexError:
-    #    pass
+    # Filter out contact with backbone atoms
+    # backbone_atoms = ["C", "O", "N", "CA"]
+    # if not contact_options or "backbone" not in contact_options:
+    #    i_options_filter = i_options_filter & ~Q(atomname_residue1__in=backbone_atoms) & ~Q(atomname_residue2__in=backbone_atoms)
+
+    # Filters for inter- and intrasegment contacts + BB/SC filters
+    backbone_atoms = ["C", "O", "N", "CA"]
+    pure_backbone_atoms = ["C", "O", "N"]
+
+    # INTERsegment interactions
+    inter_segments = ~Q(interacting_pair__res1__protein_segment=F('interacting_pair__res2__protein_segment'))
+
+    # Blocking filter for empty settings
+    inter_options_filter = (inter_segments & Q(atomname_residue1="FOO"))
+
+    # BB-BB
+    if contact_options and "inter_bbbb" in contact_options:
+        bbbb = Q(atomname_residue1__in=backbone_atoms) & Q(atomname_residue2__in=backbone_atoms) & inter_segments
+        inter_options_filter = inter_options_filter | bbbb
+
+    # SC-BB
+    if contact_options and "inter_scbb" in contact_options:
+        scbb = ((Q(atomname_residue1__in=backbone_atoms) & ~Q(atomname_residue2__in=pure_backbone_atoms)) | (~Q(atomname_residue1__in=pure_backbone_atoms) & Q(atomname_residue2__in=backbone_atoms))) & inter_segments
+        inter_options_filter = inter_options_filter | scbb
+
+    # SC-SC
+    if contact_options and "inter_scsc" in contact_options:
+        scsc = ~Q(atomname_residue1__in=pure_backbone_atoms) & ~Q(atomname_residue2__in=pure_backbone_atoms) & inter_segments
+        inter_options_filter = inter_options_filter | scsc
+
+    # INTRAsegment interactions
+    intra_segments = Q(interacting_pair__res1__protein_segment=F('interacting_pair__res2__protein_segment'))
+
+    # Blocking filter for empty settings
+    intra_options_filter = (intra_segments & Q(atomname_residue1="FOO"))
+
+    # BB-BB
+    if contact_options and "intra_bbbb" in contact_options:
+        bbbb = Q(atomname_residue1__in=backbone_atoms) & Q(atomname_residue2__in=backbone_atoms) & intra_segments
+        intra_options_filter = intra_options_filter | bbbb
+
+    # SC-BB
+    if contact_options and "intra_scbb" in contact_options:
+        scbb = ((Q(atomname_residue1__in=backbone_atoms) & ~Q(atomname_residue2__in=pure_backbone_atoms)) | (~Q(atomname_residue1__in=pure_backbone_atoms) & Q(atomname_residue2__in=backbone_atoms))) & intra_segments
+        intra_options_filter = intra_options_filter | scbb
+
+    # SC-SC
+    if contact_options and "intra_scsc" in contact_options:
+        scsc = ~Q(atomname_residue1__in=pure_backbone_atoms) & ~Q(atomname_residue2__in=pure_backbone_atoms) & intra_segments
+        intra_options_filter = intra_options_filter | scsc
+
+    i_options_filter = inter_options_filter | intra_options_filter
 
     # DISCUSS: cache hash now takes the normalize along, is this necessary
     normalized = "normalize" in contact_options
+
+    forced_class_a = "classa" in contact_options
 
     # Segment filters are now disabled
     segment_filter_res1 = Q()
     segment_filter_res2 = Q()
 
-    # if segments:
-    #     segment_filter_res1 |= Q(interacting_pair__res1__protein_segment__slug__in=segments)
-    #     segment_filter_res2 |= Q(interacting_pair__res2__protein_segment__slug__in=segments)
-
+    # Cache
     hash_list = [pdbs1,pdbs2,i_types, strict_interactions, contact_options]
     hash_cache_key = 'interactionbrowserdata_{}'.format(get_hash(hash_list))
     data = cache.get(hash_cache_key)
 
     # data = None
     if data==None:
-        cache_key = 'amino_acid_pair_conservation_{}'.format(gpcr_class)
+        cache_key = 'amino_acid_pair_conservation_{}_{}'.format(gpcr_class,forced_class_a)
         print('Before getting class cache',time.time()-start_time)
         class_pair_lookup = cache.get(cache_key)
         print('After getting class cache',time.time()-start_time)
@@ -665,7 +714,10 @@ def InteractionBrowserData(request):
             for r in residues:
                 # use the class specific generic number
                 r['display_generic_number__label'] = re.sub(r'\.[\d]+', '', r['display_generic_number__label'])
-                r_pair_lookup[r['display_generic_number__label']][r['amino_acid']].add(r['protein_conformation__protein__entry_name'])
+                if forced_class_a:
+                    r_pair_lookup[r['generic_number__label']][r['amino_acid']].add(r['protein_conformation__protein__entry_name'])
+                else:
+                    r_pair_lookup[r['display_generic_number__label']][r['amino_acid']].add(r['protein_conformation__protein__entry_name'])
             class_pair_lookup = {}
 
             gen_keys = sorted(r_pair_lookup.keys(), key=functools.cmp_to_key(gpcrdb_number_comparator))
@@ -692,7 +744,103 @@ def InteractionBrowserData(request):
                             p = p1.intersection(p2)
                             if p:
                                 class_pair_lookup[coord+pair] = round(100*len(p)/sum_proteins)
-            cache.set(cache_key,class_pair_lookup,3600*24*7)
+            cache.set(cache_key, class_pair_lookup, 3600 * 24 * 7)
+
+        ### Fetch class ligand / G-protein interactions for snakeplot colouring
+        cache_key = 'class_ligand_interactions_{}_{}'.format(gpcr_class,forced_class_a)
+        class_ligand_interactions = cache.get(cache_key)
+        # class_ligand_interactions=None
+        if class_ligand_interactions==None or len(class_ligand_interactions)==0:
+            class_interactions = ResidueFragmentInteraction.objects.filter(
+                structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=gpcr_class, structure_ligand_pair__annotated=True).prefetch_related(
+                'rotamer__residue__generic_number',
+                'rotamer__residue__display_generic_number',
+                'structure_ligand_pair__structure__protein_conformation__protein__family')
+
+            class_ligand_interactions = {}
+            for i in class_interactions:
+                p = i.structure_ligand_pair.structure.protein_conformation.protein.family.slug
+                if i.rotamer.residue.generic_number:
+
+                    display_gn = re.sub(r'\.[\d]+', '', i.rotamer.residue.generic_number.label)
+                    if forced_class_a:
+                        gn = i.rotamer.residue.generic_number.label
+                    else:
+                        gn = display_gn
+
+                else:
+                    continue
+                if gn not in class_ligand_interactions.keys():
+                    class_ligand_interactions[gn] = set()
+
+                class_ligand_interactions[gn].add(p)
+            class_ligand_interactions = {key: len(value) for key, value in class_ligand_interactions.items()}
+            cache.set(cache_key, class_ligand_interactions, 3600 * 24 * 7)
+
+        cache_key = 'class_complex_interactions_{}_{}'.format(gpcr_class,forced_class_a)
+        class_complex_interactions = cache.get(cache_key)
+        # class_ligand_interactions=None
+        if class_complex_interactions == None or len(class_complex_interactions) == 0:
+
+            interactions = Interaction.objects.filter(
+                interacting_pair__referenced_structure__protein_conformation__protein__family__slug__startswith=gpcr_class
+            ).exclude(
+                interacting_pair__res1__protein_conformation_id=F('interacting_pair__res2__protein_conformation_id') # Filter interactions with other proteins
+            ).distinct(
+            ).exclude(
+                specific_type='water-mediated'
+            ).values(
+                'interaction_type',
+                'interacting_pair__referenced_structure__protein_conformation__protein__family__slug',
+                'interacting_pair__res1__generic_number__label',
+                'interacting_pair__res1__display_generic_number__label',
+                'interacting_pair__res2__pk',
+            )
+
+            class_complex_interactions = {}
+            for i in interactions:
+                p = i['interacting_pair__referenced_structure__protein_conformation__protein__family__slug']
+
+                display_gn = re.sub(r'\.[\d]+', '', i['interacting_pair__res1__display_generic_number__label'])
+                if forced_class_a:
+                    gn = i['interacting_pair__res1__generic_number__label']
+                else:
+                    gn = display_gn
+
+                if gn not in class_complex_interactions.keys():
+                    class_complex_interactions[gn] = set()
+
+                class_complex_interactions[gn].add(p)
+
+
+            class_complex_interactions = {key: len(value) for key, value in class_complex_interactions.items()}
+            cache.set(cache_key, class_complex_interactions, 3600 * 24 * 7)
+
+        cache_key = 'class_mutation_positions_{}_{}'.format(gpcr_class,forced_class_a)
+        class_mutations = cache.get(cache_key)
+        # class_ligand_interactions=None
+        if class_mutations == None or len(class_mutations) == 0:
+
+            class_mutations_q = MutationExperiment.objects.filter(protein__family__slug__startswith=gpcr_class).prefetch_related('protein__family','protein__parent__family','residue__generic_number','residue__display_generic_number').order_by('foldchange','exp_qual')
+
+            class_mutations = {}
+            for m in class_mutations_q:
+
+                if m.residue.generic_number and abs(m.foldchange)>5:
+                    p = m.protein.family.slug
+                    foldchange = m.foldchange
+                    d_gn = m.residue.display_generic_number.label
+                    gn = m.residue.generic_number.label
+                    display_gn = re.sub(r'\.[\d]+', '', d_gn)
+                    if not forced_class_a:
+                        gn = display_gn
+                    if gn not in class_mutations.keys():
+                        class_mutations[gn] = set()
+
+                    class_mutations[gn].add(p)
+
+            class_mutations = {key: len(value) for key, value in class_mutations.items()}
+            cache.set(cache_key, class_mutations, 3600 * 24 * 7)
 
         # Get the relevant interactions
         # TODO MAKE SURE ITs only gpcr residues..
@@ -727,7 +875,7 @@ def InteractionBrowserData(request):
         )
 
         # FOR DEBUGGING interaction + strict filters
-        #print(interactions.query)
+        # print(interactions.query)
         interactions = list(interactions)
 
         # Grab unique interaction_IDs
@@ -742,6 +890,23 @@ def InteractionBrowserData(request):
 
 
         data = {}
+        data['class_ligand_interactions'] = class_ligand_interactions
+        data['class_complex_interactions'] = class_complex_interactions
+        data['class_mutations'] = class_mutations
+
+        data['gpcr_class'] = gpcr_class
+
+        with open('{}_{}.txt'.format(gpcr_class,"gprotein"), 'w') as f:
+            for key,d in class_complex_interactions.items():
+                print(key,d)
+                f.write("%s,%s\n"%(key,d))
+        with open('{}_{}.txt'.format(gpcr_class,"ligand"), 'w') as f:
+            for key,d in class_ligand_interactions.items():
+                f.write("%s,%s\n"%(key,d))
+        with open('{}_{}.txt'.format(gpcr_class,"mutation"), 'w') as f:
+            for key,d in class_mutations.items():
+                f.write("%s,%s\n"%(key,d))
+
         data['segments'] = set()
         data['segment_map'] = {}
         data['interactions'] = {}
@@ -812,7 +977,8 @@ def InteractionBrowserData(request):
 
 
         # Get all unique GNS to populate all residue tables (tab4)
-        distinct_gns = list(Residue.objects.filter(protein_conformation__protein__entry_name__in=pdbs).exclude(generic_number=None).values_list('generic_number__label','protein_segment__slug').distinct().order_by())
+        # TODO, check if can be deleted... it is regenerated later with class_specific numbers
+        # distinct_gns = list(Residue.objects.filter(protein_conformation__protein__entry_name__in=pdbs).exclude(generic_number=None).values_list('generic_number__label','protein_segment__slug').distinct().order_by())
 
         all_pdbs_pairs = cache.get("all_pdbs_aa_pairs")
         # all_pdbs_pairs = None
@@ -892,10 +1058,15 @@ def InteractionBrowserData(request):
 
             # remove .50 number from the display number format (1.50x50), so only the GPCRdb number is left
             r['display_generic_number__label'] = re.sub(r'\.[\d]+', '', r['display_generic_number__label'])
-            r_class_translate_from_classA[r['generic_number__label']] = r['display_generic_number__label']
-            r_class_translate[r['display_generic_number__label']] = r['generic_number__label']
-            # change the generic number (class a) to the class specific one.
-            r['generic_number__label'] = r['display_generic_number__label']
+            if forced_class_a:
+                r_class_translate[r['generic_number__label']] = r['generic_number__label']
+                r_class_translate_from_classA[r['generic_number__label']] = r['generic_number__label']
+            else:
+                # If not, then use the class relevant numbers
+                r_class_translate[r['display_generic_number__label']] = r['generic_number__label']
+                r_class_translate_from_classA[r['generic_number__label']] = r['display_generic_number__label']
+                # change the generic number (class a) to the class specific one.
+                r['generic_number__label'] = r['display_generic_number__label']
 
             r_lookup[r['pk']] = r
             r_pair_lookup[r['generic_number__label']][r['amino_acid']].append(r['protein_conformation__protein__entry_name'])
@@ -1106,7 +1277,7 @@ def InteractionBrowserData(request):
                 current["set2"] = pdbs2.copy()
                 v["pdbs_freq_1"] = len(v["pdbs1"]) / len(pdbs1)
                 v["pdbs_freq_2"] = len(v["pdbs2"]) / len(pdbs2)
-                
+
                 #pf freq
                 v["pf_freq_1"] = 0
                 for pf, pf_pdbs in data['pfs1_lookup'].items():
@@ -1345,6 +1516,7 @@ def InteractionBrowserData(request):
         ## PREPARE ADDITIONAL DATA (INTERACTIONS AND ANGLES)
         print('Prepare distance values for',mode,'mode',time.time()-start_time)
         interaction_keys = [k.replace(",","_") for k in data['interactions'].keys()]
+        interaction_keys = [v['class_a_gns'].replace(",","_") for k,v in data['interactions'].items()]
         if mode == "double":
 
             group_1_distances = get_distance_averages(data['pdbs1'],s_lookup, interaction_keys,normalized, standard_deviation = False)
@@ -1352,7 +1524,9 @@ def InteractionBrowserData(request):
 
             print('got distance values for',mode,'mode',time.time()-start_time)
             for coord in data['interactions']:
-                distance_coord = coord.replace(",","_")
+                distance_coord = coord.replace(",", "_")
+                # Replace coord to ensure using classA as distances are indexed with those
+                distance_coord = data['interactions'][coord]['class_a_gns'].replace(",", "_")
                 if distance_coord in group_1_distances and distance_coord in group_2_distances:
                     distance_diff = round(group_1_distances[distance_coord]-group_2_distances[distance_coord],0)
                 else:
@@ -1363,6 +1537,8 @@ def InteractionBrowserData(request):
             group_distances = get_distance_averages(data['pdbs'],s_lookup, interaction_keys,normalized, standard_deviation = True)
             for coord in data['interactions']:
                 distance_coord = coord.replace(",","_")
+                # Replace coord to ensure using classA as distances are indexed with those
+                distance_coord = data['interactions'][coord]['class_a_gns'].replace(",", "_")
                 if distance_coord in group_distances:
                     distance = round(group_distances[distance_coord],0)
                 else:
@@ -1372,19 +1548,19 @@ def InteractionBrowserData(request):
         # del class_pair_lookup
         # del r_pair_lookup
         print('Prepare all angles values for',mode,'mode',time.time()-start_time)
-        data['all_angles'] = get_all_angles(pdbs_upper,data['pfs'],normalized)
+        data['all_angles'] = get_all_angles(pdbs_upper,data['pfs'],normalized, forced_class_a = forced_class_a)
         print('Prepare angles values for',mode,'mode',time.time()-start_time)
 
         if mode == "double":
 
-            group_1_angles = get_angle_averages(data['pdbs1'],s_lookup, normalized)
-            group_2_angles = get_angle_averages(data['pdbs2'],s_lookup, normalized)
-            data['all_angles_set1'] = get_all_angles(data['pdbs1'],data['pfs'],normalized)
-            data['all_angles_set2'] = get_all_angles(data['pdbs2'],data['pfs'],normalized)
+            group_1_angles = get_angle_averages(data['pdbs1'],s_lookup, normalized, forced_class_a = forced_class_a)
+            group_2_angles = get_angle_averages(data['pdbs2'],s_lookup, normalized, forced_class_a = forced_class_a)
+            data['all_angles_set1'] = get_all_angles(data['pdbs1'],data['pfs1'],normalized, forced_class_a = forced_class_a)
+            data['all_angles_set2'] = get_all_angles(data['pdbs2'],data['pfs2'],normalized, forced_class_a = forced_class_a)
 
             print('got angles values for',mode,'mode',time.time()-start_time)
             custom_angles = ['a_angle', 'outer_angle', 'phi', 'psi', 'theta', 'tau']
-            index_names = {0:'core_distance',1:'a_angle',2:'outer_angle',3:'tau',4:'phi',5:'psi',6: 'sasa',7: 'rsa',8:'theta',9:'hse',10:'tau_angle'}
+            index_names = {0:'core_distance',1:'a_angle',2:'outer_angle',3:'tau',4:'phi',5:'psi',6: 'sasa',7: 'rsa',8:'theta',9:'hse',10:'tau_angle', 11:'tau', 12:'rotation_angle'}
 
             for coord in data['interactions']:
                 gn1 = coord.split(",")[0]
@@ -1453,7 +1629,7 @@ def InteractionBrowserData(request):
         else:
 
             # get_angle_averages gets "mean" in case of single pdb
-            group_angles = get_angle_averages(data['pdbs'],s_lookup, normalized, standard_deviation=True)
+            group_angles = get_angle_averages(data['pdbs'],s_lookup, normalized, standard_deviation=True, forced_class_a = forced_class_a)
             for coord in data['interactions']:
                 gn1 = coord.split(",")[0]
                 gn2 = coord.split(",")[1]
@@ -1772,6 +1948,7 @@ def InteractionBrowserData(request):
 
         print('Prepare distance values for aa/gen for',mode,'mode',time.time()-start_time)
         interaction_keys = [k.replace(",","_") for k in data['interactions'].keys()]
+        interaction_keys = [v['class_a_gns'].replace(",","_") for k,v in data['interactions'].items()]
         if mode == "double":
 
 
@@ -1781,18 +1958,19 @@ def InteractionBrowserData(request):
 
             print('got distance values for',mode,'mode',time.time()-start_time)
             for key, d in data['tab2'].items():
-                if key in group_1_distances and key in group_2_distances:
-                    distance_diff = round(group_1_distances[key]-group_2_distances[key],2)
+                class_a_key = '{}{}'.format(d['classA'], key[-2:])
+                if class_a_key in group_1_distances and class_a_key in group_2_distances:
+                    distance_diff = round(group_1_distances[class_a_key]-group_2_distances[class_a_key],2)
                 else:
                     distance_diff = ""
                 d['distance'] = distance_diff
             print('Done merging distance values for',mode,'mode',time.time()-start_time)
         else:
             group_distances = get_distance_averages(data['pdbs'],s_lookup, interaction_keys,normalized, standard_deviation = False, split_by_amino_acid = True)
-
             for key, d in data['tab2'].items():
-                if key in group_distances:
-                    distance_diff = round(group_distances[key],2)
+                class_a_key = '{}{}'.format(d['classA'], key[-2:])
+                if class_a_key in group_distances:
+                    distance_diff = round(group_distances[class_a_key],2)
                 else:
                     distance_diff = ""
                 d['distance'] = distance_diff
@@ -1801,8 +1979,8 @@ def InteractionBrowserData(request):
         print('calculate angles per gen/aa',time.time()-start_time)
         if mode == "double":
 
-            group_1_angles_aa = get_angle_averages(data['pdbs1'],s_lookup, normalized, standard_deviation = False, split_by_amino_acid = True)
-            group_2_angles_aa = get_angle_averages(data['pdbs2'],s_lookup, normalized, standard_deviation = False, split_by_amino_acid = True)
+            group_1_angles_aa = get_angle_averages(data['pdbs1'],s_lookup, normalized, standard_deviation = False, split_by_amino_acid = True, forced_class_a = forced_class_a)
+            group_2_angles_aa = get_angle_averages(data['pdbs2'],s_lookup, normalized, standard_deviation = False, split_by_amino_acid = True, forced_class_a = forced_class_a)
 
             for key, d in data['tab2'].items():
                 gen1 = key.split(',')[0]
@@ -1850,7 +2028,7 @@ def InteractionBrowserData(request):
             del group_2_angles_aa
         else:
 
-            group_angles_aa = get_angle_averages(data['pdbs'],s_lookup, normalized, standard_deviation = True, split_by_amino_acid = True)
+            group_angles_aa = get_angle_averages(data['pdbs'],s_lookup, normalized, standard_deviation = True, split_by_amino_acid = True, forced_class_a = forced_class_a)
 
             for key, d in data['tab2'].items():
                 gen1 = key.split(',')[0]
@@ -1930,12 +2108,14 @@ def InteractionBrowserData(request):
 
                     pdbs1_with_aa = list(set(pdbs).intersection(pdbs1))
                     pdbs2_with_aa = list(set(pdbs).intersection(pdbs2))
-                    temp_score_dict.append([aa,len(pdbs1_with_aa),len(pdbs2_with_aa)])
+                    temp_score_dict.append([aa,len(pdbs1_with_aa),len(pdbs2_with_aa), len(pdbs)])
 
                 most_freq_set1 = sorted(temp_score_dict.copy(), key = lambda x: -x[1])
                 most_freq_set2 = sorted(temp_score_dict.copy(), key = lambda x: -x[2])
+                most_freq_combi = sorted(temp_score_dict.copy(), key = lambda x: -x[3])
                 data['tab4'][res1]['set1_seq_cons'] = most_freq_set1[0]
                 data['tab4'][res1]['set2_seq_cons'] = most_freq_set2[0]
+                data['tab4'][res1]['all_seq_cons'] = most_freq_combi[0]
 
                 if res1 in group_1_angles:
                     data['tab4'][res1]['angles_set1'] = [ round(elem) if isinstance(elem, float) else '' for elem in group_1_angles[res1] ]
@@ -1980,16 +2160,164 @@ def InteractionBrowserData(request):
                 data['tab4'][res1]['class_cons'] = ['','']
                 print('no res1',res1,'in class lookup')
 
-        ## Clean up to allow pickle / cache
+        # calculate information for 2D helical displacement plot
+        if mode == "double":
+            pdbs1_upper = [pdb.upper() for pdb in pdbs1]
+            pdbs2_upper = [pdb.upper() for pdb in pdbs2]
+            helical_time = time.time()
+            print("Start helical movements")
+            data['tm_movement_2D'] = {}
+            # data['tm_movement_2D']["classA_ligands"] = tm_movement_2D(pdbs1_upper, pdbs2_upper, 2, data, r_class_translate_from_classA)
+            data['tm_movement_2D']["membrane_mid"] = tm_movement_2D(pdbs1_upper, pdbs2_upper, 3, data, r_class_translate_from_classA)
+            data['tm_movement_2D']["intracellular"] = tm_movement_2D(pdbs1_upper, pdbs2_upper, 1, data, r_class_translate_from_classA)
+            data['tm_movement_2D']["extracellular"] = tm_movement_2D(pdbs1_upper, pdbs2_upper, 0, data, r_class_translate_from_classA)
+
+            # viewbox
+            diff_x = 0
+            diff_y = 0
+            for x in data['tm_movement_2D']: # 2D set
+                setx = [z["x"] for y in ["coordinates_set1", "coordinates_set2"] for z in data['tm_movement_2D'][x][y]]
+                sety = [z["y"] for y in ["coordinates_set1", "coordinates_set2"] for z in data['tm_movement_2D'][x][y]]
+
+                if diff_x < (max(setx) - min(setx)):
+                    diff_x = max(setx) - min(setx)
+
+                if diff_y < (max(sety) - min(sety)):
+                    diff_y = max(sety) - min(sety)
+
+            data['tm_movement_2D']["viewbox_size"] = {"diff_x": diff_x, "diff_y" : diff_y}
+
+            print("Helical movement calculations", time.time() - helical_time)
+
+        # calculate distance movements
+        if mode == "double":
+            pdbs1_upper = [pdb.upper() for pdb in pdbs1]
+            pdbs2_upper = [pdb.upper() for pdb in pdbs2]
+            print('Start 1')
+            start = time.time()
+            dis1 = Distances()
+            dis1.load_pdbs(pdbs1_upper)
+            dis1.fetch_and_calculate(with_arr = True)
+            print('done fetching set 1',time.time()-start)
+            # dis1.calculate_window(list_of_gns)
+        #    dis1.calculate()
+
+            start = time.time()
+            dis2 = Distances()
+            dis2.load_pdbs(pdbs2_upper)
+            dis2.fetch_and_calculate(with_arr = True)
+            # dis2.calculate_window(list_of_gns)
+            #dis2.calculate()
+            print('done fetching set 2',time.time()-start)
+
+            diff = OrderedDict()
+            from math import sqrt
+            from scipy import stats
+
+            # for d1 in dis1.stats_window_reduced:
+            # for d1 in dis1.stats_window:
+
+            start = time.time()
+            total = {}
+            common_labels = list(set(dis1.stats_key.keys()).intersection(dis2.stats_key.keys()))
+            for label in common_labels:
+
+                # Get variables
+                d1, d2 = dis1.stats_key[label],dis2.stats_key[label]
+                # Correct decimal
+                mean1, mean2 = d1[1],d2[1]
+                std1,std2 = d1[2],d2[2]
+                var1,var2 = std1**2,std2**2
+                n1, n2 = d1[4],d2[4]
+
+                mean_diff = mean1-mean2
+
+                # Save values for NGL calcs
+                gn1,gn2 = label.split("_")
+                if gn1 not in total:
+                    total[gn1] = {}
+                if gn2 not in total:
+                    total[gn2] = {}
+                total[gn1][gn2] = total[gn2][gn1] = round(mean_diff,1)
+                # # Make easier readable output
+                # individual_pdbs_1 = dict(zip(d1[6], d1[5]))
+                # individual_pdbs_2 = dict(zip(d2[6], d2[5]))
+
+                # if n1>1 and n2>1 and var1>0 and var2>0:
+                #     ## T test to assess seperation of data (only if N>1 and there is variance)
+                #     t_stat_welch = abs(mean1-mean2)/(sqrt( (var1/n1) + (var2/n2)  ))
+                #     df = n1+n2 - 2
+                #     p = 1 - stats.t.cdf(t_stat_welch,df=df)
+                # else:
+                #     p = 0
+
+                # diff[label] = [round(mean_diff,1),[std1,std2],[mean1,mean2],[n1,n2],p,[individual_pdbs_1,individual_pdbs_2]]
+
+            # diff =  OrderedDict(sorted(diff.items(), key=lambda t: -abs(t[1][0])))
+            # print(diff)
+            print('done diff',time.time()-start)
+            start = time.time()
+            ngl_max_diff = 0
+            for gn1 in total.keys():
+                vals = []
+                for gn,val in total[gn1].items():
+                    if gn[0]!=gn1[0]:
+                        #if not same segment
+                        vals.append(val)
+                total[gn1]['avg'] = round(float(sum(vals))/max(len(vals),1),1)
+                if abs(total[gn1]['avg'])>ngl_max_diff:
+                    ngl_max_diff = round(abs(total[gn1]['avg']),1)
+
+            print('done ngl', time.time() - start)
+            data['distances'] = total
+            data['ngl_max_diff_distance'] = ngl_max_diff
+
         data['tab3'] = {}
         data['pdbs'] = list(data['pdbs'])
         data['proteins'] = list(data['proteins'])
         data['pfs'] = list(data['pfs'])
         data['pfs_lookup'] = dict(data['pfs_lookup'])
+
         data['segm_lookup'] = segm_lookup
+        data['segm_lookup_ordered'] = sorted(segm_lookup, key=functools.cmp_to_key(gpcrdb_number_comparator))
         data['segments'] = list(data['segments'])
         data['normalized'] = normalized
+        data['forced_class_a'] = forced_class_a
         data['residue_table'] = r_class_translate
+
+
+        excluded_segment = ['C-term','N-term'] #'ICL1','ECL1','ECL2','ICL2'
+        segments = ProteinSegment.objects.all().exclude(slug__in = excluded_segment)
+        proteins =  Protein.objects.filter(entry_name__in=list(data['proteins'])).distinct().all()
+        a = Alignment()
+        a.ignore_alternative_residue_numbering_schemes = True
+        a.load_proteins(proteins)
+        a.load_segments(segments) #get all segments to make correct diagrams
+        # build the alignment data matrix
+        a.build_alignment()
+        # calculate consensus sequence + amino acid and feature frequency
+        a.calculate_statistics()
+        consensus = a.full_consensus
+        data['snakeplot_lookup'] = {}
+        data['snakeplot_lookup_aa'] = {}
+        data['snakeplot_lookup_aa_cons'] = {}
+        for a in consensus:
+            if a.display_generic_number:
+                # Be sure to use the correct GN
+                gn = re.sub(r'\.[\d]+', '', a.display_generic_number.label)
+                if forced_class_a:
+                    gn = a.family_generic_number
+                a.display_generic_number.label = gn
+                data['snakeplot_lookup'][gn] = a.sequence_number
+                data['snakeplot_lookup_aa'][gn] = a.amino_acid
+                gen_aa = gn + a.amino_acid
+                if gen_aa in class_pair_lookup:
+                    data['snakeplot_lookup_aa_cons'][gn] = class_pair_lookup[gen_aa]
+                else:
+                    data['snakeplot_lookup_aa_cons'][gn] = 0
+        from common.diagrams_gpcr import DrawSnakePlot
+        snakeplot = DrawSnakePlot(consensus, 'Class A', 'family_diagram_preloaded_data',nobuttons = True)
+        data['snakeplot'] = str(snakeplot)
         if mode == 'double':
             data['pdbs1'] = list(data['pdbs1'])
             data['pdbs2'] = list(data['pdbs2'])
@@ -2341,7 +2669,7 @@ def coreMatrix(pdbs, core = True, middle = False):
 
 def stableResMatrix(pdbs):
     # all classes
-    # classes = ['001', '002', '003', '004', '005']
+    # classes = ['001', '002', '003', '004', '006']
     # results = []
     # for selclass in classes:
     #     numStructs = Distance.objects.filter(structure__protein_conformation__protein__family__slug__startswith=selclass).values('structure_id').distinct().count()
@@ -2398,12 +2726,12 @@ def stableResMatrix(pdbs):
 
 
     # Most stable residues from each class
-    # stable_residues = {'001':'3x53', '002':'1x44', '003':'', '004':'5x42', '005':'1x29'}
-    stable_residues = {'001':'4x50', '002':'1x44', '003':'', '004':'5x42', '005':'1x29'}
+    # stable_residues = {'001':'3x53', '002':'1x44', '003':'', '004':'5x42', '006':'1x29'}
+    stable_residues = {'001':'4x50', '002':'1x44', '003':'', '004':'5x42', '006':'1x29'}
 
     stable_distances = {}
     pdb_classes = {}
-    for selclass in ['001', '002', '003', '004', '005']:
+    for selclass in ['001', '002', '003', '004', '006']:
         # select all distances to selected residue
         reference = stable_residues[selclass]
         ds = list(Distance.objects.filter(structure__pdb_code__index__in=pdbs) \
@@ -2484,7 +2812,7 @@ def ClusteringData(request):
         [distance_matrix, pdbs] = originMatrix(pdbs)
     elif cluster_method == '7': # distance to origin
         dis = Distances()
-        dis.lower_only = True
+        dis.filtered_gns = True
         print("Print setting lower only")
         dis.load_pdbs(pdbs)
         distance_matrix = dis.get_distance_matrix(normalize = False)
@@ -3082,12 +3410,13 @@ def ServePDB(request, pdbname):
     only_gns = list(structure.protein_conformation.residue_set.exclude(generic_number=None).values_list('protein_segment__slug','sequence_number','generic_number__label','display_generic_number__label').all())
     only_gn = []
     gn_map = []
+    gn_map_classa = []
     segments = {}
     for gn in only_gns:
         only_gn.append(gn[1])
         # Use and format the display generic number to get the shorthand class specific number.
-        gn_map.append(re.sub(r'\.[\d]+', '',gn[3]))
-        # gn_map.append(gn[2])
+        gn_map.append(re.sub(r'\.[\d]+', '', gn[3]))
+        gn_map_classa.append(gn[2])
         if gn[0] not in segments:
             segments[gn[0]] = []
         segments[gn[0]].append(gn[1])
@@ -3096,6 +3425,7 @@ def ServePDB(request, pdbname):
     data['pdb'] = structure.pdb_data.pdb
     data['only_gn'] = only_gn
     data['gn_map'] = gn_map
+    data['gn_map_classa'] = gn_map_classa
     data['segments'] = segments
     data['chain'] = structure.preferred_chain
     # positioning data

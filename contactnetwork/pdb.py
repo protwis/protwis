@@ -9,7 +9,7 @@ from io import StringIO
 # Download the specified PDB file from RCSB.
 def pdb_get_structure(pdb_name):
     # Download the PDB
-    response = urllib.request.urlopen('http://www.rcsb.org/pdb/files/%s.pdb' % pdb_name)
+    response = urllib.request.urlopen('https://www.rcsb.org/pdb/files/%s.pdb' % pdb_name)
 
     # Check that the requested PDB name is valid
     if response.getcode() == 404:

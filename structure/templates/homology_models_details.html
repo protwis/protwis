@@ -114,7 +114,7 @@ canvas {
         <div style="float: left; width: 60%;">
             <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
             <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
-                <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><button id="fullscreen">Full Screen</button><a href="https://github.com/arose/ngl"> NGL</a> is a WebGL based 3D viewer powered by <a href="http://mmtf.rcsb.org">MMTF</a>.</p>
+                <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><button id="fullscreen">Full Screen</button><a href="https://github.com/arose/ngl"> NGL</a> is a WebGL based 3D viewer powered by <a href="https://mmtf.rcsb.org">MMTF</a>.</p>
             </div>
         </div>
     </div>
@@ -209,7 +209,7 @@ canvas {
         <div style="float: left; width: 50%;">
             <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
             <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
-                <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a> is a WebGL based 3D viewer powered by <a href="http://mmtf.rcsb.org">MMTF</a>.</p>
+                <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a> is a WebGL based 3D viewer powered by <a href="https://mmtf.rcsb.org">MMTF</a>.</p>
             </div>
             <div style='width: 90%; display:table; position:relative;'>
                 <div style='width: 20%; display: table-cell;'>
@@ -236,7 +236,7 @@ canvas {
                 <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>
             </div> -->
             <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 50%;">
-                
+
                 <style>
                     table.dataTable thead th {padding: 3px 1px 3px 3px;}
                 </style>
@@ -295,29 +295,12 @@ canvas {
 {% block addon_js %}
     <script src="{% static 'home/js/ngl.js' %}"> </script>
         <script>
-        // http://proteinformatics.charite.de/ngl/doc/#User_manual/Usage/Molecular_representations
-        // http://arose.github.io/ngl/api/Stage.html
-        // http://arose.github.io/ngl/js/examples.js
-        // http://arose.github.io/ngl/
         document.addEventListener( "DOMContentLoaded", function(){
             stage = new NGL.Stage( "viewport", { backgroundColor: "white" } );
-            var color_residues = "{{color_residues}}";
-            var color_array = [];
-            var l = color_residues.split(",")
-            for (i=0; i<l.length; i++) {
-                var ar = l[i].split(":");
-                for (j=0; j<ar.length; j++) {
-                    ar[j] = ar[j].replace(" ","")
-                    ar[j] = ar[j].replace("&#39;","")
-                    ar[j] = ar[j].replace("&#39;","")
-                    ar[j] = ar[j].replace("{","")
-                    ar[j] = ar[j].replace("}","")
-                }
-                color_array.push(ar);
-            }
-            color_array.push(["darkorchid","*"])
+            var color_residues = JSON.parse('{{color_residues|safe}}');
+            color_residues.push(["darkorchid","*"])
 
-            var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( color_array );
+            var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( color_residues );
 
             if ("{{state}}"=="refined") {
                 stage.loadFile( "../pdb/{{modelname}}_{{state}}", { ext: "pdb" }  ).then( function( o ){

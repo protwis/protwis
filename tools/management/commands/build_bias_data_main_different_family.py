@@ -87,7 +87,9 @@ class Command(BaseBuild):
             print('--error--', msg, '\n')
             self.logger.info("The error appeared in def handle")
 
-
+    def purge_bias_data(self):
+        delete_bias_experiment = AnalyzedExperiment.objects.all()
+        delete_bias_experiment.delete()
 
     def fetch_experiment(self, publication, ligand, receptor, residue, mutation, source):
         """
@@ -134,7 +136,7 @@ class Command(BaseBuild):
             fin_obj['vendor_counter'] = vendor_counter
             rd.append(fin_obj)
 
-        print('---counter of assays at process data---', counter)
+
         return rd
 
     def change(self, rd):
@@ -181,6 +183,9 @@ class Command(BaseBuild):
                 temp_dict['assay_time_resolved'] = j['children'][0].assay_time_resolved
                 temp_dict['quantitive_activity'] = j['children'][0].quantitive_activity
                 temp_dict['quantitive_activity_initial'] = j['children'][0].quantitive_activity
+                if temp_dict['quantitive_activity_initial']:
+                    temp_dict['quantitive_activity_initial'] = (-1)*math.log10(temp_dict['quantitive_activity_initial'])
+                    temp_dict['quantitive_activity_initial'] = "{:.2F}".format(Decimal(temp_dict['quantitive_activity_initial']))
                 temp_dict['qualitative_activity'] = j['children'][0].qualitative_activity
                 temp_dict['quantitive_unit'] = j['children'][0].quantitive_unit
                 temp_dict['quantitive_efficacy'] = j['children'][0].quantitive_efficacy
@@ -204,9 +209,8 @@ class Command(BaseBuild):
                 send[increment] = temp
                 increment = increment + 1
                 counter += 1
-        print('---counter of assays at change---', counter)
-        return send
 
+        return send
 
     def process_dublicates(self, context):
         '''
@@ -223,7 +227,7 @@ class Command(BaseBuild):
             for data in j[1]:
                 if data['assay'][0]['bias_reference'].lower() != "" and data['assay'][0]['bias_reference'] =='Reference':
                     if data in ref:
-                        print('already in list')
+                        pass
                     else:
                         ref.append(data)
 
@@ -250,7 +254,7 @@ class Command(BaseBuild):
                     send[increment] = data
                     increment += 1
 
-        print('---counter at process_refs---', increment,'\n')
+
         results_temp = self.process_group(send)
 
         return results_temp
@@ -268,7 +272,7 @@ class Command(BaseBuild):
                 if j not in temp_obj:
                     temp_obj.append(j)
                 else:
-                    print('passing dublicate___-')
+                    pass
             i[1]['assay'] = temp_obj
             test = sorted(i[1]['assay'], key=lambda k: k['quantitive_activity']
                           if k['quantitive_activity'] else 999999,  reverse=False)
@@ -284,17 +288,15 @@ class Command(BaseBuild):
 
             most_potent = dict()
             for x in i[1]['biasdata']:
-                if x['log_bias_factor'] and x['log_bias_factor'] < 0:
+                if x['log_bias_factor'] and isinstance(x['log_bias_factor'], int) and x['log_bias_factor'] < 0:
                     for j in i[1]['biasdata']:
                         if j['order_no'] == 0:
                             j['order_no'] = x['order_no']
                             x['order_no'] = 0
                     self.calc_bias_factor(i[1]['biasdata'])
 
-
             self.calc_potency(i[1]['biasdata'])
 
-    # TODO: done
     def caclulate_bias_factor_variables(self,a,b,c,d):
         lgb = (a-b)-(c-d)
         return lgb
@@ -333,11 +335,20 @@ class Command(BaseBuild):
                             temp_calculation, 1)
                     elif (i['quantitive_measure_type'].lower() == 'ic50' and temp_reference['quantitive_measure_type'].lower() == 'ic50' ):
                         i['log_bias_factor'] = 'Only agonist in main pathway'
+
+                    elif (i['qualitative_activity'] =='No activity' ):
+                        i['log_bias_factor'] = "Full Bias"
+
+                    elif (i['qualitative_activity'] =='Low activity' ):
+                        i['log_bias_factor'] = "High Bias"
+
+                    elif (i['qualitative_activity'] =='High activity' ):
+                        i['log_bias_factor'] = "Low Bias"
+
                 else:
                     i['log_bias_factor'] = None
             except:
                 i['log_bias_factor'] = None
-
 
     def calc_t_coefficient(self, biasdata):
         for i in biasdata:
@@ -390,8 +401,7 @@ class Command(BaseBuild):
             temp_obj.append(j[1])
             context[name] = temp_obj
             context[name][0]['publication'] == name
-        print('---context[name]s---', len(context), '\n')
-        print('---counter of data at process_references---', counter)
+
         send = self.process_dublicates(context)
 
         return send
@@ -496,7 +506,7 @@ class Command(BaseBuild):
             labs = list()
             i[1]['labs'] = 0
             labs.append(i[1]['publication'])
-            lab_counter = 0
+            lab_counter = 1
             for j in context.items():
                 if j[1]['publication'] not in labs:
                     if set(i[1]['authors']) & set(j[1]['authors']):
@@ -505,7 +515,7 @@ class Command(BaseBuild):
                         i[1]['labs'] = lab_counter
 
 
-            temp_obj = 0
+            temp_obj = 1
             name = str(i[1]['ref_ligand_experiment']) + \
                 '/' + str(i[1]['ligand']) + '/' + str(i[1]['receptor'])
             if(name in temp):
@@ -533,18 +543,24 @@ class Command(BaseBuild):
         return vendor_count
 
     def fetch_receptor_trunsducers(self, receptor):
-        primary = ""
-        secondary = ""
+        primary = set()
+        temp = str()
+        temp1 = str()
+        secondary = set()
         gprotein = ProteinGProteinPair.objects.filter(protein=receptor)
         for x in gprotein:
             if x.transduction and x.transduction == 'primary':
-                primary += str(x.g_protein.name)
+                primary.add(x.g_protein.name)
             elif x.transduction and x.transduction == 'secondary':
-                secondary += str(x.g_protein.name)
-        return primary, secondary
+                secondary.add(x.g_protein.name)
+        for i in primary:
+            temp += str(i) + str(', ')
+
+        for i in secondary:
+            temp1 += str(i) + str(', ')
+        return temp, temp1
 
     def bias_list(self):
-        print('i am in')
         context = {}
         content = BiasedExperiment.objects.all().prefetch_related(
             'experiment_data', 'ligand', 'receptor', 'publication', 'publication__web_link', 'experiment_data__emax_ligand_reference',

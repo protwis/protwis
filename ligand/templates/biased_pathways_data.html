@@ -1,0 +1,168 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/biased_ligands.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}" type="text/css" />
+{% endblock %}
+
+{% block content %}
+{% autoescape off %}
+<div class="container body-content">
+  <h2 class="sub-header">Experiment Data</h2>
+  <div class="row">
+    <div class="col-xs-4">
+
+      <h3>Ligand</h3>
+      <table class="table table-striped table-bordered">
+        <tr>
+          <td>Biased Ligand</td>
+          <td>{{experiment.ligand.name}}</td>
+        </tr>
+        <tr>
+          <td>pChEMBL ID</td>
+          <td>{{experiment.chembl}}</td>
+        </tr>
+        <tr>
+          <td>Smiles</td>
+          <td style="word-wrap: break-word;
+        word-break: break-all;
+        white-space: normal;">
+            {{experiment.ligand.properities.smiles}}</td>
+        </tr>
+        <tr>
+          <td>Inchikey</td>
+          <td>{{experiment.ligand.properities.inchikey}}</td>
+        </tr>
+        <tr>
+          <td>Type</td>
+          <td>{{experiment.ligand.properities.ligand_type}}</td>
+        </tr>
+        <tr>
+          <td>Reference Ligand</td>
+          <td>
+              {{experiment.reference_ligand}}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="col-xs-4">
+      <h3>Receptor</h3>
+      <table class="table table-striped table-bordered">
+        <tr>
+          <td>Receptor</td>
+          <td>{{experiment.receptor}}</td>
+        </tr>
+        <tr>
+          <td>Class</td>
+          <td>{{experiment.receptor.family.parent.parent.parent.name}}</td>
+        </tr>
+        <tr>
+          <td>Family</td>
+          <td>{{experiment.receptor.family.parent}}</td>
+        </tr>
+        <tr>
+          <td>UniProt</td>
+          <td>{{experiment.receptor.entry_short}}</td>
+        </tr>
+        <tr>
+          <td>IUPHAR</td>
+          <td>{{experiment.receptor.name}}</td>
+        </tr>
+        <tr>
+          <td>Species</td>
+          <td>{{experiment.receptor.species}}</td>
+        </tr>
+        <tr>
+          <td>Endogenous Ligand</td>
+          <td>{{experiment.endogenous_ligand}}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="col-xs-4">
+      <h3>Pathway data</h3><table class="table table-striped table-bordered">
+        <tr>
+            <td>Signalling protein</td>
+            <td>{{experiment.signalling_protein}}</td>
+        </tr>
+        <tr>
+            <td>Relevance</td>
+            <td>{{experiment.relevance}}</td>
+        </tr>
+        <tr>
+          <td>Article Author</td>
+          <td>
+            <a href='{{experiment.publication.web_link}}' target='blank'>
+              {{experiment.publication.authors}}</td>
+        </tr>
+        <tr>
+          <td>Article DOI</td>
+          <td>
+            <a href='{{experiment.publication.web_link}}' target='blank'>
+              {{experiment.publication.reference}}</td>
+        </tr>
+
+      </table>
+    </div>
+  </div>
+
+  <div class="row">
+    {%for data in experiment.biased_pathway.all%}
+
+      <h3 class="sub-header" style="text-transform: capitalize;">Pathway effect outcomes </h3>
+      <div class="table-responsive">
+        <table class="table table-striped" id="vendors_table">
+            <tr>
+            <td style="width:25%">High level term</td>
+            <td>{{data.pathway_outcome_high}}</td>
+            </tr>
+            <tr>
+            <td style="width:25%">Summary</td>
+            <td>{{data.pathway_outcome_summary}}</td>
+            </tr>
+
+            <tr>
+            <td style="width:25%">Detailed description</td>
+            <td>{{data.pathway_outcome_detail}}</td>
+            </tr>
+        </table>
+
+    </div>
+
+    <h3 class="sub-header" style="text-transform: capitalize;">Experiment</h3>
+    <div class="table-responsive">
+      <table class="table table-striped" id="vendors_table">
+            <tr>
+            <td style="width:25%">Pathway distinction</td>
+            <td>{{data.experiment_pathway_distinction}}</td>
+            </tr>
+
+            <tr>
+            <td style="width:25%">System</td>
+            <td>{{data.experiment_system}}</td>
+            </tr>
+
+            <tr>
+            <td style="width:25%">Assesment method</td>
+            <td>{{data.experiment_outcome_method}}</td>
+            </tr>
+
+      </table>
+
+  </div>
+
+
+
+
+
+    {%endfor%}
+  </div>
+
+
+</div>
+</br>
+</br>
+
+{% endautoescape %}
+
+{% endblock %}
