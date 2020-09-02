@@ -225,8 +225,12 @@ class Command(BaseBuild):
             removed = removed+[1001]
         elif structure.pdb_code.index=='6QZH':
             removed = list(range(248,252))+list(range(1001,1473))+list(range(255,260))
-
-
+        elif structure.pdb_code.index in ['6KUX', '6KUY']:
+            deletions = list(range(1,20))
+        elif structure.pdb_code.index=='7BZ2':
+            deletions = list(range(240,265))
+        elif structure.pdb_code.index=='7C6A':
+            removed = list(range(1,35))
         # print('removed',removed)
         # removed = []
         if len(deletions)>len(d['wt_seq'])*0.9:
@@ -277,7 +281,7 @@ class Command(BaseBuild):
             print(structure,'More (or almost) sequence set to be removed from sequence',len(removed),' than exists',all_pdb_residues_in_chain,' removing removed[]')
             #print(removed)
             removed = []
-
+        
         for pp in ppb.build_peptides(chain, aa_only=False): #remove >1000 pos (fusion protein / gprotein)
             for i,res in enumerate(pp,1 ):
                 id = res.id
@@ -321,7 +325,7 @@ class Command(BaseBuild):
                 if residue.resname != "NH2": # skip amidation of peptide
                     pdbseq[chain][pos] = [i, AA[residue.resname]]
                     i += 1
-
+        
         parent_seq_protein = str(structure.protein_conformation.protein.parent.sequence)
         # print(structure.protein_conformation.protein.parent.entry_name)
         rs = Residue.objects.filter(protein_conformation__protein=structure.protein_conformation.protein.parent).prefetch_related('display_generic_number','generic_number','protein_segment')
@@ -351,6 +355,8 @@ class Command(BaseBuild):
 
         if structure.pdb_code.index in ['6NBI','6NBF','6NBH','6U1N']:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -3, -1)
+        elif structure.pdb_code.index in ['6KUX', '6KUY', '6KUW']:
+            pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -4, -1.5)
         else:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -5, -2)
 
@@ -372,6 +378,9 @@ class Command(BaseBuild):
         elif structure.pdb_code.index in ['3V2Y']:
             ref_seq = ref_seq[:209]+ref_seq[210:]
             temp_seq = temp_seq[:215]+temp_seq[216:]
+        elif structure.pdb_code.index in ['6KUX','6KUY']:
+            ref_seq = ref_seq[:416]+('-'*(416-233))+ref_seq[416:]
+            temp_seq = temp_seq[:233]+('-'*(416-233))+temp_seq[233:]
 
         for i, r in enumerate(ref_seq, 1): #loop over alignment to create lookups (track pos)
             # print(i,r,temp_seq[i-1]) #print alignment for sanity check
@@ -1043,6 +1052,8 @@ class Command(BaseBuild):
                     if 'structure_method' in sd and sd['structure_method']:
                         structure_type = sd['structure_method'].capitalize()
                         structure_type_slug = slugify(sd['structure_method'])
+                        if sd['pdb']=='6ORV':
+                            structure_type_slug = 'electron-microscopy'
 
                         try:
                             st, created = StructureType.objects.get_or_create(slug=structure_type_slug,
@@ -1091,8 +1102,12 @@ class Command(BaseBuild):
                         self.logger.warning('Preferred chain not specified for structure {}'.format(sd['pdb']))
                     if 'resolution' in sd:
                         s.resolution = float(sd['resolution'])
+                        if sd['pdb']=='6ORV':
+                            s.resolution = 3.00
                     else:
                         self.logger.warning('Resolution not specified for structure {}'.format(sd['pdb']))
+                    if sd['pdb']=='6ORV':
+                        sd['publication_date'] = '2020-01-08'
                     if 'publication_date' in sd:
                         s.publication_date = sd['publication_date']
                     else:
