@@ -91,7 +91,7 @@
                         <img src="{% static 'home/logo/gpcr/main.png' %}" style="height:80px;width:80px;">
                     </div>
                     <div class='col-md-11'>
-                        <p>The GPCR database (<strong>GPCRdb</strong>) contains data, diagrams and web tools
+                        <p style="text-align:justify">The GPCR database (<strong>GPCRdb</strong>) contains data, diagrams and web tools
                             to help researchers understand G protein-coupled receptors (GPCRs). Users can browse up
                             to date curated GPCR structures and the largest collections of receptor mutants.
                             Diagrams can be produced and downloaded to illustrate receptor residues (snake-plot and helix box diagrams) and
@@ -100,7 +100,7 @@
                             amino acid conservation and have been assigned generic residue numbering for
                             equivalent residues in different receptors. For an overview read the GPCRdb
                             <a href="https://files.gpcrdb.org/GPCRdb_Poster.pdf">poster</a>,
-                            <a href="https://docs.gpcrdb.org/citing.html">articles</a> or
+                            <a onclick="citation_tool(window.location.href);" href="#">articles</a> or
                             <a href="https://docs.gpcrdb.org/">documentation</a>.</p>
                     </div>
                 </div>
@@ -132,6 +132,38 @@
     <!-- Twitter, release notes, database stats.  -->
     <div class="row">
 
+        <!-- Stats -->
+        <div class="col-md-4">
+            <div class="panel panel-primary">
+                <div class="panel-body">
+                    <h3>GPCRdb <a href="/structure/statistics">statistics</a></h3>
+                    <ul>
+                        {% for stat in release_statistics %}
+                            <li>
+                                {{ stat.statistics_type }}: {{ stat.value|intcomma }}
+                                {# FIXME #}
+                                {% if stat.statistics_type|safe == "Human proteins" %} (all non-olfactory){% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    {% if users %}
+                        {{ users|safe }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Release Notes -->
+        <div class="col-md-4">
+            <div class="panel panel-primary">
+                <div class="panel-body">
+                    <h3>Latest <a href="/pages/releasenotes">release</a></h3>
+                    <strong>{{ release_notes.date }}</strong>
+                    {{ release_notes.html|safe }}
+                </div>
+            </div>
+        </div>
+
         <!-- Twitter feed -->
         <div class="col-md-4">
             <div class="panel panel-primary">
@@ -158,83 +190,24 @@
         {#            </div>#}
         {#        </div> #}
 
-        <!-- Release Notes -->
-        <div class="col-md-4">
-            <div class="panel panel-primary">
-                <div class="panel-body">
-                    <h3>Latest <a href="/pages/releasenotes">release</a></h3>
-                    <strong>{{ release_notes.date }}</strong>
-                    {{ release_notes.html|safe }}
-                </div>
-            </div>
-        </div>
-
-        <!-- Stats -->
-        <div class="col-md-4">
-            <div class="panel panel-primary">
-                <div class="panel-body">
-                    <h3>GPCRdb <a href="/structure/statistics">statistics</a></h3>
-                    <ul>
-                        {% for stat in release_statistics %}
-                            <li>
-                                {{ stat.statistics_type }}: {{ stat.value|intcomma }}
-                                {# FIXME #}
-                                {% if stat.statistics_type|safe == "Human proteins" %} (all non-olfactory){% endif %}
-                            </li>
-                        {% endfor %}
-                    </ul>
-                    {% if users %}
-                        {{ users|safe }}
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
     </div>
 
-    <!-- External partners and collaboration -->
+    <!-- Gloriam Group and Collabs -->
     <div class="row">
-
-        <!-- Partner databases -->
-        <div class='col-md-4'>
-            <h4 class="text-center">Partner GPCR databases</h4>
-            <p class="text-center">
-                <a href='https://www.guidetopharmacology.org'>GuideToPharmacology</a> (IUPHAR),
-                {#            <a href='http://www.cmbi.ru.nl/tinygrap/credits'>tinyGRAP</a> (Tromsø, Norway)<br>#}
-                <a href='https://campagnelab.org/software/gpcr-okb'>GPCR-OKB</a> (Weill Medical College),
-                <a href='http://nava.liacs.nl/'>NaVa</a> (Leiden Uni.),
-                and <a href='https://web.expasy.org/docs/swiss-prot_guideline.html'>Swiss-Prot</a>
-            </p>
+        <div class="col-md-12">
+            <div class="panel panel-primary">
+                <div class="panel-body">
+                    <p class="text-center"> The GPCRdb is developed by the Gloriam <a href="http://gloriamgroup.org" target="_blank">group</a>.
+                        It integrates data from the large GPCR community and maintains an active collaboration with the
+                        Guide To Pharmacology (IUPHAR), GPCRmd and the European Research Network on Signal
+                        Transduction <a href="https://ernest-gpcr.eu" target="_blank">(ERNEST)</a>.
+                        If you use the GPCRdb, please remember to <a onclick="citation_tool(window.location.href);" href="#">cite us</a>.
+                    </p>
+                    
+                </div>
+            </div>
         </div>
-
-        {#        <div class='col-md-3'>#}
-        {#            <p class="text-center"><a href='http://gloriamgroup.org'>University of Copenhagen</p>#}
-        {#            <p class="text-center"><img src="{% static 'home/logo/uni_cph.png' %}" style="height:100px;width:100px;"></a></p>#}
-        {#        </div>#}
-
-        <!-- Ernest Banner -->
-        <div class='col-md-4'>
-            <h4 class="text-center"><a href='https://ernest-gpcr.eu/'>ERNEST</a> (COST Action CA18133)</h4>
-            <p class="text-center">
-                <a href='https://ernest-gpcr.eu/'><img src="{% static 'home/logo/ernest.png' %}"style="width:200px;"></a>
-            </p>
-        </div>
-
-        <!-- Partner servers -->
-        <div class='col-md-4'>
-            <h4 class="text-center">
-                <a href="{{ documentation_url }}external_servers.html">Partner GPCR servers/tools</a>
-            </h4>
-            <p class="text-center">
-                <a href='https://www.esciencecenter.nl/project/3d-e-chem'>3D-e-Chem</a> (VU University Amsterdam),
-                <a href='https://gpcrm.biomodellab.eu/'>GPCRM</a> (Uni. Warsaw),
-                <a href='http://bioinfo-pharma.u-strasbg.fr/scPDB/'>scPDB</a> (Uni. Strasbourg),
-                <a href='http://www.ssfa-7tmr.de/ssfe/'>GPCR-SSFE</a> (Leibniz-Institut, Berlin),
-                <a href='http://molsim.sci.univr.it/cgi-bin/cona/begin.php'>GoMoDo</a> (Uni. Verona),
-                <a href='http://gpcr-modsim.org/'>GPCR-ModSim</a> (Uppsala Uni.).
-            </p>
-        </div>
-
     </div>
 
 {% endblock %}
+
