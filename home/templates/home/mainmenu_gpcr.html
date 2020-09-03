@@ -306,7 +306,7 @@
             </button>-->
         </a></li>
         <li><a href="/sitesearch/targetselection">Site search (by seq. motif)</a></li>
-        <li><a href="/sitesearch/targetselectionpdb">Site search (by ligand complex)
+        <li><a href="/sitesearch/targetselectionpdb">Site search (by ligand complex)&nbsp;&nbsp;&nbsp;&nbsp;
             <button mp4="https://files.gpcrdb.org/video/interactions2.mp4" type="button"
                     class="videoLink pull-right btn btn-xs btn-default">
                 <span class="glyphicon glyphicon-film"></span>
@@ -395,6 +395,35 @@
     </ul>
 </li>
 
+<!-- Join us -->
+<li class="dropdown">
+  <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+      Join us<span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li><a href="#" onClick="javascript:joinus('annotation');">Data annotation</a></li>
+    <li><a href="#" onClick="javascript:joinus('development');">Database development</a></li>
+    <li><a href="#" onClick="javascript:joinus('collaboration');">Scientific collaboration</a></li>
+    <li><a href="#" onClick="javascript:joinus('media');">Social media</a></li>
+    <li><a href="#" onClick="javascript:joinus('feedback');">Give feedback</a></li>
+  </ul>
+</li>
+<div id="join-us" class="modal modal-sm">
+    <div class="modal-content">
+        <div class="modal-header">
+          <button style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close close_modal" onclick="javascript:$('#join-us').modal('toggle');">&times;</button>
+          <h3 class="modal-title">
+            Join us
+          </h3>
+        </div>
+        <div class="modal-body">
+          <p>
+          </p>
+        </div>
+    </div>
+</div>
+
+
 <!-- Cite us -->
 <li>
     <a class="dropdown-toggle" role="button" id='cite'>Cite Us</a>
@@ -418,6 +447,7 @@
 <link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
 <script src="{% static 'home/js/jquery-3.1.1.min.js' %}"></script>
 <script src="{% static 'home/js/citation_tool.js' %}"></script>
+<script src="{% static 'home/js/joinus_tool.js' %}"></script>
 <script type="text/javascript" charset="utf-8">
     $(document).ready(function() {
 

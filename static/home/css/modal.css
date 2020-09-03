@@ -1,7 +1,6 @@
 .modal {
     display: none; /* Hidden by default */
     position: fixed; /* Stay in place */
-    z-index: 1; /* Sit on top */
     padding-top: 100px; /* Location of the box */
     left: 0;
     top: 0;
@@ -11,6 +10,12 @@
     background-color: rgb(0,0,0); /* Fallback color */
     background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
     z-index: 1050;
+}
+
+/* Workaround for join us modal - but this file overwrite bootstrap - needs to be fixed */
+#join-us .modal-content {
+  width: 50%;
+  z-index: 1050;
 }
 
 /* Modal Content */

@@ -31,7 +31,7 @@ function citation_tool(url) {
     var env = url.split('//')[1].split('/')[0];
     var main_ref_id = false;
     var cit_request = new XMLHttpRequest();
-    cit_request.open('GET', 'http://'.concat(env).concat('/citations'));
+    cit_request.open('GET', url.split('/')[0] + '/citations');
     cit_request.onload = function() {
 		var data = JSON.parse(cit_request.responseText)
 		// Create HTML once per call
@@ -98,7 +98,7 @@ function citation_tool(url) {
 				var ref = document.createElement("div");
 				var p = document.createElement("p");
 				p.innerHTML = articles[key]['authors'] + ", " + '"' + key + '", '
-				// Link 
+				// Link
 				var a = document.createElement("a");
 				a.innerHTML = articles[key]['journal'].italics() + ", " + articles[key]['year'] + ", " + articles[key]['reference'];
       			a.title = key;
