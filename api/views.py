@@ -13,6 +13,7 @@ from protein.models import Protein, ProteinConformation, ProteinFamily, Species,
 from residue.models import Residue, ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent
 from structure.models import Structure
 from structure.assign_generic_numbers_gpcr import GenericNumbering
+from structure.sequence_parser import SequenceParser
 from api.serializers import (ProteinSerializer, ProteinFamilySerializer, SpeciesSerializer, ResidueSerializer,
                              ResidueExtendedSerializer, StructureSerializer,
                              StructureLigandInteractionSerializer,
@@ -24,7 +25,7 @@ from drugs.models import Drugs
 
 import json, os
 from io import StringIO
-from Bio.PDB import PDBIO
+from Bio.PDB import PDBIO, parse_pdb_header
 from collections import OrderedDict
 
 # FIXME add
@@ -736,8 +737,8 @@ class StructureAssignGenericNumbers(views.APIView):
 
     def post(self, request):
 
-        root, ext = os.path.splitext(request.FILES['pdb_file'].name)
-        generic_numbering = GenericNumbering(StringIO(request.FILES['pdb_file'].file.read().decode('UTF-8',"ignore")))
+        # root, ext = os.path.splitext(request._request.FILES['pdb_file'].name)
+        generic_numbering = GenericNumbering(StringIO(request._request.FILES['pdb_file'].file.read().decode('UTF-8',"ignore")))
         out_struct = generic_numbering.assign_generic_numbers()
         out_stream = StringIO()
         io = PDBIO()
@@ -756,13 +757,13 @@ class StructureSequenceParser(views.APIView):
     curl -X POST -F "pdb_file=@myfile.pdb" http://gpcrdb.org/services/structure/parse_pdb
     """
     parser_classes = (FileUploadParser,)
-    renderer_classes =(JSONRenderer)
+    renderer_classes = (JSONRenderer, )
 
     def post(self, request):
-
-        root, ext = os.path.splitext(request.FILES['pdb_file'].name)
-        header = parse_pdb_header(request.FILES['pdb_file'])
-        parser = SequenceParser(request.FILES['pdb_file'])
+        # root, ext = os.path.splitext(request._request.FILES['pdb_file'].name)
+        pdb_file = StringIO(request._request.FILES['pdb_file'].file.read().decode('UTF-8',"ignore"))
+        header = parse_pdb_header(pdb_file)
+        parser = SequenceParser(pdb_file)
 
         json_data = OrderedDict()
         json_data["header"] = header

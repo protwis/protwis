@@ -574,6 +574,8 @@ class Command(BaseCommand):
                     dssp = Bio.PDB.DSSP(structure[0], filename, dssp='/env/bin/dssp')
                 elif os.path.exists("/env/bin/mkdssp"):
                     dssp = Bio.PDB.DSSP(structure[0], filename, dssp='/env/bin/mkdssp')
+                elif os.path.exists("/usr/local/bin/mkdssp"):
+                    dssp = Bio.PDB.DSSP(structure[0], filename, dssp='/usr/local/bin/mkdssp')
 
                 # DISABLED STRIDE - selected DSSP 3 over STRIDE
 #                try:

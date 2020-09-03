@@ -270,14 +270,14 @@ canvas {
 
                             {% if rota.backbone_template %}
                                 <td><a href="/protein/{{ rota.backbone_template.protein_conformation.protein.parent.entry_name }}">{{ rota.backbone_template.protein_conformation.protein.parent.name|safe }}</a></td>
-                                <td><a href="../{{ rota.backbone_template.pdb_code.index }}">{{ rota.backbone_template.pdb_code.index }}</a></td>
+                                <td><a href="../{{ rota.backbone_template.pdb_code.index }}">{{ rota.backbone_template.pdb_code.index|safe }}</a></td>
                             {% else %}
                                 <td>-</td>
                                 <td>-</td>
                             {% endif %}
                             {% if rota.rotamer_template %}
                                 <td><a href="/protein/{{ rota.rotamer_template.protein_conformation.protein.parent.entry_name }}">{{ rota.rotamer_template.protein_conformation.protein.parent.name|safe }}</a></td>
-                                <td><a href="../{{ rota.rotamer_template.pdb_code.index }}">{{ rota.rotamer_template.pdb_code.index }}</a></td>
+                                <td><a href="../{{ rota.rotamer_template.pdb_code.index }}">{{ rota.rotamer_template.pdb_code.index|safe }}</a></td>
                             {% else %}
                                 <td>-</td>
                                 <td>-</td>

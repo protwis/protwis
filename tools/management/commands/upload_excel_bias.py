@@ -16,6 +16,9 @@ from common.models import WebLink, WebResource, Publication
 from django.db import connection
 import logging
 import os
+import queue
+import logging
+import os
 from datetime import datetime
 import xlrd
 import operator
@@ -23,6 +26,9 @@ import traceback
 import time
 import math
 import json
+import threading
+import concurrent.futures
+import pytz
 
 
 MISSING_PROTEINS = {}
@@ -143,7 +149,7 @@ class Command(BaseBuild):
             # code to skip rows in excel for faster testing
             # if i < 15:
             #     continue
-            # if i > 58:
+            # if i > 1200:
             #     break
             if i % 100 == 0:
                 print(i)
@@ -164,7 +170,7 @@ class Command(BaseBuild):
             d['receptor'] = r[11].lower().strip()
 
             d['cell_line'] = r[12]
-            d['protein'] = r[13].lower().strip()
+            d['protein'] = r[13].strip().replace('α','a').replace('β','B').replace('g','G').lower()
             d['protein_assay'] = r[14].strip()
             d['protein_assay_method'] = r[15]
             d['protein_time_resolved'] = r[16]
@@ -214,12 +220,12 @@ class Command(BaseBuild):
                 bias_value=d['pathway_bias'] = None
 
 
-            #define G family
-            family = self.define_g_family(d['protein'],d['protein_assay'])
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                family_future = executor.submit(self.define_g_family,d['protein'], d['protein_assay'])
+                family = family_future.result()
+                pub_future = executor.submit(self.fetch_publication,d['reference'])
+                pub = pub_future.result()
 
-
-            # fetch publicaition
-            pub = self.fetch_publication(d['reference'])
 
             # fetch main ligand
             l = self.fetch_ligand(
@@ -227,7 +233,7 @@ class Command(BaseBuild):
             if not l:
                 continue
             #fetch endogenous ligand
-
+            protein = self.fetch_protein(d['receptor'], d['source_file'])
 
             # fetch reference_ligand
             reference_ligand = self.fetch_ligand(
@@ -243,6 +249,8 @@ class Command(BaseBuild):
             if protein == None:
                 continue
             end_ligand  = self.fetch_endogenous(protein)
+
+
 ## TODO:  check if it was already uploaded
             experiment_entry = BiasedExperiment(submission_author=d['submitting_group'],
                                                 publication=pub,
@@ -305,9 +313,12 @@ class Command(BaseBuild):
                     counter=counter+1
             # assay_author = ExperimentAssayAuthors(experiment = experiment_assay,
 
+
+
     def fetch_measurements(self, potency, p_type, unit):
         if p_type.lower()  == 'pec50':
             potency = 10**(potency*(-1))
+            # pp = (-1)*log(potency)
             p_type = 'EC50'
         elif p_type.lower() == 'logec50':
             potency = 10**(potency)
@@ -318,7 +329,8 @@ class Command(BaseBuild):
         elif p_type.lower() == 'logic50':
             potency = 10**(potency)
             p_type = 'IC50'
-        elif p_type.lower()  == 'ec50':
+
+        if p_type.lower()  == 'ec50':
             if unit.lower() == 'nm':
                 potency = potency* 10**(-9)
             elif unit.lower() == 'µm':
@@ -329,56 +341,70 @@ class Command(BaseBuild):
                 potency = potency* 10**(-6)
             else:
                 pass
-        if potency:
-            potency = "{:.2E}".format(Decimal(potency))
+        if p_type.lower()  == 'ic50':
+            if unit.lower() == 'nm':
+                potency = potency* 10**(-9)
+            elif unit.lower() == 'µm':
+                potency = potency* 10**(-9)
+            elif unit.lower() == 'pm':
+                potency = potency* 10**(-12)
+            elif unit.lower() == 'mm':
+                potency = potency* 10**(-6)
+            else:
+                pass
+        # if potency:
+        #     potency = (-1)*math.log10(potency)
+        #     p_type = 'pec50'
+        #     # potency = "{:.2E}".format(Decimal(potency))
         return potency,p_type
 
     def define_g_family(self, protein, assay_type):
+
         family = None
-        if (protein == 'β-arrestin' or
-            protein == 'β-arrestin-1 (non-visual arrestin-2)' or
-            protein == 'β-arrestin-2 (non-visual arrestin-3)'):
+        if (protein == 'b-arrestin' or
+            protein == 'b-arrestin-1 (non-visual arrestin-2)' or
+            protein == 'b-arrestin-2 (non-visual arrestin-3)'):
             family = 'B-arr'
 
         elif (protein == 'gi/o-family' or
-                protein == 'gαi1' or
-                protein == 'gαi2' or
-                protein == 'gαi3' or
-                protein == 'gαo' or
-                protein == 'gαoA' or
-                protein == 'gαi' or
-                protein == 'gαi1' or
-                protein == 'gαi2' or
-                protein == 'gαi3' or
-                protein == 'gαi1/2' or
-                protein == 'gαo' or
-                protein == 'gαoA' or
-                protein == 'gαoB' or
-                protein == 'gαo1' or
-                protein == 'gαt1' or
-                protein == 'gαt2' or
-                protein == 'gαt3' or
-                protein == 'gαz' or
-                protein == 'gαoB'):
+                protein == 'gai1' or
+                protein == 'gai2' or
+                protein == 'gai3' or
+                protein == 'gao' or
+                protein == 'gaoA' or
+                protein == 'gai' or
+                protein == 'gai1' or
+                protein == 'gai2' or
+                protein == 'gai3' or
+                protein == 'gai1/2' or
+                protein == 'gao' or
+                protein == 'gaoA' or
+                protein == 'gaoB' or
+                protein == 'gao1' or
+                protein == 'gat1' or
+                protein == 'gat2' or
+                protein == 'gat3' or
+                protein == 'gaz' or
+                protein == 'gaoB'):
             family = 'Gi/o'
 
         elif (protein == 'gq-family' or
-                protein == 'gα12' or
-                protein==' gαq' or
-                protein=='gαq/11' or
-                protein=='gαq/14' or
-                protein=='gαq/15' or
-                protein=='gαq/16'):
+                protein == 'ga12' or
+                protein==' gaq' or
+                protein=='gaq/11' or
+                protein=='gaq/14' or
+                protein=='gaq/15' or
+                protein=='gaq/16'):
             family = 'Gq/11'
 
         elif (protein == 'g12/13-family' or
-                protein == 'gα12' or
-                protein == 'gα13'):
+                protein == 'ga12' or
+                protein == 'ga13'):
             family = 'G12/13'
 
         elif (protein == 'gs-family' or
-              protein == 'gαs' or
-              protein == 'gαolf'):
+              protein == 'gas' or
+              protein == 'gaolf'):
             family = 'Gs'
 
         elif (protein == '' or
@@ -387,6 +413,7 @@ class Command(BaseBuild):
                 family = 'pERK1-2'
         else:
             family == protein
+
         return family
 
     def fetch_endogenous(self, protein):

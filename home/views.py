@@ -1,9 +1,15 @@
 from django.shortcuts import render
 from django.conf import settings
 from django.views.decorators.cache import cache_page
+from django.http import JsonResponse
+
 
 from news.models import News
-from common.models import ReleaseNotes, ReleaseStatistics
+from common.models import ReleaseNotes, ReleaseStatistics, Citation
+from googleapiclient.discovery import build
+from oauth2client.service_account import ServiceAccountCredentials
+
+
 
 @cache_page(60 * 60 * 24)
 def index(request):
@@ -19,9 +25,9 @@ def index(request):
     context['google_analytics_key'] = settings.GOOGLE_ANALYTICS_KEY
 
     if settings.GOOGLE_ANALYTICS_API:
-         # Based on https://developers.google.com/analytics/devguides/reporting/core/v3/quickstart/service-py
-        from apiclient.discovery import build
-        from oauth2client.service_account import ServiceAccountCredentials
+        # Based on https://developers.google.com/analytics/devguides/reporting/core/v3/quickstart/service-py
+        # from googleapiclient.discovery import build
+        # from oauth2client.service_account import ServiceAccountCredentials
         # Define the auth scopes to request.
         scope = 'https://www.googleapis.com/auth/analytics.readonly'
         key_file_location = settings.GOOGLE_ANALYTICS_API
@@ -35,10 +41,10 @@ def index(request):
         # Build the service object.
         service = build('analytics', 'v3', credentials=credentials)
 
-        users_year = service.data().ga().get(ids='ga:' + profile_id,start_date='365daysAgo',end_date='today',metrics='ga:users').execute().get('rows')[0][0]
-        users_month = service.data().ga().get(ids='ga:' + profile_id,start_date='30daysAgo',end_date='today',metrics='ga:users').execute().get('rows')[0][0]
+        users_year = service.data().ga().get(ids='ga:' + profile_id, start_date='365daysAgo', end_date='today', metrics='ga:users').execute().get('rows')[0][0]
+        users_month = service.data().ga().get(ids='ga:' + profile_id, start_date='30daysAgo', end_date='today', metrics='ga:users').execute().get('rows')[0][0]
 
-        context['users'] = "GPCRdb had {:,} users since this date last year and {:,} users in the last 30 days (<a href='https://analytics.google.com'>Google Analytics</a>).".format(int(users_year),int(users_month))
+        context['users'] = "GPCRdb had {:,} users since this date last year and {:,} users in the last 30 days (<a href='https://analytics.google.com'>Google Analytics</a>).".format(int(users_year), int(users_month))
 
     # get news
     context['news'] = News.objects.order_by('-date').all()[:3]
@@ -52,3 +58,11 @@ def index(request):
         context['release_statistics'] = []
 
     return render(request, 'home/index_{}.html'.format(settings.SITE_NAME), context)
+
+# @cache_page(60 * 60 * 24)
+def citations_json(request):
+    context = {}
+    citations_q = Citation.objects.all().values_list("url", "video", "docs", "main", "page_name", "publication__title", "publication__authors", "publication__year", "publication__reference",
+                                                     "publication__journal__name", "publication__web_link__index").order_by("-publication__year", "page_name")
+    response = JsonResponse(list(citations_q), safe=False)
+    return response

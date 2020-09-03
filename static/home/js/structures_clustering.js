@@ -569,7 +569,7 @@ function refreshLegend(div_class, selectData){
         .attr("x", 20)
         .attr("y", 30)
         .text(function (d) {
-            return (d)
+            return (d.replace(new RegExp(" receptors$"), "").replace("/neuropeptide "," / "))
         })
         .style("text-anchor", "start")
         .style("font-size", 13);
@@ -1049,13 +1049,15 @@ function downloadNewick(name){
   }
 }
 
-function download(filename, text) {
+async function download(filename, text) {
   var element = document.createElement('a');
   element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
   element.setAttribute('download', filename);
 
   element.style.display = 'none';
   document.body.appendChild(element);
+  // await addition before click - in some cases otherwise there is no download
+  await new Promise(r => setTimeout(r, 500));
   element.click();
 
   document.body.removeChild(element);
@@ -1271,7 +1273,8 @@ function submitToPage(destination){
   var form = $('<form action="' + url + '" method="post">' +
       '<textarea name="pdbs1" id="submit-pdbs1" />' +
       '<textarea name="pdbs2" id="submit-pdbs2" />' +
-      csrf_token + '</form>');
+      '<input type="hidden" name="csrfmiddlewaretoken" value="' + csrf_token + '" />' +
+      '</form>');
 
   $('body').append(form);
 
