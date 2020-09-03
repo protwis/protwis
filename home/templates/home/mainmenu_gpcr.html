@@ -198,26 +198,26 @@
         <li><a href="/signprot/statistics">GPCR-G protein profiles</a></li>
         <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>Sequences
-            <button
+            <!--<button
                     url='https://dx.doi.org/10.1038/nature22070'
                     class="refLink pull-right btn btn-xs btn-default"
                     data-toggle="tooltip" data-placement="right" title="Nature">
                 <span class="glyphicon glyphicon-book"></span>
-            </button>
+            </button>-->
         </a></li>
         <li><a href="/alignment/gproteinselection">G protein alignments</a></li>
         <li class="divider"></li>
-        <li class="nav-header disabled text-left"><a>Structures</a></li>
-        <li><a href="/structure/g_protein_structure_browser">G protein structures</a></li>
-        <li><a href="/structure/complex_models">GPCR-G protein structure models</a></li>
+        <li class="nav-header disabled text-left"><a>STRUCTURES</a></li>
+        <li><a href="/structure/g_protein_structure_browser">Structures</a></li>
+        <li><a href="/structure/complex_models">Structure models</a></li>
         <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>Structure sites (interface)
-            <button
+            <!--<button
                     url='https://dx.doi.org/10.1038/nature22070'
                     class="refLink pull-right btn btn-xs btn-default"
                     data-toggle="tooltip" data-placement="right" title="Nature">
                 <span class="glyphicon glyphicon-book"></span>
-            </button>
+            </button>-->
         </a></li>
         <li><a href="/signprot/matrix">GPCR-G protein interactions</a></li>
         <!-- <li><a href="/signprot/ginterface">Interface mapping</a></li>
@@ -233,7 +233,7 @@
 <!-- B-ARRESTINS -->
 <li class="dropdown">
     <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-        B-arrestins<span class="caret"></span>
+        Arrestins<span class="caret"></span>
     </a>
     <ul class="dropdown-menu" role="menu">
         <!--<li class="nav-header disabled text-left"><a>Proteins
@@ -247,41 +247,21 @@
         <li><a href="/signprot/arrestin">Arrestin page</a></li>
         <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>Sequences
-            <button
+            <!--<button
                     url='https://dx.doi.org/10.1038/nature22070'
                     class="refLink pull-right btn btn-xs btn-default"
                     data-toggle="tooltip" data-placement="right" title="Nature">
                 <span class="glyphicon glyphicon-book"></span>
-            </button>
+            </button>-->
         </a></li>
         <li><a href="/alignment/arrestinselection">Arrestin alignments</a></li>
         <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>Structures</a></li>
-        <li><a href="/signprot/arrestin_structure_browser">Arrestin structures</a></li>
+        <li><a href="/signprot/arrestin_structure_browser">Structures</a></li>
     </ul>
 </li>
 
 
-
-<!--  BIASED SIGNALING -->
-<li class="dropdown">
-    <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" data-submenu>
-        Biased signalling<span class="caret"></span>
-    </a>
-    <ul class="dropdown-menu" role="menu">
-        <li class="nav-header disabled"><a>Ligand bias</a></li>
-        <li><a href="/ligand/biasedbrowser">Ligand bias for G protein family or arrestin</a></li>
-        <li><a href="/ligand/biasedgbrowser">Ligand bias for G protein subtype</a></li>
-        <!-- <li><a href="/ligand/browserchembl">Predicted ligand bias (potency ratios)</a></li> -->
-
-        <li class="divider"></li>
-        <li class="nav-header disabled text-left"><a href="#">Pathway effects</a></li>
-
-        <li style="display: inline;"><a href="/ligand/biasedpathways">Pathway effects</a></li>
-
-
-    </ul>
-</li>
 
 
 
@@ -291,9 +271,9 @@
         Ligands<span class="caret"></span>
     </a>
     <ul class="dropdown-menu" role="menu">
-        <li class="nav-header disabled"><a>DATA</a></li>
+        <li class="nav-header disabled"><a>LIGANDS</a></li>
         <li><a href="/ligand/statistics">Ligand statistics</a></li>
-        <li><a href="/ligand">Ligand browser</a></li>
+        <li><a href="/ligand">Ligands</a></li>
 
         <!-- DEPRECATED FUNCTION
           <li class="nav-header disabled text-left"><a>Structures</a></li>
@@ -309,7 +289,7 @@
           -->
 
         <li class="divider"></li>
-        <li class="nav-header disabled text-left"><a>Structure sites
+        <li class="nav-header disabled text-left"><a>LIGAND SITES
         </a></li>
 
         <li><a href="/interaction">GPCR-ligand interactions
@@ -318,37 +298,30 @@
                 <span class="glyphicon glyphicon-film"></span>
             </button>
 
-            <button
+<!--            <button
                     url='https://dx.doi.org/10.1016/j.coph.2016.07.003'
                     class="refLink pull-right btn btn-xs btn-default"
                     data-toggle="tooltip" data-placement="right" title="Curr. Opin. Pharmacol.">
                 <span class="glyphicon glyphicon-book"></span>
+            </button>-->
+        </a></li>
+        <li><a href="/sitesearch/targetselection">Site search (by seq. motif)</a></li>
+        <li><a href="/sitesearch/targetselectionpdb">Site search (by ligand complex)&nbsp;&nbsp;&nbsp;&nbsp;
+            <button mp4="https://files.gpcrdb.org/video/interactions2.mp4" type="button"
+                    class="videoLink pull-right btn btn-xs btn-default">
+                <span class="glyphicon glyphicon-film"></span>
             </button>
         </a></li>
 
-        <li class="dropdown-submenu">
-            <a tabindex="0" href="#">Site search</a>
-            <ul class="dropdown-menu">
-                <li><a href="/sitesearch/targetselectionpdb">Site search from PDB complex
-                    <button mp4="https://files.gpcrdb.org/video/interactions2.mp4" type="button"
-                            class="videoLink pull-right btn btn-xs btn-default">
-                        <span class="glyphicon glyphicon-film"></span>
-                    </button>
-                </a></li>
-                <li><a href="/sitesearch/targetselection">Site search - manual</a></li>
-            </ul>
-        </li>
-
-
         <!-- MUTATIONS -->
         <li class="divider"></li>
-        <li class="nav-header disabled text-left"><a>MUTATIONS (Binding sites)
-            <button
+        <li class="nav-header disabled text-left"><a>LIGAND SITE MUTATIONS
+            <!--<button
                     url='https://dx.doi.org/10.1111/bph.13509'
                     class="refLink pull-right btn btn-xs btn-default"
                     data-toggle="tooltip" data-placement="right" title="Br. J. Pharmacol.">
                 <span class="glyphicon glyphicon-book"></span>
-            </button>
+            </button>-->
         </a></li>
         <li><a href="/mutations/statistics">Mutation statistics</a></li>
         <li><a href="/mutations">Mutation browser
@@ -364,11 +337,11 @@
                 <li><a href="/mutations/designpdb">By PDB id</a></li>
             </ul>
         </li>
-        <li class="divider"></li>
+<!--        <li class="divider"></li>-->
         <li><a href="{{ documentation_url }}mutations.html#mutation-data-submission">Mutation data submission</a></li>
     </ul>
 </li>
-        
+
 
 
 
@@ -379,12 +352,12 @@
     </a>
     <ul class="dropdown-menu" role="menu">
         <li class="nav-header disabled"><a>DATA
-            <button
+            <!--<button
                     url='https://dx.doi.org/10.1038/nrd.2017.178'
                     class="refLink pull-right btn btn-xs btn-default"
                     data-toggle="tooltip" data-placement="right" title="Nat. Rev. Drug Discov.">
                 <span class="glyphicon glyphicon-book"></span>
-            </button>
+            </button>-->
         </a></li>
         <li><a href="/drugs/drugstatistics">Drug statistics</a></li>
         <li><a href="/drugs/drugmapping">Drug target mapping</a></li>
@@ -422,6 +395,35 @@
     </ul>
 </li>
 
+<!-- Join us -->
+<li class="dropdown">
+  <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+      Join us<span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li><a href="#" onClick="javascript:joinus('annotation');">Data annotation</a></li>
+    <li><a href="#" onClick="javascript:joinus('development');">Database development</a></li>
+    <li><a href="#" onClick="javascript:joinus('collaboration');">Scientific collaboration</a></li>
+    <li><a href="#" onClick="javascript:joinus('media');">Social media</a></li>
+    <li><a href="#" onClick="javascript:joinus('feedback');">Give feedback</a></li>
+  </ul>
+</li>
+<div id="join-us" class="modal modal-sm">
+    <div class="modal-content">
+        <div class="modal-header">
+          <button style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close close_modal" onclick="javascript:$('#join-us').modal('toggle');">&times;</button>
+          <h3 class="modal-title">
+            Join us
+          </h3>
+        </div>
+        <div class="modal-body">
+          <p>
+          </p>
+        </div>
+    </div>
+</div>
+
+
 <!-- Cite us -->
 <li>
     <a class="dropdown-toggle" role="button" id='cite'>Cite Us</a>
@@ -432,7 +434,7 @@
         <button style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close close_modal" href="javascript:void(0)">&times;</button>
         <h3>Cite us</h3>
         <p>
-            Select tool:  
+            Select tool:
             <select name='articles', id='dropdown_articles'></select>
         </p>
         <li id='article_list'>
@@ -440,11 +442,12 @@
         </li>
     </div>
 </div>
-        
+
 {% load static %}
 <link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
 <script src="{% static 'home/js/jquery-3.1.1.min.js' %}"></script>
 <script src="{% static 'home/js/citation_tool.js' %}"></script>
+<script src="{% static 'home/js/joinus_tool.js' %}"></script>
 <script type="text/javascript" charset="utf-8">
     $(document).ready(function() {
 

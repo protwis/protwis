@@ -404,10 +404,10 @@ function sleep(ms) {
 var displayName = 1
 function toggleNames(event){
   switch(event.target.innerText){
-      case "UniProt (full)":
+      case "UniProt_species":
         displayName = 0
         break;
-      case "UniProt (short)":
+      case "UniProt":
         displayName = 1
         break;
       case "IUPHAR":
