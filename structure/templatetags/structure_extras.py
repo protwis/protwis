@@ -50,12 +50,17 @@ def only_gproteins ( objs ):
 
 @register.filter
 def only_one_subunit ( objs, arg ):
-    protfam, value = arg.split(',')
-    if protfam=="Alpha":
-        print(objs)
-        elements = [element for element in objs if element.wt_protein.family.parent.parent.name==protfam]
+    protfams, value = arg.split(',')
+    if '-' in protfams:
+        protfams = protfams.split('-')
     else:
-        elements = [element for element in objs if element.wt_protein.family.parent.name==protfam]
+        protfams = [protfams]
+    if "Alpha" in protfams or "Arrestin" in protfams:
+        for e in objs:
+            print(e, e.wt_protein)
+        elements = [element for element in objs if element.category in ["G alpha", "Arrestin"]]
+    else:
+        elements = [element for element in objs if element.wt_protein.family.parent.name in protfams]
     if len(elements) > 0:
         if value=='name':
             return elements[0]
@@ -93,7 +98,7 @@ def only_fusions ( objs ):
 
 @register.filter
 def only_antibodies ( objs ):
-    elements = [element for obj in objs for element in obj.name.split(',') if re.match(".*bod.*|.*Ab.*|.*scFv.*|.*Fab.*|.*activity.*|.*RAMP.*|.*peptide.*|.*CD4.*", element)]
+    elements = [element for obj in objs for element in obj.name.split(',') if re.match(".*bod.*|.*Ab.*|.*scFv.*|.*Fab.*|.*activity.*|.*RAMP.*|.*peptide.*|.*CD4.*|.*IgG.*", element)]
     if len(elements) > 0:
         return "\n".join(elements)
     else:

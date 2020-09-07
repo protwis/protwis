@@ -266,56 +266,18 @@
                         <td class="text-center">{{ structure.preferred_chain }}</td>
                         <td>{{ structure.state.name }}</td>
                         <td class="text-center">{{ structure.gprot_bound_likeness|floatformat }}</td>
+                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,family"|safe }}</td>
+                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,name"|safe }}</td>
                         <td>
-                            {% for ep in structure.extra_proteins.all %}
-                                {% if ep.category == "Arrestin" %}
-                                    {{ ep.wt_protein.family.parent.parent.name }}
-                                {% else %}
-                                    {{ ep.wt_protein.family.parent.name }}
-                                {% endif %}
-                                {% empty %}
-                                    -
-                            {% endfor %}
+                            {% if ep.note|length > 20 %}
+                                <span title="{{ ep.note }}">{{ structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,note"|safe|cut_at_20 }}...</span>
+                            {% else %}
+                                {{ structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,note"|safe }}
+                            {% endif %}
+                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,coverage"|safe }}</td>
                         </td>
-                        <td>
-                            {% for ep in structure.extra_proteins.all %}
-                                {{ ep.display_name}}
-                                {% empty %}
-                                    -
-                            {% endfor %}
-                        </td>
-                        <td>
-                            {% for ep in structure.extra_proteins.all %}
-                                {% if ep.note is None %}
-                                    -
-                                {% else %}
-                                    {% if ep.note|length > 20 %}
-                                        <span title="{{ ep.note }}">{{ ep.note|cut_at_20 }}...</span>
-                                    {% else %}
-                                    {{ ep.note }}
-                                    {% endif %}
-                                {% endif %}
-                                {% empty %}
-                                    -
-                            {% endfor %}
-                        </td>
-                        <td>
-                            {% for ep in structure.extra_proteins.all %}
-                                {% if ep.wt_coverage != None %}
-                                    {{ ep.wt_coverage}}
-                                {% else %}
-                                    -
-                                {% endif %}
-                                {% empty %}
-                                    -
-                            {% endfor %}
-                        </td>
-                        <td>
-                            {{ structure.stabilizing_agents.all|only_fusions|linebreaksbr }}
-                        </td>
-                        <td>
-                            {{ structure.stabilizing_agents.all|only_antibodies|linebreaksbr }}
-                        </td>
+                        <td>{{ structure.stabilizing_agents.all|only_fusions|linebreaksbr }}</td>
+                        <td>{{ structure.stabilizing_agents.all|only_antibodies|linebreaksbr }}</td>
                         <td>
                             {% for ligand in structure.ligands.all %}
                                 {% if ligand.ligand.name|safe|length > 20 %}
@@ -331,12 +293,8 @@
                                 N/A
                             {% endfor %}
                         </td>
-                        <td>
-                            {{ structure.ligands.all|ligandtype|linebreaksbr }}
-                        </td>
-                        <td>
-                            {{ structure.ligands.all|ligandrole|linebreaksbr }}
-                        </td>
+                        <td>{{ structure.ligands.all|ligandtype|linebreaksbr }}</td>
+                        <td>{{ structure.ligands.all|ligandrole|linebreaksbr }}</td>
                         <td>
                             {% autoescape off %}
                             {% if structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat|length > 20 %}
@@ -361,9 +319,7 @@
                             No
                             {% endif %}
                         </td>
-                        <td>
-                            {{ structure.publication.authors|last_author}}
-                        </td>
+                        <td>{{ structure.publication.authors|last_author}}</td>
                         <td>
                             <a href="{{ structure.publication.web_link }}">
                             {{ structure.publication.web_link.index }}

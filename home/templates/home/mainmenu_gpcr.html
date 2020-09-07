@@ -191,7 +191,7 @@
                 <span class="glyphicon glyphicon-book"></span>
             </button>
         </a></li>-->
-        <li><a href="/signprot/">G protein page</a></li>
+        <li><a href="/signprot">G protein page</a></li>
         <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>GPCR-G Protein coupling </a></li>
         <li><a href="/signprot/couplings">GPCR-G protein couplings</a></li>
@@ -424,40 +424,107 @@
 
 <!-- Cite us -->
 <li>
-    <a class="dropdown-toggle" role="button" id='cite'>Cite Us</a>
+    <a class="dropdown-toggle" role="button" id='cite'>Cite us</a>
 </li>
+
+<!-- References widget -->
+<div style='float: left; display: none; position: absolute; left: 0px; top: 50px;' role='button' class='page-selection' id='ref_widget_div'>
+    <div id='ref_widget' style='display:inline-block;'>
+        <a><span class="glyphicon glyphicon-book icon-button" id="icon_citation" title='Cite this tool' style='padding: 3px;'></span></a>
+        <a target='_blank'><span class="glyphicon glyphicon-film icon-button" id="icon_video" title='Watch tutorial' style='padding: 3px;'></span></a>
+    </div>
+    <span class="glyphicon glyphicon-chevron-left" aria-hidden="true" id="ref_widget_openclose" ></span>
+</div>
+
 <div id="myModal" class="modal">
   <!-- Modal content -->
     <div class="modal-content">
         <button style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close close_modal" href="javascript:void(0)">&times;</button>
-        <h3>Cite us</h3>
-        <p>
-            Select tool:  
-            <select name='articles', id='dropdown_articles'></select>
-        </p>
-        <li id='article_list'>
-
-        </li>
+        <h2>Cite us</h2><br>
+        <div>
+            <h4>Main reference</h4>
+            <li id='main_reference'></li>
+        </div>
+        <p class='alert'><i>Please consider citing additional references next to the main reference based on the tools you were using. The dropdown selection will highlight the matching paper</i></p>
+        <div style='padding: 0px 0px 15px 0px;'>
+            Select page:
+            <li class='dropdown page-selection' style="display:inline;">
+                <a href="/" id="page_select_button" class="dropdown-toggle select-link" data-toggle="dropdown" role="button" aria-expanded="false">-- select page --</a>
+                <ul class="dropdown-menu" id='dropdown_articles' role="menu"></ul>
+            </li>
+        </div>
+        <li id='article_list'></li>
     </div>
 </div>
         
 {% load static %}
 <link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
+<link rel="stylesheet" type="text/css" href="{% static 'home/css/jquery.powertip.css' %}" />
 <script src="{% static 'home/js/jquery-3.1.1.min.js' %}"></script>
 <script src="{% static 'home/js/citation_tool.js' %}"></script>
+<script src="{% static 'home/js/jquery.powertip.js' %}"></script>
 <script type="text/javascript" charset="utf-8">
     $(document).ready(function() {
-
+        if (window.location.pathname!='/') {
+            $('#ref_widget_div').css('display','block');
+            check_for_video(window.location.href);
+        }
         $('#cite').click(function(){
             citation_tool(window.location.href);
         })
-        $('#dropdown_articles').change(function(){
-            highlight_article($(this).find('option:selected').attr('id'));
+        $('#icon_citation').click(function(){
+            citation_tool(window.location.href);
         })
+        $('.dropdown-menu').on('click', '.article_option', function(){
+            highlight_article($(this).parent().attr('id'));
+            location.href = "#";
+            location.href = "#"+$('#'+$(this).parent().attr('id').toString()+'_tag').parent().parent().parent().attr('id');
+            $('#page_select_button').html($(this).text());
+        })
+        $('#ref_widget_openclose').click(function(){
+            toggle_widget();
+        })
+        setTimeout(function() {
+            if ($('#ref_widget_openclose').hasClass("glyphicon glyphicon-chevron-left")) {
+                toggle_widget();
+            }
+        }, 8000)
     });
 </script>
+
 <style type="text/css">
     .highlight_reference{
         background-color: #DCDCDC;
+    }
+    .alert {
+      padding: 10px;
+      margin-bottom: 15px;
+      border-color: black;
+    }
+    .page-selection {
+        box-shadow: .5px .5px .5px .5px;
+        background-color: #f0f0f5;
+        border-radius: 3px;
+        border-width: 1px;
+        border-style: solid;
+        border-color: black;
+        padding: 5px;
+    }
+    .select-link:link, 
+    .select-link:hover {
+        color: black;
+        text-decoration: none;
+    }
+    .widget_open {
+        display: inline;
+    } 
+    .icon-button {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        outline: none;
+        border: 0;
+        background: transparent;
+        padding: 2px 0px 2px 0px;
     }
 </style>

@@ -278,7 +278,7 @@ function structurebrowser() {
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "Modality",
-                filter_match_mode : "exact",
+                // filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '100px',
