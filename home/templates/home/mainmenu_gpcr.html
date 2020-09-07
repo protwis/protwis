@@ -5,6 +5,7 @@
     </a>
     <ul class="dropdown-menu" role="menu">
         <li class="nav-header disabled"><a>INFORMATION</a></li>
+        <li><a onclick="citation_tool(window.location.href);" href="#">Cite us</a></li>
         <li><a href="https://files.gpcrdb.org/GPCRdb_Poster.pdf">GPCRdb Poster</a></li>
         <li><a href="{{ documentation_url }}">Documentation</a></li>
         <li class="dropdown-submenu">
@@ -22,19 +23,18 @@
         <li class="nav-header disabled"><a>ABOUT GPCRdb</a></li>
         <li><a href="{{ documentation_url }}about.html">About</a></li>
         <li><a href="{{ documentation_url }}contact.html">Contact</a></li>
-        <li><a href="{{ documentation_url }}citing.html">Citing GPCRdb</a></li>
         <li><a href="{{ documentation_url }}acknowledgements.html">Acknowledgements</a></li>
         <li><a href="{{ documentation_url }}legal_notice.html">Legal notice</a></li>
         <li class="divider"></li>
         <li class="nav-header disabled"><a>UPDATES</a></li>
-        <li><a href="/news">News</a></li>
+        {# <li><a href="/news">News</a></li> #}
         <li><a href="{{ documentation_url }}meetings.html">Meetings</a></li>
         <li><a href="/pages/releasenotes">Release notes</a></li>
         <li class="divider"></li>
         <li class="nav-header disabled"><a>FOR DEVELOPERS</a></li>
         <li><a href="{{ documentation_url }}linking.html">Linking to GPCRdb</a></li>
         <li><a href="{{ documentation_url }}web_services.html">Web services</a></li>
-        <li><a href="{{ documentation_url }}external_servers.html">External GPCR modeling servers</a></li>
+        <li><a href="{{ documentation_url }}external_sites.html">External GPCR sites</a></li>
     </ul>
 </li>
 
@@ -230,7 +230,7 @@
 
 
 
-<!-- B-ARRESTINS -->
+<!-- ARRESTINS -->
 <li class="dropdown">
     <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
         Arrestins<span class="caret"></span>
@@ -263,14 +263,58 @@
 
 
 
-
-
-<!-- LIGANDS -->
+<!--  BIASED SIGNALING -->
 <li class="dropdown">
     <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" data-submenu>
-        Ligands<span class="caret"></span>
+        Biased signalling<span class="caret"></span>
     </a>
     <ul class="dropdown-menu" role="menu">
+        <li class="nav-header disabled"><a>Ligand bias</a></li>
+        <li><a href="/ligand/biasedbrowser">Ligand bias for G protein family or arrestin</a></li>
+        <li><a href="/ligand/biasedgbrowser">Ligand bias for G protein subtype</a></li>
+        {# <li><a href="/ligand/browserchembl">Predicted ligand bias (potency ratios)</a></li> #}
+        {# <li class="divider"></li> #}
+        {# <li class="nav-header disabled text-left"><a href="#">Pathway effects</a></li> #}
+        {# <li style="display: inline;"><a href="/ligand/biasedpathways">Pathway effects</a></li> #}
+    </ul>
+</li>
+
+
+
+<!-- DRUGS -->
+{#<li class="dropdown">#}
+{#    <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">#}
+{#        Drugs<span class="caret"></span>#}
+{#    </a>#}
+{#    <ul class="dropdown-menu" role="menu">#}
+{#        <li class="nav-header disabled"><a>DATA#}
+{#            <!--<button#}
+{#                    url='https://dx.doi.org/10.1038/nrd.2017.178'#}
+{#                    class="refLink pull-right btn btn-xs btn-default"#}
+{#                    data-toggle="tooltip" data-placement="right" title="Nat. Rev. Drug Discov.">#}
+{#                <span class="glyphicon glyphicon-book"></span>#}
+{#            </button>-->#}
+{#        </a></li>#}
+{#        <li><a href="/drugs/drugstatistics">Drug statistics</a></li>#}
+{#        <li><a href="/drugs/drugmapping">Drug target mapping</a></li>#}
+{#        <li><a href="/drugs/drugbrowser">Drug browser</a></li>#}
+{#    </ul>#}
+{#</li>#}
+
+
+
+<!-- DRUGS AND LIGANDS -->
+<li class="dropdown">
+    <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" data-submenu>
+        Drug <span>&#38;</span> Ligands<span class="caret"></span>
+    </a>
+    <ul class="dropdown-menu" role="menu">
+        <li class="nav-header disabled"><a>DRUGS</a></li>
+        <li><a href="/drugs/drugbrowser">Drug, targets <span>&#38;</span> indications</a></li>
+        <li><a href="/drugs/drugmapping">Drug target tree</a></li>
+        <li><a href="/drugs/drugstatistics">Drug statistics</a></li>
+        <li class="divider"></li>
+
         <li class="nav-header disabled"><a>LIGANDS</a></li>
         <li><a href="/ligand/statistics">Ligand statistics</a></li>
         <li><a href="/ligand">Ligands</a></li>
@@ -344,29 +388,6 @@
 
 
 
-
-<!-- DRUGS -->
-<li class="dropdown">
-    <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-        Drugs<span class="caret"></span>
-    </a>
-    <ul class="dropdown-menu" role="menu">
-        <li class="nav-header disabled"><a>DATA
-            <!--<button
-                    url='https://dx.doi.org/10.1038/nrd.2017.178'
-                    class="refLink pull-right btn btn-xs btn-default"
-                    data-toggle="tooltip" data-placement="right" title="Nat. Rev. Drug Discov.">
-                <span class="glyphicon glyphicon-book"></span>
-            </button>-->
-        </a></li>
-        <li><a href="/drugs/drugstatistics">Drug statistics</a></li>
-        <li><a href="/drugs/drugmapping">Drug target mapping</a></li>
-        <li><a href="/drugs/drugbrowser">Drug browser</a></li>
-    </ul>
-</li>
-
-
-
 <!-- STRUCTURE CONSTRUCTS -->
 <li class="dropdown">
     <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
@@ -394,6 +415,29 @@
         <li><a href="/construct/analysis#mutations">Mutation substitution matrix</a></li>
     </ul>
 </li>
+
+
+
+<!-- Cite us -->
+<li>
+    <a class="dropdown-toggle" role="button" id='cite'>Cite us</a>
+</li>
+<div id="citation-tool" class="modal">
+  <!-- Modal content -->
+    <div class="modal-content">
+        <button style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close close_modal" href="javascript:void(0)">&times;</button>
+        <h3>Cite us</h3>
+        <p>
+            Select tool:
+            <select name='articles', id='dropdown_articles'></select>
+        </p>
+        <li id='article_list'>
+
+        </li>
+    </div>
+</div>
+
+
 
 <!-- Join us -->
 <li class="dropdown">
@@ -424,24 +468,6 @@
 </div>
 
 
-<!-- Cite us -->
-<li>
-    <a class="dropdown-toggle" role="button" id='cite'>Cite Us</a>
-</li>
-<div id="citation-tool" class="modal">
-  <!-- Modal content -->
-    <div class="modal-content">
-        <button style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close close_modal" href="javascript:void(0)">&times;</button>
-        <h3>Cite us</h3>
-        <p>
-            Select tool:
-            <select name='articles', id='dropdown_articles'></select>
-        </p>
-        <li id='article_list'>
-
-        </li>
-    </div>
-</div>
 
 {% load static %}
 <link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
