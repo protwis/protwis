@@ -1,7 +1,7 @@
 function citation_tool(url) {
 	// Modal part
 	$('#modal_table tbody').empty();
-    var modal = document.getElementById('myModal');
+    var modal = document.getElementById('citation-tool');
     var span = document.getElementsByClassName("close")[0];
     modal.classList.add("modal");
     modal.style.display = "block";
