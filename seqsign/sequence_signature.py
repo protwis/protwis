@@ -46,6 +46,7 @@ class SequenceSignature:
         self.common_gn = OrderedDict()
         self.common_segments = OrderedDict()
         self.common_schemes = {}
+        self.selection_segments = OrderedDict()
 
         self.signature = OrderedDict()
 
@@ -94,7 +95,6 @@ class SequenceSignature:
             protein_set_negative {list} -- list of Protein objects - a negative set (default: {None})
         """
 
-
         if protein_set_positive:
             self.aln_pos.load_proteins(protein_set_positive)
         if protein_set_negative:
@@ -108,6 +108,10 @@ class SequenceSignature:
         # now load the segments and generic numbers
         self.aln_pos.load_segments(segments)
         self.aln_neg.load_segments(segments)
+
+        # SM: "Borrowing" the selected segments from Alignment object to avoid extracting Selection object
+        # SM: segments are for now the same for both positive and negative set
+        self.selection_segments = self.aln_pos.segments
 
         self.aln_pos.build_alignment()
         self.aln_neg.build_alignment()
@@ -223,8 +227,11 @@ class SequenceSignature:
 
     def _update_alignment(self, alignment):
 
+        # print(alignment.segments.keys())
         for prot in alignment.proteins:
             for seg, resi in prot.alignment.items():
+                if seg not in self.common_segments.keys():
+                    continue
                 consensus = []
                 aln_list = [x[0] for x in resi]
                 aln_dict = dict([
@@ -240,6 +247,8 @@ class SequenceSignature:
     def _update_consensus_sequence(self, alignment):
 
         for seg, resi in alignment.consensus.items():
+            if seg not in self.common_segments.keys():
+                continue
             consensus = OrderedDict()
             aln_list = [x for x in resi.keys()]
             aln_dict = dict([
@@ -313,7 +322,10 @@ class SequenceSignature:
         Calculates the feature frequency difference between two protein sets.
         Generates the full differential matrix as well as maximum difference for a position (for scatter plot).
         """
-        for sid, segment in enumerate(self.aln_neg.segments):
+
+        for sid, segment in enumerate(self.selection_segments):
+            if segment not in self.common_segments:
+                continue
             self.features_normalized_pos[segment] = np.array(
                 [[x[0] for x in feat[sid]] for feat in self.aln_pos.feature_stats],
                 dtype='int'
@@ -323,7 +335,7 @@ class SequenceSignature:
                 dtype='int'
                 )
 
-        for segment in self.aln_neg.segments:
+        for segment in self.common_segments:
             #TODO: get the correct default numering scheme from settings
             for idx, res in enumerate(self.common_gn[self.common_schemes[0][0]][segment].keys()):
                 if res not in self.aln_pos.generic_numbers[self.common_schemes[0][0]][segment].keys():
