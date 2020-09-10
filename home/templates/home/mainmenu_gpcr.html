@@ -256,7 +256,7 @@
         <li><a href="/alignment/arrestinselection">Arrestin alignments</a></li>
         <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>Structures</a></li>
-        <li><a href="/signprot/arrestin_structure_browser">Structures</a></li>
+        <li><a href="/structure">Structures</a></li>
     </ul>
 </li>
 
@@ -421,38 +421,6 @@
     <a class="dropdown-toggle" role="button" id='cite'>Cite us</a>
 </li>
 
-<!-- References widget -->
-<div style='float: left; display: none; position: absolute; left: 0px; top: 50px;' role='button' class='page-selection' id='ref_widget_div'>
-    <div id='ref_widget' style='display:inline-block;'>
-        <a><span class="glyphicon glyphicon-book icon-button" id="icon_citation" title='Cite this tool' style='padding: 3px;'></span></a>
-        <a target='_blank'><span class="glyphicon glyphicon-film icon-button" id="icon_video" title='Watch tutorial' style='padding: 3px;'></span></a>
-    </div>
-    <span class="glyphicon glyphicon-chevron-left" aria-hidden="true" id="ref_widget_openclose" ></span>
-</div>
-
-<div id="citation-tool" class="modal">
-  <!-- Modal content -->
-    <div class="modal-content">
-        <button style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close close_modal" href="javascript:void(0)">&times;</button>
-        <h2>Cite us</h2><br>
-        <div>
-            <h4>Main reference</h4>
-            <li id='main_reference'></li>
-        </div>
-        <p class='alert'><i>Please consider citing additional references next to the main reference based on the tools you were using. The dropdown selection will highlight the matching paper</i></p>
-        <div style='padding: 0px 0px 15px 0px;'>
-            Select page:
-            <li class='dropdown page-selection' style="display:inline;">
-                <a href="/" id="page_select_button" class="dropdown-toggle select-link" data-toggle="dropdown" role="button" aria-expanded="false">-- select page --</a>
-                <ul class="dropdown-menu" id='dropdown_articles' role="menu"></ul>
-            </li>
-        </div>
-        <li id='article_list'></li>
-    </div>
-</div>
-
-
-
 <!-- Join us -->
 <li class="dropdown">
   <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
@@ -481,6 +449,47 @@
     </div>
 </div>
 
+<!-- References widget -->
+<div style='display: none; position: absolute; left: 0px; top: 50px; height: 30px; width: auto;' role='button' class='page-selection' id='ref_widget_div'>
+    <div id='ref_widget' style='display:inline; float: left; height: 30px;'>
+        <div style='overflow: hidden; white-space: nowrap; height: 30px; text-align:center;'>
+            <a class='widget-link' id="icon_citation"><span class="glyphicon glyphicon-book icon-button" style='padding: 0px 5px 3px 3px;'></span>Cite this page</a>
+            <a class='widget-link' id="icon_video" target='_blank' style='display: none;'><span class="glyphicon glyphicon-film icon-button" style='padding: 0px 5px 3px 3px;'></span>Video</a>
+        </div>
+    </div>
+    <div style='display:inline; float: left; height: 30px;'>
+        <span class="glyphicon glyphicon-chevron-left" aria-hidden="true" id="ref_widget_openclose"></span>
+    </div>
+</div>
+
+<div id="citation-tool" class="modal-higher">
+  <!-- Modal content -->
+    <div class="modal-content modal-scroll">
+        <div class="modal-header">
+            <button style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close close_modal" href="javascript:void(0)">&times;</button>
+            <h3 class="modal-title">Cite us</h3>
+        </div>
+        <div class='modal-body'>
+            <div>
+                <h4>Main reference</h4>
+                <li id='main_reference'></li>
+            </div>
+            
+            <div style='padding: 0px 0px 5px 0px; display:inline;' >
+                Select page:
+                <li class='dropdown page-selection' style="display:inline;">
+                    <a href="/" id="page_select_button" class="dropdown-toggle select-link" data-toggle="dropdown" role="button" aria-expanded="false">-- select page --</a>
+                    <ul class="dropdown-menu" id='dropdown_articles' role="menu"></ul>
+                </li>
+            </div>
+            <div style='padding: 0px 0px 0px 10px; display:inline-block;'>
+                <p class='alert'><i>Please cite the main reference and the reference for the GPCRdb page that you are using.</i></p>
+            </div>
+            <li id='article_list'></li>
+        </div>
+        <br><br><br>
+    </div>
+</div>
 
 
 {% load static %}
@@ -523,9 +532,9 @@
         background-color: #DCDCDC;
     }
     .alert {
-      padding: 10px;
-      margin-bottom: 15px;
+      padding: 5px;
       border-color: black;
+      display: inline-block;
     }
     .page-selection {
         box-shadow: .5px .5px .5px .5px;
@@ -536,7 +545,9 @@
         border-color: black;
         padding: 5px;
     }
-    .select-link:link, 
+    .select-link, 
+    .select-link:link,
+    .select-link:visited,
     .select-link:hover {
         color: black;
         text-decoration: none;
@@ -544,6 +555,13 @@
     .widget_open {
         display: inline;
     } 
+    .widget-link {
+        padding-right: 5px;
+
+    }
+    .widget-link:hover {
+        text-decoration: none;
+    }
     .icon-button {
         appearance: none;
         -webkit-appearance: none;

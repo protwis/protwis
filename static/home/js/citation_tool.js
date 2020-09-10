@@ -4,7 +4,10 @@ function citation_tool(url) {
     var modal = document.getElementById('citation-tool');
     var span = document.getElementsByClassName("close")[0];
     modal.classList.add("modal");
-    modal.style.display = "block";
+    setTimeout(function(){
+    	modal.style.display = "block";
+    }, 200)
+    
     span.onclick = function() {
         modal.style.display = "none";
         $(".article_option").remove();
@@ -77,6 +80,7 @@ function citation_tool(url) {
 				submenu.appendChild(a_sub);
 				var submenu_ul = document.createElement("ul");
 				submenu_ul.classList.add('dropdown-menu');
+				submenu_ul.classList.add('dropdown-auto-overflow')
 				submenu.appendChild(submenu_ul);
 			}
 			else {
@@ -157,7 +161,7 @@ function citation_tool(url) {
 			var d1 = document.createElement("div");
 			var d2 = document.createElement("div");
 			var d3 = document.createElement("div");
-			d1.innerHTML = '"' + key + '"';
+			d1.innerHTML = key;
 			d2.innerHTML = articles[key]['authors'];
 			
 			// Link 
@@ -227,6 +231,11 @@ function toggle_widget() {
     else {
         $('#ref_widget_openclose').removeClass('glyphicon glyphicon-chevron-right')
         $('#ref_widget_openclose').addClass('glyphicon glyphicon-chevron-left')
+        setTimeout(function() {
+        	$('#ref_widget').animate({width: 'toggle'});
+        	$('#ref_widget_openclose').removeClass('glyphicon glyphicon-chevron-left')
+        	$('#ref_widget_openclose').addClass('glyphicon glyphicon-chevron-right')
+        }, 8000)
     }
 }
 
@@ -241,11 +250,9 @@ function check_for_video(url) {
 			var site = parse_url(data[i][0]);
 			if (site===this_site && data[i][1]!=null) {
 				video = data[i][1];
-				$('#icon_video').parent().attr('href', video);
+				$('#icon_video').attr('href', video);
+				$('#icon_video').css('display','inline');
 			}
-		}
-		if (!video) {
-			$('#icon_video').css('display','none');
 		}
 	}
 	cit_request.send();

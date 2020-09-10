@@ -63,6 +63,9 @@ input.yadcf-filter  {
     font-size: 100%;
     font-weight: bold;
 }
+.yadcf-filter-range {
+    min-width: 35px;
+}
 /*#yadcf-filter--structures_scrollable-from-12 {
     width: 10px;
 }
