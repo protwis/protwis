@@ -59,7 +59,7 @@ class StructureBrowser(TemplateView):
 	template_name = "structure_browser.html"
 
 	def get_context_data (self, **kwargs):
-
+		
 		context = super(StructureBrowser, self).get_context_data(**kwargs)
 		try:
 			context['structures'] = Structure.objects.filter(refined=False).select_related(
@@ -1990,8 +1990,6 @@ def ConvertStructureComplexSignprotToProteins(request):
 		for struct_mod in selection.targets:
 			try:
 				prot = struct_mod.item.sign_protein
-				print(prot)
-				print(selection)
 				selection.remove('targets', 'structure_complex_signprot', struct_mod.item.id)
 				selection.add('targets', 'protein', SelectionItem('protein', prot))
 			except:
@@ -2260,7 +2258,7 @@ def webformdata(request) :
 				else:
 					pos_id = ''
 					aux_id = '1'
-				print(key,aux_id,pos_id)
+				# print(key,aux_id,pos_id)
 
 				if 'aux'+aux_id not in auxiliary:
 					auxiliary['aux'+aux_id] = {'position':data['position'+pos_id],'type':data['protein_type'+pos_id],'presence':data['presence'+pos_id]}

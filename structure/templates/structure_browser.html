@@ -35,18 +35,17 @@
 {% block content %}
 
 <div id="browser">
-    <div style="display:block;">
+    <!-- <div style="display:block;">
         <div style="display:inline; float:left;">
             <h2 style="width:auto; display:inline;">Structures</h2>
         </div>
     </div>
     <br><br>
-
+ -->
     <div style='width:100%; display:inline;'>
         <div class="btn-group">
             <a id="dlink"  style="display:none;"></a>
             <div id="excel_table"  style2="display:none;"></div>
-            <!-- <input class="btn btn-default btn-s" type="button" id="toggle_fixed_btn" value="Disable fixed columns" href="javascript:void(0)" data-toggle="buttons"></input> -->
             <input class="btn btn-default btn-s" type="button" id="toggle_columns_btn" value="Show hidden columns" href="javascript:void(0)">
             <input class="btn btn-default btn-s" type="button" id="representative_btn" value="Representative structures (state & receptor)" href="javascript:void(0)" data-toggle="buttons"></input>
         </div>
@@ -61,23 +60,6 @@
                 Superposition
             </label>
             <input class="btn btn-default btn-s" type="button" onclick="tableToExcel('structures_scrollable', 'Structure data', 'GPCRdb_structures.xls')" value="Export Excel"></input>
-            <!-- <div class="dropdown">
-                <button onclick="copyDropdown()" class="dropbtn btn btn-default btn-s">Copy Selected</button>
-                <div id="Dropdown" class="dropdown-content">
-                    <p class="btn btn_default btn-s" type="button" id="uniprot_copy">UniProts</p>
-                    <p class="btn btn_default btn-s" type="button" id="pdb_copy">PDBs</p>
-                </div>
-            </div> -->
-            <!-- <label class="btn btn-default btn-s" id="reset_filters_btn" href="javascript:void(0)">
-                Reset All
-            </label> -->
-
-            <!-- <div style="float:right;">
-                <input id="filter_input" placeholder="PDBs/UniProts..."></input>
-                <label class="btn btn-default btn-s" id="filter_button" href="javascript:void(0)">
-                    <i class="glyphicon glyphicon-search"></i>
-                </label>
-            </div> -->
         </div>
     </div>
     <br />
@@ -88,9 +70,6 @@
 
     <!-- scrollable column -->
     <div style='padding-top: 0px; font-size: 10px; white-space: nowrap; width:100%; overflow-y:hidden; display:inline-block; width:100%;'>
-        <!-- <div class='wrapper' style='height:20px;width:100%;'>
-            <div style='height:20px;width:3000px;'></div>
-        </div> -->
         <div id='structures_scrollable_div'>
             <table class="display compact text-nowrap" id='structures_scrollable'>
                 <thead>
@@ -265,57 +244,19 @@
                         <td class="text-center">{{ structure.resolution|floatformat:"1" }}</td>
                         <td class="text-center">{{ structure.preferred_chain }}</td>
                         <td>{{ structure.state.name }}</td>
-                        <td class="text-center">{{ structure.gprot_bound_likeness|floatformat }}</td>
+                        <td class="text-center">{{ structure.gprot_bound_likeness|floatformat|dashwhenempty }}</td>
+                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,family"|safe }}</td>
+                        <td><a target='_blank' href="/signprot/{{ structure.extra_proteins.all|only_one_subunit:'Alpha-Arrestin,entry_name' }}">{{ structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,name"|safe }}</a></td>
                         <td>
-                            {% for ep in structure.extra_proteins.all %}
-                                {% if ep.category == "Arrestin" %}
-                                    {{ ep.wt_protein.family.parent.parent.name }}
-                                {% else %}
-                                    {{ ep.wt_protein.family.parent.name }}
-                                {% endif %}
-                                {% empty %}
-                                    -
-                            {% endfor %}
+                            {% if ep.note|length > 20 %}
+                                <span title="{{ ep.note }}">{{ structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,note"|safe|cut_at_20 }}...</span>
+                            {% else %}
+                                {{ structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,note"|safe }}
+                            {% endif %}
+                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,coverage"|safe }}</td>
                         </td>
-                        <td>
-                            {% for ep in structure.extra_proteins.all %}
-                                {{ ep.display_name}}
-                                {% empty %}
-                                    -
-                            {% endfor %}
-                        </td>
-                        <td>
-                            {% for ep in structure.extra_proteins.all %}
-                                {% if ep.note is None %}
-                                    -
-                                {% else %}
-                                    {% if ep.note|length > 20 %}
-                                        <span title="{{ ep.note }}">{{ ep.note|cut_at_20 }}...</span>
-                                    {% else %}
-                                    {{ ep.note }}
-                                    {% endif %}
-                                {% endif %}
-                                {% empty %}
-                                    -
-                            {% endfor %}
-                        </td>
-                        <td>
-                            {% for ep in structure.extra_proteins.all %}
-                                {% if ep.wt_coverage != None %}
-                                    {{ ep.wt_coverage}}
-                                {% else %}
-                                    -
-                                {% endif %}
-                                {% empty %}
-                                    -
-                            {% endfor %}
-                        </td>
-                        <td>
-                            {{ structure.stabilizing_agents.all|only_fusions|linebreaksbr }}
-                        </td>
-                        <td>
-                            {{ structure.stabilizing_agents.all|only_antibodies|linebreaksbr }}
-                        </td>
+                        <td>{{ structure.stabilizing_agents.all|only_fusions|linebreaksbr }}</td>
+                        <td>{{ structure.stabilizing_agents.all|only_antibodies|linebreaksbr }}</td>
                         <td>
                             {% for ligand in structure.ligands.all %}
                                 {% if ligand.ligand.name|safe|length > 20 %}
@@ -328,15 +269,11 @@
                             {% endfor %}
                                 <br />
                             {% empty %}
-                                N/A
+                                -
                             {% endfor %}
                         </td>
-                        <td>
-                            {{ structure.ligands.all|ligandtype|linebreaksbr }}
-                        </td>
-                        <td>
-                            {{ structure.ligands.all|ligandrole|linebreaksbr }}
-                        </td>
+                        <td>{{ structure.ligands.all|ligandtype|linebreaksbr }}</td>
+                        <td>{{ structure.ligands.all|ligandrole|linebreaksbr }}</td>
                         <td>
                             {% autoescape off %}
                             {% if structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat|length > 20 %}
@@ -346,7 +283,7 @@
                             {% endif %}
                             {% endautoescape %}
                         </td>
-                        <td>{{ structure.protein_conformation.protein.parent.endogenous_ligands.all.0.properities.ligand_type }}</td>
+                        <td>{{ structure.protein_conformation.protein.parent.endogenous_ligands.all.0.properities.ligand_type|dashwhenempty }}</td>
                         <td>
                             {% if structure.protein_conformation.is_sodium %}
                             Yes
@@ -361,13 +298,15 @@
                             No
                             {% endif %}
                         </td>
+                        <td>{{ structure.publication.authors|last_author}}</td>
                         <td>
-                            {{ structure.publication.authors|last_author}}
-                        </td>
-                        <td>
+                            {% if structure.publication %}
                             <a href="{{ structure.publication.web_link }}">
                             {{ structure.publication.web_link.index }}
                             </a>
+                            {% else %}
+                            -
+                            {% endif %}
                         </td>
                         <td>{{ structure.publication_date|date:"Y-m-d" }}</td>
                         <td>

@@ -3,7 +3,7 @@ from build.management.commands.build_homology_models_zip import Command as Uploa
 from django.db.models import Q
 from django.conf import settings
 
-from protein.models import Protein, ProteinConformation, ProteinAnomaly, ProteinState, ProteinSegment
+from protein.models import Protein, ProteinConformation, ProteinAnomaly, ProteinState, ProteinSegment, ProteinFamily
 from residue.models import Residue
 from residue.functions import dgn, ggn
 from structure.models import *
@@ -87,7 +87,8 @@ class Command(BaseBuild):
         parser.add_argument('--force_main_temp', help='Build model using this xtal as main template', default=False, type=str)
         parser.add_argument('--fast_refinement', help='Chose fastest refinement option in MODELLER', default=False, action='store_true')
         parser.add_argument('--keep_hetatoms', help='Keep hetero atoms from main template, this includes ligands', default=False, action='store_true')
-        
+
+
     def handle(self, *args, **options):
         self.debug = options['debug']
         if not os.path.exists('./structure/homology_models/'):
@@ -113,7 +114,7 @@ class Command(BaseBuild):
         self.fast_refinement = options['fast_refinement']
         self.keep_hetatoms = options['keep_hetatoms']
 
-        GPCR_class_codes = {'A':'001', 'B1':'002', 'B2':'003', 'C':'004', 'F':'006', 'T':'007'}
+        GPCR_class_codes = {'A':'001', 'B1':'002', 'B2':'003', 'C':'004', 'D1':'005', 'F':'006', 'T':'007'}
         self.modeller_iterations = options['i']
         self.build_all = False
 
@@ -137,21 +138,24 @@ class Command(BaseBuild):
 
         if options['r']:
             all_receptors = Protein.objects.filter(entry_name__in=options['r'])
+        # Only refined structures
         elif options['x']:
             structs = Structure.objects.filter(refined=False, annotated=True).order_by('pdb_code__index')
             all_receptors = [i.protein_conformation.protein for i in structs]
+        # Build all
         elif options['c']==False:
             self.build_all = True
             all_receptors = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species__common_name='Human').filter(Q(family__slug__istartswith='001') |
                                                                                                                                       Q(family__slug__istartswith='002') |
                                                                                                                                       Q(family__slug__istartswith='003') |
                                                                                                                                       Q(family__slug__istartswith='004') |
+                                                                                                                                      Q(family__slug__istartswith='005') |
                                                                                                                                       Q(family__slug__istartswith='006') |
                                                                                                                                       Q(family__slug__istartswith='007')).order_by('entry_name')
             structs = Structure.objects.filter(refined=False, annotated=True).order_by('pdb_code__index')
             all_receptors = list(all_receptors)+[i.protein_conformation.protein for i in structs]
         elif options['c'].upper() not in GPCR_class_codes:
-            raise AssertionError('Error: Incorrect class name given. Use argument -c with class name A, B1, B2, C, F or T')
+            raise AssertionError('Error: Incorrect class name given. Use argument -c with class name A, B1, B2, D1, C, F or T')
         # Build one class
         else:
             all_receptors = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species__common_name='Human', 
@@ -163,35 +167,11 @@ class Command(BaseBuild):
             if r.accession==None:
                 self.receptor_list.append([r, Structure.objects.get(pdb_code__index=r.entry_name.upper()).state.name])
                 continue
-            structs = Structure.objects.filter(protein_conformation__protein__parent=r, refined=False, annotated=True)
-            if r.family.slug.startswith('001') or r.family.slug.startswith('002') or r.family.slug.startswith('003') or r.family.slug.startswith('007'):
-                states_dic = {'Inactive':0, 'Intermediate':0, 'Active':0}
-                if len(structs)==0:
-                    self.receptor_list.append([r, 'Inactive'])
-                    self.receptor_list.append([r, 'Intermediate'])
-                    self.receptor_list.append([r, 'Active'])
-                else:
-                    for s in structs:
-                        try:
-                            del states_dic[s.state.name]
-                        except:
-                            pass
-                    for st in states_dic:
-                        self.receptor_list.append([r, st])
-            elif r.family.slug.startswith('004') or r.family.slug.startswith('006'):
-                states_dic = {'Inactive':0}
-                if len(structs)==0:
-                    self.receptor_list.append([r, 'Inactive'])
-                else:
-                    for s in structs:
-                        try:
-                            del states_dic[s.state.name]
-                        except:
-                            pass
-                    for st in states_dic:
-                        self.receptor_list.append([r, st])
+            for st in self.get_states_to_model(r):
+                self.receptor_list.append([r, st])
 
-        if self.debug and options['state']:
+        # Only specified states
+        if options['state']:
             self.receptor_list = [i for i in self.receptor_list if i[1] in options['state']]
 
         self.receptor_list_entry_names = [i[0].entry_name for i in self.receptor_list]
@@ -200,11 +180,13 @@ class Command(BaseBuild):
         if options['test_run']:
             self.receptor_list = self.receptor_list[:5]
             self.receptor_list_entry_names = self.receptor_list_entry_names[:5]
-            
+        
+        # Model building
         print("receptors to do",len(self.receptor_list))
         self.processors = options['proc']
         self.prepare_input(options['proc'], self.receptor_list)
 
+        # Cleanup
         missing_models = []
         with open('./structure/homology_models/done_models.txt') as f:
             for i in f.readlines():
@@ -218,6 +200,7 @@ class Command(BaseBuild):
 #            new_args = shlex.split('/env/bin/python3 manage.py build_homology_models -r {} -p {} -s {}'.format(' '.join(missing_models, options['proc'], options['s'])))
         os.remove('./structure/homology_models/done_models.txt')
 
+        # Make zip file for archiving
         os.chdir('./structure/')
         if options['z']==True:
             if self.complex:
@@ -261,6 +244,26 @@ class Command(BaseBuild):
                                        update=self.update, complex_model=self.complex, signprot=self.signprot, force_main_temp=self.force_main_temp, keep_hetatoms=self.keep_hetatoms)
             chm.run(fast_refinement=self.fast_refinement)
             logger.info('Model finished for  \'{}\' ({})... (processor:{} count:{}) (Time: {})'.format(receptor[0].entry_name, receptor[1],processor_id,i,datetime.now() - mod_startTime))
+
+    def get_states_to_model(self, receptor):
+        rec_class = ProteinFamily.objects.get(name=receptor.get_protein_class())
+        structs_in_class = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=rec_class.slug, refined=False, annotated=True)
+        possible_states = structs_in_class.exclude(protein_conformation__protein__parent=receptor).exclude(state__name='Other').values_list('state__name', flat=True).distinct()
+        if len(possible_states)==0:
+            if rec_class.name=='Class B2 (Adhesion)':
+                rec_class = ProteinFamily.objects.get(name='Class B1 (Secretin)')
+            elif rec_class.name=='Class T (Taste 2)':
+                rec_class = ProteinFamily.objects.get(name='Class A (Rhodopsin)')
+            structs_in_class = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=rec_class.slug, refined=False, annotated=True)
+            possible_states = structs_in_class.exclude(protein_conformation__protein__parent=receptor).exclude(state__name='Other').values_list('state__name', flat=True).distinct()
+        structs = structs_in_class.filter(protein_conformation__protein__parent=receptor)
+        li1 = list(possible_states)
+        li2 = []
+        for s in structs:
+            if s.state.name in li1 and s.state.name not in li2:
+                li2.append(s.state.name)
+        li_dif = [i for i in li1 + li2 if i not in li1 or i not in li2]
+        return li_dif
         
 
 class CallHomologyModeling():

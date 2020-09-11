@@ -133,26 +133,32 @@
     <div class="col-md-2 text-right text-info">
         <h4>STRUCTURES</h4>
     </div>
+    {% if structures|length > 0 %}
     <div class="col-md-10">
-        {% for structure in structures %}
-          <a href="../../signprot/structure/{{ structure }}">{{ structure }}</a>,
-        {% empty %}
-        No structures available
-        {% endfor %}
+        <p>View in <a href="/signprot/g_protein_structure_browser" target='_blank'>Structures</a></p>
     </div>
+    
+    {% else %}
+    <div class="col-md-10">
+        No structures available
+    </div>
+    {% endif %}
 </div>
 
 <div class="row">
     <div class="col-md-2 text-right text-info">
         <h4>RECEPTOR COMPLEX STRUCTURES</h4>
     </div>
+    {% if complex_structures|length > 0 %}
     <div class="col-md-10">
-        {% for complex_structure in complex_structures %}
-          <a href="../../structure/{{ complex_structure.structure.pdb_code.index }}">{{ complex_structure.structure.pdb_code.index }}</a>,
-        {% empty %}
-        No receptor complex structures available
-        {% endfor %}
+        <p>View in <a href="/signprot/g_protein_structure_browser" target='_blank'>Structures</a></p>
     </div>
+    
+    {% else %}
+    <div class="col-md-10">
+        No receptor complex structures available
+    </div>
+    {% endif %}
 </div>
 
 {% endblock %}
