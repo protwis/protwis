@@ -2,7 +2,7 @@ function citation_tool(url) {
 	// Modal part
 	$('#modal_table tbody').empty();
     var modal = document.getElementById('citation-tool');
-    var span = document.getElementsByClassName("close")[0];
+    var span = document.getElementsByClassName("close-citation")[0];
     modal.classList.add("modal");
     setTimeout(function(){
     	modal.style.display = "block";

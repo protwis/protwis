@@ -466,7 +466,7 @@
   <!-- Modal content -->
     <div class="modal-content modal-scroll">
         <div class="modal-header">
-            <button style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close close_modal" href="javascript:void(0)">&times;</button>
+            <button style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close close-citation" href="javascript:void(0)">&times;</button>
             <h3 class="modal-title">Cite us</h3>
         </div>
         <div class='modal-body'>
@@ -512,8 +512,8 @@
         })
         $('.dropdown-menu').on('click', '.article_option', function(){
             highlight_article($(this).parent().attr('id'));
-            location.href = "#";
-            location.href = "#"+$('#'+$(this).parent().attr('id').toString()+'_tag').parent().parent().parent().attr('id');
+            var anchor_id = $('#'+$(this).parent().attr('id').toString()+'_tag').parent().parent().parent().attr('id')
+            document.getElementById(anchor_id).scrollIntoView(true);
             $('#page_select_button').html($(this).text());
         })
         $('#ref_widget_openclose').click(function(){
