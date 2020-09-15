@@ -615,7 +615,7 @@ class HSExposureCB(AbstractPropertyMap):
                 if p[0].get_parent().get_id() in restrict_to_chain:
                     restricted_ppl.append(p)
             ppl = restricted_ppl
-
+        ###########
         for pp1 in ppl:
             for i in range(0, len(pp1)):
                 residues_with_proper_CA.append(pp1[i].get_id()[1])
