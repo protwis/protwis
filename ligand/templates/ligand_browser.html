@@ -43,6 +43,8 @@
                         { type: "select" }, // ligand type
                         { type: "select" }, // class
                         { type: "number-range" }, // resolution
+                        { type: "number-range" }, // resolution
+                        { type: "number-range" }, // resolution
                     ]
                 });
             }
@@ -121,8 +123,12 @@ Ligand source activities (1 row/activity)-->
                 <th class="general-th">Ligand type</th>
                 <th class="general-th">Class</th>
                 <th class="activity-th">Ligand count</th>
+                <th class="activity-th">F selectivity</th>
+                <th class="activity-th">B selectivity</th>
             </tr>
             <tr>
+                <th></th>
+                <th></th>
                 <th></th>
                 <th></th>
                 <th></th>
@@ -142,6 +148,8 @@ Ligand source activities (1 row/activity)-->
                 <td>{{ligand.protein__family__parent__parent__name}}</td>
                 <td>{{ligand.protein__family__parent__parent__parent__name}}</td>
                 <td>{{ligand.num_ligands}}</td>
+                <td>{{ligand.f_selective}}</td>
+                <td>{{ligand.b_selective}}</td>
             </tr>
             {% endfor %}
         </tbody>

@@ -298,6 +298,11 @@ class LigandRole(models.Model):
     class Meta():
         db_table = 'ligand_role'
 
+class LigandReceptorStatistics(models.Model):
+    ligand = models.ForeignKey('Ligand', on_delete=models.CASCADE)
+    protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
+    type = models.CharField(max_length=3, null= True)
+    potency = models.DecimalField(max_digits=9, decimal_places=3, null= True)
 
 class ChemblAssay(models.Model):
      #slug = models.SlugField(max_length=50, unique=True)
