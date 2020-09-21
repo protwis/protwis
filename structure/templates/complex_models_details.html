@@ -4,7 +4,7 @@
 
 {% block addon_css %}
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
-    <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/simple_browser.css' %}" type="text/css" />
 {% endblock %}
 
 {% block content %}
@@ -16,8 +16,6 @@ canvas {
     color: black;
 }
 </style>
-
-<script src="http://cdn.jsdelivr.net/3dmol.js/latest/3Dmol-min.js"></script>
 
 <div class="row text-success">
     <div class="text-center">
@@ -54,10 +52,10 @@ canvas {
 
 <div class="row">
     <div class="col-md-3 text-right text-info">
-        <h4>G-PROTEIN CLASS</h4>
+        <h4>G-PROTEIN FAMILY</h4>
     </div>
     <div class="col-md-9">
-        {{ model.sign_protein.family|safe }}
+        {{ model.sign_protein.family.parent|safe }}
     </div>
 </div>
 
@@ -209,6 +207,7 @@ canvas {
                     <tr>
                         <th>Segment</th>
                         <th>Seq.num.</th>
+                        <th>AA</th>
                         <th>GPCRdb#</th>
                         <th>Backbone</th>
                         <th>PDB</th>
@@ -223,6 +222,7 @@ canvas {
                         <th></th>
                         <th></th>
                         <th></th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -230,6 +230,7 @@ canvas {
                     <tr>
                         <td>{{ rota.residue.protein_segment.slug }}</td>
                         <td>{{ rota.residue.sequence_number }}</td>
+                        <td>{{ rota.residue.amino_acid }}</td>
                         {% if rota.residue.display_generic_number %}
                             <td>{{ rota.residue.display_generic_number.label }}</td>
                         {% else %}
@@ -271,6 +272,7 @@ canvas {
                     <tr>
                         <th>Segment</th>
                         <th>Seq.num.</th>
+                        <th>AA</th>
                         <th>CGN#</th>
                         <th>Backbone</th>
                         <th>PDB</th>
@@ -285,6 +287,7 @@ canvas {
                         <th></th>
                         <th></th>
                         <th></th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -292,11 +295,8 @@ canvas {
                     <tr>
                         <td>{{ rota.residue.protein_segment.slug }}</td>
                         <td>{{ rota.residue.sequence_number }}</td>
-                        {% if rota.residue.protein_segment in loop_segments %}
-                            <td></td>
-                        {% else %}
-                            <td>{{ rota.residue.generic_number.label }}</td>
-                        {% endif %}
+                        <td>{{ rota.residue.amino_acid }}</td>
+                        <td>{{ rota.residue.generic_number.label }}</td>
                         {% if rota.backbone_template %}
                             <td><a href="/protein/{{ rota.backbone_template.protein_conformation.protein.parent.entry_name }}">{{ rota.backbone_template.protein_conformation.protein.parent.name|safe }}</a></td>
                             <td><a href="../{{ rota.backbone_template.pdb_code.index }}">{{ rota.backbone_template.pdb_code.index }}</a></td>
@@ -410,6 +410,7 @@ canvas {
                         aoColumns: [
                             { type: "select" }, // segment
                             { type: "number-range"}, // seq num
+                            { type: "text" }, // AA
                             { type: "text" }, // gn
                             { type: "text" }, // backbone
                             { type: "text" }, // backbone xtal
@@ -441,6 +442,7 @@ canvas {
                         aoColumns: [
                             { type: "select" }, // segment
                             { type: "number-range"}, // seq num
+                            { type: "text" }, // AA
                             { type: "text" }, // gn
                             { type: "text" }, // backbone
                             { type: "text" }, // backbone xtal

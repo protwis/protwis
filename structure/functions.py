@@ -556,7 +556,7 @@ class HSExposureCB(AbstractPropertyMap):
     subclasses.
     """
     def __init__(self, model, radius, offset=0, hse_up_key='HSE_U', hse_down_key='HSE_D', angle_key=None, check_chain_breaks=False, 
-                 check_knots=False, receptor=None, signprot=None,  restrict_to_chain=[]):
+                 check_knots=False, receptor=None, signprot=None,  restrict_to_chain=[], check_hetatoms=False):
         """
         @param model: model
         @type model: L{Model}
@@ -602,6 +602,11 @@ class HSExposureCB(AbstractPropertyMap):
                         #         residues_in_pdb.append(chain.get_id()[1])
                         #         print('chain', chain, res)
                         #         break
+        het_resis, het_resis_close = [], []
+        for chain in model:
+            for res in chain:
+                if res.get_id()[0]!=' ':
+                    het_resis.append(res)
         self.clash_pairs = []
         self.chain_breaks = []
         
@@ -733,7 +738,16 @@ class HSExposureCB(AbstractPropertyMap):
                                     else:
                                         clash_res2 = other_res['CA'].get_bfactor()
                                     self.clash_pairs.append([(clash_res1, pp1[i].get_id()[1]), (clash_res2, other_res.get_id()[1])])
-        if check_chain_breaks==True:
+                    if check_hetatoms:
+                        for het_res in het_resis:
+                            for het_atom in het_res:
+                                het_atom_vector = het_atom.get_vector()
+                                d = het_atom_vector-ref_vector
+                                if d.norm()<6:
+                                    het_resis_close.append(het_res)
+        ### GP checking HETRESIS to remove if not interacting with AAs
+        self.hetresis_to_remove = [i for i in het_resis if i not in het_resis_close]
+        if check_chain_breaks:
             for r in residues_in_pdb:
                 if r not in residues_with_proper_CA:
                     self.chain_breaks.append(r)
@@ -866,9 +880,7 @@ class PdbChainSelector():
 
         max_res = num_helix_res[0]
         max_i = 0
-        print(self.chains[0], num_helix_res[0], seq_lengths[0])
         for i in range(1,len(num_helix_res)):
-            print(self.chains[i], num_helix_res[i], seq_lengths[i])
             if num_helix_res[i]>max_res:
                 if num_helix_res[i]-max_res>=seq_lengths[max_i]-seq_lengths[i]:
                     max_res = num_helix_res[i]
