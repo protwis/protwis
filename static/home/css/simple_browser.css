@@ -1,10 +1,10 @@
-div.container input.form-control, select.form-control {
-    width: 50px;
+#content input.form-control, select.form-control {
+    width: 40px;
     height: 20px;
     font-size: 9px;
     padding: 2px 2px;
 }
-div.container input.number_range_filter, input.date_range_filter {
+#content input.number_range_filter, input.date_range_filter {
     width: 20px;
     font-size: 8px;
 }

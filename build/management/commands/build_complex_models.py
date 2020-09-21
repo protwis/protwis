@@ -142,6 +142,18 @@ class Command(BaseBuild):
         for rf in receptor_families:
             subfams = sf.get_subfamilies_with_templates(rf)
             self.gprotein_targets[rf] = sf.get_subfam_subtype_dict(subfams, rf)
+        if self.signprot:
+            for s in self.signprot:
+                new_targets = OrderedDict()
+                signprot = Protein.objects.get(entry_name=s)
+                for recfam, targetfams in self.gprotein_targets.items():
+                    new_targets[recfam] = {}
+                    for gprotfam, gprots in targetfams.items():
+                        if s in gprots and gprotfam not in new_targets[recfam]:
+                            new_targets[recfam][gprotfam] = [s]
+                        elif s in gprots and gprotfam in new_targets[recfam]:
+                            new_targets[recfam][gprotfam].append(s)
+            self.gprotein_targets = new_targets
 
         if options['test_run']:
             break_loop = False

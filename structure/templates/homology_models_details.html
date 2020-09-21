@@ -17,7 +17,6 @@ canvas {
 }
 </style>
 
-<script src="https://cdn.jsdelivr.net/3dmol.js/latest/3Dmol-min.js"></script>
 <div class="row text-success">
     <div class="text-center">
         {% if model.refined %}
@@ -245,6 +244,7 @@ canvas {
                         <tr>
                             <th>Segment</th>
                             <th>Seq.num.</th>
+                            <th>AA</th>
                             <th>GPCRdb#</th>
                             <th>Backbone</th>
                             <th>PDB</th>
@@ -259,6 +259,7 @@ canvas {
                             <th></th>
                             <th></th>
                             <th></th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -266,6 +267,7 @@ canvas {
                         <tr>
                             <td>{{ rota.residue.protein_segment.slug }}</td>
                             <td>{{ rota.residue.sequence_number }}</td>
+                            <td>{{ rota.residue.amino_acid }}</td>
                             <td>{{ rota.residue.display_generic_number.label }}</td>
 
                             {% if rota.backbone_template %}
@@ -353,6 +355,7 @@ canvas {
                         aoColumns: [
                             { type: "select" }, // segment
                             { type: "number-range"}, // seq num
+                            { type: "text" }, // AA
                             { type: "text" }, // gn
                             { type: "text" }, // backbone
                             { type: "text" }, // backbone xtal

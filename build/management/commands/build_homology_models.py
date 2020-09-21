@@ -331,7 +331,7 @@ class CallHomologyModeling():
             p = PDB.PDBParser()
             post_model = p.get_structure('model','./structure/homology_models/{}.pdb'.format(Homology_model.modelname))
             if self.signprot:
-                hse = HSExposureCB(post_model, radius=11, check_chain_breaks=True, check_knots=True, receptor=self.receptor, signprot=self.signprot)
+                hse = HSExposureCB(post_model, radius=11, check_chain_breaks=True, check_knots=True, receptor=self.receptor, signprot=self.signprot, check_hetatoms=True)
                 # Run remodeling
                 if len(hse.remodel_resis)>0 and not self.no_remodeling:
                     rm = Remodeling('./structure/homology_models/{}.pdb'.format(Homology_model.modelname), gaps=hse.remodel_resis, receptor=self.receptor, signprot=self.signprot, 
@@ -343,7 +343,20 @@ class CallHomologyModeling():
                         formatted_model = remodeled_pdb.read()
                     formatted_model = Homology_model.format_final_model()
             else:
-                hse = HSExposureCB(post_model, radius=11, check_chain_breaks=True, receptor=self.receptor)
+                hse = HSExposureCB(post_model, radius=11, check_chain_breaks=True, receptor=self.receptor, check_hetatoms=True)
+
+            # Remove not interacting HETATM residues
+            if self.debug:
+                print('HETRESIS to remove: {}'.format(hse.hetresis_to_remove))
+            if len(hse.hetresis_to_remove)>0:
+                post_model2 = p.get_structure('model','./structure/homology_models/{}.pdb'.format(Homology_model.modelname))
+                for chain in post_model2[0]:
+                    for hetres in hse.hetresis_to_remove:
+                        chain.detach_child(hetres.id)
+                        logger.info('{} detached from model due to no interaction'.format(hetres))
+                io = PDB.PDBIO()
+                io.set_structure(post_model2)
+                io.save('./structure/homology_models/{}.pdb'.format(Homology_model.modelname))
             
             # Check for residue shifts in model
             residue_shift = False
@@ -1743,12 +1756,14 @@ class HomologyModeling(object):
             c_count = -1
             for c in C_term:
                 c_count+=1
-                if self.revise_xtal==True and self.main_structure.pdb_code.index=='1GZM':
+                if self.revise_xtal and self.main_structure.pdb_code.index=='1GZM':
                     if c.sequence_number in [327,328,329]:
                         continue
                 a.reference_dict['C-term'][str(c.sequence_number)] = c.amino_acid
                 a.alignment_dict['C-term'][str(c.sequence_number)] = '-'
                 try:
+                    if self.revise_xtal and self.main_structure.pdb_code.index=='5F8U' and c.sequence_number==359:
+                        raise Exception()
                     main_pdb_array['C-term'][str(c.sequence_number)] = temp_coo2[c_count]    
                     a.template_dict['C-term'][str(c.sequence_number)] = list(C_term_temp)[c_count].amino_acid
                     self.template_source['C-term'][str(c.sequence_number)][0] = C_struct
