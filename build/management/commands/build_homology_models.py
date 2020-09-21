@@ -1547,11 +1547,17 @@ class HomologyModeling(object):
         for seg in main_pdb_array:
             for gn, atoms in main_pdb_array[seg].items():
                 try:
-                    if atoms[0].get_parent().get_resname() in ['YCM','CSD']:
+                    if atoms[0].get_parent().get_resname() in ['YCM','CSD','SEP','TYS']:
+                        non_ess_res = atoms[0].get_parent().get_resname()
                         if self.debug:
                             print(gn, atoms[0].get_parent().get_resname(), atoms[0].get_parent().get_id())
-                        a.template_dict[seg][gn.replace('.','x')] = 'C'
-                        a.alignment_dict[seg][gn.replace('.','x')] = '.'
+                        if non_ess_res=='SEP':
+                            a.template_dict[seg][gn.replace('.','x')] = 'S'
+                        elif non_ess_res=='TYS':
+                            a.template_dict[seg][gn.replace('.','x')] = 'Y'
+                        else:
+                            a.template_dict[seg][gn.replace('.','x')] = 'C'
+                            a.alignment_dict[seg][gn.replace('.','x')] = '.'
                 except:
                     pass
 
@@ -1976,7 +1982,7 @@ class HomologyModeling(object):
                 hetatm = 1
                 for line in lines:
                     if line.startswith('HETATM'):
-                        if 'YCM' in line or 'CSD' in line:
+                        if 'YCM' in line or 'CSD' in line or 'SEP' in line or 'TYS' in line:
                             continue
                         pref_chain = str(self.main_structure.preferred_chain)
                         if len(pref_chain)>1:

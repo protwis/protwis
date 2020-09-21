@@ -4,7 +4,7 @@
 
 {% block addon_css %}
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
-    <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/simple_browser.css' %}" type="text/css" />
 {% endblock %}
 
 {% block content %}
@@ -17,7 +17,7 @@ canvas {
 }
 </style>
 
-<script src="http://cdn.jsdelivr.net/3dmol.js/latest/3Dmol-min.js"></script>
+<script src="https://cdn.jsdelivr.net/3dmol.js/latest/3Dmol-min.js"></script>
 <div class="row text-success">
     <div class="text-center">
         {% if model.refined %}

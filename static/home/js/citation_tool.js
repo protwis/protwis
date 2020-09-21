@@ -60,6 +60,9 @@ function citation_tool(url) {
 		var articles = {};
 		var tags = [];
 		for (i = 0; i < data.length; i++) {
+			if (data[i][11]==='') {
+				continue;
+			}
 			var site = parse_url(data[i][0]);
 			if (tags.includes(site)) {
 				site = site+i.toString();
