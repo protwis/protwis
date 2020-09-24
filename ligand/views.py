@@ -39,8 +39,6 @@ class LigandBrowser(TemplateView):
         ).annotate(num_ligands=Count('ligand', distinct=True)).prefetch_related('protein', 'LigandReceptorStatistics')
 
         content = self.merge_selectivity_data(ligands)
-        print(type(ligands))
-        print(type(content))
         context['ligands'] = content
 
         return context
@@ -58,9 +56,11 @@ class LigandBrowser(TemplateView):
             thelist2= [d for d in F_selective if d.get('type') == "F"]
 
             if thelist1:
-                ligand['b_selective'] = thelist1[0]['type_from']
+                b_res = set(thelist1)
+                ligand['b_selective'] = b_res
             if thelist2:
-                ligand['f_selective'] = thelist2[0]['type_from']
+                f_res = set(thelist2)
+                ligand['f_selective'] = f_res
             content.append(ligand)
         return content
 
@@ -130,22 +130,75 @@ def LigandDetails(request, ligand_id):
     return render(request, 'ligand_details.html', context)
 
 
+def LigandDetails(request, ligand_id):
+    """
+    The details of a ligand record. Lists all the assay experiments for a given ligand.
+    """
+    ligand_records = AssayExperiment.objects.filter(
+        ligand__properities__web_links__index=ligand_id
+        ).order_by('protein__entry_name')
+
+    record_count = ligand_records.values(
+        'protein',
+        ).annotate(num_records = Count('protein__entry_name')
+                   ).order_by('protein__entry_name')
+
+
+    ligand_data = []
+
+    for record in record_count:
+        per_target_data = ligand_records.filter(protein=record['protein'])
+        protein_details = Protein.objects.get(pk=record['protein'])
+
+        """
+        A dictionary of dictionaries with a list of values.
+        Assay_type
+        |
+        ->  Standard_type [list of values]
+        """
+        tmp = defaultdict(lambda: defaultdict(list))
+        tmp_count = 0
+        for data_line in per_target_data:
+            tmp[data_line.assay_type][data_line.standard_type].append(data_line.standard_value)
+            tmp_count += 1
+
+        #Flattened list of lists of dict values
+        values = list(itertools.chain(*[itertools.chain(*tmp[x].values()) for x in tmp.keys()]))
+        # TEMPORARY workaround for handling string values
+        values = [float(item) for item in values if float(item) ]
+
+        if len(values) > 0:
+            ligand_data.append({
+                'protein_name': protein_details.entry_name,
+                'receptor_family': protein_details.family.parent.name,
+                'ligand_type': protein_details.get_protein_family(),
+                'class': protein_details.get_protein_class(),
+                'record_count': tmp_count,
+                'assay_type': ', '.join(tmp.keys()),
+                #Flattened list of lists of dict keys:
+                'value_types': ', '.join(itertools.chain(*(list(tmp[x]) for x in tmp.keys()))),
+                'low_value': min(values),
+                'average_value': sum(values)/len(values),
+                'standard_units': ', '.join(list(set([x.standard_units for x in per_target_data])))
+                })
+
+    context = {'ligand_data': ligand_data, 'ligand':ligand_id}
+
+    return render(request, 'ligand_details.html', context)
+
+
 def TargetDetailsCompact(request, **kwargs):
     if 'slug' in kwargs:
         slug = kwargs['slug']
-        if slug.count('_') == 0:
-            ps = AssayExperiment.objects.filter(
-                protein__family__parent__parent__parent__slug=slug, ligand__properities__web_links__web_resource__slug='chembl_ligand')
+        if slug.count('_') == 0 :
+            ps = AssayExperiment.objects.filter(protein__family__parent__parent__parent__slug=slug, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
         elif slug.count('_') == 1 and len(slug) == 7:
-            ps = AssayExperiment.objects.filter(
-                protein__family__parent__parent__slug=slug, ligand__properities__web_links__web_resource__slug='chembl_ligand')
+            ps = AssayExperiment.objects.filter(protein__family__parent__parent__slug=slug, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
         elif slug.count('_') == 2:
-            ps = AssayExperiment.objects.filter(
-                protein__family__parent__slug=slug, ligand__properities__web_links__web_resource__slug='chembl_ligand')
-        # elif slug.count('_') == 3:
+            ps = AssayExperiment.objects.filter(protein__family__parent__slug=slug, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
+        #elif slug.count('_') == 3:
         elif slug.count('_') == 1 and len(slug) != 7:
-            ps = AssayExperiment.objects.filter(
-                protein__entry_name=slug, ligand__properities__web_links__web_resource__slug='chembl_ligand')
+            ps = AssayExperiment.objects.filter(protein__entry_name = slug, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
 
         if slug.count('_') == 1 and len(slug) == 7:
             f = ProteinFamily.objects.get(slug=slug)
@@ -153,8 +206,8 @@ def TargetDetailsCompact(request, **kwargs):
             f = slug
 
         context = {
-            'target': f
-        }
+            'target':f
+            }
     else:
         simple_selection = request.session.get('selection', False)
         selection = Selection()
@@ -162,27 +215,24 @@ def TargetDetailsCompact(request, **kwargs):
             selection.importer(simple_selection)
         if selection.targets != []:
             prot_ids = [x.item.id for x in selection.targets]
-            ps = AssayExperiment.objects.filter(
-                protein__in=prot_ids, ligand__properities__web_links__web_resource__slug='chembl_ligand')
+            ps = AssayExperiment.objects.filter(protein__in=prot_ids, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
             context = {
                 'target': ', '.join([x.item.entry_name for x in selection.targets])
-            }
+                }
 
-    ps = ps.prefetch_related(
-        'protein', 'ligand__properities__web_links__web_resource', 'ligand__properities__vendors__vendor')
+    ps = ps.prefetch_related('protein','ligand__properities__web_links__web_resource','ligand__properities__vendors__vendor')
     d = {}
     for p in ps:
         if p.ligand not in d:
             d[p.ligand] = {}
         if p.protein not in d[p.ligand]:
-            d[p.ligand][p.protein] = []
+             d[p.ligand][p.protein] = []
         d[p.ligand][p.protein].append(p)
     ligand_data = []
-    for lig, records in d.items():
+    for lig, records  in d.items():
 
         links = lig.properities.web_links.all()
-        chembl_id = [x for x in links if x.web_resource.slug ==
-                     'chembl_ligand'][0].index
+        chembl_id = [x for x in links if x.web_resource.slug=='chembl_ligand'][0].index
 
         vendors = lig.properities.vendors.all()
         purchasability = 'No'
@@ -203,51 +253,51 @@ def TargetDetailsCompact(request, **kwargs):
             tmp = defaultdict(list)
             tmp_count = 0
             for data_line in per_target_data:
-                tmp["Bind" if data_line.assay_type == 'b' else "Funct"].append(
-                    data_line.pchembl_value)
+                tmp["Bind" if data_line.assay_type == 'b' else "Funct"].append(data_line.pchembl_value)
                 tmp_count += 1
-            values = list(itertools.chain(*tmp.values()))
-            ligand_data.append({
-                'ligand_id': chembl_id,
-                'protein_name': protein_details.entry_name,
-                'species': protein_details.species.common_name,
-                'record_count': tmp_count,
-                'assay_type': ', '.join(tmp.keys()),
-                'purchasability': purchasability,
-                # Flattened list of lists of dict keys:
-                'low_value': min(values),
-                'average_value': sum(values) / len(values),
-                'high_value': max(values),
-                'standard_units': ', '.join(list(set([x.standard_units for x in per_target_data]))),
-                'smiles': lig.properities.smiles,
-                'mw': lig.properities.mw,
-                'rotatable_bonds': lig.properities.rotatable_bonds,
-                'hdon': lig.properities.hdon,
-                'hacc': lig.properities.hacc,
-                'logp': lig.properities.logp,
-            })
+
+            # TEMPORARY workaround for handling string values
+            values = [float(item) for item in itertools.chain(*tmp.values()) if float(item) ]
+
+            if len(values)>0:
+                f_selective, b_selective = TargetSelecitivity(chembl_id)
+                print(chembl_id,'f\t',f_selective,'\tb',b_selective)
+                ligand_data.append({
+                    'ligand_id': chembl_id,
+                    'protein_name': protein_details.entry_name,
+                    'species': protein_details.species.common_name,
+                    'record_count': tmp_count,
+                    'assay_type': ', '.join(tmp.keys()),
+                    'purchasability': purchasability,
+                    #Flattened list of lists of dict keys:
+                    'low_value': min(values),
+                    'average_value': sum(values)/len(values),
+                    'high_value': max(values),
+                    'standard_units': ', '.join(list(set([x.standard_units for x in per_target_data]))),
+                    'smiles': lig.properities.smiles,
+                    'mw': lig.properities.mw,
+                    'rotatable_bonds': lig.properities.rotatable_bonds,
+                    'hdon': lig.properities.hdon,
+                    'hacc': lig.properities.hacc,
+                    'logp': lig.properities.logp,
+                    })
     context['ligand_data'] = ligand_data
 
     return render(request, 'target_details_compact.html', context)
-
 
 def TargetDetails(request, **kwargs):
 
     if 'slug' in kwargs:
         slug = kwargs['slug']
-        if slug.count('_') == 0:
-            ps = AssayExperiment.objects.filter(
-                protein__family__parent__parent__parent__slug=slug, ligand__properities__web_links__web_resource__slug='chembl_ligand')
+        if slug.count('_') == 0 :
+            ps = AssayExperiment.objects.filter(protein__family__parent__parent__parent__slug=slug, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
         elif slug.count('_') == 1 and len(slug) == 7:
-            ps = AssayExperiment.objects.filter(
-                protein__family__parent__parent__slug=slug, ligand__properities__web_links__web_resource__slug='chembl_ligand')
+            ps = AssayExperiment.objects.filter(protein__family__parent__parent__slug=slug, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
         elif slug.count('_') == 2:
-            ps = AssayExperiment.objects.filter(
-                protein__family__parent__slug=slug, ligand__properities__web_links__web_resource__slug='chembl_ligand')
-        # elif slug.count('_') == 3:
+            ps = AssayExperiment.objects.filter(protein__family__parent__slug=slug, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
+        #elif slug.count('_') == 3:
         elif slug.count('_') == 1 and len(slug) != 7:
-            ps = AssayExperiment.objects.filter(
-                protein__entry_name=slug, ligand__properities__web_links__web_resource__slug='chembl_ligand')
+            ps = AssayExperiment.objects.filter(protein__entry_name = slug, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
 
         if slug.count('_') == 1 and len(slug) == 7:
             f = ProteinFamily.objects.get(slug=slug)
@@ -255,8 +305,8 @@ def TargetDetails(request, **kwargs):
             f = slug
 
         context = {
-            'target': f
-        }
+            'target':f
+            }
     else:
         simple_selection = request.session.get('selection', False)
         selection = Selection()
@@ -264,38 +314,44 @@ def TargetDetails(request, **kwargs):
             selection.importer(simple_selection)
         if selection.targets != []:
             prot_ids = [x.item.id for x in selection.targets]
-            ps = AssayExperiment.objects.filter(
-                protein__in=prot_ids, ligand__properities__web_links__web_resource__slug='chembl_ligand')
+            ps = AssayExperiment.objects.filter(protein__in=prot_ids, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
             context = {
                 'target': ', '.join([x.item.entry_name for x in selection.targets])
-            }
+                }
     ps = ps.values('standard_type',
-                   'standard_relation',
-                   'standard_value',
-                   'assay_description',
-                   'assay_type',
-                   # 'standard_units',
-                   'pchembl_value',
-                   'ligand__id',
-                   'ligand__properities_id',
-                   'ligand__properities__web_links__index',
-                   # 'ligand__properities__vendors__vendor__name',
-                   'protein__species__common_name',
-                   'protein__entry_name',
-                   'ligand__properities__mw',
-                   'ligand__properities__logp',
-                   'ligand__properities__rotatable_bonds',
-                   'ligand__properities__smiles',
-                   'ligand__properities__hdon',
-                   'ligand__properities__hacc', 'protein'
-                   ).annotate(num_targets=Count('protein__id', distinct=True))
+                'standard_relation',
+                'standard_value',
+                'assay_description',
+                'assay_type',
+                #'standard_units',
+                'pchembl_value',
+                'ligand__id',
+                'ligand__properities_id',
+                'ligand__properities__web_links__index',
+                #'ligand__properities__vendors__vendor__name',
+                'protein__species__common_name',
+                'protein__entry_name',
+                'ligand__properities__mw',
+                'ligand__properities__logp',
+                'ligand__properities__rotatable_bonds',
+                'ligand__properities__smiles',
+                'ligand__properities__hdon',
+                'ligand__properities__hacc','protein'
+                ).annotate(num_targets = Count('protein__id', distinct=True))
     for record in ps:
-        record['purchasability'] = 'Yes' if len(LigandVendorLink.objects.filter(lp=record['ligand__properities_id']).exclude(
-            vendor__name__in=['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem'])) > 0 else 'No'
+        record['purchasability'] = 'Yes' if len(LigandVendorLink.objects.filter(lp=record['ligand__properities_id']).exclude(vendor__name__in=['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem'])) > 0 else 'No'
 
     context['proteins'] = ps
 
     return render(request, 'target_details.html', context)
+
+def TargetSelecitivity(ligand):
+    receptor_list_f = list()
+    receptor_list_b = list()
+
+    receptor_list_f=set([item for item in LigandReceptorStatistics.objects.filter(ligand__name=ligand).filter(type="F").values_list('protein__entry_name',flat=True).prefetch_related("protein")])
+    receptor_list_b=set([item for item in LigandReceptorStatistics.objects.filter(ligand__name=ligand).filter(type="B").values_list('protein__entry_name',flat=True).prefetch_related("protein")])
+    return receptor_list_f,receptor_list_b
 
 
 def TargetPurchasabilityDetails(request, **kwargs):

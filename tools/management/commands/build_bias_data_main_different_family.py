@@ -90,6 +90,7 @@ class Command(BaseBuild):
     def purge_bias_data(self):
         delete_bias_experiment = AnalyzedExperiment.objects.all()
         delete_bias_experiment.delete()
+        print('Previous data is purged')
 
     def fetch_experiment(self, publication, ligand, receptor, residue, mutation, source):
         """
@@ -136,7 +137,7 @@ class Command(BaseBuild):
             fin_obj['vendor_counter'] = vendor_counter
             rd.append(fin_obj)
 
-
+        print('#step1', len(rd))
         return rd
 
     def change(self, rd):
@@ -194,7 +195,7 @@ class Command(BaseBuild):
                 temp_dict['efficacy_measure_type'] = j['children'][0].efficacy_measure_type
                 temp_dict['t_coefficient'] = j['children'][0].bias_value
                 temp_dict['t_coefficient_initial'] = j['children'][0].bias_value_initial
-                temp_dict['potency'] = ''
+                temp_dict['potency'] = None
                 temp_dict['t_factor'] = ''
                 temp_dict['log_bias_factor'] = ''
                 temp_dict['bias_reference'] = j['children'][0].bias_reference
@@ -209,7 +210,7 @@ class Command(BaseBuild):
                 send[increment] = temp
                 increment = increment + 1
                 counter += 1
-
+        print('#step2', len(send))
         return send
 
     def process_dublicates(self, context):
@@ -230,17 +231,16 @@ class Command(BaseBuild):
                         pass
                     else:
                         ref.append(data)
-
+            assays = 0
             for data in j[1]:
                 for i in ref:
-
                     if (data['receptor'] == i['receptor'] and
                         data['species'] == i['species'] and
                         data['assay'][0]['assay_type'] == i['assay'][0]['assay_type'] and
                         data['assay'][0]['signalling_protein'] == i['assay'][0]['signalling_protein'] and
                         data['assay'][0]['cell_line'] == i['assay'][0]['cell_line'] and
                         data['assay'][0]['assay_measure_method'] == i['assay'][0]['assay_measure_method'] and
-                        data['assay'][0]['bias_reference'] == 'Tested'):
+                        data['assay'][0]['bias_reference'] != 'Reference'):
                         data['assay'][0]['reference_quantitive_activity'] = i['assay'][0]['quantitive_activity']
                         data['assay'][0]['reference_quantitive_efficacy'] = i['assay'][0]['quantitive_efficacy']
                         data['assay'][0]['reference_t_coefficient_initial'] = i['assay'][0]['t_coefficient_initial']
@@ -250,13 +250,13 @@ class Command(BaseBuild):
 
 
             for data in j[1]:
-                if data['assay'][0]['bias_reference'] =='Tested':
+                if data['assay'][0]['bias_reference'] !='Reference':
                     send[increment] = data
                     increment += 1
 
 
         results_temp = self.process_group(send)
-
+        print('#step4', len(results_temp))
         return results_temp
 
     def process_calculation(self, context):
@@ -284,18 +284,17 @@ class Command(BaseBuild):
             i[1].pop('assay')
 
             self.calc_bias_factor(i[1]['biasdata'])
-            #self.calc_t_coefficient(i[1]['biasdata'])
 
-            most_potent = dict()
-            for x in i[1]['biasdata']:
-                if x['log_bias_factor'] and isinstance(x['log_bias_factor'], int) and x['log_bias_factor'] < 0:
-                    for j in i[1]['biasdata']:
-                        if j['order_no'] == 0:
-                            j['order_no'] = x['order_no']
-                            x['order_no'] = 0
-                    self.calc_bias_factor(i[1]['biasdata'])
+            #recalculates lbf if it is negative
+            self.validate_lbf(i)
 
             self.calc_potency(i[1]['biasdata'])
+
+    def validate_lbf(self, i):
+        for x in i[1]['biasdata']:
+            if x['log_bias_factor'] and isinstance(x['log_bias_factor'], int) and x['log_bias_factor'] < 0:
+                print(type(x['order_no']))
+                self.calc_bias_factor(i[1]['biasdata'])
 
     def caclulate_bias_factor_variables(self,a,b,c,d):
         lgb = (a-b)-(c-d)
@@ -402,6 +401,7 @@ class Command(BaseBuild):
             context[name] = temp_obj
             context[name][0]['publication'] == name
 
+        print('#step3',len(context))
         send = self.process_dublicates(context)
 
         return send
@@ -565,7 +565,7 @@ class Command(BaseBuild):
         content = BiasedExperiment.objects.all().prefetch_related(
             'experiment_data', 'ligand', 'receptor', 'publication', 'publication__web_link', 'experiment_data__emax_ligand_reference',
             ).order_by('publication', 'receptor', 'ligand')
-
+        print(len(content))
         # merge children
         pre_data = self.process_data(content)
         # transform to combined dictionary
@@ -573,7 +573,7 @@ class Command(BaseBuild):
         # combine references
 
         context.update({'data': self.process_references(combined)})
-
+        counter = 0
         for i in context['data'].items():
             # try:
 
@@ -594,6 +594,7 @@ class Command(BaseBuild):
                                                       labs_quantity = i[1]['labs'],
                                                       )
                 experiment_entry.save()
+                counter=counter+1
                 for ex in i[1]['biasdata']:
                     if ex['quantitive_activity'] is not None:
                         ex['quantitive_activity'] = '%.2E' % Decimal(ex['quantitive_activity'])
@@ -627,6 +628,7 @@ class Command(BaseBuild):
 
             else:
                 pass
+        print('total rows', counter)
             # except Exception as msg:
             #     print('\n---saving error---', msg)
             #     continue

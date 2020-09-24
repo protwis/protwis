@@ -359,9 +359,10 @@ class LigandVendorLink(models.Model):
 class BiasedExperiment(models.Model):
     submission_author = models.CharField(max_length=50)
     ligand = models.ForeignKey(Ligand, on_delete = models.CASCADE)
+    lignad_pubchem = models.CharField(max_length=100,null = True)
     publication = models.ForeignKey(Publication, on_delete = models.CASCADE)
     receptor = models.ForeignKey('protein.Protein', on_delete = models.CASCADE)
-    chembl = models.CharField(max_length=40,null = True)
+    chembl = models.CharField(max_length=100,null = True)
     endogenous_ligand = models.ForeignKey(Ligand, related_name='endogenous_ligand_bias', on_delete = models.CASCADE,  null = True)
     residue = models.CharField(max_length=5,null = True)
     mutation = models.CharField(max_length=5,null = True)
@@ -410,6 +411,7 @@ class BiasedExperimentVendors(models.Model):
 
 class AnalyzedExperiment(models.Model):
     ligand = models.ForeignKey(Ligand, on_delete = models.CASCADE)
+    lignad_pubchem = models.CharField(max_length=40,null = True)
     publication = models.ForeignKey(Publication, on_delete = models.CASCADE, null = True)
     receptor = models.ForeignKey('protein.Protein', on_delete = models.CASCADE)
     source = models.CharField(max_length=60)
@@ -462,6 +464,7 @@ class AnalyzedAssay(models.Model):
 class BiasedPathways(models.Model):
     submission_author = models.CharField(max_length=50)
     ligand = models.ForeignKey(Ligand, on_delete = models.CASCADE)
+    lignad_pubchem = models.CharField(max_length=40,null = True)
     publication = models.ForeignKey(Publication, on_delete = models.CASCADE)
     receptor = models.ForeignKey('protein.Protein', on_delete = models.CASCADE)
     chembl = models.CharField(max_length=40,null = True)

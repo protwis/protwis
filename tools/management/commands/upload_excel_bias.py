@@ -46,8 +46,8 @@ class Command(BaseBuild):
 
     help = 'Reads bias data and imports it'
     # source file directory
-    # structure_data_dir = os.sep.join([settings.EXCEL_DATA, 'ligand_data', 'bias'])
-    structure_data_dir = 'excel/'
+    # links_data_dir = os.sep.join([settings.DATA_DIR, 'ligand_data', 'assay_data'])
+    structure_data_dir = os.sep.join([settings.DATA_DIR, 'ligand_data', 'bias_data','excel'])
     publication_cache = {}
     ligand_cache = {}
     data_all = []
@@ -168,25 +168,34 @@ class Command(BaseBuild):
             d['bias_ligand_id'] = r[10]
 
             d['receptor'] = r[11].lower().strip()
+            d['receptor_isoform'] = r[12]
+            d['cell_line'] = r[13]
+            d['protein'] = r[14].strip().replace('α','a').replace('β','B').replace('g','G').lower()
+            d['protein_assay'] = r[15].strip()
+            d['protein_assay_method'] = r[16]
+            d['protein_time_resolved'] = r[17]
 
-            d['cell_line'] = r[12]
-            d['protein'] = r[13].strip().replace('α','a').replace('β','B').replace('g','G').lower()
-            d['protein_assay'] = r[14].strip()
-            d['protein_assay_method'] = r[15]
-            d['protein_time_resolved'] = r[16]
+            d['protein_ligand_function'] = r[18]
+            d['protein_mtype'] = r[19]
 
-            d['protein_ligand_function'] = r[17]
-            d['protein_mtype'] = r[18]
-            d['protein_activity_equation'] = r[19]
-            d['protein_activity_quantity'] = r[20]
-            d['protein_activity_quantity_unit'] = r[21]
-            d['protein_activity_quality'] = r[22]
-            d['protein_efficacy_measure'] = r[23]
-            d['protein_efficacy_equation'] = r[24]
-            d['protein_efficacy_quantity'] = r[25]
-            d['protein_efficacy_quantity_unit'] = r[26]
-            d['pathway_bias_initial'] = r[27]
-            d['pathway_bias'] = r[28]
+            d['protein_activity_quantity'] = r[21]
+            d['protein_activity_quantity_unit'] = r[22]
+            d['protein_activity_quality'] = r[23]
+            d['protein_efficacy_measure'] = r[24]
+
+            d['protein_efficacy_quantity'] = r[26]
+            d['protein_efficacy_quantity_unit'] = r[27]
+            d['pathway_bias_initial'] = r[28]
+            d['pathway_bias'] = r[29]
+
+            d['protein_activity_equation'] = '='
+            d['protein_efficacy_equation'] = '='
+            try:
+                if len(r[19])<3 and len(r[24])<3:
+                    d['protein_activity_equation'] = r[20]
+                    d['protein_efficacy_equation'] = r[25]
+            except:
+                print(r[19],r[24])
 
             d['source_file'] = source_file + str(i)
 
@@ -200,7 +209,11 @@ class Command(BaseBuild):
             if d['protein_efficacy_quantity'] == "":
                 d['protein_efficacy_quantity'] = None
             elif d['protein_efficacy_quantity'] !=None:
-                d['protein_efficacy_quantity'] = round(d['protein_efficacy_quantity'],0)
+                try:
+                    d['protein_efficacy_quantity'] = round(d['protein_efficacy_quantity'],0)
+                except:
+                    print(d['protein_efficacy_quantity'])
+                    d['protein_efficacy_quantity'] = None
             if not isinstance(d['pathway_bias'], float):
                 d['pathway_bias'] = None
             if not isinstance(d['pathway_bias_initial'], float):
@@ -219,13 +232,8 @@ class Command(BaseBuild):
             if not isinstance(d['pathway_bias'], (int, float)):
                 bias_value=d['pathway_bias'] = None
 
-
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                family_future = executor.submit(self.define_g_family,d['protein'], d['protein_assay'])
-                family = family_future.result()
-                pub_future = executor.submit(self.fetch_publication,d['reference'])
-                pub = pub_future.result()
-
+            family = self.define_g_family(d['protein'], d['protein_assay'])
+            pub = self.fetch_publication(d['reference'])
 
             # fetch main ligand
             l = self.fetch_ligand(
@@ -249,19 +257,31 @@ class Command(BaseBuild):
             if protein == None:
                 continue
             end_ligand  = self.fetch_endogenous(protein)
-
+            try:
+                if d['ligand_type']=="PubChem CID":
+                    lignad_pubchem = d['ligand_id']
+                else:
+                    lignad_pubchem = None
+            except:
+                lignad_pubchem = None
 
 ## TODO:  check if it was already uploaded
             experiment_entry = BiasedExperiment(submission_author=d['submitting_group'],
                                                 publication=pub,
                                                 ligand=l,
+                                                lignad_pubchem = lignad_pubchem,
                                                 receptor=protein,
                                                 chembl = chembl,
                                                 endogenous_ligand = end_ligand
-
                                                 )
-            experiment_entry.save()
-            self.fetch_vendor(l,experiment_entry)
+            try:
+                experiment_entry.save()
+                self.fetch_vendor(l,experiment_entry)
+            except:
+                print('ligand pubchem', lignad_pubchem)
+                print('publication',publication)
+                print('chembl', chembl)
+                continue
 
             experiment_assay = ExperimentAssay(biased_experiment=experiment_entry,
                                                signalling_protein=d['protein'],
@@ -493,6 +513,7 @@ class Command(BaseBuild):
         fetch publication with Publication model
         requires: publication doi or pmid
         """
+        pub = None
         try:
             float(publication_doi)
             publication_doi = str(int(publication_doi))

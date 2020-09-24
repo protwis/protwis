@@ -97,17 +97,28 @@ class Command(BaseBuild):
         ligands = self.get_ligands()
         # iterate throgu assayexperiments using ligand ids
         for ligand in ligands:
+
             # for every ligand compare assays and find most potent receptor
             assay_raw = self.get_data(ligand.ligand)
             # pass assays to compare potencies for different receptor__species
             # list can be empty, has only 1 element or multiple
-            # filter selectivity F
-            assay_f = assay_raw.filter(Q(standard_type='Potency') |
-                                 Q(standard_type='EC50'))
-            self.process_data(assay_f,"F")
-            #Selectivity B
-            assay_b = assay_raw.filter(standard_type='IC50')
-            self.process_data(assay_b,"B")
+
+            try:
+                assay_f = assay_raw.filter(Q(standard_type='Potency') |
+                                     Q(standard_type='EC50'))
+                assay_b = assay_raw.filter(standard_type='IC50')
+            except assay_raw.DoesNotExist:
+                print('no data for ligand',ligand)
+            try:
+                self.process_data(assay_f,"F")
+            except:
+                print("f selectivity errir")
+                continue
+            try:
+                self.process_data(assay_b,"B")
+            except:
+                print("b selectivity errir")
+                continue
 
         end = time.time()
         print('---temp_increment time---', end - start)
@@ -115,7 +126,11 @@ class Command(BaseBuild):
     def process_data(self, assay,type):
         assay_list = list()
         assay_list = self.process_assays(assay)
-        sorted_assay_list = self.sort_assay(assay_list)
+        try:
+            sorted_assay_list = self.sort_assay(assay_list)
+        except:
+            print('sorted error')
+
         # compare assays by standard value, leave only ones with 1p fold selectivity
         final_assay = self.analyze_assay(sorted_assay_list)
         # if final_assay, then save it to db
@@ -126,7 +141,7 @@ class Command(BaseBuild):
         #Getting ligands from the model
         try:
             content = AssayExperiment.objects.all().order_by(
-                'ligand').distinct('ligand').only('ligand')[:10000]
+                'ligand').distinct('ligand').only('ligand')
         except AssayExperiment.DoesNotExist:
             content = None
         return content
@@ -134,7 +149,7 @@ class Command(BaseBuild):
     def get_data(self, ligand_name):
         #Getting data from the model for a ligand\n##limiting only by EC50 | IC50 (values)'
         try:
-            print(ligand_name)
+
             content = AssayExperiment.objects.filter(ligand=ligand_name
                                                      ).filter(Q(assay_type='F') | Q(assay_type='B')
                                                               ).filter(Q(standard_type='IC50') |
@@ -150,13 +165,18 @@ class Command(BaseBuild):
     def process_assays(self, assays):
         processed_data = list()
         for i in assays:
-            assay_data = dict()
-            assay_data["protein"] = i.protein
-            assay_data["ligand"] = i.ligand
-            assay_data["assay_type"] = i.assay_type
-            assay_data["standard_type"] = i.standard_type
-            assay_data["pchembl_value"] = round(float(i.standard_value), 3)
-            processed_data.append(assay_data)
+            try:
+                assay_data = dict()
+                assay_data["protein"] = i.protein
+                assay_data["ligand"] = i.ligand
+                assay_data["assay_type"] = i.assay_type
+                assay_data["standard_type"] = i.standard_type
+                assay_data["pchembl_value"] = float(i.standard_value)
+                processed_data.append(assay_data)
+            except:
+                print('process data', i)
+                break
+
         return processed_data
 
     def sort_assay(self, assays):
@@ -167,9 +187,12 @@ class Command(BaseBuild):
         most_potent = next(iter(assays or []), None)
         if most_potent and most_potent != None:
             for i in assays:
-                if most_potent['pchembl_value'] > (i['pchembl_value'] + 1):
-                    return most_potent
-                    break
+                try:
+                    if most_potent['pchembl_value'] > (i['pchembl_value'] + 1):
+                        return most_potent
+                        break
+                except:
+                    print('analyze rows',i)
 
         # for assay in assays:
         #     if most_potent['pchembl_value']

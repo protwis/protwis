@@ -120,15 +120,14 @@ class Command(BaseBuild):
             # First load makes sure ligands are there
         for i in self.data:
             ligand	= self.fetch_ligand(i['ligand'],i['smiles'])
-            if not ligand:
-                print(i['ligand'])
             protein	= self.fetch_protein(i['protein'])
             assay	= self.fetch_assay(i['assay'])
             publication = None
-
-            if i['publication'] != None:
-                publication	= self.fetch_publication(i['publication'])
-
+            try:
+                if i['publication'] != None:
+                    publication	= self.fetch_publication(i['publication'])
+            except:
+                publication = None        
             assay_experiment = AssayExperiment(
                 ligand	= ligand,
                 protein	= protein,
@@ -149,12 +148,13 @@ class Command(BaseBuild):
                 smiles	= i['smiles'],
                 activity	= i['activity'],
                 document_chembl_id	= i['document_chembl_id'],
-                cell_line	= 'delete_me'
+                cell_line	= i['cell_line']
             )
-            assay_experiment.save()
-            print('saved')
-            count.value +=1
-
+            try:
+                assay_experiment.save()
+                count.value +=1
+            except:
+                continue
 
     ##read pre-generated file and extract the chembl_ids
     def load_data(self, filenames=False):
