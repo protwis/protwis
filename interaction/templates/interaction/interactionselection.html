@@ -1,29 +1,39 @@
 {% extends "common/selection.html" %}
 {% load static %}
 
+{% block addon_css %}
+    <style type="text/css">
+      ul.structure_select {
+        max-height: 50vh;
+        overflow: scroll;
+      }
+    </style>
+{% endblock %}
 {% block addon_js %}
     <script>
-    $(document).ready(function() {
-        $(function(){
-          // bind change event to select
-          $('#preloaded_xtals').on('change', function () {
-            var url = window.location.href;
-
-            if (url.substr(-1) == '/') url = url.substr(0, url.length - 2);
-
-            url = url.split('/');
-            url.pop();
-            url = url.join('/')+"/interaction/"+$(this).val(); // get selected value
-            if (url) { // require a URL
-                window.location = url; // redirect
-            }
-
-            toggleButtonClass('selection-button');
-            $("#selection-targets").html("<p><span class='selection-heading-text'>Selected targets</span></p>"+$(this).val());
-            return false;
-          });
+        $(document).ready(function() {
+            $(function(){
+              // bind change event to select
+              $('#preloaded_xtals').on('change', function(){
+                selectedPDBAction($(this).val());
+              });
+            });
         });
-    }); 
+
+        function selectedPDBAction(pdb) {
+          var url = window.location.href;
+
+          if (url.substr(-1) == '#') url = url.substr(0, url.length - 2);
+          if (url.substr(-1) == '/') url = url.substr(0, url.length - 2);
+
+          url = url.split('/');
+          url.pop();
+          url = url.join('/') + "/interaction/" + pdb; // set selected PDB
+          window.location = url; // redirect
+
+          toggleButtonClass('selection-button');
+          $("#selection-targets").html("<p><span class='selection-heading-text'>Selected targets</span></p>" + pdb);
+        }
 
         function submitupload() {
             $("#errormsg").remove();
@@ -54,19 +64,30 @@
 
             <div class="col-md-12 panel panel-primary">
                 <div class="panel-body">
-                    <h4>Select from interactions pre-calculated</h4>
+                    <h4>Structure select</h4>
                     <div>
-                    <select id='preloaded_xtals'>
-                    <option>Select from list</option>
-                    {% for structure in structures %}
-                        <option value="{{structure.structure_ligand_pair__structure__pdb_code__index}}">{{structure.structure_ligand_pair__structure__pdb_code__index}} ({{structure.structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name}}) </option>
-                    {% endfor %}
-                    </select>
+                      <div class="dropdown" id='preloaded_xtals'>
+                        <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">Select from list<span class="caret"></span></button>
+                        <ul class="dropdown-menu" role="menu">
+                          {% for group in structure_groups %}
+                            <li class="dropdown-submenu">
+                              <a tabindex="-1" href="#">PDB-code: {{ group }}xxx</a>
+                              <ul class="dropdown-menu structure_select">
+                                {% for structure in structures %}
+                                  {%  if structure.structure_ligand_pair__structure__pdb_code__index|first == group %}
+                                    <li><a href="#" onClick="selectedPDBAction('{{structure.structure_ligand_pair__structure__pdb_code__index}}');">{{structure.structure_ligand_pair__structure__pdb_code__index}} ({{structure.structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name}})</a></li>
+                                  {% endif %}
+                                {% endfor %}
+                              </ul>
+                            </li>
+                          {% endfor %}
+                        </ul>
+                      </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-12 panel panel-primary">
+<!--            <div class="col-md-12 panel panel-primary">
                 <div class="panel-body">
                     <h4>Run a new calculation</h4>
                     <div>
@@ -74,10 +95,10 @@
                             <form action="calculate" id="form" method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                             <label for="pdbname">PDB code</label>
-                            {{ form.pdbname }} <br> or 
+                            {{ form.pdbname }} <br> or
                             <p>{{ form.file.label_tag }}  </p> {{ form.file }}
                         </form>
                     </div>
                 </div>
-            </div>
+            </div>-->
 {% endblock %}

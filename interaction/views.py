@@ -87,13 +87,13 @@ class InteractionSelection(AbsTargetSelection):
     #     + ' where you can edit the list.\n\nSelect which numbering schemes to use in the middle column.\n\nOnce you' \
     #     + ' have selected all your receptors, click the green button.'
 
-    description = 'Ligand Interactions description'
+    description = 'Select the structure of interest by using the dropdown in the middle. The selection if viewed to the right and the interactions will be loaded immediately.'
 
     # Middle section
     numbering_schemes = False
     filters = False
     search = False
-    title = "Select annotated receptor interactions, PDB code or upload PDB file"
+    title = "Select a structure based on PDB-code"
 
     template_name = 'interaction/interactionselection.html'
 
@@ -117,6 +117,7 @@ class InteractionSelection(AbsTargetSelection):
 
         context['structures'] = ResidueFragmentInteraction.objects.values('structure_ligand_pair__structure__pdb_code__index', 'structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name').annotate(
             num_ligands=Count('structure_ligand_pair', distinct=True), num_interactions=Count('pk', distinct=True)).order_by('structure_ligand_pair__structure__pdb_code__index')
+        context['structure_groups'] = sorted(set([ structure['structure_ligand_pair__structure__pdb_code__index'][0] for structure in context['structures'] ]))
         context['form'] = PDBform()
         return context
 
