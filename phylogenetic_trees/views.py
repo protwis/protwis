@@ -39,14 +39,15 @@ class TargetSelection(AbsTargetSelection):
         ('targets', True),
         ('segments', False),
     ])
+
     buttons = {
         'continue': {
             'label': 'Continue to next step',
             'url': '/phylogenetic_trees/segmentselection',
             'color': 'success',
+            'onclick': 'return VerifyMinimumSelection(\'receptors\', 3);', # check for a minimum selection of 3 receptors
         },
     }
-
 
 class SegmentSelection(AbsSegmentSelection):
     step = 2
@@ -302,11 +303,13 @@ class Treeclass:
         return self.branches, self.ttype, self.total, str(self.Tree.legend), self.Tree.box, self.Additional_info, self.buttons
 
 
+# DEPRECATED CODE - can be cleaned up
 def get_buttons(request):
     Tree_class=request.session['Tree']
     buttons = [(x[1]['order'],x[1]['name']) for x in sorted(Tree_class.Additional_info.items(), key= lambda x: x[1]['order']) if x[1]['include']=='True']
     return render(request, 'phylogenetic_trees/ring_buttons.html', {'but':buttons })
 
+# DEPRECATED CODE - can be cleaned up
 def modify_tree(request):
     try:
         shutil.rmtree('/tmp/modify')
@@ -386,6 +389,7 @@ def render_tree_v2(request):
     context['protein_data'] = protein_data
     return render(request, 'phylogenetic_trees/display.html', context)
 
+# TODO: move this to seqsign
 @csrf_exempt
 def signature_selection(request):
     # create full selection and import simple selection (if it exists)
