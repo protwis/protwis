@@ -6,8 +6,10 @@ from django.conf import settings
 from django.db.models import Case, When
 from django.core.cache import cache
 
-from common.selection import SimpleSelection, Selection, SelectionItem
 from common import definitions
+Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
+
+from common.selection import SimpleSelection, Selection, SelectionItem
 from structure.models import Structure, StructureModel, StructureComplexModel
 from protein.models import Protein, ProteinFamily, ProteinSegment, Species, ProteinSource, ProteinSet, ProteinGProtein, ProteinGProteinPair
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent, ResiduePositionSet
@@ -1366,6 +1368,26 @@ def SetGroupMinMatch(request):
     template = 'common/selection_lists_sitesearch.html'
 
     return render(request, template, context)
+
+def VerifyMinimumSelection(request):
+    """Receives a selection request, checks if the minimum # has been selected"""
+    selection_type = request.GET['selection_type']
+    minimum = int(request.GET['minimum'])
+
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+
+    if selection_type == "receptors":
+        # Borrow function from alignment to check receptor count
+        a = Alignment()
+        a.load_proteins_from_selection(simple_selection)
+
+        if len(a.proteins) >= minimum:
+            return HttpResponse(True)
+        else:
+            return HttpResponse(False)
+    else:
+        return HttpResponse("Not supported", 404)
 
 def ResiduesDownload(request):
 
