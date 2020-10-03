@@ -751,6 +751,7 @@ def familyDetail(request, slug):
 
     # get structures of this family
     structures = SignprotStructure.objects.filter(protein__family__slug__startswith=slug)
+    complex_structures = SignprotComplex.objects.filter(protein__family__slug__startswith=slug)
 
     mutations = MutationExperiment.objects.filter(protein__in=proteins).prefetch_related('residue__generic_number',
                                                                                          'exp_qual', 'ligand')
@@ -831,7 +832,7 @@ def familyDetail(request, slug):
     
     context = {'pf': pf, 'families': families, 'structures': structures, 'no_of_proteins': no_of_proteins,
                'no_of_human_proteins': no_of_human_proteins, 'mutations': mutations, 'r_chunks': r_chunks,
-               'chunk_size': chunk_size, 'p': p}
+               'chunk_size': chunk_size, 'p': p, 'complex_structures': complex_structures}
 
     return render(request,
                   'signprot/family_details.html',
@@ -1051,7 +1052,7 @@ def StructureInfo(request, pdbname):
     """
     protein = Protein.objects.get(signprotstructure__pdb_code__index=pdbname)
 
-    crystal = SignprotStructure.objects.get(PDB_code=pdbname)
+    crystal = SignprotStructure.objects.get(pdb_code__index=pdbname)
 
     return render(request,
                   'signprot/structure_info.html',
@@ -1086,7 +1087,7 @@ def signprotdetail(request, slug):
     # get structures of this signal protein
     structures = SignprotStructure.objects.filter(protein=p)
     complex_structures = SignprotComplex.objects.filter(protein=p)
-
+    
     # mutations
     mutations = MutationExperiment.objects.filter(protein=p)
 
@@ -1133,7 +1134,7 @@ def signprotdetail(request, slug):
     context = {'p': p, 'families': families, 'r_chunks': r_chunks, 'chunk_size': chunk_size, 'aliases': aliases,
                'gene': gene, 'alt_genes': alt_genes, 'structures': structures, 'complex_structures': complex_structures,
                'mutations': mutations}
-
+    
     return render(request,
                   'signprot/signprot_details.html',
                   context

@@ -12,7 +12,21 @@
     z-index: 1050;
 }
 
-/* Workaround for join us modal - but this file overwrite bootstrap - needs to be fixed */
+.modal-higher {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    padding-top: 50px; /* Location of the box */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+    z-index: 1050;
+}
+
+/* Workaround for join us modal - but this file overwrites bootstrap - needs to be fixed */
 #join-us .modal-content {
   width: 50%;
   z-index: 1050;
@@ -25,10 +39,18 @@
     padding: 20px;
     border: 1px solid #888;
     width: 80%;
+    height: auto;
+    overflow-y: auto;
+}
+
+.modal-scroll {
+    height: 95%;
+    width: 60%;
+    padding: 10px;
 }
 
 /* The Close Button */
-.close {
+.modal .close {
     color: #aaaaaa;
     float: right;
     font-size: 28px;

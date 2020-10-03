@@ -84,28 +84,42 @@
     <!-- GPCRdb intro -->
     <div class="row">
 
-        <div class="col-md-12">
+        <div class="col-md-8">
             <div class="panel panel-primary">
                 <div class="panel-body">
-                    <div class='col-md-1 text-center'>
-                        <img src="{% static 'home/logo/gpcr/main.png' %}" style="height:80px;width:80px;">
+                    <div class="col-md-1 text-center">
+                        <img style="height:90%; margin-right:20% " src="{% static 'home/logo/gpcr/main.png' %}">
                     </div>
-                    <div class='col-md-11'>
-                        <p style="text-align:justify">The GPCR database (<strong>GPCRdb</strong>) contains data, diagrams and web tools
-                            to help researchers understand G protein-coupled receptors (GPCRs). Users can browse up
-                            to date curated GPCR structures and the largest collections of receptor mutants.
-                            Diagrams can be produced and downloaded to illustrate receptor residues (snake-plot and helix box diagrams) and
-                            relationships (phylogenetic trees). Reference (structure) structure-based sequence
-                            alignments take into account helix bulges and constrictions, display statistics of
-                            amino acid conservation and have been assigned generic residue numbering for
-                            equivalent residues in different receptors. For an overview read the GPCRdb
-                            <a href="https://files.gpcrdb.org/GPCRdb_Poster.pdf">poster</a>,
+                    <div class="col-md-1">
+                    </div>
+                    <div class="col-md-10">
+                        <p style="text-align:justify">GPCRdb contains reference data, interactive
+                            visualisation and experiment design tools for G protein-coupled receptors (GPCRs). GPCRdb
+                            curates sequence alignments, structures and receptor mutations from literature. Interactive
+                            diagrams visualise receptor residues (e.g. snakeplot and helix box plot) and relationships
+                            (e.g phylogenetic trees). See the GPCRdb graphical <a href="/static/home/poster/overview.pdf">overview</a>,
+                            <a href="https://files.gpcrdb.org/video/GPCRdb-David_Gloriam.mp4">video</a>,
                             <a onclick="citation_tool(window.location.href);" href="#">articles</a> or
                             <a href="https://docs.gpcrdb.org/">documentation</a>.</p>
                     </div>
                 </div>
             </div>
         </div>
+
+        <div class="col-md-4">
+            <div class="panel panel-primary">
+                <div class="panel-body">
+                    <p>GPCRdb is developed by the <a href="https://drug.ku.dk/staff/?pure=en/persons/352279" target="_blank"> David</a>
+                        Gloriam group, integrates data from the large GPCR community and maintains an active collaboration with the
+                        <a href="https://www.guidetopharmacology.org/">Guide To Pharmacology</a> (IUPHAR),
+                        <a href="http://gpcrmd.org/">GPCRmd</a> and <a href="https://ernest-gpcr.eu" target="_blank">ERNEST</a>.
+                        If you use the GPCRdb, please remember to <a onclick="citation_tool(window.location.href);" href="#">cite us</a>.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+
 
     </div>
 
@@ -193,21 +207,21 @@
     </div>
 
     <!-- Gloriam Group and Collabs -->
-    <div class="row">
-        <div class="col-md-12">
-            <div class="panel panel-primary">
-                <div class="panel-body">
-                    <p class="text-center"> The GPCRdb is developed by the Gloriam <a href="http://gloriamgroup.org" target="_blank">group</a>.
-                        It integrates data from the large GPCR community and maintains an active collaboration with the
-                        Guide To Pharmacology (IUPHAR), <a href="http://gpcrmd.org/">GPCRmd</a> and the European Research Network on Signal
-                        Transduction <a href="https://ernest-gpcr.eu" target="_blank">(ERNEST)</a>.
-                        If you use the GPCRdb, please remember to <a onclick="citation_tool(window.location.href);" href="#">cite us</a>.
-                    </p>
-                    
-                </div>
-            </div>
-        </div>
-    </div>
+    {#    <div class="row">#}
+    {#        <div class="col-md-12">#}
+    {#            <div class="panel panel-primary">#}
+    {#                <div class="panel-body">#}
+    {#                    <p class="text-center"> The GPCRdb is developed by the Gloriam <a href="http://gloriamgroup.org" target="_blank">group</a>.#}
+    {#                        It integrates data from the large GPCR community and maintains an active collaboration with the#}
+    {#                        Guide To Pharmacology (IUPHAR), <a href="http://gpcrmd.org/">GPCRmd</a> and the European Research Network on Signal#}
+    {#                        Transduction <a href="https://ernest-gpcr.eu" target="_blank">(ERNEST)</a>.#}
+    {#                        If you use the GPCRdb, please remember to <a onclick="citation_tool(window.location.href);" href="#">cite us</a>.#}
+    {#                    </p>#}
+    {#                    #}
+    {#                </div>#}
+    {#            </div>#}
+    {#        </div>#}
+    {#    </div>#}
 
 {% endblock %}
 

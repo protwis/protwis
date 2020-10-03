@@ -45,7 +45,8 @@ function gproteinstructurebrowser() {
             null,
             null,
             null,
-            null
+            null,
+            null //Not displayed, storing protein id
         ],
         "bInfo" : true,
     });
@@ -73,18 +74,19 @@ function gproteinstructurebrowser() {
                 filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '40px',
+                    width: '50px',
                 }
             },
             {
                 column_number : 2,
                 filter_type: "multi_select",
                 select_type: 'select2',
+                column_data_type: "html",
                 filter_default_label: "&alpha;",
                 filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '40px',
+                    width: '50px',
                 }
             },
             {
@@ -201,16 +203,6 @@ function gproteinstructurebrowser() {
                 column_number : 14,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '30px',
-                }
-            },
-            {
-                column_number : 15,
-                filter_type: "multi_select",
-                select_type: 'select2',
                 column_data_type: "html",
                 html_data_type: "text",
                 filter_default_label: "UniProt",
@@ -221,7 +213,7 @@ function gproteinstructurebrowser() {
                 }
             },
             {
-                column_number : 16,
+                column_number : 15,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 column_data_type: "html",
@@ -234,7 +226,7 @@ function gproteinstructurebrowser() {
                 }
             },
             {
-                column_number : 17,
+                column_number : 16,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 column_data_type: "html",
@@ -247,7 +239,7 @@ function gproteinstructurebrowser() {
                 }
             },
             {
-                column_number: 18,
+                column_number: 17,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 column_data_type: "html",
@@ -259,7 +251,7 @@ function gproteinstructurebrowser() {
                 }
             },
             {
-                column_number: 19,
+                column_number: 18,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "Species",
@@ -269,10 +261,20 @@ function gproteinstructurebrowser() {
                 }
             },
             {
+                column_number : 19,
+                filter_type: "text",
+                select_type: 'select2',
+                filter_default_label: "Receptor fusion",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '100px',
+                }
+            },
+            {
                 column_number : 20,
                 filter_type: "text",
                 select_type: 'select2',
-                filter_default_label: "Fusion",
+                filter_default_label: "Antibodies",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '100px',
@@ -282,7 +284,7 @@ function gproteinstructurebrowser() {
                 column_number : 21,
                 filter_type: "text",
                 select_type: 'select2',
-                filter_default_label: "Antibodies",
+                filter_default_label: "Other",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '100px',
@@ -308,7 +310,8 @@ function gproteinstructurebrowser() {
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '100px',
-                }
+                },
+                data: ['none', 'peptide', 'peptidesmall molecule', 'protein', 'small molecule', 'small moleculesmall molecule']
             },
             {
                 column_number : 24,
@@ -319,7 +322,8 @@ function gproteinstructurebrowser() {
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '100px',
-                }
+                },
+                data: ['AgonistPAM', 'Agonist', 'Apo (no ligand)']
             },
             {
                 column_number : 25,
@@ -481,19 +485,20 @@ function gproteinstructurebrowser() {
             }
     });
 
-    $('#align_btn').click(function () {
+    $('#align_btn_g_prot').click(function () {
         var checked_data = oTable2.rows('.alt_selected').data();
         ClearSelection('targets');
+        console.log(checked_data);
         for (i = 0; i < checked_data.length; i++) {
             var div = document.createElement("div");
-            div.innerHTML = checked_data[i][7];
+            div.innerHTML = checked_data[i][30];
             if (typeof div.innerText !== "undefined") {
-                AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
+                AddToSelection('targets', 'protein', div.innerText.replace(/\s+/g, ''));
             } else {
-                AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
+                AddToSelection('targets', 'protein', div.textContent.replace(/\s+/g, ''));
             }
         }
-        window.location.href = '/structure/selection_convert';
+        window.location.href = '/alignment/segmentselectiongprot';
     });
 
     $('#superpose_btn').click(function() {
