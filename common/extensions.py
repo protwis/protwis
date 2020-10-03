@@ -4,15 +4,15 @@ from django import forms
 #following koensblog.eu (both input and field)
 class MultiFileInput(forms.FileInput):
 
-    def render(self, name, value, attrs={}):
+    def render(self, name, value, attrs={}, renderer=None):
         attrs['multiple'] = 'multiple'
-        return super(MultiFileInput, self).render(name, None, attrs=attrs)
+        return super(MultiFileInput, self).render(name, None, attrs=attrs, renderer=None)
     def value_from_datadict(self, data, files, name):
         if hasattr(files, 'getlist'):
             return files.getlist(name)
         else:
             return [files.get(name)]
- 
+
 class MultiFileField(forms.FileField):
 
     widget = MultiFileInput
