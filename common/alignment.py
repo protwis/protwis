@@ -345,7 +345,7 @@ class Alignment:
         cache_key = "ALIGNMENTS_"+self.get_hash()
 
         #cache_alignments.set(cache_key, 0, 0)
-        if self.number_of_residues_total < 2500000 or not cache_alignments.has_key(cache_key):
+        if self.number_of_residues_total < 2500 or not cache_alignments.has_key(cache_key):
             # fetch segment residues
             if not self.ignore_alternative_residue_numbering_schemes and len(self.numbering_schemes) > 1:
                 rs = Residue.objects.filter(
@@ -648,7 +648,7 @@ class Alignment:
             self.clear_empty_positions()
             self.clear_empty_segments()
 
-            if self.number_of_residues_total >= 2500000:
+            if self.number_of_residues_total >= 2500:
                 self.calculate_statistics()
                 cache_data = {'unique_proteins': self.unique_proteins,
                               'amino_acids': self.amino_acids,
