@@ -72,6 +72,8 @@ def only_one_subunit ( objs, arg ):
                 return '&alpha;'+elements[0].display_name[1:]
             elif elements[0].display_name[0]=='G':
                 return elements[0].display_name[1:]
+            elif "Arrestin" in protfams:
+                return elements[0].wt_protein.name
         elif value=='id':
             return elements[0].id
         elif value=='entry_name':

@@ -11,7 +11,7 @@ from protein.models import Protein, ProteinConformation, ProteinSequenceType, Pr
 from residue.models import Residue
 from structure.models import Structure, PdbData, StructureType
 from structure.sequence_parser import SequenceParser
-from structure.functions import PdbChainSelector, PdbStateIdentifier
+from structure.functions import PdbChainSelector, PdbStateIdentifier, get_pdb_ids
 from structure.management.commands.structure_yaml_editor import StructureYaml
 from construct.functions import *
 from common.models import WebResource, WebLink, Publication
@@ -25,6 +25,7 @@ import xmltodict
 import yaml
 import shlex
 import subprocess
+import pprint
 
 
 class Command(BaseBuild):
@@ -57,16 +58,25 @@ class Command(BaseBuild):
         else:
             uniprot_list = self.uniprots[positions[0]:positions[1]]
         q = QueryPDB(self.uniprots, self.yamls)
-        consider_list = []
+        consider_list, error_list = [], []
+        print('{} number of receptors to check'.format(len(uniprot_list)))
+
+        # uniprot_list = ['P28223']
+        
         for uni in uniprot_list:
+            # print(uni)
             q.new_xtals(uni)
             for i in q.consider_list:
                 if i not in consider_list:
                     consider_list.append(i)
+            for i in q.error_list:
+                if i not in error_list:
+                    error_list.append(i)
         if self.verbose:
             print('Missing from db: ', q.db_list)
             print('Missing yamls: ', q.yaml_list)
             print('Structures with missing x50s: {} structures {}'.format(len(consider_list), consider_list))
+            print('Structures with an error: {} structures {}'.format(len(error_list), error_list))
 
     def fetch_accession_from_entryname(self, listof_entrynames):
         return [i.accession for i in Protein.objects.filter(entry_name__in=listof_entrynames)]
@@ -95,12 +105,13 @@ class QueryPDB():
         self.db_list, self.yaml_list = [], []
         self.missing_x50_list = ['4KNG','3N7P','3N7R','3N7S','4HJ0','6DKJ','5OTT','5OTU','5OTV','5OTX','6GB1']
         self.missing_x50_exceptions = ['6TPG','6TPJ']
-        self.consider_list = []
+        self.consider_list, self.error_list = [], []
 
     def new_xtals(self, uniprot):
         ''' List GPCR crystal structures missing from GPCRdb and the yaml files. Adds missing structures to DB.
         '''
-        structs = self.pdb_request_by_uniprot(uniprot)
+        # structs = self.pdb_request_by_uniprot(uniprot)
+        structs = get_pdb_ids(uniprot)
         try:
             protein = Protein.objects.get(accession=uniprot)
         except:
@@ -111,13 +122,14 @@ class QueryPDB():
             x50s = None
         if structs!=['null']:
             for s in structs:
+                # print(s)
                 missing_from_db, missing_yaml = False, False
                 try:
                     st_obj = Structure.objects.get(pdb_code__index=s)
                 except:
                     if s not in self.exceptions:
                         check = self.pdb_request_by_pdb(s)
-                        if check==1:
+                        if check:
                             self.db_list.append(s)
                             missing_from_db = True
 
@@ -125,19 +137,21 @@ class QueryPDB():
                     if s not in self.db_list:
                         check = self.pdb_request_by_pdb(s)
                     else:
-                        check = 1
-                    if check==1:
+                        check = True
+                    if check:
                         self.yaml_list.append(s)
                         missing_yaml = True
                 if not missing_from_db:
                     continue
                 try:
                     pdb_data_dict = fetch_pdb_info(s, protein, new_xtal=True)
+                    # pprint.pprint(pdb_data_dict)
                     exp_method = pdb_data_dict['experimental_method']
                     if exp_method=='Electron Microscopy':
                         st_type = StructureType.objects.get(slug='electron-microscopy')
                     elif exp_method=='X-ray diffraction':
                         st_type = StructureType.objects.get(slug='x-ray-diffraction')
+
                     if 'deletions' in pdb_data_dict:
                         for d in pdb_data_dict['deletions']:
                             presentx50s = []
@@ -145,6 +159,22 @@ class QueryPDB():
                                 if not d['start']<x.sequence_number<d['end']:
                                     presentx50s.append(x)
                             # Filter out ones without all 7 x50 positions present in the xtal
+                            if len(presentx50s)!=7:
+                                if s not in self.missing_x50_list:
+                                    self.consider_list.append(s)
+                                if s not in self.missing_x50_exceptions:
+                                    try:
+                                        del self.db_list[self.db_list.index(s)]
+                                        missing_from_db = False
+                                        del self.yaml_list[self.yaml_list.index(s)]
+                                    except:
+                                        pass
+                    if 'not_observed' in pdb_data_dict:
+                        for no in pdb_data_dict['not_observed']:
+                            presentx50s = []
+                            for x in x50s:
+                                if not no[0]<x.sequence_number<no[1]:
+                                    presentx50s.append(x)
                             if len(presentx50s)!=7:
                                 if s not in self.missing_x50_list:
                                     self.consider_list.append(s)
@@ -293,6 +323,10 @@ class QueryPDB():
                         print('{} added to db (preferred_chain chain: {})'.format(s, preferred_chain))
                 except Exception as msg:
                     print(s, msg)
+                    self.error_list.append(s)
+                    del self.db_list[self.db_list.index(s)]
+                    missing_from_db = False
+                    del self.yaml_list[self.yaml_list.index(s)]
         
 
 
@@ -313,7 +347,22 @@ class QueryPDB():
         structures = [i.split(':')[0] for i in result.decode('utf-8').split('\n')[:-1]]
         return structures
 
-    def pdb_request_by_pdb(self, pdb_code):
+    def pdb_request_by_pdb(self, pdb):
+        data = {}
+        response = urlopen('https://data.rcsb.org/rest/v1/core/entry/{}'.format(pdb))
+        json_data = json.loads(response.read())
+        response.close()
+
+        data['method'] = json_data['exptl'][0]['method']
+        if data['method'].startswith("THEORETICAL") or data['method'] in ['SOLUTION NMR','SOLID-STATE NMR']:
+            return False
+        if 'pubmed_id' in json_data['rcsb_entry_container_identifiers']:
+            data['pubmedId'] = json_data['rcsb_entry_container_identifiers']['pubmed_id']
+        else:
+            data['pubmedId'] = None
+        return True
+
+    def pdb_request_by_pdb_deprecated(self, pdb_code):
         response = urllib.request.urlopen('https://www.rcsb.org/pdb/rest/describePDB?structureId={}'.format(pdb_code.lower()))
         response_mol = urllib.request.urlopen('https://www.rcsb.org/pdb/rest/describeMol?structureId={}'.format(pdb_code.lower()))
         str_des = str(response.read())

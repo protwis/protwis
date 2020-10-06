@@ -223,8 +223,8 @@
                         <tr model_id='{{structure.pk}}'>
                     {% endif %}
                         <td class="text-center"><input class="alt" type="checkbox" id="{{ structure.pk }}"></td>
-                        <td><span><a href="http://www.uniprot.org/uniprot/{{ structure.protein_conformation.protein.parent.accession }}">{{ structure.protein_conformation.protein.parent.entry_short|safe }}</a></span></td>
-                        <td class='uniprot'><a href="/protein/{{ structure.protein_conformation.protein.parent.entry_name }}">{{ structure.protein_conformation.protein.parent.short|safe }}</a></td>
+                        <td><span><a target='_blank' href="http://www.uniprot.org/uniprot/{{ structure.protein_conformation.protein.parent.accession }}">{{ structure.protein_conformation.protein.parent.entry_short|safe }}</a></span></td>
+                        <td class='uniprot'><a target='_blank' href="/protein/{{ structure.protein_conformation.protein.parent.entry_name }}">{{ structure.protein_conformation.protein.parent.short|safe }}</a></td>
                         <td><span>{{ structure.protein_conformation.protein.family.parent.short|safe }}</span></td>
                         <td><span>{{ structure.protein_conformation.protein.family.parent.parent.parent.short|safe }}</span></td>
                         <td>{{ structure.protein_conformation.protein.species.common_name }}</td>
@@ -232,11 +232,11 @@
                             {{ structure.structure_type.type_short|escape }}
                         </td>
                         <td class="pdb text-left">
-                            <a href="{{ structure.pdb_code.index}}">{{ structure.pdb_code.index}}</a>
+                            <a target='_blank' href="{{ structure.pdb_code.index}}">{{ structure.pdb_code.index}}</a>
                         </td>
                         <td>
                             {% if structure.is_refined %}
-                            <a href="homology_models/{{ structure.pdb_code.index }}_refined">{{structure.pdb_code.index}}_refined</a>
+                            <a target='_blank' href="homology_models/{{ structure.pdb_code.index }}_refined">{{structure.pdb_code.index}}_refined</a>
                             {% else %}
                             -
                             {% endif %}
@@ -246,7 +246,11 @@
                         <td>{{ structure.state.name }}</td>
                         <td class="text-center">{{ structure.gprot_bound_likeness|floatformat|dashwhenempty }}</td>
                         <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,family"|safe }}</td>
-                        <td><a target='_blank' href="/signprot/{{ structure.extra_proteins.all|only_one_subunit:'Alpha-Arrestin,entry_name' }}">{{ structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,name"|safe }}</a></td>
+                        {% if structure.extra_proteins.all|only_one_subunit:'Alpha-Arrestin,entry_name' in '-,None' %}
+                            <td>-</td>
+                        {% else %}
+                            <td><a target='_blank' href="/signprot/{{ structure.extra_proteins.all|only_one_subunit:'Alpha-Arrestin,entry_name' }}">{{ structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,name"|safe }}</a></td>
+                        {% endif %}
                         <td>
                             {% if ep.note|length > 20 %}
                                 <span title="{{ ep.note }}">{{ structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,note"|safe|cut_at_20 }}...</span>
@@ -301,7 +305,7 @@
                         <td>{{ structure.publication.authors|last_author}}</td>
                         <td>
                             {% if structure.publication %}
-                            <a href="{{ structure.publication.web_link }}">
+                            <a target='_blank'  href="{{ structure.publication.web_link }}">
                             {{ structure.publication.web_link.index }}
                             </a>
                             {% else %}

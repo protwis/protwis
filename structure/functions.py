@@ -34,6 +34,7 @@ import zipfile
 import pprint
 import json
 import yaml
+from urllib.request import urlopen, Request
 
 
 logger = logging.getLogger("protwis")
@@ -602,7 +603,7 @@ class HSExposureCB(AbstractPropertyMap):
                         #         residues_in_pdb.append(chain.get_id()[1])
                         #         print('chain', chain, res)
                         #         break
-        het_resis, het_resis_close = [], []
+        het_resis, het_resis_close, het_resis_clash = [], [], []
         for chain in model:
             for res in chain:
                 if res.get_id()[0]!=' ':
@@ -744,9 +745,11 @@ class HSExposureCB(AbstractPropertyMap):
                                 het_atom_vector = het_atom.get_vector()
                                 d = het_atom_vector-ref_vector
                                 if d.norm()<6:
+                                    if d.norm()<1:
+                                        het_resis_clash.append(het_res)
                                     het_resis_close.append(het_res)
         ### GP checking HETRESIS to remove if not interacting with AAs
-        self.hetresis_to_remove = [i for i in het_resis if i not in het_resis_close]
+        self.hetresis_to_remove = [i for i in het_resis if i not in het_resis_close or i in het_resis_clash]
         if check_chain_breaks:
             for r in residues_in_pdb:
                 if r not in residues_with_proper_CA:
@@ -1181,4 +1184,22 @@ def right_rotamer_select(rotamer, chain=None):
     return rotamer
 
 
+def get_pdb_ids(uniprot_id):
+    pdb_list = []
+    data = { "query": { "type": "terminal", "service": "text", "parameters":{ "attribute":"rcsb_polymer_entity_container_identifiers.reference_sequence_identifiers.database_accession", "operator":"in", "value":[ uniprot_id ] } }, "request_options": { "pager": {"start": 0,"rows": 99999 }}, "return_type": "entry" }
+    url = 'http://search.rcsb.org/rcsbsearch/v1/query'
+    req = Request(url)
+    req.add_header('Content-Type', 'application/json; charset=utf-8')
+    jsondata = json.dumps(data)
+    jsondataasbytes = jsondata.encode('utf-8')
+    req.add_header('Content-Length', len(jsondataasbytes))
+    response = urlopen(req, jsondataasbytes)
+    rr = response.read()
+    if len(rr)==0:
+        return []
+    out = json.loads(rr)
+    for i in out['result_set']:
+        pdb_list.append(i['identifier'])
+    response.close()
+    return pdb_list
 

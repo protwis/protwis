@@ -23,7 +23,7 @@ from Bio import pairwise2
 
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.functions import StructureBuildCheck
-from ligand.models import Ligand, LigandType, LigandRole, LigandProperities
+from ligand.models import Ligand, LigandType, LigandRole, LigandProperities, LigandPeptideStructure
 from interaction.models import *
 from interaction.views import runcalculation,parsecalculation
 from residue.functions import dgn
@@ -353,7 +353,10 @@ class Command(BaseBuild):
         # print('parent_seq',len(parent_seq),'pdb_seq',len(seq))
         #align WT with structure seq -- make gaps penalties big, so to avoid too much overfitting
 
-        if structure.pdb_code.index in ['6NBI','6NBF','6NBH','6U1N']:
+        if structure.pdb_code.index=='6U1N':
+            seq = seq[:265]
+
+        if structure.pdb_code.index in ['6NBI','6NBF','6NBH','6U1N','6M1H','6PWC']:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -3, -1)
         elif structure.pdb_code.index in ['6KUX', '6KUY', '6KUW']:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -4, -1.5)
@@ -366,6 +369,7 @@ class Command(BaseBuild):
         # if structure.pdb_code.index in ['5WIU','5WIV']:
         #     temp_seq = temp_seq[:144]+'D'+temp_seq[145:]
         #     temp_seq = temp_seq[:149]+'-'+temp_seq[150:]
+        # Custom fixes for alignment issues
         if structure.pdb_code.index=='5ZKP':
             ref_seq = ref_seq[:197]+'-'+ref_seq[198:]
             ref_seq = ref_seq[:198]+'A'+ref_seq[199:]
@@ -381,6 +385,31 @@ class Command(BaseBuild):
         elif structure.pdb_code.index in ['6KUX','6KUY']:
             ref_seq = ref_seq[:416]+('-'*(416-233))+ref_seq[416:]
             temp_seq = temp_seq[:233]+('-'*(416-233))+temp_seq[233:]
+        elif structure.pdb_code.index in ['6KJV','6KK1','6KK7']:
+            ref_seq = ref_seq[:176]+ref_seq[177:]
+            temp_seq = temp_seq[:178]+temp_seq[179:]
+        elif structure.pdb_code.index in ['6LN2']:
+            ref_seq = ref_seq[:292]+ref_seq[293:]
+            temp_seq = temp_seq[:294]+temp_seq[295:]
+        elif structure.pdb_code.index in ['6WHA']:
+            temp_seq = temp_seq[:76]+'P--'+temp_seq[79:]
+        elif structure.pdb_code.index in ['6X18']:
+            temp_seq = temp_seq[:105]+'S------'+temp_seq[112:]
+        elif structure.pdb_code.index in ['6K41']:
+            temp_seq = temp_seq[:71]+'W------'+temp_seq[78:]
+        elif structure.pdb_code.index in ['6LPB']:
+            temp_seq = temp_seq[:316]+'S--------'+temp_seq[325:]
+        elif structure.pdb_code.index in ['6RZ5']:
+            temp_seq = temp_seq[:221]+'K-'+temp_seq[223:]
+        elif structure.pdb_code.index in ['6TPK']:
+            temp_seq = temp_seq[:30]+'H-----'+temp_seq[36:]
+        elif structure.pdb_code.index in ['6W25']:
+            temp_seq = temp_seq[:94]+'T--'+temp_seq[97:]
+        elif structure.pdb_code.index in ['7C61']:
+            temp_seq = temp_seq[:207]+'-'+temp_seq[207:225]+'-'+temp_seq[225:238]+'-'+temp_seq[238:251]+'-'+temp_seq[251:]
+            ref_seq = ref_seq[:304]+'----'+ref_seq[304:]
+        elif structure.pdb_code.index in ['6WHC']:
+            temp_seq = temp_seq[:202]+'S----------'+temp_seq[213:]
 
         for i, r in enumerate(ref_seq, 1): #loop over alignment to create lookups (track pos)
             # print(i,r,temp_seq[i-1]) #print alignment for sanity check
@@ -1208,49 +1237,63 @@ class Command(BaseBuild):
                                 else:
                                     lt, created = LigandType.objects.get_or_create(
                                         slug=slugify(default_ligand_type), defaults={'name': default_ligand_type})
-
                                 # set pdb reference for structure-ligand interaction
-                                if len(ligand['name'])>3 and ligand['type']=='peptide':
+                                if ligand['type'] in ['peptide','protein']:
                                     pdb_reference = 'pep'
+                                    db_lig = Ligand.objects.filter(name=ligand['title'])
                                 else:
                                     pdb_reference = ligand['name']
-
-                                # use pubchem_id
-                                if 'pubchemId' in ligand and ligand['pubchemId'] and ligand['pubchemId'] != 'None':
-                                    # create ligand
-                                    l = Ligand()
-
-
-                                    # update ligand by pubchem id
-                                    ligand_title = False
-                                    if 'title' in ligand and ligand['title']:
-                                        ligand_title = ligand['title']
-                                    l = l.load_from_pubchem('cid', ligand['pubchemId'], lt, ligand_title)
-
-
-                                # if no pubchem id is specified, use name
+                                    db_lig = Ligand.objects.filter(pdbe=ligand['name'])
+                                    
+                                # check if ligand exists already
+                                if len(db_lig)>0:
+                                    l = db_lig[0]
                                 else:
-                                    # use ligand title, if specified
-                                    if 'title' in ligand and ligand['title']:
-                                        ligand['name'] = ligand['title']
+                                    # use pubchem_id
+                                    if 'pubchemId' in ligand and ligand['pubchemId'] and ligand['pubchemId'] != 'None':
+                                        # create ligand
+                                        l = Ligand()
 
-                                    # create empty properties
-                                    lp = LigandProperities.objects.create()
-                                    lp.ligand_type = lt
-                                    lp.save()
-                                    # create the ligand
-                                    try:
-                                        l, created = Ligand.objects.get_or_create(name=ligand['name'], canonical=True,
-                                            defaults={'properities': lp, 'ambigious_alias': False})
-                                        if created:
-                                            self.logger.info('Created ligand {}'.format(ligand['name']))
+
+                                        # update ligand by pubchem id
+                                        ligand_title = False
+                                        if 'title' in ligand and ligand['title']:
+                                            ligand_title = ligand['title']
                                         else:
-                                            pass
-                                    except IntegrityError:
-                                        l = Ligand.objects.get(name=ligand['name'], canonical=True)
+                                            ligand_title = ligand['name']
+                                        l = l.load_from_pubchem('cid', ligand['pubchemId'], lt, ligand_title, pdbe=pdb_reference)
+                                        l.save()
 
-                                    # save ligand
-                                    l.save()
+
+                                    # if no pubchem id is specified, use name
+                                    else:
+                                        # use ligand title, if specified
+                                        if 'title' in ligand and ligand['title']:
+                                            ligand_title = ligand['title']
+                                        else:
+                                            ligand_title = ligand['name']
+
+                                        # create empty properties
+                                        lp = LigandProperities.objects.create()
+                                        lp.ligand_type = lt
+                                        lp.save()
+                                        # create the ligand
+                                        try:
+                                            l, created = Ligand.objects.get_or_create(name=ligand_title, canonical=True, pdbe=ligand['name'],
+                                                defaults={'properities': lp, 'ambigious_alias': False})
+                                            if created:
+                                                self.logger.info('Created ligand {}'.format(ligand['name']))
+                                            else:
+                                                pass
+                                        except IntegrityError:
+                                            l = Ligand.objects.get(name=ligand_title, canonical=True, pdbe=ligand['name'])
+
+                                        # save ligand
+                                        l.save()
+                                # Create LigandPeptideStructure object to store chain ID for peptide ligands - supposed to b TEMP
+                                if ligand['type'] in ['peptide','protein']:
+                                    lps, created = LigandPeptideStructure.objects.get_or_create(structure=s, ligand=l, chain=peptide_chain)
+
                             else:
                                 continue
 

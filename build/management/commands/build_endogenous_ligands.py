@@ -81,6 +81,7 @@ class EndogenousLigands():
                 ligand_type = val[14]
                 seq = val[23]
                 name = val[12]
+                pdbe = None
                 if val[16]=='':
                     pubchemid = None
                 else:
@@ -91,6 +92,7 @@ class EndogenousLigands():
                     print('Missing {} from Protein table'.format(protein))
                     continue
                 if ligand_type=='Peptide':
+                    pdbe = 'pep'
                     if len(seq)>50:
                         ligand_type, created = LigandType.objects.get_or_create(slug='protein', name='protein')
                     else:
@@ -125,14 +127,20 @@ class EndogenousLigands():
                 try:
                     l = Ligand.objects.get(name=name)
                     l.endogenous = True
+                    pdbe = l.pdbe
                 except:
-                    l = Ligand.objects.create(name=name, endogenous=True, properities=lp)
+                    try:
+                        l = Ligand.objects.get(name=name[0].upper()+name[1:])
+                        l.endogenous = True
+                        pdbe = l.pdbe
+                    except:
+                        l = Ligand.objects.create(name=name, endogenous=True, properities=lp, pdbe=pdbe)
                 l.properities = lp
                 l.name = name
                 # if self.verbose:
                 #     print(l, lp, l.name)
                 if pubchemid:
-                    l.load_from_pubchem('cid', pubchemid, lp.ligand_type, ligand_title=l.name)
+                    l.load_from_pubchem('cid', pubchemid, lp.ligand_type, ligand_title=l.name, pdbe=pdbe)
                 l.save()
                 orthologs = Protein.objects.filter(family=db_prot.family, accession__isnull=False)
                 for o in orthologs:

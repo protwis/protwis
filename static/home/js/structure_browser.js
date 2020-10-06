@@ -284,7 +284,7 @@ function structurebrowser() {
                 select_type_options: {
                     width: '100px',
                 },
-                data: ['Agonist', 'Antagonist', 'Apo (no ligand)', 'Inverse agonist', 'Inverse agonist (partial)', 'AgonistPAM', 'AntagonistNAM',
+                data: ['Agonist', 'Antagonist', 'Apo (no ligand)', 'Inverse agonist', 'AgonistPAM', 'AntagonistNAM',
                        'Inverse agonistNAM', 'NAMAntagonist', 'NAMAgonist', 'PAMAgonist', 'unknown', 'N/A']
             },
             {
