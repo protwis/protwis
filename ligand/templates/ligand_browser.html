@@ -13,138 +13,194 @@
 <script src="{% static 'home/js/selection.js' %}"> </script>
 
 <script type="text/javascript" charset="utf-8">
-    $(document).ready(function () {
-        ClearSelection('targets');
-        var table = $('#ligands').DataTable({
-            'scrollX': true,
-            'scrollY': $(window).height() -100,
-            'bScrollCollapse': true,
-            'paging': false,
-            'orderCellsTop': true,
-            'autoWidth': true,
-            'dom': 'iTlfrt',
-            'aoColumnDefs': [
-                { 'bSortable': false, 'aTargets': [0] },
-                { 'sType': 'string', 'aTargets': [1] },
-            ],
-            'tableTools': {
-                "sRowSelect": "double",
-                "aButtons": []
-            },
-            initComplete: function () {
-                $('#ligands').dataTable().columnFilter({
-                    sPlaceHolder: "head:after",
-                    sRangeFormat: "{from}:{to}",
-                    aoColumns: [
-                        null,
-                        { type: "select" }, // receptor
-                        { type: "select" }, // Species
-                        { type: "select" }, //protein family
-                        { type: "select" }, // ligand type
-                        { type: "select" }, // class
-                        { type: "number-range" }, // resolution
-                    ]
-                });
-            }
-        });
-        $('.alt').change(function () {
-            $(this).parent().parent().toggleClass('alt_selected');
-        });
-        $('.select-all').change(function () {
-            $('.alt').prop('checked', $(this).prop("checked"));
-            $('.alt').parent().parent().toggleClass('alt_selected');
-        });
-        $('#compact_btn').click(function () {
-            ClearSelection('targets');
-            var checked_data = table.rows('.alt_selected').data();
-            for (i = 0; i < checked_data.length; i++) {
-                var div = document.createElement("div");
-                div.innerHTML = checked_data[i][1];
-                if (typeof div.innerText !== "undefined") {
-                    AddToSelection('targets', 'protein_entry', div.innerText.replace(/\s+/g, ''));
-                    console.info(div.innerText.replace(/\s+/g, ''));
-                } else {
-                    AddToSelection('targets', 'protein_entry', div.textContent.replace(/\s+/g, ''));
-                    console.info(div.textContent.replace(/\s+/g, ''));
-                }
-            }
-            window.location.href = '/ligand/targets_compact';
-        });
-        $('#all_ligs_btn').click(function () {
-            ClearSelection('targets');
-            var checked_data = table.rows('.alt_selected').data();
-            for (i = 0; i < checked_data.length; i++) {
-                var div = document.createElement("div");
-                div.innerHTML = checked_data[i][1];
-                if (typeof div.innerText !== "undefined") {
-                    AddToSelection('targets', 'protein_entry', div.innerText.replace(/\s+/g, ''));
-                    console.info(div.innerText.replace(/\s+/g, ''));
-                } else {
-                    AddToSelection('targets', 'protein_entry', div.textContent.replace(/\s+/g, ''));
-                    console.info(div.textContent.replace(/\s+/g, ''));
-                }
-            }
-            window.location.href = '/ligand/targets';
-        });
+	$(document).ready(function() {
+		ClearSelection('targets');
+		var table = $('#ligands').DataTable({
+			'scrollX': true,
+			'scrollY': $(window).height() - 100,
+			'bScrollCollapse': true,
+			'paging': false,
+			'orderCellsTop': true,
+			'autoWidth': true,
+			'dom': 'iTlfrt',
+			'aoColumnDefs': [{
+					'bSortable': false,
+					'aTargets': [0]
+				},
+				{
+					'sType': 'string',
+					'aTargets': [1]
+				},
+			],
+			'tableTools': {
+				"sRowSelect": "double",
+				"aButtons": []
+			},
+			initComplete: function() {
+				$('#ligands').dataTable().columnFilter({
+					sPlaceHolder: "head:after",
+					sRangeFormat: "{from}:{to}",
+					aoColumns: [
+						null,
+						{
+							type: "select"
+						}, // receptor
+						{
+							type: "select"
+						}, // Species
+						{
+							type: "select"
+						}, //protein family
+						{
+							type: "select"
+						}, // ligand type
+						{
+							type: "select"
+						}, // class
+						{
+							type: "number-range"
+						}, // resolution
+						// { type: "number-range" }, // resolution
+						// { type: "number-range" }, // resolution
+					]
+				});
+			}
+		});
+		$('.alt').change(function() {
+			$(this).parent().parent().toggleClass('alt_selected');
+		});
+		$('.select-all').change(function() {
+			$('.alt').prop('checked', $(this).prop("checked"));
+			$('.alt').parent().parent().toggleClass('alt_selected');
+		});
 
 
-    });
+		$('#compact_btn').click(function() {
+			if (getCheckedCheckboxesFor() == true) {
+				ClearSelection('targets');
+				var checked_data = table.rows('.alt_selected').data();
+
+				for (i = 0; i < checked_data.length; i++) {
+					var div = document.createElement("div");
+					div.innerHTML = checked_data[i][1];
+					if (typeof div.innerText !== "undefined") {
+						AddToSelection('targets', 'protein_entry', div.innerText.replace(/\s+/g, ''));
+						console.info(div.innerText.replace(/\s+/g, ''));
+					} else {
+						AddToSelection('targets', 'protein_entry', div.textContent.replace(/\s+/g, ''));
+						console.info(div.textContent.replace(/\s+/g, ''));
+					}
+				}
+				window.location.href = '/ligand/targets_compact';
+			} else {
+				showAlert("Please select at least one receptor before continuing.", "danger");
+			}
+
+		});
+
+
+
+		$('#all_ligs_btn').click(function() {
+			if (getCheckedCheckboxesFor() == true) {
+				ClearSelection('targets');
+				var checked_data = table.rows('.alt_selected').data();
+				for (i = 0; i < checked_data.length; i++) {
+					var div = document.createElement("div");
+					div.innerHTML = checked_data[i][1];
+					if (typeof div.innerText !== "undefined") {
+						AddToSelection('targets', 'protein_entry', div.innerText.replace(/\s+/g, ''));
+						console.info(div.innerText.replace(/\s+/g, ''));
+					} else {
+						AddToSelection('targets', 'protein_entry', div.textContent.replace(/\s+/g, ''));
+						console.info(div.textContent.replace(/\s+/g, ''));
+					}
+				}
+				window.location.href = '/ligand/targets';
+			} else {
+				showAlert("Please select at least one receptor before continuing.", "danger");
+			}
+		});
+
+
+	});
+</script>
+<script type="text/javascript">
+	function getCheckedCheckboxesFor() {
+		var checkboxes = document.querySelectorAll('input[type="checkbox"]:checked'),
+			values = [];
+		Array.prototype.forEach.call(checkboxes, function(el) {
+			values.push(el.value);
+		});
+		if (values.length > 11) {
+			return true
+		} else {
+			return false
+		}
+
+
+	}
 </script>
 {% endblock %}
 
 {% block content %}
 <div class="btn-group">
-    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-            aria-haspopup="true" aria-expanded="false">
-        <span class="glyphicon glyphicon-download"></span>Show ligands<span class="caret"></span>
-    </button>
-    <ul class="dropdown-menu">
-        <li>
-            <a id="compact_btn" href="javascript:void(0)">Ligand min, max & mean activities (1 row/ligand)</a>
-        </li>
-        <li>
-            <a id="all_ligs_btn" href="javascript:void(0)">Ligand source activities (1 row/activity)</a>
-        </li>
-    </ul>
+	<button id="show_button" type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+		<span class="glyphicon glyphicon-download"></span>Show ligands<span class="caret"></span>
+	</button>
+	<ul class="dropdown-menu">
+		<li>
+			<a id="compact_btn" href="javascript:void(0)">Ligand min, max & mean activities (1 row/ligand)</a>
+		</li>
+		<li>
+			<a id="all_ligs_btn" href="javascript:void(0)">Ligand source activities (1 row/activity)</a>
+		</li>
+	</ul>
 </div>
 <!--Ligand min, max & mean activities (1 row/ligand)<br />
 Ligand source activities (1 row/activity)-->
 
 <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
-    <table width="100%" class="display" id="ligands">
-        <thead>
-            <tr>
-                <th><input class="select-all" type="checkbox"> Select all</th>
-                <th class="general-th">Receptor</th>
-                <th class="general-th">Species</th>
-                <th class="general-th">Receptor family</th>
-                <th class="general-th">Ligand type</th>
-                <th class="general-th">Class</th>
-                <th class="activity-th">Ligand count</th>
-            </tr>
-            <tr>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for ligand in ligands %}
-            <tr>
-                <td><input class="alt" type="checkbox"></td>
-                <td>{{ligand.protein__entry_name}}</td>
-                <td>{{ligand.protein__species__common_name}}</td>
-                <td>{{ligand.protein__family__parent__name}}</td>
-                <td>{{ligand.protein__family__parent__parent__name}}</td>
-                <td>{{ligand.protein__family__parent__parent__parent__name}}</td>
-                <td>{{ligand.num_ligands}}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+	<table width="100%" class="display" id="ligands">
+		<thead>
+			<tr>
+				<th><input class="select-all" type="checkbox"> Select all</th>
+				<th class="general-th">Receptor</th>
+				<th class="general-th">Species</th>
+				<th class="general-th">Receptor family</th>
+				<th class="general-th">Ligand type</th>
+				<th class="general-th">Class</th>
+				<th class="activity-th">Ligand count</th>
+				<!-- <th class="activity-th">F selectivity</th>
+                <th class="activity-th">B selectivity</th> -->
+			</tr>
+			<tr>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<!-- <th></th>
+                <th></th> -->
+			</tr>
+		</thead>
+		<tbody>
+			{% for ligand in ligands %}
+			<tr>
+				<td><input class="alt" type="checkbox"></td>
+				<td>{{ligand.protein__entry_name}}</td>
+				<td>{{ligand.protein__species__common_name}}</td>
+				<td>{{ligand.protein__family__parent__name}}</td>
+				<td>{{ligand.protein__family__parent__parent__name}}</td>
+				<td>{{ligand.protein__family__parent__parent__parent__name}}</td>
+				<td>{{ligand.num_ligands}}</td>
+				<!-- TODO: skip this as i am making changes to it -->
+				<!-- <td>{{ligand.f_selective}}</td>
+                <td>{{ligand.b_selective}}</td> -->
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
 </div>
 {% endblock %}

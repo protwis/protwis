@@ -26,7 +26,7 @@
     z-index: 1050;
 }
 
-/* Workaround for join us modal - but this file overwrite bootstrap - needs to be fixed */
+/* Workaround for join us modal - but this file overwrites bootstrap - needs to be fixed */
 #join-us .modal-content {
   width: 50%;
   z-index: 1050;
@@ -50,7 +50,7 @@
 }
 
 /* The Close Button */
-.close {
+.modal .close {
     color: #aaaaaa;
     float: right;
     font-size: 28px;

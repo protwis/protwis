@@ -6,10 +6,10 @@
         {% if forloop.counter > 1 %}
         btn-sm
         {% else %}
-        btn-lg 
+        btn-lg
         {% endif %}
         btn-block has-spinner"
-        {% if button.onclick %}onclick="{{ button.onclick }}" {% endif %}>
+        {% if button.onclick %}onclick="{{ button.onclick | safe }}" {% endif %}>
             <span class="spinner"><i class="fa fa-spinner fa-spin"></i></span> {{ button.label }}
         </a>
     {% endfor %}
