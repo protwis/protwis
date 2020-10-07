@@ -929,7 +929,7 @@ class PdbStateIdentifier():
         if tm2_gn=='2x41' and tm6_gn=='6x38' and tm3_gn=='3x44' and tm7_gn=='7x52' and inactive_cutoff==2 and intermediate_cutoff==7.15:
             if family.slug.startswith('002') or family.slug.startswith('003'):
                 tm6_gn, tm7_gn = '6x33', '7x51'
-                inactive_cutoff, intermediate_cutoff = 2.5, 5.75
+                inactive_cutoff, intermediate_cutoff = 2.5, 5.5
             elif family.slug.startswith('004'):
                 inactive_cutoff, intermediate_cutoff = 5, 7.15
         self.tm2_gn, self.tm6_gn, self.tm3_gn, self.tm7_gn = tm2_gn, tm6_gn, tm3_gn, tm7_gn

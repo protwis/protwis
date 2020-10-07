@@ -252,8 +252,8 @@
                             <td><a target='_blank' href="/signprot/{{ structure.extra_proteins.all|only_one_subunit:'Alpha-Arrestin,entry_name' }}">{{ structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,name"|safe }}</a></td>
                         {% endif %}
                         <td>
-                            {% if ep.note|length > 20 %}
-                                <span title="{{ ep.note }}">{{ structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,note"|safe|cut_at_20 }}...</span>
+                            {% if structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,note"|length > 20 %}
+                                <span title="{{ structure.extra_proteins.all|only_one_subunit:'Alpha-Arrestin,note|safe' }}">{{ structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,note"|safe|cut_at_20 }}...</span>
                             {% else %}
                                 {{ structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,note"|safe }}
                             {% endif %}
