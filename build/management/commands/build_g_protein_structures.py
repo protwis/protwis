@@ -56,6 +56,8 @@ class Command(BaseBuild):
             Residue.objects.filter(protein_conformation__protein__entry_name__endswith='_a', protein_conformation__protein__family__parent__parent__name='Alpha').delete()
             ProteinConformation.objects.filter(protein__entry_name__endswith='_a', protein__family__parent__parent__name='Alpha').delete()
             Protein.objects.filter(entry_name__endswith='_a', family__parent__parent__name='Alpha').delete()
+            SignprotStructureExtraProteins.objects.all().delete()
+            SignprotStructure.objects.all().delete()
 
         if not options['only_signprot_structures']:
             # Building protein and protconf objects for g protein structure in complex
@@ -79,6 +81,7 @@ class Command(BaseBuild):
                         alpha_protein.source = ProteinSource.objects.get(name='OTHER')
                         alpha_protein.species = sc.protein.species
                         alpha_protein.save()
+
                     try:
                         alpha_protconf = ProteinConformation.objects.get(protein__entry_name=sc.structure.pdb_code.index.lower()+'_a')
                     except:
@@ -86,6 +89,7 @@ class Command(BaseBuild):
                         alpha_protconf.protein = alpha_protein
                         alpha_protconf.state = ProteinState.objects.get(slug='active')
                         alpha_protconf.save()
+
                     pdbp = PDBParser(PERMISSIVE=True, QUIET=True)
                     s = pdbp.get_structure('struct', StringIO(sc.structure.pdb_data.pdb))
                     chain = s[0][sc.alpha]
@@ -155,11 +159,12 @@ class Command(BaseBuild):
                     # print(mutations)
                     # print(shifted_mutations)
                     # print(mismatches)
+                    # print('======')
                     # print(remaining_mismatches)
                     # pprint.pprint(pdb_num_dict)
 
                     # Mismatches remained possibly to seqnumber shift, making pairwise alignment to try and fix alignment
-                    if len(remaining_mismatches)>0 and sc.structure.pdb_code.index not in ['6OIJ','6OY9', '6OYA', '6LPB']:
+                    if len(remaining_mismatches)>0 and sc.structure.pdb_code.index not in ['6OIJ','6OY9', '6OYA', '6LPB', '6WHA']:
                         ppb = PPBuilder()
                         seq = ''
                         for pp in ppb.build_peptides(chain, aa_only=False):
@@ -170,6 +175,7 @@ class Command(BaseBuild):
                         pdb_wt_dict = OrderedDict()
                         j, k = 0, 0
                         for i, ref, temp in zip(range(0,len(ref_seq)), ref_seq, temp_seq):
+                            # print(i, ref, temp) # alignment check
                             if ref!='-' and temp!='-':
                                 wt_pdb_dict[resis[j]] = pdb_num_dict[nums[k]]
                                 pdb_wt_dict[pdb_num_dict[nums[k]][0]] = resis[j]
@@ -193,21 +199,29 @@ class Command(BaseBuild):
                             # Adjust for shift
                             else:
                                 pdb_num_dict[r[0].get_id()[1]][1] = pdb_wt_dict[r[0]]
+                    # Custom alignment fix for 6WHA mini-Gq/Gi2/Gs chimera
+                    # elif sc.structure.pdb_code.index=='6WHA':
+                    #     ref_seq  = 'MTLESIMACCLSEEAKEARRINDEIERQLRRDKRDARRELKLLLLGTGESGKSTFIKQMRIIHGSGYSDEDKRGFTKLVYQNIFTAMQAMIRAMDTLKIPYKYEHNKAHAQLVREVDVEKVSAFENPYVDAIKSLWNDPGIQECYDRRREYQLSDSTKYYLNDLDRVADPAYLPTQQDVLRVRVPTTGIIEYPFDLQSVIFRMVDVGGQRSERRKWIHCFENVTSIMFLVALSEYDQVLVESDNENRMEESKALFRTIITYPWFQNSSVILFLNKKDLLEEKIMY--SHLVDYFPEYDGP----QRDAQAAREFILKMFVDL---NPDSDKIIYSHFTCATDTENIRFVFAAVKDTILQLNLKEYNLV'
+                    #     temp_seq = '----------VSAEDKAAAERSKMIDKNLREDGEKARRTLRLLLLGADNSGKSTIVK----------------------------------------------------------------------------------------------------------------------------------GIFETKFQVDKVNFHMFDVG-----RRKWIQCFNDVTAIIFVVDSSDYNR----------LQEALNDFKSIWNNRWLRTISVILFLNKQDLLAEKVLAGKSKIEDYFPEFARYTTPDPRVTRAKY-FIRKEFVDISTASGDGRHICYPHFTC-VDTENARRIFNDCKDIILQMNLREYNLV'
+                    #     for i, ref, temp in zip(range(0,len(ref_seq)), ref_seq, temp_seq):
+                    #         print(i, ref, temp)
+                    #     pprint.pprint(pdb_num_dict)
+
 
                     bulked_residues = []
                     for key, val in pdb_num_dict.items():
                         # print(key, val) # sanity check
                         if not isinstance(val[1], int):
-                         res_obj = Residue()
-                         res_obj.sequence_number = val[0].get_id()[1]
-                         res_obj.amino_acid = AA[val[0].get_resname()]
-                         res_obj.display_generic_number = val[1].display_generic_number
-                         res_obj.generic_number = val[1].generic_number
-                         res_obj.protein_conformation = alpha_protconf
-                         res_obj.protein_segment = val[1].protein_segment
-                         bulked_residues.append(res_obj)
+                            res_obj = Residue()
+                            res_obj.sequence_number = val[0].get_id()[1]
+                            res_obj.amino_acid = AA[val[0].get_resname()]
+                            res_obj.display_generic_number = val[1].display_generic_number
+                            res_obj.generic_number = val[1].generic_number
+                            res_obj.protein_conformation = alpha_protconf
+                            res_obj.protein_segment = val[1].protein_segment
+                            bulked_residues.append(res_obj)
                         else:
-                         self.logger.info('Skipped {} as no annotation was present, while building for alpha subunit of {}'.format(val[1], sc))
+                            self.logger.info('Skipped {} as no annotation was present, while building for alpha subunit of {}'.format(val[1], sc))
 
                     Residue.objects.bulk_create(bulked_residues)
                     self.logger.info('Protein, ProteinConformation and Residue build for alpha subunit of {} is finished'.format(sc))
@@ -220,18 +234,18 @@ class Command(BaseBuild):
 
 
         # Build SignprotStructure objects from non-complex signprots
-        g_prot_alphas = Protein.objects.filter(family__slug__startswith='100_001', accession__isnull=False)#.filter(entry_name='gnai1_human')
-        complex_structures = SignprotComplex.objects.all().values_list('structure__pdb_code__index', flat=True)
-        for a in g_prot_alphas:
-            pdb_list = get_pdb_ids(a.accession)
-            for pdb in pdb_list:
-                if pdb not in complex_structures:
-                    try:
-                        data = self.fetch_gprot_data(pdb, a)
-                        if data:
-                            self.build_g_prot_struct(a, pdb, data)
-                    except Exception as msg:
-                        self.logger.error('SignprotStructure of {} {} failed\n{}: {}'.format(a.entry_name, pdb, type(msg), msg))
+        # g_prot_alphas = Protein.objects.filter(family__slug__startswith='100_001', accession__isnull=False)#.filter(entry_name='gnai1_human')
+        # complex_structures = SignprotComplex.objects.all().values_list('structure__pdb_code__index', flat=True)
+        # for a in g_prot_alphas:
+        #     pdb_list = get_pdb_ids(a.accession)
+        #     for pdb in pdb_list:
+        #         if pdb not in complex_structures:
+        #             try:
+        #                 data = self.fetch_gprot_data(pdb, a)
+        #                 if data:
+        #                     self.build_g_prot_struct(a, pdb, data)
+        #             except Exception as msg:
+        #                 self.logger.error('SignprotStructure of {} {} failed\n{}: {}'.format(a.entry_name, pdb, type(msg), msg))
 
     def fetch_gprot_data(self, pdb, alpha_protein):
         data = {}
