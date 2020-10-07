@@ -833,11 +833,13 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                 seg_resid_list = [i for i in seg_resid_list if i not in actually_present]
                 pos_in_wt = [i for i in pos_in_wt if i not in actually_present]
 
-            # Custom fix for 6PT2
-            if pdbname in ['6PT2', '6PT3']:
+            # Custom fix for deletion issues
+            if pdbname in ['6PT2', '6PT3'] and chain in ['A','B']:
                 pos_in_wt = list(range(1,41))+list(range(330,373))
-            elif pdbname in ['6TPK']:
+            elif pdbname in ['6TPK'] and chain=='A':
                 pos_in_wt+=list(range(338,357))
+            elif pdbname=='7JJO'  and chain=='E':
+                pos_in_wt = list(range(1,40))+list(range(243,247))+list(range(358,484))
 
             mutations = None
 
@@ -859,6 +861,8 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                 receptor = [{'start': 30, 'end': 340, 'origin': 'user'}]
             if pdbname=='6IQL' and chain in ['A','B'] and min_pos==304:
                 seg_uniprot_ids = ['drd4_mouse']
+            if pdbname=='7JJO' and chain=='E' and min_pos==40:
+                seg_uniprot_ids = ['adrb1_melga']
             if pdbname in ['6PT2','6PT3']:
                 if chain=='A' and min_pos==999:
                     seg_uniprot_ids = ['Soluble cytochrome b562']
