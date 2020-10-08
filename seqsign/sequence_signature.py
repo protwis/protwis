@@ -574,7 +574,7 @@ class SequenceSignature:
                                     color = color/abs(color) * 5
                                 color = int(color + 5)
 
-                        tooltip = entry + " ("+ zscale + ")</br>" + \
+                        tooltip = entry + " ("+ zscale + ")<br>" + \
                                   "Set 1: " + str(round(var1[0], 2)) + " ± " + str(round(var1[1], 2)) + " (" + str(var1[2]) + ")</br>" + \
                                   "Set 2: " + str(round(var2[0], 2)) + " ± " + str(round(var2[1], 2)) + " (" + str(var2[2]) + ")</br>"
                         if p > 0.001:
