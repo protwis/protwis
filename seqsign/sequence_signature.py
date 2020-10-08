@@ -4,7 +4,7 @@ A module for generating sequence signatures for the given two sets of proteins.
 from django.conf import settings
 #from django.core import exceptions
 
-from alignment.functions import strip_html_tags, get_format_props, prepare_aa_group_preference
+from alignment.functions import strip_html_tags, get_format_props, prepare_aa_group_preference, zscales_color_scale
 Alignment = getattr(__import__(
     'common.alignment_' + settings.SITE_NAME,
     fromlist=['Alignment']
@@ -574,7 +574,7 @@ class SequenceSignature:
                                     color = color/abs(color) * 5
                                 color = int(color + 5)
 
-                        tooltip = entry + " ("+ zscale + ")<br/>" + \
+                        tooltip = entry + " ("+ zscale + ")</br>" + \
                                   "Set 1: " + str(round(var1[0], 2)) + " ± " + str(round(var1[1], 2)) + " (" + str(var1[2]) + ")</br>" + \
                                   "Set 2: " + str(round(var2[0], 2)) + " ± " + str(round(var2[1], 2)) + " (" + str(var2[2]) + ")</br>"
                         if p > 0.001:
@@ -954,6 +954,141 @@ class SequenceSignature:
             )
 
 
+    def zscales_excel(self, workbook, worksheet_name, aln):
+
+        worksheet = workbook.add_worksheet(worksheet_name)
+        if aln == 'signature':
+            generic_numbers_set = self.common_gn
+            segments = self.common_segments
+            zscales = self.zscales_signature
+        if aln == 'positive':
+            generic_numbers_set = self.aln_pos.generic_numbers
+            segments = self.aln_pos.segments
+            zscales = self.aln_pos.zscales
+        if aln == 'negative':
+            generic_numbers_set = self.aln_neg.generic_numbers
+            segments = self.aln_neg.segments
+            zscales = self.aln_neg.zscales
+
+        numbering_schemes = self.common_schemes
+
+        # First column, numbering schemes
+        for row, scheme in enumerate(numbering_schemes):
+            worksheet.write(1 + 3 * row, 0, 'Residue number')
+            worksheet.write(2 + 3 * row, 0, 'Sequence-based ({})'.format(scheme[2]))
+            worksheet.write(3 + 3 * row, 0, 'Structure-based (GPCRdb)')
+
+        # Segments
+        offset = 0
+        col_offset = 1
+
+        # First ccolumn - labels
+        for segment in generic_numbers_set[numbering_schemes[0][0]].keys():
+            worksheet.merge_range(
+                0,
+                col_offset + offset,
+                0,
+                len(generic_numbers_set[numbering_schemes[0][0]][segment]) + offset - 1,
+                segment
+            )
+            offset += len(generic_numbers_set[numbering_schemes[0][0]][segment])
+
+        # Generic numbers
+        for row, item in enumerate(numbering_schemes):
+            scheme = item[0]
+            offset = col_offset
+            for _, gn_list in generic_numbers_set[scheme].items():
+                for col, gn_pair in enumerate(gn_list.items()):
+                    try:
+                        tm, bw, gpcrdb = re.split('\.|x', strip_html_tags(gn_pair[1]))
+                    except:
+                        tm, bw, gpcrdb = ('', '', '')
+                    worksheet.write(
+                        1 + 3 * row,
+                        col + offset,
+                        tm
+                    )
+                    worksheet.write(
+                        2 + 3 * row,
+                        col + offset,
+                        bw
+                    )
+                    worksheet.write(
+                        3 + 3*row,
+                        col + offset,
+                        gpcrdb
+                    )
+                offset += len(gn_list.items())
+
+
+        # Setting starting point for writing z-scales into excel sheet
+        offset = 1 + 3 * len(numbering_schemes)
+
+
+        # This part is split into alignments and signature since zscale items have different format 
+        # (4 positions for alignment vs 3 positions for signature zscales)
+        # Signature
+        if aln == 'signature':
+
+            for z_id, zscale in enumerate(ZSCALES):
+                # Z-scale label
+                worksheet.write(
+                    offset + z_id,
+                    0,
+                    zscale
+                )
+                for segment, gns in segments.items():
+                    for g_id, gn in enumerate(gns):
+                        # Unpack the values form z-scales
+                        zs_diff, p_val, tooltip = zscales[zscale][segment][gn]
+                        # Colour cell based on p-value
+                        cell_format = workbook.add_format(get_format_props(p_val))
+                        worksheet.write(
+                            offset + z_id, # row
+                            col_offset + g_id, # column
+                            zs_diff, # Z-scale value
+                            cell_format # cell formatting
+                        )
+                        # Stuff from tooltip goes into comments
+                        worksheet.write_comment(
+                            offset + z_id, # row
+                            col_offset + g_id, # column
+                            tooltip.replace('</br>', '\n')
+                        )
+                    col_offset += len(generic_numbers_set[numbering_schemes[0][0]][segment])
+                col_offset = 1
+        else:
+            for z_id, zscale in enumerate(ZSCALES):
+                # Z-scales label
+                worksheet.write(
+                    offset + z_id,
+                    0,
+                    zscale
+                )
+                for segment, gns in segments.items():
+                    for g_id, gn in enumerate(gns):
+                        res = zscales[zscale][segment][gn]
+                        # Unpack the values form z-scales
+                        zs_mean, _, _, tooltip = res # mean, std_dev, obs_count, tooltip
+                        # Colour cell based on p-value
+                        cell_format = workbook.add_format(get_format_props(freq_gs=zscales_color_scale(res)))
+                        worksheet.write(
+                            offset + z_id, # row
+                            col_offset + g_id, # column
+                            "%.2f" % zs_mean, # Z-scale value
+                            cell_format # cell formatting
+                        )
+                        # Stuff from tooltip goes into comments
+                        worksheet.write_comment(
+                            offset + z_id, # row
+                            col_offset + g_id, # column
+                            tooltip
+                        )
+                    col_offset += len(generic_numbers_set[numbering_schemes[0][0]][segment])
+                col_offset = 1
+
+
+
 class SignatureMatch():
 
     def __init__(self, common_positions, numbering_schemes, segments, difference_matrix,
@@ -986,7 +1121,6 @@ class SignatureMatch():
             (x, len(y)) for x,y in enumerate(AMINO_ACID_GROUPS.values())
         ])
 
-        print(self.schemes)
         self.find_relevant_gns()
 
         self.residue_to_feat = dict(

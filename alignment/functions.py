@@ -15,6 +15,16 @@ def strip_html_tags(text):
     """
     return re.sub('<.*?>', '', text)
 
+def zscales_color_scale (objs):
+    if objs[2] <= 1:
+        return '0'
+    else:
+        scaling = 10 # manual, should ideally be based on number of observations
+        if objs[1]*scaling > 10:
+            return '0'
+        else:
+            return str(int(10 - objs[1]*scaling))
+
 def get_format_props(freq=None, freq_gs=None, res=None, feat=None):
     """
     Get the excel cell format for residues/frequencies.

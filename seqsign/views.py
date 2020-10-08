@@ -162,6 +162,7 @@ def render_signature_excel(request):
 
     # calculate the signture
     signature.calculate_signature()
+    signature.calculate_zscales_signature()
 
     outstream = BytesIO()
     # wb = xlsxwriter.Workbook('excel_test.xlsx', {'in_memory': False})
@@ -172,6 +173,12 @@ def render_signature_excel(request):
         'signature_properties',
         'signature',
         'features'
+    )
+    # Signature Z-scales
+    signature.zscales_excel(
+        wb,
+        "signature_zscales",
+        'signature'
     )
     # Feature stats for positive group alignment
     signature.prepare_excel_worksheet(
@@ -187,6 +194,12 @@ def render_signature_excel(request):
         'positive',
         'alignment'
     )
+    # Positive group Z-scales
+    signature.zscales_excel(
+        wb,
+        "protein_set1_zscales",
+        'positive'
+    )
     # Feature stats for negative group alignment
     signature.prepare_excel_worksheet(
         wb,
@@ -200,6 +213,12 @@ def render_signature_excel(request):
         'protein_set2_aln',
         'negative',
         'alignment'
+    )
+    # Negative group Z-scales
+    signature.zscales_excel(
+        wb,
+        "protein_set2_zscales",
+        'negative'
     )
     signature.per_gn_signature_excel(wb)
 
