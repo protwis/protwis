@@ -30,7 +30,7 @@ class BrowseSelection(AbsBrowseSelection):
     target_input=False
 
 
-@cache_page(60 * 60 * 24 * 7)
+# @cache_page(60 * 60 * 24 * 7)
 def detail(request, slug):
     # get protein
     slug = slug.lower()
@@ -40,9 +40,21 @@ def detail(request, slug):
         else:
             p = Protein.objects.prefetch_related('web_links__web_resource').get(accession=slug.upper(), sequence_type__slug='wt')
     except:
-        context = {'protein_no_found': slug}
-
-        return render(request, 'protein/protein_detail.html', context)
+        #If wt fails, it is most likely a pdb code entered. Check that and try protein->parent then.
+        if len(slug) != 4:
+            context = {'protein_no_found': slug}
+            return render(request, 'protein/protein_detail.html', context)
+        #Now checking the parent
+        try:
+            pp = Protein.objects.prefetch_related('web_links__web_resource', 'parent').get(entry_name=slug)
+            if pp.parent.sequence_type.slug == 'wt':
+                p = pp.parent
+            else:
+                context = {'protein_no_found': slug}
+                return render(request, 'protein/protein_detail.html', context)
+        except:
+            context = {'protein_no_found': slug}
+            return render(request, 'protein/protein_detail.html', context)
 
 
     if p.family.slug.startswith('100') or p.family.slug.startswith('200'):

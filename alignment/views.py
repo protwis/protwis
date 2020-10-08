@@ -414,6 +414,7 @@ def render_alignment_excel(request):
 
     # calculate the signture
     signature.calculate_signature()
+    signature.calculate_zscales_signature()
 
     outstream = BytesIO()
     wb = xlsxwriter.Workbook(outstream, {'in_memory': True})
@@ -433,7 +434,12 @@ def render_alignment_excel(request):
         'positive',
         'features'
     )
-
+    # Z-scales
+    signature.zscales_excel(
+        wb,
+        "Z-scales",
+        'positive'
+    )
     wb.close()
     outstream.seek(0)
     response = HttpResponse(

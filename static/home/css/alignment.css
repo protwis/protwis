@@ -280,8 +280,8 @@
 .signature-section-header {
     height: 60px;
     font-size: 16px;
-    text-decoration: underline;
-    text-decoration-color:red;
+    /* text-decoration: underline;
+    text-decoration-color:red; */
 }
 .signature-section-header-row {
     height: 60px;
