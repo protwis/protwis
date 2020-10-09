@@ -2,6 +2,19 @@
 
 h1, h2, h3, h4 { margin-top: 0px; }
 
+/* Allow wider menu bar for smaller screens */
+@media (max-width: 1600px) {
+  .navbar .container {
+    width: 90vw;
+  }
+}
+
+@media (max-width: 1400px) {
+  .navbar .container {
+    width: 100vw;
+  }
+}
+
 #gpcrdb_alert_placeholder {
     position:fixed;
     width: 50vw;
