@@ -220,9 +220,15 @@ def SelectionAutocomplete(request):
 
         if type_of_selection!='navbar' or (type_of_selection=='navbar' and ps.count() == 0):
             # find protein aliases
-            pas = ProteinAlias.objects.prefetch_related('protein').filter(name__icontains=q,
+            if type_of_selection != 'navbar':
+                pas = ProteinAlias.objects.prefetch_related('protein').filter(name__icontains=q,
                                         protein__species__in=(species_list), protein__source__in=(protein_source_list)) \
                                         .exclude(protein__family__slug__startswith=exclusion_slug)[:10]
+            else:
+                pas = ProteinAlias.objects.prefetch_related('protein').filter(name__icontains=q,
+                        protein__species__common_name='Human', protein__source__name='SWISSPROT') \
+                        .exclude(protein__family__slug__startswith=exclusion_slug)[:10]
+
             for pa in pas:
                 pa_json = {}
                 pa_json['id'] = pa.protein.id
