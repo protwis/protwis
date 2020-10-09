@@ -116,16 +116,29 @@ class SequenceSignature:
         self.aln_pos.build_alignment()
         self.aln_neg.build_alignment()
 
+        for x in self.aln_neg.segments.keys():
+            if x not in self.aln_pos.segments.keys():
+                self.aln_pos.segments[x] = {}
+                self.aln_pos.generic_numbers[self.common_schemes[0][0]][x] = {}
+
+        for x in self.aln_pos.segments.keys():
+            if x not in self.aln_neg.segments.keys():
+                self.aln_neg.segments[x] = {}
+                self.aln_pos.generic_numbers[self.common_schemes[0][0]][x] = {}
+
         self.common_gn = deepcopy(self.aln_pos.generic_numbers)
         for scheme in self.aln_neg.numbering_schemes:
             for segment in self.aln_neg.segments:
                 for pos in self.aln_neg.generic_numbers[scheme[0]][segment].items():
+                    if segment not in self.common_gn[scheme[0]].keys():
+                        self.common_gn[scheme[0]][segment] = {}
                     if pos[0] not in self.common_gn[scheme[0]][segment].keys():
                         self.common_gn[scheme[0]][segment][pos[0]] = pos[1]
                 self.common_gn[scheme[0]][segment] = OrderedDict(sorted(
                     self.common_gn[scheme[0]][segment].items(),
                     key=lambda x: x[0].split('x')
                     ))
+
         self.common_segments = OrderedDict([
             (x, sorted(list(set(self.aln_pos.segments[x]) | set(self.aln_neg.segments[x])), key=lambda x: x.split('x'))) for x in self.aln_neg.segments
         ])
@@ -1025,7 +1038,7 @@ class SequenceSignature:
         offset = 1 + 3 * len(numbering_schemes)
 
 
-        # This part is split into alignments and signature since zscale items have different format 
+        # This part is split into alignments and signature since zscale items have different format
         # (4 positions for alignment vs 3 positions for signature zscales)
         # Signature
         if aln == 'signature':
