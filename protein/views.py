@@ -48,7 +48,10 @@ def detail(request, slug):
         try:
             pp = Protein.objects.prefetch_related('web_links__web_resource', 'parent').get(entry_name=slug)
             if pp.parent.sequence_type.slug == 'wt':
-                p = pp.parent
+                # If this entry is a PDB-code - redirect
+                return redirect(reverse('structure_details', kwargs={'pdbname': slug}))
+                # Alternative: show WT receptor of the structure
+                #p = pp.parent
             else:
                 context = {'protein_no_found': slug}
                 return render(request, 'protein/protein_detail.html', context)
