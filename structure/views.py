@@ -59,7 +59,7 @@ class StructureBrowser(TemplateView):
 	template_name = "structure_browser.html"
 
 	def get_context_data (self, **kwargs):
-		
+
 		context = super(StructureBrowser, self).get_context_data(**kwargs)
 		try:
 			context['structures'] = Structure.objects.filter(refined=False).select_related(
@@ -111,8 +111,8 @@ class GProteinStructureBrowser(TemplateView):
 			pass
 		# Fetch non-complex g prot structures and filter for overlaps preferring SignprotComplex
 		ncstructs = SignprotStructure.objects.filter(protein__family__slug__startswith='100').select_related(
-				"protein__family", 
-				"pdb_code__web_resource", 
+				"protein__family",
+				"pdb_code__web_resource",
 				"publication__web_link__web_resource").prefetch_related(
 				"stabilizing_agents",
 				Prefetch("extra_proteins", queryset=SignprotStructureExtraProteins.objects.all().prefetch_related('wt_protein')))
@@ -400,7 +400,7 @@ def StructureDetails(request, pdbname):
 	"""
 	Show structure details
 	"""
-	pdbname = pdbname
+	pdbname = pdbname.upper()
 	structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__ligand__name','structure_ligand_pair__pdb_reference','structure_ligand_pair__annotated').filter(structure_ligand_pair__structure__pdb_code__index=pdbname, structure_ligand_pair__annotated=True).annotate(numRes = Count('pk', distinct = True)).order_by('-numRes')
 	resn_list = ''
 
