@@ -1,6 +1,7 @@
 ﻿from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.generic import TemplateView
+from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.db.models import Case, When
@@ -19,7 +20,6 @@ from construct.tool import FileUploadForm
 from svglib.svglib import SvgRenderer
 from reportlab.graphics import renderPDF
 from lxml import etree
-
 import inspect
 import html
 import re
@@ -52,6 +52,7 @@ class AbsTargetSelection(TemplateView):
     numbering_schemes = False
     search = True
     family_tree = True
+    filter_tableselect = False
     redirect_on_select = False
     filter_gprotein = False
     selection_heading = False
@@ -1494,7 +1495,7 @@ def ResiduesUpload(request):
 
 @csrf_exempt
 def ReadTargetInput(request):
-    """Receives the data from the input form nd adds the listed targets to the selection"""
+    """Receives the data from the input form and adds the listed targets to the selection"""
 
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
@@ -1806,3 +1807,64 @@ def get_gpcr_class(item):
     while item.parent.parent!=None:
         item = item.parent
     return item
+
+@csrf_exempt
+@cache_page(60*60)
+def TargetTableData(request):
+    """
+    Creates a table for selection of targets. The goal is to to offer an alternative to the togglefamilytreenode
+    alternative already present in the selection logic.
+    """
+    proteins = Protein.objects.filter(sequence_type__slug='wt',
+                                      family__slug__startswith='00',
+                                      species__common_name='Human').prefetch_related(
+        'family',
+        "family__parent__parent__parent",
+    )
+
+#    data_table = "<table id2='template_selection' border=1 class='template_selection row-border text-nowrap'> \
+#            <th rowspan=2 colspan=1> <input class ='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'> </th> \
+    data_table = "<table id='uniprot_selection' border=0 class='uniprot_selection row-border text-center compact text-nowrap' width='100%'> \
+        <thead>\
+          <tr> \
+            <th rowspan=2 colspan=1>  </th> \
+            <th colspan=4>Receptor classification</th> \
+          </tr> \
+          <tr> \
+            <th>Class</th> \
+            <th>Family</th> \
+            <th>Uniprot</th> \
+            <th>IUPHAR</th> \
+          </tr> \
+        </thead>\
+        \n \
+        <tbody>\n"
+
+    for p in proteins:
+        uniprot_id = p.accession
+        t = {}
+        t['accession'] = p.accession
+        t['class'] = p.family.parent.parent.parent
+        t['family'] = p.family.parent.parent.short()
+        t['uniprot'] = p.entry_short()
+        t['iuphar'] = p.family.name.replace('receptor', '').strip()
+
+        data_dict = OrderedDict()
+        data_dict[uniprot_id] = t
+        data_table += "<tr> \
+        <td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' value='' onclick='thisTARGET(this);' id='{}'></td> \
+        <td>{}</td> \
+        <td>{}</td> \
+        <td>{}</td> \
+        <td>{}</td> \
+        </tr> \n".format(
+            uniprot_id,
+            t['class'],
+            t['family'],
+            t['uniprot'],
+            t['iuphar']
+        )
+
+    data_table += "</tbody></table>"
+
+    return HttpResponse(data_table)

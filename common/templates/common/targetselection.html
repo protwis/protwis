@@ -1,6 +1,134 @@
 {% extends "common/selection.html" %}
 {% load static %}
 
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/targetselect_functions.css' %}" type="text/css" />
+{% endblock %}
+
+{% block middle_column %}
+    <!-- filters -->
+    {% if filters %}
+        <div class="col-md-12 panel panel-primary">
+            <div class="panel-body">
+                <h4>Filter</h4>
+                <div id="filters-species">
+                    {% include 'common/selection_filters_species.html' %}
+                </div>
+                <br \>
+                <div id="filters-annotation">
+                    {% include 'common/selection_filters_annotation.html' %}
+                </div>
+                {% if filter_gprotein == False %}
+                    <div id="filters-pref-gproteins">
+                        {% include 'common/selection_filters_pref_gproteins.html' %}
+                    </div>
+                    <div id="filters-gproteins">
+                        {% include 'common/selection_filters_gproteins.html' %}
+                    </div>
+                {% endif %}
+
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- generic numbering schemes -->
+    {% if numbering_schemes %}
+        <div class="col-md-12 panel panel-primary">
+            <div class="panel-body">
+                <h4>Numbering schemes</h4>
+                <div id="filters-schemes">
+                    {% include 'common/selection_filters_numbering_schemes.html' %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- target input form -->
+    {% if target_input %}
+        <div class="col-md-12 panel panel-primary">
+            <div class="panel-body">
+                <h4>Input target list</h4>
+                (UniProt names, one per line)
+                <div id="target-input">
+                    {% include 'common/targetselection_input_form.html' %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- protein sets -->
+    {% if psets %}
+        <div class="col-md-12 panel panel-primary">
+            <div class="panel-body">
+                <h4>Receptors with a structure</h4>
+                <div>
+                    {% include 'common/targetselection_predefined.html' %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- target search -->
+    {% if search %}
+        <div class="col-md-12 panel panel-primary">
+            <div class="panel-body">
+                <h4>Search</h4>
+                <div>
+                    <input id="selection-autocomplete" class="form-control" size="15">
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- target family tree -->
+    {% if family_tree %}
+        <div class="col-md-12 panel panel-primary">
+            <div class="panel-body">
+                <h4>Browse</h4>
+                <div>
+                    {% if filter_tableselect %}
+                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#targetselect-modal-table">Select from table</button>
+
+                        <!-- BEGIN MODAL TO CHOOSE TARGET BY ACCESSION ID -->
+                        <div class="modal fade" id="targetselect-modal-table" role="dialog">
+                            <div class="modal-dialog modal-wide">
+                                <!-- Modal content-->
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h4 class="modal-title">Select a set of targets</h4>
+                                        {# <span id="targetselect-modal-text">0 target(s) selected</span> #}
+                                        <button type="button" onclick="resetselection(false, true);" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
+                                        <button type="button" class="btn btn-default pull-right" data-dismiss="modal">Close</button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="col-md-12">
+                                            <div class="tableview"></div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                    </div>
+                                </div>
+{#                                <div class="loading_overlay">#}
+{#                                    <img src="/static/home/images/loading.gif" id="img-load" />#}
+{#                                </div>#}
+                            </div>
+                        </div>
+
+                    {% endif %}
+                </div>
+                <br/>
+                <div class="selection-tree-box">
+                    {% include 'common/selection_tree.html' %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+
+
 {% block addon_js %}
     <script type="text/javascript">
         var type_of_selection = '{{ type_of_selection }}';
@@ -11,92 +139,29 @@
     <script src="{% static 'home/js/selection-autocomplete.js' %}"></script>
     <script src="{% static 'home/js/selection-filters.js' %}"></script>
     <script src="{% static 'home/js/selection.js' %}"></script>
-{% endblock %}
 
-{% block middle_column %}
-            <!-- filters -->
-            {% if filters %}
-            <div class="col-md-12 panel panel-primary">
-                <div class="panel-body">
-                    <h4>Filter</h4>
-                    <div id="filters-species">
-                    {% include 'common/selection_filters_species.html' %}
-                    </div>
-                    <br \>
-                    <div id="filters-annotation">
-                    {% include 'common/selection_filters_annotation.html' %}
-                    </div>
-                    {% if filter_gprotein == False %}
-                    <div id="filters-pref-gproteins">
-                        {% include 'common/selection_filters_pref_gproteins.html' %}
-                    </div>
-                    <div id="filters-gproteins">
-                        {% include 'common/selection_filters_gproteins.html' %}
-                    </div>
-                    {% endif %}
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+    <script src="{% static 'home/js/select2.js' %}"> </script>
 
-                </div>
-            </div>
-            {% endif %}
+    <!-- Target select modal table -->
+    <script type="text/javascript" src="{% static 'home/js/targetselect_functions.js' %}"> </script>
 
-            <!-- generic numbering schemes -->
-            {% if numbering_schemes %}
-            <div class="col-md-12 panel panel-primary">
-                <div class="panel-body">
-                    <h4>Numbering schemes</h4>
-                    <div id="filters-schemes">
-                        {% include 'common/selection_filters_numbering_schemes.html' %}
-                    </div>
-                </div>
-            </div>
-            {% endif %}
+    <script>
+        const csrf_token = "{{ csrf_token }}";
 
-            <!-- target input form -->
-            {% if target_input %}
-            <div class="col-md-12 panel panel-primary">
-                <div class="panel-body">
-                    <h4>Input target list</h4>
-                    (UniProt names, one per line)
-                    <div id="target-input">
-                        {% include 'common/targetselection_input_form.html' %}
-                    </div>
-                </div>
-            </div>
-            {% endif %}
+        $(document).ready(function() {
+            // Get Receptor Targets for table build
+            initializeTargetChooserTables();
 
-            <!-- protein sets -->
-            {% if psets %}
-            <div class="col-md-12 panel panel-primary">
-                <div class="panel-body">
-                    <h4>Receptors with a structure</h4>
-                    <div>
-                        {% include 'common/targetselection_predefined.html' %}
-                    </div>
-                </div>
-            </div>
-            {% endif %}
+            $('#targetselect-modal-table').on('shown.bs.modal', function (e) {
+                showTARGETtable('#targetselect-modal-table');
+            })
 
-            <!-- target search -->
-            {% if search %}
-            <div class="col-md-12 panel panel-primary">
-                <div class="panel-body">
-                    <h4>Search</h4>
-                    <div>
-                        <input id="selection-autocomplete" class="form-control" size="15">
-                    </div>
-                </div>
-            </div>
-            {% endif %}
+            $('#targetselect-modal-table').on('hidden.bs.modal', processTableSelection);
 
-            <!-- target family tree -->
-            {% if family_tree %}
-            <div class="col-md-12 panel panel-primary">
-                <div class="panel-body">
-                    <h4>Browse</h4>
-                    <div class="selection-tree-box">
-                    {% include 'common/selection_tree.html' %}
-                    </div>
-                </div>
-            </div>
-            {% endif %}
+        });
+
+
+    </script>
 {% endblock %}
