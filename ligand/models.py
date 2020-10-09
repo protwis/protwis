@@ -5,6 +5,7 @@ from django.db import IntegrityError
 from common.models import WebResource
 from common.models import WebLink, Publication
 from common.tools import fetch_from_web_api
+from structure.models import Structure
 
 from urllib.request import urlopen, quote
 import json
@@ -14,6 +15,7 @@ import logging
 class Ligand(models.Model):
     properities = models.ForeignKey('LigandProperities', on_delete=models.CASCADE)
     name = models.TextField()
+    pdbe = models.CharField(max_length=3, null=True)
     canonical = models.NullBooleanField()
     ambigious_alias = models.NullBooleanField() #required to flag 'safe' alias, eg one parent
     endogenous = models.BooleanField(default=False)
@@ -52,9 +54,8 @@ class Ligand(models.Model):
 
             return self.update_ligand(ligand_name, {}, ligand_type, web_resource, gtop_id)
 
-    def load_from_pubchem(self, lookup_type, pubchem_id, ligand_type, ligand_title=False):
+    def load_from_pubchem(self, lookup_type, pubchem_id, ligand_type, ligand_title=False, pdbe=None):
         logger = logging.getLogger('build')
-
         # if ligand title is specified, use that as the name
         if ligand_title:
             ligand_name = ligand_title
@@ -126,6 +127,7 @@ class Ligand(models.Model):
             self.name = ligand_name
             self.canonical = False
             self.ambigious_alias = False
+            self.pdbe = pdbe
 
             try:
                 self.save()
@@ -133,9 +135,9 @@ class Ligand(models.Model):
             except IntegrityError:
                 return Ligand.objects.get(name=ligand_name, canonical=False)
         except LigandProperities.DoesNotExist:
-            return self.update_ligand(ligand_name, properties, ligand_type, web_resource, pubchem_id)
+            return self.update_ligand(ligand_name, properties, ligand_type, web_resource, pubchem_id, pdbe)
 
-    def update_ligand(self, ligand_name, properties, ligand_type, web_resource=False, web_resource_index=False):
+    def update_ligand(self, ligand_name, properties, ligand_type, web_resource=False, web_resource_index=False, pdbe=None):
         lp = LigandProperities.objects.create(ligand_type=ligand_type)
 
         # assign properties
@@ -160,6 +162,7 @@ class Ligand(models.Model):
         self.canonical = True
         self.ambigious_alias = False
         self.properities = lp
+        self.pdbe = pdbe
 
         try:
             self.save()
@@ -251,6 +254,18 @@ class Ligand(models.Model):
                 except IntegrityError:
                     logger.error("FAILED SAVING CANONICAL LIGAND, duplicate? "+pubchem_name+" "+name)
                     print("FAILED SAVING CANONICAL LIGAND, duplicate? "+pubchem_name+" "+name)
+
+
+class LigandPeptideStructure(models.Model):
+    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    ligand = models.ForeignKey('ligand.Ligand', on_delete=models.CASCADE)
+    chain = models.CharField(max_length=20)
+
+    def __str__(self):
+        return '<PeptideLigand: {} {} {}>'.format(structure, ligand, chain)
+
+    class Meta():
+        db_table = "ligand_peptide_structure"
 
 
 class LigandProperities(models.Model):

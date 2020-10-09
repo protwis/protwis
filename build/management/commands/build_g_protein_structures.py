@@ -10,6 +10,7 @@ from residue.models import (ResidueNumberingScheme, ResidueGenericNumber, Residu
 from signprot.models import SignprotComplex, SignprotStructure, SignprotStructureExtraProteins
 from common.models import WebResource, WebLink, Publication
 from structure.models import StructureType, StructureStabilizingAgent, Structure
+from structure.functions import get_pdb_ids
 
 import re
 from Bio import pairwise2
@@ -22,7 +23,7 @@ from Bio import pairwise2
 import pprint
 import json
 import yaml
-from urllib.request import urlopen, Request
+import urllib
 
 import traceback
 import sys, os
@@ -55,6 +56,8 @@ class Command(BaseBuild):
             Residue.objects.filter(protein_conformation__protein__entry_name__endswith='_a', protein_conformation__protein__family__parent__parent__name='Alpha').delete()
             ProteinConformation.objects.filter(protein__entry_name__endswith='_a', protein__family__parent__parent__name='Alpha').delete()
             Protein.objects.filter(entry_name__endswith='_a', family__parent__parent__name='Alpha').delete()
+            SignprotStructureExtraProteins.objects.all().delete()
+            SignprotStructure.objects.all().delete()
 
         if not options['only_signprot_structures']:
             # Building protein and protconf objects for g protein structure in complex
@@ -78,6 +81,7 @@ class Command(BaseBuild):
                         alpha_protein.source = ProteinSource.objects.get(name='OTHER')
                         alpha_protein.species = sc.protein.species
                         alpha_protein.save()
+
                     try:
                         alpha_protconf = ProteinConformation.objects.get(protein__entry_name=sc.structure.pdb_code.index.lower()+'_a')
                     except:
@@ -85,6 +89,7 @@ class Command(BaseBuild):
                         alpha_protconf.protein = alpha_protein
                         alpha_protconf.state = ProteinState.objects.get(slug='active')
                         alpha_protconf.save()
+
                     pdbp = PDBParser(PERMISSIVE=True, QUIET=True)
                     s = pdbp.get_structure('struct', StringIO(sc.structure.pdb_data.pdb))
                     chain = s[0][sc.alpha]
@@ -154,11 +159,12 @@ class Command(BaseBuild):
                     # print(mutations)
                     # print(shifted_mutations)
                     # print(mismatches)
+                    # print('======')
                     # print(remaining_mismatches)
                     # pprint.pprint(pdb_num_dict)
 
                     # Mismatches remained possibly to seqnumber shift, making pairwise alignment to try and fix alignment
-                    if len(remaining_mismatches)>0 and sc.structure.pdb_code.index not in ['6OIJ','6OY9', '6OYA', '6LPB']:
+                    if len(remaining_mismatches)>0 and sc.structure.pdb_code.index not in ['6OIJ','6OY9', '6OYA', '6LPB', '6WHA']:
                         ppb = PPBuilder()
                         seq = ''
                         for pp in ppb.build_peptides(chain, aa_only=False):
@@ -169,6 +175,7 @@ class Command(BaseBuild):
                         pdb_wt_dict = OrderedDict()
                         j, k = 0, 0
                         for i, ref, temp in zip(range(0,len(ref_seq)), ref_seq, temp_seq):
+                            # print(i, ref, temp) # alignment check
                             if ref!='-' and temp!='-':
                                 wt_pdb_dict[resis[j]] = pdb_num_dict[nums[k]]
                                 pdb_wt_dict[pdb_num_dict[nums[k]][0]] = resis[j]
@@ -192,21 +199,29 @@ class Command(BaseBuild):
                             # Adjust for shift
                             else:
                                 pdb_num_dict[r[0].get_id()[1]][1] = pdb_wt_dict[r[0]]
+                    # Custom alignment fix for 6WHA mini-Gq/Gi2/Gs chimera
+                    # elif sc.structure.pdb_code.index=='6WHA':
+                    #     ref_seq  = 'MTLESIMACCLSEEAKEARRINDEIERQLRRDKRDARRELKLLLLGTGESGKSTFIKQMRIIHGSGYSDEDKRGFTKLVYQNIFTAMQAMIRAMDTLKIPYKYEHNKAHAQLVREVDVEKVSAFENPYVDAIKSLWNDPGIQECYDRRREYQLSDSTKYYLNDLDRVADPAYLPTQQDVLRVRVPTTGIIEYPFDLQSVIFRMVDVGGQRSERRKWIHCFENVTSIMFLVALSEYDQVLVESDNENRMEESKALFRTIITYPWFQNSSVILFLNKKDLLEEKIMY--SHLVDYFPEYDGP----QRDAQAAREFILKMFVDL---NPDSDKIIYSHFTCATDTENIRFVFAAVKDTILQLNLKEYNLV'
+                    #     temp_seq = '----------VSAEDKAAAERSKMIDKNLREDGEKARRTLRLLLLGADNSGKSTIVK----------------------------------------------------------------------------------------------------------------------------------GIFETKFQVDKVNFHMFDVG-----RRKWIQCFNDVTAIIFVVDSSDYNR----------LQEALNDFKSIWNNRWLRTISVILFLNKQDLLAEKVLAGKSKIEDYFPEFARYTTPDPRVTRAKY-FIRKEFVDISTASGDGRHICYPHFTC-VDTENARRIFNDCKDIILQMNLREYNLV'
+                    #     for i, ref, temp in zip(range(0,len(ref_seq)), ref_seq, temp_seq):
+                    #         print(i, ref, temp)
+                    #     pprint.pprint(pdb_num_dict)
+
 
                     bulked_residues = []
                     for key, val in pdb_num_dict.items():
                         # print(key, val) # sanity check
                         if not isinstance(val[1], int):
-                         res_obj = Residue()
-                         res_obj.sequence_number = val[0].get_id()[1]
-                         res_obj.amino_acid = AA[val[0].get_resname()]
-                         res_obj.display_generic_number = val[1].display_generic_number
-                         res_obj.generic_number = val[1].generic_number
-                         res_obj.protein_conformation = alpha_protconf
-                         res_obj.protein_segment = val[1].protein_segment
-                         bulked_residues.append(res_obj)
+                            res_obj = Residue()
+                            res_obj.sequence_number = val[0].get_id()[1]
+                            res_obj.amino_acid = AA[val[0].get_resname()]
+                            res_obj.display_generic_number = val[1].display_generic_number
+                            res_obj.generic_number = val[1].generic_number
+                            res_obj.protein_conformation = alpha_protconf
+                            res_obj.protein_segment = val[1].protein_segment
+                            bulked_residues.append(res_obj)
                         else:
-                         self.logger.info('Skipped {} as no annotation was present, while building for alpha subunit of {}'.format(val[1], sc))
+                            self.logger.info('Skipped {} as no annotation was present, while building for alpha subunit of {}'.format(val[1], sc))
 
                     Residue.objects.bulk_create(bulked_residues)
                     self.logger.info('Protein, ProteinConformation and Residue build for alpha subunit of {} is finished'.format(sc))
@@ -219,58 +234,47 @@ class Command(BaseBuild):
 
 
         # Build SignprotStructure objects from non-complex signprots
-        g_prot_alphas = Protein.objects.filter(family__slug__startswith='100_001', accession__isnull=False)#.filter(entry_name='gnai1_human')
-        complex_structures = SignprotComplex.objects.all().values_list('structure__pdb_code__index', flat=True)
-        for a in g_prot_alphas:
-            pdb_list = self.get_pdb_ids(a.accession)
-            for pdb in pdb_list:
-                if pdb not in complex_structures:
-                    try:
-                        data = self.fetch_gprot_data(pdb, a)
-                        if data:
-                            self.build_g_prot_struct(a, pdb, data)
-                    except Exception as msg:
-                        self.logger.error('SignprotStructure of {} {} failed\n{}: {}'.format(a.entry_name, pdb, type(msg), msg))
-
-    def get_pdb_ids(self, uniprot_id):
-        pdb_list = []
-        data = { "query": { "type": "terminal", "service": "text", "parameters":{ "attribute":"rcsb_polymer_entity_container_identifiers.reference_sequence_identifiers.database_accession", "operator":"in", "value":[ uniprot_id ] } }, "request_options": { "pager": {"start": 0,"rows": 99999 }}, "return_type": "entry" }
-        url = 'http://search.rcsb.org/rcsbsearch/v1/query'
-        req = Request(url)
-        req.add_header('Content-Type', 'application/json; charset=utf-8')
-        jsondata = json.dumps(data)
-        jsondataasbytes = jsondata.encode('utf-8')
-        req.add_header('Content-Length', len(jsondataasbytes))
-        response = urlopen(req, jsondataasbytes)
-        rr = response.read()
-        if len(rr)==0:
-            return []
-        out = json.loads(rr)
-        for i in out['result_set']:
-            pdb_list.append(i['identifier'])
-        response.close()
-        return pdb_list
+        # g_prot_alphas = Protein.objects.filter(family__slug__startswith='100_001', accession__isnull=False)#.filter(entry_name='gnai1_human')
+        # complex_structures = SignprotComplex.objects.all().values_list('structure__pdb_code__index', flat=True)
+        # for a in g_prot_alphas:
+        #     pdb_list = get_pdb_ids(a.accession)
+        #     for pdb in pdb_list:
+        #         if pdb not in complex_structures:
+        #             try:
+        #                 data = self.fetch_gprot_data(pdb, a)
+        #                 if data:
+        #                     self.build_g_prot_struct(a, pdb, data)
+        #             except Exception as msg:
+        #                 self.logger.error('SignprotStructure of {} {} failed\n{}: {}'.format(a.entry_name, pdb, type(msg), msg))
 
     def fetch_gprot_data(self, pdb, alpha_protein):
         data = {}
         beta_uniprots = os.listdir(self.local_uniprot_beta_dir)
         gamma_uniprots = os.listdir(self.local_uniprot_gamma_dir)
 
-        response = urlopen('https://data.rcsb.org/rest/v1/core/entry/{}'.format(pdb))
+        response = urllib.request.urlopen('https://data.rcsb.org/rest/v1/core/entry/{}'.format(pdb))
         json_data = json.loads(response.read())
+        response.close()
 
         data['method'] = json_data['exptl'][0]['method']
-        if data['method'].startswith("THEORETICAL") or data['method']=='SOLUTION NMR':
+        if data['method'].startswith("THEORETICAL") or data['method'] in ['SOLUTION NMR','SOLID-STATE NMR']:
             return None
+        if 'citation' in json_data and 'pdbx_database_id_doi' in json_data['citation']:
+            data['doi'] = json_data['citation']['pdbx_database_id_doi']
+        else:
+            data['doi'] = None
         if 'pubmed_id' in json_data['rcsb_entry_container_identifiers']:
             data['pubmedId'] = json_data['rcsb_entry_container_identifiers']['pubmed_id']
         else:
             data['pubmedId'] = None
         
         # Format server time stamp to match release date shown on entry pages
-        date = datetime.date.fromisoformat(json_data['rcsb_accession_info']['initial_release_date'][:10])
-        date += datetime.timedelta(days=1)
-        data['release_date'] = datetime.date.isoformat(date)
+        # print(pdb, json_data['rcsb_accession_info']['initial_release_date'])
+        # date = datetime.date.fromisoformat(json_data['rcsb_accession_info']['initial_release_date'][:10])
+        # date += datetime.timedelta(days=1)
+        # print(datetime.date.isoformat(date))
+        # data['release_date'] = datetime.date.isoformat(date)
+        data['release_date'] = json_data['rcsb_accession_info']['initial_release_date'][:10]
         data['resolution'] = json_data['rcsb_entry_info']['resolution_combined'][0]
         entities_num = len(json_data['rcsb_entry_container_identifiers']['polymer_entity_ids'])
         data['alpha'] = alpha_protein.accession
@@ -282,8 +286,9 @@ class Command(BaseBuild):
         data['gamma_chain'] = None
         data['other'] = []
         for i in range(1,entities_num+1):
-            response = urlopen('https://data.rcsb.org/rest/v1/core/polymer_entity/{}/{}'.format(pdb, i))
+            response = urllib.request.urlopen('https://data.rcsb.org/rest/v1/core/polymer_entity/{}/{}'.format(pdb, i))
             json_data = json.loads(response.read())
+            response.close()
             if 'uniprot_ids' in json_data['rcsb_polymer_entity_container_identifiers']:
                 for j, u_id in enumerate(json_data['rcsb_polymer_entity_container_identifiers']['uniprot_ids']):
                     if u_id+'.txt' in beta_uniprots:
@@ -325,18 +330,29 @@ class Command(BaseBuild):
             structure_type, c = StructureType.objects.get_or_create(slug=structure_type_slug, name=data['method'])
             self.logger.info('Created StructureType:'+str(structure_type))
         # Publication
-        if data['pubmedId']:
+        if data['doi']:
             try:
-                pub = Publication.objects.get(web_link__index=data['pubmedId'])
+                pub = Publication.objects.get(web_link__index=data['doi'])
             except Publication.DoesNotExist as e:
                 pub = Publication()
-                wl, created = WebLink.objects.get_or_create(index=data['pubmedId'], web_resource=WebResource.objects.get(slug='pubmed'))
+                wl, created = WebLink.objects.get_or_create(index=data['doi'], web_resource=WebResource.objects.get(slug='doi'))
                 pub.web_link = wl
-                pub.update_from_pubmed_data(index=data['pubmedId'])
+                pub.update_from_pubmed_data(index=data['doi'])
                 pub.save()
                 self.logger.info('Created Publication:'+str(pub))
         else:
-            pub = None
+            if data['pubmedId']:
+                try:
+                    pub = Publication.objects.get(web_link__index=data['pubmedId'])
+                except Publication.DoesNotExist as e:
+                    pub = Publication()
+                    wl, created = WebLink.objects.get_or_create(index=data['pubmedId'], web_resource=WebResource.objects.get(slug='pubmed'))
+                    pub.web_link = wl
+                    pub.update_from_pubmed_data(index=data['pubmedId'])
+                    pub.save()
+                    self.logger.info('Created Publication:'+str(pub))
+            else:
+                pub = None
         ss.pdb_code = pdb_code
         ss.structure_type = structure_type
         ss.resolution = data['resolution']

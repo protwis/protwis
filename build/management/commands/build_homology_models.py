@@ -357,6 +357,8 @@ class CallHomologyModeling():
                 io = PDB.PDBIO()
                 io.set_structure(post_model2)
                 io.save('./structure/homology_models/{}.pdb'.format(Homology_model.modelname))
+                logger.info('HETRESIS removed: {}'.format(hse.hetresis_to_remove))
+                formatted_model = Homology_model.format_final_model()
             
             # Check for residue shifts in model
             residue_shift = False
@@ -2467,7 +2469,9 @@ class HomologyModeling(object):
                         continue
                     superpose = sp.RotamerSuperpose(orig_res, alt_res)
                     new_atoms = superpose.run()
-                    if superpose.backbone_rmsd>0.5:
+                    if self.debug:
+                        print(struct, gn_, superpose.backbone_rmsd)
+                    if superpose.backbone_rmsd>0.45:
                         continue
                     main_pdb_array[ref_seg][str(ref_res).replace('x','.')] = new_atoms
                     template_dict[temp_seg][temp_res] = reference_dict[ref_seg][ref_res]
@@ -2789,6 +2793,7 @@ class HomologyMODELLER(automodel):
     def __init__(self, env, alnfile, knowns, sequence, assess_methods, atom_selection, helix_restraints=[], icl3_mid=None, disulfide_nums=[], complex_start=None, beta_start=None, gamma_start=None):
         super(HomologyMODELLER, self).__init__(env, alnfile=alnfile, knowns=knowns, sequence=sequence, 
                                                assess_methods=assess_methods)
+        self.alnfile = alnfile
         self.atom_dict = atom_selection
         self.helix_restraints = helix_restraints
         self.icl3_mid = icl3_mid
@@ -2883,6 +2888,37 @@ class HomologyMODELLER(automodel):
                 elif i[1]==segment[-1][1]:
                     rsr.add(secondary_structure.alpha(self.residue_range('{}:{}'.format(i[0]-4,chain),'{}:{}'.format(i[1],chain))))
                     break
+        # Custom special distance based restraints
+        with open(self.alnfile, 'r') as alnfile:
+            template_line = alnfile.readlines()[1]
+        # To fix ECL1 loop knot with N-term in 5NX2
+        if '5nx2_Intermediate_post.pdb' in template_line:
+            at = self.atoms
+            print('YESSSS')
+            rsr.add(forms.gaussian(group=physical.xy_distance,
+                                   feature=features.distance(at['CA:63'],
+                                                             at['CA:186']),
+                                   mean=15.0, stdev=0.1))
+            rsr.add(forms.gaussian(group=physical.xy_distance,
+                                   feature=features.distance(at['CA:63'],
+                                                             at['CA:187']),
+                                   mean=15.0, stdev=0.1))
+            rsr.add(forms.gaussian(group=physical.xy_distance,
+                                   feature=features.distance(at['CA:63'],
+                                                             at['CA:188']),
+                                   mean=15.0, stdev=0.1))
+            rsr.add(forms.gaussian(group=physical.xy_distance,
+                                   feature=features.distance(at['CA:63'],
+                                                             at['CA:189']),
+                                   mean=15.0, stdev=0.1))
+            rsr.add(forms.gaussian(group=physical.xy_distance,
+                                   feature=features.distance(at['CA:63'],
+                                                             at['CA:190']),
+                                   mean=15.0, stdev=0.1))
+            rsr.add(forms.gaussian(group=physical.xy_distance,
+                                   feature=features.distance(at['CA:63'],
+                                                             at['CA:191']),
+                                   mean=15.0, stdev=0.1))
 
     def special_patches(self, aln):
         for d in self.disulfide_nums:
@@ -3437,7 +3473,7 @@ class Loops(object):
         self.model_loop = False
         self.partialECL2_1 = False
         self.partialECL2_2 = False
-        self.excluded_loops = {'ICL1':[],'ECL1':[],'ICL2':['5ZKP'],'ECL2':[],'ECL2_1':[],'ECL2_mid':[],'ECL2_2':[],'ICL3':['3VW7'],'ECL3':['4DJH']}
+        self.excluded_loops = {'ICL1':[],'ECL1':[],'ICL2':['5ZKP'],'ECL2':[],'ECL2_1':[],'ECL2_mid':[],'ECL2_2':[],'ICL3':['3VW7'],'ECL3':['4DJH','6KJV','6KK1','6KK7','5VEW']}
         self.evade_chain_break = False
     
     def fetch_loop_residues(self, main_pdb_array, superpose_modded_loop=False):

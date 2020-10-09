@@ -199,11 +199,14 @@ canvas {
                  </div>
                  <div> <button id=fullscreen>Full Screen</button></div>
             </div>
-            <div class="col-md-5 text-center text-info">
+{% comment %}
+              {# PoseView has been pending for years #}
+              <div class="col-md-5 text-center text-info">
                 2D interaction plot<br>
                 <br>
                  PoseView coming soon.
             </div>
+{% endcomment %}
         </div>
        <!-- <a href="pdb/{{pdbname}}/ligand/{{structure.structure_ligand_pair__ligand__name}}">{{structure.structure_ligand_pair__ligand__name}}</a> Has {{structure.numRes}} residues interacting<br> -->
 
@@ -292,9 +295,6 @@ canvas {
                 output = [];
 
                   $.each( interactions, function( index, val ) {
-
-                    console.log(val);
-
                     key = val['wt_pos'];
 
                     if (key in count) {
@@ -399,18 +399,17 @@ canvas {
                 } );
 
                 {% if main_ligand != 'none' %}
-                o.addRepresentation("ball+stick", { sele: "{{ main_ligand}}", scale: 1, aspectRatio: 1 } );
-                o.addRepresentation("surface", { sele: "{{ main_ligand}}", opacity: 0.4,
-                                                useWorker: false } );
-                o.addRepresentation( "licorice", { sele: "({{display_res}}) and sidechainAttached" , scale: 2, aspectRatio: 1});
-                o.addRepresentation( "label", {
-                    sele: "({{display_res}}) and .CB",
-                    color: "#113", scale: 2.0
-                } );
-                o.addRepresentation( "label", {
-                    sele: "{{ main_ligand}} and .C1",
-                    color: "#888", scale: 3.0, labelType: "resname"
-                } );
+                  o.addRepresentation("ball+stick", { sele: "{{ main_ligand}}", scale: 1, aspectRatio: 1 } );
+                  o.addRepresentation("surface", { sele: "{{ main_ligand}}", opacity: 0.4, useWorker: false } );
+                  o.addRepresentation( "licorice", { sele: "({{display_res}}) and sidechainAttached" , scale: 2, aspectRatio: 1});
+                  o.addRepresentation( "label", {
+                      sele: "({{display_res}}) and .CB",
+                      color: "#113", scale: 2.0
+                  } );
+                  o.addRepresentation( "label", {
+                      sele: "{{ main_ligand}} and .C1",
+                      color: "#888", scale: 3.0, labelType: "resname"
+                  } );
                 {% endif %}
 
                 o.centerView();

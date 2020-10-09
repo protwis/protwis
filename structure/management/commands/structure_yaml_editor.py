@@ -33,6 +33,8 @@ class Command(BaseBuild):
         super(Command, self).add_arguments(parser=parser)
         parser.add_argument('-y', help="Query specific yaml(s) with PDB code", default=False, type=str, nargs='+')
         parser.add_argument('-a', help="Check for auxiliary protein. Options: BRIL, T4-Lysozyme", default=False, type=str)
+        parser.add_argument('--change', help="Change specific ligand value of specific field in yaml file. Arg1 field, arg2 old value, arg3 new value", default=False, type=str, nargs='+')
+        parser.add_argument('-q', help="Add quotes to field", default=False, type=str)
 
     def handle(self, *args, **options):
         yaml_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'structures'])
@@ -46,6 +48,14 @@ class Command(BaseBuild):
                 aux_protein = options['a']
                 out = sy.check_aux_protein(aux_protein)
                 print(out)
+            elif options['change']:
+                if len(options['change'])!=3:
+                    raise AssertionError('The --change flag takes exactly 3 arguments (field, old value, new value)')
+                else:
+                    field, old_value, new_value = options['change']
+                    sy.change_ligand_value(y, field, old_value, new_value)
+            elif options['q']:
+                sy.add_quotes(y, options['q'])
 
 class StructureYaml():
     def __init__(self, yaml):
@@ -71,8 +81,38 @@ class StructureYaml():
                     if self.aux_protein_table[aux_protein] in l_split:
                         aux_pdb = True
                         aux_line = l
-                        if aux_protein not in yaml_dict['auxiliary_protein']:
+                        if yaml_dict and aux_protein not in yaml_dict['auxiliary_protein']:
                             return [True, False]
                         else:
                             return [True, True]
             return [False, False]
+
+    def change_ligand_value(self, filename, field, old_value, new_value):
+        with open(os.sep.join([self.yaml_dir, filename]), 'r') as yf:
+            struct_yaml = yaml.load(yf, Loader=yaml.FullLoader)
+        change = False
+        if type(struct_yaml['ligand'])==type([]):
+            for i, ligand in enumerate(struct_yaml['ligand']):
+                if ligand[field]==old_value:
+                    change = True
+                    struct_yaml['ligand'][i][field] = new_value
+            if change:
+                with open(os.sep.join([self.yaml_dir, filename]), 'w') as yf:
+                    yaml.dump(struct_yaml, yf, indent=4, default_flow_style=False)
+        else:
+            if struct_yaml['ligand'][field]==old_value:
+                struct_yaml['ligand'][field] = new_value
+                with open(os.sep.join([self.yaml_dir, filename]), 'w') as yf:
+                    yaml.dump(struct_yaml, yf, indent=4, default_flow_style=False)
+
+    def add_quotes(self, filename, field):
+        change = False
+        with open(os.sep.join([self.yaml_dir, filename]), 'r') as yf:
+            struct_yaml = yaml.load(yf, Loader=yaml.FullLoader)
+            pprint.pprint(struct_yaml)
+            struct_yaml[field] = str(struct_yaml[field])
+            pprint.pprint(struct_yaml)
+            change = True
+        if change:
+            with open(os.sep.join([self.yaml_dir, filename]), 'w') as yf:
+                yaml.dump(struct_yaml, yf, indent=4, default_flow_style=False)

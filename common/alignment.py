@@ -646,6 +646,7 @@ class Alignment:
             self.sort_generic_numbers()
             self.merge_generic_numbers()
             self.clear_empty_positions()
+            self.clear_empty_segments()
 
             if self.number_of_residues_total >= 2500:
                 self.calculate_statistics()
@@ -727,6 +728,26 @@ class Alignment:
     #                for p in s:
     #                    if p[0] not in self.positions:
     #                        self.proteins[i].alignment[j].remove(p)
+
+    def clear_empty_segments(self):
+        # SM clear empty segments
+
+        tmp = OrderedDict()
+        for segment in self.segments:
+            if self.segments[segment] != []:
+                tmp[segment] = self.segments[segment]
+        if self.segments != tmp:
+            self.segments = tmp
+
+        tmp = deepcopy(self.generic_numbers)
+        for ns, segments in self.generic_numbers.items():
+            for segment, positions in segments.items():
+                if segment not in self.segments:
+                    del tmp[ns][segment]
+        if self.generic_numbers != tmp:
+            self.generic_numbers = tmp
+        
+
 
     def merge_generic_numbers(self):
         """Check whether there are many display numbers for each position, and merge them if there are"""

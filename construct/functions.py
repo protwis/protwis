@@ -596,10 +596,6 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                                         uniprot_pos = int(pos)
                                 else:
                                     receptor = False
-                            # if pdbname in ['6KUX','6KUY']:
-                            #     # Special fix for shift in annotation
-                            #     if pos:
-                            #         uniprot_pos = uniprot_pos-15
 
                             # if receptor:
                             #     print(receptor, uniprot_pos, pos,uniprot_aa, u_id,raw_u_id,chain,node.attrib['dbResNum'],d['wt_seq'][uniprot_pos-1])
@@ -837,6 +833,14 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                 seg_resid_list = [i for i in seg_resid_list if i not in actually_present]
                 pos_in_wt = [i for i in pos_in_wt if i not in actually_present]
 
+            # Custom fix for deletion issues
+            if pdbname in ['6PT2', '6PT3'] and chain in ['A','B']:
+                pos_in_wt = list(range(1,41))+list(range(330,373))
+            elif pdbname in ['6TPK'] and chain=='A':
+                pos_in_wt+=list(range(338,357))
+            elif pdbname=='7JJO'  and chain=='E':
+                pos_in_wt = list(range(1,40))+list(range(243,247))+list(range(358,484))
+
             mutations = None
 
             if receptor==False and u_id_source=='UniProt':
@@ -857,6 +861,15 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                 receptor = [{'start': 30, 'end': 340, 'origin': 'user'}]
             if pdbname=='6IQL' and chain in ['A','B'] and min_pos==304:
                 seg_uniprot_ids = ['drd4_mouse']
+            if pdbname=='7JJO' and chain=='E' and min_pos==40:
+                seg_uniprot_ids = ['adrb1_melga']
+            if pdbname in ['6PT2','6PT3']:
+                if chain=='A' and min_pos==999:
+                    seg_uniprot_ids = ['Soluble cytochrome b562']
+                elif chain=='B' and min_pos==1002:
+                    seg_uniprot_ids = ['Soluble cytochrome b562']
+            if pdbname in ['6U1N'] and chain=='A' and min_pos==487:
+                seg_uniprot_ids = ['v2r_human']
 
             # print([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,seg_had_receptor])
             d['xml_segments'].append([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,seg_had_receptor])
@@ -864,7 +877,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
             # print("end of segment",elem.attrib['segId'],seg_uniprot_ids,max_pos)
             if [elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,seg_had_receptor] not in d['xml_segments']:
                 d['xml_segments'].append([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,seg_had_receptor])
-
+            
             if receptor == False and receptor_chain==chain: #not receptor, but is in same chain
                 if len(seg_uniprot_ids):
                     subtype =seg_uniprot_ids[0]
@@ -886,6 +899,10 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                 # print('\t',pdbname.lower(),'Protein in PDB, not part of receptor chain',seg_uniprot_ids,'chain',chain)
                 logger.warning('{} Protein in structure, but not part of receptor chain {} {}'.format(pdbname.lower(),seg_uniprot_ids,chain))
 
+        # Custom fix for 6PT2
+        if pdbname in ['6PT2','6PT3']:
+            del d['auxiliary']['aux1']
+
         # print(sorted(pdb_resid_total))
         # print(sorted(pdb_resid_total_accounted))
         non_accounted = sorted(list(set(pdb_resid_total) - set(pdb_resid_total_accounted)))
@@ -905,6 +922,11 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
             for k, g in groupby(enumerate(sorted(d['xml_not_observed'])), lambda x:x[0]-x[1]):
                 group = list(map(itemgetter(1), g))
                 d['not_observed'].append((group[0], group[-1]))
+
+        # Custom fix for 6PT2
+        if pdbname in ['6PT2','6PT3']:
+            d['construct_sequences']['Soluble cytochrome b562'] = d['construct_sequences']['N/A']
+            del d['construct_sequences']['N/A']
 
         for i,v in d['construct_sequences'].items():
             d['construct_sequences'][i]['ranges'] = []

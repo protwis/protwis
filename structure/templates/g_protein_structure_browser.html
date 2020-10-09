@@ -213,8 +213,8 @@
                         <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha,species"|safe }}</td>
                         
                         <td>
-                            {% if ep.note|length > 20 %}
-                                <span title="{{ ep.note }}">{{ structure.extra_proteins.all|only_one_subunit:"Alpha,note"|safe|cut_at_20 }}...</span>
+                            {% if structure.extra_proteins.all|only_one_subunit:"Alpha,note"|length > 20 %}
+                                <span title="{{ structure.extra_proteins.all|only_one_subunit:'Alpha,note' }}">{{ structure.extra_proteins.all|only_one_subunit:"Alpha,note"|safe|cut_at_20 }}...</span>
                             {% else %}
                                 {{ structure.extra_proteins.all|only_one_subunit:"Alpha,note"|safe }}
                             {% endif %}

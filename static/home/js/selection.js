@@ -401,6 +401,35 @@ function SetGroupMinMatch(selection_type, group_id, min_match) {
     });
 }
 
+var verifiedResponse;
+function VerifyMinimumSelection(selection_type, minimum) {
+    $.ajax({
+        'url': '/common/verifyminimumselection',
+        'data': {
+            selection_type: selection_type,
+            minimum: minimum
+        },
+        'type': 'GET',
+        'async': false,
+        'success': function(data) {
+            if (data == "True"){
+              verifiedResponse = true;
+            } else {
+              showAlert("Please select at least " + minimum + " " + selection_type, "danger");
+              verifiedResponse = false;
+            }
+        },
+        'error': function() {
+            showAlert("Something went wrong, please try again later", "", "danger");
+            return false;
+        },
+    });
+
+    if (!verifiedResponse)
+      toggleButtonClass('selection-button');
+    return verifiedResponse;
+}
+
 function ReadDefinitionFromFile(form, url) {
     //Dealing with csrf token
     function getCookie(c_name) {

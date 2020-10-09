@@ -40,9 +40,24 @@ def detail(request, slug):
         else:
             p = Protein.objects.prefetch_related('web_links__web_resource').get(accession=slug.upper(), sequence_type__slug='wt')
     except:
-        context = {'protein_no_found': slug}
-
-        return render(request, 'protein/protein_detail.html', context)
+        #If wt fails, it is most likely a pdb code entered. Check that and try protein->parent then.
+        if len(slug) != 4:
+            context = {'protein_no_found': slug}
+            return render(request, 'protein/protein_detail.html', context)
+        #Now checking the parent
+        try:
+            pp = Protein.objects.prefetch_related('web_links__web_resource', 'parent').get(entry_name=slug)
+            if pp.parent.sequence_type.slug == 'wt':
+                # If this entry is a PDB-code - redirect
+                return redirect(reverse('structure_details', kwargs={'pdbname': slug}))
+                # Alternative: show WT receptor of the structure
+                #p = pp.parent
+            else:
+                context = {'protein_no_found': slug}
+                return render(request, 'protein/protein_detail.html', context)
+        except:
+            context = {'protein_no_found': slug}
+            return render(request, 'protein/protein_detail.html', context)
 
 
     if p.family.slug.startswith('100') or p.family.slug.startswith('200'):
@@ -172,23 +187,25 @@ def SelectionAutocomplete(request):
         if type_of_selection!='navbar':
             ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q),
                                         species__in=(species_list),
-                                        source__in=(protein_source_list)).exclude(family__slug__startswith=exclusion_slug)[:10]
+                                        source__in=(protein_source_list)).exclude(family__slug__startswith=exclusion_slug).exclude(sequence_type__slug='consensus')[:10]
         else:
             ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q),
-                                        species__common_name='Human', source__name='SWISSPROT').exclude(family__slug__startswith=exclusion_slug)[:10]
+                                        species__common_name='Human', source__name='SWISSPROT').exclude(family__slug__startswith=exclusion_slug).exclude(sequence_type__slug='consensus')[:10]
 
         # Try matching protein name after stripping html tags
         if ps.count() == 0:
-            ps = Protein.objects.annotate(filtered=Func(F('name'), Value('<[^>]+>'), Value(''), Value('gi'), function='regexp_replace')).filter(Q(filtered__icontains=q), species__common_name='Human', source__name='SWISSPROT')
+            ps = Protein.objects.annotate(filtered=Func(F('name'), Value('<[^>]+>'), Value(''), Value('gi'), function='regexp_replace')) \
+                .filter(Q(filtered__icontains=q), species__common_name='Human', source__name='SWISSPROT')
 
             # If count still 0 try searching for the full thing
             if ps.count() == 0:
                 ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q),
-                                            source__name='SWISSPROT').exclude(family__slug__startswith=exclusion_slug)[:10]
+                                            source__name='SWISSPROT').exclude(family__slug__startswith=exclusion_slug).exclude(sequence_type__slug='consensus')[:10]
 
                 # If count still 0 try searching outside of Swissprot
                 if ps.count() == 0:
-                    ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q)).exclude(family__slug__startswith=exclusion_slug)[:10]
+                    ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q)) \
+                        .exclude(family__slug__startswith=exclusion_slug).exclude(sequence_type__slug='consensus')[:10]
 
 
         for p in ps:
@@ -201,11 +218,17 @@ def SelectionAutocomplete(request):
             results.append(p_json)
 
 
-        if type_of_selection!='navbar':
+        if type_of_selection!='navbar' or (type_of_selection=='navbar' and ps.count() == 0):
             # find protein aliases
-            pas = ProteinAlias.objects.prefetch_related('protein').filter(name__icontains=q,
-                                                                          protein__species__in=(species_list),
-                                                                          protein__source__in=(protein_source_list)).exclude(protein__family__slug__startswith=exclusion_slug)[:10]
+            if type_of_selection != 'navbar':
+                pas = ProteinAlias.objects.prefetch_related('protein').filter(name__icontains=q,
+                                        protein__species__in=(species_list), protein__source__in=(protein_source_list)) \
+                                        .exclude(protein__family__slug__startswith=exclusion_slug)[:10]
+            else:
+                pas = ProteinAlias.objects.prefetch_related('protein').filter(name__icontains=q,
+                        protein__species__common_name='Human', protein__source__name='SWISSPROT') \
+                        .exclude(protein__family__slug__startswith=exclusion_slug)[:10]
+
             for pa in pas:
                 pa_json = {}
                 pa_json['id'] = pa.protein.id
@@ -216,6 +239,7 @@ def SelectionAutocomplete(request):
                 if pa_json not in results:
                     results.append(pa_json)
 
+        if type_of_selection!='navbar':
             # protein families
             if (type_of_selection == 'targets' or type_of_selection == 'browse' or type_of_selection == 'gproteins') and selection_only_receptors!="True":
                 # find protein families
