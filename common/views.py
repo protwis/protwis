@@ -12,7 +12,7 @@ Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlis
 from common.selection import SimpleSelection, Selection, SelectionItem
 from structure.models import Structure, StructureModel, StructureComplexModel
 from protein.models import Protein, ProteinFamily, ProteinSegment, Species, ProteinSource, ProteinSet, ProteinGProtein, ProteinGProteinPair
-from residue.models import ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent, ResiduePositionSet
+from residue.models import ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent, ResiduePositionSet, Residue
 from interaction.forms import PDBform
 from construct.tool import FileUploadForm
 
@@ -667,20 +667,40 @@ def SelectAlignableResidues(request):
     # find the relevant numbering scheme (based on target selection)
 
     cgn = False
+    seg_ids_all = []
+    numbering_schemes = []
     if numbering_scheme_slug == 'cgn':
         cgn = True
     elif numbering_scheme_slug == 'false':
         if simple_selection.reference:
-            first_item = simple_selection.reference[0]
-        else:
-            first_item = simple_selection.targets[0]
-        if first_item.type == 'family':
-            proteins = Protein.objects.filter(family__slug__startswith=first_item.item.slug)
-            numbering_scheme = proteins[0].residue_numbering_scheme
-        elif first_item.type == 'protein':
-            numbering_scheme = first_item.item.residue_numbering_scheme
+            if simple_selection.reference[0].type == 'family':
+                proteins = Protein.objects.filter(family__slug__startswith=simple_selection.reference[0].item.slug)
+                r_prot = proteins[0]
+            elif simple_selection.reference[0].type == 'protein':
+                r_prot = simple_selection.reference[0].item
+            
+            seg_ids_all = get_protein_segment_ids(r_prot, seg_ids_all)
+            if r_prot.residue_numbering_scheme not in numbering_schemes:
+                numbering_schemes.append(r_prot.residue_numbering_scheme)
+            
+        if simple_selection.targets:
+            for t in simple_selection.targets:
+                if t.type == 'family':
+                    proteins = Protein.objects.filter(family__slug__startswith=t.item.slug)
+                    t_prot = proteins[0]
+                elif t.type == 'protein':
+                    t_prot = t.item
+                seg_ids_all = get_protein_segment_ids(t_prot, seg_ids_all)
+                if t_prot.residue_numbering_scheme not in numbering_schemes:
+                    numbering_schemes.append(t_prot.residue_numbering_scheme)
+        # Filter based on reference and target proteins
+        filtered_segments = []
+        for segment in segments:
+            if segment.id in seg_ids_all:
+                filtered_segments.append(segment)
+        segments = filtered_segments
     else:
-        numbering_scheme = ResidueNumberingScheme.objects.get(slug=numbering_scheme_slug)
+        numbering_schemes = [ResidueNumberingScheme.objects.get(slug=numbering_scheme_slug)]
 
     for segment in segments:
         if segment.fully_aligned:
@@ -692,7 +712,7 @@ def SelectAlignableResidues(request):
 
             if ResidueGenericNumberEquivalent.objects.filter(
             default_generic_number__protein_segment=segment,
-            scheme=numbering_scheme).exists():
+            scheme__in=numbering_schemes).exists():
                 segment.only_aligned_residues = True
                 selection_object = SelectionItem(segment.category, segment, properties={'only_aligned_residues':True})
                 selection.add(selection_type, segment.category, selection_object)
@@ -703,6 +723,13 @@ def SelectAlignableResidues(request):
     request.session['selection'] = simple_selection
 
     return render(request, 'common/selection_lists.html', selection.dict('segments'))
+
+def get_protein_segment_ids(protein, seg_ids_all):
+    seg_ids = Residue.objects.filter(protein_conformation__protein=protein).order_by('protein_segment__id').distinct('protein_segment__id').values_list('protein_segment', flat=True)
+    for s in seg_ids:
+        if s not in seg_ids_all:
+            seg_ids_all.append(s)
+    return seg_ids_all
 
 def ToggleFamilyTreeNode(request):
     """Opens/closes a node in the family selection tree"""
