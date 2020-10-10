@@ -646,7 +646,9 @@ class Alignment:
             self.sort_generic_numbers()
             self.merge_generic_numbers()
             self.clear_empty_positions()
-            self.clear_empty_segments()
+
+            # TODO Needs fix - not working completely
+            # self.clear_empty_segments()
 
             if self.number_of_residues_total >= 2500:
                 self.calculate_statistics()
@@ -729,6 +731,7 @@ class Alignment:
     #                    if p[0] not in self.positions:
     #                        self.proteins[i].alignment[j].remove(p)
 
+    # TODO Needs fix - not working completely
     def clear_empty_segments(self):
         # SM clear empty segments
 
@@ -746,7 +749,7 @@ class Alignment:
                     del tmp[ns][segment]
         if self.generic_numbers != tmp:
             self.generic_numbers = tmp
-        
+
 
 
     def merge_generic_numbers(self):
