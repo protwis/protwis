@@ -417,7 +417,8 @@ def isoforms(request):
         i += 1
 
 
-    context['segments'] = list(ProteinSegment.objects.filter(proteinfamily="GPCR").exclude(slug='ICL4').values_list('slug', flat=True))
+    # context['segments'] = list(ProteinSegment.objects.filter(proteinfamily="GPCR").exclude(slug__in=('ICL4','D1S1','D1e1','D1T1','D1S2')).values_list('slug', flat=True))
+    context['segments'] = list(ProteinSegment.objects.filter(proteinfamily="GPCR").filter(slug__in=('N-term', 'TM1', 'ICL1', 'TM2', 'ECL1', 'TM3', 'ICL2', 'TM4', 'ECL2', 'TM5', 'ICL3', 'TM6', 'ECL3', 'TM7', 'H8', 'C-term')).values_list('slug', flat=True))
     # print(context['segments'])
     context['tree'] = json.dumps(tree)
 
