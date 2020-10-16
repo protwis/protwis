@@ -119,41 +119,44 @@ class Command(BaseBuild):
 
             # First load makes sure ligands are there
         for i in self.data:
-            ligand	= self.fetch_ligand(i['ligand'],i['smiles'])
-            if not ligand:
-                print(i['ligand'])
-            protein	= self.fetch_protein(i['protein'])
-            assay	= self.fetch_assay(i['assay'])
-            publication = None
+            try:
+                ligand	= self.fetch_ligand(i['ligand'],i['smiles'])
+                if not ligand:
+                    print(i['ligand'])
+                protein	= self.fetch_protein(i['protein'])
+                assay	= self.fetch_assay(i['assay'])
+                publication = None
 
-            if i['publication'] != None:
-                publication	= self.fetch_publication(i['publication'])
+                if i['publication'] != None:
+                    publication	= self.fetch_publication(i['publication'])
 
-            assay_experiment = AssayExperiment(
-                ligand	= ligand,
-                protein	= protein,
-                assay	= assay,
-                publication = publication,
-                assay_type	= i['assay_type'],
-                assay_description= i['assay_description'],
-                pchembl_value	= i['pchembl_value'],
-                published_value	= i['published_value'],
-                published_relation	= i['published_relation'],
-                published_type	= i['published_type'],
-                published_units	= i['published_units'],
-                standard_value	= i['standard_value'],
-                standard_relation	= i['standard_relation'],
-                standard_type	= i['standard_type'],
-                standard_units	= i['standard_units'],
-                chembl	= i['chembl'],
-                smiles	= i['smiles'],
-                activity	= i['activity'],
-                document_chembl_id	= i['document_chembl_id'],
-                cell_line	= 'delete_me'
-            )
-            assay_experiment.save()
-            print('saved')
-            count.value +=1
+                assay_experiment = AssayExperiment(
+                    ligand	= ligand,
+                    protein	= protein,
+                    assay	= assay,
+                    publication = publication,
+                    assay_type	= i['assay_type'],
+                    assay_description= i['assay_description'],
+                    pchembl_value	= i['pchembl_value'],
+                    published_value	= i['published_value'],
+                    published_relation	= i['published_relation'],
+                    published_type	= i['published_type'],
+                    published_units	= i['published_units'],
+                    standard_value	= i['standard_value'],
+                    standard_relation	= i['standard_relation'],
+                    standard_type	= i['standard_type'],
+                    standard_units	= i['standard_units'],
+                    chembl	= i['chembl'],
+                    smiles	= i['smiles'],
+                    activity	= i['activity'],
+                    document_chembl_id	= i['document_chembl_id'],
+                    cell_line	= 'delete_me'
+                )
+                assay_experiment.save()
+                print('saved')
+                count.value +=1
+            except:
+                print('Skipping this entry')
 
 
     ##read pre-generated file and extract the chembl_ids
