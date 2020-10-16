@@ -8,78 +8,44 @@ let oTable = [];
 function initializeTargetChooserTables() {
     $.get('/common/targettabledata', function (data) {
         $('#targetselect-modal-table .tableview').html(data);
-        targettabledata = data;
+        let targettabledata = data;
     });
-
 }
 
-function AddMultipleTargets(receptor_selection) { // instead of a form an array which should be called receptor_selection
-    // Deals with csrf token
-    function getCookie(c_name) {
-        if (document.cookie.length > 0) {
-            c_start = document.cookie.indexOf(c_name + "=");
-            if (c_start != -1) {
-                c_start = c_start + c_name.length + 1;
-                c_end = document.cookie.indexOf(";", c_start);
-                if (c_end == -1) c_end = document.cookie.length;
-                return unescape(document.cookie.substring(c_start, c_end));
-            }
-        }
-        return "";
-    }
-    $.ajaxSetup({
-        headers: { "X-CSRFToken": getCookie("csrftoken") }
-    });
-    rec_sel = Array.from(new Set(receptor_selection))
-    //Actual post
-    $.ajax({
-        type: 'POST',
-        url: '/common/targetformread',
-        data: {
-            "input-targets": rec_sel.join("\r")
-        },
-        cache: false,
-        processData: false,
-        contentType: false,
-        'success': function (data) {
+/**
+ * POST array of targets (receptor_selection) to receiver endpoint /common/targetformread
+ */
+function AddMultipleTargets() {
+    $.post('/common/targetformread',
+        { "input-targets": receptor_selection.join("\r") },
+        function (data) {
             $("#selection-targets").html(data);
-        },
-    }).fail(function (jqXHR, textStatus, error) {
+        }).fail(function (jqXHR, textStatus, error) {
         alert("Request failed: " + textStatus + error);
     });
-    return false;
 }
 
-function processTableSelection(){
-
-}
-
-function thisTARGET(elem) {
-    let mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
-   $('.pdb_selected:checked', oTable[mode].cells().nodes()).each(function() {
-       receptor_selection.push($(this).attr('id'));
-   });
-    receptor_selection = Array.from(new Set(receptor_selection))
-    console.log(receptor_selection)
-
+/**
+ * Onclick function triggered in input element in html table
+ * @param name
+ * @returns receptor_selection
+ */
+function thisTARGET(name) {
+    const checkboxes = document.querySelectorAll(`input[name="targets"]:checked`);
+    receptor_selection =[];
+    checkboxes.forEach((checkbox) => {
+        receptor_selection.push(checkbox.id);
+    });
+    return receptor_selection;
 }
 
 function resetselection(not_update = false, reset_filters = false) {
-    var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
-    group = $('.tableview:visible').attr('group-number');
-    if (group) mode = mode + group;
-
     $('.check_all:visible').prop('checked', false);
-
-    $('input', oTable[mode].cells().nodes()).prop('checked', false);
-
-//    if (!not_update) update_text_in_modal();
-
-    if (reset_filters) yadcf.exResetAllFilters(oTable[mode]);
+    $('input', oTable.cells().nodes()).prop('checked', false);
+    if (reset_filters) yadcf.exResetAllFilters(oTable);
 }
 
 function check_all(elem, button) {
-    var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
     show_all = $('.check_all:visible').prop("checked");
     if (button) {
         if (show_all) {
@@ -101,13 +67,10 @@ $.fn.dataTable.ext.order['dom-checkbox'] = function(settings, col) {
 };
 
 function pastePDBs() {
-    var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
-    group = $('.tableview:visible').attr('group-number');
-    if (group) mode = mode + group;
     pdbs = $('.pastePDBs:visible').val().toUpperCase().trim();
     pdbs = pdbs.split(/[ ,]+/);
     resetselection(1);
-    $('.pdb_selected', oTable[mode].cells().nodes()).each(function() {
+    $('.pdb_selected', oTable.cells().nodes()).each(function() {
         pdb = $(this).attr('id')
         check = $.inArray(pdb, pdbs);
         if (check !== -1) {
@@ -119,7 +82,7 @@ function pastePDBs() {
         var popOverSettings = {
             placement: 'bottom',
             container: 'body',
-            title: 'One or more PDB(s) not found:', //Sepcify the selector here
+            title: 'One or more PDB(s) not found:', //Specify the selector here
             content: pdbs
         }
         $('.pastePDBs').popover(popOverSettings);
@@ -131,21 +94,17 @@ function pastePDBs() {
     } /*else {
         $('.pastePDBs').popover('destroy');
     }*/
-    oTable[mode].order([
+    oTable.order([
         [1, 'desc']
     ]);
-    oTable[mode].draw();
+    oTable.draw();
 }
 
 function exportPDBs() {
-    var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
-    group = $('.tableview:visible').attr('group-number');
-    if (group) mode = mode + group;
     var pdbs = [];
-    $('.pdb_selected:checked', oTable[mode].cells().nodes()).each(function() {
+    $('.pdb_selected:checked', oTable.cells().nodes()).each(function() {
         pdbs.push($(this).attr('id'));
     });
-
 
     var textArea = document.createElement("textarea");
     textArea.value = pdbs;
@@ -165,15 +124,8 @@ function exportPDBs() {
 }
 
 function showTARGETtable(element) {
-    var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
-    group = $(element + ' .tableview').attr('group-number');
-    if (group) mode = mode + group;
-    console.log(element, mode, group);
-
-    mode_without_space = mode.replace(/ /g, '_');
 
     if (!$.fn.DataTable.isDataTable(element + ' .tableview table')) {
-        console.log(mode);
 
         $(element + ' .modal-header .pastePDBs').keypress(function(event) {
             var keycode = (event.keyCode ? event.keyCode : event.which);
@@ -187,7 +139,7 @@ function showTARGETtable(element) {
             'class="btn btn-xs btn-primary export_pdbs">Export</button></span>');
 
         console.time('DataTable');
-        oTable[mode] = $(element + ' .tableview table').DataTable({
+        oTable = $(element + ' .tableview table').DataTable({
             dom: "ftip",
             deferRender: true,
             scrollY: '50vh',
@@ -209,19 +161,14 @@ function showTARGETtable(element) {
         });
         console.timeEnd('DataTable');
         console.time('yadcf');
-        yadcf.init(oTable[mode],
+        yadcf.init(oTable,
             [
-               {
-                   column_number : 0,
-                   column_data_type: "html",
-                   html_data_type: "text",
-               },
                 {
                     column_number: 1,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Class",
-//                    filter_reset_button_text: false,
+                    filter_reset_button_text: true,
                 },
                 {
                     column_number: 2,
@@ -241,9 +188,10 @@ function showTARGETtable(element) {
                     column_number: 4,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "IUPHAR",
+                    column_data_type: "html",
                     html_data_type: "text",
-//                    filter_reset_button_text: true,
+                    filter_default_label: "IUPHAR",
+                    filter_match_mode : "exact",
                 },
 
             ], {
@@ -252,9 +200,22 @@ function showTARGETtable(element) {
             }
         );
         console.timeEnd('yadcf');
-//        yadcf.exResetAllFilters(oTable);
-
     };
 
-    oTable[mode].draw();
+    oTable.draw();
+
+// Put top scroller
+// https://stackoverflow.com/questions/35147038/how-to-place-the-datatables-horizontal-scrollbar-on-top-of-the-table
+//    console.time("scroll to top");
+    $('.dataTables_scrollHead').css({
+        'overflow-x':'scroll'
+    }).on('scroll', function(e){
+        var scrollBody = $(this).parent().find('.dataTables_scrollBody').get(0);
+        scrollBody.scrollLeft = this.scrollLeft;
+        $(scrollBody).trigger('scroll');
+    });
+//    console.timeEnd("scroll to top");
+
+
+
 }

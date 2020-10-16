@@ -94,7 +94,7 @@
 
                         <!-- BEGIN MODAL TO CHOOSE TARGET BY ACCESSION ID -->
                         <div class="modal fade" id="targetselect-modal-table" role="dialog">
-                            <div class="modal-dialog modal-wide">
+                            <div class="modal-dialog modal-xl">
                                 <!-- Modal content-->
                                 <div class="modal-content">
                                     <div class="modal-header">
@@ -158,7 +158,8 @@
                 showTARGETtable('#targetselect-modal-table');
             })
 
-            $('#targetselect-modal-table').on('hidden.bs.modal', processTableSelection);
+
+            $('#targetselect-modal-table').on('hidden.bs.modal', AddMultipleTargets);
 
         });
 

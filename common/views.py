@@ -1513,6 +1513,7 @@ def ReadTargetInput(request):
 
     o = []
     up_names = request.POST['input-targets'].split('\r')
+    print(up_names)
     for up_name in up_names:
         try:
             o.append(Protein.objects.get(entry_name=up_name.strip().lower()))
@@ -1809,7 +1810,7 @@ def get_gpcr_class(item):
     return item
 
 @csrf_exempt
-@cache_page(60*60)
+#@cache_page(60*60)
 def TargetTableData(request):
     """
     Creates a table for selection of targets. The goal is to to offer an alternative to the togglefamilytreenode
@@ -1844,7 +1845,7 @@ def TargetTableData(request):
         uniprot_id = p.accession
         t = {}
         t['accession'] = p.accession
-        t['class'] = p.family.parent.parent.parent
+        t['class'] = p.family.parent.parent.parent.short()
         t['family'] = p.family.parent.parent.short()
         t['uniprot'] = p.entry_short()
         t['iuphar'] = p.family.name.replace('receptor', '').strip()
@@ -1852,11 +1853,11 @@ def TargetTableData(request):
         data_dict = OrderedDict()
         data_dict[uniprot_id] = t
         data_table += "<tr> \
-        <td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' value='' onclick='thisTARGET(this);' id='{}'></td> \
+        <td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' name='targets' value='' onclick='thisTARGET(this);' id='{}'></td> \
         <td>{}</td> \
         <td>{}</td> \
         <td>{}</td> \
-        <td>{}</td> \
+        <td><span>{}</span></td> \
         </tr> \n".format(
             uniprot_id,
             t['class'],
