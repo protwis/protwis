@@ -4,7 +4,7 @@ from django.views.generic import TemplateView
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-from django.db.models import Case, When
+from django.db.models import Case, When, Min
 from django.core.cache import cache
 
 from common import definitions
@@ -1513,7 +1513,6 @@ def ReadTargetInput(request):
 
     o = []
     up_names = request.POST['input-targets'].split('\r')
-    print(up_names)
     for up_name in up_names:
         try:
             o.append(Protein.objects.get(entry_name=up_name.strip().lower()))
@@ -1815,24 +1814,27 @@ def TargetTableData(request):
     """
     Creates a table for selection of targets. The goal is to to offer an alternative to the togglefamilytreenode
     alternative already present in the selection logic.
+    Here we do server-side rendering of the table. This is a common trick to optimize response to client.
+    See the following relevant video from google chrome.
+    <https://youtu.be/ff4fgQxPaO0>
     """
     proteins = Protein.objects.filter(sequence_type__slug='wt',
                                       family__slug__startswith='00',
                                       species__common_name='Human').prefetch_related(
         'family',
-        "family__parent__parent__parent",
+        'family__parent__parent__parent'
     )
 
-#    data_table = "<table id2='template_selection' border=1 class='template_selection row-border text-nowrap'> \
-#            <th rowspan=2 colspan=1> <input class ='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'> </th> \
-    data_table = "<table id='uniprot_selection' border=0 class='uniprot_selection row-border text-center compact text-nowrap' width='100%'> \
+    data_table = "<table id='uniprot_selection' border=0 class='uniprot_selection'> \
         <thead>\
           <tr> \
-            <th rowspan=2 colspan=1>  </th> \
-            <th colspan=4>Receptor classification</th> \
+            <th rowspan=1 colspan=1> <input class ='form-check-input check_all' type='checkbox' onclick='check_all(this);'> </th> \
+            <th colspan=5>Receptor classification</th> \
           </tr> \
           <tr> \
+            <th></th> \
             <th>Class</th> \
+            <th>Ligand type</th> \
             <th>Family</th> \
             <th>Uniprot</th> \
             <th>IUPHAR</th> \
@@ -1846,14 +1848,17 @@ def TargetTableData(request):
         t = {}
         t['accession'] = p.accession
         t['class'] = p.family.parent.parent.parent.short()
-        t['family'] = p.family.parent.parent.short()
+        t['ligandtype'] = p.family.parent.parent.short()
+        t['family'] = p.family.parent
         t['uniprot'] = p.entry_short()
         t['iuphar'] = p.family.name.replace('receptor', '').strip()
+
 
         data_dict = OrderedDict()
         data_dict[uniprot_id] = t
         data_table += "<tr> \
-        <td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' name='targets' value='' onclick='thisTARGET(this);' id='{}'></td> \
+        <td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' name='targets' onclick='thisTARGET(this);' id='{}'></td> \
+        <td>{}</td> \
         <td>{}</td> \
         <td>{}</td> \
         <td>{}</td> \
@@ -1861,9 +1866,10 @@ def TargetTableData(request):
         </tr> \n".format(
             uniprot_id,
             t['class'],
+            t['ligandtype'],
             t['family'],
             t['uniprot'],
-            t['iuphar']
+            t['iuphar'],
         )
 
     data_table += "</tbody></table>"

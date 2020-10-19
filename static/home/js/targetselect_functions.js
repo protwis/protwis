@@ -39,24 +39,33 @@ function thisTARGET(name) {
     return receptor_selection;
 }
 
+/**
+ * Similar to thisTARGET but selects all checkboxes in one go, that is, check_all
+ */
+function check_all() {
+    show_all = $('.check_all:visible').prop("checked");
+
+    if (show_all) {
+        $('.pdb_selected:visible').prop("checked", true);
+    } else {
+        $('.pdb_selected:visible').prop("checked", false);
+    }
+
+    const checkboxes = document.querySelectorAll(`input[name="targets"]:checked`);
+    receptor_selection =[];
+    checkboxes.forEach((checkbox) => {
+        receptor_selection.push(checkbox.id);
+    });
+
+}
+
 function resetselection(not_update = false, reset_filters = false) {
     $('.check_all:visible').prop('checked', false);
     $('input', oTable.cells().nodes()).prop('checked', false);
     if (reset_filters) yadcf.exResetAllFilters(oTable);
 }
 
-function check_all(elem, button) {
-    show_all = $('.check_all:visible').prop("checked");
-    if (button) {
-        if (show_all) {
-            $('.check_all:visible').prop("checked", false);
-            show_all = false;
-        } else {
-            $('.check_all:visible').prop("checked", true);
-            show_all = true;
-        }
-    }
-}
+
 
 $.fn.dataTable.ext.order['dom-checkbox'] = function(settings, col) {
     return this.api().column(col, {
@@ -174,18 +183,25 @@ function showTARGETtable(element) {
                     column_number: 2,
                     filter_type: "multi_select",
                     select_type: 'select2',
+                    filter_default_label: "Ligand",
+                    filter_reset_button_text: true,
+                },
+                {
+                    column_number: 3,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
                     filter_default_label: "Family",
 //                    filter_reset_button_text: true,
                 },
                 {
-                    column_number: 3,
+                    column_number: 4,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "Uniprot",
 //                    filter_reset_button_text: true,
                 },
                 {
-                    column_number: 4,
+                    column_number: 5,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     column_data_type: "html",

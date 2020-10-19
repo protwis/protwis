@@ -97,18 +97,19 @@
                             <div class="modal-dialog modal-xl">
                                 <!-- Modal content-->
                                 <div class="modal-content">
-                                    <div class="modal-header">
+                                    <div class="modal-header modal-no-border">
                                         <h4 class="modal-title">Select a set of targets</h4>
                                         {# <span id="targetselect-modal-text">0 target(s) selected</span> #}
                                         <button type="button" onclick="resetselection(false, true);" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
                                         <button type="button" class="btn btn-default pull-right" data-dismiss="modal">Close</button>
                                     </div>
-                                    <div class="modal-body">
+                                    <div class="modal-body modal-no-border">
                                         <div class="col-md-12">
                                             <div class="tableview"></div>
                                         </div>
                                     </div>
-                                    <div class="modal-footer">
+                                    <div class="modal-footer modal-no-border">
+                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                                     </div>
                                 </div>
 {#                                <div class="loading_overlay">#}
