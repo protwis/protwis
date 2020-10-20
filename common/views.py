@@ -1809,7 +1809,7 @@ def get_gpcr_class(item):
     return item
 
 @csrf_exempt
-#@cache_page(60*60)
+@cache_page(60*60)
 def TargetTableData(request):
     """
     Creates a table for selection of targets. The goal is to to offer an alternative to the togglefamilytreenode
@@ -1825,19 +1825,56 @@ def TargetTableData(request):
         'family__parent__parent__parent'
     )
 
-    data_table = "<table id='uniprot_selection' border=0 class='uniprot_selection'> \
+    pdbids = list(Structure.objects.filter(refined=False).values_list('pdb_code__index', 'protein_conformation__protein__family_id'))
+
+    allpdbs = {}
+    for pdb in pdbids:
+        if pdb[1] not in allpdbs:
+            allpdbs[pdb[1]] = [pdb[0]]
+        else:
+            allpdbs[pdb[1]].append(pdb[0])
+
+    drugtargets_approved = list(Protein.objects.filter(drugs__status='approved').values_list('entry_name', flat=True))
+    drugtargets_trials = list(Protein.objects.filter(drugs__status__in=['in trial'],
+                                                     drugs__clinicalstatus__in=['completed', 'not open yet',
+                                                                                'ongoing', 'recruiting',
+                                                                                'suspended']).values_list(
+        'entry_name', flat=True))
+
+    # Filter data source to Guide to Pharmacology until other coupling transduction sources are "consolidated".
+    couplings = ProteinGProteinPair.objects.filter(source="GuideToPharma").values_list('protein__entry_name',
+                                                                                       'g_protein__name',
+                                                                                       'transduction')
+
+    signaling_data = {}
+    for pairing in couplings:
+        if pairing[0] not in signaling_data:
+            signaling_data[pairing[0]] = {}
+        signaling_data[pairing[0]][pairing[1]] = pairing[2]
+
+    data_table = "<table id='uniprot_selection' border=1 class='uniprot_selection'> \
         <thead>\
           <tr> \
-            <th rowspan=1 colspan=1> <input class ='form-check-input check_all' type='checkbox' onclick='check_all(this);'> </th> \
+            <th colspan=1></th> \
             <th colspan=5>Receptor classification</th> \
+            <th colspan=1>PDB</th> \
+            <th colspan=2>Drugs</th> \
+            <th colspan=4>G protein coupling</th> \
           </tr> \
           <tr> \
-            <th></th> \
+            <th rowspan=1 colspan=1> <input class ='form-check-input check_all' type='checkbox' onclick='check_all(this);'> </th> \
             <th>Class</th> \
             <th>Ligand type</th> \
             <th>Family</th> \
             <th>Uniprot</th> \
             <th>IUPHAR</th> \
+            <th>PDB</th> \
+            <th>Target of and approved drug</th> \
+            <th>Target in clinical trials</th> \
+            <th>Gs</th> \
+            <th>Gi/o</th> \
+            <th>Gq/11</th> \
+            <th>G12/13</th> \
           </tr> \
         </thead>\
         \n \
@@ -1853,6 +1890,25 @@ def TargetTableData(request):
         t['uniprot'] = p.entry_short()
         t['iuphar'] = p.family.name.replace('receptor', '').strip()
 
+        if p.family_id in allpdbs:
+            pdb_entries = allpdbs[p.family_id]
+            pdb_entries.sort()
+            t['pdbid'] = ",".join(pdb_entries)
+            t['pdbid_two'] = ",".join(pdb_entries[:2])
+            if len(allpdbs[p.family_id]) > 2:
+                t['pdbid_two'] += "..."
+        else:
+            t['pdbid'] = t['pdbid_two'] = "-"
+
+        t['approved_target'] = "Yes" if p.entry_name in drugtargets_approved else "No"
+        t['clinical_target'] = "Yes" if p.entry_name in drugtargets_trials else "No"
+
+        gprotein_families = ["Gs family", "Gi/Go family", "Gq/G11 family", "G12/G13 family"]
+        for gprotein in gprotein_families:
+            if p.entry_name in signaling_data and gprotein in signaling_data[p.entry_name]:
+                t[gprotein] = signaling_data[p.entry_name][gprotein]
+            else:
+                t[gprotein] = "-"
 
         data_dict = OrderedDict()
         data_dict[uniprot_id] = t
@@ -1863,6 +1919,13 @@ def TargetTableData(request):
         <td>{}</td> \
         <td>{}</td> \
         <td><span>{}</span></td> \
+        <td data-search=\"{}\">{}</td> \
+        <td>{}</td> \
+        <td>{}</td> \
+        <td>{}</td> \
+        <td>{}</td> \
+        <td>{}</td> \
+        <td>{}</td> \
         </tr> \n".format(
             uniprot_id,
             t['class'],
@@ -1870,8 +1933,17 @@ def TargetTableData(request):
             t['family'],
             t['uniprot'],
             t['iuphar'],
+            t['pdbid'],      # This one hidden used for search box.
+            t['pdbid_two'],  # This one shown. Show only first two pdb's.
+            t['approved_target'],
+            t['clinical_target'],
+            t[gprotein_families[0]],
+            t[gprotein_families[1]],
+            t[gprotein_families[2]],
+            t[gprotein_families[3]],
         )
 
     data_table += "</tbody></table>"
 
     return HttpResponse(data_table)
+
