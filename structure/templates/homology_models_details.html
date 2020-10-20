@@ -101,11 +101,16 @@ canvas {
     </div>
     <div class="col-md-9">
         <div class="btn-group">
-            {% if model.refined %}
-                <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.pdb_code.index}}/download_pdb">Download</a>
-            {% else %}
-                <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.protein.entry_name}}_{{model.state.slug}}/download_pdb">Download</a>
-            {% endif %}
+            <a href="/" class="dropdown-toggle btn btn-primary btn-mini" data-toggle="dropdown" role="button" aria-expanded="false">Download <span class='caret'></span></a>
+            <ul class="dropdown-menu" role="menu" style="min-width:50%;">
+                {% if model.refined %}
+                    <li><a id="download_btn" href="./{{model.pdb_code.index}}_full/download_pdb">Full</a></li>
+                    <li><a id="download_btn" href="./{{model.pdb_code.index}}_noloops/download_pdb">Without loops</a></li>
+                {% else %}
+                    <li><a id="download_btn" href="./{{model.protein.entry_name}}_{{model.state.slug}}_full/download_pdb">Full</a></li>
+                    <li><a id="download_btn" href="./{{model.protein.entry_name}}_{{model.state.slug}}_noloops/download_pdb">Without loops</a></li>
+                {% endif %}
+            </ul>
         </div>
         <div>
             <p>PDB file contains GPCRdb generic numbers in the B-factor field of CA atoms</p>
