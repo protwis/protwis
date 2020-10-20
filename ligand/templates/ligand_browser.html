@@ -126,18 +126,16 @@
 </script>
 <script type="text/javascript">
 	function getCheckedCheckboxesFor() {
-		var checkboxes = document.querySelectorAll('input[type="checkbox"]:checked'),
+		var checkboxes = document.querySelectorAll('table input[type="checkbox"]:checked'),
 			values = [];
 		Array.prototype.forEach.call(checkboxes, function(el) {
 			values.push(el.value);
 		});
-		if (values.length > 11) {
+		if (values.length > 0) {
 			return true
 		} else {
 			return false
 		}
-
-
 	}
 </script>
 {% endblock %}

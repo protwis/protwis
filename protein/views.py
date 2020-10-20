@@ -48,7 +48,10 @@ def detail(request, slug):
         try:
             pp = Protein.objects.prefetch_related('web_links__web_resource', 'parent').get(entry_name=slug)
             if pp.parent.sequence_type.slug == 'wt':
-                p = pp.parent
+                # If this entry is a PDB-code - redirect
+                return redirect(reverse('structure_details', kwargs={'pdbname': slug}))
+                # Alternative: show WT receptor of the structure
+                #p = pp.parent
             else:
                 context = {'protein_no_found': slug}
                 return render(request, 'protein/protein_detail.html', context)
@@ -184,23 +187,25 @@ def SelectionAutocomplete(request):
         if type_of_selection!='navbar':
             ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q),
                                         species__in=(species_list),
-                                        source__in=(protein_source_list)).exclude(family__slug__startswith=exclusion_slug)[:10]
+                                        source__in=(protein_source_list)).exclude(family__slug__startswith=exclusion_slug).exclude(sequence_type__slug='consensus')[:10]
         else:
             ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q),
-                                        species__common_name='Human', source__name='SWISSPROT').exclude(family__slug__startswith=exclusion_slug)[:10]
+                                        species__common_name='Human', source__name='SWISSPROT').exclude(family__slug__startswith=exclusion_slug).exclude(sequence_type__slug='consensus')[:10]
 
         # Try matching protein name after stripping html tags
         if ps.count() == 0:
-            ps = Protein.objects.annotate(filtered=Func(F('name'), Value('<[^>]+>'), Value(''), Value('gi'), function='regexp_replace')).filter(Q(filtered__icontains=q), species__common_name='Human', source__name='SWISSPROT')
+            ps = Protein.objects.annotate(filtered=Func(F('name'), Value('<[^>]+>'), Value(''), Value('gi'), function='regexp_replace')) \
+                .filter(Q(filtered__icontains=q), species__common_name='Human', source__name='SWISSPROT')
 
             # If count still 0 try searching for the full thing
             if ps.count() == 0:
                 ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q),
-                                            source__name='SWISSPROT').exclude(family__slug__startswith=exclusion_slug)[:10]
+                                            source__name='SWISSPROT').exclude(family__slug__startswith=exclusion_slug).exclude(sequence_type__slug='consensus')[:10]
 
                 # If count still 0 try searching outside of Swissprot
                 if ps.count() == 0:
-                    ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q)).exclude(family__slug__startswith=exclusion_slug)[:10]
+                    ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q)) \
+                        .exclude(family__slug__startswith=exclusion_slug).exclude(sequence_type__slug='consensus')[:10]
 
 
         for p in ps:
@@ -213,11 +218,17 @@ def SelectionAutocomplete(request):
             results.append(p_json)
 
 
-        if type_of_selection!='navbar':
+        if type_of_selection!='navbar' or (type_of_selection=='navbar' and ps.count() == 0):
             # find protein aliases
-            pas = ProteinAlias.objects.prefetch_related('protein').filter(name__icontains=q,
-                                                                          protein__species__in=(species_list),
-                                                                          protein__source__in=(protein_source_list)).exclude(protein__family__slug__startswith=exclusion_slug)[:10]
+            if type_of_selection != 'navbar':
+                pas = ProteinAlias.objects.prefetch_related('protein').filter(name__icontains=q,
+                                        protein__species__in=(species_list), protein__source__in=(protein_source_list)) \
+                                        .exclude(protein__family__slug__startswith=exclusion_slug)[:10]
+            else:
+                pas = ProteinAlias.objects.prefetch_related('protein').filter(name__icontains=q,
+                        protein__species__common_name='Human', protein__source__name='SWISSPROT') \
+                        .exclude(protein__family__slug__startswith=exclusion_slug)[:10]
+
             for pa in pas:
                 pa_json = {}
                 pa_json['id'] = pa.protein.id
@@ -228,6 +239,7 @@ def SelectionAutocomplete(request):
                 if pa_json not in results:
                     results.append(pa_json)
 
+        if type_of_selection!='navbar':
             # protein families
             if (type_of_selection == 'targets' or type_of_selection == 'browse' or type_of_selection == 'gproteins') and selection_only_receptors!="True":
                 # find protein families
@@ -405,7 +417,8 @@ def isoforms(request):
         i += 1
 
 
-    context['segments'] = list(ProteinSegment.objects.filter(proteinfamily="GPCR").exclude(slug='ICL4').values_list('slug', flat=True))
+    # context['segments'] = list(ProteinSegment.objects.filter(proteinfamily="GPCR").exclude(slug__in=('ICL4','D1S1','D1e1','D1T1','D1S2')).values_list('slug', flat=True))
+    context['segments'] = list(ProteinSegment.objects.filter(proteinfamily="GPCR").filter(slug__in=('N-term', 'TM1', 'ICL1', 'TM2', 'ECL1', 'TM3', 'ICL2', 'TM4', 'ECL2', 'TM5', 'ICL3', 'TM6', 'ECL3', 'TM7', 'H8', 'C-term')).values_list('slug', flat=True))
     # print(context['segments'])
     context['tree'] = json.dumps(tree)
 
