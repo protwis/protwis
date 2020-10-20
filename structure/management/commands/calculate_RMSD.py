@@ -146,11 +146,12 @@ class Validation():
         num_atoms1, num_atoms2 = OrderedDict(), OrderedDict()
         num_atoms = [num_atoms1, num_atoms2]
         mismatches = []
-        for m in arrays:
+        resis_to_delete = []
+        for m_i, m in enumerate(arrays):
             for i in range(0,2):
                 for res in m[i]:
                     if res in deletes[i] or res not in keeps[i]:
-                        del m[i][res]
+                        resis_to_delete.append([m_i,i,res])
                     else:
                         try:
                             if m[i][res].get_resname()!=num_atoms[i][res][0].get_parent().get_resname():
@@ -168,6 +169,8 @@ class Validation():
                                 else:
                                     if len(atoms)<len(num_atoms[i][res]):
                                         num_atoms[i][res] = atoms
+        for i in resis_to_delete:
+            del arrays[i[0]][i[1]][i[2]]
         atom_lists = []
         for m in arrays:
             this_model = []

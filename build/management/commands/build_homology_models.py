@@ -749,7 +749,7 @@ class HomologyModeling(object):
                                     atom_num+=1
                         except:
                             out_list.append(line)
-        
+
         with open (path+self.modelname+'.pdb', 'w') as f:   
             f.write(''.join(out_list))
 
@@ -1758,9 +1758,6 @@ class HomologyModeling(object):
             c_count = -1
             for c in C_term:
                 c_count+=1
-                if self.revise_xtal and self.main_structure.pdb_code.index=='1GZM':
-                    if c.sequence_number in [327,328,329]:
-                        continue
                 a.reference_dict['C-term'][str(c.sequence_number)] = c.amino_acid
                 a.alignment_dict['C-term'][str(c.sequence_number)] = '-'
                 try:
@@ -1807,7 +1804,7 @@ class HomologyModeling(object):
                 label = i
                 break
         try:
-            if len(a.reference_dict[label])>10:
+            if '_dis' not in label and len(a.reference_dict[label])>10:
                 delete_ts, delete_r, delete_t, delete_a, delete_m = set(),set(),set(),set(),set()
                 chain_break = False
                 icl3_c = 0
@@ -1945,6 +1942,9 @@ class HomologyModeling(object):
         if self.reference_protein.family.slug.startswith('004'):
             for i in a.template_dict['H8']:
                 trimmed_residues.append(i.replace('x','.'))
+        # Add last res of TM7 to model when start of H8 was added from alt template
+        if 'H8' in self.template_source and self.template_source['H8'][list(self.template_source['H8'])[0]][0]!=self.main_structure:
+            trimmed_residues.append(list(main_pdb_array['TM7'])[-1])
    
         self.statistics.add_info('trimmed_residues', trimmed_residues)
 
@@ -1999,7 +1999,9 @@ class HomologyModeling(object):
                 hetatm = 1
                 for line in lines:
                     if line.startswith('HETATM'):
-                        if 'YCM' in line or 'CSD' in line or 'SEP' in line or 'TYS' in line:
+                        if 'YCM' in line or 'CSD' in line or 'SEP' in line or 'TYS' in line or 'ACE' in line:
+                            continue
+                        if self.main_structure.pdb_code.index=='4BUO' and 'GLY' in line:
                             continue
                         pref_chain = str(self.main_structure.preferred_chain)
                         if len(pref_chain)>1:
@@ -2153,6 +2155,9 @@ class HomologyModeling(object):
             pir_file = "./structure/PIR/{}_{}.pir".format(self.uniprot_id, self.target_signprot.entry_name)
         else:
             pir_file = "./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir"
+        if self.debug:
+            print('Atom selection for MODELLER:')
+            print(trimmed_res_nums)
         self.run_MODELLER(pir_file, post_file, 
                           self.uniprot_id, self.modeller_iterations, path+self.modelname+'.pdb', 
                           atom_dict=trimmed_res_nums, helix_restraints=helix_restraints, icl3_mid=icl3_mid, disulfide_nums=disulfide_nums, complex_start=complex_start, beta_start=beta_start,
@@ -2315,6 +2320,8 @@ class HomologyModeling(object):
                                                       alignment_dict[aligned_seg]):
                 if self.revise_xtal==True and reference_dict[ref_seg][ref_res]!=template_dict[temp_seg][temp_res]:
                     alignment_dict[aligned_seg][aligned_res]='.'
+                if template_dict[temp_seg][temp_res]=='/':
+                    continue
                 if reference_dict[ref_seg][ref_res]!='-':
                     ref_length+=1
                 else:
@@ -3111,7 +3118,7 @@ class HelixEndsModeling(HomologyModeling):
         for seg_lab, seg in array.items():
             if seg_lab[0]=='T' or seg_lab=='H8':
                 try:
-                    ends[seg_lab] = [list(seg.keys())[0].replace('.','x'),list(seg.keys())[-1].replace('.','x')]
+                    ends[seg_lab] = [[i for i in seg.keys() if seg[i]!='x'][0].replace('.','x'),[i for i in seg.keys() if seg[i]!='x'][-1].replace('.','x')]
                 except:
                     pass
         return ends
