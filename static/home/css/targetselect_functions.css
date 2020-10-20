@@ -7,3 +7,7 @@
    max-width:1200px;
   }
 }
+
+.modal-no-border{
+  border: none;
+}

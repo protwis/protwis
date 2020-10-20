@@ -39,24 +39,33 @@ function thisTARGET(name) {
     return receptor_selection;
 }
 
+/**
+ * Similar to thisTARGET but selects all checkboxes in one go, that is, check_all
+ */
+function check_all() {
+    show_all = $('.check_all:visible').prop("checked");
+
+    if (show_all) {
+        $('.pdb_selected:visible').prop("checked", true);
+    } else {
+        $('.pdb_selected:visible').prop("checked", false);
+    }
+
+    const checkboxes = document.querySelectorAll(`input[name="targets"]:checked`);
+    receptor_selection =[];
+    checkboxes.forEach((checkbox) => {
+        receptor_selection.push(checkbox.id);
+    });
+
+}
+
 function resetselection(not_update = false, reset_filters = false) {
     $('.check_all:visible').prop('checked', false);
     $('input', oTable.cells().nodes()).prop('checked', false);
     if (reset_filters) yadcf.exResetAllFilters(oTable);
 }
 
-function check_all(elem, button) {
-    show_all = $('.check_all:visible').prop("checked");
-    if (button) {
-        if (show_all) {
-            $('.check_all:visible').prop("checked", false);
-            show_all = false;
-        } else {
-            $('.check_all:visible').prop("checked", true);
-            show_all = true;
-        }
-    }
-}
+
 
 $.fn.dataTable.ext.order['dom-checkbox'] = function(settings, col) {
     return this.api().column(col, {
@@ -129,7 +138,7 @@ function showTARGETtable(element) {
 
         $(element + ' .modal-header .pastePDBs').keypress(function(event) {
             var keycode = (event.keyCode ? event.keyCode : event.which);
-            if(keycode == '13'){
+            if(keycode === '13'){
                 pastePDBs();
             }
         });
@@ -174,24 +183,73 @@ function showTARGETtable(element) {
                     column_number: 2,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Family",
-//                    filter_reset_button_text: true,
+                    filter_default_label: "Ligand",
+                    filter_reset_button_text: true,
+                    filter_match_mode : "exact",
                 },
                 {
                     column_number: 3,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Uniprot",
-//                    filter_reset_button_text: true,
+                    filter_default_label: "Family",
                 },
                 {
                     column_number: 4,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Uniprot",
+                },
+                {
+                    column_number: 5,
                     filter_type: "multi_select",
                     select_type: 'select2',
                     column_data_type: "html",
                     html_data_type: "text",
                     filter_default_label: "IUPHAR",
                     filter_match_mode : "exact",
+                },
+                {
+                    column_number: 6,
+                    filter_type: "text",
+                    select_type: 'select2',
+                    html5_data: "data-search",
+                    filter_default_label: "PDB",
+                },
+                {
+                    column_number: 7,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Approved",
+                },
+                {
+                    column_number: 8,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Clinical trial",
+                },
+                {
+                    column_number: 9,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Gs",
+                },
+                {
+                    column_number: 10,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Gi/o",
+                },
+                {
+                    column_number: 11,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Gq/11",
+                },
+                {
+                    column_number: 12,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "G12/13",
                 },
 
             ], {
