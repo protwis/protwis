@@ -175,13 +175,13 @@ function toggleLoop(id, type, skipmaxmin, el) {
     //     if (!curr) $(this).css("display", "none");
     // });
     // console.log('draw c', (+new Date()) - start);
-    if (id == ".ICL3" || id == ".ICL2" || id == ".ICL1" || id == ".C-term" ) {
+/*    if (id == ".ICL3" || id == ".ICL2" || id == ".ICL1" || id == ".C-term" ) {
       if (skipmaxmin!=1) redraw_terminus("C");
     }
     // console.log('draw n', (+new Date()) - start);
     if (id == ".ECL3" || id == ".ECL2" || id == ".ECL1" || id == ".N-term" ) {
       if (skipmaxmin!=1) redraw_terminus("N");
-    }
+    }*/
     // console.log('maxmin', (+new Date()) - start);
     // if (skipmaxmin!=1) maxmin();
     // console.log('done', (+new Date()) - start);
@@ -418,13 +418,15 @@ function maxmin() {
         }
     });
 
+    // Alternative for height - otherwise the height of the element itself is skipped
+    //svgmax = document.getElementById('snake').getBBox().height;
+
     // if (svgmin>y_min) svgmin = y_min;
     // if (svgmax<y_max) svgmax = y_max;
 
     // console.log('max '+svgmax+' '+classmax+' min'+svgmin+' '+classmin+' count'+count);
 
     var svg = $('#snake').closest('svg')[0];
-
     check = document.getElementById("snakeplot").getAttribute('viewBox');
     // console.log('check',check)
     if (typeof check !== typeof undefined && check !== false && check !== null ) {
@@ -436,7 +438,7 @@ function maxmin() {
       width = $("#snakeplot").attr('width');
     }
 
-    newheight = (svgmax-svgmin+margin*2);
+    newheight = (svgmax-svgmin+margin*2)+margin/2; // add extra border/padding
 
     // console.log('New height:'+ newheight +' old height:'+oldheight);
     // console.log("Prev attr"+$('#snake').attr("transform"));
