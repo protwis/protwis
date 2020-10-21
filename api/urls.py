@@ -68,5 +68,7 @@ urlpatterns = [
     url(r'^species/$', views.SpeciesList.as_view(), name='species-list'),
     url(r'^species/(?P<latin_name>[^/]+)/$', views.SpeciesDetail.as_view(), name='species-detail'),
     url(r'^mutants/(?P<entry_name>[^/].+)/$', views.MutantList.as_view(), name='mutants'),
-    url(r'^drugs/(?P<entry_name>[^/].+)/$', views.DrugList.as_view(), name='drugs')
+    url(r'^drugs/(?P<entry_name>[^/].+)/$', views.DrugList.as_view(), name='drugs'),
+    url(r'^plot/helixbox/(?P<entry_name>[^/].+)/$', views.HelixBoxView.as_view(), name='helixbox'),
+    url(r'^plot/snake/(?P<entry_name>[^/].+)/$', views.SnakePlotView.as_view(), name='snakeplot')
 ]
