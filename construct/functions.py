@@ -841,6 +841,10 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
             elif pdbname=='7JJO'  and chain=='E':
                 pos_in_wt = list(range(1,40))+list(range(243,247))+list(range(358,484))
 
+            # Custom fix for 1GZM flying residues
+            if pdbname=='1GZM' and chain in ['A','B']:
+                max_pos=326
+                seg_resid_list = seg_resid_list[:-3]
             mutations = None
 
             if receptor==False and u_id_source=='UniProt':

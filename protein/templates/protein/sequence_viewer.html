@@ -12,10 +12,18 @@
                         {% if not r.1 and r.2 %}
                         {% else %}
                         <td class="seqv seqv-segment no-wrap
-                        {% if r.0.protein_segment.id|divisibleby:2 %}
-                         bg-success
-                        {% else %} 
+                        {% comment %}
+                          {% if r.0.protein_segment.id|divisibleby:2 %}
+                           bg-success
+                          {% else %}
+                           bg-info
+                          {% endif %}"
+                        {% endcomment %}
+                        {# NOW BASED ON SEGMENT CATEGORY - can be optimized #}
+                        {% if r.0.protein_segment.category == "helix" %}
                          bg-info
+                        {% else %}
+                         bg-success
                         {% endif %}"
                         {% if r.1 %}
                          colspan="{{ r.0.protein_segment.slug|length }}"

@@ -26,6 +26,7 @@ from common.selection import Selection, SelectionItem
 from common.extensions import MultiFileField
 from common.models import ReleaseNotes
 from common.alignment import GProteinAlignment
+from residue.models import Residue
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
@@ -2064,9 +2065,8 @@ def ComplexmodDownload(request):
 	response['Content-Length'] = zip_io.tell()
 	return response
 
-def SingleModelDownload(request, modelname, state, csv=False):
+def SingleModelDownload(request, modelname, state, fullness, csv=False):
 	"Download single homology model"
-
 	zip_io = BytesIO()
 	if state=='refined':
 		hommod = Structure.objects.get(pdb_code__index=modelname+'_refined')
@@ -2083,8 +2083,50 @@ def SingleModelDownload(request, modelname, state, csv=False):
 																	   hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
 		stat_name = 'Class{}_{}_{}_{}_{}_GPCRdb.templates.csv'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name,
 																	   hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
-	io = StringIO(hommod.pdb_data.pdb)
-	stats_text = StringIO(hommod.stats_text.stats_text)
+	pdb_lines = hommod.pdb_data.pdb
+	stats_lines = hommod.stats_text.stats_text
+	if fullness=='noloops':
+		filtered_lines = ''
+		remark_line_count = 0
+		for line in pdb_lines.split('\n'):
+			if line.startswith('REMARK'):
+				filtered_lines+=line+'\n'
+				remark_line_count+=1
+		filtered_lines+='REMARK    {} ALL LOOPS REMOVED AFTER MODELING\n'.format(remark_line_count+1)
+		if state=='refined':
+			helix_resis = Residue.objects.filter(protein_conformation__protein=hommod.protein_conformation.protein, protein_segment__category='helix').values_list('sequence_number', flat=True)
+		else:
+			helix_resis = Residue.objects.filter(protein_conformation__protein=hommod.protein, protein_segment__category='helix').values_list('sequence_number', flat=True)
+		p = PDBParser(get_header=True)
+		pdb = p.get_structure('pdb', StringIO(pdb_lines))[0]
+		to_remove = []
+		for chain in pdb:
+			for res in chain:
+				if res.id[1] not in helix_resis and res.id[0]==' ':
+					to_remove.append(res.id)
+		for i in to_remove:
+			chain.detach_child(i)
+		io = StringIO()
+		pdbio = PDBIO()
+		pdbio.set_structure(pdb)
+		pdbio.save(io)
+		io = StringIO(filtered_lines+io.getvalue())
+		filtered_stats_lines = ''
+		for i in stats_lines.split('\n'):
+			if i.startswith('Segment'):
+				filtered_stats_lines+=i+'\n'
+				continue
+			if len(i)<2:
+				continue
+			resnum = int(i.split(',')[1])
+			if resnum in helix_resis:
+				filtered_stats_lines+=i+'\n'
+		stats_text = StringIO(filtered_stats_lines)
+		mod_name = mod_name.split('.')[0]+'_WL'+'.pdb'
+		stat_name = stat_name.split('.')[0]+'_WL'+'.templates.csv'
+	else:
+		io = StringIO(pdb_lines)
+		stats_text = StringIO(stats_lines)
 	with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as backup_zip:
 		backup_zip.writestr(mod_name, io.getvalue())
 		backup_zip.writestr(stat_name, stats_text.getvalue())

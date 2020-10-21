@@ -1,9 +1,10 @@
 ﻿from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.generic import TemplateView
+from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-from django.db.models import Case, When
+from django.db.models import Case, When, Min
 from django.core.cache import cache
 
 from common import definitions
@@ -19,7 +20,6 @@ from construct.tool import FileUploadForm
 from svglib.svglib import SvgRenderer
 from reportlab.graphics import renderPDF
 from lxml import etree
-
 import inspect
 import html
 import re
@@ -52,6 +52,7 @@ class AbsTargetSelection(TemplateView):
     numbering_schemes = False
     search = True
     family_tree = True
+    filter_tableselect = False
     redirect_on_select = False
     filter_gprotein = False
     selection_heading = False
@@ -1494,7 +1495,7 @@ def ResiduesUpload(request):
 
 @csrf_exempt
 def ReadTargetInput(request):
-    """Receives the data from the input form nd adds the listed targets to the selection"""
+    """Receives the data from the input form and adds the listed targets to the selection"""
 
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
@@ -1806,3 +1807,143 @@ def get_gpcr_class(item):
     while item.parent.parent!=None:
         item = item.parent
     return item
+
+@csrf_exempt
+@cache_page(60*60)
+def TargetTableData(request):
+    """
+    Creates a table for selection of targets. The goal is to to offer an alternative to the togglefamilytreenode
+    alternative already present in the selection logic.
+    Here we do server-side rendering of the table. This is a common trick to optimize response to client.
+    See the following relevant video from google chrome.
+    <https://youtu.be/ff4fgQxPaO0>
+    """
+    proteins = Protein.objects.filter(sequence_type__slug='wt',
+                                      family__slug__startswith='00',
+                                      species__common_name='Human').prefetch_related(
+        'family',
+        'family__parent__parent__parent'
+    )
+
+    pdbids = list(Structure.objects.filter(refined=False).values_list('pdb_code__index', 'protein_conformation__protein__family_id'))
+
+    allpdbs = {}
+    for pdb in pdbids:
+        if pdb[1] not in allpdbs:
+            allpdbs[pdb[1]] = [pdb[0]]
+        else:
+            allpdbs[pdb[1]].append(pdb[0])
+
+    drugtargets_approved = list(Protein.objects.filter(drugs__status='approved').values_list('entry_name', flat=True))
+    drugtargets_trials = list(Protein.objects.filter(drugs__status__in=['in trial'],
+                                                     drugs__clinicalstatus__in=['completed', 'not open yet',
+                                                                                'ongoing', 'recruiting',
+                                                                                'suspended']).values_list(
+        'entry_name', flat=True))
+
+    # Filter data source to Guide to Pharmacology until other coupling transduction sources are "consolidated".
+    couplings = ProteinGProteinPair.objects.filter(source="GuideToPharma").values_list('protein__entry_name',
+                                                                                       'g_protein__name',
+                                                                                       'transduction')
+
+    signaling_data = {}
+    for pairing in couplings:
+        if pairing[0] not in signaling_data:
+            signaling_data[pairing[0]] = {}
+        signaling_data[pairing[0]][pairing[1]] = pairing[2]
+
+    data_table = "<table id='uniprot_selection' border=1 class='uniprot_selection'> \
+        <thead>\
+          <tr> \
+            <th colspan=1></th> \
+            <th colspan=5>Receptor classification</th> \
+            <th colspan=1>PDB</th> \
+            <th colspan=2>Drugs</th> \
+            <th colspan=4>G protein coupling</th> \
+          </tr> \
+          <tr> \
+            <th rowspan=1 colspan=1> <input class ='form-check-input check_all' type='checkbox' onclick='check_all(this);'> </th> \
+            <th>Class</th> \
+            <th>Ligand type</th> \
+            <th>Family</th> \
+            <th>Uniprot</th> \
+            <th>IUPHAR</th> \
+            <th>PDB</th> \
+            <th>Target of and approved drug</th> \
+            <th>Target in clinical trials</th> \
+            <th>Gs</th> \
+            <th>Gi/o</th> \
+            <th>Gq/11</th> \
+            <th>G12/13</th> \
+          </tr> \
+        </thead>\
+        \n \
+        <tbody>\n"
+
+    for p in proteins:
+        uniprot_id = p.accession
+        t = {}
+        t['accession'] = p.accession
+        t['class'] = p.family.parent.parent.parent.short()
+        t['ligandtype'] = p.family.parent.parent.short()
+        t['family'] = p.family.parent
+        t['uniprot'] = p.entry_short()
+        t['iuphar'] = p.family.name.replace('receptor', '').strip()
+
+        if p.family_id in allpdbs:
+            pdb_entries = allpdbs[p.family_id]
+            pdb_entries.sort()
+            t['pdbid'] = ",".join(pdb_entries)
+            t['pdbid_two'] = ",".join(pdb_entries[:2])
+            if len(allpdbs[p.family_id]) > 2:
+                t['pdbid_two'] += "..."
+        else:
+            t['pdbid'] = t['pdbid_two'] = "-"
+
+        t['approved_target'] = "Yes" if p.entry_name in drugtargets_approved else "No"
+        t['clinical_target'] = "Yes" if p.entry_name in drugtargets_trials else "No"
+
+        gprotein_families = ["Gs family", "Gi/Go family", "Gq/G11 family", "G12/G13 family"]
+        for gprotein in gprotein_families:
+            if p.entry_name in signaling_data and gprotein in signaling_data[p.entry_name]:
+                t[gprotein] = signaling_data[p.entry_name][gprotein]
+            else:
+                t[gprotein] = "-"
+
+        data_dict = OrderedDict()
+        data_dict[uniprot_id] = t
+        data_table += "<tr> \
+        <td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' name='targets' onclick='thisTARGET(this);' id='{}'></td> \
+        <td>{}</td> \
+        <td>{}</td> \
+        <td>{}</td> \
+        <td>{}</td> \
+        <td><span>{}</span></td> \
+        <td data-search=\"{}\">{}</td> \
+        <td>{}</td> \
+        <td>{}</td> \
+        <td>{}</td> \
+        <td>{}</td> \
+        <td>{}</td> \
+        <td>{}</td> \
+        </tr> \n".format(
+            uniprot_id,
+            t['class'],
+            t['ligandtype'],
+            t['family'],
+            t['uniprot'],
+            t['iuphar'],
+            t['pdbid'],      # This one hidden used for search box.
+            t['pdbid_two'],  # This one shown. Show only first two pdb's.
+            t['approved_target'],
+            t['clinical_target'],
+            t[gprotein_families[0]],
+            t[gprotein_families[1]],
+            t[gprotein_families[2]],
+            t[gprotein_families[3]],
+        )
+
+    data_table += "</tbody></table>"
+
+    return HttpResponse(data_table)
+

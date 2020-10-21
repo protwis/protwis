@@ -35,4 +35,5 @@ urlpatterns = [
     url(r'^exportexceldownload/(?P<ts>[^/]*?)/(?P<entry_name>.+)$', views.ExportExcelDownload, name='exportexceldownload'),
     url(r'^importexcel$', views.ImportExcel, name='importexcel'),
     url(r'^convertsvg$', views.ConvertSVG, name='convertsvg'),
+    url(r'^targettabledata', views.TargetTableData, name='targettabledata'),
 ]
