@@ -215,7 +215,7 @@ class BlastSearchInput(AbsMiscSelection):
     buttons = {
         'continue': {
             'label': 'BLAST',
-            'onclick': 'document.getElementById("form").submit()',
+            'onclick': 'document.getElementById(\'form\').submit()',
             'color': 'success',
         },
     }
