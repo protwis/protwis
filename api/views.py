@@ -13,6 +13,7 @@ from protein.models import Protein, ProteinConformation, ProteinFamily, Species,
 from residue.models import Residue, ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent
 from structure.models import Structure
 from structure.assign_generic_numbers_gpcr import GenericNumbering
+from structure.sequence_parser import SequenceParser
 from api.serializers import (ProteinSerializer, ProteinFamilySerializer, SpeciesSerializer, ResidueSerializer,
                              ResidueExtendedSerializer, StructureSerializer,
                              StructureLigandInteractionSerializer,
@@ -24,7 +25,7 @@ from drugs.models import Drugs
 
 import json, os
 from io import StringIO
-from Bio.PDB import PDBIO
+from Bio.PDB import PDBIO, parse_pdb_header
 from collections import OrderedDict
 
 # FIXME add
@@ -732,18 +733,17 @@ class StructureAssignGenericNumbers(views.APIView):
     curl -X POST -F "pdb_file=@myfile.pdb" http://gpcrdb.org/services/structure/assign_generic_numbers
     """
     parser_classes = (FileUploadParser,)
-    renderer_classes = (PDBRenderer, )
+    renderer_classes = (PDBRenderer,)
 
     def post(self, request):
-
-        root, ext = os.path.splitext(request.FILES['pdb_file'].name)
-        generic_numbering = GenericNumbering(StringIO(request.FILES['pdb_file'].file.read().decode('UTF-8',"ignore")))
+        #root, ext = os.path.splitext(request.FILES['pdb_file'].name)
+        generic_numbering = GenericNumbering(StringIO(request._request.FILES['pdb_file'].file.read().decode('UTF-8', "ignore")))
         out_struct = generic_numbering.assign_generic_numbers()
         out_stream = StringIO()
         io = PDBIO()
         io.set_structure(out_struct)
         io.save(out_stream)
-        print(len(out_stream.getvalue()))
+        # print(len(out_stream.getvalue()))
         # filename="{}_GPCRdb.pdb".format(root)
         return Response(out_stream.getvalue())
 
@@ -756,7 +756,7 @@ class StructureSequenceParser(views.APIView):
     curl -X POST -F "pdb_file=@myfile.pdb" http://gpcrdb.org/services/structure/parse_pdb
     """
     parser_classes = (FileUploadParser,)
-    renderer_classes =(JSONRenderer)
+    renderer_classes =(JSONRenderer,)
 
     def post(self, request):
 
