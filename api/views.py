@@ -733,17 +733,18 @@ class StructureAssignGenericNumbers(views.APIView):
     curl -X POST -F "pdb_file=@myfile.pdb" http://gpcrdb.org/services/structure/assign_generic_numbers
     """
     parser_classes = (FileUploadParser,)
-    renderer_classes = (PDBRenderer,)
+    renderer_classes = (PDBRenderer, )
 
     def post(self, request):
-        #root, ext = os.path.splitext(request.FILES['pdb_file'].name)
+
+        # root, ext = os.path.splitext(request._request.FILES['pdb_file'].name)
         generic_numbering = GenericNumbering(StringIO(request._request.FILES['pdb_file'].file.read().decode('UTF-8', "ignore")))
         out_struct = generic_numbering.assign_generic_numbers()
         out_stream = StringIO()
         io = PDBIO()
         io.set_structure(out_struct)
         io.save(out_stream)
-        # print(len(out_stream.getvalue()))
+        print(len(out_stream.getvalue()))
         # filename="{}_GPCRdb.pdb".format(root)
         return Response(out_stream.getvalue())
 
@@ -756,13 +757,13 @@ class StructureSequenceParser(views.APIView):
     curl -X POST -F "pdb_file=@myfile.pdb" http://gpcrdb.org/services/structure/parse_pdb
     """
     parser_classes = (FileUploadParser,)
-    renderer_classes =(JSONRenderer,)
+    renderer_classes = (JSONRenderer, )
 
     def post(self, request):
-
-        root, ext = os.path.splitext(request.FILES['pdb_file'].name)
-        header = parse_pdb_header(request.FILES['pdb_file'])
-        parser = SequenceParser(request.FILES['pdb_file'])
+        # root, ext = os.path.splitext(request._request.FILES['pdb_file'].name)
+        pdb_file = StringIO(request._request.FILES['pdb_file'].file.read().decode('UTF-8', "ignore"))
+        header = parse_pdb_header(pdb_file)
+        parser = SequenceParser(pdb_file)
 
         json_data = OrderedDict()
         json_data["header"] = header
