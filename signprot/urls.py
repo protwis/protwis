@@ -11,7 +11,6 @@ urlpatterns = [
     url(r'^statistics',  views.GProtein, name='gprotein'),
 #    url(r'^couplings',  views.couplings, name='couplings'),
     url(r'^couplings$', (CouplingBrowser.as_view()), name='coupling_browser'),
-    url(r'^couplingsbrowser$', (CouplingBrowser.as_view()), name='coupling_browser'),
     url(r'^ginterface/(?P<protein>[^/]*?)/$', views.Ginterface, name='render'),
     url(r'^ginterface[/]?$', views.TargetSelection.as_view(), name='targetselection'),
     url(r'^ajax/barcode/(?P<slug>[-\w]+)/(?P<cutoff>\d+\.\d{0,2})/$', views.ajaxBarcode, name='ajaxBarcode'),
