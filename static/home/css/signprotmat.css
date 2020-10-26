@@ -221,3 +221,7 @@ text.expand {
     width: 50px;
     text-align: center;
 }
+
+p.no_margins {
+    margin: 0;
+}
