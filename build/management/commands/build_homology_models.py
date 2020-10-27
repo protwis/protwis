@@ -433,12 +433,12 @@ class CallHomologyModeling():
                 # Handling local vs live builds
                 manage_call = "./manage.py"
                 if os.path.exists("/env/bin/python3"):
-                    manage_call = "/env/bin/python3"
+                    manage_call = "/env/bin/python3 manage.py"
 
                 if self.complex:
-                    new_args = shlex.split((manage_call + ' manage.py build_homology_models_zip -c -f {}.zip').format(Homology_model.modelname))
+                    new_args = shlex.split((manage_call + ' build_homology_models_zip -c -f {}.zip').format(Homology_model.modelname))
                 else:
-                    new_args = shlex.split((manage_call + ' manage.py build_homology_models_zip -f {}.zip').format(Homology_model.modelname))
+                    new_args = shlex.split((manage_call + ' build_homology_models_zip -f {}.zip').format(Homology_model.modelname))
 
                 subprocess.call(new_args)
 
