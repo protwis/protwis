@@ -55,7 +55,7 @@ class DrawSnakePlot(Diagram):
                 segment = str(r.segment_slug)
 
 
-            if segment not in self.segments: 
+            if segment not in self.segments:
                 self.segments[segment] = []
                 self.segments_full[segment] = r.protein_segment
             label = ''
@@ -152,11 +152,11 @@ class DrawSnakePlot(Diagram):
                 print('error with helix',8,msg)
 
         self.drawSnakePlotLoops()
-        
+
         self.drawSnakePlotTerminals()
 
     def __str__(self):
-
+        # NOTE: this translate is overwritten in JS (diagram.js)
         self.output_final = "<g id=snake transform='translate(0, " + str(-self.low+ self.offsetY) + ")'>" + self.traceoutput+self.output+self.helixoutput+self.drawToolTip() + "</g>"; #for resizing height
         return mark_safe(self.create(self.output_final,self.maxX['right']+30,self.high-self.low+self.offsetY*2,"snakeplot", self.nobuttons))
 

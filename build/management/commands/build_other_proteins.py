@@ -112,7 +112,7 @@ class Command(BuildHumanProteins):
             while count.value<len(filenames):
                 with lock:
                     source_file = filenames[count.value]
-                    count.value +=1 
+                    count.value +=1
                 # if i<positions[0]: #continue if less than start
                 #     continue
                 # if positions[1]: #if end is non-false
@@ -169,6 +169,12 @@ class Command(BuildHumanProteins):
                     if not p:
                         split_entry_name = up['entry_name'].split('_')
 
+                        # UGLY: hardcoded corrections
+                        # NOTE: when extending this - make a dictionary
+                        # NOTE: consider utilizing e.g. OrthoDB
+                        if up['entry_name'] == "b1b1u5_9arac":
++                           split_entry_name = ["opsd", ""]
+
                         # add _ to the split entry name to avoid e.g. gp1 matching gp139
                         entry_name_query = split_entry_name[0] + '_'
                         try:
@@ -212,7 +218,7 @@ class Command(BuildHumanProteins):
                     continue
                 elif len(already_entry_names):
                     self.logger.error("{} {} swissprot orthologue already there? {}".format(up['entry_name'], accession,already_entry_names))
-                
+
                 # # check whether reference positions exist for this protein, and find them if they do not
                 # ref_position_file_path = os.sep.join([self.ref_position_source_dir, up['entry_name'] + '.yaml'])
                 # auto_ref_position_file_path = os.sep.join([self.auto_ref_position_source_dir, up['entry_name'] + '.yaml'])
