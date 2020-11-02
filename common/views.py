@@ -49,10 +49,11 @@ class AbsTargetSelection(TemplateView):
     target_input = True
     default_species = 'Human'
     default_slug = '000'
+    default_subslug = '00'
     numbering_schemes = False
     search = True
     family_tree = True
-    filter_tableselect = False
+    filter_tableselect = True
     redirect_on_select = False
     filter_gprotein = False
     selection_heading = False
@@ -75,7 +76,7 @@ class AbsTargetSelection(TemplateView):
     try:
         if ProteinFamily.objects.filter(slug=default_slug).exists():
             ppf = ProteinFamily.objects.get(slug=default_slug)
-            pfs = ProteinFamily.objects.filter(parent=ppf.id)
+            pfs = ProteinFamily.objects.filter(parent=ppf.id).filter(slug__startswith=default_subslug)
             ps = Protein.objects.filter(family=ppf)
             psets = ProteinSet.objects.all().prefetch_related('proteins')
             tree_indent_level = []
@@ -234,7 +235,6 @@ class AbsSegmentSelection(TemplateView):
                 context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
 
         for f in selection.targets:
-            print(f)
             if f.type=='family':
                 family = get_gpcr_class(f.item)
                 if family.name.startswith('Class D1'):
@@ -679,11 +679,11 @@ def SelectAlignableResidues(request):
                 r_prot = proteins[0]
             elif simple_selection.reference[0].type == 'protein':
                 r_prot = simple_selection.reference[0].item
-            
+
             seg_ids_all = get_protein_segment_ids(r_prot, seg_ids_all)
             if r_prot.residue_numbering_scheme not in numbering_schemes:
                 numbering_schemes.append(r_prot.residue_numbering_scheme)
-            
+
         if simple_selection.targets:
             for t in simple_selection.targets:
                 if t.type == 'family':
@@ -1809,7 +1809,7 @@ def get_gpcr_class(item):
     return item
 
 @csrf_exempt
-@cache_page(60*60)
+@cache_page(60*60*24*7)
 def TargetTableData(request):
     """
     Creates a table for selection of targets. The goal is to to offer an alternative to the togglefamilytreenode
@@ -1946,4 +1946,3 @@ def TargetTableData(request):
     data_table += "</tbody></table>"
 
     return HttpResponse(data_table)
-
