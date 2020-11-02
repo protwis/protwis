@@ -7,7 +7,6 @@ from common.models import WebLink, Publication
 class SignprotStructure(models.Model):
     protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
     pdb_code = models.ForeignKey('common.WebLink', on_delete=models.CASCADE)
-    extra_proteins = models.ManyToManyField('SignprotStructureExtraProteins', related_name='extra_proteins')
     structure_type = models.ForeignKey('structure.StructureType', on_delete=models.CASCADE)
     publication_date = models.DateField()
     publication = models.ForeignKey('common.Publication', null=True, on_delete=models.CASCADE)
@@ -22,7 +21,7 @@ class SignprotStructure(models.Model):
 
 
 class SignprotStructureExtraProteins(models.Model):
-    structure = models.ForeignKey('SignprotStructure', on_delete=models.CASCADE, null=True)
+    structure = models.ForeignKey('SignprotStructure', on_delete=models.CASCADE, null=True, related_name='extra_proteins')
     wt_protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE, null=True)
     protein_conformation = models.ForeignKey('protein.ProteinConformation', on_delete=models.CASCADE, null=True)
     display_name = models.CharField(max_length=20)
