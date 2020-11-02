@@ -54,7 +54,7 @@ class AbsTargetSelection(TemplateView):
     numbering_schemes = False
     search = True
     family_tree = True
-    filter_tableselect = True
+    filter_tableselect = False
     redirect_on_select = False
     filter_gprotein = False
     selection_heading = False
