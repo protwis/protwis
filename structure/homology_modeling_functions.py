@@ -268,8 +268,10 @@ class GPCRDBParsingPDB(object):
                             gn = gn+'0'
                         if gn[0]=='-':
                             gn = gn[1:]+'1'
-                        # Exception for 3PBL 331, gn get's assigned wrong
+                        # Exceptions
                         if structure.pdb_code.index=='3PBL' and residue.get_id()[1]==331:
+                            raise Exception()
+                        elif structure.pdb_code.index=='6QZH' and residue.get_id()[1]==1434:
                             raise Exception()
                         #################################################
                         if gn in gn_list:
@@ -300,6 +302,7 @@ class GPCRDBParsingPDB(object):
                 output[label] = OrderedDict()
             if len(gn_array)!=len(residue_array):
                 raise AssertionError()
+
             for gn, res in zip(gn_array,residue_array):
                 if '.' in gn:
                     seg_num = int(gn.split('.')[0])

@@ -59,7 +59,7 @@ class Command(BaseBuild):
 			struct_resis = Residue.objects.filter(protein_conformation=sep.protein_conformation)
 			sep.wt_coverage = round(len(struct_resis)/len(wt_resis)*100)
 			sep.save()
-			s.structure.extra_proteins.add(sep)
+			# s.structure.extra_proteins.add(sep)
 			# Beta
 			if s.beta_protein:
 				beta_sep = StructureExtraProteins()
@@ -72,7 +72,7 @@ class Command(BaseBuild):
 				beta_sep.category = 'G beta'
 				beta_sep.wt_coverage = None
 				beta_sep.save()
-				s.structure.extra_proteins.add(beta_sep)
+				# s.structure.extra_proteins.add(beta_sep)
 			# Gamma
 			if s.gamma_protein:
 				gamma_sep = StructureExtraProteins()
@@ -85,8 +85,8 @@ class Command(BaseBuild):
 				gamma_sep.category = 'G gamma'
 				gamma_sep.wt_coverage = None
 				gamma_sep.save()
-				s.structure.extra_proteins.add(gamma_sep)
-			s.structure.save()
+				# s.structure.extra_proteins.add(gamma_sep)
+			# s.structure.save()
 
 	def build_from_notes(self):
 		for struct, vals in self.notes.items():
@@ -124,7 +124,7 @@ class Command(BaseBuild):
 						sep.wt_coverage = None
 
 				sep.save()
-				sep.structure.extra_proteins.add(sep)
-				sep.structure.save()
+				# sep.structure.extra_proteins.add(sep)
+				# sep.structure.save()
 
 			

@@ -12,9 +12,9 @@ class Structure(models.Model):
     structure_type = models.ForeignKey('StructureType', on_delete=models.CASCADE)
     pdb_code = models.ForeignKey('common.WebLink', on_delete=models.CASCADE)
     state = models.ForeignKey('protein.ProteinState', on_delete=models.CASCADE)
+    author_state = models.ForeignKey('protein.ProteinState', null=True, on_delete=models.CASCADE, related_name='author_state')
     publication = models.ForeignKey('common.Publication', null=True, on_delete=models.CASCADE)
     ligands = models.ManyToManyField('ligand.Ligand', through='interaction.StructureLigandInteraction')
-    extra_proteins = models.ManyToManyField('StructureExtraProteins', related_name='extra_proteins')
     protein_anomalies = models.ManyToManyField('protein.ProteinAnomaly')
     stabilizing_agents = models.ManyToManyField('StructureStabilizingAgent')
     preferred_chain = models.CharField(max_length=20)
@@ -331,7 +331,7 @@ class StructureType(models.Model):
 
 
 class StructureExtraProteins(models.Model):
-    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE, null=True)
+    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE, null=True, related_name='extra_proteins')
     wt_protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE, null=True)
     protein_conformation = models.ForeignKey('protein.ProteinConformation', on_delete=models.CASCADE, null=True)
     display_name = models.CharField(max_length=20)

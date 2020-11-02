@@ -233,19 +233,19 @@ class Command(BaseBuild):
                     self.logger.info('Protein, ProteinConformation and Residue build for alpha subunit of {} has failed'.format(sc))
 
 
-        # Build SignprotStructure objects from non-complex signprots
-        # g_prot_alphas = Protein.objects.filter(family__slug__startswith='100_001', accession__isnull=False)#.filter(entry_name='gnai1_human')
-        # complex_structures = SignprotComplex.objects.all().values_list('structure__pdb_code__index', flat=True)
-        # for a in g_prot_alphas:
-        #     pdb_list = get_pdb_ids(a.accession)
-        #     for pdb in pdb_list:
-        #         if pdb not in complex_structures:
-        #             try:
-        #                 data = self.fetch_gprot_data(pdb, a)
-        #                 if data:
-        #                     self.build_g_prot_struct(a, pdb, data)
-        #             except Exception as msg:
-        #                 self.logger.error('SignprotStructure of {} {} failed\n{}: {}'.format(a.entry_name, pdb, type(msg), msg))
+        ### Build SignprotStructure objects from non-complex signprots
+        g_prot_alphas = Protein.objects.filter(family__slug__startswith='100_001', accession__isnull=False)#.filter(entry_name='gnai1_human')
+        complex_structures = SignprotComplex.objects.all().values_list('structure__pdb_code__index', flat=True)
+        for a in g_prot_alphas:
+            pdb_list = get_pdb_ids(a.accession)
+            for pdb in pdb_list:
+                if pdb not in complex_structures:
+                    try:
+                        data = self.fetch_gprot_data(pdb, a)
+                        if data:
+                            self.build_g_prot_struct(a, pdb, data)
+                    except Exception as msg:
+                        self.logger.error('SignprotStructure of {} {} failed\n{}: {}'.format(a.entry_name, pdb, type(msg), msg))
 
     def fetch_gprot_data(self, pdb, alpha_protein):
         data = {}
@@ -380,15 +380,19 @@ class Command(BaseBuild):
         if data['alpha']:
             alpha_sep = SignprotStructureExtraProteins()
             alpha_sep.wt_protein = alpha_prot
-            alpha_prot.structure = ss
+            alpha_sep.structure = ss
             alpha_sep.protein_conformation = ProteinConformation.objects.get(protein=alpha_prot)
             alpha_sep.display_name = self.display_name_lookup[alpha_prot.family.name]
             alpha_sep.note = None
             alpha_sep.chain = data['alpha_chain']
             alpha_sep.category = 'G alpha'
-            alpha_sep.wt_coverage = round(data['alpha_coverage']/len(alpha_prot.sequence)*100)
+            cov = round(data['alpha_coverage']/len(alpha_prot.sequence)*100)
+            if cov>100:
+                self.logger.warning("SignprotStructureExtraProtein Alpha subunit sequence coverage of {} is {}% which is longer than 100% in structure {}".format(alpha_sep, cov, ss))
+                cov = 100
+            alpha_sep.wt_coverage = cov
             alpha_sep.save()
-            ss.extra_proteins.add(alpha_sep)
+            # ss.extra_proteins.add(alpha_sep)
         # Beta
         if data['beta']:
             beta_prot = Protein.objects.get(accession=data['beta'])
@@ -402,7 +406,7 @@ class Command(BaseBuild):
             beta_sep.category = 'G beta'
             beta_sep.wt_coverage = None
             beta_sep.save()
-            ss.extra_proteins.add(beta_sep)
+            # ss.extra_proteins.add(beta_sep)
         # Gamma
         if data['gamma']:
             gamma_prot = Protein.objects.get(accession=data['gamma'])
@@ -416,7 +420,7 @@ class Command(BaseBuild):
             gamma_sep.category = 'G gamma'
             gamma_sep.wt_coverage = None
             gamma_sep.save()
-            ss.extra_proteins.add(gamma_sep)
-        ss.save()
+            # ss.extra_proteins.add(gamma_sep)
+        # ss.save()
         self.logger.info('Created SignprotStructure: {}'.format(ss.pdb_code))
 
