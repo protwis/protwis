@@ -1,4 +1,4 @@
-﻿from django.http import HttpResponse
+from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.generic import TemplateView
 from django.views.decorators.cache import cache_page
@@ -29,6 +29,7 @@ import xlsxwriter, xlrd
 import time
 import json
 
+default_schemes_excluded = ['cgn', 'ecd', 'can']
 
 class AbsTargetSelection(TemplateView):
     """An abstract class for the target selection page used in many apps. To use it in another app, create a class
@@ -49,6 +50,7 @@ class AbsTargetSelection(TemplateView):
     target_input = True
     default_species = 'Human'
     default_slug = '000'
+    default_subslug = '00'
     numbering_schemes = False
     search = True
     family_tree = True
@@ -75,7 +77,7 @@ class AbsTargetSelection(TemplateView):
     try:
         if ProteinFamily.objects.filter(slug=default_slug).exists():
             ppf = ProteinFamily.objects.get(slug=default_slug)
-            pfs = ProteinFamily.objects.filter(parent=ppf.id)
+            pfs = ProteinFamily.objects.filter(parent=ppf.id).filter(slug__startswith=default_subslug)
             ps = Protein.objects.filter(family=ppf)
             psets = ProteinSet.objects.all().prefetch_related('proteins')
             tree_indent_level = []
@@ -92,7 +94,7 @@ class AbsTargetSelection(TemplateView):
     gprots = ProteinGProtein.objects.all()
 
     # numbering schemes
-    gns = ResidueNumberingScheme.objects.exclude(slug=settings.DEFAULT_NUMBERING_SCHEME).exclude(slug='cgn')
+    gns = ResidueNumberingScheme.objects.exclude(slug=settings.DEFAULT_NUMBERING_SCHEME).exclude(slug__in=default_schemes_excluded)
 
     def get_context_data(self, **kwargs):
         """get context from parent class (really only relevant for children of this class, as TemplateView does
@@ -234,7 +236,6 @@ class AbsSegmentSelection(TemplateView):
                 context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
 
         for f in selection.targets:
-            print(f)
             if f.type=='family':
                 family = get_gpcr_class(f.item)
                 if family.name.startswith('Class D1'):
@@ -330,7 +331,7 @@ def AddToSelection(request):
             o.append(Protein.objects.get(pk=selection_id))
         if selection_subtype == 'protein_entry':
             o.append(Protein.objects.get(entry_name=selection_id))
-            print("Added {}".format(Protein.objects.get(entry_name=selection_id).name))
+            # print("Added {}".format(Protein.objects.get(entry_name=selection_id).name))
 
         elif selection_subtype == 'protein_set':
             selection_subtype = 'protein'
@@ -679,11 +680,11 @@ def SelectAlignableResidues(request):
                 r_prot = proteins[0]
             elif simple_selection.reference[0].type == 'protein':
                 r_prot = simple_selection.reference[0].item
-            
+
             seg_ids_all = get_protein_segment_ids(r_prot, seg_ids_all)
             if r_prot.residue_numbering_scheme not in numbering_schemes:
                 numbering_schemes.append(r_prot.residue_numbering_scheme)
-            
+
         if simple_selection.targets:
             for t in simple_selection.targets:
                 if t.type == 'family':
@@ -976,7 +977,7 @@ def SelectionGproteinToggle(request):
 
     all_gprots = ProteinGProtein.objects.all()
     gprots = ProteinGProtein.objects.filter(pk=g_protein_id)
-    print("'{}'".format(ProteinGProtein.objects.get(pk=g_protein_id).name))
+    # print("'{}'".format(ProteinGProtein.objects.get(pk=g_protein_id).name))
 
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
@@ -1065,7 +1066,6 @@ def ExpandSegment(request):
         context['scheme'] = numbering_scheme
         context['schemes'] = ResidueNumberingScheme.objects.filter(parent__isnull=False)
         context['segment_id'] = segment_id
-        print(context['scheme'], context['schemes'])
 
     return render(request, 'common/segment_generic_numbers.html', context)
 
@@ -1081,10 +1081,9 @@ def SelectionSchemesPredefined(request):
     if simple_selection:
         selection.importer(simple_selection)
 
-    all_gns = ResidueNumberingScheme.objects.exclude(slug=settings.DEFAULT_NUMBERING_SCHEME).exclude(slug='cgn')
+    all_gns = ResidueNumberingScheme.objects.exclude(slug=settings.DEFAULT_NUMBERING_SCHEME).exclude(slug__in=default_schemes_excluded)
     gns = False
     if numbering_schemes == 'All':
-        print(len(selection.numbering_schemes), all_gns.count())
         if len(selection.numbering_schemes) == all_gns.count():
             gns = []
         else:
@@ -1113,7 +1112,7 @@ def SelectionSchemesPredefined(request):
 def SelectionSchemesToggle(request):
     """Updates the selected numbering schemes arbitrary selections"""
     numbering_scheme_id = request.GET['numbering_scheme_id']
-    gns = ResidueNumberingScheme.objects.filter(pk=numbering_scheme_id).exclude(slug='cgn')
+    gns = ResidueNumberingScheme.objects.filter(pk=numbering_scheme_id).exclude(slug__in=default_schemes_excluded)
 
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
@@ -1138,7 +1137,7 @@ def SelectionSchemesToggle(request):
 
     # add all species objects to context (for comparison to selected species)
     context = selection.dict('numbering_schemes')
-    context['gns'] = ResidueNumberingScheme.objects.exclude(slug=settings.DEFAULT_NUMBERING_SCHEME).exclude(slug='cgn')
+    context['gns'] = ResidueNumberingScheme.objects.exclude(slug=settings.DEFAULT_NUMBERING_SCHEME).exclude(slug__in=default_schemes_excluded)
 
     return render(request, 'common/selection_filters_numbering_schemes.html', context)
 
@@ -1809,7 +1808,7 @@ def get_gpcr_class(item):
     return item
 
 @csrf_exempt
-@cache_page(60*60)
+@cache_page(60*60*24*7)
 def TargetTableData(request):
     """
     Creates a table for selection of targets. The goal is to to offer an alternative to the togglefamilytreenode
@@ -1946,4 +1945,3 @@ def TargetTableData(request):
     data_table += "</tbody></table>"
 
     return HttpResponse(data_table)
-
