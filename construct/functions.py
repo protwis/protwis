@@ -987,7 +987,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
         d['links'].append(Template(url).substitute(index=quote(str(pdbname), safe='')))
         # print(Template(url).substitute(index=quote(str(pdbname), safe='')))
     except:
-        print('rscb failed for ',pdbname)
+        print('rcsb failed for ',pdbname)
         rcsb_mod = None
     if rcsb_mod: #success
         d['modifications'] = []

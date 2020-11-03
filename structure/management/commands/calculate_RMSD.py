@@ -31,7 +31,6 @@ class Command(BaseCommand):
                 seq_nums+=[str(i) for i in list(range(int(start),int(end)+1))]
         else:
             seq_nums = options['n']
-        print(seq_nums)
         if seq_nums==False:
             if options['c']==False:
                 v.run_RMSD_list(options['files'])

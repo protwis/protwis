@@ -261,42 +261,27 @@ class GPCRDBParsingPDB(object):
             if len(pref_chain)>1:
                 pref_chain = pref_chain[0]
             for residue in pdb_struct[pref_chain]:
-                try:
-                    if -9.1 < residue['CA'].get_bfactor() < 9.1:
-                        gn = str(residue['CA'].get_bfactor())
-                        if len(gn.split('.')[1])==1:
-                            gn = gn+'0'
-                        if gn[0]=='-':
-                            gn = gn[1:]+'1'
-                        # Exceptions
-                        if structure.pdb_code.index=='3PBL' and residue.get_id()[1]==331:
-                            raise Exception()
-                        elif structure.pdb_code.index=='6QZH' and residue.get_id()[1]==1434:
-                            raise Exception()
-                        #################################################
-                        if gn in gn_list:
-                            # if int(residue.get_id()[1])>1000:
-                            #     if structure.pdb_code.index in seq_nums_overwrite_cutoff_dict and int(residue.get_id()[1])>=seq_nums_overwrite_cutoff_dict[structure.pdb_code.index]:
-                            #         gn_array.append(gn)
-                            #         residue_array.append(residue.get_list())
-                            #     else:
-                            #         raise Exception()
-                            # else:
-                            gn_array.append(gn)
-                            residue_array.append(residue.get_list())
-                        else:
-                            raise Exception()
+                if 'CA' in residue and -9.1 < residue['CA'].get_bfactor() < 9.1:
+                    use_resid = False
+                    gn = str(residue['CA'].get_bfactor())
+                    if len(gn.split('.')[1])==1:
+                        gn = gn+'0'
+                    if gn[0]=='-':
+                        gn = gn[1:]+'1'
+                    # Exceptions
+                    if structure.pdb_code.index=='3PBL' and residue.get_id()[1]==331:
+                        use_resid = True
+                    elif structure.pdb_code.index=='6QZH' and residue.get_id()[1]==1434:
+                        use_resid = True
+                    #################################################
+                    elif gn in gn_list:
+                        gn_array.append(gn)
+                        residue_array.append(residue.get_list())
                     else:
-                        raise Exception()
-                except:
-                    # if structure!=None and structure.pdb_code.index in seq_nums_overwrite_cutoff_dict:
-                    #     if int(residue.get_id()[1])>seq_nums_overwrite_cutoff_dict[structure.pdb_code.index]:
-                    #         gn_array.append(str(int(str(residue.get_id()[1])[1:])))
-                    #     else:
-                    #         gn_array.append(str(residue.get_id()[1]))
-                    # else:
-                    gn_array.append(str(residue.get_id()[1]))
-                    residue_array.append(residue.get_list())
+                        use_resid = True
+                    if use_resid:
+                        gn_array.append(str(residue.get_id()[1]))
+                        residue_array.append(residue.get_list())
             output = OrderedDict()
             for num, label in self.segment_coding.items():
                 output[label] = OrderedDict()
