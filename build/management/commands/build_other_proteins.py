@@ -173,7 +173,7 @@ class Command(BuildHumanProteins):
                         # NOTE: when extending this - make a dictionary
                         # NOTE: consider utilizing e.g. OrthoDB
                         if up['entry_name'] == "b1b1u5_9arac":
-+                           split_entry_name = ["opsd", ""]
+                           split_entry_name = ["opsd", ""]
 
                         # add _ to the split entry name to avoid e.g. gp1 matching gp139
                         entry_name_query = split_entry_name[0] + '_'

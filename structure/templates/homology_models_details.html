@@ -105,7 +105,7 @@ canvas {
             <ul class="dropdown-menu" role="menu" style="min-width:50%;">
                 {% if model.refined %}
                     <li><a id="download_btn" href="./{{model.pdb_code.index}}_full/download_pdb">Full</a></li>
-                    <li><a id="download_btn" href="./{{model.pdb_code.index}}_noloops/download_pdb">Without loops</a></li>
+                    <li><a id="download_btn" href="./{{model.pdb_code.index}}_noloops/download_pdb">Without loops and termini</a></li>
                 {% else %}
                     <li><a id="download_btn" href="./{{model.protein.entry_name}}_{{model.state.slug}}_full/download_pdb">Full</a></li>
                     <li><a id="download_btn" href="./{{model.protein.entry_name}}_{{model.state.slug}}_noloops/download_pdb">Without loops</a></li>

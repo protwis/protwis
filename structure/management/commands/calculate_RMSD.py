@@ -18,21 +18,29 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('files', help='Add any number of files as arguments. First one has to be the reference file.',
                             type=str, nargs='+')
-        parser.add_argument('-r', help='Specify residue sequence numbers to compare.', type=str, default=False, nargs='+')
+        parser.add_argument('-n', help='Specify residue sequence numbers to compare.', type=str, default=False, nargs='+')
+        parser.add_argument('-r', help='Specify a range of residue sequence numbers to compare. Format: e.g. 1-300', type=str, default=False, nargs='+')
         parser.add_argument('-c', help='Specify chain ID. If not specified, the program will try to find one that matches.', type=str, default=False)
         
     def handle(self, *args, **options):
         v = Validation()
-        if options['r']==False:
+        if options['r']:
+            seq_nums = []
+            for r in options['r']:
+                start, end = r.split('-')
+                seq_nums+=[str(i) for i in list(range(int(start),int(end)+1))]
+        else:
+            seq_nums = options['n']
+        if seq_nums==False:
             if options['c']==False:
                 v.run_RMSD_list(options['files'])
             else:
                 v.run_RMSD_list(options['files'], force_chain=options['c'])
         else:
             if options['c']==False:
-                v.run_RMSD_list(options['files'], seq_nums=options['r'])
+                v.run_RMSD_list(options['files'], seq_nums=seq_nums)
             else:
-                v.run_RMSD_list(options['files'], seq_nums=options['r'], force_chain=options['c'])
+                v.run_RMSD_list(options['files'], seq_nums=seq_nums, force_chain=options['c'])
         self.stdout.write('\nNumber of superposed residues:\n')
         for i,j in v.number_of_residues_superposed.items():
             self.stdout.write('{}: {}'.format(i,j))
