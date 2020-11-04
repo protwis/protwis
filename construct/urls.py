@@ -6,13 +6,13 @@ from construct import views
 
 urlpatterns = [
     # url(r'^$', views.ConstructBrowser.as_view(), name='browse'), #no cache, for dev
-    url(r'^$', cache_page(3600*24)(views.ConstructBrowser.as_view()), name='browse'),
+    url(r'^$', cache_page(60 * 60 * 24 * 7)(views.ConstructBrowser.as_view()), name='browse'),
     url(r'^experiments[/]?$', views.ExperimentBrowser.as_view(), name='browse'), #no cache version
     # url(r'^experiments[/]?$', cache_page(3600*24)(views.ExperimentBrowser.as_view()), name='browse'), #cache
     # url(r'^analysis[/]?$', views.ConstructStatistics.as_view(), name='statistics'),
-    url(r'^analysis[/]?$', cache_page(3600*24)(views.ConstructStatistics.as_view()), name='statistics'),
+    url(r'^analysis[/]?$', cache_page(60 * 60 * 24 * 7)(views.ConstructStatistics.as_view()), name='statistics'),
     # url(r'^mutations[/]?$', views.ConstructMutations.as_view(), name='mutations'),
-    url(r'^mutations[/]?$', cache_page(3600*24)(views.ConstructMutations.as_view()), name='mutations'),
+    url(r'^mutations[/]?$', cache_page(60 * 60 * 24 * 7)(views.ConstructMutations.as_view()), name='mutations'),
     url(r'^residuetable[/]?$', views.ConstructTable.as_view(), name='residuetable'),
     url(r'^auto_webform/(?P<slug>[-\w]+)/$', views.fetch_pdb_for_webform, name='fetch'),
     url(r'^auto/(?P<slug>[-\w]+)/$', views.fetch_pdb, name='fetch'),

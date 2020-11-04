@@ -33,7 +33,7 @@ Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlis
 
 
 # Create your views here.
-#@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def detail(request, slug):
 
     # get constructs
@@ -968,7 +968,7 @@ class ConstructStatistics(TemplateView):
                             new_list[position] = ''
                 except:
                     skip_this_one = 1
-                
+
                 # print(pclass,c_vals,new_list)
                 if pos!='cterm':
                     truncations_new_sum[pos][pclass] = OrderedDict(reversed(list(new_list.items())))
