@@ -231,7 +231,8 @@ class Command(BaseBuild):
                 d['pathway_bias_initial'] = None
             if not isinstance(d['pathway_bias'], (int, float)):
                 bias_value=d['pathway_bias'] = None
-
+            if d['protein'] == None or d['protein'] == "":
+                d['protein'] = 'G-protein'
             family = self.define_g_family(d['protein'], d['protein_assay'])
             pub = self.fetch_publication(d['reference'])
 
@@ -432,7 +433,7 @@ class Command(BaseBuild):
             if assay_type == 'pERK1/2 activation' or assay_type =="pERK1-2":
                 family = 'pERK1-2'
         else:
-            family == protein
+            family == 'G-protein'
 
         return family
 

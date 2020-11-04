@@ -1,0 +1,431 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+
+{% block content %}
+{% autoescape off %}
+
+<div class="container body-content">
+	<h2 class="sub-header">Ligand Data</h2>
+	<div class="row">
+		<div class="col-xs-5">
+			<h3>Ligand</h3>
+			<table class="table table-striped table-bordered">
+				<tr>
+					<td>Name </td>
+					<td>{{ligand.ligand_name}}</td>
+				</tr>
+				<tr>
+					<td>SMILES</td>
+					<td>{{ligand.ligand_smiles}}</td>
+				</tr>
+				<tr>
+					<td>InChIKey</td>
+					<td>
+						{{ligand.ligand_inchikey}}</td>
+				</tr>
+				<tr>
+					<td>Type</td>
+					<td>
+						{{ligand.type}}</td>
+				</tr>
+				<tr>
+					<td>External Links</td>
+					<td>
+						{% for ex in ligand.wl %}
+						<li><a href="{{ex.link}}" target="_blank">{{ex.name}}</a></li>
+						{%endfor%}
+					</td>
+				</tr>
+			</table>
+		</div>
+
+		<div class="col-xs-3" style>
+			<h3>Structure</h3>
+			<table class="table table-striped table-bordered">
+				<tr>
+					<td>
+						<img src="http://www.ebi.ac.uk/chembl/api/data/image/{{ligand.picture}}" style="height: 60%" /></td>
+				</tr>
+			</table>
+		</div>
+
+		<div class="col-xs-3">
+			<h3>Selectivity</h3>
+			<table class="table table-striped table-bordered">
+				<tr>
+					<td>Receptor</td>
+					<td>Selectivity</td>
+                    <td>Potency</td>
+				</tr>
+                	{% for ex in selectivity %}
+                    <tr>
+                        <td>{{ex.protein}}</td><td>{{ex.type}}</td><td>{{ex.potency}} nM</td>
+                    </tr>
+                    {%endfor%}
+
+			</table>
+		</div>
+	</div>
+
+
+	<table class="display" id='structures_scrollable_ligand' style="width: 100%">
+		<thead>
+			<tr>
+				<td>Protein</td>
+				<td>Assay type</td>
+				<td>Standard value</td>
+				<td>ChEMBL document id</td>
+				<td>Assay description</td>
+			</tr>
+		</thead>
+		<tbody>
+			{%for data in assay%}
+			<tr>
+				<td>{{data.protein_id}}</td>
+				<td>{{data.assay_type}}</td>
+				<td>{{data.standard_value}} nM</td>
+				<td>{{data.document_chembl_id}}</td>
+				<td class="name">{{data.assay_description}}</td>
+			</tr>
+			{%endfor%}
+		</tbody>
+	</table>
+
+	</br>
+	</br>
+	{% endautoescape %}
+	{% endblock %}
+
+	{% block addon_js %}
+	<script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+	<script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+	<script src="{% static 'home/js/dataTables.buttons.min.js' %}"> </script>
+	<script src="{% static 'home/js/select2.js' %}"> </script>
+	<script src="{% static 'home/js/shading.js' %}"></script>
+	<script src="{% static 'home/js/datatables_buttons_altered_header_export.js' %}"></script>
+
+	<script type="text/javascript">
+		$(document).ready(function() {
+			var table = $('#structures_scrollable_ligand').DataTable({
+				dom: 'B<>ftrip',
+				StateSave: true,
+				scrollX: '100%',
+				scrollY: '60vh',
+				paging: false,
+				scrollCollapse: true,
+				AutoWidth: true,
+				pageLength: 75,
+				"order": [
+					[3, "desc"]
+				],
+				"deferRender": true,
+				buttons: [{
+						text: 'Excel',
+						className: 'btn btn-primary',
+						titleAttr: 'Download excel',
+						init: function(api, node, config) {
+							$(node).removeClass('dt-button buttons-excel buttons-html5');
+						},
+						action: function(e, dt, node, config) {
+							tableToExcel('structures_scrollable_ligand', 'Biased Ligand Data', 'GPCRdb_biased_ligands.xls')
+						},
+					},
+					{
+						text: 'Reset All Filters',
+						className: 'btn btn-primary',
+						titleAttr: 'Reset All Filters',
+						init: function(api, node, config) {
+							$(node).removeClass('dt-button buttons-excel buttons-html5');
+						},
+						action: function(e, dt, node, config) {
+							reset_filters()
+						},
+					},
+					{
+						text: 'Get Vendors',
+						className: 'btn btn-primary',
+						titleAttr: 'Vendors info for top 20 ligands',
+						init: function(api, node, config) {
+							$(node).removeClass('dt-button buttons-excel buttons-html5');
+						},
+						action: function(e, dt, node, config) {
+							var id = read_ids()
+							var result
+							$.ajaxSetup({
+								headers: {
+									"X-CSRFToken": getCookie("csrftoken")
+								}
+							});
+							$.ajax({
+								type: 'POST',
+								url: '/ligand/vendors',
+								data: {
+									ids: id,
+									csrfmiddlewaretoken: '{{csrf_token }}',
+									action: 'post',
+								},
+								success: function() {
+
+									myFunction('/ligand/browservendors', 'Detail View', window, 850, 1000)
+								}
+							});
+						},
+					},
+				],
+			});
+
+			function reset_filters() {
+				location.reload()
+			}
+			table.columns.adjust();
+
+			var tableToExcel = (function() {
+				var uri = 'data:application/vnd.ms-excel;base64,',
+					template =
+					'<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>',
+					base64 = function(s) {
+						return window.btoa(unescape(encodeURIComponent(s)))
+					},
+					format = function(s, c) {
+						return s.replace(/{(\w+)}/g, function(m, p) {
+							return c[p];
+						})
+					}
+				return function(table, name, filename) {
+					var table = $("#" + table).clone();
+					$("#excel_table").html(table);
+					// Clean up table to remove yadcf stuff
+					$("#excel_table thead tr").css('height', '');
+					$("#excel_table thead th").css('height', '');
+					$("#excel_table thead div").css('height', '');
+					$("#excel_table thead .yadcf-filter-wrapper").remove();
+					$("#excel_table thead button").remove();
+					var tr = $("#excel_table thead tr:eq(1)");
+					// reattach th titles
+					tr.find('th').each(function(column, th) {
+						if ($(th).attr('title')) $(th).html($(th).attr('title'));
+					});
+
+					var ctx = {
+						worksheet: name || 'Worksheet',
+						table: $("#excel_table").html()
+					}
+					$("#excel_table").html("");
+					document.getElementById("dlink").href = uri + base64(format(template, ctx));
+					document.getElementById("dlink").download = filename;
+					document.getElementById("dlink").click();
+				}
+			})()
+		});
+	</script>
+	{% endblock %}
+
+	{% block addon_css %}
+	<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+	<link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
+	<link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+	<link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+	<link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet">
+	<link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
+	<link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.4.0/css/buttons.dataTables.min.css" type="text/css" />
+
+	<!-- configure radio buttons style -->
+	<style>
+		.highlight {
+			/* background-color: red */
+			display: none;
+		}
+	</style>
+
+	<style type="text/css">
+		.dataTables_scrollHeadInner {
+			margin-top: 20px;
+		}
+
+		table.dataTable thead th,
+		table.dataTable tbody td {
+			max-width: 65px;
+			word-break: break-all;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		table.dataTable thead .sorting {
+			background-position: right;
+		}
+
+		.select2-container select2-container-multi {
+			width: 75%;
+		}
+
+		.select2-container-multi .select2-choices .select2-search-field input {
+			max-width: 50px;
+		}
+
+		.yadcf-filter-wrapper {
+			position: center;
+			display: flex;
+			white-space: normal;
+			margin-top: 7px;
+			width: 50% !important;
+		}
+
+		.select2-results {
+			background-color: white;
+			border: gray;
+			width: 150px !important;
+		}
+
+		.yadcf-filter-range {
+			grid-auto-columns: auto;
+			max-width: 50px !important;
+			font-family: sans-serif;
+			font-size: 80%;
+			font-weight: bold;
+			margin: auto;
+			margin-top: 10%;
+			min-width: 40px;
+		}
+
+		table.dataTable thead .sorting {
+			background-image: none !important;
+		}
+
+		table.dataTable thead .sorting_desc {
+			background-image: none !important;
+		}
+
+		table.dataTable thead .sorting_asc {
+			background-image: none !important;
+		}
+
+		table.dataTable.compact tbody th,
+		table.dataTable.compact tbody td {
+			padding: 5px 10px 5px 0px !important;
+			/* width: 0px; */
+		}
+
+		table.dataTable.compact thead th,
+		table.dataTable.compact thead td {
+			padding: 5px 10px 5px 0px;
+			/* width: 0px; */
+		}
+
+		table.dataTable.compact thead tr.over_header th {
+			border-bottom: 1px solid #ccc;
+		}
+
+		table.dataTable.compact thead th.leftborder {
+			border-left: 1px solid;
+		}
+
+		table.dataTable.compact thead th.rightborder {
+			border-right: 1px solid;
+		}
+
+		.yadcf-filter-range {
+			max-width: 40px !important;
+			font-family: sans-serif;
+			font-size: 80%;
+			font-weight: bold;
+			min-width: 40px;
+		}
+
+		.clicked_button {
+			background-color: rgb(215, 215, 215);
+		}
+
+		#overlay {
+			top: 0px;
+			position: absolute;
+			background: #f8f8f8;
+			/*border: 1px solid #333;*/
+			-webkit-box-shadow: 5px 0 2px -2px #888;
+			box-shadow: 5px 0 2px -2px #888;
+		}
+
+		.container {
+			width: 90%;
+			/* display:flex;
+            flex-direction: column; */
+		}
+
+		.wrapper {
+			overflow-x: scroll;
+			overflow-y: hidden;
+		}
+
+		#overlay tbody tr {
+			background-color: #f8f8f8;
+		}
+
+		#count_row th {
+			font-size: 11px;
+			text-align: center;
+		}
+
+		.switch-field label:hover {
+			cursor: pointer;
+			/* width: 100%; */
+		}
+
+		.switch-field input:checked+label {
+			background-color: #337ab7;
+			/* #a5dc86; */
+			box-shadow: none;
+		}
+
+		.border-left {
+			padding-left: 3px;
+		}
+
+		.switch-field label:first-of-type {
+			border-radius: 4px 0 0 4px;
+
+		}
+
+		.switch-field label:last-of-type {
+			border-radius: 0 4px 4px 0;
+		}
+
+		/* This is just for CodePen. */
+
+		.name {
+			/* width: 100px; */
+			text-overflow: ellipsis;
+			cursor: pointer;
+			word-break: break-all;
+			overflow: hidden;
+			white-space: nowrap;
+		}
+
+		.name:hover {
+			overflow: visible;
+			white-space: normal;
+
+		}
+
+		.toolbar_data_css {
+			width: 250px;
+			margin-right: auto;
+			margin-left: 0px;
+			/* border: 1px solid; */
+			font-family: "Lucida Grande", Tahoma, Verdana, sans-serif;
+			font-weight: normal;
+			font-size: 120%;
+			line-height: 1.625;
+		}
+
+		.toolbar_data_css.td {
+			height: 15px;
+			max-width: 150px;
+			overflow: hidden;
+			white-space: nowrap;
+			text-overflow: ellipsis;
+		}
+	</style>
+
+	{% endblock %}

@@ -49,7 +49,7 @@
 	</div>
 	<div id='structures_scrollable_div'>
 		<!-- <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;"> -->
-		<table class="display compact text-nowrap" id='structures_scrollable' style="width: " 100%"">
+		<table class="display compact text-nowrap" id='structures_scrollable' style="width: 100%">
 			<thead id="headers">
 				<tr rowspan="2">
 					<th><a href="#"><span class="glyphicon glyphicon-info-sign"></span></a></th>
@@ -320,22 +320,10 @@
 <script src="{% static 'home/js/dataTables.buttons.min.js' %}"> </script>
 <script src="{% static 'home/js/select2.js' %}"> </script>
 <script src="{% static 'home/js/shading.js' %}"></script>
-<script src="https://cdn.datatables.net/buttons/1.5.1/js/dataTables.buttons.min.js"></script>
+<script src="{% static 'home/js/datatables_buttons_altered_header_export.js' %}">
 
-<script src="https://cdn.datatables.net/buttons/1.5.1/js/buttons.flash.min.js"></script>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.32/pdfmake.min.js"></script>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.32/vfs_fonts.js"></script>
-
-<script src="https://cdn.datatables.net/buttons/1.5.1/js/buttons.html5.min.js"></script>
-
-<script src="https://cdn.datatables.net/buttons/1.5.1/js/buttons.print.min.js"></script>
-
+</script>
 <script type="text/javascript">
-
 	function calculate_header(ids) {
 		$("#receptor").attr("colspan", 6);
 		$("#ligand").attr("colspan", 5);
@@ -351,7 +339,7 @@
 		$("#cell").attr("colspan", 5);
 		$("#time").attr("colspan", 5);
 		setTimeout(function() {
-			calculate_hidden("pathways");
+			// calculate_hidden("pathways");
 
 			$("#receptor").attr("colspan", 6 - (document.getElementsByClassName("receptor highlight").length / 2));
 			$("#ligand").attr("colspan", 5 - (document.getElementsByClassName("ligand highlight").length / 2));
@@ -361,7 +349,7 @@
 
 			// console.log('opmodel highlight lenght:'+ (document.getElementsByClassName("pathways").length/2));
 
-			$("#opmodel").attr("colspan", 4 - (document.getElementsByClassName("operational highlight").length / 2));
+			$("#opmodel").attr("colspan", 4 - (document.getElementsByClassName("opmodel highlight").length / 2));
 
 			$("#lbf").attr("colspan", 4 - (document.getElementsByClassName("lbf highlight").length / 2));
 			$("#potency").attr("colspan", 4 - (document.getElementsByClassName("potency highlight").length / 2));
@@ -412,25 +400,69 @@
 			StateSave: true,
 			scrollX: '100%',
 			scrollY: '60vh',
+            paging: false,
 			scrollCollapse: true,
-			AutoWidth: false,
+			AutoWidth: true,
 			pageLength: 75,
 			"order": [
 				[3, "desc"]
 			],
 			"deferRender": true,
+			buttons: [{
+					text: 'Excel',
+					className: 'btn btn-primary',
+					titleAttr: 'Download excel',
+					init: function(api, node, config) {
+						$(node).removeClass('dt-button buttons-excel buttons-html5');
+					},
+					action: function(e, dt, node, config) {
+						tableToExcel('structures_scrollable', 'Biased Ligand Data', 'GPCRdb_biased_ligands.xls')
+					},
+				},
+				{
+					text: 'Reset All Filters',
+					className: 'btn btn-primary',
+					titleAttr: 'Reset All Filters',
+					init: function(api, node, config) {
+						$(node).removeClass('dt-button buttons-excel buttons-html5');
+					},
+					action: function(e, dt, node, config) {
+						reset_filters()
+					},
+				},
+				{
+					text: 'Get Vendors',
+					className: 'btn btn-primary',
+					titleAttr: 'Vendors info for top 20 ligands',
+					init: function(api, node, config) {
+						$(node).removeClass('dt-button buttons-excel buttons-html5');
+					},
+					action: function(e, dt, node, config) {
+						var id = read_ids()
+						var result
+						$.ajaxSetup({
+							headers: {
+								"X-CSRFToken": getCookie("csrftoken")
+							}
+						});
+						$.ajax({
+							type: 'POST',
+							url: '/ligand/vendors',
+							data: {
+								ids: id,
+								csrfmiddlewaretoken: '{{csrf_token }}',
+								action: 'post',
+							},
+							success: function() {
+
+								myFunction('/ligand/browservendors', 'Detail View', window, 850, 1000)
+							}
+						});
+					},
+				},
+			],
+
 			// buttons: [{
-			// 		text: 'Excel',
-			// 		className: 'btn btn-primary',
-			// 		titleAttr: 'Download excel',
-			// 		init: function(api, node, config) {
-			// 			$(node).removeClass('dt-button buttons-excel buttons-html5');
-			// 		},
-			// 		action: function(e, dt, node, config) {
-			// 			tableToExcel('structures_scrollable', 'Biased Ligand Data', 'GPCRdb_biased_ligands.xls')
-			// 		},
-			// 	},
-			// 	{
 			// 		text: 'Reset All Filters',
 			// 		className: 'btn btn-primary',
 			// 		titleAttr: 'Reset All Filters',
@@ -441,45 +473,15 @@
 			// 			reset_filters()
 			// 		},
 			// 	},
-			// 	{
-			// 		text: 'Get Vendors',
-			// 		className: 'btn btn-primary',
-			// 		titleAttr: 'Vendors info for top 20 ligands',
-			// 		init: function(api, node, config) {
-			// 			$(node).removeClass('dt-button buttons-excel buttons-html5');
-			// 		},
-			// 		action: function(e, dt, node, config) {
-			// 			var id = read_ids()
-			// 			var result
-			// 			$.ajaxSetup({
-			// 				headers: {
-			// 					"X-CSRFToken": getCookie("csrftoken")
-			// 				}
-			// 			});
-			// 			$.ajax({
-			// 				type: 'POST',
-			// 				url: '/ligand/vendors',
-			// 				data: {
-			// 					ids: id,
-			// 					csrfmiddlewaretoken: '{{csrf_token }}',
-			// 					action: 'post',
-			// 				},
-			// 				success: function() {
-			//
-			// 					myFunction('/ligand/browservendors', 'Detail View', window, 850, 1000)
-			// 				}
-			// 			});
-			// 		},
-			// 	},
+			// {extend: 'excel'}
 			// ],
-			//
-			buttons: ['copy', 'excel', 'csv', 'pdf', 'print'],
-			exportOptions: {
-				modifer: {
-					page: 'all',
-					search: 'none'
-				}
-			},
+            //
+			// exportOptions: {
+			// 	modifer: {
+			// 		page: 'all',
+			// 		search: 'none'
+			// 	}
+			// },
 
 			"initComplete": function(settings, json) {
 				$('#loadingSpinner').show();
@@ -490,19 +492,19 @@
 					var column_ids = [];
 					var columnData = [];
 					$('#structures_scrollable').removeClass("highlight");
-					// table.columns().flatten().each(function(colIdx) {
-					// 	var columnData = [];
-					// 	table.rows({
-					// 		filter: 'applied'
-					// 	}).data().each(function(i) {
-					// 		columnData.push(i[colIdx]);
-					// 	})
-					// 	if (columnData.join('').length == 0 && colIdx != 0) {
-					// 		$(table.column(colIdx).nodes()).addClass('highlight');
-					// 		$(table.column(colIdx).header()).addClass('highlight');
-					// 		column_ids.push(colIdx);
-					// 	}
-					// });
+					table.columns().flatten().each(function(colIdx) {
+						var columnData = [];
+						table.rows({
+							filter: 'applied'
+						}).data().each(function(i) {
+							columnData.push(i[colIdx]);
+						})
+						if (columnData.join('').length == 0 && colIdx != 0) {
+							$(table.column(colIdx).nodes()).addClass('highlight');
+							$(table.column(colIdx).header()).addClass('highlight');
+							column_ids.push(colIdx);
+						}
+					});
 					var ligand_counter = read_unique_ids();
 					var receptor_counter = read_unique_ids_receptor();
 					document.getElementById("ligand_counter").innerHTML = ligand_counter;
@@ -521,19 +523,19 @@
 					var column_ids = [];
 					var columnData = [];
 					$('#structures_scrollable').removeClass("highlight");
-					// table.columns().flatten().each(function(colIdx) {
-					// 	var columnData = [];
-					// 	table.rows({
-					// 		filter: 'applied'
-					// 	}).data().each(function(i) {
-					// 		columnData.push(i[colIdx]);
-					// 	})
-					// 	if (columnData.join('').length == 0 && colIdx != 0) {
-					// 		$(table.column(colIdx).nodes()).addClass('highlight');
-					// 		$(table.column(colIdx).header()).addClass('highlight');
-					// 		column_ids.push(colIdx);
-					// 	}
-					// });
+					table.columns().flatten().each(function(colIdx) {
+						var columnData = [];
+						table.rows({
+							filter: 'applied'
+						}).data().each(function(i) {
+							columnData.push(i[colIdx]);
+						})
+						if (columnData.join('').length == 0 && colIdx != 0) {
+							$(table.column(colIdx).nodes()).addClass('highlight');
+							$(table.column(colIdx).header()).addClass('highlight');
+							column_ids.push(colIdx);
+						}
+					});
 
 					var ligand_counter = read_unique_ids();
 					var receptor_counter = read_unique_ids_receptor();
@@ -560,7 +562,6 @@
 					select_type: 'select2',
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
-
 				},
 				{
 					column_number: 3,

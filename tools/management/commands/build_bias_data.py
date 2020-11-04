@@ -96,7 +96,7 @@ class Command(BaseBuild):
             self.logger.info("The error appeared in def handle")
 
     def purge_bias_data(self):
-        
+
         delete_bias_experiment = AnalyzedExperiment.objects.all()
         delete_bias_experiment.delete()
 
@@ -215,7 +215,7 @@ class Command(BaseBuild):
             if assay_type == 'pERK1/2 activation' or assay_type == "pERK1-2":
                 family = 'pERK1-2'
         else:
-            family == protein
+            family == 'G-protein'
 
         return family
 
@@ -321,7 +321,6 @@ class Command(BaseBuild):
                     wl = WebLink.objects.get(
                         index=publication_doi, web_resource__slug=pub_type)
 
-
             try:
                 pub = Publication.objects.get(web_link=wl)
             except Publication.DoesNotExist:
@@ -364,9 +363,8 @@ class Command(BaseBuild):
                 "Experiment AnalyzedExperiment error | module: AnalyzedExperiment.")
             return False
 
-
-
     # Bias data block #
+
     def build_bias_data(self):
         print('Build bias data gproteins')
         context = dict()
@@ -428,7 +426,6 @@ class Command(BaseBuild):
         # save dataset to model
         self.save_data_to_model(context, 'same_family')
         print('stage # 8: saving data to model is finished')
-
 
     def save_data_to_model(self, context, source):
         for i in context['data'].items():
@@ -508,7 +505,7 @@ class Command(BaseBuild):
             return temp, temp1
         except:
             print('receptor not found', receptor)
-            return None,None
+            return None, None
 
     def fetch_experiment(self, publication, ligand, receptor, source):
         """
@@ -610,6 +607,8 @@ class Command(BaseBuild):
                 temp_dict['signalling_protein'] = j['children'][0].signalling_protein
                 temp_dict['cell_line'] = j['children'][0].cell_line
                 temp_dict['family'] = j['children'][0].family
+                if temp_dict['family'] == "" or temp_dict['family'] == None:
+                    temp_dict['family'] = 'G-protein'
                 temp_dict['assay_type'] = j['children'][0].assay_type
                 temp_dict['assay_measure_method'] = j['children'][0].assay_measure
                 temp_dict['assay_time_resolved'] = j['children'][0].assay_time_resolved
@@ -627,7 +626,6 @@ class Command(BaseBuild):
                 temp_dict['efficacy_measure_type'] = j['children'][0].efficacy_measure_type
                 temp_dict['t_coefficient'] = j['children'][0].bias_value
                 temp_dict['t_coefficient_initial'] = j['children'][0].bias_value_initial
-
                 temp_dict['bias_reference'] = j['children'][0].bias_reference
                 temp_dict['emax_reference_ligand'] = j['children'][0].emax_ligand_reference
                 temp_dict['ligand_function'] = j['children'][0].ligand_function
@@ -675,9 +673,7 @@ class Command(BaseBuild):
         '''
         send = dict()
         increment = 0
-
         for j in context.items():
-
             ref = list()
             for data in j[1]:
                 if data['assay'][0]['bias_reference'].lower() != "" and data['assay'][0]['bias_reference'] == 'Reference':
@@ -688,7 +684,6 @@ class Command(BaseBuild):
 
             for data in j[1]:
                 for i in ref:
-
                     if (data['receptor'] == i['receptor'] and
                         data['species'] == i['species'] and
                         data['assay'][0]['assay_type'] == i['assay'][0]['assay_type'] and
@@ -779,6 +774,7 @@ class Command(BaseBuild):
         Gq = dict()
         GS = dict()
         Barr = dict()
+        G_prot = dict()
         for i in send:
             try:
                 if i['family'] == 'B-arr':
@@ -796,6 +792,16 @@ class Command(BaseBuild):
                     else:
                         if i['quantitive_activity'] < G12['quantitive_activity']:
                             G12 = i
+            except:
+                continue
+
+            try:
+                if i['family'] == 'G-protein':
+                    if bool(G_prot) == False:
+                        G_prot = i
+                    else:
+                        if i['quantitive_activity'] < G_prot['quantitive_activity']:
+                            G_prot = i
             except:
                 continue
 
@@ -837,7 +843,8 @@ class Command(BaseBuild):
             families.append(Gq)
         if GS:
             families.append(GS)
-
+        if G_prot:
+            families.append(G_prot)
         return families
 
     def process_calculation(self, context):

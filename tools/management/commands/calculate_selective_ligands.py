@@ -188,7 +188,7 @@ class Command(BaseBuild):
         if most_potent and most_potent != None:
             for i in assays:
                 try:
-                    if most_potent['pchembl_value'] > (i['pchembl_value'] + 1):
+                    if most_potent['pchembl_value'] < (i['pchembl_value'] + 1):
                         return most_potent
                         break
                 except:
