@@ -166,7 +166,7 @@ def StructureDetails(request, pdbname):
         pos = residue.rotamer.residue.sequence_number
         wt_pos = -1
 
-        if residue.rotamer.residue.generic_number:
+        if residue.rotamer.residue.generic_number and residue.rotamer.residue.generic_number.label in lookup:
             residue_table_list.append(
                 residue.rotamer.residue.generic_number.label)
             wt_pos = lookup[residue.rotamer.residue.generic_number.label]
@@ -183,10 +183,12 @@ def StructureDetails(request, pdbname):
         display_res.append(str(pos))
         residues_browser.append({'type': key, 'aa': aa, 'ligand': ligand,
                                  'pos': pos, 'wt_pos': wt_pos, 'gpcrdb': display, 'segment': segment})
+
         if pos not in residues_lookup:
             residues_lookup[pos] = aa + str(pos) + " " +display + " interaction " + key
         else:
             residues_lookup[pos] += " interaction " + key
+
         if ligand not in ligands:
             ligands.append(ligand)
             main_ligand_full = ligand
@@ -395,8 +397,10 @@ def updateall(request):
 def runcalculation(pdbname, peptide=""):
     calc_script = os.sep.join(
         [os.path.dirname(__file__), 'legacy_functions.py'])
+
     call(["python2.7", calc_script, "-p", pdbname, "-c", peptide],
          stdout=open(devnull, 'wb'), stderr=open(devnull, 'wb'))
+
     return None
 
 

@@ -27,7 +27,7 @@ def striphtml(data):
     p = re.compile(r'<.*?>')
     return p.sub('', data)
 
-@cache_page(60*60*24*30)
+@cache_page(60 * 60 * 24 * 28)
 def drugstatistics(request):
 
     # ===== drugtargets =====
@@ -229,7 +229,7 @@ def drugstatistics(request):
 
     return render(request, 'drugstatistics.html', {'drugtypes_approved':drugtypes_approved, 'drugtypes_trials':drugtypes_trials,  'drugtypes_estab':drugtypes_estab,  'drugtypes_not_estab':drugtypes_not_estab, 'drugindications_approved':drugindications_approved, 'drugindications_trials':drugindications_trials, 'drugtargets_approved':drugtargets_approved, 'drugtargets_trials':drugtargets_trials, 'phase_trials':phase_trials, 'phase_trials_inactive': phase_trials_inactive, 'moas_trials':moas_trials, 'moas_approved':moas_approved, 'drugfamilies_approved':drugfamilies_approved, 'drugfamilies_trials':drugfamilies_trials, 'drugClasses_approved':drugClasses_approved, 'drugClasses_trials':drugClasses_trials, 'drugs_over_time':drugs_over_time, 'in_trial':len(in_trial), 'not_targeted':not_targeted})
 
-@cache_page(60*60*24*30)
+@cache_page(60 * 60 * 24 * 28)
 def drugbrowser(request):
     # Get drugdata from here somehow
 
@@ -271,11 +271,11 @@ def drugbrowser(request):
                 jsondata = {'name': drugname, 'target': str(protein), 'phase': phase, 'approval': approval, 'class': clas, 'family': family, 'indication': indication, 'status': status, 'drugtype': drugtype, 'moa': moa, 'novelty': novelty, 'targetlevel': targetlevel, 'clinicalstatus': clinicalstatus, 'references': references, 'NHS': NHS}
                 context.append(jsondata)
 
-            cache.set(name_of_cache, context, 60*60*24*25)   # two days timeout on cache
+            cache.set(name_of_cache, context, 60*60*24*28)
 
     return render(request, 'drugbrowser.html', {'drugdata': context})
 
-@cache_page(60*60*24*30)
+@cache_page(60 * 60 * 24 * 28)
 def drugmapping(request):
     context = dict()
 
@@ -410,7 +410,7 @@ def drugmapping(request):
 
     return render(request, 'drugmapping.html', {'drugdata':context})
 
-@cache_page(60*60*24*15)
+@cache_page(60 * 60 * 24 * 28)
 def nhs_drug(request, slug):
 
     nhs_data = NHSPrescribings.objects.filter(drugname__name=slug.lower()).order_by('date')
@@ -439,7 +439,7 @@ def nhs_drug(request, slug):
 
     return render(request, 'nhs.html', {'data':data, 'drug':slug, 'section':list(set(sections))})
 
-@cache_page(60*60*24*15)
+@cache_page(60 * 60 * 24 * 28)
 def nhs_section(request, slug):
 
     nhs_data = NHSPrescribings.objects.filter(bnf_section=slug).order_by('date')

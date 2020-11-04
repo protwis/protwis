@@ -202,7 +202,7 @@ class CouplingBrowser(TemplateView):
                                                                  'g_protein')
         for c in couplings:
             p = c.protein.entry_short()
-            
+
             # Skip entries without any annotation
             if p not in data:
                 continue
@@ -526,7 +526,7 @@ class CouplingBrowser(TemplateView):
 
         return fd
 
-def GProtein(request, dataset="GuideToPharma"):
+def GProtein(request, dataset="GuideToPharma", render_part="both"):
     name_of_cache = 'gprotein_statistics_{}'.format(dataset)
 
     context = cache.get(name_of_cache)
@@ -563,11 +563,18 @@ def GProtein(request, dataset="GuideToPharma"):
         context["selectivitydata"] = selectivitydata
 
     cache.set(name_of_cache, context, 60 * 60 * 24 * 7)  # seven days timeout on cache
+    context["render_part"] = render_part
 
     return render(request,
                   'signprot/gprotein.html',
                   context
     )
+
+def GProteinTree(request, dataset="GuideToPharma"):
+    return GProtein(request, dataset, "tree")
+
+def GProteinVenn(request, dataset="GuideToPharma"):
+    return GProtein(request, dataset, "venn")
 
 # @cache_page(60*60*24*2) # 2 days caching
 def couplings(request, template_name='signprot/coupling_browser.html'):
@@ -829,7 +836,7 @@ def familyDetail(request, slug):
             title_cell_skip -= 1
     if r_buffer:
         r_chunks.append(r_buffer)
-    
+
     context = {'pf': pf, 'families': families, 'structures': structures, 'no_of_proteins': no_of_proteins,
                'no_of_human_proteins': no_of_human_proteins, 'mutations': mutations, 'r_chunks': r_chunks,
                'chunk_size': chunk_size, 'p': p, 'complex_structures': complex_structures}
@@ -1087,7 +1094,7 @@ def signprotdetail(request, slug):
     # get structures of this signal protein
     structures = SignprotStructure.objects.filter(protein=p)
     complex_structures = SignprotComplex.objects.filter(protein=p)
-    
+
     # mutations
     mutations = MutationExperiment.objects.filter(protein=p)
 
@@ -1134,7 +1141,7 @@ def signprotdetail(request, slug):
     context = {'p': p, 'families': families, 'r_chunks': r_chunks, 'chunk_size': chunk_size, 'aliases': aliases,
                'gene': gene, 'alt_genes': alt_genes, 'structures': structures, 'complex_structures': complex_structures,
                'mutations': mutations}
-    
+
     return render(request,
                   'signprot/signprot_details.html',
                   context

@@ -355,7 +355,7 @@ class Command(BaseBuild):
 
         if structure.pdb_code.index=='6U1N':
             seq = seq[:265]
-        elif structure.pdb_code.index=='1GZM':
+        elif structure.pdb_code.index in ['1GZM', '3C9L']:
             seq = seq[:-3]
         if structure.pdb_code.index in ['6NBI','6NBF','6NBH','6U1N','6M1H','6PWC']:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -3, -1)
@@ -1011,6 +1011,7 @@ class Command(BaseBuild):
                     except IntegrityError:
                         ps = ProteinState.objects.get(slug=state_slug)
                     s.state = ps
+                    s.author_state = ps
 
                     # xtal activation value aka Delta Distance (Å)
                     if 'distance' not in sd:

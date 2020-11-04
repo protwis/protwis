@@ -86,6 +86,7 @@
 /* CSS GRID */
 .svg {
 grid-area: svg;
+max-width: 90vw;
 }
 .isoformtable {
 grid-area: isoformtable;
@@ -181,12 +182,12 @@ grid-area: caption;
   background-color: SandyBrown !important;
 }
 .red {
-  background-color: indianred !important; 
+  background-color: indianred !important;
 }
 
 .protein {
-    border: 0px !important; 
-    border-top: 0px !important; 
+    border: 0px !important;
+    border-top: 0px !important;
     display: inline-block;
     width:100%;
     -moz-border-radius:5px;  /* for Firefox */
@@ -231,7 +232,7 @@ function build_table() {
     var table = $(".table");
     var tbody = table.find('tbody');
     $.each(table_data, function(id, v) {
-        
+
         // console.log(v[v.length-1]);
         // 0: "receptor"
         // 1: "isoform_id"
@@ -330,7 +331,7 @@ function build_table() {
         tbody.append(tr);
     });
 
-    // $('[data-toggle="tooltip"]').tooltip(); 
+    // $('[data-toggle="tooltip"]').tooltip();
     $('.popovertooltip').each(function() {
         $(this).popover({
             html: true,
@@ -435,7 +436,7 @@ function build_table() {
                           //     is_same = wt_aa!=data['pre_aligned'][i] ? 'false' : 'true';
 
                           //     iso_string += `<div class='issame_${is_same}'">${data['pre_aligned'][i]}</div>`;
-       
+
                           //     // iso_aa = data['isoforms'][e_id[0]][i];
                           //     // console.log(wt_aa,iso_aa);
                           //     number = ''
@@ -607,7 +608,7 @@ function build_table() {
 <!-- MODAL POP UP FOR RESIDUE INFO -->
 <div class="modal fade" id="alignment" role="dialog">
   <div class="modal-dialog modal-wide">
-  
+
     <!-- Modal content-->
     <div class="modal-content">
       <div class="modal-header">
@@ -621,7 +622,7 @@ function build_table() {
         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
       </div>
     </div>
-    
+
   </div>
 </div>
 {% endblock %}
