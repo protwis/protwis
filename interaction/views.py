@@ -87,13 +87,13 @@ class InteractionSelection(AbsTargetSelection):
     #     + ' where you can edit the list.\n\nSelect which numbering schemes to use in the middle column.\n\nOnce you' \
     #     + ' have selected all your receptors, click the green button.'
 
-    description = 'Ligand Interactions description'
+    description = 'Select the structure of interest by using the dropdown in the middle. The selection if viewed to the right and the interactions will be loaded immediately.'
 
     # Middle section
     numbering_schemes = False
     filters = False
     search = False
-    title = "Select annotated receptor interactions, PDB code or upload PDB file"
+    title = "Select a structure based on PDB-code"
 
     template_name = 'interaction/interactionselection.html'
 
@@ -117,6 +117,7 @@ class InteractionSelection(AbsTargetSelection):
 
         context['structures'] = ResidueFragmentInteraction.objects.values('structure_ligand_pair__structure__pdb_code__index', 'structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name').annotate(
             num_ligands=Count('structure_ligand_pair', distinct=True), num_interactions=Count('pk', distinct=True)).order_by('structure_ligand_pair__structure__pdb_code__index')
+        context['structure_groups'] = sorted(set([ structure['structure_ligand_pair__structure__pdb_code__index'][0] for structure in context['structures'] ]))
         context['form'] = PDBform()
         return context
 
@@ -165,7 +166,7 @@ def StructureDetails(request, pdbname):
         pos = residue.rotamer.residue.sequence_number
         wt_pos = -1
 
-        if residue.rotamer.residue.generic_number:
+        if residue.rotamer.residue.generic_number and residue.rotamer.residue.generic_number.label in lookup:
             residue_table_list.append(
                 residue.rotamer.residue.generic_number.label)
             wt_pos = lookup[residue.rotamer.residue.generic_number.label]
@@ -182,10 +183,12 @@ def StructureDetails(request, pdbname):
         display_res.append(str(pos))
         residues_browser.append({'type': key, 'aa': aa, 'ligand': ligand,
                                  'pos': pos, 'wt_pos': wt_pos, 'gpcrdb': display, 'segment': segment})
+
         if pos not in residues_lookup:
             residues_lookup[pos] = aa + str(pos) + " " +display + " interaction " + key
         else:
             residues_lookup[pos] += " interaction " + key
+
         if ligand not in ligands:
             ligands.append(ligand)
             main_ligand_full = ligand
@@ -394,8 +397,10 @@ def updateall(request):
 def runcalculation(pdbname, peptide=""):
     calc_script = os.sep.join(
         [os.path.dirname(__file__), 'legacy_functions.py'])
+
     call(["python2.7", calc_script, "-p", pdbname, "-c", peptide],
          stdout=open(devnull, 'wb'), stderr=open(devnull, 'wb'))
+
     return None
 
 

@@ -202,7 +202,7 @@ class CouplingBrowser(TemplateView):
                                                                  'g_protein')
         for c in couplings:
             p = c.protein.entry_short()
-            
+
             # Skip entries without any annotation
             if p not in data:
                 continue
@@ -526,7 +526,7 @@ class CouplingBrowser(TemplateView):
 
         return fd
 
-def GProtein(request, dataset="GuideToPharma"):
+def GProtein(request, dataset="GuideToPharma", render_part="both"):
     name_of_cache = 'gprotein_statistics_{}'.format(dataset)
 
     context = cache.get(name_of_cache)
@@ -563,11 +563,18 @@ def GProtein(request, dataset="GuideToPharma"):
         context["selectivitydata"] = selectivitydata
 
     cache.set(name_of_cache, context, 60 * 60 * 24 * 7)  # seven days timeout on cache
+    context["render_part"] = render_part
 
     return render(request,
                   'signprot/gprotein.html',
                   context
     )
+
+def GProteinTree(request, dataset="GuideToPharma"):
+    return GProtein(request, dataset, "tree")
+
+def GProteinVenn(request, dataset="GuideToPharma"):
+    return GProtein(request, dataset, "venn")
 
 # @cache_page(60*60*24*2) # 2 days caching
 def couplings(request, template_name='signprot/coupling_browser.html'):
@@ -734,7 +741,6 @@ def couplings(request, template_name='signprot/coupling_browser.html'):
 def familyDetail(request, slug):
     # get family
     pf = ProteinFamily.objects.get(slug=slug)
-
     # get family list
     ppf = pf
     families = [ppf.name]
@@ -751,8 +757,8 @@ def familyDetail(request, slug):
     list_proteins = list(proteins.values_list('pk', flat=True))
 
     # get structures of this family
-    structures = SignprotStructure.objects.filter(protein__family__slug__startswith=slug
-                                                  )
+    structures = SignprotStructure.objects.filter(protein__family__slug__startswith=slug)
+    complex_structures = SignprotComplex.objects.filter(protein__family__slug__startswith=slug)
 
     mutations = MutationExperiment.objects.filter(protein__in=proteins).prefetch_related('residue__generic_number',
                                                                                          'exp_qual', 'ligand')
@@ -782,7 +788,8 @@ def familyDetail(request, slug):
                                                  protein__sequence_type__slug='wt')
         except:
             pc = None
-    
+            p = None
+    p = pc.protein
     residues = Residue.objects.filter(protein_conformation=pc).order_by('sequence_number').prefetch_related(
         'protein_segment', 'generic_number', 'display_generic_number')
 
@@ -832,7 +839,7 @@ def familyDetail(request, slug):
 
     context = {'pf': pf, 'families': families, 'structures': structures, 'no_of_proteins': no_of_proteins,
                'no_of_human_proteins': no_of_human_proteins, 'mutations': mutations, 'r_chunks': r_chunks,
-               'chunk_size': chunk_size}
+               'chunk_size': chunk_size, 'p': p, 'complex_structures': complex_structures}
 
     return render(request,
                   'signprot/family_details.html',
@@ -1050,9 +1057,9 @@ def StructureInfo(request, pdbname):
     """
     Show structure details
     """
-    protein = Protein.objects.get(signprotstructure__PDB_code=pdbname)
+    protein = Protein.objects.get(signprotstructure__pdb_code__index=pdbname)
 
-    crystal = SignprotStructure.objects.get(PDB_code=pdbname)
+    crystal = SignprotStructure.objects.get(pdb_code__index=pdbname)
 
     return render(request,
                   'signprot/structure_info.html',

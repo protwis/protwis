@@ -7,6 +7,7 @@ from django.views.decorators.cache import cache_page
 
 urlpatterns = [
     url(r'^$', cache_page(60*60*24)(StructureBrowser.as_view()), name='structure_browser'),
+    url(r'^g_protein_structure_browser$', cache_page(60*60*24)(GProteinStructureBrowser.as_view()), name='g_protein_structure_browser'),
     url(r'^browser$', RedirectBrowser, name='redirect_browser'),
     url(r'^selection_convert$', ConvertStructuresToProteins, name='convert'),
     url(r'^selection_convert_model$', ConvertStructureModelsToProteins, name='convert_mod'),
@@ -45,7 +46,7 @@ urlpatterns = [
     url(r'^(?P<pdbname>\w+)$', StructureDetails, name='structure_details'),
     url(r'^pdb/(?P<pdbname>\w+)$', ServePdbDiagram, name='structure_serve_pdb'),
     url(r'^homology_models/(?P<modelname>\w+)_(?P<state>\w+)$', cache_page(60*60*24)(HomologyModelDetails), name='homology_model_details'),
-    url(r'^homology_models/(?P<modelname>\w+)_(?P<state>\w+)/download_pdb$', SingleModelDownload, name='single_model_download'),
+    url(r'^homology_models/(?P<modelname>\w+)_(?P<state>\w+)_(?P<fullness>\w+)/download_pdb$', SingleModelDownload, name='single_model_download'),
 #    url(r'^homology_models/(?P<modelname>\w+)_(?P<state>\w+)/download_csv$', SingleModelDownload, {'csv':True}, name='single_model_download'),
     url(r'^complex_models/(?P<modelname>\w+)-(?P<signprot>\w+)/download_pdb$', SingleComplexModelDownload, name='single_complex_model_download'),
 #    url(r'^complex_models/(?P<modelname>\w+)-(?P<signprot>\w+)/download_csv$', SingleComplexModelDownload, {'csv':True}, name='single_complex_model_download'),

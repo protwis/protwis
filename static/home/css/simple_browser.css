@@ -1,0 +1,31 @@
+#content input.form-control, select.form-control {
+    width: 40px;
+    height: 20px;
+    font-size: 9px;
+    padding: 2px 2px;
+}
+#content input.number_range_filter, input.date_range_filter {
+    width: 20px;
+    font-size: 8px;
+}
+.protein-th {
+    background-color: #98df8a;
+}
+.pdb-th {
+    background-color: #aec7e8;
+}
+.ligand-th {
+    background-color: #ff9896;
+}
+.pub-th {
+    background-color: #ffbb78;
+}
+.version-th {
+    background-color: #c2c2d6;
+}
+.similarity-th {
+    background-color: gold;
+}
+div.container .toggled, .toggled:hover, .toggled:visited, .toggled:active, .toggled:link {
+    background-color: #134B7D;
+}

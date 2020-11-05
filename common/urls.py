@@ -24,6 +24,7 @@ urlpatterns = [
     url(r'selectresiduegroup', views.SelectResidueGroup, name='selectresiduegroup'),
     url(r'removeresiduegroup', views.RemoveResidueGroup, name='removeresiduegroup'),
     url(r'setgroupminmatch', views.SetGroupMinMatch, name='setgroupminmatch'),
+    url(r'verifyminimumselection', views.VerifyMinimumSelection, name='verifyminimumselection'),
     url(r'residuesdownload', views.ResiduesDownload, name='residuesupload'),
     url(r'residuesupload', views.ResiduesUpload, name='residuesupload'),
     url(r'^selectiongproteinpredefined', views.SelectionGproteinPredefined, name='selectiongproteinpredefined'),
@@ -34,4 +35,5 @@ urlpatterns = [
     url(r'^exportexceldownload/(?P<ts>[^/]*?)/(?P<entry_name>.+)$', views.ExportExcelDownload, name='exportexceldownload'),
     url(r'^importexcel$', views.ImportExcel, name='importexcel'),
     url(r'^convertsvg$', views.ConvertSVG, name='convertsvg'),
+    url(r'^targettabledata', views.TargetTableData, name='targettabledata'),
 ]

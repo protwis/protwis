@@ -737,8 +737,8 @@ class StructureAssignGenericNumbers(views.APIView):
 
     def post(self, request):
 
-        root, ext = os.path.splitext(request._request.FILES['pdb_file'].name)
-        generic_numbering = GenericNumbering(StringIO(request._request.FILES['pdb_file'].file.read().decode('UTF-8',"ignore")))
+        # root, ext = os.path.splitext(request._request.FILES['pdb_file'].name)
+        generic_numbering = GenericNumbering(StringIO(request._request.FILES['pdb_file'].file.read().decode('UTF-8', "ignore")))
         out_struct = generic_numbering.assign_generic_numbers()
         out_stream = StringIO()
         io = PDBIO()
@@ -760,8 +760,8 @@ class StructureSequenceParser(views.APIView):
     renderer_classes = (JSONRenderer, )
 
     def post(self, request):
-        root, ext = os.path.splitext(request._request.FILES['pdb_file'].name)
-        pdb_file = StringIO(request._request.FILES['pdb_file'].file.read().decode('UTF-8',"ignore"))
+        # root, ext = os.path.splitext(request._request.FILES['pdb_file'].name)
+        pdb_file = StringIO(request._request.FILES['pdb_file'].file.read().decode('UTF-8', "ignore"))
         header = parse_pdb_header(pdb_file)
         parser = SequenceParser(pdb_file)
 
@@ -835,3 +835,31 @@ class DrugList(views.APIView):
             druglist.append({'name':drugname, 'approval': approval, 'indication': indication, 'status':status, 'drugtype':drugtype, 'moa':moa, 'novelty': novelty})
 
         return Response(druglist)
+
+
+class HelixBoxView(views.APIView):
+    """
+    Get SVG source code for a protein's helix box plot
+    \n/plot/helixbox/{entry_name}/
+    \n{entry_name} is a protein identifier from Uniprot, e.g. adrb2_human
+    """
+
+    def get(self, request, entry_name=None):
+        if entry_name is not None:
+            p = Protein.objects.get(entry_name=entry_name)
+
+            return Response(str(p.get_helical_box()).split('\n'))
+
+
+class SnakePlotView(views.APIView):
+    """
+    Get SVG source code for a protein's snake plot
+    \n/plot/snake/{entry_name}/
+    \n{entry_name} is a protein identifier from Uniprot, e.g. adrb2_human
+    """
+
+    def get(self, request, entry_name=None):
+        if entry_name is not None:
+            p = Protein.objects.get(entry_name=entry_name)
+
+            return Response(str(p.get_snake_plot()).split('\n'))

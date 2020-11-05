@@ -90,7 +90,6 @@ class Command(BaseBuild):
     def purge_bias_data(self):
         delete_bias_experiment = AnalyzedExperiment.objects.all()
         delete_bias_experiment.delete()
-        print('Previous data is purged')
 
     def fetch_experiment(self, publication, ligand, receptor, residue, mutation, source):
         """
@@ -136,6 +135,7 @@ class Command(BaseBuild):
             fin_obj['children'] = temp_obj
             fin_obj['vendor_counter'] = vendor_counter
             rd.append(fin_obj)
+
 
         print('#step1', len(rd))
         return rd
@@ -210,7 +210,7 @@ class Command(BaseBuild):
                 send[increment] = temp
                 increment = increment + 1
                 counter += 1
-        print('#step2', len(send))
+
         return send
 
     def process_dublicates(self, context):
@@ -256,6 +256,8 @@ class Command(BaseBuild):
 
 
         results_temp = self.process_group(send)
+
+        results_temp = self.process_group(send)
         print('#step4', len(results_temp))
         return results_temp
 
@@ -284,17 +286,18 @@ class Command(BaseBuild):
             i[1].pop('assay')
 
             self.calc_bias_factor(i[1]['biasdata'])
+            #self.calc_t_coefficient(i[1]['biasdata'])
 
-            #recalculates lbf if it is negative
-            self.validate_lbf(i)
+            most_potent = dict()
+            for x in i[1]['biasdata']:
+                if x['log_bias_factor'] and isinstance(x['log_bias_factor'], int) and x['log_bias_factor'] < 0:
+                    for j in i[1]['biasdata']:
+                        if j['order_no'] == 0:
+                            j['order_no'] = x['order_no']
+                            x['order_no'] = 0
+                    self.calc_bias_factor(i[1]['biasdata'])
 
             self.calc_potency(i[1]['biasdata'])
-
-    def validate_lbf(self, i):
-        for x in i[1]['biasdata']:
-            if x['log_bias_factor'] and isinstance(x['log_bias_factor'], int) and x['log_bias_factor'] < 0:
-                print(type(x['order_no']))
-                self.calc_bias_factor(i[1]['biasdata'])
 
     def caclulate_bias_factor_variables(self,a,b,c,d):
         lgb = (a-b)-(c-d)
@@ -401,7 +404,6 @@ class Command(BaseBuild):
             context[name] = temp_obj
             context[name][0]['publication'] == name
 
-        print('#step3',len(context))
         send = self.process_dublicates(context)
 
         return send

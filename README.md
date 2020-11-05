@@ -1,5 +1,6 @@
 PROTWIS
 =======
+[![DOI](https://zenodo.org/badge/50017823.svg)](https://zenodo.org/badge/latestdoi/50017823)
 
 Welcome to the Protwis project, the technology behind [GPCRdb](http://gpcrdb.org) and related systems.
 

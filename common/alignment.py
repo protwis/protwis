@@ -647,6 +647,9 @@ class Alignment:
             self.merge_generic_numbers()
             self.clear_empty_positions()
 
+            # TODO Needs fix - not working completely
+            # self.clear_empty_segments()
+
             if self.number_of_residues_total >= 2500:
                 self.calculate_statistics()
                 cache_data = {'unique_proteins': self.unique_proteins,
@@ -727,6 +730,27 @@ class Alignment:
     #                for p in s:
     #                    if p[0] not in self.positions:
     #                        self.proteins[i].alignment[j].remove(p)
+
+    # TODO Needs fix - not working completely
+    def clear_empty_segments(self):
+        # SM clear empty segments
+
+        tmp = OrderedDict()
+        for segment in self.segments:
+            if self.segments[segment] != []:
+                tmp[segment] = self.segments[segment]
+        if self.segments != tmp:
+            self.segments = tmp
+
+        tmp = deepcopy(self.generic_numbers)
+        for ns, segments in self.generic_numbers.items():
+            for segment, positions in segments.items():
+                if segment not in self.segments:
+                    del tmp[ns][segment]
+        if self.generic_numbers != tmp:
+            self.generic_numbers = tmp
+
+
 
     def merge_generic_numbers(self):
         """Check whether there are many display numbers for each position, and merge them if there are"""
@@ -1854,7 +1878,7 @@ class ClosestReceptorHomolog():
     def find_closest_receptor_homolog(self):
         a = Alignment()
         p = Protein.objects.get(entry_name=self.protein)
-        exclusion_list = ['opsd_todpa', 'adrb1_melga', 'g1sgd4_rabit', 'us28_hcmva', 'q08bg4_danre', 'q9wtk1_cavpo', 'q80km9_hcmv', 'q98sw5_xenla']
+        exclusion_list = ['opsd_todpa', 'adrb1_melga', 'g1sgd4_rabit', 'us28_hcmva', 'q08bg4_danre', 'q9wtk1_cavpo', 'q80km9_hcmv', 'q98sw5_xenla', 'b1b1u5_9arac']
         if self.protein in exclusion_list:
             exclusion_list.remove(self.protein)
         if p.family.slug[:3]=='008':

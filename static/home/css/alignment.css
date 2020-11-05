@@ -116,6 +116,12 @@
     color: #000000;
     text-decoration: none;
 }
+.ali-scroll-div {
+  position: -webkit-sticky;
+  position: sticky;
+  background-color: white;
+  top: 0;
+}
 .ali-first-col-div, .ali-first-scroll-div
 {
     overflow-x: scroll;
@@ -274,8 +280,8 @@
 .signature-section-header {
     height: 60px;
     font-size: 16px;
-    text-decoration: underline;
-    text-decoration-color:red;
+    /* text-decoration: underline;
+    text-decoration-color:red; */
 }
 .signature-section-header-row {
     height: 60px;

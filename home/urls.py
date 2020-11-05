@@ -1,5 +1,4 @@
 from django.conf.urls import url
-#from home import views
 from django.views.generic import TemplateView
 from django.conf import settings
 from django.contrib.staticfiles.storage import staticfiles_storage
@@ -15,5 +14,6 @@ urlpatterns = [
             url=staticfiles_storage.url('home/images/favicon_dev.ico'),
             permanent=False),
         name="favicon"
-    )
+    ),
+    url(r'^citations', views.citations_json, name='citation')
 ]

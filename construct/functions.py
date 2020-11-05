@@ -37,8 +37,12 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     # ignore_gaspar_annotation skips PDB_RANGE edits that mark missing residues as deleted, which messes up constructs.
 
     if not protein:
-        url = 'https://www.rcsb.org/pdb/files/%s.pdb' % pdbname
-        pdbdata_raw = urlopen(url).read().decode('utf-8')
+        if pdbname=='6ORV':
+            with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs', '6ORV.pdb']), 'r') as pdb6orv:
+                pdbdata_raw = pdb6orv.read()
+        else:
+            url = 'https://www.rcsb.org/pdb/files/%s.pdb' % pdbname
+            pdbdata_raw = urlopen(url).read().decode('utf-8')
         # figure out what protein this is
         for line in pdbdata_raw.split('\n'):
             if line.startswith('DBREF'):
@@ -250,6 +254,16 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     if pdbname.upper()=='6NIY':
         pdb_range = list(range(1,475))
 
+    # # Maybe this messes with construct build, temp fix
+    # if pdbname.upper()=='6K41':
+    #     pdb_range = list(range(11,79))+list(range(85,150))+list(range(164,167))+list(range(170,204))+list(range(361,394))+list(range(404,442))
+    # if pdbname.upper()=='6K42':
+    #     pdb_range = list(range(11,152))+list(range(162,205))+list(range(358,399))+list(range(401,446))
+    # if pdbname.upper()=='6KUY':
+    #     pdb_range = list(range(33,173))+list(range(184,228))+list(range(365,444))
+    # if pdbname.upper()=='6KUX':
+    #     pdb_range = list(range(29,174))+list(range(183,228))+list(range(365,444))
+
     if not ignore_gasper_annotation:
         ## THIS BLOCK IS DONE BY GASPAR -- IT ALSO REMOVES MISSING RESIDUES, NOT TO BE USED TO WRITE CONSTRUCTS
         # Misannotated DBREF in PDB file
@@ -344,7 +358,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
         chain_over_ride = 'E'
     # elif pdbname=='5VBL': # fixed by pdb_range
     #     chain_over_ride = 'B'
-
+    # print(pdb_range)
     #http://files.gpcrdb.org/uniprot_mapping.txt
     ## get uniprot to name mapping
     uniprot_mapping = cache.get('gpcrdb_uniprot_mapping')
@@ -442,6 +456,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
         prev_elem_name = ""
         pdb_resid_total = []
         pdb_resid_total_accounted = []
+        # print(d['wt_seq'])
         for elem in sifts.findall('.//{'+sfits_https+'://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}segment'):
             if 'segId' not in elem.attrib:
                 continue #not receptor
@@ -581,6 +596,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                                         uniprot_pos = int(pos)
                                 else:
                                     receptor = False
+
                             # if receptor:
                             #     print(receptor, uniprot_pos, pos,uniprot_aa, u_id,raw_u_id,chain,node.attrib['dbResNum'],d['wt_seq'][uniprot_pos-1])
                         elif source=='PDB' and node.attrib['dbResNum'].lstrip('-').isdigit(): #use instead of isinstance(node.attrib['dbResNum'], int):
@@ -696,7 +712,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                     if receptor:
                             if not uniprot_pos:
                                 uniprot_pos = pos
-                            #print(pos,uniprot_pos)
+                            # print(chain,pos,uniprot_pos,uniprot_aa)
                             wt_aa = d['wt_seq'][uniprot_pos-1]
                             prev_receptor = True
                             # if pos==250 or uniprot_pos==250:
@@ -817,6 +833,18 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                 seg_resid_list = [i for i in seg_resid_list if i not in actually_present]
                 pos_in_wt = [i for i in pos_in_wt if i not in actually_present]
 
+            # Custom fix for deletion issues
+            if pdbname in ['6PT2', '6PT3'] and chain in ['A','B']:
+                pos_in_wt = list(range(1,41))+list(range(330,373))
+            elif pdbname in ['6TPK'] and chain=='A':
+                pos_in_wt+=list(range(338,357))
+            elif pdbname=='7JJO'  and chain=='E':
+                pos_in_wt = list(range(1,40))+list(range(243,247))+list(range(358,484))
+
+            # Custom fix for 1GZM flying residues
+            if pdbname=='1GZM' and chain in ['A','B']:
+                max_pos=326
+                seg_resid_list = seg_resid_list[:-3]
             mutations = None
 
             if receptor==False and u_id_source=='UniProt':
@@ -832,6 +860,20 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                 seg_uniprot_ids = ['Uncharacterized protein']
             # elif pdbname in ['4LDE'] and min_pos==1029 and max_pos==1342:
             #     seg_uniprot_ids = ['adrb2_human']
+            if pdbname=='7BZ2' and chain=='E':
+                seg_uniprot_ids = ['adrb2_human']
+                receptor = [{'start': 30, 'end': 340, 'origin': 'user'}]
+            if pdbname=='6IQL' and chain in ['A','B'] and min_pos==304:
+                seg_uniprot_ids = ['drd4_mouse']
+            if pdbname=='7JJO' and chain=='E' and min_pos==40:
+                seg_uniprot_ids = ['adrb1_melga']
+            if pdbname in ['6PT2','6PT3']:
+                if chain=='A' and min_pos==999:
+                    seg_uniprot_ids = ['Soluble cytochrome b562']
+                elif chain=='B' and min_pos==1002:
+                    seg_uniprot_ids = ['Soluble cytochrome b562']
+            if pdbname in ['6U1N'] and chain=='A' and min_pos==487:
+                seg_uniprot_ids = ['v2r_human']
 
             # print([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,seg_had_receptor])
             d['xml_segments'].append([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,seg_had_receptor])
@@ -839,7 +881,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
             # print("end of segment",elem.attrib['segId'],seg_uniprot_ids,max_pos)
             if [elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,seg_had_receptor] not in d['xml_segments']:
                 d['xml_segments'].append([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,seg_had_receptor])
-
+            
             if receptor == False and receptor_chain==chain: #not receptor, but is in same chain
                 if len(seg_uniprot_ids):
                     subtype =seg_uniprot_ids[0]
@@ -861,6 +903,10 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                 # print('\t',pdbname.lower(),'Protein in PDB, not part of receptor chain',seg_uniprot_ids,'chain',chain)
                 logger.warning('{} Protein in structure, but not part of receptor chain {} {}'.format(pdbname.lower(),seg_uniprot_ids,chain))
 
+        # Custom fix for 6PT2
+        if pdbname in ['6PT2','6PT3']:
+            del d['auxiliary']['aux1']
+
         # print(sorted(pdb_resid_total))
         # print(sorted(pdb_resid_total_accounted))
         non_accounted = sorted(list(set(pdb_resid_total) - set(pdb_resid_total_accounted)))
@@ -880,6 +926,11 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
             for k, g in groupby(enumerate(sorted(d['xml_not_observed'])), lambda x:x[0]-x[1]):
                 group = list(map(itemgetter(1), g))
                 d['not_observed'].append((group[0], group[-1]))
+
+        # Custom fix for 6PT2
+        if pdbname in ['6PT2','6PT3']:
+            d['construct_sequences']['Soluble cytochrome b562'] = d['construct_sequences']['N/A']
+            del d['construct_sequences']['N/A']
 
         for i,v in d['construct_sequences'].items():
             d['construct_sequences'][i]['ranges'] = []
@@ -936,7 +987,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
         d['links'].append(Template(url).substitute(index=quote(str(pdbname), safe='')))
         # print(Template(url).substitute(index=quote(str(pdbname), safe='')))
     except:
-        print('rscb failed for ',pdbname)
+        print('rcsb failed for ',pdbname)
         rcsb_mod = None
     if rcsb_mod: #success
         d['modifications'] = []

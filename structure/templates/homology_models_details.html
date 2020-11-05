@@ -4,7 +4,7 @@
 
 {% block addon_css %}
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
-    <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/simple_browser.css' %}" type="text/css" />
 {% endblock %}
 
 {% block content %}
@@ -17,7 +17,6 @@ canvas {
 }
 </style>
 
-<script src="http://cdn.jsdelivr.net/3dmol.js/latest/3Dmol-min.js"></script>
 <div class="row text-success">
     <div class="text-center">
         {% if model.refined %}
@@ -72,7 +71,7 @@ canvas {
         <h4>STATE</h4>
     </div>
     <div class="col-md-9">
-    {{ model.state.name }} (&#916; distance (&#8491;): {{ delta_distance }} <a href="http://docs.gpcrdb.org/structures.html#structure-state">docs</a>)
+    {{ model.state.name }}
     </div>
 </div>
 
@@ -102,11 +101,16 @@ canvas {
     </div>
     <div class="col-md-9">
         <div class="btn-group">
-            {% if model.refined %}
-                <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.pdb_code.index}}/download_pdb">Download</a>
-            {% else %}
-                <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.protein.entry_name}}_{{model.state.slug}}/download_pdb">Download</a>
-            {% endif %}
+            <a href="/" class="dropdown-toggle btn btn-primary btn-mini" data-toggle="dropdown" role="button" aria-expanded="false">Download <span class='caret'></span></a>
+            <ul class="dropdown-menu" role="menu" style="min-width:50%;">
+                {% if model.refined %}
+                    <li><a id="download_btn" href="./{{model.pdb_code.index}}_full/download_pdb">Full</a></li>
+                    <li><a id="download_btn" href="./{{model.pdb_code.index}}_noloops/download_pdb">Without loops and termini</a></li>
+                {% else %}
+                    <li><a id="download_btn" href="./{{model.protein.entry_name}}_{{model.state.slug}}_full/download_pdb">Full</a></li>
+                    <li><a id="download_btn" href="./{{model.protein.entry_name}}_{{model.state.slug}}_noloops/download_pdb">Without loops</a></li>
+                {% endif %}
+            </ul>
         </div>
         <div>
             <p>PDB file contains GPCRdb generic numbers in the B-factor field of CA atoms</p>
@@ -245,6 +249,7 @@ canvas {
                         <tr>
                             <th>Segment</th>
                             <th>Seq.num.</th>
+                            <th>AA</th>
                             <th>GPCRdb#</th>
                             <th>Backbone</th>
                             <th>PDB</th>
@@ -259,6 +264,7 @@ canvas {
                             <th></th>
                             <th></th>
                             <th></th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -266,18 +272,19 @@ canvas {
                         <tr>
                             <td>{{ rota.residue.protein_segment.slug }}</td>
                             <td>{{ rota.residue.sequence_number }}</td>
+                            <td>{{ rota.residue.amino_acid }}</td>
                             <td>{{ rota.residue.display_generic_number.label }}</td>
 
                             {% if rota.backbone_template %}
                                 <td><a href="/protein/{{ rota.backbone_template.protein_conformation.protein.parent.entry_name }}">{{ rota.backbone_template.protein_conformation.protein.parent.name|safe }}</a></td>
-                                <td><a href="../{{ rota.backbone_template.pdb_code.index }}">{{ rota.backbone_template.pdb_code.index }}</a></td>
+                                <td><a href="../{{ rota.backbone_template.pdb_code.index }}">{{ rota.backbone_template.pdb_code.index|safe }}</a></td>
                             {% else %}
                                 <td>-</td>
                                 <td>-</td>
                             {% endif %}
                             {% if rota.rotamer_template %}
                                 <td><a href="/protein/{{ rota.rotamer_template.protein_conformation.protein.parent.entry_name }}">{{ rota.rotamer_template.protein_conformation.protein.parent.name|safe }}</a></td>
-                                <td><a href="../{{ rota.rotamer_template.pdb_code.index }}">{{ rota.rotamer_template.pdb_code.index }}</a></td>
+                                <td><a href="../{{ rota.rotamer_template.pdb_code.index }}">{{ rota.rotamer_template.pdb_code.index|safe }}</a></td>
                             {% else %}
                                 <td>-</td>
                                 <td>-</td>
@@ -353,6 +360,7 @@ canvas {
                         aoColumns: [
                             { type: "select" }, // segment
                             { type: "number-range"}, // seq num
+                            { type: "text" }, // AA
                             { type: "text" }, // gn
                             { type: "text" }, // backbone
                             { type: "text" }, // backbone xtal

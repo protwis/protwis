@@ -194,7 +194,7 @@ def PdbTreeData(request):
 
     return JsonResponse(data_dict)
 
-@cache_page(60*60)
+@cache_page(60*60*24*7)
 def PdbTableData(request):
     exclude_non_interacting = True if request.GET.get('exclude_non_interacting') == 'true' else False
 
@@ -372,9 +372,10 @@ def PdbTableData(request):
         r['signal_protein_note'] = ''
         r['signal_protein_seq_cons'] = ''
         r['signal_protein_seq_cons_color'] = ''
-        for ep in s.extra_proteins.all():
-            if ep.category == "Antibody":
-                continue
+        # Only show alpha-subunit or arrestin in
+        for ep in s.extra_proteins.filter(category__in=["G alpha", "Arrestin"]):
+#            if ep.category == "Antibody":
+#                continue
             key = '{}_{}'.format(s.protein_conformation.protein.parent.pk,ep)
             if best_signal_p[key] == ep.wt_coverage:
                 # this is the best coverage
@@ -386,7 +387,11 @@ def PdbTableData(request):
             else:
                  r['signal_protein'] = ep.wt_protein.family.parent.name
 
+            # Slight reformatting along the lines of the structure browser
             r['signal_protein_subtype'] = ep.display_name
+            if ep.category == "G alpha" and r['signal_protein_subtype'][0] == 'G':
+                r['signal_protein_subtype'] = '&alpha;' + r['signal_protein_subtype'][1:]
+
             if ep.note:
                 if len(ep.note) > 20:
                     r['signal_protein_note'] = "<span title='{}'>{}...</span>".format(ep.note, ep.note[:20])

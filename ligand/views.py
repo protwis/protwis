@@ -109,6 +109,7 @@ def LigandDetails(request, ligand_id):
                 data_line.standard_value)
             tmp_count += 1
 
+
         # Flattened list of lists of dict values
         values = list(itertools.chain(
             *[itertools.chain(*tmp[x].values()) for x in tmp.keys()]))
@@ -170,6 +171,13 @@ def LigandDetails(request, ligand_id):
         # TEMPORARY workaround for handling string values
         values = [float(item) for item in values if float(item)]
 
+
+        #Flattened list of lists of dict values
+        values = list(itertools.chain(*[itertools.chain(*tmp[x].values()) for x in tmp.keys()]))
+        # TEMPORARY workaround for handling string values
+        values = [float(item) for item in values if float(item) ]
+
+
         if len(values) > 0:
             ligand_data.append({
                 'protein_name': protein_details.entry_name,
@@ -178,12 +186,21 @@ def LigandDetails(request, ligand_id):
                 'class': protein_details.get_protein_class(),
                 'record_count': tmp_count,
                 'assay_type': ', '.join(tmp.keys()),
+
                 # Flattened list of lists of dict keys:
                 'value_types': ', '.join(itertools.chain(*(list(tmp[x]) for x in tmp.keys()))),
                 'low_value': min(values),
                 'average_value': sum(values) / len(values),
                 'standard_units': ', '.join(list(set([x.standard_units for x in per_target_data])))
             })
+
+                #Flattened list of lists of dict keys:
+                'value_types': ', '.join(itertools.chain(*(list(tmp[x]) for x in tmp.keys()))),
+                'low_value': min(values),
+                'average_value': sum(values)/len(values),
+                'standard_units': ', '.join(list(set([x.standard_units for x in per_target_data])))
+                })
+
 
     context = {'ligand_data': ligand_data, 'ligand': ligand_id}
 
@@ -601,7 +618,7 @@ class LigandInformationView(TemplateView):
         ld['type'] = ligand_data[0].properities.ligand_type.name
         ld['wl'] = list()
         ld['picture'] = None
-        for i in ligand_data[0].properities.web_links.all():        
+        for i in ligand_data[0].properities.web_links.all():
             ld['wl'].append({'name': i.web_resource.name, "link":str(i)})
             if i.web_resource.slug == 'chembl_ligand':
                 ld['picture'] = i.index
@@ -649,6 +666,7 @@ def test_link(request):
     return HttpResponse(request)
     # except OSError as exc:
     #     raise
+
 
 
 class BiasVendorBrowser(TemplateView):
@@ -985,14 +1003,13 @@ access data from db, fill empty fields with empty parse_children
 
 class BiasBrowserChembl(TemplateView):
     template_name = 'bias_browser_chembl.html'
-    # @cache_page(50000)
-
-    def get_context_data(self, *args, **kwargs):
+    #@cache_page(50000)
+    def get_context_data(self, *args, **kwargs  ):
         content = AnalyzedExperiment.objects.filter(source='chembl_data').prefetch_related(
-            'analyzed_data', 'ligand', 'ligand__reference_ligand', 'reference_ligand',
-            'endogenous_ligand', 'ligand__properities', 'receptor', 'receptor__family',
-            'receptor__family__parent', 'receptor__family__parent__parent__parent',
-            'receptor__family__parent__parent', 'receptor__species',
+            'analyzed_data', 'ligand','ligand__reference_ligand','reference_ligand',
+            'endogenous_ligand' ,'ligand__properities','receptor','receptor__family',
+            'receptor__family__parent','receptor__family__parent__parent__parent',
+            'receptor__family__parent__parent','receptor__species',
             'publication', 'publication__web_link', 'publication__web_link__web_resource',
             'publication__journal', 'ligand__ref_ligand_bias_analyzed',
             'analyzed_data__emax_ligand_reference')
@@ -1061,7 +1078,7 @@ class BiasBrowserChembl(TemplateView):
                 else:
                     continue
             rd[increment] = temp
-            increment += 1
+            increment+=1
         return rd
 
     def multply_assay(self, data):

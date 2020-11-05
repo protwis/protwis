@@ -72,7 +72,7 @@ $('#cutoff-apply').click( function() {
     ApplyCutoff(cutoff);
 });
 
-$(window).on("load", function () {
+/*$(window).on("load", function () {
     $('.internal-scroll-div').css('width', $('.dynamic-div').outerWidth() );
     ApplyCutoff(40);
-});
+});*/

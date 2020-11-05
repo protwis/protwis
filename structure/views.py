@@ -16,7 +16,7 @@ from structure.functions import CASelector, SelectionParser, GenericNumbersSelec
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
 from structure.forms import *
-from signprot.models import SignprotComplex
+from signprot.models import SignprotComplex, SignprotStructure, SignprotStructureExtraProteins
 from interaction.models import ResidueFragmentInteraction,StructureLigandInteraction
 from protein.models import Protein, ProteinFamily
 from construct.models import Construct
@@ -26,6 +26,7 @@ from common.selection import Selection, SelectionItem
 from common.extensions import MultiFileField
 from common.models import ReleaseNotes
 from common.alignment import GProteinAlignment
+from residue.models import Residue
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
@@ -79,6 +80,53 @@ class StructureBrowser(TemplateView):
 		except Structure.DoesNotExist as e:
 			pass
 
+		return context
+
+
+class GProteinStructureBrowser(TemplateView):
+	"""
+	Fetching Structure data for browser
+	"""
+	template_name = "g_protein_structure_browser.html"
+
+	def get_context_data (self, **kwargs):
+		# Fetch g prot - receptor compleces
+		context = super(GProteinStructureBrowser, self).get_context_data(**kwargs)
+		complexstructs = SignprotComplex.objects.filter(protein__family__slug__startswith='100')
+		try:
+			context['structures'] = Structure.objects.filter(refined=False, id__in=complexstructs.values_list('structure', flat=True)).select_related(
+				"state",
+				"pdb_code__web_resource",
+				"protein_conformation__protein__species",
+				"protein_conformation__protein__source",
+				"protein_conformation__protein__family__parent__parent__parent",
+				"publication__web_link__web_resource").prefetch_related(
+				"stabilizing_agents", "construct__crystallization__crystal_method",
+				"protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
+				"protein_conformation__site_protein_conformation__site",
+				Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
+				annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role','ligand__properities__web_links__web_resource')),
+				Prefetch("extra_proteins", queryset=StructureExtraProteins.objects.all().prefetch_related(
+					'protein_conformation','wt_protein')))
+		except Structure.DoesNotExist as e:
+			pass
+		# Fetch non-complex g prot structures and filter for overlaps preferring SignprotComplex
+		ncstructs = SignprotStructure.objects.filter(protein__family__slug__startswith='100').select_related(
+				"protein__family",
+				"pdb_code__web_resource",
+				"publication__web_link__web_resource").prefetch_related(
+				"stabilizing_agents",
+				Prefetch("extra_proteins", queryset=SignprotStructureExtraProteins.objects.all().prefetch_related('wt_protein')))
+		pdbs = []
+		filtered_ncstructs = []
+		for i in context['structures']:
+			if i.pdb_code.index not in pdbs:
+				pdbs.append(i.pdb_code.index)
+		for i in ncstructs:
+			if i.pdb_code.index not in pdbs:
+				pdbs.append(i.pdb_code.index)
+				filtered_ncstructs.append(i)
+		context['structures'] = list(context['structures'])+list(filtered_ncstructs)
 		return context
 
 
@@ -353,7 +401,7 @@ def StructureDetails(request, pdbname):
 	"""
 	Show structure details
 	"""
-	pdbname = pdbname
+	pdbname = pdbname.upper()
 	structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__ligand__name','structure_ligand_pair__pdb_reference','structure_ligand_pair__annotated').filter(structure_ligand_pair__structure__pdb_code__index=pdbname, structure_ligand_pair__annotated=True).annotate(numRes = Count('pk', distinct = True)).order_by('-numRes')
 	resn_list = ''
 
@@ -1943,8 +1991,6 @@ def ConvertStructureComplexSignprotToProteins(request):
 		for struct_mod in selection.targets:
 			try:
 				prot = struct_mod.item.sign_protein
-				print(prot)
-				print(selection)
 				selection.remove('targets', 'structure_complex_signprot', struct_mod.item.id)
 				selection.add('targets', 'protein', SelectionItem('protein', prot))
 			except:
@@ -2019,9 +2065,8 @@ def ComplexmodDownload(request):
 	response['Content-Length'] = zip_io.tell()
 	return response
 
-def SingleModelDownload(request, modelname, state, csv=False):
+def SingleModelDownload(request, modelname, state, fullness, csv=False):
 	"Download single homology model"
-
 	zip_io = BytesIO()
 	if state=='refined':
 		hommod = Structure.objects.get(pdb_code__index=modelname+'_refined')
@@ -2038,8 +2083,50 @@ def SingleModelDownload(request, modelname, state, csv=False):
 																	   hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
 		stat_name = 'Class{}_{}_{}_{}_{}_GPCRdb.templates.csv'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name,
 																	   hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
-	io = StringIO(hommod.pdb_data.pdb)
-	stats_text = StringIO(hommod.stats_text.stats_text)
+	pdb_lines = hommod.pdb_data.pdb
+	stats_lines = hommod.stats_text.stats_text
+	if fullness=='noloops':
+		filtered_lines = ''
+		remark_line_count = 0
+		for line in pdb_lines.split('\n'):
+			if line.startswith('REMARK'):
+				filtered_lines+=line+'\n'
+				remark_line_count+=1
+		filtered_lines+='REMARK    {} ALL LOOPS REMOVED AFTER MODELING\n'.format(remark_line_count+1)
+		if state=='refined':
+			helix_resis = Residue.objects.filter(protein_conformation__protein=hommod.protein_conformation.protein, protein_segment__category='helix').values_list('sequence_number', flat=True)
+		else:
+			helix_resis = Residue.objects.filter(protein_conformation__protein=hommod.protein, protein_segment__category='helix').values_list('sequence_number', flat=True)
+		p = PDBParser(get_header=True)
+		pdb = p.get_structure('pdb', StringIO(pdb_lines))[0]
+		to_remove = []
+		for chain in pdb:
+			for res in chain:
+				if res.id[1] not in helix_resis and res.id[0]==' ':
+					to_remove.append(res.id)
+		for i in to_remove:
+			chain.detach_child(i)
+		io = StringIO()
+		pdbio = PDBIO()
+		pdbio.set_structure(pdb)
+		pdbio.save(io)
+		io = StringIO(filtered_lines+io.getvalue())
+		filtered_stats_lines = ''
+		for i in stats_lines.split('\n'):
+			if i.startswith('Segment'):
+				filtered_stats_lines+=i+'\n'
+				continue
+			if len(i)<2:
+				continue
+			resnum = int(i.split(',')[1])
+			if resnum in helix_resis:
+				filtered_stats_lines+=i+'\n'
+		stats_text = StringIO(filtered_stats_lines)
+		mod_name = mod_name.split('.')[0]+'_WL'+'.pdb'
+		stat_name = stat_name.split('.')[0]+'_WL'+'.templates.csv'
+	else:
+		io = StringIO(pdb_lines)
+		stats_text = StringIO(stats_lines)
 	with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as backup_zip:
 		backup_zip.writestr(mod_name, io.getvalue())
 		backup_zip.writestr(stat_name, stats_text.getvalue())
@@ -2213,7 +2300,7 @@ def webformdata(request) :
 				else:
 					pos_id = ''
 					aux_id = '1'
-				print(key,aux_id,pos_id)
+				# print(key,aux_id,pos_id)
 
 				if 'aux'+aux_id not in auxiliary:
 					auxiliary['aux'+aux_id] = {'position':data['position'+pos_id],'type':data['protein_type'+pos_id],'presence':data['presence'+pos_id]}

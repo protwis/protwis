@@ -158,30 +158,30 @@ def create_or_update_residue(protein_conformation, segment, schemes,residue,b_an
     return [bulk_r,bulk_add_alt]
 
 
-def get_gprotein_cgns(consensus_prot_conf, segment, residues_to_update):
-    # Return CGNs for longest segment in the subfamily
+def get_gprotein_non_gns(consensus_prot_conf, segment, residues_to_update):
+    # Return non-GNs for longest segment in the subfamily
     proteins = Protein.objects.filter(family__parent=consensus_prot_conf.protein.family, species__common_name='Human', accession__isnull=False)
     s_len = 0
-    cgns = []
+    non_gns = []
     for p in proteins:
         resis = Residue.objects.filter(protein_segment=segment, protein_conformation__protein=p)
         if len(resis)>s_len:
             s_len = len(resis)
-            cgns = [r.display_generic_number for r in resis]
+            non_gns = [r.display_generic_number for r in resis]
     # In case of multiple with same length but different numbers, get all numbers (e.g. Gi/o hbhc)
-    if len(residues_to_update)!=len(cgns):
-        new_cgns = []
+    if len(residues_to_update)!=len(non_gns):
+        new_non_gns = []
         resis = Residue.objects.filter(protein_segment=segment, protein_conformation__protein__species__common_name='Human', 
                                        protein_conformation__protein__accession__isnull=False, protein_conformation__protein__family__parent=consensus_prot_conf.protein.family)
         for r in resis:
-            if r.display_generic_number not in new_cgns:
-                new_cgns.append(r.display_generic_number)
-        cgns = sorted(new_cgns, key=lambda x:x.label)
-    return cgns
+            if r.display_generic_number not in new_non_gns:
+                new_non_gns.append(r.display_generic_number)
+        non_gns = sorted(new_non_gns, key=lambda x:x.label)
+    return non_gns
 
 
 def create_or_update_residues_in_segment(protein_conformation, segment, start, aligned_start, end, aligned_end,
-    schemes, ref_positions, protein_anomalies, disregard_db_residues, g_prot=False):
+    schemes, ref_positions, protein_anomalies, disregard_db_residues, signprot=False):
     logger = logging.getLogger('build')
     rns_defaults = {'protein_segment': segment} # default numbering scheme for creating generic numbers
 
@@ -209,8 +209,8 @@ def create_or_update_residues_in_segment(protein_conformation, segment, start, a
     ns = settings.DEFAULT_NUMBERING_SCHEME
     ns_obj = ResidueNumberingScheme.objects.get(slug=ns)
     
-    if g_prot:
-        cgns = get_gprotein_cgns(protein_conformation, segment, residues_to_update)
+    if signprot:
+        non_gns = get_gprotein_non_gns(protein_conformation, segment, residues_to_update)
     created_residues = 0
     for res_num, residue in enumerate(residues_to_update, start=1):
         sequence_number = residue[0]
@@ -285,12 +285,10 @@ def create_or_update_residues_in_segment(protein_conformation, segment, start, a
                         gn = ResidueGenericNumber.objects.get(
                             scheme=protein_conformation.protein.residue_numbering_scheme, label=gnl)
                     rvalues['display_generic_number'] = schemes[ns]['generic_numbers'][gnl] = gn
-        elif segment.slug in ProteinSegment.objects.filter(proteinfamily='Alpha').values_list('slug', flat=True):
-            if protein_conformation.protein.entry_name!='alpha-consensus':
-                # print(res_num, residue, protein_conformation, segment, start, aligned_start, end, aligned_end, ref_positions, protein_anomalies, disregard_db_residues)
-                # print(cgns)
-                rvalues['display_generic_number'] = cgns[res_num-1]
-                rvalues['generic_number'] = cgns[res_num-1]
+        elif segment.slug in ProteinSegment.objects.filter(proteinfamily=signprot).values_list('slug', flat=True):
+            # if protein_conformation.protein.entry_name!='alpha-consensus':
+            rvalues['display_generic_number'] = non_gns[res_num-1]
+            rvalues['generic_number'] = non_gns[res_num-1]
 
         # UPDATE or CREATE the residue
         r, created = Residue.objects.update_or_create(protein_conformation=protein_conformation,

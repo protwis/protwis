@@ -53,6 +53,7 @@ class Command(BaseBuild):
             my_queue.put(f(*args))
         return wrapper
 
+
     def add_arguments(self, parser):
         parser.add_argument('-p', '--proc',
                             type=int,

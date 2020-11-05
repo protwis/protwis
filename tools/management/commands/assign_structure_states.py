@@ -50,7 +50,7 @@ class Command(BaseCommand):
                 if slug[0] == "001":
                     active_ids.extend(["6LI3"])
                 elif slug[0] == "004": # hardcoded custom YZ03 as active
-                    active_ids = ["6N51"]
+                    active_ids = ["6N51", "6UO8", "7C7Q"]
 
                 # print("The following PDBs are G-prot complex structures:")
                 # print(slug[0], active_ids)
@@ -159,10 +159,15 @@ class Command(BaseCommand):
                         # Classification
                         score = scoring_results[pdb]
                         structure_state = "inactive"
-                        if score < 0: # above this score always inactive structure
+                        if score < 25 and slug[0] == "001": # above this score always inactive structure
                             structure_state = "active"
-                            if slug[0] == "001" and score > -60:
+                            if slug[0] == "001" and score > -75:
                                 structure_state = "intermediate"
+                        elif score < -5 and slug[0] == "004": # above this score always inactive structure
+                            structure_state = "active"
+                        elif score < 0 and slug[0] not in ["001", "004"]: # above this score always inactive structure
+                            structure_state = "active"
+
                                 #print(slug[0], entry[0], structure_state, score)
                             #if slug=="002" and score > -20:
                             #    structure_state = "intermediate"
@@ -191,22 +196,12 @@ class Command(BaseCommand):
                             gprot_likeness = None
                             percentage = None
 
-                        # elif pdb in inactive_ids and structure_state=="inactive":
-                        #     gprot_likeness = 0
-                            #structure_state = "inactive"
-                        # elif entry[0] in inactive_ids:
-                        #     gprot_likeness = 0
-                        #     structure_state = "inactive"
-
-
                         # Store for structure
                         struct = Structure.objects.get(pdb_code__index=pdb)
                         struct.state, created = ProteinState.objects.get_or_create(slug=structure_state, defaults={'name': structure_state.capitalize()})
                         struct.tm6_angle = percentage
                         struct.gprot_bound_likeness = gprot_likeness
                         struct.save()
-
-                        #print("Class {}: structure {} to state {} and opening is {}%".format(slug, entry[0], structure_state, percentage))
                 elif len(structure_ids) > 0:
                     distances = list(Distance.objects.filter(gn1="2x46").filter(gn2="6x37") \
                                         .filter(structure__pdb_code__index__in=structure_ids) \

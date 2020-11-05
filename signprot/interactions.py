@@ -377,6 +377,10 @@ def fill_coupling_data_container(data, sources=["GuideToPharma", "Aska"]):
 
     for c in couplings:
         p = c.protein.entry_short()
+        # Skip entries without any annotation
+        if p not in data:
+            continue
+        
         s = c.source
         t = c.transduction
         m = c.log_rai_mean

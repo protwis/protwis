@@ -1,10 +1,7 @@
 {% extends "home/base.html" %}
 {% load static %}
+{% load structure_extras %}
 
-{% block addon_css %}
-<link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
-<link href="{% static 'home/css/color_picker.css' %}" rel="stylesheet">
-{% endblock %}
 
 {% block content %}
 
@@ -122,38 +119,60 @@
 
 <div class="row">
     <div class="col-md-2 text-right text-info">
-        <h4>STRUCTURES</h4>
+        <h4>HOMOLOGY MODELS</h4>
     </div>
+
     <div class="col-md-10">
-        {% for structure in structures %}
-        <p style="display: inline;"><a href="/structure/{{ structure.pdb_code.index }}">{{ structure.pdb_code.index }}</a>{% if forloop.last %} {% else %}, {% endif %}</p>
+        {% for hommod in homology_models %}
+            <p style="display: inline;"><a href="/structure/homology_models/{{ hommod.protein.entry_name }}_{{ hommod.state.slug }}">{{ hommod.protein.entry_name }} {{ hommod.state.slug }}</a>{% if forloop.last %} {% else %}, {% endif %}</p>
         {% empty %}
-        No structures available
+        No homology models available. Check the Archive on <a href="/structure/homology_models">Structure models</a> for earlier releases.
         {% endfor %}
     </div>
 </div>
 
 <div class="row">
-    {% if homology_models %}
-        <div class="col-md-2 text-right text-info">
-            <h4>HOMOLOGY MODELS</h4>
-        </div>
-        <div class="col-md-10">
-            {% for hommod in homology_models %}
-                <p style="display: inline;"><a href="/structure/homology_models/{{ hommod.protein.entry_name }}_{{ hommod.state.slug }}">{{ hommod.protein.entry_name }} {{ hommod.state.slug }}</a>{% if forloop.last %} {% else %}, {% endif %}</p>
-            {% empty %}
-            No homology models available
-            {% endfor %}
-        </div>
+    <div class="col-md-2 text-right text-info">
+        <h4>STRUCTURES</h4>
+    </div>
+    {% if structures|length > 0 %}
+    <div class="col-md-10">
+        <p>View in <a href="/structure" target='_blank'>Structures</a></p>
+    </div>
+    
+    {% else %}
+    <div class="col-md-10">
+        No structures available
+    </div>
     {% endif %}
 </div>
 
 {% endif %}
 {% endblock %}
 
-{% block addon_js %}
-<script src="{% static 'home/js/sequenceviewer.js' %}"></script>
-<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
-<script src="{% static 'home/js/diagrams.js' %}"></script>
-<script src="{% static 'home/js/color_picker.js' %}"></script>
+
+{% block addon_css %}
+    <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
+    <link href="{% static 'home/css/color_picker.css' %}" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+    <link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet">
+    <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
+    <link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{% static 'home/css/jquery.powertip.css' %}" />
 {% endblock %}
+
+{% block addon_js %}
+    <script src="{% static 'home/js/sequenceviewer.js' %}"></script>
+    <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+    <script src="{% static 'home/js/diagrams.js' %}"></script>
+    <script src="{% static 'home/js/color_picker.js' %}"></script>
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+    <script src="{% static 'home/js/select2.js' %}"> </script>
+    <script src="{% static 'home/js/alignment.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.powertip.js' %}"></script>
+{% endblock %}
+

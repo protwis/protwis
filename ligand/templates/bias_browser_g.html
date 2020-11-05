@@ -1,6 +1,6 @@
 {% extends "home/base.html" %}
-
 {% load static %}
+{% csrf_token %}
 
 {%csrf_token%}
 {% block content %}
@@ -19,7 +19,7 @@
 </div>
 <br><br>
 
-<img id="loadingSpinner" style="position: absolute;
+    <img id="loadingSpinner" style="position: absolute;
     left: 50%;
     top: 50%;" src="{% static 'home/images/loading.gif' %}" />
 
@@ -310,8 +310,6 @@
 <br>
 <br>
 {% endblock %}
-
-
 {% block addon_js %}
 <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
 <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
@@ -1338,4 +1336,617 @@
 	}
 </style>
 
+            yadcf.init(table,
+                [{
+                    column_number: 1,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Class",
+                    filter_reset_button_text: false,
+                },
+                    {
+                        column_number: 2,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Select",
+                        filter_reset_button_text: false,
+
+                    },
+                    {
+                        column_number: 3,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        //column_data_type: "html",
+                        filter_default_label: "Select",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 4,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Select",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 5,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Select",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 6,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Select",
+                        filter_reset_button_text: false,
+                    },
+                    // Ligand
+                    {
+                        column_number: 7,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Select",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 8,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        column_data_type: "html",
+                        html_data_type: "text",
+                        filter_default_label: "Select",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 9,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_plugin_options: {
+                            width: '30px'
+                        },
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 10,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_plugin_options: {
+                            width: '30px'
+                        },
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 11,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                    },
+                    //  Receotor Transduction
+                    {
+                        column_number: 12,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Select",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 13,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Select",
+                        filter_reset_button_text: false,
+                    },
+                    // pathway_bias
+                    {
+                        column_number: 14,
+                        select_type: 'select2',
+                        filter_type: "multi_select",
+                        text_data_delimiter: " ",
+                        filter_default_label: "P 1",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 15,
+                        select_type: 'select2',
+                        filter_type: "multi_select",
+                        filter_default_label: "P 2",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 16,
+                        select_type: 'select2',
+                        filter_type: "multi_select",
+                        filter_default_label: "P 3",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 17,
+                        select_type: 'select2',
+                        filter_type: "multi_select",
+                        filter_default_label: "P 4",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 18,
+                        select_type: 'select2',
+                        filter_type: "multi_select",
+                        filter_default_label: "P 5",
+                        filter_reset_button_text: false,
+                    },
+                    // pathway operational model
+                    {
+                        column_number: 19,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 20,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 21,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 22,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                    },
+
+                    //Log bias factor <br>(ddLog(Emax/EC50)
+                    {
+                        column_number: 23,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 24,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 25,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 26,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                    },
+                    //"Potency ratio ddlog(EC50)"
+                    {
+                        column_number: 27,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 28,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 29,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 30,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                    },
+                    //potency or ic50
+                    // TODO: change to p value
+                    {
+                        column_number: 31,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 32,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 33,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 34,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 35,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                    },
+
+                    // Emax
+                    {
+                        column_number: 36,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                    },
+
+                    {
+                        column_number: 37,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 38,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 39,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 40,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                    },
+                    //Transduction eff
+                    {
+                        column_number: 41,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 42,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 43,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 44,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 45,
+                        filter_type: "range_number",
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                    },
+                    //assay_type
+                    {
+                        column_number: 46,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Assay type",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 47,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Assay type",
+                        filter_reset_button_text: false,
+
+                    },
+                    {
+                        column_number: 48,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Assay type",
+                        filter_reset_button_text: false,
+                    },
+
+                    {
+                        column_number: 49,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Assay type",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 50,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Assay type",
+                        filter_reset_button_text: false,
+                    },
+                    //cell_line
+                    {
+                        column_number: 51,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Cell Line",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 52,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Cell Line",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 53,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Cell Line",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 54,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Cell Line",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 55,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Cell Line",
+                        filter_reset_button_text: false,
+                    },
+                    //Time resolved
+                    {
+                        column_number: 56,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 57,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 58,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 59,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 60,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "",
+                        filter_reset_button_text: false,
+                    },
+                    //Article
+                    {
+                        column_number: 61,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Authors",
+                        filter_reset_button_text: false,
+
+                    },
+                    {
+                        column_number: 62,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        column_data_type: "html",
+                        html_data_type: "text",
+                        filter_default_label: "DOI",
+                        filter_reset_button_text: false,
+                    },
+
+                ], {
+                    cumulative_filtering: true
+                }
+            );
+            shadeTable(table, [".shade"], 120, 200);
+
+            function reset_filters() {
+                $('#loadingSpinner').show();
+                $('#structures_scrollable_body').hide();
+                location.reload()
+                //yadcf.exResetAllFilters(oTable);
+            }
+            table.columns.adjust();
+            $('.dataTables_scrollBody #structures_scrollable').addClass("pull-left");
+
+            $('.dataTables_scrollBody').append('<div id=overlay><table id="overlay_table" class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
+
+            function create_overlay() {
+                // This function fires upon filtering, to update what rows to show as an overlay
+                $("#overlay_table tbody tr").remove();
+                var $target = $("#overlay_table tbody");
+                $("#structures_scrollable tbody tr").each(function() {
+                    var $tds = $(this).children(),
+                        $row = $("<tr></tr>");
+                    // $row.append($tds.eq(0).clone()).append($tds.eq(1).clone()).appendTo($target);
+                    // var clone_this = document.getElementById("potency_id2").clone()
+                    var $tr = document.getElementsByClassName('tr_clone');
+
+                    var $clone = [$tr];
+
+                    $row.append($tds.eq(0).clone()).append($tds.eq(4).clone()).append($tds.eq(5).clone()).append($tds.eq(8).clone());
+                    // .id = "pathways"
+                    if ($tds[12].className == "pathway") {
+                        $row.append($tds.eq(12).clone());
+                    }
+                    if ($tds[13].className == "pathway") {
+                        $row.append($tds.eq(13).clone());
+                    }
+                    if ($tds[11].className == "pathway") {
+                        $row.append($tds.eq(11).clone());
+                    }
+                    if ($tds[14].className == "pathway") {
+                        $row.append($tds.eq(14).clone());
+                    }
+                    if ($tds[15].className == "pathway") {
+                        $row.append($tds.eq(15).clone());
+                    } // && isNaN($tds[15].innerText)
+                    if ($tds[16].className == "pathway") {
+                        $row.append($tds.eq(16).clone());
+                    }
+                    if ($tds[17].className == "pathway") {
+                        $row.append($tds.eq(17).clone());
+                    }
+                    if ($tds[18].className == "pathway") {
+                        $row.append($tds.eq(18).clone());
+                    }
+                    $row.appendTo($target)
+                    $row.height($(this).height());
+                });
+                $("#overlay_table .border-right").removeClass("border-right");
+            }
+            // Function that detects filtering events
+            $('#structures_scrollable').on('draw.dt', function(e, oSettings) {
+                create_overlay();
+                table.columns.adjust();
+            });
+            create_overlay();
+            $("#overlay").hide();
+            var left = 0;
+            var old_left = 0;
+            $('.dataTables_scrollBody').scroll(function() {
+                // If user scrolls and it's >100px from left, then attach fixed columns overlay
+                left = $('.dataTables_scrollBody').scrollLeft();
+                if (left != old_left) $("#overlay").hide();
+                old_left = left;
+                if (left > 100) {
+                    $("#overlay").css({
+                        left: left + 'px'
+                    });
+                    if ($("#overlay").is(":hidden")) $("#overlay").show();
+                }
+            });
+            var tableToExcel = (function() {
+                var uri = 'data:application/vnd.ms-excel;base64,',
+                    template =
+                        '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>',
+                    base64 = function(s) {
+                        return window.btoa(unescape(encodeURIComponent(s)))
+                    },
+                    format = function(s, c) {
+                        return s.replace(/{(\w+)}/g, function(m, p) {
+                            return c[p];
+                        })
+                    }
+                return function(table, name, filename) {
+                    var table = $("#" + table).clone();
+                    $("#excel_table").html(table);
+                    // Clean up table to remove yadcf stuff
+                    $("#excel_table thead tr").css('height', '');
+                    $("#excel_table thead th").css('height', '');
+                    $("#excel_table thead div").css('height', '');
+                    $("#excel_table thead .yadcf-filter-wrapper").remove();
+                    $("#excel_table thead button").remove();
+                    var tr = $("#excel_table thead tr:eq(1)");
+                    // reattach th titles
+                    tr.find('th').each(function(column, th) {
+                        if ($(th).attr('title')) $(th).html($(th).attr('title'));
+                    });
+
+                    var ctx = {
+                        worksheet: name || 'Worksheet',
+                        table: $("#excel_table").html()
+                    }
+                    $("#excel_table").html("");
+                    document.getElementById("dlink").href = uri + base64(format(template, ctx));
+                    document.getElementById("dlink").download = filename;
+                    document.getElementById("dlink").click();
+                }
+            })()
+        });
+    </script>
+    <script type="text/javascript">
+        function myFunction(url, title, win, w, h) {
+            const y = win.top.outerHeight / 2 + win.top.screenY - (h / 2);
+            const x = win.top.outerWidth / 2 + win.top.screenX - (w / 2);
+            return win.open(url, title, 'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width=' + w + ', height=' + h + ', top=' + y + ', left=' + x);
+        }
+
+        function read_unique_ids() {
+            var ids = [];
+            var table = document.getElementById("structures_scrollable")
+            var temp_lenght = table.rows.length;
+            var l = 0;
+            for (var i = 2; i < temp_lenght; i++) {
+                var x = table.rows[i].cells[0];
+                ids.push($(x).find('span:first')[0].innerText)
+            }
+            l = countUnique(ids);
+            return l
+        }
+
+        function read_unique_ids_receptor() {
+            var ids = [];
+            var table = document.getElementById("structures_scrollable")
+            var temp_lenght = table.rows.length;
+            var l = 0;
+            for (var i = 2; i < temp_lenght; i++) {
+                var x = table.rows[i].cells[2];
+
+                ids.push($(x)[0].innerText)
+            }
+            l = countUnique(ids);
+            return l
+        }
+
+        function countUnique(iterable) {
+            return new Set(iterable).size;
+        }
+
+        function read_ids() {
+            var ids = [];
+            var table = document.getElementById("structures_scrollable")
+            var temp_lenght = table.rows.length;
+            if (temp_lenght > 22) {
+                temp_lenght = 22;
+            }
+            for (var i = 2; i < temp_lenght; i++) {
+                var x = table.rows[i].cells[0];
+                ids.push($(x).find('span:first')[0].innerText)
+            }
+            var myJSON = JSON.stringify(ids);
+            return myJSON
+        }
+    </script>
 {% endblock %}

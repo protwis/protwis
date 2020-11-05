@@ -5,7 +5,9 @@
     </a>
     <ul class="dropdown-menu" role="menu">
         <li class="nav-header disabled"><a>INFORMATION</a></li>
-        <li><a href="https://files.gpcrdb.org/GPCRdb_Poster.pdf">GPCRdb Poster</a></li>
+        <li><a onclick="citation_tool(window.location.href);" href="#">Cite us</a></li>
+        <li><a href="/static/home/poster/overview.pdf">Graphical overview</a></li>
+        <li><a href="https://files.gpcrdb.org/video/GPCRdb-David_Gloriam.mp4">Video</a></li>
         <li><a href="{{ documentation_url }}">Documentation</a></li>
         <li class="dropdown-submenu">
             <a tabindex="0" href="#">Tutorial</a>
@@ -22,19 +24,20 @@
         <li class="nav-header disabled"><a>ABOUT GPCRdb</a></li>
         <li><a href="{{ documentation_url }}about.html">About</a></li>
         <li><a href="{{ documentation_url }}contact.html">Contact</a></li>
-        <li><a href="{{ documentation_url }}citing.html">Citing GPCRdb</a></li>
         <li><a href="{{ documentation_url }}acknowledgements.html">Acknowledgements</a></li>
         <li><a href="{{ documentation_url }}legal_notice.html">Legal notice</a></li>
         <li class="divider"></li>
         <li class="nav-header disabled"><a>UPDATES</a></li>
-        <li><a href="/news">News</a></li>
+        {# <li><a href="/news">News</a></li> #}
         <li><a href="{{ documentation_url }}meetings.html">Meetings</a></li>
         <li><a href="/pages/releasenotes">Release notes</a></li>
         <li class="divider"></li>
         <li class="nav-header disabled"><a>FOR DEVELOPERS</a></li>
         <li><a href="{{ documentation_url }}linking.html">Linking to GPCRdb</a></li>
         <li><a href="{{ documentation_url }}web_services.html">Web services</a></li>
-        <li><a href="{{ documentation_url }}external_servers.html">External GPCR modeling servers</a></li>
+        <li class="divider"></li>
+        <li class="nav-header disabled"><a>OTHER GPCR RESOURCES</a></li>
+        <li><a href="{{ documentation_url }}external_sites.html">External GPCR sites</a></li>
     </ul>
 </li>
 
@@ -42,87 +45,61 @@
 
 <!-- RECEPTORS -->
 <li class="dropdown">
-    <a tabindex="0" href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false"
-       data-submenu>
+    <a tabindex="0" href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" data-submenu aria-expanded="false">
         Receptors<span class="caret"></span>
     </a>
     <ul class="dropdown-menu" role="menu">
-
-        <!-- PROTEINS -->
-        <li class="nav-header disabled text-left"><a>PROTEINS
-            <button
-                    url='https://dx.doi.org/10.1111/bph.13509'
-                    class="refLink pull-right btn btn-xs btn-default"
-                    data-toggle="tooltip" data-placement="right" title="Br. J. Pharmacol.">
-                <span class="glyphicon glyphicon-book"></span>
-            </button>
-            <button url='https://dx.doi.org/10.1093/nar/gkv1178' class="refLink pull-right btn btn-xs btn-default"
-                    data-toggle="tooltip" data-placement="right" title="Nucleic Acids Res.">
-                <span class="glyphicon glyphicon-book"></span>
-            </button>
-        </a>
-        </li>
-        <li><a href="/protein">Receptor search
+        <li><a href="/protein">Receptor page
             <button mp4="https://files.gpcrdb.org/video/receptors1.mp4"
                     class="videoLink pull-right btn btn-xs btn-default">
                 <span class="glyphicon glyphicon-film"></span>
             </button>
         </a></li>
-        <li class="divider"></li>
-
 
         <!-- SEQUENCES -->
-        <li class="nav-header disabled text-left"><a>SEQUENCES
-
-            <!-- <button type="button" class="pull-right btn btn-xs btn-default">
-              <span class="glyphicon glyphicon-info-sign"></span>
-            </button> -->
-            <button
-                    url='https://dx.doi.org/10.1111/bph.13509'
-                    class="refLink pull-right btn btn-xs btn-default"
-                    data-toggle="tooltip" data-placement="right" title="Br. J. Pharmacol.">
-                <span class="glyphicon glyphicon-book"></span>
-            </button>
-            <button url='https://dx.doi.org/10.1093/nar/gkv1178' class="refLink pull-right btn btn-xs btn-default"
-                    data-toggle="tooltip" data-placement="right" title="Nucleic Acids Res.">
-                <span class="glyphicon glyphicon-book"></span>
-            </button>
-
-        </a></li>
-        <li><a href="/alignment/targetselection">Sequence alignments
-
+        <li class="divider"></li>
+        <li class="nav-header disabled text-left"><a>SEQUENCES</a></li>
+        <li>
+          <a href="/alignment/targetselection">Sequence alignments
             <button mp4="https://files.gpcrdb.org/video/sequences1.mp4" type="button"
                     class="videoLink pull-right btn btn-xs btn-default">
                 <span class="glyphicon glyphicon-film"></span>
             </button>
-        </a></li>
-        <li><a href="/seqsign">Sequence signature</a></li>
-        <li><a href="/phylogenetic_trees/targetselection">Phylogenetic trees</a></li>
+          </a>
+        </li>
+        <li><a href="/residue/residuetable">Generic residue number tables</a></li>
         <li class="dropdown-submenu">
-            <a tabindex="0" href="#">Similarity</a>
+            <a tabindex="0" href="#">Genetic variants</a>
             <ul class="dropdown-menu">
-                <li><a href="/similaritysearch/referenceselection">Similarity search-GPCRdb
+              <li><a href="/mutational_landscape/statistics">Variation statistics</a></li>
+              <li><a href="/mutational_landscape">Receptor variants</a></li>
+              <li><a href="/mutational_landscape/economicburden">Estimated economic burden</a></li>
+            </ul>
+        </li>
+        <li><a href="/protein/isoforms">Isoforms</a></li>
+
+        <!-- SEQUENCE COMPARISON -->
+        <li class="divider"></li>
+        <li class="nav-header disabled text-left"><a>SEQUENCE COMPARISON</a></li>
+        <li class="dropdown-submenu">
+            <a tabindex="0" href="#">Receptor similarity</a>
+            <ul class="dropdown-menu">
+                <li><a href="/similaritysearch/referenceselection">BLAST (GPCRdb alignment)
                     <button mp4="https://files.gpcrdb.org/video/sequences2.mp4" type="button"
                             class="videoLink pull-right btn btn-xs btn-default">
                         <span class="glyphicon glyphicon-film"></span>
                     </button>
-
-                    <button
-                            url='https://dx.doi.org/10.1111/bph.13509'
-                            class="refLink pull-right btn btn-xs btn-default"
-                            data-toggle="tooltip" data-placement="right" title="Br. J. Pharmacol.">
-                        <span class="glyphicon glyphicon-book"></span>
-                    </button>
                 </a></li>
 
-                <li><a href="/alignment/blastsearch">Similarity search-BLAST</a></li>
-                <li><a href="/similaritymatrix/targetselection">Similarity matrix</a></li>
+                <li><a href="/alignment/blastsearch">BLAST (non-GPCRdb query)</a></li>
+                <li><a href="/phylogenetic_trees/targetselection">Phylogenetic trees</a></li>
+                <li><a href="/similaritymatrix/targetselection">Similarity matrix (all-to-all)</a></li>
             </ul>
         </li>
-        <li class="divider"></li>
-
+        <li><a href="/sitesearch/targetselection">Site search (by seq. motif)</a></li>
 
         <!-- STRUCTURES -->
+        <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>STRUCTURES</a></li>
         <li><a href="/structure/statistics">Structure statistics
             <button mp4="https://files.gpcrdb.org/video/structures1.mp4" type="button"
@@ -132,108 +109,24 @@
         </a></li>
         <li><a href="/structure">Structures</a></li>
         <li><a href="/structure/homology_models">Structure models</a></li>
-        <li class="divider"></li>
+        <li><a href="/structure/superposition_workflow_index/true">Structure superposition</a></li>
+
+        {#  NOTE: we need the spacing here to keep all elements including icons in a single line #}
+        <li><a href="/structure/generic_numbering_index">Generic residue numbering (PDB)&nbsp;&nbsp;&nbsp;&nbsp;</a></li>
+        {#  DEPRECATED FOR NOW #}
+        {#  <li><a href="/structure/template_selection">Template selection</a></li> #}
 
 
         <!-- STRUCTURE COMPARISON -->
+        <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>STRUCTURE COMPARISON</a></li>
         <li><a href="/structure_comparison/comparative_analysis">Comparative structure analysis</a></li>
         <li><a href="/structure_comparison/structure_clustering">Structure similarity tree</a></li>
+
+        <!-- DETERMINANTS & MUTATIONS -->
         <li class="divider"></li>
-
-
-        <!-- STRUCTURAL TOOLS -->
-        <li class="nav-header disabled text-left"><a>STRUCTURAL TOOLS</a></li>
-        <li><a href="/structure/superposition_workflow_index/true">Structure superposition</a></li>
-        <li><a href="/structure/template_selection">Template selection</a></li>
-        <li class="divider"></li>
-
-
-        <!-- STRUCTURE SITES -->
-        <li class="nav-header disabled text-left"><a>STRUCTURE SITES
-            <button
-                    url='https://dx.doi.org/10.1016/j.tips.2014.11.001'
-                    class="refLink pull-right btn btn-xs btn-default"
-                    data-toggle="tooltip" data-placement="right" title="Trends Pharmacol. Sci.">
-                <span class="glyphicon glyphicon-book"></span>
-            </button>
-        </a></li>
-        <li class="dropdown-submenu">
-            <a tabindex="0" href="#">Site search</a>
-            <ul class="dropdown-menu">
-                <li><a href="/sitesearch/targetselectionpdb">Site search from PDB file
-                    <button mp4="https://files.gpcrdb.org/video/interactions2.mp4" type="button"
-                            class="videoLink pull-right btn btn-xs btn-default">
-                        <span class="glyphicon glyphicon-film"></span>
-                    </button>
-                </a></li>
-                <li><a href="/sitesearch/targetselection">Site search - manual</a></li>
-            </ul>
-        </li>
-        <li class="divider"></li>
-
-
-        <!-- RESIDUES -->
-        <li class="nav-header disabled text-left"><a>RESIDUES
-            <button
-                    url='https://dx.doi.org/10.1016/j.tips.2014.11.001'
-                    class="refLink pull-right btn btn-xs btn-default"
-                    data-toggle="tooltip" data-placement="right" title="Trends Pharmacol. Sci.">
-                <span class="glyphicon glyphicon-book"></span>
-            </button>
-        </a></li>
-        <li class="dropdown-submenu">
-            <a tabindex="0" href="#">Generic residue numbers</a>
-            <ul class="dropdown-menu">
-                <li><a href="/residue/residuetable">Residue tables</a></li>
-                <li><a href="/structure/generic_numbering_index">PDB file residue numbering</a></li>
-            </ul>
-        </li>
-        <li class="divider"></li>
-
-
-        <!-- MUTATIONS -->
-        <li class="nav-header disabled text-left"><a>MUTATIONS
-            <button
-                    url='https://dx.doi.org/10.1016/j.coph.2016.07.003'
-                    class="refLink pull-right btn btn-xs btn-default"
-                    data-toggle="tooltip" data-placement="right" title="Curr. Opin. Pharmacol.">
-                <span class="glyphicon glyphicon-book"></span>
-            </button>
-        </a></li>
-        <li><a href="/construct/mutations">Receptor construct mutations</a></li>
-        <li class="dropdown-submenu">
-            <a tabindex="0" href="#">Ligand binding site mutations</a>
-            <ul class="dropdown-menu">
-
-                <li><a href="/mutations/statistics">Mutation statistics</a></li>
-                <li><a href="/mutations">Mutation browser
-                    <button mp4="https://files.gpcrdb.org/video/mutations1.mp4" type="button"
-                            class="videoLink pull-right btn btn-xs btn-default">
-                        <span class="glyphicon glyphicon-film"></span>
-                    </button>
-                </a></li>
-
-                <li><a href="{{ documentation_url }}mutations.html#mutation-data-submission">Mutation data
-                    submission</a></li>
-
-            </ul>
-        </li>
-        <li class="divider"></li>
-
-
-        <!-- GENETIC VARIATION -->
-        <li class="nav-header disabled text-left"><a>GENETIC VARIATION
-            <button
-                    url='https://dx.doi.org/10.1016/j.cell.2017.11.033'
-                    class="refLink pull-right btn btn-xs btn-default"
-                    data-toggle="tooltip" data-placement="right" title="Cell">
-                <span class="glyphicon glyphicon-book"></span>
-            </button>
-        </a></li>
-        <li><a href="/mutational_landscape/statistics">Variation statistics</a></li>
-        <li><a href="/mutational_landscape">Receptor variant browser</a></li>
-        <li><a href="/mutational_landscape/economicburden">Estimated economic burden</a></li>
+        <li class="nav-header disabled text-left"><a>DETERMINANTS & MUTATIONS</a></li>
+        <li><a href="/seqsign">Sequence signatures</a></li>
     </ul>
 </li>
 
@@ -245,80 +138,60 @@
         G Proteins<span class="caret"></span>
     </a>
     <ul class="dropdown-menu" role="menu">
-        <li class="nav-header disabled text-left"><a>Proteins
-            <button
-                    url='https://dx.doi.org/10.1038/nature22070'
-                    class="refLink pull-right btn btn-xs btn-default"
-                    data-toggle="tooltip" data-placement="right" title="Nature">
-                <span class="glyphicon glyphicon-book"></span>
-            </button>
-        </a></li>
-        <li><a href="/signprot/">G protein page</a></li>
+        <li><a href="/signprot">G protein page</a></li>
+
+        <!-- GPCR-G PROTEIN COUPLING -->
         <li class="divider"></li>
-        <li class="nav-header disabled text-left"><a>GPCR-G Protein coupling </a></li>
+        <li class="nav-header disabled text-left"><a>GPCR-G Protein coupling</a></li>
         <li><a href="/signprot/couplings">GPCR-G protein couplings</a></li>
-        <li><a href="/signprot/statistics">GPCR-G protein profiles</a></li>
+        <li><a href="/signprot/statistics_venn">GPCR-G protein profiles (Venn)</a></li>
+        <li><a href="/signprot/statistics_tree">GPCR-G protein profiles (Tree)</a></li>
+
+        <!-- SEQUENCES -->
         <li class="divider"></li>
-        <li class="nav-header disabled text-left"><a>Sequences
-            <button
-                    url='https://dx.doi.org/10.1038/nature22070'
-                    class="refLink pull-right btn btn-xs btn-default"
-                    data-toggle="tooltip" data-placement="right" title="Nature">
-                <span class="glyphicon glyphicon-book"></span>
-            </button>
-        </a></li>
+        <li class="nav-header disabled text-left"><a>SEQUENCES</a></li>
         <li><a href="/alignment/gproteinselection">G protein alignments</a></li>
+
+        <!-- STRUCTURES -->
         <li class="divider"></li>
-        <li class="nav-header disabled text-left"><a>Structures</a></li>
-        <li><a href="/structure/complex_models">GPCR-G protein structure models</a></li>
+        <li class="nav-header disabled text-left"><a>STRUCTURES</a></li>
+        <li><a href="/structure/g_protein_structure_browser">Structures</a></li>
+        <li><a href="/structure/complex_models">Structure models</a></li>
+
+        <!-- GPCR-G PROTEIN INTERFACE -->
         <li class="divider"></li>
-        <li class="nav-header disabled text-left"><a>Structure sites (interface)
-            <button
-                    url='https://dx.doi.org/10.1038/nature22070'
-                    class="refLink pull-right btn btn-xs btn-default"
-                    data-toggle="tooltip" data-placement="right" title="Nature">
-                <span class="glyphicon glyphicon-book"></span>
-            </button>
-        </a></li>
-        <li><a href="/signprot/matrix">GPCR-G protein interactions</a></li>
-        <!-- <li><a href="/signprot/ginterface">Interface mapping</a></li>
-        <li><a href="/sitesearch/targetselection">Site search - manual</a></li> -->
+        <li class="nav-header disabled text-left"><a>GPCR-G PROTEIN INTERFACE</a></li>
+        <li><a href="/signprot/matrix">Interface interactions & matching</a></li>
+        <li><a href="https://files.gpcrdb.org/GPCR-Gprotein_Mutations.xlsx">Interface mutations & chimera</a></li>
+
+{% comment %}
+        <!-- DETERMINANTS & MUTATIONS -->
         <li class="divider"></li>
-        <li class="nav-header disabled text-left"><a>Mutations (Interface)</a></li>
-        <li><a href="https://files.gpcrdb.org/GPCR-Gprotein_Mutations.xlsx">GPCR-G protein interface mutations</a></li>
+        <li class="nav-header disabled text-left"><a>DETERMINANTS & MUTATIONS</a></li>
+{% endcomment %}
     </ul>
 </li>
 
 
 
-<!-- B-ARRESTINS -->
+<!-- ARRESTINS -->
 <li class="dropdown">
     <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-        B-arrestins<span class="caret"></span>
+        Arrestins<span class="caret"></span>
     </a>
     <ul class="dropdown-menu" role="menu">
-        <li class="nav-header disabled text-left"><a>Proteins
-            <button
-                    url='https://dx.doi.org/10.1038/nature22070'
-                    class="refLink pull-right btn btn-xs btn-default"
-                    data-toggle="tooltip" data-placement="right" title="Nature">
-                <span class="glyphicon glyphicon-book"></span>
-            </button>
-        </a></li>
         <li><a href="/signprot/arrestin">Arrestin page</a></li>
+
+
+        <!-- SEQUENCES -->
         <li class="divider"></li>
-        <li class="nav-header disabled text-left"><a>Sequences
-            <button
-                    url='https://dx.doi.org/10.1038/nature22070'
-                    class="refLink pull-right btn btn-xs btn-default"
-                    data-toggle="tooltip" data-placement="right" title="Nature">
-                <span class="glyphicon glyphicon-book"></span>
-            </button>
-        </a></li>
+        <li class="nav-header disabled text-left"><a>SEQUENCES</a></li>
         <li><a href="/alignment/arrestinselection">Arrestin alignments</a></li>
+
+        <!-- STRUCTURES -->
         <li class="divider"></li>
-        <li class="nav-header disabled text-left"><a>Structures</a></li>
-        <li><a href="/structure/">Structure browser</a></li>
+        <li class="nav-header disabled text-left"><a>STRUCTURES</a></li>
+        <li><a href="/structure">Structures</a></li>
     </ul>
 </li>
 
@@ -326,7 +199,7 @@
 
 <!--  BIASED SIGNALING -->
 <li class="dropdown">
-    <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" data-submenu>
+    <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" data-submenu aria-expanded="false">
         Biased signalling<span class="caret"></span>
     </a>
     <ul class="dropdown-menu" role="menu">
@@ -334,27 +207,45 @@
         <li><a href="/ligand/biasedbrowser">Ligand bias for G protein family or arrestin</a></li>
         <li><a href="/ligand/biasedgbrowser">Ligand bias for G protein subtype</a></li>
         <!-- <li><a href="/ligand/browserchembl">Predicted ligand bias (potency ratios)</a></li> -->
-
         <li class="divider"></li>
-        <li class="nav-header disabled text-left"><a href="#">Pathway effects</a></li>
-
-        <li style="display: inline;"><a href="/ligand/biasedpathways">Pathway effects</a></li>
-
-
+        <li class="nav-header disabled text-left"><a>Pathways</a></li>
+        <li><a href="/ligand/biasedpathways">Pathway effects</a></li>
     </ul>
 </li>
 
 
-
-<!-- LIGANDS -->
+<!-- DRUGS -->
+{% comment %}
 <li class="dropdown">
-    <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" data-submenu>
-        Ligands<span class="caret"></span>
+    <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+        Drugs<span class="caret"></span>
     </a>
     <ul class="dropdown-menu" role="menu">
         <li class="nav-header disabled"><a>DATA</a></li>
+        <li><a href="/drugs/drugstatistics">Drug statistics</a></li>
+        <li><a href="/drugs/drugmapping">Drug target mapping</a></li>
+        <li><a href="/drugs/drugbrowser">Drug browser</a></li>
+    </ul>
+</li>
+{% endcomment %}
+
+
+
+<!-- DRUGS AND LIGANDS -->
+<li class="dropdown">
+    <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" data-submenu aria-expanded="false">
+        Drugs <span>&#38;</span> ligands<span class="caret"></span>
+    </a>
+    <ul class="dropdown-menu" role="menu">
+        <li class="nav-header disabled"><a>DRUGS</a></li>
+        <li><a href="/drugs/drugbrowser">Drugs, targets <span>&#38;</span> indications</a></li>
+        <li><a href="/drugs/drugmapping">Drug target tree</a></li>
+        <li><a href="/drugs/drugstatistics">Drug statistics</a></li>
+        <li class="divider"></li>
+
+        <li class="nav-header disabled"><a>LIGANDS</a></li>
         <li><a href="/ligand/statistics">Ligand statistics</a></li>
-        <li><a href="/ligand">Ligand browser</a></li>
+        <li><a href="/ligand">Ligands</a></li>
 
         <!-- DEPRECATED FUNCTION
           <li class="nav-header disabled text-left"><a>Structures</a></li>
@@ -370,7 +261,7 @@
           -->
 
         <li class="divider"></li>
-        <li class="nav-header disabled text-left"><a>Structure sites
+        <li class="nav-header disabled text-left"><a>LIGAND SITES
         </a></li>
 
         <li><a href="/interaction">GPCR-ligand interactions
@@ -378,41 +269,20 @@
                     class="videoLink pull-right btn btn-xs btn-default">
                 <span class="glyphicon glyphicon-film"></span>
             </button>
-
-            <button
-                    url='https://dx.doi.org/10.1016/j.coph.2016.07.003'
-                    class="refLink pull-right btn btn-xs btn-default"
-                    data-toggle="tooltip" data-placement="right" title="Curr. Opin. Pharmacol.">
-                <span class="glyphicon glyphicon-book"></span>
+        </a></li>
+        <li><a href="/sitesearch/targetselection">Site search (by seq. motif)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</a></li>
+        <li><a href="/sitesearch/targetselectionpdb">Site search (by ligand complex)
+            <button mp4="https://files.gpcrdb.org/video/interactions2.mp4" type="button"
+                    class="videoLink pull-right btn btn-xs btn-default">
+                <span class="glyphicon glyphicon-film"></span>
             </button>
         </a></li>
-
-        <li class="dropdown-submenu">
-            <a tabindex="0" href="#">Site search</a>
-            <ul class="dropdown-menu">
-                <li><a href="/sitesearch/targetselectionpdb">Site search from PDB complex
-                    <button mp4="https://files.gpcrdb.org/video/interactions2.mp4" type="button"
-                            class="videoLink pull-right btn btn-xs btn-default">
-                        <span class="glyphicon glyphicon-film"></span>
-                    </button>
-                </a></li>
-                <li><a href="/sitesearch/targetselection">Site search - manual</a></li>
-            </ul>
-        </li>
-
 
         <!-- MUTATIONS -->
         <li class="divider"></li>
-        <li class="nav-header disabled text-left"><a>MUTATIONS (Binding sites)
-            <button
-                    url='https://dx.doi.org/10.1111/bph.13509'
-                    class="refLink pull-right btn btn-xs btn-default"
-                    data-toggle="tooltip" data-placement="right" title="Br. J. Pharmacol.">
-                <span class="glyphicon glyphicon-book"></span>
-            </button>
-        </a></li>
+        <li class="nav-header disabled text-left"><a>LIGAND SITE MUTATIONS</a></li>
         <li><a href="/mutations/statistics">Mutation statistics</a></li>
-        <li><a href="/mutations">Mutation browser
+        <li><a href="/mutations">Mutations
             <button mp4="https://files.gpcrdb.org/video/mutations1.mp4" type="button"
                     class="videoLink pull-right btn btn-xs btn-default">
                 <span class="glyphicon glyphicon-film"></span>
@@ -425,30 +295,7 @@
                 <li><a href="/mutations/designpdb">By PDB id</a></li>
             </ul>
         </li>
-        <li class="divider"></li>
         <li><a href="{{ documentation_url }}mutations.html#mutation-data-submission">Mutation data submission</a></li>
-    </ul>
-</li>
-
-
-
-<!-- DRUGS -->
-<li class="dropdown">
-    <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-        Drugs<span class="caret"></span>
-    </a>
-    <ul class="dropdown-menu" role="menu">
-        <li class="nav-header disabled"><a>DATA
-            <button
-                    url='https://dx.doi.org/10.1038/nrd.2017.178'
-                    class="refLink pull-right btn btn-xs btn-default"
-                    data-toggle="tooltip" data-placement="right" title="Nat. Rev. Drug Discov.">
-                <span class="glyphicon glyphicon-book"></span>
-            </button>
-        </a></li>
-        <li><a href="/drugs/drugstatistics">Drug statistics</a></li>
-        <li><a href="/drugs/drugmapping">Drug target mapping</a></li>
-        <li><a href="/drugs/drugbrowser">Drug browser</a></li>
     </ul>
 </li>
 
@@ -457,7 +304,7 @@
 <!-- STRUCTURE CONSTRUCTS -->
 <li class="dropdown">
     <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-        Structure Constructs<span class="caret"></span>
+        Structure constructs<span class="caret"></span>
     </a>
     <ul class="dropdown-menu" role="menu">
         <li class="nav-header disabled text-left"><a>Construct & experiment design</a></li>
@@ -476,8 +323,166 @@
         <li><a href="/construct/analysis#loopdeletions">Loop deletions</a></li>
         <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>Mutation analysis</a></li>
-        <li><a href="/construct/mutations">Mutation browser</a></li>
+        <li><a href="/construct/mutations">Stabilising mutations</a></li>
         <li><a href="/construct/stabilisation">StabMutAnalyser</a></li>
         <li><a href="/construct/analysis#mutations">Mutation substitution matrix</a></li>
     </ul>
 </li>
+
+
+
+<!-- Cite us -->
+<li>
+    <a class="dropdown-toggle" role="button" id='cite'>Cite us</a>
+</li>
+
+<!-- Join us -->
+<li class="dropdown">
+  <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+      Join us<span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li><a href="#" onClick="javascript:joinus('annotation');">Data annotation</a></li>
+    <li><a href="#" onClick="javascript:joinus('development');">Database development</a></li>
+    <li><a href="#" onClick="javascript:joinus('collaboration');">Scientific collaboration</a></li>
+    <li><a href="#" onClick="javascript:joinus('media');">Social media</a></li>
+    <li><a href="#" onClick="javascript:joinus('feedback');">Give feedback</a></li>
+  </ul>
+</li>
+<div id="join-us" class="modal modal-sm">
+    <div class="modal-content">
+        <div class="modal-header">
+          <button style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close close_modal" onclick="javascript:$('#join-us').modal('toggle');">&times;</button>
+          <h3 class="modal-title">
+            Join us
+          </h3>
+        </div>
+        <div class="modal-body">
+          <p>
+          </p>
+        </div>
+    </div>
+</div>
+
+<!-- References widget -->
+<div style='display: none; position: absolute; left: 0px; top: 50px; height: 30px; width: auto;' role='button' class='page-selection' id='ref_widget_div'>
+    <div id='ref_widget' style='display:inline; float: left; height: 30px;'>
+        <div style='overflow: hidden; white-space: nowrap; height: 30px; text-align:center;'>
+            <a class='widget-link' id="icon_citation"><span class="glyphicon glyphicon-book icon-button" style='padding: 0px 5px 3px 3px;'></span>Cite this page</a>
+            <a class='widget-link' id="icon_video" target='_blank' style='display: none;'><span class="glyphicon glyphicon-film icon-button" style='padding: 0px 5px 3px 3px;'></span>Video</a>
+        </div>
+    </div>
+    <div style='display:inline; float: left; height: 30px;'>
+        <span class="glyphicon glyphicon-chevron-left" aria-hidden="true" id="ref_widget_openclose"></span>
+    </div>
+</div>
+
+<div id="citation-tool" class="modal-higher">
+  <!-- Modal content -->
+    <div class="modal-content modal-scroll">
+        <div class="modal-header">
+            <button style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close close-citation" href="javascript:void(0)">&times;</button>
+            <h3 class="modal-title">Cite us</h3>
+        </div>
+        <div class='modal-body'>
+            <div>
+                <h4>Main reference</h4>
+                <li id='main_reference'></li>
+            </div>
+
+            <div style='padding: 0px 0px 5px 0px; display:inline; '>
+                <li class='dropdown page-selection' style="display:inline;">
+                    <a href="/" id="page_select_button" class="dropdown-toggle select-link" data-toggle="dropdown" role="button" aria-expanded="false">-- select page --</a>
+                    <ul class="dropdown-menu" id='dropdown_articles' role="menu"></ul>
+                </li>
+            </div>
+            <div style='padding: 0px 0px 0px 10px; display:inline-block;'>
+                <p class='alert'><i>Please cite the main reference and the reference for the GPCRdb page that you are using.</i></p>
+            </div>
+            <li id='article_list'></li>
+        </div>
+        <br><br><br>
+    </div>
+</div>
+
+
+{% load static %}
+<link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
+<link rel="stylesheet" type="text/css" href="{% static 'home/css/jquery.powertip.css' %}" />
+<script src="{% static 'home/js/jquery-3.1.1.min.js' %}"></script>
+<script src="{% static 'home/js/citation_tool.js' %}"></script>
+<script src="{% static 'home/js/joinus_tool.js' %}"></script>
+<script type="text/javascript" charset="utf-8">
+    $(document).ready(function() {
+        if (window.location.pathname!='/') {
+            $('#ref_widget_div').css('display','block');
+            check_for_video(window.location.href);
+        }
+        $('#cite').click(function(){
+            citation_tool(window.location.href);
+        })
+        $('#icon_citation').click(function(){
+            citation_tool(window.location.href);
+        })
+        $('.dropdown-menu').on('click', '.article_option', function(){
+            highlight_article($(this).parent().attr('id'));
+            var anchor_id = $('#'+$(this).parent().attr('id').toString()+'_tag').parent().parent().parent().attr('id')
+            document.getElementById(anchor_id).scrollIntoView(true);
+            $('#page_select_button').html($(this).text());
+        })
+        $('#ref_widget_openclose').click(function(){
+            toggle_widget();
+        })
+        setTimeout(function() {
+            if ($('#ref_widget_openclose').hasClass("glyphicon glyphicon-chevron-left")) {
+                toggle_widget();
+            }
+        }, 8000)
+    });
+</script>
+
+<style type="text/css">
+    .highlight_reference{
+        background-color: #DCDCDC;
+    }
+    .alert {
+      padding: 5px;
+      border-color: black;
+      display: inline-block;
+    }
+    .page-selection {
+        box-shadow: .5px .5px .5px .5px;
+        background-color: #f0f0f5;
+        border-radius: 3px;
+        border-width: 1px;
+        border-style: solid;
+        border-color: black;
+        padding: 5px;
+    }
+    .select-link,
+    .select-link:link,
+    .select-link:visited,
+    .select-link:hover {
+        color: black;
+        text-decoration: none;
+    }
+    .widget_open {
+        display: inline;
+    }
+    .widget-link {
+        padding-right: 5px;
+
+    }
+    .widget-link:hover {
+        text-decoration: none;
+    }
+    .icon-button {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        outline: none;
+        border: 0;
+        background: transparent;
+        padding: 2px 0px 2px 0px;
+    }
+</style>

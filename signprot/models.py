@@ -1,18 +1,40 @@
 from django.db import models
-from protein.models import Protein
-from structure.models import Structure
+from protein.models import Protein, ProteinConformation
+from structure.models import Structure, StructureType, StructureExtraProteins, StructureStabilizingAgent
+from common.models import WebLink, Publication
 
 
 class SignprotStructure(models.Model):
     protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
-    PDB_code = models.CharField(max_length=4)
+    pdb_code = models.ForeignKey('common.WebLink', on_delete=models.CASCADE)
+    structure_type = models.ForeignKey('structure.StructureType', on_delete=models.CASCADE)
+    publication_date = models.DateField()
+    publication = models.ForeignKey('common.Publication', null=True, on_delete=models.CASCADE)
+    stabilizing_agents = models.ManyToManyField('structure.StructureStabilizingAgent')
     resolution = models.DecimalField(max_digits=5, decimal_places=3)
 
     def __str__(self):
-        return self.PDB_code
+        return self.pdb_code.index
 
     class Meta():
         db_table = 'signprot_structure'
+
+
+class SignprotStructureExtraProteins(models.Model):
+    structure = models.ForeignKey('SignprotStructure', on_delete=models.CASCADE, null=True, related_name='extra_proteins')
+    wt_protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE, null=True)
+    protein_conformation = models.ForeignKey('protein.ProteinConformation', on_delete=models.CASCADE, null=True)
+    display_name = models.CharField(max_length=20)
+    note = models.CharField(max_length=50, null=True)
+    chain = models.CharField(max_length=1)
+    category = models.CharField(max_length=20)
+    wt_coverage = models.IntegerField(null=True)
+
+    def __str__(self):
+        return self.display_name
+
+    class Meta():
+        db_table = "signprot_extra_proteins"
 
 
 class SignprotBarcode(models.Model):

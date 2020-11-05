@@ -1,320 +1,217 @@
 {% extends "home/base.html" %}
-
 {% load static %}
+{% csrf_token %}
 
-{%csrf_token%}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+<link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet">
+<link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
+<link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.4.0/css/buttons.dataTables.min.css" type="text/css" />
 
+<!-- configure radio buttons style -->
+<style>
+	.highlight {
+		/* background-color: red */
+		display: none;
+	}
+</style>
 
-{% block content %}
-<a id="dlink" style="display:none;"></a>
-<div id="excel_table" style2="display:none;"></div>
-<div style="display:block;">
-	<div style="display:inline; float:left;">
-		<h2 style="width:auto; display:inline;">Ligand bias for G protein family or arrestin</h2>
-	</div>
-	<div style="float:left; padding:4px 0px 0px 6px;">
-		<div style="font-size: 10px; ">
-			<a href="https://academic.oup.com/nar/article/44/D1/D356/2502664"> read article</a><br>
-			<a href="https://academic.oup.com/nar/article/44/D1/D356/2502664"> latest GPCRdb article</a>
-		</div>
-	</div>
-</div>
-<br><br>
+<style type="text/css">
+	.dataTables_scrollHeadInner {
+		margin-top: 20px;
+	}
 
-<img id="loadingSpinner" style="position: absolute;
-    left: 50%;
-    top: 50%;" src="{% static 'home/images/loading.gif' %}" />
+	table.dataTable thead th,
+	table.dataTable tbody td {
+		max-width: 65px;
+		word-break: break-all;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
 
-{% if data %}
-{% autoescape off %}
+	table.dataTable thead .sorting {
+		background-position: right;
+	}
 
-<div style='padding-top: 0px; font-size: 10px; white-space: nowrap; overflow-y:hidden;  width:100%;'>
-	<div class="toolbar_data_css" id="toolbar_data">
-		<table class="display compact text-nowrap toolbar_data_css">
-			<thead>
-				<tr>
-					<h4>Showing unique:</h4>
-				</tr>
-			</thead>
+	.select2-container select2-container-multi {
+		width: 75%;
+	}
 
-			<tr>
-				<td>Ligands</td>
-				<td id="ligand_counter"></td>
-			</tr>
-			<tr>
-				<td>Receptors</td>
-				<td id="receptor_counter"></td>
-			</tr>
-		</table>
-	</div>
-	<div id='structures_scrollable_div'>
-		<!-- <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;"> -->
-		<table class="display compact text-nowrap" id='structures_scrollable' style="width: 100%">
-			<thead id="headers">
-				<tr rowspan="2">
-					<th><a href="#"><span class="glyphicon glyphicon-info-sign"></span></a></th>
-					<th id="receptor" style="text-align:left" colspan="6">
-						Receptor</th>
-					<th style="border-left: 1px solid black; text-align:left" colspan="5" style="">
-						Tested Ligand Pair </th>
-					<th id="transducers" style="border-left: 1px solid black; text-align:left" colspan="2" style="">
-						Receptor transducers</th>
-					<th id="pathways" style="border-left: 1px solid black; text-align:left" colspan="5">
-						Pathway Bias Rank Order </th>
-					<th id="opmodel" class="shade" style="border-left: 1px solid black; text-align:left" colspan="4">
-						Operational model <br> &#916;&#916;(Tau/Ka)</th>
-					<th id="lbf" class="shade" style="border-left: 1px solid black; text-align:left" colspan="4">
-						Intrinsic relative<br>activity<br>(&#916;&#916;Log(Emax/EC50))</th>
-					<th id="potency" class="shade" style="border-left: 1px solid black; text-align:left" colspan="4">
-						Potency ratio</th>
-					<th id="activity" class="shade" style="border-left: 1px solid black; text-align:left" colspan="5">
-						Potency (pEC50 or<br>
-						<font color="#FF0000">IC50)</font>
-					</th>
-					<th id="emax" class="shade" style="border-left: 1px solid black; text-align:left" colspan="5">
-						Emax (% of ref ligand)</th>
-					<th id="tfactor" class="shade" style="border-left: 1px solid black; text-align:left" colspan="5">
-						Transduction coefficient</th>
-					<th id="assay" style="border-left: 1px solid black; text-align:left" colspan="5">
-						Assay</th>
-					<th id="cell" style="border-left: 1px solid black; text-align:left" colspan="5">
-						Cell line</th>
-					<th id="time" style="border-left: 1px solid black; text-align:left" colspan="5">
-						Time resolved</th>
-					<th style="border-left: 1px solid black; text-align:left; overflow: hidden;
-                              white-space: nowrap;
-                              text-overflow: ellipsis;
-                      max-width: 250px;" colspan="2">Reference</th>
-				</tr>
-				<tr>
-					<!-- Receptor -->
-					<th><a href="#"><span class="glyphicon glyphicon-info-sign"></span></a></th>
-					<th class="receptor">Class<br></th>
-					<th class="receptor" title="Receptor Family">Rec Fam</th>
-					<th class="receptor">UniProt</th>
-					<th class="receptor">IUPHAR</th>
-					<th class="receptor">Species</th>
-					<th class="receptor">Endogenous<br>Ligand</th>
-					<!-- Ligand -->
-					<th class="ligand" style="border-left: 1px solid black;">Reference</th>
-					<th class="ligand">Biased</th>
-					<th class="ligand" id='vendor'>#Ven<br>dors</th>
-					<th class="ligand">#Arti<br>cles</th>
-					<th class="ligand">#Labs<br> </th>
-					<!-- Receptor trunsducers-->
-					<th class="transducers" style="border-left: 1px solid black;">Primary</th>
-					<th class="transducers">Secondary</th>
-					<!-- Pathways -->
-					<th class="pathways" style="border-left: 1px solid black;">P 1</th>
-					<th class="pathways">P 2</th>
-					<th class="pathways">P 3</th>
-					<th class="pathways">P 4</th>
-					<th class="pathways">P 5</th>
-					<!-- operational model -->
-					<th class="opmodel shade" id='column0' style="border-left: 1px solid black;">P 2 / P 1 </th>
-					<th class="opmodel shade" id='column1'>P 3 / P 1</th>
-					<th class="opmodel shade" id='column2'>P 4 / P 1</th>
-					<th class="opmodel shade" id='column3'>P 5 / P 1</th>
-					<!-- log bias factor -->
-					<th class="lbf shade" id='column4' style="border-left: 1px solid black;">P 2 / P 1</th>
-					<th class="lbf shade" id='column5'>P 3 / P 1</th>
-					<th class="lbf shade" id='column7'>P 4 / P 1</th>
-					<th class="lbf shade" id='column8'>P 5 / P 1</th>
-					<!-- Potency ratio -->
-					<th class="potency shade" id='column9' style="border-left: 1px solid black;">P 2 / P 1</th>
-					<th class="potency shade" id='column10'>P 3 / P 1</th>
-					<th class="potency shade" id='column12'>P 4 / P 1</th>
-					<th class="potency shade" id='column13'>P 5 / P 1</th>
-					<!-- Potency -->
-					<th class="activity shade" id='column14' style="border-left: 1px solid black;">P 1 </th>
-					<th class="activity shade" id='column15'>P 2</th>
-					<th class="activity shade" id='column16'>P 3</th>
-					<th class="activity shade" id='column17'>P 4</th>
-					<th class="activity shade" id='column18'>P 5</th>
-					<!-- emax -->
-					<th class="emax shade" id='column19' style="border-left: 1px solid black;">P 1</th>
-					<th class="emax shade" id='column20'>P 2</th>
-					<th class="emax shade" id='column21'>P 3</th>
-					<th class="emax shade" id='column22'>P 4</th>
-					<th class="emax shade" id='column23'>P 5</th>
-					<!-- transduction efficacy -->
-					<th class="tfactor shade" id='column24' style="border-left: 1px solid black;">P 1</th>
-					<th class="tfactor shade" id='column25'>P 2</th>
-					<th class="tfactor shade" id='column26'>P 3</th>
-					<th class="tfactor shade" id='column27'>P 4</th>
-					<th class="tfactor shade" id='column28'>P 5</th>
-					<!-- Assay type -->
-					<th class="assay" style="border-left: 1px solid black;">P 1</th>
-					<th class="assay">P 2</th>
-					<th class="assay">P 3</th>
-					<th class="assay">P 4</th>
-					<th class="assay">P 5</th>
-					<!-- Cell Line -->
-					<th class="cell" style="border-left: 1px solid black;">P 1</th>
-					<th class="cell">P 2</th>
-					<th class="cell">P 3</th>
-					<th class="cell">P 4</th>
-					<th class="cell">P 5</th>
-					<!-- Time resolved -->
-					<th class="time" style="border-left: 1px solid black;">P 1</th>
-					<th class="time">P 2</th>
-					<th class="time">P 3</th>
-					<th class="time">P 4</th>
-					<th class="time">P 5</th>
-					<!-- Authors -->
-					<th style="overflow: hidden;
-          white-space: nowrap;
-          text-overflow: ellipsis;
-          max-width: 100px; border-left: 1px solid black;">Authors</th>
-					<th style="border-right: 1px solid black;">DOI/ <br>Reference</th>
-				</tr>
-			</thead>
-			<tbody id='structures_scrollable_body' style="display:none">
-				{%for e in data.items%}
-				<tr>
-					<td>
-						<span style='display: none'> {{e.1.ligand.id}}</span>
-						<a href="#">
-							<span class="glyphicon glyphicon-info-sign" onclick="myFunction('experiment/{{e.1.experiment_id}}/detail', 'Detail View', window, 1500, 1000)"></span>
-						</a>
-					</td>
+	.select2-container-multi .select2-choices .select2-search-field input {
+		max-width: 50px;
+	}
 
-					<!-- s.protein_conformation.protein.parent.family.parent.parent.parent.shorter() -->
-					<td title='{{e.1.class}}'>{{e.1.class}}</td>
-					<td title='{{e.1.receptor.family.parent}}'>{{e.1.receptor.family.parent}}</td>
-					<td title='{{e.1.uniprot}}'>{{e.1.uniprot}}</td>
-					<td title='{{e.1.IUPHAR}}'>{{e.1.IUPHAR}}</td>
-					<td title='{{e.1.receptor.species.common_name}}'>{{e.1.receptor.species.common_name}}</td>
-					{% if e.1.endogenous_ligand == None %}
-					<td></td>
-					{%else%}
-					<td title='{{e.1.endogenous_ligand}}'>{{e.1.endogenous_ligand}}</td>
-					{%endif%}
-					<!-- ligand -->
-					<td title='{{e.1.reference_ligand}}' style="border-left: 1px solid black;">{{e.1.reference_ligand}}</td>
-					<td title='{{e.1.ligand}}'>
-						<!-- {%if e.1.chembl%}
-                            <a href='/ligand/{{e.1.chembl}}' target='blank'>
-                            {%endif%} -->
-						{{e.1.ligand}}
-					</td>
-					<td>{{e.1.vendor_quantity}}</td>
-					<td>{{e.1.publication_quantity}}</td>
-					<td>{{e.1.lab_quantity}}</td>
+	.yadcf-filter-wrapper {
+		position: center;
+		display: flex;
+		white-space: normal;
+		margin-top: 7px;
+		width: 50% !important;
+	}
 
-					<!-- receptor trunsducers -->
-					<td style="border-left: 1px solid black;">{{e.1.primary}}</td>
-					<td>{{e.1.secondary}}</td>
+	.select2-results {
+		background-color: white;
+		border: gray;
+		width: 150px !important;
+	}
 
-					<!-- pathways -->
-					{% for ex in e.1.biasdata|dictsort:"order_no" %}
-					{% if forloop.first %}
-					<td class="pathway" style="border-left: 1px solid black;">{{ex.family}}</td>
-					{% else %}
-					<td class="pathway">{{ex.family}}</td>
-					{%endif%}
-					{%endfor%}
+	.yadcf-filter-range {
+		grid-auto-columns: auto;
+		max-width: 50px !important;
+		font-family: sans-serif;
+		font-size: 80%;
+		font-weight: bold;
+		margin: auto;
+		margin-top: 10%;
+		min-width: 40px;
+	}
 
-					<!-- t factor -->
-					{% for ex in e.1.biasdata|dictsort:"order_no" %}
-					{% if not forloop.first %}
-					<td class="shade" style="text-align:right">{{ex.t_factor}}</td>
-					{%endif%}
-					{%endfor%}
+	table.dataTable thead .sorting {
+		background-image: none !important;
+	}
 
-					<!-- log bias facrtor -->
-					{% for ex in e.1.biasdata|dictsort:"order_no" %}
-					{% if not forloop.first %}
-					<td class="shade" style="text-align:right"> {{ex.log_bias_factor }}</td>
-					{%endif%}
-					{%endfor%}
+	table.dataTable thead .sorting_desc {
+		background-image: none !important;
+	}
 
-					<!-- potency ratio -->
-					{% for ex in e.1.biasdata|dictsort:"order_no" %}
-					{% if not forloop.first %}
-					<td class="shade" style="text-align:right">{{ex.potency }}</td>
-					{%endif%}
-					{%endfor%}
+	table.dataTable thead .sorting_asc {
+		background-image: none !important;
+	}
 
-					<!-- potency -->
-					{% for ex in e.1.biasdata|dictsort:"order_no" %}
-					{%if ex.quantitive_activity_initial %}
-					{%if ex.quantitive_measure_type == 'EC50' %}
-					<td class="shade" style="text-align:right">{{ex.quantitive_activity_initial}} </td>
-					{%else%}
-					<td class="shade" style="text-align:right">
-						<font color="#FF0000">{{ex.quantitive_activity_initial}} </font>
-					</td>
-					{%endif%}
-					{%else%}
-					<td class="shade">{{ex.qualitative_activity}}</td>
-					{%endif%}
-					{%endfor%}
+	table.dataTable.compact tbody th,
+	table.dataTable.compact tbody td {
+		padding: 5px 10px 5px 0px !important;
+		/* width: 0px; */
+	}
 
-					<!-- E max -->
-					{% for ex in e.1.biasdata|dictsort:"order_no" %}
-					<td class="shade" style="text-align:right">{{ex.quantitive_efficacy}}</td>
-					{%endfor%}
+	table.dataTable.compact thead th,
+	table.dataTable.compact thead td {
+		padding: 5px 10px 5px 0px;
+		/* width: 0px; */
+	}
 
-					<!-- T coefficient -->
-					{% for ex in e.1.biasdata|dictsort:"order_no" %}
-					{% if ex.t_coefficient == None %}
-					<td class="shade"></td>
-					{%else%}
-					<td class="shade" style="text-align:right">{{ex.t_coefficient}}</td>
-					{%endif%}
-					{%endfor%}
+	table.dataTable.compact thead tr.over_header th {
+		border-bottom: 1px solid #ccc;
+	}
 
-					<!-- Assay -->
-					{% for ex in e.1.biasdata|dictsort:"order_no" %}
+	table.dataTable.compact thead th.leftborder {
+		border-left: 1px solid;
+	}
 
-					<td title='{{ex.assay_type}}'>{{ex.assay_type }}</td>
+	table.dataTable.compact thead th.rightborder {
+		border-right: 1px solid;
+	}
 
-					{%endfor%}
+	.yadcf-filter-range {
+		max-width: 40px !important;
+		font-family: sans-serif;
+		font-size: 80%;
+		font-weight: bold;
+		min-width: 40px;
+	}
 
-					<!-- Cell line -->
-					{% for ex in e.1.biasdata|dictsort:"order_no" %}
+	.clicked_button {
+		background-color: rgb(215, 215, 215);
+	}
 
-					<td>{{ex.cell_line }}</td>
+	#overlay {
+		top: 0px;
+		position: absolute;
+		background: #f8f8f8;
+		/*border: 1px solid #333;*/
+		-webkit-box-shadow: 5px 0 2px -2px #888;
+		box-shadow: 5px 0 2px -2px #888;
+	}
 
-					{%endfor%}
+	.container {
+		width: 90%;
+		/* display:flex;
+            flex-direction: column; */
+	}
 
-					<!-- Time resolved -->
-					{% for ex in e.1.biasdata|dictsort:"order_no" %}
+	.wrapper {
+		overflow-x: scroll;
+		overflow-y: hidden;
+	}
 
-					<td>{{ex.assay_time_resolved }}</td>
+	#overlay tbody tr {
+		background-color: #f8f8f8;
+	}
 
-					{%endfor%}
+	#count_row th {
+		font-size: 11px;
+		text-align: center;
+	}
 
-					<!-- Reference -->
-					<td class="name" style="border-left: 1px solid black;">
-						{{e.1.publication.authors}}</td>
-					<td class="name">
-						<a href='{{e.1.publication.web_link}}' target='blank'>
-							{{e.1.publication.web_link.index}}</td>
+	.switch-field label:hover {
+		cursor: pointer;
+		/* width: 100%; */
+	}
 
-				</tr>
-				{%endfor%}
-			</tbody>
-		</table>
-	</div>
-	<!-- </div> -->
-	<!-- </div> -->
-</div>
-{% endautoescape %}
-{% else %}
-<p> Ooops! There is no data to show here yet. </p>
-<script>
-	document.getElementById("loadingSpinner").style.display = "none";
-</script>
-{% endif %}
+	.switch-field input:checked+label {
+		background-color: #337ab7;
+		/* #a5dc86; */
+		box-shadow: none;
+	}
 
-<br>
-<br>
+	.border-left {
+		padding-left: 3px;
+	}
+
+	.switch-field label:first-of-type {
+		border-radius: 4px 0 0 4px;
+
+	}
+
+	.switch-field label:last-of-type {
+		border-radius: 0 4px 4px 0;
+	}
+
+	/* This is just for CodePen. */
+
+	.name {
+		width: 100px;
+		text-overflow: ellipsis;
+		cursor: pointer;
+		word-break: break-all;
+		overflow: hidden;
+		white-space: nowrap;
+	}
+
+	.name:hover {
+		overflow: visible;
+		white-space: normal;
+
+	}
+
+	.toolbar_data_css {
+		width: 250px;
+		margin-right: auto;
+		margin-left: 0px;
+		/* border: 1px solid; */
+		font-family: "Lucida Grande", Tahoma, Verdana, sans-serif;
+		font-weight: normal;
+		font-size: 120%;
+		line-height: 1.625;
+	}
+
+	.toolbar_data_css.td {
+		height: 15px;
+		max-width: 150px;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+	}
+</style>
+
 {% endblock %}
-
-
 {% block addon_js %}
+
 <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
 <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
 <script src="{% static 'home/js/dataTables.buttons.min.js' %}"> </script>
@@ -1162,211 +1059,290 @@
 </script>
 {% endblock %}
 
-{% block addon_css %}
-<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
-<link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
-<link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
-<link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
-<link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet">
-<link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
-<link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.4.0/css/buttons.dataTables.min.css" type="text/css" />
+{% block content %}
+{% if data %}
+{% autoescape off %}
+<div style='padding-top: 0px; font-size: 10px; white-space: nowrap; overflow-y:hidden;  width:100%;'>
+	<div class="toolbar_data_css" id="toolbar_data">
+		<table class="display compact text-nowrap toolbar_data_css">
+			<thead>
+				<tr>
+					<h4>Showing unique:</h4>
+				</tr>
+			</thead>
 
-<!-- configure radio buttons style -->
-<style>
-	.highlight {
-		/* background-color: red */
-		display: none;
-	}
-</style>
+			<tr>
+				<td>Ligands</td>
+				<td id="ligand_counter"></td>
+			</tr>
+			<tr>
+				<td>Receptors</td>
+				<td id="receptor_counter"></td>
+			</tr>
+		</table>
+	</div>
+	<div id='structures_scrollable_div'>
+		<!-- <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;"> -->
+		<table class="display compact text-nowrap" id='structures_scrollable' style="width: 100%">
+			<thead id="headers">
+				<tr rowspan="2">
+					<th><a href="#"><span class="glyphicon glyphicon-info-sign"></span></a></th>
+					<th id="receptor" style="text-align:left" colspan="6">
+						Receptor</th>
+					<th style="border-left: 1px solid black; text-align:left" colspan="5" style="">
+						Tested Ligand Pair </th>
+					<th id="transducers" style="border-left: 1px solid black; text-align:left" colspan="2" style="">
+						Receptor transducers</th>
+					<th id="pathways" style="border-left: 1px solid black; text-align:left" colspan="5">
+						Pathway Bias Rank Order </th>
+					<th id="opmodel" class="shade" style="border-left: 1px solid black; text-align:left" colspan="4">
+						Operational model <br> &#916;&#916;(Tau/Ka)</th>
+					<th id="lbf" class="shade" style="border-left: 1px solid black; text-align:left" colspan="4">
+						Intrinsic relative<br>activity<br>(&#916;&#916;Log(Emax/EC50))</th>
+					<th id="potency" class="shade" style="border-left: 1px solid black; text-align:left" colspan="4">
+						Potency ratio</th>
+					<th id="activity" class="shade" style="border-left: 1px solid black; text-align:left" colspan="5">
+						Potency (pEC50 or<br>
+						<font color="#FF0000">IC50)</font>
+					</th>
+					<th id="emax" class="shade" style="border-left: 1px solid black; text-align:left" colspan="5">
+						Emax (% of ref ligand)</th>
+					<th id="tfactor" class="shade" style="border-left: 1px solid black; text-align:left" colspan="5">
+						Transduction coefficient</th>
+					<th id="assay" style="border-left: 1px solid black; text-align:left" colspan="5">
+						Assay</th>
+					<th id="cell" style="border-left: 1px solid black; text-align:left" colspan="5">
+						Cell line</th>
+					<th id="time" style="border-left: 1px solid black; text-align:left" colspan="5">
+						Time resolved</th>
+					<th style="border-left: 1px solid black; text-align:left; overflow: hidden;
+                              white-space: nowrap;
+                              text-overflow: ellipsis;
+                      max-width: 250px;" colspan="2">Reference</th>
+				</tr>
+				<tr>
+					<!-- Receptor -->
+					<th><a href="#"><span class="glyphicon glyphicon-info-sign"></span></a></th>
+					<th class="receptor">Class<br></th>
+					<th class="receptor" title="Receptor Family">Rec Fam</th>
+					<th class="receptor">UniProt</th>
+					<th class="receptor">IUPHAR</th>
+					<th class="receptor">Species</th>
+					<th class="receptor">Endogenous<br>Ligand</th>
+					<!-- Ligand -->
+					<th class="ligand" style="border-left: 1px solid black;">Reference</th>
+					<th class="ligand">Biased</th>
+					<th class="ligand" id='vendor'>#Ven<br>dors</th>
+					<th class="ligand">#Arti<br>cles</th>
+					<th class="ligand">#Labs<br> </th>
+					<!-- Receptor trunsducers-->
+					<th class="transducers" style="border-left: 1px solid black;">Primary</th>
+					<th class="transducers">Secondary</th>
+					<!-- Pathways -->
+					<th class="pathways" style="border-left: 1px solid black;">P 1</th>
+					<th class="pathways">P 2</th>
+					<th class="pathways">P 3</th>
+					<th class="pathways">P 4</th>
+					<th class="pathways">P 5</th>
+					<!-- operational model -->
+					<th class="opmodel shade" id='column0' style="border-left: 1px solid black;">P 2 / P 1 </th>
+					<th class="opmodel shade" id='column1'>P 3 / P 1</th>
+					<th class="opmodel shade" id='column2'>P 4 / P 1</th>
+					<th class="opmodel shade" id='column3'>P 5 / P 1</th>
+					<!-- log bias factor -->
+					<th class="lbf shade" id='column4' style="border-left: 1px solid black;">P 2 / P 1</th>
+					<th class="lbf shade" id='column5'>P 3 / P 1</th>
+					<th class="lbf shade" id='column7'>P 4 / P 1</th>
+					<th class="lbf shade" id='column8'>P 5 / P 1</th>
+					<!-- Potency ratio -->
+					<th class="potency shade" id='column9' style="border-left: 1px solid black;">P 2 / P 1</th>
+					<th class="potency shade" id='column10'>P 3 / P 1</th>
+					<th class="potency shade" id='column12'>P 4 / P 1</th>
+					<th class="potency shade" id='column13'>P 5 / P 1</th>
+					<!-- Potency -->
+					<th class="activity shade" id='column14' style="border-left: 1px solid black;">P 1 </th>
+					<th class="activity shade" id='column15'>P 2</th>
+					<th class="activity shade" id='column16'>P 3</th>
+					<th class="activity shade" id='column17'>P 4</th>
+					<th class="activity shade" id='column18'>P 5</th>
+					<!-- emax -->
+					<th class="emax shade" id='column19' style="border-left: 1px solid black;">P 1</th>
+					<th class="emax shade" id='column20'>P 2</th>
+					<th class="emax shade" id='column21'>P 3</th>
+					<th class="emax shade" id='column22'>P 4</th>
+					<th class="emax shade" id='column23'>P 5</th>
+					<!-- transduction efficacy -->
+					<th class="tfactor shade" id='column24' style="border-left: 1px solid black;">P 1</th>
+					<th class="tfactor shade" id='column25'>P 2</th>
+					<th class="tfactor shade" id='column26'>P 3</th>
+					<th class="tfactor shade" id='column27'>P 4</th>
+					<th class="tfactor shade" id='column28'>P 5</th>
+					<!-- Assay type -->
+					<th class="assay" style="border-left: 1px solid black;">P 1</th>
+					<th class="assay">P 2</th>
+					<th class="assay">P 3</th>
+					<th class="assay">P 4</th>
+					<th class="assay">P 5</th>
+					<!-- Cell Line -->
+					<th class="cell" style="border-left: 1px solid black;">P 1</th>
+					<th class="cell">P 2</th>
+					<th class="cell">P 3</th>
+					<th class="cell">P 4</th>
+					<th class="cell">P 5</th>
+					<!-- Time resolved -->
+					<th class="time" style="border-left: 1px solid black;">P 1</th>
+					<th class="time">P 2</th>
+					<th class="time">P 3</th>
+					<th class="time">P 4</th>
+					<th class="time">P 5</th>
+					<!-- Authors -->
+					<th style="overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          max-width: 100px; border-left: 1px solid black;">Authors</th>
+					<th style="border-right: 1px solid black;">DOI/ <br>Reference</th>
+				</tr>
+			</thead>
+			<tbody id='structures_scrollable_body' style="display:none">
+				{%for e in data.items%}
+				<tr>
+					<td>
+						<span style='display: none'> {{e.1.ligand.id}}</span>
+						<a href="#">
+							<span class="glyphicon glyphicon-info-sign" onclick="myFunction('experiment/{{e.1.experiment_id}}/detail', 'Detail View', window, 1500, 1000)"></span>
+						</a>
+					</td>
 
-<style type="text/css">
-	.dataTables_scrollHeadInner {
-		margin-top: 20px;
-	}
+					<!-- s.protein_conformation.protein.parent.family.parent.parent.parent.shorter() -->
+					<td title='{{e.1.class}}'>{{e.1.class}}</td>
+					<td title='{{e.1.receptor.family.parent}}'>{{e.1.receptor.family.parent}}</td>
+					<td title='{{e.1.uniprot}}'>{{e.1.uniprot}}</td>
+					<td title='{{e.1.IUPHAR}}'>{{e.1.IUPHAR}}</td>
+					<td title='{{e.1.receptor.species.common_name}}'>{{e.1.receptor.species.common_name}}</td>
+					{% if e.1.endogenous_ligand == None %}
+					<td></td>
+					{%else%}
+					<td title='{{e.1.endogenous_ligand}}'>{{e.1.endogenous_ligand}}</td>
+					{%endif%}
+					<!-- ligand -->
+					<td title='{{e.1.reference_ligand}}' style="border-left: 1px solid black;">{{e.1.reference_ligand}}</td>
+					<td title='{{e.1.ligand}}'>
+						<!-- {%if e.1.chembl%}
+                            <a href='/ligand/{{e.1.chembl}}' target='blank'>
+                            {%endif%} -->
+						{{e.1.ligand}}
+					</td>
+					<td>{{e.1.vendor_quantity}}</td>
+					<td>{{e.1.publication_quantity}}</td>
+					<td>{{e.1.lab_quantity}}</td>
 
-	table.dataTable thead th,
-	table.dataTable tbody td {
-		max-width: 65px;
-		word-break: break-all;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
+					<!-- receptor trunsducers -->
+					<td style="border-left: 1px solid black;">{{e.1.primary}}</td>
+					<td>{{e.1.secondary}}</td>
 
-	table.dataTable thead .sorting {
-		background-position: right;
-	}
+					<!-- pathways -->
+					{% for ex in e.1.biasdata|dictsort:"order_no" %}
+					{% if forloop.first %}
+					<td class="pathway" style="border-left: 1px solid black;">{{ex.family}}</td>
+					{% else %}
+					<td class="pathway">{{ex.family}}</td>
+					{%endif%}
+					{%endfor%}
 
-	.select2-container select2-container-multi {
-		width: 75%;
-	}
+					<!-- t factor -->
+					{% for ex in e.1.biasdata|dictsort:"order_no" %}
+					{% if not forloop.first %}
+					<td class="shade" style="text-align:right">{{ex.t_factor}}</td>
+					{%endif%}
+					{%endfor%}
 
-	.select2-container-multi .select2-choices .select2-search-field input {
-		max-width: 50px;
-	}
+					<!-- log bias facrtor -->
+					{% for ex in e.1.biasdata|dictsort:"order_no" %}
+					{% if not forloop.first %}
+					<td class="shade" style="text-align:right"> {{ex.log_bias_factor }}</td>
+					{%endif%}
+					{%endfor%}
 
-	.yadcf-filter-wrapper {
-		position: center;
-		display: flex;
-		white-space: normal;
-		margin-top: 7px;
-		width: 50% !important;
-	}
+					<!-- potency ratio -->
+					{% for ex in e.1.biasdata|dictsort:"order_no" %}
+					{% if not forloop.first %}
+					<td class="shade" style="text-align:right">{{ex.potency }}</td>
+					{%endif%}
+					{%endfor%}
 
-	.select2-results {
-		background-color: white;
-		border: gray;
-		width: 150px !important;
-	}
+					<!-- potency -->
+					{% for ex in e.1.biasdata|dictsort:"order_no" %}
+					{%if ex.quantitive_activity_initial %}
+					{%if ex.quantitive_measure_type == 'EC50' %}
+					<td class="shade" style="text-align:right">{{ex.quantitive_activity_initial}} </td>
+					{%else%}
+					<td class="shade" style="text-align:right">
+						<font color="#FF0000">{{ex.quantitive_activity_initial}} </font>
+					</td>
+					{%endif%}
+					{%else%}
+					<td class="shade">{{ex.qualitative_activity}}</td>
+					{%endif%}
+					{%endfor%}
 
-	.yadcf-filter-range {
-		grid-auto-columns: auto;
-		max-width: 50px !important;
-		font-family: sans-serif;
-		font-size: 80%;
-		font-weight: bold;
-		margin: auto;
-		margin-top: 10%;
-		min-width: 40px;
-	}
+					<!-- E max -->
+					{% for ex in e.1.biasdata|dictsort:"order_no" %}
+					<td class="shade" style="text-align:right">{{ex.quantitive_efficacy}}</td>
+					{%endfor%}
 
-	table.dataTable thead .sorting {
-		background-image: none !important;
-	}
+					<!-- T coefficient -->
+					{% for ex in e.1.biasdata|dictsort:"order_no" %}
+					{% if ex.t_coefficient == None %}
+					<td class="shade"></td>
+					{%else%}
+					<td class="shade" style="text-align:right">{{ex.t_coefficient}}</td>
+					{%endif%}
+					{%endfor%}
 
-	table.dataTable thead .sorting_desc {
-		background-image: none !important;
-	}
+					<!-- Assay -->
+					{% for ex in e.1.biasdata|dictsort:"order_no" %}
 
-	table.dataTable thead .sorting_asc {
-		background-image: none !important;
-	}
+					<td title='{{ex.assay_type}}'>{{ex.assay_type }}</td>
 
-	table.dataTable.compact tbody th,
-	table.dataTable.compact tbody td {
-		padding: 5px 10px 5px 0px !important;
-		/* width: 0px; */
-	}
+					{%endfor%}
 
-	table.dataTable.compact thead th,
-	table.dataTable.compact thead td {
-		padding: 5px 10px 5px 0px;
-		/* width: 0px; */
-	}
+					<!-- Cell line -->
+					{% for ex in e.1.biasdata|dictsort:"order_no" %}
 
-	table.dataTable.compact thead tr.over_header th {
-		border-bottom: 1px solid #ccc;
-	}
+					<td>{{ex.cell_line }}</td>
 
-	table.dataTable.compact thead th.leftborder {
-		border-left: 1px solid;
-	}
+					{%endfor%}
 
-	table.dataTable.compact thead th.rightborder {
-		border-right: 1px solid;
-	}
+					<!-- Time resolved -->
+					{% for ex in e.1.biasdata|dictsort:"order_no" %}
 
-	.yadcf-filter-range {
-		max-width: 40px !important;
-		font-family: sans-serif;
-		font-size: 80%;
-		font-weight: bold;
-		min-width: 40px;
-	}
+					<td>{{ex.assay_time_resolved }}</td>
 
-	.clicked_button {
-		background-color: rgb(215, 215, 215);
-	}
+					{%endfor%}
 
-	#overlay {
-		top: 0px;
-		position: absolute;
-		background: #f8f8f8;
-		/*border: 1px solid #333;*/
-		-webkit-box-shadow: 5px 0 2px -2px #888;
-		box-shadow: 5px 0 2px -2px #888;
-	}
+					<!-- Reference -->
+					<td class="name" style="border-left: 1px solid black;">
+						{{e.1.publication.authors}}</td>
+					<td class="name">
+						<a href='{{e.1.publication.web_link}}' target='blank'>
+							{{e.1.publication.web_link.index}}</td>
 
-	.container {
-		width: 90%;
-		/* display:flex;
-            flex-direction: column; */
-	}
+				</tr>
+				{%endfor%}
+			</tbody>
+		</table>
+	</div>
+	<!-- </div> -->
+	<!-- </div> -->
+</div>
+{% endautoescape %}
+{% else %}
+<p> Ooops! There is no data to show here yet. </p>
+<script>
+	document.getElementById("loadingSpinner").style.display = "none";
+</script>
+{% endif %}
 
-	.wrapper {
-		overflow-x: scroll;
-		overflow-y: hidden;
-	}
-
-	#overlay tbody tr {
-		background-color: #f8f8f8;
-	}
-
-	#count_row th {
-		font-size: 11px;
-		text-align: center;
-	}
-
-	.switch-field label:hover {
-		cursor: pointer;
-		/* width: 100%; */
-	}
-
-	.switch-field input:checked+label {
-		background-color: #337ab7;
-		/* #a5dc86; */
-		box-shadow: none;
-	}
-
-	.border-left {
-		padding-left: 3px;
-	}
-
-	.switch-field label:first-of-type {
-		border-radius: 4px 0 0 4px;
-
-	}
-
-	.switch-field label:last-of-type {
-		border-radius: 0 4px 4px 0;
-	}
-
-	/* This is just for CodePen. */
-
-	.name {
-		width: 100px;
-		text-overflow: ellipsis;
-		cursor: pointer;
-		word-break: break-all;
-		overflow: hidden;
-		white-space: nowrap;
-	}
-
-	.name:hover {
-		overflow: visible;
-		white-space: normal;
-
-	}
-
-	.toolbar_data_css {
-		width: 250px;
-		margin-right: auto;
-		margin-left: 0px;
-		/* border: 1px solid; */
-		font-family: "Lucida Grande", Tahoma, Verdana, sans-serif;
-		font-weight: normal;
-		font-size: 120%;
-		line-height: 1.625;
-	}
-
-	.toolbar_data_css.td {
-		height: 15px;
-		max-width: 150px;
-		overflow: hidden;
-		white-space: nowrap;
-		text-overflow: ellipsis;
-	}
-</style>
-
+<br>
+<br>
 {% endblock %}

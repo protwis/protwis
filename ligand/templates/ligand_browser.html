@@ -77,7 +77,6 @@
 
 		$('#compact_btn').click(function() {
 			if (getCheckedCheckboxesFor() == true) {
-				console.log('true')
 				ClearSelection('targets');
 				var checked_data = table.rows('.alt_selected').data();
 
@@ -94,7 +93,9 @@
 				}
 				window.location.href = '/ligand/targets_compact';
 			} else {
-				alert("Select at least 1 target!");
+
+				showAlert("Please select at least one receptor before continuing.", "danger");
+
 			}
 
 		});
@@ -103,7 +104,6 @@
 
 		$('#all_ligs_btn').click(function() {
 			if (getCheckedCheckboxesFor() == true) {
-				console.log('true')
 				ClearSelection('targets');
 				var checked_data = table.rows('.alt_selected').data();
 				for (i = 0; i < checked_data.length; i++) {
@@ -119,12 +119,26 @@
 				}
 				window.location.href = '/ligand/targets';
 			} else {
-				alert("Select at least 1 target!");
+				showAlert("Please select at least one receptor before continuing.", "danger");
 			}
 		});
 
 
 	});
+</script>
+<script type="text/javascript">
+	function getCheckedCheckboxesFor() {
+		var checkboxes = document.querySelectorAll('table input[type="checkbox"]:checked'),
+			values = [];
+		Array.prototype.forEach.call(checkboxes, function(el) {
+			values.push(el.value);
+		});
+		if (values.length > 0) {
+			return true
+		} else {
+			return false
+		}
+	}
 </script>
 <script type="text/javascript">
 	function getCheckedCheckboxesFor() {

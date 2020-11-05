@@ -34,6 +34,7 @@ import zipfile
 import pprint
 import json
 import yaml
+from urllib.request import urlopen, Request
 
 
 logger = logging.getLogger("protwis")
@@ -556,7 +557,7 @@ class HSExposureCB(AbstractPropertyMap):
     subclasses.
     """
     def __init__(self, model, radius, offset=0, hse_up_key='HSE_U', hse_down_key='HSE_D', angle_key=None, check_chain_breaks=False, 
-                 check_knots=False, receptor=None, signprot=None,  restrict_to_chain=[]):
+                 check_knots=False, receptor=None, signprot=None,  restrict_to_chain=[], check_hetatoms=False):
         """
         @param model: model
         @type model: L{Model}
@@ -602,6 +603,11 @@ class HSExposureCB(AbstractPropertyMap):
                         #         residues_in_pdb.append(chain.get_id()[1])
                         #         print('chain', chain, res)
                         #         break
+        het_resis, het_resis_close, het_resis_clash = [], [], []
+        for chain in model:
+            for res in chain:
+                if res.get_id()[0]!=' ':
+                    het_resis.append(res)
         self.clash_pairs = []
         self.chain_breaks = []
         
@@ -615,7 +621,7 @@ class HSExposureCB(AbstractPropertyMap):
                 if p[0].get_parent().get_id() in restrict_to_chain:
                     restricted_ppl.append(p)
             ppl = restricted_ppl
-
+        ###########
         for pp1 in ppl:
             for i in range(0, len(pp1)):
                 residues_with_proper_CA.append(pp1[i].get_id()[1])
@@ -733,7 +739,18 @@ class HSExposureCB(AbstractPropertyMap):
                                     else:
                                         clash_res2 = other_res['CA'].get_bfactor()
                                     self.clash_pairs.append([(clash_res1, pp1[i].get_id()[1]), (clash_res2, other_res.get_id()[1])])
-        if check_chain_breaks==True:
+                    if check_hetatoms:
+                        for het_res in het_resis:
+                            for het_atom in het_res:
+                                het_atom_vector = het_atom.get_vector()
+                                d = het_atom_vector-ref_vector
+                                if d.norm()<6:
+                                    if d.norm()<1:
+                                        het_resis_clash.append(het_res)
+                                    het_resis_close.append(het_res)
+        ### GP checking HETRESIS to remove if not interacting with AAs
+        self.hetresis_to_remove = [i for i in het_resis if i not in het_resis_close or i in het_resis_clash]
+        if check_chain_breaks:
             for r in residues_in_pdb:
                 if r not in residues_with_proper_CA:
                     self.chain_breaks.append(r)
@@ -866,9 +883,7 @@ class PdbChainSelector():
 
         max_res = num_helix_res[0]
         max_i = 0
-        print(self.chains[0], num_helix_res[0], seq_lengths[0])
         for i in range(1,len(num_helix_res)):
-            print(self.chains[i], num_helix_res[i], seq_lengths[i])
             if num_helix_res[i]>max_res:
                 if num_helix_res[i]-max_res>=seq_lengths[max_i]-seq_lengths[i]:
                     max_res = num_helix_res[i]
@@ -914,7 +929,7 @@ class PdbStateIdentifier():
         if tm2_gn=='2x41' and tm6_gn=='6x38' and tm3_gn=='3x44' and tm7_gn=='7x52' and inactive_cutoff==2 and intermediate_cutoff==7.15:
             if family.slug.startswith('002') or family.slug.startswith('003'):
                 tm6_gn, tm7_gn = '6x33', '7x51'
-                inactive_cutoff, intermediate_cutoff = 2.5, 5.75
+                inactive_cutoff, intermediate_cutoff = 2.5, 5.5
             elif family.slug.startswith('004'):
                 inactive_cutoff, intermediate_cutoff = 5, 7.15
         self.tm2_gn, self.tm6_gn, self.tm3_gn, self.tm7_gn = tm2_gn, tm6_gn, tm3_gn, tm7_gn
@@ -1169,4 +1184,22 @@ def right_rotamer_select(rotamer, chain=None):
     return rotamer
 
 
+def get_pdb_ids(uniprot_id):
+    pdb_list = []
+    data = { "query": { "type": "terminal", "service": "text", "parameters":{ "attribute":"rcsb_polymer_entity_container_identifiers.reference_sequence_identifiers.database_accession", "operator":"in", "value":[ uniprot_id ] } }, "request_options": { "pager": {"start": 0,"rows": 99999 }}, "return_type": "entry" }
+    url = 'http://search.rcsb.org/rcsbsearch/v1/query'
+    req = Request(url)
+    req.add_header('Content-Type', 'application/json; charset=utf-8')
+    jsondata = json.dumps(data)
+    jsondataasbytes = jsondata.encode('utf-8')
+    req.add_header('Content-Length', len(jsondataasbytes))
+    response = urlopen(req, jsondataasbytes)
+    rr = response.read()
+    if len(rr)==0:
+        return []
+    out = json.loads(rr)
+    for i in out['result_set']:
+        pdb_list.append(i['identifier'])
+    response.close()
+    return pdb_list
 

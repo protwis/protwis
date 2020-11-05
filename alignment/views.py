@@ -40,6 +40,7 @@ import xlrd
 class TargetSelection(AbsTargetSelection):
     step = 1
     number_of_steps = 2
+    filter_tableselect = False
     docs = 'sequences.html#structure-based-alignments'
     selection_boxes = OrderedDict([
         ('reference', False),
@@ -53,6 +54,7 @@ class TargetSelection(AbsTargetSelection):
             'color': 'success',
         },
     }
+
 
 class TargetSelectionGprotein(AbsTargetSelection):
     step = 1
@@ -169,6 +171,7 @@ class SegmentSelectionGprotein(AbsSegmentSelection):
     ss = ProteinSegment.objects.filter(partial=False, proteinfamily='Alpha').prefetch_related('generic_numbers')
     ss_cats = ss.values_list('category').order_by('category').distinct('category')
 
+
 class SegmentSelectionArrestin(AbsSegmentSelection):
     step = 2
     number_of_steps = 2
@@ -202,6 +205,7 @@ class SegmentSelectionArrestin(AbsSegmentSelection):
     ss = ProteinSegment.objects.filter(partial=False, proteinfamily='Arrestin').prefetch_related('generic_numbers')
     ss_cats = ss.values_list('category').order_by('category').distinct('category')
 
+
 class BlastSearchInput(AbsMiscSelection):
     step = 1
     number_of_steps = 1
@@ -211,12 +215,13 @@ class BlastSearchInput(AbsMiscSelection):
     buttons = {
         'continue': {
             'label': 'BLAST',
-            'onclick': 'document.getElementById("form").submit()',
+            'onclick': 'document.getElementById(\'form\').submit()',
             'color': 'success',
         },
     }
     selection_boxes = {}
     blast_input = True
+
 
 class BlastSearchResults(TemplateView):
     """
@@ -238,6 +243,7 @@ class BlastSearchResults(TemplateView):
         context["input"] = request.POST['input_seq']
 
         return render(request, self.template_name, context)
+
 
 def render_alignment(request):
     # get the user selection from session
@@ -414,6 +420,7 @@ def render_alignment_excel(request):
 
     # calculate the signture
     signature.calculate_signature()
+    signature.calculate_zscales_signature()
 
     outstream = BytesIO()
     wb = xlsxwriter.Workbook(outstream, {'in_memory': True})
@@ -433,7 +440,12 @@ def render_alignment_excel(request):
         'positive',
         'features'
     )
-
+    # Z-scales
+    signature.zscales_excel(
+        wb,
+        "Z-scales",
+        'positive'
+    )
     wb.close()
     outstream.seek(0)
     response = HttpResponse(
