@@ -142,7 +142,7 @@
       <div class="col-sm-8">
 
         <h1 class="display-4">Construct Design Tool</h1>
-        <p>This is a tool to design structure constructs based on all published GPCR structures. <br>A modification can be based on a closest template, most frequent solution or structural rationale (mutations).<br><a href="http://docs.gpcrdb.org/constructs.html#construct-design-tool"  target="_blank">Read about the tool here.</a> <button id=toolvideo mp4="http://files.gpcrdb.org/video/constructtool3.mp4" type="button" class="videoLink btn btn-xs btn-default">
+        <p>This is a tool to design structure constructs based on all published GPCR structures. <br>A modification can be based on a closest template, most frequent solution or structural rationale (mutations).<br><a href="http://docs.gpcrdb.org/constructs.html#construct-design-tool"  target="_blank">Read about the tool here.</a> <button id=toolvideo mp4="https://files.gpcrdb.org/video/constructtool3.mp4" type="button" class="videoLink btn btn-xs btn-default">
                               <span class="glyphicon glyphicon-film"></span>
                             </button></p>
 
@@ -759,7 +759,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
     tables["auto_combi"].push( "<table class='table combitable'><tr><td>N-term truncation:</td><td><select id=combi_nterm class='form-control'>"+combi_dropdown+"</select></td></tr><tr><td>ICL start cut:</td><td><select id=combi_icl_start class='form-control'>"+combi_dropdown+"</select></td></tr><tr><td>ICL end cut:</td><td><select id=combi_icl_end class='form-control'>"+combi_dropdown+"</select></td></tr><tr><td>C-term truncation:</td><td><select id=combi_cterm class='form-control'>"+combi_dropdown+"</select></td></tr><tr><td></td><td><span id=combi_summary></span><button type='submit' class='btn btn-primary pull-right' onclick='auto_generate()'>Add</button></td></tr></table>");
     tables["auto_combi"] = tables["auto_combi"].join( "" );
 
-    tables["help"] = ['See small movie with a sample usage of tool: <button onclick="$(\'#toolvideo\').click();" mp4="http://files.gpcrdb.org/video/constructtool3.mp4" type="button" class="videoLink btn btn-xs btn-default">' +
+    tables["help"] = ['See small movie with a sample usage of tool: <button onclick="$(\'#toolvideo\').click();" mp4="https://files.gpcrdb.org/video/constructtool3.mp4" type="button" class="videoLink btn btn-xs btn-default">' +
                         '<span class="glyphicon glyphicon-film"></span>' +
                         '</button>']
 
@@ -813,7 +813,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
       }
     }
 
-    other_inserts_dropdown = "Please see <a href='http://files.gpcrdb.org/Insert_sequences.xlsx'>here</a> for exact sequences used in inserts. They are based on sequences used in published structures.<br><table><tr class='fusion_inserts fusion fusion_site_inserts'><th colspan=2 id=fusion_text>Fusion Protein</th></tr><tr class='fusion_inserts fusion fusion_site_inserts'><td colspan=2>"+fusion_protein_dropdown + "</td></tr>";
+    other_inserts_dropdown = "Please see <a href='https://files.gpcrdb.org/Insert_sequences.xlsx'>here</a> for exact sequences used in inserts. They are based on sequences used in published structures.<br><table><tr class='fusion_inserts fusion fusion_site_inserts'><th colspan=2 id=fusion_text>Fusion Protein</th></tr><tr class='fusion_inserts fusion fusion_site_inserts'><td colspan=2>"+fusion_protein_dropdown + "</td></tr>";
     // other_inserts_dropdown += `<select id="insert_type_where"  class="form-control">
     //               <option value="" >Please select Type</option>
     //               <option value="nterm">N-term</option>

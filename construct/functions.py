@@ -359,11 +359,11 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     # elif pdbname=='5VBL': # fixed by pdb_range
     #     chain_over_ride = 'B'
     # print(pdb_range)
-    #http://files.gpcrdb.org/uniprot_mapping.txt
+    #https://files.gpcrdb.org/uniprot_mapping.txt
     ## get uniprot to name mapping
     uniprot_mapping = cache.get('gpcrdb_uniprot_mapping')
     if not uniprot_mapping:
-        url = 'http://files.gpcrdb.org/uniprot_mapping.txt'
+        url = 'https://files.gpcrdb.org/uniprot_mapping.txt'
         req = urlopen(url)
         uniprot_mapping = req.read().decode('UTF-8')
         rows = ( line.split(' ') for line in uniprot_mapping.split('\n') )
@@ -881,7 +881,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
             # print("end of segment",elem.attrib['segId'],seg_uniprot_ids,max_pos)
             if [elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,seg_had_receptor] not in d['xml_segments']:
                 d['xml_segments'].append([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,seg_had_receptor])
-            
+
             if receptor == False and receptor_chain==chain: #not receptor, but is in same chain
                 if len(seg_uniprot_ids):
                     subtype =seg_uniprot_ids[0]
