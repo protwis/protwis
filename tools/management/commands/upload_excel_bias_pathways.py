@@ -88,6 +88,10 @@ class Command(BaseBuild):
             print('--error--', msg, '\n')
             self.logger.info("The error appeared in def handle")
 
+    def purge_bias_data(self):
+        BiasedPathwaysAssay.objects.all().delete()
+        BiasedPathways.objects.all().delete()
+
     def loaddatafromexcel(self, excelpath):
         """
         Reads excel file (require specific excel sheet)
