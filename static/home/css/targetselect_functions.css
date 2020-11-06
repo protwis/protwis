@@ -11,3 +11,8 @@
 .modal-no-border{
   border: none;
 }
+
+table#uniprot_selection {
+  margin: 0;
+  font-size: 1em;
+}

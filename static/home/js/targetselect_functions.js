@@ -132,6 +132,8 @@ function exportPDBs() {
     document.body.removeChild(textArea);
 }
 
+
+
 function showTARGETtable(element) {
 
     if (!$.fn.DataTable.isDataTable(element + ' .tableview table')) {
@@ -250,6 +252,159 @@ function showTARGETtable(element) {
                     filter_type: "multi_select",
                     select_type: 'select2',
                     filter_default_label: "G12/13",
+                },
+
+            ], {
+//                cumulative_filtering: true,
+                filters_tr_index: 1
+            }
+        );
+        console.timeEnd('yadcf');
+    };
+
+    oTable.draw();
+
+// Put top scroller
+// https://stackoverflow.com/questions/35147038/how-to-place-the-datatables-horizontal-scrollbar-on-top-of-the-table
+//    console.time("scroll to top");
+    $('.dataTables_scrollHead').css({
+        'overflow-x':'scroll'
+    }).on('scroll', function(e){
+        var scrollBody = $(this).parent().find('.dataTables_scrollBody').get(0);
+        scrollBody.scrollLeft = this.scrollLeft;
+        $(scrollBody).trigger('scroll');
+    });
+//    console.timeEnd("scroll to top");
+
+
+
+}
+
+function initTargetTable(element) {
+
+    if (!$.fn.DataTable.isDataTable(element + ' table')) {
+
+        /*$(element + ' .modal-header .pastePDBs').keypress(function(event) {
+            var keycode = (event.keyCode ? event.keyCode : event.which);
+            if(keycode === '13'){
+                pastePDBs();
+            }
+        });
+
+        // Exports selected id's
+        $(element + ' .modal-header').append(' | <span><button type="button" onclick="exportPDBs();" ' +
+            'class="btn btn-xs btn-primary export_pdbs">Export</button></span>');*/
+
+        oTable = $(element + ' table').DataTable({
+            dom: "ftip",
+            deferRender: true,
+            scrollY: '50vh',
+            scrollX: true,
+            scrollCollapse: true,
+            scroller: true,
+            paging: false,
+//        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            bSortCellsTop: false, //prevent sort arrows going on bottom row
+            aaSorting: [],
+            autoWidth: true,
+//            pageLength: -1,
+            bInfo: true,
+            columnDefs: [{
+                targets: 0,
+                orderable: false,
+                className: 'select-checkbox'
+            },],
+        });
+        console.timeEnd('DataTable');
+        console.time('yadcf');
+        yadcf.init(oTable,
+            [
+                {
+                    column_number: 1,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Class",
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 2,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Ligand",
+                    filter_reset_button_text: false,
+                    filter_match_mode : "exact",
+                },
+                {
+                    column_number: 3,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Family",
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 4,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Uniprot",
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 5,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    column_data_type: "html",
+                    html_data_type: "text",
+                    filter_default_label: "GtP",
+                    filter_match_mode : "exact",
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 6,
+                    filter_type: "text",
+                    select_type: 'select2',
+                    html5_data: "data-search",
+                    filter_default_label: "PDB",
+                    filter_reset_button_text: false,
+                },
+                /*{
+                    column_number: 7,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Approved",
+                },
+                {
+                    column_number: 8,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Clinical trial",
+                },*/
+                {
+                    column_number: 7,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Gs",
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 8,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Gi/o",
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 9,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Gq/11",
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 10,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "G12/13",
+                    filter_reset_button_text: false,
                 },
 
             ], {

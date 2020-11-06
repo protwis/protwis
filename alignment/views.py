@@ -13,7 +13,7 @@ except:
 from alignment.functions import get_proteins_from_selection
 from common import definitions
 from common.selection import Selection
-from common.views import AbsTargetSelection
+from common.views import AbsTargetSelection, AbsTargetSelectionTable
 from common.views import AbsSegmentSelection
 from common.views import AbsMiscSelection
 from structure.functions import BlastSearch
@@ -37,7 +37,25 @@ import xlsxwriter
 import xlrd
 
 
-class TargetSelection(AbsTargetSelection):
+# class TargetSelection(AbsTargetSelection):
+#     step = 1
+#     number_of_steps = 2
+#     filter_tableselect = False
+#     docs = 'sequences.html#structure-based-alignments'
+#     selection_boxes = OrderedDict([
+#         ('reference', False),
+#         ('targets', True),
+#         ('segments', False),
+#     ])
+#     buttons = {
+#         'continue': {
+#             'label': 'Continue to next step',
+#             'url': '/alignment/segmentselection',
+#             'color': 'success',
+#         },
+#     }
+
+class TargetSelection(AbsTargetSelectionTable):
     step = 1
     number_of_steps = 2
     filter_tableselect = False
@@ -54,7 +72,6 @@ class TargetSelection(AbsTargetSelection):
             'color': 'success',
         },
     }
-
 
 class TargetSelectionGprotein(AbsTargetSelection):
     step = 1

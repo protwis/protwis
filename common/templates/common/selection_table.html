@@ -1,0 +1,89 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/button_spinner.css' %}" type="text/css" />
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+{% endblock %}
+
+{% block content %}
+    {% if selection_heading %}
+    <div class="row">
+        <div class="col-md-12">
+            <h2>{{selection_heading}}</h2>
+        </div>
+    </div>
+    {% endif %}
+    <div class="row">
+
+        <!-- description column -->
+        <div class="col-md-4">
+
+            <!-- main description -->
+            <div class="col-md-12 panel panel-primary">
+                <div class="panel-body">
+                    {% if step and number_of_steps and number_of_steps > 1 %}
+                    <h2>STEP {{ step }} of {{ number_of_steps }}</h2>
+                    {% endif %}
+                    <h4>{{ title }}</h4>
+                    {{ description|linebreaks }}
+                </div>
+            </div>
+
+            <!-- link to docs -->
+            {% if docs %}
+            <div class="col-md-12 panel panel-primary">
+                <div class="panel-body">
+                    <p>For more information on this tool, see the <a href="{{ documentation_url }}{{ docs }}">docs</a>.
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+
+        <!-- middle column -->
+        <div class="col-md-4">
+        {% block middle_column %}
+        {% endblock %}
+        </div>
+
+        <!-- selection column -->
+        <div class="col-md-4">
+
+            <!-- button(s) -->
+            {% if buttons.continue.label %}
+            <div id="selection-buttons">
+                {% include 'common/selection_buttons.html' %}
+            </div>
+            {% endif %}
+
+            <!-- show the selection -->
+{% comment %}
+            {% for selection_box, include in selection_boxes.items %}
+                {% if include %}
+                <div class="col-md-12 panel panel-primary">
+                    <div class="panel-body" id="selection-{{ selection_box }}">
+                    {% with selection_type=selection_box %}
+                        {% if position_type and position_type == 'site_residue' %}
+                            {% include 'common/selection_lists_sitesearch.html' %}
+                        {% else %}
+                            {% include 'common/selection_lists.html' %}
+                        {% endif %}
+                    {% endwith %}
+                    </div>
+                </div>
+                {% endif %}
+            {% endfor %}
+{% endcomment %}
+
+        </div>
+
+    </div>
+    <div class="row">
+      <div class="col-md-12 panel panel-primary" id="target-table-container">
+        {% block table %}
+        {% endblock %}
+      </div>
+    </div>
+{% endblock %}
