@@ -69,21 +69,21 @@ def getTargetTable():
         data_table = "<table id='uniprot_selection' class='uniprot_selection stripe compact'> \
             <thead>\
               <tr> \
-                <th colspan=1></th> \
+                <th colspan=1>&nbsp;</th> \
                 <th colspan=5>Receptor classification</th> \
                 <th colspan=1>Structures</th> \
 <!--                <th colspan=2>Drugs</th> -->\
                 <th colspan=4>G protein coupling</th> \
               </tr> \
               <tr> \
-                <th rowspan=1 colspan=1> <input class ='form-check-input check_all' type='checkbox' onclick='check_all(this);'> </th> \
+                <th>&nbsp;<br><input class ='form-check-input' type='checkbox' onclick='return check_all_targets();'></th> \
                 <th>Class</th> \
                 <th>Ligand type</th> \
                 <th>Family</th> \
-                <th>Uniprot</th> \
-                <th>IUPHAR</th> \
-                <th>PDB</th> \
-<!--                <th>Target of and approved drug</th> \
+                <th>Receptor (UniProt)</th> \
+                <th>Receptor (GtP)</th> \
+                <th>PDB(s)</th> \
+<!--                <th>Target of an approved drug</th> \
                 <th>Target in clinical trials</th> --> \
                 <th>Gs</th> \
                 <th>Gi/o</th> \
@@ -104,6 +104,7 @@ def getTargetTable():
             t['uniprot'] = p.entry_short()
             t['iuphar'] = p.family.name.replace('receptor', '').strip()
 
+            t['pdbid'] = t['pdbid_two'] = t['pdbid_tooltip'] = "-"
             if p.family_id in allpdbs:
                 pdb_entries = allpdbs[p.family_id]
                 pdb_entries.sort()
@@ -111,8 +112,9 @@ def getTargetTable():
                 t['pdbid_two'] = ",".join(pdb_entries[:2])
                 if len(allpdbs[p.family_id]) > 2:
                     t['pdbid_two'] += "..."
-            else:
-                t['pdbid'] = t['pdbid_two'] = "-"
+                    n = 4 # Number of PDBs per line
+                    pdb_sets = ["&nbsp;&nbsp;".join(pdb_entries[i:i + n]) for i in range(0, len(pdb_entries), n)]
+                    t['pdbid_tooltip'] = "<br>".join(pdb_sets)
 
             t['approved_target'] = "Yes" if p.entry_name in drugtargets_approved else "No"
             t['clinical_target'] = "Yes" if p.entry_name in drugtargets_trials else "No"
@@ -125,13 +127,13 @@ def getTargetTable():
                     t[gprotein] = "-"
 
             data_table += "<tr> \
-            <td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' name='targets' onclick='thisTARGET(this);' id='{}'></td> \
+            <td data-sort='0'><input class='form-check-input' type='checkbox' name='targets' id='{}'></td> \
             <td>{}</td> \
             <td>{}</td> \
             <td>{}</td> \
             <td>{}</td> \
             <td><span>{}</span></td> \
-            <td data-search=\"{}\">{}</td> \
+            <td><span {} data-html=\"true\" data-placement=\"bottom\" title=\"{}\" data-search=\"{}\">{}<span></td> \
             <!--<td>{}</td> \
             <td>{}</td>--> \
             <td>{}</td> \
@@ -145,14 +147,16 @@ def getTargetTable():
                 t['family'],
                 t['uniprot'],
                 t['iuphar'],
+                ("data-toggle=\"tooltip\"" if t['pdbid_tooltip']!="-" else ""),
+                t['pdbid_tooltip'],
                 t['pdbid'],      # This one hidden used for search box.
                 t['pdbid_two'],  # This one shown. Show only first two pdb's.
                 t['approved_target'],
                 t['clinical_target'],
-                t[gprotein_families[0]],
-                t[gprotein_families[1]],
-                t[gprotein_families[2]],
-                t[gprotein_families[3]],
+                t[gprotein_families[0]].capitalize(),
+                t[gprotein_families[1]].capitalize(),
+                t[gprotein_families[2]].capitalize(),
+                t[gprotein_families[3]].capitalize(),
             )
 
         data_table += "</tbody></table>"

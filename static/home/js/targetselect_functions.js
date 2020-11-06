@@ -280,6 +280,7 @@ function showTARGETtable(element) {
 
 }
 
+var targetTable;
 function initTargetTable(element) {
 
     if (!$.fn.DataTable.isDataTable(element + ' table')) {
@@ -295,7 +296,7 @@ function initTargetTable(element) {
         $(element + ' .modal-header').append(' | <span><button type="button" onclick="exportPDBs();" ' +
             'class="btn btn-xs btn-primary export_pdbs">Export</button></span>');*/
 
-        oTable = $(element + ' table').DataTable({
+        targetTable = $(element + ' table').DataTable({
             dom: "ftip",
             deferRender: true,
             scrollY: '50vh',
@@ -303,21 +304,21 @@ function initTargetTable(element) {
             scrollCollapse: true,
             scroller: true,
             paging: false,
-//        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
             bSortCellsTop: false, //prevent sort arrows going on bottom row
             aaSorting: [],
             autoWidth: true,
-//            pageLength: -1,
             bInfo: true,
             columnDefs: [{
                 targets: 0,
                 orderable: false,
                 className: 'select-checkbox'
+            },{
+                targets: 1,
+                className: 'text-center'
             },],
         });
-        console.timeEnd('DataTable');
-        console.time('yadcf');
-        yadcf.init(oTable,
+
+        yadcf.init(targetTable,
             [
                 {
                     column_number: 1,
@@ -325,6 +326,7 @@ function initTargetTable(element) {
                     select_type: 'select2',
                     filter_default_label: "Class",
                     filter_reset_button_text: false,
+                    style_class: "center",
                 },
                 {
                     column_number: 2,
@@ -412,10 +414,9 @@ function initTargetTable(element) {
                 filters_tr_index: 1
             }
         );
-        console.timeEnd('yadcf');
     };
 
-    oTable.draw();
+    targetTable.draw();
 
 // Put top scroller
 // https://stackoverflow.com/questions/35147038/how-to-place-the-datatables-horizontal-scrollbar-on-top-of-the-table
@@ -429,6 +430,35 @@ function initTargetTable(element) {
     });
 //    console.timeEnd("scroll to top");
 
+}
 
 
+// Add to buttons
+//  yadcf.exResetAllFilters(targetTable);
+
+/*function clearTargetSelection(){
+  $('table#uniprot_selection.tbody.checkbox').prop('checked',false)
+}*/
+
+
+var changedTargetBoxes = 0;
+function check_all_targets(){
+  changedTargetBoxes = 0;
+  $("table#uniprot_selection tbody tr").each(function() {
+    if (!$(this).hasClass("selected")){
+      $(this).addClass("selected");
+      var checkbox = $(this).find("[type=checkbox]");
+      checkbox.prop("checked", true);
+      changedTargetBoxes++;
+    }
+  });
+
+  if (changedTargetBoxes==0){
+    $("table#uniprot_selection tbody tr").each(function() {
+      $(this).removeClass("selected");
+      var checkbox = $(this).find("[type=checkbox]");
+      checkbox.prop("checked", false);
+    });
+  }
+  return false;
 }

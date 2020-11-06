@@ -16,3 +16,7 @@ table#uniprot_selection {
   margin: 0;
   font-size: 1em;
 }
+
+tr.selected td {
+  background-color: rgb(204,229,255);
+}

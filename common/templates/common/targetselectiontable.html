@@ -64,6 +64,16 @@
         $(document).ready(function() {
           // initialize YADCF table
           initTargetTable('#target-table-container');
+          // initialize tooltips
+          $('[data-toggle="tooltip"]').tooltip({
+            trigger : 'hover'
+          });
+          // click rows
+          $('table#uniprot_selection tbody').on('click', 'tr', function () {
+              $(this).toggleClass("selected");
+              var checkbox = $(this).find("[type=checkbox]");
+              checkbox.prop("checked", !checkbox.prop("checked"));
+          });
         });
 
     </script>
