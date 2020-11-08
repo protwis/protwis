@@ -72,7 +72,8 @@
           $('table#uniprot_selection tbody').on('click', 'tr', function () {
               $(this).toggleClass("selected");
               var checkbox = $(this).find("[type=checkbox]");
-              checkbox.prop("checked", !checkbox.prop("checked"));
+              checkbox.prop("checked", $(this).hasClass("selected"));
+              updateTargetCount();
           });
         });
 

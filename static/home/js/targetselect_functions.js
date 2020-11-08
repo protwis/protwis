@@ -75,7 +75,7 @@ $.fn.dataTable.ext.order['dom-checkbox'] = function(settings, col) {
     });
 };
 
-function pastePDBs() {
+function pasteTargets() {
     pdbs = $('.pastePDBs:visible').val().toUpperCase().trim();
     pdbs = pdbs.split(/[ ,]+/);
     resetselection(1);
@@ -109,12 +109,14 @@ function pastePDBs() {
     oTable.draw();
 }
 
-function exportPDBs() {
-    var pdbs = [];
-    $('.pdb_selected:checked', oTable.cells().nodes()).each(function() {
+function exportSelectedTargets() {
+    var targets = [];
+    // TODO Replace with uniprot IDs
+    /*$('.pdb_selected:checked', oTable.cells().nodes()).each(function() {
         pdbs.push($(this).attr('id'));
-    });
+    });*/
 
+    // TODO add export button
     var textArea = document.createElement("textarea");
     textArea.value = pdbs;
     document.body.appendChild(textArea);
@@ -123,179 +125,20 @@ function exportPDBs() {
     try {
         var successful = document.execCommand('copy');
         var msg = successful ? 'Successful' : 'Unsuccessful';
-        $(".export_pdbs").html(msg);
-        setTimeout("$('.export_pdbs').html('Export selected PDB codes');", 4000);
+        $(".export_targets").html(msg);
+        setTimeout("$('.export_targets').html('Export selected targets');", 4000);
     } catch (err) {
-        $(".export_pdbs").html('Oops, unable to copy');
+        $(".export_targets").html('Oops, unable to copy');
     }
 
+    // remove area for copying
     document.body.removeChild(textArea);
-}
-
-
-
-function showTARGETtable(element) {
-
-    if (!$.fn.DataTable.isDataTable(element + ' .tableview table')) {
-
-        $(element + ' .modal-header .pastePDBs').keypress(function(event) {
-            var keycode = (event.keyCode ? event.keyCode : event.which);
-            if(keycode === '13'){
-                pastePDBs();
-            }
-        });
-
-        // Exports selected id's
-        $(element + ' .modal-header').append(' | <span><button type="button" onclick="exportPDBs();" ' +
-            'class="btn btn-xs btn-primary export_pdbs">Export</button></span>');
-
-        console.time('DataTable');
-        oTable = $(element + ' .tableview table').DataTable({
-            dom: "ftip",
-            deferRender: true,
-            scrollY: '50vh',
-            scrollX: true,
-            scrollCollapse: true,
-            scroller: true,
-            paging: false,
-//        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
-            bSortCellsTop: false, //prevent sort arrows going on bottom row
-            aaSorting: [],
-            autoWidth: true,
-//            pageLength: -1,
-            bInfo: true,
-            columnDefs: [{
-                targets: 0,
-                orderable: false,
-                className: 'select-checkbox'
-            },],
-        });
-        console.timeEnd('DataTable');
-        console.time('yadcf');
-        yadcf.init(oTable,
-            [
-                {
-                    column_number: 1,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Class",
-                    filter_reset_button_text: true,
-                },
-                {
-                    column_number: 2,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Ligand",
-                    filter_reset_button_text: true,
-                    filter_match_mode : "exact",
-                },
-                {
-                    column_number: 3,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Family",
-                },
-                {
-                    column_number: 4,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Uniprot",
-                },
-                {
-                    column_number: 5,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    column_data_type: "html",
-                    html_data_type: "text",
-                    filter_default_label: "IUPHAR",
-                    filter_match_mode : "exact",
-                },
-                {
-                    column_number: 6,
-                    filter_type: "text",
-                    select_type: 'select2',
-                    html5_data: "data-search",
-                    filter_default_label: "PDB",
-                },
-                {
-                    column_number: 7,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Approved",
-                },
-                {
-                    column_number: 8,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Clinical trial",
-                },
-                {
-                    column_number: 9,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Gs",
-                },
-                {
-                    column_number: 10,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Gi/o",
-                },
-                {
-                    column_number: 11,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Gq/11",
-                },
-                {
-                    column_number: 12,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "G12/13",
-                },
-
-            ], {
-//                cumulative_filtering: true,
-                filters_tr_index: 1
-            }
-        );
-        console.timeEnd('yadcf');
-    };
-
-    oTable.draw();
-
-// Put top scroller
-// https://stackoverflow.com/questions/35147038/how-to-place-the-datatables-horizontal-scrollbar-on-top-of-the-table
-//    console.time("scroll to top");
-    $('.dataTables_scrollHead').css({
-        'overflow-x':'scroll'
-    }).on('scroll', function(e){
-        var scrollBody = $(this).parent().find('.dataTables_scrollBody').get(0);
-        scrollBody.scrollLeft = this.scrollLeft;
-        $(scrollBody).trigger('scroll');
-    });
-//    console.timeEnd("scroll to top");
-
-
-
 }
 
 var targetTable;
 function initTargetTable(element) {
 
     if (!$.fn.DataTable.isDataTable(element + ' table')) {
-
-        /*$(element + ' .modal-header .pastePDBs').keypress(function(event) {
-            var keycode = (event.keyCode ? event.keyCode : event.which);
-            if(keycode === '13'){
-                pastePDBs();
-            }
-        });
-
-        // Exports selected id's
-        $(element + ' .modal-header').append(' | <span><button type="button" onclick="exportPDBs();" ' +
-            'class="btn btn-xs btn-primary export_pdbs">Export</button></span>');*/
-
         targetTable = $(element + ' table').DataTable({
             dom: "ftip",
             deferRender: true,
@@ -308,12 +151,14 @@ function initTargetTable(element) {
             aaSorting: [],
             autoWidth: true,
             bInfo: true,
+//            order: [[ 1, "asc" ], [ 2, "asc" ], [ 3, "asc" ], [ 4, "asc" ]],
             columnDefs: [{
                 targets: 0,
                 orderable: false,
                 className: 'select-checkbox'
             },{
                 targets: 1,
+                orderable: false,
                 className: 'text-center'
             },],
         });
@@ -418,9 +263,8 @@ function initTargetTable(element) {
 
     targetTable.draw();
 
-// Put top scroller
-// https://stackoverflow.com/questions/35147038/how-to-place-the-datatables-horizontal-scrollbar-on-top-of-the-table
-//    console.time("scroll to top");
+    // Put top scroller
+    // https://stackoverflow.com/questions/35147038/how-to-place-the-datatables-horizontal-scrollbar-on-top-of-the-table
     $('.dataTables_scrollHead').css({
         'overflow-x':'scroll'
     }).on('scroll', function(e){
@@ -428,8 +272,9 @@ function initTargetTable(element) {
         scrollBody.scrollLeft = this.scrollLeft;
         $(scrollBody).trigger('scroll');
     });
-//    console.timeEnd("scroll to top");
 
+    // Add selection counter
+    updateTargetCount();
 }
 
 
@@ -448,7 +293,7 @@ function check_all_targets(){
     if (!$(this).hasClass("selected")){
       $(this).addClass("selected");
       var checkbox = $(this).find("[type=checkbox]");
-      checkbox.prop("checked", true);
+      checkbox.prop("checked", $(this).hasClass("selected"));
       changedTargetBoxes++;
     }
   });
@@ -460,5 +305,24 @@ function check_all_targets(){
       checkbox.prop("checked", false);
     });
   }
+
+  updateTargetCount();
   return false;
+}
+
+// TODO: maintain using array or count using the DOM?
+function updateTargetCount(){
+  // Counting the selected targets matching the current filters
+  var numTargets = $('table#uniprot_selection tbody input:checked').length;
+  var message = " ("+numTargets+" targets selected )";
+  if (numTargets == 1)
+    message = " ("+numTargets+" target selected )";
+
+  // Tweak selection message + integrate filtering and selection
+  if ($("#uniprot_selection_info_targets").length == 0)
+    $("#uniprot_selection_info").append("<span id=\"uniprot_selection_info_targets\"></span>");
+
+  $("#uniprot_selection_info_targets").html(message);
+
+  //var allTargets = $('table#uniprot_selection tbody input').length;
 }

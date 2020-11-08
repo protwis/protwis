@@ -176,14 +176,18 @@ class AbsTargetSelectionTable(TemplateView):
     description = 'Select targets by in the table or by browsing the classification tree in the middle column. You can select entire target' \
         + ' families or individual targets.\n\nOnce you have selected all your targets, click the green button.'
     documentation_url = settings.DOCUMENTATION_URL
+
     docs = False
     filters = True
-    target_input = True
+
+    target_input = False
+
     default_species = 'Human'
     default_slug = '000'
     default_subslug = '00'
+
     numbering_schemes = False
-    search = True
+    search = False
     family_tree = True
     redirect_on_select = False
     filter_gprotein = False
