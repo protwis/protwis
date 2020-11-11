@@ -165,18 +165,20 @@ class RotamerSuperpose(object):
         self.template_atoms = template_atoms
         self.backbone_rmsd = None
         self.TM_keys = TM_keys
+        self.num_atoms_used_for_superposition = 0
 
     def run(self):
         ''' Run the superpositioning. 
         '''
         super_imposer = Superimposer()
         try:
-            if self.TM_keys==None:
+            if not self.TM_keys:
                 ref_backbone_atoms = [atom for atom in self.reference_atoms if atom.get_name() in ['N','CA','C','O']]
                 temp_backbone_atoms = [atom for atom in self.template_atoms if atom.get_name() in ['N','CA','C','O']]
             else:
-                ref_backbone_atoms = [atom for atom in self.reference_atoms if atom.get_name() in ['N','CA','C','O'] and atom.get_parent().get_full_id()[-1][1] in self.TM_keys]
-                temp_backbone_atoms = [atom for atom in self.template_atoms if atom.get_name() in ['N','CA','C','O'] and atom.get_parent().get_full_id()[-1][1] in self.TM_keys]
+                ref_backbone_atoms = [atom for atom in self.reference_atoms if atom.get_name() in ['N','CA','C'] and atom.get_parent().get_full_id()[-1][1] in self.TM_keys]
+                temp_backbone_atoms = [atom for atom in self.template_atoms if atom.get_name() in ['N','CA','C'] and atom.get_parent().get_full_id()[-1][1] in self.TM_keys]
+            self.num_atoms_used_for_superposition = len(ref_backbone_atoms)
             super_imposer.set_atoms(ref_backbone_atoms, temp_backbone_atoms)
             super_imposer.apply(self.template_atoms)
             array1, array2 = np.array([0,0,0]), np.array([0,0,0])
