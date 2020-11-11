@@ -308,7 +308,7 @@ class StructureModelRMSD(models.Model):
     binding_pocket = models.DecimalField(null=True, max_digits=2, decimal_places=1)
 
     def __repr__(self):
-        return '<StructureModelRMSD: {} {}>'.format(self.target_structure, version)
+        return '<StructureModelRMSD: {} {}>'.format(self.target_structure, self.version)
 
     class Meta():
         db_table = 'structure_model_rmsd'
