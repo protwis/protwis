@@ -284,7 +284,7 @@ def tool(request):
 
     return render(request,'tool.html',context)
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def json_fusion(request, slug, **response_kwargs):
 
     level = Protein.objects.filter(entry_name=slug).values_list('family__slug', flat = True).get()
@@ -296,7 +296,7 @@ def json_fusion(request, slug, **response_kwargs):
     response_kwargs['content_type'] = 'application/json'
     return HttpResponse(jsondata, **response_kwargs)
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def json_palmi(request, slug, **response_kwargs):
 
     start_time = time.time()
@@ -336,7 +336,7 @@ def json_palmi(request, slug, **response_kwargs):
     return HttpResponse(jsondata, **response_kwargs)
 
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def json_glyco(request, slug, **response_kwargs):
     start_time = time.time()
 
@@ -393,7 +393,7 @@ def json_glyco(request, slug, **response_kwargs):
     print("glyco",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def json_icl3(request, slug, **response_kwargs):
     start_time = time.time()
     level = Protein.objects.filter(entry_name=slug).values_list('family__slug', flat = True).get()
@@ -467,7 +467,7 @@ def json_icl3(request, slug, **response_kwargs):
     print("icl3",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def json_icl2(request, slug, **response_kwargs):
     start_time = time.time()
     level = Protein.objects.filter(entry_name=slug).values_list('family__slug', flat = True).get()
@@ -539,7 +539,7 @@ def json_icl2(request, slug, **response_kwargs):
     print("icl2",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def json_nterm(request, slug, **response_kwargs):
     start_time = time.time()
 
@@ -587,7 +587,7 @@ def json_nterm(request, slug, **response_kwargs):
     print("nterm",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def json_cterm(request, slug, **response_kwargs):
 
     start_time = time.time()
@@ -642,7 +642,7 @@ def json_cterm(request, slug, **response_kwargs):
     print("cterm",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def thermostabilising(request, slug, **response_kwargs):
 
     start_time = time.time()
@@ -763,7 +763,7 @@ def thermostabilising(request, slug, **response_kwargs):
     return HttpResponse(jsondata, **response_kwargs)
 
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def structure_rules(request, slug, **response_kwargs):
     start_time = time.time()
 
@@ -933,7 +933,7 @@ def structure_rules(request, slug, **response_kwargs):
     return HttpResponse(jsondata, **response_kwargs)
 
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def mutations(request, slug, **response_kwargs):
     from django.db import connection
     start_time = time.time()
@@ -1467,7 +1467,7 @@ def mutations(request, slug, **response_kwargs):
     print("muts",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def cons_strucs(request, slug, **response_kwargs):
     start_time = time.time()
 
@@ -1535,7 +1535,7 @@ def cons_strucs(request, slug, **response_kwargs):
     print("cons_strucs",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def cons_rf(request, slug, **response_kwargs):
     start_time = time.time()
 
@@ -1607,7 +1607,7 @@ def cons_rf(request, slug, **response_kwargs):
     print("cons_rf",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def cons_rf_and_class(request, slug, **response_kwargs):
     start_time = time.time()
 
@@ -1727,7 +1727,7 @@ def cons_rf_and_class(request, slug, **response_kwargs):
     print("cons_rf_and_class",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def cons_rm_GP(request, slug, **response_kwargs):
     start_time = time.time()
     level = Protein.objects.filter(entry_name=slug).values_list('family__slug', flat = True).get()

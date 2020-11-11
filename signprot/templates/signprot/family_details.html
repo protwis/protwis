@@ -154,9 +154,9 @@
     </div>
     {% if structures|length > 0 %}
     <div class="col-md-10">
-        <p>View in <a href="/signprot/g_protein_structure_browser" target='_blank'>Structures</a></p>
+        <p>View in <a href="/structure/g_protein_structure_browser" target='_blank'>Structures</a></p>
     </div>
-    
+
     {% else %}
     <div class="col-md-10">
         No structures available
@@ -170,9 +170,9 @@
     </div>
     {% if complex_structures|length > 0 %}
     <div class="col-md-10">
-        <p>View in <a href="/signprot/g_protein_structure_browser" target='_blank'>Structures</a></p>
+        <p>View in <a href="/structure/g_protein_structure_browser" target='_blank'>Structures</a></p>
     </div>
-    
+
     {% else %}
     <div class="col-md-10">
         No receptor complex structures available
@@ -193,6 +193,6 @@
             interaction_json = '{{interaction_pos_list|safe}}';
             natural_mutations_json = '{{natural_mutations_pos_list|safe}}';
             ptms_json = '{{ptms_pos_list|safe}}';
-        });        
-    </script> 
+        });
+    </script>
 {% endblock %}
