@@ -11,6 +11,7 @@ from urllib.request import urlopen, quote
 import json
 import yaml
 import logging
+import requests
 
 class Ligand(models.Model):
     properities = models.ForeignKey('LigandProperities', on_delete=models.CASCADE)
@@ -40,19 +41,92 @@ class Ligand(models.Model):
             ligand_name = gtop['name']
             if ligand_name=='11-<i>cis</i>-retinal':
                 ligand_name = 'retinal'
-
         # does a ligand by this name already exists?
         try:
             existing_ligand = Ligand.objects.get(name=ligand_name, canonical=True)
             return existing_ligand
         except Ligand.DoesNotExist:
             web_resource = False
-
             if gtop_id:
+                print('saving new ligand')
                 # gtoplig webresource
-                web_resource = WebResource.objects.get(slug='gtoplig')
+                lp = self.build_ligand_properties_gtp(gtop_id, ligand_type)
+                if lp == None:
+                    ligand = None
+                else:
+                    ligand = Ligand()
+                    ligand.properities = lp
+                    ligand.name = ligand_name
+                    ligand.canonical = True
+                    ligand.ambigious_alias = False
+                    ligand.pdbe = None
+                    try:
+                        ligand.save()
+                    except IntegrityError:
+                        return Ligand.objects.get(name=ligand_name, canonical=True)
+            return ligand
+            # return self.update_ligand(ligand_name, {}, ligand_type, web_resource, gtop_id)
 
-            return self.update_ligand(ligand_name, {}, ligand_type, web_resource, gtop_id)
+    def build_ligand_properties_gtp(self, gtop_id, ligand_type):
+        structure = self.gtp_api_ligand_structure(gtop_id)
+        if structure == {}:
+            return None
+        subunits = self.gtp_api_ligand_subunits(gtop_id)
+        web_resource = WebResource.objects.get(slug='gtoplig')
+        try:
+            wl, created = WebLink.objects.get_or_create(index=gtop_id, web_resource=web_resource)
+        except IntegrityError:
+            wl = Weblink.objects.get(index=gtop_id, web_resource=web_resource)
+
+        lp = LigandProperities()
+        try:
+            lt = LigandType.objects.filter(name = ligand_type)[0]
+            lp.ligand_type = lt
+        except :
+            lt =  LigandType.objects.filter(name = 'small molecule')[0]
+            lp.ligand_type = lt
+        lp.smiles = structure['smiles']
+        lp.inchikey = structure['inchikey']
+        lp.sequence= structure['sequence']
+        lp.mw = subunits['mw']
+        lp.rotatable_bonds = subunits['rotatableBonds']
+        lp.hacc = subunits['hacc']
+        lp.hdon = subunits['hdon']
+        lp.logp = subunits['logp']
+        try:
+            lp.save()
+            lp.web_links.add(wl)
+        except IntegrityError:
+            lp = LigandProperities.objects.get(inchikey=structure['inchikey'])
+        return lp
+
+    def gtp_api_ligand_structure(self, gtop_id):
+        structure = dict()
+        structure_response = requests.get("https://www.guidetopharmacology.org/services/ligands/"+ str(gtop_id)+"/structure")
+        if structure_response.status_code == 200:
+            ligand_data = structure_response.json()
+            structure['smiles']=ligand_data['smiles']
+            structure['inchikey']=ligand_data['inchiKey']
+            structure['sequence']=ligand_data['oneLetterSeq']
+        return structure
+
+    def gtp_api_ligand_subunits(self, gtop_id):
+        subunits = dict()
+        subunit_reponse = requests.get("https://www.guidetopharmacology.org/services/ligands/"+ str(gtop_id)+"/subunits")
+        if subunit_reponse.status_code == 200:
+            ligand_data = subunit_reponse.json()
+            subunits['hacc']=ligand_data['hydrogenBondAcceptors']
+            subunits['hdon']=ligand_data['hydrogenBondDonors']
+            subunits['logp']=ligand_data['logP']
+            subunits['mw']=ligand_data['molecularWeight']
+            subunits['rotatableBonds']=ligand_data['rotatableBonds']
+        else:
+            subunits['mw'] = None
+            subunits['rotatableBonds'] = None
+            subunits['hacc'] = None
+            subunits['hdon'] = None
+            subunits['logp'] = None
+        return subunits
 
     def load_from_pubchem(self, lookup_type, pubchem_id, ligand_type, ligand_title=False, pdbe=None):
         logger = logging.getLogger('build')
@@ -345,7 +419,7 @@ class AssayExperiment(models.Model):
     published_type = models.CharField(max_length=20, null= True)
     published_units = models.CharField(max_length=20, null= True)
 
-    standard_value =  models.CharField(max_length=10, null=True)
+    standard_value =  models.CharField(max_length=20, null=True)
     standard_relation = models.CharField(max_length=10)
     standard_type = models.CharField(max_length=20)
     standard_units = models.CharField(max_length=20)
