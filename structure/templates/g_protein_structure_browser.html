@@ -155,7 +155,7 @@
                         <th class='rightborder'>Function</th>
                         <th>Name</th>
                         <th class='rightborder'>Type</th>
-                        <th>Last author</th>
+                        <th>Authors</th>
                         <th>Reference</th>
                         <th class='rightborder'>PDB Date</th>
                         <th style='display: none;'></th>
@@ -212,12 +212,8 @@
                         {% endif %}
                         <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha,species"|safe }}</td>
                         
-                        <td>
-                            {% if structure.extra_proteins.all|only_one_subunit:"Alpha,note"|length > 20 %}
-                                <span title="{{ structure.extra_proteins.all|only_one_subunit:'Alpha,note' }}">{{ structure.extra_proteins.all|only_one_subunit:"Alpha,note"|safe|cut_at_20 }}...</span>
-                            {% else %}
-                                {{ structure.extra_proteins.all|only_one_subunit:"Alpha,note"|safe }}
-                            {% endif %}
+                        <td class='expand'>
+                            {{ structure.extra_proteins.all|only_one_subunit:"Alpha,note"|safe }}
                         </td>
                         <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha,coverage"|safe }}</td>
                         <td>{{ structure.extra_proteins.all|only_one_subunit:"Beta,name"|safe }}</td>
@@ -259,13 +255,9 @@
                         <td>
                             {{ structure.stabilizing_agents.all|only_other_proteins|linebreaksbr }}
                         </td>
-                        <td>
+                        <td class='expand'>
                             {% for ligand in structure.ligands.all %}
-                                {% if ligand.ligand.name|safe|length > 20 %}
-                                    <span title="{{ ligand.ligand.name|safe }}">{{ ligand.ligand.name|safe|cut_at_20 }}...</span>
-                                {% else %}
-                                    {{ ligand.ligand.name|safe }}
-                                {% endif %}
+                                {{ ligand.ligand.name|safe }}
                             {% for link in ligand.ligand.properities.web_links.all %}
                                 <a href="{{ link}}" target="_blank">{{link.web_resource.slug}}</a>
                             {% endfor %}
@@ -280,18 +272,14 @@
                         <td>
                             {{ structure.ligands.all|ligandrole|linebreaksbr }}
                         </td>
-                        <td>
+                        <td class='expand'>
                             {% autoescape off %}
-                            {% if structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat|length > 20 %}
-                                <span title="{% autoescape off %}{{ structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat }}{% endautoescape %}">{{ structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat|cut_at_20 }}...</span>
-                            {% else %}
                                 {{ structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat }}
-                            {% endif %}
                             {% endautoescape %}
                         </td>
                         <td>{{ structure.protein_conformation.protein.parent.endogenous_ligands.all.0.properities.ligand_type|dashwhenempty }}</td>
-                        <td>
-                            {{ structure.publication.authors|last_author}}
+                        <td class='expand'>
+                            {{ structure.publication.authors}}
                         </td>
                         <td>
                             {% if structure.publication %}
