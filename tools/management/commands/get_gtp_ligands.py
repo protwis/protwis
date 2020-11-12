@@ -65,11 +65,7 @@ class Command(BaseBuild):
                             action='append',
                             dest='filename',
                             help='Filename to import. Can be used multiple times')
-        parser.add_argument('-u', '--purge',
-                            action='store_true',
-                            dest='purge',
-                            default=False,
-                            help='Purge existing bias records')
+
         parser.add_argument('--test_run', action='store_true', help='Skip this during a test run',
                             default=False)
 
@@ -77,21 +73,10 @@ class Command(BaseBuild):
         if options['test_run']:
             print('Skipping in test run')
             return
-        # delete any existing structure data
-        if options['purge']:
-            try:
-                print('Started purging bias data')
-                self.purge_bias_data()
-                print('Ended purging bias data')
-            except Exception as msg:
-                print(msg)
-                self.logger.error(msg)
-        # import the structure data
-        # self.analyse_rows()
         try:
-            print('Updatind ChEMBL data')
+            print('Updatind ligand data from GuideToPharma')
             self.analyse_rows()
-            self.logger.info('COMPLETED updating ChEMBL Data')
+            self.logger.info('COMPLETED updating GuideToPharma Data')
         except Exception as msg:
             print('--error--', msg, '\n')
             self.logger.info("The error appeared in def handle")
@@ -102,17 +87,19 @@ class Command(BaseBuild):
     def get_endogenous(self, targets):
         for target in targets:
             protein = self.fetch_protein(target)
-            response = requests.get("https://www.guidetopharmacology.org/services/targets/"+str(target)+"/naturalLigands")
+            response = requests.get(
+                "https://www.guidetopharmacology.org/services/targets/" + str(target) + "/naturalLigands")
             data = response.json()
             for i in data:
                 try:
-                    ligand = self.fetch_ligand(data[0]['ligandId'],data[0]['type'])
+                    ligand = self.fetch_ligand(
+                        data[0]['ligandId'], data[0]['type'])
                     if ligand and protein:
                         protein.endogenous_ligands.add(ligand)
                         lig, created = Ligand.objects.update_or_create(
-                                                id=ligand.id,
-                                                defaults={'endogenous': True},
-                                            )
+                            id=ligand.id,
+                            defaults={'endogenous': True},
+                        )
                     else:
                         pass
                 except:
@@ -125,30 +112,33 @@ class Command(BaseBuild):
         requires: source_file name
         """
         lig = Ligand()
-        l = lig.load_by_gtop_id(ligand['name'],ligand['entry'], ligand['type'])
+        l = lig.load_by_gtop_id(
+            ligand['name'], ligand['entry'], ligand['type'])
         if l != None:
             self.ligand_cache[ligand['entry']] = l
 
     def get_ligands(self):
         ligands = list()
-        response = requests.get("https://www.guidetopharmacology.org/services/ligands")
+        response = requests.get(
+            "https://www.guidetopharmacology.org/services/ligands")
         print('total ligands:', len(response.json()))
         for entry in response.json():
             try:
                 temp = dict()
-                temp['entry']=entry['ligandId']
-                temp['name']=entry['name']
-                temp['type']=entry['type']
+                temp['entry'] = entry['ligandId']
+                temp['name'] = entry['name']
+                temp['type'] = entry['type']
                 self.save_ligand_copy(temp)
             except:
                 pass
 
     def get_gpcrs(self):
         target_list = list()
-        response = requests.get("https://www.guidetopharmacology.org/services/targets/families")
+        response = requests.get(
+            "https://www.guidetopharmacology.org/services/targets/families")
         for entry in response.json():
             try:
-                if entry['parentFamilyIds'] != None and entry['parentFamilyIds'][0] == 694 :
+                if entry['parentFamilyIds'] != None and entry['parentFamilyIds'][0] == 694:
                     target_list.extend(entry['targetIds'])
             except:
                 pass
@@ -157,14 +147,15 @@ class Command(BaseBuild):
 
     def get_ligand_assays(self, targets):
         assay_list = list()
-        response = requests.get("https://www.guidetopharmacology.org/services/interactions")
+        response = requests.get(
+            "https://www.guidetopharmacology.org/services/interactions")
         for entry in response.json():
             try:
                 if entry['targetId'] != None and entry['targetId'] in targets:
                     assay_list.append(entry)
             except:
                 pass
-        print('\ninteractions',assay_list[:2])
+        print('\ninteractions', assay_list[:2])
         # print(len(assay_list))
         return assay_list
 
@@ -172,8 +163,9 @@ class Command(BaseBuild):
         for i in assays:
             temp_dict = dict()
             temp_dict['protein'] = self.fetch_protein(i['targetId'])
-            temp_dict['ligand'] = self.fetch_ligand(i['ligandId'],i['type'])
-            print(i['refIds'],'ligand g: ',temp_dict['ligand'],' ligand fra',i['ligandId'],)
+            temp_dict['ligand'] = self.fetch_ligand(i['ligandId'], i['type'])
+            print(i['refIds'], 'ligand g: ', temp_dict['ligand'],
+                  ' ligand fra', i['ligandId'],)
             if i['refIds']:
                 temp_dict['doi'] = self.fetch_publication(i['refIds'])
             else:
@@ -199,11 +191,11 @@ class Command(BaseBuild):
         print("\n#1 Get GPCR ids from target families")
         target_list = self.get_gpcrs()
         print("\n#2 Get Ligands")
-        # self.get_ligands()
-        print("\n#3 Get Ligand assays",self.ligand_cache)
-        # assays = self.get_ligand_assays(target_list)
+        self.get_ligands()
+        print("\n#3 Get Ligand assays", self.ligand_cache)
+        assays = self.get_ligand_assays(target_list)
         print("\n#4 Process Ligand assays")
-        # self.process_ligand_assays(assays)
+        self.process_ligand_assays(assays)
         print("\n#5 Get Endogeneous ligands")
         self.get_endogenous(target_list)
         print('\n\n---Finished---')
@@ -234,7 +226,7 @@ class Command(BaseBuild):
         except:
             return None
 
-    def fetch_ligand(self, ligand_id,type):
+    def fetch_ligand(self, ligand_id, type):
         """
         fetch ligands with Ligand model
         requires: ligand id, ligand id type, ligand name
@@ -257,7 +249,7 @@ class Command(BaseBuild):
                         l = None
                 else:
                     lig = Ligand()
-                    l = lig.load_by_gtop_id('',ligand_id, ligand['type'])
+                    l = lig.load_by_gtop_id('', ligand_id, ligand['type'])
         except Exception as msg:
             l = None
             # print('ligand_id---',l,'\n end')
@@ -269,7 +261,8 @@ class Command(BaseBuild):
         requires: publication doi or pmid
         """
         publication_doi = None
-        reference_response = requests.get("https://www.guidetopharmacology.org/services/refs/"+ str(refs[0]))
+        reference_response = requests.get(
+            "https://www.guidetopharmacology.org/services/refs/" + str(refs[0]))
 
         if reference_response.status_code == 200:
             ligand_data = reference_response.json()
