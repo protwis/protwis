@@ -168,7 +168,7 @@ class AbsTargetSelectionTable(TemplateView):
     based view for that app that extends this class"""
     template_name = 'common/targetselectiontable.html'
 
-    type_of_selection = 'targets'
+    type_of_selection = 'targets_table'
     selection_only_receptors = False
     step = 1
     number_of_steps = 2

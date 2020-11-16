@@ -19,9 +19,11 @@
     {% elif type_of_selection == 'targets' %}
     <a href="javascript:void(0)" onclick="AddToSelection('{{ type_of_selection }}', 'family', '{{ ppf.id }}')"
         class="target-selection">
+    {% elif type_of_selection == 'targets_table' %}
+    <a href="javascript:void(0)" onclick="SelectInTable('{{ ppf.slug }}')" class="target-selection">
     {% endif %}
         {{ ppf.name|safe }}
-    {% if type_of_selection == 'targets' or type_of_selection == 'browse' or type_of_selection == 'browse_gprot'%}
+    {% if type_of_selection == 'targets' or type_of_selection == 'targets_table' or type_of_selection == 'browse' or type_of_selection == 'browse_gprot'%}
     </a>
     {% endif %}
     <br />
@@ -33,66 +35,75 @@
     {% for i in tree_indent_level %}
         &nbsp;&nbsp
     {% endfor %}
-    <a href="javascript:void(0)"
-    onclick="ToggleFamilyTreeNode('expand', '{{ type_of_selection }}', '{{ pf.id }}', {{ tree_indent_level|length }})"
-        class='btn btn-default btn-xs'>
-        <span class="glyphicon glyphicon-folder-close"></span>
-    </a>
-    {% if type_of_selection == 'targets' %}
-    <a href="javascript:void(0)" onclick="AddToSelection('{{ type_of_selection }}', 'family', '{{ pf.id }}')"
-        class="target-selection">
+
+    {% if type_of_selection == 'targets_table' and pf.slug|length == 15 %}
+      <span class="glyphicon glyphicon-star"></span>
+    {% else %}
+      <a href="javascript:void(0)"
+      onclick="ToggleFamilyTreeNode('expand', '{{ type_of_selection }}', '{{ pf.id }}', {{ tree_indent_level|length }})"
+          class='btn btn-default btn-xs'>
+          <span class="glyphicon glyphicon-folder-close"></span>
+      </a>
     {% endif %}
-    {% if type_of_selection == 'browse' %}
-    <a href="javascript:void(0)" onclick="AddToSelection('targets', 'family', '{{ pf.id }}');
+
+    {% if type_of_selection == 'targets' %}
+      <a href="javascript:void(0)" onclick="AddToSelection('{{ type_of_selection }}', 'family', '{{ pf.id }}')"
+        class="target-selection">
+    {% elif type_of_selection == 'targets_table' %}
+      <a href="javascript:void(0)" onclick="SelectInTable('{{ pf.slug }}')" class="target-selection">
+    {% elif type_of_selection == 'browse' %}
+      <a href="javascript:void(0)" onclick="AddToSelection('targets', 'family', '{{ pf.id }}');
         toggleButtonClass('selection-button');
         setTimeout(function(){window.location = '/family/{{ pf.slug }}';}, 200);" class="target-selection">
     {% elif type_of_selection == 'browse_gprot' %}
-        <a href="javascript:void(0)" onclick="AddToSelection('targets', 'family', '{{ pf.id }}');
+      <a href="javascript:void(0)" onclick="AddToSelection('targets', 'family', '{{ pf.id }}');
         toggleButtonClass('selection-button');
         setTimeout(function(){window.location = '/signprot/family/{{ pf.slug }}';}, 200);" class="target-selection">
     {% endif %}
         {{ pf.name|safe }}
-    {% if type_of_selection == 'targets' or type_of_selection == 'browse' or type_of_selection == 'browse_gprot' %}
-    </a>
+    {% if type_of_selection == 'targets' or type_of_selection == 'targets_table' or type_of_selection == 'browse' or type_of_selection == 'browse_gprot' %}
+      </a>
     {% endif %}
     <br />
 </div>
 {% endfor %}
 
-{% for p in ps %}
-    {% for i in tree_indent_level %}
-        &nbsp;&nbsp
-    {% endfor %}
-    {% if p.source.name == 'SWISSPROT' %}
-<span class="glyphicon glyphicon-star"></span>
-    {% elif p.sequence_type.slug == 'mod' %}
-<span class="glyphicon glyphicon-edit"></span>
-    {% elif p.sequence_type.slug == 'consensus' %}
-<span class="glyphicon glyphicon-compressed"></span>
-    {% else %}
-<span class="glyphicon glyphicon-star-empty"></span>
-    {% endif %}
-    {% if type_of_selection == 'browse' %}
-<a href="javascript:void(0)" onclick="AddToSelection('targets', 'protein', '{{ p.id }}');
-    toggleButtonClass('selection-button');
-    setTimeout(function(){window.location = '/protein/{{ p.entry_name }}';}, 200);" class="target-selection">
-    {% elif type_of_selection == 'browse_gprot' %}
-<a href="javascript:void(0)" onclick="AddToSelection('targets', 'protein', '{{ p.id }}');
-    toggleButtonClass('selection-button');
-    setTimeout(function(){window.location = '/signprot/{{ p.entry_name }}';}, 200);" class="target-selection">
-    {% elif type_of_selection == 'ginterface' %}
-<a href="javascript:void(0)" onclick="AddToSelection('targets', 'protein', '{{ p.id }}');
-    toggleButtonClass('selection-button');
-    setTimeout(function(){window.location = '/signprot/ginterface/{{ p.entry_name }}';}, 200);" class="target-selection">
-    {% else %}
-<a href="javascript:void(0)" class="target-selection" onclick="AddToSelection('{{ type_of_selection }}', 'protein',
-    '{{ p.id }}');
-    if (type_of_selection == 'reference' && redirect_on_select == 'True') {
-        toggleButtonClass('selection-button');
-        setTimeout(function(){window.location = redirect_url;}, 200);
-    };">
-    {% endif %}
-    {{ p.name|safe }} [{{ p.species.common_name|safe }}]
-</a><br />
-<div id="{{ p.id }}"></div>
-{% endfor %}
+{% if type_of_selection != 'targets_table' %}
+  {% for p in ps %}
+      {% for i in tree_indent_level %}
+          &nbsp;&nbsp
+      {% endfor %}
+      {% if p.source.name == 'SWISSPROT' %}
+  <span class="glyphicon glyphicon-star"></span>
+      {% elif p.sequence_type.slug == 'mod' %}
+  <span class="glyphicon glyphicon-edit"></span>
+      {% elif p.sequence_type.slug == 'consensus' %}
+  <span class="glyphicon glyphicon-compressed"></span>
+      {% else %}
+  <span class="glyphicon glyphicon-star-empty"></span>
+      {% endif %}
+      {% if type_of_selection == 'browse' %}
+  <a href="javascript:void(0)" onclick="AddToSelection('targets', 'protein', '{{ p.id }}');
+      toggleButtonClass('selection-button');
+      setTimeout(function(){window.location = '/protein/{{ p.entry_name }}';}, 200);" class="target-selection">
+      {% elif type_of_selection == 'browse_gprot' %}
+  <a href="javascript:void(0)" onclick="AddToSelection('targets', 'protein', '{{ p.id }}');
+      toggleButtonClass('selection-button');
+      setTimeout(function(){window.location = '/signprot/{{ p.entry_name }}';}, 200);" class="target-selection">
+      {% elif type_of_selection == 'ginterface' %}
+  <a href="javascript:void(0)" onclick="AddToSelection('targets', 'protein', '{{ p.id }}');
+      toggleButtonClass('selection-button');
+      setTimeout(function(){window.location = '/signprot/ginterface/{{ p.entry_name }}';}, 200);" class="target-selection">
+      {% else %}
+  <a href="javascript:void(0)" class="target-selection" onclick="AddToSelection('{{ type_of_selection }}', 'protein',
+      '{{ p.id }}');
+      if (type_of_selection == 'reference' && redirect_on_select == 'True') {
+          toggleButtonClass('selection-button');
+          setTimeout(function(){window.location = redirect_url;}, 200);
+      };">
+      {% endif %}
+      {{ p.name|safe }} [{{ p.species.common_name|safe }}]
+  </a><br />
+  <div id="{{ p.id }}"></div>
+  {% endfor %}
+{% endif %}

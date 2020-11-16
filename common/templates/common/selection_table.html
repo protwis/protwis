@@ -81,6 +81,20 @@
 
     </div>
     <div class="row">
+      <div class="col-md-12">
+        <span>
+          <button type="button" onclick="onlySelectedTargets(this);" class="btn btn-xs btn-primary" id="only_selected">Only selected</button>
+          <button type="button" onclick="clearFilters();" class="btn btn-xs btn-primary">Clear Filters</button>
+          <button type="button" onclick="clearTargetSelection();" class="btn btn-xs btn-primary">Clear Selection</button>
+          <span id="hidden_filter_container" class="hidden"></span>
+        </span>
+
+        <span class="pull-right">
+          <input type="text" class="copyboxTargets" placeholder="Target names">
+          <button type="button" onclick="importTargets();" class="btn btn-xs btn-primary">Import</button>
+          <button type="button" onclick="exportTargets();" class="btn btn-xs btn-primary">Export</button>
+        <span>
+      </div>
       <div class="col-md-12 panel panel-primary" id="target-table-container">
         {% block table %}
         {% endblock %}

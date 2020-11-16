@@ -166,6 +166,13 @@ function initTargetTable(element) {
         yadcf.init(targetTable,
             [
                 {
+                  column_number: 0,
+                  filter_type: 'custom_func',
+                  custom_func: selectedTargetFilter,
+                  filter_container_id: 'hidden_filter_container',
+                  html5_data: "data-search", // which does not exist - prevent warning logs
+                },
+                {
                     column_number: 1,
                     filter_type: "multi_select",
                     select_type: 'select2',
@@ -185,8 +192,6 @@ function initTargetTable(element) {
                     column_number: 3,
                     filter_type: "multi_select",
                     select_type: 'select2',
-                    filter_default_label: "Family",
-                    filter_reset_button_text: false,
                 },
                 {
                     column_number: 4,
@@ -278,13 +283,50 @@ function initTargetTable(element) {
 }
 
 
-// Add to buttons
-//  yadcf.exResetAllFilters(targetTable);
+// Button functions
+function clearFilters(){
+  yadcf.exResetAllFilters(targetTable);
 
-/*function clearTargetSelection(){
-  $('table#uniprot_selection.tbody.checkbox').prop('checked',false)
-}*/
+  // Clear status "only_selected" buttons if used
+  $("#only_selected").text("Only selected");
+}
 
+function clearTargetSelection(){
+  $("table#uniprot_selection tbody tr [type=checkbox]:checked").each(function() {
+    $(this).prop("checked", false);
+    $(this).closest('tr').removeClass("selected");
+  });
+
+  updateTargetCount();
+  return false;
+}
+
+
+
+function onlySelectedTargets(target){
+  var msg1 = "Only selected";
+  var msg2 = "Show all";
+
+  if (target.textContent == "Only selected"){
+    yadcf.exFilterColumn(targetTable, [[0]]);
+    target.textContent = msg2;
+  } else {
+    // clear filters + show allTargets
+    yadcf.exResetAllFilters(targetTable);
+    target.textContent = msg1;
+    clearFilters();
+  }
+}
+
+function selectedTargetFilter(filterVal, columnVal, rowValues, stateVal){
+  var checkbox_id = columnVal.match(/id="(.*?)"/g);
+  if (checkbox_id.length > 0){
+      checkbox_id = checkbox_id[0].replace(/id="/g,'').replace("\"",'');
+      return $("#"+checkbox_id).prop("checked");
+  } else {
+    return false;
+  }
+}
 
 var changedTargetBoxes = 0;
 function check_all_targets(){
@@ -325,4 +367,17 @@ function updateTargetCount(){
   $("#uniprot_selection_info_targets").html(message);
 
   //var allTargets = $('table#uniprot_selection tbody input').length;
+}
+
+// Select via Tree
+function SelectInTable(slug){
+  $("table#uniprot_selection tbody tr [type=checkbox]").each(function() {
+    if ($(this).attr("id") && $(this).attr("id").startsWith(slug)) {
+      $(this).prop("checked", true);
+      $(this).closest('tr').addClass("selected");
+    }
+  });
+
+  updateTargetCount();
+  return false;
 }
