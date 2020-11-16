@@ -294,18 +294,21 @@ class StructureRefinedSeqSim(models.Model):
 
 
 class StructureModelRMSD(models.Model):
-    homology_model = models.ForeignKey('structure.StructureModel', on_delete=models.CASCADE)
-    pdb = models.CharField(max_length=4)
-    service = models.CharField(max_length=10)
-    version = models.DecimalField(max_digits=2, decimal_places=1)
-    date = models.DateField(null=True)
-    overall_all = models.DecimalField(null=True, max_digits=3, decimal_places=1)
-    overall_backbone = models.DecimalField(null=True, max_digits=3, decimal_places=1)
-    TM_all = models.DecimalField(null=True, max_digits=3, decimal_places=1)
-    TM_backbone = models.DecimalField(null=True, max_digits=3, decimal_places=1)
+    homology_model = models.ForeignKey('structure.StructureModel', on_delete=models.CASCADE, null=True)
+    target_structure = models.ForeignKey('structure.Structure', related_name='target_structure', on_delete=models.CASCADE)
+    main_template = models.ForeignKey('structure.Structure', related_name='main_template', on_delete=models.CASCADE)
+    version = models.DateField(null=True)
+    TM_all = models.DecimalField(null=True, max_digits=2, decimal_places=1)
+    TM_backbone = models.DecimalField(null=True, max_digits=2, decimal_places=1)
+    ICL1 = models.DecimalField(null=True, max_digits=2, decimal_places=1)
+    ECL1 = models.DecimalField(null=True, max_digits=2, decimal_places=1)
+    ICL2 = models.DecimalField(null=True, max_digits=2, decimal_places=1)
+    ECL2 = models.DecimalField(null=True, max_digits=2, decimal_places=1)
+    H8 = models.DecimalField(null=True, max_digits=2, decimal_places=1)
+    binding_pocket = models.DecimalField(null=True, max_digits=2, decimal_places=1)
 
     def __repr__(self):
-        return '<StructureModelRMSD: '+self.service+' hommod '+str(self.homology_model.protein)+'>'
+        return '<StructureModelRMSD: {} {}>'.format(self.target_structure, self.version)
 
     class Meta():
         db_table = 'structure_model_rmsd'

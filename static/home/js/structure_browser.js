@@ -311,27 +311,27 @@ function structurebrowser() {
                 column_number : 24,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "D2x50-S3x39",
+                filter_default_label: "",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '80px',
+                    width: '40px',
                 }
             },
             {
                 column_number : 25,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                filter_default_label: "Sodium in structure",
+                filter_default_label: "",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '100px',
+                    width: '40px',
                 }
             },
             {
                 column_number : 26,
-                filter_type: "multi_select",
+                filter_type: "text",
                 select_type: 'select2',
-                filter_default_label: "Last author",
+                filter_default_label: "Authors",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '100px',
