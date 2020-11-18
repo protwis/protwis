@@ -147,9 +147,8 @@ class Command(BaseBuild):
                 standard_value	= i['standard_value'],
                 standard_relation	= i['standard_relation'],
                 standard_type	= i['standard_type'],
-                standard_units	= i['standard_units'],
-                chembl	= i['chembl'],
-                smiles	= i['smiles'],
+                standard_units	= i['standard_units'],               
+
                 activity	= i['activity'],
                 document_chembl_id	= i['document_chembl_id'],
                 cell_line	= 'delete_me'

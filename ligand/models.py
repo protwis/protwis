@@ -48,7 +48,6 @@ class Ligand(models.Model):
         except Ligand.DoesNotExist:
             web_resource = False
             if gtop_id:
-                print('saving new ligand')
                 # gtoplig webresource
                 lp = self.build_ligand_properties_gtp(gtop_id, ligand_type)
                 if lp == None:
@@ -61,7 +60,7 @@ class Ligand(models.Model):
                     ligand.ambigious_alias = False
                     ligand.pdbe = None
                     try:
-                        ligand.save()
+                        ligand.save()                        
                     except IntegrityError:
                         return Ligand.objects.get(name=ligand_name, canonical=True)
             return ligand
@@ -77,7 +76,6 @@ class Ligand(models.Model):
             wl, created = WebLink.objects.get_or_create(index=gtop_id, web_resource=web_resource)
         except IntegrityError:
             wl = Weblink.objects.get(index=gtop_id, web_resource=web_resource)
-
         lp = LigandProperities()
         try:
             lt = LigandType.objects.filter(name = ligand_type)[0]
@@ -93,11 +91,13 @@ class Ligand(models.Model):
         lp.hacc = subunits['hacc']
         lp.hdon = subunits['hdon']
         lp.logp = subunits['logp']
-        try:
-            lp.save()
-            lp.web_links.add(wl)
-        except IntegrityError:
-            lp = LigandProperities.objects.get(inchikey=structure['inchikey'])
+        lp.save()
+        lp.web_links.add(wl)
+        # try:
+        #     lp.save()
+        #     lp.web_links.add(wl)
+        # except IntegrityError:
+        #     lp = LigandProperities.objects.get(inchikey=structure['inchikey'])
         return lp
 
     def gtp_api_ligand_structure(self, gtop_id):
@@ -348,7 +348,7 @@ class LigandProperities(models.Model):
     #vendor_links = models.ManyToManyField('common.WebLink', related_name='vendors')
     smiles = models.TextField(null=True)
     inchikey = models.CharField(max_length=50, null=True, unique=True)
-    sequence = models.CharField(max_length=1000, null=True)
+    sequence = models.CharField(max_length=1500, null=True)
     #vendors = models.ManyToManyField('LigandVenderLink')
 
     mw = models.DecimalField(max_digits=15, decimal_places=3, null=True)
@@ -411,18 +411,18 @@ class AssayExperiment(models.Model):
     protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
     assay = models.ForeignKey('ChemblAssay', on_delete=models.CASCADE, null= True)
     assay_type = models.CharField(max_length=10)
-    assay_description = models.TextField(max_length=1000)
+    assay_description = models.TextField(max_length=1500)
     pchembl_value = models.CharField(max_length=10, null=True)
 
-    published_value = models.DecimalField(max_digits=9, decimal_places=3, null= True)
+    published_value = models.CharField(max_length=20)
     published_relation = models.CharField(max_length=10, null= True)
     published_type = models.CharField(max_length=20, null= True)
     published_units = models.CharField(max_length=20, null= True)
 
-    standard_value =  models.CharField(max_length=20, null=True)
-    standard_relation = models.CharField(max_length=10)
-    standard_type = models.CharField(max_length=20)
-    standard_units = models.CharField(max_length=20)
+    standard_value =  models.DecimalField(max_digits=9, decimal_places=3, null= True)
+    standard_relation = models.CharField(max_length=10, null= True)
+    standard_type = models.CharField(max_length=20, null= True)
+    standard_units = models.CharField(max_length=20, null= True)
 
     publication = models.ForeignKey(Publication, on_delete = models.CASCADE, null= True)
     activity = models.CharField(max_length=50,null = True)

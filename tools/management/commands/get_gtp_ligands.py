@@ -59,13 +59,17 @@ class Command(BaseBuild):
                             type=int,
                             action='store',
                             dest='proc',
-                            default=3,
+                            default=1,
                             help='Number of processes to run')
         parser.add_argument('-f', '--filename',
                             action='append',
                             dest='filename',
                             help='Filename to import. Can be used multiple times')
-
+        parser.add_argument('-u', '--purge',
+                            action='store_true',
+                            dest='purge',
+                            default=False,
+                            help='Purge existing bias records')
         parser.add_argument('--test_run', action='store_true', help='Skip this during a test run',
                             default=False)
 
@@ -73,113 +77,27 @@ class Command(BaseBuild):
         if options['test_run']:
             print('Skipping in test run')
             return
+        if options['purge']:
+            try:
+                self.purge_bias_data()
+            except Exception as msg:
+                print(msg)
+                self.logger.error(msg)
         try:
             print('Updatind ligand data from GuideToPharma')
             self.analyse_rows()
-            self.logger.info('COMPLETED updating GuideToPharma Data')
+            print('COMPLETED updating GuideToPharma Data')
         except Exception as msg:
             print('--error--', msg, '\n')
             self.logger.info("The error appeared in def handle")
 
     def purge_bias_data(self):
-        pass
-
-    def get_endogenous(self, targets):
-        for target in targets:
-            protein = self.fetch_protein(target)
-            response = requests.get(
-                "https://www.guidetopharmacology.org/services/targets/" + str(target) + "/naturalLigands")
-            data = response.json()
-            for i in data:
-                try:
-                    ligand = self.fetch_ligand(
-                        data[0]['ligandId'], data[0]['type'])
-                    if ligand and protein:
-                        protein.endogenous_ligands.add(ligand)
-                        lig, created = Ligand.objects.update_or_create(
-                            id=ligand.id,
-                            defaults={'endogenous': True},
-                        )
-                    else:
-                        pass
-                except:
-                    continue
-
-    def save_ligand_copy(self, ligand):
-        """
-        fetch ligands with Ligand model
-        requires: ligand id, ligand id type, ligand name
-        requires: source_file name
-        """
-        lig = Ligand()
-        l = lig.load_by_gtop_id(
-            ligand['name'], ligand['entry'], ligand['type'])
-        if l != None:
-            self.ligand_cache[ligand['entry']] = l
-
-    def get_ligands(self):
-        ligands = list()
-        response = requests.get(
-            "https://www.guidetopharmacology.org/services/ligands")
-        print('total ligands:', len(response.json()))
-        for entry in response.json():
-            try:
-                temp = dict()
-                temp['entry'] = entry['ligandId']
-                temp['name'] = entry['name']
-                temp['type'] = entry['type']
-                self.save_ligand_copy(temp)
-            except:
-                pass
-
-    def get_gpcrs(self):
-        target_list = list()
-        response = requests.get(
-            "https://www.guidetopharmacology.org/services/targets/families")
-        for entry in response.json():
-            try:
-                if entry['parentFamilyIds'] != None and entry['parentFamilyIds'][0] == 694:
-                    target_list.extend(entry['targetIds'])
-            except:
-                pass
-                print('error entry', entry)
-        return target_list
-
-    def get_ligand_assays(self, targets):
-        assay_list = list()
-        response = requests.get(
-            "https://www.guidetopharmacology.org/services/interactions")
-        for entry in response.json():
-            try:
-                if entry['targetId'] != None and entry['targetId'] in targets:
-                    assay_list.append(entry)
-            except:
-                pass
-        print('\ninteractions', assay_list[:2])
-        # print(len(assay_list))
-        return assay_list
-
-    def process_ligand_assays(self, assays):
-        for i in assays:
-            temp_dict = dict()
-            temp_dict['protein'] = self.fetch_protein(i['targetId'])
-            temp_dict['ligand'] = self.fetch_ligand(i['ligandId'], i['type'])
-            print(i['refIds'], 'ligand g: ', temp_dict['ligand'],
-                  ' ligand fra', i['ligandId'],)
-            if i['refIds']:
-                temp_dict['doi'] = self.fetch_publication(i['refIds'])
-            else:
-                temp_dict['doi'] = None
-            if temp_dict['protein'] == None:
-                continue
-            if temp_dict['ligand'] == None:
-                continue
-            temp_dict['standard_type'] = i['affinityParameter']
-            temp_dict['standard_value'] = i['affinity']
-            temp_dict['assay_description'] = i['ligandContext']
-            if temp_dict['assay_description'] == None:
-                temp_dict['assay_description'] = "No data available"
-            self.upload_to_db(temp_dict)
+        print("# Purging data")
+        delete_bias_experiment = Ligand.objects.all()
+        delete_bias_experiment.delete()
+        delete_ligand_props = LigandProperities.objects.all()
+        delete_ligand_props.delete()
+        print("# Data purged")
 
     def analyse_rows(self):
         """
@@ -187,28 +105,52 @@ class Command(BaseBuild):
         Saves to DB
         """
         print('---Starting---\n')
-        start = time.time()
         print("\n#1 Get GPCR ids from target families")
         target_list = self.get_gpcrs()
         print("\n#2 Get Ligands")
         self.get_ligands()
-        print("\n#3 Get Ligand assays", self.ligand_cache)
+        print("\n#3 Get Ligand assays")
         assays = self.get_ligand_assays(target_list)
         print("\n#4 Process Ligand assays")
         self.process_ligand_assays(assays)
         print("\n#5 Get Endogeneous ligands")
         self.get_endogenous(target_list)
         print('\n\n---Finished---')
-        # range should be set to number of total objects/20 (API batch size)
-        # 555200 is the last id saved before session was aborted
+
+    def get_endogenous(self, targets):
+        for target in targets:
+            protein = self.fetch_protein(target)
+            response = requests.get(
+                "https://www.guidetopharmacology.org/services/targets/" + str(target) + "/naturalLigands")
+            if response.status_code == 200:
+                data = response.json()
+                for i in data:
+                    try:
+                        ligand_name = str()
+                        try:
+                            ligand_name = self.ligand_cache[i['targetId']]
+                        except:
+                            ligand_name = ""
+                        ligand = self.fetch_ligand(
+                            data[0]['ligandId'], data[0]['type'],ligand_name)
+                        if ligand and protein:
+                            protein.endogenous_ligands.add(ligand)
+                            lig, created = Ligand.objects.update_or_create(
+                                id=ligand.id,
+                                defaults={'endogenous': True},
+                            )
+                        else:
+                            pass
+                    except:
+                        continue
 
     def upload_to_db(self, i):
         # saves data
         chembl_data = AssayExperiment(ligand=i["ligand"],
                                       publication=i["doi"],
                                       protein=i["protein"],
-                                      standard_type=i["standard_type"],
-                                      standard_value=i["standard_value"],
+                                      published_type=i["standard_type"],
+                                      published_value=i["standard_value"],
                                       assay_description=i["assay_description"],
                                       )
         chembl_data.save()
@@ -226,7 +168,7 @@ class Command(BaseBuild):
         except:
             return None
 
-    def fetch_ligand(self, ligand_id, type):
+    def fetch_ligand(self, ligand_id, type, name):
         """
         fetch ligands with Ligand model
         requires: ligand id, ligand id type, ligand name
@@ -235,21 +177,19 @@ class Command(BaseBuild):
         l = None
 
         try:
-            if ligand_id in self.ligand_cache:
-                l = self.ligand_cache[ligand_id]
-            else:
-                l = Ligand.objects.filter(
-                    properities__web_links__index=ligand_id).first()
-                if l:
-                    cid = l.properities.web_links.filter(
-                        web_resource__slug='gtoplig').first()
-                    if cid:
-                        return l
-                    else:
-                        l = None
+            l = Ligand.objects.filter(
+                properities__web_links__index=ligand_id).first()
+            if l:
+                cid = l.properities.web_links.filter(
+                    web_resource__slug='gtoplig').first()
+                if cid:
+                    return l
                 else:
                     lig = Ligand()
-                    l = lig.load_by_gtop_id('', ligand_id, ligand['type'])
+                    l = lig.load_by_gtop_id(name, ligand_id, type)
+            else:
+                lig = Ligand()
+                l = lig.load_by_gtop_id(name, ligand_id, type)
         except Exception as msg:
             l = None
             # print('ligand_id---',l,'\n end')
@@ -325,3 +265,80 @@ class Command(BaseBuild):
             pub = self.publication_cache[publication_doi]
 
         return pub
+
+    def save_ligand_copy(self, ligand):
+        """
+        fetch ligands with Ligand model
+        requires: ligand id, ligand id type, ligand name
+        requires: source_file name
+        """
+        self.ligand_cache.update({ligand['entry']:ligand['name'] })
+
+    def get_ligands(self):
+        ligands = list()
+        response = requests.get(
+            "https://www.guidetopharmacology.org/services/ligands")
+        print('total ligands:', len(response.json()))
+        for entry in response.json():
+            try:
+                temp = dict()
+                temp['entry'] = entry['ligandId']
+                temp['name'] = entry['name']
+                temp['type'] = entry['type']
+                self.save_ligand_copy(temp)
+            except:
+                pass
+
+    def get_gpcrs(self):
+        target_list = list()
+        response = requests.get(
+            "https://www.guidetopharmacology.org/services/targets/families")
+        for entry in response.json():
+            try:
+                if entry['parentFamilyIds'] != None:
+                    if entry['parentFamilyIds'][0] == 694 or entry['parentFamilyIds'][0] == 115:
+                        target_list.extend(entry['targetIds'])
+            except:
+                pass
+        return target_list
+
+    def get_ligand_assays(self, targets):
+        assay_list = list()
+        response = requests.get(
+            "https://www.guidetopharmacology.org/services/interactions")
+        for entry in response.json():
+            try:
+                if entry['targetId'] != None and entry['targetId'] in targets:
+                    assay_list.append(entry)
+            except:
+                pass
+        return assay_list
+
+    def process_ligand_assays(self, assays):
+
+        for i in assays:
+            temp_dict = dict()
+            temp_dict['protein'] = self.fetch_protein(i['targetId'])
+            ligand_name = str()
+            try:
+                ligand_name = self.ligand_cache[i['targetId']]
+            except:
+                ligand_name = ""
+            temp_dict['ligand'] = self.fetch_ligand(i['ligandId'], i['type'], ligand_name)
+            if i['refIds']:
+                try:
+                    temp_dict['doi'] = self.fetch_publication(i['refIds'])
+                except:
+                    temp_dict['doi'] = None
+            else:
+                temp_dict['doi'] = None            
+            if temp_dict['protein'] == None:
+                continue
+            if temp_dict['ligand'] == None:
+                continue
+            temp_dict['standard_type'] = i['affinityParameter']
+            temp_dict['standard_value'] = i['affinity']
+            temp_dict['assay_description'] = i['ligandContext']
+            if temp_dict['assay_description'] == None:
+                temp_dict['assay_description'] = "No data available"
+            self.upload_to_db(temp_dict)
