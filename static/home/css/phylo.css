@@ -7,12 +7,14 @@
   fill: lightgray;
 }
 
-.node, text {
+.node,
+text {
   font: 7px sans-serif;
   cursor: pointer;
 }
 
-.node, text:hover {
+.node,
+text:hover {
   font: 10px sans-serif;
   font-weight: bold;
   cursor: pointer;
@@ -53,7 +55,9 @@
   shape-rendering: crispEdges;
 }
 
-.internal-node circle, .internal-node ellipse, .internal-node rect {
+.internal-node circle,
+.internal-node ellipse,
+.internal-node rect {
   fill: #ccc;
   stroke: black;
   stroke-width: 0.5px;
@@ -67,7 +71,9 @@
   fill: #f00 !important;
 }
 
-.node-collapsed circle, .node-collapsed ellipse, .node-collapsed rect {
+.node-collapsed circle,
+.node-collapsed ellipse,
+.node-collapsed rect {
   fill: black !important;
 }
 
@@ -114,7 +120,9 @@
   stroke-width: 10px;
 }
 
-.internal-node circle:hover, .internal-node ellipse:hover, .internal-node rect:hover {
+.internal-node circle:hover,
+.internal-node ellipse:hover,
+.internal-node rect:hover {
   fill: black;
   stroke: #ccc;
 }
@@ -135,7 +143,8 @@
   border-color: #204d74;
 }
 
-.btn-default.active, .btn-default.active:hover {
+.btn-default.active,
+.btn-default.active:hover {
   color: white;
   background-color: #204d74;
   border-color: #204d74;

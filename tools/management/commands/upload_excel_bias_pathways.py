@@ -80,7 +80,7 @@ class Command(BaseBuild):
         BiasedPathways.objects.all().delete()
 
     def loaddatafromexcel(self, excelpath):
-        """Reads excel file (require specific excel sheet)"""
+        """Reads excel file (require specific excel sheet)."""
         num_rows = 0
         try:
             workbook = xlrd.open_workbook(excelpath)
@@ -115,9 +115,9 @@ class Command(BaseBuild):
 
     def analyse_rows(self, rows, source_file):
         """
-        Reads excel rows one by one
-        Fetch data to models
-        Saves to DB
+        Reads excel rows one by one.
+        Fetch data to models.
+        Saves to DB.
         """
         skipped = 0
         # Analyse the rows from excel and assign the right headers

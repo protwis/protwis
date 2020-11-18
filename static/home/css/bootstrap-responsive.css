@@ -736,6 +736,10 @@
     margin-left: 0;
   }
 
+  .controls-row [class*="span"] + [class*="span"] {
+    margin-left: 20px;
+  }
+
   .row-fluid .controls-row [class*="span"] + [class*="span"] {
     margin-left: 2.7624309392265194%;
   }
@@ -924,10 +928,6 @@
   textarea,
   .uneditable-input {
     margin-left: 0;
-  }
-
-  .controls-row [class*="span"] + [class*="span"] {
-    margin-left: 20px;
   }
 
   input.span12,
