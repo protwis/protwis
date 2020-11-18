@@ -58,6 +58,7 @@ License: MIT
   bottom: 0;
   left: 84%;
   height: 100%;
+  background: linear-gradient(to bottom, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%);
 }
 
 .sp-fill {
@@ -80,6 +81,17 @@ License: MIT
   right: 0;
   left: 0;
   height: 8px;
+}
+
+/* Gradients for hue, saturation and value instead of images.  Not pretty... but it works */
+.sp-sat {
+  background-image: linear-gradient(to right, #fff, rgba(204, 154, 129, 0));
+  filter: progid:dximagetransform.microsoft.gradient(GradientType=1, startColorstr='#FFFFFFFF', endColorstr='#00CC9A81');
+}
+
+.sp-val {
+  background-image: linear-gradient(to top, #000, rgba(204, 154, 129, 0));
+  filter: progid:dximagetransform.microsoft.gradient(startColorstr='#00CC9A81', endColorstr='#f0000');
 }
 
 /* Don't allow text selection */
@@ -125,16 +137,6 @@ License: MIT
 
 .sp-clear.sp-clear-display {
   background-position: center;
-}
-
-.sp-clear-enabled .sp-clear {
-  display: block;
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 84%;
-  height: 28px;
 }
 
 /* IE filters do not support multiple color stops.
@@ -371,7 +373,6 @@ See http://bgrins.github.io/spectrum/themes/ for instructions.
   padding: 4px;
   display: inline-block;
   *zoom: 1;
-  *display: inline;
   border: solid 1px #91765d;
 
   /* background: #eee; */
@@ -556,19 +557,4 @@ See http://bgrins.github.io/spectrum/themes/ for instructions.
 
 .sp-alpha-enabled .sp-alpha {
   display: block;
-}
-
-/* Gradients for hue, saturation and value instead of images.  Not pretty... but it works */
-.sp-sat {
-  background-image: linear-gradient(to right, #fff, rgba(204, 154, 129, 0));
-  filter: progid:dximagetransform.microsoft.gradient(GradientType=1, startColorstr='#FFFFFFFF', endColorstr='#00CC9A81');
-}
-
-.sp-val {
-  background-image: linear-gradient(to top, #000, rgba(204, 154, 129, 0));
-  filter: progid:dximagetransform.microsoft.gradient(startColorstr='#00CC9A81', endColorstr='#f0000');
-}
-
-.sp-hue {
-  background: linear-gradient(to bottom, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%);
 }
