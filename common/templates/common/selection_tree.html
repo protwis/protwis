@@ -20,7 +20,7 @@
     <a href="javascript:void(0)" onclick="AddToSelection('{{ type_of_selection }}', 'family', '{{ ppf.id }}')"
         class="target-selection">
     {% elif type_of_selection == 'targets_table' %}
-    <a href="javascript:void(0)" onclick="SelectInTable('{{ ppf.slug }}')" class="target-selection">
+    <a href="javascript:void(0)" onclick="selectInTable('{{ ppf.slug }}')" class="target-selection">
     {% endif %}
         {{ ppf.name|safe }}
     {% if type_of_selection == 'targets' or type_of_selection == 'targets_table' or type_of_selection == 'browse' or type_of_selection == 'browse_gprot'%}
@@ -50,7 +50,7 @@
       <a href="javascript:void(0)" onclick="AddToSelection('{{ type_of_selection }}', 'family', '{{ pf.id }}')"
         class="target-selection">
     {% elif type_of_selection == 'targets_table' %}
-      <a href="javascript:void(0)" onclick="SelectInTable('{{ pf.slug }}')" class="target-selection">
+      <a href="javascript:void(0)" onclick="selectInTable('{{ pf.slug }}')" class="target-selection">
     {% elif type_of_selection == 'browse' %}
       <a href="javascript:void(0)" onclick="AddToSelection('targets', 'family', '{{ pf.id }}');
         toggleButtonClass('selection-button');

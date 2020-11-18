@@ -7,11 +7,11 @@ var selected_targets = new Set();
  */
 function initTargetTable(elementID) {
 
-    if (!$.fn.DataTable.isDataTable(elementID + ' table')) {
-        targetTable = $(elementID + ' table').DataTable({
+    if (!$.fn.DataTable.isDataTable(elementID + " table")) {
+        targetTable = $(elementID + " table").DataTable({
             dom: "ftip",
             deferRender: true,
-            scrollY: '50vh',
+            scrollY: "50vh",
             scrollX: true,
             scrollCollapse: true,
             scroller: true,
@@ -24,11 +24,11 @@ function initTargetTable(elementID) {
             columnDefs: [{
                 targets: 0,
                 orderable: false,
-                className: 'select-checkbox'
+                className: "select-checkbox"
             },{
                 targets: 1,
                 orderable: false,
-                className: 'text-center'
+                className: "text-center"
             },],
         });
 
@@ -36,15 +36,15 @@ function initTargetTable(elementID) {
             [
                 {
                   column_number: 0,
-                  filter_type: 'custom_func',
+                  filter_type: "custom_func",
                   custom_func: selectedTargetFilter,
-                  filter_container_id: 'hidden_filter_container',
+                  filter_container_id: "hidden_filter_container",
                   html5_data: "data-search", // which does not exist - prevent warning logs
                 },
                 {
                     column_number: 1,
                     filter_type: "multi_select",
-                    select_type: 'select2',
+                    select_type: "select2",
                     filter_default_label: "Class",
                     filter_reset_button_text: false,
                     style_class: "center",
@@ -52,7 +52,7 @@ function initTargetTable(elementID) {
                 {
                     column_number: 2,
                     filter_type: "multi_select",
-                    select_type: 'select2',
+                    select_type: "select2",
                     filter_default_label: "Ligand",
                     filter_reset_button_text: false,
                     filter_match_mode : "exact",
@@ -60,19 +60,19 @@ function initTargetTable(elementID) {
                 {
                     column_number: 3,
                     filter_type: "multi_select",
-                    select_type: 'select2',
+                    select_type: "select2",
                 },
                 {
                     column_number: 4,
                     filter_type: "multi_select",
-                    select_type: 'select2',
+                    select_type: "select2",
                     filter_default_label: "Uniprot",
                     filter_reset_button_text: false,
                 },
                 {
                     column_number: 5,
                     filter_type: "multi_select",
-                    select_type: 'select2',
+                    select_type: "select2",
                     column_data_type: "html",
                     html_data_type: "text",
                     filter_default_label: "GtP",
@@ -82,7 +82,7 @@ function initTargetTable(elementID) {
                 {
                     column_number: 6,
                     filter_type: "text",
-                    select_type: 'select2',
+                    select_type: "select2",
                     html5_data: "data-search",
                     filter_default_label: "PDB",
                     filter_reset_button_text: false,
@@ -90,40 +90,40 @@ function initTargetTable(elementID) {
                 /*{
                     column_number: 7,
                     filter_type: "multi_select",
-                    select_type: 'select2',
+                    select_type: "select2",
                     filter_default_label: "Approved",
                 },
                 {
                     column_number: 8,
                     filter_type: "multi_select",
-                    select_type: 'select2',
+                    select_type: "select2",
                     filter_default_label: "Clinical trial",
                 },*/
                 {
                     column_number: 7,
                     filter_type: "multi_select",
-                    select_type: 'select2',
+                    select_type: "select2",
                     filter_default_label: "Gs",
                     filter_reset_button_text: false,
                 },
                 {
                     column_number: 8,
                     filter_type: "multi_select",
-                    select_type: 'select2',
+                    select_type: "select2",
                     filter_default_label: "Gi/o",
                     filter_reset_button_text: false,
                 },
                 {
                     column_number: 9,
                     filter_type: "multi_select",
-                    select_type: 'select2',
+                    select_type: "select2",
                     filter_default_label: "Gq/11",
                     filter_reset_button_text: false,
                 },
                 {
                     column_number: 10,
                     filter_type: "multi_select",
-                    select_type: 'select2',
+                    select_type: "select2",
                     filter_default_label: "G12/13",
                     filter_reset_button_text: false,
                 },
@@ -133,21 +133,21 @@ function initTargetTable(elementID) {
                 filters_tr_index: 1
             }
         );
-    };
+    }
 
     // When redrawing update the information selection message
-    targetTable.on('draw.dt', function(e, oSettings) {
+    targetTable.on("draw.dt", function(e, oSettings) {
         updateTargetCount();
     });
 
     // Put top scroller
     // https://stackoverflow.com/questions/35147038/how-to-place-the-datatables-horizontal-scrollbar-on-top-of-the-table
-    $('.dataTables_scrollHead').css({
-        'overflow-x':'scroll'
-    }).on('scroll', function(e){
-        var scrollBody = $(this).parent().find('.dataTables_scrollBody').get(0);
+    $(".dataTables_scrollHead").css({
+        "overflow-x": "scroll"
+    }).on("scroll", function(e){
+        var scrollBody = $(this).parent().find(".dataTables_scrollBody").get(0);
         scrollBody.scrollLeft = this.scrollLeft;
-        $(scrollBody).trigger('scroll');
+        $(scrollBody).trigger("scroll");
     });
 
     // Ready to draw the table
@@ -218,7 +218,7 @@ function onlySelectedTargets(target){
 function selectedTargetFilter(filterVal, columnVal, rowValues, stateVal){
   var checkbox_id = columnVal.match(/id="(.*?)"/g);
   if (checkbox_id.length > 0){
-      checkbox_id = checkbox_id[0].replace(/id="/g,'').replace("\"",'');
+      checkbox_id = checkbox_id[0].replace(/id="/g, '').replace("\"", '');
       return $("#"+checkbox_id).prop("checked");
   } else {
     return false;
@@ -243,7 +243,7 @@ function check_all_targets(){
     }
   });
 
-  if (changedTargetBoxes==0){
+  if (changedTargetBoxes === 0){
     $("table#uniprot_selection tbody tr").each(function() {
       removeTarget($(this).find("[type=checkbox]")[0]);
     });
@@ -260,10 +260,10 @@ function check_all_targets(){
 var previous_target_count = 0;
 function updateTargetCount(){
   // Counting the selected targets matching the current filters
-  var numTargets = $('table#uniprot_selection tbody input:checked').length;
+  var numTargets = $("table#uniprot_selection tbody input:checked").length;
 
   var message = selected_targets.size.toString();
-  if (numTargets == 1)
+  if (numTargets === 1)
     message += " target selected";
   else
     message += " targets selected";
@@ -274,7 +274,7 @@ function updateTargetCount(){
 
   $("#selection_table_info").html(message);
   if (previous_target_count != selected_targets.size) {
-    if (!$("#selection_table_info").is(':animated'))
+    if (!$("#selection_table_info").is(":animated"))
       $("#selection_table_info").effect("highlight", {color:"#FFAAAA"}, 1000 );
     previous_target_count = selected_targets.size;
   }
@@ -306,7 +306,7 @@ function selectInTable(slug){
 function addTarget(checkbox){
   var slug = $(checkbox).attr("id");
   $(checkbox).prop("checked", true);
-  $(checkbox).closest('tr').addClass("selected");
+  $(checkbox).closest("tr").addClass("selected");
 
   selected_targets.add(slug);
 }
@@ -318,7 +318,7 @@ function addTarget(checkbox){
 function removeTarget(checkbox){
   var slug = $(checkbox).attr("id");
   $(checkbox).prop("checked", false);
-  $(checkbox).closest('tr').removeClass("selected");
+  $(checkbox).closest("tr").removeClass("selected");
 
   selected_targets.delete(slug);
 }
@@ -402,12 +402,12 @@ function submitSelection(url) {
     // set CSRF csrf_token
     $.ajaxSetup({
         headers:
-        { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') }
+        { "X-CSRF-TOKEN": $("meta[name=\"csrf-token\"]").attr("content") }
     });
 
     // Submit proteins to target selection
     var group = Array.from(selected_targets);
-    $.post('/common/targetformread', { "input-targets": group.join("\r") },  function (data) {
+    $.post("/common/targetformread", { "input-targets": group.join("\r") },  function (data) {
       // On success go to alignment page
       window.location.href = url;
     })
