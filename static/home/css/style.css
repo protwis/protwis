@@ -32,6 +32,8 @@ h4 {
 
 #selection_table_info {
   width: 100%;
+  background-color: #fafafa;
+  color: #555;
 }
 
 .carousel-caption {
