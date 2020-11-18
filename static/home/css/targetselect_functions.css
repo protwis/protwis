@@ -1,14 +1,15 @@
 .dataTables_scrollBody {
-    border: 2px
+  border: 2px;
 }
+
 @media (min-width: 768px) {
   .modal-xl {
     width: 90%;
-   max-width:1200px;
+    max-width: 1200px;
   }
 }
 
-.modal-no-border{
+.modal-no-border {
   border: none;
 }
 
