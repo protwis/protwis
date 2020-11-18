@@ -1,145 +1,14 @@
-let receptor_selection = [];
-let oTable = [];
-
-
-/**
- * Connects to an endpoint served by a django view
- */
-function initializeTargetChooserTables() {
-    $.get('/common/targettabledata', function (data) {
-        $('#targetselect-modal-table .tableview').html(data);
-        let targettabledata = data;
-    });
-}
-
-/**
- * POST array of targets (receptor_selection) to receiver endpoint /common/targetformread
- */
-function AddMultipleTargets() {
-    $.post('/common/targetformread',
-        { "input-targets": receptor_selection.join("\r") },
-        function (data) {
-            $("#selection-targets").html(data);
-        }).fail(function (jqXHR, textStatus, error) {
-        alert("Request failed: " + textStatus + error);
-    });
-}
-
-/**
- * Onclick function triggered in input element in html table
- * @param name
- * @returns receptor_selection
- */
-function thisTARGET(name) {
-    const checkboxes = document.querySelectorAll(`input[name="targets"]:checked`);
-    receptor_selection =[];
-    checkboxes.forEach((checkbox) => {
-        receptor_selection.push(checkbox.id);
-    });
-    return receptor_selection;
-}
-
-/**
- * Similar to thisTARGET but selects all checkboxes in one go, that is, check_all
- */
-function check_all() {
-    show_all = $('.check_all:visible').prop("checked");
-
-    if (show_all) {
-        $('.pdb_selected:visible').prop("checked", true);
-    } else {
-        $('.pdb_selected:visible').prop("checked", false);
-    }
-
-    const checkboxes = document.querySelectorAll(`input[name="targets"]:checked`);
-    receptor_selection =[];
-    checkboxes.forEach((checkbox) => {
-        receptor_selection.push(checkbox.id);
-    });
-
-}
-
-function resetselection(not_update = false, reset_filters = false) {
-    $('.check_all:visible').prop('checked', false);
-    $('input', oTable.cells().nodes()).prop('checked', false);
-    if (reset_filters) yadcf.exResetAllFilters(oTable);
-}
-
-
-
-$.fn.dataTable.ext.order['dom-checkbox'] = function(settings, col) {
-    return this.api().column(col, {
-        order: 'index'
-    }).nodes().map(function(td, i) {
-        return $('input', td).prop('checked') ? '1' : '0';
-    });
-};
-
-function pasteTargets() {
-    pdbs = $('.pastePDBs:visible').val().toUpperCase().trim();
-    pdbs = pdbs.split(/[ ,]+/);
-    resetselection(1);
-    $('.pdb_selected', oTable.cells().nodes()).each(function() {
-        pdb = $(this).attr('id')
-        check = $.inArray(pdb, pdbs);
-        if (check !== -1) {
-            $(this).prop("checked", true);
-            pdbs.splice(check, 1);
-        }
-    });
-    if (pdbs.length) {
-        var popOverSettings = {
-            placement: 'bottom',
-            container: 'body',
-            title: 'One or more PDB(s) not found:', //Specify the selector here
-            content: pdbs
-        }
-        $('.pastePDBs').popover(popOverSettings);
-        $('.pastePDBs').popover('show');
-        $('.pastePDBs').on('shown.bs.popover',function() {
-            setTimeout(function() {
-                $('.pastePDBs').popover("destroy")}, 3000);
-        })
-    } /*else {
-        $('.pastePDBs').popover('destroy');
-    }*/
-    oTable.order([
-        [1, 'desc']
-    ]);
-    oTable.draw();
-}
-
-function exportSelectedTargets() {
-    var targets = [];
-    // TODO Replace with uniprot IDs
-    /*$('.pdb_selected:checked', oTable.cells().nodes()).each(function() {
-        pdbs.push($(this).attr('id'));
-    });*/
-
-    // TODO add export button
-    var textArea = document.createElement("textarea");
-    textArea.value = pdbs;
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    try {
-        var successful = document.execCommand('copy');
-        var msg = successful ? 'Successful' : 'Unsuccessful';
-        $(".export_targets").html(msg);
-        setTimeout("$('.export_targets').html('Export selected targets');", 4000);
-    } catch (err) {
-        $(".export_targets").html('Oops, unable to copy');
-    }
-
-    // remove area for copying
-    document.body.removeChild(textArea);
-}
-
 var targetTable;
-function initTargetTable(element) {
+var selected_targets = new Set();
 
-    if (!$.fn.DataTable.isDataTable(element + ' table')) {
-        targetTable = $(element + ' table').DataTable({
+/**
+ * This function initializes the YADCF datatables for a specific element
+ * @param {string} elementID The identifier of the container containing the table
+ */
+function initTargetTable(elementID) {
+
+    if (!$.fn.DataTable.isDataTable(elementID + ' table')) {
+        targetTable = $(elementID + ' table').DataTable({
             dom: "ftip",
             deferRender: true,
             scrollY: '50vh',
@@ -266,7 +135,10 @@ function initTargetTable(element) {
         );
     };
 
-    targetTable.draw();
+    // When redrawing update the information selection message
+    targetTable.on('draw.dt', function(e, oSettings) {
+        updateTargetCount();
+    });
 
     // Put top scroller
     // https://stackoverflow.com/questions/35147038/how-to-place-the-datatables-horizontal-scrollbar-on-top-of-the-table
@@ -278,31 +150,47 @@ function initTargetTable(element) {
         $(scrollBody).trigger('scroll');
     });
 
-    // Add selection counter
-    updateTargetCount();
+    // Ready to draw the table
+    targetTable.draw();
 }
 
 
-// Button functions
+/**
+ * This function clear all filters on a the YADCF target table
+ */
 function clearFilters(){
-  yadcf.exResetAllFilters(targetTable);
+  // Redrawing is slow: only reset filters when actually active
+  if ($("#uniprot_selection_info").text().includes("filtered")){
+    yadcf.exResetAllFilters(targetTable);
 
-  // Clear status "only_selected" buttons if used
-  $("#only_selected").text("Only selected");
+    // Clear status "only_selected" buttons if used
+    $("#only_selected").text("Only selected");
+  }
 }
 
+/**
+ * This function clear all currently selected targets and resets the filters
+ * @returns {boolean} false to prevent event propagation
+ */
 function clearTargetSelection(){
+  // clear filters, otherwise there will be mismatches
+  clearFilters();
+
+  // uncheck all selected targets
   $("table#uniprot_selection tbody tr [type=checkbox]:checked").each(function() {
-    $(this).prop("checked", false);
-    $(this).closest('tr').removeClass("selected");
+    removeTarget(this);
   });
 
+  // update information message
   updateTargetCount();
   return false;
 }
 
-
-
+/**
+ * This function will filter all unselected targets from the table
+ * and toggle the button to Show all targets (+ vice versa)
+ * @param {object} target The button element that triggers this function
+ */
 function onlySelectedTargets(target){
   var msg1 = "Only selected";
   var msg2 = "Show all";
@@ -318,6 +206,15 @@ function onlySelectedTargets(target){
   }
 }
 
+/**
+ * This is a custom YADCF function that checks if a row is selected or not
+ * In this case this is done using the checkbox in the first column
+ * @param {object} filterVal Value to filter on (not applicable)
+ * @param {object} columnVal Element in the filtered column
+ * @param {object} rowValues All elements in this row (not used)
+ * @param {object} stateVal Current DOM state of the row (not sufficient in this case)
+ * @returns {boolean} true if row contains selected target otherwise false
+ */
 function selectedTargetFilter(filterVal, columnVal, rowValues, stateVal){
   var checkbox_id = columnVal.match(/id="(.*?)"/g);
   if (checkbox_id.length > 0){
@@ -328,23 +225,27 @@ function selectedTargetFilter(filterVal, columnVal, rowValues, stateVal){
   }
 }
 
-var changedTargetBoxes = 0;
+/**
+ * This is a custom YADCF function that checks if a row is selected or not
+ * In this case this is done using the checkbox in the first column
+ * @param {object} filterVal Value to filter on (not applicable)
+ * @param {object} columnVal Element in the filtered column
+ * @param {object} rowValues All elements in this row (not used)
+ * @param {object} stateVal Current DOM state of the row (not sufficient in this case)
+ * @returns {boolean} true if row contains selected target otherwise false
+ */
 function check_all_targets(){
-  changedTargetBoxes = 0;
+  var changedTargetBoxes = 0;
   $("table#uniprot_selection tbody tr").each(function() {
     if (!$(this).hasClass("selected")){
-      $(this).addClass("selected");
-      var checkbox = $(this).find("[type=checkbox]");
-      checkbox.prop("checked", $(this).hasClass("selected"));
+      addTarget($(this).find("[type=checkbox]")[0]);
       changedTargetBoxes++;
     }
   });
 
   if (changedTargetBoxes==0){
     $("table#uniprot_selection tbody tr").each(function() {
-      $(this).removeClass("selected");
-      var checkbox = $(this).find("[type=checkbox]");
-      checkbox.prop("checked", false);
+      removeTarget($(this).find("[type=checkbox]")[0]);
     });
   }
 
@@ -352,32 +253,169 @@ function check_all_targets(){
   return false;
 }
 
-// TODO: maintain using array or count using the DOM?
+/**
+ * This function mains the shown and hidden selected targets
+ * and updates an information message after each update/filter.
+ */
+var previous_target_count = 0;
 function updateTargetCount(){
   // Counting the selected targets matching the current filters
   var numTargets = $('table#uniprot_selection tbody input:checked').length;
-  var message = " ("+numTargets+" targets selected )";
+
+  var message = selected_targets.size.toString();
   if (numTargets == 1)
-    message = " ("+numTargets+" target selected )";
+    message += " target selected";
+  else
+    message += " targets selected";
 
-  // Tweak selection message + integrate filtering and selection
-  if ($("#uniprot_selection_info_targets").length == 0)
-    $("#uniprot_selection_info").append("<span id=\"uniprot_selection_info_targets\"></span>");
+  var filtered = selected_targets.size - numTargets;
+  if (filtered > 0)
+    message += " ("+filtered+" currently filtered)";
 
-  $("#uniprot_selection_info_targets").html(message);
-
-  //var allTargets = $('table#uniprot_selection tbody input').length;
+  $("#selection_table_info").html(message);
+  if (previous_target_count != selected_targets.size) {
+    if (!$("#selection_table_info").is(':animated'))
+      $("#selection_table_info").effect("highlight", {color:"#FFAAAA"}, 1000 );
+    previous_target_count = selected_targets.size;
+  }
 }
 
-// Select via Tree
-function SelectInTable(slug){
+/**
+ * This function enables protein family selections from the tree browser
+ * @param {string} slug Protein family slug of the targets that should be selected
+ * @returns {boolean} false to prevent event propagation
+ */
+function selectInTable(slug){
+  // clear filters, otherwise there will be mismatches
+  clearFilters();
+
   $("table#uniprot_selection tbody tr [type=checkbox]").each(function() {
     if ($(this).attr("id") && $(this).attr("id").startsWith(slug)) {
-      $(this).prop("checked", true);
-      $(this).closest('tr').addClass("selected");
+      addTarget(this);
     }
   });
 
   updateTargetCount();
   return false;
+}
+
+/**
+ * This function adds the target of the checkbox to the selected targets
+ * @param {object} checkbox Checkbox element of the target to select
+ */
+function addTarget(checkbox){
+  var slug = $(checkbox).attr("id");
+  $(checkbox).prop("checked", true);
+  $(checkbox).closest('tr').addClass("selected");
+
+  selected_targets.add(slug);
+}
+
+/**
+ * This function remove the target of the checkbox from the selected targets
+ * @param {object} checkbox Checkbox element of the target to remove
+ */
+function removeTarget(checkbox){
+  var slug = $(checkbox).attr("id");
+  $(checkbox).prop("checked", false);
+  $(checkbox).closest('tr').removeClass("selected");
+
+  selected_targets.delete(slug);
+}
+
+/**
+ * This function imports a user provided list of targets from an input textbox
+ * parses this list and tries to select the matching targets
+ */
+function importTargets(){
+  // clear filters, otherwise there will be mismatches
+  clearFilters();
+
+  // process the input table
+  var input_entries = $("#copyboxTargets").val();
+  var split_entries = input_entries.split(/[ ,:;]+/);
+
+  // Keep track of matches and misses
+  var not_found = [];
+  var parsed = 0;
+  for (var i = 0; i < split_entries.length; i++) {
+    split_entries[i] = split_entries[i].trim().toLowerCase();
+    // minimum protein name =
+    if (split_entries[i].length >= 2){
+      // Find checkbox with correct entry
+      var items = $("table#uniprot_selection").find(`input[data-entry='${split_entries[i]}']`);
+      if (items.length > 0){
+        parsed++;
+        addTarget(items[0]);
+      } else {
+        not_found.push(split_entries[i]);
+      }
+    }
+  }
+
+  // Add summary on message
+  var message = "";
+  var type = "info";
+  if (parsed > 0){
+    message = "<b>Successfully</b> imported "+parsed+" targets.<br>";
+    if (not_found.length > 0)
+      message += "<br>The following name(s) could <i>not</i> be matched:<br>"+not_found.join("<br>");
+  } else {
+    message = "The target selection import was <b>not successful</b>. Please make sure you are using the uniprot target names.";
+    var type = "warning";
+  }
+  showAlert(message, type);
+  updateTargetCount();
+}
+
+/**
+ * This function exports the current taret selection to a textbox and copies the
+ * selection to clipboard.
+ */
+function exportTargets(){
+  var selected = [];
+  var entries = $("table#uniprot_selection tbody tr [type=checkbox]:checked");
+  if (entries.length > 0){
+    for (var i = 0; i < entries.length; i++) {
+      var checkbox = $(entries[i]);
+      selected.push(checkbox.attr("data-entry"));
+    }
+    // Place in textbox and copy to clipboard
+    var copybox = $("#copyboxTargets");
+    copybox.val(selected.join(" "));
+    copybox.select();
+    copybox[0].setSelectionRange(0, 99999);
+    document.execCommand("copy");
+    showAlert("Target selection has been copied to your clipboard.", "info");
+  } else {
+    showAlert("There are currenlty no selected targets.", "warning");
+  }
+}
+
+/**
+ * This function submits the selected targets to the backend and moves to the
+ * next page. This function should be executed upon pressing the green button
+ * after target selection.
+ */
+function submitSelection(url) {
+  if (selected_targets.size > 0) {
+    // set CSRF csrf_token
+    $.ajaxSetup({
+        headers:
+        { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') }
+    });
+
+    // Submit proteins to target selection
+    var group = Array.from(selected_targets);
+    $.post('/common/targetformread', { "input-targets": group.join("\r") },  function (data) {
+      // On success go to alignment page
+      window.location.href = url;
+    })
+    .fail(
+      function(){
+        showAlert("Something went wrong, please try again or contact us.", "danger");
+      });
+  } else {
+    showAlert("Please select at least one target.", "warning");
+  }
 }

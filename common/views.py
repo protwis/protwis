@@ -38,6 +38,23 @@ def getTargetTable():
             'family',
             'family__parent__parent__parent'
         )
+        # Acquired slugs
+        slug_list = [ p.family.slug for p in proteins ]
+
+        # Acquire all targets that do not have a human ortholog
+        missing_slugs = list(Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith='00')\
+                                         .exclude(family__slug__in=slug_list)\
+                                         .distinct('family__slug')\
+                                         .values_list('family__slug', flat=True))
+
+        for i in missing_slugs:
+            missing = Protein.objects.filter(family__slug=i)\
+                                        .order_by("id")\
+                                        .prefetch_related(
+                'family',
+                'family__parent__parent__parent'
+            )
+            proteins = proteins | missing[:1]
 
         pdbids = list(Structure.objects.filter(refined=False).values_list('pdb_code__index', 'protein_conformation__protein__family_id'))
 
@@ -94,15 +111,21 @@ def getTargetTable():
             \n \
             <tbody>\n"
 
+        slug_list = []
         for p in proteins:
+            # Do not repeat slugs (only unhuman proteins)
+            if p.family.slug in slug_list:
+                continue
+            slug_list.append(p.family.slug)
             t = {}
             t['accession'] = p.accession
+            t['name'] = p.entry_name.split("_")[0]
             t['slug'] = p.family.slug
             t['class'] = p.family.parent.parent.parent.short().split(' ')[0]
             t['ligandtype'] = p.family.parent.parent.short()
             t['family'] = p.family.parent.short()
             t['uniprot'] = p.entry_short()
-            t['iuphar'] = p.family.name.replace('receptor', '').strip()
+            t['iuphar'] = p.family.name.replace("receptor", '').strip()
 
             t['pdbid'] = t['pdbid_two'] = t['pdbid_tooltip'] = "-"
             if p.family_id in allpdbs:
@@ -127,7 +150,7 @@ def getTargetTable():
                     t[gprotein] = "-"
 
             data_table += "<tr> \
-            <td data-sort='0'><input class='form-check-input' type='checkbox' name='targets' id='{}'></td> \
+            <td data-sort=\"0\"><input class=\"form-check-input\" type=\"checkbox\" name=\"targets\" id=\"{}\" data-entry=\"{}\"></td> \
             <td>{}</td> \
             <td>{}</td> \
             <td>{}</td> \
@@ -142,6 +165,7 @@ def getTargetTable():
             <td>{}</td> \
             </tr> \n".format(
                 t['slug'],
+                t['name'],
                 t['class'],
                 t['ligandtype'],
                 t['family'],
@@ -1755,21 +1779,35 @@ def ReadTargetInput(request):
     if request.POST == {}:
         return render(request, 'common/selection_lists.html', '')
 
-    o = []
+    # Process input names
     up_names = request.POST['input-targets'].split('\r')
     for up_name in up_names:
-        try:
-            o.append(Protein.objects.get(entry_name=up_name.strip().lower()))
-        except:
+        up_name = up_name.strip()
+        obj = None
+        if "_" in up_name: # Maybe entry name
+            selection_subtype = 'protein'
             try:
-                o.append(Protein.objects.get(accession=up_name.strip().upper()))
+                obj = Protein.objects.get(entry_name=up_name.lower())
             except:
-                continue
+                obj = None
+        else: # Maybe accession code
+            selection_subtype = 'protein'
+            try:
+                obj = Protein.objects.get(accession=up_name.upper())
+            except:
+                obj = None
 
-    for obj in o:
-        # add the selected item to the selection
-        selection_object = SelectionItem(selection_subtype, obj)
-        selection.add(selection_type, selection_subtype, selection_object)
+        # Try slugs
+        if obj == None and (up_name.isnumeric() or "_" in up_name):
+            selection_subtype = 'family'
+            try:
+                obj = ProteinFamily.objects.get(slug=up_name)
+            except:
+                obj = None
+
+        if obj != None:
+            selection_object = SelectionItem(selection_subtype, obj)
+            selection.add(selection_type, selection_subtype, selection_object)
 
     # export simple selection that can be serialized
     simple_selection = selection.exporter()

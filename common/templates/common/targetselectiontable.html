@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="{% static 'home/css/targetselect_functions.css' %}" type="text/css" />
 {% endblock %}
 
-{% block middle_column %}
+{% block middle_right_column %}
     <!-- target family tree -->
     {% if family_tree %}
         <div class="col-md-12 panel panel-primary">
@@ -21,13 +21,19 @@
             </div>
         </div>
     {% endif %}
+{% endblock %}
 
+{% block middle_left_column %}
     <!-- filters -->
     {% if filters %}
         <div class="col-md-12 panel panel-primary">
             <div class="panel-body">
                 <div id="filters-species">
                     {% include 'common/selection_filters_species.html' %}
+                </div>
+                <br>
+                <div id="filters-annotation">
+                    {% include 'common/selection_filters_annotation.html' %}
                 </div>
             </div>
         </div>
@@ -64,17 +70,25 @@
         $(document).ready(function() {
           // initialize YADCF table
           initTargetTable('#target-table-container');
+          
           // initialize tooltips
           $('[data-toggle="tooltip"]').tooltip({
             trigger : 'hover'
           });
-          // click rows
+
+          // Enable row clicks
           $('table#uniprot_selection tbody').on('click', 'tr', function () {
-              $(this).toggleClass("selected");
-              var checkbox = $(this).find("[type=checkbox]");
-              checkbox.prop("checked", $(this).hasClass("selected"));
+            var checkbox = $(this).find("[type=checkbox]")[0];
+              if ($(this).hasClass("selected")){
+                removeTarget(checkbox);
+              } else {
+                addTarget(checkbox);
+              }
               updateTargetCount();
           });
+
+          // Update selection message
+          updateTargetCount();
         });
 
     </script>

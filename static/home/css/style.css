@@ -26,6 +26,9 @@ h1, h2, h3, h4 { margin-top: 0px; }
   width: 100%;
 }
 
+#selection_table_info {
+  width: 100%;
+}
 
 .carousel-caption{
     background: rgba(0,0,0,0.8);

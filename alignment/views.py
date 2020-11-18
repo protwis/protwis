@@ -67,8 +67,8 @@ class TargetSelection(AbsTargetSelectionTable):
     ])
     buttons = {
         'continue': {
-            'label': 'Continue to next step',
-            'url': '/alignment/segmentselection',
+            'label': 'Next',
+            'onclick': "submitSelection('/alignment/segmentselection');",
             'color': 'success',
         },
     }

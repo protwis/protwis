@@ -281,7 +281,7 @@ class Command(BaseBuild):
             print(structure,'More (or almost) sequence set to be removed from sequence',len(removed),' than exists',all_pdb_residues_in_chain,' removing removed[]')
             #print(removed)
             removed = []
-        
+
         for pp in ppb.build_peptides(chain, aa_only=False): #remove >1000 pos (fusion protein / gprotein)
             for i,res in enumerate(pp,1 ):
                 id = res.id
@@ -325,7 +325,7 @@ class Command(BaseBuild):
                 if residue.resname != "NH2": # skip amidation of peptide
                     pdbseq[chain][pos] = [i, AA[residue.resname]]
                     i += 1
-        
+
         parent_seq_protein = str(structure.protein_conformation.protein.parent.sequence)
         # print(structure.protein_conformation.protein.parent.entry_name)
         rs = Residue.objects.filter(protein_conformation__protein=structure.protein_conformation.protein.parent).prefetch_related('display_generic_number','generic_number','protein_segment')
@@ -1246,7 +1246,7 @@ class Command(BaseBuild):
                                 else:
                                     pdb_reference = ligand['name']
                                     db_lig = Ligand.objects.filter(pdbe=ligand['name'])
-                                    
+
                                 # check if ligand exists already
                                 if len(db_lig)>0:
                                     l = db_lig[0]
@@ -1287,8 +1287,8 @@ class Command(BaseBuild):
                                                 self.logger.info('Created ligand {}'.format(ligand['name']))
                                             else:
                                                 pass
-                                        except IntegrityError:
-                                            l = Ligand.objects.get(name=ligand_title, canonical=True, pdbe=ligand['name'])
+                                        except:
+                                            l = Ligand.objects.get(name=ligand_title, canonical=True)
 
                                         # save ligand
                                         l.save()
