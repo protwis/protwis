@@ -46,13 +46,6 @@
 {% endblock %}
 
 {% block addon_js %}
-    <script type="text/javascript">
-        var type_of_selection = '{{ type_of_selection }}';
-        var selection_only_receptors = '{{ selection_only_receptors }}';
-        var redirect_url = '{{ buttons.continue.url }}'
-        var redirect_on_select = '{{ redirect_on_select }}'
-    </script>
-
     <!--<script src="{% static 'home/js/selection-autocomplete.js' %}"></script>-->
     <script src="{% static 'home/js/selection-filters.js' %}"></script>
     <script src="{% static 'home/js/selection.js' %}"></script>
@@ -70,7 +63,7 @@
         $(document).ready(function() {
           // initialize YADCF table
           initTargetTable('#target-table-container');
-          
+
           // initialize tooltips
           $('[data-toggle="tooltip"]').tooltip({
             trigger : 'hover'

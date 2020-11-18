@@ -96,7 +96,7 @@
       </div>
       <div class="col-md-4">
         <span class="text-center">
-          <button type="text" id="selection_table_info" class="btn" disabled></button>
+          <button id="selection_table_info" class="btn" disabled></button>
         </span>
       </div>
       <div class="col-md-4">
@@ -104,7 +104,7 @@
           <input type="text" id="copyboxTargets" placeholder="Target names">
           <button type="button" onclick="importTargets();" class="btn btn-xs btn-primary">Import</button>
           <button type="button" onclick="exportTargets();" class="btn btn-xs btn-primary">Export</button>
-        <span>
+        </span>
       </div>
       <div class="col-md-12 panel panel-primary" id="target-table-container">
         {% block table %}

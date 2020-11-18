@@ -9,7 +9,6 @@ License: MIT
   top: 0;
   left: 0;
   display: inline-block;
-  *display: inline;
   *zoom: 1;
 
   /* https://github.com/bgrins/spectrum/issues/40 */
@@ -108,10 +107,6 @@ License: MIT
   margin-bottom: 18px;
 }
 
-.sp-alpha-enabled .sp-alpha {
-  display: block;
-}
-
 .sp-alpha-handle {
   position: absolute;
   top: -4px;
@@ -140,67 +135,6 @@ License: MIT
   bottom: 0;
   left: 84%;
   height: 28px;
-}
-
-.sp-container.sp-input-disabled .sp-input-container {
-  display: none;
-}
-
-.sp-container.sp-buttons-disabled .sp-button-container {
-  display: none;
-}
-
-.sp-container.sp-palette-buttons-disabled .sp-palette-button-container {
-  display: none;
-}
-
-.sp-palette-only .sp-picker-container {
-  display: none;
-}
-
-.sp-palette-disabled .sp-palette-container {
-  display: none;
-}
-
-.sp-initial-disabled .sp-initial {
-  display: none;
-}
-
-/* Gradients for hue, saturation and value instead of images.  Not pretty... but it works */
-.sp-sat {
-  background-image: -webkit-gradient(linear, 0 0, 100% 0, from(#fff), to(rgba(204, 154, 129, 0)));
-  background-image: -webkit-linear-gradient(left, #fff, rgba(204, 154, 129, 0));
-  background-image: -moz-linear-gradient(left, #fff, rgba(204, 154, 129, 0));
-  background-image: -o-linear-gradient(left, #fff, rgba(204, 154, 129, 0));
-  background-image: -ms-linear-gradient(left, #fff, rgba(204, 154, 129, 0));
-  background-image: linear-gradient(to right, #fff, rgba(204, 154, 129, 0));
-  -ms-filter: "progid:dximagetransform.microsoft.gradient(GradientType = 1, startColorstr=#FFFFFFFF, endColorstr=#00CC9A81)";
-  filter: progid:dximagetransform.microsoft.gradient(GradientType=1, startColorstr='#FFFFFFFF', endColorstr='#00CC9A81');
-}
-
-.sp-val {
-  background-image: -webkit-gradient(linear, 0 100%, 0 0, from(#000), to(rgba(204, 154, 129, 0)));
-  background-image: -webkit-linear-gradient(bottom, #000, rgba(204, 154, 129, 0));
-  background-image: -moz-linear-gradient(bottom, #000, rgba(204, 154, 129, 0));
-  background-image: -o-linear-gradient(bottom, #000, rgba(204, 154, 129, 0));
-  background-image: -ms-linear-gradient(bottom, #000, rgba(204, 154, 129, 0));
-  background-image: linear-gradient(to top, #000, rgba(204, 154, 129, 0));
-  -ms-filter: "progid:dximagetransform.microsoft.gradient(startColorstr=#00CC9A81, endColorstr=#f0000)";
-  filter: progid:dximagetransform.microsoft.gradient(startColorstr='#00CC9A81', endColorstr='#f0000');
-}
-
-.sp-hue {
-  background: -moz-linear-gradient(top, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%);
-  background: -ms-linear-gradient(top, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%);
-  background: -o-linear-gradient(top, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%);
-  background: -webkit-gradient(linear, left top, left bottom, from(#f00), color-stop(0.17, #ff0), color-stop(0.33, #0f0), color-stop(0.5, #0ff), color-stop(0.67, #00f), color-stop(0.83, #f0f), to(#f00));
-  background: -webkit-linear-gradient(top, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%);
-  background: linear-gradient(to bottom, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%);
-}
-
-.sp-clear-enabled .sp-hue {
-  top: 33px;
-  height: 77.5%;
 }
 
 /* IE filters do not support multiple color stops.
@@ -439,6 +373,7 @@ See http://bgrins.github.io/spectrum/themes/ for instructions.
   *zoom: 1;
   *display: inline;
   border: solid 1px #91765d;
+
   /* background: #eee; */
   color: #333;
   vertical-align: middle;
@@ -588,4 +523,52 @@ See http://bgrins.github.io/spectrum/themes/ for instructions.
   background-repeat: no-repeat;
   background-position: center;
   background-image: url(data:image/gif;base64,R0lGODlhFAAUAPcAAAAAAJmZmZ2dnZ6enqKioqOjo6SkpKWlpaampqenp6ioqKmpqaqqqqurq/Hx8fLy8vT09PX19ff39/j4+Pn5+fr6+vv7+wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAP8ALAAAAAAUABQAAAihAP9FoPCvoMGDBy08+EdhQAIJCCMybCDAAYUEARBAlFiQQoMABQhKUJBxY0SPICEYHBnggEmDKAuoPMjS5cGYMxHW3IiT478JJA8M/CjTZ0GgLRekNGpwAsYABHIypcAgQMsITDtWJYBR6NSqMico9cqR6tKfY7GeBCuVwlipDNmefAtTrkSzB1RaIAoXodsABiZAEFB06gIBWC1mLVgBa0AAOw==);
+}
+
+.sp-container.sp-input-disabled .sp-input-container {
+  display: none;
+}
+
+.sp-container.sp-buttons-disabled .sp-button-container {
+  display: none;
+}
+
+.sp-container.sp-palette-buttons-disabled .sp-palette-button-container {
+  display: none;
+}
+
+.sp-palette-only .sp-picker-container {
+  display: none;
+}
+
+.sp-palette-disabled .sp-palette-container {
+  display: none;
+}
+
+.sp-initial-disabled .sp-initial {
+  display: none;
+}
+
+.sp-clear-enabled .sp-hue {
+  top: 33px;
+  height: 77.5%;
+}
+
+.sp-alpha-enabled .sp-alpha {
+  display: block;
+}
+
+/* Gradients for hue, saturation and value instead of images.  Not pretty... but it works */
+.sp-sat {
+  background-image: linear-gradient(to right, #fff, rgba(204, 154, 129, 0));
+  filter: progid:dximagetransform.microsoft.gradient(GradientType=1, startColorstr='#FFFFFFFF', endColorstr='#00CC9A81');
+}
+
+.sp-val {
+  background-image: linear-gradient(to top, #000, rgba(204, 154, 129, 0));
+  filter: progid:dximagetransform.microsoft.gradient(startColorstr='#00CC9A81', endColorstr='#f0000');
+}
+
+.sp-hue {
+  background: linear-gradient(to bottom, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%);
 }
