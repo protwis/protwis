@@ -191,16 +191,16 @@ function importTargets(){
   var not_found = [];
   var parsed = 0;
   for (var i = 0; i < split_entries.length; i++) {
-    split_entries[parseInt(i)] = split_entries[i].trim().toLowerCase();
+    split_entries[parseInt(i, 10)] = split_entries[parseInt(i, 10)].trim().toLowerCase();
     // minimum protein name =
-    if (split_entries[parseInt(i)].length >= 2){
+    if (split_entries[parseInt(i, 10)].length >= 2){
       // Find checkbox with correct entry
-      var items = $("table#uniprot_selection").find(`input[data-entry='${split_entries[parseInt(i)]}']`);
+      var items = $("table#uniprot_selection").find(`input[data-entry='${split_entries[parseInt(i, 10)]}']`);
       if (items.length > 0){
         parsed++;
         addTarget(items[0]);
       } else {
-        not_found.push(split_entries[parseInt(i)]);
+        not_found.push(split_entries[parseInt(i, 10)]);
       }
     }
   }
@@ -230,7 +230,7 @@ function exportTargets(){
   var entries = $("table#uniprot_selection tbody tr [type=checkbox]:checked");
   if (entries.length > 0){
     for (var i = 0; i < entries.length; i++) {
-      var checkbox = $(entries[i]);
+      var checkbox = $(entries[parseInt(i, 10)]);
       selected.push(checkbox.attr("data-entry"));
     }
     // Place in textbox and copy to clipboard
