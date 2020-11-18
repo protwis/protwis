@@ -1,28 +1,15 @@
 from django.core.management.base import BaseCommand, CommandError
-from django.conf import settings
-from django.db import connection
 from django.db import IntegrityError
-from django.utils.text import slugify
-from django.http import HttpResponse, JsonResponse
 
 from build.management.commands.base_build import Command as BaseBuild
-from common.tools import fetch_from_cache, save_to_cache, fetch_from_web_api
-from residue.models import Residue
 from protein.models import Protein
 from ligand.models import BiasedPathwaysAssay, BiasedPathways
-from mutation.models import Mutation
 from ligand.functions import get_or_make_ligand
 from common.models import WebLink, WebResource, Publication
-from django.db import connection
+
 import logging
 import os
-from datetime import datetime
 import xlrd
-import operator
-import traceback
-import time
-import math
-import json
 
 
 MISSING_PROTEINS = {}

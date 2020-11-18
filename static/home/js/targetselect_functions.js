@@ -1,3 +1,6 @@
+/*eslint complexity: ["error", 8]*/
+/*eslint quotes: ["error", "double", { "avoidEscape": true }]*/
+
 var targetTable;
 var selected_targets = new Set();
 
@@ -11,19 +14,22 @@ function updateTargetCount(){
   var numTargets = $("table#uniprot_selection tbody input:checked").length;
 
   var message = selected_targets.size.toString();
-  if (numTargets === 1)
+  if (numTargets === 1){
     message += " target selected";
-  else
+  } else {
     message += " targets selected";
+  }
 
   var filtered = selected_targets.size - numTargets;
-  if (filtered > 0)
+  if (filtered > 0) {
     message += " ("+filtered+" currently filtered)";
+  }
 
   $("#selection_table_info").html(message);
-  if (previous_target_count != selected_targets.size) {
-    if (!$("#selection_table_info").is(":animated"))
+  if (previous_target_count !== selected_targets.size) {
+    if (!$("#selection_table_info").is(":animated")) {
       $("#selection_table_info").effect("highlight", {color:"#FFAAAA"}, 1000 );
+    }
     previous_target_count = selected_targets.size;
   }
 }
@@ -185,32 +191,33 @@ function importTargets(){
   var not_found = [];
   var parsed = 0;
   for (var i = 0; i < split_entries.length; i++) {
-    split_entries[i] = split_entries[i].trim().toLowerCase();
+    split_entries[parseInt(i)] = split_entries[i].trim().toLowerCase();
     // minimum protein name =
-    if (split_entries[i].length >= 2){
+    if (split_entries[parseInt(i)].length >= 2){
       // Find checkbox with correct entry
-      var items = $("table#uniprot_selection").find(`input[data-entry='${split_entries[i]}']`);
+      var items = $("table#uniprot_selection").find(`input[data-entry='${split_entries[parseInt(i)]}']`);
       if (items.length > 0){
         parsed++;
         addTarget(items[0]);
       } else {
-        not_found.push(split_entries[i]);
+        not_found.push(split_entries[parseInt(i)]);
       }
     }
   }
 
   // Add summary on message
   var message = "";
-  var type = "info";
+  var msg_type = "info";
   if (parsed > 0){
     message = "<b>Successfully</b> imported "+parsed+" targets.<br>";
-    if (not_found.length > 0)
-      message += "<br>The following name(s) could <i>not</i> be matched:<br>"+not_found.join("<br>");
+    if (not_found.length > 0){
+      message += "<br>The following name(s) could <i>not</i> be matched:<br>&#8226;&nbsp;&nbsp;" + not_found.join("<br>&#8226;&nbsp;&nbsp;");
+    }
   } else {
     message = "The target selection import was <b>not successful</b>. Please make sure you are using the uniprot target names.";
-    var type = "warning";
+    msg_type = "warning";
   }
-  showAlert(message, type);
+  showAlert(message, msg_type);
   updateTargetCount();
 }
 
