@@ -54,7 +54,7 @@
 }
 
 .internal-node circle, .internal-node ellipse, .internal-node rect {
-  fill: #CCC;
+  fill: #ccc;
   stroke: black;
   stroke-width: 0.5px;
 }
@@ -116,10 +116,12 @@
 
 .internal-node circle:hover, .internal-node ellipse:hover, .internal-node rect:hover {
   fill: black;
-  stroke: #CCC;
+  stroke: #ccc;
 }
 
-.tree-widget {}
+/*
+  .tree-widget {}
+*/
 
 .btn {
   color: #fff;
@@ -141,13 +143,13 @@
 
 .class_band_radial {
   fill: antiquewhite;
-  stroke: #444444;
+  stroke: #444;
   stroke-dasharray: 1;
 }
 
 .class_band_linear {
   fill: antiquewhite;
-  stroke: #444444;
+  stroke: #444;
   stroke-dasharray: 1;
 }
 

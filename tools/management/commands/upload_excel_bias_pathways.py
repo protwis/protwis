@@ -80,9 +80,7 @@ class Command(BaseBuild):
         BiasedPathways.objects.all().delete()
 
     def loaddatafromexcel(self, excelpath):
-        """
-        Reads excel file (require specific excel sheet)
-        """
+        """Reads excel file (require specific excel sheet)"""
         num_rows = 0
         try:
             workbook = xlrd.open_workbook(excelpath)

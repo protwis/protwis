@@ -75,7 +75,7 @@ html[dir="rtl"] .select2-container .select2-choice {
   margin-right: 42px;
 }
 
-.select2-container .select2-choice>.select2-chosen {
+.select2-container .select2-choice > .select2-chosen {
   margin-right: 26px;
   display: block;
   overflow: hidden;
@@ -85,7 +85,7 @@ html[dir="rtl"] .select2-container .select2-choice {
   width: auto;
 }
 
-html[dir="rtl"] .select2-container .select2-choice>.select2-chosen {
+html[dir="rtl"] .select2-container .select2-choice > .select2-chosen {
   margin-left: 26px;
   margin-right: 0;
 }
@@ -354,7 +354,7 @@ html[dir="rtl"] .select2-results {
   background-image: none;
 }
 
-.select2-results li.select2-result-with-children>.select2-result-label {
+.select2-results li.select2-result-with-children > .select2-result-label {
   font-weight: bold;
 }
 
