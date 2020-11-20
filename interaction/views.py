@@ -1075,21 +1075,22 @@ def excel(request, slug, **response_kwargs):
         # return HttpResponse("Hello, world. You're at the polls index. "+slug)
         data = []
         for interaction in interactions:
-
             row = {}
             row['Sequence Number'] = interaction.rotamer.residue.sequence_number
             row['Amino Acid'] = interaction.rotamer.residue.amino_acid
             if interaction.rotamer.residue.display_generic_number:
                 row['Generic Number'] = interaction.rotamer.residue.display_generic_number.label
+                row['Segment'] = interaction.rotamer.residue.protein_segment.slug
             else:
                 row['Generic Number'] = 'N/A'
+                row['Segment'] = '-'
 
-            row['Segment'] = interaction.rotamer.residue.protein_segment.slug
             row['Interaction'] = interaction.interaction_type.name
             row['Interaction Slug'] = interaction.interaction_type.slug
             row['Ligand'] = interaction.structure_ligand_pair.ligand.name
 
             data.append(row)
+
 
     headers = ['Ligand','Amino Acid','Sequence Number','Generic Number','Segment','Interaction','Interaction Slug']
 

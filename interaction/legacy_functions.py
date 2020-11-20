@@ -140,7 +140,6 @@ def checkdirs():
 def find_ligand_full_names():
     pdbfile = projectdir + 'pdbs/' + pdbname + '.pdb'
     residuename = ''
-
     f_in = open(pdbfile, 'r')
     d = {}
 
@@ -148,6 +147,7 @@ def find_ligand_full_names():
         if line.startswith('HETSYN'):
             # need to fix bad PDB formatting where col4 and col5 are put
             # together for some reason -- usually seen when the id is +1000
+            # NOTE: PDB is a fixed-width column format, so this is normal
             m = re.match("HETSYN[\s]+([\w]{3})[\s]+(.+)", line)
             if (m):
                 d[m.group(1)] = m.group(2).strip()
