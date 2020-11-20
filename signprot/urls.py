@@ -1,7 +1,7 @@
 from . import views
-from django.urls import path, re_path
+from django.urls import path
 from django.views.decorators.cache import cache_page
-from signprot.views import *
+from signprot.views import CouplingBrowser
 from contactnetwork.views import PdbTableData
 
 urlpatterns = [
@@ -11,11 +11,10 @@ urlpatterns = [
     path('statistics_venn',  views.GProteinVenn, name='gprotein'),
     path('statistics_tree',  views.GProteinTree, name='gprotein'),
     path('statistics',  views.GProtein, name='gprotein'),
-#    path('couplings',  views.couplings, name='couplings'),
     path('couplings', cache_page(60*60*24*7)(CouplingBrowser.as_view()), name='coupling_browser'),
     path('ginterface/<protein>/', views.Ginterface, name='render'),
     path('ginterface/', views.TargetSelection.as_view(), name='targetselection'),
-    re_path(r'ajax/barcode/(?P<slug>[-\w]+)/(?P<cutoff>\d+\.\d{0,2})/$', views.ajaxBarcode, name='ajaxBarcode'),
+    path('ajax/barcode/<slug>/<cutoff>/', views.ajaxBarcode, name='ajaxBarcode'),
     path('ajax/interface/<slug>/', views.ajaxInterface, name='ajaxInterface'),
     path('structure/<pdbname>/', views.StructureInfo, name='StructureInfo'),
     path('family/<slug>/', views.familyDetail, name='familyDetail'),
@@ -26,4 +25,3 @@ urlpatterns = [
     path('pdbtabledata', PdbTableData, name='pdbtreedata'),
     path('<slug>/', views.signprotdetail, name='signprotdetail'),
 ]
-
