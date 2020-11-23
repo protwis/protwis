@@ -1278,11 +1278,11 @@ class SignatureMatch():
                 resi_dict_all[pcf][r.generic_number.label] = r
 
         for pcf in class_a_pcf:
-            p_start = time.time()
+            # p_start = time.time()
             score, nscore, signature_match = self.score_protein(pcf, resi_dict_all)
             protein_scores[pcf] = (score, nscore)
             protein_signature_match[pcf] = signature_match
-            p_end = time.time()
+            # p_end = time.time()
             # print("Time elapsed for {}: ".format(pcf.protein.entry_name), p_end - p_start)
         end = time.time()
         self.protein_report = OrderedDict(sorted(protein_scores.items(), key=lambda x: x[1][0], reverse=True))
@@ -1328,11 +1328,11 @@ class SignatureMatch():
                 resi_dict_all[pcf][r.generic_number.label] = r
 
         for pcf in pcfs:
-            p_start = time.time()
+            # p_start = time.time()
             score, nscore, signature_match = self.score_protein(pcf,resi_dict_all)
             protein_scores[pcf] = (score, nscore)
             protein_signature_match[pcf] = signature_match
-            p_end = time.time()
+            # p_end = time.time()
             # print("Time elapsed for {}: ".format(pcf.protein.entry_name), p_end - p_start)
         end = time.time()
         protein_report = OrderedDict(sorted(protein_scores.items(), key=lambda x: x[1][0], reverse=True))
