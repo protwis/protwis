@@ -281,16 +281,16 @@ function initTargetTable(elementID) {
 
     if (!$.fn.DataTable.isDataTable(elementID + " table")) {
         targetTable = $(elementID + " table").DataTable({
-            dom: "ftip",
+//            dom: "ftip",
             deferRender: true,
             scrollY: "50vh",
             scrollX: true,
             scrollCollapse: true,
             scroller: true,
             paging: false,
-            bSortCellsTop: false, //prevent sort arrows going on bottom row
+//            bSortCellsTop: false, //prevent sort arrows going on bottom row
             aaSorting: [],
-            autoWidth: true,
+            autoWidth: false,
             bInfo: true,
 //            order: [[ 1, "asc" ], [ 2, "asc" ], [ 3, "asc" ], [ 4, "asc" ]],
             columnDefs: [{
@@ -299,7 +299,9 @@ function initTargetTable(elementID) {
                 className: "select-checkbox"
             },{
                 targets: 1,
-                orderable: false,
+                className: "text-center"
+            },{
+                targets: [6,8,9,10,11,12],
                 className: "text-center"
             },],
         });
@@ -319,7 +321,9 @@ function initTargetTable(elementID) {
                     select_type: "select2",
                     filter_default_label: "Class",
                     filter_reset_button_text: false,
-                    style_class: "center",
+                    select_type_options: {
+                        "width": "70px",
+                    },
                 },
                 {
                     column_number: 2,
@@ -331,8 +335,10 @@ function initTargetTable(elementID) {
                 },
                 {
                     column_number: 3,
-                    filter_type: "multi_select",
+                    filter_type: "text",
                     select_type: "select2",
+                    filter_default_label: "Family",
+                    filter_reset_button_text: false,
                 },
                 {
                     column_number: 4,
@@ -340,6 +346,9 @@ function initTargetTable(elementID) {
                     select_type: "select2",
                     filter_default_label: "Uniprot",
                     filter_reset_button_text: false,
+                    select_type_options: {
+                        "width": "110px",
+                    }
                 },
                 {
                     column_number: 5,
@@ -350,14 +359,34 @@ function initTargetTable(elementID) {
                     filter_default_label: "GtP",
                     filter_match_mode : "exact",
                     filter_reset_button_text: false,
+                    select_type_options: {
+                        "width": "110px",
+                    }
                 },
                 {
                     column_number: 6,
+                    filter_type: "range_number",
+                    filter_default_label: ["From", "To"],
+                    filter_reset_button_text: false,
+                    style_class: "center",
+                },
+                {
+                    column_number: 7,
                     filter_type: "text",
                     select_type: "select2",
                     html5_data: "data-search",
                     filter_default_label: "PDB",
                     filter_reset_button_text: false,
+                    select_type_options: {
+                        "width": "110px",
+                    }
+                },
+                {
+                    column_number: 8,
+                    filter_type: "range_number",
+                    filter_default_label: ["From", "To"],
+                    filter_reset_button_text: false,
+                    style_class: "center",
                 },
                 /*{
                     column_number: 7,
@@ -372,28 +401,28 @@ function initTargetTable(elementID) {
                     filter_default_label: "Clinical trial",
                 },*/
                 {
-                    column_number: 7,
+                    column_number: 9,
                     filter_type: "multi_select",
                     select_type: "select2",
                     filter_default_label: "Gs",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 8,
+                    column_number: 10,
                     filter_type: "multi_select",
                     select_type: "select2",
                     filter_default_label: "Gi/o",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 9,
+                    column_number: 11,
                     filter_type: "multi_select",
                     select_type: "select2",
                     filter_default_label: "Gq/11",
                     filter_reset_button_text: false,
                 },
                 {
-                    column_number: 10,
+                    column_number: 12,
                     filter_type: "multi_select",
                     select_type: "select2",
                     filter_default_label: "G12/13",

@@ -4,13 +4,14 @@ from django.views.generic import TemplateView
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-from django.db.models import Case, When, Min
+from django.db.models import Count, Case, When, Min
 from django.core.cache import cache
 
 from common import definitions
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 from common.selection import SimpleSelection, Selection, SelectionItem
+from ligand.models import AssayExperiment
 from structure.models import Structure, StructureModel, StructureComplexModel
 from protein.models import Protein, ProteinFamily, ProteinSegment, Species, ProteinSource, ProteinSet, ProteinGProtein, ProteinGProteinPair
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent, ResiduePositionSet, Residue
@@ -72,6 +73,13 @@ def getTargetTable():
                                                                                     'suspended']).values_list(
             'entry_name', flat=True))
 
+        ligand_set = list(AssayExperiment.objects.values('protein__family__slug')\
+            .annotate(num_ligands=Count('ligand', distinct=True)))
+
+        ligand_count = {}
+        for entry in ligand_set:
+            ligand_count[entry["protein__family__slug"]] = entry["num_ligands"]
+
         # Filter data source to Guide to Pharmacology until other coupling transduction sources are "consolidated".
         couplings = ProteinGProteinPair.objects.filter(source="GuideToPharma").values_list('protein__entry_name',
                                                                                            'g_protein__name',
@@ -88,21 +96,24 @@ def getTargetTable():
               <tr> \
                 <th colspan=1>&nbsp;</th> \
                 <th colspan=5>Receptor classification</th> \
-                <th colspan=1>Structures</th> \
+                <th colspan=1>Ligands</th> \
+                <th colspan=2>Structures</th> \
 <!--                <th colspan=2>Drugs</th> -->\
                 <th colspan=4>G protein coupling</th> \
               </tr> \
               <tr> \
                 <th>&nbsp;<br><input class ='form-check-input' type='checkbox' onclick='return check_all_targets();'></th> \
-                <th>Class</th> \
+                <th>Class<br><br></th> \
                 <th>Ligand type</th> \
-                <th>Family</th> \
-                <th>Receptor (UniProt)</th> \
+                <th style=\"width; 100px;\">Family</th> \
+                <th class=\"text-highlight\">Receptor (UniProt)</th> \
                 <th>Receptor (GtP)</th> \
+                <th>Count</th> \
                 <th>PDB(s)</th> \
+                <th>Count</th> \
 <!--                <th>Target of an approved drug</th> \
                 <th>Target in clinical trials</th> --> \
-                <th>Gs</th> \
+                <th class=\"expand\">Gs</th> \
                 <th>Gi/o</th> \
                 <th>Gq/11</th> \
                 <th>G12/13</th> \
@@ -127,14 +138,28 @@ def getTargetTable():
             t['uniprot'] = p.entry_short()
             t['iuphar'] = p.family.name.replace("receptor", '').strip()
 
+            # Web resource links
+            link_setup = "</span><a target=\"_blank\" href=\"{}\"><span class=\"glyphicon glyphicon-new-window btn-xs\"></span></a>";
+            t['uniprot_link'] = ""
+            t['gtp_link'] = ""
+            uniprot_links = p.web_links.filter(web_resource__slug='uniprot')
+            if uniprot_links.count() > 0:
+                t['uniprot_link'] = link_setup.format(p.web_links.filter(web_resource__slug='uniprot')[0])
+            gtop_links = p.web_links.filter(web_resource__slug='gtop')
+            if gtop_links.count() > 0:
+                t['gtp_link'] = link_setup.format(p.web_links.filter(web_resource__slug='gtop')[0])
+
             t['pdbid'] = t['pdbid_two'] = t['pdbid_tooltip'] = "-"
+            t['pdb_count'] = 0
             if p.family_id in allpdbs:
+                t['pdb_count'] = len(allpdbs[p.family_id])
+
                 pdb_entries = allpdbs[p.family_id]
                 pdb_entries.sort()
                 t['pdbid'] = ",".join(pdb_entries)
                 t['pdbid_two'] = ",".join(pdb_entries[:2])
                 if len(allpdbs[p.family_id]) > 2:
-                    t['pdbid_two'] += "..."
+                    t['pdbid_two'] += ",..."
                     n = 4 # Number of PDBs per line
                     pdb_sets = ["&nbsp;&nbsp;".join(pdb_entries[i:i + n]) for i in range(0, len(pdb_entries), n)]
                     t['pdbid_tooltip'] = "<br>".join(pdb_sets)
@@ -154,9 +179,11 @@ def getTargetTable():
             <td>{}</td> \
             <td>{}</td> \
             <td>{}</td> \
+            <td><span class=\"expand\">{}{}</td> \
+            <td><span class=\"expand\">{}{}</td> \
             <td>{}</td> \
-            <td><span>{}</span></td> \
-            <td><span {} data-html=\"true\" data-placement=\"bottom\" title=\"{}\" data-search=\"{}\">{}<span></td> \
+            <td><span {} data-html=\"true\" data-placement=\"bottom\" title=\"{}\" data-search=\"{}\" >{}</span></td> \
+            <td>{}</td> \
             <!--<td>{}</td> \
             <td>{}</td>--> \
             <td>{}</td> \
@@ -170,11 +197,15 @@ def getTargetTable():
                 t['ligandtype'],
                 t['family'],
                 t['uniprot'],
+                t['uniprot_link'],
                 t['iuphar'],
+                t['gtp_link'],
+                ligand_count[t['slug']] if t['slug'] in ligand_count else 0,
                 ("data-toggle=\"tooltip\"" if t['pdbid_tooltip']!="-" else ""),
                 t['pdbid_tooltip'],
                 t['pdbid'],      # This one hidden used for search box.
                 t['pdbid_two'],  # This one shown. Show only first two pdb's.
+                t['pdb_count'],
                 t['approved_target'],
                 t['clinical_target'],
                 t[gprotein_families[0]].capitalize(),
@@ -197,7 +228,7 @@ class AbsTargetSelectionTable(TemplateView):
     step = 1
     number_of_steps = 2
     title = 'SELECT TARGETS'
-    description = 'Select targets by in the table or by browsing the classification tree in the middle column. You can select entire target' \
+    description = 'Select targets in the table (below) or browse the classification tree (right). You can select entire target' \
         + ' families or individual targets.\n\nOnce you have selected all your targets, click the green button.'
     documentation_url = settings.DOCUMENTATION_URL
 

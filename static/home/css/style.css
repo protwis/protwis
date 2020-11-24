@@ -32,6 +32,8 @@ h4 {
 
 #selection_table_info {
   width: 100%;
+  background-color: #fafafa;
+  color: #555;
 }
 
 .carousel-caption {
@@ -84,6 +86,40 @@ h4 {
   width: 330px;
   height: 350px;
   overflow-x: scroll;
+}
+
+.selection-tree-box.selection_table {
+  max-height: 190px;
+}
+
+#copyboxTargets {
+  width: 100%;
+  margin-bottom: 0.9em;
+}
+
+#target-table-container .yadcf-filter-range-number {
+  width: 30px;
+}
+
+#target-table-container .yadcf-filter {
+  width: 100px;
+}
+
+.text-highlight {
+  color: red;
+}
+
+#target-table-container span.expand {
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 85px;
+  white-space: nowrap;
+}
+
+#target-table-container span.expand:hover {
+  overflow: visible;
+  white-space: normal;
 }
 
 .target-selection {

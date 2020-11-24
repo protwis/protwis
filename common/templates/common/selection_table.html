@@ -28,17 +28,16 @@
                     <h4>{{ title }}</h4>
                     {{ description|linebreaks }}
                 </div>
-            </div>
 
-            <!-- link to docs -->
-            {% if docs %}
-            <div class="col-md-12 panel panel-primary">
+              {% if docs %}
+              <!-- link to docs -->
                 <div class="panel-body">
                     <p>For more information on this tool, see the <a href="{{ documentation_url }}{{ docs }}">docs</a>.
                     </p>
                 </div>
+              {% endif %}
             </div>
-            {% endif %}
+
 
         </div>
 
@@ -46,6 +45,15 @@
         <div class="col-md-3">
         {% block middle_left_column %}
         {% endblock %}
+        <div class="col-md-12 panel panel-primary">
+            <div class="panel-body" id="selection-{{ selection_box }}">
+              <div><input type="text" id="copyboxTargets" class="form-control" placeholder="UniProt names"></div>
+              <div>
+                <button type="button" onclick="importTargets();" class="btn btn-primary">Import</button>
+                <button type="button" onclick="exportTargets();" class="btn btn-primary">Export</button>
+              </div>
+            </div>
+        </div>
         </div>
 
         <div class="col-md-3">
@@ -94,16 +102,9 @@
           <span id="hidden_filter_container" class="hidden"></span>
         </span>
       </div>
-      <div class="col-md-4">
+      <div class="col-md-3">
         <span class="text-center">
           <button id="selection_table_info" class="btn" disabled></button>
-        </span>
-      </div>
-      <div class="col-md-4">
-        <span class="pull-right">
-          <input type="text" id="copyboxTargets" placeholder="Target names">
-          <button type="button" onclick="importTargets();" class="btn btn-xs btn-primary">Import</button>
-          <button type="button" onclick="exportTargets();" class="btn btn-xs btn-primary">Export</button>
         </span>
       </div>
       <div class="col-md-12 panel panel-primary" id="target-table-container">
