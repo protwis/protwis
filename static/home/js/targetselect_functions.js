@@ -322,7 +322,7 @@ function initTargetTable(elementID) {
                     filter_default_label: "Class",
                     filter_reset_button_text: false,
                     select_type_options: {
-                        "width": '70px',
+                        "width": "70px",
                     },
                 },
                 {
@@ -336,7 +336,7 @@ function initTargetTable(elementID) {
                 {
                     column_number: 3,
                     filter_type: "text",
-                    select_type: 'select2',
+                    select_type: "select2",
                     filter_default_label: "Family",
                     filter_reset_button_text: false,
                 },
@@ -347,7 +347,7 @@ function initTargetTable(elementID) {
                     filter_default_label: "Uniprot",
                     filter_reset_button_text: false,
                     select_type_options: {
-                        "width": '110px',
+                        "width": "110px",
                     }
                 },
                 {
@@ -360,7 +360,7 @@ function initTargetTable(elementID) {
                     filter_match_mode : "exact",
                     filter_reset_button_text: false,
                     select_type_options: {
-                        "width": '110px',
+                        "width": "110px",
                     }
                 },
                 {
@@ -378,7 +378,7 @@ function initTargetTable(elementID) {
                     filter_default_label: "PDB",
                     filter_reset_button_text: false,
                     select_type_options: {
-                        "width": '110px',
+                        "width": "110px",
                     }
                 },
                 {

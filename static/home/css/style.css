@@ -89,11 +89,11 @@ h4 {
 }
 
 .selection-tree-box.selection_table {
-  max-height: 190px
+  max-height: 190px;
 }
 
 #copyboxTargets {
-  width : 100%;
+  width: 100%;
   margin-bottom: 0.9em;
 }
 
@@ -118,8 +118,8 @@ h4 {
 }
 
 #target-table-container span.expand:hover {
-    overflow: visible;
-    white-space: normal;
+  overflow: visible;
+  white-space: normal;
 }
 
 .target-selection {
