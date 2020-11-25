@@ -345,6 +345,7 @@ function initTargetTable(elementID) {
                     column_number: 4,
                     filter_type: "multi_select",
                     select_type: "select2",
+                    column_data_type: "html",
                     filter_default_label: "Uniprot",
                     filter_reset_button_text: false,
                     select_type_options: {
