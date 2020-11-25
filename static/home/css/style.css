@@ -105,8 +105,12 @@ h4 {
   width: 100px;
 }
 
-.text-highlight {
-  color: red;
+#target-table-container .text-highlight input.select2-default {
+  color: red !important;
+}
+
+#target-table-container .text-highlight input.select2-focused {
+  color: #666;
 }
 
 #target-table-container span.expand {
