@@ -109,8 +109,8 @@ def getTargetTable():
                 <th class=\"text-highlight\">Receptor<br>(UniProt)</th> \
                 <th class=\"text-highlight\">Receptor<br>(GtP)</th> \
                 <th>Count</th> \
-                <th>PDB(s)<br>&nbsp;</th> \
                 <th>Count</th> \
+                <th>PDB(s)<br>&nbsp;</th> \
 <!--                <th>Target of an approved drug</th> \
                 <th>Target in clinical trials</th> --> \
                 <th>Gs<br>&nbsp;</th> \
@@ -123,7 +123,8 @@ def getTargetTable():
             <tbody>\n"
 
         slug_list = []
-        link_setup = "<a target=\"_blank\" href=\"{}\"><span class=\"glyphicon glyphicon-new-window btn-xs\"></span></a>"
+        #link_setup = "<a target=\"_blank\" href=\"{}\"><span class=\"glyphicon glyphicon-new-window btn-xs\"></span></a>"
+        link_setup = "<a target=\"_blank\" href=\"{}\">{}</a>"
         for p in proteins:
             # Do not repeat slugs (only unhuman proteins)
             if p.family.slug in slug_list:
@@ -140,14 +141,22 @@ def getTargetTable():
             t['iuphar'] = p.family.name.replace("receptor", '').strip()
 
             # Web resource links
-            t['uniprot_link'] = ""
-            t['gtp_link'] = ""
+            #t['uniprot_link'] = ""
+            #t['gtp_link'] = ""
             uniprot_links = p.web_links.filter(web_resource__slug='uniprot')
             if uniprot_links.count() > 0:
-                t['uniprot_link'] = link_setup.format(p.web_links.filter(web_resource__slug='uniprot')[0])
+                #t['uniprot_link'] = link_setup.format(p.web_links.filter(web_resource__slug='uniprot')[0])
+                t['uniprot'] = link_setup.format(p.web_links.filter(web_resource__slug='uniprot')[0], t['uniprot'])
+
             gtop_links = p.web_links.filter(web_resource__slug='gtop')
             if gtop_links.count() > 0:
-                t['gtp_link'] = link_setup.format(p.web_links.filter(web_resource__slug='gtop')[0])
+                #t['gtp_link'] = link_setup.format(p.web_links.filter(web_resource__slug='gtop')[0])
+                t['iuphar'] = link_setup.format(p.web_links.filter(web_resource__slug='gtop')[0], t['iuphar'])
+
+            # Ligand count
+            t['ligand_count'] = 0
+            if t['slug'] in ligand_count:
+                t['ligand_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_count[t['slug']])
 
             t['pdbid'] = t['pdbid_two'] = t['pdbid_tooltip'] = "-"
             t['pdb_count'] = 0
@@ -179,11 +188,11 @@ def getTargetTable():
             <td>{}</td> \
             <td>{}</td> \
             <td>{}</td> \
-            <td><span class=\"expand\">{}</span>{}</td> \
-            <td><span class=\"expand\">{}</span>{}</td> \
-            <td><span data-html=\"true\" data-search=\"{}\">{}</span>{}</td> \
-            <td><span {} data-html=\"true\" data-placement=\"bottom\" title=\"{}\" data-search=\"{}\" >{}</span></td> \
+            <td><span class=\"expand\">{}</span></td> \
+            <td><span class=\"expand\">{}</span></td> \
             <td>{}</td> \
+            <td>{}</td> \
+            <td><span {} data-html=\"true\" data-placement=\"bottom\" title=\"{}\" data-search=\"{}\" >{}</span></td> \
             <!--<td>{}</td> \
             <td>{}</td>--> \
             <td>{}</td> \
@@ -197,17 +206,13 @@ def getTargetTable():
                 t['ligandtype'],
                 t['family'],
                 t['uniprot'],
-                t['uniprot_link'],
                 t['iuphar'],
-                t['gtp_link'],
-                ligand_count[t['slug']] if t['slug'] in ligand_count else 0,
-                ligand_count[t['slug']] if t['slug'] in ligand_count else 0,
-                link_setup.format("/ligand/target/all/" + t['slug']) if t['slug'] in ligand_count else "",
+                t['ligand_count'],
+                t['pdb_count'],
                 ("data-toggle=\"tooltip\"" if t['pdbid_tooltip']!="-" else ""),
                 t['pdbid_tooltip'],
                 t['pdbid'],      # This one hidden used for search box.
                 t['pdbid_two'],  # This one shown. Show only first two pdb's.
-                t['pdb_count'],
                 t['approved_target'],
                 t['clinical_target'],
                 t[gprotein_families[0]].capitalize(),

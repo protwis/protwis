@@ -302,7 +302,7 @@ function initTargetTable(elementID) {
                 targets: 1,
                 className: "text-center"
             },{
-                targets: [6,8,9,10,11,12],
+                targets: [6,7,9,10,11,12],
                 className: "text-center"
             },],
         });
@@ -375,6 +375,13 @@ function initTargetTable(elementID) {
                 },
                 {
                     column_number: 7,
+                    filter_type: "range_number",
+                    filter_default_label: ["From", "To"],
+                    filter_reset_button_text: false,
+                    style_class: "center",
+                },
+                {
+                    column_number: 8,
                     filter_type: "text",
                     select_type: "select2",
                     html5_data: "data-search",
@@ -383,13 +390,6 @@ function initTargetTable(elementID) {
                     select_type_options: {
                         "width": "110px",
                     }
-                },
-                {
-                    column_number: 8,
-                    filter_type: "range_number",
-                    filter_default_label: ["From", "To"],
-                    filter_reset_button_text: false,
-                    style_class: "center",
                 },
                 /*{
                     column_number: 7,
