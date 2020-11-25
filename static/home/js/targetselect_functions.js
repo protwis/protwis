@@ -249,6 +249,7 @@ function exportTargets(){
  * This function submits the selected targets to the backend and moves to the
  * next page. This function should be executed upon pressing the green button
  * after target selection.
+ * @param {string} url The url to go to after synchronizing the target selection
  */
 function submitSelection(url) {
   if (selected_targets.size > 0) {
@@ -368,7 +369,9 @@ function initTargetTable(elementID) {
                     filter_type: "range_number",
                     filter_default_label: ["From", "To"],
                     filter_reset_button_text: false,
-                    style_class: "center",
+                    //style_class: "center"
+                    //html5_data: "data-search",
+                    column_data_type: "html",
                 },
                 {
                     column_number: 7,
@@ -454,3 +457,27 @@ function initTargetTable(elementID) {
     // Ready to draw the table
     targetTable.draw();
 }
+
+/**
+ * This function submits the selected target slug to the backend and opens
+ * the ligands overview page in a new window
+* @param {string} slug The slug of the target for which to show the ligands
+ */
+/*function showLigands(slug) {
+  // set CSRF csrf_token
+  $.ajaxSetup({
+      headers:
+      { "X-CSRF-TOKEN": $("meta[name=\"csrf-token\"]").attr("content") }
+  });
+
+  // Submit the slug to target selection
+  var group = [slug];
+  $.post("/common/targetformread", { "input-targets": group.join("\r") },  function (data) {
+    // On success go to ligand page
+    window.open("/ligand/targets", "_blank");
+  })
+  .fail(
+    function(){
+      showAlert("Something went wrong, please try again or contact us.", "danger");
+    });
+}*/

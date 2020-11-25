@@ -102,27 +102,28 @@ def getTargetTable():
                 <th colspan=4>G protein coupling</th> \
               </tr> \
               <tr> \
-                <th>&nbsp;<br><input class ='form-check-input' type='checkbox' onclick='return check_all_targets();'></th> \
-                <th>Class<br><br></th> \
-                <th>Ligand type</th> \
-                <th style=\"width; 100px;\">Family</th> \
-                <th class=\"text-highlight\">Receptor (UniProt)</th> \
-                <th>Receptor (GtP)</th> \
+                <th><br><br><input class ='form-check-input' type='checkbox' onclick='return check_all_targets();'></th> \
+                <th>Class<br>&nbsp;</th> \
+                <th>Ligand type<br>&nbsp;</th> \
+                <th style=\"width; 100px;\">Family<br>&nbsp;</th> \
+                <th class=\"text-highlight\">Receptor<br>(UniProt)</th> \
+                <th class=\"text-highlight\">Receptor<br>(GtP)</th> \
                 <th>Count</th> \
-                <th>PDB(s)</th> \
+                <th>PDB(s)<br>&nbsp;</th> \
                 <th>Count</th> \
 <!--                <th>Target of an approved drug</th> \
                 <th>Target in clinical trials</th> --> \
-                <th class=\"expand\">Gs</th> \
-                <th>Gi/o</th> \
-                <th>Gq/11</th> \
-                <th>G12/13</th> \
+                <th>Gs<br>&nbsp;</th> \
+                <th>Gi/o<br>&nbsp;</th> \
+                <th>Gq/11<br>&nbsp;</th> \
+                <th>G12/13<br>&nbsp;</th> \
               </tr> \
             </thead>\
             \n \
             <tbody>\n"
 
         slug_list = []
+        link_setup = "<a target=\"_blank\" href=\"{}\"><span class=\"glyphicon glyphicon-new-window btn-xs\"></span></a>"
         for p in proteins:
             # Do not repeat slugs (only unhuman proteins)
             if p.family.slug in slug_list:
@@ -139,7 +140,6 @@ def getTargetTable():
             t['iuphar'] = p.family.name.replace("receptor", '').strip()
 
             # Web resource links
-            link_setup = "</span><a target=\"_blank\" href=\"{}\"><span class=\"glyphicon glyphicon-new-window btn-xs\"></span></a>";
             t['uniprot_link'] = ""
             t['gtp_link'] = ""
             uniprot_links = p.web_links.filter(web_resource__slug='uniprot')
@@ -179,9 +179,9 @@ def getTargetTable():
             <td>{}</td> \
             <td>{}</td> \
             <td>{}</td> \
-            <td><span class=\"expand\">{}{}</td> \
-            <td><span class=\"expand\">{}{}</td> \
-            <td>{}</td> \
+            <td><span class=\"expand\">{}</span>{}</td> \
+            <td><span class=\"expand\">{}</span>{}</td> \
+            <td><span data-html=\"true\" data-search=\"{}\">{}</span>{}</td> \
             <td><span {} data-html=\"true\" data-placement=\"bottom\" title=\"{}\" data-search=\"{}\" >{}</span></td> \
             <td>{}</td> \
             <!--<td>{}</td> \
@@ -201,6 +201,8 @@ def getTargetTable():
                 t['iuphar'],
                 t['gtp_link'],
                 ligand_count[t['slug']] if t['slug'] in ligand_count else 0,
+                ligand_count[t['slug']] if t['slug'] in ligand_count else 0,
+                link_setup.format("/ligand/target/all/" + t['slug']) if t['slug'] in ligand_count else "",
                 ("data-toggle=\"tooltip\"" if t['pdbid_tooltip']!="-" else ""),
                 t['pdbid_tooltip'],
                 t['pdbid'],      # This one hidden used for search box.
