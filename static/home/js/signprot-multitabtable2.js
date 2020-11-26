@@ -671,8 +671,8 @@ $(document).ready(function () {
             if ($("#overlay").is(":hidden")) $("#overlay").show();
         }
     });
-    
-    $("#subtypestabletab").closest(".dataTables_scrollBody").append(<div id="overlay2"><table class="row-border text-center compact dataTable no-footer text-nowrap" id="overlay_table2"><tbody></tbody></table></div>');
+
+//    $("#subtypestabletab").closest(".dataTables_scrollBody").append(<div id="overlay2"><table class="row-border text-center compact dataTable no-footer text-nowrap" id="overlay_table2"><tbody></tbody></table></div>);
 
     function create_overlay2() {
         // This function fires upon filtering, to update what rows to show as an overlay
