@@ -1,0 +1,333 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css"/>
+    {#    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.22/css/jquery.dataTables.min.css">#}
+    {#    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css">#}
+    <link rel="stylesheet" href="{% static 'home/css/signprot-multitabtable.css' %}" type="text/css"/>
+{% endblock %}
+
+{% block content %}
+
+    <div style="display:block;">
+        <div style="display:inline; float:left;">
+            <h2 style="width:auto; display:inline;">G-Protein Couplings</h2>
+        </div>
+    </div>
+    <br><br>
+
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="table1-tab" data-toggle="tab" href="#table_1" role="tab"
+               aria-controls="table_1" aria-selected="true">Families</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="table2-tab" data-toggle="tab" href="#table_2" role="tab"
+               aria-controls="table_2" aria-selected="false">Subtypes</a>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="myTabContent">
+
+        {# ====================================================================== #}
+        {# FAMILIES TAB STARTS HERE id='familiestabletab' connects to js #}
+        {# ====================================================================== #}
+        <div class="tab-pane fade active" id="table_1" role="tabpanel" aria-labelledby="table1-tab">
+            <br>
+            <div style='width:100%; display:inline;'>
+                <div class="btn-group">
+                    <a id="dlink" style="display:none;"></a>
+                    <div id="excel_table" style2="display:none;"></div>
+                    <input class="btn btn-default btn-s" type="button" id="toggle_fixed_btn" value="Disable fixed columns"
+                           href="javascript:void(0)" data-toggle="buttons">
+                    <input class="btn btn-default btn-s" type="button" onclick="resetHidden1()" id="toggle"
+                           value="Show hidden columns">
+                    <!--<input class="btn btn-default btn-s" type="button" id="toggle_columns_btn" value="Show hidden
+                    columns"
+                           href="javascript:void(0)"> -->
+                </div>
+                <div class="btn-group" style='padding-left:10px;'>
+                    <input class="btn btn-default btn-s" type="button"
+                           onclick="tableToExcel('familiestabletab', 'Families data', 'families_coupling.xls')"
+                           value="Export Excel">
+                    <input class="btn btn-default btn-s" type="button"
+                           onclick="reset_tab1()"
+                           value="Reset All">
+                </div>
+            </div>
+
+            <table class="compact dataTable no-footer display" id="familiestabletab" >
+                <thead>
+                <tr>
+                    <th colspan=1 style='height:35px; text-align:left;'>
+                        Source
+                    </th>
+                    <th colspan=4 style='height:35px; text-align:left;'>
+                        Receptor
+                    </th>
+                    <th colspan=4 style='height:35px; text-align:left;'>
+                        Guide to Pharmacology
+                    </th>
+                </tr>
+
+                <tr>
+                    <th>Data source</th>
+                    <th>Cl</th>
+                    <th>ResFam</th>
+                    <th>Uniprot</th>
+                    <th>IUPHAR</th>
+
+                    {% for p, subval in header.items  %}
+                        <th>{{ p }}</th>
+                    {% endfor %}
+                </tr>
+
+                <tr>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                </tr>
+
+                </thead>
+
+                <tbody>
+                {% for p, vals in tabfields.items %}
+
+                    {% if vals.coupling.Aska2 %}
+                        <tr>
+                            <td>Inoue et al.</td>
+                            <td>{{ vals.protein.class }}</td>
+                            <td>{{ vals.protein.family }}</td>
+                            <td class="uniprot">
+                                <span><a href="https://www.uniprot.org/uniprot/{{ vals.protein.accession }}" target="_blank">{{ vals.protein.uniprot|safe }}</a></span>
+                            </td>
+                            <td class="text-left">
+                                <a href="https://gpcrdb.org/protein/{{ vals.protein.entryname }}" target="_blank">{{ vals.protein.iuphar|safe }}</a>
+                            </td>
+                            <td>{{ vals.protein.gs }}</td>
+                            <td>{{ vals.protein.gio }}</td>
+                            <td>{{ vals.protein.gq11 }}</td>
+                            <td>{{ vals.protein.g1213 }}</td>
+                        </tr>
+                    {% endif %}
+
+                    {% if vals.coupling.Bouvier2 %}
+                        <tr>
+                            <td>Bouvier et al.</td>
+                            <td>{{ vals.protein.class }}</td>
+                            <td>{{ vals.protein.family }}</td>
+                            <td class="uniprot">
+                                <span><a href="https://www.uniprot.org/uniprot/{{ vals.protein.accession }}" target="_blank">{{ vals.protein.uniprot|safe }}</a></span>
+                            </td>
+                            <td class="text-left">
+                                <a href="https://gpcrdb.org/protein/{{ vals.protein.entryname }}" target="_blank">{{ vals.protein.iuphar|safe }}</a>
+                            </td>
+
+                            <td>{{ vals.protein.gs }}</td>
+                            <td>{{ vals.protein.gio }}</td>
+                            <td>{{ vals.protein.gq11 }}</td>
+                            <td>{{ vals.protein.g1213 }}</td>
+
+
+                        </tr>
+                    {% endif %}
+
+
+                {% endfor %}
+
+                </tbody>
+
+
+
+            </table>
+
+        </div>
+
+        {# ====================================================================== #}
+        {# SUBTYPES TAB STARTS HERE id='subtypestabletab' connects to js #}
+        {# ====================================================================== #}
+        <div class="tab-pane fade" id="table_2" role="tabpanel" aria-labelledby="table2-tab">
+            <br>
+            <div style='width:100%; display:inline;'>
+                <div class="btn-group">
+                    <a id="dlink" style="display:none;"></a>
+                    <div id="excel_table" style2="display:none;"></div>
+                    <input class="btn btn-default btn-s" type="button" id="toggle_fixed_btn" value="Disable fixed columns"
+                           href="javascript:void(0)" data-toggle="buttons">
+                    <input class="btn btn-default btn-s" type="button" onclick="resetHidden2()" id="toggle"
+                           value="Show hidden columns">
+                    <!--<input class="btn btn-default btn-s" type="button" id="toggle_columns_btn" value="Show hidden
+                    columns"
+                           href="javascript:void(0)"> -->
+                </div>
+                <div class="btn-group" style='padding-left:10px;'>
+                    <input class="btn btn-default btn-s" type="button"
+                           onclick="tableToExcel('subtypestabletab', 'Subtypes data', 'subtypes_coupling.xls')"
+                           value="Export Excel">
+                    <input class="btn btn-default btn-s" type="button"
+                           onclick="reset_tab2()"
+                           value="Reset All">
+                </div>
+            </div>
+
+            <table width="100%" class="display compact text-nowrap" id="subtypestabletab" >
+                <thead>
+                <tr>
+                    <th colspan=1 style='height:35px; text-align:left;'>
+                        Source
+                    </th>
+                    <th colspan=4 style='height:35px; text-align:left;'>
+                        Receptor
+                    </th>
+                    <th colspan=13 style='height:35px; text-align:left;'>
+                        log(Emax/EC50)
+                    </th>
+                    <th colspan=13 style='height:35px; text-align:left;'>
+                        pEC50
+                    </th>
+                    <th colspan=13 style='height:35px; text-align:left;'>
+                        Emax
+                    </th>
+                </tr>
+
+                <tr>
+                    <th>Data source</th>
+                    <th>Class</th>
+                    <th>Family</th>
+                    <th>Uniprot</th>
+                    <th>IUPHAR</th>
+
+                    {% for p, subval in header.items  %}
+                        <th colspan={{ subval|length }}>{{ p }}</th>
+                    {% endfor %}
+
+                    {% for p, subval in header.items  %}
+                        <th colspan={{ subval|length }}>{{ p }}</th>
+                    {% endfor %}
+
+                    {% for p, subval in header.items  %}
+                        <th colspan={{ subval|length }}>{{ p }}</th>
+                    {% endfor %}
+
+                    {#            <th colspan=2>Gs</th>#}
+                    {#            <th colspan=5>Gi/Go</th>#}
+                    {#            <th colspan=4>Gq/G11</th>#}
+                    {#            <th colspan=2>G12/G13</th>#}
+                </tr>
+
+                <tr>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    {% for subval in subunitheader %}
+                        <th>
+                            {{ subval}}
+                        </th>
+                    {% endfor %}
+
+                    {% for subval in subunitheader %}
+                        <th>
+                            {{ subval}}
+                        </th>
+                    {% endfor %}
+
+                    {% for subval in subunitheader %}
+                        <th>
+                            {{ subval}}
+                        </th>
+                    {% endfor %}
+
+                </tr>
+                </thead>
+
+
+                <tbody>
+                {% for p, vals in tabfields.items %}
+
+                    {% if vals.coupling.Aska2 %}
+                        <tr>
+                            <td>Inoue et al.</td>
+                            <td>{{ vals.protein.class }}</td>
+                            <td>{{ vals.protein.family }}</td>
+                            <td class="uniprot">
+                                <span><a href="https://www.uniprot.org/uniprot/{{ vals.protein.accession }}" target="_blank">{{ vals.protein.uniprot|safe }}</a></span>
+                            </td>
+                            <td class="text-left">
+                                <a href="https://gpcrdb.org/protein/{{ vals.protein.entryname }}" target="_blank">{{ vals.protein.iuphar|safe }}</a>
+                            </td>
+
+                            {% for q, logval in vals.coupling.Aska2.logemaxec50.items %}
+                                <td>{{ logval }}</td>
+                            {% endfor %}
+
+                            {% for q, logval in vals.coupling.Aska2.pec50.items %}
+                                <td>{{ logval }}</td>
+                            {% endfor %}
+
+                            {% for q, logval in vals.coupling.Aska2.emax.items %}
+                                <td>{{ logval }}</td>
+                            {% endfor %}
+
+                        </tr>
+                    {% endif %}
+
+                    {% if vals.coupling.Bouvier2 %}
+                        <tr>
+                            <td>Bouvier et al.</td>
+                            <td>{{ vals.protein.class }}</td>
+                            <td>{{ vals.protein.family }}</td>
+                            <td class="uniprot">
+                                <span><a href="https://www.uniprot.org/uniprot/{{ vals.protein.accession }}" target="_blank">{{ vals.protein.uniprot|safe }}</a></span>
+                            </td>
+                            <td class="text-left">
+                                <a href="https://gpcrdb.org/protein/{{ vals.protein.entryname }}" target="_blank">{{ vals.protein.iuphar|safe }}</a>
+                            </td>
+
+                            {% for q, logval in vals.coupling.Bouvier2.logemaxec50.items %}
+                                <td>{{ logval }}</td>
+                            {% endfor %}
+
+                            {% for q, logval in vals.coupling.Bouvier2.pec50.items %}
+                                <td>{{ logval }}</td>
+                            {% endfor %}
+
+                            {% for q, logval in vals.coupling.Bouvier2.emax.items %}
+                                <td>{{ logval }}</td>
+                            {% endfor %}
+
+
+                        </tr>
+                    {% endif %}
+
+                {% endfor %}
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+{% endblock %}
+
+{% block addon_js %}
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"></script>
+    <script src="{% static 'home/js/select2.js' %}"></script>
+    {#    <script src="{% static 'home/js/datatables.min.js' %}"></script>#}
+    {#    <script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>#}
+    {#    <script src="https://cdnjs.cloudflare.com/ajax/libs/yadcf/0.9.4/jquery.dataTables.yadcf.min.js"></script>#}
+    {#    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>#}
+    <script src="{% static 'home/js/signprot-multitabtable2.js' %}"></script>
+{% endblock %}

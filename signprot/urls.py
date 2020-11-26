@@ -1,7 +1,7 @@
 from . import views
 from django.urls import path
 from django.views.decorators.cache import cache_page
-from signprot.views import CouplingBrowser
+from signprot.views import CouplingBrowser, CouplingBrowser2
 from contactnetwork.views import PdbTableData
 
 urlpatterns = [
@@ -12,6 +12,7 @@ urlpatterns = [
     path('statistics_tree',  views.GProteinTree, name='gprotein'),
     path('statistics',  views.GProtein, name='gprotein'),
     path('couplings', cache_page(60*60*24*7)(CouplingBrowser.as_view()), name='coupling_browser'),
+    path('couplings2', CouplingBrowser2.as_view(), name='coupling_browser2'),
     path('ginterface/<protein>/', views.Ginterface, name='render'),
     path('ginterface/', views.TargetSelection.as_view(), name='targetselection'),
     path('ajax/barcode/<slug>/<cutoff>/', views.ajaxBarcode, name='ajaxBarcode'),
