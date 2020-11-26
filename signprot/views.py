@@ -29,6 +29,9 @@ import re
 import time
 from collections import Counter, OrderedDict
 from decimal import Decimal
+from pprint import pprint
+from copy import deepcopy
+from statistics import mean
 
 
 class BrowseSelection(AbsTargetSelection):
@@ -528,6 +531,7 @@ class CouplingBrowser(TemplateView):
 
 
 class CouplingBrowser2(TemplateView):
+
     """Class based generic view.
 
     Class based generic view which serves coupling data between Receptors and G-proteins.
@@ -623,11 +627,13 @@ class CouplingBrowser2(TemplateView):
 
         coupling_header_names = {}
         coupling_placeholder = {}
+        coupling_placeholder2 = {}
         for name in coupling_headers:
             if name[1] not in coupling_header_names:
                 coupling_header_names[name[1]] = []
             coupling_header_names[name[1]].append(name[0])
             coupling_placeholder[name[0]] = "--"
+            coupling_placeholder2[name[0]] = []
 
         dictotemplate = {}
         for pair in couplings2:
@@ -635,19 +641,38 @@ class CouplingBrowser2(TemplateView):
                 dictotemplate[pair.protein_id] = {}
                 dictotemplate[pair.protein_id]['protein'] = protein_data[pair.protein_id]
                 dictotemplate[pair.protein_id]['coupling'] = {}
+                dictotemplate[pair.protein_id]['coupling']['GPCRdb'] = {}
+                dictotemplate[pair.protein_id]['coupling']['GPCRdb']['logemaxec50'] = deepcopy(coupling_placeholder2)
+                dictotemplate[pair.protein_id]['coupling']['GPCRdb']['pec50'] = deepcopy(coupling_placeholder2)
+                dictotemplate[pair.protein_id]['coupling']['GPCRdb']['emax'] = deepcopy(coupling_placeholder2)
             if pair.source not in dictotemplate[pair.protein_id]['coupling']:
                 dictotemplate[pair.protein_id]['coupling'][pair.source] = {}
                 dictotemplate[pair.protein_id]['coupling'][pair.source]['logemaxec50'] = coupling_placeholder.copy()
                 dictotemplate[pair.protein_id]['coupling'][pair.source]['pec50'] = coupling_placeholder.copy()
                 dictotemplate[pair.protein_id]['coupling'][pair.source]['emax'] = coupling_placeholder.copy()
-                dictotemplate[pair.protein_id]['coupling']['GPCRdb'] = {}
-                dictotemplate[pair.protein_id]['coupling']['GPCRdb']['logemaxec50'] = coupling_placeholder.copy()
-                dictotemplate[pair.protein_id]['coupling']['GPCRdb']['pec50'] = coupling_placeholder.copy()
-                dictotemplate[pair.protein_id]['coupling']['GPCRdb']['emax'] = coupling_placeholder.copy()
             subunit = pair.g_protein_subunit.family.name
             dictotemplate[pair.protein_id]['coupling'][pair.source]['logemaxec50'][subunit] = pair.logmaxec50_deg
             dictotemplate[pair.protein_id]['coupling'][pair.source]['pec50'][subunit] = pair.pec50_deg
             dictotemplate[pair.protein_id]['coupling'][pair.source]['emax'][subunit] = pair.emax_deg
+
+            dictotemplate[pair.protein_id]['coupling']['GPCRdb']['logemaxec50'][subunit].append(pair.logmaxec50_deg)
+            dictotemplate[pair.protein_id]['coupling']['GPCRdb']['pec50'][subunit].append(pair.pec50_deg)
+            dictotemplate[pair.protein_id]['coupling']['GPCRdb']['emax'][subunit].append(pair.emax_deg)
+
+        for prot in dictotemplate:
+            for entry in dictotemplate[prot]['coupling']['GPCRdb']:
+                for sub in dictotemplate[prot]['coupling']['GPCRdb'][entry]:
+                    valuelist = dictotemplate[prot]['coupling']['GPCRdb'][entry][sub]
+                    if len(valuelist) == 0:
+                        dictotemplate[prot]['coupling']['GPCRdb'][entry][sub] = "--"
+                    elif len(valuelist) == 1:
+                        dictotemplate[prot]['coupling']['GPCRdb'][entry][sub] = valuelist[0]
+                    else:
+                        dictotemplate[prot]['coupling']['GPCRdb'][entry][sub] = round(mean(valuelist), 2)
+
+
+        #pprint(dictotemplate[348])
+        pprint(dictotemplate[1])
             # myNames.keys() & myRDP.keys(
             # if pair.source == "Bouvier2":
             #
@@ -713,7 +738,7 @@ def GProteinVenn(request, dataset="GuideToPharma"):
     return GProtein(request, dataset, "venn")
 
 
-@cache_page(60 * 60 * 24 * 7)
+#@cache_page(60*60*24*7)
 def couplings(request, template_name='signprot/coupling_browser.html'):
     """
     Presents coupling data between Receptors and G-proteins.

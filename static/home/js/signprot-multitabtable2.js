@@ -3,55 +3,57 @@ let oTable2 = [];
 
 let table1data;
 
-var tableToExcel = (function () {
-    var uri = 'data:application/vnd.ms-excel;base64,',
-        template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>',
-        base64 = function (s) {
-            return window.btoa(unescape(encodeURIComponent(s)))
-        }, format = function (s, c) {
-            return s.replace(/{(\w+)}/g, function (m, p) {
-                return c[p];
-            })
-        }
-    return function (table, name, filename) {
-        var table= $("#"+table).clone();
-        $("#excel_table").html(table);
-
-        // Clean up table to remove yadcf stuff
-        $("#excel_table thead tr").css('height','');
-        $("#excel_table thead th").css('height','');
-        $("#excel_table thead div").css('height','');
-        $("#excel_table thead .yadcf-filter-wrapper").remove();
-        $("#excel_table thead button").remove();
-        var tr = $("#excel_table thead tr:eq(1)");
-
-        // reattach th titles
-        tr.find('th').each (function( column, th) {
-            if ($(th).attr('title')) $(th).html($(th).attr('title'));
-        });
-
-        var ctx = {
-            worksheet: name || 'Worksheet',
-            table: $("#excel_table").html()
-        }
-        $("#excel_table").html("");
-        document.getElementById("dlink").href = uri + base64(format(template, ctx));
-        document.getElementById("dlink").download = filename;
-        document.getElementById("dlink").click();
+var tableToExcel = (function() {
+  var uri = "data:application/vnd.ms-excel;base64,",
+    template = "<html xmlns:o=\"urn:schemas-microsoft-com:office:office\" xmlns:x=\"urn:schemas-microsoft-com:office:excel\" xmlns=\"http://www.w3.org/TR/REC-html40\"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>",
+    base64 = function(s) {
+      return window.btoa(unescape(encodeURIComponent(s)));
+    },
+    format = function(s, c) {
+      return s.replace(/{(\w+)}/g, function(m, p) {
+        return c[p];
+      });
     }
-})()
+  return function(table, name, filename) {
+    var table_obj = $("#" + table).clone();
+    $("#excel_table").html(table_obj);
+    // Clean up table to remove yadcf stuff
+    $("#excel_table thead tr").css("height", "");
+    $("#excel_table thead th").css("height", "");
+    $("#excel_table thead div").css("height", "");
+    $("#excel_table thead .yadcf-filter-wrapper").remove();
+    $("#excel_table thead button").remove();
+    var tr = $("#excel_table thead tr:eq(1)");
+    // reattach th titles
+    tr.find("th").each(function(column, th) {
+      if ($(th).attr("title")) {
+        $(th).html($(th).attr("title"));
+      }
+    });
+
+    var ctx = {
+      worksheet: name || "Worksheet",
+      table: $("#excel_table").html()
+    }
+    $("#excel_table").html("");
+    document.getElementById("dlink").href = uri + base64(format(template, ctx));
+    document.getElementById("dlink").download = filename;
+    document.getElementById("dlink").click();
+  }
+}());
+
 
 function select_all(e) {
     var checkedStatus = $(e).prop("checked");
 
-    $('.select-all  ').each(function () {
+    $(".select-all  ").each(function () {
         $(this).prop('checked', checkedStatus);
     });
 
-    $('.alt').each(function () {
+    $(".alt").each(function () {
         $(this).prop('checked', checkedStatus);
     });
-};
+}
 
 function resetHidden1() {
     var columns = Array.from(new Array(17), (x,i) => i + 3);
@@ -70,7 +72,7 @@ function resetHidden1() {
 function resetHidden2() {
     var columns = Array.from(new Array(28), (x,i) => i + 3);
     columns.forEach(function(column) {
-        console.log('columns variable ' + columns);
+        console.log("columns variable " + columns);
         column = oTable2.column( column );
         try {
             column.visible( true, false );
@@ -84,12 +86,12 @@ function resetHidden2() {
 
 function reset_tab1() {
 // Just a button to go back to the main page.
-    window.location.href = '/signprot/couplings2#table_1';
+    window.location.href = "/signprot/couplings2";
 }
 
 function reset_tab2() {
 // Just a button to go back to the main page.
-    window.location.href = '/signprot/couplings2#table_2';
+    window.location.href = "/signprot/couplings2";
 }
 
 //this.element.addEventListener(t, e, { passive: true} )
@@ -107,7 +109,7 @@ $(document).ready(function () {
 //        data: table1data,
 //        serverSide: true,
         deferRender: true,
-        scrollY: '50vh',
+        scrollY: "50vh",
         scrollX: true,
         scrollCollapse: true,
         scroller: true,
@@ -159,28 +161,28 @@ $(document).ready(function () {
             {
                 column_number: 0,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 filter_default_label: "Source",
                 filter_reset_button_text: false,
             },
             {
                 column_number: 1,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 filter_default_label: "Class",
                 filter_reset_button_text: false,
             },
             {
                 column_number: 2,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 filter_default_label: "Family",
                 filter_reset_button_text: false,
             },
             {
                 column_number: 3,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 column_data_type: "html",
                 html_data_type: "text",
                 filter_default_label: "uniprot",
@@ -190,7 +192,7 @@ $(document).ready(function () {
             {
                 column_number: 4,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 column_data_type: "html",
                 html_data_type: "text",
                 filter_default_label: "IUPHAR",
@@ -201,40 +203,40 @@ $(document).ready(function () {
             {
                 column_number: 5,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 filter_default_label: "Gs",
                 select_type_options: {
-                    width: '55%'
+                    width: "55%"
                 },
             },
 
             {
                 column_number: 6,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 filter_default_label: "Gi/Go",
                 select_type_options: {
-                    width: '55%'
+                    width: "55%"
                 },
             },
 
             {
                 column_number: 7,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 filter_default_label: "Gq/G11",
                 select_type_options: {
-                    width: '55%'
+                    width: "55%"
                 },
             },
 
             {
                 column_number: 8,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 filter_default_label: "G12/13",
                 select_type_options: {
-                    width: '55%'
+                    width: "55%"
                 },
             },
 
@@ -286,57 +288,57 @@ $(document).ready(function () {
             {
                 column_number: 0,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 filter_default_label: "Source",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '90px',
+                    width: "90px",
                 },
             },
             {
                 column_number: 1,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 filter_default_label: "Class",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '90px',
+                    width: "90px",
                 },
             },
             {
                 column_number: 2,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 filter_default_label: "Family",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '100px',
+                    width: "100px",
                 },
             },
             {
                 column_number: 3,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 column_data_type: "html",
                 html_data_type: "text",
                 filter_default_label: "UniProt",
                 filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '80px',
+                    width: "80px",
                 },
             },
             {
                 column_number: 4,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 column_data_type: "html",
                 html_data_type: "text",
                 filter_default_label: "IUPHAR",
                 filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '100px',
+                    width: "100px",
                 },
             },
 
@@ -565,16 +567,16 @@ $(document).ready(function () {
 
 
 // By default display the first tab. If this is not ON, one has to click on the tab for display.
-    $('#myTab a:first').tab('show');
+    $("#myTab a:first").tab("show");
 //    $('#myTab a[href="#table_1"]').tab('show');
 
 // Just a button to go back to the main page.
     $('#reset_tab1').click(function () {
-        window.location.href = '/signprot/couplings2';
+        window.location.href = "/signprot/couplings2";
     });
 
-    $('.hide_columns1').click(function(evt) {
-        var columns = $(this).attr('columns').split(",");
+    $(".hide_columns1").click(function(evt) {
+        var columns = $(this).attr("columns").split(",");
         columns.forEach(function(column) {
             column = oTable1.column( column );
             try {
@@ -587,8 +589,8 @@ $(document).ready(function () {
         oTable1.draw();
     } );
 
-    $('.hide_columns2').click(function(evt) {
-        var columns = $(this).attr('columns').split(",");
+    $(".hide_columns2").click(function(evt) {
+        var columns = $(this).attr("columns").split(",");
         columns.forEach(function(column) {
             var column = oTable2.column( column );
             try {
@@ -605,12 +607,12 @@ $(document).ready(function () {
 // Put top scroller
 // https://stackoverflow.com/questions/35147038/how-to-place-the-datatables-horizontal-scrollbar-on-top-of-the-table
 //    console.time("scroll to top");
-    $('.dataTables_scrollHead').css({
-        'overflow-x':'scroll'
-    }).on('scroll', function(e){
-        var scrollBody = $(this).parent().find('.dataTables_scrollBody').get(0);
+    $(".dataTables_scrollHead").css({
+        "overflow-x":"scroll"
+    }).on("scroll", function(e){
+        var scrollBody = $(this).parent().find(".dataTables_scrollBody").get(0);
         scrollBody.scrollLeft = this.scrollLeft;
-        $(scrollBody).trigger('scroll');
+        $(scrollBody).trigger("scroll");
     });
 //    console.timeEnd("scroll to top");
 
@@ -620,39 +622,39 @@ $(document).ready(function () {
 // START OVERLAY COLUMNS CODE HERE
 // =============================================================================
     toggle_enabled = true;
-    $('#toggle_fixed_btn').click(function() {
+    $("#toggle_fixed_btn").click(function() {
         if (toggle_enabled) {
             toggle_enabled = false;
             $("#overlay1").hide();
             $("#overlay2").hide();
-            $("#toggle_fixed_btn").attr('value',"Enable fixed columns");
-            $("#toggle_fixed_btn").addClass('clicked_button');
+            $("#toggle_fixed_btn").attr("value","Enable fixed columns");
+            $("#toggle_fixed_btn").addClass("clicked_button");
         } else {
             toggle_enabled = true;
-            $('#familiestabletab').closest('.dataTables_scrollBody').scroll();
-            $('#subtypestabletab').closest('.dataTables_scrollBody').scroll();
+            $("#familiestabletab").closest(".dataTables_scrollBody").scroll();
+            $("#subtypestabletab").closest(".dataTables_scrollBody").scroll();
 
-            $("#toggle_fixed_btn").attr('value',"Disable fixed columns");
-            $("#toggle_fixed_btn").removeClass('clicked_button');
+            $("#toggle_fixed_btn").attr("value","Disable fixed columns");
+            $("#toggle_fixed_btn").removeClass("clicked_button");
         }
     });
 
     var left1 = 0;
     var old_left1 = 0;
-    $('#subtypestabletab').closest('.dataTables_scrollBody').scroll(function(){
+    $("#subtypestabletab").closest(".dataTables_scrollBody").scroll(function(){
         // If user scrolls and it's > 100px from left, then attach fixed columns overlay
-        left1 = $('#subtypestabletab').closest('.dataTables_scrollBody').scrollLeft();
+        left1 = $("#subtypestabletab").closest(".dataTables_scrollBody").scrollLeft();
         if (left1!=old_left1) $("#overlay2").hide();
         old_left1 = left1;
 
         if (left1 > 100 && toggle_enabled) {
-            $("#overlay2").css({ left: left1 + 'px' });
+            $("#overlay2").css({ left: left1 + "px" });
             if ($("#overlay2").is(":hidden")) $("#overlay2").show();
         }
     });
 
 
-    $('#subtypestabletab').closest('.dataTables_scrollBody').append('<div id="overlay2"><table' +
+    $("#subtypestabletab").closest(".dataTables_scrollBody").append('<div id="overlay2"><table' +
         ' class="row-border text-center compact dataTable no-footer text-nowrap" ' +
         ' id="overlay_table2"><tbody></tbody></table></div>');
 
