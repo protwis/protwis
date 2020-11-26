@@ -161,6 +161,7 @@ function structurebrowser() {
             {
                 column_number : 9,
                 filter_type: "range_number",
+                filter_reset_button_text: false,
                 filter_default_label: ["From", "To"],
             },
             {
@@ -188,6 +189,7 @@ function structurebrowser() {
             {
                 column_number : 12,
                 filter_type: "range_number",
+                filter_reset_button_text: false,
                 filter_default_label: ["From", "To"],
             },
             {
@@ -226,6 +228,7 @@ function structurebrowser() {
             {
                 column_number : 16,
                 filter_type: "range_number",
+                filter_reset_button_text: false,
                 filter_default_label: ["From", "To"],
                 select_type_options: {
                     width: '50px',
@@ -350,6 +353,7 @@ function structurebrowser() {
             {
                 column_number : 28,
                 filter_type: "range_date",
+                filter_reset_button_text: false,
                 date_format: "yyyy-mm-dd",
                 select_type: 'select2',
                 filter_default_label: ["From", "To"],

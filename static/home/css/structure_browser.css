@@ -164,22 +164,13 @@ div.overhead_close {
 .show {display:block;}
 
 .expand {
-    width: 100px;
+    max-width: 100px;
     text-overflow: ellipsis;
-    /*cursor: pointer;*/
-    word-break: break-all;
+    word-break: normal;
     overflow: hidden;
     white-space: nowrap;
 }
 .expand:hover {
     overflow: visible;
     white-space: normal;
-}
-.expand,
-.expand{
-    max-width: 100px;
-    word-break: break-all;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
