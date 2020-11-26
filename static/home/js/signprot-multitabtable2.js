@@ -658,20 +658,6 @@ $(document).ready(function () {
     //     }
     // });
 
-    var left = 0;
-    var old_left = 0;
-    $('.dataTables_scrollBody').scroll(function(){
-        // If user scrolls and it's >100px from left, then attach fixed columns overlay
-        left = $('.dataTables_scrollBody').scrollLeft();
-        if (left!=old_left) $("#overlay").hide();
-        old_left = left;
-
-        if (left>100 && toggle_enabled) {
-            $("#overlay").css({ left: left+'px' });
-            if ($("#overlay").is(":hidden")) $("#overlay").show();
-        }
-    });
-
 //    $("#subtypestabletab").closest(".dataTables_scrollBody").append(<div id="overlay2"><table class="row-border text-center compact dataTable no-footer text-nowrap" id="overlay_table2"><tbody></tbody></table></div>);
 
     function create_overlay2() {
