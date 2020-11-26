@@ -901,16 +901,16 @@ def InteractionBrowserData(request):
 
         data['gpcr_class'] = gpcr_class
 
-        with open('{}_{}.txt'.format(gpcr_class,"gprotein"), 'w') as f:
-            for key,d in class_complex_interactions.items():
-                print(key,d)
-                f.write("%s,%s\n"%(key,d))
-        with open('{}_{}.txt'.format(gpcr_class,"ligand"), 'w') as f:
-            for key,d in class_ligand_interactions.items():
-                f.write("%s,%s\n"%(key,d))
-        with open('{}_{}.txt'.format(gpcr_class,"mutation"), 'w') as f:
-            for key,d in class_mutations.items():
-                f.write("%s,%s\n"%(key,d))
+        # with open('{}_{}.txt'.format(gpcr_class,"gprotein"), 'w') as f:
+        #     for key,d in class_complex_interactions.items():
+        #         print(key,d)
+        #         f.write("%s,%s\n"%(key,d))
+        # with open('{}_{}.txt'.format(gpcr_class,"ligand"), 'w') as f:
+        #     for key,d in class_ligand_interactions.items():
+        #         f.write("%s,%s\n"%(key,d))
+        # with open('{}_{}.txt'.format(gpcr_class,"mutation"), 'w') as f:
+        #     for key,d in class_mutations.items():
+        #         f.write("%s,%s\n"%(key,d))
 
         data['segments'] = set()
         data['segment_map'] = {}

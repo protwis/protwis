@@ -4,13 +4,14 @@ from django.views.generic import TemplateView
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-from django.db.models import Case, When, Min
+from django.db.models import Count, Case, When, Min
 from django.core.cache import cache
 
 from common import definitions
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 from common.selection import SimpleSelection, Selection, SelectionItem
+from ligand.models import AssayExperiment
 from structure.models import Structure, StructureModel, StructureComplexModel
 from protein.models import Protein, ProteinFamily, ProteinSegment, Species, ProteinSource, ProteinSet, ProteinGProtein, ProteinGProteinPair
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent, ResiduePositionSet, Residue
@@ -30,6 +31,312 @@ import time
 import json
 
 default_schemes_excluded = ['cgn', 'ecd', 'can']
+
+def getTargetTable():
+        proteins = Protein.objects.filter(sequence_type__slug='wt',
+                                          family__slug__startswith='00',
+                                          species__common_name='Human').prefetch_related(
+            'family',
+            'family__parent__parent__parent'
+        )
+        # Acquired slugs
+        slug_list = [ p.family.slug for p in proteins ]
+
+        # Acquire all targets that do not have a human ortholog
+        missing_slugs = list(Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith='00')\
+                                         .exclude(family__slug__in=slug_list)\
+                                         .distinct('family__slug')\
+                                         .values_list('family__slug', flat=True))
+
+        for i in missing_slugs:
+            missing = Protein.objects.filter(family__slug=i)\
+                                        .order_by("id")\
+                                        .prefetch_related(
+                'family',
+                'family__parent__parent__parent'
+            )
+            proteins = proteins | missing[:1]
+
+        pdbids = list(Structure.objects.filter(refined=False).values_list('pdb_code__index', 'protein_conformation__protein__family_id'))
+
+        allpdbs = {}
+        for pdb in pdbids:
+            if pdb[1] not in allpdbs:
+                allpdbs[pdb[1]] = [pdb[0]]
+            else:
+                allpdbs[pdb[1]].append(pdb[0])
+
+        drugtargets_approved = list(Protein.objects.filter(drugs__status='approved').values_list('entry_name', flat=True))
+        drugtargets_trials = list(Protein.objects.filter(drugs__status__in=['in trial'],
+                                                         drugs__clinicalstatus__in=['completed', 'not open yet',
+                                                                                    'ongoing', 'recruiting',
+                                                                                    'suspended']).values_list(
+            'entry_name', flat=True))
+
+        ligand_set = list(AssayExperiment.objects.values('protein__family__slug')\
+            .annotate(num_ligands=Count('ligand', distinct=True)))
+
+        ligand_count = {}
+        for entry in ligand_set:
+            ligand_count[entry["protein__family__slug"]] = entry["num_ligands"]
+
+        # Filter data source to Guide to Pharmacology until other coupling transduction sources are "consolidated".
+        couplings = ProteinGProteinPair.objects.filter(source="GuideToPharma").values_list('protein__entry_name',
+                                                                                           'g_protein__name',
+                                                                                           'transduction')
+
+        signaling_data = {}
+        for pairing in couplings:
+            if pairing[0] not in signaling_data:
+                signaling_data[pairing[0]] = {}
+            signaling_data[pairing[0]][pairing[1]] = pairing[2]
+
+        data_table = "<table id='uniprot_selection' class='uniprot_selection stripe compact'> \
+            <thead>\
+              <tr> \
+                <th colspan=1>&nbsp;</th> \
+                <th colspan=5>Receptor classification</th> \
+                <th colspan=1>Ligands</th> \
+                <th colspan=2>Structures</th> \
+<!--                <th colspan=2>Drugs</th> -->\
+                <th colspan=4>G protein coupling</th> \
+              </tr> \
+              <tr> \
+                <th><br><br><input class ='form-check-input' type='checkbox' onclick='return check_all_targets();'></th> \
+                <th>Class<br>&nbsp;</th> \
+                <th>Ligand type<br>&nbsp;</th> \
+                <th style=\"width; 100px;\">Family<br>&nbsp;</th> \
+                <th class=\"text-highlight\">Receptor<br>(UniProt)</th> \
+                <th class=\"text-highlight\">Receptor<br>(GtP)</th> \
+                <th>Count</th> \
+                <th>Count</th> \
+                <th>PDB(s)<br>&nbsp;</th> \
+<!--                <th>Target of an approved drug</th> \
+                <th>Target in clinical trials</th> --> \
+                <th>Gs<br>&nbsp;</th> \
+                <th>Gi/o<br>&nbsp;</th> \
+                <th>Gq/11<br>&nbsp;</th> \
+                <th>G12/13<br>&nbsp;</th> \
+              </tr> \
+            </thead>\
+            \n \
+            <tbody>\n"
+
+        slug_list = []
+        #link_setup = "<a target=\"_blank\" href=\"{}\"><span class=\"glyphicon glyphicon-new-window btn-xs\"></span></a>"
+        link_setup = "<a target=\"_blank\" href=\"{}\">{}</a>"
+        for p in proteins:
+            # Do not repeat slugs (only unhuman proteins)
+            if p.family.slug in slug_list:
+                continue
+            slug_list.append(p.family.slug)
+            t = {}
+            t['accession'] = p.accession
+            t['name'] = p.entry_name.split("_")[0]
+            t['slug'] = p.family.slug
+            t['class'] = p.family.parent.parent.parent.short().split(' ')[0]
+            t['ligandtype'] = p.family.parent.parent.short()
+            t['family'] = p.family.parent.short()
+            t['uniprot'] = p.entry_short()
+            t['iuphar'] = p.family.name.replace("receptor", '').strip()
+
+            # Web resource links
+            #t['uniprot_link'] = ""
+            #t['gtp_link'] = ""
+            uniprot_links = p.web_links.filter(web_resource__slug='uniprot')
+            if uniprot_links.count() > 0:
+                #t['uniprot_link'] = link_setup.format(p.web_links.filter(web_resource__slug='uniprot')[0])
+                t['uniprot'] = link_setup.format(p.web_links.filter(web_resource__slug='uniprot')[0], t['uniprot'])
+
+            gtop_links = p.web_links.filter(web_resource__slug='gtop')
+            if gtop_links.count() > 0:
+                #t['gtp_link'] = link_setup.format(p.web_links.filter(web_resource__slug='gtop')[0])
+                t['iuphar'] = link_setup.format(p.web_links.filter(web_resource__slug='gtop')[0], t['iuphar'])
+
+            # Ligand count
+            t['ligand_count'] = 0
+            if t['slug'] in ligand_count:
+                t['ligand_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_count[t['slug']])
+
+            t['pdbid'] = t['pdbid_two'] = t['pdbid_tooltip'] = "-"
+            t['pdb_count'] = 0
+            if p.family_id in allpdbs:
+                t['pdb_count'] = len(allpdbs[p.family_id])
+
+                pdb_entries = allpdbs[p.family_id]
+                pdb_entries.sort()
+                t['pdbid'] = ",".join(pdb_entries)
+                t['pdbid_two'] = ",".join(pdb_entries[:2])
+                if len(allpdbs[p.family_id]) > 2:
+                    t['pdbid_two'] += ",..."
+                    n = 4 # Number of PDBs per line
+                    pdb_sets = ["&nbsp;&nbsp;".join(pdb_entries[i:i + n]) for i in range(0, len(pdb_entries), n)]
+                    t['pdbid_tooltip'] = "<br>".join(pdb_sets)
+
+            t['approved_target'] = "Yes" if p.entry_name in drugtargets_approved else "No"
+            t['clinical_target'] = "Yes" if p.entry_name in drugtargets_trials else "No"
+
+            gprotein_families = ["Gs family", "Gi/Go family", "Gq/G11 family", "G12/G13 family"]
+            for gprotein in gprotein_families:
+                if p.entry_name in signaling_data and gprotein in signaling_data[p.entry_name]:
+                    t[gprotein] = signaling_data[p.entry_name][gprotein]
+                else:
+                    t[gprotein] = "-"
+
+            data_table += "<tr> \
+            <td data-sort=\"0\"><input class=\"form-check-input\" type=\"checkbox\" name=\"targets\" id=\"{}\" data-entry=\"{}\"></td> \
+            <td>{}</td> \
+            <td>{}</td> \
+            <td>{}</td> \
+            <td><span class=\"expand\">{}</span></td> \
+            <td><span class=\"expand\">{}</span></td> \
+            <td>{}</td> \
+            <td>{}</td> \
+            <td><span {} data-html=\"true\" data-placement=\"bottom\" title=\"{}\" data-search=\"{}\" >{}</span></td> \
+            <!--<td>{}</td> \
+            <td>{}</td>--> \
+            <td>{}</td> \
+            <td>{}</td> \
+            <td>{}</td> \
+            <td>{}</td> \
+            </tr> \n".format(
+                t['slug'],
+                t['name'],
+                t['class'],
+                t['ligandtype'],
+                t['family'],
+                t['uniprot'],
+                t['iuphar'],
+                t['ligand_count'],
+                t['pdb_count'],
+                ("data-toggle=\"tooltip\"" if t['pdbid_tooltip']!="-" else ""),
+                t['pdbid_tooltip'],
+                t['pdbid'],      # This one hidden used for search box.
+                t['pdbid_two'],  # This one shown. Show only first two pdb's.
+                t['approved_target'],
+                t['clinical_target'],
+                t[gprotein_families[0]].capitalize(),
+                t[gprotein_families[1]].capitalize(),
+                t[gprotein_families[2]].capitalize(),
+                t[gprotein_families[3]].capitalize(),
+            )
+
+        data_table += "</tbody></table>"
+
+        return data_table
+
+class AbsTargetSelectionTable(TemplateView):
+    """An abstract class for the target selection page used in many apps. To use it in another app, create a class
+    based view for that app that extends this class"""
+    template_name = 'common/targetselectiontable.html'
+
+    type_of_selection = 'targets_table'
+    selection_only_receptors = False
+    step = 1
+    number_of_steps = 2
+    title = 'SELECT TARGETS'
+    description = 'Select targets in the table (below) or browse the classification tree (right). You can select entire target' \
+        + ' families or individual targets.\n\nOnce you have selected all your targets, click the green button.'
+    documentation_url = settings.DOCUMENTATION_URL
+
+    docs = False
+    filters = True
+
+    target_input = False
+
+    default_species = 'Human'
+    default_slug = '000'
+    default_subslug = '00'
+
+    numbering_schemes = False
+    search = False
+    family_tree = True
+    redirect_on_select = False
+    filter_gprotein = False
+    selection_heading = False
+    buttons = {
+        'continue': {
+            'label': 'Continue to next step',
+            'url': '#',
+            'color': 'success',
+        },
+    }
+    # OrderedDict to preserve the order of the boxes
+    selection_boxes = OrderedDict([
+        ('reference', False),
+        ('targets', True),
+        ('segments', False),
+    ])
+
+    # proteins and families
+    #try - except block prevents manage.py from crashing - circular dependencies between protein - common
+    try:
+        if ProteinFamily.objects.filter(slug=default_slug).exists():
+            ppf = ProteinFamily.objects.get(slug=default_slug)
+            pfs = ProteinFamily.objects.filter(parent=ppf.id).filter(slug__startswith=default_subslug)
+            ps = Protein.objects.filter(family=ppf)
+            psets = ProteinSet.objects.all().prefetch_related('proteins')
+            tree_indent_level = []
+            action = 'expand'
+            # remove the parent family (for all other families than the root of the tree, the parent should be shown)
+            del ppf
+    except Exception as e:
+        pass
+
+    table_data = getTargetTable()
+
+    # species
+    sps = Species.objects.all()
+
+    # g proteins
+    gprots = ProteinGProtein.objects.all()
+
+    # numbering schemes
+    gns = ResidueNumberingScheme.objects.exclude(slug=settings.DEFAULT_NUMBERING_SCHEME).exclude(slug__in=default_schemes_excluded)
+
+    def get_context_data(self, **kwargs):
+        """get context from parent class (really only relevant for children of this class, as TemplateView does
+        not have any context variables)"""
+        context = super().get_context_data(**kwargs)
+
+        # get selection from session and add to context
+        # get simple selection from session
+        simple_selection = self.request.session.get('selection', False)
+
+        # create full selection and import simple selection (if it exists)
+        selection = Selection()
+
+        # on the first page of a workflow, clear the selection (or dont' import from the session)
+        if self.step is not 1:
+            if simple_selection:
+                selection.importer(simple_selection)
+
+        # default species selection
+        if self.default_species:
+            sp = Species.objects.get(common_name=self.default_species)
+            o = SelectionItem('species', sp)
+            selection.species = [o]
+
+        # update session
+        simple_selection = selection.exporter()
+        self.request.session['selection'] = simple_selection
+
+        context['selection'] = {}
+        for selection_box, include in self.selection_boxes.items():
+            if include:
+                context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
+        if self.filters:
+            context['selection']['species'] = selection.species
+            context['selection']['annotation'] = selection.annotation
+            context['selection']['g_proteins'] = selection.g_proteins
+            context['selection']['pref_g_proteins'] = selection.pref_g_proteins
+
+        # get attributes of this class and add them to the context
+        attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
+        for a in attributes:
+            if not(a[0].startswith('__') and a[0].endswith('__')):
+                context[a[0]] = a[1]
+        return context
 
 class AbsTargetSelection(TemplateView):
     """An abstract class for the target selection page used in many apps. To use it in another app, create a class
@@ -1510,21 +1817,35 @@ def ReadTargetInput(request):
     if request.POST == {}:
         return render(request, 'common/selection_lists.html', '')
 
-    o = []
+    # Process input names
     up_names = request.POST['input-targets'].split('\r')
     for up_name in up_names:
-        try:
-            o.append(Protein.objects.get(entry_name=up_name.strip().lower()))
-        except:
+        up_name = up_name.strip()
+        obj = None
+        if "_" in up_name: # Maybe entry name
+            selection_subtype = 'protein'
             try:
-                o.append(Protein.objects.get(accession=up_name.strip().upper()))
+                obj = Protein.objects.get(entry_name=up_name.lower())
             except:
-                continue
+                obj = None
+        else: # Maybe accession code
+            selection_subtype = 'protein'
+            try:
+                obj = Protein.objects.get(accession=up_name.upper())
+            except:
+                obj = None
 
-    for obj in o:
-        # add the selected item to the selection
-        selection_object = SelectionItem(selection_subtype, obj)
-        selection.add(selection_type, selection_subtype, selection_object)
+        # Try slugs
+        if obj == None and (up_name.isnumeric() or "_" in up_name):
+            selection_subtype = 'family'
+            try:
+                obj = ProteinFamily.objects.get(slug=up_name)
+            except:
+                obj = None
+
+        if obj != None:
+            selection_object = SelectionItem(selection_subtype, obj)
+            selection.add(selection_type, selection_subtype, selection_object)
 
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
@@ -1817,131 +2138,5 @@ def TargetTableData(request):
     See the following relevant video from google chrome.
     <https://youtu.be/ff4fgQxPaO0>
     """
-    proteins = Protein.objects.filter(sequence_type__slug='wt',
-                                      family__slug__startswith='00',
-                                      species__common_name='Human').prefetch_related(
-        'family',
-        'family__parent__parent__parent'
-    )
 
-    pdbids = list(Structure.objects.filter(refined=False).values_list('pdb_code__index', 'protein_conformation__protein__family_id'))
-
-    allpdbs = {}
-    for pdb in pdbids:
-        if pdb[1] not in allpdbs:
-            allpdbs[pdb[1]] = [pdb[0]]
-        else:
-            allpdbs[pdb[1]].append(pdb[0])
-
-    drugtargets_approved = list(Protein.objects.filter(drugs__status='approved').values_list('entry_name', flat=True))
-    drugtargets_trials = list(Protein.objects.filter(drugs__status__in=['in trial'],
-                                                     drugs__clinicalstatus__in=['completed', 'not open yet',
-                                                                                'ongoing', 'recruiting',
-                                                                                'suspended']).values_list(
-        'entry_name', flat=True))
-
-    # Filter data source to Guide to Pharmacology until other coupling transduction sources are "consolidated".
-    couplings = ProteinGProteinPair.objects.filter(source="GuideToPharma").values_list('protein__entry_name',
-                                                                                       'g_protein__name',
-                                                                                       'transduction')
-
-    signaling_data = {}
-    for pairing in couplings:
-        if pairing[0] not in signaling_data:
-            signaling_data[pairing[0]] = {}
-        signaling_data[pairing[0]][pairing[1]] = pairing[2]
-
-    data_table = "<table id='uniprot_selection' border=1 class='uniprot_selection'> \
-        <thead>\
-          <tr> \
-            <th colspan=1></th> \
-            <th colspan=5>Receptor classification</th> \
-            <th colspan=1>PDB</th> \
-            <th colspan=2>Drugs</th> \
-            <th colspan=4>G protein coupling</th> \
-          </tr> \
-          <tr> \
-            <th rowspan=1 colspan=1> <input class ='form-check-input check_all' type='checkbox' onclick='check_all(this);'> </th> \
-            <th>Class</th> \
-            <th>Ligand type</th> \
-            <th>Family</th> \
-            <th>Uniprot</th> \
-            <th>IUPHAR</th> \
-            <th>PDB</th> \
-            <th>Target of and approved drug</th> \
-            <th>Target in clinical trials</th> \
-            <th>Gs</th> \
-            <th>Gi/o</th> \
-            <th>Gq/11</th> \
-            <th>G12/13</th> \
-          </tr> \
-        </thead>\
-        \n \
-        <tbody>\n"
-
-    for p in proteins:
-        uniprot_id = p.accession
-        t = {}
-        t['accession'] = p.accession
-        t['class'] = p.family.parent.parent.parent.short()
-        t['ligandtype'] = p.family.parent.parent.short()
-        t['family'] = p.family.parent
-        t['uniprot'] = p.entry_short()
-        t['iuphar'] = p.family.name.replace('receptor', '').strip()
-
-        if p.family_id in allpdbs:
-            pdb_entries = allpdbs[p.family_id]
-            pdb_entries.sort()
-            t['pdbid'] = ",".join(pdb_entries)
-            t['pdbid_two'] = ",".join(pdb_entries[:2])
-            if len(allpdbs[p.family_id]) > 2:
-                t['pdbid_two'] += "..."
-        else:
-            t['pdbid'] = t['pdbid_two'] = "-"
-
-        t['approved_target'] = "Yes" if p.entry_name in drugtargets_approved else "No"
-        t['clinical_target'] = "Yes" if p.entry_name in drugtargets_trials else "No"
-
-        gprotein_families = ["Gs family", "Gi/Go family", "Gq/G11 family", "G12/G13 family"]
-        for gprotein in gprotein_families:
-            if p.entry_name in signaling_data and gprotein in signaling_data[p.entry_name]:
-                t[gprotein] = signaling_data[p.entry_name][gprotein]
-            else:
-                t[gprotein] = "-"
-
-        data_dict = OrderedDict()
-        data_dict[uniprot_id] = t
-        data_table += "<tr> \
-        <td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' name='targets' onclick='thisTARGET(this);' id='{}'></td> \
-        <td>{}</td> \
-        <td>{}</td> \
-        <td>{}</td> \
-        <td>{}</td> \
-        <td><span>{}</span></td> \
-        <td data-search=\"{}\">{}</td> \
-        <td>{}</td> \
-        <td>{}</td> \
-        <td>{}</td> \
-        <td>{}</td> \
-        <td>{}</td> \
-        <td>{}</td> \
-        </tr> \n".format(
-            uniprot_id,
-            t['class'],
-            t['ligandtype'],
-            t['family'],
-            t['uniprot'],
-            t['iuphar'],
-            t['pdbid'],      # This one hidden used for search box.
-            t['pdbid_two'],  # This one shown. Show only first two pdb's.
-            t['approved_target'],
-            t['clinical_target'],
-            t[gprotein_families[0]],
-            t[gprotein_families[1]],
-            t[gprotein_families[2]],
-            t[gprotein_families[3]],
-        )
-
-    data_table += "</tbody></table>"
-
-    return HttpResponse(data_table)
+    return HttpResponse(getTargetTable())

@@ -70,7 +70,7 @@ function filter_browser() {
         if (analys_mode == "#two-crystal-groups") {
             $.each(filtered_gns_abs_diff_values, function (i, v) {
                 // Go through all the diff values. If both negative and positive diff numbers exist
-                // then label position as "both". Otherwise the correct set. This gives information whether 
+                // then label position as "both". Otherwise the correct set. This gives information whether
                 // the position is only participating in interactions in one set or the other..
                 let max = Math.max.apply(null, v);
                 let min = Math.min.apply(null, v);
@@ -87,7 +87,7 @@ function filter_browser() {
             })
 
             $.each(filtered_cluster_groups, function (i, gns) {
-    
+
                 // console.log('filter id', i);
                 var sum = 0;
                 for (var ii = 0; ii < gns.length; ii++){
@@ -287,7 +287,7 @@ function renderDataTablesYadcf(element) {
             if (analys_mode == "#two-crystal-groups") {
 
                 repeated_from_to_1 = make_range_number_cols(8, 18);
-                repeated_from_to_2 = make_range_number_cols(28, 9);
+                repeated_from_to_2 = make_range_number_cols(28, 10);
 
                 yadcf.init(btable,
                     [{
@@ -1340,7 +1340,7 @@ function renderBrowser(data) {
                           <th colspan="2">Secondary structure</th> \
                           <th colspan="2"></th> \
                           <th colspan="4" rowspan="1">Absence in receptor or structure (%)</th> \
-                          <th rowspan="2" colspan="3">Contact AA pair sequence conservation in class (%)</th> \
+                          <th rowspan="2" colspan="4">Contact AA pair sequence conservation in class (%)</th> \
                         </tr> \
                         <tr> \
                           <th colspan="2">Distance to all other pos.</th> \
@@ -1391,6 +1391,7 @@ function renderBrowser(data) {
                           <th class="narrow_col">Set 1<br></th> \
                           <th class="narrow_col">Set 2<br></th> \
                           <th class="narrow_col">Diff<br></th> \
+                          <th class="narrow_col">Max<br></th> \
                         </tr>';
         table.find('thead').html(thead);
         // two groups
@@ -1429,6 +1430,7 @@ function renderBrowser(data) {
 
 
             var class_seq_cons_diff = class_seq_cons[0] - class_seq_cons[1];
+            var class_seq_cons_max = Math.max(class_seq_cons[0], class_seq_cons[1]);
 
             // var types = v['types'].join(",<br>");
             const types = v['types'].map((t) => types_to_short[t]).join('|');
@@ -1559,11 +1561,11 @@ function renderBrowser(data) {
             distance_all_gn1 = '';
             if (gn1 in data['distances']) {
                 distance_all_gn1 = data['distances'][gn1]['avg'];
-            } 
+            }
             distance_all_gn2 = '';
             if (gn2 in data['distances']) {
                 distance_all_gn2 = data['distances'][gn2]['avg'];
-            } 
+            }
 
             tr = `
                     <tr class="clickable-row filter_rows" id="${i}">
@@ -1604,6 +1606,7 @@ function renderBrowser(data) {
                       <td class="narrow_col">${class_seq_cons[0]}</td>
                       <td class="narrow_col">${class_seq_cons[1]}</td>
                       <td class="narrow_col">${class_seq_cons_diff}</td>
+                      <td class="narrow_col" data_comparison="${class_seq_cons_diff}">${class_seq_cons_max}</td>
                     </tr>`;
             tbody.append(tr);
         });
@@ -3738,10 +3741,11 @@ function gray_scale_table(table) {
             c_maxmin = maxmin[j];
             c_header = h_cols[j];
             value = parseFloat(cell.innerText);
+            comparison_toggle = cell.hasAttribute("data_comparison")
             if (!(isNaN(value) || isNaN(c_maxmin[0]) || isNaN(c_maxmin[1]))) {
                 scale = Math.abs(value) / c_maxmin[2];
                 var color = { r: 255, g: 255, b: 255 };
-                if ((c_header.includes('Set 2') || value < 0) && !(c_header.includes('Set 1'))) {
+                if ((c_header.includes('Set 2') || value < 0 || (comparison_toggle && parseFloat(cell.getAttribute("data_comparison")) < 0)) && !(c_header.includes('Set 1'))) {
                     // if the header is a set two, then make it red
                     color = { r: 255, g: 255-(255-153)*scale, b: 255-(255-153)*scale }; //red
                 } else if (value > 0) {
