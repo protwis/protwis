@@ -531,15 +531,14 @@ class CouplingBrowser(TemplateView):
 
 
 class CouplingBrowser2(TemplateView):
-
-    """Class based generic view.
-
+    """
     Class based generic view which serves coupling data between Receptors and G-proteins.
     Data coming from Guide to Pharmacology, Asuka Inuoue and Michel Bouvier at the moment.
     More data might come later from Roth and Strachan TRUPATH biosensor and Neville Lambert.
     :param dataset: ProteinGProteinPair (see build/management/commands/build_g_proteins.py)
     :return: context
     """
+
     template_name = "signprot/coupling_browser2.html"
 
     @method_decorator(csrf_exempt)
@@ -670,17 +669,8 @@ class CouplingBrowser2(TemplateView):
                     else:
                         dictotemplate[prot]['coupling']['GPCRdb'][entry][sub] = round(mean(valuelist), 2)
 
-
         #pprint(dictotemplate[348])
-        pprint(dictotemplate[1])
-            # myNames.keys() & myRDP.keys(
-            # if pair.source == "Bouvier2":
-            #
-            # if pair.source == "Aska2":
-            #
-            # dictotemplate[pair.protein_id]['coupling']['GPCRdb']['logemaxec50'][subunit] = avg_logmaxec50_deg
-            # dictotemplate[pair.protein_id]['coupling']['GPCRdb']['pec50'][subunit] = avg_pec50_deg
-            # dictotemplate[pair.protein_id]['coupling']['GPCRdb']['emax'][subunit] = avg_emax_deg
+        #pprint(dictotemplate[1])
 
         return dictotemplate, coupling_header_names
 
@@ -900,7 +890,7 @@ def couplings(request, template_name='signprot/coupling_browser.html'):
                   )
 
 
-@cache_page(60 * 60 * 24 * 7)
+@cache_page(60*60*24*7)
 def familyDetail(request, slug):
     # get family
     pf = ProteinFamily.objects.get(slug=slug)

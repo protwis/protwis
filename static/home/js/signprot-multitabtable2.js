@@ -13,7 +13,7 @@ var tableToExcel = (function() {
       return s.replace(/{(\w+)}/g, function(m, p) {
         return c[p];
       });
-    }
+    };
   return function(table, name, filename) {
     var table_obj = $("#" + table).clone();
     $("#excel_table").html(table_obj);
@@ -47,11 +47,11 @@ function select_all(e) {
     var checkedStatus = $(e).prop("checked");
 
     $(".select-all  ").each(function () {
-        $(this).prop('checked', checkedStatus);
+        $(this).prop("checked", checkedStatus);
     });
 
     $(".alt").each(function () {
-        $(this).prop('checked', checkedStatus);
+        $(this).prop("checked", checkedStatus);
     });
 }
 
@@ -261,7 +261,7 @@ $(document).ready(function () {
 //        data: table2data,
 //        serverSide: true,
         deferRender: true,
-        scrollY: '50vh',
+        scrollY: "50vh",
         scrollX: true,
         scrollCollapse: true,
         scroller: true,
@@ -571,7 +571,7 @@ $(document).ready(function () {
 //    $('#myTab a[href="#table_1"]').tab('show');
 
 // Just a button to go back to the main page.
-    $('#reset_tab1').click(function () {
+    $("#reset_tab1").click(function () {
         window.location.href = "/signprot/couplings2";
     });
 
@@ -592,7 +592,7 @@ $(document).ready(function () {
     $(".hide_columns2").click(function(evt) {
         var columns = $(this).attr("columns").split(",");
         columns.forEach(function(column) {
-            var column = oTable2.column( column );
+            column = oTable2.column( column );
             try {
                 column.visible( false, false );
             }
@@ -621,7 +621,7 @@ $(document).ready(function () {
 // =============================================================================
 // START OVERLAY COLUMNS CODE HERE
 // =============================================================================
-    toggle_enabled = true;
+    let toggle_enabled = true;
     $("#toggle_fixed_btn").click(function() {
         if (toggle_enabled) {
             toggle_enabled = false;
@@ -644,7 +644,7 @@ $(document).ready(function () {
     $("#subtypestabletab").closest(".dataTables_scrollBody").scroll(function(){
         // If user scrolls and it's > 100px from left, then attach fixed columns overlay
         left1 = $("#subtypestabletab").closest(".dataTables_scrollBody").scrollLeft();
-        if (left1!=old_left1) $("#overlay2").hide();
+        if (left1!==old_left1) $("#overlay2").hide();
         old_left1 = left1;
 
         if (left1 > 100 && toggle_enabled) {
