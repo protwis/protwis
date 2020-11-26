@@ -890,7 +890,7 @@ def couplings(request, template_name='signprot/coupling_browser.html'):
                   )
 
 
-@cache_page(60*60*24*7)
+#@cache_page(60*60*24*7)
 def familyDetail(request, slug):
     # get family
     pf = ProteinFamily.objects.get(slug=slug)

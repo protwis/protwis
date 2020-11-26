@@ -11,7 +11,7 @@ var tableToExcel = (function() {
     },
     format = function(s, c) {
       return s.replace(/{(\w+)}/g, function(m, p) {
-        return c[p];
+        return c[parseInt(p)];
       });
     };
   return function(table, name, filename) {
@@ -34,7 +34,7 @@ var tableToExcel = (function() {
     var ctx = {
       worksheet: name || "Worksheet",
       table: $("#excel_table").html()
-    }
+    };
     $("#excel_table").html("");
     document.getElementById("dlink").href = uri + base64(format(template, ctx));
     document.getElementById("dlink").download = filename;
@@ -644,12 +644,16 @@ $(document).ready(function () {
     $("#subtypestabletab").closest(".dataTables_scrollBody").scroll(function(){
         // If user scrolls and it's > 100px from left, then attach fixed columns overlay
         left1 = $("#subtypestabletab").closest(".dataTables_scrollBody").scrollLeft();
-        if (left1!==old_left1) $("#overlay2").hide();
+        if (left1!==old_left1) {
+            $("#overlay2").hide();
+        }
         old_left1 = left1;
 
         if (left1 > 100 && toggle_enabled) {
             $("#overlay2").css({ left: left1 + "px" });
-            if ($("#overlay2").is(":hidden")) $("#overlay2").show();
+            if ($("#overlay2").is(":hidden")) {
+                $("#overlay2").show();
+            }
         }
     });
 
