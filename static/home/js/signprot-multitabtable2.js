@@ -2,6 +2,7 @@ let oTable1 = [];
 let oTable2 = [];
 
 let table1data;
+let yadcf;
 
 var tableToExcel = (function() {
   var uri = "data:application/vnd.ms-excel;base64,",
@@ -11,7 +12,7 @@ var tableToExcel = (function() {
     },
     format = function(s, c) {
       return s.replace(/{(\w+)}/g, function(m, p) {
-        return c[parseInt(p)];
+        return c[parseInt(p, 10)];
       });
     };
   return function(table, name, filename) {
@@ -39,7 +40,7 @@ var tableToExcel = (function() {
     document.getElementById("dlink").href = uri + base64(format(template, ctx));
     document.getElementById("dlink").download = filename;
     document.getElementById("dlink").click();
-  }
+  };
 }());
 
 
