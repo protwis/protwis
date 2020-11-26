@@ -640,29 +640,39 @@ $(document).ready(function () {
         }
     });
 
-    var left1 = 0;
-    var old_left1 = 0;
-    $("#subtypestabletab").closest(".dataTables_scrollBody").scroll(function(){
-        // If user scrolls and it's > 100px from left, then attach fixed columns overlay
-        left1 = $("#subtypestabletab").closest(".dataTables_scrollBody").scrollLeft();
-        if (left1!==old_left1) {
-            $("#overlay2").hide();
-        }
-        old_left1 = left1;
+    // var left1 = 0;
+    // var old_left1 = 0;
+    // $("#subtypestabletab").closest(".dataTables_scrollBody").scroll(function(){
+    //     // If user scrolls and it's > 100px from left, then attach fixed columns overlay
+    //     left1 = $("#subtypestabletab").closest(".dataTables_scrollBody").scrollLeft();
+    //     if (left1!==old_left1) {
+    //         $("#overlay2").hide();
+    //     }
+    //     old_left1 = left1;
+    //
+    //     if (left1 > 100 && toggle_enabled) {
+    //         $("#overlay2").css({ left: left1 + "px" });
+    //         if ($("#overlay2").is(":hidden")) {
+    //             $("#overlay2").show();
+    //         }
+    //     }
+    // });
 
-        if (left1 > 100 && toggle_enabled) {
-            $("#overlay2").css({ left: left1 + "px" });
-            if ($("#overlay2").is(":hidden")) {
-                $("#overlay2").show();
-            }
+    var left = 0;
+    var old_left = 0;
+    $('.dataTables_scrollBody').scroll(function(){
+        // If user scrolls and it's >100px from left, then attach fixed columns overlay
+        left = $('.dataTables_scrollBody').scrollLeft();
+        if (left!=old_left) $("#overlay").hide();
+        old_left = left;
+
+        if (left>100 && toggle_enabled) {
+            $("#overlay").css({ left: left+'px' });
+            if ($("#overlay").is(":hidden")) $("#overlay").show();
         }
     });
-
-
-    $("#subtypestabletab").closest(".dataTables_scrollBody").append('<div id="overlay2"><table' +
-        ' class="row-border text-center compact dataTable no-footer text-nowrap" ' +
-        ' id="overlay_table2"><tbody></tbody></table></div>');
-
+    
+    $("#subtypestabletab").closest(".dataTables_scrollBody").append(<div id="overlay2"><table class="row-border text-center compact dataTable no-footer text-nowrap" id="overlay_table2"><tbody></tbody></table></div>');
 
     function create_overlay2() {
         // This function fires upon filtering, to update what rows to show as an overlay
