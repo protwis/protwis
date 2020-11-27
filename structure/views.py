@@ -10,9 +10,7 @@ from django.shortcuts import redirect
 
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from protein.models import Gene, ProteinSegment, IdentifiedSites, ProteinGProteinPair
-from structure.models import (Structure, StructureModel, StructureComplexModel, StructureModelStatsRotamer, StructureComplexModelStatsRotamer,
-							 StructureModelSeqSim, StructureComplexModelSeqSim, StructureRefinedStatsRotamer, StructureRefinedSeqSim, StructureExtraProteins, 
-							 StructureModelRMSD)
+from structure.models import Structure, StructureModel, StructureComplexModel, StructureModelStatsRotamer, StructureComplexModelStatsRotamer, StructureModelSeqSim, StructureComplexModelSeqSim, StructureRefinedStatsRotamer, StructureRefinedSeqSim, StructureExtraProteins, StructureModelRMSD
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn, PdbStateIdentifier
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
@@ -190,7 +188,7 @@ class ServeModelStatistics(TemplateView):
 				"target_structure__protein_conformation__protein__parent",
 				"target_structure__protein_conformation__protein__parent__family")
 		except StructureModelRMSD.DoesNotExist as e:
-			pass
+			print(e)
 
 		return context
 
