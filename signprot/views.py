@@ -144,19 +144,6 @@ class CouplingBrowser(TemplateView):
         context = super().get_context_data(**kwargs)
         fam_tab = self.fams_tab()
 
-        protobj = Protein.objects.filter(sequence_type__slug='wt',
-                                         family__slug__startswith='00',
-                                         species__common_name='Human').prefetch_related(
-            "family",
-            "parent",
-            "source")
-
-        coupobj = ProteinGProteinPair.objects.all().prefetch_related('protein',
-                                                                     'g_protein_subunit',
-                                                                     'g_protein')
-
-        #        context['proteins'] = protobj
-        #        context['couplings'] = coupobj
         context['famtab'] = fam_tab
 
         return context

@@ -1,8 +1,10 @@
+/*eslint complexity: ["error", 8]*/
+/*eslint quotes: ["error", "double", { "avoidEscape": true }]*/
+
 let oTable1 = [];
 let oTable2 = [];
 
 let table1data;
-let yadcf;
 
 var tableToExcel = (function() {
   var uri = "data:application/vnd.ms-excel;base64,",
@@ -42,7 +44,6 @@ var tableToExcel = (function() {
     document.getElementById("dlink").click();
   };
 }());
-
 
 function select_all(e) {
     var checkedStatus = $(e).prop("checked");
@@ -201,46 +202,47 @@ $(document).ready(function () {
                 filter_reset_button_text: false,
             },
 
+// Guide to Pharmacology
             {
                 column_number: 5,
                 filter_type: "multi_select",
                 select_type: "select2",
                 filter_default_label: "Gs",
+                filter_reset_button_text: false,
                 select_type_options: {
                     width: "55%"
                 },
             },
-
             {
                 column_number: 6,
                 filter_type: "multi_select",
                 select_type: "select2",
                 filter_default_label: "Gi/Go",
+                filter_reset_button_text: false,
                 select_type_options: {
                     width: "55%"
                 },
             },
-
             {
                 column_number: 7,
                 filter_type: "multi_select",
                 select_type: "select2",
                 filter_default_label: "Gq/G11",
+                filter_reset_button_text: false,
                 select_type_options: {
                     width: "55%"
                 },
             },
-
             {
                 column_number: 8,
                 filter_type: "multi_select",
                 select_type: "select2",
                 filter_default_label: "G12/13",
+                filter_reset_button_text: false,
                 select_type_options: {
                     width: "55%"
                 },
             },
-
 
         ],
 
@@ -640,25 +642,25 @@ $(document).ready(function () {
         }
     });
 
-    // var left1 = 0;
-    // var old_left1 = 0;
-    // $("#subtypestabletab").closest(".dataTables_scrollBody").scroll(function(){
-    //     // If user scrolls and it's > 100px from left, then attach fixed columns overlay
-    //     left1 = $("#subtypestabletab").closest(".dataTables_scrollBody").scrollLeft();
-    //     if (left1!==old_left1) {
-    //         $("#overlay2").hide();
-    //     }
-    //     old_left1 = left1;
-    //
-    //     if (left1 > 100 && toggle_enabled) {
-    //         $("#overlay2").css({ left: left1 + "px" });
-    //         if ($("#overlay2").is(":hidden")) {
-    //             $("#overlay2").show();
-    //         }
-    //     }
-    // });
+    var left1 = 0;
+    var old_left1 = 0;
+    $("#subtypestabletab").closest(".dataTables_scrollBody").scroll(function(){
+        // If user scrolls and it's > 100px from left, then attach fixed columns overlay
+        left1 = $("#subtypestabletab").closest(".dataTables_scrollBody").scrollLeft();
+        if (left1!==old_left1) {
+            $("#overlay2").hide();
+        }
+        old_left1 = left1;
 
-//    $("#subtypestabletab").closest(".dataTables_scrollBody").append(<div id="overlay2"><table class="row-border text-center compact dataTable no-footer text-nowrap" id="overlay_table2"><tbody></tbody></table></div>);
+        if (left1 > 100 && toggle_enabled) {
+            $("#overlay2").css({ left: left1 + "px" });
+            if ($("#overlay2").is(":hidden")) {
+                $("#overlay2").show();
+            }
+        }
+    });
+
+   $("#subtypestabletab").closest(".dataTables_scrollBody").append('<div id="overlay2"><table id="overlay_table2" class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
 
     function create_overlay2() {
         // This function fires upon filtering, to update what rows to show as an overlay
