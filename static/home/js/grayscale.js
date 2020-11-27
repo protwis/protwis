@@ -8,8 +8,8 @@ function rgbToHex(r, g, b) {
 }
 
 function gray_scale_table(table) {
-    // Create gray scale for numberic values in table. Assign either the 'color-column' class to a cell (td object) to use min-max values for coloring
-    // only in that column, or assign the 'color-set[int]' class to use min-max values spanning through multiple columns sharing the class set name.
+    // Create gray scale for numberic values in table. Assign either the "color-column" class to a cell (td object) to use min-max values for coloring
+    // only in that column, or assign the "color-set[int]" class to use min-max values spanning through multiple columns sharing the class set name.
     
     // Find all color-sets
     var colorSetIds = [];
@@ -32,11 +32,11 @@ function gray_scale_table(table) {
     for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
         for (let [j, cell] of [...row.cells].entries()) {
             cols[j] = cols[j] || [];
-            if (cell.innerText!=='-' && cell.classList.contains("color-column")) {
+            if (cell.innerText!=="-" && cell.classList.contains("color-column")) {
                 cols[j].push(cell.innerText);
             }
             else if (cell.innerText!=="-") {
-                for (k = 0; k < colorSetIds.length; k++) {
+                for (var k = 0; k < colorSetIds.length; k++) {
                     if (cell.classList.contains(colorSetIds[k])) {
                         sets[colorSetIds[k]].push(cell.innerText);
                         break;
@@ -75,7 +75,7 @@ function gray_scale_table(table) {
                 calculate_color = true;
             }
             else {
-                for (k = 0; k < colorSetIds.length; k++) {
+                for (var k = 0; k < colorSetIds.length; k++) {
                     if (cell.classList.contains(colorSetIds[k])) {
                         c_maxmin = setsmaxmin[colorSetIds[k]];
                         calculate_color = true;

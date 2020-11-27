@@ -50,9 +50,9 @@ function model_statistics() {
     });
 
     //Uncheck every row when using back button on browser
-    $(".alt_selected").prop("checked",false)
-    $(".alt").prop("checked",false)
-    $(".select-all").prop("checked",false)
+    $(".alt_selected").prop("checked",false);
+    $(".alt").prop("checked",false);
+    $(".select-all").prop("checked",false);
     
     ClearSelection("targets");
     ClearSelection("reference");
@@ -352,8 +352,9 @@ function model_statistics() {
 
     $(".hide_columns").click(function(evt) {
         var columns = $(this).attr("columns").split(",");
+        var column;
         columns.forEach(function(column) {
-            var column = oTable2.column( column );
+            column = oTable2.column( column );
             try {
                 column.visible( false, false );
             }
@@ -388,20 +389,20 @@ function model_statistics() {
     $("#pdb_copy").click(function () {
         copyToClipboard($(".alt_selected > .pdb > a"), "\n", "PDB IDs", $(".pdb-export"));
     });
-};
+}
 
-var tableToExcel = (function () {
+var tableToExcel = function () {
     var uri = "data:application/vnd.ms-excel;base64,",
         template = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:x='urn:schemas-microsoft-com:office:excel' xmlns='http://www.w3.org/TR/REC-html40'><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>",
         base64 = function (s) {
-            return window.btoa(unescape(encodeURIComponent(s)))
+            return window.btoa(unescape(encodeURIComponent(s)));
         }, format = function (s, c) {
             return s.replace(/{(\w+)}/g, function (m, p) {
                 return c[p];
-            })
-        }
+            });
+        };
     return function (table, name, filename) {
-            var table= $("#"+table).clone();
+            table= $("#"+table).clone();
             $("#excel_table").html(table);
             // Clean up table to remove yadcf stuff
             $("#excel_table thead tr").css("height","");
@@ -412,7 +413,9 @@ var tableToExcel = (function () {
             var tr = $("#excel_table thead tr:eq(1)");
             // reattach th titles
             tr.find("th").each (function( column, th) {
-              if ($(th).attr("title")) $(th).html($(th).attr("title"));
+                if ($(th).attr("title")) {
+                    $(th).html($(th).attr("title"))
+                };
             });
 
         var ctx = {
@@ -424,7 +427,7 @@ var tableToExcel = (function () {
         document.getElementById("dlink").download = filename;
         document.getElementById("dlink").click();
     }
-})()
+}();
 
 function copyToClipboard(array, delimiter, data_name, powertip_object=false) {
     var link = array;
@@ -434,8 +437,8 @@ function copyToClipboard(array, delimiter, data_name, powertip_object=false) {
         out+=ele[ele.length-1]+delimiter;
     });
     if (out.length===0) {
-        window.alert("No entries selected for copying")
-        return 0
+        window.alert("No entries selected for copying");
+        return 0;
     }
     var textArea = document.createElement("textarea");
     textArea.value = out;
@@ -449,12 +452,12 @@ function copyToClipboard(array, delimiter, data_name, powertip_object=false) {
             $.powerTip.hide();
             powertip_object.data("powertipjq", $([
                 "<p>Copied to clipboard!</p>"
-                ].join("\n")))
+                ].join("\n")));
             powertip_object.powerTip("show");
             setTimeout(function() {
             powertip_object.data("powertipjq", $([
                 "<p>Export "+data_name+"</p>"
-                ].join("\n")))
+                ].join("\n")));
             },1000);
         }
     } catch (err) {
