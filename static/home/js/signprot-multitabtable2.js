@@ -1,6 +1,7 @@
 /*eslint complexity: ["error", 8]*/
 /*eslint quotes: ["error", "double", { "avoidEscape": true }]*/
-
+let oTable1 = [];
+let oTable2 = [];
 let table1data;
 
 var tableToExcel = (function() {
@@ -97,8 +98,6 @@ function reset_tab2() {
 //$(document.addEventListener('touchstart', null, { passive: true})).ready(function () {
 //$(document).ready(function () {
 $(function() {
-    let oTable1 = [];
-    let oTable2 = [];
 
 //     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
 // //      console.log( 'show tab' );
@@ -120,8 +119,7 @@ $(function() {
         bInfo: true,
     });
 
-    let yadcf1 = yadcf;
-    yadcf1.init(oTable1,
+    yadcf.init(oTable1,
         [
             {
                 column_number: 0,
@@ -130,7 +128,7 @@ $(function() {
                 filter_default_label: "Source",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '80px',
+                    width: "80px",
                 }
             },
             {
@@ -140,7 +138,7 @@ $(function() {
                 filter_default_label: "Cl",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '40px',
+                    width: "40px",
                 }
             },
             {
@@ -150,7 +148,7 @@ $(function() {
                 filter_default_label: "Family",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '200px',
+                    width: "200px",
                 }
             },
             {
@@ -163,7 +161,7 @@ $(function() {
                 filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '60px',
+                    width: "60px",
                 }
             },
             {
@@ -231,7 +229,7 @@ $(function() {
         }
     );
 
-    yadcf1.exResetAllFilters(oTable1);
+    yadcf.exResetAllFilters(oTable1);
 //    setTimeout(() => {
 //        console.timeEnd("table1load");
 //    }, );
@@ -251,7 +249,7 @@ $(function() {
         bInfo: true,
     });
 
-    yadcf1.init(oTable2,
+    yadcf.init(oTable2,
         [
             {
                 column_number: 0,
@@ -561,7 +559,7 @@ $(function() {
         }
     );
 
-    yadcf1.exResetAllFilters(oTable2);
+    yadcf.exResetAllFilters(oTable2);
 //    setTimeout(() => {
 //        console.timeEnd("table2load");
 //    }, );
