@@ -1,48 +1,45 @@
 /*eslint complexity: ["error", 8]*/
 /*eslint quotes: ["error", "double", { "avoidEscape": true }]*/
 
-let oTable1 = [];
-let oTable2 = [];
-
 let table1data;
 
 var tableToExcel = (function() {
-  var uri = "data:application/vnd.ms-excel;base64,",
-    template = "<html xmlns:o=\"urn:schemas-microsoft-com:office:office\" xmlns:x=\"urn:schemas-microsoft-com:office:excel\" xmlns=\"http://www.w3.org/TR/REC-html40\"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>",
-    base64 = function(s) {
-      return window.btoa(unescape(encodeURIComponent(s)));
-    },
-    format = function(s, c) {
-      return s.replace(/{(\w+)}/g, function(m, p) {
-        return c[parseInt(p, 10)];
-      });
-    };
-  return function(table, name, filename) {
-    var table_obj = $("#" + table).clone();
-    $("#excel_table").html(table_obj);
-    // Clean up table to remove yadcf stuff
-    $("#excel_table thead tr").css("height", "");
-    $("#excel_table thead th").css("height", "");
-    $("#excel_table thead div").css("height", "");
-    $("#excel_table thead .yadcf-filter-wrapper").remove();
-    $("#excel_table thead button").remove();
-    var tr = $("#excel_table thead tr:eq(1)");
-    // reattach th titles
-    tr.find("th").each(function(column, th) {
-      if ($(th).attr("title")) {
-        $(th).html($(th).attr("title"));
-      }
-    });
+    var uri = "data:application/vnd.ms-excel;base64,",
+        template = "<html xmlns:o=\"urn:schemas-microsoft-com:office:office\" xmlns:x=\"urn:schemas-microsoft-com:office:excel\" xmlns=\"http://www.w3.org/TR/REC-html40\"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>",
+        base64 = function(s) {
+            return window.btoa(unescape(encodeURIComponent(s)));
+        },
+        format = function(s, c) {
+            return s.replace(/{(\w+)}/g, function(m, p) {
+                return c[parseInt(p, 10)];
+            });
+        };
+    return function(table, name, filename) {
+        var table_obj = $("#" + table).clone();
+        $("#excel_table").html(table_obj);
+        // Clean up table to remove yadcf stuff
+        $("#excel_table thead tr").css("height", "");
+        $("#excel_table thead th").css("height", "");
+        $("#excel_table thead div").css("height", "");
+        $("#excel_table thead .yadcf-filter-wrapper").remove();
+        $("#excel_table thead button").remove();
+        var tr = $("#excel_table thead tr:eq(1)");
+        // reattach th titles
+        tr.find("th").each(function(column, th) {
+            if ($(th).attr("title")) {
+                $(th).html($(th).attr("title"));
+            }
+        });
 
-    var ctx = {
-      worksheet: name || "Worksheet",
-      table: $("#excel_table").html()
+        var ctx = {
+            worksheet: name || "Worksheet",
+            table: $("#excel_table").html()
+        };
+        $("#excel_table").html("");
+        document.getElementById("dlink").href = uri + base64(format(template, ctx));
+        document.getElementById("dlink").download = filename;
+        document.getElementById("dlink").click();
     };
-    $("#excel_table").html("");
-    document.getElementById("dlink").href = uri + base64(format(template, ctx));
-    document.getElementById("dlink").download = filename;
-    document.getElementById("dlink").click();
-  };
 }());
 
 function select_all(e) {
@@ -98,7 +95,10 @@ function reset_tab2() {
 
 //this.element.addEventListener(t, e, { passive: true} )
 //$(document.addEventListener('touchstart', null, { passive: true})).ready(function () {
-$(document).ready(function () {
+//$(document).ready(function () {
+$(function() {
+    let oTable1 = [];
+    let oTable2 = [];
 
 //     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
 // //      console.log( 'show tab' );
@@ -108,57 +108,20 @@ $(document).ready(function () {
 
     console.time("table1load");
     oTable1 = $("#familiestabletab").DataTable({
-//        data: table1data,
-//        serverSide: true,
         deferRender: true,
         scrollY: "50vh",
         scrollX: true,
         scrollCollapse: true,
         scroller: true,
         paging: false,
-//        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
         bSortCellsTop: false, //prevent sort arrows going on bottom row
         aaSorting: [],
         autoWidth: false,
-//        pageLength: -1,
         bInfo: true,
-        // columnDefs: [
-        //     {
-        //         targets: [6,8,10,12],
-        //         visible: false
-        //     }
-        // ],
-        // columns: [
-        //     null,
-        //     null,
-        //     null,
-        //     null,
-        //     null, // 4
-        //     {width: "20%"}, // 5
-        //     null, // 6
-        //     null, // 7
-        //     null, // 8
-        //     null, // 9
-        //     null, // 10
-        //     null, // 11
-        //     null,
-        //     null,
-        //     null,
-        //     null,
-        //     null,
-        //     null,
-        //     null,
-        //     null,
-        //     null,
-        //     null,
-        //     null,
-        //     null,
-        //     null,
-        //     null
-        // ],
     });
 
-    yadcf.init(oTable1,
+    let yadcf1 = yadcf;
+    yadcf1.init(oTable1,
         [
             {
                 column_number: 0,
@@ -166,13 +129,19 @@ $(document).ready(function () {
                 select_type: "select2",
                 filter_default_label: "Source",
                 filter_reset_button_text: false,
+                select_type_options: {
+                    width: '80px',
+                }
             },
             {
                 column_number: 1,
                 filter_type: "multi_select",
                 select_type: "select2",
-                filter_default_label: "Class",
+                filter_default_label: "Cl",
                 filter_reset_button_text: false,
+                select_type_options: {
+                    width: '40px',
+                }
             },
             {
                 column_number: 2,
@@ -180,6 +149,9 @@ $(document).ready(function () {
                 select_type: "select2",
                 filter_default_label: "Family",
                 filter_reset_button_text: false,
+                select_type_options: {
+                    width: '200px',
+                }
             },
             {
                 column_number: 3,
@@ -190,6 +162,9 @@ $(document).ready(function () {
                 filter_default_label: "uniprot",
                 filter_match_mode : "exact",
                 filter_reset_button_text: false,
+                select_type_options: {
+                    width: '60px',
+                }
             },
             {
                 column_number: 4,
@@ -200,6 +175,9 @@ $(document).ready(function () {
                 filter_default_label: "IUPHAR",
                 filter_match_mode : "exact",
                 filter_reset_button_text: false,
+                select_type_options: {
+                    width: '80px',
+                }
             },
 
 // Guide to Pharmacology
@@ -207,40 +185,40 @@ $(document).ready(function () {
                 column_number: 5,
                 filter_type: "multi_select",
                 select_type: "select2",
-                filter_default_label: "Gs",
+                filter_default_label: "",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: "55%"
+                    width: "40px"
                 },
             },
             {
                 column_number: 6,
                 filter_type: "multi_select",
                 select_type: "select2",
-                filter_default_label: "Gi/Go",
+                filter_default_label: "",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: "55%"
+                    width: "40px"
                 },
             },
             {
                 column_number: 7,
                 filter_type: "multi_select",
                 select_type: "select2",
-                filter_default_label: "Gq/G11",
+                filter_default_label: "",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: "55%"
+                    width: "40px"
                 },
             },
             {
                 column_number: 8,
                 filter_type: "multi_select",
                 select_type: "select2",
-                filter_default_label: "G12/13",
+                filter_default_label: "",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: "55%"
+                    width: "40px"
                 },
             },
 
@@ -253,7 +231,7 @@ $(document).ready(function () {
         }
     );
 
-    yadcf.exResetAllFilters(oTable1);
+    yadcf1.exResetAllFilters(oTable1);
 //    setTimeout(() => {
 //        console.timeEnd("table1load");
 //    }, );
@@ -261,32 +239,19 @@ $(document).ready(function () {
 
     console.time("table2load");
     oTable2 = $("#subtypestabletab").DataTable({
-//        data: table2data,
-//        serverSide: true,
         deferRender: true,
         scrollY: "50vh",
         scrollX: true,
         scrollCollapse: true,
         scroller: true,
         paging: false,
-//        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
         bSortCellsTop: false, //prevent sort arrows going on bottom row
         aaSorting: [],
         autoWidth: false,
-//        fixedColumns:   {
-//            heightMatch: 'none'
-//        },
-//        order: [[4, 'asc'],[26,'desc']],
-//        columnDefs: [
-//            {
-//                targets: 'no-sort',
-//                orderable: false
-//            }
-//            ],
-        pageLength: -1,
-        bInfo: true
+        bInfo: true,
     });
-    yadcf.init(oTable2,
+
+    yadcf1.init(oTable2,
         [
             {
                 column_number: 0,
@@ -295,18 +260,18 @@ $(document).ready(function () {
                 filter_default_label: "Source",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: "90px",
-                },
+                    width: '80px',
+                }
             },
             {
                 column_number: 1,
                 filter_type: "multi_select",
                 select_type: "select2",
-                filter_default_label: "Class",
+                filter_default_label: "Cl",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: "90px",
-                },
+                    width: '40px',
+                }
             },
             {
                 column_number: 2,
@@ -315,8 +280,8 @@ $(document).ready(function () {
                 filter_default_label: "Family",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: "100px",
-                },
+                    width: '200px',
+                }
             },
             {
                 column_number: 3,
@@ -324,12 +289,12 @@ $(document).ready(function () {
                 select_type: "select2",
                 column_data_type: "html",
                 html_data_type: "text",
-                filter_default_label: "UniProt",
+                filter_default_label: "uniprot",
                 filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: "80px",
-                },
+                    width: '60px',
+                }
             },
             {
                 column_number: 4,
@@ -341,147 +306,168 @@ $(document).ready(function () {
                 filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: "100px",
-                },
+                    width: '80px',
+                }
             },
 
+// log(Emax/EC50)
             {
                 column_number : 5,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
             {
                 column_number : 6,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
             {
                 column_number : 7,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
-
-
             {
                 column_number : 8,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
             {
                 column_number : 9,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
             {
                 column_number : 10,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
             {
                 column_number : 11,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
             {
                 column_number : 12,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
             {
                 column_number : 13,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
             {
                 column_number : 14,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
             {
                 column_number : 15,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
             {
                 column_number : 16,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
-
-
             {
                 column_number : 17,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
+
+// pEC50
             {
                 column_number : 18,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
             {
                 column_number : 19,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
             {
                 column_number : 20,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
             {
                 column_number : 21,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
             {
                 column_number : 22,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
             {
                 column_number : 23,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
             {
                 column_number : 24,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
-
-
             {
                 column_number : 25,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
             {
                 column_number : 26,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
             {
                 column_number : 27,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
             {
                 column_number : 28,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
-
-
             {
                 column_number : 29,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
             {
                 column_number : 30,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
 
 // Emax
@@ -489,80 +475,93 @@ $(document).ready(function () {
                 column_number : 31,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
             {
                 column_number : 32,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
 
             {
                 column_number : 33,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
             {
                 column_number : 34,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
             {
                 column_number : 35,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
             {
                 column_number : 36,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
             {
                 column_number : 37,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
 
             {
                 column_number : 38,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
             {
                 column_number : 39,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
             {
                 column_number : 40,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
             {
                 column_number : 41,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
 
             {
                 column_number : 42,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
             {
                 column_number : 43,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
             },
 
         ],
         {filters_tr_index: 2},
 
         {
-            cumulative_filtering: false
+            cumulative_filtering: true
         }
     );
 
-    yadcf.exResetAllFilters(oTable2);
+    yadcf1.exResetAllFilters(oTable2);
 //    setTimeout(() => {
 //        console.timeEnd("table2load");
 //    }, );
@@ -578,6 +577,7 @@ $(document).ready(function () {
         window.location.href = "/signprot/couplings2";
     });
 
+// Hide column button for table1
     $(".hide_columns1").click(function(evt) {
         var columns = $(this).attr("columns").split(",");
         columns.forEach(function(column) {
@@ -592,6 +592,7 @@ $(document).ready(function () {
         oTable1.draw();
     } );
 
+// Hide column button for table2
     $(".hide_columns2").click(function(evt) {
         var columns = $(this).attr("columns").split(",");
         columns.forEach(function(column) {
@@ -660,7 +661,7 @@ $(document).ready(function () {
         }
     });
 
-   $("#subtypestabletab").closest(".dataTables_scrollBody").append('<div id="overlay2"><table id="overlay_table2" class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
+    $("#subtypestabletab").closest(".dataTables_scrollBody").append('<div id="overlay2"><table id="overlay_table2" class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
 
     function create_overlay2() {
         // This function fires upon filtering, to update what rows to show as an overlay

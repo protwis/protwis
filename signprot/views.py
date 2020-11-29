@@ -563,7 +563,10 @@ class CouplingBrowser2(TemplateView):
                                                                                            'g_protein__name',
                                                                                            'transduction')
 
-        # uniprot_links = Protein.objects.filter(parent__web_links__web_resource='5')
+        # pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).prefetch_related('protein').filter(residue__protein_segment__slug='TM5').annotate(start=Min('residue__sequence_number'), end=Max('residue__sequence_number'))
+        # maxvals = ProteinGproteinPair.objects.filter(protein_id__in=proteins).prefetch_related('protein').annotate(max=Max('g_protein__'))
+        #weblinks = Protein.objects.prefetch_related('web_links__web_resource').get(sequence_type__slug='wt')
+        #print(weblinks.id)
 
         signaling_data = {}
         for pairing in couplings:
@@ -571,10 +574,11 @@ class CouplingBrowser2(TemplateView):
                 signaling_data[pairing[0]] = {}
             signaling_data[pairing[0]][pairing[1]] = pairing[2]
 
+
         protein_data = {}
         for prot in proteins:
             protein_data[prot.id] = {}
-            protein_data[prot.id]['class'] = prot.family.parent.parent.parent.short()
+            protein_data[prot.id]['class'] = prot.family.parent.parent.parent.shorter()
             protein_data[prot.id]['family'] = prot.family.parent.short()
             protein_data[prot.id]['uniprot'] = prot.entry_short()
             protein_data[prot.id]['iuphar'] = prot.family.name.replace('receptor', '').strip()
@@ -585,6 +589,9 @@ class CouplingBrowser2(TemplateView):
             # uniprot_links = prot.web_links.filter(web_resource__slug='uniprot')
             # if uniprot_links.count() > 0:
             #     protein_data[prot.id]['uniprot_link'] = uniprot_links
+            #print(prot.web_links.index.filter(web_resource__name="Guide To Pharmacology", protein__entry_name=prot.entry_name))
+            # if uniprot_links.count() > 0:
+            #     protein_data[prot.id]['uniprot_link'] = uniprot_links
 
             # gtop_links = prot.web_links.filter(web_resource__slug='gtop')
             # if gtop_links.count() > 0:
@@ -593,7 +600,12 @@ class CouplingBrowser2(TemplateView):
             gprotein_families = ["Gs family", "Gi/Go family", "Gq/G11 family", "G12/G13 family"]
             for gprotein in gprotein_families:
                 if prot.entry_name in signaling_data and gprotein in signaling_data[prot.entry_name]:
-                    protein_data[prot.id][gprotein] = signaling_data[prot.entry_name][gprotein]
+                    if signaling_data[prot.entry_name][gprotein] == "primary":
+                        protein_data[prot.id][gprotein] = "1'"
+                    elif signaling_data[prot.entry_name][gprotein] == "secondary":
+                        protein_data[prot.id][gprotein] = "2'"
+                    else:
+                        protein_data[prot.id][gprotein] = "-"
                 else:
                     protein_data[prot.id][gprotein] = "-"
 
@@ -603,7 +615,7 @@ class CouplingBrowser2(TemplateView):
             protein_data[prot.id]['g1213'] = protein_data[prot.id][gprotein_families[3]]
 
         couplings2 = ProteinGProteinPair.objects.filter(source__in=["Aska2", "Bouvier2"])\
-            .filter(g_protein_subunit__family__slug__startswith="100_001").order_by("g_protein_subunit__family__slug", "source")\
+            .filter(g_protein_subunit__family__slug__startswith="100_001").order_by("g_protein_subunit__family__slug", "-source")\
             .prefetch_related('g_protein_subunit__family').annotate(avg_log=Avg('pec50_deg'))
 
         coupling_headers = ProteinGProteinPair.objects.filter(source__in=["Aska2", "Bouvier2"])\
@@ -640,7 +652,6 @@ class CouplingBrowser2(TemplateView):
             dictotemplate[pair.protein_id]['coupling'][pair.source]['logemaxec50'][subunit] = pair.logmaxec50_deg
             dictotemplate[pair.protein_id]['coupling'][pair.source]['pec50'][subunit] = pair.pec50_deg
             dictotemplate[pair.protein_id]['coupling'][pair.source]['emax'][subunit] = pair.emax_deg
-
             dictotemplate[pair.protein_id]['coupling']['GPCRdb']['logemaxec50'][subunit].append(pair.logmaxec50_deg)
             dictotemplate[pair.protein_id]['coupling']['GPCRdb']['pec50'][subunit].append(pair.pec50_deg)
             dictotemplate[pair.protein_id]['coupling']['GPCRdb']['emax'][subunit].append(pair.emax_deg)
@@ -652,7 +663,7 @@ class CouplingBrowser2(TemplateView):
                     if len(valuelist) == 0:
                         dictotemplate[prot]['coupling']['GPCRdb'][entry][sub] = "--"
                     elif len(valuelist) == 1:
-                        dictotemplate[prot]['coupling']['GPCRdb'][entry][sub] = valuelist[0]
+                        dictotemplate[prot]['coupling']['GPCRdb'][entry][sub] = "--"  # valuelist[0]
                     else:
                         dictotemplate[prot]['coupling']['GPCRdb'][entry][sub] = round(mean(valuelist), 2)
 

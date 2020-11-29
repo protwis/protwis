@@ -100,48 +100,24 @@
                 </thead>
 
                 <tbody>
-                {% for p, vals in tabfields.items %}
-
-                    {% if vals.coupling.Aska2 %}
+                {% for p, pvals in tabfields.items %}
+                    {% for c in pvals.coupling.keys %}
                         <tr>
-                            <td>Inoue et al.</td>
-                            <td>{{ vals.protein.class }}</td>
-                            <td>{{ vals.protein.family }}</td>
+                            <td>{{ c }}</td>
+                            <td>{{ pvals.protein.class }}</td>
+                            <td>{{ pvals.protein.family }}</td>
                             <td class="uniprot">
-                                <span><a href="https://www.uniprot.org/uniprot/{{ vals.protein.accession }}" target="_blank">{{ vals.protein.uniprot|safe }}</a></span>
+                                <span><a href="https://www.uniprot.org/uniprot/{{ pvals.protein.accession }}" target="_blank">{{ pvals.protein.uniprot|safe }}</a></span>
                             </td>
                             <td class="text-left">
-                                <a href="https://gpcrdb.org/protein/{{ vals.protein.entryname }}" target="_blank">{{ vals.protein.iuphar|safe }}</a>
+                                <a href="https://gpcrdb.org/protein/{{ pvals.protein.entryname }}" target="_blank">{{ pvals.protein.iuphar|safe }}</a>
                             </td>
-                            <td>{{ vals.protein.gs }}</td>
-                            <td>{{ vals.protein.gio }}</td>
-                            <td>{{ vals.protein.gq11 }}</td>
-                            <td>{{ vals.protein.g1213 }}</td>
+                            <td>{{ pvals.protein.gs }}</td>
+                            <td>{{ pvals.protein.gio }}</td>
+                            <td>{{ pvals.protein.gq11 }}</td>
+                            <td>{{ pvals.protein.g1213 }}</td>
                         </tr>
-                    {% endif %}
-
-                    {% if vals.coupling.Bouvier2 %}
-                        <tr>
-                            <td>Bouvier et al.</td>
-                            <td>{{ vals.protein.class }}</td>
-                            <td>{{ vals.protein.family }}</td>
-                            <td class="uniprot">
-                                <span><a href="https://www.uniprot.org/uniprot/{{ vals.protein.accession }}" target="_blank">{{ vals.protein.uniprot|safe }}</a></span>
-                            </td>
-                            <td class="text-left">
-                                <a href="https://gpcrdb.org/protein/{{ vals.protein.entryname }}" target="_blank">{{ vals.protein.iuphar|safe }}</a>
-                            </td>
-
-                            <td>{{ vals.protein.gs }}</td>
-                            <td>{{ vals.protein.gio }}</td>
-                            <td>{{ vals.protein.gq11 }}</td>
-                            <td>{{ vals.protein.g1213 }}</td>
-
-
-                        </tr>
-                    {% endif %}
-
-
+                    {% endfor %}
                 {% endfor %}
 
                 </tbody>
@@ -201,8 +177,8 @@
 
                 <tr>
                     <th>Data source</th>
-                    <th>Class</th>
-                    <th>Family</th>
+                    <th>Cl</th>
+                    <th>ResFam</th>
                     <th>Uniprot</th>
                     <th>IUPHAR</th>
 
@@ -253,62 +229,34 @@
 
 
                 <tbody>
-                {% for p, vals in tabfields.items %}
+                {% for p, pvals in tabfields.items %}
 
-                    {% if vals.coupling.Aska2 %}
+                    {% for c, cvals in pvals.coupling.items %}
                         <tr>
-                            <td>Inoue et al.</td>
-                            <td>{{ vals.protein.class }}</td>
-                            <td>{{ vals.protein.family }}</td>
+                            <td>{{ c }}</td>
+                            <td>{{ pvals.protein.class }}</td>
+                            <td>{{ pvals.protein.family }}</td>
                             <td class="uniprot">
-                                <span><a href="https://www.uniprot.org/uniprot/{{ vals.protein.accession }}" target="_blank">{{ vals.protein.uniprot|safe }}</a></span>
+                                <span><a href="https://www.uniprot.org/uniprot/{{ pvals.protein.accession }}" target="_blank">{{ pvals.protein.uniprot|safe }}</a></span>
                             </td>
                             <td class="text-left">
-                                <a href="https://gpcrdb.org/protein/{{ vals.protein.entryname }}" target="_blank">{{ vals.protein.iuphar|safe }}</a>
+                                <a href="https://gpcrdb.org/protein/{{ pvals.protein.entryname }}" target="_blank">{{ pvals.protein.iuphar|safe }}</a>
                             </td>
 
-                            {% for q, logval in vals.coupling.Aska2.logemaxec50.items %}
+                            {% for q, logval in cvals.logemaxec50.items %}
                                 <td>{{ logval }}</td>
                             {% endfor %}
 
-                            {% for q, logval in vals.coupling.Aska2.pec50.items %}
+                            {% for q, logval in cvals.pec50.items %}
                                 <td>{{ logval }}</td>
                             {% endfor %}
 
-                            {% for q, logval in vals.coupling.Aska2.emax.items %}
+                            {% for q, logval in cvals.emax.items %}
                                 <td>{{ logval }}</td>
                             {% endfor %}
 
                         </tr>
-                    {% endif %}
-
-                    {% if vals.coupling.Bouvier2 %}
-                        <tr>
-                            <td>Bouvier et al.</td>
-                            <td>{{ vals.protein.class }}</td>
-                            <td>{{ vals.protein.family }}</td>
-                            <td class="uniprot">
-                                <span><a href="https://www.uniprot.org/uniprot/{{ vals.protein.accession }}" target="_blank">{{ vals.protein.uniprot|safe }}</a></span>
-                            </td>
-                            <td class="text-left">
-                                <a href="https://gpcrdb.org/protein/{{ vals.protein.entryname }}" target="_blank">{{ vals.protein.iuphar|safe }}</a>
-                            </td>
-
-                            {% for q, logval in vals.coupling.Bouvier2.logemaxec50.items %}
-                                <td>{{ logval }}</td>
-                            {% endfor %}
-
-                            {% for q, logval in vals.coupling.Bouvier2.pec50.items %}
-                                <td>{{ logval }}</td>
-                            {% endfor %}
-
-                            {% for q, logval in vals.coupling.Bouvier2.emax.items %}
-                                <td>{{ logval }}</td>
-                            {% endfor %}
-
-
-                        </tr>
-                    {% endif %}
+                    {% endfor %}
 
                 {% endfor %}
                 </tbody>
