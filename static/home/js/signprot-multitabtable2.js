@@ -1,6 +1,7 @@
 /*eslint complexity: ["error", 8]*/
 /*eslint quotes: ["error", "double", { "avoidEscape": true }]*/
 /*eslint camelcase: ["error", {allow: ["^UNSAFE_"]}]*/
+/*eslint camelcase: ["error", {properties: "never"}]*/
 let oTable1 = [];
 let oTable2 = [];
 let table1data;
