@@ -542,6 +542,11 @@ class DrawSnakePlot(Diagram):
 
             rs = self.segments[name] # get residues
 
+            # TEMP FIX for N-term segments of Class D1
+            if self.family.startswith("Class D1") and name=="N-term":
+                rs = rs + self.segments["D1S1"] + self.segments["D1T1"] + self.segments["D1S2"]
+            ###
+
             if i=='N':
                 orientation = -1
                 y_max = self.maxY['extra']-between_residues*4
@@ -658,8 +663,17 @@ class DrawSnakePlot(Diagram):
                 orientation = 1
                 name = "ICL"+str(number)
 
-            if name not in self.segments: continue
+            # TEMP FIX for Class D1 D1e1
+            if name not in self.segments:
+                if self.family.startswith("Class D1") and i==2:
+                    name = 'D1e1'
+                else:
+                    continue
             rs = self.segments[name] # get residues
+
+            if self.family.startswith("Class D1") and i==2:
+                rs = rs + self.segments["D1e1"]
+                print(rs)
 
             start = 1
             res_before = []
