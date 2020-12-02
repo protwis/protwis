@@ -336,10 +336,11 @@ function initTargetTable(elementID) {
                 },
                 {
                     column_number: 3,
-                    filter_type: "text",
+                    filter_type: "multi_select",
                     select_type: "select2",
                     filter_default_label: "Family",
                     filter_reset_button_text: false,
+                    filter_match_mode : "exact",
                 },
                 {
                     column_number: 4,
