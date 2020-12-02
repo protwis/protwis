@@ -33,6 +33,7 @@ class Command(BaseCommand):
             # self.logger.error('No filename specified, aborting')
 
     def separate(self, input_filename):
+        print(input_filename)
         with open(input_filename) as input_file:
             line_buffer = []
             acs = []

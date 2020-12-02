@@ -1,5 +1,5 @@
 {% extends "home/base.html" %}
-{% load staticfiles %}
+{% load static %}
 
 {% block addon_css %}
 <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
@@ -69,26 +69,23 @@
     </div>
 </div>
 
+
 <div class="row">
     <div class="col-md-2 text-right text-info">
         <h4>STRUCTURES</h4>
     </div>
+    {% if structures|length > 0 %}
     <div class="col-md-10">
-        {% for structure in structures %}
-        <p><a href="/structure/{{ structure.pdb_code.index }}">{{ structure.pdb_code.index }}</a></p>
-        {% empty %}
-        No structures available
-        {% endfor %}
+        <p>View in <a href="/structure" target='_blank'>Structures</a></p>
     </div>
+    
+    {% else %}
+    <div class="col-md-10">
+        No structures available
+    </div>
+    {% endif %}
 </div>
 
-<!-- <div class="row">
-    <div class="col-md-2 text-right text-info">
-        <h4>LINKS</h4>
-    </div>
-    <div class="col-md-10">
-    </div>
-</div> -->
 {% endblock %}
 
 {% block addon_js %}

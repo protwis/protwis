@@ -1,5 +1,6 @@
 {% extends "home/base.html" %}
-{% load staticfiles %}
+{% load static %}
+{% load filters %}
 
 {% block addon_css %}
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
@@ -99,7 +100,7 @@
             var prev_ids = Array()
             var current_align_ids = Array()
 
-            console.log(oTable);
+            // console.log(oTable);
             $("#constructs_div").show();
             assign_to_row();
             $("#loading_div").hide();
@@ -113,7 +114,7 @@
                         select_type: 'select2',
                         column_data_type: "html",
                         html_data_type: "text",
-                        filter_default_label: "Gene",
+                        filter_default_label: "UniProt",
                         filter_match_mode : "exact",
                         filter_reset_button_text: false,
                         select_type_options: {
@@ -277,10 +278,20 @@
                             width: '50px',
                         }
                     },
-                    // {
-                    //     column_number : 19,
-                    //     filter_type: "range_number_slider",
-                    // },
+                    {
+                        column_number : 19,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Ligand Function",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number : 21,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "State",
+                        filter_reset_button_text: false,
+                    },
                 ],
                 {
                     cumulative_filtering: false
@@ -485,7 +496,7 @@
                     <th colspan=3 class="over_header">EXPRESSION </th>
                     <th colspan=1 class="over_header">SOLUBILIZATION</th>
                     <th colspan=1 class="over_header">PURIFICATION</th>
-                    <th colspan=7 class="over_header">STRUCTURE DETERMINATION</th>
+                    <th colspan=8 class="over_header">STRUCTURE DETERMINATION</th>
                     <th colspan=2></th>
                     <th colspan=2></th>
                 </tr>
@@ -508,8 +519,10 @@
                     <th ></th>
                     <th >pH</th>
                     <th >Temp</th>
+                    <th ></th>
                     <th  class='rightborder'></th>
                     <th >Resolution</th>
+                    <th ></th>
                     <th >Reference</th>
                     <th >Date</th>
                 </tr>
@@ -583,21 +596,25 @@
                     </td>
 
                     <td>
-                        {% if construct.crystallization %}
-                             {% for l in construct.crystallization.ligands.all %}
-
-                                {% if l.ligand.name|length < 40 %}
-                                    {{ l.ligand.name}}
+                            {% for ligand in construct.structure.ligands.all %}
+                                {% if ligand.ligand.name|safe|length > 20 %}
+                                    <span title="{{ ligand.ligand.name|safe }}">{{ ligand.ligand.name|safe|cut_at_20 }}...</span>
                                 {% else %}
-                                    {{ l.ligand.name|slice:"0:40"}}..
+                                    {{ ligand.ligand.name|safe }}
                                 {% endif %}
-
-                             {% endfor %}
-                        {% else %}
+                                {% for link in ligand.ligand.properities.web_links.all %}
+                                    <a href="{{ link}}" target="_blank">{{link.web_resource.slug}}</a>
+                                {% endfor %}
+                                    <br />
+                                {% empty %}
+                                    N/A
+                            {% endfor %}
+                        </td>
+                        <td>{% for ligand in construct.structure.ligands.all %}{{ ligand.ligand_role.name }}{% empty %}
                             N/A
-                        {% endif %}
-                    </td>
+                            {% endfor %}</td>
                     <td class="text-center">{{ construct.crystal.resolution|floatformat:"1" }}</td>
+                    <td><span>{{ construct.structure.state.name }}</span></td>
                     <!--
                     <td>{{ construct.contributor.pi_name|safe }}</td>
                     <td>{{ construct.contributor.date|safe }}</td> -->

@@ -18,21 +18,29 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('files', help='Add any number of files as arguments. First one has to be the reference file.',
                             type=str, nargs='+')
-        parser.add_argument('-r', help='Specify residue sequence numbers to compare.', type=str, default=False, nargs='+')
+        parser.add_argument('-n', help='Specify residue sequence numbers to compare.', type=str, default=False, nargs='+')
+        parser.add_argument('-r', help='Specify a range of residue sequence numbers to compare. Format: e.g. 1-300', type=str, default=False, nargs='+')
         parser.add_argument('-c', help='Specify chain ID. If not specified, the program will try to find one that matches.', type=str, default=False)
         
     def handle(self, *args, **options):
         v = Validation()
-        if options['r']==False:
+        if options['r']:
+            seq_nums = []
+            for r in options['r']:
+                start, end = r.split('-')
+                seq_nums+=[str(i) for i in list(range(int(start),int(end)+1))]
+        else:
+            seq_nums = options['n']
+        if seq_nums==False:
             if options['c']==False:
                 v.run_RMSD_list(options['files'])
             else:
                 v.run_RMSD_list(options['files'], force_chain=options['c'])
         else:
             if options['c']==False:
-                v.run_RMSD_list(options['files'], seq_nums=options['r'])
+                v.run_RMSD_list(options['files'], seq_nums=seq_nums)
             else:
-                v.run_RMSD_list(options['files'], seq_nums=options['r'], force_chain=options['c'])
+                v.run_RMSD_list(options['files'], seq_nums=seq_nums, force_chain=options['c'])
         self.stdout.write('\nNumber of superposed residues:\n')
         for i,j in v.number_of_residues_superposed.items():
             self.stdout.write('{}: {}'.format(i,j))
@@ -77,8 +85,8 @@ class Validation():
         for f in files:
             count+=1
             pdb = parser.get_structure('struct{}'.format(count), f)[0]
-            assign_gn = as_gn.GenericNumbering(structure=pdb)
-            pdb = assign_gn.assign_generic_numbers()
+            assign_gn = as_gn.GenericNumbering(pdb_file=f, sequence_parser=True)
+            pdb = assign_gn.assign_generic_numbers_with_sequence_parser()
             pdbs.append(pdb)
         chains = []
         for p in pdbs:
@@ -146,11 +154,12 @@ class Validation():
         num_atoms1, num_atoms2 = OrderedDict(), OrderedDict()
         num_atoms = [num_atoms1, num_atoms2]
         mismatches = []
-        for m in arrays:
+        resis_to_delete = []
+        for m_i, m in enumerate(arrays):
             for i in range(0,2):
                 for res in m[i]:
                     if res in deletes[i] or res not in keeps[i]:
-                        del m[i][res]
+                        resis_to_delete.append([m_i,i,res])
                     else:
                         try:
                             if m[i][res].get_resname()!=num_atoms[i][res][0].get_parent().get_resname():
@@ -168,6 +177,8 @@ class Validation():
                                 else:
                                     if len(atoms)<len(num_atoms[i][res]):
                                         num_atoms[i][res] = atoms
+        for i in resis_to_delete:
+            del arrays[i[0]][i[1]][i[2]]
         atom_lists = []
         for m in arrays:
             this_model = []
@@ -291,6 +302,9 @@ class Validation():
         ''' Calculates RMSD between two atoms lists. The two lists have to have the same length. 
         '''
         superpose = sp.RotamerSuperpose(list1, list2, TM_keys)
+        print(list1)
+        print(list2)
+        print(TM_keys)
         list2 = superpose.run()
         array1, array2 = np.array([0,0,0]), np.array([0,0,0])
         for a1, a2 in zip(list1, list2):

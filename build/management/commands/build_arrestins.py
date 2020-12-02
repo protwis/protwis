@@ -1,61 +1,62 @@
-from django.core.management.base import BaseCommand, CommandError
-from django.conf import settings
-from django.db import connection
-from django.db import IntegrityError
-
-from common.models import WebResource, WebLink
-
-from protein.models import (Protein, ProteinConformation, ProteinState, ProteinFamily, ProteinAlias, ProteinSequenceType, Species, Gene, ProteinSource, ProteinSegment)
-
-from residue.models import (ResidueNumberingScheme, ResidueGenericNumber, Residue, ResidueGenericNumberEquivalent)
-
-from signprot.models import SignprotStructure
-import pandas as pd
-
-import requests
+import logging
+import os
+from urllib.request import urlopen
 from xml.etree.ElementTree import fromstring
 
-import os
-import logging
-from urllib.request import urlopen
+import pandas as pd
+import requests
+
+from common.models import WebLink, WebResource
+from django.conf import settings
+from django.core.management.base import BaseCommand, CommandError
+from django.db import IntegrityError, connection
+from protein.models import (Gene, Protein, ProteinAlias, ProteinConformation,
+                            ProteinFamily, ProteinSegment, ProteinSequenceType,
+                            ProteinSource, ProteinState, Species)
+from residue.models import (Residue, ResidueGenericNumber,
+                            ResidueGenericNumberEquivalent,
+                            ResidueNumberingScheme)
+from signprot.models import SignprotStructure
+from structure.models import Structure
 
 
 class Command(BaseCommand):
     help = 'Build Arrestin proteins'
 
-    # source file directory
+    # source files
     arrestin_data_file = os.sep.join([settings.DATA_DIR, 'arrestin_data', 'ortholog_alignment.xlsx'])
-
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'protein_data', 'uniprot'])
-    remote_uniprot_dir = 'http://www.uniprot.org/uniprot/'
+    remote_uniprot_dir = 'https://www.uniprot.org/uniprot/'
+
     logger = logging.getLogger(__name__)
 
-
     def add_arguments(self, parser):
-        parser.add_argument('--filename', action='append', dest='filename',
-            help='Filename to import. Can be used multiple times')
-
+        parser.add_argument('--filename',
+                            action='append',
+                            dest='filename',
+                            help='Filename to import. Can be used multiple times')
 
     def handle(self, *args, **options):
+        self.options = options
         if options['filename']:
             filenames = options['filename']
         else:
             filenames = False
 
-        try:
-            self.purge_can_residues()
-            self.purge_can_proteins()
+        # try:
+        self.purge_can_residues()
+        self.purge_can_proteins()
 
-            # add proteins
-            self.can_create_families()
-            self.can_add_proteins()
+        # add proteins
+        self.can_create_families()
+        self.can_add_proteins()
 
-            # add residues
-            self.add_can_residues()
+        # add residues
+        self.add_can_residues()
 
-        except Exception as msg:
-            print(msg)
-            self.logger.error(msg)
+        # except Exception as msg:
+        #     print(msg)
+        #     self.logger.error(msg)
 
     def purge_can_residues(self):
         """Purge residues."""
@@ -85,14 +86,18 @@ class Command(BaseCommand):
         # Loop over data table, but skip "CAN_posand" and "CAN_id" from current input file
         for index, row in residue_data[2:].iterrows():
 
-            # for now only allow for ortholog with uniprot entries:
-            if not row['AccessionID'].startswith('ENS'):
-                # fetch protein for protein conformation
-                pr, c = Protein.objects.get_or_create(accession=row['AccessionID'])
+            try:
+                # for now only allow for ortholog with uniprot entries:
+                if not row['AccessionID'].startswith('ENS'):
+                    # fetch protein for protein conformation
+                    pr, c = Protein.objects.get_or_create(accession=row['AccessionID'])
 
-                # fetch protein conformation
-                pc, c = ProteinConformation.objects.get_or_create(protein_id=pr)
-            else:
+                    # fetch protein conformation
+                    pc, c = ProteinConformation.objects.get_or_create(protein_id=pr)
+                else:
+                    continue
+            except:
+                print('error making/getting protein',row['AccessionID'])
                 continue
 
             # loop over residue generic number
@@ -138,7 +143,7 @@ class Command(BaseCommand):
 
     def map_pdb_to_uniprot(self, pdb_id):
         """Get uniprot ID from PDB ID."""
-        pdb_mapping_url = 'http://www.rcsb.org/pdb/rest/das/pdb_uniprot_mapping/alignment'
+        pdb_mapping_url = 'https://www.rcsb.org/pdb/rest/das/pdb_uniprot_mapping/alignment'
         pdb_mapping_response = requests.get(
             pdb_mapping_url, params={'query': pdb_id}
         ).text
@@ -169,6 +174,14 @@ class Command(BaseCommand):
                 # only allow uniprot accession:
                 if not accession.startswith('ENS'):
                     up = self.parse_uniprot_file(accession)
+                    if len(up['genes']) == 0:
+                        print('Accession not found on uniprot!', accession)
+                        self.logger.error('Accession not found on uniprot! {}'.format(accession))
+                        continue
+                    if not 'source' in up:
+                        print('Accession not found on uniprot!', accession)
+                        self.logger.error('Accession not found on uniprot! {}'.format(accession))
+                        continue
 
                     # Create new Protein
                     self.can_create_arrestins(pfm, rns, accession, up)
@@ -177,14 +190,13 @@ class Command(BaseCommand):
                     try:
                         arrestin = Protein.objects.get(accession=accession)
 
-                        pc, created = ProteinConformation.objects.get_or_create(protein=arrestin, state=state, template_structure=None)
+                        pc, created = ProteinConformation.objects.get_or_create(protein=arrestin, state=state)
                         self.logger.info('Created protein conformation')
                     except Exception as msg:
                         self.logger.error('Failed to create protein conformation', msg)
 
     def can_create_arrestins(self, family, residue_numbering_scheme, accession, uniprot):
         # get/create protein source
-
         try:
             source, created = ProteinSource.objects.get_or_create(name=uniprot['source'],
                 defaults={'name': uniprot['source']})
@@ -266,22 +278,24 @@ class Command(BaseCommand):
                 g.proteins.add(pcan)
 
         # structures
-        for i, structure in enumerate(uniprot['structures']):
-            try:
-                res = structure[1]
-                if res == '-':
-                    res = 0
+        # for i, structure in enumerate(uniprot['structures']):
+        #     # try:
+        #     res = structure[1]
+        #     if res == '-':
+        #         res = 0
 
-                structure, created = SignprotStructure.objects.get_or_create(PDB_code=structure[0], resolution=res)
-                if created:
-                    self.logger.info('Created structure ' + structure.PDB_code + ' for protein ' + p.name)
-            except IntegrityError:
-                self.logger.error('Failed creating structure ' + structure.PDB_code + ' for protein ' + p.name)
+        #     structure, created = SignprotStructure.objects.get_or_create(PDB_code=structure[0], resolution=res, protein = p, id=self.signprot_struct_ids())
+        #     if created:
+        #         self.logger.info('Created structure ' + structure.PDB_code + ' for protein ' + p.name)
 
-            if g:
-                pcan = Protein.objects.get(entry_name=uniprot['entry_name'].lower())
-                structure.origin.add(pcan)
-                structure.save()
+    def signprot_struct_ids(self):
+        structs = Structure.objects.count()
+        s_structs = SignprotStructure.objects.count()
+        offset = 1000
+        if s_structs == None:
+            return structs+1+offset
+        else:
+            return structs+s_structs+1+offset
 
     def create_can_rns(self):
         """Add new numbering scheme entry_name."""

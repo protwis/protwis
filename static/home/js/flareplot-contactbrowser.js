@@ -7,7 +7,7 @@
  * @param containerSelector
  * @returns {{getNumFrames, setFrame, framesIntersect, framesSum, setTrack, setTree, getTreeNames, getTrackNames, addNodeToggleListener, addNodeHoverListener, addEdgeToggleListener, addEdgeHoverListener, graph}}
  */
-function createFlareplot(width, inputGraph, containerSelector, contiguousOutward = false){
+function createFlareplot(width, inputGraph, containerSelector, contiguousOutward = true){
     var w = width;
     var h = w;
     var outwardShift = 0;
@@ -61,8 +61,18 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                             aRes = a.key;
                             bRes = b.key;
                         } else {
-                            aRes = parseInt(aRes[0]);
-                            bRes = parseInt(bRes[0]);
+                            if (aRes[0].length==3) {
+                              // Make bulges fit "numerically" correct
+                              aRes = parseInt(aRes[0])/10;
+                            } else {
+                              aRes = parseInt(aRes[0]);
+                            }
+                            if (bRes[0].length==3) {
+                              // Make bulges fit "numerically" correct
+                              bRes = parseInt(bRes[0])/10;
+                            } else {
+                              bRes = parseInt(bRes[0]);
+                            }
                         }
                     }
                     return d3.ascending(aRes, bRes);
@@ -155,7 +165,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
             div = d3.select(containerSelector).insert("div")
                 .attr("class", "flareplot")
                 .style("width", "100%")
-                .style("margin-top","100px")
+                // .style("margin-top","100px")
                 // .style("height", h + "px")
                 .style("-webkit-backface-visibility", "hidden");
 
@@ -163,8 +173,9 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
             var cy = cx;
             svg = div.append("svg:svg")
                 .attr("viewBox", "0 0 " + w + " " + h )
-                // .attr("width", w)
-                // .attr("height", h)
+                .attr("width", "100%")
+                .attr("style", "height: 500px")
+                .attr("class", "flareplot")
                 .append("svg:g")
                 .attr("transform", "translate(" + cx + "," + cy + ")");
 
@@ -211,9 +222,10 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                 .attr("id", function(d) { return "node-" + d.key; })
                 .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
                 .append("text")
-                .attr("dx", function(d) { return d.x < 180 ? 8 : -8; })
+                .attr("dx", function(d) { return d.x < 180 ? 8 : -30; })
                 .attr("dy", ".31em")
-                .attr("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
+                .attr("text-anchor", function(d) { return d.x < 180 ? "start" : "start"; })
+                .attr("text-align", function(d) { return d.x < 180 ? "right" : "left"; })
                 .attr("transform", function(d) { return d.x < 180 ? null : "rotate(180)"; })
                 .text(function(d) { return d.key; })
                 .on("mouseover", mouseoverNode)
@@ -369,6 +381,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                         graph.segments[c.segment] = {};
                         graph.segments[c.segment]["name"] = c.segment;
                         graph.segments[c.segment]["color"] = c.color;
+                        graph.segments[c.segment]["rainbow"] = c.rainbow;
                         graph.segments[c.segment]["count"] = 1;
                         graph.segments[c.segment]["nodes"] = [name];
                     } else {
@@ -438,6 +451,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                         interactions: e.interactions,
                         opacity: e.opacity || graph.defaults.edgeOpacity || 1,
                         segment: e.segment || e.color || graph.defaults.edgeColor || "rgba(100,100,100)",
+                        rainbow: e.rainbow || e.color || graph.defaults.edgeColor || "rgba(100,100,100)",
                         width: e.width || graph.defaults.edgeWidth || 1
                     };
 
@@ -453,6 +467,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                             interactions: edge.interactions,
                             opacity: edge.opacity,
                             segment: edge.segment,
+                            rainbow: edge.rainbow,
                             width: edge.width
                         };
                         t.allEdges.push({
@@ -465,6 +480,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                             interactions: edge.interactions,
                             opacity: edge.opacity,
                             segment: edge.segment,
+                            rainbow: edge.rainbow,
                             width: edge.width
                         });
                     } else {
@@ -660,7 +676,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                     if( d.source.key in toggledNodes || d.target.key in toggledNodes) {
                         ret += " toggled";
                     }
-                    ret += " " + Object.keys(d.interactions).join(" ");
+                    ret += " " + d.interactions.join(" ");
                     return ret;
                 })
                 //.attr("class", function(d) { return "link source-" + d.source.key + " target-" + d.target.key; })
@@ -1128,10 +1144,23 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                 svg.selectAll("path.link")
                     .style("stroke", function(d){ if (Array.isArray(d.frequency)){ return getFlareGradientColor( d.frequency[2], false);} else { return getFlareGradientColor( -1*d.frequency, false);} });
                 break;
+              case "frequency_1":
+                svg.selectAll("path.link")
+                    .style("stroke", function(d){ if (Array.isArray(d.frequency)){ return getFlareGradientColor( d.frequency[0], false);} else { return getFlareGradientColor( -1*d.frequency, false);} });
+                break;
+              case "frequency_2":
+                svg.selectAll("path.link")
+                    .style("stroke", function(d){ if (Array.isArray(d.frequency)){ return getFlareGradientColor( d.frequency[1], false);} else { return getFlareGradientColor( -1*d.frequency, false);} });
+                break;
               case "interactions":
                 svg.selectAll("path.link")
-                    .style("stroke", function(d){ return getColorStrongestInteraction(Object.keys(d.interactions).filter(value => -1 !== interactions.indexOf(value)), false); });
+                    // .style("stroke", function(d){ console.log('get color!',d.interactions,Object.keys(d.interactions),interactions); return getColorStrongestInteraction(Object.keys(d.interactions).filter(value => -1 !== interactions.indexOf(value)), false); });
+                    .style("stroke", function(d){ return getColorStrongestInteraction(d.interactions, false); });
                 break;
+              case "rainbow":
+                svg.selectAll("path.link")
+                    .style("stroke", function(d){ return d.rainbow; });
+              break;
               case "segment":
                 svg.selectAll("path.link")
                     .style("stroke", function(d){ return d.segment; });
@@ -1140,6 +1169,15 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                 svg.selectAll("path.link")
                     .style("stroke", function(d){ return d.color; });
                 break;
+            }
+
+            if (color=="rainbow"){
+              svg.selectAll("g.trackElement").select("path")
+                  .style("fill", function(d){ return d.rainbow; });
+            } else {
+              // default
+              svg.selectAll("g.trackElement").select("path")
+                  .style("fill", function(d){ return d.color; });
             }
         }
 

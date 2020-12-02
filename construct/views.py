@@ -4,6 +4,7 @@ from django.http import HttpResponse
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
+from django.db.models import Count, Q, Prefetch
 
 
 from common.diagrams_gpcr import DrawSnakePlot
@@ -17,7 +18,7 @@ from protein.models import Protein, ProteinConformation, ProteinSegment
 from structure.models import Structure
 from mutation.models import Mutation
 from residue.models import ResiduePositionSet
-from interaction.models import ResidueFragmentInteraction
+from interaction.models import ResidueFragmentInteraction,StructureLigandInteraction
 
 
 
@@ -32,7 +33,7 @@ Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlis
 
 
 # Create your views here.
-#@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def detail(request, slug):
 
     # get constructs
@@ -202,6 +203,9 @@ class ConstructStatistics(TemplateView):
         truncations_new['icl3_start'] = OrderedDict()
         truncations_new['icl3_end'] = OrderedDict()
 
+        truncations_new['icl2_start'] = OrderedDict()
+        truncations_new['icl2_end'] = OrderedDict()
+
         truncations_new['icl3_fusion_start'] = OrderedDict()
         truncations_new['icl3_fusion_end'] = OrderedDict()
         truncations_new['icl2_fusion_start'] = OrderedDict()
@@ -233,571 +237,575 @@ class ConstructStatistics(TemplateView):
         '3A Arrestin': 'Arr'
         }
         for c in cons:
-            p = c.protein
-            entry_name = p.entry_name
-            pdb_code = c.crystal.pdb_code
-            entry_name_pdb = entry_name+ "_"+ pdb_code
-            state = c.structure.state.slug
-            entry_name_pdb_state = entry_name+ "_"+ pdb_code + "_" +state
-            crystal_p = c.structure.protein_conformation.protein.parent.entry_name
-            if entry_name!=crystal_p:
-                print("ERROR ERROR ERROR",pdb_code,entry_name,crystal_p)
-                c.protein = c.structure.protein_conformation.protein.parent
-                c.save()
-            #print(c.structure.state.slug)
-            p_class = p.family.slug.split('_')[0]
-            if p_class not in class_names:
-                class_names[p_class] =  re.sub(r'\([^)]*\)', '', p.family.parent.parent.parent.name)
-            p_class_name = class_names[p_class].strip()
-            states[pdb_code] = state
-            # if state=='active':
-            #     p_class_name += "_active"
-            # if state=='intermediate':
-            #     p_class_name += "_interm"
-            fusion_n = False
-            fusion_icl3 = False
+            try:
+                p = c.protein
+                entry_name = p.entry_name
+                pdb_code = c.crystal.pdb_code
+                entry_name_pdb = entry_name+ "_"+ pdb_code
+                state = c.structure.state.slug
+                if state=='other':
+                    continue
+                entry_name_pdb_state = entry_name+ "_"+ pdb_code + "_" +state
+                crystal_p = c.structure.protein_conformation.protein.parent.entry_name
+                if entry_name!=crystal_p:
+                    print("ERROR ERROR ERROR",pdb_code,entry_name,crystal_p)
+                    c.protein = c.structure.protein_conformation.protein.parent
+                    c.save()
+                #print(c.structure.state.slug)
+                p_class = p.family.slug.split('_')[0]
+                if p_class not in class_names:
+                    class_names[p_class] =  re.sub(r'\([^)]*\)', '', p.family.parent.parent.parent.name)
+                p_class_name = class_names[p_class].strip()
+                states[pdb_code] = state
+                # if state=='active':
+                #     p_class_name += "_active"
+                # if state=='intermediate':
+                #     p_class_name += "_interm"
+                fusion_n = False
+                fusion_icl3 = False
 
-            fusion_position, fusions, linkers = c.fusion()
-            found_nterm = False
-            found_cterm = False
+                fusion_position, fusions, linkers = c.fusion()
+                found_nterm = False
+                found_cterm = False
 
-            if p_class_name not in track_fusions:
-                track_fusions[p_class_name] = OrderedDict()
-            # print(entry_name_pdb,fusions)
-            if fusions:
-                if entry_name_pdb not in track_fusions[p_class_name]:
-                    track_fusions[p_class_name][entry_name_pdb] = {'found':[],'for_print':[], '3_4_length':[], '5_6_length':[], '3_4_deleted':[], '5_6_deleted':[]}
+                if p_class_name not in track_fusions:
+                    track_fusions[p_class_name] = OrderedDict()
+                # print(entry_name_pdb,fusions)
+                if fusions:
+                    if entry_name_pdb not in track_fusions[p_class_name]:
+                        track_fusions[p_class_name][entry_name_pdb] = {'found':[],'for_print':[], '3_4_length':[], '5_6_length':[], '3_4_deleted':[], '5_6_deleted':[]}
 
-            if fusions:
-                fusion_name = fusions[0][2]
-                if fusion_name in fusions_short:
-                    fusion_by_pdb[pdb_code] = fusions_short[fusion_name]
-                else:
-                    fusion_by_pdb[pdb_code] = fusion_name
-                if fusion_name not in track_fusions2:
-                    track_fusions2[fusion_name] = {'found':[],'for_print':[]}
-            # if entry_name=='aa2ar_human':
-            #     print(state,p_class_name)
-            for deletion in c.deletions.all():
-                # if entry_name=='aa2ar_human':
-                #     print(entry_name,deletion.start,cterm_start[entry_name],c.name) # lpar1_human
-
-                if deletion.end <= x50s[entry_name]['1x50']:
-                    found_nterm = True
-                    bw = "1."+str(50-x50s[entry_name]['1x50']+deletion.end)
-                    #bw = bw + " " + str(x50s[entry_name]['1x50']-deletion.end)
-                    from_tm1 = tm1_start[entry_name] - deletion.end-1
-                    if entry_name=='agtr1_human' and pdb_code=='4YAY':
-                        # print(from_tm1,entry_name,c.name,fusion_position)
-                        # This is due to odd situation with 4YAY where they deleted in the middle.
-                        from_tm1 = 14
-                    if pdb_code=='4ZUD':
-                        from_tm1 = 9
-
-
-                    position = 'nterm'
-                    if fusion_position=='nterm' or fusion_position=='nterm_icl3':
-                        position = 'nterm_fusion'
-                        if from_tm1 not in track_fusions[p_class_name][entry_name_pdb]['found']:
-                            track_fusions[p_class_name][entry_name_pdb]['found'].append(from_tm1)
-                        if from_tm1 not in track_fusions2[fusion_name]['found']:
-                            track_fusions2[fusion_name]['found'].append(from_tm1)
-
-                    if p_class_name not in truncations[position]:
-                        truncations[position][p_class_name] = {}
-                    if bw not in truncations[position][p_class_name]:
-                        truncations[position][p_class_name][bw] = []
-                    if entry_name_pdb not in truncations[position][p_class_name][bw]:
-                        truncations[position][p_class_name][bw].append(entry_name_pdb)
-
-                    if position not in truncations_new_possibilties:
-                        truncations_new_possibilties[position] = []
-                    if position not in truncations_maximums:
-                        truncations_maximums[position] = {}
-                    if p_class_name not in truncations_maximums[position]:
-                        truncations_maximums[position][p_class_name] = 0
-                    if from_tm1 not in truncations_new_possibilties[position]:
-                        truncations_new_possibilties[position].append(from_tm1)
-                        truncations_new_possibilties[position] = sorted(truncations_new_possibilties[position])
-                    if tm1_start[entry_name]-1 > truncations_maximums[position][p_class_name]:
-                        truncations_maximums[position][p_class_name] = tm1_start[entry_name]-1
-
-                    if position not in truncations_new_sum:
-                        truncations_new_sum[position] = {}
-                    if p_class_name not in truncations_new_sum[position]:
-                        truncations_new_sum[position][p_class_name] = {}
-
-                    if p_class_name not in truncations_new[position]:
-                        truncations_new[position][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
-                    if entry_name_pdb_state not in truncations_new[position][p_class_name]['receptors']:
-                        truncations_new[position][p_class_name]['receptors'][entry_name_pdb_state] = [[],[],[tm1_start[entry_name]-1]]
-                    if fusion_position!='nterm' or 1==1:
-                        if from_tm1 not in truncations_new[position][p_class_name]['receptors'][entry_name_pdb_state][0]:
-                            truncations_new[position][p_class_name]['receptors'][entry_name_pdb_state][0].append(from_tm1)
-                            if from_tm1 not in truncations_new_sum[position][p_class_name]:
-                                truncations_new_sum[position][p_class_name][from_tm1] = 0
-                            truncations_new_sum[position][p_class_name][from_tm1] += 1
-                    # if from_tm1 not in truncations_new[position][p_class_name]['possiblities']:
-                    #     truncations_new[position][p_class_name]['possiblities'].append(from_tm1)
-                    #     truncations_new[position][p_class_name]['possiblities'] = sorted(truncations_new[position][p_class_name]['possiblities'])
-                    # if from_tm1==0:
-                    #     print(state,entry_name,p_class_name,truncations_new[position][p_class_name]['receptors'][entry_name])
-
-                if deletion.start >= x50s[entry_name]['7x50']:
-                    found_cterm = True
-                    import html
-                    # bw = x50s[entry_name]['8x50']-deletion.start
-                    # bw = "8."+str(50-x50s[entry_name]['8x50']+deletion.start)
-
-                    from_h8 = deletion.start - cterm_start[entry_name]
-                    # print(p_class_name,':',html.unescape(p.family.name),':',entry_name,':',pdb_code,':',deletion.start-x50s[entry_name]['8x50'],':',from_h8)
-
-                    if p_class_name not in truncations['cterm']:
-                        truncations['cterm'][p_class_name] = {}
-                    if bw not in truncations['cterm'][p_class_name]:
-                        truncations['cterm'][p_class_name][bw] = []
-                    if entry_name_pdb not in truncations['cterm'][p_class_name][bw]:
-                        truncations['cterm'][p_class_name][bw].append(entry_name_pdb)
-
-                    position = 'cterm'
-                    if deletion.start>1000:
-                        #TODO there are some wrong ones, can be seen by having >1000 positions which are fusion
-                        continue
-                        print(deletion.start,from_h8,cterm_start[entry_name],c.crystal.pdb_code )
-
-                    if position not in truncations_new_possibilties:
-                        truncations_new_possibilties[position] = []
-                    if position not in truncations_maximums:
-                        truncations_maximums[position] = {}
-                    if p_class_name not in truncations_maximums[position]:
-                        truncations_maximums[position][p_class_name] = 0
-                    if from_h8 not in truncations_new_possibilties[position]:
-                        truncations_new_possibilties[position].append(from_h8)
-                        truncations_new_possibilties[position] = sorted(truncations_new_possibilties[position])
-                    if from_h8 > truncations_maximums[position][p_class_name]:
-                        truncations_maximums[position][p_class_name] = from_h8
-
-                    if position not in truncations_new_sum:
-                        truncations_new_sum[position] = {}
-                    if p_class_name not in truncations_new_sum[position]:
-                        truncations_new_sum[position][p_class_name] = {}
-
-
-
-
-                    if p_class_name not in truncations_new[position]:
-                        truncations_new[position][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
-                    if entry_name_pdb not in truncations_new[position][p_class_name]['receptors']:
-                        truncations_new[position][p_class_name]['receptors'][entry_name_pdb] = [[],[],[cterm_end[entry_name]-cterm_start[entry_name]+1]]
-                    if from_h8 not in truncations_new[position][p_class_name]['receptors'][entry_name_pdb][0]:
-                        truncations_new[position][p_class_name]['receptors'][entry_name_pdb][0].append(from_h8)
-                        if from_h8 not in truncations_new_sum[position][p_class_name]:
-                            truncations_new_sum[position][p_class_name][from_h8] = 0
-                        truncations_new_sum[position][p_class_name][from_h8] += 1
-
-                if deletion.start > x50s[entry_name]['5x50'] and deletion.start < x50s[entry_name]['6x50']:
-                    # if linkers['before']:
-                    #      print(entry_name,c.name,deletion.start,deletion.end,x50s[entry_name]['5x50'])
-                    if linkers['before']:
-                        deletion.start += len(linkers['before'])
-                        linkers_exist_before[c.crystal.pdb_code] = len(linkers['before'])
-                    if linkers['after']:
-                        deletion.end -= len(linkers['after'])
-                        linkers_exist_after[c.crystal.pdb_code] = len(linkers['after'])
-                    # if linkers['before']:
-                    #      print(entry_name,c.name,deletion.start,deletion.end,x50s[entry_name]['5x50'])
-                    fusion_icl3 = True
-                    bw = x50s[entry_name]['5x50']-deletion.start-1
-                    bw = "5x"+str(50-x50s[entry_name]['5x50']+deletion.start+track_anamalities[entry_name]['5'][1]-1)
-                    bw_real = "5."+str(50-x50s[entry_name]['5x50']+deletion.start-1)
-                    bw2 = "6x"+str(50-x50s[entry_name]['6x50']+deletion.end+track_anamalities[entry_name]['6'][0]+1)
-                    bw2_real = "6."+str(50-x50s[entry_name]['6x50']+deletion.end+1)
-                    # Make 1.50x50 number
-                    # bw = bw_real+"x"+bw
-                    # bw2 = bw2_real+"x"+bw2
-                    bw_combine = bw+"-"+bw2
-                    position = 'icl3'
-                    del_length = 1+deletion.end-deletion.start
-
-                    if bw=='5x107':
-                        # Skip these false deletions in melga
-                        continue
-
-                    # if entry_name=='s1pr1_human':
-                    #     print("CHECK",deletion.start,deletion.end, bw,bw2)
-                    if entry_name=='s1pr1_human' and deletion.start==250:
-                        # Skip these false deletions in s1pr1_human (3V2W, 3V2Y)
-                        continue
-
-                    l_5_6_length = x50s[entry_name]['6x50']-x50s[entry_name]['5x50']
-                    if fusion_position=='icl3' or fusion_position=='nterm_icl3':
-                        position = 'icl3_fusion'
-                        if bw not in track_fusions2[fusion_name]['found']:
-                            track_fusions2[fusion_name]['found'].append(bw)
-                        if bw2 not in track_fusions2[fusion_name]['found']:
-                            track_fusions2[fusion_name]['found'].append(bw2)
-                    # else:
-                    #      print(entry_name,c.name,fusions)
-
-                    if fusion_position=='icl3' or fusion_position=='nterm_icl3':
-                        #Track those with fusion
-                        if bw not in track_fusions[p_class_name][entry_name_pdb]['found']:
-                            track_fusions[p_class_name][entry_name_pdb]['found'].append(bw)
-                        if bw2 not in track_fusions[p_class_name][entry_name_pdb]['found']:
-                            track_fusions[p_class_name][entry_name_pdb]['found'].append(bw2)
-                        if del_length not in track_fusions[p_class_name][entry_name_pdb]['5_6_deleted']:
-                            track_fusions[p_class_name][entry_name_pdb]['5_6_deleted'].append(del_length)
-                        if l_5_6_length not in track_fusions[p_class_name][entry_name_pdb]['5_6_length']:
-                            track_fusions[p_class_name][entry_name_pdb]['5_6_length'].append(l_5_6_length)
-
-                        if p_class_name not in truncations_new[position+'_start']:
-                            truncations_new[position+'_start'][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
-                        if entry_name_pdb not in truncations_new[position+'_start'][p_class_name]['receptors']:
-                            truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb] = [[],[],[bw]]
-                        if bw not in truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb][0]:
-                            truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb][0].append(bw)
-
-
-                        if p_class_name not in truncations_new[position+'_end']:
-                            truncations_new[position+'_end'][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
-                        if entry_name_pdb not in truncations_new[position+'_end'][p_class_name]['receptors']:
-                            truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb] = [[],[],[bw2]]
-                        if bw not in truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb][0]:
-                            truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb][0].append(bw2)
-
+                if fusions:
+                    fusion_name = fusions[0][2]
+                    if fusion_name in fusions_short:
+                        fusion_by_pdb[pdb_code] = fusions_short[fusion_name]
                     else:
-                        # print('ICL3 CUT WITHOUT FUSION',bw_combine,entry_name,c.name)
-                        if p_class_name not in track_without_fusions:
-                            track_without_fusions[p_class_name] = OrderedDict()
+                        fusion_by_pdb[pdb_code] = fusion_name
+                    if fusion_name not in track_fusions2:
+                        track_fusions2[fusion_name] = {'found':[],'for_print':[]}
+                # if entry_name=='aa2ar_human':
+                #     print(state,p_class_name)
+                for deletion in c.deletions.all():
+                    # if entry_name=='aa2ar_human':
+                    #     print(entry_name,deletion.start,cterm_start[entry_name],c.name) # lpar1_human
 
-                        if entry_name_pdb not in track_without_fusions[p_class_name]:
-                            track_without_fusions[p_class_name][entry_name_pdb] = {'found':[],'for_print':[], '3_4_length':[], '5_6_length':[], '3_4_deleted':[], '5_6_deleted':[]}
-
-                        #Track those without fusion
-                        if bw not in track_without_fusions[p_class_name][entry_name_pdb]['found']:
-                            track_without_fusions[p_class_name][entry_name_pdb]['found'].append(bw)
-                        if bw2 not in track_without_fusions[p_class_name][entry_name_pdb]['found']:
-                            track_without_fusions[p_class_name][entry_name_pdb]['found'].append(bw2)
-                        if del_length not in track_without_fusions[p_class_name][entry_name_pdb]['5_6_deleted']:
-                            track_without_fusions[p_class_name][entry_name_pdb]['5_6_deleted'].append(del_length)
-                        if l_5_6_length not in track_without_fusions[p_class_name][entry_name_pdb]['5_6_length']:
-                            track_without_fusions[p_class_name][entry_name_pdb]['5_6_length'].append(l_5_6_length)
-
-
-                        if p_class_name not in truncations_new[position+'_start']:
-                            truncations_new[position+'_start'][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
-                        if entry_name_pdb not in truncations_new[position+'_start'][p_class_name]['receptors']:
-                            truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb] = [[],[],[bw]]
-                        if bw not in truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb][0]:
-                            truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb][0].append(bw)
+                    if deletion.end <= x50s[entry_name]['1x50']:
+                        found_nterm = True
+                        bw = "1."+str(50-x50s[entry_name]['1x50']+deletion.end)
+                        #bw = bw + " " + str(x50s[entry_name]['1x50']-deletion.end)
+                        from_tm1 = tm1_start[entry_name] - deletion.end-1
+                        if entry_name=='agtr1_human' and pdb_code=='4YAY':
+                            # print(from_tm1,entry_name,c.name,fusion_position)
+                            # This is due to odd situation with 4YAY where they deleted in the middle.
+                            from_tm1 = 14
+                        if pdb_code=='4ZUD':
+                            from_tm1 = 9
 
 
-                        if p_class_name not in truncations_new[position+'_end']:
-                            truncations_new[position+'_end'][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
-                        if entry_name_pdb not in truncations_new[position+'_end'][p_class_name]['receptors']:
-                            truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb] = [[],[],[bw2]]
-                        if bw not in truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb][0]:
-                            truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb][0].append(bw2)
+                        position = 'nterm'
+                        if fusion_position=='nterm' or fusion_position=='nterm_icl3':
+                            position = 'nterm_fusion'
+                            if from_tm1 not in track_fusions[p_class_name][entry_name_pdb]['found']:
+                                track_fusions[p_class_name][entry_name_pdb]['found'].append(from_tm1)
+                            if from_tm1 not in track_fusions2[fusion_name]['found']:
+                                track_fusions2[fusion_name]['found'].append(from_tm1)
 
+                        if p_class_name not in truncations[position]:
+                            truncations[position][p_class_name] = {}
+                        if bw not in truncations[position][p_class_name]:
+                            truncations[position][p_class_name][bw] = []
+                        if entry_name_pdb not in truncations[position][p_class_name][bw]:
+                            truncations[position][p_class_name][bw].append(entry_name_pdb)
 
-                    if p_class_name not in truncations[position]:
-                        truncations[position][p_class_name] = {}
-                    if bw_combine not in truncations[position][p_class_name]:
-                        truncations[position][p_class_name][bw_combine] = []
-                    if entry_name_pdb not in truncations[position][p_class_name][bw_combine]:
-                        truncations[position][p_class_name][bw_combine].append(entry_name_pdb)
-
-
-                    if position+"_start" not in truncations_new_possibilties:
-                        truncations_new_possibilties[position+"_start"] = []
-                    if position+"_end" not in truncations_new_possibilties:
-                        truncations_new_possibilties[position+"_end"] = []
-                    if bw not in truncations_new_possibilties[position+"_start"]:
-                        truncations_new_possibilties[position+"_start"].append(bw)
-                        truncations_new_possibilties[position+"_start"] = sorted(truncations_new_possibilties[position+"_start"])
-                    if bw2 not in truncations_new_possibilties[position+"_end"]:
-                        truncations_new_possibilties[position+"_end"].append(bw2)
-                        truncations_new_possibilties[position+"_end"] = sorted(truncations_new_possibilties[position+"_end"])
-
-
-
-                if deletion.start > x50s[entry_name]['3x50'] and deletion.start < x50s[entry_name]['4x50']:
-                    # if fusion_icl3:
-                    #      print(entry_name,c.name,deletion.start,deletion.end,x50s[entry_name]['5x50'])
-                    fusion_icl3 = True
-                    bw = x50s[entry_name]['5x50']-deletion.start
-                    bw = "3x"+str(50-x50s[entry_name]['3x50']+deletion.start+track_anamalities[entry_name]['3'][1]-1)
-                    bw_real = "3."+str(50-x50s[entry_name]['3x50']+deletion.start-1)
-                    bw2 = "4x"+str(50-x50s[entry_name]['4x50']+deletion.end+track_anamalities[entry_name]['4'][0]+1)
-                    bw2_real = "4."+str(50-x50s[entry_name]['4x50']+deletion.end+1)
-                    # Make 1.50x50 number
-                    # bw = bw_real+"x"+bw
-                    # bw2 = bw2_real+"x"+bw2
-                    bw_combine = bw+"-"+bw2
-                    position = 'icl2'
-                    del_length = 1+deletion.end-deletion.start
-                    l_3_4_length = x50s[entry_name]['4x50']-x50s[entry_name]['3x50']
-                    # print(fusion_position)
-                    if fusion_position=='icl3' or fusion_position=='nterm_icl3':
-                        position = 'icl2_fusion'
-                        if bw not in track_fusions2[fusion_name]['found']:
-                            track_fusions2[fusion_name]['found'].append(bw)
-                        if bw2 not in track_fusions2[fusion_name]['found']:
-                            track_fusions2[fusion_name]['found'].append(bw2)
-
-
-                    if p_class_name not in truncations_new[position+'_start']:
-                        truncations_new[position+'_start'][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
-                    if entry_name_pdb not in truncations_new[position+'_start'][p_class_name]['receptors']:
-                        truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb] = [[],[],[bw]]
-                    if bw not in truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb][0]:
-                        truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb][0].append(bw)
-
-                    if p_class_name not in truncations_new[position+'_end']:
-                        truncations_new[position+'_end'][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
-                    if entry_name_pdb not in truncations_new[position+'_end'][p_class_name]['receptors']:
-                        truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb] = [[],[],[bw2]]
-                    if bw not in truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb][0]:
-                        truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb][0].append(bw2)
-
-                    if bw not in track_fusions[p_class_name][entry_name_pdb]['found']:
-                            track_fusions[p_class_name][entry_name_pdb]['found'].append(bw)
-                    if bw2 not in track_fusions[p_class_name][entry_name_pdb]['found']:
-                            track_fusions[p_class_name][entry_name_pdb]['found'].append(bw2)
-                    if del_length not in track_fusions[p_class_name][entry_name_pdb]['found']:
-                        track_fusions[p_class_name][entry_name_pdb]['3_4_deleted'].append(del_length)
-                    if l_3_4_length not in track_fusions[p_class_name][entry_name_pdb]['found']:
-                        track_fusions[p_class_name][entry_name_pdb]['3_4_length'].append(l_3_4_length)
-
-                    if p_class_name not in truncations[position]:
-                        truncations[position][p_class_name] = {}
-                    if bw_combine not in truncations[position][p_class_name]:
-                        truncations[position][p_class_name][bw_combine] = []
-                    if entry_name_pdb not in truncations[position][p_class_name][bw_combine]:
-                        truncations[position][p_class_name][bw_combine].append(entry_name_pdb)
-
-                    if position+"_start" not in truncations_new_possibilties:
-                        truncations_new_possibilties[position+"_start"] = []
-                    if position+"_end" not in truncations_new_possibilties:
-                        truncations_new_possibilties[position+"_end"] = []
-                    if bw not in truncations_new_possibilties[position+"_start"]:
-                        truncations_new_possibilties[position+"_start"].append(bw)
-                        truncations_new_possibilties[position+"_start"] = sorted(truncations_new_possibilties[position+"_start"])
-                    if bw2 not in truncations_new_possibilties[position+"_end"]:
-                        truncations_new_possibilties[position+"_end"].append(bw2)
-                        truncations_new_possibilties[position+"_end"] = sorted(truncations_new_possibilties[position+"_end"])
-
-            if fusions:
-                if track_fusions[p_class_name][entry_name_pdb] == {'found':[],'for_print':[], '3_4_length':[], '5_6_length':[], '3_4_deleted':[], '5_6_deleted':[]}:
-                    if fusion_position=='nterm' or fusions[0][3].startswith('N-term'):
-                        from_tm1 = tm1_start[entry_name]-1
-                        # print(entry_name_pdb,'Seems to be without truncated N-term, fixme',tm1_start[entry_name])
-                        position = 'nterm_fusion'
+                        if position not in truncations_new_possibilties:
+                            truncations_new_possibilties[position] = []
+                        if position not in truncations_maximums:
+                            truncations_maximums[position] = {}
+                        if p_class_name not in truncations_maximums[position]:
+                            truncations_maximums[position][p_class_name] = 0
                         if from_tm1 not in truncations_new_possibilties[position]:
                             truncations_new_possibilties[position].append(from_tm1)
                             truncations_new_possibilties[position] = sorted(truncations_new_possibilties[position])
-                        if from_tm1 not in track_fusions[p_class_name][entry_name_pdb]['found']:
-                            track_fusions[p_class_name][entry_name_pdb]['found'].append(from_tm1)
-                        if from_tm1 not in track_fusions2[fusion_name]['found']:
-                            track_fusions2[fusion_name]['found'].append(from_tm1)
-                    elif not fusions[0][3].startswith('C-term'):
-                        # print(entry_name_pdb,'NOT FOUND CUT??',fusion_position,fusions)
-                        deletion.start = fusions[0][4] #the next one is "cut"
-                        deletion.end = fusions[0][4]+1 #the 'prev' is cut
+                        if tm1_start[entry_name]-1 > truncations_maximums[position][p_class_name]:
+                            truncations_maximums[position][p_class_name] = tm1_start[entry_name]-1
 
-                        if deletion.start > x50s[entry_name]['5x50'] and deletion.start < x50s[entry_name]['6x50']:
-                            # if fusion_icl3:
-                            #      print(entry_name,c.name,deletion.start,deletion.end,x50s[entry_name]['5x50'])
-                            fusion_icl3 = True
-                            bw = x50s[entry_name]['5x50']-deletion.start
-                            bw =  "5x"+str(50-x50s[entry_name]['5x50']+deletion.start+track_anamalities[entry_name]['5'][1])
-                            bw_real = "5."+str(50-x50s[entry_name]['5x50']+deletion.start)
-                            bw2 = "6x"+str(50-x50s[entry_name]['6x50']+deletion.end+track_anamalities[entry_name]['6'][0])
-                            bw2_real = "6."+str(50-x50s[entry_name]['6x50']+deletion.end)
-                            # Make 1.50x50 number
-                            # bw = bw_real+"x"+bw
-                            # bw2 = bw2_real+"x"+bw2
-                            bw_combine = bw+"-"+bw2
-                            position = 'icl3'
-                            del_length = 1+deletion.end-deletion.start
+                        if position not in truncations_new_sum:
+                            truncations_new_sum[position] = {}
+                        if p_class_name not in truncations_new_sum[position]:
+                            truncations_new_sum[position][p_class_name] = {}
 
-                            l_5_6_length = x50s[entry_name]['6x50']-x50s[entry_name]['5x50']
-                            if fusion_position=='icl3' or fusion_position=='nterm_icl3':
-                                position = 'icl3_fusion'
-                                if bw not in track_fusions2[fusion_name]['found']:
-                                    track_fusions2[fusion_name]['found'].append(bw)
-                                if bw2 not in track_fusions2[fusion_name]['found']:
-                                    track_fusions2[fusion_name]['found'].append(bw2)
+                        if p_class_name not in truncations_new[position]:
+                            truncations_new[position][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
+                        if entry_name_pdb_state not in truncations_new[position][p_class_name]['receptors']:
+                            truncations_new[position][p_class_name]['receptors'][entry_name_pdb_state] = [[],[],[tm1_start[entry_name]-1]]
+                        if fusion_position!='nterm' or 1==1:
+                            if from_tm1 not in truncations_new[position][p_class_name]['receptors'][entry_name_pdb_state][0]:
+                                truncations_new[position][p_class_name]['receptors'][entry_name_pdb_state][0].append(from_tm1)
+                                if from_tm1 not in truncations_new_sum[position][p_class_name]:
+                                    truncations_new_sum[position][p_class_name][from_tm1] = 0
+                                truncations_new_sum[position][p_class_name][from_tm1] += 1
+                        # if from_tm1 not in truncations_new[position][p_class_name]['possiblities']:
+                        #     truncations_new[position][p_class_name]['possiblities'].append(from_tm1)
+                        #     truncations_new[position][p_class_name]['possiblities'] = sorted(truncations_new[position][p_class_name]['possiblities'])
+                        # if from_tm1==0:
+                        #     print(state,entry_name,p_class_name,truncations_new[position][p_class_name]['receptors'][entry_name])
 
-                            if fusion_position=='icl3' or fusion_position=='nterm_icl3':
-                                #Track those with fusion
-                                if bw not in track_fusions[p_class_name][entry_name_pdb]['found']:
-                                    track_fusions[p_class_name][entry_name_pdb]['found'].append(bw)
-                                if bw2 not in track_fusions[p_class_name][entry_name_pdb]['found']:
-                                    track_fusions[p_class_name][entry_name_pdb]['found'].append(bw2)
-                                if del_length not in track_fusions[p_class_name][entry_name_pdb]['found']:
-                                    track_fusions[p_class_name][entry_name_pdb]['5_6_deleted'].append(del_length)
-                                if l_5_6_length not in track_fusions[p_class_name][entry_name_pdb]['found']:
-                                    track_fusions[p_class_name][entry_name_pdb]['5_6_length'].append(l_5_6_length)
+                    if deletion.start >= x50s[entry_name]['7x50']:
+                        found_cterm = True
+                        import html
+                        # bw = x50s[entry_name]['8x50']-deletion.start
+                        # bw = "8."+str(50-x50s[entry_name]['8x50']+deletion.start)
 
-                            else:
-                                print('ICL3 CUT WITHOUT FUSION',bw_combine,entry_name,c.name)
-                                if p_class_name not in track_without_fusions:
-                                    track_without_fusions[p_class_name] = OrderedDict()
+                        from_h8 = deletion.start - cterm_start[entry_name]
+                        # print(p_class_name,':',html.unescape(p.family.name),':',entry_name,':',pdb_code,':',deletion.start-x50s[entry_name]['8x50'],':',from_h8)
 
-                                if entry_name_pdb not in track_without_fusions[p_class_name]:
-                                    track_without_fusions[p_class_name][entry_name_pdb] = {'found':[],'for_print':[]}
+                        if p_class_name not in truncations['cterm']:
+                            truncations['cterm'][p_class_name] = {}
+                        if bw not in truncations['cterm'][p_class_name]:
+                            truncations['cterm'][p_class_name][bw] = []
+                        if entry_name_pdb not in truncations['cterm'][p_class_name][bw]:
+                            truncations['cterm'][p_class_name][bw].append(entry_name_pdb)
 
-                                #Track those without fusion
-                                if bw not in track_without_fusions[p_class_name][entry_name_pdb]['found']:
-                                    track_without_fusions[p_class_name][entry_name_pdb]['found'].append(bw)
-                                if bw2 not in track_without_fusions[p_class_name][entry_name_pdb]['found']:
-                                    track_without_fusions[p_class_name][entry_name_pdb]['found'].append(bw2)
+                        position = 'cterm'
+                        if deletion.start>1000:
+                            #TODO there are some wrong ones, can be seen by having >1000 positions which are fusion
+                            continue
+                            print(deletion.start,from_h8,cterm_start[entry_name],c.crystal.pdb_code )
 
+                        if position not in truncations_new_possibilties:
+                            truncations_new_possibilties[position] = []
+                        if position not in truncations_maximums:
+                            truncations_maximums[position] = {}
+                        if p_class_name not in truncations_maximums[position]:
+                            truncations_maximums[position][p_class_name] = 0
+                        if from_h8 not in truncations_new_possibilties[position]:
+                            truncations_new_possibilties[position].append(from_h8)
+                            truncations_new_possibilties[position] = sorted(truncations_new_possibilties[position])
+                        if from_h8 > truncations_maximums[position][p_class_name]:
+                            truncations_maximums[position][p_class_name] = from_h8
 
-                            if p_class_name not in truncations[position]:
-                                truncations[position][p_class_name] = {}
-                            if bw_combine not in truncations[position][p_class_name]:
-                                truncations[position][p_class_name][bw_combine] = []
-                            if entry_name_pdb not in truncations[position][p_class_name][bw_combine]:
-                                truncations[position][p_class_name][bw_combine].append(entry_name_pdb)
-
-
-                            if position+"_start" not in truncations_new_possibilties:
-                                truncations_new_possibilties[position+"_start"] = []
-                            if position+"_end" not in truncations_new_possibilties:
-                                truncations_new_possibilties[position+"_end"] = []
-                            if bw not in truncations_new_possibilties[position+"_start"]:
-                                truncations_new_possibilties[position+"_start"].append(bw)
-                                truncations_new_possibilties[position+"_start"] = sorted(truncations_new_possibilties[position+"_start"])
-                            if bw2 not in truncations_new_possibilties[position+"_end"]:
-                                truncations_new_possibilties[position+"_end"].append(bw2)
-                                truncations_new_possibilties[position+"_end"] = sorted(truncations_new_possibilties[position+"_end"])
+                        if position not in truncations_new_sum:
+                            truncations_new_sum[position] = {}
+                        if p_class_name not in truncations_new_sum[position]:
+                            truncations_new_sum[position][p_class_name] = {}
 
 
 
-                        if deletion.start > x50s[entry_name]['3x50'] and deletion.start < x50s[entry_name]['4x50']:
-                            # if fusion_icl3:
-                            #      print(entry_name,c.name,deletion.start,deletion.end,x50s[entry_name]['5x50'])
-                            fusion_icl3 = True
-                            bw = x50s[entry_name]['5x50']-deletion.start
-                            bw = "3x"+str(50-x50s[entry_name]['3x50']+deletion.start+track_anamalities[entry_name]['3'][1])
-                            bw_real = "3."+str(50-x50s[entry_name]['3x50']+deletion.start)
-                            bw2 = "4x"+str(50-x50s[entry_name]['4x50']+deletion.end+track_anamalities[entry_name]['4'][0])
-                            bw2_real = "4."+str(50-x50s[entry_name]['4x50']+deletion.end)
-                            # Make 1.50x50 number
-                            # bw = bw_real+"x"+bw
-                            # bw2 = bw2_real+"x"+bw2
-                            bw_combine = bw+"-"+bw2
-                            position = 'icl2'
-                            del_length = deletion.end-deletion.start-1
-                            l_3_4_length = x50s[entry_name]['4x50']-x50s[entry_name]['3x50']
-                            if fusion_position=='icl3':
-                                position = 'icl2_fusion'
-                                if bw not in track_fusions2[fusion_name]['found']:
-                                    track_fusions2[fusion_name]['found'].append(bw)
-                                if bw2 not in track_fusions2[fusion_name]['found']:
-                                    track_fusions2[fusion_name]['found'].append(bw2)
 
+                        if p_class_name not in truncations_new[position]:
+                            truncations_new[position][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
+                        if entry_name_pdb not in truncations_new[position][p_class_name]['receptors']:
+                            truncations_new[position][p_class_name]['receptors'][entry_name_pdb] = [[],[],[cterm_end[entry_name]-cterm_start[entry_name]+1]]
+                        if from_h8 not in truncations_new[position][p_class_name]['receptors'][entry_name_pdb][0]:
+                            truncations_new[position][p_class_name]['receptors'][entry_name_pdb][0].append(from_h8)
+                            if from_h8 not in truncations_new_sum[position][p_class_name]:
+                                truncations_new_sum[position][p_class_name][from_h8] = 0
+                            truncations_new_sum[position][p_class_name][from_h8] += 1
 
+                    if deletion.start > x50s[entry_name]['5x50'] and deletion.start < x50s[entry_name]['6x50']:
+                        # if linkers['before']:
+                        #      print(entry_name,c.name,deletion.start,deletion.end,x50s[entry_name]['5x50'])
+                        if linkers['before']:
+                            deletion.start += len(linkers['before'])
+                            linkers_exist_before[c.crystal.pdb_code] = len(linkers['before'])
+                        if linkers['after']:
+                            deletion.end -= len(linkers['after'])
+                            linkers_exist_after[c.crystal.pdb_code] = len(linkers['after'])
+                        # if linkers['before']:
+                        #      print(entry_name,c.name,deletion.start,deletion.end,x50s[entry_name]['5x50'])
+                        fusion_icl3 = True
+                        bw = x50s[entry_name]['5x50']-deletion.start-1
+                        bw = "5x"+str(50-x50s[entry_name]['5x50']+deletion.start+track_anamalities[entry_name]['5'][1]-1)
+                        bw_real = "5."+str(50-x50s[entry_name]['5x50']+deletion.start-1)
+                        bw2 = "6x"+str(50-x50s[entry_name]['6x50']+deletion.end+track_anamalities[entry_name]['6'][0]+1)
+                        bw2_real = "6."+str(50-x50s[entry_name]['6x50']+deletion.end+1)
+                        # Make 1.50x50 number
+                        # bw = bw_real+"x"+bw
+                        # bw2 = bw2_real+"x"+bw2
+                        bw_combine = bw+"-"+bw2
+                        position = 'icl3'
+                        del_length = 1+deletion.end-deletion.start
+
+                        if bw=='5x107':
+                            # Skip these false deletions in melga
+                            continue
+
+                        # if entry_name=='s1pr1_human':
+                        #     print("CHECK",deletion.start,deletion.end, bw,bw2)
+                        if entry_name=='s1pr1_human' and deletion.start==250:
+                            # Skip these false deletions in s1pr1_human (3V2W, 3V2Y)
+                            continue
+
+                        l_5_6_length = x50s[entry_name]['6x50']-x50s[entry_name]['5x50']
+                        if fusion_position=='icl3' or fusion_position=='nterm_icl3':
+                            position = 'icl3_fusion'
+                            if bw not in track_fusions2[fusion_name]['found']:
+                                track_fusions2[fusion_name]['found'].append(bw)
+                            if bw2 not in track_fusions2[fusion_name]['found']:
+                                track_fusions2[fusion_name]['found'].append(bw2)
+                        # else:
+                        #      print(entry_name,c.name,fusions)
+
+                        if fusion_position=='icl3' or fusion_position=='nterm_icl3':
+                            #Track those with fusion
                             if bw not in track_fusions[p_class_name][entry_name_pdb]['found']:
-                                    track_fusions[p_class_name][entry_name_pdb]['found'].append(bw)
+                                track_fusions[p_class_name][entry_name_pdb]['found'].append(bw)
                             if bw2 not in track_fusions[p_class_name][entry_name_pdb]['found']:
-                                    track_fusions[p_class_name][entry_name_pdb]['found'].append(bw2)
-                            if del_length not in track_fusions[p_class_name][entry_name_pdb]['found']:
-                                track_fusions[p_class_name][entry_name_pdb]['3_4_deleted'].append(del_length)
-                            if l_3_4_length not in track_fusions[p_class_name][entry_name_pdb]['found']:
-                                track_fusions[p_class_name][entry_name_pdb]['3_4_length'].append(l_3_4_length)
+                                track_fusions[p_class_name][entry_name_pdb]['found'].append(bw2)
+                            if del_length not in track_fusions[p_class_name][entry_name_pdb]['5_6_deleted']:
+                                track_fusions[p_class_name][entry_name_pdb]['5_6_deleted'].append(del_length)
+                            if l_5_6_length not in track_fusions[p_class_name][entry_name_pdb]['5_6_length']:
+                                track_fusions[p_class_name][entry_name_pdb]['5_6_length'].append(l_5_6_length)
 
-                            if p_class_name not in truncations[position]:
-                                truncations[position][p_class_name] = {}
-                            if bw_combine not in truncations[position][p_class_name]:
-                                truncations[position][p_class_name][bw_combine] = []
-                            if entry_name_pdb not in truncations[position][p_class_name][bw_combine]:
-                                truncations[position][p_class_name][bw_combine].append(entry_name_pdb)
-
-                            if position+"_start" not in truncations_new_possibilties:
-                                truncations_new_possibilties[position+"_start"] = []
-                            if position+"_end" not in truncations_new_possibilties:
-                                truncations_new_possibilties[position+"_end"] = []
-                            if bw not in truncations_new_possibilties[position+"_start"]:
-                                truncations_new_possibilties[position+"_start"].append(bw)
-                                truncations_new_possibilties[position+"_start"] = sorted(truncations_new_possibilties[position+"_start"])
-                            if bw2 not in truncations_new_possibilties[position+"_end"]:
-                                truncations_new_possibilties[position+"_end"].append(bw2)
-                                truncations_new_possibilties[position+"_end"] = sorted(truncations_new_possibilties[position+"_end"])
-                    else:
-                        print(entry_name_pdb," is CTERM FUSION")
+                            if p_class_name not in truncations_new[position+'_start']:
+                                truncations_new[position+'_start'][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
+                            if entry_name_pdb not in truncations_new[position+'_start'][p_class_name]['receptors']:
+                                truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb] = [[],[],[bw]]
+                            if bw not in truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb][0]:
+                                truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb][0].append(bw)
 
 
-            position = 'nterm'
-            if fusion_position=='nterm' or fusion_position=='nterm_icl3':
-                position = 'nterm_fusion'
-            if p_class_name not in truncations_new[position]:
-                truncations_new[position][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
+                            if p_class_name not in truncations_new[position+'_end']:
+                                truncations_new[position+'_end'][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
+                            if entry_name_pdb not in truncations_new[position+'_end'][p_class_name]['receptors']:
+                                truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb] = [[],[],[bw2]]
+                            if bw not in truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb][0]:
+                                truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb][0].append(bw2)
 
-            # if entry_name=='aa2ar_human':
-            #     print(found_nterm,entry_name,position,p_class_name)
+                        else:
+                            # print('ICL3 CUT WITHOUT FUSION',bw_combine,entry_name,c.name)
+                            if p_class_name not in track_without_fusions:
+                                track_without_fusions[p_class_name] = OrderedDict()
 
-            from_tm1 = tm1_start[entry_name]-1
-            if not found_nterm:
-                if position not in truncations_new_sum:
-                    truncations_new_sum[position] = {}
-                if p_class_name not in truncations_new_sum[position]:
-                    truncations_new_sum[position][p_class_name] = {}
-                if from_tm1 not in truncations_new_sum[position][p_class_name]:
-                        truncations_new_sum[position][p_class_name][from_tm1] = 0
-                #if full receptor in xtal
-                if entry_name_pdb not in truncations_new[position][p_class_name]['receptors']:
-                    truncations_new[position][p_class_name]['receptors'][entry_name_pdb] = [[],[from_tm1],[from_tm1]]
+                            if entry_name_pdb not in track_without_fusions[p_class_name]:
+                                track_without_fusions[p_class_name][entry_name_pdb] = {'found':[],'for_print':[], '3_4_length':[], '5_6_length':[], '3_4_deleted':[], '5_6_deleted':[]}
 
-                    # add one for this position if it is first time receptor is mentioned
-                    truncations_new_sum[position][p_class_name][from_tm1] += 1
-                else:
-                    if from_tm1 not in truncations_new[position][p_class_name]['receptors'][entry_name_pdb][1]:
-                        truncations_new[position][p_class_name]['receptors'][entry_name_pdb][1].append(from_tm1)
+                            #Track those without fusion
+                            if bw not in track_without_fusions[p_class_name][entry_name_pdb]['found']:
+                                track_without_fusions[p_class_name][entry_name_pdb]['found'].append(bw)
+                            if bw2 not in track_without_fusions[p_class_name][entry_name_pdb]['found']:
+                                track_without_fusions[p_class_name][entry_name_pdb]['found'].append(bw2)
+                            if del_length not in track_without_fusions[p_class_name][entry_name_pdb]['5_6_deleted']:
+                                track_without_fusions[p_class_name][entry_name_pdb]['5_6_deleted'].append(del_length)
+                            if l_5_6_length not in track_without_fusions[p_class_name][entry_name_pdb]['5_6_length']:
+                                track_without_fusions[p_class_name][entry_name_pdb]['5_6_length'].append(l_5_6_length)
+
+
+                            if p_class_name not in truncations_new[position+'_start']:
+                                truncations_new[position+'_start'][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
+                            if entry_name_pdb not in truncations_new[position+'_start'][p_class_name]['receptors']:
+                                truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb] = [[],[],[bw]]
+                            if bw not in truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb][0]:
+                                truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb][0].append(bw)
+
+
+                            if p_class_name not in truncations_new[position+'_end']:
+                                truncations_new[position+'_end'][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
+                            if entry_name_pdb not in truncations_new[position+'_end'][p_class_name]['receptors']:
+                                truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb] = [[],[],[bw2]]
+                            if bw not in truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb][0]:
+                                truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb][0].append(bw2)
+
+
+                        if p_class_name not in truncations[position]:
+                            truncations[position][p_class_name] = {}
+                        if bw_combine not in truncations[position][p_class_name]:
+                            truncations[position][p_class_name][bw_combine] = []
+                        if entry_name_pdb not in truncations[position][p_class_name][bw_combine]:
+                            truncations[position][p_class_name][bw_combine].append(entry_name_pdb)
+
+
+                        if position+"_start" not in truncations_new_possibilties:
+                            truncations_new_possibilties[position+"_start"] = []
+                        if position+"_end" not in truncations_new_possibilties:
+                            truncations_new_possibilties[position+"_end"] = []
+                        if bw not in truncations_new_possibilties[position+"_start"]:
+                            truncations_new_possibilties[position+"_start"].append(bw)
+                            truncations_new_possibilties[position+"_start"] = sorted(truncations_new_possibilties[position+"_start"])
+                        if bw2 not in truncations_new_possibilties[position+"_end"]:
+                            truncations_new_possibilties[position+"_end"].append(bw2)
+                            truncations_new_possibilties[position+"_end"] = sorted(truncations_new_possibilties[position+"_end"])
+
+
+
+                    if deletion.start > x50s[entry_name]['3x50'] and deletion.start < x50s[entry_name]['4x50']:
+                        # if fusion_icl3:
+                        #      print(entry_name,c.name,deletion.start,deletion.end,x50s[entry_name]['5x50'])
+                        fusion_icl3 = True
+                        bw = x50s[entry_name]['5x50']-deletion.start
+                        bw = "3x"+str(50-x50s[entry_name]['3x50']+deletion.start+track_anamalities[entry_name]['3'][1]-1)
+                        bw_real = "3."+str(50-x50s[entry_name]['3x50']+deletion.start-1)
+                        bw2 = "4x"+str(50-x50s[entry_name]['4x50']+deletion.end+track_anamalities[entry_name]['4'][0]+1)
+                        bw2_real = "4."+str(50-x50s[entry_name]['4x50']+deletion.end+1)
+                        # Make 1.50x50 number
+                        # bw = bw_real+"x"+bw
+                        # bw2 = bw2_real+"x"+bw2
+                        bw_combine = bw+"-"+bw2
+                        position = 'icl2'
+                        del_length = 1+deletion.end-deletion.start
+                        l_3_4_length = x50s[entry_name]['4x50']-x50s[entry_name]['3x50']
+                        # print(fusion_position)
+                        if fusion_position=='icl3' or fusion_position=='nterm_icl3':
+                            position = 'icl2_fusion'
+                            if bw not in track_fusions2[fusion_name]['found']:
+                                track_fusions2[fusion_name]['found'].append(bw)
+                            if bw2 not in track_fusions2[fusion_name]['found']:
+                                track_fusions2[fusion_name]['found'].append(bw2)
+
+
+                        if p_class_name not in truncations_new[position+'_start']:
+                            truncations_new[position+'_start'][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
+                        if entry_name_pdb not in truncations_new[position+'_start'][p_class_name]['receptors']:
+                            truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb] = [[],[],[bw]]
+                        if bw not in truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb][0]:
+                            truncations_new[position+'_start'][p_class_name]['receptors'][entry_name_pdb][0].append(bw)
+
+                        if p_class_name not in truncations_new[position+'_end']:
+                            truncations_new[position+'_end'][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
+                        if entry_name_pdb not in truncations_new[position+'_end'][p_class_name]['receptors']:
+                            truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb] = [[],[],[bw2]]
+                        if bw not in truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb][0]:
+                            truncations_new[position+'_end'][p_class_name]['receptors'][entry_name_pdb][0].append(bw2)
+
+                        if bw not in track_fusions[p_class_name][entry_name_pdb]['found']:
+                                track_fusions[p_class_name][entry_name_pdb]['found'].append(bw)
+                        if bw2 not in track_fusions[p_class_name][entry_name_pdb]['found']:
+                                track_fusions[p_class_name][entry_name_pdb]['found'].append(bw2)
+                        if del_length not in track_fusions[p_class_name][entry_name_pdb]['found']:
+                            track_fusions[p_class_name][entry_name_pdb]['3_4_deleted'].append(del_length)
+                        if l_3_4_length not in track_fusions[p_class_name][entry_name_pdb]['found']:
+                            track_fusions[p_class_name][entry_name_pdb]['3_4_length'].append(l_3_4_length)
+
+                        if p_class_name not in truncations[position]:
+                            truncations[position][p_class_name] = {}
+                        if bw_combine not in truncations[position][p_class_name]:
+                            truncations[position][p_class_name][bw_combine] = []
+                        if entry_name_pdb not in truncations[position][p_class_name][bw_combine]:
+                            truncations[position][p_class_name][bw_combine].append(entry_name_pdb)
+
+                        if position+"_start" not in truncations_new_possibilties:
+                            truncations_new_possibilties[position+"_start"] = []
+                        if position+"_end" not in truncations_new_possibilties:
+                            truncations_new_possibilties[position+"_end"] = []
+                        if bw not in truncations_new_possibilties[position+"_start"]:
+                            truncations_new_possibilties[position+"_start"].append(bw)
+                            truncations_new_possibilties[position+"_start"] = sorted(truncations_new_possibilties[position+"_start"])
+                        if bw2 not in truncations_new_possibilties[position+"_end"]:
+                            truncations_new_possibilties[position+"_end"].append(bw2)
+                            truncations_new_possibilties[position+"_end"] = sorted(truncations_new_possibilties[position+"_end"])
+
+                if fusions:
+                    if track_fusions[p_class_name][entry_name_pdb] == {'found':[],'for_print':[], '3_4_length':[], '5_6_length':[], '3_4_deleted':[], '5_6_deleted':[]}:
+                        if fusion_position=='nterm' or fusions[0][3].startswith('N-term'):
+                            from_tm1 = tm1_start[entry_name]-1
+                            # print(entry_name_pdb,'Seems to be without truncated N-term, fixme',tm1_start[entry_name])
+                            position = 'nterm_fusion'
+                            if from_tm1 not in truncations_new_possibilties[position]:
+                                truncations_new_possibilties[position].append(from_tm1)
+                                truncations_new_possibilties[position] = sorted(truncations_new_possibilties[position])
+                            if from_tm1 not in track_fusions[p_class_name][entry_name_pdb]['found']:
+                                track_fusions[p_class_name][entry_name_pdb]['found'].append(from_tm1)
+                            if from_tm1 not in track_fusions2[fusion_name]['found']:
+                                track_fusions2[fusion_name]['found'].append(from_tm1)
+                        elif not fusions[0][3].startswith('C-term'):
+                            # print(entry_name_pdb,'NOT FOUND CUT??',fusion_position,fusions)
+                            deletion.start = fusions[0][4] #the next one is "cut"
+                            deletion.end = fusions[0][4]+1 #the 'prev' is cut
+
+                            if deletion.start > x50s[entry_name]['5x50'] and deletion.start < x50s[entry_name]['6x50']:
+                                # if fusion_icl3:
+                                #      print(entry_name,c.name,deletion.start,deletion.end,x50s[entry_name]['5x50'])
+                                fusion_icl3 = True
+                                bw = x50s[entry_name]['5x50']-deletion.start
+                                bw =  "5x"+str(50-x50s[entry_name]['5x50']+deletion.start+track_anamalities[entry_name]['5'][1])
+                                bw_real = "5."+str(50-x50s[entry_name]['5x50']+deletion.start)
+                                bw2 = "6x"+str(50-x50s[entry_name]['6x50']+deletion.end+track_anamalities[entry_name]['6'][0])
+                                bw2_real = "6."+str(50-x50s[entry_name]['6x50']+deletion.end)
+                                # Make 1.50x50 number
+                                # bw = bw_real+"x"+bw
+                                # bw2 = bw2_real+"x"+bw2
+                                bw_combine = bw+"-"+bw2
+                                position = 'icl3'
+                                del_length = 1+deletion.end-deletion.start
+
+                                l_5_6_length = x50s[entry_name]['6x50']-x50s[entry_name]['5x50']
+                                if fusion_position=='icl3' or fusion_position=='nterm_icl3':
+                                    position = 'icl3_fusion'
+                                    if bw not in track_fusions2[fusion_name]['found']:
+                                        track_fusions2[fusion_name]['found'].append(bw)
+                                    if bw2 not in track_fusions2[fusion_name]['found']:
+                                        track_fusions2[fusion_name]['found'].append(bw2)
+
+                                if fusion_position=='icl3' or fusion_position=='nterm_icl3':
+                                    #Track those with fusion
+                                    if bw not in track_fusions[p_class_name][entry_name_pdb]['found']:
+                                        track_fusions[p_class_name][entry_name_pdb]['found'].append(bw)
+                                    if bw2 not in track_fusions[p_class_name][entry_name_pdb]['found']:
+                                        track_fusions[p_class_name][entry_name_pdb]['found'].append(bw2)
+                                    if del_length not in track_fusions[p_class_name][entry_name_pdb]['found']:
+                                        track_fusions[p_class_name][entry_name_pdb]['5_6_deleted'].append(del_length)
+                                    if l_5_6_length not in track_fusions[p_class_name][entry_name_pdb]['found']:
+                                        track_fusions[p_class_name][entry_name_pdb]['5_6_length'].append(l_5_6_length)
+
+                                else:
+                                    print('ICL3 CUT WITHOUT FUSION',bw_combine,entry_name,c.name)
+                                    if p_class_name not in track_without_fusions:
+                                        track_without_fusions[p_class_name] = OrderedDict()
+
+                                    if entry_name_pdb not in track_without_fusions[p_class_name]:
+                                        track_without_fusions[p_class_name][entry_name_pdb] = {'found':[],'for_print':[]}
+
+                                    #Track those without fusion
+                                    if bw not in track_without_fusions[p_class_name][entry_name_pdb]['found']:
+                                        track_without_fusions[p_class_name][entry_name_pdb]['found'].append(bw)
+                                    if bw2 not in track_without_fusions[p_class_name][entry_name_pdb]['found']:
+                                        track_without_fusions[p_class_name][entry_name_pdb]['found'].append(bw2)
+
+
+                                if p_class_name not in truncations[position]:
+                                    truncations[position][p_class_name] = {}
+                                if bw_combine not in truncations[position][p_class_name]:
+                                    truncations[position][p_class_name][bw_combine] = []
+                                if entry_name_pdb not in truncations[position][p_class_name][bw_combine]:
+                                    truncations[position][p_class_name][bw_combine].append(entry_name_pdb)
+
+
+                                if position+"_start" not in truncations_new_possibilties:
+                                    truncations_new_possibilties[position+"_start"] = []
+                                if position+"_end" not in truncations_new_possibilties:
+                                    truncations_new_possibilties[position+"_end"] = []
+                                if bw not in truncations_new_possibilties[position+"_start"]:
+                                    truncations_new_possibilties[position+"_start"].append(bw)
+                                    truncations_new_possibilties[position+"_start"] = sorted(truncations_new_possibilties[position+"_start"])
+                                if bw2 not in truncations_new_possibilties[position+"_end"]:
+                                    truncations_new_possibilties[position+"_end"].append(bw2)
+                                    truncations_new_possibilties[position+"_end"] = sorted(truncations_new_possibilties[position+"_end"])
+
+
+
+                            if deletion.start > x50s[entry_name]['3x50'] and deletion.start < x50s[entry_name]['4x50']:
+                                # if fusion_icl3:
+                                #      print(entry_name,c.name,deletion.start,deletion.end,x50s[entry_name]['5x50'])
+                                fusion_icl3 = True
+                                bw = x50s[entry_name]['5x50']-deletion.start
+                                bw = "3x"+str(50-x50s[entry_name]['3x50']+deletion.start+track_anamalities[entry_name]['3'][1])
+                                bw_real = "3."+str(50-x50s[entry_name]['3x50']+deletion.start)
+                                bw2 = "4x"+str(50-x50s[entry_name]['4x50']+deletion.end+track_anamalities[entry_name]['4'][0])
+                                bw2_real = "4."+str(50-x50s[entry_name]['4x50']+deletion.end)
+                                # Make 1.50x50 number
+                                # bw = bw_real+"x"+bw
+                                # bw2 = bw2_real+"x"+bw2
+                                bw_combine = bw+"-"+bw2
+                                position = 'icl2'
+                                del_length = deletion.end-deletion.start-1
+                                l_3_4_length = x50s[entry_name]['4x50']-x50s[entry_name]['3x50']
+                                if fusion_position=='icl3':
+                                    position = 'icl2_fusion'
+                                    if bw not in track_fusions2[fusion_name]['found']:
+                                        track_fusions2[fusion_name]['found'].append(bw)
+                                    if bw2 not in track_fusions2[fusion_name]['found']:
+                                        track_fusions2[fusion_name]['found'].append(bw2)
+
+
+                                if bw not in track_fusions[p_class_name][entry_name_pdb]['found']:
+                                        track_fusions[p_class_name][entry_name_pdb]['found'].append(bw)
+                                if bw2 not in track_fusions[p_class_name][entry_name_pdb]['found']:
+                                        track_fusions[p_class_name][entry_name_pdb]['found'].append(bw2)
+                                if del_length not in track_fusions[p_class_name][entry_name_pdb]['found']:
+                                    track_fusions[p_class_name][entry_name_pdb]['3_4_deleted'].append(del_length)
+                                if l_3_4_length not in track_fusions[p_class_name][entry_name_pdb]['found']:
+                                    track_fusions[p_class_name][entry_name_pdb]['3_4_length'].append(l_3_4_length)
+
+                                if p_class_name not in truncations[position]:
+                                    truncations[position][p_class_name] = {}
+                                if bw_combine not in truncations[position][p_class_name]:
+                                    truncations[position][p_class_name][bw_combine] = []
+                                if entry_name_pdb not in truncations[position][p_class_name][bw_combine]:
+                                    truncations[position][p_class_name][bw_combine].append(entry_name_pdb)
+
+                                if position+"_start" not in truncations_new_possibilties:
+                                    truncations_new_possibilties[position+"_start"] = []
+                                if position+"_end" not in truncations_new_possibilties:
+                                    truncations_new_possibilties[position+"_end"] = []
+                                if bw not in truncations_new_possibilties[position+"_start"]:
+                                    truncations_new_possibilties[position+"_start"].append(bw)
+                                    truncations_new_possibilties[position+"_start"] = sorted(truncations_new_possibilties[position+"_start"])
+                                if bw2 not in truncations_new_possibilties[position+"_end"]:
+                                    truncations_new_possibilties[position+"_end"].append(bw2)
+                                    truncations_new_possibilties[position+"_end"] = sorted(truncations_new_possibilties[position+"_end"])
+                        else:
+                            print(entry_name_pdb," is CTERM FUSION")
+
+
+                position = 'nterm'
+                if fusion_position=='nterm' or fusion_position=='nterm_icl3':
+                    position = 'nterm_fusion'
+                if p_class_name not in truncations_new[position]:
+                    truncations_new[position][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
+
+                # if entry_name=='aa2ar_human':
+                #     print(found_nterm,entry_name,position,p_class_name)
+
+                from_tm1 = tm1_start[entry_name]-1
+                if not found_nterm:
+                    if position not in truncations_new_sum:
+                        truncations_new_sum[position] = {}
+                    if p_class_name not in truncations_new_sum[position]:
+                        truncations_new_sum[position][p_class_name] = {}
+                    if from_tm1 not in truncations_new_sum[position][p_class_name]:
+                            truncations_new_sum[position][p_class_name][from_tm1] = 0
+                    #if full receptor in xtal
+                    if entry_name_pdb not in truncations_new[position][p_class_name]['receptors']:
+                        truncations_new[position][p_class_name]['receptors'][entry_name_pdb] = [[],[from_tm1],[from_tm1]]
+
+                        # add one for this position if it is first time receptor is mentioned
                         truncations_new_sum[position][p_class_name][from_tm1] += 1
-            # else:
-            #     #if full was found, fill in the max
-            #     #print(entry_name,found_nterm)
-            #     if from_tm1 not in truncations_new[position][p_class_name]['receptors'][entry_name][1]:
-            #         truncations_new[position][p_class_name]['receptors'][entry_name][2].append(from_tm1)
+                    else:
+                        if from_tm1 not in truncations_new[position][p_class_name]['receptors'][entry_name_pdb][1]:
+                            truncations_new[position][p_class_name]['receptors'][entry_name_pdb][1].append(from_tm1)
+                            truncations_new_sum[position][p_class_name][from_tm1] += 1
+                # else:
+                #     #if full was found, fill in the max
+                #     #print(entry_name,found_nterm)
+                #     if from_tm1 not in truncations_new[position][p_class_name]['receptors'][entry_name][1]:
+                #         truncations_new[position][p_class_name]['receptors'][entry_name][2].append(from_tm1)
 
-            if position!='nterm_fusion' and from_tm1 not in truncations_new_possibilties[position]:
-                truncations_new_possibilties[position].append(from_tm1)
-                truncations_new_possibilties[position] = sorted(truncations_new_possibilties[position])
+                if position!='nterm_fusion' and from_tm1 not in truncations_new_possibilties[position]:
+                    truncations_new_possibilties[position].append(from_tm1)
+                    truncations_new_possibilties[position] = sorted(truncations_new_possibilties[position])
 
-            position = 'cterm'
-            if p_class_name not in truncations_new[position]:
-                truncations_new[position][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
-            if position not in truncations_new_possibilties:
-                truncations_new_possibilties[position] = []
+                position = 'cterm'
+                if p_class_name not in truncations_new[position]:
+                    truncations_new[position][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
+                if position not in truncations_new_possibilties:
+                    truncations_new_possibilties[position] = []
 
 
-            from_h8 = cterm_end[entry_name] - cterm_start[entry_name]+1
-            if not found_cterm:
-                if position not in truncations_new_sum:
-                    truncations_new_sum[position] = {}
-                if p_class_name not in truncations_new_sum[position]:
-                    truncations_new_sum[position][p_class_name] = {}
-                if from_h8 not in truncations_new_sum[position][p_class_name]:
-                        truncations_new_sum[position][p_class_name][from_h8] = 0
-                if entry_name_pdb not in truncations_new[position][p_class_name]['receptors']:
-                    truncations_new[position][p_class_name]['receptors'][entry_name_pdb] = [[],[from_h8],[from_h8]]
-                    # add one for this position if it is first time receptor is mentioned
-                    truncations_new_sum[position][p_class_name][from_h8] += 1
-                else:
-                    if from_h8 not in truncations_new[position][p_class_name]['receptors'][entry_name_pdb][1]:
-                        truncations_new[position][p_class_name]['receptors'][entry_name_pdb][1].append(from_h8)
+                from_h8 = cterm_end[entry_name] - cterm_start[entry_name]+1
+                if not found_cterm:
+                    if position not in truncations_new_sum:
+                        truncations_new_sum[position] = {}
+                    if p_class_name not in truncations_new_sum[position]:
+                        truncations_new_sum[position][p_class_name] = {}
+                    if from_h8 not in truncations_new_sum[position][p_class_name]:
+                            truncations_new_sum[position][p_class_name][from_h8] = 0
+                    if entry_name_pdb not in truncations_new[position][p_class_name]['receptors']:
+                        truncations_new[position][p_class_name]['receptors'][entry_name_pdb] = [[],[from_h8],[from_h8]]
+                        # add one for this position if it is first time receptor is mentioned
                         truncations_new_sum[position][p_class_name][from_h8] += 1
-            # else:
-            #     if from_h8 not in truncations_new[position][p_class_name]['receptors'][entry_name][1]:
-            #         truncations_new[position][p_class_name]['receptors'][entry_name][1].append(from_h8)
+                    else:
+                        if from_h8 not in truncations_new[position][p_class_name]['receptors'][entry_name_pdb][1]:
+                            truncations_new[position][p_class_name]['receptors'][entry_name_pdb][1].append(from_h8)
+                            truncations_new_sum[position][p_class_name][from_h8] += 1
+                # else:
+                #     if from_h8 not in truncations_new[position][p_class_name]['receptors'][entry_name][1]:
+                #         truncations_new[position][p_class_name]['receptors'][entry_name][1].append(from_h8)
 
-            if from_h8 not in truncations_new_possibilties[position]:
-                truncations_new_possibilties[position].append(from_h8)
-            truncations_new_possibilties[position] = sorted(truncations_new_possibilties[position])
-
+                if from_h8 not in truncations_new_possibilties[position]:
+                    truncations_new_possibilties[position].append(from_h8)
+                truncations_new_possibilties[position] = sorted(truncations_new_possibilties[position])
+            except:
+                print("ERROR WITH CONSTRUCT",c.crystal.pdb_code)
 
         #print(truncations_new)
         max_pos_range = {}
@@ -952,11 +960,15 @@ class ConstructStatistics(TemplateView):
         for pos, p_vals in truncations_new_sum.items():
             for pclass, c_vals in p_vals.items():
                 new_list = OrderedDict()
-                for position in truncations_new_possibilties[pos]:
-                    if position in c_vals:
-                        new_list[position] = c_vals[position]
-                    else:
-                        new_list[position] = ''
+                try:
+                    for position in truncations_new_possibilties[pos]:
+                        if position in c_vals:
+                            new_list[position] = c_vals[position]
+                        else:
+                            new_list[position] = ''
+                except:
+                    skip_this_one = 1
+
                 # print(pclass,c_vals,new_list)
                 if pos!='cterm':
                     truncations_new_sum[pos][pclass] = OrderedDict(reversed(list(new_list.items())))
@@ -1247,9 +1259,11 @@ class ConstructTable(TemplateView):
 
             if c =='001':
                 residue_set_name = 'Class A binding pocket'
+            elif c=='002':
+                residue_set_name = 'Class B1 binding pocket'
             elif c=='004':
                 residue_set_name = 'Class C binding pocket'
-            elif c=='005':
+            elif c=='006':
                 residue_set_name = 'Class F binding pocket'
             else:
                 residue_set_name = ''
@@ -1491,7 +1505,7 @@ def stabilisation_browser(request):
     ''' View to display and summarise mutation data for thermostabilising mutational constructs. '''
 
 
-    gpcr_class = ['001','002','003','004','005','006','007']
+    gpcr_class = ['001','002','003','004','005','006','007', '008']
     class_interactions_list = {}
     for c in gpcr_class:
         class_interactions = ResidueFragmentInteraction.objects.filter(
@@ -1513,6 +1527,8 @@ def stabilisation_browser(request):
 
         class_interactions_list[c]=generic
 
+
+    # TOFIX: change code to perform query and dynamically generate these lists
     arrestin_data = {'001':
         {"12.49x49": {"001_009_001_001"},
         "2.37x37": {"001_009_001_001"},
@@ -2180,8 +2196,8 @@ def fetch_pdb(request, slug):
         protein = Protein.objects.filter(entry_name=slug.lower()).get()
     except:
         protein = False
-    
-    d = fetch_pdb_info(slug,protein)
+
+    d = fetch_pdb_info(slug,protein, ignore_gasper_annotation=True)
 
 
     #delete before adding new
@@ -2218,13 +2234,14 @@ class ConstructBrowser(TemplateView):
 
         context = super(ConstructBrowser, self).get_context_data(**kwargs)
         try:
-            cons = Construct.objects.all().prefetch_related(
-                "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type", "modifications", "deletions", "crystallization__chemical_lists",
+            cons = Construct.objects.defer('schematics','snakecache').all().prefetch_related(
+                "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type",
+                "modifications", "deletions", "crystallization__chemical_lists",
                 "protein__species","structure__pdb_code","structure__publication__web_link", "contributor")
 
             context['constructs'] = []
             for c in cons:
-                #c.schematics = c.schematic()
+                # c.schematics = c.schematic()
                 c.wt_schematic = c.wt_schematic()
                 c.cons_schematic = c.cons_schematic()
                 context['constructs'].append(c)
@@ -2245,12 +2262,13 @@ class ExperimentBrowser(TemplateView):
 
         context = super(ExperimentBrowser , self).get_context_data(**kwargs)
         try:
-            cons = Construct.objects.all().prefetch_related(
+            cons = Construct.objects.defer('schematics','snakecache').all().prefetch_related(
                 "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type","expression","solubilization", "modifications", "deletions",
                 "crystallization__crystal_method", "crystallization__crystal_type",
                 "crystallization__chemical_lists", "crystallization__chemical_lists__chemicals__chemical__chemical_type",
-                "protein__species","structure__pdb_code","structure__publication__web_link", "contributor").annotate(pur_count = Count('purification__steps')).annotate(sub_count = Count('solubilization__chemical_list__chemicals'))
-
+                "protein__species","structure__pdb_code","structure__publication__web_link", "contributor",
+                Prefetch("structure__ligands", queryset=StructureLigandInteraction.objects.filter(
+                annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role','ligand__properities__web_links__web_resource'))).annotate(pur_count = Count('purification__steps')).annotate(sub_count = Count('solubilization__chemical_list__chemicals'))
             #context['constructs'] = cache.get('construct_browser')
             #if context['constructs']==None:
             context['constructs'] = []

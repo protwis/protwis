@@ -32,6 +32,9 @@ import csv
 import numpy
 import zipfile
 import pprint
+import json
+import yaml
+from urllib.request import urlopen, Request
 
 
 logger = logging.getLogger("protwis")
@@ -554,7 +557,7 @@ class HSExposureCB(AbstractPropertyMap):
     subclasses.
     """
     def __init__(self, model, radius, offset=0, hse_up_key='HSE_U', hse_down_key='HSE_D', angle_key=None, check_chain_breaks=False, 
-                 check_knots=False, receptor=None, signprot=None):
+                 check_knots=False, receptor=None, signprot=None,  restrict_to_chain=[], check_hetatoms=False):
         """
         @param model: model
         @type model: L{Model}
@@ -600,6 +603,11 @@ class HSExposureCB(AbstractPropertyMap):
                         #         residues_in_pdb.append(chain.get_id()[1])
                         #         print('chain', chain, res)
                         #         break
+        het_resis, het_resis_close, het_resis_clash = [], [], []
+        for chain in model:
+            for res in chain:
+                if res.get_id()[0]!=' ':
+                    het_resis.append(res)
         self.clash_pairs = []
         self.chain_breaks = []
         
@@ -607,7 +615,13 @@ class HSExposureCB(AbstractPropertyMap):
             possible_knots = PossibleKnots(receptor, signprot)
             knot_resis = possible_knots.get_resnums()
             self.remodel_resis = {}
-
+        if len(restrict_to_chain)>0:
+            restricted_ppl = []
+            for p in ppl:
+                if p[0].get_parent().get_id() in restrict_to_chain:
+                    restricted_ppl.append(p)
+            ppl = restricted_ppl
+        ###########
         for pp1 in ppl:
             for i in range(0, len(pp1)):
                 residues_with_proper_CA.append(pp1[i].get_id()[1])
@@ -678,10 +692,10 @@ class HSExposureCB(AbstractPropertyMap):
                 if check_knots:
                     for knot in knot_resis:
                         if knot[0][1]==pp1[i].get_id()[1] and knot[0][0]==pp1[i].get_parent().get_id():
-                            print(pp1[i].get_parent().get_id(),pp1[i])
+                            # print(pp1[i].get_parent().get_id(),pp1[i]) #print reference
                             for r in residue_up:
                                 if r.get_parent().get_id()==knot[1][0] and r.get_id()[1] in knot[1][1]:
-                                    print('close: ', r.get_parent().get_id(),r)
+                                    # print('close: ', r.get_parent().get_id(),r) #print res within radius
                                     resi_range = [knot[1][1][0], knot[1][1][-1]]
                                     if knot[1][0] not in self.remodel_resis:
                                         self.remodel_resis[knot[1][0]] = [resi_range]
@@ -725,7 +739,18 @@ class HSExposureCB(AbstractPropertyMap):
                                     else:
                                         clash_res2 = other_res['CA'].get_bfactor()
                                     self.clash_pairs.append([(clash_res1, pp1[i].get_id()[1]), (clash_res2, other_res.get_id()[1])])
-        if check_chain_breaks==True:
+                    if check_hetatoms:
+                        for het_res in het_resis:
+                            for het_atom in het_res:
+                                het_atom_vector = het_atom.get_vector()
+                                d = het_atom_vector-ref_vector
+                                if d.norm()<6:
+                                    if d.norm()<1:
+                                        het_resis_clash.append(het_res)
+                                    het_resis_close.append(het_res)
+        ### GP checking HETRESIS to remove if not interacting with AAs
+        self.hetresis_to_remove = [i for i in het_resis if i not in het_resis_close or i in het_resis_clash]
+        if check_chain_breaks:
             for r in residues_in_pdb:
                 if r not in residues_with_proper_CA:
                     self.chain_breaks.append(r)
@@ -779,7 +804,7 @@ class PossibleKnots():
         self.receptor = Protein.objects.get(entry_name=receptor)
         self.signprot = Protein.objects.get(entry_name=signprot)
         self.possible_knots = {'ICL3-H4':[['R','A'],['G.H4.11','G.H4.14','G.H4.15','G.h4s6.01']],
-                               'h1ha-hehf':[['A','A'],['H.HF.03']]}
+                               'h1ha-hehf':[['A','A'],['H.HE.08', 'H.hdhe.05']]}
         self.output = []
 
     def get_resnums(self):
@@ -797,7 +822,6 @@ class PossibleKnots():
                 for r in values[1]:
                     region2 = Residue.objects.get(protein_conformation__protein=self.signprot, display_generic_number__label=r)
                     self.output.append([[chain2,region2.sequence_number],[chain1,region1]])
-        print(self.output)
         return self.output
 
 
@@ -859,9 +883,7 @@ class PdbChainSelector():
 
         max_res = num_helix_res[0]
         max_i = 0
-        print(self.chains[0], num_helix_res[0], seq_lengths[0])
         for i in range(1,len(num_helix_res)):
-            print(self.chains[i], num_helix_res[i], seq_lengths[i])
             if num_helix_res[i]>max_res:
                 if num_helix_res[i]-max_res>=seq_lengths[max_i]-seq_lengths[i]:
                     max_res = num_helix_res[i]
@@ -907,7 +929,7 @@ class PdbStateIdentifier():
         if tm2_gn=='2x41' and tm6_gn=='6x38' and tm3_gn=='3x44' and tm7_gn=='7x52' and inactive_cutoff==2 and intermediate_cutoff==7.15:
             if family.slug.startswith('002') or family.slug.startswith('003'):
                 tm6_gn, tm7_gn = '6x33', '7x51'
-                inactive_cutoff, intermediate_cutoff = 2.5, 6
+                inactive_cutoff, intermediate_cutoff = 2.5, 5.5
             elif family.slug.startswith('004'):
                 inactive_cutoff, intermediate_cutoff = 5, 7.15
         self.tm2_gn, self.tm6_gn, self.tm3_gn, self.tm7_gn = tm2_gn, tm6_gn, tm3_gn, tm7_gn
@@ -920,6 +942,8 @@ class PdbStateIdentifier():
     def run(self):
         if self.structure_type=='structure':
             self.parent_prot_conf = ProteinConformation.objects.get(protein=self.structure.protein_conformation.protein.parent)
+            ssno = StructureSeqNumOverwrite(self.structure)
+            ssno.seq_num_overwrite('pdb')
         elif self.structure_type=='refined':
             self.parent_prot_conf = ProteinConformation.objects.get(protein=self.structure.protein_conformation.protein)
         elif self.structure_type=='hommod':
@@ -927,7 +951,7 @@ class PdbStateIdentifier():
         elif self.structure_type=='complex':
             self.parent_prot_conf = ProteinConformation.objects.get(protein=self.structure.receptor_protein)
         # class A and T
-        if self.parent_prot_conf.protein.family.slug.startswith('001') or self.parent_prot_conf.protein.family.slug.startswith('006'):
+        if self.parent_prot_conf.protein.family.slug.startswith('001') or self.parent_prot_conf.protein.family.slug.startswith('007'):
             tm6 = self.get_residue_distance(self.tm2_gn, self.tm6_gn)
             tm7 = self.get_residue_distance(self.tm3_gn, self.tm7_gn)
             print(tm6, tm7, tm6-tm7)
@@ -973,8 +997,10 @@ class PdbStateIdentifier():
                     self.state = ProteinState.objects.get(slug='intermediate')
                 elif self.activation_value>self.intermediate_cutoff:
                     self.state = ProteinState.objects.get(slug='active')
+        # class D
+        #########
         # class F
-        elif self.parent_prot_conf.protein.family.slug.startswith('005'):
+        elif self.parent_prot_conf.protein.family.slug.startswith('006'):
             tm2_gn_f = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm2_gn, scheme__short_name='GPCRdb(F)').label
             tm6_gn_f = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm6_gn, scheme__short_name='GPCRdb(F)').label
             tm3_gn_f = ResidueGenericNumberEquivalent.objects.get(default_generic_number__label=self.tm3_gn, scheme__short_name='GPCRdb(F)').label
@@ -984,14 +1010,16 @@ class PdbStateIdentifier():
             tm7 = self.get_residue_distance(tm3_gn_f, tm7_gn_f)
             if tm6!=False and tm7!=False:
                 self.activation_value = tm6-tm7
-                if self.activation_value<5:
+                if self.activation_value<0:
                     self.state = ProteinState.objects.get(slug='inactive')
-                elif 5<=self.activation_value<=15:
+                elif 0<=self.activation_value<=2:
                     self.state = ProteinState.objects.get(slug='intermediate')
-                elif self.activation_value>15:
+                elif self.activation_value>2:
                     self.state = ProteinState.objects.get(slug='active')
         else:
             print('{} is not class A,B,C,F'.format(self.structure))
+        if self.structure_type=='structure':
+            ssno.seq_num_overwrite('pdb')
 
     def get_residue_distance(self, residue1, residue2):
         try:
@@ -1051,6 +1079,67 @@ class PdbStateIdentifier():
         return numpy.sqrt(numpy.sum(diff_vector * diff_vector))
 
 
+class StructureSeqNumOverwrite():
+    def __init__(self, structure):
+        self.structure = structure
+        path = os.sep.join([settings.DATA_DIR, 'structure_data','wt_pdb_lookup', '{}.json'.format(self.structure.pdb_code.index)])
+        if os.path.isfile(path):
+            with open(path, 'r') as lookup_file:
+                self.lookup = json.load(lookup_file)
+            self.wt_pdb_table, self.pdb_wt_table = OrderedDict(), OrderedDict()
+            for i in self.lookup:
+                self.wt_pdb_table[i['WT_POS']] = i['PDB_POS']
+                self.pdb_wt_table[i['PDB_POS']] = i['WT_POS']
+        else:
+            self.lookup = OrderedDict()
+            self.wt_pdb_table = OrderedDict()
+            self.pdb_wt_table = OrderedDict()
+            
+    def seq_num_overwrite(self, overwrite_target):
+        ''' Overwrites Residue object sequence numbers in GPCRDB
+            @param overwrite_target: 'pdb' if converting pdb to wt, 'wt' if the other way around 
+        '''
+        resis = Residue.objects.filter(protein_conformation=self.structure.protein_conformation)
+        if overwrite_target=='pdb':
+            target_dict = self.pdb_wt_table
+        elif overwrite_target=='wt':
+            target_dict = self.wt_pdb_table
+        for r in resis:
+            if r.sequence_number in target_dict:
+                r.sequence_number = int(target_dict[r.sequence_number])
+                r.save()
+
+
+class StructureBuildCheck():
+    def __init__(self):
+        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'xtal_segends.yaml']), 'r') as f:
+            self.annotation_data = yaml.load(f, Loader=yaml.FullLoader)
+
+    def check_rotamers(self, pdb):
+        structure = Structure.objects.get(pdb_code__index=pdb)
+        structure_residues = Residue.objects.filter(protein_conformation=structure.protein_conformation)
+        wt_residues = Residue.objects.filter(protein_conformation__protein=structure.protein_conformation.protein.parent)
+        key = structure.protein_conformation.protein.parent.entry_name+'_'+pdb
+        try:
+            annotation = self.annotation_data[key]
+        except:
+            raise Exception('Warning: {} not annotated'.format(pdb))
+        errors = []
+        for i in range(1,9):
+            if annotation[str(i)+'e']!='-':
+                anno_len = int(annotation[str(i)+'e']-annotation[str(i)+'b']+1)
+                if i==8:
+                    struct_len = len(structure_residues.filter(protein_segment__slug='H8'))
+                    wt_len = len(wt_residues.filter(protein_segment__slug='H8'))
+                else:
+                    struct_len = len(structure_residues.filter(protein_segment__slug='TM'+str(i)))
+                    wt_len = len(wt_residues.filter(protein_segment__slug='TM'+str(i)))
+                if anno_len!=struct_len:
+                    if wt_len!=struct_len:
+                        errors.append(['H'+str(i), anno_len, struct_len])
+        return errors
+
+
 def update_template_source(template_source, keys, struct, segment, just_rot=False):
     ''' Update the template_source dictionary with structure info for backbone and rotamers.
     '''
@@ -1095,4 +1184,22 @@ def right_rotamer_select(rotamer, chain=None):
     return rotamer
 
 
+def get_pdb_ids(uniprot_id):
+    pdb_list = []
+    data = { "query": { "type": "terminal", "service": "text", "parameters":{ "attribute":"rcsb_polymer_entity_container_identifiers.reference_sequence_identifiers.database_accession", "operator":"in", "value":[ uniprot_id ] } }, "request_options": { "pager": {"start": 0,"rows": 99999 }}, "return_type": "entry" }
+    url = 'http://search.rcsb.org/rcsbsearch/v1/query'
+    req = Request(url)
+    req.add_header('Content-Type', 'application/json; charset=utf-8')
+    jsondata = json.dumps(data)
+    jsondataasbytes = jsondata.encode('utf-8')
+    req.add_header('Content-Length', len(jsondataasbytes))
+    response = urlopen(req, jsondataasbytes)
+    rr = response.read()
+    if len(rr)==0:
+        return []
+    out = json.loads(rr)
+    for i in out['result_set']:
+        pdb_list.append(i['identifier'])
+    response.close()
+    return pdb_list
 

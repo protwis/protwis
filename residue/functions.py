@@ -2,7 +2,7 @@ from django.conf import settings
 from django.db.models import Q
 from django.db import IntegrityError
 
-from protein.models import ProteinAnomaly
+from protein.models import Protein, ProteinAnomaly, ProteinSegment
 from residue.models import Residue, ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent
 
 import logging
@@ -38,7 +38,7 @@ def parse_scheme_tables(path):
 def load_reference_positions(path):
     try:
         with open(path, 'r') as ref_position_file:
-            ref_positions = yaml.load(ref_position_file)
+            ref_positions = yaml.load(ref_position_file, Loader=yaml.FullLoader)
         return ref_positions
     except:
         return False
@@ -92,10 +92,16 @@ def create_or_update_residue(protein_conformation, segment, schemes,residue,b_an
             #     logger.info('Created generic number equivalent {} ({}) for scheme {}'.format(
             #         numbers['equivalent'], numbers['generic_number'],
             #         protein_conformation.protein.residue_numbering_scheme))
-        except IntegrityError:
-            gn_equivalent = ResidueGenericNumberEquivalent.objects.get(
+        except:
+            sleep(0.5)
+            print('sleep to hope to fix')
+            gn_equivalent, created = ResidueGenericNumberEquivalent.objects.get_or_create(
                 default_generic_number=rvalues['generic_number'],
-                scheme=protein_conformation.protein.residue_numbering_scheme)
+                scheme=protein_conformation.protein.residue_numbering_scheme,
+                defaults={'label': numbers['equivalent']})
+            # gn_equivalent = ResidueGenericNumberEquivalent.objects.get(
+            #     default_generic_number=rvalues['generic_number'],
+            #     scheme=protein_conformation.protein.residue_numbering_scheme)
     
     # display generic number
     if 'display_generic_number' in numbers:
@@ -152,8 +158,30 @@ def create_or_update_residue(protein_conformation, segment, schemes,residue,b_an
     return [bulk_r,bulk_add_alt]
 
 
+def get_gprotein_non_gns(consensus_prot_conf, segment, residues_to_update):
+    # Return non-GNs for longest segment in the subfamily
+    proteins = Protein.objects.filter(family__parent=consensus_prot_conf.protein.family, species__common_name='Human', accession__isnull=False)
+    s_len = 0
+    non_gns = []
+    for p in proteins:
+        resis = Residue.objects.filter(protein_segment=segment, protein_conformation__protein=p)
+        if len(resis)>s_len:
+            s_len = len(resis)
+            non_gns = [r.display_generic_number for r in resis]
+    # In case of multiple with same length but different numbers, get all numbers (e.g. Gi/o hbhc)
+    if len(residues_to_update)!=len(non_gns):
+        new_non_gns = []
+        resis = Residue.objects.filter(protein_segment=segment, protein_conformation__protein__species__common_name='Human', 
+                                       protein_conformation__protein__accession__isnull=False, protein_conformation__protein__family__parent=consensus_prot_conf.protein.family)
+        for r in resis:
+            if r.display_generic_number not in new_non_gns:
+                new_non_gns.append(r.display_generic_number)
+        non_gns = sorted(new_non_gns, key=lambda x:x.label)
+    return non_gns
+
+
 def create_or_update_residues_in_segment(protein_conformation, segment, start, aligned_start, end, aligned_end,
-    schemes, ref_positions, protein_anomalies, disregard_db_residues):
+    schemes, ref_positions, protein_anomalies, disregard_db_residues, signprot=False):
     logger = logging.getLogger('build')
     rns_defaults = {'protein_segment': segment} # default numbering scheme for creating generic numbers
 
@@ -181,6 +209,8 @@ def create_or_update_residues_in_segment(protein_conformation, segment, start, a
     ns = settings.DEFAULT_NUMBERING_SCHEME
     ns_obj = ResidueNumberingScheme.objects.get(slug=ns)
     
+    if signprot:
+        non_gns = get_gprotein_non_gns(protein_conformation, segment, residues_to_update)
     created_residues = 0
     for res_num, residue in enumerate(residues_to_update, start=1):
         sequence_number = residue[0]
@@ -255,7 +285,11 @@ def create_or_update_residues_in_segment(protein_conformation, segment, start, a
                         gn = ResidueGenericNumber.objects.get(
                             scheme=protein_conformation.protein.residue_numbering_scheme, label=gnl)
                     rvalues['display_generic_number'] = schemes[ns]['generic_numbers'][gnl] = gn
-            
+        elif segment.slug in ProteinSegment.objects.filter(proteinfamily=signprot).values_list('slug', flat=True):
+            # if protein_conformation.protein.entry_name!='alpha-consensus':
+            rvalues['display_generic_number'] = non_gns[res_num-1]
+            rvalues['generic_number'] = non_gns[res_num-1]
+
         # UPDATE or CREATE the residue
         r, created = Residue.objects.update_or_create(protein_conformation=protein_conformation,
             sequence_number=sequence_number, defaults = rvalues)

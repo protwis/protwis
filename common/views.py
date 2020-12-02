@@ -1,26 +1,35 @@
-﻿from django.http import HttpResponse
+from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.generic import TemplateView
+from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-from django.db.models import Case, When
+from django.db.models import Case, When, Min
 from django.core.cache import cache
 
-from common.selection import SimpleSelection, Selection, SelectionItem
 from common import definitions
+Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
+
+from common.selection import SimpleSelection, Selection, SelectionItem
 from structure.models import Structure, StructureModel, StructureComplexModel
 from protein.models import Protein, ProteinFamily, ProteinSegment, Species, ProteinSource, ProteinSet, ProteinGProtein, ProteinGProteinPair
-from residue.models import ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent, ResiduePositionSet
+from residue.models import ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent, ResiduePositionSet, Residue
 from interaction.forms import PDBform
 from construct.tool import FileUploadForm
 
+from svglib.svglib import SvgRenderer
+from reportlab.graphics import renderPDF
+from lxml import etree
 import inspect
+import html
+import re
 from collections import OrderedDict
 from io import BytesIO
 import xlsxwriter, xlrd
 import time
 import json
 
+default_schemes_excluded = ['cgn', 'ecd', 'can']
 
 class AbsTargetSelection(TemplateView):
     """An abstract class for the target selection page used in many apps. To use it in another app, create a class
@@ -41,9 +50,11 @@ class AbsTargetSelection(TemplateView):
     target_input = True
     default_species = 'Human'
     default_slug = '000'
+    default_subslug = '00'
     numbering_schemes = False
     search = True
     family_tree = True
+    filter_tableselect = False
     redirect_on_select = False
     filter_gprotein = False
     selection_heading = False
@@ -66,7 +77,7 @@ class AbsTargetSelection(TemplateView):
     try:
         if ProteinFamily.objects.filter(slug=default_slug).exists():
             ppf = ProteinFamily.objects.get(slug=default_slug)
-            pfs = ProteinFamily.objects.filter(parent=ppf.id)
+            pfs = ProteinFamily.objects.filter(parent=ppf.id).filter(slug__startswith=default_subslug)
             ps = Protein.objects.filter(family=ppf)
             psets = ProteinSet.objects.all().prefetch_related('proteins')
             tree_indent_level = []
@@ -83,7 +94,7 @@ class AbsTargetSelection(TemplateView):
     gprots = ProteinGProtein.objects.all()
 
     # numbering schemes
-    gns = ResidueNumberingScheme.objects.exclude(slug=settings.DEFAULT_NUMBERING_SCHEME).exclude(slug='cgn')
+    gns = ResidueNumberingScheme.objects.exclude(slug=settings.DEFAULT_NUMBERING_SCHEME).exclude(slug__in=default_schemes_excluded)
 
     def get_context_data(self, **kwargs):
         """get context from parent class (really only relevant for children of this class, as TemplateView does
@@ -116,7 +127,6 @@ class AbsTargetSelection(TemplateView):
         for selection_box, include in self.selection_boxes.items():
             if include:
                 context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
-
         if self.filters:
             context['selection']['species'] = selection.species
             context['selection']['annotation'] = selection.annotation
@@ -129,6 +139,7 @@ class AbsTargetSelection(TemplateView):
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
         return context
+
 
 class AbsReferenceSelection(AbsTargetSelection):
     type_of_selection = 'reference'
@@ -144,6 +155,7 @@ class AbsReferenceSelection(AbsTargetSelection):
     ])
     psets = [] # protein sets not applicable for this selection
 
+
 class AbsBrowseSelection(AbsTargetSelection):
     type_of_selection = 'browse'
     step = 1
@@ -151,6 +163,7 @@ class AbsBrowseSelection(AbsTargetSelection):
     title = 'SELECT A TARGET OR FAMILY'
     description = 'Select a target or family by searching or browsing in the right column.'
     psets = [] # protein sets not applicable for this selection
+
 
 class AbsSegmentSelection(TemplateView):
     """An abstract class for the segment selection page used in many apps. To use it in another app, create a class
@@ -189,12 +202,16 @@ class AbsSegmentSelection(TemplateView):
     except Exception as e:
         pass
 
-    ss = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').prefetch_related('generic_numbers')
+    ss = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(name__startswith='Fungal').exclude(name__startswith='ECD').prefetch_related('generic_numbers')
     ss_cats = ss.values_list('category').order_by('category').distinct('category')
     action = 'expand'
 
     amino_acid_groups = definitions.AMINO_ACID_GROUPS
     amino_acid_group_names = definitions.AMINO_ACID_GROUP_NAMES
+
+    # Necessary for the site search functionality
+    amino_acid_groups_old = definitions.AMINO_ACID_GROUPS_OLD
+    amino_acid_group_names_old = definitions.AMINO_ACID_GROUP_NAMES_OLD
 
     def get_context_data(self, **kwargs):
         """get context from parent class (really only relevant for child classes of this class, as TemplateView does
@@ -218,12 +235,30 @@ class AbsSegmentSelection(TemplateView):
             if include:
                 context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
 
+        for f in selection.targets:
+            if f.type=='family':
+                family = get_gpcr_class(f.item)
+                if family.name.startswith('Class D1'):
+                    self.ss = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(name__startswith='ECD').prefetch_related('generic_numbers')
+                    self.ss_cats = self.ss.values_list('category').order_by('category').distinct('category')
+                elif family.name.startswith('Class B'):
+                    self.ss = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(name__startswith='Class D1').prefetch_related('generic_numbers')
+                    self.ss_cats = self.ss.values_list('category').order_by('category').distinct('category')
+            elif f.type=='protein':
+                if f.item.family.parent.parent.parent.name.startswith('Class D1'):
+                    self.ss = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(name__startswith='ECD').prefetch_related('generic_numbers')
+                    self.ss_cats = self.ss.values_list('category').order_by('category').distinct('category')
+                elif f.item.family.parent.parent.parent.name.startswith('Class B'):
+                    self.ss = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(name__startswith='Class D1').prefetch_related('generic_numbers')
+                    self.ss_cats = self.ss.values_list('category').order_by('category').distinct('category')
+
         # get attributes of this class and add them to the context
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
         return context
+
 
 class AbsMiscSelection(TemplateView):
     """An abstract class for selection pages of other types than target- and segmentselection"""
@@ -274,6 +309,7 @@ class AbsMiscSelection(TemplateView):
                 context[a[0]] = a[1]
         return context
 
+
 def AddToSelection(request):
     """Receives a selection request, adds the selected item to session, and returns the updated selection"""
     selection_type = request.GET['selection_type']
@@ -295,7 +331,7 @@ def AddToSelection(request):
             o.append(Protein.objects.get(pk=selection_id))
         if selection_subtype == 'protein_entry':
             o.append(Protein.objects.get(entry_name=selection_id))
-            print("Added {}".format(Protein.objects.get(entry_name=selection_id).name))
+            # print("Added {}".format(Protein.objects.get(entry_name=selection_id).name))
 
         elif selection_subtype == 'protein_set':
             selection_subtype = 'protein'
@@ -390,8 +426,8 @@ def AddToSelection(request):
     if selection_subtype == 'site_residue':
         template = 'common/selection_lists_sitesearch.html'
         amino_acid_groups = {
-            'amino_acid_groups': definitions.AMINO_ACID_GROUPS,
-            'amino_acid_group_names': definitions.AMINO_ACID_GROUP_NAMES }
+            'amino_acid_groups_old': definitions.AMINO_ACID_GROUPS_OLD,
+            'amino_acid_group_names_old': definitions.AMINO_ACID_GROUP_NAMES_OLD}
         context.update(amino_acid_groups)
     else:
         template = 'common/selection_lists.html'
@@ -434,8 +470,8 @@ def RemoveFromSelection(request):
     if selection_subtype == 'site_residue':
         template = 'common/selection_lists_sitesearch.html'
         amino_acid_groups = {
-            'amino_acid_groups': definitions.AMINO_ACID_GROUPS,
-            'amino_acid_group_names': definitions.AMINO_ACID_GROUP_NAMES }
+            'amino_acid_groups_old': definitions.AMINO_ACID_GROUPS_OLD,
+            'amino_acid_group_names_old': definitions.AMINO_ACID_GROUP_NAMES_OLD}
         context.update(amino_acid_groups)
     else:
         template = 'common/selection_lists.html'
@@ -515,7 +551,25 @@ def SelectFullSequence(request):
         segments = ProteinSegment.objects.filter(slug__in=segmentlist['Full'], partial=False, proteinfamily=pfam).order_by(preserved)
 
     else:
-        segments = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR')
+        add_class_b, add_class_d = False, False
+        for f in selection.targets:
+            if f.type=='family':
+                family = get_gpcr_class(f.item)
+                if family.name.startswith('Class D1'):
+                    add_class_d = True
+                elif family.name.startswith('Class B1'):
+                    add_class_b = True
+            elif f.type=='protein':
+                if f.item.family.parent.parent.parent.name.startswith('Class D1'):
+                    add_class_d = True
+                elif f.item.family.parent.parent.parent.name.startswith('Class B1'):
+                    add_class_b = True
+        if add_class_d:
+            segments = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(name__startswith='ECD')
+        elif add_class_b:
+            segments = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(name__startswith='Class D1')
+        else:
+            segments = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(name__startswith='Class D1').exclude(name__startswith='ECD')
 
     for segment in segments:
         selection_object = SelectionItem(segment.category, segment)
@@ -615,20 +669,40 @@ def SelectAlignableResidues(request):
     # find the relevant numbering scheme (based on target selection)
 
     cgn = False
+    seg_ids_all = []
+    numbering_schemes = []
     if numbering_scheme_slug == 'cgn':
         cgn = True
     elif numbering_scheme_slug == 'false':
         if simple_selection.reference:
-            first_item = simple_selection.reference[0]
-        else:
-            first_item = simple_selection.targets[0]
-        if first_item.type == 'family':
-            proteins = Protein.objects.filter(family__slug__startswith=first_item.item.slug)
-            numbering_scheme = proteins[0].residue_numbering_scheme
-        elif first_item.type == 'protein':
-            numbering_scheme = first_item.item.residue_numbering_scheme
+            if simple_selection.reference[0].type == 'family':
+                proteins = Protein.objects.filter(family__slug__startswith=simple_selection.reference[0].item.slug)
+                r_prot = proteins[0]
+            elif simple_selection.reference[0].type == 'protein':
+                r_prot = simple_selection.reference[0].item
+
+            seg_ids_all = get_protein_segment_ids(r_prot, seg_ids_all)
+            if r_prot.residue_numbering_scheme not in numbering_schemes:
+                numbering_schemes.append(r_prot.residue_numbering_scheme)
+
+        if simple_selection.targets:
+            for t in simple_selection.targets:
+                if t.type == 'family':
+                    proteins = Protein.objects.filter(family__slug__startswith=t.item.slug)
+                    t_prot = proteins[0]
+                elif t.type == 'protein':
+                    t_prot = t.item
+                seg_ids_all = get_protein_segment_ids(t_prot, seg_ids_all)
+                if t_prot.residue_numbering_scheme not in numbering_schemes:
+                    numbering_schemes.append(t_prot.residue_numbering_scheme)
+        # Filter based on reference and target proteins
+        filtered_segments = []
+        for segment in segments:
+            if segment.id in seg_ids_all:
+                filtered_segments.append(segment)
+        segments = filtered_segments
     else:
-        numbering_scheme = ResidueNumberingScheme.objects.get(slug=numbering_scheme_slug)
+        numbering_schemes = [ResidueNumberingScheme.objects.get(slug=numbering_scheme_slug)]
 
     for segment in segments:
         if segment.fully_aligned:
@@ -640,7 +714,7 @@ def SelectAlignableResidues(request):
 
             if ResidueGenericNumberEquivalent.objects.filter(
             default_generic_number__protein_segment=segment,
-            scheme=numbering_scheme).exists():
+            scheme__in=numbering_schemes).exists():
                 segment.only_aligned_residues = True
                 selection_object = SelectionItem(segment.category, segment, properties={'only_aligned_residues':True})
                 selection.add(selection_type, segment.category, selection_object)
@@ -651,6 +725,13 @@ def SelectAlignableResidues(request):
     request.session['selection'] = simple_selection
 
     return render(request, 'common/selection_lists.html', selection.dict('segments'))
+
+def get_protein_segment_ids(protein, seg_ids_all):
+    seg_ids = Residue.objects.filter(protein_conformation__protein=protein).order_by('protein_segment__id').distinct('protein_segment__id').values_list('protein_segment', flat=True)
+    for s in seg_ids:
+        if s not in seg_ids_all:
+            seg_ids_all.append(s)
+    return seg_ids_all
 
 def ToggleFamilyTreeNode(request):
     """Opens/closes a node in the family selection tree"""
@@ -703,6 +784,7 @@ def ToggleFamilyTreeNode(request):
         else:
             ps = Protein.objects.order_by('id').filter(family=ppf,
                 source__in=(protein_source_list)).order_by('source_id', 'id')
+
         if pref_g_proteins_list:
             proteins = [x.protein_id for x in ProteinGProteinPair.objects.filter(g_protein__in=g_proteins_list, transduction='primary')]
             ps = Protein.objects.order_by('id').filter(pk__in=proteins).filter(pk__in=ps)
@@ -710,6 +792,9 @@ def ToggleFamilyTreeNode(request):
         if g_proteins_list:
             proteins = [x.protein_id for x in ProteinGProteinPair.objects.filter(g_protein__in=g_proteins_list)]
             ps = Protein.objects.order_by('id').filter(pk__in=proteins).filter(pk__in=ps)
+
+        # Excluding G protein Alpha subunit protein structure objects, e.g. 3sn6_a
+        ps = ps.exclude(accession__isnull=True, family__parent__parent__name='Alpha')
 
         action = 'collapse'
     else:
@@ -892,7 +977,7 @@ def SelectionGproteinToggle(request):
 
     all_gprots = ProteinGProtein.objects.all()
     gprots = ProteinGProtein.objects.filter(pk=g_protein_id)
-    print("'{}'".format(ProteinGProtein.objects.get(pk=g_protein_id).name))
+    # print("'{}'".format(ProteinGProtein.objects.get(pk=g_protein_id).name))
 
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
@@ -981,7 +1066,6 @@ def ExpandSegment(request):
         context['scheme'] = numbering_scheme
         context['schemes'] = ResidueNumberingScheme.objects.filter(parent__isnull=False)
         context['segment_id'] = segment_id
-        print(context['scheme'], context['schemes'])
 
     return render(request, 'common/segment_generic_numbers.html', context)
 
@@ -997,10 +1081,9 @@ def SelectionSchemesPredefined(request):
     if simple_selection:
         selection.importer(simple_selection)
 
-    all_gns = ResidueNumberingScheme.objects.exclude(slug=settings.DEFAULT_NUMBERING_SCHEME).exclude(slug='cgn')
+    all_gns = ResidueNumberingScheme.objects.exclude(slug=settings.DEFAULT_NUMBERING_SCHEME).exclude(slug__in=default_schemes_excluded)
     gns = False
     if numbering_schemes == 'All':
-        print(len(selection.numbering_schemes), all_gns.count())
         if len(selection.numbering_schemes) == all_gns.count():
             gns = []
         else:
@@ -1029,7 +1112,7 @@ def SelectionSchemesPredefined(request):
 def SelectionSchemesToggle(request):
     """Updates the selected numbering schemes arbitrary selections"""
     numbering_scheme_id = request.GET['numbering_scheme_id']
-    gns = ResidueNumberingScheme.objects.filter(pk=numbering_scheme_id).exclude(slug='cgn')
+    gns = ResidueNumberingScheme.objects.filter(pk=numbering_scheme_id).exclude(slug__in=default_schemes_excluded)
 
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
@@ -1054,7 +1137,7 @@ def SelectionSchemesToggle(request):
 
     # add all species objects to context (for comparison to selected species)
     context = selection.dict('numbering_schemes')
-    context['gns'] = ResidueNumberingScheme.objects.exclude(slug=settings.DEFAULT_NUMBERING_SCHEME).exclude(slug='cgn')
+    context['gns'] = ResidueNumberingScheme.objects.exclude(slug=settings.DEFAULT_NUMBERING_SCHEME).exclude(slug__in=default_schemes_excluded)
 
     return render(request, 'common/selection_filters_numbering_schemes.html', context)
 
@@ -1128,7 +1211,7 @@ def SelectResidueFeature(request):
         for obj in selection.segments:
             if int(obj.item.id) == selection_id:
                 obj.properties['feature'] = feature
-                obj.properties['amino_acids'] = ','.join(definitions.AMINO_ACID_GROUPS[feature])
+                obj.properties['amino_acids'] = ','.join(definitions.AMINO_ACID_GROUPS_OLD[feature])
                 break
 
     # export simple selection that can be serialized
@@ -1142,8 +1225,8 @@ def SelectResidueFeature(request):
 
     # amino acid groups
     amino_acid_groups = {
-        'amino_acid_groups': definitions.AMINO_ACID_GROUPS,
-        'amino_acid_group_names': definitions.AMINO_ACID_GROUP_NAMES }
+        'amino_acid_groups_old': definitions.AMINO_ACID_GROUPS_OLD,
+        'amino_acid_group_names_old': definitions.AMINO_ACID_GROUP_NAMES_OLD }
     context.update(amino_acid_groups)
 
     # template to load
@@ -1181,6 +1264,8 @@ def AddResidueGroup(request):
 
     # amino acid groups
     amino_acid_groups = {
+        'amino_acid_groups_old': definitions.AMINO_ACID_GROUPS_OLD,
+        'amino_acid_group_names_old': definitions.AMINO_ACID_GROUP_NAMES_OLD,
         'amino_acid_groups': definitions.AMINO_ACID_GROUPS,
         'amino_acid_group_names': definitions.AMINO_ACID_GROUP_NAMES }
     context.update(amino_acid_groups)
@@ -1217,6 +1302,8 @@ def SelectResidueGroup(request):
 
     # amino acid groups
     amino_acid_groups = {
+        'amino_acid_groups_old': definitions.AMINO_ACID_GROUPS_OLD,
+        'amino_acid_group_names_old': definitions.AMINO_ACID_GROUP_NAMES_OLD,
         'amino_acid_groups': definitions.AMINO_ACID_GROUPS,
         'amino_acid_group_names': definitions.AMINO_ACID_GROUP_NAMES }
     context.update(amino_acid_groups)
@@ -1259,6 +1346,8 @@ def RemoveResidueGroup(request):
 
     # amino acid groups
     amino_acid_groups = {
+        'amino_acid_groups_old': definitions.AMINO_ACID_GROUPS_OLD,
+        'amino_acid_group_names_old': definitions.AMINO_ACID_GROUP_NAMES_OLD,
         'amino_acid_groups': definitions.AMINO_ACID_GROUPS,
         'amino_acid_group_names': definitions.AMINO_ACID_GROUP_NAMES }
     context.update(amino_acid_groups)
@@ -1296,6 +1385,8 @@ def SetGroupMinMatch(request):
 
     # amino acid groups
     amino_acid_groups = {
+        'amino_acid_groups_old': definitions.AMINO_ACID_GROUPS_OLD,
+        'amino_acid_group_names_old': definitions.AMINO_ACID_GROUP_NAMES_OLD,
         'amino_acid_groups': definitions.AMINO_ACID_GROUPS,
         'amino_acid_group_names': definitions.AMINO_ACID_GROUP_NAMES }
     context.update(amino_acid_groups)
@@ -1304,6 +1395,26 @@ def SetGroupMinMatch(request):
     template = 'common/selection_lists_sitesearch.html'
 
     return render(request, template, context)
+
+def VerifyMinimumSelection(request):
+    """Receives a selection request, checks if the minimum # has been selected"""
+    selection_type = request.GET['selection_type']
+    minimum = int(request.GET['minimum'])
+
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+
+    if selection_type == "receptors":
+        # Borrow function from alignment to check receptor count
+        a = Alignment()
+        a.load_proteins_from_selection(simple_selection)
+
+        if len(a.proteins) >= minimum:
+            return HttpResponse(True)
+        else:
+            return HttpResponse(False)
+    else:
+        return HttpResponse("Not supported", 404)
 
 def ResiduesDownload(request):
 
@@ -1383,7 +1494,7 @@ def ResiduesUpload(request):
 
 @csrf_exempt
 def ReadTargetInput(request):
-    """Receives the data from the input form nd adds the listed targets to the selection"""
+    """Receives the data from the input form and adds the listed targets to the selection"""
 
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
@@ -1405,7 +1516,10 @@ def ReadTargetInput(request):
         try:
             o.append(Protein.objects.get(entry_name=up_name.strip().lower()))
         except:
-            continue
+            try:
+                o.append(Protein.objects.get(accession=up_name.strip().upper()))
+            except:
+                continue
 
     for obj in o:
         # add the selected item to the selection
@@ -1619,7 +1733,7 @@ def ExportExcelDownload(request, ts, entry_name):
 
 @csrf_exempt
 def ImportExcel(request, **response_kwargs):
-    """Recieves excel, outputs json"""
+    """Receives excel, outputs json"""
     o = []
     if request.method == 'POST':
         form = FileUploadForm(data=request.POST, files=request.FILES)
@@ -1656,3 +1770,178 @@ def ImportExcel(request, **response_kwargs):
     jsondata = json.dumps(o)
     response_kwargs['content_type'] = 'application/json'
     return HttpResponse(jsondata, **response_kwargs)
+
+@csrf_exempt
+def ConvertSVG(request, **response_kwargs):
+    """Receives SVG, outputs PDF"""
+
+    pdf_content = ""
+    filename = "converted.pdf"
+    if request.method == 'POST':
+        # Obtain the POST data
+        filename = request.POST.get('filename')
+        svg_content = request.POST.get('dataUrl')
+
+        # unescape the SVG string
+        svg_content = html.unescape(svg_content)
+
+        ## Removing inline tspans as super/subscript breaks the layout
+        clean = re.compile('</?tspan.*?>')
+        svg_content = re.sub(clean, '', svg_content)
+
+        # Build XML tree
+        svg = etree.fromstring(svg_content)
+
+        # Render in PDF
+        renderer = SvgRenderer("")
+        drawing = renderer.render(svg)
+        pdf_content = renderPDF.drawToString(drawing)
+
+    response = HttpResponse(content_type="application/pdf")
+    response['Content-Disposition'] = 'attachment; filename="' + filename + '"'
+    response.write(pdf_content)
+    return response
+
+def get_gpcr_class(item):
+    while item.parent.parent!=None:
+        item = item.parent
+    return item
+
+@csrf_exempt
+@cache_page(60*60*24*7)
+def TargetTableData(request):
+    """
+    Creates a table for selection of targets. The goal is to to offer an alternative to the togglefamilytreenode
+    alternative already present in the selection logic.
+    Here we do server-side rendering of the table. This is a common trick to optimize response to client.
+    See the following relevant video from google chrome.
+    <https://youtu.be/ff4fgQxPaO0>
+    """
+    proteins = Protein.objects.filter(sequence_type__slug='wt',
+                                      family__slug__startswith='00',
+                                      species__common_name='Human').prefetch_related(
+        'family',
+        'family__parent__parent__parent'
+    )
+
+    pdbids = list(Structure.objects.filter(refined=False).values_list('pdb_code__index', 'protein_conformation__protein__family_id'))
+
+    allpdbs = {}
+    for pdb in pdbids:
+        if pdb[1] not in allpdbs:
+            allpdbs[pdb[1]] = [pdb[0]]
+        else:
+            allpdbs[pdb[1]].append(pdb[0])
+
+    drugtargets_approved = list(Protein.objects.filter(drugs__status='approved').values_list('entry_name', flat=True))
+    drugtargets_trials = list(Protein.objects.filter(drugs__status__in=['in trial'],
+                                                     drugs__clinicalstatus__in=['completed', 'not open yet',
+                                                                                'ongoing', 'recruiting',
+                                                                                'suspended']).values_list(
+        'entry_name', flat=True))
+
+    # Filter data source to Guide to Pharmacology until other coupling transduction sources are "consolidated".
+    couplings = ProteinGProteinPair.objects.filter(source="GuideToPharma").values_list('protein__entry_name',
+                                                                                       'g_protein__name',
+                                                                                       'transduction')
+
+    signaling_data = {}
+    for pairing in couplings:
+        if pairing[0] not in signaling_data:
+            signaling_data[pairing[0]] = {}
+        signaling_data[pairing[0]][pairing[1]] = pairing[2]
+
+    data_table = "<table id='uniprot_selection' border=1 class='uniprot_selection'> \
+        <thead>\
+          <tr> \
+            <th colspan=1></th> \
+            <th colspan=5>Receptor classification</th> \
+            <th colspan=1>PDB</th> \
+            <th colspan=2>Drugs</th> \
+            <th colspan=4>G protein coupling</th> \
+          </tr> \
+          <tr> \
+            <th rowspan=1 colspan=1> <input class ='form-check-input check_all' type='checkbox' onclick='check_all(this);'> </th> \
+            <th>Class</th> \
+            <th>Ligand type</th> \
+            <th>Family</th> \
+            <th>Uniprot</th> \
+            <th>IUPHAR</th> \
+            <th>PDB</th> \
+            <th>Target of and approved drug</th> \
+            <th>Target in clinical trials</th> \
+            <th>Gs</th> \
+            <th>Gi/o</th> \
+            <th>Gq/11</th> \
+            <th>G12/13</th> \
+          </tr> \
+        </thead>\
+        \n \
+        <tbody>\n"
+
+    for p in proteins:
+        uniprot_id = p.accession
+        t = {}
+        t['accession'] = p.accession
+        t['class'] = p.family.parent.parent.parent.short()
+        t['ligandtype'] = p.family.parent.parent.short()
+        t['family'] = p.family.parent
+        t['uniprot'] = p.entry_short()
+        t['iuphar'] = p.family.name.replace('receptor', '').strip()
+
+        if p.family_id in allpdbs:
+            pdb_entries = allpdbs[p.family_id]
+            pdb_entries.sort()
+            t['pdbid'] = ",".join(pdb_entries)
+            t['pdbid_two'] = ",".join(pdb_entries[:2])
+            if len(allpdbs[p.family_id]) > 2:
+                t['pdbid_two'] += "..."
+        else:
+            t['pdbid'] = t['pdbid_two'] = "-"
+
+        t['approved_target'] = "Yes" if p.entry_name in drugtargets_approved else "No"
+        t['clinical_target'] = "Yes" if p.entry_name in drugtargets_trials else "No"
+
+        gprotein_families = ["Gs family", "Gi/Go family", "Gq/G11 family", "G12/G13 family"]
+        for gprotein in gprotein_families:
+            if p.entry_name in signaling_data and gprotein in signaling_data[p.entry_name]:
+                t[gprotein] = signaling_data[p.entry_name][gprotein]
+            else:
+                t[gprotein] = "-"
+
+        data_dict = OrderedDict()
+        data_dict[uniprot_id] = t
+        data_table += "<tr> \
+        <td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' name='targets' onclick='thisTARGET(this);' id='{}'></td> \
+        <td>{}</td> \
+        <td>{}</td> \
+        <td>{}</td> \
+        <td>{}</td> \
+        <td><span>{}</span></td> \
+        <td data-search=\"{}\">{}</td> \
+        <td>{}</td> \
+        <td>{}</td> \
+        <td>{}</td> \
+        <td>{}</td> \
+        <td>{}</td> \
+        <td>{}</td> \
+        </tr> \n".format(
+            uniprot_id,
+            t['class'],
+            t['ligandtype'],
+            t['family'],
+            t['uniprot'],
+            t['iuphar'],
+            t['pdbid'],      # This one hidden used for search box.
+            t['pdbid_two'],  # This one shown. Show only first two pdb's.
+            t['approved_target'],
+            t['clinical_target'],
+            t[gprotein_families[0]],
+            t[gprotein_families[1]],
+            t[gprotein_families[2]],
+            t[gprotein_families[3]],
+        )
+
+    data_table += "</tbody></table>"
+
+    return HttpResponse(data_table)

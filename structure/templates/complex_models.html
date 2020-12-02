@@ -1,5 +1,5 @@
 {% extends "home/base.html" %}
-{% load staticfiles %}
+{% load static %}
 
 {% block addon_css %}
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
@@ -17,7 +17,7 @@
         #filters{
 
             font-size: 10px;
-            padding:  7px 15px; 
+            padding:  7px 15px;
         }
 
         @media (min-width: 1600px){
@@ -89,7 +89,7 @@
 
             // var oTable;
             var oTable = $('#constructs').DataTable({
-                scrollY:        "80vh",
+                scrollY:        "65vh",
                 scrollX:        true,
                 scrollCollapse: true,
                 paging:         false,
@@ -155,7 +155,7 @@
                         select_type_options: {
                             width: '80px',
                         }
-                    }, 
+                    },
                     {
                         column_number: 4,
                         filter_type: "multi_select",
@@ -177,7 +177,7 @@
                         select_type_options: {
                             width: '100px',
                         }
-                    }, 
+                    },
                     {
                         column_number : 6,
                         filter_type: "multi_select",
@@ -187,7 +187,7 @@
                         select_type_options: {
                             width: '100px',
                         }
-                    }, 
+                    },
                     {
                         column_number : 7,
                         filter_type: "multi_select",
@@ -281,7 +281,7 @@
                 $('.alt').parent().parent().toggleClass('alt_selected');
             });
 
-            $("#remove_sel").click(function () { 
+            $("#remove_sel").click(function () {
                 var oTable = $('#constructs').dataTable();
                 $('input:checkbox:checked').each(function () {
                     if ( $(this).is(':visible') ) {
@@ -295,7 +295,7 @@
                oTable.fnDraw();
             });
 
-            $("#remove_non_sel").click(function () { 
+            $("#remove_non_sel").click(function () {
                 var oTable = $('#constructs').dataTable();
                 $('input:checkbox:not(:checked)').each(function () {
                     if ( $(this).is(':visible') ) {
@@ -386,10 +386,10 @@
                 AddToSelection('targets', 'structure_models_many', selected_ids.join(","));
                 window.location.href = '/structure/superposition_workflow_index';
             });
-            
+
             $('#download_btn').click(function () {
                 var selected_ids = [];
-                 $.each($(".alt_selected"), function(){            
+                 $.each($(".alt_selected"), function(){
                     hom_id = $(this).closest('tr').attr('model_id');
                     selected_ids.push(hom_id);
                 });
@@ -494,7 +494,7 @@
             console.log(ids);
 
             current_align_ids = ids
-            var url = '/construct/align'; 
+            var url = '/construct/align';
             var posting = $.post( url, { ids: JSON.stringify(current_align_ids)  } );
               posting.done(function( data ) {
                 $("#align_div").html('').append(data)
@@ -517,7 +517,7 @@
         };
 
 
-    </script> 
+    </script>
 {% endblock %}
 
 {% block content %}
@@ -530,7 +530,7 @@
     <!-- <label class="btn btn-default btn-s" id="superpose_btn" href="javascript:void(0)">Superposition</label> -->
 </div>
 <br /><br />
-<!-- 
+<!--
     Show/hide columns:
 <div class="btn-group" data-toggle="buttons">
   <label class="btn btn-default btn-xs">
@@ -591,23 +591,17 @@
                     <td><span>{{ model.receptor_protein.family.parent.short|safe }}</span></td>
                     <td>{{ model.receptor_protein.family.parent.parent.parent.short }}</td>
                     <td>{{ model.receptor_protein.species.common_name }}</td>
-                    <td><a href="signprot/{{ model.sign_protein.entry_name }}">{{ model.sign_protein.name|safe }}</a></td>
+                    <td><a href="/signprot/{{ model.sign_protein.entry_name }}">{{ model.sign_protein.name|safe }}</a></td>
                     <td>{{ model.sign_protein.family.name|safe }}</td>
-                    {% if model.prot_signprot_pair %}
-                        <td>{{ model.prot_signprot_pair.transduction }}</td>
-                    {% else %}
-                        <td>no evidence</td>
-                    {% endif %}
+                    <td>{{ model.get_prot_gprot_pair }}</td>
                     <td><a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a></td>
                     <td><a href="/signprot/{{ model.main_template.signprot_complex.protein.entry_name }}">{{ model.main_template.signprot_complex.protein.name|safe }}</a></td>
                     <td><a href="{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index}}</a></td>
                     <td style="display:none;">{{ model.receptor_protein.entry_name }}</td>
-                    <td style="display:none;">{{ model.sign_protein.entry_name }}</td>          
+                    <td style="display:none;">{{ model.sign_protein.entry_name }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 {% endblock %}
-
-

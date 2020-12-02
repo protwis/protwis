@@ -1,5 +1,5 @@
 ﻿{% extends "home/base.html" %}
-{% load staticfiles %}
+{% load static %}
 {% load humanize %}
 {% block addon_css %}
 <link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
@@ -117,7 +117,7 @@
             <td><b>Class<br />(Family)</b></td>
             <td align="center"><b>Total</b></td>
             {% for data in ligands_by_class %}
-            <td align="center"><b>{% if data.name == "Taste 2" %}Taste&nbsp;2{% else %}{{ data.name }}{% endif %}</b></td>
+            <td align="center"><b>{% if data.name == "Class T (Taste 2)" %}Taste&nbsp;2{% else %}{{ data.name }}{% endif %}</b></td>
             {% endfor %}
         </tr>
     </thead>
@@ -149,12 +149,12 @@
 </table>
 
 Specific sets of ligands can be downloaded from the <a href="/ligand">ligand browser</a><br />
-Structure statistics was last updated: <strong>{{ release_notes.date|date:"Y-m-d" }}</strong><br />
+Ligand statistics were last updated: <strong>{{ release_notes.date|date:"Y-m-d" }}</strong><br />
 <br />
 <br />
 <h4>Ligand coverage of GPCR Classes</h4><br />
 
-Circle colors indicate a number of ligands: 
+Circle colors indicate a number of ligands:
 <table style="width:30%">
     <tr>
         <td ><div id="circle_100"></div></td>
@@ -298,7 +298,7 @@ Circle colors indicate a number of ligands:
             <h4>Class F<br />(Frizzled)</h4>
         </td>
         <td width="50%" align="center">
-            <h4>Taste 2</h4>
+            <h4>Class T (Taste 2)</h4>
         </td>
     </tr>
     <tr>

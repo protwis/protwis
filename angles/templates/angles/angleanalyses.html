@@ -1,0 +1,2410 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block content %}
+
+      <ul class="nav nav-tabs" id='mode_nav'>
+  			<li class="{% if not pdbs1 and not pdbs %}active{% endif %}">
+                  <a href="#single-crystal-tab" data-toggle="tab">Single structure</a>
+  			</li>
+  			<li class="{% if pdbs %}active{% endif %}">
+                  <a href="#single-crystal-group-tab" data-toggle="tab">Single set of structures</a>
+  			</li>
+  			<li class="{% if pdbs1 %}active{% endif %}">
+                  <a href="#two-crystal-groups-tab" data-toggle="tab">Two sets of structures</a>
+  			</li>
+		  </ul>
+
+      <div class="tab-content clearfix">
+
+        <!-- BEGIN SINGLE CRYSTAL TAB -->
+		    <div class="tab-pane main_option {% if not pdbs1 and not pdbs %}active{% endif %}" id="single-crystal-tab">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Structures</h3>
+                            </div>
+                            <div class="panel-body">
+                                <input class="crystal-pdb" type="hidden" value="[&quot;2RH1&quot;]">
+                                {# <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal">Select Structure</button><br><br> #}
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal-table">Select Structure</button> <span class="crystal-count">No structure selected.</span>
+                                <div class="btn btn-success pull-right go-button"><span>Go</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 hidden">
+                        <div class="panel panel-default controls-panel">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Controls</h3>
+                            </div>
+                            <div class="panel-body">
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-1">
+                    </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-7 tab-content">
+                      <div class="tab-pane active" id="single-matrix-tab">
+                           <div class="panel panel-default no-top-border">
+                              <div class="panel-heading">
+                                  <h3 class="panel-title pull-left">Residue analysis (data)</h3>
+                                  <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  <span class="pull-right glyphicon glyphicon glyphicon-download btn-download"></span>
+                                  <div class="clearfix"></div>
+                              </div>
+                              <div class="panel-body">
+                                  <div class="heatmap-container">
+                                      <table class="heatmap-table" class="display" width="100%"></table>
+                                  </div>
+                              </div>
+                           </div>
+                      </div>
+                  </div>
+
+                  <div class="col-md-5 tab-pane" id="single-NGL-tab">
+                         <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title pull-left">3D view (<a href="http://dx.doi.org/10.1093/bioinformatics/bty419" target="_blank">NGL</a>)</h3>
+                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="ngl-container" id="ngl-single" style="margin: auto; width:100%; height:800px;">
+                                </div>
+                            </div>
+                         </div>
+                  </div>
+                </div>
+
+
+            </div>
+            <!-- END SINGLE CRYSTAL TAB -->
+
+            <!-- BEGIN SINGLE CRYSTAL GROUP TAB -->
+            <div class="tab-pane main_option {% if pdbs %}active{% endif %}" id="single-crystal-group-tab">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Structures</h3>
+                            </div>
+                            <div class="panel-body">
+                                <input class="crystal-pdb" type="hidden" value="[&quot;5XRA&quot;,&quot;5WB1&quot;,&quot;5G53&quot;,&quot;3SN6&quot;,&quot;5T04&quot;,&quot;6G79&quot;,&quot;5C1M&quot;,&quot;5XSZ&quot;,&quot;4MQT&quot;,&quot;5UNG&quot;,&quot;5ZKP&quot;,&quot;5TUD&quot;,&quot;6B73&quot;,&quot;6AK3&quot;,&quot;5DYS&quot;,&quot;6D9H&quot;,&quot;4XT1&quot;,&quot;6H7N&quot;,&quot;4ZWJ&quot;]">
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-group-pdbs-modal-table">Select Structures</button>
+                                <span class="crystal-count">No</span> structure(s) selected.
+                                <div class="btn btn-success pull-right go-button"><span>Go</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 hidden">
+                        <div class="panel panel-default controls-panel">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Controls</h3>
+                            </div>
+                            <div class="panel-body">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BEGIN SINGLE CRYSTAL GROUP TAB -->
+                <div class="row">
+                  <div class="col-md-7 tab-content">
+                      <div class="tab-pane active" id="single-group-matrix-tab">
+                           <div class="panel panel-default">
+                              <div class="panel-heading">
+                                  <h3 class="panel-title pull-left">Residue analysis (data)</h3>
+                                  <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  <span class="pull-right glyphicon glyphicon glyphicon-download btn-download"></span>
+                                  <div class="clearfix"></div>
+                              </div>
+                              <div class="panel-body">
+                                  <div class="heatmap-container">
+                                      <table class="heatmap-table" class="display" width="100%"></table>
+                                  </div>
+                              </div>
+                           </div>
+                      </div>
+                    </div>
+
+                    <div class="col-md-5 tab-pane" id="single-group-NGL-tab">
+                         <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title pull-left">3D view (<a href="http://dx.doi.org/10.1093/bioinformatics/bty419" target="_blank">NGL</a>)</h3>
+                                <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="ngl-container" id="ngl-single-group" style="margin: auto; width:100%; height:800px;">
+                                </div>
+                            </div>
+                         </div>
+
+                      </div>
+                </div>
+            </div>
+            <!-- END SINGLE CRYSTAL GROUP TAB -->
+
+            <!-- BEGIN TWO CRYSTAL GROUPS TAB -->
+            <div class="tab-pane main_option {% if pdbs2 %}active{% endif %}" id="two-crystal-groups-tab">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Structures (Set 1)</h3>
+                            </div>
+                            <div class="panel-body">
+                                <input class="crystal-group-1-pdbs" type="hidden" value="[&quot;5XRA&quot;,&quot;5WB1&quot;,&quot;5G53&quot;,&quot;3SN6&quot;,&quot;5T04&quot;,&quot;6G79&quot;,&quot;5C1M&quot;,&quot;5XSZ&quot;,&quot;4MQT&quot;,&quot;5UNG&quot;,&quot;5ZKP&quot;,&quot;5TUD&quot;,&quot;6B73&quot;,&quot;6AK3&quot;,&quot;5DYS&quot;,&quot;6D9H&quot;,&quot;4XT1&quot;,&quot;6H7N&quot;,&quot;4ZWJ&quot;]">
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-1-table">Select Structures</button> <span class="crystal-count-1">No</span> structure(s) selected.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Structures (Set 2)</h3>
+                            </div>
+                            <div class="panel-body">
+                                <input class="crystal-group-2-pdbs" type="hidden" value="[&quot;4N6H&quot;,&quot;5CXV&quot;,&quot;5DSG&quot;,&quot;5TGZ&quot;,&quot;5X93&quot;,&quot;5WS3&quot;,&quot;5JQH&quot;,&quot;5X33&quot;,&quot;6BQH&quot;,&quot;5ZBH&quot;,&quot;6HLP&quot;,&quot;6CM4&quot;,&quot;6IIV&quot;,&quot;4DJH&quot;,&quot;3RZE&quot;,&quot;5DHG&quot;,&quot;5ZKC&quot;,&quot;5T1A&quot;,&quot;4U15&quot;,&quot;2Z73&quot;,&quot;5YWY&quot;,&quot;5UEN&quot;,&quot;4Z35&quot;,&quot;3ODU&quot;,&quot;5O9H&quot;,&quot;5LWE&quot;,&quot;3PBL&quot;,&quot;5VBL&quot;,&quot;5WIV&quot;,&quot;1GZM&quot;,&quot;4ZUD&quot;,&quot;4ZJ8&quot;,&quot;4BUO&quot;,&quot;4EJ4&quot;,&quot;5UIW&quot;,&quot;3V2Y&quot;,&quot;3VG9&quot;,&quot;4DKL&quot;,&quot;4AMJ&quot;]">
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-2-table">Select Structures</button> <span class="crystal-count-2">No</span> structure(s) selected.
+                                <div class="btn btn-success pull-right go-button">Go</div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 hidden">
+                        <div class="panel panel-default controls-panel">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Controls</h3>
+                            </div>
+                            <div class="panel-body">
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-offset-3 col-md-1">
+                    </div>
+                </div>
+
+                <div class="row">
+                  <div class="tab-content col-md-7 ">
+                      <div class="tab-pane active" id="two-groups-matrix-tab">
+                           <div class="panel panel-default no-top-border">
+                              <div class="panel-heading">
+                                  <h3 class="panel-title pull-left">Residue analysis (data)</h3>
+                                  <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                                  <span class="pull-right glyphicon glyphicon glyphicon-download btn-download"></span>
+                                  <div class="clearfix"></div>
+                              </div>
+                              <div class="panel-body">
+                                  <div class="heatmap-container">
+                                      <table class="heatmap-table" class="display" width="100%"></table>
+                                  </div>
+                              </div>
+                           </div>
+                      </div>
+                </div>
+
+                <div class="col-md-5 tab-pane" id="two-groups-NGL-tab">
+                     <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title pull-left">3D view (<a href="http://dx.doi.org/10.1093/bioinformatics/bty419" target="_blank">NGL</a>)</h3>
+                            <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="ngl-container" id="ngl-two-groups" style="margin: auto; width:100%; height:800px;">
+                            </div>
+                        </div>
+                     </div>
+
+                  </div>
+
+                </div>
+
+            </div>
+            <!-- END TWO CRYSTAL GROUPS TAB -->
+        </div>
+
+
+
+    <!-- BEGIN SINGLE CRYSTAL PDB CHOOSER MODAL -->
+    <div class="modal fade" id="single-crystal-pdb-modal-table" role="dialog">
+        <div class="modal-dialog modal-wide">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Select a structure</h4>
+                </div>
+                <div class="modal-body">
+                      <div class="col-md-12">
+                        <div class="tableview"></div>
+                        </div>
+                      <div class="clearfix"></div>
+               </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END SINGLE CRYSTAL PDB CHOOSER MODAL -->
+
+    <!-- BEGIN SINGLE CRYSTAL GROUP PDBS CHOOSER MODAL -->
+    <div class="modal fade" id="single-crystal-group-pdbs-modal-table" role="dialog">
+        <div class="modal-dialog modal-wide">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Select a set of structures</h4>
+                </div>
+                <div class="modal-body">
+                      <div class="col-md-12">
+                        <span id="single-crystal-group-pdbs-modal-text">0 structure(s) selected</span>
+                        <button type="button" onclick="resetselection();" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
+                        <div class="tableview"></div>
+                      </div>
+               </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END SINGLE CRYSTAL GROUP PDBS CHOOSER MODAL -->
+
+    <!-- BEGIN TWO CRYSTAL GROUP 1 PDBS CHOOSER MODAL (GROUP 1) -->
+    <div class="modal fade" id="two-crystal-group-pdbs-modal-1-table" role="dialog">
+        <div class="modal-dialog modal-wide">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Select a set of structures</h4>
+                </div>
+                <div class="modal-body">
+                        <span id="two-crystal-group-pdbs-modal-1-text">0 structure(s) selected</span>
+                        <button type="button" onclick="resetselection(this);" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
+                        <div class="tableview group-number-1" group-number="1"></div>
+               </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END TWO CRYSTAL GROUP 1 PDBS CHOOSER MODAL (GROUP 1) -->
+
+    <!-- BEGIN TWO CRYSTAL GROUP PDBS CHOOSER MODAL (GROUP 2) -->
+    <div class="modal fade" id="two-crystal-group-pdbs-modal-2-table" role="dialog">
+        <div class="modal-dialog modal-wide">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Select a set of structures</h4>
+                </div>
+                <div class="modal-body">
+                        <span id="two-crystal-group-pdbs-modal-2-text">0 structure(s) selected</span>
+                        <button type="button" onclick="resetselection(this);" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
+                        <div class="tableview group-number-2" group-number="2"></div>
+               </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END TWO CRYSTAL GROUP PDBS CHOOSER MODAL (GROUP 2) -->
+
+{% endblock %}
+{% block addon_js %}
+    <script type="text/javascript" src="{% static 'home/js/snap.svg-min.js' %}"> </script>
+    <script type="text/javascript" src="{% static 'home/js/typeahead.bundle.min.js' %}"> </script>
+
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/selection.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+    <script src="{% static 'home/js/select2.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.tablesorter.js' %}"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+
+    <!-- PDB table -->
+    <script type="text/javascript" src="{% static 'home/js/fixed_columns.js' %}"> </script>
+
+    <!-- NGL -->
+    <script type="text/javascript" src="https://cdn.rawgit.com/arose/ngl/v2.0.0-dev.32/dist/ngl.js"> </script>
+
+    <script>
+        // create NGL tooltip
+        var ngl_tooltip = document.createElement("div")
+        Object.assign(ngl_tooltip.style, {
+          display: "none",
+          position: "fixed",
+          zIndex: 10,
+          pointerEvents: "none",
+          backgroundColor: "rgba( 0, 0, 0, 0.6 )",
+          color: "lightgrey",
+          padding: "8px",
+          fontFamily: "sans-serif"
+        })
+        document.body.appendChild(ngl_tooltip)
+
+        function toggleFullScreen(fullScreenElement) {
+            if (!document.mozFullScreen && !document.webkitFullScreen) {
+                if (fullScreenElement.mozRequestFullScreen) {
+                    fullScreenElement.mozRequestFullScreen();
+                } else {
+                    fullScreenElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+                }
+            } else {
+                if (document.mozCancelFullScreen) {
+                  document.mozCancelFullScreen();
+                } else {
+                  document.webkitCancelFullScreen();
+                }
+            }
+        }
+
+        function hidePopovers() {
+            $('.popover').each(function(){
+                $(this).remove();
+            });
+        }
+
+        function getFlareGradientColor(fDiff, rgb = true) {
+            var color;
+            var shift = 80;
+            var basal = 255 - shift;
+
+            if (fDiff <= 0)
+                // If fDiff is close to -1, we want a red color
+                color = { r: basal + (fDiff * -1*shift), g: basal-basal*(-fDiff), b: basal-basal*(-fDiff) };
+            else
+                // If fDiff is close to 1 we want a blue color
+                color = { r: basal-basal*fDiff, g: basal-basal*fDiff, b: basal + (fDiff * shift)};
+
+            if (rgb)
+                return color;
+            else
+                return rgb2hex(color.r, color.g, color.b);
+        }
+
+        function getGradientColor(fDiff, rgb = true){
+          var color;
+            if (fDiff <= 0)
+                // If fDiff is close to -1, we want a red color
+                color = { r: 255, g: 255-255*(-fDiff), b: 255-255*(-fDiff) };
+            else
+                // If fDiff is close to 1 we want a blue color
+                color = { r: 255-255*fDiff, g: 255-255*fDiff, b: 255 };
+
+            if (rgb)
+                return color;
+            else
+                return rgb2hex(color.r, color.g, color.b);
+        }
+
+        function getAminoAcidOneLetterCode(threeLetterCode) {
+            switch (threeLetterCode.toUpperCase()) {
+                case 'ALA':
+                    return 'A';
+                case 'ARG':
+                    return 'R';
+                case 'ASN':
+                    return 'N';
+                case 'ASP':
+                    return 'D';
+                case 'CYS':
+                    return 'C';
+                case 'GLN':
+                    return 'Q';
+                case 'GLU':
+                    return 'E';
+                case 'GLY':
+                    return 'G';
+                case 'HIS':
+                    return 'H';
+                case 'ILE':
+                    return 'I';
+                case 'LEU':
+                    return 'L';
+                case 'LYS':
+                    return 'K';
+                case 'MET':
+                    return 'M';
+                case 'PHE':
+                    return 'F';
+                case 'PRO':
+                    return 'P';
+                case 'SER':
+                    return 'S';
+                case 'THR':
+                    return 'T';
+                case 'TRP':
+                    return 'W';
+                case 'TYR':
+                    return 'Y';
+                case 'VAL':
+                    return 'V';
+                default:
+                    return null;
+            }
+        }
+
+        function downloadSVG(svgSelector, name) {
+          var svgClone = $(svgSelector).clone();
+          svgClone.find('.svg-pan-zoom_viewport').attr('transform', 'matrix(2.2,0,0,2.2,295,140)');
+
+          var escapedSVG = new XMLSerializer().serializeToString(svgClone.get(0));
+
+          downloadURI('data:image/svg+xml;base64,' + window.btoa(escapedSVG), name);
+        }
+
+        function downloadSingleCrystalCSV(singleCrystalSvgSelector, name) {
+            var data = [];
+            var header = ['Residue number 1', 'Residue number 2', 'Segment 1', 'Segment 2',  'Generic number 1', 'Generic number 2', 'Amino acid 1', 'Amino acid 2', 'Interaction type'];
+            data.push(header);
+
+            $(singleCrystalSvgSelector + ' rect[data-interaction-type]').each(function(e) {
+              var rect = $(this);
+              var resNo1 = rect.data('res-no-1');
+              var resNo2 = rect.data('res-no-2');
+              var seg1 = rect.data('seg-1');
+              var seg2 = rect.data('seg-2');
+              var genNo1 = rect.data('gen-no-1');
+              var genNo2 = rect.data('gen-no-2');
+              var aa1 = rect.data('aa-1');
+              var aa2 = rect.data('aa-2');
+              var iType = rect.data('interaction-type');
+              data.push([resNo1, resNo2, seg1, seg2, genNo1, genNo2, aa1, aa2, iType]);
+            });
+
+            // Convert to CSV
+            var csv = Papa.unparse(data);
+
+            // Download file
+            downloadURI('data:text/csv;charset=UTF-8,' + encodeURI(csv), name);
+        }
+
+
+        function downloadSingleCrystalGroupCSV(singleGroupSvgSelector, name) {
+            var data = [];
+            var header = ['Generic number 1', 'Generic number 2', 'Segment 1', 'Segment 2', 'Frequency',  'Number of interactions', 'Number of crystals'];
+            data.push(header);
+
+            $(singleGroupSvgSelector + ' rect[data-frequency]').each(function(e) {
+              var rect = $(this);
+              var genNo1 = rect.data('gen-no-1');
+              var genNo2 = rect.data('gen-no-2');
+              var seg1 = rect.data('seg-1');
+              var seg2 = rect.data('seg-2');
+              var nInteractions = rect.data('num-interactions');
+              var nTotalInteractions = rect.data('total-possible-interactions');
+              var frequency = rect.data('frequency');
+              data.push([genNo1, genNo2, seg1, seg2, nInteractions, nTotalInteractions, frequency]);
+            });
+
+            // Convert to CSV
+            var csv = Papa.unparse(data);
+
+            // Download file
+            downloadURI('data:text/csv;charset=UTF-8,' + encodeURI(csv), name);
+        }
+
+        function downloadTwoCrystalGroupsCSV(twoGroupsSvgSelector, name) {
+            var data = [];
+            var header = ['Generic number 1', 'Generic number 2', 'Segment 1', 'Segment 2', 'Interactions group 1', 'Interactions group 2', 'Crystals group 1', 'Crystals group 2', 'Frequency group 1', 'Frequency group 2', 'Frequency Difference'];
+            data.push(header);
+
+            $(twoGroupsSvgSelector + ' rect[data-frequency-diff]').each(function(e) {
+              var rect = $(this);
+              var genNo1 = rect.data('gen-no-1');
+              var genNo2 = rect.data('gen-no-2');
+              var seg1 = rect.data('seg-1');
+              var seg2 = rect.data('seg-2');
+              var numIntsGroup1 = rect.data('group-1-num-ints');
+              var numIntsGroup2 = rect.data('group-2-num-ints');
+              var numPdbsGroup1 = rect.data('group-1-num-pdbs');
+              var numPdbsGroup2 = rect.data('group-2-num-pdbs');
+              var freqGroup1 = rect.data('group-1-freq');
+              var freqGroup2 = rect.data('group-2-freq');
+              var fDiff = rect.data('frequency-diff').toFixed(2);
+              data.push([genNo1, genNo2, seg1, seg2, numIntsGroup1, numIntsGroup2, numPdbsGroup1, numPdbsGroup2, freqGroup1, freqGroup2, fDiff]);
+            });
+
+            // Convert to CSV
+            var csv = Papa.unparse(data);
+
+            // Download file
+            downloadURI('data:text/csv;charset=UTF-8,' + encodeURI(csv), name);
+        }
+
+        function populateTable(selector) {
+          var table = [];
+              rows = []
+          if (selector=='single-table') {
+              var header = ['Residue number 1', 'Residue number 2', 'Segment 1', 'Segment 2',  'Generic number 1', 'Generic number 2', 'Amino acid 1', 'Amino acid 2', 'Interaction type'];
+              $('#single-crystal-tab .heatmap-container rect[data-interaction-type]').each(function(e) {
+                  var rect = $(this);
+                  var resNo1 = rect.data('res-no-1');
+                  var resNo2 = rect.data('res-no-2');
+                  var seg1 = rect.data('seg-1');
+                  var seg2 = rect.data('seg-2');
+                  var genNo1 = rect.data('gen-no-1');
+                  var genNo2 = rect.data('gen-no-2');
+                  var aa1 = rect.data('aa-1');
+                  var aa2 = rect.data('aa-2');
+                  var iType = rect.data('interaction-type');
+                  rows.push('<tr><td>'+resNo1+'</td><td>'+resNo2+'</td><td>'+seg1+'</td><td>'+seg2+'</td><td>'+genNo1+'</td><td>'+genNo2+'</td><td>'+aa1+'</td><td>'+aa2+'</td><td>'+iType+'</td>')
+                });
+          } else if (selector=='single-group-table') {
+            var header = ['Generic number 1', 'Generic number 2', 'Segment 1', 'Segment 2',  'Number of interactions', 'Number of crystals', 'Frequency'];
+            $('#single-crystal-group-tab .heatmap-container rect[data-frequency]').each(function(e) {
+              var rect = $(this);
+              var genNo1 = rect.data('gen-no-1');
+              var genNo2 = rect.data('gen-no-2');
+              var seg1 = rect.data('seg-1');
+              var seg2 = rect.data('seg-2');
+              var nInteractions = rect.data('num-interactions');
+              var nTotalInteractions = rect.data('total-possible-interactions');
+              var frequency = rect.data('frequency');
+            //data.push([resNo1, resNo2, seg1, seg2, genNo1, genNo2, aa1, aa2, iType]);
+            rows.push('<tr><td>'+genNo1+'</td><td>'+genNo2+'</td><td>'+seg1+'</td><td>'+seg2+'</td><td>'+nInteractions+'</td><td>'+nTotalInteractions+'</td><td>'+frequency+'</td>')
+            });
+
+          } else if (selector=='two-groups-table') {
+            var header = ['Generic number 1', 'Generic number 2', 'Segment 1', 'Segment 2', 'Interactions group 1', 'Interactions group 2', 'Frequency group 1', 'Frequency group 2', 'Frequency Difference'];
+            $('#two-crystal-groups-tab .heatmap-container rect[data-frequency-diff]').each(function(e) {
+              var rect = $(this);
+              var genNo1 = rect.data('gen-no-1');
+              var genNo2 = rect.data('gen-no-2');
+              var seg1 = rect.data('seg-1');
+              var seg2 = rect.data('seg-2');
+              var numIntsGroup1 = rect.data('group-1-num-ints');
+              var numIntsGroup2 = rect.data('group-2-num-ints');
+              var numPdbsGroup1 = rect.data('group-1-num-pdbs');
+              var numPdbsGroup2 = rect.data('group-2-num-pdbs');
+              var freqGroup1 = rect.data('group-1-freq');
+              var freqGroup2 = rect.data('group-2-freq');
+              var fDiff = rect.data('frequency-diff').toFixed(2);
+              rows.push('<tr><td>'+genNo1+'</td><td>'+genNo2+'</td><td>'+seg1+'</td><td>'+seg2+'</td><td>'+numIntsGroup1+'</td><td>'+numIntsGroup2+'</td><td>'+freqGroup1+'</td><td>'+freqGroup2+'</td><td>'+fDiff+'</td>')
+            });
+
+          }
+          table.push('<table id="'+selector+'" class="table display" width="100%"><thead><tr>');
+          header.forEach(function(h) {
+            table.push('<th></th>'); //'+h+'
+          });
+          table.push('</tr</thead>');
+          table.push('<tbody>');
+          table = table.concat(rows);
+          table.push('</tbody></table>');
+          $("#"+selector+"-tab").html(table.join( "" ));
+
+          $("#"+selector+"-tab-link").click(function(e){
+              setTimeout(renderTable,100,"#"+selector);
+          });
+        }
+
+        function renderTable(mode) {
+          if ( ! $.fn.DataTable.isDataTable(mode ) ) {
+          oTable[mode] = $(mode).DataTable({
+                'scrollX': true,
+                scrollY:        '80vh',
+                paging:         false,
+                columnDefs: [
+                  { targets: 'no-sort', orderable: false }
+                ],
+                "aaSorting": [],
+              });
+              if (mode=='#single-table') {
+                  yadcf.init(oTable[mode],
+                    [
+                        {
+                            column_number : 0,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Residue #1",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 1,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Residue #2",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 2,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Segment #1",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 3,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Segment #2",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 4,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "GN #1",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 5,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "GN #2",
+                            filter_reset_button_text: false,
+
+                        },
+                        {
+                            column_number : 6,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Amino acid #1",
+                            filter_reset_button_text: false,
+
+                        },
+                        {
+                            column_number : 7,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Amino acid #2",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 8,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Interaction Type",
+                            filter_reset_button_text: false,
+
+                        },
+                    ],
+                    {
+                        cumulative_filtering: false
+                    }
+
+                );
+              } else if (mode=='#single-group-table') {
+                  yadcf.init(oTable[mode],
+                    [
+                        {
+                            column_number : 0,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "GN #1",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 1,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "GN #2",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 2,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Segment #1",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 3,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Segment #2",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 4,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Number of interactions",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 5,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Total Structures",
+                            filter_reset_button_text: false,
+
+                        },
+                        {
+                            column_number : 6,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Frequency",
+                            filter_reset_button_text: false,
+
+                        },
+                    ],
+                    {
+                        cumulative_filtering: false
+                    }
+
+                );
+              } else if (mode=='#two-groups-table') {
+                  yadcf.init(oTable[mode],
+                    [
+                        {
+                            column_number : 0,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "GN #1",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 1,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "GN #2",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 2,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Segment #1",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 3,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Segment #2",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 4,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Interactions group 1",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number : 5,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Interactions group 2",
+                            filter_reset_button_text: false,
+
+                        },
+                        {
+                            column_number : 6,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Frequency group 1",
+                            filter_reset_button_text: false,
+
+                        },
+                        {
+                            column_number : 7,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Frequency group 2",
+                            filter_reset_button_text: false,
+
+                        },
+                        {
+                            column_number : 8,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            filter_default_label: "Frequency difference",
+                            filter_reset_button_text: false,
+
+                        },
+                    ],
+                    {
+                        cumulative_filtering: false
+                    }
+
+                );
+              }
+
+            yadcf.exResetAllFilters(oTable[mode]);
+          }
+        }
+
+        function downloadURI(uri, name) {
+            var link = document.createElement("a");
+            link.download = name;
+            link.href = uri;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            delete link;
+        }
+
+        var angleData = {}
+        function showDataTable(data, selector){
+          // store data globally for easy access
+          angleData[selector] = data
+
+          // Add controls to generic control panel and show
+          var cp = $(selector + ' .controls-panel .panel-body')
+          cp.parent().parent().removeClass("hidden");
+
+          // add selector
+          var selectVariable = '<select class="variable_selector">';
+          if (selector=='#single-crystal-tab') {
+              selectVariable += '<optgroup label="Secondary structure">';
+              selectVariable += '<option value="ss_dssp">DSSP method</option>';
+              selectVariable += '<option value="ss_stride">Stride method</option>';
+              selectVariable += '</optgroup>';
+          }
+          selectVariable += '<optgroup label="Backbone movement">';
+          selectVariable += '<option value="distance" SELECTED>Distance to 7TM axis (Å)</option>';
+          selectVariable += '<option value="bb_angle">Angle of C&alpha; to helix and 7TM axis</option>';
+          selectVariable += '<option value="sc_angle">Angle of C&beta; to helix and 7TM axis</option>';
+          selectVariable += '<option value="HSE">Half-sphere exposure</option>';
+          selectVariable += '</optgroup>';
+          selectVariable += '<optgroup label="Residue angles and dihedrals">';
+          selectVariable += '<option value="phi">Phi dihedral (C(-1)-N-C&alpha;-C)</option>';
+          selectVariable += '<option value="psi">Psi dihedral (N-C&alpha;-C-N(+1))</option>';
+          selectVariable += '<option value="tau_angle">Tau angle (N-C&alpha;-C)</option>';
+          selectVariable += '</optgroup>';
+          selectVariable += '<optgroup label="Helix turn angles and dihedrals">';
+          selectVariable += '<option value="tau">Tau dihedral (C&alpha;(-1)-C&alpha;-C&alpha;(+1)-C&alpha;(+2))</option>';
+          selectVariable += '<option value="theta">Theta angle (C&alpha;(-1)-C&alpha;-C&alpha;(+1))</option>';
+          selectVariable += '</optgroup>';
+          selectVariable += '<optgroup label="Sidechain properties">';
+          selectVariable += '<option value="outer_angle">Rotamer (angle of terminal atom to helix and 7TM axis)</option>';
+          selectVariable += '<option value="SASA">Solvent-accessible surface area (SASA)</option>';
+          selectVariable += '<option value="RSA">Relative SASA</option>';
+          selectVariable += '</select>';
+          cp.html(selectVariable)
+
+          $(selector + " .variable_selector").change(function(e) {
+              updateDataTable(selector, $(this).val())
+            });
+
+          // draw table
+          updateDataTable(selector)
+        }
+
+        // Draw table for selected variable
+        var availableVariables = {
+          "GN_number" : 0,
+          "seq_number" : 1,
+          "bb_angle" : 2,
+          "sc_angle" : 3,
+          "outer_angle" : 4,
+          "HSE" : 5,
+          "SASA" : 6,
+          "RSA" : 7,
+          "phi" : 8,
+          "psi" : 9,
+          "theta" : 10,
+          "tau" : 11,
+          "distance" : 12,
+          "ss_dssp" : 13,
+          "ss_stride" : 14
+        }
+        var angleVariables = [2,3,4,8,9,10,11]
+
+        var coloringData = {}
+        var repr_dict = {}
+        function updateDataTable(selector, variable = "distance") {
+            data = angleData[selector];
+            coloringData[tabMap[selector]] = {}
+
+            // remove old table (if present)
+            if ( $.fn.DataTable.isDataTable( selector + " .heatmap-table" )){
+              $(selector + " .heatmap-table").DataTable().clear()
+              $(selector + " .heatmap-table").DataTable().destroy()
+            }
+
+            // selector
+            var dataSelector = [0]
+            var headers = [{ title: "GPCRdb #"}]
+
+            if (selector == "#single-crystal-tab"){
+                dataSelector.push(1)
+                headers.push({title: "Seq. #"})
+            }
+
+            // Add selected variable
+            dataSelector.push(availableVariables[variable])
+
+            headers.push($.extend(true,[],data["headers"]))
+            headers.push($.extend(true,[],data["headers2"]))
+            headers.push({title: "Diff"})
+
+            // add rows based on selection
+            var rowset = []
+            var angleColumn = angleVariables.includes(availableVariables[variable]);
+            data["data"].forEach(function (row){
+                var tmp = []
+                for (var i =0; i < dataSelector.length; i++){
+                  tmp.push(row[dataSelector[i]])
+                }
+
+                // add second dataset
+                for (var i = 0; i < dataSelector.length; i++){
+                  if (dataSelector[i]>1){
+                      if (data["data2"][row[0]] != undefined && data["data2"][row[0]][dataSelector[i]] != undefined)
+                        tmp.push(data["data2"][row[0]][dataSelector[i]])
+                      else
+                        tmp.push(['-','-','-'])
+                  }
+                }
+                tmp = tmp.flat()
+
+                // Add the diff column
+                if (availableVariables[variable] < 13){ // no secondary structure
+                  var otherCol = 4
+                  if (tmp.length>6)
+                    otherCol = 5;
+
+                  tmp.push(tmp[2] - tmp[otherCol])
+                  if (angleColumn && Math.abs(tmp[tmp.length - 1 ]) > 180) // correct for angle differences
+                    tmp[tmp.length - 1 ] = 360 - Math.abs(tmp[tmp.length - 1 ])
+
+                  for (var i=2; i<tmp.length;i++){
+                    tmp[i] = Math.round(tmp[i]*10)/10
+                  }
+                } else {
+                  tmp.push("-")
+                }
+
+                // 0 - diff | 1- AvgG1/value | 2 - rangeG1 | 3 - avgG2 - 4 - rangeG2
+                var tmp2 = []
+                tmp2.push(tmp[tmp.length - 1])
+                tmp2.push(tmp[2])
+                if (tabMap[selector]=="two-groups"){
+                    tmp2.push(tmp[3]-tmp[1])
+                    tmp2.push(tmp[5])
+                    tmp2.push(tmp[6]-tmp[4])
+                } else if (tabMap[selector]=="single-group"){
+                    tmp2.push(tmp[3]-tmp[1])
+                }
+                coloringData[tabMap[selector]][tmp[0]] = tmp2
+
+                rowset.push(tmp)
+            });
+
+            // add data and init
+            $(selector + " .heatmap-table").DataTable({
+                data: rowset,
+                columns: headers.flat(),
+                scrollX: true,
+                scrollY:        '80vh',
+                paging:         false,
+                columnDefs: [
+                  { targets: 'no-sort', orderable: false }
+                ],
+                "aaSorting": [[0, 'asc']],
+              })
+
+            // update NGL viewer
+            updateStructureRepresentations(tabMap[selector])
+
+            // add link to NGL hover/click to highlight residue in NGL viewer
+            var temprepr;
+            $(selector + " .heatmap-table tbody").on("mouseover", "tr", function(event){
+                mode = tabMap[selector]
+                key = 0
+
+                gn_key = $(selector + " .heatmap-table").DataTable().row(this).data()[0]
+                gn = pdb_data[mode][key]["gn_map"].indexOf(gn_key)
+                if (gn > -1) {
+                  ngl_selection = ":" + pdb_data[mode][key]['chain'] + " and sidechainAttached and " + pdb_data[mode][key]["only_gn"][gn]
+                  //temprepr = reps[mode][key].structureComponent.addRepresentation("ball+stick", {sele: ngl_selection});
+                  reps[mode][key].hover.setSelection(ngl_selection)
+//                  reps[mode][key].structureComponent.autoView(ngl_selection)
+                }
+
+                if (mode=="two-groups"){
+                  key = 1
+                  gn = pdb_data[mode][key]["gn_map"].indexOf(gn_key)
+                  if (gn > -1) {
+                    ngl_selection = ":" + pdb_data[mode][key]['chain'] + "  and sidechainAttached and " + pdb_data[mode][key]["only_gn"][gn]
+                    //temprepr = reps[mode][key].structureComponent.addRepresentation("ball+stick", {sele: ngl_selection});
+                    reps[mode][key].hover.setSelection(ngl_selection)
+                  }
+                }
+            }).mouseout(function(event){
+                mode = tabMap[selector]
+                reps[mode][0].hover.setSelection(":A and 999999")
+
+                if (mode=="two-groups")
+                    reps[mode][1].hover.setSelection(":A and 999999")
+            });
+
+
+            if (repr_dict[tabMap[selector]] == undefined){
+              repr_dict[tabMap[selector]] = {}
+              $(selector + " .heatmap-table tbody").on("click", "tr", function(event){
+                  mode = tabMap[selector]
+                  key = 0
+
+                  gn_key = $(selector + " .heatmap-table").DataTable().row(this).data()[0]
+                  if (gn_key in repr_dict[mode]){
+                    for (i in repr_dict[mode][gn_key])
+                      reps[mode][i].structureComponent.removeRepresentation(repr_dict[mode][gn_key][i])
+                      // reset autoview
+
+                    delete repr_dict[mode][gn_key]
+
+                    $(this).removeClass("table-selected")
+                  } else {
+                    gn = pdb_data[mode][key]["gn_map"].indexOf(gn_key)
+                    repr_dict[mode][gn_key] = {}
+                    if (gn > -1) {
+                      ngl_selection = ":" + pdb_data[mode][key]['chain'] + " and sidechainAttached and " + pdb_data[mode][key]["only_gn"][gn]
+                      repr_dict[mode][gn_key][key] = reps[mode][key].structureComponent.addRepresentation("ball+stick", {sele: ngl_selection});
+                      reps[mode][key].structureComponent.autoView(ngl_selection, 1000)
+                    }
+
+                    if (mode=="two-groups") {
+                      key = 1
+                      gn = pdb_data[mode][key]["gn_map"].indexOf(gn_key)
+                      if (gn > -1) {
+                        ngl_selection = ":" + pdb_data[mode][key]['chain'] + " and sidechainAttached and " + pdb_data[mode][key]["only_gn"][gn]
+                        repr_dict[mode][gn_key][key] = reps[mode][key].structureComponent.addRepresentation("ball+stick", {sele: ngl_selection});
+                      }
+                    }
+                    $(this).addClass("table-selected")
+                  }
+              });
+            }
+        }
+
+        function addClickHandler(elem, arg1, arg2) {
+          elem.addEventListener('click', function(e) {
+              // in the event handler function here, you can directly refer
+              // to arg1 and arg2 from the parent function arguments
+          }, false);
+        }
+
+        function redraw_renders() {
+          // Makes sure diagrams fit sizes
+
+          var visible_svg = $('svg:visible');
+          var svg_class = visible_svg.attr("class");
+
+          var width_svg = visible_svg.width();
+
+          // Don't go too high
+          if (width_svg>screen.height) width_svg = screen.height;
+          visible_svg.height(width_svg);
+
+          // Resize NGL
+          var ngl = $('.ngl-container:visible');
+          var width_ngl = ngl.width();
+
+          // Don't go too high
+          if (width_ngl>screen.height) width_ngl = screen.height;
+          ngl.height(width_svg);
+        }
+
+        function initializeGoButton(selector) {
+            $(selector + ' .go-button').click(function() {
+                var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
+
+                loadPDBsView(pdb, selector)
+            });
+        }
+
+        function initializeGoButtonTwoCrystalGroups(selector) {
+            $(selector + ' .go-button').click(function() {
+                var pdbs1 = JSON.parse($(selector + ' .crystal-group-1-pdbs').val());
+                var pdbs2 = JSON.parse($(selector + ' .crystal-group-2-pdbs').val());
+                loadPDBsView(pdbs1, selector, pdbs2)
+            });
+        }
+
+        var tabMap = {
+          "two-groups": '#two-crystal-groups-tab',
+          "single-group": '#single-crystal-group-tab',
+          "single": "#single-crystal-tab",
+          '#two-crystal-groups-tab': "two-groups",
+          '#single-crystal-group-tab': "single-group",
+          '#single-crystal-tab': "single"
+        }
+        function loadPDBsView(pdb, selector, pdbs2 = []) {
+          if (pdb.length > 0) {
+              $(selector + ' .heatmap-container').append('<span id=svgloading>Loading...</span>');
+              $.getJSON( 'angledata',
+                {
+                    'pdbs': pdb,
+                    'pdbs2': pdbs2,
+                },
+                function( data ) {
+                    $("#svgloading").remove()
+
+                    showDataTable(data, selector)
+                    if (selector == '#two-crystal-groups-tab') {
+                      createNGLview("two-groups",pdb[0], pdb, pdbs2, pdbs2[0]);
+                    } else if (selector == '#single-crystal-group-tab') {
+                      createNGLview("single-group",pdb[0], pdb);
+                    } else {
+                      createNGLview("single",pdb[0]);
+                    }
+                });
+            }
+        }
+
+        function initializeFullscreenButton(selector) {
+            $(selector + ' .btn-fullscreen').click(function() {
+                fullScreenElement = $(this).parent().next().children().first();
+                fullScreenElement.css('background-color','white');
+                toggleFullScreen(fullScreenElement.get(0));
+            });
+        }
+
+        function updateTwoGroupSliders(origin, ui) {
+            // grab data from all sliders
+            var g1 = $( "#freq-flare-slider-range-1").slider("values");
+            var g2 = $( "#freq-flare-slider-range-2" ).slider("values");
+            var diff = $( "#freq-flare-slider-range-3" ).slider("values");
+
+            // update with current slide values
+            if (origin == "freq-flare-slider-range-1")
+                g1 = ui.values;
+            else if (origin == "freq-flare-slider-range-2")
+                g2 = ui.values;
+            else if (origin == "freq-flare-slider-range-3")
+                diff = ui.values;
+
+            // apply cutoffs
+            flareplot[$( "#freq-flare-slider-range-1").data("referenceContainer")].updateRangeTwoGroups(g1[0], g1[1], g2[0], g2[1], diff[0], diff[1]);
+        }
+
+        var stage = {};
+        var pdb_data = {};
+        var color_schemes = {};
+        var reps = {} // store ngl representations
+        var gpcr_rep = {}
+        var selectColoring = {} // store coloring settings
+        var int_labels = []
+        function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false) {
+            $("#ngl-"+mode).html("");
+            stage[mode] = new NGL.Stage( "ngl-"+mode, { backgroundColor: "white" } );
+            color_schemes[mode] = [[],[]];
+            reps[mode] = [{},{}]
+            gpcr_rep[mode] = [];
+            pdb_data[mode] = [];
+            int_labels[mode] = []
+
+            var first_structure;
+            var num_set1;
+            var gn_num_set1;
+            var two_structures = false;
+
+            //var blue_colors = ['#f7fcf0','#e0f3db','#ccebc5', '#a8ddb5',    '#7bccc4',    '#4eb3d3', '#2b8cbe',    '#0868ac',    '#084081']
+            var blue_colors = ['#f0fcfa','#D3E4EA','#B6CDDB', '#99B5CC',    '#7C9EBD',    '#5F86AE', '#426F9F',    '#255790',    '#084081']
+            var red_colors = ['#fbf0fc','#f3dbec','#ebc5df', '#dda8bc',    '#cc7b7f',    '#d3574e', '#be372b',    '#ac1808',    '#811808']
+
+            $.getJSON( "/contactnetwork/pdb/"+pdb,
+              function( data ) {
+                var highlight = ['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8'];
+                var segments_sets = {}
+                int_labels[mode][0] = {}
+
+                highlight.forEach( function(e){
+                  segments_sets[e] = ((e in data['segments']) ? data['segments'][e].join(", ") : "")
+                });
+
+                pdb_data[mode][0] = data;
+                color_schemes[mode][0]['blue'] = NGL.ColormakerRegistry.addSelectionScheme([
+                        [blue_colors[1], segments_sets[highlight[0]]],
+                        [blue_colors[2], segments_sets[highlight[1]]],
+                        [blue_colors[3], segments_sets[highlight[2]]],
+                        [blue_colors[4], segments_sets[highlight[3]]],
+                        [blue_colors[5], segments_sets[highlight[4]]],
+                        [blue_colors[6], segments_sets[highlight[5]]],
+                        [blue_colors[7], segments_sets[highlight[6]]],
+                        [blue_colors[8], segments_sets[highlight[7]]],
+                        [ "white", "*" ]
+                        ])
+
+                color_schemes[mode][0]['grey'] = NGL.ColormakerRegistry.addSelectionScheme([
+                          ["#ccc", segments_sets[highlight[0]]],
+                          ["#bbb", segments_sets[highlight[1]]],
+                          ["#aaa", segments_sets[highlight[2]]],
+                          ["#888", segments_sets[highlight[3]]],
+                          ["#666", segments_sets[highlight[4]]],
+                          ["#444", segments_sets[highlight[5]]],
+                          ["#333", segments_sets[highlight[6]]],
+                          ["#111", segments_sets[highlight[7]]],
+                          [ "white", "*" ]
+                          ])
+
+
+                chain_set1 = pdb_data[mode][0]['chain'];
+                num_set1 = pdb_data[mode][0]['only_gn'];
+                gn_num_set1 = pdb_data[mode][0]['gn_map'];
+
+                var stringBlob = new Blob( [ pdb_data[mode][0]['pdb'] ], { type: 'text/plain'} );
+                stage[mode].loadFile( stringBlob, { ext: "pdb" }  ).then( function( o ){
+                    first_structure = o
+
+                    // Cleanup
+                    pdb_data[mode][0]['pdb'] = null;
+
+                    // TODO: cartoon for ECL2 is currently not shown (only 3 res, but 4 needed for cartoon) - show ribbon for ICL/ECLs?
+                    gpcr_rep[mode][0] = o.addRepresentation( "cartoon", {
+                      sele: ":"+pdb_data[mode][0]['chain']+" and ("+pdb_data[mode][0]['only_gn'].join(", ")+")",
+                      // radiusType: '',
+                      radiusSize: 1,
+                      radiusScale: 0.6,
+                      // color: "atomindex",
+                      // colorScale: "Accent",
+                      // color: "residueindex",
+                      // colorScale: "greys",
+                      color: color_schemes[mode][0]['blue'],
+                      metalness: 0,
+                      colorMode: "hcl",
+                      roughness: 1,
+                      opacity: 1,
+                      side: "front",
+                      depthWrite: true
+                    });
+
+                    // REMOVE default hoverPick mouse action
+                    stage[mode].mouseControls.remove("hoverPick")
+
+                    // Add residue labels for GN residues
+                    pdb_data[mode][0]['only_gn'].forEach( function(resNo, index){
+                      var genNo = pdb_data[mode][0]['gn_map'][index]
+                      int_labels[mode][0][resNo] = genNo
+                    })
+
+                    // listen to `hovered` signal to move tooltip around and change its text
+                    // TODO: implement this to handle two structures
+                    stage[mode].signals.hovered.add(function (pickingProxy) {
+                      var label_index = false
+
+                      if (pickingProxy && (pickingProxy.distance || pickingProxy.atom)) {
+                        var mp = pickingProxy.mouse.position
+                        if (pickingProxy.distance){
+                          label_index = pickingProxy.distance.atom1.resno + "-" + pickingProxy.distance.atom2.resno;
+                          ngl_tooltip.innerText = "INTERACTION:"
+                        } else {
+                          label_index = pickingProxy.atom.resno;
+                          ngl_tooltip.innerText = "RESIDUE:"
+                        }
+                      }
+
+                      if (label_index && (label_index in int_labels[mode][0])) {
+                        ngl_tooltip.innerText += " " +int_labels[mode][0][label_index]
+                        ngl_tooltip.style.bottom = window.innerHeight - mp.y + 3 + "px"
+                        ngl_tooltip.style.left = mp.x + 3 + "px"
+                        ngl_tooltip.style.display = "block"
+                      } else {
+                        ngl_tooltip.style.display = "none"
+                      }
+                    })
+
+                    reps[mode][0].structureComponent = o
+                    createNGLRepresentations(mode, 0, false)
+
+                    // Automatic GPCR positioning
+                    if ("translation" in pdb_data[mode][0]){
+                      var translation = JSON.parse(pdb_data[mode][0]["translation"])
+                      var center_axis = JSON.parse(pdb_data[mode][0]["center_axis"])
+
+                      // calculate rotation and apply
+                      v1 = new NGL.Vector3(0,1,0)
+                      v2 = new NGL.Vector3(center_axis[0], center_axis[1], center_axis[2])
+                      var quaternion = new NGL.Quaternion(); // create one and reuse it
+                      quaternion.setFromUnitVectors( v2, v1 )
+                      o.setRotation(quaternion)
+
+                      // calculate translation and apply
+                      var v = new NGL.Vector3( -1*translation[0], -1*translation[1], -1*translation[2])
+                      v.applyMatrix4(o.matrix)
+                      o.setPosition([-1*v.x, -1*v.y, -1*v.z])
+
+                      // calculate H8 position (based on TM1)
+                      var tm1_vector
+                      var ref_tm1 = pdb_data[mode][0]["only_gn"][pdb_data[mode][0]["gn_map"].indexOf("1x46")]
+                      o.structure.eachAtom(function (ap) {
+                        tm1_vector = new NGL.Vector3(ap.x, ap.y, ap.z)
+                        tm1_vector.applyMatrix4(o.matrix)
+                      }, new NGL.Selection(":"+pdb_data[mode][0]['chain']+" and "+ ref_tm1 +" and .CA"))
+
+                      tm1_vector.y = 0 // height position doesn't matter
+                      tm1_vector.normalize()
+
+                      // calculate rotation angle around Y-axis (as the GPCR is now upright)
+                      v3 = new NGL.Vector3(-1, 0, 0)
+                      var m = new NGL.Matrix4()
+                      if (tm1_vector.z < 0)
+                        m.makeRotationY(v3.angleTo(tm1_vector))
+                      else if (tm1_vector.z > 0)
+                        m.makeRotationY(-1*v3.angleTo(tm1_vector))
+
+                      o.setTransform(m)
+                    }
+
+//                    o.autoView(":"+pdb_data[mode][0]['chain']+" and ("+pdb_data[mode][0]['only_gn'].join(", ")+") and (.CA)")
+
+                    var view = new NGL.Matrix4()
+                    view.set(144.5, 12.5, 8.8, 0, -13.1, 144.3, 10.0, 0, -7.9, -10.8, 144.7, 0, 4, -0.4, -1.1, 1)
+                    stage[mode].viewerControls.orient(view)
+                } );
+
+            }).then( function(){
+                if (pdbs_set2){
+                    $.getJSON( "/contactnetwork/pdb/"+pdb2,
+                      function( data ) {
+                        var highlight = ['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8'];
+                        var segments_sets = {}
+                        int_labels[mode][1] = {}
+
+                        highlight.forEach( function(e){
+                          segments_sets[e] = ((e in data['segments']) ? data['segments'][e].join(", ") : "")
+                        });
+
+                        pdb_data[mode][1] = data;
+                        num_set2 = pdb_data[mode][1]['only_gn'];
+                        gn_num_set2 = pdb_data[mode][1]['gn_map'];
+
+                        // intersect GN-numbering
+                        var matching_TM_residues = [];
+                        gn_num_set1.forEach(function(gn, gn_index) {
+                          // Filter GN residues, only within 7TM + present in other protein
+                          //if (gn.charAt(1)=='x' && gn.charAt(0)<=7){
+                          if (gn.charAt(0)=='1' && gn.charAt(1)=='x' && gn.charAt(0)<=7){
+                            var match = gn_num_set2.indexOf(gn);
+                            if (match > -1){
+                              return matching_TM_residues.push([num_set1[gn_index], num_set2[match]]);
+                            }
+                          }
+                        });
+
+                        color_schemes[mode][1]['red'] = NGL.ColormakerRegistry.addSelectionScheme([
+                                [red_colors[1], segments_sets[highlight[0]]],
+                                [red_colors[2], segments_sets[highlight[1]]],
+                                [red_colors[3], segments_sets[highlight[2]]],
+                                [red_colors[4], segments_sets[highlight[3]]],
+                                [red_colors[5], segments_sets[highlight[4]]],
+                                [red_colors[6], segments_sets[highlight[5]]],
+                                [red_colors[7], segments_sets[highlight[6]]],
+                                [red_colors[8], segments_sets[highlight[7]]],
+                                [ "white", "*" ]
+                                ])
+
+                        color_schemes[mode][1]['grey'] = NGL.ColormakerRegistry.addSelectionScheme([
+                                  ["#ccc", segments_sets[highlight[0]]],
+                                  ["#bbb", segments_sets[highlight[1]]],
+                                  ["#aaa", segments_sets[highlight[2]]],
+                                  ["#888", segments_sets[highlight[3]]],
+                                  ["#666", segments_sets[highlight[4]]],
+                                  ["#444", segments_sets[highlight[5]]],
+                                  ["#333", segments_sets[highlight[6]]],
+                                  ["#111", segments_sets[highlight[7]]],
+                                  [ "white", "*" ]
+                                  ])
+
+                        var stringBlob = new Blob( [ pdb_data[mode][1]['pdb'] ], { type: 'text/plain'} );
+                        stage[mode].loadFile( stringBlob, { ext: "pdb" }  ).then( function( o ){
+                            // Cleanup
+                            pdb_data[mode][1]['pdb'] = null;
+
+                            //// SUPERPOSE structures using 7TM bundle ////
+
+                            // Intersect GN-numbering of proteins and create Selection
+                            var selectionOne = "(";
+                            var selectionTwo = "(";
+                            gn_num_set1.forEach(function(gn, gn_index) {
+                              // Filter GN residues, only within 7TM + present in other protein
+                              if (gn.charAt(1)=='x' && gn.charAt(0)<=7) {
+                                var match = gn_num_set2.indexOf(gn);
+                                if (match > -1) {
+                                  if (selectionOne.length > 1){
+                                    selectionOne += " or ";
+                                    selectionTwo += " or ";
+                                  }
+                                  selectionOne += num_set1[gn_index];
+                                  selectionTwo += num_set2[match];
+                                }
+                              }
+                            });
+
+                            selectionOne += ") and .CA and :" + pdb_data[mode][0]['chain'];
+                            selectionTwo += ") and .CA and :" + pdb_data[mode][1]['chain'];
+
+                            var atoms1 = first_structure.structure.getView(new NGL.Selection(selectionOne))
+                            var atoms2 = o.structure.getView(new NGL.Selection(selectionTwo))
+
+                            // Due to superposing apply transformation to second struture
+                            var superpose = new NGL.Superposition(atoms2, atoms1)
+                            superpose.transform(o.structure)
+                            o.structure.refreshPosition()
+                            o.updateRepresentations({ 'position': true })
+                            o.setTransform(first_structure.matrix)
+
+                            //// END SUPERPOSE ////
+                            gpcr_rep[mode][1] = o.addRepresentation( "cartoon", {
+                              sele: ":"+pdb_data[mode][1]['chain']+" and ("+pdb_data[mode][1]['only_gn'].join(", ")+")",
+                              radiusSize: 1,
+                              radiusScale: 0.6,
+                              //color: color_schemes[mode][1]['red'],
+                              color: color_schemes[mode][1]['grey'],
+                              metalness: 0,
+                              colorMode: "hcl",
+                              roughness: 1,
+                              opacity: 0.2,
+                              side: "front",
+                              depthWrite: true
+                            });
+
+                            reps[mode][1].structureComponent = o
+                            createNGLRepresentations(mode, 1, false)
+
+//                            o.autoView(selectionTwo);
+                        } );
+
+                    });
+                }
+            });
+
+            var newDiv = document.createElement("div");
+            newDiv.setAttribute("style", "position: absolute; top: 45px; left: 20px; background-color: #DDD; opacity: .8; padding: 10px;")
+            var controls = '<div class="controls">'
+                         + '<h4>Controls</h4>';
+
+            // Toggle for showing two structures simultaneously
+            if (mode == "two-groups" && pdbs_set2)
+              two_structures = true;
+            else
+              two_structures = false;
+
+            if (pdbs){
+                if (two_structures)
+                  controls += '<p>Structure set 1: <select id="ngl_pdb_'+mode+'_ref">';
+                else
+                  controls += '<p>Structure: <select id="ngl_pdb_'+mode+'_ref">';
+                for (var i = 0; i < pdbs.length; i++){
+                    if (pdbs[i]==pdb)
+                        controls += '<option value="'+pdbs[i]+'" SELECTED>'+pdbs[i]+'</option>';
+                    else
+                        controls += '<option value="'+pdbs[i]+'">'+pdbs[i]+'</option>';
+                }
+                controls += '</select></p>';
+            }
+
+            if (pdbs){
+              controls += '<input type="button" id="ngl_download_'+mode+'_struc1" value="Download 1">';
+              if (two_structures)
+                controls += '<input type="button" id="ngl_download_'+mode+'_struc2" value="Download 2">';
+            }
+//            controls += '<p>Colors: <select id="ngl_color"><option value="blue">blue</option><option value="grey">greys</option></select></p><br/>';
+
+
+            if (two_structures){
+              if (!pdb2)
+                pdb2 = pdbs_set2[0]
+
+              controls += '<p>Structure set 2: <select id="ngl_pdb_'+mode+'_ref2">';
+              for (var i = 0; i < pdbs_set2.length; i++){
+                  if (pdbs_set2[i]==pdb2)
+                      controls += '<option value="'+pdbs_set2[i]+'" SELECTED>'+pdbs_set2[i]+'</option>';
+                  else
+                      controls += '<option value="'+pdbs_set2[i]+'">'+pdbs_set2[i]+'</option>';
+              }
+              controls += '</select></p>';
+//              controls += '<p>Colors: <select id="ngl_color2"><option value="red">red</option><option value="grey">greys</option></select></p><br/>';
+            }
+
+            controls += '<p>Only GNs: <input type=checkbox id="ngl_only_gns" checked></p>'
+            controls += '<p><select id="ngl_coloring_'+mode+'">'
+            if (mode == "single-group"){
+              controls += '<option value="averageG1">Average</option>'
+              controls += '<option value="rangeG1">Variation in group</option>'
+              controls += '<option value="diff" SELECTED>Difference with class</option>'
+            } else if (mode == "two-groups"){
+              controls += '<option value="averageG1">Average group 1</option>'
+              controls += '<option value="averageG2">Average group 2</option>'
+              controls += '<option value="rangeG1">Variation in group 1</option>'
+              controls += '<option value="rangeG2">Variation in group 2</option>'
+              controls += '<option value="diff" SELECTED>Difference between groups</option>'
+            } else {
+              controls += '<option value="value" SELECTED>Value</option>'
+              controls += '<option value="diff">Difference with class</option>'
+            }
+            controls += '</select></p>'
+
+//                              +'<p>Highlight interacting res: <input type=checkbox id="highlight_res" checked></p>'
+//                              +'<p>Hide interaction lines: <input type=checkbox id="toggle_interactions"></p>'
+//                              +'<p>Show all side-chains: <input type=checkbox id="toggle_sidechains"></p>'
+//                              +'<p>Show interacting side-chains: <input type=checkbox id="toggle_sidechains_int"></p>'
+//                              +'<p>Show NGL derived contacts: <input type=checkbox id="ngl_contacts"></p>'
+//                              +'</div>';
+
+            newDiv.innerHTML = controls;
+
+            $("#ngl-"+mode).append(newDiv);
+
+            selectColoring[mode] = "diff"
+            // DEBUG setting (or keep as default?)
+            if (mode=="single")
+                selectColoring[mode] = "value"
+
+            $('#ngl_coloring_'+mode).change(function(e) {
+                selectColoring[mode] = $(this).val()
+                updateStructureRepresentations(mode)
+              });
+
+            $('#ngl_download_'+mode+'_struc1').click(function(e){
+              console.log("test 1")
+              var pdbWriter = new NGL.PdbWriter(reps[mode][0].structureComponent.structure)
+              pdbWriter.download('structure')
+            });
+
+            if (two_structures) {
+              $('#ngl_download_'+mode+'_struc2').click(function(e){
+                console.log("test 2")
+                var pdbWriter = new NGL.PdbWriter(reps[mode][1].structureComponent.structure)
+                pdbWriter.download('structure')
+              });
+
+              // structure selection
+              $("#ngl_pdb_"+mode+"_ref").change(function(e){
+                    createNGLview(mode, $(this).val(), pdbs, pdbs_set2, $("#ngl_pdb_"+mode+"_ref2").val());
+              });
+              $("#ngl_pdb_"+mode+"_ref2").change(function(e){
+                    createNGLview(mode, $("#ngl_pdb_"+mode+"_ref").val(), pdbs, pdbs_set2, $(this).val(),);
+              });
+
+              // coloring structure 2
+              $("#ngl-"+mode+" #ngl_color2").change(function(e){
+                  gpcr_rep[mode][1].setParameters({
+                    color: color_schemes[mode][1][$(this).val()]
+                  });
+              });
+            } else {
+              // structure selection
+              $("#ngl_pdb_"+mode+"_ref").change(function(e){
+                    createNGLview(mode, $(this).val(), pdbs, pdbs_set2);
+              });
+            }
+
+            $("#ngl-"+mode+" #ngl_color").change(function(e){
+                gpcr_rep[mode][0].setParameters({
+                  color: color_schemes[mode][0][$(this).val()]
+                });
+            });
+
+
+            $("#"+mode+"-NGL-tab-link").click(function(e){
+                $(function() {
+                  stage[mode].handleResize();
+                });
+            });
+
+            $("#ngl-"+mode+" #ngl_only_gns").change(function(e){
+                updateStructureRepresentations(mode);
+            });
+
+/*            $("#ngl-"+mode+" #highlight_res").change(function(e){
+                updateStructureRepresentations(mode);
+            });
+
+            $("#ngl-"+mode+" #toggle_interactions").change(function(e){
+                updateStructureRepresentations(mode);
+            });*/
+
+            /*$("#ngl-"+mode+" #toggle_sidechains").change(function(e){
+                updateStructureRepresentations(mode);
+            });*/
+
+/*            $("#ngl-"+mode+" #toggle_sidechains_int").change(function(e){
+                updateStructureRepresentations(mode);
+            });*/
+
+            /*$("#ngl-"+mode+" #ngl_contacts").change(function(e){
+                updateStructureRepresentations(mode);
+            });*/
+
+            // Prevent scrolling of document
+            // TODO: fix this for passive
+            document.getElementById( "ngl-"+mode ).onwheel = function(event){return false;};//event.preventDefault();};
+            document.getElementById( "ngl-"+mode ).onmousewheel = function(event){return false;};//event.preventDefault();};
+        }
+
+        var linkColourScheme = {}
+        function createNGLRepresentations(mode, structureNumber, update = false) {
+            var res_int = []
+            if (mode in reps && structureNumber in reps[mode] && reps[mode][structureNumber].structureComponent)
+              var o = reps[mode][structureNumber].structureComponent;
+            else
+              return  // NGL not initialized
+
+            // initialize linkMap + colorScheme
+            if (!(mode in linkColourScheme)) linkColourScheme[mode] = {}
+
+            var gnOnly = !update || $("#ngl-"+mode+" #ngl_only_gns").prop('checked');
+
+            // get cutoffs from control-tab if sliders are initialized
+/*            var r1, r2, r3;
+            r1 = r2 = r3 = [-1000, 1000]
+            if ($('#' + currentTab + '-crystal-tab #freq-slider-range-1').slider("instance")){
+                r1 = $('#' + currentTab + '-crystal-tab #freq-slider-range-1').slider( "option", "values" );
+                r2 = $('#' + currentTab + '-crystal-tab #freq-slider-range-2').slider( "option", "values" );
+                r3 = $('#' + currentTab + '-crystal-tab #freq-slider-range-3').slider( "option", "values" );
+            }*/
+
+            // Empty? Update selection with a fake residue -> hide everything
+            if (res_int.length == 0) res_int.push("9999999")
+
+            if (update){
+                reps[mode][structureNumber].int_res.setSelection(":"+pdb_data[mode][structureNumber]['chain']+" and ("+res_int.join(", ")+") and (.CA)")
+                reps[mode][structureNumber].ball_int.setSelection(":"+pdb_data[mode][structureNumber]['chain']+" and ("+res_int.join(", ")+") and sidechainAttached")
+            } else {
+                // selection representation
+                reps[mode][structureNumber].hover = o.addRepresentation("ball+stick", {sele: ":"+pdb_data[mode][structureNumber]['chain']+" and ("+res_int.join(", ")+") and (.CA)"});
+
+                reps[mode][structureNumber].int_res = o.addRepresentation( "spacefill", {
+                  sele: ":"+pdb_data[mode][structureNumber]['chain']+" and ("+res_int.join(", ")+") and (.CA)",
+                  color: (structureNumber==0 ? "#084081" : "#811808"),
+                  // colorScale: ["#44f", "#444"],
+                  radiusScale: .2,
+                  name: "res",
+                  visible: true
+                });
+
+                reps[mode][structureNumber].ball_int = o.addRepresentation("ball+stick", {
+                  sele: ":"+pdb_data[mode][structureNumber]['chain']+" and ("+res_int.join(", ")+") and sidechainAttached",
+                  color: "element",
+                  colorValue: (structureNumber==0 ? "#99B5CC" : "#DDA8BC"),
+                  visible: false
+                  })
+            }
+
+            // update show/hide when updating representations
+            //if (update) updateStructureRepresentations(mode)
+             updateStructureRepresentations(mode)
+        }
+
+        var DSSP_COLORING = {
+          "H": "#FF0000", // alpha helix
+          "G": "#FF00FF", // 3-10 helix
+          "I": "#00FF00", // pi helix
+          "B": "#ffd700", // isolated bridge
+          "E": "#00a8ff", // strand/extended conformation
+          "T": "#ff5700", // turn
+          "S": "#00ffff", // bend (unique to DSSP)
+          "-": "#5d8aa8", // coil/other
+        }
+        var STRIDE_COLORING = {
+          "H": "#FF0000",
+          "G": "#FF00FF",
+          "I": "#00FF00",
+          "B": "#ffd700",
+          "E": "#00a8ff",
+          "T": "#ff5700",
+          "C": "#5d8aa8",
+        }
+        // TODO: make this function obsolete and merge remaining code with *createNGLRepresentations*
+        function updateStructureRepresentations(mode) {
+          var structures = 1;
+//          if (mode=="two-groups")
+//            structures = 2;
+
+          if (gpcr_rep[mode] != undefined && gpcr_rep[mode][0] != undefined){
+            for (var key = 0; key < structures; key++) {
+              var color_scheme = []
+
+              if (coloringData[mode] != undefined){
+                // find selected coloring option
+                var colorIndex = 0
+                switch (selectColoring[mode]) {
+                  case "averageG1":
+                  case "value":
+                    colorIndex = 1
+                    break;
+                  case "rangeG1":
+                    colorIndex = 2
+                    break;
+                  case "averageG2":
+                    colorIndex = 3
+                    break;
+                  case "rangeG2":
+                    colorIndex = 4
+                    break;
+                  case "diff":
+                  default :
+                    colorIndex = 0
+                }
+
+                var colorType = $(tabMap[mode] + " .variable_selector").val()
+                for (gn_key in coloringData[mode]){
+                  // select residue
+                  gn = pdb_data[mode][key]["gn_map"].indexOf(gn_key)
+                  ngl_selection = ":" + pdb_data[mode][key]['chain'] + " and " + pdb_data[mode][key]["only_gn"][gn]
+
+                  // add color
+                  // 0 - diff | 1- AvgG1/value | 2 - rangeG1 | 3 - avgG2 - 4 - rangeG2
+                  switch(colorType){
+                    case "outer_angle":
+                    case "bb_angle":
+                    case "sc_angle":
+                      if (colorIndex == 1 || colorIndex == 3)
+                        //color_scheme.push([numberToColor4(140, coloringData[mode][gn_key][colorIndex]-40, false) , ngl_selection])
+                        color_scheme.push([numberToColor3(140, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      else if (colorIndex == 2 || colorIndex == 4)
+                        color_scheme.push([numberToColor5(90, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      else
+                        color_scheme.push([numberToColor5(45, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      break;
+                    case "HSE":
+                      if (colorIndex == 1 || colorIndex == 3)
+                        color_scheme.push([numberToColor4(25, coloringData[mode][gn_key][colorIndex]-5, false) , ngl_selection])
+                      else if (colorIndex == 2 || colorIndex == 4)
+                          color_scheme.push([numberToColor5(10, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      else
+                        color_scheme.push([numberToColor5(10, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      break;
+                    case "SASA":
+                      if (colorIndex == 1 || colorIndex == 3)
+                        color_scheme.push([numberToColor4(125, coloringData[mode][gn_key][colorIndex], false) , ngl_selection])
+                      else if (colorIndex == 2 || colorIndex == 4)
+                          color_scheme.push([numberToColor5(75, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      else
+                        color_scheme.push([numberToColor5(50, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      break;
+                    case "RSA":
+                      if (colorIndex == 1 || colorIndex == 3)
+                        color_scheme.push([numberToColor4(75, coloringData[mode][gn_key][colorIndex], false) , ngl_selection])
+                      else if (colorIndex == 2 || colorIndex == 4)
+                        color_scheme.push([numberToColor5(50, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      else
+                        color_scheme.push([numberToColor5(50, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      break;
+                    case "phi":
+                    case "psi":
+                      if (colorIndex == 1 || colorIndex == 3){
+                        var tmp = coloringData[mode][gn_key][colorIndex]
+                        if (colorType=="phi"){
+                          tmp = (tmp+67.479)/15 //20.658
+                        } else {
+                          tmp = (tmp+33.478)/30 //34.245
+                        }
+
+                        color_scheme.push([numberToColor3(3, tmp, true) , ngl_selection])
+                      } else if (colorIndex == 2 || colorIndex == 4)
+                        color_scheme.push([numberToColor5(45, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      else
+                        color_scheme.push([numberToColor5(60, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      break;
+                    case "tau":
+                      if (colorIndex == 1 || colorIndex == 3){
+                        var tmp = (coloringData[mode][gn_key][colorIndex] - 44.066)/25
+
+                        color_scheme.push([numberToColor3(3, tmp, true) , ngl_selection])
+                      } else if (colorIndex == 2 || colorIndex == 4)
+                        color_scheme.push([numberToColor5(45, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      else
+                        color_scheme.push([numberToColor5(30, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      break;
+                    case "theta":
+                      if (colorIndex == 1 || colorIndex == 3){
+                        var tmp = (coloringData[mode][gn_key][colorIndex] - 93.686)/7.529
+                        if ( tmp < 0 ) tmp = tmp*1.2 // emphasize negative values (diff distribution in negative range)
+
+                        color_scheme.push([numberToColor3(3, tmp, true) , ngl_selection])
+                      } else if (colorIndex == 2 || colorIndex == 4)
+                        color_scheme.push([numberToColor5(45, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      else
+                        color_scheme.push([numberToColor5(45, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      break;
+                    case "distance":
+                      // 0 - diff | 1- AvgG1/value | 2 - rangeG1 | 3 - avgG2 - 4 - rangeG2
+                      if (colorIndex == 1 || colorIndex == 3)
+                        color_scheme.push([numberToColor4(25, coloringData[mode][gn_key][colorIndex], false) , ngl_selection])
+                      else if (colorIndex == 2 || colorIndex == 4)
+                        color_scheme.push([numberToColor5(10, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      else
+                        color_scheme.push([numberToColor5(5, coloringData[mode][gn_key][colorIndex], true) , ngl_selection])
+                      break;
+                    case "ss_dssp":
+                      if (coloringData[mode][gn_key][colorIndex] != null && coloringData[mode][gn_key][colorIndex] != "")
+                        color_scheme.push([DSSP_COLORING[coloringData[mode][gn_key][colorIndex]], ngl_selection])
+                      break;
+                    case "ss_stride":
+                      if (coloringData[mode][gn_key][colorIndex] != null && coloringData[mode][gn_key][colorIndex] != "")
+                        color_scheme.push([STRIDE_COLORING[coloringData[mode][gn_key][colorIndex]], ngl_selection])
+                      break;
+                  }
+                }
+
+                color_scheme.push([ "white", "*" ]);
+                diff_coloring = NGL.ColormakerRegistry.addSelectionScheme(color_scheme)
+                gpcr_rep[mode][key].setParameters({
+                    color: diff_coloring
+                });
+              }
+
+              // Update cartoon using selection
+              checked = $("#ngl-"+mode+" #ngl_only_gns").prop('checked');
+              sele = ":"+pdb_data[mode][key]['chain'];
+              int_sele = sele
+              if (checked)
+                sele = ":"+pdb_data[mode][key]['chain']+" and ("+pdb_data[mode][key]['only_gn'].join(", ")+")";
+                int_sele =
+
+              gpcr_rep[mode][key].setSelection(sele);
+            }
+          }
+        }
+
+        function rgb2hex(r,g,b) {
+
+            if (r.length == 1)
+                r = '0' + r;
+
+            if (g.length == 1)
+                g = '0' + g;
+
+            if (b.length == 1)
+                b = '0' + b;
+
+            return '#' + r + g + b;
+        }
+
+        function numberToColor(max, value, neg_and_pos = false) {
+            if (neg_and_pos) {
+              value = value + max
+              max = max*2
+            }
+
+            if (value > max)
+              value = max
+
+            var hexc = 255/max;
+
+            if(value<(max/3)){
+                return rgb2hex("00","00",Math.floor((max-value)*hexc).toString(16));
+            } else if (value < ((2*max)/3)) {
+                return rgb2hex(Math.floor(value*hexc).toString(16),Math.floor((max-Math.abs(value-max/2))*hexc).toString(16),Math.floor((max-value)*hexc).toString(16));
+            } else {
+                return rgb2hex(Math.floor(value*hexc).toString(16),"00","00");
+            }
+        }
+
+        function numberToColor5(max,value, neg_and_pos = false) {
+            return numberToColor3(max, value*-1, neg_and_pos)
+        }
+
+        function numberToColor4(max,value, neg_and_pos = false) {
+            if (neg_and_pos) {
+              value = value + max
+              max = max*2
+            }
+
+            if (value > max)
+              value = max
+            if (value < 0)
+              value = 0
+
+            //return colorGradient(value/max, {red:255, green:255, blue: 255}, {red:255, green:128, blue: 83}, {red:0, green:0, blue: 255})
+            //return colorGradient(value/max, {red:255, green:255, blue: 255}, {red:7, green:74, blue: 33})
+            return colorGradient(value/max, {red:255, green:255, blue: 255}, {red:117, green:177, blue: 212}, {red:16, green:55, blue: 117})
+        }
+
+        function numberToColor3(max,value, neg_and_pos = false) {
+            if (neg_and_pos) {
+              value = value + max
+              max = max*2
+            }
+
+            if (value > max)
+              value = max
+            if (value < 0)
+              value = 0
+
+            return colorGradient(value/max, {red:255, green:0, blue: 0}, {red:255, green:255, blue: 255}, {red:0, green:0, blue: 255})
+        }
+
+        function numberToColor2(max,value, neg_and_pos = false) {
+            if (neg_and_pos) {
+              value = value + max
+              max = max*2
+            }
+
+            if (value > max)
+              value = max
+            if (value < 0)
+              value = 0
+
+            return colorGradient(value/max, {red:255, green:255, blue: 255}, {red:0, green:0, blue: 255})
+        }
+
+        function colorGradient(fadeFraction, rgbColor1, rgbColor2, rgbColor3) {
+            var color1 = rgbColor1;
+            var color2 = rgbColor2;
+            var fade = fadeFraction;
+
+            // Do we have 3 colors for the gradient? Need to adjust the params.
+            if (rgbColor3) {
+              fade = fade * 2;
+
+              // Find which interval to use and adjust the fade percentage
+              if (fade >= 1) {
+                fade -= 1;
+                color1 = rgbColor2;
+                color2 = rgbColor3;
+              }
+            }
+
+            var diffRed = color2.red - color1.red;
+            var diffGreen = color2.green - color1.green;
+            var diffBlue = color2.blue - color1.blue;
+
+            var gradient = {
+              red: parseInt(Math.floor(color1.red + (diffRed * fade)), 10),
+              green: parseInt(Math.floor(color1.green + (diffGreen * fade)), 10),
+              blue: parseInt(Math.floor(color1.blue + (diffBlue * fade)), 10),
+            };
+
+            //return 'rgb(' + gradient.red + ',' + gradient.green + ',' + gradient.blue + ')';
+            return rgb2hex(gradient.red.toString(16),gradient.green.toString(16),gradient.blue.toString(16));
+        }
+
+        function redraw_ngl() {
+          var mode = $('ul#mode_nav').find('li.active').find('a').text().trim();
+          var mode = $('.ngl-container:visible').attr('id').replace('ngl-','');
+          if (mode in stage){
+            $(function() {
+              stage[mode].handleResize();
+            });
+          }
+        }
+
+        function intersect(a, b) {
+          var t;
+          if (b.length > a.length) t = b, b = a, a = t; // indexOf to loop over shorter
+          return a.filter(function (e) {
+              return b.indexOf(e) > -1;
+          });
+        }
+
+        $('#single-crystal-pdb-modal-table').on('shown.bs.modal', function (e) {
+          showPDBtable('#single-crystal-pdb-modal-table');
+        })
+        $('#single-crystal-group-pdbs-modal-table').on('shown.bs.modal', function (e) {
+          showPDBtable('#single-crystal-group-pdbs-modal-table');
+        })
+        $('#two-crystal-group-pdbs-modal-1-table').on('shown.bs.modal', function (e) {
+          showPDBtable('#two-crystal-group-pdbs-modal-1-table');
+        })
+        $('#two-crystal-group-pdbs-modal-2-table').on('shown.bs.modal', function (e) {
+          showPDBtable('#two-crystal-group-pdbs-modal-2-table');
+        })
+
+
+        function initializePdbChooserTables() {
+          $.get('/contactnetwork/pdbtabledata', function ( data ) {
+            $('#single-crystal-pdb-modal-table .tableview').html(data);
+            $('#single-crystal-group-pdbs-modal-table .tableview').html(data);
+            $('#two-crystal-group-pdbs-modal-1-table .tableview').html(data);
+            $('#two-crystal-group-pdbs-modal-2-table .tableview').html(data);
+            pdbtabledata = data;
+          });
+        }
+
+        function swap(dict){
+          var ret = {};
+          for(var key in dict){
+            ret[dict[key]] = key;
+          }
+          return ret;
+        }
+
+        function initializeDownloadButton(selector) {
+          // Distance matrix download
+          $(selector + ' .btn-download').click(function() {
+              // create download table
+              if (angleData != undefined){
+                  /*var header = lastData['dm_labels']
+                  header.unshift("PDB-code")
+                  */
+
+
+                  // TODO Create header + data toggle HERE -> large download looping over all possible features
+                  var header = []
+                  var header2 = []
+                  var variables = swap(availableVariables);
+                  for (i in variables){
+                    if (i>=2){
+                      // group 1
+                      for (var j = 0; j < angleData[selector]["headers"].length; j++){
+                          header.push(variables[i])
+                          header2.push(angleData[selector]["headers"][j]["title"].replace(/(<([^>]+)>)/ig," "))
+                      }
+                      // group 2 or class
+                      for (var j = 0; j < angleData[selector]["headers2"].length; j++){
+                          header.push(variables[i])
+                          header2.push(angleData[selector]["headers2"][j]["title"].replace(/(<([^>]+)>)/ig," "))
+                      }
+                    } else {
+                      header.push("")
+                      header2.push(variables[i])
+                    }
+                  }
+                  // add headers
+                  var data = [];
+                  data.push(header);
+                  data.push(header2);
+
+                  rawdata = angleData[selector]["data"]
+                  rawdata2 = angleData[selector]["data2"]
+                  for (var i=0; i < rawdata.length; i++) {
+                    var residue = rawdata[i][0]
+                    var row = [residue, rawdata[i][1]]
+                    for (j in variables) {
+                        if (j >= 2){
+                          // group 1
+                          row.push(rawdata[i][j])
+
+                          // group 2
+                          if (residue in rawdata2)
+                            row.push(rawdata2[residue][j])
+                          else
+                            if (Array.isArray(rawdata[i][j]))
+                              for (var g=0; g < rawdata[i][j].length; g++)
+                                row.push('-')
+                            else
+                              row.push('-')
+                        }
+                    }
+                    data.push(row.flat())
+                  }
+
+                  // Convert to CSV
+                  var csv = Papa.unparse(data);
+
+                  // Download file
+                  downloadURI('data:text/csv;charset=UTF-8,' + encodeURI(csv), "GPCRdb_residue_properties.csv");
+              }
+          });
+        }
+
+
+        function initalizeSingleCrystalView() {
+            initializeGoButton('#single-crystal-tab');
+            initializeDownloadButton('#single-crystal-tab');
+            initializeFullscreenButton('#single-crystal-tab');
+        }
+
+        function initializeSingleGroupCrystalView() {
+            initializeGoButton('#single-crystal-group-tab');
+            initializeDownloadButton('#single-crystal-group-tab');
+            initializeFullscreenButton('#single-crystal-group-tab');
+        }
+
+        function initializeTwoCrystalGroupsView() {
+            initializeGoButtonTwoCrystalGroups('#two-crystal-groups-tab');
+            initializeDownloadButton('#two-crystal-groups-tab');
+            initializeFullscreenButton('#two-crystal-groups-tab');
+        }
+
+        $(document).ready(function() {
+            // Get PDBs for table build
+            initializePdbChooserTables();
+
+            // Single PDB files
+            initalizeSingleCrystalView();
+
+            // Single group of PDB files
+            initializeSingleGroupCrystalView();
+
+            // Two groups of PDB files
+            initializeTwoCrystalGroupsView();
+
+            window.addEventListener("resize", redraw_ngl);
+
+            window.addEventListener("resize", redraw_renders);
+
+            {% if pdbs %}
+                // handle post data (if present) for single group
+                loadPDBsView({{ pdbs | safe}}, '#single-crystal-group-tab')
+            {% endif %}
+
+            {% if pdbs1 and pdbs2 %}
+                // handle post data (if present) for two groups
+                loadPDBsView({{ pdbs1 | safe }}, '#two-crystal-groups-tab',  {{ pdbs2 | safe}});
+            {% endif %}
+        });
+    </script>
+
+{% endblock %}
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+    <style type="text/css">
+
+        .select2-result-label{
+            font-size:x-small;
+            font-size: 10px;
+        }
+
+        .no-top-border{
+            border-top: 0px;
+        }
+
+        #filters{
+            float:left;
+          display:none;
+          position:absolute;
+          background:white;
+          border: 1px solid #D1C9C2;
+          border-top: 1;
+          width: 400px;
+          margin: 0 auto;
+          padding:  7px 15px;
+          text-align: left;
+          -webkit-border-bottom-right-radius: 6px;
+          -webkit-border-bottom-left-radius: 6px;
+          -moz-border-radius-bottomright: 6px;
+          -moz-border-radius-bottomleft: 6px;
+          border-bottom-right-radius: 6px;
+          border-bottom-left-radius: 6px;
+          z-index: 1;
+            font-size: 10px;
+        }
+
+        @media (min-width: 1800px){
+            #content {
+                width: 1770px;
+            }
+        }
+
+        @media (min-width: 2200px){
+            #content {
+                width: 100%;
+                padding-left: 100px;
+                padding-right: 100px;
+            }
+        }
+
+        .nav-tabs {
+            border-bottom: 0px solid #ddd;
+        }
+
+        @media (min-width: 1200px) {
+          .modal-wide {
+            width: 1200px;
+          }
+        }
+        @media (min-width: 1800px) {
+          .modal-wide {
+            width: 1800px;
+          }
+        }
+        @media (min-width: 2400px) {
+          .modal-wide {
+            width: 2400px;
+          }
+        }
+
+        .modal-footer {
+            border-top: 0px;
+        }
+
+        #single-crystal-pdbs {
+            height: 400px;
+            overflow: scroll;
+        }
+
+        .heatmap {
+          height: 800px;
+        /*  border: 1px lightslategrey solid;*/
+          width: 100%;
+        }
+
+        @media screen and (max-width: 992px) {
+            .go-button {
+                width: 100%;
+                margin-bottom: 15px;
+            }
+        }
+
+        .heatmap-container {
+            position: relative;
+        }
+
+        :-webkit-full-screen.heatmap-container {
+          width: 100%;
+          height: 100%;
+          border: 0px;
+        }
+
+        :-webkit-full-screen.heatmap-container .heatmap {
+          width: 100%;
+          height: 100%;
+          border: none;
+        }
+
+        .highlighted {
+            stroke: #286090 !important;
+            stroke-width: 3 !important;
+            opacity: 1 !important;
+        }
+
+        .temperature-scale .gray-to-red {
+            height: 10px;
+            width: 100%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(220,220,220,1)), color-stop(100%, rgba(255,0,0,1))); /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* ie10+ */
+            background: linear-gradient(270deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#DCDCDC', endColorstr='#FF0000',GradientType=1 );
+        }
+
+        .temperature-scale .red-to-gray {
+            height: 10px;
+            width: 50%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255,0,0,1)), color-stop(100%, rgba(220,220,220,1))); /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* ie10+ */
+            background: linear-gradient(270deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FF0000', endColorstr='#DCDCDC',GradientType=1 );
+        }
+
+        .temperature-scale .gray-to-blue {
+            height: 10px;
+            width: 50%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(220,220,220,1)), color-stop(100%, rgba(0,0,255,1))); /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* ie10+ */
+            background: linear-gradient(270deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#DCDCDC', endColorstr='#0000FF',GradientType=1 );
+        }
+
+        .temperature-scale .white-to-red {
+            height: 10px;
+            width: 100%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 100%); /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255,255,255,1)), color-stop(100%, rgba(255,0,0,1))); /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 100%); /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 100%); /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 100%); /* ie10+ */
+            background: linear-gradient(270deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 100%); /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FFFFFF', endColorstr='#FF0000',GradientType=1 );
+        }
+
+        .temperature-scale .red-to-white {
+            height: 10px;
+            width: 50%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255,0,0,1)), color-stop(100%, rgba(255,255,255,1))); /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* ie10+ */
+            background: linear-gradient(270deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FF0000', endColorstr='#FFFFFF',GradientType=1 );
+        }
+
+        .temperature-scale .white-to-blue {
+            height: 10px;
+            width: 50%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255,255,255,1)), color-stop(100%, rgba(0,0,255,1))); /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* ie10+ */
+            background: linear-gradient(270deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FFFFFF', endColorstr='#0000FF',GradientType=1 );
+        }
+
+        #single-crystal-tab .panel .btn-primary:hover, #single-crystal-group-tab .panel .btn-primary:hover, #two-crystal-groups-tab .panel .btn-primary:hover {
+            background-color: #337ab7;
+        }
+
+        #single-crystal-tab .panel .btn-primary.active:hover, #single-crystal-group-tab .panel .btn-primary.active:hover, #two-crystal-groups-tab .panel .btn-primary.active:hover {
+            background-color: #286090;
+        }
+
+        #single-crystal-tab .panel .btn-primary:focus, #single-crystal-group-tab .panel .btn-primary:focus, #two-crystal-groups-tab .panel .btn-primary:focus {
+            background-color: #337ab7;
+        }
+
+        #single-crystal-tab .panel .btn-primary.active:focus, #single-crystal-group-tab .panel .btn-primary.active:focus, #two-crystal-groups-tab .panel .btn-primary.active:focus {
+            background-color: #286090;
+        }
+
+        .svg-download-button {
+            margin-top: 6px;
+        }
+
+        .csv-download-button {
+            margin-top: 6px;
+        }
+
+        .btn-download, .btn-download-alt, .btn-fullscreen {
+          margin-right: 10px;
+        }
+
+        #sliderDiv {
+            height: 30px;
+            width: 600px;
+            position: relative;
+            left: 50%;
+            margin-left: -300px;
+            margin-top: 20px;
+        }
+        #regroupDiv {
+            position: relative;
+            left: 50%;
+            margin-left: -50px;
+            margin-top: 20px;
+            width: 100px;
+            height: 30px;
+            background-color: #d7deeb;
+            vertical-align: middle;
+            text-align: center;
+            line-height: 30px;
+            border: 2px solid #8489a3;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        #regroupDiv:hover {
+            background-color: #a1a5bd;
+        }
+
+        tr.table-selected {
+            color: #F00;
+            font-weight: bolder;
+        }
+    </style>
+
+{% endblock %}

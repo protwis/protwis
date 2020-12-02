@@ -1,0 +1,446 @@
+{% extends "home/base.html" %}
+
+{% load static %}
+
+{%csrf_token%}
+{% block addon_js %}
+<script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+<script src="{% static 'home/js/dataTables.buttons.min.js' %}"> </script>
+<script src="{% static 'home/js/select2.js' %}"> </script>
+
+
+<script type="text/javascript" charset="utf-8">
+    // main table load
+    $(document).ready(function() {
+        oTable = $('#structures_scrollable').DataTable({
+            StateSave: true,
+            dom: 'Bftrip<>',
+
+            // "language": {
+            //     "processing": "<span class='glyphicon glyphicon-refresh glyphicon-refresh-animate'></span>"
+            // }, // you can put text or html here in the language.processing setting.
+            // "processing": true, // you have to set this to true as well
+            buttons: [{
+                    text: 'Excel',
+                    className: 'btn btn-primary',
+                    titleAttr: 'Download excel',
+                    init: function(api, node, config) {
+                        $(node).removeClass('dt-button buttons-excel buttons-html5');
+                    },
+                    action: function(e, dt, node, config) {
+                        tableToExcel('structures_scrollable', 'Biased Ligand Data', 'GPCRdb_biased_ligands.xls')
+                    },
+                },
+                {
+                    text: 'Reset All Filters',
+                    className: 'btn btn-primary',
+                    titleAttr: 'Reset All Filters',
+                    init: function(api, node, config) {
+                        $(node).removeClass('dt-button buttons-excel buttons-html5');
+                    },
+                    action: function(e, dt, node, config) {
+                        reset_filters()
+                    },
+                },
+            ],
+            scrollX: '100%',
+            scrollY: '70vh',
+            scrollCollapse: true,
+            "order": [
+                [0, "desc"]
+            ],
+            AutoWidth: false,
+            paging: false,
+
+            "initComplete": function(settings, json) {
+                $('#loadingSpinner').show();
+                $('#structures_scrollable_body').hide();
+                setTimeout(function() {
+                    oTable.columns.adjust();
+                    $('#loadingSpinner').hide();
+                    $('#structures_scrollable_body').show();
+                }, 1);
+            },
+
+            "fnDrawCallback": function() {
+                $('#loadingSpinner').show();
+                $('#structures_scrollable_body').hide();
+                setTimeout(function() {
+                    oTable.columns.adjust();
+                    $('#loadingSpinner').hide();
+                    $('#structures_scrollable_body').show();
+                }, 1);
+            }
+
+        });
+
+
+        yadcf.init(oTable,
+            [{
+                    column_number: 0,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Class",
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 1,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Select",
+                    filter_reset_button_text: false,
+
+                },
+                {
+                    column_number: 2,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    //column_data_type: "html",
+                    filter_default_label: "Select",
+                    filter_reset_button_text: false,
+                },
+
+
+            ], {
+                cumulative_filtering: true
+            },
+        );
+
+        function reset_filters() {
+            yadcf.exResetAllFilters(oTable);
+            setTimeout(function() {
+                oTable.columns().flatten().each(function(colIdx) {
+                    var columnData = [];
+                    oTable.rows({
+                        filter: 'applied'
+                    }).data().each(function(i) {
+                        columnData.push(i[colIdx]);
+                    })
+                    if (columnData.join('').length == 0 && colIdx != 0) {
+                        oTable.column(colIdx).visible(false);
+                    }
+                });
+                oTable.columns.adjust();
+
+                $('#loadingSpinner').hide();
+                $('#structures_scrollable_body').show();
+            }, 1);
+
+        }
+
+
+        var tableToExcel = (function() {
+            var uri = 'data:application/vnd.ms-excel;base64,',
+                template =
+                '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>',
+                base64 = function(s) {
+                    return window.btoa(unescape(encodeURIComponent(s)))
+                },
+                format = function(s, c) {
+                    return s.replace(/{(\w+)}/g, function(m, p) {
+                        return c[p];
+                    })
+                }
+            return function(table, name, filename) {
+                var table = $("#" + table).clone();
+                $("#excel_table").html(table);
+                // Clean up table to remove yadcf stuff
+                $("#excel_table thead tr").css('height', '');
+                $("#excel_table thead th").css('height', '');
+                $("#excel_table thead div").css('height', '');
+                $("#excel_table thead .yadcf-filter-wrapper").remove();
+                $("#excel_table thead button").remove();
+                var tr = $("#excel_table thead tr:eq(1)");
+                // reattach th titles
+                tr.find('th').each(function(column, th) {
+                    if ($(th).attr('title')) $(th).html($(th).attr('title'));
+                });
+
+                var ctx = {
+                    worksheet: name || 'Worksheet',
+                    table: $("#excel_table").html()
+                }
+                $("#excel_table").html("");
+                document.getElementById("dlink").href = uri + base64(format(template, ctx));
+                document.getElementById("dlink").download = filename;
+                document.getElementById("dlink").click();
+            }
+        })()
+
+    });
+</script>
+
+
+{% endblock %}
+
+
+{% block content %}
+<a id="dlink" style="display:none;"></a>
+<div id="excel_table" style2="display:none;"></div>
+<div style="display:block;">
+    <div style="display:inline; float:left;">
+        <h2 style="width:auto; display:inline;">Ligands Vendors</h2>
+    </div>
+</div>
+<br><br>
+
+<img id="loadingSpinner" style="position: absolute;
+    left: 50%;
+    top: 50%;" src="{% static 'home/images/loading.gif' %}" />
+
+{% if data %}
+{% autoescape off %}
+
+<div style='padding-top: 0px; font-size: 10px; white-space: nowrap; overflow-y:hidden;  '>
+
+    <div id='structures_scrollable_div' style=" width: fit-content;">
+
+        <div id="testTable" style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
+            <table class="display"  style ='display:inline-block;' id='structures_scrollable'>
+
+                <thead id="headers" style="margin-top:15px;">
+
+                    <tr>
+                        <!-- Receptor -->
+
+                        <th style="border: 1px solid black;">Ligand<br></th>
+                        <th style="border: 1px solid black;">Link<br></th>
+                        <th style="border: 1px solid black;">Product ID<br></th>
+
+                    </tr>
+                </thead>
+                <tbody id='structures_scrollable_body' style="display: none">
+                    {%for data_entry in data%}
+
+                    <tr>
+                        </td>
+
+                        <!-- s.protein_conformation.protein.parent.family.parent.parent.parent.shorter() -->
+
+                        <td title='{{data_entry.ligand}}'>{{data_entry.ligand}}</td>
+                        <td><a href='{{data_entry.url}}' target='blank'>{{data_entry.vendor.name}}</td>
+                        <td>{{data_entry.vendor_id}}</td>
+
+                    </tr>
+                    {%endfor%}
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+    <!-- </div> -->
+
+</div>
+
+
+{% endautoescape %}
+{% else %}
+<p> Ooops! There is no data to show here yet. </p>
+
+<script>
+document.getElementById("loadingSpinner").style.display = "none";
+</script>
+{% endif %}
+
+<br>
+<br>
+{% endblock %}
+
+
+
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+<link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet">
+<link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
+<link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.4.0/css/buttons.dataTables.min.css" type="text/css" />
+
+<!-- configure radio buttons style -->
+<style>
+    div#content ul li {
+        display: inline-block;
+    }
+</style>
+
+<style type="text/css">
+
+    .dataTables_scrollHeadInner{
+        margin-top: 20px;
+    }
+    table.dataTable tbody td {
+        padding-top: 6px !important;
+        padding-bottom: 6px !important;
+    }
+
+
+
+    table.dataTable.compact thead th.over_header {
+        border-right: 1px solid;
+        /* border-left: 0px solid; */
+        text-align: center;
+
+    }
+
+    table.dataTable.compact thead tr.over_header th {
+        border-bottom: 1px solid #ccc;
+    }
+
+    table.dataTable.compact thead th.leftborder {
+        border-left: 1px solid;
+    }
+
+    table.dataTable.compact thead th.rightborder {
+        border-right: 1px solid;
+    }
+
+    table.dataTable.compact thead th.checkbox_tr {
+        text-align: left;
+    }
+
+
+    .select2-container-multi .select2-choices {
+        min-height: 26px;
+        /* width: 80px; */
+    }
+
+    .yadcf-filter-wrapper {
+        margin-top: 0px;
+    }
+
+    input.yadcf-filter {
+        width: 100px;
+        font-family: sans-serif;
+        font-size: 100%;
+        font-weight: bold;
+    }
+
+    /* .select2-container,
+    .select2-drop,
+    .select2-search,
+    .select2-search input {
+        min-width: 95px !important;
+        max-width: 95px !important;
+    } */
+
+    /* .select2-container-multi .select2-choices{
+
+        min-width: 95px !important;
+        max-width: 95px !important;
+    } */
+
+
+    .clicked_button {
+        background-color: rgb(215, 215, 215);
+    }
+
+    #overlay {
+        top: 0px;
+        position: absolute;
+        background: #f8f8f8;
+        /*border: 1px solid #333;*/
+        -webkit-box-shadow: 5px 0 2px -2px #888;
+        box-shadow: 5px 0 2px -2px #888;
+    }
+
+    .container {
+        width: 90%;
+    }
+
+    .wrapper {
+        overflow-x: scroll;
+        overflow-y: hidden;
+    }
+
+    #overlay tbody tr {
+        background-color: #f8f8f8;
+    }
+
+    #count_row th {
+        font-size: 11px;
+        text-align: center;
+    }
+
+    .switch-field {
+        display: flex;
+        margin: auto;
+        margin-bottom: 0px;
+        overflow: hidden;
+        width: 100%;
+
+    }
+
+    .switch-field input {
+        position: left !important;
+        clip: rect(0, 0, 0, 0);
+        height: 1px;
+        width: 1px;
+        border: 0;
+        overflow: hidden;
+    }
+
+    .switch-field label {
+        background-color: white;
+        color: rgba(0, 0, 0, 0.6);
+        font-size: 14px;
+        line-height: 1;
+        text-align: center;
+        padding: 8px 16px;
+        margin-right: -1px;
+        border: 1px solid rgba(0, 0, 0, 0.2);
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px rgba(255, 255, 255, 0.1);
+        transition: all 0.1s ease-in-out;
+    }
+
+    .switch-field label:hover {
+        cursor: pointer;
+        width: 100%;
+    }
+
+    .switch-field input:checked+label {
+        background-color: #337ab7;
+        /* #a5dc86; */
+        box-shadow: none;
+    }
+
+    .switch-field label:first-of-type {
+        border-radius: 4px 0 0 4px;
+
+    }
+
+    .switch-field label:last-of-type {
+        border-radius: 0 4px 4px 0;
+    }
+
+    /* This is just for CodePen. */
+
+    .form1 {
+        max-width: 600px;
+        width: 500px;
+        font-family: "Lucida Grande", Tahoma, Verdana, sans-serif;
+        font-weight: normal;
+        line-height: 1.625;
+
+    }
+
+    .name {
+        width: 150px;
+        text-overflow: ellipsis;
+        cursor: pointer;
+        word-break: break-all;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
+    .name:hover {
+        overflow: visible;
+        white-space: normal;
+        /* height: auto;  /* just added this line */
+        */
+    }
+</style>
+
+{% endblock %}

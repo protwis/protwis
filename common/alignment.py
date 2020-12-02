@@ -1,31 +1,35 @@
-from django.conf import settings
-from django.core.cache import cache
-from django.core.cache import caches
-try:
-  cache_alignments = caches['alignment_core']
-except:
-  cache_alignments = cache
-
-from alignment.functions import prepare_aa_group_preference
-from common.selection import Selection
-from common.definitions import *
-from protein.models import Protein, ProteinConformation, ProteinState, ProteinSegment, ProteinFusionProtein, ProteinFamily
-from residue.models import Residue
-from residue.models import ResidueGenericNumber, ResidueGenericNumberEquivalent
-from residue.models import ResidueNumberingScheme
-from residue.functions import dgn, ggn
-from structure.models import Structure, Rotamer
-from signprot.models import SignprotComplex
-
+import hashlib
+import json
+import logging
+import os
+import time
 from collections import OrderedDict
 from copy import deepcopy
 from operator import itemgetter
-from Bio.SubsMat import MatrixInfo
 
-import hashlib
-import logging
 import numpy as np
-import time
+
+from alignment.functions import prepare_aa_group_preference
+from Bio.SubsMat import MatrixInfo
+from common.definitions import *
+from common.selection import Selection
+from django.conf import settings
+from django.core.cache import cache, caches
+from protein.models import (Protein, ProteinConformation, ProteinFamily,
+                            ProteinFusionProtein, ProteinSegment, ProteinState)
+from residue.functions import dgn, ggn
+from residue.models import (Residue, ResidueGenericNumber,
+                            ResidueGenericNumberEquivalent,
+                            ResidueNumberingScheme)
+# from structure.functions import StructureSeqNumOverwrite
+from signprot.models import SignprotComplex
+from structure.models import Rotamer, Structure
+
+try:
+    cache_alignments = caches['alignment_core']
+except:
+    cache_alignments = cache
+
 
 class Alignment:
     """A class representing a protein sequence alignment, with or without a reference sequence"""
@@ -90,7 +94,6 @@ class Alignment:
             new_signature.append(self._calculate_best_feature(pos, segment, argmax, ref_matrix))
         return new_signature
 
-
     def _calculate_best_feature(self, pos, segment, argmax, ref_matrix):
 
         tmp = self.feature_preference[argmax]
@@ -118,7 +121,7 @@ class Alignment:
             pconf = ProteinConformation.objects.get(protein=protein)
         except ProteinConformation.DoesNotExist:
             raise Exception ('Protein conformation {} not found for protein {}'.format(self.states[0],
-                protein.entry_name))
+                                                                                       protein.entry_name))
 
         self.proteins.insert(0, pconf)
         self.update_numbering_schemes()
@@ -135,8 +138,8 @@ class Alignment:
         # fetch all conformations of selected proteins
         # FIXME only show inactive?
         protein_conformations = ProteinConformation.objects.order_by('protein__family__slug',
-            'protein__entry_name').filter(protein__in=proteins).select_related('protein__residue_numbering_scheme',
-            'protein__species', 'state')
+                                                                     'protein__entry_name').filter(protein__in=proteins).select_related('protein__residue_numbering_scheme',
+                                                                                                                                        'protein__species', 'state')
         pconfs = OrderedDict()
         for pconf in protein_conformations:
             pconf_label = pconf.__str__()
@@ -171,11 +174,11 @@ class Alignment:
 
                 if species_list:
                     family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
-                        species__in=(species_list), source__in=(protein_source_list)).select_related(
+                                                             species__in=(species_list), source__in=(protein_source_list)).select_related(
                         'residue_numbering_scheme', 'species')
                 else:
                     family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
-                        source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
+                                                             source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
 
                 for fp in family_proteins:
                     proteins.append(fp)
@@ -189,6 +192,28 @@ class Alignment:
         segment_lookup = {}
         segment_lookup_positions = {}
         unsorted_segments = OrderedDict()
+
+        ## Check segments and find all ResidueGenericNumber to lessen queries afterwards
+        normal_segments = []
+        segment_positions_lookup = OrderedDict()
+        for s in selected_segments:
+            if hasattr(s, 'item'):
+                selected_segment = s.item
+            else:
+                selected_segment = s
+            # handle residue positions separately
+            if selected_segment.__class__.__name__ == 'ResidueGenericNumberEquivalent':
+                continue
+            normal_segments.append(selected_segment)
+            segment_positions_lookup[selected_segment.slug] = []
+        if normal_segments:
+            # If normal segments, prepare all ResidueGenericNumber for less overhead
+            segment_positions = ResidueGenericNumber.objects.filter(protein_segment__in=normal_segments,
+                                                                    scheme=self.default_numbering_scheme).select_related('protein_segment').order_by('label')
+            for segment_residue in segment_positions:
+                segment = segment_residue.protein_segment.slug
+                segment_positions_lookup[segment].append(segment_residue)
+
         for s in selected_segments:
             if hasattr(s, 'item'):
                 selected_segment = s.item
@@ -202,25 +227,16 @@ class Alignment:
                 segment_residue = [selected_segment]
 
                 # if in site search, add residue group to selected item
-                if 'site_residue_group' in s.properties:
+                if hasattr(s, 'properties') and 'site_residue_group' in s.properties:
                     segment_residue.append(s.properties['site_residue_group'])
                 selected_residue_positions.append(segment_residue)
                 continue
 
-            # fetch split segments (e.g. ECL2_before and ECL2_after)
-            # AJK: point for optimization
-            alt_segments = ProteinSegment.objects.filter(slug__startswith=selected_segment.slug)#.prefetch_related('proteinfamily__protein__residue__generic_number', 'proteinfamily__protein__residue__generic_number__generic_number__scheme')
-
-            for segment in alt_segments:
-                segment_positions = ResidueGenericNumber.objects.filter(protein_segment=segment,
-                    scheme=self.default_numbering_scheme).order_by('label')
-
-                # segments
-                unsorted_segments[segment.pk] = []
-                segment_lookup[segment.pk] = segment.slug
-                segment_lookup_positions[segment.pk] = segment_positions
-                for segment_residue in segment_positions:
-                    unsorted_segments[segment.pk].append(segment_residue.label)
+            unsorted_segments[selected_segment.pk] = []
+            segment_lookup[selected_segment.pk] = selected_segment.slug
+            segment_lookup_positions[selected_segment.pk] = segment_positions_lookup[selected_segment.slug]
+            for segment_residue in segment_positions_lookup[selected_segment.slug]:
+                unsorted_segments[selected_segment.pk].append(segment_residue.label)
 
         # Use PK values of segments to sort them before making alignment to ensure logical order
         sorted_segments = sorted(unsorted_segments)
@@ -467,15 +483,15 @@ class Alignment:
                         right_align = False
                         # In a "normal", non split, unaligned segment, is this past the middle?
                         if (pos_label.startswith('01-')
-                            and res_obj.protein_segment.category != 'terminus'
-                            and pos_num > (segment_counters[pcid][ps] / 2 + 0.5)):
+                                and res_obj.protein_segment.category != 'terminus'
+                                and pos_num > (segment_counters[pcid][ps] / 2 + 0.5)):
                             right_align = True
                         # In an partially aligned segment (prefixed with 00), where conserved residues are lacking, treat
                         # as an unaligned segment
                         elif (pos_label.startswith('00-')
-                            and not aligned_residue_encountered[pcid][ps]
-                            and pos_num > (segment_counters[pcid][ps] / 2 + 0.5)
-                            or res_obj.protein_segment.slug == 'N-term'):
+                              and not aligned_residue_encountered[pcid][ps]
+                              and pos_num > (segment_counters[pcid][ps] / 2 + 0.5)
+                              or res_obj.protein_segment.slug == 'N-term'):
                             right_align = True
                         # In an N-terminus, always right align everything
                         elif pos_label.startswith('01-') and res_obj.protein_segment.slug == 'N-term':
@@ -587,7 +603,7 @@ class Alignment:
                                 #   r.display_generic_number.scheme.short_name, r.sequence_number])
 
                                 s.append([pos, r.display_generic_number.label, r.amino_acid,
-                                    r.display_generic_number.scheme.short_name, r.sequence_number, r.generic_number.label])
+                                          r.display_generic_number.scheme.short_name, r.sequence_number, r.generic_number.label])
 
 
                                 # update generic residue object dict
@@ -625,30 +641,36 @@ class Alignment:
                     row[segment] = s
                     pc.alignment_list.append(s)
                 pc.alignment = row
-#                pc.alignment_list = row_list # FIXME redundant, remove when dependecies are removed
+            #                pc.alignment_list = row_list # FIXME redundant, remove when dependecies are removed
 
             self.sort_generic_numbers()
             self.merge_generic_numbers()
             self.clear_empty_positions()
 
+            # TODO Needs fix - not working completely
+            # self.clear_empty_segments()
+
             if self.number_of_residues_total >= 2500:
                 self.calculate_statistics()
                 cache_data = {'unique_proteins': self.unique_proteins,
-                            'amino_acids': self.amino_acids,
-                            'amino_acid_stats': self.amino_acid_stats,
-                            'aa_count': self.aa_count,
-                            'aa_count_with_protein': self.aa_count_with_protein,
-                            'gaps': self.gaps,
-                            'feat_consensus': self.feat_consensus,
-                            'features': self.features,
-                            'features_combo': self.features_combo,
-                            'feature_stats': self.feature_stats,
-                            'consensus': self.consensus,
-                            'forced_consensus': self.forced_consensus,
-                            'full_consensus': self.full_consensus,
-                            'generic_number_objs': self.generic_number_objs,
-                            'generic_numbers': self.generic_numbers,
-                            'zscales': self.zscales}
+                              'amino_acids': self.amino_acids,
+                              'amino_acid_stats': self.amino_acid_stats,
+                              'aa_count': self.aa_count,
+                              'aa_count_with_protein': self.aa_count_with_protein,
+                              'gaps': self.gaps,
+                              'feat_consensus': self.feat_consensus,
+                              'features': self.features,
+                              'features_combo': self.features_combo,
+                              'feature_stats': self.feature_stats,
+                              'consensus': self.consensus,
+                              'forced_consensus': self.forced_consensus,
+                              'full_consensus': self.full_consensus,
+                              'generic_number_objs': self.generic_number_objs,
+                              'generic_numbers': self.generic_numbers,
+                              #                            'numbering_schemes': self.numbering_schemes,
+                              'positions': self.positions,
+                              'segments': self.segments,
+                              'zscales': self.zscales}
                 cache_alignments.set(cache_key, cache_data, 60*60*24*14)
         else:
             cache_data = cache_alignments.get(cache_key)
@@ -667,6 +689,9 @@ class Alignment:
             self.full_consensus = cache_data['full_consensus']
             self.generic_number_objs = cache_data['generic_number_objs']
             self.generic_numbers = cache_data['generic_numbers']
+            #            self.numbering_schemes = cache_data['numbering_schemes']
+            self.positions = cache_data['positions']
+            self.segments = cache_data['segments']
             self.zscales = cache_data['zscales']
             self.stats_done = True
 
@@ -685,14 +710,14 @@ class Alignment:
                 self.segments[segment] = [ pos for pos in self.segments[segment] if pos in self.positions ]
 
                 # Deprecated
-#                for pos, dn in positions.items():
-#                    if pos not in self.positions:
-                        # remove position from generic numbers dict
-#                        del self.generic_numbers[ns][segment][pos]
+        #                for pos, dn in positions.items():
+        #                    if pos not in self.positions:
+        # remove position from generic numbers dict
+        #                        del self.generic_numbers[ns][segment][pos]
 
-                        # remove position from segment dict
-#                        if pos in self.segments[segment]:
-#                            self.segments[segment].remove(pos)
+        # remove position from segment dict
+        #                        if pos in self.segments[segment]:
+        #                            self.segments[segment].remove(pos)
 
         # proteins
         # AJK optimized cleaning alignment - deepcopy not required and faster removal
@@ -702,9 +727,30 @@ class Alignment:
                 self.unique_proteins[i].alignment[j] = [ p for p in s if p[0] in self.positions ]
 
                 # Deprecated
-#                for p in s:
-#                    if p[0] not in self.positions:
-#                        self.proteins[i].alignment[j].remove(p)
+    #                for p in s:
+    #                    if p[0] not in self.positions:
+    #                        self.proteins[i].alignment[j].remove(p)
+
+    # TODO Needs fix - not working completely
+    def clear_empty_segments(self):
+        # SM clear empty segments
+
+        tmp = OrderedDict()
+        for segment in self.segments:
+            if self.segments[segment] != []:
+                tmp[segment] = self.segments[segment]
+        if self.segments != tmp:
+            self.segments = tmp
+
+        tmp = deepcopy(self.generic_numbers)
+        for ns, segments in self.generic_numbers.items():
+            for segment, positions in segments.items():
+                if segment not in self.segments:
+                    del tmp[ns][segment]
+        if self.generic_numbers != tmp:
+            self.generic_numbers = tmp
+
+
 
     def merge_generic_numbers(self):
         """Check whether there are many display numbers for each position, and merge them if there are"""
@@ -737,8 +783,8 @@ class Alignment:
         """A placeholder for an instance specific function"""
         return generic_number
 
-    def calculate_statistics(self):
-        """Calculate consesus sequence and amino acid and feature frequency"""
+    def calculate_statistics(self, ignore={}):
+        """Calculate consensus sequence and amino acid and feature frequency"""
 
         if not self.stats_done:
             feature_count = OrderedDict()
@@ -749,12 +795,16 @@ class Alignment:
             # AJK: optimized for speed - split into multiple steps
             for i, p in enumerate(self.unique_proteins):
                 entry_name = p.protein.entry_name
+                # print(entry_name)
                 for j, s in p.alignment.items():
                     if i == 0:
                         self.aa_count[j] = OrderedDict()
                     for p in s:
                         generic_number = p[0]
+                        display_generic_number = p[1]
                         amino_acid = p[2]
+
+                        ignore_list = ignore.get(generic_number, [])
 
                         # Indicate gap and collect statistics
                         if amino_acid in self.gaps:
@@ -764,10 +814,17 @@ class Alignment:
                         elif amino_acid == 'X':
                             continue
 
+                        # skip when position is on the ignore list
+                        if entry_name in ignore_list:
+                            continue
+
+                        if ignore and amino_acid in self.gaps:
+                            continue
+
                         # Init counters
                         if generic_number not in self.aa_count[j]:
                             self.aa_count[j][generic_number] = amino_acids.copy()
-    #                        if generic_number in self.generic_number_objs:
+                            #                        if generic_number in self.generic_number_objs:
                             self.aa_count_with_protein[generic_number] = {}
 
                         # update amino acid counter for this generic number
@@ -812,8 +869,10 @@ class Alignment:
             for i, s in most_freq_aa.items():
                 self.consensus[i] = OrderedDict()
                 self.forced_consensus[i] = OrderedDict()
-                if i=='Custom':
+                if i == 'Custom' and s == 'x':
                     sorted_res = sorted(s, key=lambda x: (x.split("x")[0], x.split("x")[1]))
+                elif i == 'Custom' and s == '.':
+                    sorted_res = sorted(s, key=lambda x: (x.split(".")[0], x.split(".")[1]))
                 else:
                     sorted_res = sorted(s)
                 for p in sorted_res:
@@ -837,14 +896,21 @@ class Alignment:
                             cons_interval,
                             round(r[1]/num_proteins*100),
                             ""
-                            ]
+                        ]
+                    elif num_freq_aa > 1 and ignore:
+                        self.consensus[i][p] = [
+                            r[0][0],
+                            cons_interval,
+                            round(r[1]/num_proteins*100),
+                            ", ".join(r[0])
+                        ]
                     elif num_freq_aa > 1:
                         self.consensus[i][p] = [
                             '+',
                             cons_interval,
                             round(r[1]/num_proteins*100),
                             ", ".join(r[0])
-                            ]
+                        ]
 
                     # create a residue object full consensus
                     res = Residue()
@@ -867,8 +933,10 @@ class Alignment:
                 for segment, segment_num in self.aa_count.items():
                     self.amino_acid_stats[i].append([])
                     k = 0
-                    if segment=='Custom':
+                    if segment == 'Custom' and segment_num == 'x':
                         sorted_res = sorted(segment_num, key=lambda x: (x.split("x")[0], x.split("x")[1]))
+                    elif segment == 'Custom' and segment_num == '.':
+                        sorted_res = sorted(segment_num, key=lambda x: (x.split(".")[0], x.split(".")[1]))
                     else:
                         sorted_res = sorted(segment_num)
                     for gn in sorted_res:
@@ -897,8 +965,10 @@ class Alignment:
             j = 0
             for segment, segment_num in feature_count.items():
                 k = 0
-                if segment=='Custom':
+                if segment == 'Custom' and segment_num == 'x':
                     sorted_res = sorted(segment_num, key=lambda x: (x.split("x")[0], x.split("x")[1]))
+                elif segment == 'Custom' and segment_num == '.':
+                    sorted_res = sorted(segment_num, key=lambda x: (x.split(".")[0], x.split(".")[1]))
                 else:
                     sorted_res = sorted(segment_num)
                 for gn in sorted_res:
@@ -927,7 +997,7 @@ class Alignment:
                 feats[segment] = np.array(
                     [[x[0] for x in feat[sid]] for feat in self.feature_stats],
                     dtype='int'
-                    )
+                )
                 feat_cons_tmp = feats[segment].argmax(axis=0)
                 feat_cons_tmp = self._assign_preferred_features(feat_cons_tmp, segment, feats)
                 for col, pos in enumerate(list(feat_cons_tmp)):
@@ -940,9 +1010,12 @@ class Alignment:
                         list(AMINO_ACID_GROUPS.keys())[pos]
                     ])
                 #print(self.feat_consensus[segment])
+
             del feats
-            del feat_cons_tmp
-            self.calculate_zscales()
+            if 'feat_cons_tmp' in locals():
+                del feat_cons_tmp
+
+            self.calculate_zscales(True)
             self.stats_done = True
 
     def calculate_aa_count_per_generic_number(self):
@@ -958,7 +1031,6 @@ class Alignment:
                         else:
                             generic_lookup_aa_freq[self.generic_number_objs[g].label] = {aa: round(c/num_proteins*100) }
         return generic_lookup_aa_freq
-
 
     def calculate_similarity(self, normalized=False):
         """Calculate the sequence identity/similarity of every selected protein compared to a selected reference"""
@@ -1039,41 +1111,42 @@ class Alignment:
                     color_class = str(value)[:-1]
                 self.similarity_matrix[protein_key]['values'][k] = [value, color_class]
 
-    def calculate_zscales(self):
+    def calculate_zscales(self, from_stats = False):
         """Calculate Z-scales distribution for current alignment set"""
 
         if not self.stats_done:
             # Check if alignment statistics need to be calculated
-            if len(self.aa_count) == 0:
+            if len(self.aa_count) == 0 and not from_stats:
                 self.calculate_statistics()
+            else:
+                # Prepare Z-scales per segment/GN position
+                self.zscales = OrderedDict([ (zscale, OrderedDict()) for zscale in ZSCALES ])
 
-            # Prepare Z-scales per segment/GN position
-            self.zscales = OrderedDict([ (zscale, OrderedDict()) for zscale in ZSCALES ])
-
-            # Calculates distribution per GN position
-            for segment in self.aa_count:
-                for zscale in ZSCALES:
-                    self.zscales[zscale][segment] = OrderedDict()
-                for generic_number in self.aa_count[segment]:
-                    zscale_position = { zscale: [] for zscale in ZSCALES }
-
-                    for amino_acid in self.aa_count[segment][generic_number]:
-                        if amino_acid != "-" and self.aa_count[segment][generic_number][amino_acid] > 0:
-                            for key in range(len(ZSCALES)):
-                                # Frequency AA at this position * value
-                                zscale_position[ZSCALES[key]].extend([AA_ZSCALES[amino_acid][key]] * self.aa_count[segment][generic_number][amino_acid])
-
-                    # store average + stddev + count + display
+                # Calculates distribution per GN position
+                for segment in self.aa_count:
                     for zscale in ZSCALES:
-                        if len(zscale_position[zscale]) == 1:
-                            display = tooltip = str(round(zscale_position[zscale][0], 2)) + " ± " + str(0) + " (1)"
-                            self.zscales[zscale][segment][generic_number] = [zscale_position[zscale][0], 0, 1, display]
-                        else:
-                            z_mean = np.mean(zscale_position[zscale])
-                            z_std = np.std(zscale_position[zscale], ddof=1)
-                            z_count = len(zscale_position[zscale])
-                            display = tooltip = str(round(z_mean,2)) + " ± " + str(round(z_std, 2)) + " (" + str(z_count) + ")"
-                            self.zscales[zscale][segment][generic_number] = [z_mean, z_std, z_count, display]
+                        self.zscales[zscale][segment] = OrderedDict()
+                    for generic_number in self.aa_count[segment]:
+                        zscale_position = { zscale: [] for zscale in ZSCALES }
+
+                        for amino_acid in self.aa_count[segment][generic_number]:
+                            if amino_acid != "-" and self.aa_count[segment][generic_number][amino_acid] > 0:
+                                for key in range(len(ZSCALES)):
+                                    # Frequency AA at this position * value
+                                    if amino_acid in AA_ZSCALES:
+                                        zscale_position[ZSCALES[key]].extend([AA_ZSCALES[amino_acid][key]] * self.aa_count[segment][generic_number][amino_acid])
+
+                        # store average + stddev + count + display
+                        for zscale in ZSCALES:
+                            if len(zscale_position[zscale]) == 1:
+                                display = tooltip = str(round(zscale_position[zscale][0], 2)) + " ± " + str(0) + " (1)"
+                                self.zscales[zscale][segment][generic_number] = [zscale_position[zscale][0], 0, 1, display]
+                            else:
+                                z_mean = np.mean(zscale_position[zscale])
+                                z_std = np.std(zscale_position[zscale], ddof=1)
+                                z_count = len(zscale_position[zscale])
+                                display = tooltip = str(round(z_mean,2)) + " ± " + str(round(z_std, 2)) + " (" + str(z_count) + ")"
+                                self.zscales[zscale][segment][generic_number] = [z_mean, z_std, z_count, display]
 
     def evaluate_sites(self, request):
         """Evaluate which user selected site definitions match each protein sequence"""
@@ -1154,7 +1227,7 @@ class Alignment:
                         pair = (protein_residue, reference_residue)
                         # Similarity lookup is slow -> disabling results in 1/3 reduction calc. time
                         similarity = self.score_match(pair, MatrixInfo.blosum62)
-#                        similarity = 1
+                        #                        similarity = 1
                         if similarity > 0:
                             similarityscore += 1
                             totalsimilarity += similarity
@@ -1239,15 +1312,19 @@ class AlignedReferenceTemplate(Alignment):
         self.loop_partial_except_list = {'ICL1':[],'ECL1':[],'ICL2':[],'ECL2':[],'ECL2_1':['3UZA','3UZC','3RFM','6G79'],
                                          'ECL2_mid':[],'ECL2_2':[],'ICL3':['3VW7'],'ECL3':[],'ICL4':[]}
         self.seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000, '5KW2':2000, '6D26':2000, '6D27':2000, '6CSY':1000}
+        self.seq_num_overwrite_files = [i.split('.')[0] for i in os.listdir(os.sep.join([settings.DATA_DIR, 'structure_data','wt_pdb_lookup']))]
 
     def run_hommod_alignment(self, reference_protein, segments, query_states, order_by, provide_main_template_structure=None,
                              provide_similarity_table=None, main_pdb_array=None, provide_alignment=None, only_output_alignment=None,
-                             complex_model=False, signprot=None, force_main_temp=False):
+                             complex_model=False, signprot=None, force_main_temp=False, core_alignment=None):
         self.logger = logging.getLogger('homology_modeling')
         self.segment_labels = segments
         self.complex = complex_model
         self.signprot = signprot
         self.force_main_temp = force_main_temp
+        self.core_alignment = core_alignment
+        self.main_temp_ban_list = ['opsd_todpa', 'adrb1_melga']
+        self.gpcr_class = ProteinFamily.objects.get(name=reference_protein.get_protein_class())
         if len(str(reference_protein))==4:
             self.reference_protein = Protein.objects.get(entry_name=reference_protein.parent)
             self.revise_xtal = str(reference_protein)
@@ -1290,7 +1367,7 @@ class AlignedReferenceTemplate(Alignment):
             self.loop_table = OrderedDict()
             self.similarity_table = self.create_loop_similarity_table()
         if self.main_template_structure==None:
-            self.changes_on_db = []
+            self.changes_on_db = False
             self.main_template_structure = self.get_main_template()
 
     def local_pairwise_alignment(self, reference, template, segment):
@@ -1311,16 +1388,20 @@ class AlignedReferenceTemplate(Alignment):
         '''
         if self.reference_protein.family.parent.parent.parent.slug=='003':
             template_family = ProteinFamily.objects.get(slug='002')
-        elif self.reference_protein.family.parent.parent.parent.slug=='006':
+        elif self.reference_protein.family.parent.parent.parent.slug=='007':
             template_family = ProteinFamily.objects.get(slug='001')
         else:
             template_family = self.reference_protein.family.parent.parent.parent
         self.structures_data = Structure.objects.filter(
             state__name__in=self.query_states, protein_conformation__protein__parent__family__parent__parent__parent=
             template_family).order_by('protein_conformation__protein__parent',
-            'resolution').filter(annotated=True).exclude(refined=True)
+                                      'resolution').filter(annotated=True).exclude(refined=True).distinct()
         if self.revise_xtal==None:
-            self.structures_data = self.structures_data.exclude(protein_conformation__protein__parent__entry_name__in=['opsd_todpa', 'adrb1_melga'])
+            if self.force_main_temp:
+                main_st = Structure.objects.get(pdb_code__index=self.force_main_temp.upper())
+                if main_st.protein_conformation.protein.parent.entry_name in self.main_temp_ban_list:
+                    self.main_temp_ban_list.remove(main_st.protein_conformation.protein.parent.entry_name)
+            self.structures_data = self.structures_data.exclude(protein_conformation__protein__parent__entry_name__in=self.main_temp_ban_list)
         self.load_proteins(
             [Protein.objects.get(id=target.protein_conformation.protein.parent.id) for target in self.structures_data])
 
@@ -1329,45 +1410,45 @@ class AlignedReferenceTemplate(Alignment):
         '''
         if self.force_main_temp:
             st = Structure.objects.get(pdb_code__index=self.force_main_temp.upper())
+            # if self.core_alignment and st.pdb_code.index in self.seq_num_overwrite_files:
+            #     self.overwrite_db_seq_nums(st, st.pdb_code.index)
             self.main_template_protein = [i for i in self.ordered_proteins if i.protein==st.protein_conformation.protein.parent][0]
             return st
         i = 1
         if self.complex:
             complex_templates = self.get_template_from_gprotein(self.signprot)
-        try:
-            for st in self.similarity_table:
-                if st.pdb_code.index=='5LWE' and st.protein_conformation.protein.parent==self.ordered_proteins[i].protein:
-                    i+=1
-                    continue
-                # only use complex main template in table signprot_complex
-                if self.complex and st.pdb_code.index not in complex_templates:
-                    i+=1
-                    continue
-                if st.protein_conformation.protein.parent==self.ordered_proteins[i].protein:
-                    self.main_template_protein = self.ordered_proteins[i]
-                    if st.pdb_code.index in self.seq_nums_overwrite_cutoff_dict:
-                        self.overwrite_db_seq_nums(st, self.seq_nums_overwrite_cutoff_dict[st.pdb_code.index])
-                    return st
-        except:
-            pass
+        # try:
+        for st in self.similarity_table:
+            if st.pdb_code.index=='5LWE' and st.protein_conformation.protein.parent==self.ordered_proteins[i].protein:
+                i+=1
+                continue
+            # only use complex main template in table signprot_complex
+            if self.complex and st.pdb_code.index not in complex_templates:
+                i+=1
+                continue
+            if st.protein_conformation.protein.parent==self.ordered_proteins[i].protein:
+                self.main_template_protein = self.ordered_proteins[i]
+                # if self.core_alignment and st.pdb_code.index in self.seq_num_overwrite_files:
+                #     self.overwrite_db_seq_nums(st, st.pdb_code.index)
+                return st
+        # except:
+        #     pass
 
     def get_template_from_gprotein(self, signprot):
         gprotein = Protein.objects.get(entry_name=signprot)
-        templates = SignprotComplex.objects.filter(protein=gprotein).values_list('structure__pdb_code__index', flat=True)
+        templates = SignprotComplex.objects.filter(protein=gprotein, structure__protein_conformation__protein__family__slug__startswith=self.gpcr_class.slug).exclude(beta_protein__isnull=True).values_list('structure__pdb_code__index', flat=True)
         if len(templates)==0:
-            subfamily = Protein.objects.filter(family=gprotein.family).exclude(entry_name=gprotein.entry_name)
-            templates = SignprotComplex.objects.filter(protein__in=subfamily).values_list('structure__pdb_code__index', flat=True)
+            subfamily = Protein.objects.filter(family__parent=gprotein.family.parent).exclude(entry_name=gprotein.entry_name)
+            templates = SignprotComplex.objects.filter(protein__in=subfamily, structure__protein_conformation__protein__family__slug__startswith=self.gpcr_class.slug).exclude(beta_protein__isnull=True).values_list('structure__pdb_code__index', flat=True)
         if len(templates)==0:
-            templates = SignprotComplex.objects.all().values_list('structure__pdb_code__index', flat=True)
+            templates = SignprotComplex.objects.all().exclude(beta_protein__isnull=True).values_list('structure__pdb_code__index', flat=True)
         return templates
 
     def overwrite_db_seq_nums(self, structure, cutoff):
-        resis = Residue.objects.filter(protein_conformation=structure.protein_conformation,
-                                       sequence_number__gte=cutoff)
-        for r in resis:
-            self.changes_on_db.append(r.sequence_number)
-            r.sequence_number = int(str(r.sequence_number)[1:])
-            r.save()
+        ssno = StructureSeqNumOverwrite(structure)
+        ssno.seq_num_overwrite('pdb')
+        self.changes_on_db = True
+        self.logger.info('Structure {} residue table sequence number overwrite pdb to wt'.format(structure))
 
     def create_helix_similarity_table(self):
         ''' Creates an ordered dictionary of structure objects, where templates are sorted by similarity and resolution.
@@ -1381,7 +1462,8 @@ class AlignedReferenceTemplate(Alignment):
                 for m in matches:
                     if m.protein_conformation.protein.parent==self.reference_protein.protein and int(protein.similarity)==0:
                         continue
-                    temp_list.append((m, int(protein.similarity), float(m.resolution), protein, m.representative))
+                    if (m, int(protein.similarity), float(m.resolution), protein, m.representative) not in temp_list:
+                        temp_list.append((m, int(protein.similarity), float(m.resolution), protein, m.representative))
             except:
                 pass
         sorted_list = sorted(temp_list, key=lambda x: (-x[1],-x[4],x[2]))
@@ -1446,10 +1528,10 @@ class AlignedReferenceTemplate(Alignment):
             protein = struct.protein_conformation.protein.parent
             if protein==self.main_template_protein:
                 main_temp_seq = Residue.objects.filter(protein_conformation=struct.protein_conformation,
-                                         protein_segment__slug=self.segment_labels[0])
+                                                       protein_segment__slug=self.segment_labels[0])
                 parent = ProteinConformation.objects.get(protein=struct.protein_conformation.protein.parent)
                 main_temp_parent = Residue.objects.filter(protein_conformation=parent,
-                                         protein_segment__slug=self.segment_labels[0])
+                                                          protein_segment__slug=self.segment_labels[0])
                 try:
                     if self.segment_labels[0]=='ECL2' and ref_ECL2!=None:
                         main_temp_ECL2 = self.ECL2_slicer(main_temp_seq)
@@ -1479,13 +1561,13 @@ class AlignedReferenceTemplate(Alignment):
                     if len(main_temp_seq)==0:
                         continue
                     if ((len(ref_seq)==len(main_temp_seq) and len(main_temp_seq)==len(main_temp_parent) and
-                        [i.sequence_number for i in main_temp_seq]==[i.sequence_number for i in main_temp_parent]) or
-                        self.segment_labels[0] in self.provide_alignment.reference_dict):
+                         [i.sequence_number for i in main_temp_seq]==[i.sequence_number for i in main_temp_parent]) or
+                            self.segment_labels[0] in self.provide_alignment.reference_dict):
                         if len(main_temp_seq)!=len(main_temp_parent):
                             temp_list.append((struct, len(ref_seq), 0, float(struct.resolution), protein, struct.representative))
                         else:
                             similarity_table[self.main_template_structure] = self.provide_similarity_table[
-                                                                                                self.main_template_structure]
+                                self.main_template_structure]
                             temp_list.append((struct, len(main_temp_seq), similarity, float(struct.resolution), protein, struct.representative))
                     # Allow for partial main loop template
                     elif (len(ref_seq)>=len(main_temp_parent) and len(main_temp_parent)>len(main_temp_seq) and
@@ -1532,7 +1614,7 @@ class AlignedReferenceTemplate(Alignment):
                     alt_before8 = Residue.objects.filter(protein_conformation__protein=protein,
                                                          sequence_number__in=before_nums)
                     alt_after8 = Residue.objects.filter(protein_conformation__protein=protein,
-                                                         sequence_number__in=after_nums)
+                                                        sequence_number__in=after_nums)
                     alt_before_gns = [ggn(r.display_generic_number.label) for r in alt_before8]
                     alt_after_gns = [ggn(r.display_generic_number.label) for r in alt_after8]
                     if orig_before_gns==alt_before_gns and orig_after_gns==alt_after_gns:
@@ -1629,6 +1711,8 @@ class AlignedReferenceTemplate(Alignment):
             if 'TM' in ref_seglab or ref_seglab in ['ICL1','ECL1','ICL2','ECL2','H8']:
                 ref_segment_dict,temp_segment_dict,align_segment_dict = OrderedDict(), OrderedDict(), OrderedDict()
                 for ref_position, temp_position in zip(reference.alignment[ref_seglab],template.alignment[temp_seglab]):
+                    ### Check res by res alignment
+                    # print(ref_position, temp_position)
                     if ref_position[1]!=False and temp_position[1]!=False and ref_position[1]!='' and temp_position!='':
                         bw, gn = ref_position[1].split('x')
                         gen_num = '{}x{}'.format(bw.split('.')[0],gn)
@@ -1699,7 +1783,7 @@ class AlignedReferenceTemplate(Alignment):
                     else:
                         well_aligned = True
                         if (self.code_dict[r_seglab] not in self.reference_dict[r_seglab]
-                            or self.code_dict[r_seglab] not in self.template_dict[t_seglab]):
+                                or self.code_dict[r_seglab] not in self.template_dict[t_seglab]):
                             well_aligned = False
                         x50_present = False
                         for i in self.reference_dict[r_seglab]:
@@ -1785,20 +1869,23 @@ class ClosestReceptorHomolog():
         self.protein = protein
         self.protein_segments = protein_segments
         self.normalized = normalized
-        self.family_mapping = {'001':'001','002':'002','003':'002','004':'004','005':'005','006':'001','007':['001','002','004','005']}
+
+        # TOFIX this is a bad workaround to select similar receptor family
+        # slugs can change and the selection updates based on the available structures
+        self.family_mapping = {'001':'001','002':'002','003':'002','004':'004','005':'005','006':'006','007':'001','008':['001','002','004','005']}
         self.all_proteins = []
 
     def find_closest_receptor_homolog(self):
         a = Alignment()
         p = Protein.objects.get(entry_name=self.protein)
-        exclusion_list = ['opsd_todpa', 'adrb1_melga', 'g1sgd4_rabit', 'us28_hcmva', 'q08bg4_danre', 'q9wtk1_cavpo', 'q80km9_hcmv', 'q98sw5_xenla']
+        exclusion_list = ['opsd_todpa', 'adrb1_melga', 'g1sgd4_rabit', 'us28_hcmva', 'q08bg4_danre', 'q9wtk1_cavpo', 'q80km9_hcmv', 'q98sw5_xenla', 'b1b1u5_9arac']
         if self.protein in exclusion_list:
             exclusion_list.remove(self.protein)
-        if p.family.slug[:3]=='007':
+        if p.family.slug[:3]=='008':
             structures = Structure.objects.all().exclude(annotated=False).exclude(refined=True).exclude(protein_conformation__protein__parent__entry_name__in=exclusion_list)
         else:
             structures = Structure.objects.filter(protein_conformation__protein__parent__family__slug__istartswith=self.family_mapping[p.family.slug[:3]]).exclude(
-                                                  annotated=False).exclude(refined=True).exclude(protein_conformation__protein__parent__entry_name__in=exclusion_list)
+                annotated=False).exclude(refined=True).exclude(protein_conformation__protein__parent__entry_name__in=exclusion_list)
         a.load_reference_protein(p)
         structure_proteins = [i.protein_conformation.protein.parent for i in list(structures)]
         a.load_proteins(structure_proteins)

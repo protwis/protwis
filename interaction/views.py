@@ -87,13 +87,13 @@ class InteractionSelection(AbsTargetSelection):
     #     + ' where you can edit the list.\n\nSelect which numbering schemes to use in the middle column.\n\nOnce you' \
     #     + ' have selected all your receptors, click the green button.'
 
-    description = 'Ligand Interactions description'
+    description = 'Select the structure of interest by using the dropdown in the middle. The selection if viewed to the right and the interactions will be loaded immediately.'
 
     # Middle section
     numbering_schemes = False
     filters = False
     search = False
-    title = "Select annotated receptor interactions, PDB code or upload PDB file"
+    title = "Select a structure based on PDB-code"
 
     template_name = 'interaction/interactionselection.html'
 
@@ -117,6 +117,7 @@ class InteractionSelection(AbsTargetSelection):
 
         context['structures'] = ResidueFragmentInteraction.objects.values('structure_ligand_pair__structure__pdb_code__index', 'structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name').annotate(
             num_ligands=Count('structure_ligand_pair', distinct=True), num_interactions=Count('pk', distinct=True)).order_by('structure_ligand_pair__structure__pdb_code__index')
+        context['structure_groups'] = sorted(set([ structure['structure_ligand_pair__structure__pdb_code__index'][0] for structure in context['structures'] ]))
         context['form'] = PDBform()
         return context
 
@@ -165,7 +166,7 @@ def StructureDetails(request, pdbname):
         pos = residue.rotamer.residue.sequence_number
         wt_pos = -1
 
-        if residue.rotamer.residue.generic_number:
+        if residue.rotamer.residue.generic_number and residue.rotamer.residue.generic_number.label in lookup:
             residue_table_list.append(
                 residue.rotamer.residue.generic_number.label)
             wt_pos = lookup[residue.rotamer.residue.generic_number.label]
@@ -182,10 +183,12 @@ def StructureDetails(request, pdbname):
         display_res.append(str(pos))
         residues_browser.append({'type': key, 'aa': aa, 'ligand': ligand,
                                  'pos': pos, 'wt_pos': wt_pos, 'gpcrdb': display, 'segment': segment})
+
         if pos not in residues_lookup:
             residues_lookup[pos] = aa + str(pos) + " " +display + " interaction " + key
         else:
             residues_lookup[pos] += " interaction " + key
+
         if ligand not in ligands:
             ligands.append(ligand)
             main_ligand_full = ligand
@@ -394,8 +397,10 @@ def updateall(request):
 def runcalculation(pdbname, peptide=""):
     calc_script = os.sep.join(
         [os.path.dirname(__file__), 'legacy_functions.py'])
-    call(["python", calc_script, "-p", pdbname, "-c", peptide],
+
+    call(["python2.7", calc_script, "-p", pdbname, "-c", peptide],
          stdout=open(devnull, 'wb'), stderr=open(devnull, 'wb'))
+
     return None
 
 
@@ -480,7 +485,7 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
             if os.path.isfile(os.path.join(mypath, f)):
                 annotated = 0
                 #print(mypath + "/" +f)
-                result = yaml.load(open(mypath + "/" + f, 'rb'))
+                result = yaml.load(open(mypath + "/" + f, 'rb'), Loader=yaml.FullLoader)
                 output = result
                 temp = f.replace('.yaml', '').split("_")
                 temp.append([output])
@@ -590,7 +595,7 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
             logger.info("Structure not in DB?!??!")
         for f in listdir(mypath):
             if os.path.isfile(os.path.join(mypath, f)):
-                result = yaml.load(open(mypath + "/" + f, 'rb'))
+                result = yaml.load(open(mypath + "/" + f, 'rb'), Loader=yaml.FullLoader)
                 output = result
 
                 temp = f.replace('.yaml', '').split("_")
@@ -608,7 +613,7 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
 def runusercalculation(filename, session):
     calc_script = os.sep.join(
         [os.path.dirname(__file__), 'legacy_functions.py'])
-    call(["python", calc_script, "-p", filename, "-s", session])
+    call(["python2.7", calc_script, "-p", filename, "-s", session])
     return None
 
 
@@ -621,7 +626,7 @@ def parseusercalculation(pdbname, session, debug=True, ignore_ligand_preset=Fals
 
     for f in listdir(mypath):
         if os.path.isfile(os.path.join(mypath, f)):
-            result = yaml.load(open(mypath + "/" + f, 'rb'))
+            result = yaml.load(open(mypath + "/" + f, 'rb'), Loader=yaml.FullLoader)
             output = result
 
             temp = f.replace('.yaml', '').split("_")
@@ -637,12 +642,14 @@ def parseusercalculation(pdbname, session, debug=True, ignore_ligand_preset=Fals
     results = sorted(results, key=itemgetter(3), reverse=True)
     return results
 
+# DEPRECATED
 def showcalculation(request):
 
     context = calculate(request)
 
     return render(request, 'interaction/diagram.html', context)
 
+# NOTE: this function is solely used by the sitesearch functionality
 def calculate(request, redirect=None):
     if request.method == 'POST':
         form = PDBform(request.POST, request.FILES)
@@ -763,11 +770,6 @@ def calculate(request, redirect=None):
                     r.segment_slug = seg
                     r.amino_acid = v[1]
                     residue_list.append(r)
-
-            HelixBox = DrawHelixBox(
-                residue_list, 'Class A', str('test'), nobuttons=1)
-            SnakePlot = DrawSnakePlot(
-                residue_list, 'Class A', str('test'), nobuttons=1)
 
             xtal = {}
             hetsyn = {}
@@ -975,7 +977,7 @@ def calculate(request, redirect=None):
                         # create a selection item
                         properties = {
                             'feature': interaction_name_dict[feature][1],
-                            'amino_acids': ','.join(definitions.AMINO_ACID_GROUPS[interaction_name_dict[feature][1]])
+                            'amino_acids': ','.join(definitions.AMINO_ACID_GROUPS_OLD[interaction_name_dict[feature][1]])
                         }
                         selection_item = SelectionItem(
                             'site_residue', rne, properties)
@@ -997,6 +999,12 @@ def calculate(request, redirect=None):
                 # re-direct to segment selection (with the extracted interactions already selected)
                 return HttpResponseRedirect(redirect)
             else:
+                # Only relevant when not redirecting - moved here
+                HelixBox = DrawHelixBox(
+                    residue_list, 'Class A', str('test'), nobuttons=1)
+                SnakePlot = DrawSnakePlot(
+                    residue_list, 'Class A', str('test'), nobuttons=1)
+
                 return {'result': "Looking at " + pdbname, 'outputs': results,
                                                                     'simple': simple, 'simple_generic_number': simple_generic_number, 'xtal': xtal, 'pdbname': pdbname, 'mainligand': mainligand, 'residues': residues_browser,
                                                                     'HelixBox': HelixBox, 'SnakePlot': SnakePlot, 'data': context['data'],
@@ -1208,4 +1216,3 @@ def pdb(request):
         response = HttpResponse(structure.pdb_data.pdb,
                                 content_type='text/plain')
     return response
-    

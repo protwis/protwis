@@ -1,5 +1,57 @@
 /*from https://github.com/tdamsma/datatables-yadcf-bootstrap-webpack*/
 
+
+.yadcf-number-slider-filter-wrapper-inner {
+  display: inline-block;
+  width: 100px;
+  margin-bottom: 7px;
+}
+
+.yadcf-filter-range-number-slider .ui-slider-handle {
+  width: 10px;
+  height: 10px;
+  margin-top: 1px;
+}
+
+.yadcf-filter-range-number-slider .ui-slider-range {
+  position: relative;
+  height: 5px;
+}
+
+.yadcf-filter-range-number-slider {
+  height: 5px;
+  margin-left: 6px;
+  margin-right: 6px;
+}
+
+.yadcf-filter-range-number-slider {
+    overflow: visible;
+}
+
+.yadcf-number-slider-filter-wrapper-inner .yadcf-filter-range-number-slider-min-tip {
+  font-size: 13px;
+  font-weight: normal;
+  position: absolute;
+  outline-style: none;
+}
+
+.yadcf-number-slider-filter-wrapper-inner .yadcf-filter-range-number-slider-max-tip {
+  font-size: 13px;
+  font-weight: normal;
+  position:absolute;
+  outline-style: none;
+}
+
+.yadcf-number-slider-filter-wrapper-inner .yadcf-filter-range-number-slider-min-tip-inner {
+  position:absolute;
+  top: 11px;
+}
+
+.yadcf-number-slider-filter-wrapper-inner .yadcf-filter-range-number-slider-max-tip-inner {
+  position:absolute;
+  top: 11px;
+}
+
 .dataTables_filter {
   display: none;
 }

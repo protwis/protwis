@@ -93,10 +93,10 @@ class Command(BaseCommand):
 
     def rebuild_constructs(self):
         self.purge_construct_data()
-
         structures = Structure.objects.all().exclude(refined=True)
         for s in structures:
             pdbname = str(s)
+            cache.delete(pdbname+"_auto_d")
             self.all_pdbs.append(pdbname)
             protein_conformation = s.protein_conformation
 
@@ -350,10 +350,12 @@ class Command(BaseCommand):
                 continue 
             if i[3]=='?':
                 continue
-            #print(i)
+            print(i)
             aux_type, created = ConstructInsertionType.objects.get_or_create(name=i[5],subtype=i[6])
             for construct in Construct.objects.filter(structure__pdb_code__index=i[1].upper()):
                 try:
+                    if i[3]=='':
+                        i[3] = 0
                     insert = ConstructInsertion.objects.create(construct=construct, insert_type=aux_type,presence=i[7],position=i[2]+"_"+str(int(i[3])))
                 except Exception as e:
                     print('Error with insert! FIXIT',i,str(e))
@@ -375,6 +377,13 @@ class Command(BaseCommand):
 
     def export_inserts(self):
 
+        ## Get a list of annotated structures
+        inserts = self.parse_excel(self.annotation_file,'inserts')
+        tracked_pdbs = []
+        for i in inserts:
+            if i[1] not in tracked_pdbs:
+                tracked_pdbs.append(i[1])
+
         checked_pdbcode_without_fusions = ['4AMI']
         checked_pdb_code_with_fusions = {'3PDS' : 'icl3'}
         # 3pds has P00720 LYS
@@ -391,6 +400,12 @@ class Command(BaseCommand):
         csv_rows_xtal_ligands = []
         for c in constructs:
             pdbname = c.structure.pdb_code.index
+            if pdbname in tracked_pdbs:
+                # print("skip",pdbname,"already annotated.")
+                continue
+            else:
+                print("dump auto annotation for",pdbname," (considering adding these to excel sheet)")
+
             fusion_position, fusions, linkers = c.fusion() 
             protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
             uniprot = protein.parent.entry_name   
@@ -462,53 +477,68 @@ class Command(BaseCommand):
                     cc, created = ChemicalConc.objects.get_or_create(concentration=d['crystallization']['lipid_concentr'], concentration_unit=d['crystallization']['lipid_concentr_unit'], chemical=chem)
                     c_list.chemicals.add(cc)
                     c.crystallization.chemical_lists.add(c_list)
-            # d = cache.get(pdbname+"_deletions")
-            # # d = None
-            # if not d:
-            #     d = fetch_pdb_info(pdbname,protein)
-            #     cache.set(pdbname+"_deletions",d,60*60*24)
-            # #print(d['auxiliary'])
-            # found = False
-            # found_where = None
-            # found_type = None
-            # for aux, v in d['auxiliary'].items():
-            #     # print(v['subtype'])
-            #     if v['subtype'] in list_of_comfirmed_fusion:
-            #         found = True
-            #         # print(v['subtype'],v['position'])
-            #         found_where = v['position']
-            #         found_type = v['subtype']
-            # # print(d['construct_sequences'])
-            # for aux, v in d['construct_sequences'].items():
-            #     if aux in list_of_comfirmed_fusion:
-            #         found = True
-            #         # print(aux,v['where'])
-            #         found_where = v['where']
-            #         found_type = aux
+            d = cache.get(pdbname+"_deletions")
+            # d = None
+            if not d:
+                d = fetch_pdb_info(pdbname,protein,ignore_gasper_annotation=True)
+                cache.set(pdbname+"_deletions",d,60*60*24)
+            #print(d['auxiliary'])
+            found = False
+            found_where = None
+            found_type = None
+            for aux, v in d['auxiliary'].items():
+                # print(v['subtype'])
+                if v['subtype'] in list_of_comfirmed_fusion:
+                    found = True
+                    # print(v['subtype'],v['position'])
+                    found_where = v['position']
+                    found_type = v['subtype']
+            # print(d['construct_sequences'])
+            for aux, v in d['construct_sequences'].items():
+                if aux in list_of_comfirmed_fusion:
+                    found = True
+                    # print(aux,v['where'])
+                    found_where = v['where']
+                    found_type = aux
 
-            # if not found and fusion_position:
-            #     # print(fusion_position, "not found in", c.name)
-            #     #print(d['construct_sequences'])
-            #     pass
+            if not found and fusion_position:
+                # print(fusion_position, "not found in", c.name)
+                #print(d['construct_sequences'])
+                pass
 
 
-            # for i in c.insertions.all().order_by('position'):
-            #     #print(i)
-            #     position = i.position.split("_")
-            #     seq_pos = ''
-            #     if i.start:
-            #         seq_pos = '%s:%s' % (i.start,i.end)
-            #     if i.insert_type.name=='fusion' or i.insert_type.subtype in list_of_comfirmed_fusion:
-            #         insert = [uniprot,pdbname,position[0],position[1],seq_pos,i.insert_type.name,i.insert_type.subtype,i.presence,found_where,found_type]
-            #     else:
-            #         insert = [uniprot,pdbname,position[0],position[1],seq_pos,i.insert_type.name,i.insert_type.subtype,i.presence]
-            #     #print(insert)
-            #     csv_rows.append(insert)
+            for i in c.insertions.all().order_by('position'):
+                #print(i)
+                position = i.position.split("_")
+                seq_pos = ''
 
-            # if c.insertions.count()==0:
-            #     insert = [uniprot,pdbname,'NONE','','','','','',found_where,found_type]
-            #     #print(insert)
-            #     csv_rows.append(insert)
+                if i.insert_type.subtype == 'Soluble cytochrome b562':
+                    i.insert_type.subtype = 'BRIL (b562RIL)'
+                    i.insert_type.name = 'fusion'
+                if i.insert_type.subtype == 'Endolysin':
+                    i.insert_type.subtype = 'T4 Lysozyme (T4L)'
+                    i.insert_type.name = 'fusion'
+                if i.insert_type.subtype == 'Rubredoxin':
+                    i.insert_type.name = 'fusion'
+                if i.insert_type.subtype == 'Flavodoxin':
+                    i.insert_type.name = 'fusion'
+                if i.insert_type.subtype == 'GlgA glycogen synthase':
+                    i.insert_type.subtype = 'PGS (Pyrococcus abyssi glycogen synthase)' 
+                    i.insert_type.name = 'fusion'
+
+                if i.start:
+                    seq_pos = '%s:%s' % (i.start,i.end)
+                if i.insert_type.name=='fusion' or i.insert_type.subtype in list_of_comfirmed_fusion:
+                    insert = [uniprot,pdbname,position[0],position[1],seq_pos,i.insert_type.name,i.insert_type.subtype,i.presence,found_where,found_type]
+                else:
+                    insert = [uniprot,pdbname,position[0],position[1],seq_pos,i.insert_type.name,i.insert_type.subtype,i.presence]
+                #print(insert)
+                csv_rows.append(insert)
+
+            if c.insertions.count()==0:
+                insert = [uniprot,pdbname,'NONE','','','','','',found_where,found_type]
+                #print(insert)
+                csv_rows.append(insert)
 
             # # EXPRESSION #
             # if c.expression:
@@ -714,7 +744,7 @@ class Command(BaseCommand):
             d = cache.get(pdbname+"_auto_d")
             # d = None
             if not d:
-                d = fetch_pdb_info(pdbname,protein)
+                d = fetch_pdb_info(c_pdb,protein,ignore_gasper_annotation=True)
                 cache.set(pdbname+"_auto_d",d,60*60*24)
             pdb_deletions = []
             for d in d['deletions']:
@@ -771,7 +801,7 @@ class Command(BaseCommand):
             d = cache.get(pdbname+"_auto_d")
             # d = None
             if not d and 'deletions' in d:
-                d = fetch_pdb_info(pdbname,protein)
+                d = fetch_pdb_info(c_pdb,protein,ignore_gasper_annotation=True)
                 cache.set(pdbname+"_auto_d",d,60*60*24)
             if 'deletions' in d:
                 for d in d['deletions']:
@@ -830,7 +860,7 @@ class Command(BaseCommand):
             d = cache.get(pdbname+"_auto_d")
             # d = None
             if not d:
-                d = fetch_pdb_info(pdbname,protein)
+                d = fetch_pdb_info(c_pdb,protein,ignore_gasper_annotation=True)
                 cache.set(pdbname+"_auto_d",d,60*60*24)
             # print('pdb',d['mutations'])
             cons_muts = ConstructMutation.objects.filter(construct = c)
@@ -976,7 +1006,7 @@ class Command(BaseCommand):
                 else:
                     d = cache.get(c_pdb+"_auto_d")
                     if not d:
-                        d = fetch_pdb_info(c_pdb,protein)
+                        d = fetch_pdb_info(c_pdb,protein,ignore_gasper_annotation=True)
                         cache.set(c_pdb+"_auto_d",d,60*60*24)
                     cached_mutations[c_pdb] = d
                 # Find construct mutation
@@ -1052,7 +1082,7 @@ class Command(BaseCommand):
             d = cache.get(c_pdb+"_auto_d")
             if not d:
                 protein = Protein.objects.filter(entry_name=c_pdb.lower()).get()
-                d = fetch_pdb_info(c_pdb,protein)
+                d = fetch_pdb_info(c_pdb,protein,ignore_gasper_annotation=True)
                 cache.set(c_pdb+"_auto_d",d,60*60*24)
             if len(d['mutations']):
                 missing2.append(c_pdb)

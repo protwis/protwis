@@ -1,0 +1,227 @@
+#content {
+    max-width: 1400px;
+}
+
+/* make the svg responsive to the page width */
+.svg-container {
+    display: inline-block;
+    position: relative;
+    width: 100%;
+    /*padding-bottom: 100%;*/
+    /* aspect ratio */
+    vertical-align: top;
+    /* overflow: hidden; */
+}
+
+.svg-container#conseq-container{
+    padding-bottom: 30%;
+}
+
+.svg-content {
+    display: inline-block;
+    /*position: absolute;*/
+    /*top: 0;*/
+    /*left: 0;*/
+}
+
+
+/* styling for hover tooltip */
+.d3-tip {
+    line-height: 1;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    border-radius: 2px;
+    pointer-events: none;
+    text-align: left;
+}
+
+
+/* Creates a small triangle extender for the tooltip */
+.d3-tip:after {
+    box-sizing: border-box;
+    display: inline;
+    font-size: 10px;
+    width: 100%;
+    line-height: 1;
+    color: rgba(0, 0, 0, 0.8);
+    position: absolute;
+    pointer-events: none;
+}
+.d3-tip.n:after {
+    content: "\25BC";
+    margin: -2px 0 0 0;
+    top: 100%;
+    left: 0;
+    text-align: center;
+}
+
+
+/* styling for the major ticks of the grid */
+.x.grid line {
+    stroke-opacity: 0.3;
+    stroke-dasharray: 3, 6;
+    stroke-linecap: round;
+    stroke-width: 0.5;
+}
+.y.grid line {
+    stroke-opacity: 0.3;
+    stroke-dasharray: 3, 6;
+    stroke-linecap: round;
+    stroke-width: 0.5;
+}
+
+
+/* hover effect for rects */
+/*rect {
+    opacity: 1;
+    transition: opacity 400ms;
+}
+
+rect:hover {
+    opacity: 0.6;
+    transition: opacity 200ms;
+}*/
+
+
+/* legend label style */
+text.legend {
+    font-size: 75%;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    font-weight: normal;
+}
+
+/* thick outline around matrix, some problem with double lines */
+/* .x.axis path.domain {
+    stroke-width: 2;
+}
+.y.axis path.domain {
+    stroke-width: 2;
+}
+line {
+    stroke-width: 2;
+} */
+
+.axis_label {
+    display: inline;
+    padding: .2em .6em .3em;
+    font-size: 85%;
+    font-weight: 700;
+    line-height: 1;
+    color: #fff;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: .25em;
+    dominant-baseline: central;
+    font-family: monospace;
+}
+
+.seq_label {
+    display: inline;
+    padding: .2em .6em .3em;
+    font-size: 68%;
+    line-height: 1;
+    color: #fff;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: .25em;
+    dominant-baseline: central;
+    font-family: sans-serif;
+}
+
+.con_seq_label {
+    text-anchor: end;
+    display: inline;
+    font-size: 90%;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    dominant-baseline: central;
+    font-family: sans-serif;
+}
+
+.res_label, .cons_label, .len_label, .amino_label, .int_count {
+    display: inline;
+    font-size: 75%;
+    dominant-baseline: central;
+    pointer-events: none;
+}
+
+rect.expand {
+    fill: #337ab7;
+    pointer-events: all;
+    cursor: pointer;
+}
+
+rect.expand:hover {
+    fill: #286090;
+}
+
+text.expand {
+    text-anchor: middle;
+    fill: white;
+    font-size: 120%;
+    font-weight: bold;
+    pointer-events: none;
+}
+
+
+
+
+/* removing unnecessary paths via assigning no stroke */
+.x.grid path {
+    stroke: none;
+}
+
+.y.grid path {
+    stroke: none;
+}
+
+.activeRes {
+    -webkit-animation: pulse 1s linear infinite;
+    animation: pulse 1s linear infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+.fa.mattab {
+    font-size: 24px !important;
+    padding: 0 3px;
+}
+
+.coupling {
+    border-radius: 0px;
+    color: white;
+    padding: 2px 5px;
+}
+
+.coupling.prim {
+    background-color: #808080;
+}
+
+.coupling.seco {
+    background-color: #bebebe;
+}
+
+.coupling.no {
+    color: black;
+    background-color: #f9f9f9
+}
+
+#amount_min, #amount_max {
+    position: relative;
+    width: 50px;
+    text-align: center;
+}
+
+p.no_margins {
+    margin: 0;
+}

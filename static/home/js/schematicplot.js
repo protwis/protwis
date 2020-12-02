@@ -70,7 +70,6 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
     seqStart = i;
     prevSeg = seg;
   }
-
   // Push last segment
   segments.push({
     seg: prevSeg,
@@ -125,7 +124,10 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
   const rectWidth = 30;
   const rectHeight = 14;
 
-  const g = svg
+  const paths = svg.append('g');
+  const residues = svg.append('g');
+
+  const g = residues
     .selectAll('g')
     .data(isGeneric ? Object.keys(segment_map_full_gn) : Object.keys(segment_map_full))
     .enter()
@@ -200,7 +202,6 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
       return `translate(${x},${y})`;
     });
 
-  const paths = svg.append('g');
 
   g
     .append('rect')
@@ -220,19 +221,19 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
 
   switch (config.type) {
     case 'singleCrystal':
-      svg.style('background-color', '#f0f0f0');
+      // svg.style('background-color', '#f0f0f0');
       renderSchematicSingleCrystal(getInteractionsSingleCrystal());
       createLegendSingleCrystal();
       break;
     case 'singleCrystalGroup':
       // getInteractionsCrystalGroup();
-      svg.style('background-color', '#f0f0f0');
+      // svg.style('background-color', '#f0f0f0');
       renderSchematicSingleCrystalGroup();
       createLegendSingleCrystalGroup();
       break;
     case 'twoCrystalGroups':
       // getInteractionsCrystalGroup();
-      svg.style('background-color', '#f0f0f0');
+      // svg.style('background-color', '#f0f0f0');
       renderSchematicTwoCrystalGroups();
       createLegendTwoCrystalGroups();
       break;
@@ -752,7 +753,8 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
   }
 
   function createLegendSingleCrystal() {
-    let interactionTypes = new Set();
+    let legendHtml = ""
+    /*let interactionTypes = new Set();
 
     $(`${containerSelector} .edge`).each(function () {
       const friendlyName = getFriendlyInteractionName($(this).data('interaction-type'));
@@ -777,21 +779,22 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
         '</li>';
     });
     legendHtml += '</ul>';
+    */
 
-    // Add SVG download button
-    legendHtml +=
-      `<button onclick="downloadSVG('${containerSelector}schematic', 'interactions.svg')" type="button" class="btn btn-primary pull-right svg-download-button" aria-label="Left Align">` +
-      '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download SVG' +
-      '</button>';
+    // // Add SVG download button
+    // legendHtml +=
+    //   `<button onclick="downloadSVG('${containerSelector}schematic', 'interactions.svg')" type="button" class="btn btn-primary pull-right svg-download-button" aria-label="Left Align">` +
+    //   '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download SVG' +
+    //   '</button>';
 
-    // Add CSV download button
-    legendHtml +=
-      `<br /><button onclick="downloadSingleCrystalCSV('${containerSelector}schematic', 'interactions.csv')" type="button" class="btn btn-success pull-right csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV` +
-      '</button>';
+    // // Add CSV download button
+    // legendHtml +=
+    //   `<br /><button onclick="downloadSingleCrystalCSV('${containerSelector}schematic', 'interactions.csv')" type="button" class="btn btn-success pull-right csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV` +
+    //   '</button>';
 
-    $(`${containerSelector} .schematic-legend`).html(legendHtml);
+    // $(`${containerSelector} .schematic-legend`).html(legendHtml);
 
-    $(`${containerSelector} .schematic-legend input[type=checkbox]`).each(function () {
+    /*$(`${containerSelector} .schematic-legend input[type=checkbox]`).each(function () {
       $(this).prop('checked', true);
       $(this).change(function () {
         const interactionType = $(this).data('interaction-type');
@@ -803,7 +806,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
           paths.hide();
         }
       });
-    });
+    });*/
   }
 
   function createLegendSingleCrystalGroup() {
@@ -826,25 +829,26 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
       '<span class="white-to-red"></span>' +
       '</div>';*/
 
-    let legendHtml = '<h4 class="center">Frequency (#PDBs)</h4>'
+    let legendHtml = "";
+    /*let legendHtml = '<h4 class="center">Frequency (#PDBs)</h4>'
           + `<p>Range: <span id="clscg-pdbs-range">1 - ${data.pdbs.length}</span></p>`
           + '<div class="slider-range" data-text-id="clscg-pdbs-range" id="clscg-pdbs-range-slider"></div>'
           + '<div class="temperature-scale">'
           + '<span class="white-to-red"></span>'
-          + '</div>';
+          + '</div>';*/
 
-    // Add SVG download button
-    legendHtml +=
-      `<button onclick="downloadSVG('${containerSelector} .schematic', 'interactions.svg')" type="button" class="btn btn-primary pull-right svg-download-button" aria-label="Left Align">` +
-      '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download SVG' +
-      '</button>';
+    // // Add SVG download button
+    // legendHtml +=
+    //   `<button onclick="downloadSVG('${containerSelector} .schematic', 'interactions.svg')" type="button" class="btn btn-primary pull-right svg-download-button" aria-label="Left Align">` +
+    //   '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download SVG' +
+    //   '</button>';
 
-    // Add CSV download button
-    legendHtml +=
-      `<br /><button onclick="downloadSingleCrystalGroupCSV('${containerSelector} .schematic', 'interactions.csv')" type="button" class="btn btn-success pull-right csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV` +
-      '</button>';
+    // // Add CSV download button
+    // legendHtml +=
+    //   `<br /><button onclick="downloadSingleCrystalGroupCSV('${containerSelector} .schematic', 'interactions.csv')" type="button" class="btn btn-success pull-right csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV` +
+    //   '</button>';
 
-    $(`${containerSelector} .schematic-legend`).html(legendHtml);
+    // $(`${containerSelector} .schematic-legend`).html(legendHtml);
 
     /*
     // Changed from separate min/max sliders to one range slider - to REMOVE if OK
@@ -872,7 +876,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
 
     $(`${containerSelector} .schematic-legend .max-interactions-range`).change(getRangeChangeFunction());*/
 
-    $( function() {
+    /*$( function() {
       $(`${containerSelector} #clscg-pdbs-range-slider`).slider({
         range: true,
         min: 1,
@@ -896,7 +900,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
               $(this).show();
             }
           });
-    }
+    }*/
   }
 
   function createLegendTwoCrystalGroups() {
@@ -917,7 +921,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
       '<span class="white-to-blue"></span>' +
       '</div>';*/
 
-    let legendHtml = '<h4 class="center">Frequency</h4>'
+    /*let legendHtml = '<h4 class="center">Frequency</h4>'
           + `<p>Group 1 range: <span id="cltcg-group1-range">0 - 1</span></p>`
           + '<div class="slider-range" data-text-id="cltcg-group1-range" id="cltcg-group1-range-slider"></div>'
           + `<p>Group 2 range: <span id="cltcg-group2-range">0 - 1</span></p>`
@@ -927,21 +931,22 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
           + '<div class="temperature-scale">'
           + '<span class="red-to-gray"></span>'
           + '<span class="gray-to-blue"></span>'
-          + '</div>';
+          + '</div>';*/
 
+    let legendHtml = ""
 
-    // Add SVG download button
-    legendHtml +=
-      `<button onclick="downloadSVG('${containerSelector} .schematic', 'interactions.svg')" type="button" class="btn btn-primary pull-right svg-download-button" aria-label="Left Align">` +
-      '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download SVG' +
-      '</button>';
+    // // Add SVG download button
+    // legendHtml +=
+    //   `<button onclick="downloadSVG('${containerSelector} .schematic', 'interactions.svg')" type="button" class="btn btn-primary pull-right svg-download-button" aria-label="Left Align">` +
+    //   '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download SVG' +
+    //   '</button>';
 
-    // Add CSV download button
-    legendHtml +=
-      `<br /><button onclick="downloadTwoCrystalGroupsCSV('${containerSelector} .schematic', 'interactions.csv')" type="button" class="btn btn-success pull-right csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV` +
-      '</button>';
+    // // Add CSV download button
+    // legendHtml +=
+    //   `<br /><button onclick="downloadTwoCrystalGroupsCSV('${containerSelector} .schematic', 'interactions.csv')" type="button" class="btn btn-success pull-right csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV` +
+    //   '</button>';
 
-    $(`${containerSelector} .schematic-legend`).html(legendHtml);
+    // $(`${containerSelector} .schematic-legend`).html(legendHtml);
 
     // Changed from separate min/max sliders to one range slider - to REMOVE if OK
     /*
@@ -969,7 +974,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
 
     $(`${containerSelector} .schematic-legend .max-interactions-range`).change(getRangeChangeFunction());*/
 
-    $( function() {
+    /*$( function() {
       $( containerSelector+" #cltcg-group1-range-slider" ).data({ "referenceContainer" : containerSelector });
       $( containerSelector+" #cltcg-group2-range-slider" ).data({ "referenceContainer" : containerSelector });
       $( containerSelector+" #cltcg-diff-range-slider" ).data({ "referenceContainer" : containerSelector });
@@ -1042,6 +1047,6 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
             $(this).hide();
           }
         });
-    }
+    }*/
   }
 }

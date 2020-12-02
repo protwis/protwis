@@ -10,6 +10,6 @@ from io import StringIO
 # Download the specified MMTF file from RCSB.
 def mmtf_get_structure(pdb_name):
     # Download the PDB
-    response = urllib.request.urlopen('http://mmtf.rcsb.org/v1.0/full/%s' % pdb_name)
+    response = urllib.request.urlopen('https://mmtf.rcsb.org/v1.0/full/%s' % pdb_name)
 
     return MMTFParser.get_structure_from_url(pdb_name)

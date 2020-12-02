@@ -1,5 +1,6 @@
+<!-- DEPRECATED CODE -->
 ﻿{% extends "home/base.html" %}
-{% load staticfiles %}
+{% load static %}
 <div id='all'>
 {% block addon_js %}
     <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
@@ -45,10 +46,10 @@
         {% if ttype == 0 %}
         <button class="btn btn-primary style="width:250px;" onclick="predefined_colours({{add.crystal.proteins}},'{{ add.crystal.colours.crystal_true }}')">Highlight crystallized receptors</button>
         {% endif %}
-        
+
 
     </div>
-    
+
 {% include 'phylogenetic_trees/tree_options.html' %}
 </div>
 

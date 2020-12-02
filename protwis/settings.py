@@ -1,11 +1,10 @@
 ﻿"""
 Django settings for protwis project.
 """
-
-# import local settings
-# by default, local settings are in protwis/settings_local_default.py
-# you can override these settings by creating a protwis/settings_local.py file (or copying settings_local_default)
-# protwis/settings_local.py is ignored by git
+# Import local settings
+# by default, local settings are in protwis/settings_local_development.py
+# you can override these settings by creating a protwis/settings_local.py file (or copying settings_local_development)
+# protwis/settings_local.py is ignored using .gitignore
 try:
     from protwis.settings_local import *
 except ImportError:
@@ -17,7 +16,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 
 # Application definition
-
 INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.auth',
@@ -55,6 +53,8 @@ INSTALLED_APPS = (
     'mutational_landscape',
     'contactnetwork',
     'seqsign',
+    'angles',
+    'hotspots',
 )
 
 MIDDLEWARE = (
@@ -73,40 +73,28 @@ ROOT_URLCONF = 'protwis.urls'
 
 # WSGI_APPLICATION = 'protwis.wsgi.application'
 
-
 # Internationalization
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'Europe/Copenhagen'
-
 USE_I18N = True
-
 USE_L10N = True
-
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
-
 STATIC_URL = '/static/'
 STATIC_ROOT = '/protwis/static/protwis'
 STATICFILES_DIRS = (os.sep.join([BASE_DIR, "static"]),)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = '/protwis/media/protwis'
 
-
 # Serializer
-
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 SESSION_COOKIE_AGE = 86400 #Expire cookies and session after 24 hrs
-
 SWAGGER_SETTINGS = {
     'USE_SESSION_AUTH' : False,
 }
 
 # Templates
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -133,12 +121,10 @@ TEMPLATES = [
 if DEBUG:
     TEMPLATES[0]['OPTIONS']['debug'] = True
 
-
 # Debug toolbar
 if DEBUG:
     DEBUG_TOOLBAR_PATCH_SETTINGS = False
     INTERNAL_IPS = ('10.0.2.2')
-
 
 # Logging
 if DEBUG:
@@ -153,7 +139,7 @@ if DEBUG:
        },
        'handlers': {
            'django': {
-               'level': 'DEBUG',
+               'level': 'WARNING',
                'class': 'logging.FileHandler',
                'filename': 'logs/django.log',
                'formatter': 'verbose'
@@ -175,7 +161,7 @@ if DEBUG:
            'django': {
                'handlers':['django'],
                'propagate': True,
-               'level':'DEBUG',
+               'level':'WARNING',
            },
            'build': {
                'handlers': ['build'],
@@ -205,3 +191,8 @@ CACHES = {
         }
     }
 }
+
+# Note that https://www.django-rest-framework.org/community/3.10-announcement
+# So, have to switch from CoreAPI to OpenAPI. Next line will work for now.
+# Uncomment when needed.
+# REST_FRAMEWORK = { 'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema' }

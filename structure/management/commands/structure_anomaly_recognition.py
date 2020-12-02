@@ -3,7 +3,7 @@ from django.db.models import Q
 from django.conf import settings
 
 from protein.models import Protein, ProteinConformation, ProteinAnomaly, ProteinState, ProteinSegment
-from residue.models import Residue
+from residue.models import Residue, ResidueGenericNumberEquivalent
 from residue.functions import dgn, ggn
 from structure.models import *
 from structure.functions import HSExposureCB, PdbStateIdentifier
@@ -78,6 +78,8 @@ class StructureAnomalyRecognition(object):
 			else:
 				for t in ProteinSegment.objects.filter(proteinfamily='GPCR',category='helix'):
 					resis = Residue.objects.filter(protein_conformation__protein=self.structure.protein_conformation.protein.parent, protein_segment=t)
+					if len(resis)==0:
+						continue
 					self.range.append([resis[0].sequence_number, resis.reverse()[0].sequence_number])
 
 	def run_recog(self):
@@ -169,8 +171,13 @@ class StructureAnomalyRecognition(object):
 		db_bulges_dict = OrderedDict()
 		for b in db_bulges:
 			gn = b.generic_number.label
-			resi = Residue.objects.get(protein_conformation=self.parent_prot_conf, 
-									   display_generic_number__label=dgn(b.generic_number.label, self.parent_prot_conf))
+			try:
+				resi = Residue.objects.get(protein_conformation=self.parent_prot_conf, 
+										   display_generic_number__label=dgn(b.generic_number.label, self.parent_prot_conf))
+			except ResidueGenericNumberEquivalent.DoesNotExist:
+				print('Warning: {} ResidueGenericNumberEquivalent object missing from db'.format(gn))
+				continue
+
 			db_bulges_dict[gn] = resi.sequence_number
 			for ca2 in bulges:
 				if ca2-2<=resi.sequence_number<=ca2+2:

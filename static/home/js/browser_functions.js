@@ -2,11 +2,11 @@ function superposition(oTable, columns, site, hide_first_column) {
     // oTable: DataTable object of table of entries
     // columns: Column indeces of oTable to be extracted to build table for reference selection. First column has to be structure/model string used for superposition workflow
     // site: Structure browser or Homology model browser (add new logic when expanding to new sites)
-    if(window.location.hash === "#keepselection") {}
-    else {
-        ClearSelection('targets');
-        ClearSelection('reference');
-    }
+    // if(window.location.hash === "#keepselection") {}
+    // else {
+    ClearSelection('targets');
+    ClearSelection('reference');
+    // }
 
     var checked_data = oTable.rows('.alt_selected').data();
     if (checked_data.length===0) {
@@ -14,10 +14,11 @@ function superposition(oTable, columns, site, hide_first_column) {
         return 0;
     }
     var selected_ids = []
+    console.log(checked_data);
     if (site==='structure_browser') {
         for (i = 0; i < checked_data.length; i++) {
             var div = document.createElement("div");
-            div.innerHTML = checked_data[i][6];
+            div.innerHTML = checked_data[i][7];
             if (typeof div.innerText !== "undefined") {
                 selected_ids.push(div.innerText.replace(/\s+/g, ''));
             } else {
@@ -25,6 +26,7 @@ function superposition(oTable, columns, site, hide_first_column) {
             }
         }
         AddToSelection('targets', 'structure_many', selected_ids.join(","));
+        console.log(selected_ids);
     } else if (site==='homology_model_browser') {
         for (i = 0; i < checked_data.length; i++) {
             var div = document.createElement("div");
@@ -210,21 +212,28 @@ function match_rowheight(table1_id, table2_id) {
     });
 }
 
-function catch_filter(table1_id, table2_id) {
-    $('#'+table2_id).on( 'draw.dt', function (e,oSettings) {
-        $('#loading_div').show();
-        update_tables(table1_id, table2_id, 2);
-        var scrollable_height = $('.yadcf-datatables-table--'+table2_id+' > thead > tr').eq(1).eq(0).height();
-        $('.yadcf-datatables-table--'+table1_id+' > thead > tr').eq(1).css('height', scrollable_height);
-        $('#loading_div').hide();
-    });
-    $('#'+table1_id).on( 'draw.dt', function (e,oSettings) {
-        $('#loading_div').show();
-        update_tables(table1_id, table2_id, 1);
-        var frozen_height = $('.yadcf-datatables-table--'+table1_id+' > thead > tr').eq(1).eq(0).height();
-        $('.yadcf-datatables-table--'+table2_id+' > thead > tr').eq(1).css('height', frozen_height);
-        $('#loading_div').hide();
-    });
+var trigger_draw = true
+
+function catch_filter(table1_id, table2_id, oTable1, oTable2) {
+    if (trigger_draw==true) {
+        $('#'+table2_id).on( 'draw.dt', function (e,oSettings) {
+            $('#loading_div').show();
+            update_tables(table1_id, table2_id, 2);
+            var scrollable_height = $('.yadcf-datatables-table--'+table2_id+' > thead > tr').eq(1).eq(0).height();
+            $('.yadcf-datatables-table--'+table1_id+' > thead > tr').eq(1).css('height', scrollable_height);
+            $('#loading_div').hide();
+        });
+        $('#'+table1_id).on( 'draw.dt', function (e,oSettings) {
+            $('#loading_div').show();
+            update_tables(table1_id, table2_id, 1);
+            var frozen_height = $('.yadcf-datatables-table--'+table1_id+' > thead > tr').eq(1).eq(0).height();
+            $('.yadcf-datatables-table--'+table2_id+' > thead > tr').eq(1).css('height', frozen_height);
+            trigger_draw = false;
+            oTable2.draw();
+            trigger_draw = true;
+            $('#loading_div').hide();
+        });
+    }
 }
 
 function update_tables(table1_id, table2_id, source_table) {

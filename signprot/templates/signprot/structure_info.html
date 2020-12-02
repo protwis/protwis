@@ -1,5 +1,5 @@
 {% extends "home/base.html" %}
-{% load staticfiles %}
+{% load static %}
 
 {% block content %}
 <style>
@@ -8,7 +8,7 @@ canvas {
 }
 </style>
 
- <script src="http://cdn.jsdelivr.net/3dmol.js/latest/3Dmol-min.js"></script> 
+ <script src="https://cdn.jsdelivr.net/3dmol.js/latest/3Dmol-min.js"></script>
 <div class="row text-success">
 <div class="text-center">
         <h2>{{ protein.name|safe }}</h2>
@@ -77,9 +77,9 @@ canvas {
     <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
     <div> <button id=fullscreen>Full Screen</button></div>
 
-<!--     <div style="height: 400px; width: 500px; position: relative;" class='viewer_3Dmoljs'  data-backgroundcolor='0xffffff' data-href='pdb/{{pdbname}}' data-type='pdb' data-backgroundcolor='0xffffff' data-labelres2='fontSize:12;opacity:.2;color:black' data-select1='{"hetflag":false}'  data-style1='{"cartoon":{"color":"spectrum"}}' data-select2='{"resn":["test"{{ annotated_resn}}]}' data-style2='{"stick":{"colorscheme":"greenCarbon"}}'></div> 
+<!--     <div style="height: 400px; width: 500px; position: relative;" class='viewer_3Dmoljs'  data-backgroundcolor='0xffffff' data-href='pdb/{{pdbname}}' data-type='pdb' data-backgroundcolor='0xffffff' data-labelres2='fontSize:12;opacity:.2;color:black' data-select1='{"hetflag":false}'  data-style1='{"cartoon":{"color":"spectrum"}}' data-select2='{"resn":["test"{{ annotated_resn}}]}' data-style2='{"stick":{"colorscheme":"greenCarbon"}}'></div>
          <a href="pdb/{{pdbname}}">Download PDB file</a>
-         
+
     </div> -->
 </div>
 
@@ -95,10 +95,10 @@ canvas {
             stage = new NGL.Stage( "viewport", { backgroundColor: "white" } );
 
             //var stringBlob = new Blob( [ "pdb/{{pdbname}}" ], { type: 'text/plain'} );
-            // stage.loadFile( "http://localhost:8000/structure/pdb/{{pdbname}}", { ext: "pdb" } );
-            // NGL.autoLoad( "http://files.rcsb.org/download/5IOS.cif" );
-            //stage.loadFile( "http://files.rcsb.org/download/{{pdbname}}.pdb", { ext: "pdb" } );
-            stage.loadFile( "http://files.rcsb.org/download/{{pdbname}}.pdb", { defaultRepresentation: true } );
+            // stage.loadFile( "https://localhost:8000/structure/pdb/{{pdbname}}", { ext: "pdb" } );
+            // NGL.autoLoad( "https://files.rcsb.org/download/5IOS.cif" );
+            //stage.loadFile( "https://files.rcsb.org/download/{{pdbname}}.pdb", { ext: "pdb" } );
+            stage.loadFile( "https://files.rcsb.org/download/{{pdbname}}.pdb", { defaultRepresentation: true } );
             //stage.loadFile( "rcsb://1crn.mmtf", { defaultRepresentation: true } );
         } );
         $( "#fullscreen" ).click(function() {

@@ -1,10 +1,10 @@
 {% extends "home/base.html" %}
-{% load staticfiles %}
+{% load static %}
 {% load structure_extras %}
 
 {% block addon_css %}
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
-    <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/simple_browser.css' %}" type="text/css" />
 {% endblock %}
 
 {% block content %}
@@ -16,8 +16,6 @@ canvas {
     color: black;
 }
 </style>
-
-<script src="http://cdn.jsdelivr.net/3dmol.js/latest/3Dmol-min.js"></script>
 
 <div class="row text-success">
     <div class="text-center">
@@ -54,10 +52,10 @@ canvas {
 
 <div class="row">
     <div class="col-md-3 text-right text-info">
-        <h4>G-PROTEIN CLASS</h4>
+        <h4>G-PROTEIN FAMILY</h4>
     </div>
     <div class="col-md-9">
-        {{ model.sign_protein.family|safe }}
+        {{ model.sign_protein.family.parent|safe }}
     </div>
 </div>
 
@@ -93,7 +91,7 @@ canvas {
         <div style="float: left; width: 60%;">
             <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
             <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
-                <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><button id="fullscreen">Full Screen</button><a href="https://github.com/arose/ngl"> NGL</a> is a WebGL based 3D viewer powered by <a href="http://mmtf.rcsb.org">MMTF</a>.</p>
+                <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><button id="fullscreen">Full Screen</button><a href="https://github.com/arose/ngl"> NGL</a> is a WebGL based 3D viewer powered by <a href="https://mmtf.rcsb.org">MMTF</a>.</p>
             </div>
 
             <br>
@@ -112,7 +110,7 @@ canvas {
             <!-- <div class="btn-group">
                 <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>
             </div> -->
-            
+
         </div>
     </div>
 </div>
@@ -123,7 +121,7 @@ canvas {
     </div>
     <div class="col-md-9">
         <a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a> (sequence similarity: {{ main_template_seqsim }}%) PDB: <a href="../{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index }}</a>
-        
+
         <div class="btn-group", style="padding: 0px 0px 5px 5px;">
             <a id="align_btn1" class="btn btn-primary btn-mini " href="javascript:void(0)" style="padding: 2px 5px;">Align</a>
         </div>
@@ -163,8 +161,8 @@ canvas {
                     {% for bt in bts %}
                         <div class="graphcolor" style="background-color:{{ bt.color }}; width: 20px; height: 10px; margin-top: 5px;"></div>
                         {{ bt.pdb_code.index }} ({{ bt.protein_conformation.protein.parent.name|safe}}) <br>
-                        
-                        
+
+
                     {% endfor %}
                 {% endfor %}
                         <div class="graphcolor" style="background-color:white; width: 20px; height: 10px;"></div>
@@ -209,6 +207,7 @@ canvas {
                     <tr>
                         <th>Segment</th>
                         <th>Seq.num.</th>
+                        <th>AA</th>
                         <th>GPCRdb#</th>
                         <th>Backbone</th>
                         <th>PDB</th>
@@ -223,6 +222,7 @@ canvas {
                         <th></th>
                         <th></th>
                         <th></th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -230,6 +230,7 @@ canvas {
                     <tr>
                         <td>{{ rota.residue.protein_segment.slug }}</td>
                         <td>{{ rota.residue.sequence_number }}</td>
+                        <td>{{ rota.residue.amino_acid }}</td>
                         {% if rota.residue.display_generic_number %}
                             <td>{{ rota.residue.display_generic_number.label }}</td>
                         {% else %}
@@ -271,6 +272,7 @@ canvas {
                     <tr>
                         <th>Segment</th>
                         <th>Seq.num.</th>
+                        <th>AA</th>
                         <th>CGN#</th>
                         <th>Backbone</th>
                         <th>PDB</th>
@@ -285,6 +287,7 @@ canvas {
                         <th></th>
                         <th></th>
                         <th></th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -292,11 +295,8 @@ canvas {
                     <tr>
                         <td>{{ rota.residue.protein_segment.slug }}</td>
                         <td>{{ rota.residue.sequence_number }}</td>
-                        {% if rota.residue.protein_segment in loop_segments %}
-                            <td></td>
-                        {% else %}
-                            <td>{{ rota.residue.generic_number.label }}</td>
-                        {% endif %}
+                        <td>{{ rota.residue.amino_acid }}</td>
+                        <td>{{ rota.residue.generic_number.label }}</td>
                         {% if rota.backbone_template %}
                             <td><a href="/protein/{{ rota.backbone_template.protein_conformation.protein.parent.entry_name }}">{{ rota.backbone_template.protein_conformation.protein.parent.name|safe }}</a></td>
                             <td><a href="../{{ rota.backbone_template.pdb_code.index }}">{{ rota.backbone_template.pdb_code.index }}</a></td>
@@ -350,45 +350,12 @@ canvas {
 {% block addon_js %}
     <script src="{% static 'home/js/ngl.js' %}"> </script>
         <script>
-        // http://proteinformatics.charite.de/ngl/doc/#User_manual/Usage/Molecular_representations
-        // http://arose.github.io/ngl/api/Stage.html
-        // http://arose.github.io/ngl/js/examples.js
-        // http://arose.github.io/ngl/
         document.addEventListener( "DOMContentLoaded", function(){
             stage = new NGL.Stage( "viewport", { backgroundColor: "white" } );
-            var color_residues = "{{color_residues}}";
-            var color_array = [];
-            var l = color_residues.split(",")
-            for (i=0; i<l.length; i++) {
-                var ar = l[i].split(":");
-                for (j=0; j<ar.length; j++) {
-                    ar[j] = ar[j].replace(" ","")
-                    ar[j] = ar[j].replace("&#39;","")
-                    ar[j] = ar[j].replace("&#39;","")
-                    ar[j] = ar[j].replace("{","")
-                    ar[j] = ar[j].replace("}","")
-                    ar[j] = ar[j].replace("Rand","R and")
-                    ar[j] = ar[j].replace("R and",":R and")
-                }
-                color_array.push(ar);
-            }
-            var color_residues2 = "{{signprot_color_residues}}";
-            var l = color_residues2.split(',')
-            for (i=0; i<l.length; i++) {
-                var ar = l[i].split(':');
-                for (j=0; j<ar.length; j++) {
-                    ar[j] = ar[j].replace(" ","")
-                    ar[j] = ar[j].replace("&#39;","")
-                    ar[j] = ar[j].replace("&#39;","")
-                    ar[j] = ar[j].replace("{","")
-                    ar[j] = ar[j].replace("}","")
-                    ar[j] = ar[j].replace("Aand","A and")
-                    ar[j] = ar[j].replace("A and",":A and")
-                }
-
-                color_array.push(ar);
-            }
-            color_array.push(["darkorchid","*"])
+            var color_residues = JSON.parse('{{color_residues|safe}}');
+            var color_residues2 = JSON.parse('{{signprot_color_residues|safe}}');
+            color_residues2.push(["darkorchid","*"])
+            var color_array = color_residues.concat(color_residues2);
 
             var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( color_array );
 
@@ -443,6 +410,7 @@ canvas {
                         aoColumns: [
                             { type: "select" }, // segment
                             { type: "number-range"}, // seq num
+                            { type: "text" }, // AA
                             { type: "text" }, // gn
                             { type: "text" }, // backbone
                             { type: "text" }, // backbone xtal
@@ -474,6 +442,7 @@ canvas {
                         aoColumns: [
                             { type: "select" }, // segment
                             { type: "number-range"}, // seq num
+                            { type: "text" }, // AA
                             { type: "text" }, // gn
                             { type: "text" }, // backbone
                             { type: "text" }, // backbone xtal
@@ -520,7 +489,7 @@ canvas {
                 ClearSelection('targets');
                 ClearSelection('reference');
                 var div = document.createElement("div");
-                
+
                 div.innerHTML = "{{model.receptor_protein.entry_name}}";
                 if (typeof div.innerText !== "undefined") {
                     AddToSelection('reference', 'structure_complex_receptor', div.innerText.replace(/\s+/g, '').replace('[','').replace(']',''));

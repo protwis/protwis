@@ -26,6 +26,7 @@ import yaml
 import traceback
 import subprocess
 from copy import deepcopy
+import pprint
 
 gprotein_segments = ProteinSegment.objects.filter(proteinfamily='Alpha')
 gprotein_segment_slugs = [i.slug for i in gprotein_segments]
@@ -42,6 +43,41 @@ class SignprotModeling():
         self.main_pdb_array = main_pdb_array
         self.target_signprot = None
 
+    def get_full_alpha_templates(self):
+        sc_all = SignprotComplex.objects.all().values_list('structure', flat=True)
+        sep_all = StructureExtraProteins.objects.filter(structure__in=sc_all, category='G alpha')
+        sep_filtered = sep_all.filter(wt_coverage__gte=85)
+        return sep_filtered, sep_filtered.values_list('structure', flat=True)
+
+    def group_full_alpha_templates(self, templates, group_by_subfam=False):
+        h_domain_template_dict = OrderedDict()
+        for i in templates:
+            if group_by_subfam:
+                if i.wt_protein.family.parent not in h_domain_template_dict:
+                    h_domain_template_dict[i.wt_protein.family.parent] = [i.structure]
+                else:
+                    h_domain_template_dict[i.wt_protein.family.parent].append(i.structure)
+            else:
+                if i.wt_protein.family not in h_domain_template_dict:
+                    h_domain_template_dict[i.wt_protein.family] = [i.structure]
+                else:
+                    h_domain_template_dict[i.wt_protein.family].append(i.structure)
+        for i, j in h_domain_template_dict.items():
+            j = sorted(j, key=lambda x: x.resolution)
+            h_domain_template_dict[i] = j
+        return h_domain_template_dict
+
+    def find_h_domain_template(self, signprot, templates):
+        template_dict = self.group_full_alpha_templates(templates)
+        if signprot.family in template_dict:
+            return template_dict[signprot.family][0]
+        else:
+            subfam_dict = self.group_full_alpha_templates(templates, group_by_subfam=True)
+            if signprot.family.parent in subfam_dict:
+                return subfam_dict[signprot.family.parent][0]
+            else:
+                return Structure.objects.get(pdb_code__index='3SN6')
+
     def run(self):
         parse = GPCRDBParsingPDB()
         self.signprot_complex = SignprotComplex.objects.get(structure=self.main_structure)
@@ -56,6 +92,18 @@ class SignprotModeling():
         io = StringIO(self.main_structure.pdb_data.pdb)
         assign_cgn = as_gn.GenericNumbering(pdb_file=io, pdb_code=self.main_structure.pdb_code.index, sequence_parser=True, signprot=structure_signprot)
         signprot_pdb_array = assign_cgn.assign_cgn_with_sequence_parser(self.signprot_complex.alpha)
+        
+        # Alignment exception in HN for 6OIJ, shifting alignment by 6 residues
+        if self.main_structure.pdb_code.index=='6OIJ':
+            keys = list(signprot_pdb_array['HN'].keys())
+            new_HN = OrderedDict()
+            for i, k in enumerate(signprot_pdb_array['HN']):
+                if i<8:
+                    new_HN[k] = 'x'
+                else:
+                    new_HN[k] = signprot_pdb_array['HN'][keys[i-6]]
+            signprot_pdb_array['HN'] = new_HN
+
         new_array = OrderedDict()
 
         # Initiate complex part of template source
@@ -71,13 +119,15 @@ class SignprotModeling():
         # Superimpose missing regions H1 - hfs2
         alt_complex_struct = None
         segs_for_alt_complex_struct = []
-        if self.main_structure.pdb_code.index!='3SN6':
+        alt_templates_H_domain = self.get_full_alpha_templates()
+
+        if self.main_structure.id not in alt_templates_H_domain[1]:
             segs_for_alt_complex_struct = ['H1', 'h1ha', 'HA', 'hahb', 'HB', 'hbhc', 'HC', 'hchd', 'HD', 'hdhe', 'HE', 'hehf', 'HF', 'hfs2']
-            alt_complex_struct = Structure.objects.get(pdb_code__index='3SN6')
+            alt_complex_struct = self.find_h_domain_template(self.target_signprot, alt_templates_H_domain[0]) #Structure.objects.get(pdb_code__index='3SN6')
             io = StringIO(alt_complex_struct.pdb_data.pdb)
-            alt_signprot_complex = SignprotComplex.objects.get(structure__pdb_code__index='3SN6')
-            alt_assign_cgn = as_gn.GenericNumbering(pdb_file=io, pdb_code='3SN6', sequence_parser=True, signprot=alt_signprot_complex.protein)
-            alt_signprot_pdb_array = alt_assign_cgn.assign_cgn_with_sequence_parser(alt_signprot_complex.alpha)
+            alt_signprot_complex = SignprotComplex.objects.get(structure=alt_complex_struct)
+            alt_assign_cgn = as_gn.GenericNumbering(pdb_file=io, pdb_code=alt_complex_struct.pdb_code.index, sequence_parser=True, signprot=alt_signprot_complex.protein)
+            alt_signprot_pdb_array = alt_assign_cgn.assign_cgn_with_sequence_parser(alt_signprot_complex.alpha) 
             before_cgns = ['G.HN.50', 'G.HN.51', 'G.HN.52', 'G.HN.53']
             after_cgns =  ['G.H5.03', 'G.H5.04', 'G.H5.05', 'G.H5.06']
             orig_residues1 = parse.fetch_residues_from_array(signprot_pdb_array['HN'], before_cgns)
@@ -87,13 +137,13 @@ class SignprotModeling():
             alt_residues1 = parse.fetch_residues_from_array(alt_signprot_pdb_array['HN'], before_cgns)
             alt_residues2 = parse.fetch_residues_from_array(alt_signprot_pdb_array['H5'], after_cgns)
 
-            for i,j in orig_residues.items():
-                print(i, j, j[0].get_parent())
-            print('ALTERNATIVES')
-            for i,j in alt_residues1.items():
-                print(i, j, j[0].get_parent())
-            for i,j in alt_residues2.items():
-                print(i, j, j[0].get_parent())
+            # for i,j in orig_residues.items():
+            #     print(i, j, j[0].get_parent())
+            # print('ALTERNATIVES')
+            # for i,j in alt_residues1.items():
+            #     print(i, j, j[0].get_parent())
+            # for i,j in alt_residues2.items():
+            #     print(i, j, j[0].get_parent())
             
             alt_middle = OrderedDict()
             for s in segs_for_alt_complex_struct:
@@ -234,13 +284,17 @@ class SignprotModeling():
                     loops_to_model.append(r_seg)
                 # ref and temp length equal
                 else:
-                    c = 1
+                    cr, ct = 1,1
                     for i, j in zip(list(sign_a.reference_dict[r_seg].values()), list(sign_a.template_dict[t_seg].values())):
-                        ref_out[r_seg+'_'+str(c)] = i
-                        temp_out[r_seg+'_'+str(c)] = j
-                        self.template_source = compare_and_update_template_source(self.template_source, r_seg, signprot_pdb_array, c-1, temp_loop_residues[c-1].display_generic_number.label, 
-                                                                                  ref_loop_residues[c-1].sequence_number, segs_for_alt_complex_struct, alt_complex_struct, self.main_structure)
-                        c+=1
+                        ref_out[r_seg+'_'+str(cr)] = i
+                        temp_out[r_seg+'_'+str(ct)] = j
+                        self.template_source = compare_and_update_template_source(self.template_source, r_seg, signprot_pdb_array, ct-1, temp_loop_residues[ct-1].display_generic_number.label, 
+                                                                                  ref_loop_residues[cr-1].sequence_number, segs_for_alt_complex_struct, alt_complex_struct, self.main_structure)
+                        if i!='-':
+                            cr+=1
+                        if j!='-':
+                            ct+=1
+                        
                 c = 1
 
                 # update alignment dict

@@ -3,7 +3,7 @@ from django.conf import settings
 from phylogenetic_trees.views import *
 
 class Command(BaseCommand):
-    classes=['001','002','003','004','005','006']
+    classes=['001','002','003','004','006','007']
 
     def handle(self, *args, **options):
         for cl in self.classes:

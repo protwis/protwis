@@ -31,7 +31,7 @@ def fetch_from_cache(path, file_id):
     cache_file_path = os.sep.join([cache_dir_path, file_id + '.yaml'])
     if os.path.isfile(cache_file_path):
         with open(cache_file_path) as cache_file:
-            return yaml.load(cache_file)
+            return yaml.load(cache_file, Loader=yaml.FullLoader)
     else:
         return False
 
@@ -117,7 +117,7 @@ def fetch_from_web_api(url, index, cache_dir=False, xml=False, raw=False):
     logger.error('Failed fetching {} {} times, giving up'.format(full_url, max_tries))
     return False
 
-def fetch_from_entrez(index, cache_dir=False):
+def fetch_from_entrez(index, cache_dir=''):
     logger = logging.getLogger('build')
 
     # slugify the index for the cache filename (some indices have symbols not allowed in file names (e.g. /))
@@ -134,10 +134,10 @@ def fetch_from_entrez(index, cache_dir=False):
     # if nothing is found in the cache, use the web API
     logger.info('Fetching {} from Entrez'.format(index))
     tries = 0
-    max_tries = 5
+    max_tries = 2
     while tries < max_tries:
         if tries > 0:
-            logger.warning('Failed fetching {}, retrying'.format(full_url))
+            logger.warning('Failed fetching pubmed via Entrez {}, retrying'.format(str(index)))
             
         try:
             Entrez.email = 'info@gpcrdb.org'
@@ -149,7 +149,7 @@ def fetch_from_entrez(index, cache_dir=False):
             )
         except:
             tries += 1
-            time.sleep(2)
+            time.sleep(0.2)
         else:
             d = Medline.read(handle)
 

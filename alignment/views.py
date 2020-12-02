@@ -22,6 +22,7 @@ from structure.functions import BlastSearch
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 from protein.models import Protein, ProteinSegment, ProteinFamily, ProteinSet
 from residue.models import ResidueNumberingScheme, ResiduePositionSet
+from seqsign.sequence_signature import SequenceSignature, signature_score_excel
 
 from collections import OrderedDict
 from copy import deepcopy
@@ -39,6 +40,7 @@ import xlrd
 class TargetSelection(AbsTargetSelection):
     step = 1
     number_of_steps = 2
+    filter_tableselect = False
     docs = 'sequences.html#structure-based-alignments'
     selection_boxes = OrderedDict([
         ('reference', False),
@@ -52,6 +54,7 @@ class TargetSelection(AbsTargetSelection):
             'color': 'success',
         },
     }
+
 
 class TargetSelectionGprotein(AbsTargetSelection):
     step = 1
@@ -168,6 +171,7 @@ class SegmentSelectionGprotein(AbsSegmentSelection):
     ss = ProteinSegment.objects.filter(partial=False, proteinfamily='Alpha').prefetch_related('generic_numbers')
     ss_cats = ss.values_list('category').order_by('category').distinct('category')
 
+
 class SegmentSelectionArrestin(AbsSegmentSelection):
     step = 2
     number_of_steps = 2
@@ -201,6 +205,7 @@ class SegmentSelectionArrestin(AbsSegmentSelection):
     ss = ProteinSegment.objects.filter(partial=False, proteinfamily='Arrestin').prefetch_related('generic_numbers')
     ss_cats = ss.values_list('category').order_by('category').distinct('category')
 
+
 class BlastSearchInput(AbsMiscSelection):
     step = 1
     number_of_steps = 1
@@ -210,12 +215,13 @@ class BlastSearchInput(AbsMiscSelection):
     buttons = {
         'continue': {
             'label': 'BLAST',
-            'onclick': 'document.getElementById("form").submit()',
+            'onclick': 'document.getElementById(\'form\').submit()',
             'color': 'success',
         },
     }
     selection_boxes = {}
     blast_input = True
+
 
 class BlastSearchResults(TemplateView):
     """
@@ -237,6 +243,7 @@ class BlastSearchResults(TemplateView):
         context["input"] = request.POST['input_seq']
 
         return render(request, self.template_name, context)
+
 
 def render_alignment(request):
     # get the user selection from session
@@ -399,4 +406,52 @@ def render_csv_alignment(request):
 
     response = render(request, 'alignment/alignment_csv.html', context={'a': a}, content_type='text/csv')
     response['Content-Disposition'] = "attachment; filename=" + settings.SITE_TITLE + "_alignment.csv"
+    return response
+
+# Excel download based on seq. signature tool
+def render_alignment_excel(request):
+
+    # Grab all targets
+    targets = request.session.get('selection', False)
+
+    # create placeholder seq signature
+    signature = SequenceSignature()
+    signature.setup_alignments_from_selection(targets, targets)
+
+    # calculate the signture
+    signature.calculate_signature()
+    signature.calculate_zscales_signature()
+
+    outstream = BytesIO()
+    wb = xlsxwriter.Workbook(outstream, {'in_memory': True})
+
+    # Sequence alignment of targets
+    signature.prepare_excel_worksheet(
+        wb,
+        'Alignment',
+        'positive',
+        'alignment'
+    )
+
+    # Residue properties stats
+    signature.prepare_excel_worksheet(
+        wb,
+        'Property_conservation',
+        'positive',
+        'features'
+    )
+    # Z-scales
+    signature.zscales_excel(
+        wb,
+        "Z-scales",
+        'positive'
+    )
+    wb.close()
+    outstream.seek(0)
+    response = HttpResponse(
+        outstream.read(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    response['Content-Disposition'] = "attachment; filename=gpcrdb_alignment.xlsx"
+
     return response

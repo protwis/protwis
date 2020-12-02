@@ -4,6 +4,7 @@ from django.core.cache import cache
 from io import StringIO
 from Bio.PDB import PDBIO
 import re
+from protein.models import ProteinGProteinPair
 
 class Structure(models.Model):
     # linked onto the Xtal ProteinConformation, which is linked to the Xtal protein
@@ -11,6 +12,7 @@ class Structure(models.Model):
     structure_type = models.ForeignKey('StructureType', on_delete=models.CASCADE)
     pdb_code = models.ForeignKey('common.WebLink', on_delete=models.CASCADE)
     state = models.ForeignKey('protein.ProteinState', on_delete=models.CASCADE)
+    author_state = models.ForeignKey('protein.ProteinState', null=True, on_delete=models.CASCADE, related_name='author_state')
     publication = models.ForeignKey('common.Publication', null=True, on_delete=models.CASCADE)
     ligands = models.ManyToManyField('ligand.Ligand', through='interaction.StructureLigandInteraction')
     protein_anomalies = models.ManyToManyField('protein.ProteinAnomaly')
@@ -20,12 +22,22 @@ class Structure(models.Model):
     publication_date = models.DateField()
     pdb_data = models.ForeignKey('PdbData', null=True, on_delete=models.CASCADE) #allow null for now, since dump file does not contain.
     representative = models.BooleanField(default=False)
+    distance_representative = models.BooleanField(default=True)
+    contact_representative = models.BooleanField(default=False)
+    contact_representative_score = models.DecimalField(max_digits=5, decimal_places=3, null=True)
+    inactive_class_contacts_fraction = models.DecimalField(max_digits=5, decimal_places=3, null=True)
+    active_class_contacts_fraction = models.DecimalField(max_digits=5, decimal_places=3, null=True)
+    class_contact_representative = models.BooleanField(default=False)
     annotated = models.BooleanField(default=True)
     refined = models.BooleanField(default=False)
     distance = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    tm6_angle = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    gprot_bound_likeness = models.DecimalField(max_digits=5, decimal_places=2, null=True)
     sodium = models.BooleanField(default=False)
-    signprot_complex = models.ForeignKey('signprot.SignprotComplex', null=True, on_delete=models.CASCADE, related_name='signprot_complex')
+    signprot_complex = models.ForeignKey('signprot.SignprotComplex', null=True, on_delete=models.SET_NULL, related_name='signprot_complex')
     stats_text = models.ForeignKey('StatsText', null=True, on_delete=models.CASCADE)
+    mammal = models.BooleanField(default=False) #whether the species of the structure is mammal
+    closest_to_human = models.BooleanField(default=False) # A boolean to say if the receptor/state of this structure is the closest structure to human
 
     def __str__(self):
         return self.pdb_code.index
@@ -38,28 +50,44 @@ class Structure(models.Model):
         else:
             return '-'
 
+    def get_signprot_gprot_family(self):
+        tmp = self.signprot_complex.protein.family
+        while tmp.parent.parent.parent.parent is not None:
+            tmp = tmp.parent
+        return tmp.name
+
+        return str(self.signprot_complex.protein)
+
     def get_cleaned_pdb(self, pref_chain=True, remove_waters=True, ligands_to_keep=None, remove_aux=False, aux_range=5.0):
 
         tmp = []
         for line in self.pdb_data.pdb.split('\n'):
             save_line = False
             if pref_chain:
+                # or 'refined' bit needs rework, it fucks up the extraction
                 if (line.startswith('ATOM') or line.startswith('HET')) and (line[21] == self.preferred_chain[0] or 'refined' in self.pdb_code.index):
+                # if (line.startswith('ATOM') or line.startswith('HET')) and (line[21] == self.preferred_chain[0]):
                     save_line = True
             else:
                 save_line = True
             if remove_waters and line.startswith('HET') and line[17:20] == 'HOH':
                 save_line = False
             if ligands_to_keep and line.startswith('HET'):
-                if line[17:20] != 'HOH' and line[17:20] in ligands_to_keep:
-                    save_line = True
-                elif line[17:20] != 'HOH':
-                    save_line=False
+                if pref_chain:
+                    if line[17:20] != 'HOH' and line[17:20] in ligands_to_keep and line[21] == self.preferred_chain[0]:
+                        save_line = True
+                    elif line[17:20] != 'HOH':
+                        save_line=False
+                else:
+                    if line[17:20] != 'HOH' and line[17:20] in ligands_to_keep:
+                        save_line = True
+                    elif line[17:20] != 'HOH':
+                        save_line=False
             if save_line:
                 tmp.append(line)
 
         return '\n'.join(tmp)
-    
+
     def get_ligand_pdb(self, ligand):
 
         tmp = []
@@ -95,6 +123,29 @@ class Structure(models.Model):
         db_table = 'structure'
 
 
+class StructureComplexProtein(models.Model):
+    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    protein_conformation = models.ForeignKey('protein.ProteinConformation', on_delete=models.CASCADE)
+    chain = models.CharField(max_length=1)
+
+    def __repr__(self):
+        return '<StructureComplexProtein: '+str(self.protein_conformation.protein)+'>'
+
+    def __str__(self):
+        return '<StructureComplexProtein: '+str(self.protein_conformation.protein)+'>'
+
+    class Meta():
+        db_table = 'structure_complex_protein'
+
+class StructureVectors(models.Model):
+    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    translation = models.CharField(max_length=100, null=True)
+    center_axis = models.CharField(max_length=100)
+
+    class Meta():
+        db_table = 'structure_vectors'
+
+
 class StructureModel(models.Model):
     protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
     state = models.ForeignKey('protein.ProteinState', on_delete=models.CASCADE)
@@ -122,7 +173,7 @@ class StructureComplexModel(models.Model):
     main_template = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
     pdb_data = models.ForeignKey('PdbData', null=True, on_delete=models.CASCADE)
     version = models.DateField()
-    prot_signprot_pair = models.ForeignKey('protein.ProteinGProteinPair', related_name='+', on_delete=models.CASCADE, null=True)
+    # prot_signprot_pair = models.ForeignKey('protein.ProteinGProteinPair', related_name='+', on_delete=models.CASCADE, null=True)
     stats_text = models.ForeignKey('StatsText', on_delete=models.CASCADE)
 
     def __repr__(self):
@@ -136,6 +187,13 @@ class StructureComplexModel(models.Model):
 
     def get_cleaned_pdb(self):
         return self.pdb_data.pdb
+
+    def get_prot_gprot_pair(self):
+        pgp = ProteinGProteinPair.objects.filter(protein=self.receptor_protein, g_protein__slug=self.sign_protein.family.parent.slug, source='GuideToPharma')
+        if len(pgp)>0:
+            return pgp[0].transduction
+        else:
+            return 'no evidence'
 
 
 class StatsText(models.Model):
@@ -257,6 +315,14 @@ class StructureType(models.Model):
     slug = models.SlugField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
 
+    def type_short(self):
+        if self.name=="X-ray diffraction":
+            return "X-ray"
+        elif self.name=="Electron microscopy":
+            return "cryo-EM"
+        else:
+            return self.name
+
     def __str__(self):
         return self.name
 
@@ -264,8 +330,25 @@ class StructureType(models.Model):
         db_table = "structure_type"
 
 
+class StructureExtraProteins(models.Model):
+    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE, null=True, related_name='extra_proteins')
+    wt_protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE, null=True)
+    protein_conformation = models.ForeignKey('protein.ProteinConformation', on_delete=models.CASCADE, null=True)
+    display_name = models.CharField(max_length=20)
+    note = models.CharField(max_length=50, null=True)
+    chain = models.CharField(max_length=1)
+    category = models.CharField(max_length=20)
+    wt_coverage = models.IntegerField(null=True)
+
+    def __str__(self):
+        return self.display_name
+
+    class Meta():
+        db_table = "extra_proteins"
+
+
 class StructureStabilizingAgent(models.Model):
-    slug = models.SlugField(max_length=50, unique=True)
+    slug = models.SlugField(max_length=75, unique=True)
     name = models.CharField(max_length=100)
 
     def __str__(self):

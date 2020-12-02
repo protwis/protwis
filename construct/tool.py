@@ -84,10 +84,10 @@ def compare_family_slug(a,b):
         elif a[0] == '004':
             # if Class C ignore others
             return -1, 'ignore'
-        elif a[0] == '005':
+        elif a[0] == '006':
             # if Class F ignore others
             return -1, 'ignore'
-        elif a[0] == '006':
+        elif a[0] == '007':
             # if Class Taste take for A
             if b[0]!= '001':
                 return -1, 'ignore'
@@ -122,7 +122,7 @@ def new_tool(request):
         c_level = 'B'
     elif level.split("_")[0]=='004':
         c_level = 'C'
-    elif level.split("_")[0]=='005':
+    elif level.split("_")[0]=='006':
         c_level = 'F'
     else:
         c_level = ''
@@ -154,7 +154,7 @@ def new_tool(request):
 
 
     cons = Construct.objects.all().prefetch_related('crystal', 'protein__family','deletions','structure__state','insertions__insert_type')
-    
+
     inserts = {}
     inserts['fusions'] = []
     inserts['other'] = {}
@@ -219,7 +219,7 @@ def tool(request):
         c_level = 'B'
     elif level.split("_")[0]=='004':
         c_level = 'C'
-    elif level.split("_")[0]=='005':
+    elif level.split("_")[0]=='006':
         c_level = 'F'
     else:
         c_level = ''
@@ -251,7 +251,7 @@ def tool(request):
 
 
     cons = Construct.objects.all().prefetch_related('crystal', 'protein__family','deletions','structure__state','insertions__insert_type')
-    
+
     inserts = {}
     inserts['fusions'] = []
     inserts['other'] = {}
@@ -284,7 +284,7 @@ def tool(request):
 
     return render(request,'tool.html',context)
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def json_fusion(request, slug, **response_kwargs):
 
     level = Protein.objects.filter(entry_name=slug).values_list('family__slug', flat = True).get()
@@ -296,7 +296,7 @@ def json_fusion(request, slug, **response_kwargs):
     response_kwargs['content_type'] = 'application/json'
     return HttpResponse(jsondata, **response_kwargs)
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def json_palmi(request, slug, **response_kwargs):
 
     start_time = time.time()
@@ -336,7 +336,7 @@ def json_palmi(request, slug, **response_kwargs):
     return HttpResponse(jsondata, **response_kwargs)
 
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def json_glyco(request, slug, **response_kwargs):
     start_time = time.time()
 
@@ -393,7 +393,7 @@ def json_glyco(request, slug, **response_kwargs):
     print("glyco",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def json_icl3(request, slug, **response_kwargs):
     start_time = time.time()
     level = Protein.objects.filter(entry_name=slug).values_list('family__slug', flat = True).get()
@@ -423,7 +423,7 @@ def json_icl3(request, slug, **response_kwargs):
 
 
     cons = Construct.objects.all().prefetch_related('crystal', 'protein__family','deletions','structure__state','insertions__insert_type')
-    
+
     deletions = OrderedDict()
     deletions['Receptor'] = {}
     deletions['Receptor Family'] = {}
@@ -467,7 +467,7 @@ def json_icl3(request, slug, **response_kwargs):
     print("icl3",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def json_icl2(request, slug, **response_kwargs):
     start_time = time.time()
     level = Protein.objects.filter(entry_name=slug).values_list('family__slug', flat = True).get()
@@ -497,7 +497,7 @@ def json_icl2(request, slug, **response_kwargs):
 
 
     cons = Construct.objects.all().prefetch_related('crystal', 'protein__family','deletions','structure__state','insertions__insert_type')
-    
+
     deletions = OrderedDict()
     deletions['Receptor'] = {}
     deletions['Receptor Family'] = {}
@@ -539,7 +539,7 @@ def json_icl2(request, slug, **response_kwargs):
     print("icl2",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def json_nterm(request, slug, **response_kwargs):
     start_time = time.time()
 
@@ -587,7 +587,7 @@ def json_nterm(request, slug, **response_kwargs):
     print("nterm",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def json_cterm(request, slug, **response_kwargs):
 
     start_time = time.time()
@@ -608,7 +608,7 @@ def json_cterm(request, slug, **response_kwargs):
 
 
     cons = Construct.objects.all().prefetch_related('crystal', 'protein__family','deletions','structure__state','insertions__insert_type')
-    
+
     deletions = OrderedDict()
     deletions['Receptor'] = {}
     deletions['Receptor Family'] = {}
@@ -642,7 +642,7 @@ def json_cterm(request, slug, **response_kwargs):
     print("cterm",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def thermostabilising(request, slug, **response_kwargs):
 
     start_time = time.time()
@@ -667,7 +667,7 @@ def thermostabilising(request, slug, **response_kwargs):
         c_level = 'B'
     elif level.split("_")[0]=='004':
         c_level = 'C'
-    elif level.split("_")[0]=='005':
+    elif level.split("_")[0]=='006':
         c_level = 'F'
     else:
         c_level = ''
@@ -723,7 +723,7 @@ def thermostabilising(request, slug, **response_kwargs):
                         results['3'][gn][wt_aa]['hits'] += 1
                         if mut_aa not in results['3'][gn][wt_aa]['muts']:
                             results['3'][gn][wt_aa]['muts'].append(mut_aa)
-      
+
     temp = {}
     for gn, vals1 in results['2'].items():
         for mut_aa, vals2 in vals1.items():
@@ -735,7 +735,7 @@ def thermostabilising(request, slug, **response_kwargs):
                 #results['2'][gn].pop(mut_aa, None)
     results['2'] = temp
 
-    temp_single = {}                  
+    temp_single = {}
     temp = {}
     for gn, vals1 in results['3'].items():
         for mut_aa, vals2 in vals1.items():
@@ -763,7 +763,7 @@ def thermostabilising(request, slug, **response_kwargs):
     return HttpResponse(jsondata, **response_kwargs)
 
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def structure_rules(request, slug, **response_kwargs):
     start_time = time.time()
 
@@ -787,7 +787,7 @@ def structure_rules(request, slug, **response_kwargs):
         c_level = 'B'
     elif level.split("_")[0]=='004':
         c_level = 'C'
-    elif level.split("_")[0]=='005':
+    elif level.split("_")[0]=='006':
         c_level = 'F'
     else:
         c_level = ''
@@ -855,14 +855,14 @@ def structure_rules(request, slug, **response_kwargs):
             if valid:
                 mut = {'wt':wt_lookup[gn][0], 'gn': gn, 'pos':wt_lookup[gn][1], 'mut':mut_aa, 'definition':definition}
                 if state=='all':
-                    if gn not in results['active']: 
+                    if gn not in results['active']:
                         results['active'][gn] = []
-                    if gn not in results['inactive']: 
+                    if gn not in results['inactive']:
                         results['inactive'][gn] = []
                     results['active'][gn].append(mut)
                     results['inactive'][gn].append(mut)
                 else:
-                    if gn not in results[state]: 
+                    if gn not in results[state]:
                         results[state][gn] = []
                     results[state][gn].append(mut)
 
@@ -933,7 +933,7 @@ def structure_rules(request, slug, **response_kwargs):
     return HttpResponse(jsondata, **response_kwargs)
 
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def mutations(request, slug, **response_kwargs):
     from django.db import connection
     start_time = time.time()
@@ -971,7 +971,7 @@ def mutations(request, slug, **response_kwargs):
 
     # Build current target residue GN mapping
     rs = Residue.objects.filter(protein_conformation__protein__entry_name=slug, generic_number__isnull=False).prefetch_related('generic_number', 'protein_segment')
-    
+
     # Build a dictionary to know how far a residue is from segment end/start
     # Used for propensity removals
     start_end_segments = {}
@@ -1013,7 +1013,7 @@ def mutations(request, slug, **response_kwargs):
 
             if entry_name not in mutation_list[full_mutation]['proteins']:
                 mutation_list[full_mutation]['proteins'].append(entry_name)
-                mutation_list[full_mutation]['hits'] += 1  
+                mutation_list[full_mutation]['hits'] += 1
                 mutation_list[full_mutation]['mutation'][0].append(mut_wt)
                 mutation_list[full_mutation]['mutation'][1].append(mut_mut)
                 if gn in wt_lookup:
@@ -1034,7 +1034,7 @@ def mutations(request, slug, **response_kwargs):
 
             if entry_name not in mutation_list[full_mutation]['proteins']:
                 mutation_list[full_mutation]['proteins'].append(entry_name)
-                mutation_list[full_mutation]['hits'] += 1  
+                mutation_list[full_mutation]['hits'] += 1
                 mutation_list[full_mutation]['mutation'][0].append(mut_wt)
                 mutation_list[full_mutation]['mutation'][1].append(mut_mut)
                 if gn in wt_lookup:
@@ -1093,7 +1093,7 @@ def mutations(request, slug, **response_kwargs):
             pos = vals['wt'][1]
             wt_aa = vals['wt'][0]
             segment = vals['wt'][2]
-            origin = {'pdbs': vals['pdbs'], 'protein_families': vals['protein_families'], 'proteins': vals['proteins'], 'hits':vals['hits']} 
+            origin = {'pdbs': vals['pdbs'], 'protein_families': vals['protein_families'], 'proteins': vals['proteins'], 'hits':vals['hits']}
             gpcrdb = gn.split("_")[0]
             for mut_aa in set(vals['mutation'][1]):
                 if mut_aa!=wt_aa:
@@ -1109,7 +1109,7 @@ def mutations(request, slug, **response_kwargs):
                         simple_list[key]['origin'].append(origin)
 
 
-    # TODO : overlay with other types of mutations, e.g. surfacing expressing 
+    # TODO : overlay with other types of mutations, e.g. surfacing expressing
 
     # Conservation rules and Helix propensity rules
 
@@ -1147,7 +1147,7 @@ def mutations(request, slug, **response_kwargs):
                         remove = True
                 # elif wt_lookup[cons_gn][0]=='G':
                 #     print('it is G',aa[2]['G'])
-                #     cut_offs = {'001':0.03, '002': 0.21, '003': 0.19, '004': 0.21 ,'005': 0.21}
+                #     cut_offs = {'001':0.03, '002': 0.21, '003': 0.19, '004': 0.21 ,'006': 0.21}
                 #     if protein_class_slug in cut_offs:
                 #         cut_off = cut_offs[protein_class_slug]
                 #         print('cutoff',cut_off,cut_off>aa[2]['G'][1])
@@ -1194,7 +1194,7 @@ def mutations(request, slug, **response_kwargs):
                     # if only one count of P (will be this P)
                     remove = True
             elif wt_lookup[cons_gn][0]=='G':
-                cut_offs = {'001':0.03, '002': 0.21, '003': 0.19, '004': 0.21 ,'005': 0.21}
+                cut_offs = {'001':0.03, '002': 0.21, '003': 0.19, '004': 0.21 ,'006': 0.21}
                 if protein_class_slug in cut_offs:
                     cut_off = cut_offs[protein_class_slug]
                     if cut_off>aa[2]['G'][1]:
@@ -1295,13 +1295,13 @@ def mutations(request, slug, **response_kwargs):
                         if aa_1[3]!='Wt' and aa_1[3]!=wt_lookup[aa_1[0]][0]:
                            active.append([wt_lookup[aa_1[0]][0],aa_1[3],wt_lookup[aa_1[0]][1],aa_1[0]])
                         if aa_2[3]!='Wt' and aa_2[3]!=wt_lookup[aa_2[0]][0]:
-                           active.append([wt_lookup[aa_2[0]][0],aa_2[3],wt_lookup[aa_2[0]][1],aa_2[0]]) 
+                           active.append([wt_lookup[aa_2[0]][0],aa_2[3],wt_lookup[aa_2[0]][1],aa_2[0]])
 
                         inactive = []
                         if aa_1[2]!='Wt' and aa_1[2]!=wt_lookup[aa_1[0]][0]:
-                           inactive.append([wt_lookup[aa_1[0]][0],aa_1[2],wt_lookup[aa_1[0]][1],aa_1[0]]) 
+                           inactive.append([wt_lookup[aa_1[0]][0],aa_1[2],wt_lookup[aa_1[0]][1],aa_1[0]])
                         if aa_2[2]!='Wt' and aa_2[2]!=wt_lookup[aa_2[0]][0]:
-                           inactive.append([wt_lookup[aa_2[0]][0],aa_2[2],wt_lookup[aa_2[0]][1],aa_2[0]]) 
+                           inactive.append([wt_lookup[aa_2[0]][0],aa_2[2],wt_lookup[aa_2[0]][1],aa_2[0]])
 
 
                         # print(aa_1,wt_lookup[aa_1[0]],match_1)
@@ -1366,7 +1366,7 @@ def mutations(request, slug, **response_kwargs):
     matches = re.finditer(r'(?=([N][^P][TS]))',seq)
     matches_seq = re.findall(r'(?=([N][^P][TS]))',seq)
     #{"all": [[39, "Q", "", "", "NTS", "N-term"], [203, "Q", "", "", "NNT", "ECL2"]], "mammalian": [[205, "V", 206, "V", "TTCVLNDPN", "ECL2"]]}
-    
+
     definition_matches = [int(3),"n-linked glycosylation removal"]
     for i,m in enumerate(matches):
         #print(matches_seq[i],m.start())
@@ -1374,7 +1374,7 @@ def mutations(request, slug, **response_kwargs):
         if residues[m.start()+1] in ['N-term','ECL1','ECL2','ECL3']:
             key = '%s%s%s' % ("N",m.start()+1,"Q")
             mut = {'wt_aa': "N", 'segment': residues[m.start()+1], 'pos': m.start()+1, 'gpcrdb':'', 'mut_aa':"Q", 'definitions' : [definition_matches], 'priority': 3}
-                
+
             if key not in simple_list:
                 simple_list[key] = mut
             else:
@@ -1443,7 +1443,7 @@ def mutations(request, slug, **response_kwargs):
     for m in p.finditer(seq):
         key = '%s%s%s' % ("C",m.start()+start_h8,"Q")
         mut = {'wt_aa': "C", 'segment': residues[m.start()+start_h8], 'pos': m.start()+start_h8, 'gpcrdb':'', 'mut_aa':"A", 'definitions' : [definition_matches], 'priority': 3}
-            
+
         if key not in simple_list:
             simple_list[key] = mut
         else:
@@ -1453,7 +1453,7 @@ def mutations(request, slug, **response_kwargs):
 
     simple_list = OrderedDict(sorted(simple_list.items(), key=lambda x: (x[1]['priority'],x[1]['pos']) ))
     for key, val in simple_list.items():
-        if val['gpcrdb']: 
+        if val['gpcrdb']:
             val['display_gn'] = wt_lookup[val['gpcrdb']][3]
         else:
             val['display_gn'] = ""
@@ -1467,7 +1467,7 @@ def mutations(request, slug, **response_kwargs):
     print("muts",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def cons_strucs(request, slug, **response_kwargs):
     start_time = time.time()
 
@@ -1479,7 +1479,7 @@ def cons_strucs(request, slug, **response_kwargs):
 
     amino_acids_stats = {}
     amino_acids_groups_stats = {}
-        
+
     potentials = cache.get("CD_xtal_"+level.split("_")[0])
 
     if potentials==None:
@@ -1535,7 +1535,7 @@ def cons_strucs(request, slug, **response_kwargs):
     print("cons_strucs",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def cons_rf(request, slug, **response_kwargs):
     start_time = time.time()
 
@@ -1547,13 +1547,13 @@ def cons_rf(request, slug, **response_kwargs):
 
     amino_acids_stats = {}
     amino_acids_groups_stats = {}
-        
+
 
     print(len(rf_proteins))
 
     try:
 
-        # Load alignment 
+        # Load alignment
         a = pickle.loads(AlignmentConsensus.objects.get(slug="_".join(level.split("_")[0:3])).alignment)
     except:
         print('failed!')
@@ -1607,7 +1607,7 @@ def cons_rf(request, slug, **response_kwargs):
     print("cons_rf",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def cons_rf_and_class(request, slug, **response_kwargs):
     start_time = time.time()
 
@@ -1619,9 +1619,9 @@ def cons_rf_and_class(request, slug, **response_kwargs):
 
     amino_acids_stats = {}
     amino_acids_groups_stats = {}
-        
+
     try:
-        # Load alignment 
+        # Load alignment
         a = pickle.loads(AlignmentConsensus.objects.get(slug="_".join(level.split("_")[0:3])).alignment)
     except:
         print('failed!')
@@ -1668,9 +1668,9 @@ def cons_rf_and_class(request, slug, **response_kwargs):
 
         amino_acids_stats = {}
         amino_acids_groups_stats = {}
-            
+
         try:
-            # Load alignment 
+            # Load alignment
             a = pickle.loads(AlignmentConsensus.objects.get(slug="_".join(level.split("_")[0:1])).alignment)
         except:
             print('failed!')
@@ -1727,7 +1727,7 @@ def cons_rf_and_class(request, slug, **response_kwargs):
     print("cons_rf_and_class",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
-@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def cons_rm_GP(request, slug, **response_kwargs):
     start_time = time.time()
     level = Protein.objects.filter(entry_name=slug).values_list('family__slug', flat = True).get()
@@ -1738,7 +1738,7 @@ def cons_rm_GP(request, slug, **response_kwargs):
 
     amino_acids_stats = {}
     amino_acids_groups_stats = {}
-        
+
     a = Alignment()
     a.load_proteins(rf_proteins)
     a.load_segments(align_segments) #get all segments to make correct diagrams
@@ -1797,8 +1797,8 @@ def calculate_conservation(proteins = None, slug = None):
     amino_acids_groups_stats = {}
 
     if slug:
-        try: 
-            # Load alignment 
+        try:
+            # Load alignment
             alignment_consensus = AlignmentConsensus.objects.get(slug=slug)
             if alignment_consensus.gn_consensus:
                 alignment_consensus = pickle.loads(alignment_consensus.gn_consensus)
@@ -1806,13 +1806,13 @@ def calculate_conservation(proteins = None, slug = None):
                 test = alignment_consensus['1x50'][2]
                 return alignment_consensus
             a = pickle.loads(alignment_consensus.alignment)
-        except: 
+        except:
             print('no saved alignment')
             proteins = Protein.objects.filter(family__slug__startswith=slug, source__name='SWISSPROT',species__common_name='Human')
             align_segments = ProteinSegment.objects.all().filter(slug__in = list(settings.REFERENCE_POSITIONS.keys())).prefetch_related()
             a = Alignment()
             a.load_proteins(proteins)
-            a.load_segments(align_segments) 
+            a.load_segments(align_segments)
             a.build_alignment()
             # calculate consensus sequence + amino acid and feature frequency
             a.calculate_statistics()
@@ -1821,7 +1821,7 @@ def calculate_conservation(proteins = None, slug = None):
         align_segments = ProteinSegment.objects.all().filter(slug__in = list(settings.REFERENCE_POSITIONS.keys())).prefetch_related()
         a = Alignment()
         a.load_proteins(proteins)
-        a.load_segments(align_segments) 
+        a.load_segments(align_segments)
         a.build_alignment()
         # calculate consensus sequence + amino acid and feature frequency
         a.calculate_statistics()

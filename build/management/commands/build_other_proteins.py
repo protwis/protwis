@@ -90,7 +90,7 @@ class Command(BuildHumanProteins):
 
                 # read the yaml file
                 with open(source_file_path, 'r') as f:
-                    sd = yaml.load(f)
+                    sd = yaml.load(f, Loader=yaml.FullLoader)
 
                 # check whether protein is specified
                 if 'protein' not in sd:
@@ -102,6 +102,9 @@ class Command(BuildHumanProteins):
             # parse files
             filenames = os.listdir(self.local_uniprot_dir)
 
+            ###GP - class D addition - just temporary - FIXME
+            construct_entry_names = construct_entry_names+['a0a0w0dd93_cangb', 'q8wzm9_sorma', 'b1gvb8_pench', 'mam2_schpo', 'q4wyu8_aspfu', 'q8nir1_neucs', 'ste2_lackl', 'q6fly8_canga', 'g2ye05_botf4', 's6exb4_zygb2', 'c5dx97_zygrc']
+
             # Keep track of first or second iteration
             reviewed = ['SWISSPROT','TREMBL'][iteration-1]
             skipped_due_to_swissprot = 0
@@ -109,7 +112,7 @@ class Command(BuildHumanProteins):
             while count.value<len(filenames):
                 with lock:
                     source_file = filenames[count.value]
-                    count.value +=1 
+                    count.value +=1
                 # if i<positions[0]: #continue if less than start
                 #     continue
                 # if positions[1]: #if end is non-false
@@ -124,7 +127,6 @@ class Command(BuildHumanProteins):
                     continue
 
                 up = self.parse_uniprot_file(accession)
-
                 # Skip TREMBL on first loop, and SWISSPROT on second
                 if reviewed != up['source']:
                     continue
@@ -167,6 +169,12 @@ class Command(BuildHumanProteins):
                     if not p:
                         split_entry_name = up['entry_name'].split('_')
 
+                        # UGLY: hardcoded corrections
+                        # NOTE: when extending this - make a dictionary
+                        # NOTE: consider utilizing e.g. OrthoDB
+                        if up['entry_name'] == "b1b1u5_9arac":
+                           split_entry_name = ["opsd", ""]
+
                         # add _ to the split entry name to avoid e.g. gp1 matching gp139
                         entry_name_query = split_entry_name[0] + '_'
                         try:
@@ -185,12 +193,19 @@ class Command(BuildHumanProteins):
                         # use first hit from BLAST as template for reference positions
                         try:
                             p = Protein.objects.get(pk=blast_out[0][0])
+                            # class D exception
+                            if p.entry_name=='ste2_yeast':
+                                ortholog = True
                         except Protein.DoesNotExist:
                             print('Template protein for {} not found'.format(up['entry_name']))
                             self.logger.error('Template protein for {} not found'.format(up['entry_name']))
 
                 # skip if no ortholog is found FIXME use a profile to find a good template
                 if not p:
+                    try:
+                        source_file_name = os.remove(source_file_name)
+                    except:
+                        pass
                     continue
 
                 # check whether an entry already exists for this protein/species
@@ -203,7 +218,7 @@ class Command(BuildHumanProteins):
                     continue
                 elif len(already_entry_names):
                     self.logger.error("{} {} swissprot orthologue already there? {}".format(up['entry_name'], accession,already_entry_names))
-                
+
                 # # check whether reference positions exist for this protein, and find them if they do not
                 # ref_position_file_path = os.sep.join([self.ref_position_source_dir, up['entry_name'] + '.yaml'])
                 # auto_ref_position_file_path = os.sep.join([self.auto_ref_position_source_dir, up['entry_name'] + '.yaml'])

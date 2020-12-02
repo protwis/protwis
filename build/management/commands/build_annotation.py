@@ -52,15 +52,15 @@ class Command(BaseBuild):
 
     non_xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'non_xtal_segends.yaml'])
     with open(non_xtal_seg_end_file, 'r') as f:
-        non_xtal_seg_end = yaml.load(f)
+        non_xtal_seg_end = yaml.load(f, Loader=yaml.FullLoader)
 
     all_anomalities_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'all_anomalities.yaml'])
     with open(all_anomalities_file, 'r') as f:
-        all_anomalities = yaml.load(f)
+        all_anomalities = yaml.load(f, Loader=yaml.FullLoader)
 
     sequence_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'sequences.yaml'])
     with open(sequence_file, 'r') as f:
-        gpcr_sequences = yaml.load(f)
+        gpcr_sequences = yaml.load(f, Loader=yaml.FullLoader)
 
     xtal_anomalities_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'xtal_anomalities.yaml'])
     non_xtal_seg_end_bw_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'non_xtal_segends_bw.yaml'])
@@ -122,7 +122,20 @@ class Command(BaseBuild):
         #return dict
         a = {'aa':aa, 'pos':i, 's':'', 'numbers':{'bw':''}}
         if i<int(v['1b']):
-            a['s'] = 'N-term'
+            if 'D1S1b' in v:
+                if i<int(v['D1S1b']):
+                    a['s'] = 'N-term'
+                elif i<=int(v['D1S1e']):
+                    a['s'] = 'D1S1'
+                    a['numbers']['bw'] = 'D1S1.'+str(50+i-int(v['D1S1x']))
+                elif i<=int(v['D1T1e']):
+                    a['s'] = 'D1T1'
+                    a['numbers']['bw'] = 'D1T1.'+str(50+i-int(v['D1T1x']))
+                elif i<=int(v['D1S2e']):
+                    a['s'] = 'D1S2'
+                    a['numbers']['bw'] = 'D1S2.'+str(50+i-int(v['D1S2x']))
+            else:
+                a['s'] = 'N-term'
         elif i<=int(v['1e']):
             a['s'] = 'TM1'
             a['numbers']['bw'] = '1.'+str(50+i-int(v['1x']))
@@ -139,7 +152,15 @@ class Command(BaseBuild):
         elif i<=int(v['2e']):
             a['s'] = 'TM2'
             a['numbers']['bw'] = '2.'+str(50+i-int(v['2x']))
-        elif v['e1x']!="-" and i<int(v['3b']):
+        elif 'D1e1x' in v and v['D1e1x']!="-" and i<int(v['3b']):
+            if i<int(v['D1e1b']):
+                a['s'] = 'D1e1'
+            elif i<=int(v['D1e1e']):
+                a['s'] = 'D1e1'
+                a['numbers']['bw'] = 'D1e1.'+str(50+i-int(v['D1e1x']))
+            else:
+                a['s'] = 'D1e1'
+        elif 'e1x' in v and v['e1x']!="-" and i<int(v['3b']):
             if i<int(v['e1b']):
                 a['s'] = 'ECL1'
             elif i<=int(v['e1e']):
@@ -421,9 +442,12 @@ class Command(BaseBuild):
             if len(s)<10:
                 print(counter,entry_name,"Something wrong with sequence")
             for i,aa in enumerate(s, start=1):
+                
+
                 # if i<170 or i>190:
                 #     continue
                 res = self.generate_bw(i,v,aa)
+
                 segment = self.all_segments[res['s']]
 
                 ##perform bulges / constriction check!
@@ -433,7 +457,6 @@ class Command(BaseBuild):
                     gn = self.b_and_c_check(b_and_c,number,seg)
                     res['numbers']['generic_number'] = seg+"x"+gn
 
-
                 # print("\t",res)
 
                 bulk_info = create_or_update_residue(pconf, segment, self.schemes,res,b_and_c)
@@ -442,7 +465,17 @@ class Command(BaseBuild):
 
                 al.append(res)
 
-            bulked = Residue.objects.bulk_create(bulk)
+            try:
+                bulked = Residue.objects.bulk_create(bulk)
+            except Exception as msg:
+                print('Error saving residues for ',pconf)
+                print(msg)
+                try:
+                    bulked = Residue.objects.bulk_create(bulk)
+                except:
+                    print('failed 2nd try')
+                self.logger.error('Error saving residues for {}'.format(pconf))
+                    
             rs = Residue.objects.filter(protein_conformation=pconf).order_by('sequence_number')
 
             ThroughModel = Residue.alternative_generic_numbers.through

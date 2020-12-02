@@ -1,5 +1,5 @@
 {% extends "home/base.html" %}
-{% load staticfiles %}
+{% load static %}
 {% block addon_css %}
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
 {% endblock %}
@@ -21,7 +21,7 @@
 
   select.form-control {
     height: 34px;
-    font-size: 14px; 
+    font-size: 14px;
   }
 
   .fixed td:not(.mod_buttons){
@@ -56,12 +56,12 @@
 
 <h2> Construct Design Tool  </h2>
 
-<p> This is a tool to help aid crystallographers design crystal constructs.<a href=#  onclick='modifications_overview();showModal("Introduction",tables["help"]);'> Press here for an introduction.</a> <button id=toolvideo mp4="http://files.gpcrdb.org/video/constructtool1.mp4" type="button" class="videoLink btn btn-xs btn-default">
+<p> This is a tool to help aid structural biologist design constructs.<a href=#  onclick='modifications_overview();showModal("Introduction",tables["help"]);'> Press here for an introduction.</a> <button id=toolvideo mp4="https://files.gpcrdb.org/video/constructtool1.mp4" type="button" class="videoLink btn btn-xs btn-default">
                           <span class="glyphicon glyphicon-film"></span>
                         </button></p>
 
 <p>
-Target: {{target.entry_name}} | 
+Target: {{target.entry_name}} |
 Class: {{class}}
 </p>
 
@@ -197,7 +197,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 {% block addon_js %}
     <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
     <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
-    <script src="{% static 'home/js/diagrams.js' %}"></script> 
+    <script src="{% static 'home/js/diagrams.js' %}"></script>
     <script type="text/javascript" charset="utf-8">
 
     function upload() {
@@ -268,7 +268,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     function allPossibleCases(arr) {
       if (arr.length === 0) {
         return [];
-      } 
+      }
     else if (arr.length ===1){
     return arr[0];
     }
@@ -293,7 +293,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         "paging":   false,
         "ordering": true,
         "info":     false,
-        "bFilter": true, 
+        "bFilter": true,
         "bInfo": false,
         "order": [],
         // "fixedHeader": true,
@@ -327,19 +327,19 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     export_list['icl2_start'] = [];
     export_list['icl2_end'] = [];
     export_list['thermo'] = [];
-    export_list['removals'] = [];  
+    export_list['removals'] = [];
 
     var info_text = {};
 
-    info_text['nterm'] = '<p class=info_text>Here you select the N-term truncation. The data comes from crystallized receptors and is grouped by the truncation\'s distance to TM1. It is possible to sort the data by occurrances (frequence) or by homology (Levels). Furthermore, it is possible to filter by fusion protein in N-term if it has interest.</p>';
+    info_text['nterm'] = '<p class=info_text>Here you select the N-term truncation. The data comes from receptor structures and is grouped by the truncation\'s distance to TM1. It is possible to sort the data by occurrances (frequence) or by homology (Levels). Furthermore, it is possible to filter by fusion protein in N-term if it has interest.</p>';
 
-    info_text['icl2_start'] = '<p class=info_text>Select the start position for the truncation within ICL2. The data comes from crystallized receptors and is grouped by their GPCRdb generic number. It is possible to sort the data by occurrances (frequence) or by homology (Levels). Furthermore, it is possible to filter by fusion protein in N-term if it has interest. Once the starting position is selected a new window will open to select the ending position.</p>';
+    info_text['icl2_start'] = '<p class=info_text>Select the start position for the truncation within ICL2. The data comes from receptor structures and is grouped by their GPCRdb generic number. It is possible to sort the data by occurrances (frequence) or by homology (Levels). Furthermore, it is possible to filter by fusion protein in N-term if it has interest. Once the starting position is selected a new window will open to select the ending position.</p>';
     info_text['icl2_end'] = '<p class=info_text>Select the ending position for the ICL2 truncation.</p>';
 
-    info_text['icl3_start'] = '<p class=info_text>Select the start position for the truncation within ICL3. The data comes from crystallized receptors and is grouped by their GPCRdb generic number. It is possible to sort the data by occurrances (frequence) or by homology (Levels). Furthermore, it is possible to filter by fusion protein in N-term if it has interest. Once the starting position is selected a new window will open to select the ending position.</p>';
+    info_text['icl3_start'] = '<p class=info_text>Select the start position for the truncation within ICL3. The data comes from receptor structures and is grouped by their GPCRdb generic number. It is possible to sort the data by occurrances (frequence) or by homology (Levels). Furthermore, it is possible to filter by fusion protein in N-term if it has interest. Once the starting position is selected a new window will open to select the ending position.</p>';
     info_text['icl3_end'] = '<p class=info_text>Select the ending position for the ICL3 truncation.</p>';
 
-    info_text['cterm'] = '<p class=info_text>Here you select the C-term truncation. The data comes from crystallized receptors and is grouped by the truncation\'s distance to TM8. It is possible to sort the data by occurrances (frequence) or by homology (Levels).</p>';
+    info_text['cterm'] = '<p class=info_text>Here you select the C-term truncation. The data comes from receptor structures and is grouped by the truncation\'s distance to TM8. It is possible to sort the data by occurrances (frequence) or by homology (Levels).</p>';
     info_text['termo'] = '<p class=info_text>Select mutation by click the mutation suggestion in the <i>Mutation</i> column.</p>';
 
     info_text['sites'] = '<p class=info_text>The tool recognizes possible site motifs. These can be attempted to be removed using the following mutations.</p>';
@@ -351,20 +351,20 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     tables["custom"] = [info_text['custom']]
     tables["custom"].push( "Mutate: <input type='text' id='custom_pos' placeholder='sequence position'> to <input type='text' id='custom_mut' placeholder='aminoacid (1-letter)'> <input type='text'  id='custom_reason' placeholder='Reason'><input type=button value=Add onclick='custom_mut()'><div id=confirm_cus_mut></div><br>");
     tables["custom"].push( "Deletion: <input type='text' id='custom_del_start' placeholder='from (sequence position)'> - <input type='text' id='custom_del_end' placeholder='to (sequence number)'> <input type='text'  id='custom_del_reason' placeholder='Reason'><input type=button value=Add onclick='custom_del()'><div id=confirm_cus_del></del><br>");
-    tables["custom"] = tables["custom"].join( "" );  
+    tables["custom"] = tables["custom"].join( "" );
 
-    tables["help"] = ['See small movie with a sample usage of tool: <button onclick="$(\'#toolvideo\').click();" mp4="http://files.gpcrdb.org/video/constructtool1.mp4" type="button" class="videoLink btn btn-xs btn-default">' +
+    tables["help"] = ['See small movie with a sample usage of tool: <button onclick="$(\'#toolvideo\').click();" mp4="https://files.gpcrdb.org/video/constructtool1.mp4" type="button" class="videoLink btn btn-xs btn-default">' +
                         '<span class="glyphicon glyphicon-film"></span>' +
-                        '</button>']  
-  
-    tables["help"].push( "<div class='row'><div class='col-sm-2'><strong>State</strong></div><div class='col-sm-10'>Select either Inactive or Active to limit the dataset to be crystals with chosen state.</div></div>");
-    tables["help"].push( "<div class='row'><div class='col-sm-2'><strong>Fusion site</strong></div><div class='col-sm-10'>Select if and where the fusion protein to be inserted. This is used to make suggestions for the intercelluar loop (ICL) truncation based on crystals with fusion protein in same region.</div></div>");
+                        '</button>']
+
+    tables["help"].push( "<div class='row'><div class='col-sm-2'><strong>State</strong></div><div class='col-sm-10'>Select either Inactive or Active to limit the dataset to the structures with chosen state.</div></div>");
+    tables["help"].push( "<div class='row'><div class='col-sm-2'><strong>Fusion site</strong></div><div class='col-sm-10'>Select if and where the fusion protein to be inserted. This is used to make suggestions for the intercelluar loop (ICL) truncation based on structures with fusion protein in same region.</div></div>");
     tables["help"].push( "<div class='row'><div class='col-sm-2'><strong>Export</strong></div><div class='col-sm-10'>Export all suggestions to an excel sheet for local analysis.</div></div>");
     tables["help"].push( "<div class='row'><div class='col-sm-2'><strong>Upload</strong></div><div class='col-sm-10'>Upload a previous construct design to continue work.</div></div>");
     tables["help"].push( "<br><div class='row'><div class='col-sm-2'><strong>Deletions</strong></div><div class='col-sm-10'>Methods to help guide truncations in different regions</div></div>");
     tables["help"].push( "<div class='row'><div class='col-sm-2'><strong>Mutations</strong></div><div class='col-sm-10'>Suggestions for thermostabilising mutations and for site removals</div></div>");
     tables["help"].push( "<div class='row'><div class='col-sm-2'><strong>Other</strong></div><div class='col-sm-10'>Create Custom modifications and see current modifications. Export current modificaitons to excel.</div></div>");
-    tables["help"] = tables["help"].join( "" );  
+    tables["help"] = tables["help"].join( "" );
 
 
     // insert_sequences = new Array;
@@ -400,14 +400,14 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       }
     }
 
-    other_inserts_dropdown = "Please see <a href='http://files.gpcrdb.org/Insert_sequences.xlsx'>here</a> for exact sequences used in inserts. They are based on sequences used in published crystals.<br><table><tr class='fusion_site_inserts'><th colspan=2 id=fusion_text>Fusion Protein</th></tr><tr class='fusion_site_inserts'><td colspan=2>"+fusion_protein_dropdown + "</td></tr><tr><th colspan=2>Other inserts</th></tr>";
+    other_inserts_dropdown = "Please see <a href='https://files.gpcrdb.org/Insert_sequences.xlsx'>here</a> for exact sequences used in inserts. They are based on sequences used in published structures.<br><table><tr class='fusion_site_inserts'><th colspan=2 id=fusion_text>Fusion Protein</th></tr><tr class='fusion_site_inserts'><td colspan=2>"+fusion_protein_dropdown + "</td></tr><tr><th colspan=2>Other inserts</th></tr>";
     // other_inserts_dropdown += `<select id="insert_type_where"  class="form-control">
     //               <option value="" >Please select Type</option>
     //               <option value="nterm">N-term</option>
     //               <option value="fusion">Fusion-Site</option>
     //               <option value="cterm">C-term</option>
     //             </select>`;
-    // other_inserts_dropdown += "<table>"; 
+    // other_inserts_dropdown += "<table>";
     var segment_pretty = ['N-term','FusionSite','C-term']
      $.each(['nterm','fusion','cterm'], function(key,segment) {
     other_inserts_dropdown += "<tr class='"+segment+"_site_inserts'><th width=75>"+segment_pretty[key] + "</th><td>";
@@ -454,7 +454,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
                   <option value="YFP">YFP</option>
                   <option value="Luciferase">Luficerase</option>
                   <option value="SNAP tag">SNAP tag</option>
-                  <option value="Flash tag">Flash tag</option>            
+                  <option value="Flash tag">Flash tag</option>
                   <option value="other">Other</option>
                 </select>`;
        other_inserts_dropdown += `<select class="`+segment+`_insert_type form-control" id="`+segment+`_prot_cleavage" name="prot_cleavage">
@@ -599,7 +599,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           //Bind to check for other
           if (insert_type_specific=='linker') {
             // return if linker, as there is not supposed to be change event
-            return 
+            return
           }
           console.log("#"+insert_type);
           $("#"+insert_type).change(function () {
@@ -779,7 +779,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           })
         })
         level_num += 1;
-      }) 
+      })
 
       var items_table = [info_text['nterm']];
       items_table.push( "Custom: <input type='text' id='custom_nterm' placeholder='From Helix 1'><input type=button value=Add onclick='custom_nterm()'>");
@@ -817,8 +817,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
             if (state==vals[3]) {
                 find = 1;
                 // console.log(state +" "+fusionpos+" "+level+" "+protein+" "+pdb+" "+vals);
-                if(!show_cterm[level]) { show_cterm[level] = {}; } 
-                if(!show_cterm[level][vals[2]]) { show_cterm[level][vals[2]] = {'proteins': [],'pdbs': [], 'hits':0}; } 
+                if(!show_cterm[level]) { show_cterm[level] = {}; }
+                if(!show_cterm[level][vals[2]]) { show_cterm[level][vals[2]] = {'proteins': [],'pdbs': [], 'hits':0}; }
                 if(show_cterm[level][vals[2]]['proteins'].indexOf(protein)==-1) {
                   show_cterm[level][vals[2]]['proteins'].push(protein);
                   show_cterm[level][vals[2]]['pdbs'].push(pdb);
@@ -845,7 +845,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           show_cterm[level]['sortedkeys'] = getSortedKeys(show_cterm[level]);
         }
         level_num += 1;
-      }) 
+      })
 
       var items_table = [info_text['cterm']];
       items_table.push( "Custom: <input type='text' id='custom_cterm' placeholder='From Helix 8'><input type=button value=Add onclick='custom_cterm()'>");
@@ -947,7 +947,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           })
         })
         level_num += 1;
-      }) 
+      })
 
        var items_table = [info_text['icl3_start']];
       items_table.push( "Custom: 5.<input type='text' id='custom_icl' placeholder='Generic number'><input type=button value=Add onclick='custom_icl(3)'>");
@@ -988,7 +988,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       items_table.push( "</tbody></table>" );
       result = items_table.join( "" );
       tables['icl3_end'] = result;
-      
+
 
       $("#icl3_start_button").html("ICL3 ("+Object.keys(show_table_start).length+")");
     }
@@ -1073,7 +1073,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           })
         })
         level_num += 1;
-      }) 
+      })
 
 
        var items_table = [info_text['icl2_start']];
@@ -1255,7 +1255,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         $.each(removals_list[type], function(subtype, values){
           // console.log(type);
           // console.log(subtype);
-          $.each(values, function(i, details) { 
+          $.each(values, function(i, details) {
             // console.log(i);
             // console.log(details);
             count += 1;
@@ -1681,7 +1681,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     function rebuild_insert_order() {
       console.log("rebuild_insert_order!");
       fusionpos = $('input:radio[name=fusionpos]:checked').val();
-      // $.each(modifications, function(key,val) { //remove all inserts 
+      // $.each(modifications, function(key,val) { //remove all inserts
       //   console.log(val);
       //   type = val['type'];
       //   if (type == 'Fusion' || type == 'Insert' ) {
@@ -1820,12 +1820,12 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           var p1 = b.method.toLowerCase();
           if (a.type=='mutation' && b.type=='mutation') {
             var p1 = a.range;
-            var p2 = b.range;  
+            var p2 = b.range;
           }
 
 
           var q1 = a.range;
-          var q2 = b.range;  
+          var q2 = b.range;
 
           if (o1 < o2) return -1;
           if (o1 > o2) return 1;
@@ -1887,7 +1887,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         // $("#overview").append(row);
         tables["overview"].push(row);
 
-      }) 
+      })
       tables["overview"].push("</table>");
 
       tables["overview"] = tables["overview"].join( "" );
@@ -1931,7 +1931,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
         });
 
-      }) 
+      })
       tables["inserts"].push("</table>");
 
       overlay_modifications();
@@ -1984,7 +1984,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
               unique_groups["mutation"][4].push(key);
               unique_groups["mutation"][1] += 1;
             } else {
-              //if combination mutation 
+              //if combination mutation
               unique_groups["mutation"][0] += 1;
               unique_groups["mutation"][2].push(key);
 
@@ -2012,7 +2012,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
             $.each(val[4], function(key,val) {
               // add the fixed mutations one at a time
-              modifications_to_do.push([val]); 
+              modifications_to_do.push([val]);
             });
           }
         } else if (val[0]!=0) {
@@ -2022,10 +2022,10 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
             modifications_to_do.push(val[2]); //add all combinations to a single array
           } else {
             if (val[2]) modifications_to_do.push(val[2]); //add all combinations to a single array
-            //for the case of mutations, 
+            //for the case of mutations,
             $.each(val[4], function(key,val) {
               // add the fixed mutations one at a time
-              modifications_to_do.push([val]); 
+              modifications_to_do.push([val]);
             });
           }
         }
@@ -2090,7 +2090,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       fusion_site_location = -1;
 
       fusionpos = $('input:radio[name=fusionpos]:checked').val();
-        
+
       $.each(modifications, function(key,val) {
 
         if ($.inArray(String(key), include)==-1 && val['type']!="Insert") {
@@ -2200,7 +2200,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
              add_wt_start = 0;
           }
           last_key_in_stretch = key;
-          // console.log('added'); 
+          // console.log('added');
         }
       });
       if (add_wt_start==0){
@@ -2237,7 +2237,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
       fusionpos = $('input:radio[name=fusionpos]:checked').val();
       // console.log("fusionpost"+fusionpos);
-        
+
       $.each(modifications, function(key,val) {
         type = val['type'];
         range = val['range'];
@@ -2331,7 +2331,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
              add_wt_start = 0;
           }
           last_key_in_stretch = key;
-          // console.log('added'); 
+          // console.log('added');
         }
       });
       if (add_wt_start==0){
@@ -2348,9 +2348,9 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
             sequence_long += "["+val['type']+":"+val['name']+"]";
           }
       });
-          // console.log(sequence.length); 
-          // console.log(sequence); 
-          // console.log(sequence_short); 
+          // console.log(sequence.length);
+          // console.log(sequence);
+          // console.log(sequence_short);
 
     }
 
@@ -2415,7 +2415,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
       // http://localhost:8000/construct/tool/json/nterm/adrb2_human/
       $.getJSON( "/construct/tool/json/nterm/{{target.entry_name}}/", function( data ) {
-          n_term_data = data; 
+          n_term_data = data;
           build_nterm_menu();
           load_status += 1;
           updateLoadStatus();
@@ -2433,7 +2433,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     {% if class == 'A'  or class == 'F' %}
       // http://localhost:8000/construct/tool/json/icl3/adrb2_human/
       $.getJSON( "/construct/tool/json/icl3/{{target.entry_name}}/", function( data ) {
-          icl3_data = data; 
+          icl3_data = data;
           build_icl3_menu();
           load_status += 1;
           updateLoadStatus();
@@ -2441,7 +2441,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     {% elif class == 'B' or class == 'C' %}
       // http://localhost:8000/construct/tool/json/icl3/adrb2_human/
       $.getJSON( "/construct/tool/json/icl2/{{target.entry_name}}/", function( data ) {
-          icl2_data = data; 
+          icl2_data = data;
           build_icl2_menu();
           load_status += 1;
           updateLoadStatus();
@@ -2474,7 +2474,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           load_status += 1;
           updateLoadStatus();
         });
-                    
+
       // http://localhost:8000/construct/tool/json/palmi/adrb2_human/
       $.getJSON( "/construct/tool/json/palmi/{{target.entry_name}}/", function( data ) {
           var items = [];
@@ -2538,7 +2538,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         });
 
 
-        
+
 
         $.getJSON( "/construct/tool/json/cons_rm_GP/{{target.entry_name}}/", function( data ) {
           var items = [];
@@ -2573,7 +2573,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
                 $.each( aa, function( key, value ) {
 
                 extra = " to ";
-                to = key ; 
+                to = key ;
                 number = value['pdbs'].length;
                 if (level == 2) {
                   extra = " to ";
@@ -2639,4 +2639,3 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     });
 </script>
 {% endblock %}
-

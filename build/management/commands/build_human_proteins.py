@@ -26,7 +26,7 @@ class Command(BaseBuild):
     protein_source_file = os.sep.join([settings.DATA_DIR, 'protein_data', 'proteins_and_families.txt'])
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'protein_data', 'uniprot'])
     with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'sequences.yaml']), 'r') as f:
-        excel_sequences = yaml.load(f)
+        excel_sequences = yaml.load(f, Loader=yaml.FullLoader)
     remote_uniprot_dir = 'http://www.uniprot.org/uniprot/'
 
     def handle(self, *args, **options):

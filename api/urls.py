@@ -29,6 +29,8 @@ urlpatterns = [
         name='familyalignment-partial'),
     url(r'^alignment/family/(?P<slug>[^/]+)/(?P<segments>[^/]+)/statistics/$', views.FamilyAlignmentPartial.as_view(), {'statistics': True},
         name='familyalignment-partial-statistics'),
+    url(r'^alignment/family/(?P<slug>[^/]+)//(?P<latin_name>[^/]+)/$', views.FamilyAlignmentSpecies.as_view(),
+        name='familyalignment-partial-statistics'),
     url(r'^alignment/family/(?P<slug>[^/]+)/(?P<segments>[^/]+)/(?P<latin_name>[^/]+)/$', views.FamilyAlignmentPartialSpecies.as_view(),
         name='familyalignment-partial-statistics'),
     url(r'^alignment/family/(?P<slug>[^/]+)/(?P<segments>[^/]+)/(?P<latin_name>[^/]+)/statistics/$', views.FamilyAlignmentPartialSpecies.as_view(), {'statistics': True},
@@ -66,5 +68,7 @@ urlpatterns = [
     url(r'^species/$', views.SpeciesList.as_view(), name='species-list'),
     url(r'^species/(?P<latin_name>[^/]+)/$', views.SpeciesDetail.as_view(), name='species-detail'),
     url(r'^mutants/(?P<entry_name>[^/].+)/$', views.MutantList.as_view(), name='mutants'),
-    url(r'^drugs/(?P<entry_name>[^/].+)/$', views.DrugList.as_view(), name='drugs')
+    url(r'^drugs/(?P<entry_name>[^/].+)/$', views.DrugList.as_view(), name='drugs'),
+    url(r'^plot/helixbox/(?P<entry_name>[^/].+)/$', views.HelixBoxView.as_view(), name='helixbox'),
+    url(r'^plot/snake/(?P<entry_name>[^/].+)/$', views.SnakePlotView.as_view(), name='snakeplot')
 ]

@@ -4,7 +4,7 @@ from protein.models import Protein, ProteinConformation, ProteinAnomaly, Protein
 from residue.models import Residue
 from residue.functions import dgn, ggn
 from structure.models import *
-from structure.functions import HSExposureCB, PdbStateIdentifier, update_template_source, compare_and_update_template_source
+from structure.functions import HSExposureCB, PdbStateIdentifier, StructureSeqNumOverwrite, update_template_source, compare_and_update_template_source
 from common.alignment import AlignedReferenceTemplate, GProteinAlignment
 from common.definitions import *
 from common.models import WebLink
@@ -22,6 +22,7 @@ import sys
 import re
 import math
 import yaml
+import json
 import traceback
 import subprocess
 from copy import deepcopy
@@ -38,20 +39,25 @@ class SignprotFunctions(object):
     def get_subtypes_with_templates(self):
         return SignprotComplex.objects.all().values_list('protein__entry_name', flat=True)
 
-    def get_subfamilies_with_templates(self):
+    def get_subfamilies_with_templates(self, receptor_family):
         subfams = []
-        for i in SignprotComplex.objects.all():
-            if i.protein.family.name not in subfams:
-                subfams.append(i.protein.family.name)
+        for i in SignprotComplex.objects.filter(structure__protein_conformation__protein__family__parent__parent__parent__name=receptor_family):
+            if i.protein.family.parent.name not in subfams:
+                subfams.append(i.protein.family.parent.name)
         return subfams
 
-    def get_subfam_subtype_dict(self, subfamilies):
+    def get_receptor_families_with_templates(self):
+        return SignprotComplex.objects.all().values_list('structure__protein_conformation__protein__family__parent__parent__parent__name', flat=True).distinct()
+
+    def get_subfam_subtype_dict(self, subfamilies, receptor_family):
         d = {}
         for s in subfamilies:
             ordered_prots, non_ordered_prots = [], []
-            prots = [i.entry_name for i in Protein.objects.filter(family__name=s, species__common_name='Human')]
+            prots = [i.entry_name for i in Protein.objects.filter(family__parent__name=s, species__common_name='Human', accession__isnull=False)]
             for p in prots:
-                if len(SignprotComplex.objects.filter(protein__entry_name=p))>0:
+                if p=='gnal_human':
+                    continue
+                if len(SignprotComplex.objects.filter(protein__entry_name=p, structure__protein_conformation__protein__family__parent__parent__parent__name=receptor_family))>0:
                     ordered_prots.append(p)
                 else:
                     non_ordered_prots.append(p)
@@ -60,7 +66,7 @@ class SignprotFunctions(object):
 
     def get_other_subtypes_in_subfam(self, protein):
         this_prot = Protein.objects.get(entry_name=protein)
-        return [i.entry_name for i in Protein.objects.filter(family=this_prot.family, species__common_name='Human').exclude(entry_name=protein)]
+        return [i.entry_name for i in Protein.objects.filter(family=this_prot.family.parent, species__common_name='Human', accession__isnull=False).exclude(entry_name=protein)]
 
 
 class GPCRDBParsingPDB(object):
@@ -173,6 +179,18 @@ class GPCRDBParsingPDB(object):
             output[i] = j
         return output
 
+    def right_rotamer_select(self, rotamer):
+        ''' Filter out compound rotamers.
+        '''
+        if len(rotamer)>1:
+            for i in rotamer:
+                if i.pdbdata.pdb.startswith('COMPND')==False:
+                    rotamer = i
+                    break
+        else:
+            rotamer=rotamer[0]
+        return rotamer
+
     def pdb_array_creator(self, structure=None, filename=None):
         ''' Creates an OrderedDict() from the pdb of a Structure object where residue numbers/generic numbers are 
             keys for the residues, and atom names are keys for the Bio.PDB.Residue objects.
@@ -180,7 +198,7 @@ class GPCRDBParsingPDB(object):
             @param structure: Structure, Structure object of protein. When using structure, leave filename=None. \n
             @param filename: str, filename of pdb to be parsed. When using filename, leave structure=None).
         '''
-        seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000, '5KW2':2000}
+        # seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000, '5KW2':2000}
         if structure!=None and filename==None:
             io = StringIO(structure.pdb_data.pdb)
         else:
@@ -188,7 +206,7 @@ class GPCRDBParsingPDB(object):
         gn_array = []
         residue_array = []
         # pdb_struct = PDB.PDBParser(QUIET=True).get_structure(structure.pdb_code.index, io)[0]
-        
+
         residues = Residue.objects.filter(protein_conformation=structure.protein_conformation)
         gn_list = []
         for i in residues:
@@ -197,98 +215,125 @@ class GPCRDBParsingPDB(object):
             except:
                 pass
 
-        assign_gn = as_gn.GenericNumbering(pdb_file=io, pdb_code=structure.pdb_code.index, sequence_parser=True)
-        pdb_struct = assign_gn.assign_generic_numbers_with_sequence_parser()
-        pref_chain = structure.preferred_chain
-        parent_prot_conf = ProteinConformation.objects.get(protein=structure.protein_conformation.protein.parent)
-        parent_residues = Residue.objects.filter(protein_conformation=parent_prot_conf)
-        last_res = list(parent_residues)[-1].sequence_number
-        if len(pref_chain)>1:
-            pref_chain = pref_chain[0]
-        for residue in pdb_struct[pref_chain]:
-            try:
-                if -9.1 < residue['CA'].get_bfactor() < 9.1:
+        ssno = StructureSeqNumOverwrite(structure)
+        ssno.seq_num_overwrite('pdb')
+        if len(ssno.pdb_wt_table)>0:
+            residues = residues.filter(protein_segment__slug__in=['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8']).order_by('sequence_number')
+            output = OrderedDict()
+            for r in residues:
+                print(r, r.display_generic_number.label, r.protein_segment.slug)
+                if r.protein_segment.slug==None:
+                    continue
+                if r.protein_segment.slug not in output:
+                    output[r.protein_segment.slug] = OrderedDict()
+                rotamer = Rotamer.objects.filter(residue=r)
+                rotamer = self.right_rotamer_select(rotamer)
+                rota_io = StringIO(rotamer.pdbdata.pdb)
+                p = PDB.PDBParser()
+                parsed_rota = p.get_structure('rota', rota_io)
+                for chain in parsed_rota[0]:
+                    for res in chain:
+                        atom_list = []
+                        for atom in res:
+                            # Skip hydrogens
+                            if atom.get_id().startswith('H'):
+                                continue
+                            if atom.get_id()=='N':
+                                bw, gn = r.display_generic_number.label.split('x')
+                                atom.set_bfactor(bw)
+                            elif atom.get_id()=='CA':
+                                bw, gn = r.display_generic_number.label.split('x')
+                                gn = "{}.{}".format(bw.split('.')[0], gn)
+                                if len(gn.split('.')[1])==3:
+                                    gn = '-'+gn[:-1]
+                                atom.set_bfactor(gn)
+                            atom_list.append(atom)
+                        output[r.protein_segment.slug][ggn(r.display_generic_number.label).replace('x','.')] = atom_list
+            pprint.pprint(output)
+            return output
+        else:
+            assign_gn = as_gn.GenericNumbering(pdb_file=io, pdb_code=structure.pdb_code.index, sequence_parser=True)
+            pdb_struct = assign_gn.assign_generic_numbers_with_sequence_parser()
+            pref_chain = structure.preferred_chain
+            parent_prot_conf = ProteinConformation.objects.get(protein=structure.protein_conformation.protein.parent)
+            parent_residues = Residue.objects.filter(protein_conformation=parent_prot_conf)
+            last_res = list(parent_residues)[-1].sequence_number
+            if len(pref_chain)>1:
+                pref_chain = pref_chain[0]
+            for residue in pdb_struct[pref_chain]:
+                if 'CA' in residue and -9.1 < residue['CA'].get_bfactor() < 9.1:
+                    use_resid = False
                     gn = str(residue['CA'].get_bfactor())
                     if len(gn.split('.')[1])==1:
                         gn = gn+'0'
                     if gn[0]=='-':
                         gn = gn[1:]+'1'
-                    # Exception for 3PBL 331, gn get's assigned wrong
+                    # Exceptions
                     if structure.pdb_code.index=='3PBL' and residue.get_id()[1]==331:
-                        raise Exception()
+                        use_resid = True
+                    elif structure.pdb_code.index=='6QZH' and residue.get_id()[1]==1434:
+                        use_resid = True
                     #################################################
-                    if gn in gn_list:
-                        if int(residue.get_id()[1])>1000:
-                            if structure.pdb_code.index in seq_nums_overwrite_cutoff_dict and int(residue.get_id()[1])>=seq_nums_overwrite_cutoff_dict[structure.pdb_code.index]:
-                                gn_array.append(gn)
-                                residue_array.append(residue.get_list())
-                            else:
-                                raise Exception()
-                        else:
-                            gn_array.append(gn)
-                            residue_array.append(residue.get_list())
+                    elif gn in gn_list:
+                        gn_array.append(gn)
+                        residue_array.append(residue.get_list())
                     else:
-                        raise Exception()
-                else:
-                    raise Exception()
-            except:
-                if structure!=None and structure.pdb_code.index in seq_nums_overwrite_cutoff_dict:
-                    if int(residue.get_id()[1])>seq_nums_overwrite_cutoff_dict[structure.pdb_code.index]:
-                        gn_array.append(str(int(str(residue.get_id()[1])[1:])))
-                    else:
+                        use_resid = True
+                    if use_resid:
                         gn_array.append(str(residue.get_id()[1]))
+                        residue_array.append(residue.get_list())
+            output = OrderedDict()
+            for num, label in self.segment_coding.items():
+                output[label] = OrderedDict()
+            if len(gn_array)!=len(residue_array):
+                raise AssertionError()
+
+            for gn, res in zip(gn_array,residue_array):
+                if '.' in gn:
+                    seg_num = int(gn.split('.')[0])
+                    seg_label = self.segment_coding[seg_num]
+                    if seg_num==8 and len(output['TM7'])==0:
+                        continue
+                    else:
+                        output[seg_label][gn] = res
                 else:
-                    gn_array.append(str(residue.get_id()[1]))
-                residue_array.append(residue.get_list())
-        output = OrderedDict()
-        for num, label in self.segment_coding.items():
-            output[label] = OrderedDict()
-        if len(gn_array)!=len(residue_array):
-            raise AssertionError()
-        for gn, res in zip(gn_array,residue_array):
-            if '.' in gn:
-                seg_num = int(gn.split('.')[0])
-                seg_label = self.segment_coding[seg_num]
-                if seg_num==8 and len(output['TM7'])==0:
-                    continue
-                else:
-                    output[seg_label][gn] = res
-            else:
-                try:
-                    found_res, found_gn = None, None
                     try:
-                        found_res = Residue.objects.get(protein_conformation=structure.protein_conformation,
-                                                        sequence_number=gn)
-                    except:
-                        # Exception for res 317 in 5VEX, 5VEW
-                        if structure.pdb_code.index in ['5VEX','5VEW'] and gn=='317' and res[0].get_parent().get_resname()=='CYS':
-                            found_res = Residue.objects.get(protein_conformation=parent_prot_conf,
-                                                            sequence_number=gn)
-                        #####################################
-                    found_gn = str(ggn(found_res.display_generic_number.label)).replace('x','.')
-
-                    # Exception for res 318 in 5VEX, 5VEW
-                    if structure.pdb_code.index in ['5VEX','5VEW'] and gn=='318' and res[0].get_parent().get_resname()=='ILE' and found_gn=='5.47':
-                        found_gn = '5.48'
-                    #####################################
-                    if -9.1 < float(found_gn) < 9.1:
-                        if len(res)==1:
-                            continue
-                        if int(gn)>last_res:
-                            continue
-                        seg_label = self.segment_coding[int(found_gn.split('.')[0])]
-                        output[seg_label][found_gn] = res
-                except:
-                    if res[0].get_parent().get_resname()=='YCM' or res[0].get_parent().get_resname()=='CSD':
-                        found_res = Residue.objects.get(protein_conformation=parent_prot_conf, sequence_number=gn)
-                        if found_res.protein_segment.slug[0] not in ['T','H']:
-                            continue
+                        found_res, found_gn = None, None
                         try:
-                            found_gn = str(ggn(found_res.display_generic_number.label)).replace('x','.')
+                            found_res = Residue.objects.get(protein_conformation=structure.protein_conformation,
+                                                            sequence_number=gn)
                         except:
-                            found_gn = str(gn)
-                        output[found_res.protein_segment.slug][found_gn] = res
+                            # Exception for res 317 in 5VEX, 5VEW
+                            if structure.pdb_code.index in ['5VEX','5VEW'] and gn=='317' and res[0].get_parent().get_resname()=='CYS':
+                                found_res = Residue.objects.get(protein_conformation=parent_prot_conf,
+                                                                sequence_number=gn)
+                            #####################################
+                        found_gn = str(ggn(found_res.display_generic_number.label)).replace('x','.')
 
+                        # Exception for res 318 in 5VEX, 5VEW
+                        if structure.pdb_code.index in ['5VEX','5VEW'] and gn=='318' and res[0].get_parent().get_resname()=='ILE' and found_gn=='5.47':
+                            found_gn = '5.48'
+                        #####################################
+                        if -9.1 < float(found_gn) < 9.1:
+                            if len(res)==1:
+                                continue
+                            if int(gn)>last_res:
+                                continue
+                            seg_label = self.segment_coding[int(found_gn.split('.')[0])]
+                            output[seg_label][found_gn] = res
+                    except:
+                        if res[0].get_parent().get_resname()=='YCM' or res[0].get_parent().get_resname()=='CSD':
+                            try:
+                                found_res = Residue.objects.get(protein_conformation=parent_prot_conf, sequence_number=gn)
+                            except:
+                                continue
+                            if found_res.protein_segment.slug[0] not in ['T','H']:
+                                continue
+                            try:
+                                found_gn = str(ggn(found_res.display_generic_number.label)).replace('x','.')
+                            except:
+                                found_gn = str(gn)
+                            output[found_res.protein_segment.slug][found_gn] = res
         return output
 
 
@@ -452,14 +497,15 @@ class ImportHomologyModel():
 
 
 class Remodeling():
-    def __init__(self, model_file, gaps={}, receptor=None, signprot=None):
+    def __init__(self, model_file, gaps={}, receptor=None, signprot=None, icl3_delete=[]):
         self.model_file = model_file
         self.struct = PDB.PDBParser(QUIET=True).get_structure('structure', self.model_file)[0]
-        self.pir_file = './structure/PIR/{}'.format(self.model_file.split('/')[-1])
+        self.pir_file = './structure/PIR/{}'.format(self.model_file.split('/')[-1].replace('.pdb','.pir'))
         self.gaps = gaps
         self.remark_lines = []
         self.receptor = receptor
         self.signprot = signprot
+        self.icl3_delete = icl3_delete
 
     def find_clashes(self):
         hse = HSExposureCB(self.struct, radius=11, check_chain_breaks=True, check_knots=True, receptor=self.receptor, signprot=self.signprot)
@@ -478,7 +524,6 @@ class Remodeling():
             for g in gaps:
                 text+=chain+' '+str(g[0])+'-'+str(g[1])+' '
         self.remark_lines.append(text+'\n')
-
         ref_seq, temp_seq = '', ''
         resnum = 0
         self.chains, self.first_resis = [], []
@@ -506,7 +551,8 @@ class Remodeling():
         for chain, gaps in self.gaps.items():
             for g in gaps:
                 for i in range(g[0],g[1]+1):
-                    self.struct[chain].detach_child(self.struct[chain][i].get_id())
+                    if i in self.struct[chain]:
+                        self.struct[chain].detach_child(self.struct[chain][i].get_id())
 
         with open(self.pir_file, 'w+') as output_file:
             template="""
@@ -534,7 +580,7 @@ sequence:{uniprot}::::::::
     def run(self):
         log.none()
         env = environ()
-
+        print(self.gaps)
         m = LoopRemodel(env,
             alnfile = self.pir_file,
             # inimodel=self.model_file,   # initial model of the target
@@ -543,7 +589,8 @@ sequence:{uniprot}::::::::
             assess_methods=assess.DOPE,
             gaps=self.gaps,
             model_chains=self.chains,
-            start_resnums=self.first_resis) # assess loops with DOPE
+            start_resnums=self.first_resis,      # assess loops with DOPE
+            icl3_delete=self.icl3_delete)
 
         m.starting_model= 1           # index of the first loop model
         m.ending_model  = 1           # index of the last loop model
@@ -574,12 +621,13 @@ sequence:{uniprot}::::::::
 
 
 class LoopRemodel(automodel):
-    def __init__(self, env, alnfile, knowns, sequence, assess_methods, gaps=[], model_chains=[], start_resnums=[]):
+    def __init__(self, env, alnfile, knowns, sequence, assess_methods, gaps=[], model_chains=[], start_resnums=[], icl3_delete=[]):
         super(LoopRemodel, self).__init__(env, alnfile=alnfile, knowns=knowns, sequence=sequence, 
                                                assess_methods=assess_methods)
         self.gaps = gaps
         self.model_chains = model_chains
         self.start_resnums = start_resnums
+        self.icl3_delete = icl3_delete
         
     def special_patches(self, aln):
         # Rename chains and renumber the residues in each
@@ -588,15 +636,20 @@ class LoopRemodel(automodel):
 
     def select_atoms(self):
         selection_out = []
+
         for chain, gaps in self.gaps.items():
             for g in gaps:
-                for i in range(g[0],g[1]+1):
+                if chain=='R' and chain in self.icl3_delete:
+                    end_range = g[0]+10
+                else:
+                    end_range = g[1]+1
+                for i in range(g[0],end_range):
                     selection_out.append(self.residues[str(i)+':{}'.format(chain)])
         return selection(selection_out)
 
-    def make(self):
-        with SilentModeller():
-            super(LoopRemodel, self).make()
+    # def make(self):
+    #     with SilentModeller():
+    #         super(LoopRemodel, self).make()
 
 class SilentModeller(object):
     ''' No text to console.
@@ -608,5 +661,4 @@ class SilentModeller(object):
     def __exit__(self, *args):
         sys.stdout.close()
         sys.stdout = self._stdout
-
 

@@ -1,0 +1,477 @@
+{% extends "home/base.html" %}
+
+{% load static %}
+
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+<link href="//datatables.net/download/build/nightly/jquery.dataTables.css" rel="stylesheet" type="text/css" />
+<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script src="//datatables.net/download/build/nightly/jquery.dataTables.js"></script>
+
+<link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet" />
+<link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet" />
+<link href="{% static 'home/css/modal.css' %}" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.4.0/css/buttons.dataTables.min.css" type="text/css" />
+
+<!-- configure radio buttons style -->
+<style>
+  div#content ul li {
+    display: inline-block;
+  }
+</style>
+
+<style type="text/css">
+  .select2-result-label {
+    font-size: x-small;
+    font-size: 10px;
+  }
+
+  /* configure authors */
+  .demo-2 {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    max-width: 250px;
+  }
+
+  .demo-1 {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    max-width: 150px;
+  }
+
+  .pathways {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    max-width: 75px;
+  }
+
+  .CellLine {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    max-width: 150px;
+  }
+
+  .AssayType {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    max-width: 150px;
+  }
+
+  /* test for configartion of td widgth */
+  .fit_td {
+    overflow-x: scroll;
+    overflow-y: scroll;
+    width: 100%;
+    height: 100%
+  }
+
+  #filters {
+
+    font-size: 10px;
+    padding: 7px 15px;
+  }
+
+  @media (min-width: 1600px) {
+    #content {
+      width: 1570px;
+    }
+  }
+
+  @media (min-width: 1800px) {
+    #content {
+      width: 1770px;
+    }
+  }
+
+  table.dataTable.compact thead th.over_header {
+    border-right: 1px solid;
+    border-left: 0px solid;
+    text-align: center;
+    padding: 4px 4px 4px 4px;
+  }
+
+  table.dataTable.compact thead tr.over_header th {
+    border-bottom: 1px solid #ccc;
+  }
+
+  table.dataTable.compact thead th.leftborder {
+    border-left: 1px solid;
+  }
+
+  table.dataTable.compact thead th.rightborder {
+    border-right: 1px solid;
+  }
+
+  table.dataTable.compact thead th.checkbox_tr {
+    text-align: left;
+    padding: 4px 4px 4px 4px;
+  }
+
+  table.dataTable.compact thead th {
+    padding: 4px 16px 4px 2px;
+  }
+
+  .yadcf-filter-wrapper {
+    margin-top: 0px;
+  }
+
+  input.yadcf-filter {
+    width: 100px;
+    font-family: sans-serif;
+    font-size: 100%;
+    font-weight: bold;
+  }
+
+  .yadcf-filter-range-date,
+  .yadcf-filter-range-number {
+    width: 30px;
+    font-family: sans-serif;
+    font-size: 100%;
+    font-weight: bold;
+  }
+
+  .clicked_button {
+    background-color: rgb(215, 215, 215);
+  }
+</style>
+
+{% endblock %}
+{% block content %}
+<h2>Biased Ligands Browser</h2>
+<div>
+
+  <br>
+    <label for="status"><h4>Show intra-G protein family subtype bias:</h4></label>
+    <input type="checkbox" name="family-selection" id='status'/> <br>
+
+
+
+
+  {% if forms %}
+
+  <form method="post" class='bootstrap-select'>
+      {%csrf_token%}
+    <h4>Show Biased Ligands from:  </h4>
+    {% for radio in forms %}
+     {{ radio }}
+     {% endfor %}
+    <!-- <input type='submit' value='submit'> -->
+  </form>
+  {%endif%}
+
+
+
+
+</div>
+
+{% if data %}
+{% autoescape off %}
+
+<table id="example" class="display" style="width:100%">
+  <!-- <table id="drugdata" class="display dataTable no-footer" cellspacing="0"> -->
+
+    <thead>
+      <tr>
+        <th style="text-align:center">Class</th>
+        <th id="col_Receptor" colspan="4" style="text-align:left">Receptor</th>
+        <th id="col_Ligand" colspan="2" style="text-align:left">Ligand </th>
+        <th id="col_Pathway" colspan="5" style="text-align:left">Pathway Bias Rank Order </th>
+        <th id="col_Operational" colspan="4" style="text-align:left">Operational model dd(Tau/Ka)</th>
+        <th id="col_Log" colspan="4" style="text-align:left">Log bias factor (&#916;&#916;Log(Emax/EC50))</th>
+        <th id="col_Potency" colspan="4" style="text-align:left">Potency ratio (&#916;&#916;log(EC50))</th>
+        <th id="col_ec50" colspan="5" style="text-align:left">Potency EC50 or <font color="#FF0000">IC50</font>
+        </th>
+        <th id="col_Emax" colspan="5" style="text-align:left">Emax (% of ref ligand)</th>
+        <th id="col_Transduction1" colspan="5" style="text-align:left">Transduction coefficient </th>
+        <th id="col_Assay1" colspan="5" style="text-align:left">Assay type</th>
+        <th id="col_Cell" colspan="5" style="text-align:left">Cell line </th>
+        <th>Authors</th>
+        <th>Source</th>
+      </tr>
+      <tr>
+        <th>Class<br></th>
+        <th>Family</th>
+        <th>UniProt</th>
+        <th>IUPHAR</th>
+        <th>Species</th>
+        <th>Reference</th>
+        <th>Biased</th>
+        <th>P 1</th>
+        <th>P 2</th>
+        <th>P 3</th>
+        <th>P 4</th>
+        <th>P 5</th>
+        <!-- operational model -->
+        <th>P 2</th>
+        <th>P 3</th>
+        <th>P 4</th>
+        <th>P 5</th>
+        <!-- log bias factor -->
+        <th>P 2</th>
+        <th>P 3</th>
+        <th>P 4</th>
+        <th>P 5</th>
+        <!-- Potency ratio -->
+        <th>P 2</th>
+        <th>P 3</th>
+        <th>P 4</th>
+        <th>P 5</th>
+        <!-- Potency -->
+        <th>P 1</th>
+        <th>P 2</th>
+        <th>P 3</th>
+        <th>P 4</th>
+        <th>P 5</th>
+        <!-- emax -->
+        <th>P 1</th>
+        <th>P 2</th>
+        <th>P 3</th>
+        <th>P 4</th>
+        <th>P 5</th>
+        <!-- transduction efficacy -->
+        <th>P 1</th>
+        <th>P 2</th>
+        <th>P 3</th>
+        <th>P 4</th>
+        <th>P 5</th>
+        <!-- Assay type -->
+        <th>P 1</th>
+        <th>P 2</th>
+        <th>P 3</th>
+        <th>P 4</th>
+        <th>P 5</th>
+        <!-- Cell Line -->
+        <th>P 1</th>
+        <th>P 2</th>
+        <th>P 3</th>
+        <th>P 4</th>
+        <th>P 5</th>
+        <!-- Authors -->
+        <th>Authors</th>
+        <th> Source</th>
+      </tr>
+      <tr>
+        <th>Class<br></th>
+        <th>Family</th>
+        <th>UniProt</th>
+        <th>IUPHAR</th>
+        <th>Species</th>
+        <th>Reference</th>
+        <th>Biased</th>
+        <th>P 1</th>
+        <th>P 2</th>
+        <th>P 3</th>
+        <th>P 4</th>
+        <th>P 5</th>
+        <!-- operational model -->
+        <th>P 2</th>
+        <th>P 3</th>
+        <th>P 4</th>
+        <th>P 5</th>
+        <!-- log bias factor -->
+        <th>P 2</th>
+        <th>P 3</th>
+        <th>P 4</th>
+        <th>P 5</th>
+        <!-- Potency ratio -->
+        <th>P 2</th>
+        <th>P 3</th>
+        <th>P 4</th>
+        <th>P 5</th>
+        <!-- Potency -->
+        <th>P 1</th>
+        <th>P 2</th>
+        <th>P 3</th>
+        <th>P 4</th>
+        <th>P 5</th>
+        <!-- emax -->
+        <th>P 1</th>
+        <th>P 2</th>
+        <th>P 3</th>
+        <th>P 4</th>
+        <th>P 5</th>
+        <!-- transduction efficacy -->
+        <th>P 1</th>
+        <th>P 2</th>
+        <th>P 3</th>
+        <th>P 4</th>
+        <th>P 5</th>
+        <!-- Assay type -->
+        <th>P 1</th>
+        <th>P 2</th>
+        <th>P 3</th>
+        <th>P 4</th>
+        <th>P 5</th>
+        <!-- Cell Line -->
+        <th>P 1</th>
+        <th>P 2</th>
+        <th>P 3</th>
+        <th>P 4</th>
+        <th>P 5</th>
+        <!-- Authors -->
+        <th>Authors</th>
+        <th> Source</th>
+      </tr>
+    </thead>
+    <tbody>
+      {%for e in data.items%}
+      <tr>
+        <!-- TODO: class name -->
+        <!-- s.protein_conformation.protein.parent.family.parent.parent.parent.shorter() -->
+        <td style="text-align:left;" class='demo-1'>{{e.1.receptor.family.parent.parent.parent.name}}</td>
+        <td style="text-align:left;" class='demo-1'>{{e.1.receptor.family.parent}}</td>
+        <td style="text-align:left;" class='demo-1'>{{e.1.receptor.accession}}</td>
+        <td style="text-align:left;" class='demo-1'>{{e.1.receptor.entry_short}}</td>
+        <td style="text-align:left;" class='demo-1'>{{e.1.receptor.species.common_name}}</td>
+
+        <td style="text-align:left;" class='demo-1'>{{e.1.reference_ligand}}</td>
+        <td style="text-align:left;" class='demo-1'> <a href='/ligand/{{e.1.ligand}}' target='blank'>{{e.1.ligand}}</td>
+
+        {% for ex in e.1.biasdata|dictsort:"order_no" %}
+        <td style="text-align:left;" class='pathway'>{{ex.show_family}}</td>
+        {%endfor%}
+
+        {% for ex in e.1.biasdata|dictsort:"order_no"%}
+        {% if not forloop.first %}
+        <td style="text-align:left" class='demo-1'>{{ex.t_factor }}</td>
+        {% endif %}
+        {%endfor%}
+
+        {% for ex in e.1.biasdata|dictsort:"order_no"%}
+        {% if not forloop.first %}
+        <td style="text-align:left" class='demo-1'>{{ex.log_bias_factor }}</td>
+        {% endif %}
+        {%endfor%}
+
+        {% for ex in e.1.biasdata|dictsort:"order_no"%}
+        {% if not forloop.first %}
+        <td style="text-align:left">{{ex.potency}}</td>
+        {% endif %}
+        {%endfor%}
+
+        {% for ex in e.1.biasdata|dictsort:"order_no"%}
+               {%if ex.quantitive_activity_initial %}
+               {%if ex.quantitive_measure_type == 'EC50' %}
+               <td style="text-align:center">{{ex.quantitive_activity_initial }} {{ex.quantitive_unit }}</td>
+               {%else%}
+               <td style="text-align:center">
+                 <font color="#FF0000">{{ex.quantitive_activity_initial }} {{ex.quantitive_unit }}</font>
+               </td>
+               {%endif%}
+               {%else%}
+               <td style="text-align:center">{{ex.qualitative_activity }}</td>
+               {%endif%}
+               {%endfor%}
+
+        {% for ex in e.1.biasdata|dictsort:"order_no"%}
+        <td style="text-align:left">{{ex.quantitive_efficacy }}</td>
+        {%endfor%}
+
+        {% for ex in e.1.biasdata|dictsort:"order_no"%}
+        <td style="text-align:left">{{ex.t_coefficient}}</td>
+        {%endfor%}
+
+        {% for ex in e.1.biasdata|dictsort:"order_no"%}
+        <td style="text-align:left;" class='demo-1'>{{ex.assay_type}}</td>
+        {%endfor%}
+
+        {% for ex in e.1.biasdata|dictsort:"order_no"%}
+        <td style="text-align:left;" class='demo-1'>{{ex.cell_line }}</td>
+        {%endfor%}
+
+        <td class='demo-2'>
+          <a href='{{e.1.publication.web_link}}' target='blank'>
+            {{e.1.publication.authors}}</td>
+        <td style="display: hidden">
+          {{e.1.source}}</td>
+      </tr>
+      {%endfor%}
+    </tbody>
+  </table>
+</div>
+{% endautoescape %}
+{% else %}
+<p> Ooops! There is no data to show here yet. </p>
+{% endif %}
+
+<br>
+<br>
+
+<br>
+{% endblock %}
+{% block addon_js %}
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.css">
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.js"></script>
+<script type="text/javascript" charset="utf-8">
+$(document).ready(function() {
+
+    $('#example').DataTable( {
+        initComplete: function () {
+            this.api().columns().every( function () {
+                var column = this;
+                var select = $('<select><option value=""></option></select>')
+                    .appendTo( $(column.header()).empty() )
+                    .on( 'change', function () {
+                        var val = $.fn.dataTable.util.escapeRegex(
+                            $(this).val()
+                        );
+
+                        column
+                            .search( val ? '^'+val+'$' : '', true, false )
+                            .draw();
+                    } );
+
+                column.data().unique().sort().each( function ( d, j ) {
+                    select.append( '<option value="'+d+'">'+d+'</option>' )
+                } );
+            } );
+        }
+    } );
+} );
+  // main table load
+  // $(document).ready(function() {
+  //
+  //     // Setup - add a text input to each footer cell
+  //     // $('#example thead tr').clone(true).appendTo( '#example thead' );
+  //     $('#example thead tr:eq(1) th').each( function (i) {
+  //         var title = $(this).text();
+  //         $(this).html( '<input type="text" placeholder="Search '+title+'" />' );
+  //
+  //         $( 'input', this ).on( 'keyup change', function () {
+  //             if ( table.column(i).search() !== this.value ) {
+  //                 table
+  //                     .column(i)
+  //                     .search( this.value )
+  //                     .draw();
+  //             }
+  //         });
+  //     });
+  //
+  //     var table = $('#example').DataTable( {
+  //         orderCellsTop: true,
+  //         fixedHeader: true,
+  //
+  //     } );
+  //     table.columns().every( function () {
+  //      var that = this;
+  //
+  //      $( 'input', this.header() ).on( 'keyup change clear', function () {
+  //          if ( that.search() !== this.value ) {
+  //              that
+  //                  .search( this.value )
+  //                  .draw();
+  //          }
+  //      } );
+  //  } );
+  // } );
+</script>
+
+{% endblock %}

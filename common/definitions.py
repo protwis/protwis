@@ -1,5 +1,3 @@
-'''Common definitions to be used throughout the Django module.'''
-
 from collections import OrderedDict
 from decimal import Decimal
 
@@ -288,7 +286,7 @@ AMINO_ACID_GROUP_PROPERTIES = OrderedDict([
     ('HA_3', {'display_name_short': 'HA', 'length': '3'}),
     ('HA_3-4', {'display_name_short': 'HA', 'length': '3-4'}),
     ('M_4', {'display_name_short': 'M', 'length': '4'}),
-    ('A_1', {'display_name_short': 'A', 'length': 'Max'}),
+    ('A_1', {'display_name_short': 'A', 'length': '1'}),
     ('I_', {'display_name_short': 'I', 'length': ''}),
     ('L_', {'display_name_short': 'L', 'length': ''}),
     ('V_', {'display_name_short': 'V', 'length': ''}),

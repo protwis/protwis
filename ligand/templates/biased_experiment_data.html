@@ -1,0 +1,193 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/biased_ligands.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}" type="text/css" />
+{% endblock %}
+
+{% block content %}
+{% autoescape off %}
+<div class="container body-content">
+  <h2 class="sub-header">Experiment Data</h2>
+  <div class="row">
+    <div class="col-xs-4">
+
+      <h3>Ligand</h3>
+      <table class="table table-striped table-bordered">
+        <tr>
+          <td>Biased Ligand</td>
+          <td>{{experiment.ligand.name}}</td>
+        </tr>
+        <tr>
+          <td>pChEMBL ID</td>
+               {% if experiment.chembl == None %}
+               <td></td>
+               {%else%}
+               <td title='{{experiment.chembl}}'>{{experiment.chembl}}</td>
+               {%endif%}
+        </tr>
+        <tr>
+          <td>Smiles</td>
+          <td style="word-wrap: break-word;
+        word-break: break-all;
+        white-space: normal;">
+            {{experiment.ligand.properities.smiles}}</td>
+        </tr>
+        <tr>
+          <td>Inchikey</td>
+          <td>{{experiment.ligand.properities.inchikey}}</td>
+        </tr>
+        <tr>
+          <td>Type</td>
+          <td>{{experiment.ligand.properities.ligand_type}}</td>
+        </tr>
+        <tr>
+          <td>Reference Ligand</td>
+          <td>
+              {{experiment.reference_ligand}}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="col-xs-4">
+      <h3>Receptor</h3>
+      <table class="table table-striped table-bordered">
+        <tr>
+          <td>Receptor</td>
+          <td>{{experiment.receptor}}</td>
+        </tr>
+        <tr>
+          <td>Class</td>
+          <td>{{experiment.receptor.family.parent.parent.parent.name}}</td>
+        </tr>
+        <tr>
+          <td>Family</td>
+          <td>{{experiment.receptor.family.parent}}</td>
+        </tr>
+        <tr>
+          <td>UniProt</td>
+          <td>{{experiment.receptor.entry_short}}</td>
+        </tr>
+        <tr>
+          <td>IUPHAR</td>
+          <td>{{experiment.receptor.name}}</td>
+        </tr>
+        <tr>
+          <td>Species</td>
+          <td>{{experiment.receptor.species}}</td>
+        </tr>
+        <tr>
+          <td>Endogenous Ligand</td>
+         {% if experiment.endogenous_ligand == None %}
+         <td></td>
+         {%else%}
+         <td title='{{experiment.endogenous_ligand}}'>{{experiment.endogenous_ligand}}</td>
+         {%endif%}
+        </tr>
+      </table>
+    </div>
+
+    <div class="col-xs-4">
+      <h3>Reference</h3><table class="table table-striped table-bordered">
+        <tr>
+          <td>Article Author</td>
+          <td>
+            <a href='{{experiment.publication.web_link}}' target='blank'>
+              {{experiment.publication.authors}}</td>
+        </tr>
+        <tr>
+          <td>Article DOI</td>
+          <td>
+            <a href='{{experiment.publication.web_link}}' target='blank'>
+              {{experiment.publication.reference}}</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="row">
+    {%for data in experiment.analyzed_data.all%}
+    <div class="col-xs-6">
+      <h3 class="sub-header" style="text-transform: capitalize;">Pathway {{ forloop.counter }}: {{data.family}} </h3>
+      <div class="table-responsive">
+        <table class="table table-striped" id="vendors_table">
+          <tr>
+            <td>Signalling Protein</td>
+            <td>{{data.family}}</td>
+          </tr>
+          {%if data.assay_description%}
+            <tr>
+              <td>Assay Description</td>
+              <td>{{data.assay_description}}</td>
+            </tr>
+            {%endif%}
+          {%if data.cell_line%}<tr>
+            <td>Cell Line</td>
+            <td>{{data.cell_line}}</td>
+          </tr>
+          {%endif%}
+          {%if data.assay_type%}<tr>
+            <td>Assay Type</td>
+            <td>{{data.assay_type}}</td>
+          </tr>
+          {%endif%}
+          {%if data.assay_measure%}<tr>
+            <td>Assay Measure</td>
+            <td>{{data.assay_measure}}</td>
+          </tr>
+          {%endif%}
+          {%if data.ligand_function%}<tr>
+            <td>Ligand Function</td>
+            <td>{{data.ligand_function}}</td>
+          </tr>
+          {%endif%}
+          <tr>
+            <td>Quantitive Measure Type</td>
+            <td>{{data.quantitive_measure_type}}</td>
+          </tr>
+          <tr>
+            <td>Quantitive Activity</td>
+            <td>{{data.quantitive_activity}}</td>
+          </tr>
+          <tr>
+            <td>Qualitative Activity</td>
+            <td>{{data.qualitative_activity}}</td>
+          </tr>
+
+          {%if data.efficacy_measure_type%}<tr>
+            <td>Efficacy Measure Type</td>
+            <td>{{data.efficacy_measure_type}}</td>
+          </tr>
+          {%endif%}
+          {%if data.quantitive_efficacy%}<tr>
+            <td>Quantitive Efficacy</td>
+            <td>{{data.quantitive_efficacy}}</td>
+          </tr>
+          {%endif%}
+          {%if data.efficacy_unit%}<tr>
+            <td>Efficacy Unit</td>
+            <td>{{data.efficacy_unit}}</td>
+          </tr>
+          {%endif%}
+          <tr>
+            <td>Emax Reference Ligand</td>
+            <td>{{data.emax_ligand_reference.name}}</td>
+          </tr>
+          <tr>
+            <td>Emax Reference Ligand</br>Quantitive Activity</td>
+            <td>{{data.emax_ligand_reference.name}}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    {%endfor%}
+  </div>
+
+
+</div>
+</br>
+</br>
+
+{% endautoescape %}
+
+{% endblock %}

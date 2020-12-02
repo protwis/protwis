@@ -93,16 +93,18 @@ function createHiveplot(data, container) {
 
     hivesvg = d3.select(container).append("svg")
         .attr("class", "hiveplot")
-        .attr("width", width)
-        .attr("height", height)
+        // .attr("width", width)
+        .attr("width", "100%")
+        // .attr("height", height)
+        // .attr('viewBox', "0 0 "+width+" "+height)
       .append("g")
-        .attr("transform", "translate(" + width/2 + "," + height/2.2 + ")");
+        .attr("transform", "translate(" + width/1.6 + "," + height/2.2 + ")");
 
     // draw lines based on length TM helix
-    hivesvg.selectAll(".axis")
+    hivesvg.selectAll(".hive-axis")
         .data(d3.range(8))
       .enter().append("line")
-        .attr("class", "axis")
+        .attr("class", "hive-axis")
         .attr("transform", function(d) { return "rotate(" + degreesHP(angle(d)) + ")" })
         .attr("x1", function(d) { if (resCount[d] == 0){ return 0; } else if (d == 7) { return (resCount[0] * 1.2) * (outerRadius-innerRadius)/20+innerRadius; } else { return innerRadius; }})
         .attr("x2", function(d) { var extra = 0; if (resCount[d] == 0){ return 0; } else if (d == 7  && resCount[d]>0){ extra = resCount[0] * 1.2}; return (outerRadius-innerRadius)/20*(extra+resCount[d]+1)+innerRadius; });
@@ -127,10 +129,10 @@ function createHiveplot(data, container) {
         .radius(function(d) { var extra = 0; if (d.x >= 6.5){ extra = resCount[0] * 1.2}; return (d.y+extra)*(outerRadius-innerRadius)/20+innerRadius; })
         .angle(function(d) { /*if (d.x < 0) d.x = 7 + d.x;*/ return angle(d.x); });
 
-    hivesvg.selectAll(".link")
+    hivesvg.selectAll(".hive-link")
         .data(links)
       .enter().append("path")
-        .attr("class", "link")
+        .attr("class", "hive-link")
         .attr("d", function(d, i) {
             var placer = 0.3;
 //            if (d.source.x == 7 || d.target.x == 7)
@@ -186,10 +188,10 @@ function createHiveplot(data, container) {
 
 
     // draw nodes
-    hivesvg.selectAll(".node")
+    hivesvg.selectAll(".hive-node")
         .data(nodes)
       .enter().append("circle")
-        .attr("class", "node")
+        .attr("class", "hive-node")
         .attr("transform", function(d) { return "rotate(" + degreesHP(angle(d.x)) + ")"; })
         .attr("cx", function(d) { var extra = 0; if (d.x == 7){ extra = resCount[0] * 1.2}; return (d.y+extra)*(outerRadius-innerRadius)/20+innerRadius; })
         .attr("r", 5)
@@ -204,14 +206,14 @@ function createHiveplot(data, container) {
 // Based on Mike Bostock's example: https://bl.ocks.org/mbostock/2066415
 // highlight link and connected nodes on mouseover
 function linkMouseoverHP(d) {
-  hivesvg.selectAll(".link")
+  hivesvg.selectAll(".hive-link")
     .classed("turnedOn", function(dl) {
       return dl === d;
     })
     .classed("turnedOff", function(dl) {
       return !(dl === d);
     })
-  hivesvg.selectAll(".node")
+  hivesvg.selectAll(".hive-node")
     .classed("turnedOn", function(dl) {
       return dl === d.source || dl === d.target;
     })
@@ -219,7 +221,7 @@ function linkMouseoverHP(d) {
 
 // highlight node and connected links on mouseover
 function nodeMouseoverHP(d) {
-  hivesvg.selectAll(".link")
+  hivesvg.selectAll(".hive-link")
     .classed("turnedOn", function(dl) {
       return dl.source === d || dl.target === d;
     })

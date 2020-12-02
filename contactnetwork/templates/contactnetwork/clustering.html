@@ -1,0 +1,638 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block content %}
+
+      <div class="tab-content clearfix">
+            <!-- BEGIN SINGLE CRYSTAL GROUP TAB -->
+            <div class="tab-pane active" id="single-crystal-group-tab">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Structures</h3>
+                            </div>
+                            <div class="panel-body">
+                                <input class="crystal-pdb" type="hidden" value="[]" />
+                                <h5><span class="crystal-count">0</span> structure(s) selected.</h5>
+                                {# <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-group-pdbs-modal">Select Structures</button> #}
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-group-pdbs-modal-table">Select Structures</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go</div></div>
+                        <!-- <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance pairs)</div></div>
+                        <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance pairs - normalized)</div></div>
+                        <!-- <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance to 7TM axis)</div></div>
+                        <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance to membrane mid)</div></div>
+                        <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance to 7TM axis and membrane mid)</div></div>
+                        <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance to "origin")</div></div>
+                        <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance to most stable residue)</div></div> -->
+                    </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-12 tab-content">
+                      <div class="tab-pane active" id="single-group-tree-tab">
+                           <div class="panel panel-default no-top-border">
+                              <div class="panel-heading">
+                                  <h3 class="panel-title pull-left">Conformational clusters (tree of structures)</h3>
+                                  <span class="pull-right glyphicon glyphicon-fullscreen btn-fullscreen" data-toggle="tooltip" data-placement="bottom" title="Fullscreen"></span>
+                                  <div class="dropdown">
+                                    <span class="pull-right glyphicon glyphicon-download-alt btn-download-menu dropdown-toggle" type="button" data-toggle="dropdown" id="downloadDropdown" data-toggle="dropdown"></span>
+                                    <ul class="pull-right dropdown-menu downloadmenu" role="menu" aria-labelledby="downloadDropdown">
+                                      <li><a role="menuitem" href="#" onClick="downloadPDFWait('clustering-tree', 'GPCR_structure_clustering.pdf')">Tree as PDF Figure</a></li>
+                                      <li><a role="menuitem" href="#" onClick="downloadSVGWait('clustering-tree', 'GPCR_structure_clustering.svg')">Tree as SVG Figure</a></li>
+                                      <li><a role="menuitem" href="#" onClick="downloadPNGWait('clustering-tree', 'GPCR_structure_clustering.png')">Tree as PNG Figure</a></li>
+                                      <li><a role="menuitem" href="#" onClick="downloadNewick('GPCR_structure_clustering.tree')">Tree in Newick format</a></li>
+                                      <li><a role="menuitem" href="#" onClick="downloadDistanceMatrix('GPCR_structure_clustering.csv')">Raw distance matrix in CSV</a></li>
+                                    </ul>
+                                  </div>
+<!--                                  <span class="pull-right glyphicon glyphicon-download btn-download" data-toggle="tooltip" data-placement="bottom" title="Download raw distance data (CSV)"></span>
+                                  <span class="pull-right glyphicon glyphicon-tree-conifer btn-newick" data-toggle="tooltip" data-placement="bottom" title="Download tree (Newick format)"></span>
+                                  <span class="pull-right glyphicon glyphicon-download-alt btn-download-alt" data-toggle="tooltip" data-placement="bottom" title="Download figure (SVG)"></span>
+                                  <span class="pull-right glyphicon glyphicon-picture btn-camera" data-toggle="tooltip" data-placement="bottom" title="Download figure (PNG)"></span>-->
+                                  <div class="clearfix"></div>
+                              </div>
+                              <div class="panel-body">
+                                <div class="row nav-row">
+                                    <div class="col-md-2">
+                                      <div class="hidden" id="submit-group">
+                                          <div class="btn btn-success CN-button disabled" id="CN-button">Structural analysis<br/>(1 or 2 sets)</div>
+                                      <!--                        <div class="btn btn-success pull-left DN-button disabled" id="DN-button">Distance Network</div>-->
+                                      </div>
+                                    </div>
+                                    <div class="col-md-7">
+                                      <div class="btn-group tree-toggles hidden">
+                                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                          Tree type <span class="caret"></span>
+                                        </button>
+                                        <ul class="dropdown-menu treetypes" role="menu">
+                      <!--                      <li><a href="#">
+                                              <label>Radial layout</label>
+                                              <input type="checkbox" id="radial-layout" checked/>
+                                            </a></li>
+                                            <li><a href="#">
+                                              <label>Color edges and leaves</label>
+                                              <input type="checkbox" id="colored-edges" checked/>
+                                            </a></li>
+                                            <li><a href="#">
+                                              <label>Hide PDB-codes</label>
+                                              <input type="checkbox" id="hide-pdbs"/>
+                                            </a></li>
+                                            <li><a href="#">
+                                                <label>Switch label order</label>
+                                                <input type="checkbox" id="label-order"/>
+                                            </a></li>-->
+                                            <li class="active"><a href="#">Circular dendrogram</a></li>
+                                            <li><a href="#">Horizontal dendrogram</a></li>
+                                        </ul>
+                                      </div>
+                                      <div class="btn-group tree-toggles hidden">
+                                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                          Receptor names <span class="caret"></span>
+                                        </button>
+                                        <ul class="dropdown-menu names" role="menu">
+                                          <li><a href="#">IUPHAR</a></li>
+                                          <li><a href="#">IUPHAR (PDB)</a></li>
+                                          <li><a href="#">IUPHAR [inner] (PDB) [outer]</a></li>
+                                          <li><a href="#">UniProt</a></li>
+                                          <li><a href="#">UniProt (PDB)</a></li>
+                                          <li class="active"><a href="#">UniProt [inner] (PDB) [outer]</a></li>
+                                          <li><a href="#">PDB</a></li>
+                                        </ul>
+                                      </div>
+                                      <div class="btn-group tree-toggles hidden">
+                                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                          Outer markers<span class="caret"></span>
+                                        </button>
+                                        <ul class="dropdown-menu dataouter" role="menu">
+                                          <li><a href="#">No data</a></li>
+                                          <h6 class="dropdown-header">Activation state</h6>
+                                          <li class="active"><a href="#">Receptor activation state</a></li>
+                                          <li><a href="#">Degree active (%)</a></li>
+                                          <li><a href="#">TM6 opening (%)</a></li>
+                                          <li><a href="#">Ligand function</a></li>
+                                          <h6 class="dropdown-header">Classification</h6>
+                                          <li><a href="#">GPCR class</a></li>
+                                          <li><a href="#">Ligand type</a></li>
+                                          <li><a href="#">Receptor family</a></li>
+                                          <h6 class="dropdown-header">G protein Coupling</h6>
+                                          <li><a href="#">All G proteins</a></li>
+                                          <li><a href="#">Primary G proteins</a></li>
+                                          <li><a href="#">Secondary G proteins</a></li>
+                                          <h6 class="dropdown-header">Structure</h6>
+                                          <li><a href="#">Structure determination method</a></li>
+                                        </ul>
+                                      </div>
+                                      <div class="btn-group tree-toggles hidden">
+                                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                          Inner markers<span class="caret"></span>
+                                        </button>
+                                        <ul class="dropdown-menu datainner" role="menu">
+                                          <li><a href="#">No data</a></li>
+                                          <h6 class="dropdown-header">Activation state</h6>
+                                          <li><a href="#">Receptor activation state</a></li>
+                                          <li><a href="#">Ligand function</a></li>
+                                          <h6 class="dropdown-header">Classification</h6>
+                                          <li><a href="#">GPCR class</a></li>
+                                          <li><a href="#">Ligand type</a></li>
+                                          <li class="active"><a href="#">Receptor family</a></li>
+                                          <h6 class="dropdown-header">G protein Coupling</h6>
+                                          <li><a href="#">All G proteins</a></li>
+                                          <li><a href="#">Primary G proteins</a></li>
+                                          <li><a href="#">Secondary G proteins</a></li>
+                                          <h6 class="dropdown-header">Structure</h6>
+                                          <li><a href="#">Structure determination method</a></li>
+                                        </ul>
+                                      </div>
+                                  </div>
+                                  <div class="col-md-3"></div>
+                                </div>
+                                <div>
+                                <div class="col-md-2">
+                                    <div class="row nav-row">
+                                      <div class="hidden" id="output-group0">
+                                          <div class="panel panel-default">
+                                              <div class="panel-heading">
+                                                  <h3 class="panel-title">Structure set 1</h3>
+                                              </div>
+                                              <div class="panel-body">
+                                                  <textarea name="input-targets-0" id="input-targets-0" style="width: 100%;" wrap="off" rows="5" readonly></textarea>
+                                              </div>
+                                          </div>
+                                      </div>
+                                      <div class="hidden" id="output-group1">
+                                          <div class="panel panel-default">
+                                              <div class="panel-heading">
+                                                  <h3 class="panel-title">Structure set 2</h3>
+                                              </div>
+                                              <div class="panel-body">
+                                                  <textarea name="input-targets-1" id="input-targets-1" style="width: 100%;" wrap="off" rows="5" readonly></textarea>
+                                              </div>
+                                          </div>
+                                      </div>
+
+                                    </div>
+                                  </div>
+                                <div class="col-md-7">
+                                    <span class="zoombutton-container hidden">
+                                      <span class="pull-right glyphicon glyphicon-resize-full btn-zoomsize" data-toggle="tooltip" data-placement="bottom" title="Fit" onClick="resizeTree()"></span>
+                                      <span class="pull-right glyphicon glyphicon-plus btn-zoomin" data-toggle="tooltip" data-placement="bottom" title="Zoom-in" onClick="zoomInTree()"></span>
+                                      <span class="pull-right glyphicon glyphicon-minus btn-zoomout" data-toggle="tooltip" data-placement="bottom" title="Zoom-out" onClick="zoomOutTree()"></span>
+                                    </span>
+                                    <div class="tree-container" id="tree-container">
+                                        <svg id="clustering-tree"></svg>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                  <div class="legend_box">
+                                    <div class="outer_legend"></div>
+                                    <div class="inner_legend"></div>
+                                  </div>
+                                </div>
+                                </div>
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+
+
+            <!-- END SINGLE CRYSTAL GROUP TAB -->
+
+
+    <!-- BEGIN SINGLE CRYSTAL GROUP PDBS CHOOSER MODAL -->
+    <div class="modal fade" id="single-crystal-group-pdbs-modal-table" role="dialog">
+        <div class="modal-dialog modal-wide">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Select a set of structures</h4>
+                </div>
+                <div class="modal-body">
+                      <div class="col-md-12">
+                        <span id="single-crystal-group-pdbs-modal-text">0 structure(s) selected</span>
+                        <button type="button" onclick="resetselection();" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
+                        <div class="tableview"></div>
+                      </div>
+               </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END SINGLE CRYSTAL GROUP PDBS CHOOSER MODAL -->
+    <div class="alert alert_pdb alert-warning fade out" id="bsalert">
+      Please select at least two structures to compare
+    </div>
+{% endblock %}
+{% block addon_js %}
+    <script type="text/javascript">
+      var csrf_token = "{{ csrf_token }}";
+    </script>
+
+    <script type="text/javascript" src="{% static 'home/js/snap.svg-min.js' %}"> </script>
+    <script type="text/javascript" src="{% static 'home/js/typeahead.bundle.min.js' %}"> </script>
+
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <!--<script src="{% static 'home/js/selection.js' %}"> </script>-->
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+    <script src="{% static 'home/js/select2.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.tablesorter.js' %}"></script>
+    <!--<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script src="{% static 'home/js/newick.js' %}"> </script>-->
+
+    <!-- PDB table -->
+    <script type="text/javascript" src="{% static 'home/js/fixed_columns.js' %}"> </script>
+
+    <!-- D3 -->
+    <script type="text/javascript" src="{% static 'home/js/d3.v3.min.js' %}"> </script>
+    <script src="{% static 'home/js/d3-color.v1.min.js' %}"></script>
+    <script src="{% static 'home/js/d3-interpolate.v1.min.js' %}"></script>
+    <script src="{% static 'home/js/d3-scale-chromatic.v1.min.js' %}"></script>
+    <script src="{% static 'home/js/d3-selection-multi.v1.min.js' %}"></script>
+    <script src="{% static 'home/js/phylo_library.js' %}"> </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js" charset="utf-8"></script>
+    <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+    <script src="{% static 'home/js/structures_clustering.js' %}"> </script>
+
+{% endblock %}
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+
+    <style type="text/css">
+        textarea#input-targets-0 {
+          background-color: rgba(255, 124, 124, 0.1);
+        }
+
+        textarea#input-targets-1 {
+            background-color: rgba(124, 124, 255, 0.1);
+        }
+
+        .btn-download, .btn-download-alt, .btn-download-menu, .btn-fullscreen, .btn-camera, .btn-newick {
+          margin-right: 10px;
+        }
+
+        .btn-zoomsize, .btn-zoomin, .btn-zoomout {
+          margin-right: 10px;
+        }
+
+        .select2-result-label{
+            font-size:x-small;
+            font-size: 10px;
+        }
+
+        .no-top-border{
+            border-top: 0px;
+        }
+
+        #filters{
+            float:left;
+          display:none;
+          position:absolute;
+          background:white;
+          border: 1px solid #D1C9C2;
+          border-top: 1;
+          width: 400px;
+          margin: 0 auto;
+          padding:  7px 15px;
+          text-align: left;
+          -webkit-border-bottom-right-radius: 6px;
+          -webkit-border-bottom-left-radius: 6px;
+          -moz-border-radius-bottomright: 6px;
+          -moz-border-radius-bottomleft: 6px;
+          border-bottom-right-radius: 6px;
+          border-bottom-left-radius: 6px;
+          z-index: 1;
+            font-size: 10px;
+        }
+
+        @media (min-width: 1800px){
+            #content {
+                width: 1770px;
+            }
+        }
+
+        @media (min-width: 2200px){
+            #content {
+                width: 100%;
+                padding-left: 100px;
+                padding-right: 100px;
+            }
+        }
+
+        @media (min-width: 1200px) {
+          .modal-wide {
+            width: 1200px;
+          }
+        }
+        @media (min-width: 1800px) {
+          .modal-wide {
+            width: 1800px;
+          }
+        }
+        @media (min-width: 2400px) {
+          .modal-wide {
+            width: 2400px;
+          }
+        }
+
+        .modal-footer {
+            border-top: 0px;
+        }
+
+        @media screen and (max-width: 992px) {
+            .go-button {
+                width: 100%;
+                margin-bottom: 15px;
+            }
+        }
+
+        .highlighted {
+            stroke: #286090 !important;
+            stroke-width: 3 !important;
+            opacity: 1 !important;
+        }
+        .svg-download-button {
+            margin-top: 6px;
+        }
+
+        div.class_tooltip {
+            padding: 4px;
+        }
+
+        div.tooltip {
+          padding: 5px;
+          border-radius: 10px;
+          font-size: 1em;
+          background-color: #FFF;
+          border: 1px solid black;
+        }
+
+        .divider{
+            stroke-width: 0.5px;
+            fill: lightgray;
+        }
+
+        .node, text {
+            font: 7px sans-serif;
+            cursor: pointer;
+
+        }
+
+        .node, text:hover {
+            font: 10px sans-serif;
+            font-weight: bold;
+            cursor: pointer;
+
+
+        }
+
+        .link {
+            fill: none;
+            stroke: #ccc;
+            stroke-width: 1.5px;
+        }
+
+        .row {
+            margin-top: 10px;
+            margin-right: -15px;
+            margin-left: 15px;
+        }
+
+        .container-fluid{
+            margin-top: 10px;
+            margin-right: -15px;
+            margin-left: 15px;
+        }
+
+        .tree-selection-brush .extent {
+            fill-opacity: .05;
+            stroke: #fff;
+            shape-rendering: crispEdges;
+        }
+
+        .tree-scale-bar text {
+            font: 7px sans-serif;
+        }
+
+        .tree-scale-bar line,
+        .tree-scale-bar path {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+        }
+
+        /*.node ellipse, .node rect {
+            fill: steelblue;
+            stroke: black;
+            stroke-width: 0.5px;
+        }*/
+
+
+        .internal-node circle, .internal-node ellipse, .internal-node rect{
+            fill: #CCC;
+            stroke: black;
+            stroke-width: 0.5px;
+        }
+
+        .node {
+            font: 10px sans-serif;
+        }
+
+        .node-selected {
+            fill: #f00 !important;
+        }
+
+        .node-collapsed circle, .node-collapsed ellipse, .node-collapsed rect{
+            fill: black !important;
+        }
+
+        .node-tagged {
+            fill: #00f;
+        }
+
+        .branch {
+            fill: none;
+            stroke: #999;
+            stroke-width: 2px;
+        }
+
+        .clade {
+            fill: #1f77b4;
+            stroke: #444;
+            stroke-width: 2px;
+            opacity: 0.5;
+        }
+
+        .branch-selected {
+            stroke: #f00 !important;
+            stroke-width: 3px;
+        }
+
+        .branch-tagged {
+            stroke: #00f;
+            stroke-dasharray: 10,5;
+            stroke-width: 2px;
+        }
+
+        .branch-tracer {
+            stroke: #bbb;
+            stroke-dasharray: 3,4;
+            stroke-width: 1px;
+        }
+
+
+        .branch-multiple {
+            stroke-dasharray: 5, 5, 1, 5;
+            stroke-width: 3px;
+        }
+
+        .branch:hover {
+            stroke-width: 10px;
+        }
+
+        .internal-node circle:hover, .internal-node ellipse:hover, .internal-node rect:hover {
+            fill: black;
+            stroke: #CCC;
+        }
+
+        .tree-widget {
+        }
+
+        .btn{
+            color: #fff;
+            background-color: #337ab7;
+            border-color: #204d74;
+        }
+
+        .btn:hover{
+            color: white;
+            background-color: #204d74;
+            border-color: #204d74;
+        }
+
+        .btn-default.active, .btn-default.active:hover{
+            color: white;
+            background-color: #204d74;
+            border-color: #204d74;
+
+        }
+
+        .class_band_radial{
+            fill: antiquewhite;
+            stroke: #444444;
+            stroke-dasharray: 1;
+        }
+
+        .class_band_linear{
+            fill: antiquewhite;
+            stroke: #444444;
+            stroke-dasharray: 1;
+        }
+
+        #receptor_class_text{
+            font: 15px sans-serif;
+        }
+
+        div.class_tooltip {
+            position: absolute;
+            text-align: center;
+            width: auto;
+            height: auto;
+            padding: 2px;
+            font: 12px sans-serif;
+            background: lightsteelblue;
+            border: 0px;
+            border-radius: 8px;
+            pointer-events: none;
+        }
+
+        div.ligand_tooltip{
+            position: absolute;
+            text-align: center;
+            width: auto;
+            height: auto;
+            padding: 2px;
+            font: 12px sans-serif;
+            background: lightsteelblue;
+            border: 0px;
+            border-radius: 8px;
+            pointer-events: none;
+        }
+
+
+        div.coverage_tooltip{
+            position: absolute;
+            text-align: center;
+            width: auto;
+            height: auto;
+            padding: 2px;
+            font: 12px sans-serif;
+            background: lightsteelblue;
+            border: 0px;
+            border-radius: 8px;
+            pointer-events: none;
+        }
+
+        div.selectivity_tooltip{
+            position: absolute;
+            text-align: center;
+            width: auto;
+            height: auto;
+            padding: 2px;
+            font: 12px sans-serif;
+            background: lightsteelblue;
+            border: 0px;
+            border-radius: 8px;
+            pointer-events: none;
+
+        }
+
+
+        #class_legend_box{
+            width: auto;
+            height: auto;
+            /*margin: 10px 10px 10px 10px;
+            top: 10%;
+            padding: 7px 10px 10px 10px;
+            float: left;
+            fill: black;
+            border: 2px solid dimgrey;*/
+        }
+
+        #quantity_legend_box{
+            margin: 10px 10px 10px 10px;
+            top: 10%;
+            padding: 7px 10px 10px 10px;
+            float: left;
+            fill: black;
+            border: 2px solid dimgrey;
+
+        }
+
+        #categorical_legend_box{
+            margin: 10px 10px 10px 10px;
+            top: 10%;
+            padding: 7px 10px 10px 10px;
+            float: left;
+            fill: black;
+            border: 2px solid dimgrey;
+
+        }
+
+        .downloadmenu {
+          margin-top: 1.4em;
+        }
+    </style>
+
+
+
+{% endblock %}

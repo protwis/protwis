@@ -1,0 +1,910 @@
+{% extends "home/base.html" %}
+
+{% load static %}
+
+
+
+{% block addon_js %}
+<script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+<script src="{% static 'home/js/dataTables.buttons.min.js' %}"> </script>
+<script src="{% static 'home/js/select2.js' %}"> </script>
+
+
+<script type="text/javascript" charset="utf-8">
+    // main table load
+    $(document).ready(function() {
+        oTable = $('#structures_scrollable').DataTable({
+            StateSave: true,
+            dom: 'Bftrip<>',
+
+            // "language": {
+            //     "processing": "<span class='glyphicon glyphicon-refresh glyphicon-refresh-animate'></span>"
+            // }, // you can put text or html here in the language.processing setting.
+            // "processing": true, // you have to set this to true as well
+            buttons: [{
+                    text: 'Excel',
+                    className: 'btn btn-primary',
+                    titleAttr: 'Download excel',
+                    init: function(api, node, config) {
+                        $(node).removeClass('dt-button buttons-excel buttons-html5');
+                    },
+                    action: function(e, dt, node, config) {
+                        tableToExcel('structures_scrollable', 'Biased Ligand Data', 'GPCRdb_biased_ligands.xls')
+                    },
+                },
+                {
+                    text: 'Reset All Filters',
+                    className: 'btn btn-primary',
+                    titleAttr: 'Reset All Filters',
+                    init: function(api, node, config) {
+                        $(node).removeClass('dt-button buttons-excel buttons-html5');
+                    },
+                    action: function(e, dt, node, config) {
+                        reset_filters()
+                    },
+                },
+                {
+                    text: 'Get Vendors',
+                    className: 'btn btn-primary',
+                    titleAttr: 'Get Vendors',
+                    init: function(api, node, config) {
+                        $(node).removeClass('dt-button buttons-excel buttons-html5');
+                    },
+                    action: function(e, dt, node, config) {
+                        var id = read_ids()
+                        var result
+                        $.ajax({
+                            type: 'POST',
+                            url: '/ligand/vendors',
+                            data: {
+                                data: id,
+                                csrfmiddlewaretoken: '{{csrf_token }}',
+                                action: 'post',
+                            },
+                            success: function() {
+
+                                myFunction('/ligand/browservendors', 'Detail View', window, 850, 1000)
+                            }
+                        });
+                    },
+                },
+            ],
+            scrollX: '100%',
+            scrollY: '70vh',
+            scrollCollapse: true,
+            "order": [
+                [4, "desc"]
+            ],
+            AutoWidth: false,
+            paging: true,
+            "lengthMenu": [
+                [100, -1],
+                [100, "All"]
+            ],
+            "initComplete": function(settings, json) {
+                $('#loadingSpinner').show();
+                $('#structures_scrollable_body').hide();
+                setTimeout(function() {
+                    oTable.columns().flatten().each(function(colIdx) {
+                        var columnData = [];
+                        oTable.rows({
+                            filter: 'applied'
+                        }).data().each(function(i) {
+                            columnData.push(i[colIdx]);
+                        })
+                        if (columnData.join('').length == 0 && colIdx != 0) {
+                            oTable.column(colIdx).visible(false);
+                        }
+                    });
+                    oTable.columns.adjust();
+                    $('#loadingSpinner').hide();
+                    $('#structures_scrollable_body').show();
+                    zoom_page()
+                }, 5);
+            },
+
+            "fnDrawCallback": function() {
+                $('#loadingSpinner').show();
+                $('#structures_scrollable_body').hide();
+                setTimeout(function() {
+                    $('#loadingSpinner').hide();
+                    $('#structures_scrollable_body').show();
+                }, 5);
+                setTimeout(function() {
+                    oTable.columns().flatten().each(function(colIdx) {
+                        var columnData = [];
+                        oTable.rows({
+                            filter: 'applied'
+                        }).data().each(function(i) {
+                            columnData.push(i[colIdx]);
+                        })
+                        if (columnData.join('').length == 0 && colIdx != 0) {
+                            oTable.column(colIdx).visible(false);
+                        }
+
+                    });
+                    oTable.columns.adjust();
+                    zoom_page()
+                }, 1);
+            }
+
+        });
+
+
+        yadcf.init(oTable,
+            [{
+                    column_number: 1,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Class",
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 2,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Select",
+                    filter_reset_button_text: false,
+
+                },
+                {
+                    column_number: 3,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    //column_data_type: "html",
+                    filter_default_label: "Select",
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 4,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Select",
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 5,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Select",
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 6,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Select",
+                    filter_reset_button_text: false,
+                },
+                // Ligand
+                {
+                    column_number: 7,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    column_data_type: "html",
+                    html_data_type: "text",
+                    filter_default_label: "Select",
+                    filter_reset_button_text: false,
+                },
+
+                //  Receptor Transduction
+                {
+                    column_number: 8,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Select",
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 9,
+                    filter_type: "multi_select",
+                    select_type: 'select2',
+                    filter_default_label: "Select",
+                    filter_reset_button_text: false,
+                },
+                // pathway_bias
+                {
+                    column_number: 10,
+                    select_type: 'select2',
+                    filter_type: "multi_select",
+                    text_data_delimiter: " ",
+                    filter_default_label: "P 1",
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 11,
+                    select_type: 'select2',
+                    filter_type: "multi_select",
+                    filter_default_label: "P 2",
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 12,
+                    select_type: 'select2',
+                    filter_type: "multi_select",
+                    filter_default_label: "P 3",
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 13,
+                    select_type: 'select2',
+                    filter_type: "multi_select",
+                    filter_default_label: "P 4",
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 14,
+                    select_type: 'select2',
+                    filter_type: "multi_select",
+                    filter_default_label: "P 5",
+                    filter_reset_button_text: false,
+                },
+                //"Potency ratio ddlog(EC50)"
+                {
+                    column_number: 15,
+                    filter_type: "range_number",
+                    filter_default_label: ["From", "To"],
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 16,
+                    filter_type: "range_number",
+                    filter_default_label: ["From", "To"],
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 17,
+                    filter_type: "range_number",
+                    filter_default_label: ["From", "To"],
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 18,
+                    filter_type: "range_number",
+                    filter_default_label: ["From", "To"],
+                    filter_reset_button_text: false,
+                },
+                //potency or ic50
+                // TODO: change to p value
+                {
+                    column_number: 19,
+                    filter_type: "range_number",
+                    filter_default_label: ["From", "To"],
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 20,
+                    filter_type: "range_number",
+                    filter_default_label: ["From", "To"],
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 21,
+                    filter_type: "range_number",
+                    filter_default_label: ["From", "To"],
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 22,
+                    filter_type: "range_number",
+                    filter_default_label: ["From", "To"],
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 23,
+                    filter_type: "range_number",
+                    filter_default_label: ["From", "To"],
+                    filter_reset_button_text: false,
+                },
+                //DOI
+                {
+                    column_number: 24,
+                    filter_type: "range_number",
+                    filter_default_label: ["From", "To"],
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 25,
+                    filter_type: "range_number",
+                    filter_default_label: ["From", "To"],
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 26,
+                    filter_type: "range_number",
+                    filter_default_label: ["From", "To"],
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 27,
+                    filter_type: "range_number",
+                    filter_default_label: ["From", "To"],
+                    filter_reset_button_text: false,
+                },
+                {
+                    column_number: 28,
+                    filter_type: "range_number",
+                    filter_default_label: ["From", "To"],
+                    filter_reset_button_text: false,
+                },
+
+            ], {
+                cumulative_filtering: true
+            }, {
+                externally_triggered: true
+            },
+        );
+
+        function reset_filters() {
+            yadcf.exResetAllFilters(oTable);
+            setTimeout(function() {
+                oTable.columns().flatten().each(function(colIdx) {
+                    var columnData = [];
+                    oTable.rows({
+                        filter: 'applied'
+                    }).data().each(function(i) {
+                        columnData.push(i[colIdx]);
+                    })
+                    if (columnData.join('').length == 0 && colIdx != 0) {
+                        oTable.column(colIdx).visible(false);
+                    }
+                });
+                oTable.columns.adjust();
+                zoom_page()
+                $('#loadingSpinner').hide();
+                $('#structures_scrollable_body').show();
+            }, 5);
+
+        }
+
+        $('.dataTables_scrollBody #structures_scrollable').addClass("pull-left");
+
+        $('.dataTables_scrollBody').append('<div id=overlay><table id="overlay_table" class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
+
+        function create_overlay() {
+            // This function fires upon filtering, to update what rows to show as an overlay
+            $("#overlay_table tbody tr").remove();
+            var $target = $("#overlay_table tbody");
+            $("#structures_scrollable tbody tr").each(function() {
+                var $tds = $(this).children(),
+                    $row = $("<tr></tr>");
+                // $row.append($tds.eq(0).clone()).append($tds.eq(1).clone()).appendTo($target);
+                // var clone_this = document.getElementById("potency_id2").clone()
+                var $tr = document.getElementsByClassName('tr_clone');
+
+                var $clone = [$tr];
+
+                $row.append($tds.eq(0).clone()).append($tds.eq(4).clone()).append($tds.eq(5).clone()).append($tds.eq(7).clone());
+
+                if (isNaN($tds[10].innerText)) {
+                    $row.append($tds.eq(10).clone());
+                }
+                if (isNaN($tds[11].innerText)) {
+                    $row.append($tds.eq(11).clone());
+                }
+                if (isNaN($tds[12].innerText)) {
+                    $row.append($tds.eq(12).clone());
+                }
+                if (isNaN($tds[13].innerText)) {
+                    $row.append($tds.eq(13).clone());
+                }
+                if (isNaN($tds[14].innerText)) {
+                    $row.append($tds.eq(14).clone());
+                }
+                $row.appendTo($target)
+                $row.height($(this).height());
+            });
+            $("#overlay_table .border-right").removeClass("border-right");
+        }
+        // Function that detects filtering events
+        $('#structures_scrollable').on('draw.dt', function(e, oSettings) {
+            create_overlay();
+        });
+        create_overlay();
+        $("#overlay").hide();
+        var left = 0;
+        var old_left = 0;
+        $('.dataTables_scrollBody').scroll(function() {
+            // If user scrolls and it's >100px from left, then attach fixed columns overlay
+            left = $('.dataTables_scrollBody').scrollLeft();
+            if (left != old_left) $("#overlay").hide();
+            old_left = left;
+            if (left > 100) {
+                $("#overlay").css({
+                    left: left + 'px'
+                });
+                if ($("#overlay").is(":hidden")) $("#overlay").show();
+            }
+        });
+
+        var tableToExcel = (function() {
+            var uri = 'data:application/vnd.ms-excel;base64,',
+                template =
+                '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>',
+                base64 = function(s) {
+                    return window.btoa(unescape(encodeURIComponent(s)))
+                },
+                format = function(s, c) {
+                    return s.replace(/{(\w+)}/g, function(m, p) {
+                        return c[p];
+                    })
+                }
+            return function(table, name, filename) {
+                var table = $("#" + table).clone();
+                $("#excel_table").html(table);
+                // Clean up table to remove yadcf stuff
+                $("#excel_table thead tr").css('height', '');
+                $("#excel_table thead th").css('height', '');
+                $("#excel_table thead div").css('height', '');
+                $("#excel_table thead .yadcf-filter-wrapper").remove();
+                $("#excel_table thead button").remove();
+                var tr = $("#excel_table thead tr:eq(1)");
+                // reattach th titles
+                tr.find('th').each(function(column, th) {
+                    if ($(th).attr('title')) $(th).html($(th).attr('title'));
+                });
+
+                var ctx = {
+                    worksheet: name || 'Worksheet',
+                    table: $("#excel_table").html()
+                }
+                $("#excel_table").html("");
+                document.getElementById("dlink").href = uri + base64(format(template, ctx));
+                document.getElementById("dlink").download = filename;
+                document.getElementById("dlink").click();
+            }
+        })()
+
+    });
+</script>
+
+<script type="text/javascript">
+    function zoom_page() {
+        document.body.style.transform = 'scale(1)';
+        document.body.style['-o-transform'] = 'scale(1)';
+        document.body.style['-webkit-transform'] = 'scale(1)';
+        document.body.style['-moz-transform'] = 'scale(1)';
+    }
+
+    function myFunction(url, title, win, w, h) {
+
+        const y = win.top.outerHeight / 2 + win.top.screenY - (h / 2);
+        const x = win.top.outerWidth / 2 + win.top.screenX - (w / 2);
+        return win.open(url, title, 'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width=' + w + ', height=' + h + ', top=' + y + ', left=' + x);
+
+    }
+
+    function read_ids() {
+        var ids = [];
+        var table = document.getElementById("structures_scrollable")
+        var temp_lenght = table.rows.length;
+        if (temp_lenght > 22) {
+            temp_lenght = 22;
+        }
+        for (var i = 2; i < temp_lenght; i++) {
+            var x = table.rows[i].cells[0];
+            ids.push($(x).find('span:first')[0].innerText)
+        }
+        var myJSON = JSON.stringify(ids);
+        return myJSON
+    }
+</script>
+
+{% endblock %}
+
+
+{% block content %}
+<a id="dlink" style="display:none;"></a>
+<div id="excel_table" style2="display:none;"></div>
+<div style="display:block;">
+    <div style="display:inline; float:left;">
+        <h2 style="width:auto; display:inline;">Biased Ligands</h2>
+    </div>
+</div>
+<br><br>
+
+<img id="loadingSpinner" style="position: absolute;
+    left: 50%;
+    top: 50%;" src="{% static 'home/images/loading.gif' %}" />
+
+{% if data %}
+{% autoescape off %}
+
+<div style='padding-top: 0px; font-size: 10px; white-space: nowrap; width:100%; overflow-y:hidden; display:inline-block; width:100%;'>
+
+    <div id='structures_scrollable_div'>
+
+        <div id="testTable" style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
+            <table class="display compact text-nowrap" id='structures_scrollable'>
+
+                <thead id="headers">
+                    <tr>
+                        <th colspan="1">Details</th>
+                        <th style="border-left: 1px solid black;" colspan="6" style="text-align:left">Receptor</th>
+                        <th style="border-left: 1px solid black;" colspan="1" style="text-align:left">Tested Ligand</th>
+                        <th style="border-left: 1px solid black;" colspan="2" style="text-align:left">Receptor transducers</th>
+                        <th style="border-left: 1px solid black;" colspan="5">Pathway Bias Rank Order </th>
+                        <th style="border-left: 1px solid black;" colspan="4">Potency ratio</th>
+                        <th style="border-left: 1px solid black;" colspan="5">Potency EC50 or <font color="#FF0000">IC50</font>
+                        <th style="border-left: 1px solid black;" colspan="5">DOI</font>
+                        <th style="border-left: 1px solid black;" colspan="5">Assay description</font>
+                        </th>
+                        <th colspan="1" style="display:none">ligand_id</th>
+                    </tr>
+                    <tr>
+                        <!-- Receptor -->
+                        <th>Details</th>
+                        <th style="border-left: 1px solid black;">Class<br></th>
+                        <th>Family</th>
+                        <th>UniProt</th>
+                        <th>IUPHAR</th>
+                        <th>Species</th>
+                        <th>Endogenous Ligand</th>
+                        <!-- Ligand -->
+                        <th style="border-left: 1px solid black;">Biased</th>
+                        <!-- Receptor trunsducers-->
+                        <th style="border-left: 1px solid black;">Primary</th>
+                        <th>Secondary</th>
+                        <!-- Pathways -->
+                        <th class='pathways' style="border-left: 1px solid black;">P 1</th>
+                        <th class='pathways'>P 2</th>
+                        <th class='pathways'>P 3</th>
+                        <th class='pathways'>P 4</th>
+                        <th class="pathways">P 5</th>
+                        <!-- Potency ratio -->
+                        <th class='potency' style="border-left: 1px solid black;">P 2</th>
+                        <th class='potency'>P 3</th>
+                        <th class='potency'>P 4</th>
+                        <th class="potency">P 5</th>
+                        <!-- Potency -->
+                        <th class='ec50' style="border-left: 1px solid black;">P 1</th>
+                        <th class='ec50'>P 2</th>
+                        <th class='ec50'>P 3</th>
+                        <th class='ec50'>P 4</th>
+                        <th class="ec50">P 5</th>
+                        <!-- DOI -->
+                        <th class='ec50' style="border-left: 1px solid black;">P 1</th>
+                        <th class='ec50'>P 2</th>
+                        <th class='ec50'>P 3</th>
+                        <th class='ec50'>P 4</th>
+                        <th class="ec50">P 5</th>
+                        <!-- assay description -->
+                        <th class='ec50' style="border-left: 1px solid black;">P 1</th>
+                        <th class='ec50'>P 2</th>
+                        <th class='ec50'>P 3</th>
+                        <th class='ec50'>P 4</th>
+                        <th class="ec50">P 5</th>
+                        <th colspan="1" style="display:none">ligand_id</th>
+                    </tr>
+                </thead>
+                <tbody id='structures_scrollable_body' style="display: none">
+                    {%for e in data.items%}
+
+                    <tr>
+                        <td>
+                            <span style='display: none'> {{e.1.ligand.id}}</span>
+                            <a href="#">
+                                <!-- <span class="glyphicon glyphicon-info-sign" onclick="myFunction('vendor/{{e.1.ligand.id}}/detail', 'Detail View', window, 1500, 1000)">Details</span> -->
+
+                                <span class="glyphicon glyphicon-info-sign" onclick="myFunction('/ligand/experiment/{{e.1.experiment_id}}/detail', 'Detail View', window, 1500, 1000)"></span> Details
+
+                            </a>
+                        </td>
+
+                        <!-- s.protein_conformation.protein.parent.family.parent.parent.parent.shorter() -->
+                        <td title='{{e.1.receptor.family.parent.parent.parent.name}}'>{{e.1.receptor.family.parent.parent.parent.name}}</td>
+                        <td title='{{e.1.receptor.family.parent}}'>{{e.1.receptor.family.parent}}</td>
+                        <td>{{e.1.receptor.accession}}</td>
+                        <td>{{e.1.receptor.entry_short}}</td>
+                        <td>{{e.1.receptor.species.common_name}}</td>
+                        {% if e.1.endogenous_ligand == None %}
+                        <td>Not available</td>
+                        {%else%}
+                        <td title='{{e.1.endogenous_ligand}}'>{{e.1.endogenous_ligand}}</td>
+                        {%endif%}
+                        <!-- ligand -->
+                        <td style="border-left: 1px solid black;" title='{{e.1.ligand}}'>
+                            {%if e.1.chembl%}
+                            <a href='/ligand/{{e.1.chembl}}' target='blank'>
+                                {%else%}
+                                <a href='/ligand/{{e.1.ligand}}' target='blank'>
+                                    {%endif%}
+                                    {{e.1.ligand}}
+                        </td>
+
+                        <!-- receptor trunsducers -->
+                        <td id='potency_id1' style="border-left: 1px solid black;">{{e.1.primary}}</td>
+                        <td style="border-right: 1px solid black;">{{e.1.secondary}}</td>
+
+                        <!-- pathways -->
+                        {% for ex in e.1.biasdata|dictsort:"order_no" %}
+
+                        <td id="pathways" class="tr_clone">{{ex.signalling_protein}}</td>
+
+                        {%endfor%}
+
+
+                        <!-- potency ratio -->
+                        {% for ex in e.1.biasdata|dictsort:"order_no" %}
+                        {% if not forloop.first %}
+                        {% widthratio forloop.counter 1 20 as outer_counter%}
+                        {% with outer_counter|add:"140" as var1 %}
+                        <td id="false" style="background-color: rgb( {{ var1 }},{{ var1 }},{{ var1 }})" title='{{ex.potency}}'>{{ex.potency }}</td>
+                        {% endwith %}
+                        {%endif%}
+                        {%endfor%}
+
+                        <!-- potency -->
+                        {% for ex in e.1.biasdata|dictsort:"order_no" %}
+                        {%if ex.quantitive_activity %}
+                        {%if ex.quantitive_measure_type == 'EC50' %}
+                        {% widthratio forloop.counter 1 20 as outer_counter%}
+                        {% with outer_counter|add:"140" as var1 %}
+                        <td style="background-color: rgb( {{ var1 }},{{ var1 }},{{ var1 }})">{{ex.quantitive_activity}} </td>
+                        {% endwith %}
+                        {%else%}
+                        {% widthratio forloop.counter 1 20 as outer_counter%}
+                        {% with outer_counter|add:"140" as var1 %}
+                        <td style="background-color: rgb( {{ var1 }},{{ var1 }},{{ var1 }})">
+                            <font color="#FF0000">{{ex.quantitive_activity}} </font>
+                        </td>
+                        {% endwith %}
+                        {%endif%}
+                        {%else%}
+                        {% widthratio forloop.counter 1 20 as outer_counter%}
+                        {% with outer_counter|add:"140" as var1 %}
+                        <td style="background-color: rgb( {{ var1 }},{{ var1 }},{{ var1 }})">{{ex.qualitative_activity }}</td>
+                        {% endwith %}
+                        {%endif%}
+                        {%endfor%}
+
+                        {% for ex in e.1.biasdata|dictsort:"order_no" %}
+
+                        <td title="{{ex.assay}}">{{ex.assay}}</td>
+
+                        {%endfor%}
+
+                        {% for ex in e.1.biasdata|dictsort:"order_no" %}
+
+                        <td title="{{ex.assay_description}}">{{ex.assay_description}}</td>
+
+                        {%endfor%}
+                        <td style="display:none">{{e.1.ligand.id}}</td>
+
+                    </tr>
+                    {%endfor%}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!-- </div> -->
+</div>
+{% endautoescape %}
+{% else %}
+<p> Ooops! There is no data to show here yet. </p>
+{% endif %}
+
+<br>
+<br>
+{% endblock %}
+
+
+
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+<link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet">
+<link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
+<link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.4.0/css/buttons.dataTables.min.css" type="text/css" />
+
+<!-- configure radio buttons style -->
+<style>
+    div#content ul li {
+        display: inline-block;
+    }
+</style>
+
+<style type="text/css">
+    td {
+        height: 15px;
+        max-width: 150px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    table.dataTable tbody td {
+        padding-top: 6px !important;
+        padding-bottom: 6px !important;
+    }
+
+    table.dataTable thead th,
+    table.dataTable tbody td {
+        max-width: 110px !important;
+        border-bottom: 1px solid #111;
+        /* padding-top: 4px;
+      padding-bottom: 4px; */
+    }
+
+    table.dataTable.compact thead th.over_header {
+        border-right: 1px solid;
+        /* border-left: 0px solid; */
+        text-align: center;
+
+    }
+
+    table.dataTable.compact thead tr.over_header th {
+        border-bottom: 1px solid #ccc;
+    }
+
+    table.dataTable.compact thead th.leftborder {
+        border-left: 1px solid;
+    }
+
+    table.dataTable.compact thead th.rightborder {
+        border-right: 1px solid;
+    }
+
+    table.dataTable.compact thead th.checkbox_tr {
+        text-align: left;
+    }
+
+
+    .select2-container-multi .select2-choices {
+        min-height: 26px;
+        /* width: 80px; */
+    }
+
+    .yadcf-filter-wrapper {
+        margin-top: 0px;
+    }
+
+    input.yadcf-filter {
+        width: 100px;
+        font-family: sans-serif;
+        font-size: 100%;
+        font-weight: bold;
+    }
+
+    .select2-container,
+    .select2-drop,
+    .select2-search,
+    .select2-search input {
+        min-width: 95px !important;
+        max-width: 95px !important;
+    }
+
+    /* .select2-container-multi .select2-choices{
+
+        min-width: 95px !important;
+        max-width: 95px !important;
+    } */
+
+    .select2-container-multi .select2-choices .select2-search-field input {
+        min-width: 95px !important;
+        max-width: 95px !important;
+    }
+
+    .yadcf-filter-range-date,
+    .yadcf-filter-range-number {
+        width: 95px !important;
+        font-family: sans-serif;
+        font-size: 100%;
+        font-weight: bold;
+    }
+
+    .clicked_button {
+        background-color: rgb(215, 215, 215);
+    }
+
+    #overlay {
+        top: 0px;
+        position: absolute;
+        background: #f8f8f8;
+        /*border: 1px solid #333;*/
+        -webkit-box-shadow: 5px 0 2px -2px #888;
+        box-shadow: 5px 0 2px -2px #888;
+    }
+
+    .container {
+        width: 90%;
+    }
+
+    .wrapper {
+        overflow-x: scroll;
+        overflow-y: hidden;
+    }
+
+    #overlay tbody tr {
+        background-color: #f8f8f8;
+    }
+
+    #count_row th {
+        font-size: 11px;
+        text-align: center;
+    }
+
+    .switch-field {
+        display: flex;
+        margin: auto;
+        margin-bottom: 0px;
+        overflow: hidden;
+        width: 100%;
+
+    }
+
+    .switch-field input {
+        position: left !important;
+        clip: rect(0, 0, 0, 0);
+        height: 1px;
+        width: 1px;
+        border: 0;
+        overflow: hidden;
+    }
+
+    .switch-field label {
+        background-color: white;
+        color: rgba(0, 0, 0, 0.6);
+        font-size: 14px;
+        line-height: 1;
+        text-align: center;
+        padding: 8px 16px;
+        margin-right: -1px;
+        border: 1px solid rgba(0, 0, 0, 0.2);
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px rgba(255, 255, 255, 0.1);
+        transition: all 0.1s ease-in-out;
+    }
+
+    .switch-field label:hover {
+        cursor: pointer;
+        width: 100%;
+    }
+
+    .switch-field input:checked+label {
+        background-color: #337ab7;
+        /* #a5dc86; */
+        box-shadow: none;
+    }
+
+    .switch-field label:first-of-type {
+        border-radius: 4px 0 0 4px;
+
+    }
+
+    .switch-field label:last-of-type {
+        border-radius: 0 4px 4px 0;
+    }
+
+    /* This is just for CodePen. */
+
+    .form1 {
+        max-width: 600px;
+        width: 500px;
+        font-family: "Lucida Grande", Tahoma, Verdana, sans-serif;
+        font-weight: normal;
+        line-height: 1.625;
+
+    }
+
+    .name {
+        width: 150px;
+        text-overflow: ellipsis;
+        cursor: pointer;
+        word-break: break-all;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
+    .name:hover {
+        overflow: visible;
+        white-space: normal;
+        /* height: auto;  /* just added this line */
+        */
+    }
+</style>
+
+{% endblock %}

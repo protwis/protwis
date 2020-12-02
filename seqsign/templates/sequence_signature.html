@@ -1,5 +1,5 @@
 {% extends "home/base.html" %}
-{% load staticfiles %}
+{% load static %}
 {% block addon_css %}
     <link href="{% static 'home/css/alignment.css' %}" rel="stylesheet">
 <!-- <style>
@@ -109,7 +109,7 @@
             </div>
             <div class="ali-main-div">
                 <div class="dynamic-div">
-                    <table>
+                    <table class="displayTableAfterLoad">
                         <tr>
                             <td>{% include 'signature_right_panel.html' %}</td>
                         </tr>
@@ -157,5 +157,17 @@
         //    draw_scatter_plot(data, options);
         //});
 
+    </script>
+
+    <!-- increase browser drawing performance for displaying (larger) alignments -->
+    <script>
+      $(document).ready(function () {
+        $('.displayTableAfterLoad').css("display", "table");
+        $('.internal-scroll-div').css('width', $('.dynamic-div').outerWidth() );
+      });
+
+      $(window).on("load", function () {
+          ApplyCutoff(40);
+      });
     </script>
 {% endblock %}

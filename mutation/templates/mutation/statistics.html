@@ -105,7 +105,7 @@ var diameter = 1350;
 function getBB(selection) {
     selection.each(function(d){d.bbox = this.getBBox();})
 }
- 
+
 
 function getAngle(d) {
     // Offset the angle by 90 deg since the '0' degree axis for arc is Y axis, while
@@ -161,20 +161,20 @@ var width = 1350,
 
     var partition = d3.layout.partition()
       .sort(function(a,b) { return b.sort - a.sort; })
-      .value(function(d) { if (only_data) { 
+      .value(function(d) { if (only_data) {
         if (d.depth!=4) {return d.receptor_i+d.receptor_m_an;} else { return Math.min(1,d.receptor_i+d.receptor_m_an); }
         } else {
           return d.receptor_t;
-        } 
+        }
       });
       // .value(function(d) { return d.receptor_t });
 
     var arc = d3.svg.arc()
       .startAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x))); })
       .endAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x + d.dx))); })
-      .innerRadius(function(d) { 
+      .innerRadius(function(d) {
 
-        // console.log("inner" + d.y+" "+Math.max(0, y(d.y))); return Math.max(0, y(d.y)); 
+        // console.log("inner" + d.y+" "+Math.max(0, y(d.y))); return Math.max(0, y(d.y));
         if (d.y<0.3) {
             return 2;
         } else if (d.y<0.5) {
@@ -186,8 +186,8 @@ var width = 1350,
         }
 
   })
-      .outerRadius(function(d) { 
-        
+      .outerRadius(function(d) {
+
         // console.log("outer" + d.y+" "+Math.max(0, y(d.y + d.dy))); return Math.max(0, y(d.y + d.dy));
         if (d.y<0.3) {
             return 180;
@@ -208,11 +208,11 @@ var lineFunction = d3.svg.line()
 var path = svg3.datum(interactions).selectAll("path")
       .data(partition.nodes)
       .enter().append("g")
-        
+
   path.append("path")
       .attr("display", function(d) { return d.depth ? null : "none"; }) // hide inner ring
       .attr("d", arc)
-      .style("fill", function(d) { 
+      .style("fill", function(d) {
           if (d.color && d.depth<4 && 1==2 ){ return "#FFF" } //&& d.depth<4 && 1==2
           // else if (d.interactions > 0 && d.mutations_an > 0) {return "#31a354" }
           // else if (d.interactions > 0) {return "#3182bd" }
@@ -257,7 +257,7 @@ var path = svg3.datum(interactions).selectAll("path")
       path.filter(function(d) {return (d.depth==1 || d.name=='Other GPCRs')}).each(function(d,i) {
                          console.log(d.name+ " "+i);
                          svg3.append("line")
-                         .attr("x1",  function() { console.log(d.name + " " + d.x + " " + d.y +" " + x(d.x)*180/Math.PI + " " + x(d.x + d.dx)*180/Math.PI); 
+                         .attr("x1",  function() { console.log(d.name + " " + d.x + " " + d.y +" " + x(d.x)*180/Math.PI + " " + x(d.x + d.dx)*180/Math.PI);
                           return 2 * Math.cos(x(d.x)-Math.PI/2); })
                          .attr("y1", function() { return 2* Math.sin(x(d.x)-Math.PI/2); })
                          .attr("x2", function() { return (radius-36) * Math.cos(x(d.x)-Math.PI/2); })
@@ -293,9 +293,9 @@ var path = svg3.datum(interactions).selectAll("path")
   path.each(function(d,i) {
 
         svg3.append("text")
-        .text(function() { 
+        .text(function() {
             // if ( d.receptor_i+d.receptor_m_an>0) {
-            //     return d.name 
+            //     return d.name
             // } else if (1==1) { //if showing all
             //     return d.name
             // }
@@ -304,12 +304,12 @@ var path = svg3.datum(interactions).selectAll("path")
         .classed("label2", true)
         .attr("x", function() { if (d.depth==4) { return d.x;} else {return d.x; } })
         // .attr("text-anchor", "end")
-        .attr("text-anchor", function() { 
+        .attr("text-anchor", function() {
             // console.log(d.name+ " "+arc.centroid(d));
-            if (d.depth==4) { 
-                return arc.centroid(d)[0] < 0 ? "start" : "end"; 
+            if (d.depth==4) {
+                return arc.centroid(d)[0] < 0 ? "start" : "end";
             } else if (d.depth>0) {
-                return arc.centroid(d)[0] < 0 ? "start" : "end"; 
+                return arc.centroid(d)[0] < 0 ? "start" : "end";
             } else {
                 return "middle";
             }
@@ -320,7 +320,7 @@ var path = svg3.datum(interactions).selectAll("path")
                 return "translate(" + arc.centroid(d) + ")" +
                        "rotate(" + getAngle(d) + ")";
             }  else if (d.depth == 4) {
-                // return d.x < 180 ? "translate(8)" : "rotate(180)translate(-8)"; 
+                // return d.x < 180 ? "translate(8)" : "rotate(180)translate(-8)";
                 return "translate(" + arc.centroid(d) + ")" +
                        "rotate(" + getAngle(d) + ")";
             }  else {
@@ -339,9 +339,9 @@ var path = svg3.datum(interactions).selectAll("path")
 
         // .style("font", "Palatino")
         .style("font", function() { if (d.depth<3) {return "17px"+ " Palatino"} else if (d.depth==3) {return "16px"+ " Palatino"} else { return "14px"+ " Palatino" } })
-       
+
         .style("fill", function() { return (d.depth<4 && (d.interactions > 0 && d.mutations_an > 0) ? "#000" : "#000") })
-       
+
         // .style("fill", function(d) {
         //   if (d.interactions > 0 && d.mutations_an > 0) {return "#FFF" }
         //   else if (d.interactions > 0) {return "#000" }
@@ -368,7 +368,7 @@ var path = svg3.datum(interactions).selectAll("path")
 
 <div id=svg3 width="100%"></div>
 The tree highlights receptors for which ligand interaction data is available from: Orange: annotated literature mutations, Blue:  structure complexes and Green: both.<br>
-The following receptors have no data and has been exluded for clarity: Class A orphans, Class B2 (Adhesions), Taste 2 and Other GPCRs (not part of any of the classes A-C or F).<br>
+The following receptors have no data and has been exluded for clarity: Class A orphans, Class B2 (Adhesions), Class T (Taste 2) and Other GPCRs (not part of any of the classes A-C or F).<br>
 The labs of David Gloriam, Anke Schiedel, Chris de Graaf and Hugo Gutiérrez-de-Terán are acknowledged for the annotation of mutation data.
 
 <br>

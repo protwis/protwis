@@ -1,16 +1,24 @@
-﻿from django.shortcuts import render
+from django.contrib.postgres.aggregates import ArrayAgg
 from django.conf import settings
 from django.core.files import File
-from protein.models import ProteinFamily, ProteinAlias, ProteinSet, Protein, ProteinSegment
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt
+
 from common.views import AbsTargetSelection
 from common.views import AbsSegmentSelection
 from common.views import AbsMiscSelection
-from common.selection import SelectionItem
+from common.selection import SimpleSelection, Selection, SelectionItem
 from mutation.models import *
+from phylogenetic_trees.PrepareTree import *
+from protein.models import ProteinFamily, ProteinAlias, ProteinSet, Protein, ProteinSegment, ProteinGProteinPair
+
+from copy import deepcopy
+import json
 import math
 import os, shutil, subprocess, signal
 import uuid
-from phylogenetic_trees.PrepareTree import *
+
 from collections import OrderedDict
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
@@ -31,14 +39,15 @@ class TargetSelection(AbsTargetSelection):
         ('targets', True),
         ('segments', False),
     ])
+
     buttons = {
         'continue': {
             'label': 'Continue to next step',
             'url': '/phylogenetic_trees/segmentselection',
             'color': 'success',
+            'onclick': 'return VerifyMinimumSelection(\'receptors\', 3);', # check for a minimum selection of 3 receptors
         },
     }
-
 
 class SegmentSelection(AbsSegmentSelection):
     step = 2
@@ -56,7 +65,6 @@ class SegmentSelection(AbsSegmentSelection):
         },
     }
 
-
 class TreeSettings(AbsMiscSelection):
     step = 3
     number_of_steps = 3
@@ -69,19 +77,37 @@ class TreeSettings(AbsMiscSelection):
         ('targets', True),
         ('segments', True),
     ])
+
     buttons = {
         'continue': {
-            'label': 'Draw tree',
-            'url': '/phylogenetic_trees/render',
+            'label': 'Calculate & draw tree',
+            'url': '/phylogenetic_trees/render_v3',
             'color': 'success',
         },
     }
+    # buttons = OrderedDict({
+    #     'continue_v3': {
+    #         'label': 'Draw tree using v3 code',
+    #         'url': '/phylogenetic_trees/render_v3',
+    #         'color': 'success',
+    #     },
+    #     'continue_v2': {
+    #         'label': 'Draw tree using new code',
+    #         'url': '/phylogenetic_trees/render_v2',
+    #         'color': 'success',
+    #     },
+    #     'continue': {
+    #         'label': 'Draw tree using previous code',
+    #         'url': '/phylogenetic_trees/render',
+    #         'color': 'success',
+    #     }
+    # })
     tree_settings = True
 
 
 class Treeclass:
     family = {}
-    
+
     def __init__(self):
         self.Additional_info={"crystal": {"include":"False", "order":6, "colours":{"crystal_true":"#6dcde1","crystal_false":"#EEE"}, "color_type":"single", "proteins":[], "parent":None, "child": None, "name":"Crystals"},
                 "class": {"include":"True", "order":0, "colours":{}, "proteins":[], "color_type":"grayscale", "parent":[], "child": ["family,ligand"], "name":"Class"},
@@ -97,7 +123,6 @@ class Treeclass:
         self.outtree = None
         self.dir = ''
 
-
     def Prepare_file(self, request,build=False):
         self.Tree = PrepareTree(build)
         a=Alignment()
@@ -110,7 +135,7 @@ class Treeclass:
                 for prot in n.proteins.all():
                     crysts.append(prot.entry_name)
 
-            
+
         #############################
         # get the user selection from session
         if build != False:
@@ -159,7 +184,7 @@ class Treeclass:
         infile = open('/tmp/%s/infile' %dirname,'w')
         infile.write('    '+str(self.total)+'    '+str(total_length)+'\n')
         if len(a.proteins) < 3:
-            return 'More_prots',None, None, None, None,None,None,None
+            return 'More_prots',None, None, None, None,None,None,None,None
         ####Get additional protein information
         accesions = {}
         for n in a.proteins:
@@ -192,7 +217,7 @@ class Treeclass:
                     sequence += residue[2].replace('_','-')
             infile.write(acc+' '*9+sequence+'\n')
         infile.close()
-        
+
         ####Run bootstrap
         if self.bootstrap:
         ### Write phylip input options
@@ -201,11 +226,11 @@ class Treeclass:
             inp.close()
         ###
             try:
-                subprocess.check_output(['phylip seqboot<temp'], shell=True, cwd = '/tmp/%s' %dirname, timeout=60)
+                subprocess.check_output(['phylip seqboot<temp'], shell=True, cwd = '/tmp/%s' %dirname, timeout=300)
                 os.rename('/tmp/%s/outfile' %dirname, '/tmp/%s/infile' %dirname)
             except:
                 kill_phylo() #FIXME, needs better way of handling this!
-                return "too big","too big","too big","too big","too big","too big","too big","too big"
+                return "too big","too big","too big","too big","too big","too big","too big","too big","too big"
 
         ### Write phylip input options
         inp = open('/tmp/%s/temp' %dirname,'w')
@@ -216,10 +241,10 @@ class Treeclass:
         inp.close()
         ###
         try:
-            subprocess.check_output(['phylip protdist<temp>>log'], shell=True, cwd = '/tmp/%s' %dirname, timeout=60)
+            subprocess.check_output(['phylip protdist<temp>>log'], shell=True, cwd = '/tmp/%s' %dirname, timeout=300)
         except:
             kill_phylo() #FIXME, needs better way of handling this!
-            return "too big","too big","too big","too big","too big","too big","too big","too big"
+            return "too big","too big","too big","too big","too big","too big","too big","too big","too big"
         os.rename('/tmp/%s/infile' %dirname, '/tmp/%s/dupa' %dirname)
         os.rename('/tmp/%s/outfile' %dirname, '/tmp/%s/infile' %dirname)
         inp = open('/tmp/%s/temp' %dirname,'w')
@@ -236,8 +261,8 @@ class Treeclass:
                 inp.write('y\n')
         inp.close()
         ###
-        try: 
-            subprocess.check_output(['phylip neighbor<temp'], shell=True, cwd = '/tmp/%s' %dirname, timeout=60)
+        try:
+            subprocess.check_output(['phylip neighbor<temp'], shell=True, cwd = '/tmp/%s' %dirname, timeout=300)
         except:
             kill_phylo() #FIXME, needs better way of handling this!
             return "too big","too big","too big","too big","too big","too big","too big","too big"
@@ -250,7 +275,7 @@ class Treeclass:
             inp.close()
         ###
             try:
-                subprocess.check_output(['phylip consense<temp'], shell=True, cwd = '/tmp/%s' %dirname, timeout=60)
+                subprocess.check_output(['phylip consense<temp'], shell=True, cwd = '/tmp/%s' %dirname, timeout=300)
             except:
                 kill_phylo() #FIXME, needs better way of handling this!
                 return "too big","too big","too big","too big","too big","too big","too big","too big"
@@ -261,30 +286,30 @@ class Treeclass:
         self.outtree = open('/tmp/%s/outfile' %dirname).read().lstrip()
         phylogeny_input = self.get_phylogeny('/tmp/%s/' %dirname)
         shutil.rmtree('/tmp/%s' %dirname)
-        
+
         if build != False:
             open('static/home/images/'+build+'_legend.svg','w').write(str(self.Tree.legend))
             open('static/home/images/'+build+'_tree.xml','w').write(phylogeny_input)
         else:
-            return phylogeny_input, self.branches, self.ttype, self.total, str(self.Tree.legend), self.Tree.box, self.Additional_info, self.buttons
-        
+            return phylogeny_input, self.branches, self.ttype, self.total, str(self.Tree.legend), self.Tree.box, self.Additional_info, self.buttons, a.proteins
+
     def get_phylogeny(self, dirname):
 
         self.Tree.treeDo(dirname, self.phylip,self.branches,self.family,self.Additional_info, self.famdict)
         phylogeny_input = open('%s/out.xml' %dirname,'r').read().replace('\n','')
         return phylogeny_input
-    
+
     def get_data(self):
         return self.branches, self.ttype, self.total, str(self.Tree.legend), self.Tree.box, self.Additional_info, self.buttons
 
- 
+
+# DEPRECATED CODE - can be cleaned up
 def get_buttons(request):
     Tree_class=request.session['Tree']
     buttons = [(x[1]['order'],x[1]['name']) for x in sorted(Tree_class.Additional_info.items(), key= lambda x: x[1]['order']) if x[1]['include']=='True']
     return render(request, 'phylogenetic_trees/ring_buttons.html', {'but':buttons })
-   
-        
 
+# DEPRECATED CODE - can be cleaned up
 def modify_tree(request):
     try:
         shutil.rmtree('/tmp/modify')
@@ -304,24 +329,182 @@ def modify_tree(request):
         float(total)/4*100
     else:
         count = 1900 - 1400/math.sqrt(float(total))
-    print(count)
+
     return render(request, 'phylogenetic_trees/main.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':count, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons, 'phylip':Tree_class.phylip, 'outtree':Tree_class.outtree})
 
+# DEPRECATED CODE - can be cleaned up
 def render_tree(request):
     Tree_class=Treeclass()
-    phylogeny_input, branches, ttype, total, legend, box, Additional_info, buttons=Tree_class.Prepare_file(request)
+    phylogeny_input, branches, ttype, total, legend, box, Additional_info, buttons, proteins=Tree_class.Prepare_file(request)
     if phylogeny_input == 'too big':
         return render(request, 'phylogenetic_trees/too_big.html')
 
     if phylogeny_input == 'More_prots':
         return render(request, 'phylogenetic_trees/warning.html')
-    
+
     if ttype == '1':
         float(total)/4*100
     else:
         count = 1900 - 1400/math.sqrt(float(total))
-    
+
     request.session['Tree']=Tree_class
     return render(request, 'phylogenetic_trees/alignment.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':count, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons, 'phylip':Tree_class.phylip, 'outtree':Tree_class.outtree })
 
+# DEPRECATED CODE - can be cleaned up
+def render_tree_v2(request):
+    Tree_class=Treeclass()
+    phylogeny_input, branches, ttype, total, legend, box, Additional_info, buttons, proteins=Tree_class.Prepare_file(request)
+    if phylogeny_input == 'too big':
+        return render(request, 'phylogenetic_trees/too_big.html')
 
+    if phylogeny_input == 'More_prots':
+        return render(request, 'phylogenetic_trees/warning.html')
+
+    if ttype == '1':
+        float(total)/4*100
+    else:
+        count = 1900 - 1400/math.sqrt(float(total))
+
+
+    protein_data = []
+
+    #FIXME remove
+    import random
+    for pc in proteins:
+        v = {}
+        p = pc.protein
+        v['name'] = p.entry_name
+        v['GPCR_class'] = p.family.parent.parent.parent.name
+        v['selectivity'] = ["Gq/G11 family"]
+        v['ligand_type'] = p.family.parent.parent.name
+        v['coverage'] = random.uniform(0, 1)
+        v['receptor_page'] = ''
+        print(v)
+        protein_data.append(v)
+
+
+    request.session['Tree']=Tree_class
+    context = {}
+    context['phylip'] = Tree_class.phylip.replace('\n', '')
+    context['protein_data'] = protein_data
+    return render(request, 'phylogenetic_trees/display.html', context)
+
+# TODO: move this to seqsign
+@csrf_exempt
+def signature_selection(request):
+    # create full selection and import simple selection (if it exists)
+    simple_selection = request.session.get('selection', False)
+    selection_pos = Selection()
+    selection_pos.importer(deepcopy(simple_selection))
+    selection_pos.clear('targets')
+
+    selection_neg = Selection()
+    selection_neg.importer(deepcopy(simple_selection))
+    selection_neg.clear('targets')
+
+    if 'group1' in request.POST and 'group2' in request.POST:
+        up_names = request.POST['group1'].split('\r')
+        for up_name in up_names:
+            try:
+                selection_object = SelectionItem('protein', Protein.objects.get(entry_name=up_name.strip().lower()))
+                selection_pos.add('targets', 'protein', selection_object)
+            except:
+                continue
+
+        down_names = request.POST['group2'].split('\r')
+        for down_name in down_names:
+            try:
+                selection_object = SelectionItem('protein', Protein.objects.get(entry_name=down_name.strip().lower()))
+                selection_neg.add('targets', 'protein', selection_object)
+            except:
+                continue
+
+        # Set both the positive and negative target selections
+        request.session['targets_pos'] = selection_pos.exporter()
+
+        request.session['selection'] = selection_neg.exporter()
+
+        return JsonResponse({"response": "ok"})
+    else:
+        return JsonResponse({"response": "error"})
+
+def render_tree_v3(request):
+    Tree_class=Treeclass()
+
+    phylogeny_input, branches, ttype, total, legend, box, Additional_info, buttons, proteins=Tree_class.Prepare_file(request)
+    if phylogeny_input == 'too big':
+        return render(request, 'phylogenetic_trees/too_big.html')
+
+    if phylogeny_input == 'More_prots':
+        return render(request, 'phylogenetic_trees/warning.html')
+
+    # if ttype == '1':
+    #     float(total)/4*100
+    # else:
+    #     count = 1900 - 1400/math.sqrt(float(total))
+
+    #protein_data = []
+    #
+    #FIXME remove
+    # import random
+    # for pc in proteins:
+    #     v = {}
+    #     p = pc.protein
+    #     v['name'] = p.entry_name
+    #     v['GPCR_class'] = p.family.parent.parent.parent.name
+    #     v['selectivity'] = ["Gq/G11 family"]
+    #     v['ligand_type'] = p.family.parent.parent.name
+    #     v['coverage'] = random.uniform(0, 1)
+    #     v['receptor_page'] = ''
+    #     print(v)
+    #     protein_data.append(v)
+
+    request.session['Tree'] = Tree_class
+
+    # output dictionary
+    data = {}
+    data['tree'] = Tree_class.phylip.replace('\n', '')
+    # context['protein_data'] = protein_data
+
+
+    protein_entries = []
+    for pc in proteins:
+        protein_entries.append(pc.protein.entry_name)
+
+    # load all
+    cluster_method = 0
+
+    # Collect structure annotations
+    protein_annotations = {}
+
+    # Grab all annotations and all the ligand role when present in aggregates
+    # NOTE: we can probably remove the parent step and go directly via family in the query
+    annotations = Protein.objects.filter(entry_name__in=protein_entries) \
+                    .values_list('entry_name', 'name', 'family__parent__name', 'family__parent__parent__name', 'family__parent__parent__parent__name', 'family__slug', 'name')
+
+    protein_slugs = set()
+    for an in annotations:
+        protein_annotations[an[0]] = list(an[1:])
+
+        # add slug to lists
+        slug = protein_annotations[an[0]][4]
+        protein_slugs.add(slug)
+
+    data['annotations'] = protein_annotations
+
+    # Grab G-protein coupling profile for all receptors covered by the selection
+    # TODO: make general cache(s) for these kinds of data
+    selectivitydata = {}
+    coupling = ProteinGProteinPair.objects.filter(protein__family__slug__in=protein_slugs, source="GuideToPharma").values_list('protein__family__slug', 'transduction').annotate(arr=ArrayAgg('g_protein__name'))
+
+    for pairing in coupling:
+        if pairing[0] not in selectivitydata:
+            selectivitydata[pairing[0]] = {}
+        selectivitydata[pairing[0]][pairing[1]] = pairing[2]
+
+    data['Gprot_coupling'] = selectivitydata
+
+    context = {}
+    context["data"] = json.dumps(data)
+
+    return render(request, 'phylogenetic_trees/phylo_tree.html', context)

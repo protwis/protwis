@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.http import HttpResponse
+from django.db import connection
 
 import time,datetime,os
 
@@ -26,6 +27,8 @@ class StatsMiddleware:
         # Code to be executed for each request/response after
         # the view is called.
         total = time.time() - start_time
+        if settings.DEBUG:
+            print(request.path,"Time to execute", round(total,2), "SQL queries",len(connection.queries))
 
         text_file = open(os.path.join(settings.BASE_DIR, "logs/stats.log"), "a")
         text_file.write('%s %s %s %s %s\n' % (datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), round(total,2),request.META.get('REMOTE_ADDR'), request.method, request.path ))

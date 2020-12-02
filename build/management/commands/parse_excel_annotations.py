@@ -15,6 +15,7 @@ import shutil
 import xlrd
 import yaml
 from collections import OrderedDict
+import pprint
 
 
 _mapping_tag = yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG
@@ -55,6 +56,8 @@ class Command(BaseCommand):
     xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'xtal_segends.yaml'])
     mod_xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'mod_xtal_segends.yaml'])
     xtal_seg_end_bw_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'xtal_segends_bw.yaml'])
+    ECD_annotation_source_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'ECD_annotation.xlsx'])
+    ClassD_annotation_source_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'Class_D_Annotation.xlsx'])
 
     non_xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'non_xtal_segends.yaml'])
     non_xtal_seg_end_bw_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'non_xtal_segends_bw.yaml'])
@@ -64,6 +67,9 @@ class Command(BaseCommand):
 
     sequence_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'sequences.yaml'])
 
+    ECD_wt_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'ECD_wt.yaml'])
+    ECD_anomalies_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'ECD_anomalies.yaml'])
+
 
     if not os.path.exists(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation'])):
         os.makedirs(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation']))
@@ -71,10 +77,114 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.data = self.parse_excel(self.annotation_source_file)
         self.dump_files()
+        self.ECD_data = self.parse_excel(self.ECD_annotation_source_file)
+        self.dump_ECD_files()
+        self.ClassD_data = self.parse_excel(self.ClassD_annotation_source_file)
+        self.dump_ClassD_data()
         # self.analyse_annotation_consistency()
         self.find_representatives()
         if options['m']:
             self.main_template_search()
+
+    def dump_ECD_files(self):
+        data_dict = OrderedDict()
+        for key, val in self.ECD_data['wt'].items():
+            if val['H1x50']=='':
+                continue
+            entry_name = val['UniProt']
+            del val['Key']
+            del val['UniProt']
+            data_dict[entry_name] = val
+        with open(self.ECD_wt_file, 'w') as outfile:
+            yaml.dump(data_dict, outfile, indent=4)
+        anomalies = OrderedDict()
+        for key, val in self.ECD_data['anomalies'].items():
+            entry_name = val['protein']
+            del val['protein']
+            anomalies[entry_name] = val
+        with open(self.ECD_anomalies_file, 'w') as outfile:
+            yaml.dump(anomalies, outfile, indent=4)
+
+
+    def dump_ClassD_data(self):
+        data_dict1, data_dict2 = OrderedDict(), OrderedDict()
+        for key, val in self.ClassD_data['SegEnds_NonXtal_Prot#'].items():
+            entry_name = val['UniProt'].lower()
+            del val['Key']
+            del val['UniProt']
+            del val['']
+            data_dict1[entry_name] = val
+        with open(self.non_xtal_seg_end_file, 'a') as outfile:
+            yaml.dump(data_dict1, outfile, indent=4)
+        for key, val in self.ClassD_data['SegEnds_NonXtal_BW#'].items():
+            entry_name = val['UniProt'].lower()
+            del val['UniProt']
+            data_dict2[entry_name] = val
+        with open(self.non_xtal_seg_end_bw_file, 'a') as outfile:
+            yaml.dump(data_dict2, outfile, indent=4)
+        data = self.ClassD_data["Bulges_Constrictions"]
+        NonXtal_Bulges_Constr_GPCRdb = {}
+        for structure,vals in data.items():
+            entry = structure.lower()
+            NonXtal_Bulges_Constr_GPCRdb[entry] = OrderedDict()
+            for key,val in vals.items():
+                if not key:
+                    continue
+                NonXtal_Bulges_Constr_GPCRdb[entry][key] = val
+        NonXtal_Bulges_Constr_GPCRdb = OrderedDict(sorted(NonXtal_Bulges_Constr_GPCRdb.items()))
+        with open(self.all_anomalities_file, 'a') as outfile:
+            yaml.dump(NonXtal_Bulges_Constr_GPCRdb, outfile, indent=4)
+        data = self.ClassD_data["Seqs"]
+        Seqs = {}
+        for structure,vals in data.items():
+            entry = structure.lower()
+            Seqs[entry] = OrderedDict()
+            for key,val in vals.items():
+                if not key:
+                    continue
+                Seqs[entry][key] = val
+        Seqs = OrderedDict(sorted(Seqs.items()))
+        with open(self.sequence_file, 'a') as outfile:
+            yaml.dump(Seqs, outfile, indent=4)
+
+        structures = self.ClassD_data["SegEnds_Xtal_Prot#"]
+        pdb_info = {}
+        pdb_info_all = {}
+        for structure,vals in structures.items():
+            if structure.split("_")[-1] == "wt":
+                continue
+            if structure.split("_")[-1] == "dist":
+                continue
+            #print(structure)
+            pdb_id = structure.split("_")[-1]
+            pdb_info[pdb_id] = OrderedDict()
+            for key,val in vals.items():
+                if len(key)>3:
+                    continue
+                if not key:
+                    continue
+                if key[-1]!="b" and key[-1]!="e":
+                    continue
+                pdb_info[pdb_id][key] = val
+
+        for structure,vals in structures.items():
+            entry = structure
+            pdb_info_all[entry] = OrderedDict()
+            for key,val in vals.items():
+                if len(key)>3:
+                    continue
+                if not key:
+                    continue
+                if key[-1]!="b" and key[-1]!="e":
+                    continue
+                pdb_info_all[entry][key] = val
+
+        pdb_info = OrderedDict(sorted(pdb_info.items())) 
+        with open(self.mod_xtal_seg_end_file, 'a') as outfile:
+            yaml.dump(pdb_info, outfile, indent=4)
+        pdb_info_all = OrderedDict(sorted(pdb_info_all.items())) 
+        with open(self.xtal_seg_end_file, 'a') as outfile:
+            yaml.dump(pdb_info_all, outfile, indent=4)
 
     def parse_excel(self,path):
         workbook = xlrd.open_workbook(path)

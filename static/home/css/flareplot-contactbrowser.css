@@ -1,3 +1,521 @@
+        .select2-result-label{
+            font-size:x-small;
+            font-size: 10px;
+        }
+
+        .no-top-border{
+            border-top: 0px;
+        }
+        .yadcf-filter-range {
+            width: 30px;
+        }
+
+        .yadcf-filter {
+            /*display: flex;*/
+            width: 100px;
+        }
+
+        .contact-browser td.narrow_col {
+            text-align: right;
+            padding-right: 30px !important;
+        }
+
+        .contact-browser th.dt-center .select2-container {
+          margin: 0 auto;
+        }
+
+        .contact-browser th.narrow_col {
+            width:75px;
+        }
+
+        .contact-browser div.dataTables_wrapper {
+          margin: 0 auto;
+          width: 2030px;
+        }
+
+        .contact-browser div.dataTables_scrollHeadInner {
+          margin: 0 auto;
+        }
+
+        .contact-browser .yadcf-filter-range {
+            min-width: 41px;
+            padding-left: 2px;
+        }
+
+        .plot-container {
+          height: 500px;
+        }
+
+        #filters{
+            float:left;
+          display:none;
+          position:absolute;
+          background:white;
+          border: 1px solid #D1C9C2;
+          border-top: 1;
+          width: 400px;
+          margin: 0 auto;
+          padding:  7px 15px;
+          text-align: left;
+          -webkit-border-bottom-right-radius: 6px;
+          -webkit-border-bottom-left-radius: 6px;
+          -moz-border-radius-bottomright: 6px;
+          -moz-border-radius-bottomleft: 6px;
+          border-bottom-right-radius: 6px;
+          border-bottom-left-radius: 6px;
+          z-index: 1;
+            font-size: 10px;
+        }
+
+        @media (min-width: 1800px){
+            #content {
+                width: 1770px;
+            }
+        }
+
+        @media (min-width: 2200px){
+            #content {
+                width: 100%;
+                padding-left: 100px;
+                padding-right: 100px;
+            }
+        }
+
+        #content .nav-tabs {
+            border-bottom: 0px solid #ddd;
+        }
+
+        #content .nav>li>a {
+            padding-top: 5px;
+            padding-bottom: 5px;
+        }
+
+        @media (min-width: 1200px) {
+          .modal-wide {
+            width: 1200px;
+          }
+        }
+        @media (min-width: 1800px) {
+          .modal-wide {
+            width: 1800px;
+          }
+        }
+        @media (min-width: 2400px) {
+          .modal-wide {
+            width: 2400px;
+          }
+        }
+
+        .modal-footer {
+            border-top: 0px;
+        }
+
+        #single-crystal-pdbs {
+            height: 400px;
+            overflow: scroll;
+        }
+
+        .flareplot {
+            width: 100%;
+        }
+
+        .flareplot-legend {
+          top: 20px;
+          left: 20px;
+          z-index: 1;
+        }
+
+        .heatmap {
+          height: 800px;
+        /*  border: 1px lightslategrey solid;*/
+          width: 100%;
+        }
+
+        @media screen and (max-width: 992px) {
+            .go-button {
+                width: 100%;
+                margin-bottom: 15px;
+            }
+        }
+
+        .heatmap-container {
+            position: relative;
+        }
+
+        :-webkit-full-screen.heatmap-container {
+          width: 100%;
+          height: 100%;
+          border: 0px;
+        }
+
+        :-webkit-full-screen.heatmap-container .heatmap {
+          width: 100%;
+          height: 100%;
+          border: none;
+        }
+
+        .schematic-legend {
+            position: absolute;
+            right: 25px;
+            top: 45px;
+            padding: 5px;
+            border: 1px dashed;
+            background-color: white;
+        }
+
+        .schematic-legend ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .schematic-legend ul li {
+            padding: 0;
+            margin: 0;
+        }
+
+        .schematic-legend ul li p {
+            padding: 0;
+            margin: 0;
+            margin-left: 20px;
+        }
+
+        .schematic-legend .color-box {
+            width: 18px;
+            height: 18px;
+            float: left;
+            margin-top: 2px;
+        }
+
+        .schematic-legend input[type=checkbox] {
+            position: relative;
+            bottom: 2px;
+            left: 3px;
+        }
+
+        .schematic-legend .temperature-scale .white-to-red {
+            height: 10px;
+            width: 100%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(255, 0, 0, 1) 0%, rgba(255, 255, 255, 1) 100%);
+            /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255, 255, 255, 1)), color-stop(100%, rgba(255, 0, 0, 1)));
+            /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(255, 0, 0, 1) 0%, rgba(255, 255, 255, 1) 100%);
+            /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(255, 0, 0, 1) 0%, rgba(255, 255, 255, 1) 100%);
+            /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(255, 0, 0, 1) 0%, rgba(255, 255, 255, 1) 100%);
+            /* ie10+ */
+            background: linear-gradient(270deg, rgba(255, 0, 0, 1) 0%, rgba(255, 255, 255, 1) 100%);
+            /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FFFFFF', endColorstr='#FF0000', GradientType=1);
+        }
+
+        .schematic-legend .temperature-scale .red-to-white {
+            height: 10px;
+            width: 50%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(255, 0, 0, 1) 100%);
+            /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255, 0, 0, 1)), color-stop(100%, rgba(255, 255, 255, 1)));
+            /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(255, 0, 0, 1) 100%);
+            /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(255, 0, 0, 1) 100%);
+            /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(255, 0, 0, 1) 100%);
+            /* ie10+ */
+            background: linear-gradient(270deg, rgba(255, 255, 255, 1) 0%, rgba(255, 0, 0, 1) 100%);
+            /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FF0000', endColorstr='#FFFFFF', GradientType=1);
+        }
+
+        .schematic-legend .temperature-scale .white-to-blue {
+            height: 10px;
+            width: 50%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(0, 0, 255, 1) 0%, rgba(255, 255, 255, 1) 100%);
+            /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255, 255, 255, 1)), color-stop(100%, rgba(0, 0, 255, 1)));
+            /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(0, 0, 255, 1) 0%, rgba(255, 255, 255, 1) 100%);
+            /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(0, 0, 255, 1) 0%, rgba(255, 255, 255, 1) 100%);
+            /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(0, 0, 255, 1) 0%, rgba(255, 255, 255, 1) 100%);
+            /* ie10+ */
+            background: linear-gradient(270deg, rgba(0, 0, 255, 1) 0%, rgba(255, 255, 255, 1) 100%);
+            /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FFFFFF', endColorstr='#0000FF', GradientType=1);
+        }
+
+        .highlighted {
+            stroke: #286090 !important;
+            stroke-width: 3 !important;
+            opacity: 1 !important;
+        }
+
+        .heatmap-legend, .flareplot-legend  {
+            position: absolute;
+            /*right: 15px;*/
+            /*width:90%;*/
+            /*top: 50px;*/
+            padding: 5px;
+            border: 1px dashed;
+            background-color: white;
+        }
+
+        .heatmap-legend ul, .flareplot-legend ul, .controls-panel ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .heatmap-legend ul li, .flareplot-legend ul li, .controls-panel ul li {
+            padding: 0;
+            margin: 0;
+        }
+
+        .heatmap-legend ul li p, .flareplot-legend ul li p, .controls-panel ul li p {
+            padding: 0;
+            margin: 0;
+            margin-left: 20px;
+        }
+
+        .heatmap-legend .color-box, .flareplot-legend .color-box, .controls-panel .color-box {
+            width: 18px;
+            height: 18px;
+            float: left;
+            margin-top: 2px;
+        }
+
+        .heatmap-legend input[type=checkbox], .flareplot-legend input[type=checkbox],  .controls-panel input[type=checkbox] {
+            position: relative;
+            bottom: 2px;
+            left: 3px;
+        }
+
+        .heatmap-legend {
+            display: none;
+        }
+
+        .temperature-scale .gray-to-red {
+            height: 10px;
+            width: 100%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(220,220,220,1)), color-stop(100%, rgba(255,0,0,1))); /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* ie10+ */
+            background: linear-gradient(270deg, rgba(255,0,0,1) 0%, rgba(220,220,220,1) 100%); /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#DCDCDC', endColorstr='#FF0000',GradientType=1 );
+        }
+
+        .temperature-scale .red-to-gray {
+            height: 10px;
+            width: 50%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255,0,0,1)), color-stop(100%, rgba(220,220,220,1))); /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* ie10+ */
+            background: linear-gradient(270deg, rgba(220,220,220,1) 0%, rgba(255,0,0,1) 100%); /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FF0000', endColorstr='#DCDCDC',GradientType=1 );
+        }
+
+        .temperature-scale .gray-to-blue {
+            height: 10px;
+            width: 50%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(220,220,220,1)), color-stop(100%, rgba(0,0,255,1))); /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* ie10+ */
+            background: linear-gradient(270deg, rgba(0,0,255,1) 0%, rgba(220,220,220,1) 100%); /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#DCDCDC', endColorstr='#0000FF',GradientType=1 );
+        }
+
+        .temperature-scale .white-to-red {
+            height: 10px;
+            width: 100%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 100%); /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255,255,255,1)), color-stop(100%, rgba(255,0,0,1))); /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 100%); /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 100%); /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 100%); /* ie10+ */
+            background: linear-gradient(270deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 100%); /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FFFFFF', endColorstr='#FF0000',GradientType=1 );
+        }
+
+        .temperature-scale .red-to-white {
+            height: 10px;
+            width: 50%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255,0,0,1)), color-stop(100%, rgba(255,255,255,1))); /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* ie10+ */
+            background: linear-gradient(270deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FF0000', endColorstr='#FFFFFF',GradientType=1 );
+        }
+
+        .temperature-scale .white-to-blue {
+            height: 10px;
+            width: 50%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255,255,255,1)), color-stop(100%, rgba(0,0,255,1))); /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* ie10+ */
+            background: linear-gradient(270deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FFFFFF', endColorstr='#0000FF',GradientType=1 );
+        }
+
+        .flareplot-container {
+            position: absolute;
+        }
+
+        :-webkit-full-screen.flareplot-container {
+          width: 100%;
+          height: 100%;
+          border: 0px;
+        }
+
+        :-webkit-full-screen.flareplot-container .heatmap {
+          width: 100%;
+          height: 100%;
+          border: none;
+        }
+
+        #single-crystal-tab .panel .btn-primary:hover, #single-crystal-group-tab .panel .btn-primary:hover, #two-crystal-groups-tab .panel .btn-primary:hover {
+            background-color: #337ab7;
+        }
+
+        #single-crystal-tab .panel .btn-primary.active:hover, #single-crystal-group-tab .panel .btn-primary.active:hover, #two-crystal-groups-tab .panel .btn-primary.active:hover {
+            background-color: #286090;
+        }
+
+                #single-crystal-tab .panel .btn-primary:focus, #single-crystal-group-tab .panel .btn-primary:focus, #two-crystal-groups-tab .panel .btn-primary:focus {
+            background-color: #337ab7;
+        }
+
+        #single-crystal-tab .panel .btn-primary.active:focus, #single-crystal-group-tab .panel .btn-primary.active:focus, #two-crystal-groups-tab .panel .btn-primary.active:focus {
+            background-color: #286090;
+        }
+
+        .svg-download-button {
+            margin-top: 6px;
+        }
+
+        .csv-download-button {
+            margin-top: 6px;
+        }
+
+
+/*.flareplot-container div.flareplot{
+            position: relative;
+            left: 35%;
+            margin-left: -400px;
+        }*/
+        #sliderDiv {
+            height: 30px;
+            width: 600px;
+            position: relative;
+            left: 50%;
+            margin-left: -300px;
+            margin-top: 20px;
+        }
+        #regroupDiv {
+            position: relative;
+            left: 50%;
+            margin-left: -50px;
+            margin-top: 20px;
+            width: 100px;
+            height: 30px;
+            background-color: #d7deeb;
+            vertical-align: middle;
+            text-align: center;
+            line-height: 30px;
+            border: 2px solid #8489a3;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        #regroupDiv:hover {
+            background-color: #a1a5bd;
+        }
+
+        .hive-axis {
+           stroke: #000;
+           stroke-width:1.5px;
+         }
+
+         .hive-node {
+           stroke:#000;
+         }
+
+         .hive-link {
+           fill: none;
+           stroke-width: 1px;
+           stroke-opacity: 0.5;
+         }
+
+         .hive-link.turnedOn {
+           stroke-width: 3px;
+         }
+
+         .hive-link.turnedOff {
+           stroke-opacity: 0.2;
+           stroke-width: 0.7px;
+         }
+
+         .hive-node.turnedOn {
+           stroke: red;
+           stroke-width: 3px;
+         }
+
+         div#hiveTooltip {
+           background-color: white;
+           .border-radius ( 5px );
+         }
+
+         .loading_overlay {
+          /*display:none; */
+          opacity : 0.9;
+          position:absolute;
+          background:#fff;
+          z-index: 99999;
+          top:0;
+          left:0;
+          width:100%;
+          height:100%;
+          text-align: center;
+        }
+        .main_loading_overlay {
+          /*display:none; */
+          opacity : 0.9;
+          position:absolute;
+          background:#fff;
+          z-index: 99999;
+          top:50px;
+          left:0;
+          width:100%;
+          height:100%;
+          text-align: center;
+        }
+        #img-load {
+          margin-left: auto;
+          margin-right: auto;
+          margin-top: 300px;
+          display: block;
+        }
+
 path.arc {
     fill: #fff;
 }
@@ -25,11 +543,13 @@ path.arc {
     cursor: pointer;
 }
 
+
 .link {
-    stroke: #000;
-    stroke-opacity: .1;
+    /*stroke: #000;*/
+    stroke-opacity: .3;
     /*pointer-events: none;*/
 }
+
 
 .link.source, .link.target {
     stroke-opacity: 1;
@@ -75,4 +595,58 @@ svg text {
 }
 svg text::selection {
     background: none;
+}
+
+.material-switch > input[type="checkbox"] {
+    display: none;
+}
+
+.material-switch > label {
+    cursor: pointer;
+    height: 0px;
+    position: relative;
+    width: 40px;
+}
+
+.material-switch > label::before {
+    background: rgb(0, 0, 0);
+    box-shadow: inset 0px 0px 10px rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+    content: '';
+    height: 16px;
+    margin-top: -8px;
+    position:absolute;
+    opacity: 0.3;
+    transition: all 0.4s ease-in-out;
+    width: 40px;
+}
+.material-switch > label::after {
+    background: rgb(255, 255, 255);
+    border-radius: 16px;
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+    content: '';
+    height: 24px;
+    left: -4px;
+    margin-top: -8px;
+    position: absolute;
+    top: -4px;
+    transition: all 0.3s ease-in-out;
+    width: 24px;
+}
+.material-switch > input[type="checkbox"]:checked + label::before {
+    background: inherit;
+    opacity: 0.5;
+}
+.material-switch > input[type="checkbox"]:checked + label::after {
+    background: inherit;
+    left: 20px;
+}
+
+.snakeplot-legend {
+    position: absolute;
+    right: 25px;
+    top: 45px;
+    padding: 5px;
+    border: 1px dashed;
+    background-color: white;
 }

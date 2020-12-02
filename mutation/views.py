@@ -82,6 +82,8 @@ def render_mutations(request, protein = None, family = None, download = None, re
     proteins = []
     alignment_proteins = []
     original_positions = []
+    used_schemes = {}
+    # print("receptor_class",receptor_class,family)
     if receptor_class==None:
 
         if protein: # if protein static page
@@ -95,8 +97,12 @@ def render_mutations(request, protein = None, family = None, download = None, re
             family_proteins = Protein.objects.filter(family__slug__startswith=family, sequence_type__slug='wt')
             for fp in family_proteins:
                 proteins.append(fp)
+                if fp.residue_numbering_scheme.slug not in used_schemes:
+                    used_schemes[fp.residue_numbering_scheme.slug] = 0
+                used_schemes[fp.residue_numbering_scheme.slug] += 1
             segments_ids = ProteinSegment.objects.filter(proteinfamily='GPCR').values('id')
             original_segments = ProteinSegment.objects.filter(proteinfamily='GPCR')
+            used_scheme = max(used_schemes, key=used_schemes.get)
 
         else:
 
@@ -180,6 +186,9 @@ def render_mutations(request, protein = None, family = None, download = None, re
         SnakePlot = ''
         numbering_schemes = ''
         mutations_pos_list = []
+        family_proteins = Protein.objects.filter(family__slug__startswith=receptor_class, sequence_type__slug='wt').all()[0]
+        used_schemes[family_proteins.residue_numbering_scheme.slug] = 1
+        used_scheme = max(used_schemes, key=used_schemes.get)
         mutations = MutationExperiment.objects.filter(protein__family__slug__startswith=receptor_class,
                                 residue__generic_number__label=gn, residue__amino_acid=aa).prefetch_related('residue__generic_number',
                                 'residue__protein_segment','residue__generic_number','exp_func','exp_qual',
@@ -192,13 +201,17 @@ def render_mutations(request, protein = None, family = None, download = None, re
     mutations_display_generic_number = {}
     mutations_class_generic_number = {}
     context = {}
+    context['data'] = ''
+    context['header'] = ''
+    context['segments'] = ''
+    context['number_of_schemes'] = ''
+    context['longest_name'] = {'div' : 0, 'height': 0}
 
     gn_lookup = {}
 
     residue_table_list = []
 
     gn_labels = mutations.values_list('mutation__residue__generic_number__label', flat=True)
-
     class_gns = ResidueGenericNumberEquivalent.objects.filter(default_generic_number__label__in = gn_labels, scheme__slug = used_scheme).prefetch_related('default_generic_number').all()
 
     for class_gn in class_gns:
@@ -826,7 +839,7 @@ def coverage(request):
     n = 0
     for c,c_v in coverage.items():
         c_v['name'] = c_v['name'].split("(")[0]
-        if c_v['name'].strip() in ['Other GPCRs','Taste 2','Class B2']:
+        if c_v['name'].strip() in ['Other GPCRs','Class T (Taste 2)','Class B2']:
             # i += 1
             continue
             # pass
@@ -838,7 +851,7 @@ def coverage(request):
             children_rf = []
             for rf,rf_v in lt_v['children'].items():
                 rf_v['name'] = rf_v['name'].split("<")[0]
-                if rf_v['name'].strip() == 'Taste 2':
+                if rf_v['name'].strip() == 'Class T (Taste 2)':
                     continue
                 children_r = []
                 for r,r_v in rf_v['children'].items():
@@ -907,7 +920,7 @@ def pocket(request):
 
     context = {}
 
-    gpcr_class = '005' #class a 1 , c 4, f 5
+    gpcr_class = '006' #class a 1 , c 4, f 6
 
     class_interactions = ResidueFragmentInteraction.objects.filter(
         structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=gpcr_class, structure_ligand_pair__annotated=True).prefetch_related(
