@@ -1,7 +1,6 @@
-function model_statistics() {
-// $(document).ready(function () {
-    // "use strict";
+/*eslint no-undef: "error"*/
 
+function model_statistics() {
     var oTable2 = $("#structures_scrollable").DataTable({
         "scrollY":        "65vh",
         "scrollX":        true,
@@ -324,7 +323,7 @@ function model_statistics() {
     yadcf.exResetAllFilters(oTable2);
 
     // Init gray scale
-    gray_scale_table($("#structures_scrollable"), ['color-set1']);
+    gray_scale_table($("#structures_scrollable"), ["color-set1"]);
 
     $("#structures_scrollable"+" > tbody > tr").click(function(event) {
         if (event.target.type !== "checkbox") {

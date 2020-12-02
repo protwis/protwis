@@ -1,3 +1,5 @@
+/*eslint complexity: ["error", 20]*/
+
 function componentToHex(c) {
     var hex = c.toString(16);
     return hex.length === 1 ? "0" + hex : hex;
@@ -45,13 +47,13 @@ function gray_scale_table(table, colorSetIds = []) {
     for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
         for (let [j, cell] of [...row.cells].entries()) {
             cols[parseInt(j)] = cols[j] || [];
-            if (cell.innerText!=='-' && cell.classList.contains("color-column")) {
+            if (cell.innerText!=="-" && cell.classList.contains("color-column")) {
                 cols[j].push(cell.innerText);
             }
             else {
                 for (var k = 0; k < colorSetIds.length; k++) {
                     if (cell.classList.contains(colorSetIds[k])) {
-                        if (cell.innerText!=='-') {
+                        if (cell.innerText!=="-") {
                             sets[String(colorSetIds[k])].push(cell.innerText);
                         }
                         if (i===0) {
@@ -72,7 +74,7 @@ function gray_scale_table(table, colorSetIds = []) {
         var abs_max = Math.max.apply(null, [max, min].map(Math.abs));
         maxmin.push([max, min, abs_max]);
     });
-    for (i = 0; i < colorSetIds.length; i++) {
+    for (var i = 0; i < colorSetIds.length; i++) {
         setsmaxmin[String(colorSetIds[i])] = [Math.max.apply(null, sets[colorSetIds[i]]), Math.min.apply(null, sets[colorSetIds[i]]), Math.max.apply(null, [Math.max.apply(null, sets[colorSetIds[i]]), Math.min.apply(null, sets[colorSetIds[i]])].map(Math.abs))];
     }
     
@@ -98,7 +100,7 @@ function gray_scale_table(table, colorSetIds = []) {
             // Assign color to cell
             if (calculate_color) {
                 value = parseFloat(cell.innerText);
-                if (cell.classList.contains('color-reverse')) {
+                if (cell.classList.contains("color-reverse")) {
                     reverse = true;
                 }
                 if (!(isNaN(value) || isNaN(c_maxmin[0]) || isNaN(c_maxmin[1]))) {
