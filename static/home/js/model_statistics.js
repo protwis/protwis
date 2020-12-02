@@ -10,7 +10,7 @@ function model_statistics() {
         "paging":         false,
         "aaSorting": [],
         "autoWidth": false,
-        "order": [[11,"desc"],[13,"asc"]],
+        "order": [[18,"desc"],[12,"asc"]],
         "columnDefs": [
             { "targets": "no-sort", "orderable": false }
             ],
@@ -65,84 +65,65 @@ function model_statistics() {
                 column_number : 1,
                 filter_type: "range_number",
                 filter_reset_button_text: false,
-                filter_default_label: ["From", "To"],
+                filter_default_label: ["Min", "Max"],
             },
             {
                 column_number : 2,
                 filter_type: "range_number",
                 filter_reset_button_text: false,
-                filter_default_label: ["From", "To"],
+                filter_default_label: ["Min", "Max"],
             },
             {
                 column_number : 3,
                 filter_type: "range_number",
                 filter_reset_button_text: false,
-                filter_default_label: ["From", "To"],
+                filter_default_label: ["Min", "Max"],
             },
             {
                 column_number : 4,
                 filter_type: "range_number",
                 filter_reset_button_text: false,
-                filter_default_label: ["From", "To"],
+                filter_default_label: ["Min", "Max"],
             },
             {
                 column_number : 5,
                 filter_type: "range_number",
                 filter_reset_button_text: false,
-                filter_default_label: ["From", "To"],
+                filter_default_label: ["Min", "Max"],
             },
             {
                 column_number : 6,
                 filter_type: "range_number",
                 filter_reset_button_text: false,
-                filter_default_label: ["From", "To"],
+                filter_default_label: ["Min", "Max"],
             },
             {
                 column_number : 7,
                 filter_type: "range_number",
                 filter_reset_button_text: false,
-                filter_default_label: ["From", "To"],
+                filter_default_label: ["Min", "Max"],
             },
             {
                 column_number : 8,
                 filter_type: "range_number",
                 filter_reset_button_text: false,
-                filter_default_label: ["From", "To"],
+                filter_default_label: ["Min", "Max"],
             },
             {
                 column_number : 9,
                 filter_type: "range_number",
                 filter_reset_button_text: false,
-                filter_default_label: ["From", "To"],
+                filter_default_label: ["Min", "Max"],
             },
             {
                 column_number : 10,
                 filter_type: "range_number",
                 filter_reset_button_text: false,
-                filter_default_label: ["From", "To"],
+                filter_default_label: ["Min", "Max"],
             },
+            
             {
                 column_number : 11,
-                filter_type: "range_date",
-                filter_reset_button_text: false,
-                date_format: "yyyy-mm-dd",
-                select_type: "select2",
-                filter_default_label: ["From", "To"],
-                // filter_reset_button_text: false,
-            },
-            {
-                column_number : 12,
-                filter_type: "text",
-                select_type: "select2",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                // filter_match_mode : "exact",
-                select_type_options: {
-                    width: "70px",
-                }
-            },
-            {
-                column_number : 13,
                 filter_type: "multi_select",
                 select_type: "select2",
                 column_data_type: "html",
@@ -155,7 +136,7 @@ function model_statistics() {
                 }
             },
             {
-                column_number : 14,
+                column_number : 12,
                 filter_type: "multi_select",
                 select_type: "select2",
                 column_data_type: "html",
@@ -168,32 +149,32 @@ function model_statistics() {
                 }
             },
             {
-                column_number : 15,
+                column_number : 13,
                 filter_type: "multi_select",
                 select_type: "select2",
                 column_data_type: "html",
                 html_data_type: "text",
-                filter_default_label: "Receptor family",
+                filter_default_label: "",
                 filter_match_mode : "exact",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "120px",
-                }
-            },
-            {
-                column_number: 16,
-                filter_type: "multi_select",
-                select_type: "select2",
-                column_data_type: "html",
-                html_data_type: "text",
-                filter_default_label: "Class",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: "80px",
                 }
             },
             {
-                column_number : 17,
+                column_number: 14,
+                filter_type: "multi_select",
+                select_type: "select2",
+                column_data_type: "html",
+                html_data_type: "text",
+                filter_default_label: "",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: "35px",
+                }
+            },
+            {
+                column_number : 15,
                 filter_type: "multi_select",
                 select_type: "select2",
                 filter_default_label: "",
@@ -204,7 +185,7 @@ function model_statistics() {
                 }
             },
             {
-                column_number : 18,
+                column_number : 16,
                 filter_type: "multi_select",
                 select_type: "select2",
                 filter_default_label: "Select",
@@ -214,23 +195,44 @@ function model_statistics() {
                 }
             },
             {
-                column_number : 19,
+                column_number : 17,
                 filter_type: "range_number",
                 filter_reset_button_text: false,
-                filter_default_label: ["From", "To"],
+                filter_default_label: ["Min", "Max"],
+            },
+            {
+                column_number : 18,
+                filter_type: "range_date",
+                filter_reset_button_text: false,
+                date_format: "yyyy-mm-dd",
+                select_type: "select2",
+                filter_default_label: ["Min", "Max"],
+                // filter_reset_button_text: false,
+            },
+            {
+                column_number : 19,
+                filter_type: "text",
+                select_type: "select2",
+                filter_default_label: "",
+                filter_reset_button_text: false,
+                // filter_match_mode : "exact",
+                select_type_options: {
+                    width: "70px",
+                }
             },
             {
                 column_number : 20,
                 filter_type: "range_number",
                 filter_reset_button_text: false,
-                filter_default_label: ["From", "To"],
+                filter_default_label: ["Min", "Max"],
             },
             {
                 column_number : 21,
                 filter_type: "range_number",
                 filter_reset_button_text: false,
-                filter_default_label: ["From", "To"],
+                filter_default_label: ["Min", "Max"],
             },
+            
             {
                 column_number : 22,
                 filter_type: "multi_select",
@@ -263,11 +265,11 @@ function model_statistics() {
                 select_type: "select2",
                 column_data_type: "html",
                 html_data_type: "text",
-                filter_default_label: "Receptor family",
+                filter_default_label: "",
                 filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: "120px",
+                    width: "80px",
                 }
             },
             {
@@ -277,7 +279,7 @@ function model_statistics() {
                 filter_default_label: "Species",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: "80px",
+                    width: "60px",
                 }
             },
             {
@@ -305,13 +307,13 @@ function model_statistics() {
                 column_number : 28,
                 filter_type: "range_number",
                 filter_reset_button_text: false,
-                filter_default_label: ["From", "To"],
+                filter_default_label: ["Min", "Max"],
             },
             {
                 column_number : 29,
                 filter_type: "range_number",
                 filter_reset_button_text: false,
-                filter_default_label: ["From", "To"],
+                filter_default_label: ["Min", "Max"],
             },
         ],
         {
@@ -322,7 +324,7 @@ function model_statistics() {
     yadcf.exResetAllFilters(oTable2);
 
     // Init gray scale
-    gray_scale_table($("#structures_scrollable"));
+    gray_scale_table($("#structures_scrollable"), ['color-set1']);
 
     $("#structures_scrollable"+" > tbody > tr").click(function(event) {
         if (event.target.type !== "checkbox") {
@@ -383,86 +385,16 @@ function model_statistics() {
         placement: "n",
         smartPlacement: true
     });
-    $("#uniprot_copy").click(function () {
-        copyToClipboard($(".alt_selected > .uniprot > a"), "\n", "UniProt IDs", $(".uniprot-export"));
+    $("#uniprot_copy1").click(function () {
+        copyToClipboard($(".alt_selected > .uniprot > a:even"), "\n", "UniProt IDs", $(".uniprot-export1"));
     });
-    $("#pdb_copy").click(function () {
-        copyToClipboard($(".alt_selected > .pdb > a"), "\n", "PDB IDs", $(".pdb-export"));
+    $("#uniprot_copy2").click(function () {
+        copyToClipboard($(".alt_selected > .uniprot > a:odd"), "\n", "UniProt IDs", $(".uniprot-export2"));
+    });
+    $("#pdb_copy1").click(function () {
+        copyToClipboard($(".alt_selected > .pdb > a:even"), "\n", "PDB IDs", $(".pdb-export1"));
+    });
+    $("#pdb_copy2").click(function () {
+        copyToClipboard($(".alt_selected > .pdb > a:odd"), "\n", "PDB IDs", $(".pdb-export2"));
     });
 }
-
-var tableToExcel = function () {
-    var uri = "data:application/vnd.ms-excel;base64,",
-        template = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:x='urn:schemas-microsoft-com:office:excel' xmlns='http://www.w3.org/TR/REC-html40'><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>",
-        base64 = function (s) {
-            return window.btoa(unescape(encodeURIComponent(s)));
-        }, format = function (s, c) {
-            return s.replace(/{(\w+)}/g, function (m, p) {
-                return c[p];
-            });
-        };
-    return function (table, name, filename) {
-            table= $("#"+table).clone();
-            $("#excel_table").html(table);
-            // Clean up table to remove yadcf stuff
-            $("#excel_table thead tr").css("height","");
-            $("#excel_table thead th").css("height","");
-            $("#excel_table thead div").css("height","");
-            $("#excel_table thead .yadcf-filter-wrapper").remove();
-            $("#excel_table thead button").remove();
-            var tr = $("#excel_table thead tr:eq(1)");
-            // reattach th titles
-            tr.find("th").each (function( column, th) {
-                if ($(th).attr("title")) {
-                    $(th).html($(th).attr("title"))
-                };
-            });
-
-        var ctx = {
-            worksheet: name || "Worksheet",
-            table: $("#excel_table").html()
-        }
-        $("#excel_table").html("");
-        document.getElementById("dlink").href = uri + base64(format(template, ctx));
-        document.getElementById("dlink").download = filename;
-        document.getElementById("dlink").click();
-    }
-}();
-
-function copyToClipboard(array, delimiter, data_name, powertip_object=false) {
-    var link = array;
-    var out = "";
-    link.each(function() {
-        var ele = $(this).attr("href").split("/");
-        out+=ele[ele.length-1]+delimiter;
-    });
-    if (out.length===0) {
-        window.alert("No entries selected for copying");
-        return 0;
-    }
-    var textArea = document.createElement("textarea");
-    textArea.value = out;
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    try {
-        var successful = document.execCommand("copy");
-        var msg = successful ? "Successful" : "Unsuccessful";
-        if (powertip_object!==false) {
-            $.powerTip.hide();
-            powertip_object.data("powertipjq", $([
-                "<p>Copied to clipboard!</p>"
-                ].join("\n")));
-            powertip_object.powerTip("show");
-            setTimeout(function() {
-            powertip_object.data("powertipjq", $([
-                "<p>Export "+data_name+"</p>"
-                ].join("\n")));
-            },1000);
-        }
-    } catch (err) {
-        window.alert("Oops, unable to copy");
-    }
-    document.body.removeChild(textArea);
-}
-

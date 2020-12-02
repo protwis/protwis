@@ -7,38 +7,56 @@ function rgbToHex(r, g, b) {
     return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
 }
 
-function gray_scale_table(table) {
-    // Create gray scale for numberic values in table. Assign either the "color-column" class to a cell (td object) to use min-max values for coloring
-    // only in that column, or assign the "color-set[int]" class to use min-max values spanning through multiple columns sharing the class set name.
-    
-    // Find all color-sets
-    var colorSetIds = [];
-    var i = 1;
-    while ($(".color-set"+i).length!==0) {
-        if (!colorSetIds.includes("color-set"+i)) {
-            colorSetIds.push("color-set"+i);
-        }
-        i = i+1;
+/* Calculate color based on value and scale.
+*  @value: numeric value of cell
+*  @scale: values relation to set, preferably normalized
+*/
+function getColor(value, scale, reverse = false) {
+    var color;
+    var offset;
+    if (reverse) {
+        scale = 1-scale;
     }
+    color = { r: 255, g: 255, b: 255 };
+    if (value > 0) {
+        color = { r: Math.round(255-(255-153)*scale), g: Math.round(255-(255-153)*scale), b: Math.round(255-(255-153)*scale) }; //gray
+    }
+    return color;
+}
 
+/* Create gray scale for numberic values in table. Assign either the "color-column" class to a cell (td object) to use min-max values for coloring
+*  only in that column, or assign the "color-set[int]" class to use min-max values spanning through multiple columns sharing the class set name. 
+*  By default high values are colored dark. You can also add the "color-reverse" class to the cell to reverse this coloring.
+*
+*  @table: The table object
+*  @colorSetIds: An array of color-set[int] class name strings
+*/
+function gray_scale_table(table, colorSetIds = []) {
     // Collect values for columns and sets
     var cols = [];
     var sets = {};
     var setsmaxmin = {};
     colorSetIds.forEach(function(id) {
-        sets[id] = [];
-        setsmaxmin[id] = [];
+        sets[String(id)] = [];
+        setsmaxmin[String(id)] = [];
     });
+
+    var colIdColorSet = {};
     for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
         for (let [j, cell] of [...row.cells].entries()) {
-            cols[j] = cols[j] || [];
-            if (cell.innerText!=="-" && cell.classList.contains("color-column")) {
+            cols[parseInt(j)] = cols[j] || [];
+            if (cell.innerText!=='-' && cell.classList.contains("color-column")) {
                 cols[j].push(cell.innerText);
             }
-            else if (cell.innerText!=="-") {
+            else {
                 for (var k = 0; k < colorSetIds.length; k++) {
                     if (cell.classList.contains(colorSetIds[k])) {
-                        sets[colorSetIds[k]].push(cell.innerText);
+                        if (cell.innerText!=='-') {
+                            sets[String(colorSetIds[k])].push(cell.innerText);
+                        }
+                        if (i===0) {
+                            colIdColorSet[parseInt(j)] = colorSetIds[k];
+                        }
                         break;
                     }
                 }    
@@ -52,53 +70,48 @@ function gray_scale_table(table) {
         var max = Math.max.apply(null, col);
         var min = Math.min.apply(null, col);
         var abs_max = Math.max.apply(null, [max, min].map(Math.abs));
-        maxmin.push([max, min,abs_max]);
+        maxmin.push([max, min, abs_max]);
     });
-    
     for (i = 0; i < colorSetIds.length; i++) {
-        setsmaxmin[colorSetIds[i]] = [Math.max.apply(null, sets[colorSetIds[i]]), Math.min.apply(null, sets[colorSetIds[i]]), Math.max.apply(null, [Math.max.apply(null, sets[colorSetIds[i]]), Math.min.apply(null, sets[colorSetIds[i]])].map(Math.abs))];
+        setsmaxmin[String(colorSetIds[i])] = [Math.max.apply(null, sets[colorSetIds[i]]), Math.min.apply(null, sets[colorSetIds[i]]), Math.max.apply(null, [Math.max.apply(null, sets[colorSetIds[i]]), Math.min.apply(null, sets[colorSetIds[i]])].map(Math.abs))];
     }
-     
-    var cell_count = 0;
+    
     var c_maxmin;
     var value;
     var scale;
     var hex;
     var color;
-
     for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
         for (let [j, cell] of [...row.cells].entries()) {
             var calculate_color = false;
+            var reverse = false;
+            scale = NaN;
             // Find corresponding min-max-abs values
             if (cell.classList.contains("color-column")) {
                 c_maxmin = maxmin[j];
                 calculate_color = true;
             }
-            else {
-                for (var k = 0; k < colorSetIds.length; k++) {
-                    if (cell.classList.contains(colorSetIds[k])) {
-                        c_maxmin = setsmaxmin[colorSetIds[k]];
-                        calculate_color = true;
-                        break;
-                    }
-                }
+            else if (cell.classList.contains(colIdColorSet[j])) {
+                c_maxmin = setsmaxmin[colIdColorSet[j]];
+                calculate_color = true;
             }
-            // Calculate and assign color to cell
+            // Assign color to cell
             if (calculate_color) {
                 value = parseFloat(cell.innerText);
+                if (cell.classList.contains('color-reverse')) {
+                    reverse = true;
+                }
                 if (!(isNaN(value) || isNaN(c_maxmin[0]) || isNaN(c_maxmin[1]))) {
-                    scale = Math.abs(value) / c_maxmin[2];
-                    color = { r: 255, g: 255, b: 255 };
-                    if (value > 0) {
-                        color = { r: Math.round(255-(255-153)*scale), g: Math.round(255-(255-153)*scale), b: Math.round(255-(255-153)*scale) }; //gray
-                    }
+                    // Normalize data to get in-set color extremes
+                    scale = (Math.abs(value)-Math.abs(c_maxmin[1])) / (c_maxmin[2]-Math.abs(c_maxmin[1]));
+                    // Calculate color
+                    color = getColor(value, scale, reverse);
                     hex = rgbToHex(color.r, color.g, color.b);
                     cell.setAttribute("bgcolor", hex);
-                    cell_count++;
                 }
                 // Non-numeric cells get colored white
                 else {
-                    color = { r: 255, g: 255, b: 255 };
+                    color = color = { r: 255, g: 255, b: 255 };
                     hex = rgbToHex(color.r, color.g, color.b);
                     cell.setAttribute("bgcolor", hex);
                 }
