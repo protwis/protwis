@@ -280,10 +280,11 @@ class AbsTargetSelectionTable(TemplateView):
             action = 'expand'
             # remove the parent family (for all other families than the root of the tree, the parent should be shown)
             del ppf
+
+            # Load the target table data
+            table_data = getTargetTable()
     except Exception as e:
         pass
-
-    table_data = getTargetTable()
 
     # species
     sps = Species.objects.all()
