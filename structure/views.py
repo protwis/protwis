@@ -10,8 +10,7 @@ from django.shortcuts import redirect
 
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from protein.models import Gene, ProteinSegment, IdentifiedSites, ProteinGProteinPair
-from structure.models import (Structure, StructureModel, StructureComplexModel, StructureModelStatsRotamer, StructureComplexModelStatsRotamer,
-							 StructureModelSeqSim, StructureComplexModelSeqSim, StructureRefinedStatsRotamer, StructureRefinedSeqSim, StructureExtraProteins)
+from structure.models import Structure, StructureModel, StructureComplexModel, StructureModelStatsRotamer, StructureComplexModelStatsRotamer, StructureModelSeqSim, StructureComplexModelSeqSim, StructureRefinedStatsRotamer, StructureRefinedSeqSim, StructureExtraProteins, StructureModelRMSD
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn, PdbStateIdentifier
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
@@ -25,7 +24,7 @@ from common.views import AbsSegmentSelection,AbsReferenceSelection
 from common.selection import Selection, SelectionItem
 from common.extensions import MultiFileField
 from common.models import ReleaseNotes
-from common.alignment import GProteinAlignment
+from common.alignment import Alignment, GProteinAlignment
 from residue.models import Residue
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
@@ -174,6 +173,22 @@ class ServeComplexModels(TemplateView):
 				"main_template__signprot_complex")
 		except StructureComplexModel.DoesNotExist as e:
 			pass
+
+		return context
+
+
+class ServeModelStatistics(TemplateView):
+
+	template_name = "model_statistics.html"
+	def get_context_data(self, **kwargs):
+		context = super(ServeModelStatistics, self).get_context_data(**kwargs)
+		smr = StructureModelRMSD.objects.all()
+		try:
+			context['structure_model_rmsds'] = smr.prefetch_related(
+				"target_structure__protein_conformation__protein__parent",
+				"target_structure__protein_conformation__protein__parent__family")
+		except StructureModelRMSD.DoesNotExist as e:
+			print(e)
 
 		return context
 
