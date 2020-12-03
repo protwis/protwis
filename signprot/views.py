@@ -138,7 +138,7 @@ class CouplingBrowser(TemplateView):
     :param dataset: ProteinGProteinPair (see build/management/commands/build_g_proteins.py)
     :return: context
     """
-    template_name = "signprot/coupling_browser.html"
+    template_name = "signprot/coupling_browser1.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -723,7 +723,7 @@ def GProteinTree(request, dataset="GuideToPharma"):
 def GProteinVenn(request, dataset="GuideToPharma"):
     return GProtein(request, dataset, "venn")
 
-#@cache_page(60 * 60 * 24 * 7)
+@cache_page(60*60*24*7)
 def couplings(request):
     """
     Presents coupling data between Receptors and G-proteins.
