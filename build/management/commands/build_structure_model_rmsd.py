@@ -70,8 +70,6 @@ class BuildStructureModelRMSD():
             a.calculate_similarity()
             seq_sim = a.proteins[1].similarity
             seq_id = a.proteins[1].identity
-            print(i)
-            print(overall_all, overall_backbone, TM_all,  TM_backbone, H8, ICL1, ECL1, ICL2, ECL2, ECL3, seq_id, seq_sim)
             smr, created = StructureModelRMSD.objects.get_or_create(target_structure=target_structure,
                                                                     main_template=main_template,
                                                                     version='{}-{}-{}'.format(version[-4:], version[3:5], version[:2]),

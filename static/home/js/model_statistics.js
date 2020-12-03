@@ -1,4 +1,4 @@
-/*eslint no-undef: "error"*/
+/*eslint-env yadcf ClearSelection gray_scale_table copyToClipboard*/
 
 function model_statistics() {
     var oTable2 = $("#structures_scrollable").DataTable({

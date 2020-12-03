@@ -1,13 +1,12 @@
 .select2-result-label{
-  font-size:x-small;
+  font-size: x-small;
   font-size: 10px;
 }
 
 #filters{
   font-size: 10px;
-  padding:  7px 15px;
+  padding: 7px 15px;
 }
-
 
 @media (min-width: 1600px){
   #content {
@@ -65,46 +64,40 @@ input.yadcf-filter  {
 .yadcf-filter-range {
   min-width: 30px;
 }
-/*#yadcf-filter--structures_scrollable-from-12 {
-    width: 10px;
-}
-#yadcf-filter--structures_scrollable-to-12 {
-    width: 10px;
-}
-.yadcf-filter-wrapper-inner--structures_scrollable-12 {
-    width: 5px;
-}*/
+
 .clicked_button {
-  background-color: rgb(215,215,215);
+  background-color: rgb(215, 215, 215);
 }
 .wrapper {
   overflow-x: scroll;
-  overflow-y:hidden;
+  overflow-y: hidden;
 }
 
-#overlay
-{
+#overlay {
   top: 0px;
   position: absolute;
   background: #f8f8f8;
-/*border: 1px solid #333;*/
   -webkit-box-shadow: 5px 0 2px -2px #888;
-          box-shadow: 5px 0 2px -2px #888;
+  box-shadow: 5px 0 2px -2px #888;
 }
+
 #overlay tbody tr {
    background-color: #f8f8f8;
 }
+
 div.overhead_text {
-  float:left;
-  display:inline;
+  float: left;
+  display: inline;
   padding: 8px 0px;
-  width:90%;
+  width: 90%;
 }
+
 div.overhead_close {
-  float:right;
-  display:inline;
-  width:10%;
+  float: right;
+  display: inline;
+  width: 10%;
 }
+
 .icon-button {
   appearance: none;
   -webkit-appearance: none;
@@ -114,30 +107,11 @@ div.overhead_close {
   background: transparent;
   padding: 2px 0px 2px 0px;
 }
+
 .highlight {
-  background-color: rgb(204,229,255);
+  background-color: rgb(204, 229, 255);
 }
-/*.tooltip {
-  position: relative;
-  display: inline-block;
-  border-bottom: 1px dotted black; /* If you want dots under the hoverable text */
-/*}*/
-/*.tooltip .tooltiptext {
-  visibility: hidden;
-  width: 120px;
-  background-color: black;
-  color: #fff;
-  text-align: center;
-  padding: 5px 0;
-  border-radius: 6px;
-*/
-  /* Position the tooltip text - see examples below! */
- /* position: absolute;
-  z-index: 1;
-}*/
-/*.tooltip:hover .tooltiptext {
-  visibility: visible;
-}*/
+
 .glyphicon.glyphicon-export {
   font-size: 20px;
 }
@@ -150,7 +124,7 @@ div.overhead_close {
   position: absolute;
   background-color: #f1f1f1;
   width: 100%;
-  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
   z-index: 1;
 }
 .dropdown-content p {
@@ -160,7 +134,7 @@ div.overhead_close {
   width: 100%;
   display: block;
 }
-.show {display:block;}
+.show {display: block;}
 
 .expand {
   max-width: 100px;
