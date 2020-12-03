@@ -1,7 +1,7 @@
 /*eslint complexity: ["error", 8]*/
 /*eslint quotes: ["error", "double", { "avoidEscape": true }]*/
 /*eslint no-global-assign: "error"*/
-/*eslint-env browser*/
+/*eslint-env yadcf*/
 let oTable1 = [];
 let oTable2 = [];
 let table1data;
