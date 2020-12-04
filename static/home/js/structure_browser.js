@@ -1,6 +1,4 @@
 function structurebrowser() {
-// $(document).ready(function () {
-    // 'use strict';
 
     var oTable2 = $('#structures_scrollable').DataTable({
         "scrollY":        "65vh",
@@ -8,7 +6,6 @@ function structurebrowser() {
         "scrollCollapse": true,
         "scroller": true,
         "paging":         false,
-        // "bSortCellsTop": true,
         "aaSorting": [],
         "autoWidth": false,
         "order": [[29,'desc'],[1,'asc']],
@@ -387,15 +384,6 @@ function structurebrowser() {
 
     yadcf.exResetAllFilters(oTable2);
 
-    // $(function(){
-    //     $(".wrapper").scroll(function(){
-    //         $(".dataTables_scrollBody").eq(0).scrollLeft($(".wrapper").scrollLeft());
-    //     });
-    //     $(".dataTables_scrollBody").eq(0).scroll(function(){
-    //         $(".wrapper").scrollLeft($(".dataTables_scrollBody").eq(0).scrollLeft());
-    //     });
-    // });
-
     $('#structures_scrollable'+' > tbody > tr').click(function(event) {
         if (event.target.type !== 'checkbox') {
             $(':checkbox', this).trigger('click');
@@ -419,8 +407,6 @@ function structurebrowser() {
             $('.alt').parent().parent().find('td').removeClass('highlight');
         }
     });
-
-    // $('.wrapper').find('div').width($(".yadcf-datatables-table--structures_scrollable").width());
 
     $('.hide_columns').click(function(evt) {
     var columns = $(this).attr('columns').split(",");
@@ -525,9 +511,6 @@ function structurebrowser() {
         window.location.href = '/structure/pdb_download_index';
     });
 
-    // $('.glyphicon-export').mouseover(function() {
-    //     window.alert($(this));
-    // })
     $('.uniprot-export').data('powertipjq', $([
         '<p>Export UniProt IDs</p>'
         ].join('\n')));
@@ -591,98 +574,4 @@ function structurebrowser() {
             if ($("#overlay").is(":hidden")) $("#overlay").show();
         }
     });
-    // console.log($('#yadcf-filter--structures_scrollable-from-12').width());
-    // $('#yadcf-filter--structures_scrollable-from-12').width(10);
-    // console.log($('#yadcf-filter--structures_scrollable-from-12').width());
-
 };
-
-var tableToExcel = (function () {
-    var uri = 'data:application/vnd.ms-excel;base64,',
-        template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>',
-        base64 = function (s) {
-            return window.btoa(unescape(encodeURIComponent(s)))
-        }, format = function (s, c) {
-            return s.replace(/{(\w+)}/g, function (m, p) {
-                return c[p];
-            })
-        }
-    return function (table, name, filename) {
-            var table= $("#"+table).clone();
-            $("#excel_table").html(table);
-            // Clean up table to remove yadcf stuff
-            $("#excel_table thead tr").css('height','');
-            $("#excel_table thead th").css('height','');
-            $("#excel_table thead div").css('height','');
-            $("#excel_table thead .yadcf-filter-wrapper").remove();
-            $("#excel_table thead button").remove();
-            var tr = $("#excel_table thead tr:eq(1)");
-            // reattach th titles
-            tr.find('th').each (function( column, th) {
-              if ($(th).attr('title')) $(th).html($(th).attr('title'));
-            });
-
-        var ctx = {
-            worksheet: name || 'Worksheet',
-            table: $("#excel_table").html()
-        }
-        $("#excel_table").html("");
-        document.getElementById("dlink").href = uri + base64(format(template, ctx));
-        document.getElementById("dlink").download = filename;
-        document.getElementById("dlink").click();
-    }
-})()
-
-function copyDropdown() {
-    document.getElementById("Dropdown").classList.toggle("show");
-}
-
-window.onclick = function(event) {
-    if (!event.target.matches('.dropbtn')) {
-        var dropdowns = document.getElementsByClassName("dropdown-content");
-        var i;
-        for (i = 0; i < dropdowns.length; i++) {
-            var openDropdown = dropdowns[i];
-            if (openDropdown.classList.contains('show')) {
-                openDropdown.classList.remove('show');
-            }
-        }
-    }
-}
-
-function copyToClipboard(array, delimiter, data_name, powertip_object=false) {
-    var link = array;
-    var out = '';
-    link.each(function() {
-        var ele = $(this).attr('href').split('/');
-        out+=ele[ele.length-1]+delimiter;
-    });
-    if (out.length===0) {
-        window.alert('No entries selected for copying')
-        return 0
-    }
-    var textArea = document.createElement("textarea");
-    textArea.value = out;
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    try {
-        var successful = document.execCommand('copy');
-        var msg = successful ? 'Successful' : 'Unsuccessful';
-        if (powertip_object!==false) {
-            $.powerTip.hide();
-            powertip_object.data('powertipjq', $([
-                '<p>Copied to clipboard!</p>'
-                ].join('\n')))
-            powertip_object.powerTip('show');
-            setTimeout(function() {
-            powertip_object.data('powertipjq', $([
-                '<p>Export '+data_name+'</p>'
-                ].join('\n')))
-            },1000);
-        }
-    } catch (err) {
-        window.alert('Oops, unable to copy');
-    }
-    document.body.removeChild(textArea);
-}

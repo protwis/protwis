@@ -348,6 +348,15 @@ var tableToExcel = function () {
                 }
             });
 
+            // Convert numbers with "." decimal to numbers with "," so the excel file will have the proper number format
+            $("#excel_table tbody tr").each(function(i, row) {
+                $(row).find("td").each(function(i, td) {
+                    if (parseFloat($(td).text()) && $(td).text().includes(".")) {
+                        $(td).text($(td).text().replace(".", ','));
+                    }
+                })
+            })
+
         var ctx = {
             worksheet: name || "Worksheet",
             table: $("#excel_table").html()
