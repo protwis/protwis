@@ -11,7 +11,7 @@ function structurebrowser() {
         // "bSortCellsTop": true,
         "aaSorting": [],
         "autoWidth": false,
-        "order": [[28,'desc'],[1,'asc']],
+        "order": [[29,'desc'],[1,'asc']],
         "columnDefs": [
             { "targets": 'no-sort', "orderable": false }
             ],
@@ -37,6 +37,7 @@ function structurebrowser() {
             null,
             null,
             {"width": "20%"},
+            null,
             null,
             null,
             null,
@@ -194,6 +195,15 @@ function structurebrowser() {
             },
             {
                 column_number : 13,
+                filter_type: "range_number",
+                filter_reset_button_text: false,
+                filter_default_label: ["Min", "Max"],
+                select_type_options: {
+                    width: '50px',
+                }
+            },
+            {
+                column_number : 14,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "Family",
@@ -204,7 +214,7 @@ function structurebrowser() {
                 }
             },
             {
-                column_number : 14,
+                column_number : 15,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "Subtype",
@@ -215,7 +225,7 @@ function structurebrowser() {
                 }
             },
             {
-                column_number : 15,
+                column_number : 16,
                 filter_type: "text",
                 select_type: 'select2',
                 filter_default_label: "Note",
@@ -226,7 +236,7 @@ function structurebrowser() {
                 }
             },
             {
-                column_number : 16,
+                column_number : 17,
                 filter_type: "range_number",
                 filter_reset_button_text: false,
                 filter_default_label: ["Min", "Max"],
@@ -235,7 +245,7 @@ function structurebrowser() {
                 }
             },
             {
-                column_number : 17,
+                column_number : 18,
                 filter_type: "text",
                 select_type: 'select2',
                 filter_default_label: "Fusion",
@@ -245,7 +255,7 @@ function structurebrowser() {
                 }
             },
             {
-                column_number : 18,
+                column_number : 19,
                 filter_type: "text",
                 select_type: 'select2',
                 filter_default_label: "Antibodies",
@@ -255,7 +265,7 @@ function structurebrowser() {
                 }
             },
             {
-                column_number : 19,
+                column_number : 20,
                 filter_type: "text",
                 select_type: 'select2',
                 html_data_type: "text",
@@ -266,7 +276,7 @@ function structurebrowser() {
                 }
             },
             {
-                column_number : 20,
+                column_number : 21,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 html_data_type: "text",
@@ -278,7 +288,7 @@ function structurebrowser() {
                 data: ['none', 'nonesmall molecule', 'peptide', 'peptideion', 'peptidesmall molecule', 'protein', 'small molecule', 'small moleculesmall molecule']
             },
             {
-                column_number : 21,
+                column_number : 22,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "Modality",
@@ -291,7 +301,7 @@ function structurebrowser() {
                        'Inverse agonistNAM', 'NAMAntagonist', 'NAMAgonist', 'PAMAgonist', 'unknown', 'N/A']
             },
             {
-                column_number : 22,
+                column_number : 23,
                 filter_type: "text",
                 select_type: 'select2',
                 filter_default_label: "Ligand name",
@@ -301,23 +311,13 @@ function structurebrowser() {
                 }
             },
             {
-                column_number : 23,
+                column_number : 24,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "Ligand type",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '80px',
-                }
-            },
-            {
-                column_number : 24,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '40px',
                 }
             },
             {
@@ -332,6 +332,16 @@ function structurebrowser() {
             },
             {
                 column_number : 26,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '40px',
+                }
+            },
+            {
+                column_number : 27,
                 filter_type: "text",
                 select_type: 'select2',
                 filter_default_label: "Authors",
@@ -341,7 +351,7 @@ function structurebrowser() {
                 }
             },
             {
-                column_number : 27,
+                column_number : 28,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "Reference",
@@ -351,7 +361,7 @@ function structurebrowser() {
                 }
             },
             {
-                column_number : 28,
+                column_number : 29,
                 filter_type: "range_date",
                 filter_reset_button_text: false,
                 date_format: "yyyy-mm-dd",
@@ -360,7 +370,7 @@ function structurebrowser() {
                 // filter_reset_button_text: false,
             },
             {
-                column_number : 29,
+                column_number : 30,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "Select",
