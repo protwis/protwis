@@ -62,7 +62,7 @@ class StructureBrowser(TemplateView):
 
 		context = super(StructureBrowser, self).get_context_data(**kwargs)
 		try:
-			context['structures'] = Structure.objects.filter(refined=False).select_related(
+			structures = Structure.objects.filter(refined=False).select_related(
 				"state",
 				"pdb_code__web_resource",
 				"protein_conformation__protein__species",
@@ -78,6 +78,13 @@ class StructureBrowser(TemplateView):
 					'protein_conformation','wt_protein')))
 		except Structure.DoesNotExist as e:
 			pass
+
+		structs_and_coverage = []
+		for s in structures:
+			structure_residues = Residue.objects.filter(protein_conformation=s.protein_conformation, protein_segment__isnull=False)
+			coverage = round((len(structure_residues) / len(s.protein_conformation.protein.parent.sequence))*100)
+			structs_and_coverage.append([s, coverage])
+		context['structures'] = structs_and_coverage
 
 		return context
 
