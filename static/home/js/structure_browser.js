@@ -183,7 +183,6 @@ function structurebrowser() {
                     width: '70px',
                 }
             },
-
             {
                 column_number : 12,
                 filter_type: "range_number",
@@ -493,7 +492,7 @@ function structurebrowser() {
     });
 
     $('#superpose_btn').click(function() {
-        superposition(oTable2, [7,1,2,3,4,5,11,28], 'structure_browser');
+        superposition(oTable2, [7,1,2,3,4,5,11,29], 'structure_browser');
     });
 
     $('#download_btn').click(function () {

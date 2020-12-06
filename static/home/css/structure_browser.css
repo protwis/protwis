@@ -121,6 +121,14 @@ div.overhead_close {
   font-size: 20px;
 }
 
+.glyphicon.glyphicon-info-sign {
+  font-size: 15px;
+}
+
+.glyphicon.glyphicon-question-sign {
+  font-size: 15px;
+}
+
 .dropdown {
   position: relative;
   display: inline-block;
@@ -156,4 +164,8 @@ div.overhead_close {
 .expand:hover {
   overflow: visible;
   white-space: normal;
+}
+
+.centered-header th {
+  text-align: center;
 }

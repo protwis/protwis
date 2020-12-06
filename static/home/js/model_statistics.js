@@ -375,13 +375,26 @@ function model_statistics() {
         $(".even").removeClass("even");
     });
     
-    $(".uniprot-export").data("powertipjq", $([
+    // Tooltip popups
+    $(".uniprot-export1").data("powertipjq", $([
         "<p>Export UniProt IDs</p>"
         ].join("\n")));
-    $(".pdb-export").data("powertipjq", $([
+    $(".pdb-export1").data("powertipjq", $([
         "<p>Export PDB IDs</p>"
         ].join("\n")));
-    $(".glyphicon-export").powerTip({
+    $(".uniprot-export2").data("powertipjq", $([
+        "<p>Export UniProt IDs</p>"
+        ].join("\n")));
+    $(".pdb-export2").data("powertipjq", $([
+        "<p>Export PDB IDs</p>"
+        ].join("\n")));
+    $(".gn-seqid").data("powertipjq", $([
+        "<p>Sequence identity in % between structure and main template for GPCRdb aligned residues that have a generic number</p>"
+        ].join("\n")));
+    $(".gn-seqsim").data("powertipjq", $([
+        "<p>Sequence similarity in % between structure and main template for GPCRdb aligned residues that have a generic number</p>"
+        ].join("\n")));
+    $(".glyphicon").powerTip({
         placement: "n",
         smartPlacement: true
     });
