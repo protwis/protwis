@@ -154,7 +154,7 @@ function model_statistics() {
                 select_type: "select2",
                 column_data_type: "html",
                 html_data_type: "text",
-                filter_default_label: "",
+                filter_default_label: "Select",
                 filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
@@ -213,7 +213,7 @@ function model_statistics() {
                 column_number : 19,
                 filter_type: "text",
                 select_type: "select2",
-                filter_default_label: "",
+                filter_default_label: "Note",
                 filter_reset_button_text: false,
                 // filter_match_mode : "exact",
                 select_type_options: {
@@ -265,7 +265,7 @@ function model_statistics() {
                 select_type: "select2",
                 column_data_type: "html",
                 html_data_type: "text",
-                filter_default_label: "",
+                filter_default_label: "Select",
                 filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {

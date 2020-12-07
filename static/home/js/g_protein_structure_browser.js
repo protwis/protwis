@@ -86,7 +86,7 @@ function gproteinstructurebrowser() {
                 filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '50px',
+                    width: '40px',
                 }
             },
             {
@@ -114,7 +114,7 @@ function gproteinstructurebrowser() {
                 column_number : 5,
                 filter_type: "range_number",
                 filter_reset_button_text: false,
-                filter_default_label: ["From", "To"],
+                filter_default_label: ["Min", "Max"],
                 select_type_options: {
                     width: '30px',
                 }
@@ -199,7 +199,7 @@ function gproteinstructurebrowser() {
                 column_number : 13,
                 filter_type: "range_number",
                 filter_reset_button_text: false,
-                filter_default_label: ["From", "To"],
+                filter_default_label: ["Min", "Max"],
             },
             {
                 column_number : 14,
@@ -373,7 +373,7 @@ function gproteinstructurebrowser() {
                 filter_reset_button_text: false,
                 date_format: "yyyy-mm-dd",
                 select_type: 'select2',
-                filter_default_label: ["From", "To"],
+                filter_default_label: ["Min", "Max"],
                 // filter_reset_button_text: false,
             },
         ],
