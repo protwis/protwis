@@ -9,6 +9,7 @@ from mutation.functions import *
 from mutation.models import *
 
 from common.views import AbsTargetSelection
+from common.views import AbsTargetSelectionTable
 from common.views import AbsSegmentSelection
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 from common import definitions
@@ -37,23 +38,45 @@ import operator
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
-class TargetSelection(AbsTargetSelection):
+class TargetSelection(AbsTargetSelectionTable):
     step = 1
     number_of_steps = 2
-    docs = 'mutations.html#mutation-browser'
+    docs = "mutations.html#mutation-browser"
+    title = "SELECT RECEPTORS"
+    description = "Select receptors in the table (below) or browse the classification tree (right). You can select entire" \
+        + " families or individual receptors.\n\nOnce you have selected all your receptors, click the green button."
     selection_boxes = OrderedDict([
-        ('reference', False),
-        ('targets', True),
-        ('segments', False),
+        ("reference", False),
+        ("targets", True),
+        ("segments", False),
     ])
     buttons = {
-        'continue': {
-            'label': 'Continue to next step',
-            'url': '/mutations/segmentselection',
-            'color': 'success',
+        "continue": {
+            "label": "Next",
+            "onclick": "submitSelection('/mutations/segmentselection');",
+            "color": "success",
         },
     }
+
     default_species = False
+
+# class TargetSelection(AbsTargetSelection):
+#     step = 1
+#     number_of_steps = 2
+#     docs = 'mutations.html#mutation-browser'
+#     selection_boxes = OrderedDict([
+#         ('reference', False),
+#         ('targets', True),
+#         ('segments', False),
+#     ])
+#     buttons = {
+#         'continue': {
+#             'label': 'Continue to next step',
+#             'url': '/mutations/segmentselection',
+#             'color': 'success',
+#         },
+#     }
+#     default_species = False
 
 
 class SegmentSelection(AbsSegmentSelection):

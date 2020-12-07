@@ -5,7 +5,8 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 
-from common.views import AbsTargetSelection
+#from common.views import AbsTargetSelection
+from common.views import AbsTargetSelectionTable
 from common.views import AbsSegmentSelection
 from common.views import AbsMiscSelection
 from common.selection import SimpleSelection, Selection, SelectionItem
@@ -31,23 +32,44 @@ def kill_phylo(): #FIXME, needs better way of handling this!
             pid = int(line.split(None, 1)[0])
             os.kill(pid, signal.SIGKILL)
 
-class TargetSelection(AbsTargetSelection):
+class TargetSelection(AbsTargetSelectionTable):
     step = 1
     number_of_steps = 3
+    title = "SELECT RECEPTORS"
+    description = "Select receptors in the table (below) or browse the classification tree (right). You can select entire" \
+        + " families or individual receptors.\n\nOnce you have selected all your receptors, click the green button."
     docs = 'sequences.html#phylogeneric-trees'
     selection_boxes = OrderedDict([
-        ('targets', True),
-        ('segments', False),
+        ("reference", False),
+        ("targets", True),
+        ("segments", False),
     ])
 
     buttons = {
-        'continue': {
-            'label': 'Continue to next step',
-            'url': '/phylogenetic_trees/segmentselection',
-            'color': 'success',
-            'onclick': 'return VerifyMinimumSelection(\'receptors\', 3);', # check for a minimum selection of 3 receptors
+        "continue": {
+            "label": "Next",
+            "onclick": "submitSelection('/phylogenetic_trees/segmentselection', 3);",
+            "color": "success",
         },
     }
+
+# class TargetSelection(AbsTargetSelection):
+#     step = 1
+#     number_of_steps = 3
+#     docs = 'sequences.html#phylogeneric-trees'
+#     selection_boxes = OrderedDict([
+#         ('targets', True),
+#         ('segments', False),
+#     ])
+#
+#     buttons = {
+#         'continue': {
+#             'label': 'Continue to next step',
+#             'url': '/phylogenetic_trees/segmentselection',
+#             'color': 'success',
+#             'onclick': 'return VerifyMinimumSelection(\'receptors\', 3);', # check for a minimum selection of 3 receptors
+#         },
+#     }
 
 class SegmentSelection(AbsSegmentSelection):
     step = 2
