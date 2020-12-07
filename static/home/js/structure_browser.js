@@ -1,6 +1,4 @@
 function structurebrowser() {
-// $(document).ready(function () {
-    // 'use strict';
 
     var oTable2 = $('#structures_scrollable').DataTable({
         "scrollY":        "65vh",
@@ -8,10 +6,9 @@ function structurebrowser() {
         "scrollCollapse": true,
         "scroller": true,
         "paging":         false,
-        // "bSortCellsTop": true,
         "aaSorting": [],
         "autoWidth": false,
-        "order": [[28,'desc'],[1,'asc']],
+        "order": [[29,'desc'],[1,'asc']],
         "columnDefs": [
             { "targets": 'no-sort', "orderable": false }
             ],
@@ -37,6 +34,7 @@ function structurebrowser() {
             null,
             null,
             {"width": "20%"},
+            null,
             null,
             null,
             null,
@@ -161,7 +159,8 @@ function structurebrowser() {
             {
                 column_number : 9,
                 filter_type: "range_number",
-                filter_default_label: ["From", "To"],
+                filter_reset_button_text: false,
+                filter_default_label: ["Min", "Max"],
             },
             {
                 column_number : 10,
@@ -184,14 +183,23 @@ function structurebrowser() {
                     width: '70px',
                 }
             },
-
             {
                 column_number : 12,
                 filter_type: "range_number",
-                filter_default_label: ["From", "To"],
+                filter_reset_button_text: false,
+                filter_default_label: ["Min", "Max"],
             },
             {
                 column_number : 13,
+                filter_type: "range_number",
+                filter_reset_button_text: false,
+                filter_default_label: ["Min", "Max"],
+                select_type_options: {
+                    width: '50px',
+                }
+            },
+            {
+                column_number : 14,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "Family",
@@ -202,7 +210,7 @@ function structurebrowser() {
                 }
             },
             {
-                column_number : 14,
+                column_number : 15,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "Subtype",
@@ -213,7 +221,7 @@ function structurebrowser() {
                 }
             },
             {
-                column_number : 15,
+                column_number : 16,
                 filter_type: "text",
                 select_type: 'select2',
                 filter_default_label: "Note",
@@ -224,15 +232,16 @@ function structurebrowser() {
                 }
             },
             {
-                column_number : 16,
+                column_number : 17,
                 filter_type: "range_number",
-                filter_default_label: ["From", "To"],
+                filter_reset_button_text: false,
+                filter_default_label: ["Min", "Max"],
                 select_type_options: {
                     width: '50px',
                 }
             },
             {
-                column_number : 17,
+                column_number : 18,
                 filter_type: "text",
                 select_type: 'select2',
                 filter_default_label: "Fusion",
@@ -242,7 +251,7 @@ function structurebrowser() {
                 }
             },
             {
-                column_number : 18,
+                column_number : 19,
                 filter_type: "text",
                 select_type: 'select2',
                 filter_default_label: "Antibodies",
@@ -252,7 +261,7 @@ function structurebrowser() {
                 }
             },
             {
-                column_number : 19,
+                column_number : 20,
                 filter_type: "text",
                 select_type: 'select2',
                 html_data_type: "text",
@@ -263,7 +272,7 @@ function structurebrowser() {
                 }
             },
             {
-                column_number : 20,
+                column_number : 21,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 html_data_type: "text",
@@ -275,7 +284,7 @@ function structurebrowser() {
                 data: ['none', 'nonesmall molecule', 'peptide', 'peptideion', 'peptidesmall molecule', 'protein', 'small molecule', 'small moleculesmall molecule']
             },
             {
-                column_number : 21,
+                column_number : 22,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "Modality",
@@ -288,7 +297,7 @@ function structurebrowser() {
                        'Inverse agonistNAM', 'NAMAntagonist', 'NAMAgonist', 'PAMAgonist', 'unknown', 'N/A']
             },
             {
-                column_number : 22,
+                column_number : 23,
                 filter_type: "text",
                 select_type: 'select2',
                 filter_default_label: "Ligand name",
@@ -298,23 +307,13 @@ function structurebrowser() {
                 }
             },
             {
-                column_number : 23,
+                column_number : 24,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "Ligand type",
                 filter_reset_button_text: false,
                 select_type_options: {
                     width: '80px',
-                }
-            },
-            {
-                column_number : 24,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '40px',
                 }
             },
             {
@@ -329,6 +328,16 @@ function structurebrowser() {
             },
             {
                 column_number : 26,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: '40px',
+                }
+            },
+            {
+                column_number : 27,
                 filter_type: "text",
                 select_type: 'select2',
                 filter_default_label: "Authors",
@@ -338,7 +347,7 @@ function structurebrowser() {
                 }
             },
             {
-                column_number : 27,
+                column_number : 28,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "Reference",
@@ -348,15 +357,16 @@ function structurebrowser() {
                 }
             },
             {
-                column_number : 28,
+                column_number : 29,
                 filter_type: "range_date",
+                filter_reset_button_text: false,
                 date_format: "yyyy-mm-dd",
                 select_type: 'select2',
-                filter_default_label: ["From", "To"],
+                filter_default_label: ["Min", "Max"],
                 // filter_reset_button_text: false,
             },
             {
-                column_number : 29,
+                column_number : 30,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "Select",
@@ -372,15 +382,6 @@ function structurebrowser() {
     );
 
     yadcf.exResetAllFilters(oTable2);
-
-    // $(function(){
-    //     $(".wrapper").scroll(function(){
-    //         $(".dataTables_scrollBody").eq(0).scrollLeft($(".wrapper").scrollLeft());
-    //     });
-    //     $(".dataTables_scrollBody").eq(0).scroll(function(){
-    //         $(".wrapper").scrollLeft($(".dataTables_scrollBody").eq(0).scrollLeft());
-    //     });
-    // });
 
     $('#structures_scrollable'+' > tbody > tr').click(function(event) {
         if (event.target.type !== 'checkbox') {
@@ -405,8 +406,6 @@ function structurebrowser() {
             $('.alt').parent().parent().find('td').removeClass('highlight');
         }
     });
-
-    // $('.wrapper').find('div').width($(".yadcf-datatables-table--structures_scrollable").width());
 
     $('.hide_columns').click(function(evt) {
     var columns = $(this).attr('columns').split(",");
@@ -493,7 +492,7 @@ function structurebrowser() {
     });
 
     $('#superpose_btn').click(function() {
-        superposition(oTable2, [7,1,2,3,4,5,11,28], 'structure_browser');
+        superposition(oTable2, [7,1,2,3,4,5,11,29], 'structure_browser');
     });
 
     $('#download_btn').click(function () {
@@ -511,9 +510,6 @@ function structurebrowser() {
         window.location.href = '/structure/pdb_download_index';
     });
 
-    // $('.glyphicon-export').mouseover(function() {
-    //     window.alert($(this));
-    // })
     $('.uniprot-export').data('powertipjq', $([
         '<p>Export UniProt IDs</p>'
         ].join('\n')));
@@ -577,98 +573,4 @@ function structurebrowser() {
             if ($("#overlay").is(":hidden")) $("#overlay").show();
         }
     });
-    // console.log($('#yadcf-filter--structures_scrollable-from-12').width());
-    // $('#yadcf-filter--structures_scrollable-from-12').width(10);
-    // console.log($('#yadcf-filter--structures_scrollable-from-12').width());
-
 };
-
-var tableToExcel = (function () {
-    var uri = 'data:application/vnd.ms-excel;base64,',
-        template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>',
-        base64 = function (s) {
-            return window.btoa(unescape(encodeURIComponent(s)))
-        }, format = function (s, c) {
-            return s.replace(/{(\w+)}/g, function (m, p) {
-                return c[p];
-            })
-        }
-    return function (table, name, filename) {
-            var table= $("#"+table).clone();
-            $("#excel_table").html(table);
-            // Clean up table to remove yadcf stuff
-            $("#excel_table thead tr").css('height','');
-            $("#excel_table thead th").css('height','');
-            $("#excel_table thead div").css('height','');
-            $("#excel_table thead .yadcf-filter-wrapper").remove();
-            $("#excel_table thead button").remove();
-            var tr = $("#excel_table thead tr:eq(1)");
-            // reattach th titles
-            tr.find('th').each (function( column, th) {
-              if ($(th).attr('title')) $(th).html($(th).attr('title'));
-            });
-
-        var ctx = {
-            worksheet: name || 'Worksheet',
-            table: $("#excel_table").html()
-        }
-        $("#excel_table").html("");
-        document.getElementById("dlink").href = uri + base64(format(template, ctx));
-        document.getElementById("dlink").download = filename;
-        document.getElementById("dlink").click();
-    }
-})()
-
-function copyDropdown() {
-    document.getElementById("Dropdown").classList.toggle("show");
-}
-
-window.onclick = function(event) {
-    if (!event.target.matches('.dropbtn')) {
-        var dropdowns = document.getElementsByClassName("dropdown-content");
-        var i;
-        for (i = 0; i < dropdowns.length; i++) {
-            var openDropdown = dropdowns[i];
-            if (openDropdown.classList.contains('show')) {
-                openDropdown.classList.remove('show');
-            }
-        }
-    }
-}
-
-function copyToClipboard(array, delimiter, data_name, powertip_object=false) {
-    var link = array;
-    var out = '';
-    link.each(function() {
-        var ele = $(this).attr('href').split('/');
-        out+=ele[ele.length-1]+delimiter;
-    });
-    if (out.length===0) {
-        window.alert('No entries selected for copying')
-        return 0
-    }
-    var textArea = document.createElement("textarea");
-    textArea.value = out;
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    try {
-        var successful = document.execCommand('copy');
-        var msg = successful ? 'Successful' : 'Unsuccessful';
-        if (powertip_object!==false) {
-            $.powerTip.hide();
-            powertip_object.data('powertipjq', $([
-                '<p>Copied to clipboard!</p>'
-                ].join('\n')))
-            powertip_object.powerTip('show');
-            setTimeout(function() {
-            powertip_object.data('powertipjq', $([
-                '<p>Export '+data_name+'</p>'
-                ].join('\n')))
-            },1000);
-        }
-    } catch (err) {
-        window.alert('Oops, unable to copy');
-    }
-    document.body.removeChild(textArea);
-}

@@ -54,7 +54,8 @@ class Command(BaseCommand):
             ['build_consensus_sequences', {'proc': options['proc'], 'signprot': 'Arrestin'}],
             ['build_signprot_complex'],
             ['build_g_protein_structures'],
-            ['build_structure_extra_proteins']
+            ['build_structure_extra_proteins'],
+            ['build_structure_model_rmsd']
         ]
         phase2 = [
             ['build_structure_angles', {'proc': options['proc']}],
