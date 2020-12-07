@@ -4,12 +4,10 @@ from django.views.generic import TemplateView
 from ligand.views import *
 
 urlpatterns = [
-    url(r'^$',(LigandBrowser.as_view()), name='ligand_browser'),
-    url(r'^target/all/(?P<slug>[-\w]+)/$',TargetDetails, name='ligand_target_detail'),
-    url(r'^target/compact/(?P<slug>[-\w]+)/$',TargetDetailsCompact, name='ligand_target_detail_compact'),
-    url(r'^targets$',TargetDetails, name='ligand_target_detail'),
-    url(r'^targets_compact',TargetDetailsCompact, name='ligand_target_detail_compact'),
-    url(r'^targets_purchasable',TargetPurchasabilityDetails, name='ligand_target_detail_purchasable'),
+    url(r'^$',cache_page(3600*24*7)(LigandBrowser.as_view()), name='ligand_browser'),
+    url(r'^target/compact/(?P<pk>[-\w]+)$',TargetDetailsCompact, name='ligand_target_detail_compact'),
+    url(r'^target/(?P<pk>[-\w]+)$',TargetDetails, name='ligand_target_detail'),
+    url(r'^target/purchasable/(?P<pk>[-\w]+)$',TargetPurchasabilityDetails, name='ligand_target_detail_purchasable'),
     url(r'^(?P<ligand_id>[-\w]+)/$',LigandDetails, name='ligand_detail'),
     url(r'^statistics', cache_page(3600*24*7)(LigandStatistics.as_view()), name='ligand_statistics'),
     url(r'^experiment/(?P<pk>[-\w]+)/detail$', ExperimentEntryView.as_view()),

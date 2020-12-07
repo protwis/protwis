@@ -60,7 +60,7 @@ class Ligand(models.Model):
                     ligand.ambigious_alias = False
                     ligand.pdbe = None
                     try:
-                        ligand.save()                        
+                        ligand.save()
                     except IntegrityError:
                         return Ligand.objects.get(name=ligand_name, canonical=True)
             return ligand
@@ -389,9 +389,10 @@ class LigandRole(models.Model):
 
 class LigandReceptorStatistics(models.Model):
     ligand = models.ForeignKey('Ligand', on_delete=models.CASCADE)
-    protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
+    protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE, related_name='target_protein')
     type = models.CharField(max_length=3, null= True)
-    potency = models.DecimalField(max_digits=9, decimal_places=3, null= True)
+    value  = models.DecimalField(max_digits=9, decimal_places=3, null= True)
+    reference_protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE, related_name="reference_protein")
 
 class ChemblAssay(models.Model):
      #slug = models.SlugField(max_length=50, unique=True)
@@ -414,7 +415,7 @@ class AssayExperiment(models.Model):
     assay_description = models.TextField(max_length=1500)
     pchembl_value = models.CharField(max_length=10, null=True)
 
-    published_value = models.CharField(max_length=20)
+    published_value = models.CharField(max_length=20, null= True)
     published_relation = models.CharField(max_length=10, null= True)
     published_type = models.CharField(max_length=20, null= True)
     published_units = models.CharField(max_length=20, null= True)
