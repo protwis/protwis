@@ -2,11 +2,13 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 
 from common.models import ReleaseNotes, ReleaseStatistics, ReleaseStatisticsType
-from protein.models import Protein, Species
-from ligand.models import Ligand
-from structure.models import Structure, StructureModel, StructureComplexModel
-from mutation.models import MutationExperiment
+from drugs.models import Drugs
 from interaction.models import StructureLigandInteraction, ProteinLigandInteraction, ResidueFragmentInteraction
+from ligand.models import Ligand
+from mutation.models import MutationExperiment
+from mutational_landscape.models import NaturalMutations
+from protein.models import Protein, Species
+from structure.models import Structure, StructureModel, StructureComplexModel
 
 import logging
 import shlex
@@ -31,7 +33,7 @@ class Command(BaseCommand):
         self.logger.info('CREATING RELEASE NOTES')
 
         ReleaseNotes.objects.all().delete()
-        
+
         # what files should be parsed?
         filenames = os.listdir(self.release_notes_data_dir)
 
@@ -46,7 +48,7 @@ class Command(BaseCommand):
                     release_notes, created = ReleaseNotes.objects.get_or_create(date=ds['date'])
                     if created:
                         self.logger.info('Created release notes for {}'.format(ds['date']))
-                
+
                 with open(source_file_path[:-4]+'html', 'r') as h:
                     release_notes.html = h.read()
                     release_notes.save()
@@ -58,15 +60,20 @@ class Command(BaseCommand):
         latest_release_notes = ReleaseNotes.objects.all()[0]
 
         stats = [
-            ['Proteins', Protein.objects.filter(sequence_type__slug='wt').count()],
+            #['Proteins', Protein.objects.filter(sequence_type__slug='wt').count()],
             ['Human proteins', Protein.objects.filter(sequence_type__slug='wt', species__common_name="Human").count()],
-            ['Species', Species.objects.all().count()],
-            ['Exp. structures', Structure.objects.filter(refined=False).count()],
-            ['Refined structures', Structure.objects.filter(refined=True).count()],
+            ['Species orthologs', Protein.objects.filter(sequence_type__slug='wt').exclude(species__common_name="Human").count()],
+            #['Species', Species.objects.all().count()],
+            ['Exp. GPCR structures', Structure.objects.filter(refined=False, protein_conformation__protein__family__slug__startswith="00").count()],
+            ['Exp. Gprotein structures', Structure.objects.filter(refined=False, protein_conformation__protein__family__slug__startswith="100").count()],
+            ['Exp. Arrestin structures', Structure.objects.filter(refined=False, protein_conformation__protein__family__slug__startswith="200").count()],
             ['GPCR structure models', StructureModel.objects.all().count()],
             ['GPCR-G protein structure models', StructureComplexModel.objects.all().count()],
+            ['Refined GPCR structures', Structure.objects.filter(refined=True, protein_conformation__protein__family__slug__startswith="00").count()],
+            ['Genetic variants', NaturalMutations.objects.all().count()],
+            ['Drugs', Drugs.objects.all().count()],
             ['Ligands', Ligand.objects.filter(canonical=True).count()],
-            ['Mutants', MutationExperiment.objects.all().count()],
+            ['Ligand site mutations', MutationExperiment.objects.all().count()],
             ['Ligand interactions', ResidueFragmentInteraction.objects.all().count()],
         ]
 
