@@ -1,5 +1,6 @@
 /*eslint complexity: ["error", 8]*/
 /*eslint quotes: ["error", "double", { "avoidEscape": true }]*/
+/*global showAlert */
 
 var targetTable;
 var selected_targets = new Set();
@@ -270,7 +271,7 @@ function submitSelection(url, minimum = 1) {
         showAlert("Something went wrong, please try again or contact us.", "danger");
       });
   } else {
-    if (minimum == 1) {
+    if (minimum === 1) {
       showAlert("Please select at least one target.", "warning");
     } else {
       showAlert("Please select at least "+minimum+" targets.", "warning");
