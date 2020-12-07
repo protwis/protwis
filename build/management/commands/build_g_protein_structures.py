@@ -50,6 +50,7 @@ class Command(BaseBuild):
         parser.add_argument("--purge", default=False, action="store_true", help="Purge G protein structures from database")
         parser.add_argument("--only_signprot_structures", default=False, action="store_true", help="Only build SignprotStructure objects")
         parser.add_argument("-s", default=False, type=str, action="store", nargs="+", help="PDB codes to build")
+        parser.add_argument("--debug", default=False, action="store_true", help="Debug mode")
 
     def handle(self, *args, **options):
         self.options = options
@@ -155,15 +156,15 @@ class Command(BaseBuild):
                         else:
                             remaining_mismatches.append(m)
 
-                    ### sanity check
-                    # print(sc)
-                    # print(mutations)
-                    # print(shifted_mutations)
-                    # print(mismatches)
-                    # print("======")
-                    # print(remaining_mismatches)
-                    # pprint.pprint(pdb_num_dict)
-
+                    if options["debug"]:
+                        print(sc)
+                        print(mutations)
+                        print(shifted_mutations)
+                        print(mismatches)
+                        print("======")
+                        print(remaining_mismatches)
+                        pprint.pprint(pdb_num_dict)
+                    
                     # Mismatches remained possibly to seqnumber shift, making pairwise alignment to try and fix alignment
                     if len(remaining_mismatches)>0 and sc.structure.pdb_code.index not in ["6OIJ", "6OY9", "6OYA", "6LPB", "6WHA"]:
                         ppb = PPBuilder()
@@ -172,6 +173,10 @@ class Command(BaseBuild):
                             seq += str(pp.get_sequence())
                         pw2 = pairwise2.align.localms(sc.protein.sequence, seq, 2, -1, -.5, -.1)
                         ref_seq, temp_seq = str(pw2[0][0]), str(pw2[0][1])
+                        # Custom fix for A->G mutation at pos 18
+                        if sc.structure.pdb_code.index=="7JJO":
+                            ref_seq = ref_seq[:18]+ref_seq[19:]
+                            temp_seq = temp_seq[:17]+temp_seq[18:]
                         wt_pdb_dict = OrderedDict()
                         pdb_wt_dict = OrderedDict()
                         j, k = 0, 0
@@ -190,16 +195,23 @@ class Command(BaseBuild):
                                 wt_pdb_dict[resis[j]] = i
                                 pdb_wt_dict[i] = resis[j]
                                 j+=1
-                        for i, r in enumerate(remaining_mismatches):
-                            # Adjust for shifted residue when residue is a match
-                            if r[0].get_id()[1]-remaining_mismatches[i-1][0].get_id()[1]>1:
-                                pdb_num_dict[r[0].get_id()[1]-1][1] = pdb_wt_dict[chain[r[0].get_id()[1]-1]]
-                            # Adjust for shifted residue when residue is mutated and it's logged in SEQADV
-                            if r[0].get_id()[1] in shifted_mutations:
-                                pdb_num_dict[r[0].get_id()[1]][1] = resis.get(sequence_number=shifted_mutations[r[0].get_id()[1]][2])
-                            # Adjust for shift
-                            else:
-                                pdb_num_dict[r[0].get_id()[1]][1] = pdb_wt_dict[r[0]]
+                        # Custom fix for 7JJO isoform difference
+                        if sc.structure.pdb_code.index=="7JJO":
+                            pdb_num_dict = OrderedDict()
+                            for wt_res, st_res in wt_pdb_dict.items():
+                                if type(st_res)==type([]):
+                                    pdb_num_dict[wt_res.sequence_number] = [st_res[0], wt_res]
+                        else:
+                            for i, r in enumerate(remaining_mismatches):
+                                # Adjust for shifted residue when residue is a match
+                                if r[0].get_id()[1]-remaining_mismatches[i-1][0].get_id()[1]>1:
+                                    pdb_num_dict[r[0].get_id()[1]-1][1] = pdb_wt_dict[chain[r[0].get_id()[1]-1]]
+                                # Adjust for shifted residue when residue is mutated and it's logged in SEQADV
+                                if r[0].get_id()[1] in shifted_mutations:
+                                    pdb_num_dict[r[0].get_id()[1]][1] = resis.get(sequence_number=shifted_mutations[r[0].get_id()[1]][2])
+                                # Adjust for shift
+                                else:
+                                    pdb_num_dict[r[0].get_id()[1]][1] = pdb_wt_dict[r[0]]
                     ### Custom alignment fix for 6WHA mini-Gq/Gi2/Gs chimera
                     elif sc.structure.pdb_code.index=="6WHA":
                         ref_seq  = "MTLESIMACCLSEEAKEARRINDEIERQLRRDKRDARRELKLLLLGTGESGKSTFIKQMRIIHGSGYSDEDKRGFTKLVYQNIFTAMQAMIRAMDTLKIPYKYEHNKAHAQLVREVDVEKVSAFENPYVDAIKSLWNDPGIQECYDRRREYQLSDSTKYYLNDLDRVADPAYLPTQQDVLRVRVPTTGIIEYPFDLQSVIFRMVDVGGQRSERRKWIHCFENVTSIMFLVALSEYDQVLVESDNENRMEESKALFRTIITYPWFQNSSVILFLNKKDLLEEKIM--YSHLVDYFPEYDGP----QRDAQAAREFILKMFVDL---NPDSDKIIYSHFTCATDTENIRFVFAAVKDTILQLNLKEYNLV"
@@ -228,26 +240,27 @@ class Command(BaseBuild):
                             bulked_residues.append(res_obj)
                         else:
                             self.logger.info("Skipped {} as no annotation was present, while building for alpha subunit of {}".format(val[1], sc))
-
+                    if options["debug"]:
+                        pprint.pprint(pdb_num_dict)
                     Residue.objects.bulk_create(bulked_residues)
                     self.logger.info("Protein, ProteinConformation and Residue build for alpha subunit of {} is finished".format(sc))
                 except Exception as msg:
                     self.logger.info("Protein, ProteinConformation and Residue build for alpha subunit of {} has failed".format(sc))
 
-
-        ### Build SignprotStructure objects from non-complex signprots
-        g_prot_alphas = Protein.objects.filter(family__slug__startswith="100_001", accession__isnull=False)#.filter(entry_name="gnai1_human")
-        complex_structures = SignprotComplex.objects.all().values_list("structure__pdb_code__index", flat=True)
-        for a in g_prot_alphas:
-            pdb_list = get_pdb_ids(a.accession)
-            for pdb in pdb_list:
-                if pdb not in complex_structures:
-                    try:
-                        data = self.fetch_gprot_data(pdb, a)
-                        if data:
-                            self.build_g_prot_struct(a, pdb, data)
-                    except Exception as msg:
-                        self.logger.error("SignprotStructure of {} {} failed\n{}: {}".format(a.entry_name, pdb, type(msg), msg))
+        if not options["s"]:
+            ### Build SignprotStructure objects from non-complex signprots
+            g_prot_alphas = Protein.objects.filter(family__slug__startswith="100_001", accession__isnull=False)#.filter(entry_name="gnai1_human")
+            complex_structures = SignprotComplex.objects.all().values_list("structure__pdb_code__index", flat=True)
+            for a in g_prot_alphas:
+                pdb_list = get_pdb_ids(a.accession)
+                for pdb in pdb_list:
+                    if pdb not in complex_structures:
+                        try:
+                            data = self.fetch_gprot_data(pdb, a)
+                            if data:
+                                self.build_g_prot_struct(a, pdb, data)
+                        except Exception as msg:
+                            self.logger.error("SignprotStructure of {} {} failed\n{}: {}".format(a.entry_name, pdb, type(msg), msg))
 
     def fetch_gprot_data(self, pdb, alpha_protein):
         data = {}

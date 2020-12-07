@@ -3,25 +3,25 @@
 {% load structure_extras %}
 
 {% block addon_css %}
-    <link rel="stylesheet" href="{% static "home/css/jquery.dataTables.min.css" %}" type="text/css" />
-    <link rel="stylesheet" href="{% static "home/css/construct_browser.css" %}" type="text/css" />
-    <link rel="stylesheet" href="{% static "home/css/yadcf_bootstrap_version.css" %}" type="text/css" />
-    <link rel="stylesheet" href="{% static "home/css/select2.css" %}" type="text/css" />
-    <link rel="stylesheet" href="{% static "home/css/structure_browser.css" %}" type="text/css" />
-    <link href="{% static "home/css/construct_alignment.css" %}" rel="stylesheet">
-    <link href="{% static "home/css/sequenceviewer.css" %}" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="{% static "home/css/jquery.powertip.css" %}" />
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
+    <link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet">
+    <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{% static 'home/css/jquery.powertip.css' %}" />
 {% endblock %}
     
 {% block addon_js %}
-    <script src="{% static "home/js/jquery.dataTables.min.js" %}"> </script>
-    <script src="{% static "home/js/jquery.dataTables.yadcf.js" %}"> </script>
-    <script src="{% static "home/js/select2.js" %}"> </script>
-    <script src="{% static "home/js/alignment.js" %}"> </script>
-    <script src="{% static "home/js/browser_functions.js" %}"> </script>
-    <script src="{% static "home/js/model_statistics.js" %}"> </script>
-    <script src="{% static "home/js/grayscale.js" %}"> </script>
-    <script src="{% static "home/js/jquery.powertip.js" %}"></script>
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+    <script src="{% static 'home/js/select2.js' %}"> </script>
+    <script src="{% static 'home/js/alignment.js' %}"> </script>
+    <script src="{% static 'home/js/browser_functions.js' %}"> </script>
+    <script src="{% static 'home/js/model_statistics.js' %}"> </script>
+    <script src="{% static 'home/js/grayscale.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.powertip.js' %}"></script>
 
 <script type="text/javascript" charset="utf-8">
     $(document).ready(function() {
@@ -41,7 +41,7 @@
             <a id="dlink"  style="display:none;"></a>
             <div id="excel_table"  style="display:none;"></div>
             <input class="btn btn-default btn-s btn-success" type="button" onclick="tableToExcel('structures_scrollable', 'Structure model statistics', 'GPCRdb_structure_model_statistics.xls')" value="Export Excel"></input>
-            <div style="padding: 0px 0px 0px 10px; display: inline;">The RMSD values compare the latest model before a structure of the same receptor in the same state was published.</div>
+            <div style="padding: 0px 0px 0px 10px; display: inline;">The RMSD values compare the latest model before a structure of the same receptor in the same state was published. <a href="https:docs.gpcrdb.org/structures.html#structure-model-statistics" target="_blank">Documentation</a></div>
         </div>
     </div>
     <br />
@@ -94,57 +94,57 @@
                             </div>
                         </th>
                     </tr>
-                    <tr class="over_header">
-                        <th class="text-center"></th>
-                        <th class="text-center">Overall<br>all</th>
-                        <th class="text-center">Overall<br>backbone</th>
-                        <th class="text-center">7TM<br>all</th>
-                        <th class="text-center">7TM<br>backbone</th>
-                        <th class="text-center">H8</th>
-                        <th class="text-center">ICL1</th>
-                        <th class="text-center">ECL1</th>
-                        <th class="text-center">ICL2</th>
-                        <th class="text-center">ECL2</th>
-                        <th class="text-center rightborder">ECL3</th>
-                        <th class="text-center">
+                    <tr class="over_header centered-header">
+                        <th></th>
+                        <th>Overall<br>all</th>
+                        <th>Overall<br>backbone</th>
+                        <th>7TM<br>all</th>
+                        <th>7TM<br>backbone</th>
+                        <th>H8</th>
+                        <th>ICL1</th>
+                        <th>ECL1</th>
+                        <th>ICL2</th>
+                        <th>ECL2</th>
+                        <th class="rightborder">ECL3</th>
+                        <th>
                             <div>
                                 <div>UniProt</div>
                                 <div><button class="icon-button" type="button"><i id="uniprot_copy1" class="glyphicon glyphicon-export uniprot-export1"></i></button></div>
                             </div>
                         </th>
-                        <th class="text-center">IUPHAR</th>
-                        <th class="text-center">Receptor family</th>
-                        <th class="text-center rightborder">Cl</th>
-                        <th class="text-center">
+                        <th>IUPHAR</th>
+                        <th>Receptor family</th>
+                        <th class="rightborder">Cl</th>
+                        <th>
                             <div>
                                 <div>PDB</div>
                                 <div><button class="icon-button" type="button"><i id="pdb_copy1" class="glyphicon glyphicon-export pdb-export1"></i></button></div>
                             </div>
                         </th>
-                        <th class="text-center">State</th>
-                        <th class="text-center rightborder">Degree<br>active (%)</th>
-                        <th class="text-center">Version</th>
-                        <th class="text-center rightborder">Note</th>
-                        <th class="text-center">GN seq.<br>id. (%)</th>
-                        <th class="text-center">GN seq.<br>sim. (%)</th>
-                        <th class="text-center">
+                        <th>State</th>
+                        <th class="rightborder">Degree<br>active (%)</th>
+                        <th>Version</th>
+                        <th class="rightborder">Note</th>
+                        <th>GN seq.<br>id. (%)<br><i class="glyphicon glyphicon-question-sign gn-seqid"></i></th>
+                        <th>GN seq.<br>sim. (%)<br><i class="glyphicon glyphicon-question-sign gn-seqsim"></i></th>
+                        <th>
                             <div>
                                 <div>UniProt</div>
                                 <div><button class="icon-button" type="button"><i id="uniprot_copy2" class="glyphicon glyphicon-export uniprot-export2"></i></button></div>
                             </div>
                         </th>
-                        <th class="text-center">IUPHAR</th>
-                        <th class="text-center">Receptor family</th>
-                        <th class="text-center">Species</th>
-                        <th class="text-center">
+                        <th>IUPHAR</th>
+                        <th>Receptor family</th>
+                        <th>Species</th>
+                        <th>
                             <div>
                                 <div>PDB</div>
                                 <div><button class="icon-button" type="button"><i id="pdb_copy2" class="glyphicon glyphicon-export pdb-export2"></i></button></div>
                             </div>
                         </th>
-                        <th class="text-center">State</th>
-                        <th class="text-center">Degree<br>active (%)</th>
-                        <th class="text-center rightborder">Resolution</th>
+                        <th>State</th>
+                        <th>Degree<br>active (%)</th>
+                        <th class="rightborder">Resolution</th>
                     </tr>
                     <tr>
                         <th class="no-sort checkbox_tr"><input class="select-all" type="checkbox" onclick="select_all(this)"></th>

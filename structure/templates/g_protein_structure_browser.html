@@ -117,7 +117,7 @@
                             </div>
                         </th>
                     </tr>
-                    <tr class='over_header'>
+                    <tr class='over_header centered-header'>
                         <th></th>
                         <th>Fam.</th>
                         <th>&alpha;</th>
@@ -215,7 +215,7 @@
                         <td class='expand'>
                             {{ structure.extra_proteins.all|only_one_subunit:"Alpha,note"|safe }}
                         </td>
-                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha,coverage"|safe }}</td>
+                        <td class="text-center">{{ structure.extra_proteins.all|only_one_subunit:"Alpha,coverage"|safe }}</td>
                         <td>{{ structure.extra_proteins.all|only_one_subunit:"Beta,name"|safe }}</td>
                         <td>{{ structure.extra_proteins.all|only_one_subunit:"Beta,species"|safe }}</td>
                         <td>{{ structure.extra_proteins.all|only_one_subunit:"Gamma,name"|safe }}</td>

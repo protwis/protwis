@@ -596,10 +596,6 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                                         uniprot_pos = int(pos)
                                 else:
                                     receptor = False
-                            if pdbname == "6S0L":
-                                if not pos or pos > 1000:
-                                    continue
-                                print(receptor, uniprot_pos, pos,uniprot_aa, u_id,raw_u_id,chain,node.attrib['dbResNum'],d['wt_seq'][uniprot_pos-1])
 
                             # if receptor:
                             #     print(receptor, uniprot_pos, pos,uniprot_aa, u_id,raw_u_id,chain,node.attrib['dbResNum'],d['wt_seq'][uniprot_pos-1])
