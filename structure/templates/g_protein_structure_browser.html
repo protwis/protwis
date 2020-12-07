@@ -135,7 +135,7 @@
                                 <div><button class='icon-button' type='button'><i id='pdb_copy' class="glyphicon glyphicon-export pdb-export"></i></button></div>
                             </div>
                         </th>
-                        <th><a href="https://academic.oup.com/nar/article/44/D1/D356/2502664" target="_blank">Refined<br>structure</a></th>
+                        <th>Refined<br>structure<br><a href="https://docs.gpcrdb.org/structures.html#refined-structures" target="_blank"><span class="glyphicon glyphicon-info-sign"></span></a></th>
                         <th class='rightborder'>Resolution</th>
                         <th>
                             <div>
@@ -252,7 +252,7 @@
                         <td>
                             {{ structure.stabilizing_agents.all|only_antibodies|linebreaksbr }}
                         </td>
-                        <td>
+                        <td class="expand">
                             {{ structure.stabilizing_agents.all|only_other_proteins|linebreaksbr }}
                         </td>
                         <td class='expand'>
@@ -279,15 +279,19 @@
                         </td>
                         <td>{{ structure.protein_conformation.protein.parent.endogenous_ligands.all.0.properities.ligand_type|dashwhenempty }}</td>
                         <td class='expand'>
-                            {{ structure.publication.authors}}
+                            {% if structure.publication %}
+                                {{ structure.publication.authors}}
+                            {% else %}
+                                -
+                            {% endif %}
                         </td>
                         <td>
                             {% if structure.publication %}
                             <a href="{{ structure.publication.web_link }}">
-                            {{ structure.publication.web_link.index }}
+                                {{ structure.publication.web_link.index }}
                             </a>
                             {% else %}
-                            -
+                                -
                             {% endif %}
                         </td>
                         <td>{{ structure.publication_date|date:"Y-m-d" }}</td>
