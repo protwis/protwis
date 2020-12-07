@@ -2,29 +2,50 @@ from django.shortcuts import render
 from django.conf import settings
 
 from common.views import AbsSegmentSelection
-from common.views import AbsTargetSelection
+#from common.views import AbsTargetSelection
+from common.views import AbsTargetSelectionTable
 # from common.alignment_SITE_NAME import Alignment
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 from collections import OrderedDict
 
 
-class TargetSelection(AbsTargetSelection):
+class TargetSelection(AbsTargetSelectionTable):
     step = 1
     number_of_steps = 2
-    docs = 'sequences.html#similarity-matrix'
+    title = "SELECT RECEPTORS"
+    description = "Select receptors in the table (below) or browse the classification tree (right). You can select entire" \
+        + " families or individual receptors.\n\nOnce you have selected all your receptors, click the green button."
+    docs = "sequences.html#similarity-matrix"
     selection_boxes = OrderedDict([
-        ('reference', False),
-        ('targets', True),
-        ('segments', False),
+        ("reference", False),
+        ("targets", True),
+        ("segments", False),
     ])
     buttons = {
-        'continue': {
-            'label': 'Continue to next step',
-            'url': '/similaritymatrix/segmentselection',
-            'color': 'success',
+        "continue": {
+            "label": "Next",
+            "onclick": "submitSelection('/similaritymatrix/segmentselection');",
+            "color": "success",
         },
     }
+
+# class TargetSelection(AbsTargetSelection):
+#     step = 1
+#     number_of_steps = 2
+#     docs = 'sequences.html#similarity-matrix'
+#     selection_boxes = OrderedDict([
+#         ('reference', False),
+#         ('targets', True),
+#         ('segments', False),
+#     ])
+#     buttons = {
+#         'continue': {
+#             'label': 'Continue to next step',
+#             'url': '/similaritymatrix/segmentselection',
+#             'color': 'success',
+#         },
+#     }
 
 
 class SegmentSelection(AbsSegmentSelection):

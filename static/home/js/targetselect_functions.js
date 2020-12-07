@@ -251,8 +251,8 @@ function exportTargets(){
  * after target selection.
  * @param {string} url The url to go to after synchronizing the target selection
  */
-function submitSelection(url) {
-  if (selected_targets.size > 0) {
+function submitSelection(url, minimum = 1) {
+  if (selected_targets.size >= minimum) {
     // set CSRF csrf_token
     $.ajaxSetup({
         headers:
@@ -270,7 +270,11 @@ function submitSelection(url) {
         showAlert("Something went wrong, please try again or contact us.", "danger");
       });
   } else {
-    showAlert("Please select at least one target.", "warning");
+    if (minimum == 1) {
+      showAlert("Please select at least one target.", "warning");
+    } else {
+      showAlert("Please select at least "+minimum+" targets.", "warning");
+    }
   }
 }
 

@@ -5,7 +5,8 @@ from django.http import HttpResponse
 
 from alignment.functions import get_proteins_from_selection
 from common.selection import Selection
-from common.views import AbsTargetSelection
+#from common.views import AbsTargetSelection
+from common.views import AbsTargetSelectionTable
 from common.views import AbsSegmentSelection
 from seqsign.sequence_signature import SequenceSignature, SignatureMatch, signature_score_excel
 
@@ -17,22 +18,42 @@ from io import BytesIO
 import xlsxwriter
 
 
-class PosTargetSelection(AbsTargetSelection):
+class PosTargetSelection(AbsTargetSelectionTable):
     step = 1
     number_of_steps = 4
-    docs = 'sequences.html#structure-based-alignments'
+    title = "SELECT RECEPTORS"
+    description = "Select receptors in the table (below) or browse the classification tree (right). You can select entire" \
+        + " families or individual receptors.\n\nOnce you have selected all your receptors, click the green button."
+    docs = "sequences.html#structure-based-alignments"
     selection_boxes = OrderedDict([
         ('reference', False),
         ('targets', True),
         ('segments', False),
     ])
     buttons = {
-        'continue': {
-            'label': 'Continue to next step',
-            'url': '/seqsign/savepos',
-            'color': 'success',
+        "continue": {
+            "label": "Next",
+            "onclick": "submitSelection('/seqsign/savepos');",
+            "color": "success",
         },
     }
+
+# class PosTargetSelection(AbsTargetSelection):
+#     step = 1
+#     number_of_steps = 4
+#     docs = 'sequences.html#structure-based-alignments'
+#     selection_boxes = OrderedDict([
+#         ('reference', False),
+#         ('targets', True),
+#         ('segments', False),
+#     ])
+#     buttons = {
+#         'continue': {
+#             'label': 'Continue to next step',
+#             'url': '/seqsign/savepos',
+#             'color': 'success',
+#         },
+#     }
 
 
 def preserve_targets(request):
@@ -54,24 +75,46 @@ def preserve_targets(request):
     return redirect('/seqsign/negativegroupselection',)
 
 
-class NegTargetSelection(AbsTargetSelection):
+class NegTargetSelection(AbsTargetSelectionTable):
 
     default_species = 'Human'
     step = 2
     number_of_steps = 4
-    docs = 'sequences.html#structure-based-alignments'
+    title = "SELECT RECEPTORS"
+    description = "Select receptors in the table (below) or browse the classification tree (right). You can select entire" \
+        + " families or individual receptors.\n\nOnce you have selected all your receptors, click the green button."
+    docs = "sequences.html#structure-based-alignments"
     selection_boxes = OrderedDict([
-        ('reference', False),
-        ('targets', True),
-        ('segments', False),
+        ("reference", False),
+        ("targets", True),
+        ("segments", False),
     ])
     buttons = {
-        'continue': {
-            'label': 'Continue to next step',
-            'url': '/seqsign/segmentselectionsignature',
-            'color': 'success',
+        "continue": {
+            "label": "Next",
+            "onclick": "submitSelection('/seqsign/segmentselectionsignature');",
+            "color": "success",
         },
     }
+
+# class NegTargetSelection(AbsTargetSelection):
+#
+#     default_species = 'Human'
+#     step = 2
+#     number_of_steps = 4
+#     docs = 'sequences.html#structure-based-alignments'
+#     selection_boxes = OrderedDict([
+#         ('reference', False),
+#         ('targets', True),
+#         ('segments', False),
+#     ])
+#     buttons = {
+#         'continue': {
+#             'label': 'Continue to next step',
+#             'url': '/seqsign/segmentselectionsignature',
+#             'color': 'success',
+#         },
+#     }
 
 
 class SegmentSelectionSignature(AbsSegmentSelection):
