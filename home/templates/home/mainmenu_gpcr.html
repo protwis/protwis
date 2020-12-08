@@ -145,8 +145,9 @@
         <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>GPCR-G Protein coupling</a></li>
         <li><a href="/signprot/couplings">GPCR-G protein couplings</a></li>
-        <li><a href="/signprot/statistics_venn">GPCR-G protein profiles (Venn)</a></li>
-        <li><a href="/signprot/statistics_tree">GPCR-G protein profiles (Tree)</a></li>
+        <li><a href="/signprot/statistics_venn">GPCR-G protein profiles</a></li>
+        {#  DEPRECATED FOR NOW #}
+        {#  <li><a href="/signprot/statistics_tree">GPCR-G protein profiles (Tree)</a></li> #}
 
         <!-- SEQUENCES -->
         <li class="divider"></li>
@@ -159,17 +160,16 @@
         <li><a href="/structure/g_protein_structure_browser">Structures</a></li>
         <li><a href="/structure/complex_models">Structure models</a></li>
 
-        <!-- GPCR-G PROTEIN INTERFACE -->
+        <!-- STRUCTURE COMPARISON -->
         <li class="divider"></li>
-        <li class="nav-header disabled text-left"><a>GPCR-G PROTEIN INTERFACE</a></li>
-        <li><a href="/signprot/matrix">Interface interactions & matching</a></li>
-        <li><a href="https://files.gpcrdb.org/GPCR-Gprotein_Mutations.xlsx">Interface mutations & chimera</a></li>
+        <li class="nav-header disabled text-left"><a>STRUCTURE COMPARISON</a></li>
+        <li><a href="/signprot/matrix">Interface interactions & profiling</a></li>
 
-{% comment %}
+
         <!-- DETERMINANTS & MUTATIONS -->
         <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>DETERMINANTS & MUTATIONS</a></li>
-{% endcomment %}
+        <li><a href="https://files.gpcrdb.org/GPCR-Gprotein_Mutations.xlsx">Interface mutations & chimeras</a></li>
     </ul>
 </li>
 
@@ -193,6 +193,13 @@
         <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>STRUCTURES</a></li>
         <li><a href="/structure">Structures</a></li>
+
+        <!-- STRUCTURE COMPARISON -->
+        {% comment %}
+        <li class="divider"></li>
+        <li class="nav-header disabled text-left"><a>STRUCTURE COMPARISON</a></li>
+        {% endcomment %}
+
     </ul>
 </li>
 

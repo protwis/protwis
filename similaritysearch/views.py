@@ -3,7 +3,8 @@ from django.conf import settings
 
 from common.views import AbsReferenceSelection
 from common.views import AbsSegmentSelection
-from common.views import AbsTargetSelection
+#from common.views import AbsTargetSelection
+from common.views import AbsTargetSelectionTable
 # from common.alignment_SITE_NAME import Alignment
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
@@ -42,27 +43,48 @@ class SegmentSelection(AbsSegmentSelection):
     }
 
 
-class TargetSelection(AbsTargetSelection):
+class TargetSelection(AbsTargetSelectionTable):
     step = 3
     number_of_steps = 3
-    docs = 'sequences.html#similarity-search-gpcrdb'
+    docs = "sequences.html#similarity-search-gpcrdb"
+    title = "SELECT RECEPTORS"
+    description = "Select receptors in the table (below) or browse the classification tree (right). You can select entire" \
+        + " families or individual receptors.\n\nOnce you have selected all your receptors, click the green button."
     selection_boxes = OrderedDict([
-        ('reference', True),
-        ('segments', True),
-        ('targets', True),
+        ("reference", True),
+        ("segments", True),
+        ("targets", True),
     ])
     buttons = {
-        'continue': {
-            'label': 'Show similarity',
-            'url': '/similaritysearch/render',
-            'color': 'success',
+        "continue": {
+            "label": "Next",
+            "onclick": "submitSelection('/similaritysearch/render');",
+            "color": "success",
         },
     }
+
+
+# class TargetSelection(AbsTargetSelection):
+#     step = 3
+#     number_of_steps = 3
+#     docs = 'sequences.html#similarity-search-gpcrdb'
+#     selection_boxes = OrderedDict([
+#         ('reference', True),
+#         ('segments', True),
+#         ('targets', True),
+#     ])
+#     buttons = {
+#         'continue': {
+#             'label': 'Show similarity',
+#             'url': '/similaritysearch/render',
+#             'color': 'success',
+#         },
+#     }
 
 def render_alignment(request):
     # get the user selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create an alignment object
     a = Alignment()
 
@@ -89,7 +111,7 @@ def render_alignment(request):
 def render_fasta_alignment(request):
     # get the user selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create an alignment object
     a = Alignment()
     a.show_padding = False
@@ -107,7 +129,7 @@ def render_fasta_alignment(request):
 
     num_of_sequences = len(a.proteins)
     num_residue_columns = len(a.positions) + len(a.segments)
-    
+
     response = render(request, 'alignment/alignment_fasta.html', {'a': a, 'num_of_sequences': num_of_sequences,
         'num_residue_columns': num_residue_columns}, content_type='text/fasta')
     response['Content-Disposition'] = "attachment; filename=" + settings.SITE_TITLE + "_alignment.fasta"
@@ -116,7 +138,7 @@ def render_fasta_alignment(request):
 def render_csv_alignment(request):
     # get the user selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create an alignment object
     a = Alignment()
     a.show_padding = False
@@ -137,7 +159,7 @@ def render_csv_alignment(request):
 
     num_of_sequences = len(a.proteins)
     num_residue_columns = len(a.positions) + len(a.segments)
-    
+
     response = render(request, 'alignment/alignment_csv.html', {'a': a, 'num_of_sequences': num_of_sequences,
         'num_residue_columns': num_residue_columns}, content_type='text/fasta')
     response['Content-Disposition'] = "attachment; filename=" + settings.SITE_TITLE + "_alignment.csv"

@@ -155,8 +155,6 @@
                         {% for stat in release_statistics %}
                             <li>
                                 {{ stat.statistics_type }}: {{ stat.value|intcomma }}
-                                {# FIXME #}
-                                {% if stat.statistics_type|safe == "Human proteins" %} (all non-olfactory){% endif %}
                             </li>
                         {% endfor %}
                     </ul>
@@ -224,4 +222,3 @@
     {#    </div>#}
 
 {% endblock %}
-
