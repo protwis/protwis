@@ -613,18 +613,21 @@ class CouplingBrowser2(TemplateView):
             .filter(g_protein_subunit__family__slug__startswith="100_001").order_by("g_protein_subunit__family__slug", "source")\
             .prefetch_related('g_protein_subunit__family', 'g_protein')
 
-
         coupling_headers = ProteinGProteinPair.objects.filter(source__in=["Inoue", "Bouvier"])\
             .filter(g_protein_subunit__family__slug__startswith="100_001")\
             .order_by("g_protein_subunit__family__slug", "source").distinct("g_protein_subunit__family__slug")\
             .values_list("g_protein_subunit__family__name", "g_protein_subunit__family__parent__name")
 
         coupling_header_names = {}
+        coupling_reverse_header_names = {}
         coupling_placeholder = {}
         coupling_placeholder2 = {}
+        coupling_placeholder3 = {}
         for name in coupling_headers:
             if name[1] not in coupling_header_names:
                 coupling_header_names[name[1]] = []
+                coupling_placeholder3[name[1]] = []
+            coupling_reverse_header_names[name[0]] = name[1]
             coupling_header_names[name[1]].append(name[0])
             coupling_placeholder[name[0]] = "--"
             coupling_placeholder2[name[0]] = []
@@ -635,15 +638,24 @@ class CouplingBrowser2(TemplateView):
                 dictotemplate[pair.protein_id] = {}
                 dictotemplate[pair.protein_id]['protein'] = protein_data[pair.protein_id]
                 dictotemplate[pair.protein_id]['coupling'] = {}
+                dictotemplate[pair.protein_id]['couplingmax'] = {}
                 dictotemplate[pair.protein_id]['coupling']['GPCRdb'] = {}
                 dictotemplate[pair.protein_id]['coupling']['GPCRdb']['logemaxec50'] = deepcopy(coupling_placeholder2)
                 dictotemplate[pair.protein_id]['coupling']['GPCRdb']['pec50'] = deepcopy(coupling_placeholder2)
                 dictotemplate[pair.protein_id]['coupling']['GPCRdb']['emax'] = deepcopy(coupling_placeholder2)
+                dictotemplate[pair.protein_id]['couplingmax']['GPCRdb'] = {}
+                dictotemplate[pair.protein_id]['couplingmax']['GPCRdb']['logemaxec50'] = deepcopy(coupling_placeholder3)
+                dictotemplate[pair.protein_id]['couplingmax']['GPCRdb']['pec50'] = deepcopy(coupling_placeholder3)
+                dictotemplate[pair.protein_id]['couplingmax']['GPCRdb']['emax'] = deepcopy(coupling_placeholder3)
             if pair.source not in dictotemplate[pair.protein_id]['coupling']:
                 dictotemplate[pair.protein_id]['coupling'][pair.source] = {}
+                dictotemplate[pair.protein_id]['couplingmax'][pair.source] = {}
                 dictotemplate[pair.protein_id]['coupling'][pair.source]['logemaxec50'] = coupling_placeholder.copy()
                 dictotemplate[pair.protein_id]['coupling'][pair.source]['pec50'] = coupling_placeholder.copy()
                 dictotemplate[pair.protein_id]['coupling'][pair.source]['emax'] = coupling_placeholder.copy()
+                dictotemplate[pair.protein_id]['couplingmax'][pair.source]['logemaxec50'] =  deepcopy(coupling_placeholder3)
+                dictotemplate[pair.protein_id]['couplingmax'][pair.source]['pec50'] = deepcopy(coupling_placeholder3)
+                dictotemplate[pair.protein_id]['couplingmax'][pair.source]['emax'] = deepcopy(coupling_placeholder3)
             subunit = pair.g_protein_subunit.family.name
             dictotemplate[pair.protein_id]['coupling'][pair.source]['logemaxec50'][subunit] = pair.logmaxec50_deg
             dictotemplate[pair.protein_id]['coupling'][pair.source]['pec50'][subunit] = pair.pec50_deg
@@ -651,7 +663,13 @@ class CouplingBrowser2(TemplateView):
             dictotemplate[pair.protein_id]['coupling']['GPCRdb']['logemaxec50'][subunit].append(pair.logmaxec50_deg)
             dictotemplate[pair.protein_id]['coupling']['GPCRdb']['pec50'][subunit].append(pair.pec50_deg)
             dictotemplate[pair.protein_id]['coupling']['GPCRdb']['emax'][subunit].append(pair.emax_deg)
-
+            family = coupling_reverse_header_names[subunit]
+            dictotemplate[pair.protein_id]['couplingmax'][pair.source]['logemaxec50'][family].append(pair.logmaxec50_deg)
+            dictotemplate[pair.protein_id]['couplingmax'][pair.source]['pec50'][family].append(pair.pec50_deg)
+            dictotemplate[pair.protein_id]['couplingmax'][pair.source]['emax'][family].append(pair.emax_deg)
+            dictotemplate[pair.protein_id]['couplingmax']['GPCRdb']['logemaxec50'][family].append(pair.logmaxec50_deg)
+            dictotemplate[pair.protein_id]['couplingmax']['GPCRdb']['pec50'][family].append(pair.pec50_deg)
+            dictotemplate[pair.protein_id]['couplingmax']['GPCRdb']['emax'][family].append(pair.emax_deg)
 
         for prot in dictotemplate:
             for propval in dictotemplate[prot]['coupling']['GPCRdb']:
@@ -659,10 +677,22 @@ class CouplingBrowser2(TemplateView):
                     valuelist = dictotemplate[prot]['coupling']['GPCRdb'][propval][sub]
                     if len(valuelist) == 0:
                         dictotemplate[prot]['coupling']['GPCRdb'][propval][sub] = "--"
-                    elif len(valuelist) == 1:
-                        dictotemplate[prot]['coupling']['GPCRdb'][propval][sub] = "--"  # valuelist[0]
+                    # elif len(valuelist) == 1:
+                    #     dictotemplate[prot]['coupling']['GPCRdb'][propval][sub] = valuelist[0]
                     else:
                         dictotemplate[prot]['coupling']['GPCRdb'][propval][sub] = round(mean(valuelist), 2)
+
+        for prot in dictotemplate:
+            for source in dictotemplate[prot]['couplingmax']:
+                for propval in dictotemplate[prot]['couplingmax'][source]:
+                    for fam in dictotemplate[prot]['couplingmax'][source][propval]:
+                        valuelist = dictotemplate[prot]['couplingmax'][source][propval][fam]
+                        if len(valuelist) == 0:
+                            dictotemplate[prot]['couplingmax'][source][propval][fam] = "--"
+                        # elif len(valuelist) == 1:
+                        #     dictotemplate[prot]['coupling'][source][propval][fam] = valuelist[0]
+                        else:
+                            dictotemplate[prot]['couplingmax'][source][propval][fam] = max(valuelist)
 
         # # get max values per family for every source
         # # make new source which will allow for filter

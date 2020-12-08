@@ -111,7 +111,7 @@
 
                 <tbody>
                 {% for p, pvals in tabfields.items %}
-                    {% for c, cvals in pvals.coupling.items %}
+                    {% for c, cvals in pvals.couplingmax.items %}
                         <tr>
                             <td>{{ c }}</td>
                             <td>{{ pvals.protein.class }}</td>
@@ -127,20 +127,18 @@
                             <td>{{ pvals.protein.gq11 }}</td>
                             <td>{{ pvals.protein.g1213 }}</td>
 
-                            <td>{{ cvals.logemaxec50.GNAS2 }}</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
+                            {% for q, logval in cvals.logemaxec50.items %}
+                                <td>{{ logval }}</td>
+                            {% endfor %}
 
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
+                            {% for q, pecval in cvals.pec50.items %}
+                                <td>{{ pecval }}</td>
+                            {% endfor %}
 
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
+                            {% for q, maxval in cvals.emax.items %}
+                                <td>{{ maxval }}</td>
+                            {% endfor %}
+
                         </tr>
                     {% endfor %}
                 {% endfor %}
@@ -225,10 +223,6 @@
                     {% for p, subval in header.items  %}
                         <th colspan={{ subval|length }}>{{ p }}</th>
                     {% endfor %}
-                    {#            <th colspan=2>Gs</th>#}
-                    {#            <th colspan=5>Gi/Go</th>#}
-                    {#            <th colspan=4>Gq/G11</th>#}
-                    {#            <th colspan=2>G12/G13</th>#}
                 </tr>
 
                 <tr>
@@ -286,12 +280,12 @@
                                 <td>{{ logval }}</td>
                             {% endfor %}
 
-                            {% for q, logval in cvals.pec50.items %}
-                                <td>{{ logval }}</td>
+                            {% for q, pecval in cvals.pec50.items %}
+                                <td>{{ pecval }}</td>
                             {% endfor %}
 
-                            {% for q, logval in cvals.emax.items %}
-                                <td>{{ logval }}</td>
+                            {% for q, maxval in cvals.emax.items %}
+                                <td>{{ maxval }}</td>
                             {% endfor %}
 
                         </tr>
