@@ -231,6 +231,10 @@ class Command(BaseBuild):
             deletions = list(range(240,265))
         elif structure.pdb_code.index=='7C6A':
             removed = list(range(1,35))
+        elif structure.pdb_code.index=="6S0L":
+            removed = removed + list(range(1068,1107))
+        elif structure.pdb_code.index=="7D7M":
+            deletions = list(range(1,4)) + list(range(367,489))
         # print('removed',removed)
         # removed = []
         if len(deletions)>len(d['wt_seq'])*0.9:
@@ -434,9 +438,7 @@ class Command(BaseBuild):
                 # if r!=ref_seq[i-1]:
                 #     print('aa mismatch')
         # print("seg res not mapped",gaps)
-        # import pprint
-        # print(deletions)
-        # pprint.pprint(mapped_seq)
+
         pdb = structure.pdb_data.pdb
         protein_conformation=structure.protein_conformation
         temp = ''

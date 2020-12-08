@@ -847,6 +847,17 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                 seg_resid_list = seg_resid_list[:-3]
             mutations = None
 
+            # Custom fix for 6S0L
+            if pdbname=="6S0L":
+                if elem.attrib['segId']=="6s0l_A_11_221":
+                    max_pos = 208
+                    seg_resid_list = seg_resid_list[:-4]
+                elif elem.attrib['segId']=="6s0l_A_222_260":
+                    min_pos = 1001
+                    seg_resid_list = [1001,1002,1003,1004] + seg_resid_list
+                elif elem.attrib['segId']=="6s0l_A_261_263" or elem.attrib['segId']=="6s0l_A_285_287":
+                    seg_uniprot_ids = ["Not_Observed"]
+
             if receptor==False and u_id_source=='UniProt':
                 if seg_uniprot_ids[0] in d['construct_sequences']:
                     if 'mutations' in d['construct_sequences'][seg_uniprot_ids[0]]:

@@ -698,6 +698,23 @@ class Alignment:
         # Adapt alignment to order in current self.proteins
         self.proteins = [prot2 for prot1 in self.proteins for prot2 in self.unique_proteins if prot1.id==prot2.id]
 
+    def remove_non_generic_numbers_from_alignment(self):
+        """Remove all positions without a generic number from the protein alignment property"""
+        to_delete = {}
+        for prot in self.proteins:
+            for seg in prot.alignment:
+                if seg not in to_delete:
+                    to_delete[seg] = []
+                for i, res in enumerate(self.proteins[0].alignment[seg]):
+                    if 'x' not in res[0] and i not in to_delete[seg]:
+                        to_delete[seg].append(i)
+        for prot in self.proteins:
+            for s, ids in to_delete.items():
+                offset = 0
+                for i in ids:
+                    prot.alignment[s].pop(i-offset)
+                    offset+=1
+
     def clear_empty_positions(self):
         """Remove empty columns from the segments and matrix"""
         # segments
