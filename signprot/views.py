@@ -184,7 +184,7 @@ class CouplingBrowser(TemplateView):
                                      'pretty': p.short(),
                                      'GuideToPharma': {},
                                      'Aska': {},
-                                     'Bouvier': {}}
+                                     'Bouvier1': {}}
 
         distinct_g_families = []
         distinct_g_subunit_families = {}
@@ -294,7 +294,7 @@ class CouplingBrowser(TemplateView):
             fd[p] = [v['class'], v['family'], v['accession'], v['entryname'], p, v['pretty']]
             s = 'GuideToPharma'
             # MERGED CRITERIA FOR COUPLING
-            # merge primary, secondary, coupling, no coupling classificationm currently from
+            # merge primary, secondary, coupling, no coupling classification currently from
             # three sources, GtP, Inoue, Bouvier. Exact rules being worked on.
             for gf in distinct_g_families:
                 values = []
@@ -312,8 +312,8 @@ class CouplingBrowser(TemplateView):
                         values.append('NCI')
                 else:
                     values.append('na inoue')
-                if 'Bouvier' in v and gf in v['Bouvier']:
-                    max = v['Bouvier'][gf]['max']
+                if 'Bouvier1' in v and gf in v['Bouvier1']:
+                    max = v['Bouvier1'][gf]['max']
                     if max > threshold_primary_bouvier:
                         values.append('primary')
                     elif max > threshold_secondary_bouvier:
@@ -419,7 +419,7 @@ class CouplingBrowser(TemplateView):
                         fd[p].append('')
 
             # Loop over Bouvier
-            s = 'Bouvier'
+            s = 'Bouvier1'
             for gf in distinct_g_families:
                 if gf in v[s]:
                     if v[s][gf]['max'] > threshold_primary_bouvier:
@@ -505,7 +505,7 @@ class CouplingBrowser(TemplateView):
                     fd[p].append('')
 
             # max Values for Gs, Gi/Go, Gq/G11, G12/13 and source Bouvier
-            s = 'Bouvier'
+            s = 'Bouvier1'
             for gf in distinct_g_families:
                 if gf in v[s]:
                     # fd[p].append(v[s][gf]['max'] + 200)
@@ -563,11 +563,6 @@ class CouplingBrowser2(TemplateView):
                                                                                            'g_protein__name',
                                                                                            'transduction')
 
-        # pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).prefetch_related('protein').filter(residue__protein_segment__slug='TM5').annotate(start=Min('residue__sequence_number'), end=Max('residue__sequence_number'))
-        # maxvals = ProteinGproteinPair.objects.filter(protein_id__in=proteins).prefetch_related('protein').annotate(max=Max('g_protein__'))
-        #weblinks = Protein.objects.prefetch_related('web_links__web_resource').get(sequence_type__slug='wt')
-        #print(weblinks.id)
-
         signaling_data = {}
         for pairing in couplings:
             if pairing[0] not in signaling_data:
@@ -614,11 +609,12 @@ class CouplingBrowser2(TemplateView):
             protein_data[prot.id]['gq11'] = protein_data[prot.id][gprotein_families[2]]
             protein_data[prot.id]['g1213'] = protein_data[prot.id][gprotein_families[3]]
 
-        couplings2 = ProteinGProteinPair.objects.filter(source__in=["Aska2", "Bouvier2"])\
-            .filter(g_protein_subunit__family__slug__startswith="100_001").order_by("g_protein_subunit__family__slug", "-source")\
-            .prefetch_related('g_protein_subunit__family').annotate(avg_log=Avg('pec50_deg'))
+        couplings2 = ProteinGProteinPair.objects.filter(source__in=["Inoue", "Bouvier"])\
+            .filter(g_protein_subunit__family__slug__startswith="100_001").order_by("g_protein_subunit__family__slug", "source")\
+            .prefetch_related('g_protein_subunit__family', 'g_protein')
 
-        coupling_headers = ProteinGProteinPair.objects.filter(source__in=["Aska2", "Bouvier2"])\
+
+        coupling_headers = ProteinGProteinPair.objects.filter(source__in=["Inoue", "Bouvier"])\
             .filter(g_protein_subunit__family__slug__startswith="100_001")\
             .order_by("g_protein_subunit__family__slug", "source").distinct("g_protein_subunit__family__slug")\
             .values_list("g_protein_subunit__family__name", "g_protein_subunit__family__parent__name")
@@ -656,19 +652,24 @@ class CouplingBrowser2(TemplateView):
             dictotemplate[pair.protein_id]['coupling']['GPCRdb']['pec50'][subunit].append(pair.pec50_deg)
             dictotemplate[pair.protein_id]['coupling']['GPCRdb']['emax'][subunit].append(pair.emax_deg)
 
-        for prot in dictotemplate:
-            for entry in dictotemplate[prot]['coupling']['GPCRdb']:
-                for sub in dictotemplate[prot]['coupling']['GPCRdb'][entry]:
-                    valuelist = dictotemplate[prot]['coupling']['GPCRdb'][entry][sub]
-                    if len(valuelist) == 0:
-                        dictotemplate[prot]['coupling']['GPCRdb'][entry][sub] = "--"
-                    elif len(valuelist) == 1:
-                        dictotemplate[prot]['coupling']['GPCRdb'][entry][sub] = "--"  # valuelist[0]
-                    else:
-                        dictotemplate[prot]['coupling']['GPCRdb'][entry][sub] = round(mean(valuelist), 2)
 
-        #pprint(dictotemplate[348])
-        #pprint(dictotemplate[1])
+        for prot in dictotemplate:
+            for property in dictotemplate[prot]['coupling']['GPCRdb']:
+                for sub in dictotemplate[prot]['coupling']['GPCRdb'][property]:
+                    valuelist = dictotemplate[prot]['coupling']['GPCRdb'][property][sub]
+                    if len(valuelist) == 0:
+                        dictotemplate[prot]['coupling']['GPCRdb'][property][sub] = "--"
+                    elif len(valuelist) == 1:
+                        dictotemplate[prot]['coupling']['GPCRdb'][property][sub] = "--"  # valuelist[0]
+                    else:
+                        dictotemplate[prot]['coupling']['GPCRdb'][property][sub] = round(mean(valuelist), 2)
+
+        # # get max values per family for every source
+        # # make new source which will allow for filter
+        # # include count as first column, add after, remember that it will remain there even after setting the filters.
+
+        #pprint(dictotemplate[348]) # only Bouvier
+        #pprint(dictotemplate[1]) # Inoue and Bouvier
 
         return dictotemplate, coupling_header_names
 
@@ -723,7 +724,7 @@ def GProteinTree(request, dataset="GuideToPharma"):
 def GProteinVenn(request, dataset="GuideToPharma"):
     return GProtein(request, dataset, "venn")
 
-@cache_page(60*60*24*7)
+#@cache_page(60*60*24*7)
 def couplings(request):
     """
     Presents coupling data between Receptors and G-proteins.

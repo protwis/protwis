@@ -5,44 +5,43 @@ let oTable1 = [];
 let oTable2 = [];
 let table1data;
 
-var tableToExcel = (function() {
-    var uri = "data:application/vnd.ms-excel;base64,",
-        template = "<html xmlns:o=\"urn:schemas-microsoft-com:office:office\" xmlns:x=\"urn:schemas-microsoft-com:office:excel\" xmlns=\"http://www.w3.org/TR/REC-html40\"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>",
-        base64 = function(s) {
-            return window.btoa(unescape(encodeURIComponent(s)));
-        },
-        format = function(s, c) {
-            return s.replace(/{(\w+)}/g, function(m, p) {
-                return c[parseInt(p, 10)];
-            });
-        };
-    return function(table, name, filename) {
-        var table_obj = $("#" + table).clone();
-        $("#excel_table").html(table_obj);
+var tableToExcel = (function () {
+    var uri = 'data:application/vnd.ms-excel;base64,',
+        template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>',
+        base64 = function (s) {
+            return window.btoa(unescape(encodeURIComponent(s)))
+        }, format = function (s, c) {
+            return s.replace(/{(\w+)}/g, function (m, p) {
+                return c[p];
+            })
+        }
+    return function (table, name, filename) {
+        var table= $("#"+table).clone();
+        $("#excel_table").html(table);
+
         // Clean up table to remove yadcf stuff
-        $("#excel_table thead tr").css("height", "");
-        $("#excel_table thead th").css("height", "");
-        $("#excel_table thead div").css("height", "");
+        $("#excel_table thead tr").css('height','');
+        $("#excel_table thead th").css('height','');
+        $("#excel_table thead div").css('height','');
         $("#excel_table thead .yadcf-filter-wrapper").remove();
         $("#excel_table thead button").remove();
         var tr = $("#excel_table thead tr:eq(1)");
+
         // reattach th titles
-        tr.find("th").each(function(column, th) {
-            if ($(th).attr("title")) {
-                $(th).html($(th).attr("title"));
-            }
+        tr.find('th').each (function( column, th) {
+            if ($(th).attr('title')) $(th).html($(th).attr('title'));
         });
 
         var ctx = {
-            worksheet: name || "Worksheet",
+            worksheet: name || 'Worksheet',
             table: $("#excel_table").html()
-        };
+        }
         $("#excel_table").html("");
         document.getElementById("dlink").href = uri + base64(format(template, ctx));
         document.getElementById("dlink").download = filename;
         document.getElementById("dlink").click();
-    };
-}());
+    }
+})()
 
 function select_all(e) {
     var checkedStatus = $(e).prop("checked");
@@ -95,6 +94,7 @@ function reset_tab2() {
     window.location.href = "/signprot/couplings2";
 }
 
+
 $(function() {
 
 //     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
@@ -113,6 +113,7 @@ $(function() {
         paging: false,
         bSortCellsTop: false, //prevent sort arrows going on bottom row
         aaSorting: [],
+        order: [4,'asc'],
         autoWidth: false,
         bInfo: true,
     });
@@ -218,6 +219,84 @@ $(function() {
                 },
             },
 
+// log(Emax/EC50)
+            {
+                column_number : 9,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+            {
+                column_number : 10,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+            {
+                column_number : 11,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+            {
+                column_number : 12,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+
+// pEC50
+            {
+                column_number : 13,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+            {
+                column_number : 14,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+            {
+                column_number : 15,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+            {
+                column_number : 16,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+
+// Emax
+            {
+                column_number : 17,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+            {
+                column_number : 18,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+            {
+                column_number : 19,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+            {
+                column_number : 20,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+
         ],
 
         {filters_tr_index: 2},
@@ -243,6 +322,7 @@ $(function() {
         paging: false,
         bSortCellsTop: false, //prevent sort arrows going on bottom row
         aaSorting: [],
+        order: [4,'asc'],
         autoWidth: false,
         bInfo: true,
     });
@@ -306,31 +386,49 @@ $(function() {
                 }
             },
 
+// Guide to Pharmacology
+            {
+                column_number: 5,
+                filter_type: "multi_select",
+                select_type: "select2",
+                filter_default_label: "",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: "40px"
+                },
+            },
+            {
+                column_number: 6,
+                filter_type: "multi_select",
+                select_type: "select2",
+                filter_default_label: "",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: "40px"
+                },
+            },
+            {
+                column_number: 7,
+                filter_type: "multi_select",
+                select_type: "select2",
+                filter_default_label: "",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: "40px"
+                },
+            },
+            {
+                column_number: 8,
+                filter_type: "multi_select",
+                select_type: "select2",
+                filter_default_label: "",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: "40px"
+                },
+            },
+
 // log(Emax/EC50)
-            {
-                column_number : 5,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 6,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 7,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 8,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
             {
                 column_number : 9,
                 filter_type: "range_number",
@@ -385,8 +483,6 @@ $(function() {
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
-
-// pEC50
             {
                 column_number : 18,
                 filter_type: "range_number",
@@ -411,6 +507,8 @@ $(function() {
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
+
+// pEC50
             {
                 column_number : 22,
                 filter_type: "range_number",
@@ -465,8 +563,6 @@ $(function() {
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
-
-// Emax
             {
                 column_number : 31,
                 filter_type: "range_number",
@@ -479,7 +575,6 @@ $(function() {
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
-
             {
                 column_number : 33,
                 filter_type: "range_number",
@@ -492,6 +587,8 @@ $(function() {
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
+
+// Emax
             {
                 column_number : 35,
                 filter_type: "range_number",
@@ -504,13 +601,13 @@ $(function() {
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
+
             {
                 column_number : 37,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
-
             {
                 column_number : 38,
                 filter_type: "range_number",
@@ -544,6 +641,31 @@ $(function() {
             },
             {
                 column_number : 43,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+            {
+                column_number : 44,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+            {
+                column_number : 45,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+
+            {
+                column_number : 46,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+            {
+                column_number : 47,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,

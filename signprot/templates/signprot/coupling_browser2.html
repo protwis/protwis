@@ -5,8 +5,8 @@
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css"/>
     <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css"/>
     <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css"/>
-    {#    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.22/css/jquery.dataTables.min.css">#}
-    {#    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css">#}
+{#        <link rel="stylesheet" href="https://cdn.datatables.net/1.10.22/css/jquery.dataTables.min.css">#}
+{#        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css">#}
     <link rel="stylesheet" href="{% static 'home/css/signprot-multitabtable.css' %}" type="text/css"/>
 {% endblock %}
 
@@ -63,7 +63,7 @@
                 <thead>
                 <tr>
                     <th colspan=1 style='height:35px; text-align:left;'>
-
+                        Source
                     </th>
                     <th colspan=4 style='height:35px; text-align:left;'>
                         Receptor
@@ -71,37 +71,47 @@
                     <th colspan=4 style='height:35px; text-align:left;'>
                         Guide to Pharmacology
                     </th>
+                    <th colspan=4 style='height:35px; text-align:left;'>
+                        log(Emax/EC50)
+                        <span class="glyphicon glyphicon-align-left glyphicon-info-sign" title="Max of G protein family members"
+                              style="font-size: 16px; cursor: pointer;"></span>
+                    </th>
+                    <th colspan=4 style='height:35px; text-align:left;'>
+                        pEC50
+                        <span class="glyphicon glyphicon-align-left glyphicon-info-sign" title="Max of G protein family members"
+                              style="font-size: 16px; cursor: pointer;"></span>
+                    </th>
+                    <th colspan=4 style='height:35px; text-align:left;'>
+                        Emax
+                        <span class="glyphicon glyphicon-align-left glyphicon-info-sign" title="Max of G protein family members"
+                              style="font-size: 16px; cursor: pointer;"></span>
+                    </th>
                 </tr>
 
                 <tr>
-                    <th>Source</th>
+                    <th></th>
                     <th>Cl</th>
                     <th>ResFam</th>
                     <th>Uniprot</th>
                     <th>IUPHAR</th>
-
-                    {% for p, subval in header.items  %}
-                        <th>{{ p }}</th>
+                    {% for n in "x"|rjust:"4" %}
+                        {% for p, subval in header.items  %}
+                            <th>{{ p }}</th>
+                        {% endfor %}
                     {% endfor %}
                 </tr>
 
                 <tr>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
+                    {% for n in "x"|rjust:"21" %}
+                        <th></th>
+                    {% endfor %}
                 </tr>
 
                 </thead>
 
                 <tbody>
                 {% for p, pvals in tabfields.items %}
-                    {% for c in pvals.coupling.keys %}
+                    {% for c, cvals in pvals.coupling.items %}
                         <tr>
                             <td>{{ c }}</td>
                             <td>{{ pvals.protein.class }}</td>
@@ -116,6 +126,21 @@
                             <td>{{ pvals.protein.gio }}</td>
                             <td>{{ pvals.protein.gq11 }}</td>
                             <td>{{ pvals.protein.g1213 }}</td>
+
+                            <td>{{ cvals.logemaxec50.GNAS2 }}</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
                         </tr>
                     {% endfor %}
                 {% endfor %}
@@ -164,6 +189,9 @@
                     <th colspan=4 style='height:35px; text-align:left;'>
                         Receptor
                     </th>
+                    <th colspan=4 style='height:35px; text-align:left;'>
+                        Guide to Pharmacology
+                    </th>
                     <th colspan=13 style='height:35px; text-align:left;'>
                         log(Emax/EC50)
                     </th>
@@ -183,7 +211,7 @@
                     <th>IUPHAR</th>
 
                     {% for p, subval in header.items  %}
-                        <th colspan={{ subval|length }}>{{ p }}</th>
+                        <th>{{ p }}</th>
                     {% endfor %}
 
                     {% for p, subval in header.items  %}
@@ -194,6 +222,9 @@
                         <th colspan={{ subval|length }}>{{ p }}</th>
                     {% endfor %}
 
+                    {% for p, subval in header.items  %}
+                        <th colspan={{ subval|length }}>{{ p }}</th>
+                    {% endfor %}
                     {#            <th colspan=2>Gs</th>#}
                     {#            <th colspan=5>Gi/Go</th>#}
                     {#            <th colspan=4>Gq/G11</th>#}
@@ -206,6 +237,9 @@
                     <th></th>
                     <th></th>
                     <th></th>
+                    {% for p, subval in header.items  %}
+                        <th></th>
+                    {% endfor %}
                     {% for subval in subunitheader %}
                         <th>
                             {{ subval}}
@@ -243,6 +277,11 @@
                                 <a href="https://gpcrdb.org/protein/{{ pvals.protein.entryname }}" target="_blank">{{ pvals.protein.iuphar|safe }}</a>
                             </td>
 
+                            <td>{{ pvals.protein.gs }}</td>
+                            <td>{{ pvals.protein.gio }}</td>
+                            <td>{{ pvals.protein.gq11 }}</td>
+                            <td>{{ pvals.protein.g1213 }}</td>
+
                             {% for q, logval in cvals.logemaxec50.items %}
                                 <td>{{ logval }}</td>
                             {% endfor %}
@@ -274,8 +313,8 @@
     <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"></script>
     <script src="{% static 'home/js/select2.js' %}"></script>
     {#    <script src="{% static 'home/js/datatables.min.js' %}"></script>#}
-    {#    <script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>#}
-    {#    <script src="https://cdnjs.cloudflare.com/ajax/libs/yadcf/0.9.4/jquery.dataTables.yadcf.min.js"></script>#}
-    {#    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>#}
+{#        <script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>#}
+{#        <script src="https://cdnjs.cloudflare.com/ajax/libs/yadcf/0.9.4/jquery.dataTables.yadcf.min.js"></script>#}
+{#        <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>#}
     <script src="{% static 'home/js/signprot-multitabtable2.js' %}"></script>
 {% endblock %}
