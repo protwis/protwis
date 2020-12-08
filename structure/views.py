@@ -478,8 +478,8 @@ class StructureStatistics(TemplateView):
 
 		all_structs = Structure.objects.all().prefetch_related('protein_conformation__protein__family').exclude(refined=True)
 		all_complexes = all_structs.exclude(ligands=None)
-		#FIXME G protein list is hard-coded for now. Table structure needs to be expanded for fully automatic approach.
-		all_gprots = all_structs.filter(stabilizing_agents__slug='gs')
+
+		all_gprots = all_structs.filter(id__in=SignprotComplex.objects.filter(protein__family__slug__startswith='100').values_list("structure__id", flat=True))
 		all_active = all_structs.filter(protein_conformation__state__slug = 'active')
 
 		years = self.get_years_range(list(set([x.publication_date.year for x in all_structs])))
@@ -489,8 +489,7 @@ class StructureStatistics(TemplateView):
 		# unique_complexes = all_complexes.distinct('ligands', 'protein_conformation__protein__family__name')
 		unique_complexes = StructureLigandInteraction.objects.filter(annotated=True).distinct('ligand', 'structure__protein_conformation__protein__family')
 
-		#FIXME G protein list is hard-coded for now. Table structure needs to be expanded for fully automatic approach.
-		unique_gprots = unique_structs.filter(stabilizing_agents__slug='gs')
+		unique_gprots = unique_structs.filter(id__in=SignprotComplex.objects.filter(protein__family__slug__startswith='100').values_list("structure__id", flat=True))
 		unique_active = unique_structs.filter(protein_conformation__state__slug = 'active')
 
 		#Stats
