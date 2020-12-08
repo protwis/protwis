@@ -33,6 +33,8 @@ import json
 default_schemes_excluded = ["cgn", "ecd", "can"]
 
 def getTargetTable():
+    data_table = cache.get("target_table")
+    if data_table == None:
         proteins = Protein.objects.filter(sequence_type__slug="wt",
                                           family__slug__startswith="00",
                                           species__common_name="Human").prefetch_related(
@@ -222,8 +224,9 @@ def getTargetTable():
             )
 
         data_table += "</tbody></table>"
+        cache.set("target_table", data_table, 60*60*24*7)
 
-        return data_table
+    return data_table
 
 class AbsTargetSelectionTable(TemplateView):
     """An abstract class for the tablew target selection page used in many apps.
