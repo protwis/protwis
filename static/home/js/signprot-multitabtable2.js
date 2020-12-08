@@ -27,7 +27,7 @@ var tableToExcel = function () {
             // reattach th titles
             tr.find("th").each (function( column, th) {
                 if ($(th).attr("title")) {
-                    $(th).html($(th).attr("title"))
+                    $(th).html($(th).attr("title"));
                 }
             });
 
@@ -39,7 +39,7 @@ var tableToExcel = function () {
         document.getElementById("dlink").href = uri + base64(format(template, ctx));
         document.getElementById("dlink").download = filename;
         document.getElementById("dlink").click();
-    }
+    };
 }();
 
 function select_all(e) {

@@ -654,15 +654,15 @@ class CouplingBrowser2(TemplateView):
 
 
         for prot in dictotemplate:
-            for property in dictotemplate[prot]['coupling']['GPCRdb']:
-                for sub in dictotemplate[prot]['coupling']['GPCRdb'][property]:
-                    valuelist = dictotemplate[prot]['coupling']['GPCRdb'][property][sub]
+            for propval in dictotemplate[prot]['coupling']['GPCRdb']:
+                for sub in dictotemplate[prot]['coupling']['GPCRdb'][propval]:
+                    valuelist = dictotemplate[prot]['coupling']['GPCRdb'][propval][sub]
                     if len(valuelist) == 0:
-                        dictotemplate[prot]['coupling']['GPCRdb'][property][sub] = "--"
+                        dictotemplate[prot]['coupling']['GPCRdb'][propval][sub] = "--"
                     elif len(valuelist) == 1:
-                        dictotemplate[prot]['coupling']['GPCRdb'][property][sub] = "--"  # valuelist[0]
+                        dictotemplate[prot]['coupling']['GPCRdb'][propval][sub] = "--"  # valuelist[0]
                     else:
-                        dictotemplate[prot]['coupling']['GPCRdb'][property][sub] = round(mean(valuelist), 2)
+                        dictotemplate[prot]['coupling']['GPCRdb'][propval][sub] = round(mean(valuelist), 2)
 
         # # get max values per family for every source
         # # make new source which will allow for filter
