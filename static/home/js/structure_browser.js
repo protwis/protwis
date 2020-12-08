@@ -1,6 +1,9 @@
+/*eslint complexity: ["error", 8]*/
+/*global ClearSelection, AddToSelection, superposition, copyToClipboard */
+
 function structurebrowser() {
 
-    var oTable2 = $('#structures_scrollable').DataTable({
+    var oTable2 = $("#structures_scrollable").DataTable({
         "scrollY":        "65vh",
         "scrollX":        true,
         "scrollCollapse": true,
@@ -8,9 +11,9 @@ function structurebrowser() {
         "paging":         false,
         "aaSorting": [],
         "autoWidth": false,
-        "order": [[29,'desc'],[1,'asc']],
+        "order": [[29,"desc"],[1,"asc"]],
         "columnDefs": [
-            { "targets": 'no-sort', "orderable": false }
+            { "targets": "no-sort", "orderable": false }
             ],
         "columns": [
             null,
@@ -48,16 +51,16 @@ function structurebrowser() {
         "bInfo" : true,
     });
 
-    var prev_ids = Array()
-    var current_align_ids = Array()
+    var prev_ids = Array();
+    var current_align_ids = Array();
 
     //Uncheck every row when using back button on browser
-    $('.alt_selected').prop('checked',false)
-    $('.alt').prop('checked',false)
-    $('.select-all').prop('checked',false)
-    
-    ClearSelection('targets');
-    ClearSelection('reference');
+    $(".alt_selected").prop("checked",false);
+    $(".alt").prop("checked",false);
+    $(".select-all").prop("checked",false);
+
+    ClearSelection("targets");
+    ClearSelection("reference");
 
     $("#loading_div").hide();
 
@@ -66,94 +69,94 @@ function structurebrowser() {
             {
                 column_number : 1,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 column_data_type: "html",
                 html_data_type: "text",
                 filter_default_label: "UniProt",
                 filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '60px',
+                    width: "60px",
                 }
             },
             {
                 column_number : 2,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 column_data_type: "html",
                 html_data_type: "text",
                 filter_default_label: "IUPHAR",
                 filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '60px',
+                    width: "60px",
                 }
             },
             {
                 column_number : 3,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 column_data_type: "html",
                 html_data_type: "text",
                 filter_default_label: "Receptor family",
                 filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '120px',
+                    width: "120px",
                 }
             },
             {
                 column_number: 4,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 column_data_type: "html",
                 html_data_type: "text",
                 filter_default_label: "Class",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '80px',
+                    width: "80px",
                 }
             },
             {
                 column_number: 5,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 filter_default_label: "Species",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '80px',
+                    width: "80px",
                 }
             },
             {
                 column_number : 6,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 filter_default_label: "Method",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '60px',
+                    width: "60px",
                 }
             },
             {
                 column_number : 7,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 column_data_type: "html",
                 filter_default_label: "Select",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '50px',
+                    width: "50px",
                 }
             },
             {
                 column_number : 8,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 filter_default_label: "Select",
                 column_data_type: "html",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '50px',
+                    width: "50px",
                 }
             },
             {
@@ -165,22 +168,22 @@ function structurebrowser() {
             {
                 column_number : 10,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 filter_default_label: "",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '30px',
+                    width: "30px",
                 }
             },
             {
                 column_number : 11,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 filter_default_label: "State",
                 filter_reset_button_text: false,
                 filter_match_mode : "exact",
                 select_type_options: {
-                    width: '70px',
+                    width: "70px",
                 }
             },
             {
@@ -195,40 +198,40 @@ function structurebrowser() {
                 filter_reset_button_text: false,
                 filter_default_label: ["Min", "Max"],
                 select_type_options: {
-                    width: '50px',
+                    width: "50px",
                 }
             },
             {
                 column_number : 14,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 filter_default_label: "Family",
                 filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '50px',
+                    width: "50px",
                 }
             },
             {
                 column_number : 15,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 filter_default_label: "Subtype",
                 filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '55px',
+                    width: "55px",
                 }
             },
             {
                 column_number : 16,
                 filter_type: "text",
-                select_type: 'select2',
+                select_type: "select2",
                 filter_default_label: "Note",
                 filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '80px',
+                    width: "80px",
                 }
             },
             {
@@ -237,123 +240,123 @@ function structurebrowser() {
                 filter_reset_button_text: false,
                 filter_default_label: ["Min", "Max"],
                 select_type_options: {
-                    width: '50px',
+                    width: "50px",
                 }
             },
             {
                 column_number : 18,
                 filter_type: "text",
-                select_type: 'select2',
+                select_type: "select2",
                 filter_default_label: "Fusion",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '100px',
+                    width: "100px",
                 }
             },
             {
                 column_number : 19,
                 filter_type: "text",
-                select_type: 'select2',
+                select_type: "select2",
                 filter_default_label: "Antibodies",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '100px',
+                    width: "100px",
                 }
             },
             {
                 column_number : 20,
                 filter_type: "text",
-                select_type: 'select2',
+                select_type: "select2",
                 html_data_type: "text",
                 filter_default_label: "Ligand name",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '100px',
+                    width: "100px",
                 }
             },
             {
                 column_number : 21,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 html_data_type: "text",
                 filter_default_label: "Ligand type",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '100px',
+                    width: "100px",
                 },
-                data: ['none', 'nonesmall molecule', 'peptide', 'peptideion', 'peptidesmall molecule', 'protein', 'small molecule', 'small moleculesmall molecule']
+                data: ["none", "nonesmall molecule", "peptide", "peptideion", "peptidesmall molecule", "protein", "small molecule", "small moleculesmall molecule"]
             },
             {
                 column_number : 22,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 filter_default_label: "Modality",
                 filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '100px',
+                    width: "100px",
                 },
-                data: ['Agonist', 'Antagonist', 'Apo (no ligand)', 'Inverse agonist', 'AgonistPAM', 'AntagonistNAM',
-                       'Inverse agonistNAM', 'NAMAntagonist', 'NAMAgonist', 'PAMAgonist', 'unknown', 'N/A']
+                data: ["Agonist", "Antagonist", "Apo (no ligand)", "Inverse agonist", "AgonistPAM", "AntagonistNAM",
+                       "Inverse agonistNAM", "NAMAntagonist", "NAMAgonist", "PAMAgonist", "unknown", "N/A"]
             },
             {
                 column_number : 23,
                 filter_type: "text",
-                select_type: 'select2',
+                select_type: "select2",
                 filter_default_label: "Ligand name",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '100px',
+                    width: "100px",
                 }
             },
             {
                 column_number : 24,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 filter_default_label: "Ligand type",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '80px',
+                    width: "80px",
                 }
             },
             {
                 column_number : 25,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 filter_default_label: "",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '40px',
+                    width: "40px",
                 }
             },
             {
                 column_number : 26,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 filter_default_label: "",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '40px',
+                    width: "40px",
                 }
             },
             {
                 column_number : 27,
                 filter_type: "text",
-                select_type: 'select2',
+                select_type: "select2",
                 filter_default_label: "Authors",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '100px',
+                    width: "100px",
                 }
             },
             {
                 column_number : 28,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 filter_default_label: "Reference",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '140px',
+                    width: "140px",
                 }
             },
             {
@@ -361,18 +364,18 @@ function structurebrowser() {
                 filter_type: "range_date",
                 filter_reset_button_text: false,
                 date_format: "yyyy-mm-dd",
-                select_type: 'select2',
+                select_type: "select2",
                 filter_default_label: ["Min", "Max"],
                 // filter_reset_button_text: false,
             },
             {
                 column_number : 30,
                 filter_type: "multi_select",
-                select_type: 'select2',
+                select_type: "select2",
                 filter_default_label: "Select",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: '80px',
+                    width: "80px",
                 }
             }
         ],
@@ -383,32 +386,32 @@ function structurebrowser() {
 
     yadcf.exResetAllFilters(oTable2);
 
-    $('#structures_scrollable'+' > tbody > tr').click(function(event) {
-        if (event.target.type !== 'checkbox') {
-            $(':checkbox', this).trigger('click');
-            $(this).eq(0).toggleClass('alt_selected');
-            $(this).find('td').toggleClass('highlight');
+    $("#structures_scrollable"+" > tbody > tr").click(function(event) {
+        if (event.target.type !== "checkbox") {
+            $(":checkbox", this).trigger("click");
+            $(this).eq(0).toggleClass("alt_selected");
+            $(this).find("td").toggleClass("highlight");
         }
-        $(this).eq(0).toggleClass('alt_selected');
-        $(this).find('td').toggleClass('highlight');
+        $(this).eq(0).toggleClass("alt_selected");
+        $(this).find("td").toggleClass("highlight");
     });
 
     $(".select-all").click(function() {
-        $(':checkbox', this).trigger('click');
-        if ($(this).prop('checked')===true) {
-            $('.alt').prop('checked', true);
-            $('.alt').parent().parent().addClass('alt_selected');
-            $('.alt').parent().parent().find('td').addClass('highlight');
+        $(":checkbox", this).trigger("click");
+        if ($(this).prop("checked")===true) {
+            $(".alt").prop("checked", true);
+            $(".alt").parent().parent().addClass("alt_selected");
+            $(".alt").parent().parent().find("td").addClass("highlight");
         }
-        if ($(this).prop('checked')===false) {
-            $('.alt').prop('checked', false);
-            $('.alt').parent().parent().removeClass('alt_selected');
-            $('.alt').parent().parent().find('td').removeClass('highlight');
+        if ($(this).prop("checked")===false) {
+            $(".alt").prop("checked", false);
+            $(".alt").parent().parent().removeClass("alt_selected");
+            $(".alt").parent().parent().find("td").removeClass("highlight");
         }
     });
 
-    $('.hide_columns').click(function(evt) {
-    var columns = $(this).attr('columns').split(",");
+    $(".hide_columns").click(function(evt) {
+    var columns = $(this).attr("columns").split(",");
     columns.forEach(function(column) {
         var column = oTable2.column( column );
         try {
@@ -421,18 +424,18 @@ function structurebrowser() {
         oTable2.draw();
     } );
 
-    toggle_enabled = true;
-    $('#toggle_fixed_btn').click(function() {
+    var toggle_enabled = true;
+    $("#toggle_fixed_btn").click(function() {
         if (toggle_enabled) {
             toggle_enabled = false;
             $("#overlay").hide();
-            $("#toggle_fixed_btn").attr('value',"Enable fixed columns");
-            $("#toggle_fixed_btn").addClass('clicked_button');
+            $("#toggle_fixed_btn").attr("value","Enable fixed columns");
+            $("#toggle_fixed_btn").addClass("clicked_button");
         } else {
             toggle_enabled = true;
-            $('.dataTables_scrollBody').scroll();
-            $("#toggle_fixed_btn").attr('value',"Disable fixed columns");
-            $("#toggle_fixed_btn").removeClass('clicked_button');
+            $(".dataTables_scrollBody").scroll();
+            $("#toggle_fixed_btn").attr("value","Disable fixed columns");
+            $("#toggle_fixed_btn").removeClass("clicked_button");
         }
     });
 
@@ -450,22 +453,22 @@ function structurebrowser() {
         oTable2.draw();
     });
 
-    $('#representative_btn').click(function () {
-        $(this).toggleClass('toggled');
-        if ($(this).hasClass('toggled')) {
-            $("#representative_btn").addClass('clicked_button');
-            $("#representative_btn").attr('value','All structures');
+    $("#representative_btn").click(function () {
+        $(this).toggleClass("toggled");
+        if ($(this).hasClass("toggled")) {
+            $("#representative_btn").addClass("clicked_button");
+            $("#representative_btn").attr("value","All structures");
         }
         else {
-            $("#representative_btn").removeClass('clicked_button');
-            $("#representative_btn").attr('value','Representative structures (state & receptor)');
+            $("#representative_btn").removeClass("clicked_button");
+            $("#representative_btn").attr("value","Representative structures (state & receptor)");
         }
         oTable2.draw();
     });
 
     $.fn.dataTable.ext.search.push(
         function (settings, data, dataIndex) {
-            if ($('#representative_btn').hasClass('toggled')) {
+            if ($("#representative_btn").hasClass("toggled")) {
                 if ($(oTable2.row(dataIndex).node()).hasClass("repr-st") && $(oTable2.row(dataIndex).node()).hasClass("repr-st")) {
                     return true;
                 }
@@ -476,67 +479,67 @@ function structurebrowser() {
             }
     });
 
-    $('#align_btn').click(function () {
-        var checked_data = oTable2.rows('.alt_selected').data();
-        ClearSelection('targets');
-        for (i = 0; i < checked_data.length; i++) {
+    $("#align_btn").click(function () {
+        var checked_data = oTable2.rows(".alt_selected").data();
+        ClearSelection("targets");
+        for (var i = 0; i < checked_data.length; i++) {
             var div = document.createElement("div");
             div.innerHTML = checked_data[i][7];
             if (typeof div.innerText !== "undefined") {
-                AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
+                AddToSelection("targets", "structure", div.innerText.replace(/\s+/g, ""));
             } else {
-                AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
+                AddToSelection("targets", "structure", div.textContent.replace(/\s+/g, ""));
             }
         }
-        window.location.href = '/structure/selection_convert';
+        window.location.href = "/structure/selection_convert";
     });
 
-    $('#superpose_btn').click(function() {
-        superposition(oTable2, [7,1,2,3,4,5,11,29], 'structure_browser');
+    $("#superpose_btn").click(function() {
+        superposition(oTable2, [7,1,2,3,4,5,11,29], "structure_browser");
     });
 
-    $('#download_btn').click(function () {
-        ClearSelection('targets');
-        var checked_data = oTable2.rows('.alt_selected').data();
-        for (i = 0; i < checked_data.length; i++) {
+    $("#download_btn").click(function () {
+        ClearSelection("targets");
+        var checked_data = oTable2.rows(".alt_selected").data();
+        for (var i = 0; i < checked_data.length; i++) {
             var div = document.createElement("div");
             div.innerHTML = checked_data[i][7];
             if (typeof div.innerText !== "undefined") {
-                AddToSelection('targets', 'structure',  div.innerText.replace(/\s+/g, '') );
+                AddToSelection("targets", "structure",  div.innerText.replace(/\s+/g, "") );
             } else {
-                AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
+                AddToSelection("targets", "structure", div.textContent.replace(/\s+/g, ""));
             }
         }
-        window.location.href = '/structure/pdb_download_index';
+        window.location.href = "/structure/pdb_download_index";
     });
 
-    $('.uniprot-export').data('powertipjq', $([
-        '<p>Export UniProt IDs</p>'
-        ].join('\n')));
-    $('.pdb-export').data('powertipjq', $([
-        '<p>Export PDB IDs</p>'
-        ].join('\n')));
-    $('.glyphicon-export').powerTip({
-        placement: 'n',
+    $(".uniprot-export").data("powertipjq", $([
+        "<p>Export UniProt IDs</p>"
+        ].join("\n")));
+    $(".pdb-export").data("powertipjq", $([
+        "<p>Export PDB IDs</p>"
+        ].join("\n")));
+    $(".glyphicon-export").powerTip({
+        placement: "n",
         smartPlacement: true
     });
-    $('#uniprot_copy').click(function () {
-        copyToClipboard($('.alt_selected > .uniprot > a'), '\n', 'UniProt IDs', $('.uniprot-export'));
+    $("#uniprot_copy").click(function () {
+        copyToClipboard($(".alt_selected > .uniprot > a"), "\n", "UniProt IDs", $(".uniprot-export"));
     });
-    $('#pdb_copy').click(function () {
-        copyToClipboard($('.alt_selected > .pdb > a'), '\n', 'PDB IDs', $('.pdb-export'));
-    });
-
-    $('#reset_filters_btn').click(function () {
-        window.location.href = '/structure/'
+    $("#pdb_copy").click(function () {
+        copyToClipboard($(".alt_selected > .pdb > a"), "\n", "PDB IDs", $(".pdb-export"));
     });
 
-    $('.close_modal').click(function () {
-        var modal = document.getElementById('myModal');
+    $("#reset_filters_btn").click(function () {
+        window.location.href = "/structure/";
+    });
+
+    $(".close_modal").click(function () {
+        var modal = document.getElementById("myModal");
         modal.style.display = "none";
     });
 
-    $('.dataTables_scrollBody').append('<div id=overlay><table id="overlay_table" class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
+    $(".dataTables_scrollBody").append("<div id=overlay><table id=\"overlay_table\" class=\"row-border text-center compact dataTable no-footer text-nowrap\"><tbody></tbody></table></div>");
 
     function create_overlay() {
         // This function fires upon filtering, to update what rows to show as an overlay
@@ -553,7 +556,7 @@ function structurebrowser() {
     }
 
     // Function that detects filtering events
-    $('#structures_scrollable').on( 'draw.dt', function (e,oSettings) {
+    $("#structures_scrollable").on( "draw.dt", function (e,oSettings) {
         create_overlay();
     });
 
@@ -562,15 +565,19 @@ function structurebrowser() {
 
     var left = 0;
     var old_left = 0;
-    $('.dataTables_scrollBody').scroll(function(){
-        // If user scrolls and it's >100px from left, then attach fixed columns overlay
-        left = $('.dataTables_scrollBody').scrollLeft();
-        if (left!=old_left) $("#overlay").hide();
+    $(".dataTables_scrollBody").scroll(function(){
+        // If user scrolls and it"s >100px from left, then attach fixed columns overlay
+        left = $(".dataTables_scrollBody").scrollLeft();
+        if (left !== old_left) {
+          $("#overlay").hide();
+        }
         old_left = left;
 
         if (left>100 && toggle_enabled) {
-            $("#overlay").css({ left: left+'px' });
-            if ($("#overlay").is(":hidden")) $("#overlay").show();
+            $("#overlay").css({ left: left+"px" });
+            if ($("#overlay").is(":hidden")) {
+              $("#overlay").show();
+            }
         }
     });
-};
+}

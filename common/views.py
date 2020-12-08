@@ -30,34 +30,34 @@ import xlsxwriter, xlrd
 import time
 import json
 
-default_schemes_excluded = ['cgn', 'ecd', 'can']
+default_schemes_excluded = ["cgn", "ecd", "can"]
 
 def getTargetTable():
-        proteins = Protein.objects.filter(sequence_type__slug='wt',
-                                          family__slug__startswith='00',
-                                          species__common_name='Human').prefetch_related(
-            'family',
-            'family__parent__parent__parent'
+        proteins = Protein.objects.filter(sequence_type__slug="wt",
+                                          family__slug__startswith="00",
+                                          species__common_name="Human").prefetch_related(
+            "family",
+            "family__parent__parent__parent"
         )
         # Acquired slugs
         slug_list = [ p.family.slug for p in proteins ]
 
         # Acquire all targets that do not have a human ortholog
-        missing_slugs = list(Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith='00')\
+        missing_slugs = list(Protein.objects.filter(sequence_type__slug="wt", family__slug__startswith="00")\
                                          .exclude(family__slug__in=slug_list)\
-                                         .distinct('family__slug')\
-                                         .values_list('family__slug', flat=True))
+                                         .distinct("family__slug")\
+                                         .values_list("family__slug", flat=True))
 
         for i in missing_slugs:
             missing = Protein.objects.filter(family__slug=i)\
                                         .order_by("id")\
                                         .prefetch_related(
-                'family',
-                'family__parent__parent__parent'
+                "family",
+                "family__parent__parent__parent"
             )
             proteins = proteins | missing[:1]
 
-        pdbids = list(Structure.objects.filter(refined=False).values_list('pdb_code__index', 'protein_conformation__protein__family_id'))
+        pdbids = list(Structure.objects.filter(refined=False).values_list("pdb_code__index", "protein_conformation__protein__family_id"))
 
         allpdbs = {}
         for pdb in pdbids:
@@ -66,24 +66,24 @@ def getTargetTable():
             else:
                 allpdbs[pdb[1]].append(pdb[0])
 
-        drugtargets_approved = list(Protein.objects.filter(drugs__status='approved').values_list('entry_name', flat=True))
-        drugtargets_trials = list(Protein.objects.filter(drugs__status__in=['in trial'],
-                                                         drugs__clinicalstatus__in=['completed', 'not open yet',
-                                                                                    'ongoing', 'recruiting',
-                                                                                    'suspended']).values_list(
-            'entry_name', flat=True))
+        drugtargets_approved = list(Protein.objects.filter(drugs__status="approved").values_list("entry_name", flat=True))
+        drugtargets_trials = list(Protein.objects.filter(drugs__status__in=["in trial"],
+                                                         drugs__clinicalstatus__in=["completed", "not open yet",
+                                                                                    "ongoing", "recruiting",
+                                                                                    "suspended"]).values_list(
+            "entry_name", flat=True))
 
-        ligand_set = list(AssayExperiment.objects.values('protein__family__slug')\
-            .annotate(num_ligands=Count('ligand', distinct=True)))
+        ligand_set = list(AssayExperiment.objects.values("protein__family__slug")\
+            .annotate(num_ligands=Count("ligand", distinct=True)))
 
         ligand_count = {}
         for entry in ligand_set:
             ligand_count[entry["protein__family__slug"]] = entry["num_ligands"]
 
         # Filter data source to Guide to Pharmacology until other coupling transduction sources are "consolidated".
-        couplings = ProteinGProteinPair.objects.filter(source="GuideToPharma").values_list('protein__entry_name',
-                                                                                           'g_protein__name',
-                                                                                           'transduction')
+        couplings = ProteinGProteinPair.objects.filter(source="GuideToPharma").values_list("protein__entry_name",
+                                                                                           "g_protein__name",
+                                                                                           "transduction")
 
         signaling_data = {}
         for pairing in couplings:
@@ -226,8 +226,11 @@ def getTargetTable():
         return data_table
 
 class AbsTargetSelectionTable(TemplateView):
-    """An abstract class for the target selection page used in many apps. To use it in another app, create a class
-    based view for that app that extends this class"""
+    """An abstract class for the tablew target selection page used in many apps.
+
+    To use it in another app, create a class-based view that extends this class
+    """
+
     template_name = 'common/targetselectiontable.html'
 
     type_of_selection = 'targets_table'
@@ -296,8 +299,12 @@ class AbsTargetSelectionTable(TemplateView):
     gns = ResidueNumberingScheme.objects.exclude(slug=settings.DEFAULT_NUMBERING_SCHEME).exclude(slug__in=default_schemes_excluded)
 
     def get_context_data(self, **kwargs):
-        """get context from parent class (really only relevant for children of this class, as TemplateView does
-        not have any context variables)"""
+        """Get context from parent class
+
+        (really only relevant for children of this class, as TemplateView does
+        not have any context variables)
+        """
+
         context = super().get_context_data(**kwargs)
 
         # get selection from session and add to context
@@ -340,8 +347,11 @@ class AbsTargetSelectionTable(TemplateView):
         return context
 
 class AbsTargetSelection(TemplateView):
-    """An abstract class for the target selection page used in many apps. To use it in another app, create a class
-    based view for that app that extends this class"""
+    """An abstract class for the target selection page used in many apps.
+
+    To use it in another app, create a class-based view that extends this class.
+    """
+
     template_name = 'common/targetselection.html'
 
     type_of_selection = 'targets'
@@ -405,8 +415,12 @@ class AbsTargetSelection(TemplateView):
     gns = ResidueNumberingScheme.objects.exclude(slug=settings.DEFAULT_NUMBERING_SCHEME).exclude(slug__in=default_schemes_excluded)
 
     def get_context_data(self, **kwargs):
-        """get context from parent class (really only relevant for children of this class, as TemplateView does
-        not have any context variables)"""
+        """get context from parent class
+
+        (really only relevant for children of this class, as TemplateView does
+        not have any context variables)
+        """
+
         context = super().get_context_data(**kwargs)
 
         # get selection from session and add to context
@@ -474,8 +488,11 @@ class AbsBrowseSelection(AbsTargetSelection):
 
 
 class AbsSegmentSelection(TemplateView):
-    """An abstract class for the segment selection page used in many apps. To use it in another app, create a class
-    based view for that app that extends this class"""
+    """An abstract class for the segment selection page used in many apps.
+
+    To use it in another app, create a class-based view for that app that extends this class
+    """
+
     template_name = 'common/segmentselection.html'
 
     step = 2
@@ -522,8 +539,12 @@ class AbsSegmentSelection(TemplateView):
     amino_acid_group_names_old = definitions.AMINO_ACID_GROUP_NAMES_OLD
 
     def get_context_data(self, **kwargs):
-        """get context from parent class (really only relevant for child classes of this class, as TemplateView does
-        not have any context variables)"""
+        """get context from parent class
+
+        (really only relevant for child classes of this class, as TemplateView
+        does not have any context variables).
+        """
+
         context = super().get_context_data(**kwargs)
 
         # get selection from session and add to context
@@ -2133,7 +2154,9 @@ def get_gpcr_class(item):
 @cache_page(60*60*24*7)
 def TargetTableData(request):
     """
-    Creates a table for selection of targets. The goal is to to offer an alternative to the togglefamilytreenode
+    Creates a table for selection of targets.
+
+    The goal is to to offer an alternative to the togglefamilytreenode
     alternative already present in the selection logic.
     Here we do server-side rendering of the table. This is a common trick to optimize response to client.
     See the following relevant video from google chrome.
