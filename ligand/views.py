@@ -107,7 +107,8 @@ def TargetDetailsCompact(request, **kwargs):
             ps = AssayExperiment.objects.filter(protein__family__parent__parent__slug=slug, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
         elif slug.count('_') == 2:
             ps = AssayExperiment.objects.filter(protein__family__parent__slug=slug, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
-        #elif slug.count('_') == 3:
+        elif slug.count('_') == 3:
+            ps = AssayExperiment.objects.filter(protein__family__slug=slug, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
         elif slug.count('_') == 1 and len(slug) != 7:
             ps = AssayExperiment.objects.filter(protein__entry_name = slug, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
 
@@ -204,7 +205,8 @@ def TargetDetails(request, **kwargs):
             ps = AssayExperiment.objects.filter(protein__family__parent__parent__slug=slug, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
         elif slug.count('_') == 2:
             ps = AssayExperiment.objects.filter(protein__family__parent__slug=slug, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
-        #elif slug.count('_') == 3:
+        elif slug.count('_') == 3:
+            ps = AssayExperiment.objects.filter(protein__family__slug=slug, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
         elif slug.count('_') == 1 and len(slug) != 7:
             ps = AssayExperiment.objects.filter(protein__entry_name = slug, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
 

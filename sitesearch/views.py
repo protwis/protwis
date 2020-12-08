@@ -8,7 +8,7 @@ from common.selection import SimpleSelection, Selection, SelectionItem
 
 from common.views import AbsReferenceSelection
 from common.views import AbsSegmentSelection
-from common.views import AbsTargetSelection
+from common.views import AbsTargetSelectionTable
 # from common.alignment_SITE_NAME import Alignment
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 from protein.models import ProteinSegment
@@ -20,22 +20,40 @@ from io import BytesIO
 import xlsxwriter, xlrd
 
 
-class TargetSelection(AbsTargetSelection):
+class TargetSelection(AbsTargetSelectionTable):
     step = 1
     number_of_steps = 2
-    docs = 'sites.html#site-search-manual'
+    docs = "sites.html#site-search-manual"
+    title = "SELECT RECEPTORS"
     selection_boxes = OrderedDict([
         ('reference', False),
         ('targets', True),
         ('segments', False),
     ])
     buttons = {
-        'continue': {
-            'label': 'Continue to next step',
-            'url': '/sitesearch/segmentselection',
-            'color': 'success',
+        "continue": {
+            "label": "Next",
+            "onclick": "submitSelection('/sitesearch/segmentselection');",
+            "color": "success",
         },
     }
+
+# class TargetSelection(AbsTargetSelection):
+#     step = 1
+#     number_of_steps = 2
+#     docs = 'sites.html#site-search-manual'
+#     selection_boxes = OrderedDict([
+#         ('reference', False),
+#         ('targets', True),
+#         ('segments', False),
+#     ])
+#     buttons = {
+#         'continue': {
+#             'label': 'Continue to next step',
+#             'url': '/sitesearch/segmentselection',
+#             'color': 'success',
+#         },
+#     }
 
 
 class SegmentSelection(AbsSegmentSelection):

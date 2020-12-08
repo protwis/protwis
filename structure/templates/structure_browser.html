@@ -35,13 +35,6 @@
 {% block content %}
 
 <div id="browser">
-    <!-- <div style="display:block;">
-        <div style="display:inline; float:left;">
-            <h2 style="width:auto; display:inline;">Structures</h2>
-        </div>
-    </div>
-    <br><br>
- -->
     <div style='width:100%; display:inline;'>
         <div class="btn-group">
             <a id="dlink"  style="display:none;"></a>
@@ -79,11 +72,11 @@
                                 <div class='overhead_text'>RECEPTOR</div>
                             </div>
                         </th>
-                        <th colspan=7 class="over_header flexible_over_header" id='structure_over_header' >
+                        <th colspan=8 class="over_header flexible_over_header" id='structure_over_header' >
                             <div>
                                 <div class='overhead_text'>STRUCTURE</div>
                                 <div class='overhead_close'>
-                                    <button type="button" class="close hide_columns" columns="6,7,8,9,10,11,12"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                    <button type="button" class="close hide_columns" columns="6,7,8,9,10,11,12,13"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
                                 </div>
                             </div>
                         </th>
@@ -91,7 +84,7 @@
                             <div>
                                 <div class='overhead_text'>SIGNAL PROTEIN</div>
                                 <div class='overhead_close'>
-                                    <button type="button" class="close hide_columns" columns="13,14,15,16" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                    <button type="button" class="close hide_columns" columns="14,15,16,17" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                                 </div>
                             </div>
                         </th>
@@ -99,47 +92,47 @@
                             <div>
                                 <div class='overhead_text'>AUXILIARY PROTEIN</div>
                                 <div class='overhead_close'>
-                                    <button type="button" class="close hide_columns" columns="17,18" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                    <button type="button" class="close hide_columns" columns="18,19" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                                 </div>
                             </div>
                         </th>
                         <th colspan=3 class="over_header flexible_over_header" id='structure_ligand_over_header'>
                             <div class='overhead_text'>STRUCTURE LIGAND</div>
                                 <div class='overhead_close'>
-                                    <button type="button" class="close hide_columns" columns="19,20,21" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                    <button type="button" class="close hide_columns" columns="20,21,22" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                                 </div>
                             </div>
                         </th>
                         <th colspan=2 class="over_header flexible_over_header" id='endo_ligand_over_header'>
                             <div class='overhead_text'>ENDOGENOUS LIGAND</div>
                                 <div class='overhead_close'>
-                                    <button type="button" class="close hide_columns" columns="22,23" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                    <button type="button" class="close hide_columns" columns="23,24" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                                 </div>
                             </div>
                         </th>
                         <th colspan=2 class="over_header flexible_over_header" id='sodium_over_header'>
                             <div class='overhead_text'>SODIUM ION SITE</div>
                                 <div class='overhead_close'>
-                                    <button type="button" class="close hide_columns" columns="24,25" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                    <button type="button" class="close hide_columns" columns="25,26" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                                 </div>
                             </div>
                         </th>
                         <th colspan=3 class="over_header flexible_over_header" id='reference_over_header'>
                             <div class='overhead_text'>REFERENCE</div>
                                 <div class='overhead_close'>
-                                    <button type="button" class="close hide_columns" columns="26,27,28" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                    <button type="button" class="close hide_columns" columns="27,28,29" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                                 </div>
                             </div>
                         </th>
                         <th colspan=1 class="over_header flexible_over_header" id='annotated_over_header'>
                             <div class='overhead_text'>ANNOTATED</div>
                                 <div class='overhead_close'>
-                                    <button type="button" class="close hide_columns" columns="29," style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                    <button type="button" class="close hide_columns" columns="30," style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                                 </div>
                             </div>
                         </th>
                     </tr>
-                    <tr class='over_header'>
+                    <tr class='over_header centered-header'>
                         <th></th>
                         <th>
                             <div>
@@ -150,7 +143,7 @@
                         <th>IUPHAR</th>
                         <th>Receptor family</th>
                         <th>Class</th>
-                        <th class='rightborder'>Species</th>
+                        <th class="rightborder">Species</th>
                         <th>Method</th>
                         <th>
                             <div>
@@ -158,28 +151,29 @@
                                 <div><button class='icon-button' type='button'><i id='pdb_copy' class="glyphicon glyphicon-export pdb-export"></i></button></div>
                             </div>
                         </th>
-                        <th><a href="https://academic.oup.com/nar/article/44/D1/D356/2502664" target="_blank">Refined<br>structure</a></th>
+                        <th>Refined<br>structure<br><a href="https://docs.gpcrdb.org/structures.html#refined-structures" target="_blank"><span class="glyphicon glyphicon-info-sign"></span></a></th>
                         <th>Resolution</th>
                         <th>Preferred<br>chain</th>
                         <th>State</th>
-                        <th class='rightborder'>Degree<br>active (%)</th>
+                        <th>Degree<br>active (%)</th>
+                        <th class="rightborder">% of Seq</th>
                         <th>Family</th>
                         <th>Subtype</th>
                         <th>Note</th>
-                        <th class='rightborder'>% of Seq</th>
+                        <th class="rightborder">% of Seq</th>
                         <th>Fusion</th>
                         <th class='rightborder'>Antibodies</th>
                         <th>Name</th>
                         <th>Type</th>
-                        <th class='rightborder'>Function</th>
+                        <th class="rightborder">Function</th>
                         <th>Name</th>
-                        <th class='rightborder'>Type</th>
-                        <th>D2x50-S3x39</th>
-                        <th class='rightborder'>Sodium in structure</th>
-                        <th>Last author</th>
+                        <th class="rightborder">Type</th>
+                        <th>D2x50<br>S3x39</th>
+                        <th class="rightborder">Sodium in<br>structure</th>
+                        <th>Authors</th>
                         <th>Reference</th>
-                        <th class='rightborder'>PDB Date</th>
-                        <th class='rightborder'></th>
+                        <th class="rightborder">PDB Date</th>
+                        <th class="rightborder"></th>
                     </tr>
                     <tr>
                         <th class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
@@ -188,6 +182,7 @@
                         <th></th>
                         <th></th>
                         <th class='rightborder'></th>
+                        <th></th>
                         <th></th>
                         <th></th>
                         <th></th>
@@ -216,18 +211,20 @@
 
                 </thead>
                 <tbody>
-                {% for structure in structures.all %}
+                {% for structure, coverage in structures %}
                     {% if structure.representative %}
                         <tr class="repr-st" model_id='{{structure.pk}}'>
                     {% else %}
                         <tr model_id='{{structure.pk}}'>
                     {% endif %}
+                        <!-- Receptor -->
                         <td class="text-center"><input class="alt" type="checkbox" id="{{ structure.pk }}"></td>
                         <td><span><a target='_blank' href="http://www.uniprot.org/uniprot/{{ structure.protein_conformation.protein.parent.accession }}">{{ structure.protein_conformation.protein.parent.entry_short|safe }}</a></span></td>
                         <td class='uniprot'><a target='_blank' href="/protein/{{ structure.protein_conformation.protein.parent.entry_name }}">{{ structure.protein_conformation.protein.parent.short|safe }}</a></td>
                         <td><span>{{ structure.protein_conformation.protein.family.parent.short|safe }}</span></td>
                         <td><span>{{ structure.protein_conformation.protein.family.parent.parent.parent.short|safe }}</span></td>
                         <td>{{ structure.protein_conformation.protein.species.common_name }}</td>
+                        <!-- Structure -->
                         <td>
                             {{ structure.structure_type.type_short|escape }}
                         </td>
@@ -245,29 +242,25 @@
                         <td class="text-center">{{ structure.preferred_chain }}</td>
                         <td>{{ structure.state.name }}</td>
                         <td class="text-center">{{ structure.gprot_bound_likeness|floatformat|dashwhenempty }}</td>
+                        <td class="text-center">{{ coverage }}</td>
+                        <!-- Signal protein -->
                         <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,family"|safe }}</td>
                         {% if structure.extra_proteins.all|only_one_subunit:'Alpha-Arrestin,entry_name' in '-,None' %}
                             <td>-</td>
                         {% else %}
                             <td><a target='_blank' href="/signprot/{{ structure.extra_proteins.all|only_one_subunit:'Alpha-Arrestin,entry_name' }}">{{ structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,name"|safe }}</a></td>
                         {% endif %}
-                        <td>
-                            {% if structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,note"|length > 20 %}
-                                <span title="{{ structure.extra_proteins.all|only_one_subunit:'Alpha-Arrestin,note|safe' }}">{{ structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,note"|safe|cut_at_20 }}...</span>
-                            {% else %}
-                                {{ structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,note"|safe }}
-                            {% endif %}
-                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,coverage"|safe }}</td>
+                        <td class='expand'>
+                            {{ structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,note"|safe }}
                         </td>
+                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,coverage"|safe }}</td>
+                        <!-- Auxiliary protein -->
                         <td>{{ structure.stabilizing_agents.all|only_fusions|linebreaksbr }}</td>
                         <td>{{ structure.stabilizing_agents.all|only_antibodies|linebreaksbr }}</td>
-                        <td>
+                        <!-- Structure ligand -->
+                        <td class='expand'>
                             {% for ligand in structure.ligands.all %}
-                                {% if ligand.ligand.name|safe|length > 20 %}
-                                    <span title="{{ ligand.ligand.name|safe }}">{{ ligand.ligand.name|safe|cut_at_20 }}...</span>
-                                {% else %}
-                                    {{ ligand.ligand.name|safe }}
-                                {% endif %}
+                                {{ ligand.ligand.name|safe }}
                             {% for link in ligand.ligand.properities.web_links.all %}
                                 <a href="{{ link}}" target="_blank">{{link.web_resource.slug}}</a>
                             {% endfor %}
@@ -278,16 +271,14 @@
                         </td>
                         <td>{{ structure.ligands.all|ligandtype|linebreaksbr }}</td>
                         <td>{{ structure.ligands.all|ligandrole|linebreaksbr }}</td>
-                        <td>
+                        <!-- Endogenous ligand -->
+                        <td class='expand'>
                             {% autoescape off %}
-                            {% if structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat|length > 20 %}
-                                <span title="{% autoescape off %}{{ structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat }}{% endautoescape %}">{{ structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat|cut_at_20 }}...</span>
-                            {% else %}
                                 {{ structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat }}
-                            {% endif %}
                             {% endautoescape %}
                         </td>
                         <td>{{ structure.protein_conformation.protein.parent.endogenous_ligands.all.0.properities.ligand_type|dashwhenempty }}</td>
+                        <!-- Sodium ion site -->
                         <td>
                             {% if structure.protein_conformation.is_sodium %}
                             Yes
@@ -302,7 +293,14 @@
                             No
                             {% endif %}
                         </td>
-                        <td>{{ structure.publication.authors|last_author}}</td>
+                        <!-- Reference -->
+                        <td class='expand'>
+                            {% if structure.publication.authors %}
+                            {{ structure.publication.authors}}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
                         <td>
                             {% if structure.publication %}
                             <a target='_blank'  href="{{ structure.publication.web_link }}">
@@ -313,6 +311,7 @@
                             {% endif %}
                         </td>
                         <td>{{ structure.publication_date|date:"Y-m-d" }}</td>
+                        <!-- Annotated -->
                         <td>
                             {% if structure.annotated %}
                             Yes

@@ -33,7 +33,7 @@ def index(request):
         key_file_location = settings.GOOGLE_ANALYTICS_API
 
         # Fetched from API -- look at original code to re-fetch if changes.
-        profile_id = '77082434' 
+        profile_id = '77082434'
 
         # Authenticate and construct service.
         credentials = ServiceAccountCredentials.from_json_keyfile_name(
@@ -52,7 +52,26 @@ def index(request):
     # get release notes
     try:
         context['release_notes'] = ReleaseNotes.objects.all()[0]
-        context['release_statistics'] = ReleaseStatistics.objects.filter(release=context['release_notes'])
+        rel_stats = list(ReleaseStatistics.objects.filter(release=context['release_notes'])\
+                    .values_list("statistics_type__name", "value"))
+
+        # Create dictionary and process part of the results
+        stats = {}
+        context['release_statistics'] = []
+        for entry in rel_stats:
+            stats[entry[0]] = entry[1]
+            if "Exp." not in entry[0] and "models" not in entry[0]:
+                context['release_statistics'].append({"statistics_type": entry[0], "value": entry[1]})
+
+
+        # Adjusted formatting for release notes
+
+        # To be extended wtih G proteins and Arrestins
+        context['release_statistics'].insert(2, {"statistics_type": "Structures", "value": "GPCRs: {}".format(stats["Exp. GPCR structures"]) })
+        #context['release_statistics'].insert(2, {"statistics_type": "Structures", "value": "GPCRs: {}, G proteins: {}, Arrestins: {}".format(stats["Exp. GPCR structures"], stats["Exp. Gprotein structures"], stats["Exp. Arrestin structures"]) })
+        context['release_statistics'].insert(3, {"statistics_type": "Structure models", "value": "GPCRs: {}, GPCR-G protein complexes: {}".format(stats["GPCR structure models"], stats["GPCR-G protein structure models"]) })
+
+
     except IndexError:
         context['release_notes'] = ''
         context['release_statistics'] = []

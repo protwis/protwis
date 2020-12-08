@@ -1,28 +1,15 @@
 from django.core.management.base import BaseCommand, CommandError
-from django.conf import settings
-from django.db import connection
 from django.db import IntegrityError
-from django.utils.text import slugify
-from django.http import HttpResponse, JsonResponse
 
 from build.management.commands.base_build import Command as BaseBuild
-from common.tools import fetch_from_cache, save_to_cache, fetch_from_web_api
-from residue.models import Residue
 from protein.models import Protein
-from ligand.models import *
-from mutation.models import Mutation
+from ligand.models import BiasedPathwaysAssay, BiasedPathways
 from ligand.functions import get_or_make_ligand
 from common.models import WebLink, WebResource, Publication
-from django.db import connection
+
 import logging
 import os
-from datetime import datetime
 import xlrd
-import operator
-import traceback
-import time
-import math
-import json
 
 
 MISSING_PROTEINS = {}
@@ -88,10 +75,12 @@ class Command(BaseBuild):
             print('--error--', msg, '\n')
             self.logger.info("The error appeared in def handle")
 
+    def purge_bias_data(self):
+        BiasedPathwaysAssay.objects.all().delete()
+        BiasedPathways.objects.all().delete()
+
     def loaddatafromexcel(self, excelpath):
-        """
-        Reads excel file (require specific excel sheet)
-        """
+        """Reads excel file (require specific excel sheet)."""
         num_rows = 0
         try:
             workbook = xlrd.open_workbook(excelpath)
@@ -126,9 +115,9 @@ class Command(BaseBuild):
 
     def analyse_rows(self, rows, source_file):
         """
-        Reads excel rows one by one
-        Fetch data to models
-        Saves to DB
+        Reads excel rows one by one.
+        Fetch data to models.
+        Saves to DB.
         """
         skipped = 0
         # Analyse the rows from excel and assign the right headers

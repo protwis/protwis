@@ -8,6 +8,7 @@ from django.core.management.base import BaseCommand
 
 import structure.structural_superposition as sp
 import structure.assign_generic_numbers_gpcr as as_gn
+from residue.models import Residue
 
 import Bio.PDB as PDB
 from collections import OrderedDict
@@ -18,10 +19,13 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('files', help='Add any number of files as arguments. First one has to be the reference file.',
                             type=str, nargs='+')
+        parser.add_argument('-p', help='Receptor protein entry name.', type=str)
         parser.add_argument('-n', help='Specify residue sequence numbers to compare.', type=str, default=False, nargs='+')
         parser.add_argument('-r', help='Specify a range of residue sequence numbers to compare. Format: e.g. 1-300', type=str, default=False, nargs='+')
         parser.add_argument('-c', help='Specify chain ID. If not specified, the program will try to find one that matches.', type=str, default=False)
-        
+        parser.add_argument('--sp_7TM', help='Superposition on 7TM backbone coordinates.', action='store_true', default=False)
+        parser.add_argument('--only_backbone', help='Calculate only the backbone atoms RMSD for the custom set.', action='store_true', default=False)
+
     def handle(self, *args, **options):
         v = Validation()
         if options['r']:
@@ -33,41 +37,218 @@ class Command(BaseCommand):
             seq_nums = options['n']
         if seq_nums==False:
             if options['c']==False:
-                v.run_RMSD_list(options['files'])
+                v.run_RMSD_list(options['files'], options['p'], sp_7TM=options['sp_7TM'], only_backbone=options['only_backbone'])
             else:
-                v.run_RMSD_list(options['files'], force_chain=options['c'])
+                v.run_RMSD_list(options['files'], options['p'], force_chain=options['c'], sp_7TM=options['sp_7TM'], only_backbone=options['only_backbone'])
         else:
             if options['c']==False:
-                v.run_RMSD_list(options['files'], seq_nums=seq_nums)
+                v.run_RMSD_list(options['files'], options['p'], seq_nums=seq_nums, sp_7TM=options['sp_7TM'], only_backbone=options['only_backbone'])
             else:
-                v.run_RMSD_list(options['files'], seq_nums=seq_nums, force_chain=options['c'])
-        self.stdout.write('\nNumber of superposed residues:\n')
-        for i,j in v.number_of_residues_superposed.items():
-            self.stdout.write('{}: {}'.format(i,j))
-        self.stdout.write('\nNumber of superposed atoms:\n')
-        for i,j in v.number_of_atoms_superposed.items():
-            self.stdout.write('{}: {}'.format(i,j))
-        self.stdout.write('\nRMSD scores:\n')
-        for i,j in v.rmsds.items():
-            self.stdout.write('{}: {}'.format(i,j))
-        self.stdout.write('\n',ending='')
+                v.run_RMSD_list(options['files'], options['p'], seq_nums=seq_nums, force_chain=options['c'], sp_7TM=options['sp_7TM'], only_backbone=options['only_backbone'])
 
 
 class Validation():
     def __init__(self):
-        self.number_of_residues_superposed = OrderedDict()
-        self.number_of_atoms_superposed = OrderedDict()
-        self.rmsds = OrderedDict()
-        self.four_scores = ['overall_all','overall_backbone','TM_all','TM_backbone']
-    
-    def run_RMSD_list(self, files, seq_nums=None, force_chain=None):
-        ''' Calculates 4 RMSD values between a list of GPCR pdb files. It compares the files using sequence and generic
-        numbers. First file in the list has to be the reference file.
+        pass
+
+    def run_RMSD_list(self, files, receptor, seq_nums=None, force_chain=None, sp_7TM=False, only_backbone=False):
+        """Calculates 3 RMSD values between a list of GPCR pdb files.
+
+        It compares the files using sequence and generic numbers.
+        First file in the list has to be the reference file.
+        Params:
+            @receptor: UniProt entry name of GPCR, str
+            @seq_nums: Specified list of sequence residue numbers for the Custom calculation, list
+            @force_chain: Specify one letter chain name to use in the pdb files, str
+            @sp_7TM: Superimpose only on 7TM backbone atoms (N, CA, C), boolean
+            @only_backbone: Calculate RMSD for only the backbone atoms, boolean
+        """
+        parser = PDB.PDBParser(QUIET=True)
+        count = 0
+        pdbs = []
+        for f in files:
+            count+=1
+            pdb = parser.get_structure('struct{}'.format(count), f)[0]
+            assign_gn = as_gn.GenericNumbering(pdb_file=f, sequence_parser=True)
+            pdb = assign_gn.assign_generic_numbers_with_sequence_parser()
+            pdbs.append(pdb)
+        chains = []
+        for p in pdbs:
+            this = []
+            for c in p.get_chains():
+                this.append(c.get_id())
+            chains.append(this)
+        usable_chains = []
+        for m in chains[1:]:
+            for c in m:
+                if c in chains[0]:
+                    usable_chains.append(c)
+        if force_chain:
+            chains[0] = [force_chain]
+
+        arrays = []
+        model_counter = 0
+        ### Creating full arrays
+        for p in pdbs:
+            try:
+                if pdbs.index(p)==0 and len(usable_chains)==0:
+                    chain = [c.get_id() for c in pdbs[0].get_chains()][0]
+                else:
+                    chain = p[usable_chains[0]].get_id()
+            except:
+                try:
+                    chain = p[' '].get_id()
+                except:
+                    chain = p['A'].get_id()
+            if force_chain and model_counter==0:
+                chain = force_chain
+            pdb_array1 = OrderedDict()
+            for residue in p[chain]:
+                if residue.get_full_id()[3][0]!=' ':
+                    continue
+                pdb_array1[int(residue.get_id()[1])] = residue
+            arrays.append(pdb_array1)
+            model_counter+=1
+
+        ### Checking available residues in target and models
+        all_deletes, all_keep = [], []
+        for res in arrays[0]:
+            for m in arrays[1:]:
+                if res not in m:
+                    all_deletes.append(res)
+                else:
+                    all_keep.append(res)
+        ### Making unique list with residues present in all structures
+        unique_nums = []
+        for i in all_keep:
+            if i not in unique_nums:
+                unique_nums.append(i)
+        all_keep = [i for i in unique_nums if i not in all_deletes]
+
+        print('Residue sequence numbers present in all structures: {}'.format(len(all_keep)))
+        print(all_keep)
+
+        ### Checking available atoms in target and models
+        atoms_to_keep, atoms_to_delete = OrderedDict(), OrderedDict()
+        for target_resnum, target_res in arrays[0].items():
+            atoms_to_keep[target_resnum] = []
+            atoms_to_delete[target_resnum] = []
+            for model in arrays[1:]:
+                for model_resnum, model_res in model.items():
+                    if target_resnum==model_resnum:
+                        for atom in model_res:
+                            if atom.id in target_res and atom.id not in atoms_to_keep[target_resnum]:
+                                atoms_to_keep[target_resnum].append(atom.id)
+                            elif atom.id not in target_res and atom.id not in atoms_to_delete[target_resnum]:
+                                atoms_to_delete[target_resnum].append(atom.id)
+                        for t_atom in target_res:
+                            if t_atom.id in model_res and t_atom.id not in atoms_to_keep[target_resnum]:
+                                atoms_to_keep[target_resnum].append(t_atom.id)
+                            elif t_atom.id not in model_res and t_atom.id not in atoms_to_delete[target_resnum]:
+                                atoms_to_delete[target_resnum].append(t_atom.id)
+                        break
+
+        ### Creating atom lists of structures
+        atom_lists = []
+        for m in arrays:
+            atom_list = []
+            for num, res in m.items():
+                if num in all_keep and num not in all_deletes:
+                    for atom in res:
+                        if atom.id in atoms_to_keep[num] and atom.id not in atoms_to_delete[num]:
+                            atom_list.append(atom)
+            atom_lists.append(atom_list)
+
+        ### Fetching TM data from GPCRdb
+        TM_nums = Residue.objects.filter(protein_conformation__protein__entry_name=receptor, protein_segment__slug__in=['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7']).values_list('sequence_number', flat=True)
+        TM_target_atom_list = [i for i in atom_lists[0] if i.get_parent().id[1] in TM_nums]
+        TM_target_backbone_atom_list = [i for i in TM_target_atom_list if i.id in ['N','CA','C']]
+        TM_atom_num = len(TM_target_atom_list)
+        print('TM_atom_num:',TM_atom_num)
+        print('TM_backbone_atom_num:',len(TM_target_backbone_atom_list))
+
+        ### Running superposition and RMSD calculation
+        c = 2
+        for m in atom_lists[1:]:
+            print('########################################')
+            print('Model {}'.format(c-1))
+            if seq_nums:
+                seq_nums = [int(s) for s in seq_nums]
+            else:
+                seq_nums = all_keep
+
+            ### Custom calculation
+            if sp_7TM:
+                TM_superposed, atoms_used_sp = self.superpose(atom_lists[0], m, list(TM_nums))
+                superposed = self.fetch_atoms_with_seqnum(TM_superposed, seq_nums, only_backbone)
+                target_atoms = self.fetch_atoms_with_seqnum(atom_lists[0], seq_nums, only_backbone)
+                rmsd = self.calc_RMSD(target_atoms, superposed)
+            else:
+                superposed, atoms_used_sp = self.superpose(atom_lists[0], m)
+                target_atoms = atom_lists[0]
+            rmsd = self.calc_RMSD(target_atoms, superposed)
+            print('Num atoms sent for superposition: ', len(atom_lists[0]), len(m))
+            print('Num atoms used for superposition: ', atoms_used_sp)
+            print('Num atoms used for RMSD: ', len(target_atoms), len(superposed))
+            print('Custom RMSD:', rmsd)
+
+            ### 7TM all atoms calculation
+            TM_model_atom_list = [i for i in m if i.get_parent().id[1] in TM_nums]
+            superposed2, atoms_used_sp = self.superpose(TM_target_atom_list, TM_model_atom_list, list(TM_nums))
+            rmsd = self.calc_RMSD(TM_target_atom_list, superposed2)
+            print('Num atoms sent for superposition: ', len(TM_target_atom_list), len(TM_model_atom_list))
+            print('Num atoms used for superposition: ', atoms_used_sp)
+            print('Num atoms used for RMSD: ', len(TM_target_atom_list), len(superposed2))
+            print('7TM all RMSD:', rmsd)
+
+            ### 7TM only backbone (N, CA, C) calculation
+            superposed, atoms_used_sp = self.superpose(TM_target_atom_list, TM_model_atom_list, list(TM_nums))
+            superposed3 = self.fetch_atoms_with_seqnum(superposed, list(TM_nums), True)
+            rmsd = self.calc_RMSD(TM_target_backbone_atom_list, superposed3)
+            print('Num atoms sent for superposition: ', len(TM_target_atom_list), len(TM_model_atom_list))
+            print('Num atoms used for superposition: ', atoms_used_sp)
+            print('Num atoms used for RMSD: ', len(TM_target_backbone_atom_list), len(superposed3))
+            print('7TM backbone RMSD:', rmsd)
+
+            c+=1
+
+    def fetch_atoms_with_seqnum(self, atom_list, seq_nums, only_backbone=False):
+        """Gets atoms from list2 based on list1 resnums. Get only N, CA, C atoms of backbone when setting only_backbone to True."""
+        out_list = []
+        # print('Only backbone:', only_backbone)
+        for i in atom_list:
+            if i.get_parent().id[1] in seq_nums:
+                if only_backbone and i.id in ['N','CA','C']:
+                    out_list.append(i)
+                elif not only_backbone:
+                    out_list.append(i)
+        return out_list
+
+    def superpose(self, list1, list2, TM_keys=None):
+        """Superposition, supply TM_keys (list of sequence residue numbers) when superimposing on only those atoms."""
+        superpose = sp.RotamerSuperpose(list1, list2, TM_keys)
+        return superpose.run(), superpose.num_atoms_used_for_superposition
+
+    def calc_RMSD(self, list1, list2):
+        """Calculates RMSD between two atoms lists. The two lists have to have the same length."""
+        array1, array2 = np.array([0,0,0]), np.array([0,0,0])
+        for a1, a2 in zip(list1, list2):
+            array1 = np.vstack((array1, list(a1.get_coord())))
+            array2 = np.vstack((array2, list(a2.get_coord())))
+        rmsd = round(np.sqrt(sum(sum((array1[1:]-array2[1:])**2))/array1[1:].shape[0]),1)
+        return rmsd
+
+    ### Deprecated
+    def run_RMSD_list_archived(self, files, seq_nums=None, force_chain=None):
+        """Calculates 4 RMSD values between a list of GPCR pdb files.
+
+        It compares the files using sequence and generic numbers.
+        First file in the list has to be the reference file.
             1. overall all atoms RMSD
             2. overall backbone atoms RMSD
             3. 7TM all atoms RMSD
             4. 7TM backbone atoms RMSD
-        '''
+        """
         c = 0
         for f in files:
             c+=1
@@ -101,7 +282,7 @@ class Validation():
                     usable_chains.append(c)
         if force_chain:
             chains[0] = [force_chain]
-        
+
         arrays = []
         model_counter = 0
         for p in pdbs:
@@ -197,7 +378,7 @@ class Validation():
                 this_model.append(this_list_all)
                 this_model.append(this_list_bb)
             atom_lists.append(this_model)
-        TM_keys = list(num_atoms[1].keys())        
+        TM_keys = list(num_atoms[1].keys())
         c = 0
         for m in atom_lists:
             c+=1
@@ -215,19 +396,21 @@ class Validation():
                     self.number_of_residues_superposed['reference'][self.four_scores[i]] = len(num_atoms[j])
                     self.number_of_atoms_superposed['reference'][self.four_scores[i]] = len(m[i])
                     self.rmsds['reference'][self.four_scores[i]] = None
-    
+
     def run_RMSD(self,file1,file2):
-        ''' Calculates 4 RMSD values between two GPCR pdb files. It compares the two files using sequence numbers.
+        """Calculates 4 RMSD values between two GPCR pdb files.
+
+        It compares the two files using sequence numbers.
             1. overall all atoms RMSD
             2. overall backbone atoms RMSD
             3. 7TM all atoms RMSD
             4. 7TM backbone atoms RMSD
-        '''
+        """
         parser = PDB.PDBParser(QUIET=True)
         pdb1 = parser.get_structure('struct1', file1)[0]
         pdb2 = parser.get_structure('struct2', file2)[0]
         pdb_array1, pdb_array2, pdb_array3, pdb_array4 = OrderedDict(), OrderedDict(), OrderedDict(), OrderedDict()
-        
+
         assign_gn1 = as_gn.GenericNumbering(structure=pdb1)
         pdb1 = assign_gn1.assign_generic_numbers()
         assign_gn2 = as_gn.GenericNumbering(structure=pdb2)
@@ -236,10 +419,10 @@ class Validation():
         for i in pdb1:
             for j in pdb2:
                 if i.get_id()==j.get_id():
-                    chain1 = i.get_id()                        
+                    chain1 = i.get_id()
                     chain2 = i.get_id()
                     break
-                
+
         if 'chain1' not in locals():
             for i in pdb1.get_chains():
                 chain1 = i.get_id()
@@ -273,12 +456,11 @@ class Validation():
         rmsd1 = self.calc_RMSD(overall_all1, overall_all2,o_a)
         rmsd2 = self.calc_RMSD(overall_backbone1, overall_backbone2,o_b)
         rmsd3 = self.calc_RMSD(TM_all1, TM_all2,t_a)
-        rmsd4 = self.calc_RMSD(TM_backbone1, TM_backbone2,t_b)  
+        rmsd4 = self.calc_RMSD(TM_backbone1, TM_backbone2,t_b)
         return [rmsd1, rmsd2, rmsd3, rmsd4]
-        
+
     def create_lists(self, pdb_array1, pdb_array2):
-        ''' Creates the 4 atom lists needed for run_RMSD().
-        '''
+        """Creates the 4 atom lists needed for run_RMSD()."""
         overall_all1, overall_all2, overall_backbone1, overall_backbone2 = [], [], [], []
         keys1, keys2 = [], []
         for num1, res1 in pdb_array1.items():
@@ -297,21 +479,3 @@ class Validation():
                                 break
                     break
         return overall_all1, overall_all2, overall_backbone1, overall_backbone2, keys1, keys2
-
-    def calc_RMSD(self, list1, list2, TM_keys=None):
-        ''' Calculates RMSD between two atoms lists. The two lists have to have the same length. 
-        '''
-        superpose = sp.RotamerSuperpose(list1, list2, TM_keys)
-        print(list1)
-        print(list2)
-        print(TM_keys)
-        list2 = superpose.run()
-        array1, array2 = np.array([0,0,0]), np.array([0,0,0])
-        for a1, a2 in zip(list1, list2):
-            array1 = np.vstack((array1, list(a1.get_coord())))
-            array2 = np.vstack((array2, list(a2.get_coord())))
-        print(array1.shape,array2.shape)
-        rmsd = np.sqrt(sum(sum((array1[1:]-array2[1:])**2))/array1[1:].shape[0])
-        return rmsd
-        
-        
