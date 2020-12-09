@@ -612,7 +612,8 @@ class SequenceSignature:
                         self.zscales_signature[zscale][segment][entry] = ["-", -1, tooltip] # diff, P-value, tooltip
 
     def suggest_mutations(self, ref_prot):
-        """A function that returns a list of suggestions for point mutations based on sequence signature.No cut-off on signature strength is applied here, the function iterates over all residues in the signature.
+        """
+        A function that returns a list of suggestions for point mutations based on sequence signature.No cut-off on signature strength is applied here, the function iterates over all residues in the signature.
 
         Args:
             ref_prot ([Protein]): A protein to suggest the mutations for.
