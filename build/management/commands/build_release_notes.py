@@ -9,6 +9,7 @@ from mutation.models import MutationExperiment
 from mutational_landscape.models import NaturalMutations
 from protein.models import Protein, Species
 from structure.models import Structure, StructureModel, StructureComplexModel
+from signprot.models import SignprotComplex, SignprotStructure
 
 import logging
 import shlex
@@ -59,13 +60,19 @@ class Command(BaseCommand):
         # generate statistics
         latest_release_notes = ReleaseNotes.objects.all()[0]
 
+        # G protein structures (both complexes and individual)
+        complexstructs = list(SignprotComplex.objects.filter(protein__family__slug__startswith='100').values_list("structure__pdb_code__index", flat = True))
+        ncstructs = list(SignprotStructure.objects.filter(protein__family__slug__startswith='100').values_list("pdb_code__index", flat = True))
+        gprotein_structs = set(complexstructs + ncstructs)
+
         stats = [
             #['Proteins', Protein.objects.filter(sequence_type__slug='wt').count()],
             ['Human proteins', Protein.objects.filter(sequence_type__slug='wt', species__common_name="Human").count()],
             ['Species orthologs', Protein.objects.filter(sequence_type__slug='wt').exclude(species__common_name="Human").count()],
             #['Species', Species.objects.all().count()],
             ['Exp. GPCR structures', Structure.objects.filter(refined=False, protein_conformation__protein__family__slug__startswith="00").count()],
-            ['Exp. Gprotein structures', Structure.objects.filter(refined=False, protein_conformation__protein__family__slug__startswith="100").count()],
+            #['Exp. Gprotein structures', Structure.objects.filter(refined=False, protein_conformation__protein__family__slug__startswith="100").count()],
+            ['Exp. Gprotein structures', len(gprotein_structs)],
             ['Exp. Arrestin structures', Structure.objects.filter(refined=False, protein_conformation__protein__family__slug__startswith="200").count()],
             ['GPCR structure models', StructureModel.objects.all().count()],
             ['GPCR-G protein structure models', StructureComplexModel.objects.all().count()],
