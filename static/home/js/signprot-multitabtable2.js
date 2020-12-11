@@ -743,35 +743,90 @@ $(function() {
 // START OVERLAY COLUMNS CODE HERE
 // =============================================================================
     let toggle_enabled = true;
-    $("#toggle_fixed_btn").click(function() {
+    $("#toggle_fixed_btn1").click(function() {
         if (toggle_enabled) {
             toggle_enabled = false;
             $("#overlay1").hide();
-            $("#overlay2").hide();
-            $("#toggle_fixed_btn").attr("value","Enable fixed columns");
-            $("#toggle_fixed_btn").addClass("clicked_button");
+            $("#toggle_fixed_btn1").attr("value","Enable fixed columns");
+            $("#toggle_fixed_btn1").addClass("clicked_button");
         } else {
             toggle_enabled = true;
             $("#familiestabletab").closest(".dataTables_scrollBody").scroll();
-            $("#subtypestabletab").closest(".dataTables_scrollBody").scroll();
-
-            $("#toggle_fixed_btn").attr("value","Disable fixed columns");
-            $("#toggle_fixed_btn").removeClass("clicked_button");
+            $("#toggle_fixed_btn1").attr("value","Disable fixed columns");
+            $("#toggle_fixed_btn1").removeClass("clicked_button");
         }
     });
 
+    $("#toggle_fixed_btn2").click(function() {
+        if (toggle_enabled) {
+            toggle_enabled = false;
+            $("#overlay2").hide();
+            $("#toggle_fixed_btn2").attr("value","Enable fixed columns");
+            $("#toggle_fixed_btn2").addClass("clicked_button");
+        } else {
+            toggle_enabled = true;
+            $("#subtypestabletab").closest(".dataTables_scrollBody").scroll();
+            $("#toggle_fixed_btn2").attr("value","Disable fixed columns");
+            $("#toggle_fixed_btn2").removeClass("clicked_button");
+        }
+    });
+
+// --------- overlay for table 1 ---------
     var left1 = 0;
     var old_left1 = 0;
-    $("#subtypestabletab").closest(".dataTables_scrollBody").scroll(function(){
+    $("#familiestabletab").closest(".dataTables_scrollBody").scroll(function(){
         // If user scrolls and it's > 100px from left, then attach fixed columns overlay
-        left1 = $("#subtypestabletab").closest(".dataTables_scrollBody").scrollLeft();
+        left1 = $("#familiestabletab").closest(".dataTables_scrollBody").scrollLeft();
         if (left1!==old_left1) {
-            $("#overlay2").hide();
+            $("#overlay1").hide();
         }
         old_left1 = left1;
 
-        if (left1 > 100 && toggle_enabled) {
-            $("#overlay2").css({ left: left1 + "px" });
+        if (left1 > 50 && toggle_enabled) {
+            $("#overlay1").css({ left: left1 + "px" });
+            if ($("#overlay1").is(":hidden")) {
+                $("#overlay1").show();
+            }
+        }
+    });
+
+    $("#familiestabletab").closest(".dataTables_scrollBody").append('<div id="overlay1"><table id="overlay_table1" class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
+
+    function create_overlay1() {
+        // This function fires upon filtering, to update what rows to show as an overlay
+        $("#overlay_table1 tbody tr").remove();
+        var $target = $("#overlay_table1 tbody");
+
+        $("#familiestabletab tbody tr").each(function() {
+            var $tds = $(this).children(),
+                $row = $("<tr></tr>");
+            $row.append($tds.eq(0).clone()).append($tds.eq(1).clone()).append($tds.eq(2).clone()).append($tds.eq(3).clone()).append($tds.eq(4).clone()).appendTo($target);
+            $row.height($(this).height());
+            //$row.font_size("10");
+            //$row.height("31px");
+            //$row.append($tds.height("2.5")).appendTo($target);
+        });
+        $("#overlay_table1 .rightborder").removeClass("rightborder");
+    }
+
+    create_overlay1();
+    $("#overlay1").hide();
+// --------- End of overlay for table1 ---------
+
+
+// ---------  start overlay for table2 ---------
+    var left2 = 0;
+    var old_left2 = 0;
+    $("#subtypestabletab").closest(".dataTables_scrollBody").scroll(function(){
+        // If user scrolls and it's > 100px from left, then attach fixed columns overlay
+        left2 = $("#subtypestabletab").closest(".dataTables_scrollBody").scrollLeft();
+        if (left2!==old_left2) {
+            $("#overlay2").hide();
+        }
+        old_left2 = left2;
+
+        if (left2 > 50 && toggle_enabled) {
+            $("#overlay2").css({ left: left2 + "px" });
             if ($("#overlay2").is(":hidden")) {
                 $("#overlay2").show();
             }
@@ -797,9 +852,9 @@ $(function() {
         $("#overlay_table2 .rightborder").removeClass("rightborder");
     }
 
-
     create_overlay2();
     $("#overlay2").hide();
+// End of overlay for table2
 // =============================================================================
 // END OVERLAY COLUMNS CODE HERE
 // =============================================================================
