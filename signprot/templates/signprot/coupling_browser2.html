@@ -36,8 +36,8 @@
         {# FAMILIES TAB STARTS HERE id='familiestabletab' connects to js #}
         {# ====================================================================== #}
         <div class="tab-pane fade active" id="table_1" role="tabpanel" aria-labelledby="table1-tab">
-            <br>
             <div style='width:100%; display:inline;'>
+            <br>
                 <div class="btn-group">
                     <a id="dlink" style="display:none;"></a>
                     <div id="excel_table" style2="display:none;"></div>
@@ -72,19 +72,25 @@
                         Guide to Pharmacology
                     </th>
                     <th colspan=4 style='height:35px; text-align:left;'>
-                        log(Emax/EC50)
-                        <span class="glyphicon glyphicon-align-left glyphicon-info-sign" title="Max of G protein family members"
-                              style="font-size: 16px; cursor: pointer;"></span>
+                        Log(Emax/EC50)
+{#                        <span data-toggle="tooltip" data-placement="rigth" class="glyphicon glyphicon-info-sign"#}
+{#                              title="Max of G protein family members">#}
+{#                        </span>#}
+                        <span data-toggle="popover" data-placement="bottom" class="glyphicon glyphicon-info-sign"
+                              title="Info" data-content="Max of G protein family members">
+                        </span>
                     </th>
                     <th colspan=4 style='height:35px; text-align:left;'>
                         pEC50
-                        <span class="glyphicon glyphicon-align-left glyphicon-info-sign" title="Max of G protein family members"
-                              style="font-size: 16px; cursor: pointer;"></span>
+                        <span data-toggle="popover" data-placement="bottom" class="glyphicon glyphicon-info-sign"
+                              title="Info" data-content="Max of G protein family members">
+                        </span>
                     </th>
                     <th colspan=4 style='height:35px; text-align:left;'>
                         Emax
-                        <span class="glyphicon glyphicon-align-left glyphicon-info-sign" title="Max of G protein family members"
-                              style="font-size: 16px; cursor: pointer;"></span>
+                        <span data-toggle="popover" data-placement="bottom" class="glyphicon glyphicon-info-sign"
+                              title="Info" data-content="Max of G protein family members">
+                        </span>
                     </th>
                 </tr>
 
@@ -182,7 +188,7 @@
                 <thead>
                 <tr>
                     <th colspan=1 style='height:35px; text-align:left;'>
-
+                        Source
                     </th>
                     <th colspan=4 style='height:35px; text-align:left;'>
                         Receptor
@@ -192,6 +198,9 @@
                     </th>
                     <th colspan=13 style='height:35px; text-align:left;'>
                         log(Emax/EC50)
+                        <button type="button" class="close hide_columns2" columns="9,10,11,12,13,14,15,16,17,18,19,20,21"
+                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                        </button>
                     </th>
                     <th colspan=13 style='height:35px; text-align:left;'>
                         pEC50
@@ -202,7 +211,7 @@
                 </tr>
 
                 <tr>
-                    <th>Source</th>
+                    <th></th>
                     <th>Cl</th>
                     <th>ResFam</th>
                     <th>Uniprot</th>

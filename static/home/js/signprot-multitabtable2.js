@@ -96,6 +96,11 @@ function reset_tab2() {
 
 $(function() {
 
+// Activate tooltips and popovers from Bootstrap   * Bootstrap v3.3.7 (http://getbootstrap.com)
+    $("[data-toggle='tooltip']").tooltip()
+    $('[data-toggle="popover"]').popover()
+
+
 //     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
 // //      console.log( 'show tab' );
 //         $($.fn.dataTable.tables(true)).DataTable()
@@ -106,7 +111,7 @@ $(function() {
     oTable1 = $("#familiestabletab").DataTable({
         deferRender: true,
         scrollY: "50vh",
-        scrollX: true,
+        scrollX: false,
         scrollCollapse: true,
         scroller: true,
         paging: false,
@@ -315,7 +320,7 @@ $(function() {
     oTable2 = $("#subtypestabletab").DataTable({
         deferRender: true,
         scrollY: "50vh",
-        scrollX: true,
+        scrollX: false,
         scrollCollapse: true,
         scroller: true,
         paging: false,
@@ -859,4 +864,4 @@ $(function() {
 // END OVERLAY COLUMNS CODE HERE
 // =============================================================================
 
-});
+})
