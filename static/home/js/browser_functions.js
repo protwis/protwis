@@ -10,7 +10,8 @@ function superposition(oTable, columns, site, hide_first_column) {
 
     var checked_data = oTable.rows('.alt_selected').data();
     if (checked_data.length===0) {
-        window.alert('No entries selected for superposition')
+        // window.alert('No entries selected for superposition')
+        showAlert("No entries selected for superposition", "danger");
         return 0;
     }
     var selected_ids = []
@@ -53,12 +54,11 @@ function superposition(oTable, columns, site, hide_first_column) {
         AddToSelection('targets', 'structure_models_many', selected_ids.join(","));
     } // add new logic here for new site
 
-    $('#modal_table tbody').empty();
-    var modal = document.getElementById('myModal');
-    var span = document.getElementsByClassName("close")[0];
-    modal.classList.add("modal");
-    // console.log('hasclass',$('#myModal').hasClass('modal'));
-    // console.log(modal);
+    $('#superposition_modal_table tbody').empty();
+    var modal = document.getElementById('superposition-modal');
+    var span = document.getElementById("close_superposition_modal");
+    // modal.classList.add("modal");
+    
     modal.style.display = "block";
     span.onclick = function() {
         modal.style.display = "none";
@@ -89,22 +89,18 @@ function superposition(oTable, columns, site, hide_first_column) {
             row.appendChild(cell);
             column_count++;
         });
-        $('#modal_table tbody').append(row)
+        $('#superposition_modal_table tbody').append(row)
     }
-    $('#modal_table tbody tr').click(function() {
+    $("#superposition_modal_table tbody tr").click(function() {
         if (site==='structure_browser') {
             AddToSelection('reference', 'structure', $(this).children().eq(1).text());
-        } else if (site==='homology_model_browser') {
-            console.log($(this).children().eq(9));
-            console.log($(this).children().eq(8));
+        } else if (site==='homology_model_browser') { //FIXME
             if ($(this).children().eq(9).text()==='Yes') {
                 AddToSelection('reference', 'structure',  $(this).children().eq(11).text()+"_refined");
-                console.log($(this).children().eq(11).text()+"_refined");
             }
             else {
                 var state = $(this).children().eq(8).text();
                 AddToSelection('reference', 'structure_model', $(this).children().eq(1).text()+"_"+state);
-                console.log($(this).children().eq(1).text()+"_"+state);
             }
         } // Add logic here for new site
         $(this).children(':first').prop("checked",true);

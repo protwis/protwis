@@ -2,7 +2,7 @@ function citation_tool(url) {
 	// Modal part
 	$('#modal_table tbody').empty();
     var modal = document.getElementById('citation-tool');
-    var span = document.getElementsByClassName("close-citation")[0];
+    var span = document.getElementById("close-citation");
     modal.classList.add("modal");
     setTimeout(function(){
     	modal.style.display = "block";
@@ -231,18 +231,21 @@ function parse_url_long(url) {
 }
 
 function toggle_widget() {
-	$('#ref_widget').animate({width: 'toggle'});
-    if ($('#ref_widget_openclose').hasClass('glyphicon glyphicon-chevron-left')) {
-        $('#ref_widget_openclose').removeClass('glyphicon glyphicon-chevron-left')
-        $('#ref_widget_openclose').addClass('glyphicon glyphicon-chevron-right')
+	$("#ref_widget").animate({width: "toggle"});
+    if ($("#widget_chevron").hasClass("glyphicon glyphicon-chevron-left")) {
+        $("#widget_chevron").removeClass("glyphicon glyphicon-chevron-left");
+        $("#widget_chevron").addClass("glyphicon glyphicon-chevron-right");
+        $("#widget_infosign").show();
     }
     else {
-        $('#ref_widget_openclose').removeClass('glyphicon glyphicon-chevron-right')
-        $('#ref_widget_openclose').addClass('glyphicon glyphicon-chevron-left')
+        $("#widget_chevron").removeClass("glyphicon glyphicon-chevron-right");
+        $("#widget_chevron").addClass("glyphicon glyphicon-chevron-left");
+        $("#widget_infosign").hide();
         setTimeout(function() {
-        	$('#ref_widget').animate({width: 'toggle'});
-        	$('#ref_widget_openclose').removeClass('glyphicon glyphicon-chevron-left')
-        	$('#ref_widget_openclose').addClass('glyphicon glyphicon-chevron-right')
+        	$("#ref_widget").animate({width: "toggle"});
+        	$("#widget_chevron").removeClass("glyphicon glyphicon-chevron-left");
+        	$("#widget_chevron").addClass("glyphicon glyphicon-chevron-right");
+        	$("#widget_infosign").show();
         }, 8000)
     }
 }

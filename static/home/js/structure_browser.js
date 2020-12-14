@@ -531,11 +531,6 @@ function structurebrowser() {
         window.location.href = '/structure/'
     });
 
-    $('.close_modal').click(function () {
-        var modal = document.getElementById('myModal');
-        modal.style.display = "none";
-    });
-
     $('.dataTables_scrollBody').append('<div id=overlay><table id="overlay_table" class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
 
     function create_overlay() {
