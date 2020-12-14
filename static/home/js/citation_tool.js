@@ -52,7 +52,12 @@ function citation_tool(url) {
 				data[i].push($('a[href="'+link+'"]').first().parent().parent().parent().parent().parent().first().find(">:first-child").text().trim());
 			}
 			else {
-				data[i].push($('a[href="'+link+'"]').first().parent().parent().parent().first().find(">:first-child").text().trim());
+				if (link==="/protein/ste2_yeast") {
+					data[i].push("Receptors");
+				}
+				else {
+					data[i].push($('a[href="'+link+'"]').first().parent().parent().parent().first().find(">:first-child").text().trim());
+				}
 			}
 		}
 
@@ -222,9 +227,17 @@ function parse_url(url) {
 
 function parse_url_long(url) {
 	var url_split = url.split('/');
-	if (url_split[url_split.length-1]==="" || url_split.length===4) {
-		return url_split[3];
+	if (url_split[url_split.length-1]==="") {
+		if (url_split.length>5) {
+			return url_split[3]+"-"+url_split[4];
+		}
+		else {
+			return url_split[3];	
+		}
 	}
+	else if (url_split.length===4) {
+		return url_split[3];
+	} 
 	else {
 		return url_split[3]+"-"+url_split[4];
 	}
