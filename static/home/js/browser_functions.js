@@ -1,3 +1,6 @@
+/*global showAlert*/
+/*eslint no-undef: "error"*/
+
 function superposition(oTable, columns, site, hide_first_column) {
     // oTable: DataTable object of table of entries
     // columns: Column indeces of oTable to be extracted to build table for reference selection. First column has to be structure/model string used for superposition workflow
@@ -10,12 +13,10 @@ function superposition(oTable, columns, site, hide_first_column) {
 
     var checked_data = oTable.rows('.alt_selected').data();
     if (checked_data.length===0) {
-        // window.alert('No entries selected for superposition')
         showAlert("No entries selected for superposition", "danger");
         return 0;
     }
     var selected_ids = []
-    console.log(checked_data);
     if (site==='structure_browser') {
         for (i = 0; i < checked_data.length; i++) {
             var div = document.createElement("div");
@@ -27,7 +28,7 @@ function superposition(oTable, columns, site, hide_first_column) {
             }
         }
         AddToSelection('targets', 'structure_many', selected_ids.join(","));
-        console.log(selected_ids);
+
     } else if (site==='homology_model_browser') {
         for (i = 0; i < checked_data.length; i++) {
             var div = document.createElement("div");
@@ -44,10 +45,8 @@ function superposition(oTable, columns, site, hide_first_column) {
             else {
                 if (typeof div.innerText !== "undefined") {
                     selected_ids.push(div.innerText.replace(/\s+/g, '')+"_"+state);
-                    console.log(div.textContent.replace(/\s+/g, '')+"_"+state);
                 } else {
                     selected_ids.push(div.textContent.replace(/\s+/g, '')+"_"+state);
-                    console.log(div.textContent.replace(/\s+/g, '')+"_"+state);
                 }
             }
         }
@@ -55,9 +54,8 @@ function superposition(oTable, columns, site, hide_first_column) {
     } // add new logic here for new site
 
     $('#superposition_modal_table tbody').empty();
-    var modal = document.getElementById('superposition-modal');
+    var modal = document.getElementById("superposition-modal");
     var span = document.getElementById("close_superposition_modal");
-    // modal.classList.add("modal");
     
     modal.style.display = "block";
     span.onclick = function() {

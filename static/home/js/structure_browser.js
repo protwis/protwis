@@ -534,7 +534,7 @@ function structurebrowser() {
         window.location.href = "/structure/";
     });
 
-    $('.dataTables_scrollBody').append('<div id=overlay><table id="overlay_table" class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
+    $(".dataTables_scrollBody").append("<div id=overlay><table id='overlay_table' class='row-border text-center compact dataTable no-footer text-nowrap'><tbody></tbody></table></div>");
 
     function create_overlay() {
         // This function fires upon filtering, to update what rows to show as an overlay
