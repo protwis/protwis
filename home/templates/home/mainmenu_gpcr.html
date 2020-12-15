@@ -380,8 +380,9 @@
             <a class='widget-link' id="icon_video" target='_blank' style='display: none;'><span class="glyphicon glyphicon-film icon-button" style='padding: 0px 5px 3px 3px;'></span>Video</a>
         </div>
     </div>
-    <div style='display:inline; float: left; height: 30px;'>
-        <span class="glyphicon glyphicon-chevron-left" aria-hidden="true" id="ref_widget_openclose"></span>
+    <div id="ref_widget_openclose" style='display:inline; float: left; height: 30px;'>
+        <span id="widget_infosign" class="glyphicon glyphicon-info-sign" style="display: none;"></span>
+        <span id="widget_chevron" class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
     </div>
 </div>
 
@@ -389,7 +390,7 @@
   <!-- Modal content -->
     <div class="modal-content modal-scroll">
         <div class="modal-header">
-            <button style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close close-citation" href="javascript:void(0)">&times;</button>
+            <button id="close-citation" style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close">&times;</button>
             <h3 class="modal-title">Cite us</h3>
         </div>
         <div class='modal-body'>
@@ -399,7 +400,7 @@
             </div>
 
             <div style='padding: 0px 0px 5px 0px; display:inline; '>
-                <li class='dropdown page-selection' style="display:inline;">
+                <li class='dropdown page-selection' style="margin-top: 5px; display:inline;">
                     <a href="/" id="page_select_button" class="dropdown-toggle select-link" data-toggle="dropdown" role="button" aria-expanded="false">-- select page --</a>
                     <ul class="dropdown-menu" id='dropdown_articles' role="menu"></ul>
                 </li>
@@ -441,7 +442,7 @@
             toggle_widget();
         })
         setTimeout(function() {
-            if ($('#ref_widget_openclose').hasClass("glyphicon glyphicon-chevron-left")) {
+            if ($('#widget_chevron').hasClass("glyphicon glyphicon-chevron-left")) {
                 toggle_widget();
             }
         }, 8000)
