@@ -151,6 +151,7 @@
     <script>
         const csrf_token = "{{ csrf_token }}";
 
+        {% if filter_tableselect %}
         $(document).ready(function() {
             // Get Receptor Targets for table build
             initializeTargetChooserTables();
@@ -163,6 +164,7 @@
             $('#targetselect-modal-table').on('hidden.bs.modal', AddMultipleTargets);
 
         });
+        {% endif %}
 
 
     </script>
