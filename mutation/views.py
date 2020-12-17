@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.template import loader, Context
-from django.db.models import Count, Min, Sum, Avg, Q
+from django.db.models import Count, Min, Sum, Avg, Q, F
 from django.http import HttpResponse
 from django.conf import settings
 from django.core.cache import cache
@@ -8,18 +8,24 @@ from django.views.decorators.cache import cache_page
 from mutation.functions import *
 from mutation.models import *
 
+from common.selection import Selection
+from common.views import AbsReferenceSelection
 from common.views import AbsTargetSelection
 from common.views import AbsTargetSelectionTable
 from common.views import AbsSegmentSelection
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 from common import definitions
 
-from residue.models import Residue,ResidueNumberingScheme, ResidueGenericNumberEquivalent
-from residue.views import ResidueTablesDisplay
-from protein.models import Protein,ProteinSegment,ProteinFamily,ProteinConformation
+from contactnetwork.models import Interaction, InteractingResiduePair
+
 from interaction.models import ResidueFragmentInteraction, StructureLigandInteraction
 from interaction.views import calculate
 from interaction.forms import PDBform
+
+from residue.models import Residue,ResidueNumberingScheme, ResidueGenericNumberEquivalent
+from residue.views import ResidueTablesDisplay
+from protein.models import Protein,ProteinSegment,ProteinFamily,ProteinConformation
+from structure.models import Structure
 
 from datetime import datetime
 from collections import OrderedDict
@@ -29,12 +35,14 @@ import os
 import copy
 #env/bin/python3 -m pip install xlrd
 import csv
+import hashlib
 from io import BytesIO
 import re
 import math
 import urllib
 import xlsxwriter #sudo pip3 install XlsxWriter
 import operator
+import numpy as np
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
@@ -2069,3 +2077,437 @@ def importmutation(request):
 
     #return HttpResponse(ref_id)
     return render(request,'mutation/index.html',context)
+
+class designStateSelector(AbsReferenceSelection):
+    step = 1
+    number_of_steps = 1
+    target_input = False
+    description = 'Select a reference target by searching or browsing in the right column.'
+    #docs = 'sequences.html#similarity-search-gpcrdb'
+    buttons = {
+        'continue': {
+            'label': 'Next',
+            'url': '/mutations/design_state_active',
+            'color': 'success',
+        },
+    }
+
+def contactMutationDesign(request, goal):
+    cutoff = 999999 # Only select top X suggestions
+
+    simple_selection = request.session.get('selection', False)
+    if simple_selection.reference[0].type == 'protein':
+        # Target receptor
+        target_protein = simple_selection.reference[0].item
+        target = Protein.objects.get(entry_name=target_protein)
+        target_class = target.family.slug[:3]
+
+        # Gather structure sets for comparison
+        set1 = []
+        set2 = []
+        if goal == "active":
+            set1 = list(Structure.objects.filter(refined=False, \
+                protein_conformation__protein__family__slug__startswith=target_class, \
+                state__name='Active').values_list("pdb_code__index", flat=True))
+            set2 = list(Structure.objects.filter(refined=False, \
+                protein_conformation__protein__family__slug__startswith=target_class, \
+                state__name='Inactive').values_list("pdb_code__index", flat=True))
+        elif goal == "inactive":
+            set1 = list(Structure.objects.filter(refined=False, \
+                protein_conformation__protein__family__slug__startswith=target_class, \
+                state__name='Inactive').values_list("pdb_code__index", flat=True))
+            set2 = list(Structure.objects.filter(refined=False, \
+                protein_conformation__protein__family__slug__startswith=target_class, \
+                state__name='Active').values_list("pdb_code__index", flat=True))
+        elif goal == "xxxx": # Extend the options here
+            skip = True
+
+
+        if len(set1) > 0 and len(set2) > 0:
+            # Collect data about this GPCR class
+
+            # Class conservation
+            cache_name = "Class_AA_conservation_"+target_class
+            class_gn_cons = cache.get(cache_name)
+            #class_gn_cons = None
+            if class_gn_cons == None:
+                class_aln = Alignment()
+                human_gpcrs_class = Protein.objects.filter(species__common_name = 'Human', sequence_type__slug = 'wt', family__slug__startswith=target_class)
+                class_aln.load_proteins(human_gpcrs_class)
+                class_aln.load_segments(ProteinSegment.objects.filter(slug__in=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7', 'H8']))
+                class_aln.build_alignment()
+                class_gn_cons = {}
+                for segment in class_aln.consensus:
+                    for gn in class_aln.consensus[segment]:
+                        class_gn_cons[gn] = class_aln.consensus[segment][gn]
+                cache.set(cache_name, class_gn_cons, 60*60*24*7) # cache a week
+
+            # Class mutation data
+            cache_name = "Class_mutation_counts_"+target_class
+            class_mutations = cache.get(cache_name)
+            #class_mutations = None
+            if class_mutations == None:
+                class_mutations = {}
+
+                # Collect raw counts
+                all_ligand_mutations = MutationExperiment.objects.filter(protein__family__slug__startswith=target_class)\
+                                        .values("residue__generic_number__label").\
+                                        annotate(unique_mutations=Count("pk")).annotate(unique_receptors=Count("protein__family_id", distinct=True))
+
+                for pair in all_ligand_mutations:
+                    gn = pair["residue__generic_number__label"]
+                    class_mutations[gn] = {}
+                    class_mutations[gn]["unique_mutations"] = pair["unique_mutations"]
+                    class_mutations[gn]["unique_receptors"] = pair["unique_receptors"]
+                    # placeholder in case there are no mutations with >=5 fold effect
+                    class_mutations[gn]["fold_mutations"] = class_mutations[gn]["fold_receptors"] = 0
+
+                # Collect counts with >=5 fold effect on ligand binding
+                fold_ligand_mutations = MutationExperiment.objects.filter(Q(foldchange__gte = 5) | Q(foldchange__lte = -5), protein__family__slug__startswith=target_class)\
+                    .values("residue__generic_number__label").annotate(fold_mutations=Count("pk")).annotate(fold_receptors=Count("protein__family_id", distinct=True))
+
+                for pair in fold_ligand_mutations:
+                    gn = pair["residue__generic_number__label"]
+                    class_mutations[gn]["fold_mutations"] = pair["fold_mutations"]
+                    class_mutations[gn]["fold_receptors"] = pair["fold_receptors"]
+
+                cache.set(cache_name, class_mutations, 60*60*24*7) # cache a week
+
+            # Find residues that are >= 80% present in both sets and only TM residues
+            # Do not count frequencies or others residues that are not present in both sets
+            gns_set1 = collectGNsMatchingOccupancy(set1, 0.8)
+            gns_set2 = collectGNsMatchingOccupancy(set2, 0.8)
+            gns_both = [gn for gn in gns_set1 if gn in gns_set2]
+            gns_both.sort()
+
+            # Contact frequencies + differences
+            freq_set1 = calculateResidueContactFrequency(set1, gns_both)
+            freq_set2 = calculateResidueContactFrequency(set2, gns_both)
+
+            # Collect target residues for the selected receptor
+            wt_res = Residue.objects.filter(generic_number__label__in=gns_both,
+                                    protein_conformation__protein__entry_name=target_protein).\
+                                    values("generic_number__label", "amino_acid", "sequence_number", "display_generic_number__label")
+
+            target_residues = {}
+            for residue in wt_res:
+                gn = residue["generic_number__label"]
+                class_gn = residue["display_generic_number__label"]
+                class_gn = '%sx%s' % (class_gn.split(".")[0], class_gn.split("x")[1])
+                target_residues[gn] = [residue["amino_acid"], residue["sequence_number"], class_gn]
+
+            # Find interacting residue pairs in structures of set2 that match the WT AAs
+            # Only GNs matching at least one WT pair in set2 will be added to the analysis
+            residue_pairs = collectResiduePairs(set2, gns_both)
+            hit_residues = set()
+            for pair in residue_pairs:
+                if pair[0] in target_residues and target_residues[pair[0]][0] == pair[1] and \
+                    pair[2] in target_residues and target_residues[pair[2]][0] == pair[3]:
+                    hit_residues.add(pair[0])
+                    hit_residues.add(pair[2])
+
+            # Analyze interaction frequencies and presence in target set
+            freq_keys = list(set(freq_set1.keys()) | set(freq_set2.keys()))
+            freq_keys = [gn for gn in freq_keys if gn in hit_residues]
+            freq_results = { gn:[0,0,0] for gn in freq_keys }
+
+            for gn in freq_keys:
+                if gn in freq_set1:
+                    freq_results[gn][0] = int(freq_set1[gn])
+                if gn in freq_set2:
+                    freq_results[gn][1] = int(freq_set2[gn])
+                freq_results[gn][2] = freq_results[gn][0]-freq_results[gn][1]
+
+            # Sort and possibly apply cutoff (maximize occurrence in set 2)
+            top_diff_order = np.argsort([freq_results[gn][2] for gn in freq_keys])
+
+            # Also make sure at least a frequency different < 0 is observed (higher occurrence in set 2)
+            top_gns = [ freq_keys[i] for i in list(top_diff_order) if freq_results[freq_keys[i]][2] < 0]
+
+            context = {}
+            context['freq_results1'] = []
+            for gn in top_gns:
+                # Collect residue for target
+                target_aa = target_residues[gn][0]
+                target_resnum = target_residues[gn][1]
+                class_specific_gn = target_residues[gn][2]
+
+                # Collect most conserved residue in class
+                most_conserved = "-"
+                if gn in class_gn_cons: #and target_aa != class_gn_cons[gn][0]:
+                    most_conserved = "{} ({}%)".format(class_gn_cons[gn][0], class_gn_cons[gn][2])
+
+                # Alanine mutation
+                ala_mutant = "A" if target_aa != "A" else "-"
+
+                # Reversed polarity suggestion
+                suggestions = definitions.DESIGN_SUBSTITUTION_DICT[target_aa] if target_aa in definitions.DESIGN_SUBSTITUTION_DICT else []
+                suggestion_mutant = suggestions[0] if len(suggestions)>0 else "-"
+                suggestion_mutant2 = suggestions[1] if len(suggestions)>1 else "-"
+
+                if gn in class_mutations:
+                    mutation_text = "{} in {} rec.<br>({} in {} rec.)".format(class_mutations[gn]["fold_mutations"],\
+                                            class_mutations[gn]["fold_receptors"], class_mutations[gn]["unique_mutations"], class_mutations[gn]["unique_receptors"])
+                else:
+                    mutation_text = "-"
+
+                context['freq_results1'].append([target_resnum, class_specific_gn, target_aa, most_conserved, ala_mutant, suggestion_mutant, suggestion_mutant2, mutation_text, freq_results[gn][2], freq_results[gn][0], freq_results[gn][1]])
+            if len(context['freq_results1']) == 0:
+                context.pop('freq_results1', None)
+
+            # TABLE 2 - introducing desired AAs
+
+            # All GNs with a higher freq. in set 1
+            top_set1_gns = [ freq_keys[i] for i in list(top_diff_order[::-1]) if freq_results[freq_keys[i]][2] > 0]
+            conservation_set1 = collectAAConservation(set1, top_set1_gns)
+
+            #1. calculate conserved AA for these GNs in set 1  and identify which are different from WT
+            table2_gns = []
+            for gn in top_set1_gns:
+                # Find highest
+                conservation = 0
+                most_conserved = "X"
+                for aa in conservation_set1[gn]:
+                    if conservation_set1[gn][aa] > conservation:
+                        conservation = conservation_set1[gn][aa]
+                        most_conserved = aa
+
+                # Different from WT - then add to table
+                if target_residues[gn][0] != most_conserved:
+                    table2_gns.append(gn)
+
+            context['freq_results2'] = []
+            for gn in table2_gns:
+                # Collect residue for target
+                target_aa = target_residues[gn][0]
+                target_resnum = target_residues[gn][1]
+                class_specific_gn = target_residues[gn][2]
+
+                # Collect most conserved residue in class
+                most_conserved = "-"
+                if gn in class_gn_cons: #and target_aa != class_gn_cons[gn][0]:
+                    most_conserved = "{} ({}%)".format(class_gn_cons[gn][0], class_gn_cons[gn][2])
+
+                # Alanine mutation
+                ala_mutant = "A" if target_aa != "A" else "-"
+
+                # Reversed polarity suggestion
+                suggestions = definitions.DESIGN_SUBSTITUTION_DICT[target_aa] if target_aa in definitions.DESIGN_SUBSTITUTION_DICT else []
+                suggestion_mutant = suggestions[0] if len(suggestions)>0 else "-"
+                suggestion_mutant2 = suggestions[1] if len(suggestions)>1 else "-"
+
+                if gn in class_mutations:
+                    mutation_text = "{} in {} rec.<br>({} in {} rec.)".format(class_mutations[gn]["fold_mutations"],\
+                                            class_mutations[gn]["fold_receptors"], class_mutations[gn]["unique_mutations"], class_mutations[gn]["unique_receptors"])
+                else:
+                    mutation_text = "-"
+
+                context['freq_results2'].append([target_resnum, class_specific_gn, target_aa, most_conserved, ala_mutant, suggestion_mutant, suggestion_mutant2, mutation_text, freq_results[gn][2], freq_results[gn][0], freq_results[gn][1]])
+
+            if len(context['freq_results2']) == 0:
+                context.pop('freq_results2', None)
+
+            return render(request, 'mutation/contact_mutation_design.html', context)
+        else:
+            return HttpResponse("No valid protein target selected, please try again.")
+    else:
+        return HttpResponse("No valid mutation goal selected, please try again.")
+
+# Collect GNs that have at least a presence of X% in the provided structure set
+# TODO consider matching at least X% of receptors instead of structures
+def collectGNsMatchingOccupancy(structures, occupancy):
+    lowercase = [pdb.lower() for pdb in structures]
+    gn_occurrences = Residue.objects.filter(protein_conformation__protein__entry_name__in=lowercase,
+                            protein_segment__slug__in=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7', 'H8'])\
+                            .exclude(generic_number_id=None).\
+                            order_by('generic_number__label').values("generic_number__label").distinct().\
+                            annotate(count_structures=Count("protein_conformation__protein__entry_name", distinct=True))
+    gns_set = []
+    for presence in gn_occurrences:
+        if presence["count_structures"] >= occupancy*len(structures):
+            gns_set.append(presence["generic_number__label"])
+
+    return gns_set
+
+# Collect the AA conservation for each GN in a set of gns
+def collectAAConservation(structures, allowed_gns):
+    lowercase = [pdb.lower() for pdb in structures]
+    gn_aas = Residue.objects.filter(protein_conformation__protein__entry_name__in=lowercase,
+                            generic_number__label__in=allowed_gns).\
+                            order_by('generic_number__label').values("generic_number__label", "amino_acid").distinct().\
+                            annotate(count_slugs=Count("protein_conformation__protein__family__slug", distinct=True))
+
+    gns_set = {}
+    for gn_aa in gn_aas:
+        gn = gn_aa["generic_number__label"]
+        if gn not in gns_set:
+            gns_set[gn] = {}
+        gns_set[gn][gn_aa["amino_acid"]] = gn_aa["count_slugs"]
+
+    return gns_set
+
+# = pair / # structures
+def calculateResidueContactFrequency(pdbs, allowed_gns):
+    # Prepare list and caching
+    pdbs = list(set(pdbs))
+    pdbs.sort()
+    cache_name = "Contact_freq_" + hashlib.md5("_".join(pdbs).encode()).hexdigest()  + hashlib.md5("_".join(allowed_gns).encode()).hexdigest()
+
+    results = cache.get(cache_name)
+    #results = None
+    if results == None:
+
+        # Add interaction type filter + minimum interaction for VdW + Hyd
+        i_types_filter = Q()
+        i_types = ['ionic', 'polar', 'aromatic', 'hydrophobic', 'van-der-waals']
+        for int_type in i_types:
+            if int_type == 'hydrophobic' or int_type == 'van-der-waals':
+                i_types_filter = i_types_filter | (Q(interaction_type=int_type) & Q(atompaircount__gte=4))
+            else:
+                i_types_filter = i_types_filter | Q(interaction_type=int_type)
+
+        # intrasegment (only S-S interactions) intersegments(S-S + S-B interactions)
+        i_options_filter = Q()
+
+        # Filters for inter- and intrasegment contacts + BB/SC filters
+        backbone_atoms = ["C", "O", "N", "CA"]
+        pure_backbone_atoms = ["C", "O", "N"]
+
+        # INTERsegment interactions
+        inter_segments = ~Q(interacting_pair__res1__protein_segment=F('interacting_pair__res2__protein_segment'))
+
+        # SC-BB
+        scbb = ((Q(atomname_residue1__in=backbone_atoms) & ~Q(atomname_residue2__in=pure_backbone_atoms)) | (~Q(atomname_residue1__in=pure_backbone_atoms) & Q(atomname_residue2__in=backbone_atoms))) & inter_segments
+        inter_options_filter = scbb
+
+        # SC-SC
+        scsc = ~Q(atomname_residue1__in=pure_backbone_atoms) & ~Q(atomname_residue2__in=pure_backbone_atoms) & inter_segments
+        inter_options_filter = inter_options_filter | scsc
+
+        # INTRAsegment interactions
+        intra_segments = Q(interacting_pair__res1__protein_segment=F('interacting_pair__res2__protein_segment'))
+
+        # SC-SC
+        scsc = ~Q(atomname_residue1__in=pure_backbone_atoms) & ~Q(atomname_residue2__in=pure_backbone_atoms) & intra_segments
+        intra_options_filter = scsc
+
+        i_options_filter = inter_options_filter | intra_options_filter
+
+        # Grab all interactions with the applied filters
+        # pairs = Interaction.objects.filter(interacting_pair__res1__generic_number__label__in = allowed_gns,
+        #                 interacting_pair__res2__generic_number__label__in = allowed_gns,
+        #                 interacting_pair__referenced_structure__pdb_code__index__in=pdbs,
+        #                 interacting_pair__res1__protein_conformation_id=F('interacting_pair__res2__protein_conformation_id'),
+        #                 interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')
+        #             ).values(
+        #                     'interaction_type',
+        #                     'interacting_pair__referenced_structure__pdb_code__index',
+        #                     'interacting_pair__res1__generic_number__label',
+        #                     'interacting_pair__res2__generic_number__label',
+        #             ).distinct(
+        #             ).annotate(Count('pk'))
+        #
+        # results = {}
+        # for pair in pairs:
+        #     gn1 = pair["interacting_pair__res1__generic_number__label"]
+        #     gn2 = pair["interacting_pair__res2__generic_number__label"]
+        #
+        #     for gn in [pair["interacting_pair__res1__generic_number__label"], pair["interacting_pair__res2__generic_number__label"]]:
+        #         if gn in results:
+        #             results[gn] += 1
+        #         else:
+        #             results[gn] = 1
+
+        receptor_slugs = list(Structure.objects.filter(pdb_code__index__in=pdbs).values_list("protein_conformation__protein__family__slug", flat=True).distinct())
+        num_receptor_slugs = len(receptor_slugs)
+
+        pairs = Interaction.objects.filter(
+            interacting_pair__referenced_structure__pdb_code__index__in=pdbs
+        ).filter(interacting_pair__res1__generic_number__label__in = allowed_gns,
+                 interacting_pair__res2__generic_number__label__in = allowed_gns
+        ).filter(
+            interacting_pair__res1__protein_conformation_id=F('interacting_pair__res2__protein_conformation_id') # Filter interactions with other proteins
+        ).filter(
+            interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')
+        ).values(
+            'interaction_type',
+            'interacting_pair__referenced_structure__protein_conformation__protein__family__slug',
+            'interacting_pair__res1__generic_number__label',
+            'interacting_pair__res2__generic_number__label',
+        ).distinct(
+        ).annotate(
+             atompaircount=Count('interaction_type')
+        ).filter(
+            i_types_filter
+        ).filter(
+            i_options_filter
+        ).order_by(
+            'interaction_type',
+            'interacting_pair__referenced_structure__protein_conformation__protein__family__slug',
+            'interacting_pair__res1__generic_number__label',
+            'interacting_pair__res2__generic_number__label',
+        )
+
+        # Count and normalize by receptor slug
+        result_pairs = {}
+        for pair in pairs:
+            gn1 = pair["interacting_pair__res1__generic_number__label"]
+            gn2 = pair["interacting_pair__res2__generic_number__label"]
+            slug = pair["interacting_pair__referenced_structure__protein_conformation__protein__family__slug"]
+
+            pair_id = "{}_{}".format(gn1, gn2)
+            if pair_id not in result_pairs:
+                result_pairs[pair_id] = set()
+
+            result_pairs[pair_id].add(slug)
+
+
+        results = {}
+        for pair_id in result_pairs.keys():
+            gn1, gn2 = pair_id.split("_")
+            slugs = result_pairs[pair_id]
+
+            for gn in [gn1, gn2]:
+                if gn not in results:
+                    results[gn] = 0
+
+                results[gn] += len(slugs)/num_receptor_slugs*100
+
+        # Store in cache
+        cache.set(cache_name, results, 60*60*24*7) # cache a week
+
+    return results
+
+
+# Collect all residue pairs
+def collectResiduePairs(pdbs, allowed_gns):
+    # Prepare list and caching
+    pdbs = list(set(pdbs))
+    pdbs.sort()
+    cache_name = "Contact_pairs_" + hashlib.md5("_".join(pdbs).encode()).hexdigest()  + hashlib.md5("_".join(allowed_gns).encode()).hexdigest()
+
+    pairs = cache.get(cache_name)
+    #results = None
+    if pairs == None:
+        pairs = list(Interaction.objects.filter(interacting_pair__res1__generic_number__label__in = allowed_gns,
+                        interacting_pair__res2__generic_number__label__in = allowed_gns,
+                        interacting_pair__referenced_structure__pdb_code__index__in=pdbs,
+                        interacting_pair__res1__protein_conformation_id=F('interacting_pair__res2__protein_conformation_id'),
+                        interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')
+                    ).values_list(
+                            'interacting_pair__res1__generic_number__label',
+                            'interacting_pair__res1__amino_acid',
+                            'interacting_pair__res2__generic_number__label',
+                            'interacting_pair__res2__amino_acid',
+                    ).distinct())
+
+        # Store in cache
+        cache.set(cache_name, pairs, 60*60*24*7) # cache a week
+
+    return pairs
+
+def designStateActive(request):
+    return contactMutationDesign(request, "active")
+
+def designStateInactive(request):
+    return contactMutationDesign(request, "inactive")

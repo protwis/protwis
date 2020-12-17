@@ -7,8 +7,13 @@ from mutation import views
 urlpatterns = [
     url(r'^$', cache_page(60*60*24*7)(views.TargetSelection.as_view()), name='targetselection'),
     url(r'^import', views.importmutation, name='import'),
-    url(r'^design', cache_page(60*60*24*7)(views.design.as_view()), name='design'),
     url(r'^designpdb', views.designPDB.as_view(), name='design'),
+    url(r'^design$', cache_page(60*60*24*7)(views.design.as_view()), name='design'),
+    #url(r'^design_state', cache_page(60*60*24*7)(views.design.as_view()), name='design'),
+    # CHANGE TO PARAMETER-based urls
+    url(r'^design_state_selector', views.designStateSelector.as_view(), name='design_state_selector'),
+    url(r'^design_state_active', views.designStateActive, name='design_state_active'),
+    url(r'^design_state_inactive', views.designStateInactive, name='design_state_inactive'),
     url(r'^pocket', views.pocket, name='pocket'),
     url(r'^statistics', views.coverage, name='statistics'),
     url(r'^coverage', views.coverage, name='coverage'),
