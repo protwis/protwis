@@ -20,14 +20,14 @@ function getColor(value, scale, reverse = false) {
         scale = 1-scale;
     }
     color = { r: 255, g: 255, b: 255 };
-    if (value > 0) {
-        color = { r: Math.round(255-(255-153)*scale), g: Math.round(255-(255-153)*scale), b: Math.round(255-(255-153)*scale) }; //gray
-    }
+
+    color = { r: Math.round(255-(255-153)*scale), g: Math.round(255-(255-153)*scale), b: Math.round(255-(255-153)*scale) }; //gray
+
     return color;
 }
 
 /* Create gray scale for numberic values in table. Assign either the "color-column" class to a cell (td object) to use min-max values for coloring
-*  only in that column, or assign the "color-set[int]" class to use min-max values spanning through multiple columns sharing the class set name. 
+*  only in that column, or assign the "color-set[int]" class to use min-max values spanning through multiple columns sharing the class set name.
 *  By default high values are colored dark. You can also add the "color-reverse" class to the cell to reverse this coloring.
 *
 *  @table: The table object
@@ -61,7 +61,7 @@ function gray_scale_table(table, colorSetIds = []) {
                         }
                         break;
                     }
-                }    
+                }
             }
         }
     }
@@ -77,7 +77,7 @@ function gray_scale_table(table, colorSetIds = []) {
     for (var i = 0; i < colorSetIds.length; i++) {
         setsmaxmin[String(colorSetIds[i])] = [Math.max.apply(null, sets[colorSetIds[i]]), Math.min.apply(null, sets[colorSetIds[i]]), Math.max.apply(null, [Math.max.apply(null, sets[colorSetIds[i]]), Math.min.apply(null, sets[colorSetIds[i]])].map(Math.abs))];
     }
-    
+
     var c_maxmin;
     var value;
     var scale;
@@ -105,7 +105,7 @@ function gray_scale_table(table, colorSetIds = []) {
                 }
                 if (!(isNaN(value) || isNaN(c_maxmin[0]) || isNaN(c_maxmin[1]))) {
                     // Normalize data to get in-set color extremes
-                    scale = (Math.abs(value)-Math.abs(c_maxmin[1])) / (c_maxmin[2]-Math.abs(c_maxmin[1]));
+                    scale = (value-c_maxmin[1]) / (c_maxmin[0] - c_maxmin[1]);
                     // Calculate color
                     color = getColor(value, scale, reverse);
                     hex = rgbToHex(color.r, color.g, color.b);
