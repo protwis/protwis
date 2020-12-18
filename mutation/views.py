@@ -2180,6 +2180,11 @@ def contactMutationDesign(request, goal):
             gns_both = [gn for gn in gns_set1 if gn in gns_set2]
             gns_both.sort()
 
+            # Store settings in sessions
+            request.session['mutdesign_set1'] = set1
+            request.session['mutdesign_set2'] = set2
+            request.session['allowed_gns'] = gns_both
+
             # Contact frequencies + differences
             freq_set1 = calculateResidueContactFrequency(set1, gns_both)
             freq_set2 = calculateResidueContactFrequency(set2, gns_both)
@@ -2213,9 +2218,9 @@ def contactMutationDesign(request, goal):
 
             for gn in freq_keys:
                 if gn in freq_set1:
-                    freq_results[gn][0] = int(freq_set1[gn])
+                    freq_results[gn][0] = int(round(freq_set1[gn]))
                 if gn in freq_set2:
-                    freq_results[gn][1] = int(freq_set2[gn])
+                    freq_results[gn][1] = int(round(freq_set2[gn]))
                 freq_results[gn][2] = freq_results[gn][0]-freq_results[gn][1]
 
             # Sort and possibly apply cutoff (maximize occurrence in set 2)
@@ -2225,7 +2230,7 @@ def contactMutationDesign(request, goal):
             top_gns = [ freq_keys[i] for i in list(top_diff_order) if freq_results[freq_keys[i]][2] < 0]
 
             context = {}
-            context['freq_results1'] = []
+            context['freq_results1'] = {}
             for gn in top_gns:
                 # Collect residue for target
                 target_aa = target_residues[gn][0]
@@ -2233,12 +2238,12 @@ def contactMutationDesign(request, goal):
                 class_specific_gn = target_residues[gn][2]
 
                 # Collect most conserved residue in class
-                most_conserved = "-"
-                if gn in class_gn_cons: #and target_aa != class_gn_cons[gn][0]:
-                    most_conserved = "{} ({}%)".format(class_gn_cons[gn][0], class_gn_cons[gn][2])
+                # most_conserved = "-"
+                # if gn in class_gn_cons: #and target_aa != class_gn_cons[gn][0]:
+                #     most_conserved = "{} ({}%)".format(class_gn_cons[gn][0], class_gn_cons[gn][2])
 
                 # Alanine mutation
-                ala_mutant = "A" if target_aa != "A" else "-"
+                ala_mutant = "<span class=\"text-red-highlight\"><strong>A</strong></span>" if target_aa != "A" else "-"
 
                 # Reversed polarity suggestion
                 suggestions = definitions.DESIGN_SUBSTITUTION_DICT[target_aa] if target_aa in definitions.DESIGN_SUBSTITUTION_DICT else []
@@ -2251,7 +2256,8 @@ def contactMutationDesign(request, goal):
                 else:
                     mutation_text = "-"
 
-                context['freq_results1'].append([target_resnum, class_specific_gn, target_aa, most_conserved, ala_mutant, suggestion_mutant, suggestion_mutant2, mutation_text, freq_results[gn][2], freq_results[gn][0], freq_results[gn][1]])
+                #context['freq_results1'].append([target_resnum, class_specific_gn, target_aa,  class_gn_cons[gn][0], str(class_gn_cons[gn][2])+"%", ala_mutant, suggestion_mutant, suggestion_mutant2, mutation_text, freq_results[gn][2], freq_results[gn][0], freq_results[gn][1]])
+                context['freq_results1'][gn] = [target_resnum, class_specific_gn, target_aa,  class_gn_cons[gn][0], str(class_gn_cons[gn][2])+"%", ala_mutant, mutation_text, freq_results[gn][2], freq_results[gn][0], freq_results[gn][1]]
             if len(context['freq_results1']) == 0:
                 context.pop('freq_results1', None)
 
@@ -2261,8 +2267,12 @@ def contactMutationDesign(request, goal):
             top_set1_gns = [ freq_keys[i] for i in list(top_diff_order[::-1]) if freq_results[freq_keys[i]][2] > 0]
             conservation_set1 = collectAAConservation(set1, top_set1_gns)
 
+            receptor_slugs = list(Structure.objects.filter(pdb_code__index__in=set1).values_list("protein_conformation__protein__family__slug", flat=True).distinct())
+            num_receptor_slugs = len(receptor_slugs)
+
             #1. calculate conserved AA for these GNs in set 1  and identify which are different from WT
             table2_gns = []
+            most_conserved_set1 = {}
             for gn in top_set1_gns:
                 # Find highest
                 conservation = 0
@@ -2275,8 +2285,9 @@ def contactMutationDesign(request, goal):
                 # Different from WT - then add to table
                 if target_residues[gn][0] != most_conserved:
                     table2_gns.append(gn)
+                    most_conserved_set1[gn] = [most_conserved, str(int(round(conservation/num_receptor_slugs*100)))+"%"]
 
-            context['freq_results2'] = []
+            context['freq_results2'] = {}
             for gn in table2_gns:
                 # Collect residue for target
                 target_aa = target_residues[gn][0]
@@ -2284,9 +2295,9 @@ def contactMutationDesign(request, goal):
                 class_specific_gn = target_residues[gn][2]
 
                 # Collect most conserved residue in class
-                most_conserved = "-"
-                if gn in class_gn_cons: #and target_aa != class_gn_cons[gn][0]:
-                    most_conserved = "{} ({}%)".format(class_gn_cons[gn][0], class_gn_cons[gn][2])
+                # most_conserved = "-"
+                # if gn in class_gn_cons: #and target_aa != class_gn_cons[gn][0]:
+                #     most_conserved = "{} ({}%)".format(class_gn_cons[gn][0], class_gn_cons[gn][2])
 
                 # Alanine mutation
                 ala_mutant = "A" if target_aa != "A" else "-"
@@ -2302,7 +2313,8 @@ def contactMutationDesign(request, goal):
                 else:
                     mutation_text = "-"
 
-                context['freq_results2'].append([target_resnum, class_specific_gn, target_aa, most_conserved, ala_mutant, suggestion_mutant, suggestion_mutant2, mutation_text, freq_results[gn][2], freq_results[gn][0], freq_results[gn][1]])
+                #context['freq_results2'].append([target_resnum, class_specific_gn, target_aa, class_gn_cons[gn][0], str(class_gn_cons[gn][2])+"%", ala_mutant, suggestion_mutant, suggestion_mutant2, mutation_text, freq_results[gn][2], freq_results[gn][0], freq_results[gn][1]])
+                context['freq_results2'][gn] = [target_resnum, class_specific_gn, target_aa, class_gn_cons[gn][0], str(class_gn_cons[gn][2])+"%", "<span class=\"text-red-highlight font-weight-bold\"><strong>{}</strong></span>".format(most_conserved_set1[gn][0]), most_conserved_set1[gn][1], mutation_text, freq_results[gn][2], freq_results[gn][0], freq_results[gn][1]]
 
             if len(context['freq_results2']) == 0:
                 context.pop('freq_results2', None)
@@ -2345,6 +2357,25 @@ def collectAAConservation(structures, allowed_gns):
         gns_set[gn][gn_aa["amino_acid"]] = gn_aa["count_slugs"]
 
     return gns_set
+
+# Find detail interaction frequency information for a specific GN
+# TODO - develop into a response that can directly be fed into a modal
+def designStateDetailsGN(request):
+    # GRAB GN from POST
+    if "gn" not in request.POST:
+        return HttpResponse("No valid residue was provided, please try again.")
+
+    gn = request.POST['gn']
+
+    # Grab target and sets - store stuff in the session
+    set1 = request.session.get('mutdesign_set1', False)
+    set2 = request.session.get('mutdesign_set2', False)
+    allowed_gns = request.session.get('allowed_gns', False)
+
+    # Grab data
+    freq
+
+    return HttpResponse("Success GN - " + gn)
 
 # = pair / # structures
 def calculateResidueContactFrequency(pdbs, allowed_gns):

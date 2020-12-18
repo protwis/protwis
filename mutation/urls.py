@@ -14,6 +14,7 @@ urlpatterns = [
     url(r'^design_state_selector', views.designStateSelector.as_view(), name='design_state_selector'),
     url(r'^design_state_active', views.designStateActive, name='design_state_active'),
     url(r'^design_state_inactive', views.designStateInactive, name='design_state_inactive'),
+    url(r'^design_state_detail_gn', views.designStateDetailsGN, name='design_state_detail_gn'),
     url(r'^pocket', views.pocket, name='pocket'),
     url(r'^statistics', views.coverage, name='statistics'),
     url(r'^coverage', views.coverage, name='coverage'),

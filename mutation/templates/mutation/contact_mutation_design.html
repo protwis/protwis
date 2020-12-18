@@ -10,99 +10,136 @@
 
 {% endblock %}
 {% block content %}
+
+<ul class="nav nav-tabs nav-browsers">
+  {% if freq_results1 %}
+    <li class="active"><a href="#mutation-table-1-tab" data-toggle="tab" id="mutation-table-1-tab-link">Removing undesired AAs</a></li>
+  {% endif %}
+
+  {% if freq_results2 %}
+    {% if freq_results1 %}
+      <li>
+    {% else %}
+      <li class="active">
+    {% endif %}
+
+    <a href="#mutation-table-2-tab" data-toggle="tab" id="mutation-table-2-tab-link">Introducing desired AAs</a></li>
+  {% endif %}
+</ul>
+
 <div class="row">
-  <div class="row">
+  <div class="tab-content col-md-12 ">
+    {% if freq_results1 %}
+      <div class="tab-pane active" id="mutation-table-1-tab">
+          <div class="panel panel-default">
+              <div class="panel-heading">
+                  <h3 class="panel-title pull-left">Mutations to destabilize the <i>undesired</i> state</h3>
+                  <span class="pull-right">
+                      <span class="glyphicon glyphicon-download btn-download"></span><span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                  </span>
+                  <div class="clearfix"></div>
+              </div>
+              <div class="panel-body">
+                <table width="100%" class="display table-striped compact" id="suglist1">
+                  <thead>
+                    <tr>
+                      <th rowspan=2>Target<br>residue<br>number</th>
+                      <th rowspan=2>Generic<br>residue<br>number</th>
+                      <th rowspan=2>Target<br>WT AA</th>
+                      <th rowspan=1 colspan=2 class="text-center">Class conservation</th>
+                      <th rowspan=2><span class="text-red-highlight">Mutant AA</span><br>Ala<br>(removes sidechain)</th>
+                      <!--<th colspan=3>Mutant amino acid<br>(priority: left/hight to right/low)</th>-->
+                      <th rowspan=2>Mutation data<br>&#8805;5-fold effect<br>(all)</th>
+                      <th colspan=3 class="text-center">Sum of residue contact frequencies</th>
+                    </tr>
+                    <tr>
+                      <!--<th rowspan=2>Ala<br>(removes<br>sidechain)</th>
+                      <th colspan=2>Reversed polarity<br>(repels contact)</th>-->
+                      <th rowspan=1>AA</th>
+                      <th rowspan=1>%</th>
+                      <th rowspan=1>Diff</th>
+                      <th rowspan=1>Desired set</th>
+                      <th rowspan=1>Undesired set</th>
+                    </tr>
+                    <!--<tr>
+                      <th>#1</th>
+                      <th>#2</th>
+                    </tr>-->
+                  </thead>
+                  <tbody>
+                    {% for gn, entry in freq_results1.items %}
+                    <tr data-generic_gn="{{ gn }}">
+                      {% for data in entry %}
+                      <td>{{ data | safe}}</td>
+                      {% endfor %}
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+          </div>
+      </div>
+    {% endif %}
+    {% if freq_results2 %}
+      {% if freq_results1 %}
+        <div class="tab-pane" id="mutation-table-2-tab">
+      {% else %}
+        <div class="tab-pane active" id="mutation-table-2-tab">
+      {% endif %}
+          <div class="panel panel-default">
+              <div class="panel-heading">
+                  <h3 class="panel-title pull-left">Mutations to stabilize the <i>desired</i> state</h3>
+                  <span class="pull-right">
+                      <span class="glyphicon glyphicon-download btn-download"></span><span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                  </span>
+                  <div class="clearfix"></div>
+              </div>
+              <div class="panel-body">
+                <table width="100%" class="table-striped" id="suglist2">
+                  <thead>
+                    <tr>
+                      <th rowspan=2>Target<br>residue<br>number</th>
+                      <th rowspan=2>Generic<br>residue<br>number</th>
+                      <th rowspan=2>Target<br>WT AA</th>
+                      <th rowspan=1 colspan=2 class="text-center">Class conservation</th>
+                      <th colspan=2 class="text-center"><span class="text-red-highlight">Mutant AA</span><br>(desired set conservation)</th>
+                      <th rowspan=2>Mutation data<br>&#8805;5-fold effect<br>(all)</th>
+                      <th colspan=3 class="text-center">Sum of residue contact frequencies</th>
+                    </tr>
+                    <tr>
+                      <th rowspan=1>AA</th>
+                      <th rowspan=1>%</th>
+                      <th rowspan=1>AA</th>
+                      <th rowspan=1>%</th>
+                      <!--<th rowspan=1>Ala<br>(removes<br>sidechain)</th>
+                      <th colspan=1>Reversed polarity<br>(repels contact)</th>-->
+                      <th rowspan=1>Diff</th>
+                      <th rowspan=1>Desired set</th>
+                      <th rowspan=1>Undesired set</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for gn, entry in freq_results2.items %}
+                    <tr data-generic_gn="{{ gn }}">
+                      {% for data in entry %}
+                      <td>{{ data | safe}}</td>
+                      {% endfor %}
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+          </div>
+      </div>
+    {% endif %}
   </div>
 </div>
-{% if freq_results1 %}
-  <div class="row">
-    <h3>Mutant Suggestion 1/2 - removing undesired state contacts</h3>
-    <div class="col-md-12" style="font-size:1em;">
 
-      <table width="100%" class="display table-striped compact" id="suglist1">
-        <thead>
-          <tr>
-            <th rowspan=3>Target<br>residue<br>number</th>
-            <th rowspan=3>Generic<br>residue<br>number</th>
-            <th rowspan=3>Target<br>WT AA</th>
-            <th colspan=4>Mutant amino acid<br>(priority: left/hight to right/low)</th>
-            <th rowspan=3>Mutation data<br>&#8805;5-fold effect<br>(all)</th>
-            <th colspan=3>Sum of residue<br>contact frequencies</th>
-          </tr>
-          <tr>
-            <th rowspan=2>Most<br>conserved<br>in class</th>
-            <th rowspan=2>Ala<br>(removes<br>sidechain)</th>
-            <th colspan=2>Reversed polarity<br>(repels contact)</th>
-            <th rowspan=2>Diff</th>
-            <th rowspan=2>Set 1</th>
-            <th rowspan=2>Set 2</th>
-          </tr>
-          <tr>
-            <th>#1</th>
-            <th>#2</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for entry in freq_results1 %}
-          <tr>
-            {% for data in entry %}
-            <td>{{ data | safe}}</td>
-            {% endfor %}
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-  <div class="row">
-    <br><br><br><br><br>
-  </div>
-{% endif %}
-{% if freq_results2 %}
-  <div class="row">
-    <h3>Mutant Suggestions 2/2 - introducing desired state contacts</h3>
-    <div class="col-md-12" style="font-size: 1em;">
-
-      <table width="100%" class="table-striped" id="suglist2">
-        <thead>
-          <tr>
-            <th rowspan=3>Target<br>residue<br>number</th>
-            <th rowspan=3>Generic<br>residue<br>number</th>
-            <th rowspan=3>Target<br>WT AA</th>
-            <th colspan=4>Mutant amino acid<br>(priority: left/hight to right/low)</th>
-            <th rowspan=3>Mutation data<br>&#8805;5-fold effect<br>(all)</th>
-            <th colspan=3>Sum of residue<br>contact frequencies</th>
-          </tr>
-          <tr>
-            <th rowspan=2>Most<br>conserved<br>in class</th>
-            <th rowspan=2>Ala<br>(removes<br>sidechain)</th>
-            <th colspan=2>Reversed polarity<br>(repels contact)</th>
-            <th rowspan=2>Diff</th>
-            <th rowspan=2>Set 1</th>
-            <th rowspan=2>Set 2</th>
-          </tr>
-          <tr>
-            <th>#1</th>
-            <th>#2</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for entry in freq_results2 %}
-          <tr>
-            {% for data in entry %}
-            <td>{{ data | safe}}</td>
-            {% endfor %}
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-{% endif %}
 {% endblock %}
 
 {% block addon_js %}
 <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+<script src="{% static '/home/js/grayscale.js' %}"> </script>
 
 
 <script type="text/javascript" charset="utf-8">
@@ -116,13 +153,75 @@
   $(document).ready(function() {
     // Init mutations table 1
     if ($("#suglist1").length > 0){
-      $("#suglist1").DataTable(table_options);
+      // Assign coloring class to each cell in freq. diff table
+      // NOTE: Adjust color index when changing table - currently 8
+      $("#suglist1 tbody tr td:nth-child(8)").each( function() {
+          $(this).addClass("color-column");
+          $(this).addClass("color-reverse");
+          $(this).on("click", detailGN);
+      });
+      gray_scale_table($("#suglist1"));
+
+      var table_options1 = Object.assign({}, table_options);
+      table_options1["columnDefs"] = [
+          { className: "text-center", "targets": [ 0,1,2,3,4,5,7,8,9 ] }
+        ]
+      var table1 = $("#suglist1").DataTable(table_options1);
     }
 
     // Init mutations table 2
     if ($("#suglist2").length > 0){
-      $("#suglist2").DataTable(table_options);
+      // Assign coloring class to each cell in freq. diff table
+      // NOTE: Adjust color index when changing table - currently 8
+      $("#suglist2 tbody tr td:nth-child(9)").each( function() {
+          $(this).addClass("color-column");
+          $(this).on("click", detailGN);
+          //$(this).addClass("color-reverse");
+      });
+      gray_scale_table($("#suglist2"));
+
+      var table_options2 = Object.assign({}, table_options);
+      table_options2["columnDefs"] = [
+          { className: "text-center", "targets": [ 0, 1, 2, 3, 4, 5, 6, 8, 9, 10 ] }
+        ]
+      var table2 = $("#suglist2").DataTable(table_options2);
     }
   });
+
+  function detailGN(event) {
+    var row = $(event.target).closest("tr")[0];
+    var gn = $(row).attr("data-generic_gn");
+
+    //Dealing with csrf token
+    function getCookie(c_name) {
+        if (document.cookie.length > 0) {
+            c_start = document.cookie.indexOf(c_name + "=");
+            if (c_start != -1) {
+                c_start = c_start + c_name.length + 1;
+                c_end = document.cookie.indexOf(";", c_start);
+                if (c_end == -1) c_end = document.cookie.length;
+                return unescape(document.cookie.substring(c_start, c_end));
+            }
+        }
+        return "";
+    }
+    $.ajaxSetup({
+        headers: { "X-CSRFToken": getCookie("csrftoken") }
+    });
+
+    // Ajax query to backend and populate a modal
+    $.ajax({
+        'url': '/mutations/design_state_detail_gn',
+        'data': {
+            "gn": gn
+        },
+        'type': 'POST',
+        'async': false,
+        'success': function (data) {
+          // TODO POULATE
+            console.log(data);
+        }
+    });
+  }
 </script>
 {% endblock %}
