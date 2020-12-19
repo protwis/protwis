@@ -16,6 +16,7 @@ from common.views import AbsSegmentSelection
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 from common import definitions
 
+from construct.views import ConstructMutation
 from contactnetwork.models import Interaction, InteractingResiduePair
 
 from interaction.models import ResidueFragmentInteraction, StructureLigandInteraction
@@ -2078,7 +2079,7 @@ def importmutation(request):
     #return HttpResponse(ref_id)
     return render(request,'mutation/index.html',context)
 
-class designStateSelector(AbsReferenceSelection):
+class designStateSelectorActive(AbsReferenceSelection):
     step = 1
     number_of_steps = 1
     target_input = False
@@ -2092,9 +2093,23 @@ class designStateSelector(AbsReferenceSelection):
         },
     }
 
+class designStateSelectorInactive(AbsReferenceSelection):
+    step = 1
+    number_of_steps = 1
+    target_input = False
+    description = 'Select a reference target by searching or browsing in the right column.'
+    #docs = 'sequences.html#similarity-search-gpcrdb'
+    buttons = {
+        'continue': {
+            'label': 'Next',
+            'url': '/mutations/design_state_inactive',
+            'color': 'success',
+        },
+    }
+
 def contactMutationDesign(request, goal):
     cutoff = 999999 # Only select top X suggestions
-
+    context = {}
     simple_selection = request.session.get('selection', False)
     if simple_selection.reference[0].type == 'protein':
         # Target receptor
@@ -2112,6 +2127,8 @@ def contactMutationDesign(request, goal):
             set2 = list(Structure.objects.filter(refined=False, \
                 protein_conformation__protein__family__slug__startswith=target_class, \
                 state__name='Inactive').values_list("pdb_code__index", flat=True))
+            context["desired"] = "active-state"
+            context["undesired"] = "inactive-state"
         elif goal == "inactive":
             set1 = list(Structure.objects.filter(refined=False, \
                 protein_conformation__protein__family__slug__startswith=target_class, \
@@ -2119,6 +2136,8 @@ def contactMutationDesign(request, goal):
             set2 = list(Structure.objects.filter(refined=False, \
                 protein_conformation__protein__family__slug__startswith=target_class, \
                 state__name='Active').values_list("pdb_code__index", flat=True))
+            context["desired"] = "inactive-state"
+            context["undesired"] = "active-state"
         elif goal == "xxxx": # Extend the options here
             skip = True
 
@@ -2172,6 +2191,23 @@ def contactMutationDesign(request, goal):
                     class_mutations[gn]["fold_receptors"] = pair["fold_receptors"]
 
                 cache.set(cache_name, class_mutations, 60*60*24*7) # cache a week
+
+            # Class Thermostabilizing mutations
+            all_thermo = ConstructMutation.objects.filter(construct__protein__family__slug__startswith=target_class, effects__slug='thermostabilising')\
+                        .values("residue__generic_number__label", "wild_type_amino_acid", "mutated_amino_acid")
+
+            class_thermo_muts = {}
+            for pair in all_thermo:
+                gn = pair["residue__generic_number__label"]
+                wt = pair["wild_type_amino_acid"]
+                mutant = pair["mutated_amino_acid"]
+                if gn not in class_thermo_muts:
+                    class_thermo_muts[gn] = {}
+                    class_thermo_muts[gn]["mutations"] = set()
+                if wt not in class_thermo_muts[gn]:
+                    class_thermo_muts[gn][wt] = []
+                class_thermo_muts[gn][wt].append(mutant)
+                class_thermo_muts[gn]["mutations"].add(mutant)
 
             # Find residues that are >= 80% present in both sets and only TM residues
             # Do not count frequencies or others residues that are not present in both sets
@@ -2229,7 +2265,6 @@ def contactMutationDesign(request, goal):
             # Also make sure at least a frequency different < 0 is observed (higher occurrence in set 2)
             top_gns = [ freq_keys[i] for i in list(top_diff_order) if freq_results[freq_keys[i]][2] < 0]
 
-            context = {}
             context['freq_results1'] = {}
             for gn in top_gns:
                 # Collect residue for target
@@ -2250,14 +2285,23 @@ def contactMutationDesign(request, goal):
                 suggestion_mutant = suggestions[0] if len(suggestions)>0 else "-"
                 suggestion_mutant2 = suggestions[1] if len(suggestions)>1 else "-"
 
+                fold_mutation_text = "-"
+                total_mutation_text = "-"
                 if gn in class_mutations:
-                    mutation_text = "{} in {} rec.<br>({} in {} rec.)".format(class_mutations[gn]["fold_mutations"],\
-                                            class_mutations[gn]["fold_receptors"], class_mutations[gn]["unique_mutations"], class_mutations[gn]["unique_receptors"])
-                else:
-                    mutation_text = "-"
+                    fold_mutation_text = "{} ({} rec.)".format(class_mutations[gn]["fold_mutations"], class_mutations[gn]["fold_receptors"])
+                    total_mutation_text = "{} ({} rec.)".format(class_mutations[gn]["unique_mutations"], class_mutations[gn]["unique_receptors"])
+
+                thermo_text = ["no", "no", "no"]
+                if gn in class_thermo_muts:
+                    thermo_text[0] = "yes"
+                    if target_aa in class_thermo_muts[gn]:
+                        thermo_text[1] = "yes"
+                    if ala_mutant in class_thermo_muts[gn]["mutations"]:
+                        thermo_text[2] = "yes"
 
                 #context['freq_results1'].append([target_resnum, class_specific_gn, target_aa,  class_gn_cons[gn][0], str(class_gn_cons[gn][2])+"%", ala_mutant, suggestion_mutant, suggestion_mutant2, mutation_text, freq_results[gn][2], freq_results[gn][0], freq_results[gn][1]])
-                context['freq_results1'][gn] = [target_resnum, class_specific_gn, target_aa,  class_gn_cons[gn][0], str(class_gn_cons[gn][2])+"%", ala_mutant, mutation_text, freq_results[gn][2], freq_results[gn][0], freq_results[gn][1]]
+                #context['freq_results1'][gn] = [target_resnum, class_specific_gn, target_aa,  class_gn_cons[gn][0], str(class_gn_cons[gn][2])+"%", ala_mutant, mutation_text, freq_results[gn][2], freq_results[gn][0], freq_results[gn][1]]
+                context['freq_results1'][gn] = ["<span class=\"text-danger\">{}</span>".format(target_resnum), "<span class=\"text-danger\">{}</span>".format(class_specific_gn), "<span class=\"text-danger\">{}</span>".format(target_aa),  ala_mutant, freq_results[gn][2], int(round(freq_results[gn][2]/freq_results[gn][1]*100)), freq_results[gn][0], freq_results[gn][1], class_gn_cons[gn][0], class_gn_cons[gn][2], fold_mutation_text, total_mutation_text, thermo_text[0], thermo_text[1], thermo_text[2]]
             if len(context['freq_results1']) == 0:
                 context.pop('freq_results1', None)
 
@@ -2307,14 +2351,23 @@ def contactMutationDesign(request, goal):
                 suggestion_mutant = suggestions[0] if len(suggestions)>0 else "-"
                 suggestion_mutant2 = suggestions[1] if len(suggestions)>1 else "-"
 
+                fold_mutation_text = "-"
+                total_mutation_text = "-"
                 if gn in class_mutations:
-                    mutation_text = "{} in {} rec.<br>({} in {} rec.)".format(class_mutations[gn]["fold_mutations"],\
-                                            class_mutations[gn]["fold_receptors"], class_mutations[gn]["unique_mutations"], class_mutations[gn]["unique_receptors"])
-                else:
-                    mutation_text = "-"
+                    fold_mutation_text = "{} ({} rec.)".format(class_mutations[gn]["fold_mutations"], class_mutations[gn]["fold_receptors"])
+                    total_mutation_text = "{} ({} rec.)".format(class_mutations[gn]["unique_mutations"], class_mutations[gn]["unique_receptors"])
+
+                thermo_text = ["no", "no", "no"]
+                if gn in class_thermo_muts:
+                    thermo_text[0] = "yes"
+                    if target_aa in class_thermo_muts[gn]:
+                        thermo_text[1] = "yes"
+                    if ala_mutant in class_thermo_muts[gn]["mutations"]:
+                        thermo_text[2] = "yes"
 
                 #context['freq_results2'].append([target_resnum, class_specific_gn, target_aa, class_gn_cons[gn][0], str(class_gn_cons[gn][2])+"%", ala_mutant, suggestion_mutant, suggestion_mutant2, mutation_text, freq_results[gn][2], freq_results[gn][0], freq_results[gn][1]])
-                context['freq_results2'][gn] = [target_resnum, class_specific_gn, target_aa, class_gn_cons[gn][0], str(class_gn_cons[gn][2])+"%", "<span class=\"text-red-highlight font-weight-bold\"><strong>{}</strong></span>".format(most_conserved_set1[gn][0]), most_conserved_set1[gn][1], mutation_text, freq_results[gn][2], freq_results[gn][0], freq_results[gn][1]]
+                #context['freq_results2'][gn] = [target_resnum, class_specific_gn, target_aa, class_gn_cons[gn][0], str(class_gn_cons[gn][2])+"%", "<span class=\"text-red-highlight font-weight-bold\"><strong>{}</strong></span>".format(most_conserved_set1[gn][0]), most_conserved_set1[gn][1], mutation_text, freq_results[gn][2], freq_results[gn][0], freq_results[gn][1]]
+                context['freq_results2'][gn] = ["<span class=\"text-danger\">{}</span>".format(target_resnum), "<span class=\"text-danger\">{}</span>".format(class_specific_gn), "<span class=\"text-danger\">{}</span>".format(target_aa), "<span class=\"text-red-highlight font-weight-bold\"><strong>{}</strong></span>".format(most_conserved_set1[gn][0]), most_conserved_set1[gn][1], freq_results[gn][2], int(round(freq_results[gn][2]/freq_results[gn][1]*100)), freq_results[gn][0], freq_results[gn][1], class_gn_cons[gn][0], class_gn_cons[gn][2], fold_mutation_text, total_mutation_text, thermo_text[0], thermo_text[1], thermo_text[2]]
 
             if len(context['freq_results2']) == 0:
                 context.pop('freq_results2', None)
@@ -2359,7 +2412,6 @@ def collectAAConservation(structures, allowed_gns):
     return gns_set
 
 # Find detail interaction frequency information for a specific GN
-# TODO - develop into a response that can directly be fed into a modal
 def designStateDetailsGN(request):
     # GRAB GN from POST
     if "gn" not in request.POST:
@@ -2373,20 +2425,41 @@ def designStateDetailsGN(request):
     allowed_gns = request.session.get('allowed_gns', False)
 
     # Grab data
-    freq
+    freq_set1 = calculateResidueContactFrequency(set1, allowed_gns, gn)
+    freq_set2 = calculateResidueContactFrequency(set2, allowed_gns, gn)
 
-    return HttpResponse("Success GN - " + gn)
+    # Analyze interaction frequencies and presence in target set
+    freq_keys = list(set(freq_set1.keys()) | set(freq_set2.keys()))
+    freq_keys.sort()
+
+    freq_results = { gn:[0,0,0] for gn in freq_keys }
+    for gn in freq_keys:
+        if gn in freq_set1:
+            freq_results[gn][0] = int(round(freq_set1[gn]))
+        if gn in freq_set2:
+            freq_results[gn][1] = int(round(freq_set2[gn]))
+        freq_results[gn][2] = freq_results[gn][0]-freq_results[gn][1]
+
+    table = "<table class=\"display table-striped\"><thead><tr><th>GN</th><th>Desired set</th><th>Undesired set</th><th>Diff</th></tr></thead><tbody>"
+    for gn in freq_results:
+        table += "<tr><td>{}</td><td>{}</td><td>{}</td><td class=\"color-column\">{}</td></tr>".format(gn, freq_results[gn][0], freq_results[gn][1], freq_results[gn][2])
+    table += "</tbody></table>"
+
+    return HttpResponse(table)
 
 # = pair / # structures
-def calculateResidueContactFrequency(pdbs, allowed_gns):
+def calculateResidueContactFrequency(pdbs, allowed_gns, detail_gn = None):
     # Prepare list and caching
     pdbs = list(set(pdbs))
     pdbs.sort()
     cache_name = "Contact_freq_" + hashlib.md5("_".join(pdbs).encode()).hexdigest()  + hashlib.md5("_".join(allowed_gns).encode()).hexdigest()
 
-    results = cache.get(cache_name)
-    #results = None
-    if results == None:
+    receptor_slugs = list(Structure.objects.filter(pdb_code__index__in=pdbs).values_list("protein_conformation__protein__family__slug", flat=True).distinct())
+    num_receptor_slugs = len(receptor_slugs)
+
+    result_pairs = cache.get(cache_name)
+    #result_pairs = None
+    if result_pairs == None:
 
         # Add interaction type filter + minimum interaction for VdW + Hyd
         i_types_filter = Q()
@@ -2449,9 +2522,6 @@ def calculateResidueContactFrequency(pdbs, allowed_gns):
         #         else:
         #             results[gn] = 1
 
-        receptor_slugs = list(Structure.objects.filter(pdb_code__index__in=pdbs).values_list("protein_conformation__protein__family__slug", flat=True).distinct())
-        num_receptor_slugs = len(receptor_slugs)
-
         pairs = Interaction.objects.filter(
             interacting_pair__referenced_structure__pdb_code__index__in=pdbs
         ).filter(interacting_pair__res1__generic_number__label__in = allowed_gns,
@@ -2492,7 +2562,11 @@ def calculateResidueContactFrequency(pdbs, allowed_gns):
 
             result_pairs[pair_id].add(slug)
 
+        # Store in cache
+        cache.set(cache_name, result_pairs, 60*60*24*7) # cache a week
 
+    # Give collected results per GN or detailed results for a single GN
+    if detail_gn == None:
         results = {}
         for pair_id in result_pairs.keys():
             gn1, gn2 = pair_id.split("_")
@@ -2504,10 +2578,17 @@ def calculateResidueContactFrequency(pdbs, allowed_gns):
 
                 results[gn] += len(slugs)/num_receptor_slugs*100
 
-        # Store in cache
-        cache.set(cache_name, results, 60*60*24*7) # cache a week
+        return results
+    else:
+        results = {}
+        for pair_id in result_pairs.keys():
+            if detail_gn in pair_id:
+                gn1, gn2 = pair_id.split("_")
+                slugs = result_pairs[pair_id]
 
-    return results
+                other_gn = gn1 if gn1 != detail_gn else gn2
+                results[other_gn] = len(slugs)/num_receptor_slugs*100
+        return results
 
 
 # Collect all residue pairs
@@ -2537,8 +2618,8 @@ def collectResiduePairs(pdbs, allowed_gns):
 
     return pairs
 
-def designStateActive(request):
-    return contactMutationDesign(request, "active")
-
-def designStateInactive(request):
-    return contactMutationDesign(request, "inactive")
+# def designStateActive(request):
+#     return contactMutationDesign(request, "active")
+#
+# def designStateInactive(request):
+#     return contactMutationDesign(request, "inactive")

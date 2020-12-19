@@ -1,4 +1,5 @@
 from django.conf.urls import url
+from django.urls import path
 from django.views.decorators.cache import cache_page
 
 from mutation import views
@@ -11,10 +12,10 @@ urlpatterns = [
     url(r'^design$', cache_page(60*60*24*7)(views.design.as_view()), name='design'),
     #url(r'^design_state', cache_page(60*60*24*7)(views.design.as_view()), name='design'),
     # CHANGE TO PARAMETER-based urls
-    url(r'^design_state_selector', views.designStateSelector.as_view(), name='design_state_selector'),
-    url(r'^design_state_active', views.designStateActive, name='design_state_active'),
-    url(r'^design_state_inactive', views.designStateInactive, name='design_state_inactive'),
-    url(r'^design_state_detail_gn', views.designStateDetailsGN, name='design_state_detail_gn'),
+    path('design_state_selector/active', views.designStateSelectorActive.as_view(), name='design_state_selector'),
+    path('design_state_selector/inactive', views.designStateSelectorInactive.as_view(), name='design_state_selector'),
+    path('design_state_detail_gn', views.designStateDetailsGN, name='design_state_detail_gn'),
+    path('design_state_<goal>', views.contactMutationDesign, name='design_state_active'),
     url(r'^pocket', views.pocket, name='pocket'),
     url(r'^statistics', views.coverage, name='statistics'),
     url(r'^coverage', views.coverage, name='coverage'),
