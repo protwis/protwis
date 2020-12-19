@@ -71,8 +71,9 @@ function gray_scale_table(table, colorSetIds = []) {
     cols.forEach(function(col, index) {
         var max = Math.max.apply(null, col);
         var min = Math.min.apply(null, col);
-        var abs_max = Math.max.apply(null, [max, min].map(Math.abs));
-        maxmin.push([max, min, abs_max]);
+        maxmin.push([max, min]);
+        //var abs_max = Math.max.apply(null, [max, min].map(Math.abs));
+        //maxmin.push([max, min, abs_max]);
     });
     for (var i = 0; i < colorSetIds.length; i++) {
         setsmaxmin[String(colorSetIds[i])] = [Math.max.apply(null, sets[colorSetIds[i]]), Math.min.apply(null, sets[colorSetIds[i]]), Math.max.apply(null, [Math.max.apply(null, sets[colorSetIds[i]]), Math.min.apply(null, sets[colorSetIds[i]])].map(Math.abs))];
@@ -110,12 +111,14 @@ function gray_scale_table(table, colorSetIds = []) {
                     color = getColor(value, scale, reverse);
                     hex = rgbToHex(color.r, color.g, color.b);
                     cell.setAttribute("bgcolor", hex);
+                    cell.style.backgroundColor = hex;
                 }
                 // Non-numeric cells get colored white
                 else {
                     color = color = { r: 255, g: 255, b: 255 };
                     hex = rgbToHex(color.r, color.g, color.b);
                     cell.setAttribute("bgcolor", hex);
+                    cell.style.backgroundColor = hex;
                 }
             }
         }
