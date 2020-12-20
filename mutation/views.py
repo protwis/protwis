@@ -2329,7 +2329,7 @@ def contactMutationDesign(request, goal):
                 # Different from WT - then add to table
                 if target_residues[gn][0] != most_conserved:
                     table2_gns.append(gn)
-                    most_conserved_set1[gn] = [most_conserved, str(int(round(conservation/num_receptor_slugs*100)))+"%"]
+                    most_conserved_set1[gn] = [most_conserved, int(round(conservation/num_receptor_slugs*100))]
 
             context['freq_results2'] = {}
             for gn in table2_gns:
@@ -2362,7 +2362,7 @@ def contactMutationDesign(request, goal):
                     thermo_text[0] = "yes"
                     if target_aa in class_thermo_muts[gn]:
                         thermo_text[1] = "yes"
-                    if ala_mutant in class_thermo_muts[gn]["mutations"]:
+                    if most_conserved_set1[gn][0] in class_thermo_muts[gn]["mutations"]:
                         thermo_text[2] = "yes"
 
                 #context['freq_results2'].append([target_resnum, class_specific_gn, target_aa, class_gn_cons[gn][0], str(class_gn_cons[gn][2])+"%", ala_mutant, suggestion_mutant, suggestion_mutant2, mutation_text, freq_results[gn][2], freq_results[gn][0], freq_results[gn][1]])
