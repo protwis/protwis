@@ -4,6 +4,8 @@
 
 <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
 <link href="{% static 'home/css/buttons.dataTables.min.css' %}" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
 
 <style type="text/css">
     div.dt-buttons {
@@ -12,6 +14,32 @@
 
     table#suglist1, table#suglist2 {
       width: 100%;
+    }
+
+    .yadcf-filter-wrapper {
+      margin-top: 0;
+    }
+
+    input.yadcf-filter  {
+      width: 100px;
+      font-family: sans-serif;
+      font-size: 100%;
+      font-weight: bold;
+    }
+
+    .yadcf-filter-range-number {
+      width: 40px;
+      font-family: sans-serif;
+      font-size: 100%;
+      font-weight: bold;
+    }
+
+    .yadcf-filter-range {
+      min-width: 30px;
+    }
+
+    .yadcf-filter-range-number-seperator {
+      display: none;
     }
 </style>
 
@@ -74,10 +102,23 @@
                       <th rowspan=1>Same<br>WT AA</th>
                       <th rowspan=1>Same<br>mutant AA</th>
                     </tr>
-                    <!--<tr>
-                      <th>#1</th>
-                      <th>#2</th>
-                    </tr>-->
+                    <tr>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                    </tr>
                   </thead>
                   <tbody>
                     {% for gn, entry in freq_results1.items %}
@@ -138,6 +179,24 @@
                       <th rowspan=1>Same<br>WT AA</th>
                       <th rowspan=1>Same<br>mutant AA</th>
                     </tr>
+                    <tr>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                    </tr>
                   </thead>
                   <tbody>
                     {% for gn, entry in freq_results2.items %}
@@ -176,69 +235,164 @@
 {% endblock %}
 
 {% block addon_js %}
-<!--<script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>-->
 <script src="{% static 'home/js/dataTables.min.js' %}"> </script>
 <script src="{% static 'home/js/dataTables.buttons.min.js' %}"> </script>
 <script src="{% static '/home/js/grayscale.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+<script src="{% static 'home/js/select2.js' %}"> </script>
 
 
 <script type="text/javascript" charset="utf-8">
   var table_options = {"paging":        true,
                         "pageLength":   20,
                         "lengthChange": false,
-                        "ordering":     false,
-                        "searching":    false,
                         "buttons":      ["csv", "excel"],
                         "dom":          "lfrtipB",
                       }
 
-  $(document).ready(function() {
+  var table1, table2 = null;
+
+  function initTable1() {
     // Init mutations table 1
-    if ($("#suglist1").length > 0){
+    if ($("#suglist1").length > 0 && table1 == null){
       // Assign coloring class to each cell in freq. diff table
       // NOTE: Adjust color index when changing table - currently 8
       $("#suglist1 tbody tr td").filter(":nth-child(5), :nth-child(6)").each( function() {
           $(this).addClass("color-column");
           $(this).addClass("color-reverse");
-          //$(this).on("click", detailGN);
       });
 
+      // Enable detail pane by clicking on row
       $("#suglist1 tbody tr").each( function() {
           $(this).on("click", detailGN);
+      });
+
+      // set data-search to cell (for mutation data filtering)
+      $("#suglist1 tbody tr td span[data-search]").each( function() {
+        var cell = $(this).closest("td")[0];
+        $(cell).attr("data-search", $(this).attr("data-search"));
       });
 
       gray_scale_table($("#suglist1"));
 
       var table_options1 = Object.assign({}, table_options);
+      table_options1["order"] = [4, "asc"];
       table_options1["columnDefs"] = [
-          { className: "text-center", "targets": [ 0,1,2,3,4,5,7,8,9, 12,13,14 ] }
+          { className: "text-center", "targets": [ 0,1,2,3,4,5,6,7,8,9, 12,13,14 ] }
         ]
-      var table1 = $("#suglist1").DataTable(table_options1);
-    }
 
+      table1 = $("#suglist1").DataTable(table_options1);
+
+      // Multi select
+      var yadcf_options = [];
+      var list = [1,2,8,12,13,14];
+      for (i in list){
+        yadcf_options.push({
+              column_number : list[i],
+              filter_type: "multi_select",
+              select_type: "select2",
+              filter_default_label: "",
+              filter_reset_button_text: false,
+          });
+      }
+
+      // Range filters
+      list = [0,4,5,6,7,9];
+      for (i in list){
+        yadcf_options.push({
+            column_number : list[i],
+            filter_type: "range_number",
+            filter_reset_button_text: false,
+            column_data_type: "html",
+            html_data_type: "value",
+            filter_default_label: ["Min", "Max"],
+        });
+      }
+
+      list = [10,11];
+      for (i in list){
+        yadcf_options.push({
+          column_number: list[i],
+          filter_type: "range_number",
+          filter_default_label: ["Min", "Max"],
+          filter_reset_button_text: false,
+          html5_data: "data-search",
+        });
+      }
+
+      yadcf.init(table1, yadcf_options);
+    }
+  }
+
+  function initTable2() {
     // Init mutations table 2
-    if ($("#suglist2").length > 0){
+    if ($("#suglist2").length > 0 && table2 == null){
       // Assign coloring class to each cell in freq. diff table
       // NOTE: Adjust color index when changing table - currently 8
       $("#suglist2 tbody tr td").filter(":nth-child(6), :nth-child(7)").each( function() {
           $(this).addClass("color-column");
-          //$(this).on("click", detailGN);
-          //$(this).addClass("color-reverse");
       });
 
+      // Enable detail pane by clicking on row
       $("#suglist2 tbody tr").each( function() {
           $(this).on("click", detailGN);
+      });
+
+      // set data-search to cell (for mutation data filtering)
+      $("#suglist2 tbody tr td span[data-search]").each( function() {
+        var cell = $(this).closest("td")[0];
+        $(cell).attr("data-search", $(this).attr("data-search"));
       });
 
       gray_scale_table($("#suglist2"));
 
       var table_options2 = Object.assign({}, table_options);
+      table_options2["order"] = [5, "desc"];
       table_options2["columnDefs"] = [
           { className: "text-center", "targets": [ 0,1,2,3,4,5,6,7,8,9,10, 13,14,15 ] }
         ]
-      var table2 = $("#suglist2").DataTable(table_options2);
+      table2 = $("#suglist2").DataTable(table_options2);
+
+      // Multi select
+      var yadcf_options = [];
+      var list = [1,2,3,9,13,14,15];
+      for (i in list){
+        yadcf_options.push({
+              column_number : list[i],
+              filter_type: "multi_select",
+              select_type: "select2",
+              filter_default_label: "",
+              filter_reset_button_text: false,
+          });
+      }
+
+      // Range filters
+      list = [0,4,5,6,7,8,10];
+      for (i in list){
+        yadcf_options.push({
+            column_number : list[i],
+            filter_type: "range_number",
+            filter_reset_button_text: false,
+            column_data_type: "html",
+            html_data_type: "value",
+            filter_default_label: ["Min", "Max"],
+        });
+      }
+
+      list = [11,12];
+      for (i in list){
+        yadcf_options.push({
+          column_number: list[i],
+          filter_type: "range_number",
+          filter_default_label: ["Min", "Max"],
+          filter_reset_button_text: false,
+          html5_data: "data-search",
+        });
+      }
+
+      yadcf.init(table2, yadcf_options);
     }
-  });
+  }
 
   function detailGN(event) {
     var row = $(event.target).closest("tr")[0];
@@ -284,5 +438,16 @@
         }
     });
   }
+
+  $("#mutation-table-1-tab-link").on("click", function(){setTimeout(initTable1,100);});
+  $("#mutation-table-2-tab-link").on("click", function(){setTimeout(initTable2,100);});
+
+  $(document).ready(function() {
+    {% if freq_results1 %}
+      initTable1();
+    {% else %}
+      initTable2();
+    {% endif %}
+  });
 </script>
 {% endblock %}

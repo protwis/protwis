@@ -2288,8 +2288,8 @@ def contactMutationDesign(request, goal):
                 fold_mutation_text = "-"
                 total_mutation_text = "-"
                 if gn in class_mutations:
-                    fold_mutation_text = "{} ({} rec.)".format(class_mutations[gn]["fold_mutations"], class_mutations[gn]["fold_receptors"])
-                    total_mutation_text = "{} ({} rec.)".format(class_mutations[gn]["unique_mutations"], class_mutations[gn]["unique_receptors"])
+                    fold_mutation_text = "<span data-search=\"{}\">{} ({} rec.)</span>".format(class_mutations[gn]["fold_mutations"], class_mutations[gn]["fold_mutations"], class_mutations[gn]["fold_receptors"])
+                    total_mutation_text = "<span data-search=\"{}\">{} ({} rec.)</span>".format(class_mutations[gn]["unique_mutations"], class_mutations[gn]["unique_mutations"], class_mutations[gn]["unique_receptors"])
 
                 thermo_text = ["no", "no", "no"]
                 if gn in class_thermo_muts:
@@ -2354,8 +2354,8 @@ def contactMutationDesign(request, goal):
                 fold_mutation_text = "-"
                 total_mutation_text = "-"
                 if gn in class_mutations:
-                    fold_mutation_text = "{} ({} rec.)".format(class_mutations[gn]["fold_mutations"], class_mutations[gn]["fold_receptors"])
-                    total_mutation_text = "{} ({} rec.)".format(class_mutations[gn]["unique_mutations"], class_mutations[gn]["unique_receptors"])
+                    fold_mutation_text = "<span data-search=\"{}\">{} ({} rec.)</span>".format(class_mutations[gn]["fold_mutations"], class_mutations[gn]["fold_mutations"], class_mutations[gn]["fold_receptors"])
+                    total_mutation_text = "<span data-search=\"{}\">{} ({} rec.)</span>".format(class_mutations[gn]["unique_mutations"], class_mutations[gn]["unique_mutations"], class_mutations[gn]["unique_receptors"])
 
                 thermo_text = ["no", "no", "no"]
                 if gn in class_thermo_muts:
