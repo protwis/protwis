@@ -21,7 +21,7 @@
     }
 
     input.yadcf-filter  {
-      width: 100px;
+      width: 60px;
       font-family: sans-serif;
       font-size: 100%;
       font-weight: bold;
@@ -41,6 +41,7 @@
     .yadcf-filter-range-number-seperator {
       display: none;
     }
+
 </style>
 
 {% endblock %}
@@ -285,7 +286,7 @@
 
       // Multi select
       var yadcf_options = [];
-      var list = [1,2,8,12,13,14];
+      var list = [2,8,12,13,14];
       for (i in list){
         yadcf_options.push({
               column_number : list[i],
@@ -298,6 +299,15 @@
           if (list[i] <= 2)
             yadcf_options[yadcf_options.length-1]["column_data_type"] = "html";
       }
+
+      yadcf_options.push({
+                     column_number: 1,
+                     filter_type: "text",
+                     select_type: "select2",
+                     filter_default_label: "",
+                     filter_reset_button_text: false,
+                     filter_match_mode : "contains",
+                 });
 
       // Range filters
       list = [0,4,5,6,7,9];
@@ -358,7 +368,7 @@
 
       // Multi select
       var yadcf_options = [];
-      var list = [1,2,3,9,13,14,15];
+      var list = [2,3,9,13,14,15];
       for (i in list){
         yadcf_options.push({
               column_number : list[i],
@@ -371,6 +381,15 @@
           if (list[i] <= 3)
             yadcf_options[yadcf_options.length-1]["column_data_type"] = "html";
       }
+
+      yadcf_options.push({
+                     column_number: 1,
+                     filter_type: "text",
+                     select_type: "select2",
+                     filter_default_label: "",
+                     filter_reset_button_text: false,
+                     filter_match_mode : "contains",
+                 });
 
       // Range filters
       list = [0,4,5,6,7,8,10];
