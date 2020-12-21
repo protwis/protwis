@@ -294,6 +294,9 @@
               filter_default_label: "",
               filter_reset_button_text: false,
           });
+
+          if (list[i] <= 2)
+            yadcf_options[yadcf_options.length-1]["column_data_type"] = "html";
       }
 
       // Range filters
@@ -364,6 +367,9 @@
               filter_default_label: "",
               filter_reset_button_text: false,
           });
+
+          if (list[i] <= 3)
+            yadcf_options[yadcf_options.length-1]["column_data_type"] = "html";
       }
 
       // Range filters
