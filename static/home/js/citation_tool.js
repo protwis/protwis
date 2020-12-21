@@ -2,7 +2,7 @@ function citation_tool(url) {
 	// Modal part
 	$('#modal_table tbody').empty();
     var modal = document.getElementById('citation-tool');
-    var span = document.getElementsByClassName("close-citation")[0];
+    var span = document.getElementById("close-citation");
     modal.classList.add("modal");
     setTimeout(function(){
     	modal.style.display = "block";
@@ -22,7 +22,7 @@ function citation_tool(url) {
     }
 
     // Process location
-    var this_site = parse_url(url);
+    var this_site = parse_url_long(url);
     var highlight_main = false;
     if (window.location.pathname==='/') {
     	highlight_main = true
@@ -48,11 +48,16 @@ function citation_tool(url) {
 			else if (link==='/mutations.html#mutation-data-submission') {
 				link = 'https://docs.gpcrdb.org/mutations.html#mutation-data-submission'
 			}
-			if ($('a[href="'+link+'"]').parent().parent().parent().first().hasClass('dropdown-submenu')) {
-				data[i].push($('a[href="'+link+'"]').parent().parent().parent().parent().parent().first().find(">:first-child").text().trim());
+			if ($('a[href="'+link+'"]').first().parent().parent().parent().first().hasClass('dropdown-submenu')) {
+				data[i].push($('a[href="'+link+'"]').first().parent().parent().parent().parent().parent().first().find(">:first-child").text().trim());
 			}
 			else {
-				data[i].push($('a[href="'+link+'"]').parent().parent().parent().first().find(">:first-child").text().trim());
+				if (link==="/protein/ste2_yeast") {
+					data[i].push("Receptors");
+				}
+				else {
+					data[i].push($('a[href="'+link+'"]').first().parent().parent().parent().first().find(">:first-child").text().trim());
+				}
 			}
 		}
 
@@ -63,14 +68,8 @@ function citation_tool(url) {
 			if (data[i][11]==='') {
 				continue;
 			}
-			var site = parse_url(data[i][0]);
-			if (tags.includes(site)) {
-				site = site+i.toString();
-				tags.push(site);
-			}
-			else {
-				tags.push(site);
-			}
+			var site = parse_url_long(data[i][0]);
+			tags.push(site);
 
 			// Dropdown menus
 			if (document.getElementById(data[i][11])===null) {
@@ -104,6 +103,7 @@ function citation_tool(url) {
 				option.setAttribute("selected", "selected");
 				$('#page_select_button').html(data[i][4]);
 			}
+			
 			submenu_ul.appendChild(option);
 			dropdown_articles.appendChild(submenu);
 
@@ -129,7 +129,7 @@ function citation_tool(url) {
 				}
 			}
 		}
-		
+
 		// Create HTML
 		for (var key in articles) {
 			var main_ref = false
@@ -225,32 +225,53 @@ function parse_url(url) {
     return this_site
 }
 
+function parse_url_long(url) {
+	var url_split = url.split('/');
+	if (url_split[url_split.length-1]==="") {
+		if (url_split.length>5) {
+			return url_split[3]+"-"+url_split[4];
+		}
+		else {
+			return url_split[3];	
+		}
+	}
+	else if (url_split.length===4) {
+		return url_split[3];
+	} 
+	else {
+		return url_split[3]+"-"+url_split[4];
+	}
+}
+
 function toggle_widget() {
-	$('#ref_widget').animate({width: 'toggle'});
-    if ($('#ref_widget_openclose').hasClass('glyphicon glyphicon-chevron-left')) {
-        $('#ref_widget_openclose').removeClass('glyphicon glyphicon-chevron-left')
-        $('#ref_widget_openclose').addClass('glyphicon glyphicon-chevron-right')
+	$("#ref_widget").animate({width: "toggle"});
+    if ($("#widget_chevron").hasClass("glyphicon glyphicon-chevron-left")) {
+        $("#widget_chevron").removeClass("glyphicon glyphicon-chevron-left");
+        $("#widget_chevron").addClass("glyphicon glyphicon-chevron-right");
+        $("#widget_infosign").show();
     }
     else {
-        $('#ref_widget_openclose').removeClass('glyphicon glyphicon-chevron-right')
-        $('#ref_widget_openclose').addClass('glyphicon glyphicon-chevron-left')
+        $("#widget_chevron").removeClass("glyphicon glyphicon-chevron-right");
+        $("#widget_chevron").addClass("glyphicon glyphicon-chevron-left");
+        $("#widget_infosign").hide();
         setTimeout(function() {
-        	$('#ref_widget').animate({width: 'toggle'});
-        	$('#ref_widget_openclose').removeClass('glyphicon glyphicon-chevron-left')
-        	$('#ref_widget_openclose').addClass('glyphicon glyphicon-chevron-right')
+        	$("#ref_widget").animate({width: "toggle"});
+        	$("#widget_chevron").removeClass("glyphicon glyphicon-chevron-left");
+        	$("#widget_chevron").addClass("glyphicon glyphicon-chevron-right");
+        	$("#widget_infosign").show();
         }, 8000)
     }
 }
 
 function check_for_video(url) {
-	var this_site = parse_url(url);
+	var this_site = parse_url_long(url);
 	var cit_request = new XMLHttpRequest();
     cit_request.open('GET', url.split('/')[0] + '/citations');
     cit_request.onload = function() {
 		var data = JSON.parse(cit_request.responseText)
 		var video = false;
 		for (i = 0; i < data.length; i++) {
-			var site = parse_url(data[i][0]);
+			var site = parse_url_long(data[i][0]);
 			if (site===this_site && data[i][1]!=null) {
 				video = data[i][1];
 				$('#icon_video').attr('href', video);

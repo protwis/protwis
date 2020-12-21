@@ -98,11 +98,11 @@ function structurebrowser() {
                 select_type: "select2",
                 column_data_type: "html",
                 html_data_type: "text",
-                filter_default_label: "Receptor family",
+                filter_default_label: "Select",
                 filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: "120px",
+                    width: "80px",
                 }
             },
             {
@@ -111,10 +111,10 @@ function structurebrowser() {
                 select_type: "select2",
                 column_data_type: "html",
                 html_data_type: "text",
-                filter_default_label: "Class",
+                filter_default_label: "",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: "80px",
+                    width: "35px",
                 }
             },
             {
@@ -124,7 +124,7 @@ function structurebrowser() {
                 filter_default_label: "Species",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: "80px",
+                    width: "60px",
                 }
             },
             {
@@ -534,12 +534,7 @@ function structurebrowser() {
         window.location.href = "/structure/";
     });
 
-    $(".close_modal").click(function () {
-        var modal = document.getElementById("myModal");
-        modal.style.display = "none";
-    });
-
-    $(".dataTables_scrollBody").append("<div id=overlay><table id=\"overlay_table\" class=\"row-border text-center compact dataTable no-footer text-nowrap\"><tbody></tbody></table></div>");
+    $(".dataTables_scrollBody").append("<div id=overlay><table id='overlay_table' class='row-border text-center compact dataTable no-footer text-nowrap'><tbody></tbody></table></div>");
 
     function create_overlay() {
         // This function fires upon filtering, to update what rows to show as an overlay
