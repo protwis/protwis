@@ -2454,8 +2454,14 @@ def calculateResidueContactFrequency(pdbs, allowed_gns, detail_gn = None):
     pdbs.sort()
     cache_name = "Contact_freq_" + hashlib.md5("_".join(pdbs).encode()).hexdigest()  + hashlib.md5("_".join(allowed_gns).encode()).hexdigest()
 
-    receptor_slugs = list(Structure.objects.filter(pdb_code__index__in=pdbs).values_list("protein_conformation__protein__family__slug", flat=True).distinct())
-    num_receptor_slugs = len(receptor_slugs)
+    receptor_slugs = Structure.objects.filter(pdb_code__index__in=pdbs).values("protein_conformation__protein__family__slug").annotate(structure_count=Count('pk')).order_by(
+                'protein_conformation__protein__family__slug',
+            ).distinct()
+    receptor_counts = {}
+    for count in receptor_slugs:
+        receptor_counts[count["protein_conformation__protein__family__slug"]] = count["structure_count"]
+
+    num_receptor_slugs = len(receptor_counts)
 
     result_pairs = cache.get(cache_name)
     #result_pairs = None
@@ -2532,6 +2538,7 @@ def calculateResidueContactFrequency(pdbs, allowed_gns, detail_gn = None):
             interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')
         ).values(
             'interaction_type',
+            'interacting_pair__referenced_structure__pk',
             'interacting_pair__referenced_structure__protein_conformation__protein__family__slug',
             'interacting_pair__res1__generic_number__label',
             'interacting_pair__res2__generic_number__label',
@@ -2542,11 +2549,17 @@ def calculateResidueContactFrequency(pdbs, allowed_gns, detail_gn = None):
             i_types_filter
         ).filter(
             i_options_filter
-        ).order_by(
-            'interaction_type',
+        ).values(
+            'interacting_pair__referenced_structure__pk',
             'interacting_pair__referenced_structure__protein_conformation__protein__family__slug',
             'interacting_pair__res1__generic_number__label',
             'interacting_pair__res2__generic_number__label',
+        ).order_by(
+            'interacting_pair__referenced_structure__pk',
+            'interacting_pair__referenced_structure__protein_conformation__protein__family__slug',
+            'interacting_pair__res1__generic_number__label',
+            'interacting_pair__res2__generic_number__label',
+        ).distinct(
         )
 
         # Count and normalize by receptor slug
@@ -2558,9 +2571,9 @@ def calculateResidueContactFrequency(pdbs, allowed_gns, detail_gn = None):
 
             pair_id = "{}_{}".format(gn1, gn2)
             if pair_id not in result_pairs:
-                result_pairs[pair_id] = set()
+                result_pairs[pair_id] = []
 
-            result_pairs[pair_id].add(slug)
+            result_pairs[pair_id].append(slug)
 
         # Store in cache
         cache.set(cache_name, result_pairs, 60*60*24*7) # cache a week
@@ -2576,7 +2589,11 @@ def calculateResidueContactFrequency(pdbs, allowed_gns, detail_gn = None):
                 if gn not in results:
                     results[gn] = 0
 
-                results[gn] += len(slugs)/num_receptor_slugs*100
+            for slug in set(slugs):
+                structure_hits = sum([slug2 == slug for slug2 in slugs])
+                contribution = structure_hits/receptor_counts[slug]/num_receptor_slugs*100
+                results[gn1] += contribution
+                results[gn2] += contribution
 
         return results
     else:
@@ -2587,7 +2604,12 @@ def calculateResidueContactFrequency(pdbs, allowed_gns, detail_gn = None):
                 slugs = result_pairs[pair_id]
 
                 other_gn = gn1 if gn1 != detail_gn else gn2
-                results[other_gn] = len(slugs)/num_receptor_slugs*100
+                results[other_gn] = 0
+                for slug in set(slugs):
+                    structure_hits = sum([slug2 == slug for slug2 in slugs])
+                    contribution = structure_hits/receptor_counts[slug]/num_receptor_slugs*100
+                    results[other_gn] += contribution
+
         return results
 
 
