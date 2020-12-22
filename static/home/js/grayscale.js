@@ -88,6 +88,7 @@ function gray_scale_table(table, colorSetIds = []) {
         for (let [j, cell] of [...row.cells].entries()) {
             var calculate_color = false;
             var reverse = false;
+            var abs = false;
             scale = NaN;
             // Find corresponding min-max-abs values
             if (cell.classList.contains("color-column")) {
@@ -103,6 +104,11 @@ function gray_scale_table(table, colorSetIds = []) {
                 value = parseFloat(cell.innerText);
                 if (cell.classList.contains("color-reverse")) {
                     reverse = true;
+                }
+                if (cell.classList.contains("color-abs")) {
+                    abs = true;
+                    c_maxmin = [Math.max(Math.abs(c_maxmin[0]), Math.abs(c_maxmin[1])), 0];
+                    value = Math.abs(value);
                 }
                 if (!(isNaN(value) || isNaN(c_maxmin[0]) || isNaN(c_maxmin[1]))) {
                     // Normalize data to get in-set color extremes
