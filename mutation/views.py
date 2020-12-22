@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.template import loader, Context
+from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models import Count, Min, Sum, Avg, Q, F
 from django.http import HttpResponse
 from django.conf import settings
@@ -25,8 +26,10 @@ from interaction.forms import PDBform
 
 from residue.models import Residue,ResidueNumberingScheme, ResidueGenericNumberEquivalent
 from residue.views import ResidueTablesDisplay
-from protein.models import Protein,ProteinSegment,ProteinFamily,ProteinConformation
+from protein.models import Protein, ProteinSegment, ProteinFamily, ProteinConformation, ProteinGProteinPair
 from structure.models import Structure
+
+from seqsign.sequence_signature import SequenceSignature
 
 from datetime import datetime
 from collections import OrderedDict
@@ -2083,7 +2086,7 @@ class designStateSelectorActive(AbsReferenceSelection):
     step = 1
     number_of_steps = 1
     target_input = False
-    description = 'Select a reference target by searching or browsing in the right column.'
+    description = 'Select a reference target by searching or browsing.'
     #docs = 'sequences.html#similarity-search-gpcrdb'
     buttons = {
         'continue': {
@@ -2097,7 +2100,7 @@ class designStateSelectorInactive(AbsReferenceSelection):
     step = 1
     number_of_steps = 1
     target_input = False
-    description = 'Select a reference target by searching or browsing in the right column.'
+    description = 'Select a reference target by searching or browsing.'
     #docs = 'sequences.html#similarity-search-gpcrdb'
     buttons = {
         'continue': {
@@ -2106,6 +2109,129 @@ class designStateSelectorInactive(AbsReferenceSelection):
             'color': 'success',
         },
     }
+
+def collectAndCacheClassData(target_class):
+    # Class conservation
+    cache_name = "Class_AA_conservation_"+target_class
+    class_gn_cons = cache.get(cache_name)
+    # class_gn_cons = None
+    if class_gn_cons == None:
+        class_aln = Alignment()
+        human_gpcrs_class = Protein.objects.filter(species__common_name = 'Human', sequence_type__slug = 'wt', family__slug__startswith=target_class)
+        class_aln.load_proteins(human_gpcrs_class)
+        class_aln.load_segments(ProteinSegment.objects.filter(slug__in=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7', 'H8']))
+        class_aln.build_alignment()
+        class_gn_cons = {}
+        for segment in class_aln.consensus:
+            for gn in class_aln.consensus[segment]:
+                class_gn_cons[gn] = class_aln.consensus[segment][gn]
+                if class_gn_cons[gn][0]=="+":
+                    class_gn_cons[gn][0] = class_aln.forced_consensus[segment][gn]
+                else:
+                    class_gn_cons[gn] = class_aln.consensus[segment][gn]
+        cache.set(cache_name, class_gn_cons, 60*60*24*7) # cache a week
+
+    # Class mutation data
+    cache_name = "Class_mutation_counts_"+target_class
+    class_mutations = cache.get(cache_name)
+    #class_mutations = None
+    if class_mutations == None:
+        class_mutations = {}
+
+        # Collect raw counts
+        all_ligand_mutations = MutationExperiment.objects.filter(protein__family__slug__startswith=target_class)\
+                                .values("residue__generic_number__label").\
+                                annotate(unique_mutations=Count("pk")).annotate(unique_receptors=Count("protein__family_id", distinct=True))
+
+        for pair in all_ligand_mutations:
+            gn = pair["residue__generic_number__label"]
+            class_mutations[gn] = {}
+            class_mutations[gn]["unique_mutations"] = pair["unique_mutations"]
+            class_mutations[gn]["unique_receptors"] = pair["unique_receptors"]
+            # placeholder in case there are no mutations with >=5 fold effect
+            class_mutations[gn]["fold_mutations"] = class_mutations[gn]["fold_receptors"] = 0
+
+        # Collect counts with >=5 fold effect on ligand binding
+        fold_ligand_mutations = MutationExperiment.objects.filter(Q(foldchange__gte = 5) | Q(foldchange__lte = -5), protein__family__slug__startswith=target_class)\
+            .values("residue__generic_number__label").annotate(fold_mutations=Count("pk")).annotate(fold_receptors=Count("protein__family_id", distinct=True))
+
+        for pair in fold_ligand_mutations:
+            gn = pair["residue__generic_number__label"]
+            class_mutations[gn]["fold_mutations"] = pair["fold_mutations"]
+            class_mutations[gn]["fold_receptors"] = pair["fold_receptors"]
+
+        cache.set(cache_name, class_mutations, 60*60*24*7) # cache a week
+
+    # Class Thermostabilizing mutations
+    cache_name = "Class_thermo_muts"+target_class
+    class_thermo_muts = cache.get(cache_name)
+    if class_thermo_muts == None:
+        class_thermo_muts = {}
+        all_thermo = ConstructMutation.objects.filter(construct__protein__family__slug__startswith=target_class, effects__slug='thermostabilising')\
+                    .values("residue__generic_number__label", "wild_type_amino_acid", "mutated_amino_acid")
+        for pair in all_thermo:
+            gn = pair["residue__generic_number__label"]
+            wt = pair["wild_type_amino_acid"]
+            mutant = pair["mutated_amino_acid"]
+            if gn not in class_thermo_muts:
+                class_thermo_muts[gn] = {}
+                class_thermo_muts[gn]["mutations"] = set()
+            if wt not in class_thermo_muts[gn]:
+                class_thermo_muts[gn][wt] = []
+            class_thermo_muts[gn][wt].append(mutant)
+            class_thermo_muts[gn]["mutations"].add(mutant)
+        cache.set(cache_name, class_thermo_muts, 60*60*24*7) # cache a week
+
+    # Ligand interactions
+    cache_name = "Class_ligand_ints"+target_class
+    class_ligand_ints = cache.get(cache_name)
+    if class_ligand_ints == None:
+        class_ligand_ints = {}
+        ligand_interactions = ResidueFragmentInteraction.objects.filter(
+            structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=target_class, structure_ligand_pair__annotated=True)\
+                    .exclude(interaction_type__type='hidden')\
+                    .values("rotamer__residue__generic_number__label")\
+                    .order_by("rotamer__residue__generic_number__label")\
+                    .annotate(unique_structures=Count("rotamer__residue__protein_conformation", distinct=True))\
+                    .annotate(unique_receptors=Count("rotamer__residue__protein_conformation__protein__family_id", distinct=True))
+
+        for pair in ligand_interactions:
+            gn = pair["rotamer__residue__generic_number__label"]
+            class_ligand_ints[gn] = {}
+            class_ligand_ints[gn]["unique_structures"] = pair["unique_structures"]
+            class_ligand_ints[gn]["unique_receptors"] = pair["unique_receptors"]
+        cache.set(cache_name, class_ligand_ints, 60*60*24*7) # cache a week
+
+    # G-protein interactions
+    cache_name = "Class_gprot_ints"+target_class
+    class_prot_ints = cache.get(cache_name)
+    if class_prot_ints == None:
+        class_prot_ints = {}
+
+        gprot_interactions = InteractingResiduePair.objects.filter(
+                referenced_structure__protein_conformation__protein__family__slug__startswith=target_class
+            ).exclude(
+                res1__protein_conformation_id=F('res2__protein_conformation_id')
+            ).values(
+                "res1__generic_number__label"
+            ).order_by(
+                'res1__generic_number__label',
+            ).annotate(
+                unique_structures=Count("referenced_structure__protein_conformation", distinct=True)
+            ).annotate(
+                unique_receptors=Count("referenced_structure__protein_conformation__protein__family_id", distinct=True)
+            ).annotate(
+                pdb_codes=ArrayAgg('referenced_structure__pdb_code__index')
+            )
+
+        for pair in gprot_interactions:
+            gn = pair["res1__generic_number__label"]
+            class_prot_ints[gn] = {}
+            class_prot_ints[gn]["unique_structures"] = pair["unique_structures"]
+            class_prot_ints[gn]["unique_receptors"] = pair["unique_receptors"]
+            class_prot_ints[gn]["structures"] = pair["pdb_codes"]
+        cache.set(cache_name, class_prot_ints, 60*60*24*7) # cache a week
+
 
 def contactMutationDesign(request, goal):
     cutoff = 999999 # Only select top X suggestions
@@ -2144,70 +2270,74 @@ def contactMutationDesign(request, goal):
 
         if len(set1) > 0 and len(set2) > 0:
             # Collect data about this GPCR class
+            collectAndCacheClassData(target_class)
 
             # Class conservation
             cache_name = "Class_AA_conservation_"+target_class
             class_gn_cons = cache.get(cache_name)
             #class_gn_cons = None
-            if class_gn_cons == None:
-                class_aln = Alignment()
-                human_gpcrs_class = Protein.objects.filter(species__common_name = 'Human', sequence_type__slug = 'wt', family__slug__startswith=target_class)
-                class_aln.load_proteins(human_gpcrs_class)
-                class_aln.load_segments(ProteinSegment.objects.filter(slug__in=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7', 'H8']))
-                class_aln.build_alignment()
-                class_gn_cons = {}
-                for segment in class_aln.consensus:
-                    for gn in class_aln.consensus[segment]:
-                        class_gn_cons[gn] = class_aln.consensus[segment][gn]
-                cache.set(cache_name, class_gn_cons, 60*60*24*7) # cache a week
+            # if class_gn_cons == None:
+            #     class_aln = Alignment()
+            #     human_gpcrs_class = Protein.objects.filter(species__common_name = 'Human', sequence_type__slug = 'wt', family__slug__startswith=target_class)
+            #     class_aln.load_proteins(human_gpcrs_class)
+            #     class_aln.load_segments(ProteinSegment.objects.filter(slug__in=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7', 'H8']))
+            #     class_aln.build_alignment()
+            #     class_gn_cons = {}
+            #     for segment in class_aln.consensus:
+            #         for gn in class_aln.consensus[segment]:
+            #             class_gn_cons[gn] = class_aln.consensus[segment][gn]
+            #     cache.set(cache_name, class_gn_cons, 60*60*24*7) # cache a week
 
             # Class mutation data
             cache_name = "Class_mutation_counts_"+target_class
             class_mutations = cache.get(cache_name)
             #class_mutations = None
-            if class_mutations == None:
-                class_mutations = {}
-
-                # Collect raw counts
-                all_ligand_mutations = MutationExperiment.objects.filter(protein__family__slug__startswith=target_class)\
-                                        .values("residue__generic_number__label").\
-                                        annotate(unique_mutations=Count("pk")).annotate(unique_receptors=Count("protein__family_id", distinct=True))
-
-                for pair in all_ligand_mutations:
-                    gn = pair["residue__generic_number__label"]
-                    class_mutations[gn] = {}
-                    class_mutations[gn]["unique_mutations"] = pair["unique_mutations"]
-                    class_mutations[gn]["unique_receptors"] = pair["unique_receptors"]
-                    # placeholder in case there are no mutations with >=5 fold effect
-                    class_mutations[gn]["fold_mutations"] = class_mutations[gn]["fold_receptors"] = 0
-
-                # Collect counts with >=5 fold effect on ligand binding
-                fold_ligand_mutations = MutationExperiment.objects.filter(Q(foldchange__gte = 5) | Q(foldchange__lte = -5), protein__family__slug__startswith=target_class)\
-                    .values("residue__generic_number__label").annotate(fold_mutations=Count("pk")).annotate(fold_receptors=Count("protein__family_id", distinct=True))
-
-                for pair in fold_ligand_mutations:
-                    gn = pair["residue__generic_number__label"]
-                    class_mutations[gn]["fold_mutations"] = pair["fold_mutations"]
-                    class_mutations[gn]["fold_receptors"] = pair["fold_receptors"]
-
-                cache.set(cache_name, class_mutations, 60*60*24*7) # cache a week
+            # if class_mutations == None:
+            #     class_mutations = {}
+            #
+            #     # Collect raw counts
+            #     all_ligand_mutations = MutationExperiment.objects.filter(protein__family__slug__startswith=target_class)\
+            #                             .values("residue__generic_number__label").\
+            #                             annotate(unique_mutations=Count("pk")).annotate(unique_receptors=Count("protein__family_id", distinct=True))
+            #
+            #     for pair in all_ligand_mutations:
+            #         gn = pair["residue__generic_number__label"]
+            #         class_mutations[gn] = {}
+            #         class_mutations[gn]["unique_mutations"] = pair["unique_mutations"]
+            #         class_mutations[gn]["unique_receptors"] = pair["unique_receptors"]
+            #         # placeholder in case there are no mutations with >=5 fold effect
+            #         class_mutations[gn]["fold_mutations"] = class_mutations[gn]["fold_receptors"] = 0
+            #
+            #     # Collect counts with >=5 fold effect on ligand binding
+            #     fold_ligand_mutations = MutationExperiment.objects.filter(Q(foldchange__gte = 5) | Q(foldchange__lte = -5), protein__family__slug__startswith=target_class)\
+            #         .values("residue__generic_number__label").annotate(fold_mutations=Count("pk")).annotate(fold_receptors=Count("protein__family_id", distinct=True))
+            #
+            #     for pair in fold_ligand_mutations:
+            #         gn = pair["residue__generic_number__label"]
+            #         class_mutations[gn]["fold_mutations"] = pair["fold_mutations"]
+            #         class_mutations[gn]["fold_receptors"] = pair["fold_receptors"]
+            #
+            #     cache.set(cache_name, class_mutations, 60*60*24*7) # cache a week
 
             # Class Thermostabilizing mutations
-            all_thermo = ConstructMutation.objects.filter(construct__protein__family__slug__startswith=target_class, effects__slug='thermostabilising')\
-                        .values("residue__generic_number__label", "wild_type_amino_acid", "mutated_amino_acid")
-
-            class_thermo_muts = {}
-            for pair in all_thermo:
-                gn = pair["residue__generic_number__label"]
-                wt = pair["wild_type_amino_acid"]
-                mutant = pair["mutated_amino_acid"]
-                if gn not in class_thermo_muts:
-                    class_thermo_muts[gn] = {}
-                    class_thermo_muts[gn]["mutations"] = set()
-                if wt not in class_thermo_muts[gn]:
-                    class_thermo_muts[gn][wt] = []
-                class_thermo_muts[gn][wt].append(mutant)
-                class_thermo_muts[gn]["mutations"].add(mutant)
+            cache_name = "Class_thermo_muts"+target_class
+            class_thermo_muts = cache.get(cache_name)
+            # if class_thermo_muts == None:
+            #     class_thermo_muts = {}
+            #     all_thermo = ConstructMutation.objects.filter(construct__protein__family__slug__startswith=target_class, effects__slug='thermostabilising')\
+            #                 .values("residue__generic_number__label", "wild_type_amino_acid", "mutated_amino_acid")
+            #     for pair in all_thermo:
+            #         gn = pair["residue__generic_number__label"]
+            #         wt = pair["wild_type_amino_acid"]
+            #         mutant = pair["mutated_amino_acid"]
+            #         if gn not in class_thermo_muts:
+            #             class_thermo_muts[gn] = {}
+            #             class_thermo_muts[gn]["mutations"] = set()
+            #         if wt not in class_thermo_muts[gn]:
+            #             class_thermo_muts[gn][wt] = []
+            #         class_thermo_muts[gn][wt].append(mutant)
+            #         class_thermo_muts[gn]["mutations"].add(mutant)
+            #     cache.set(cache_name, class_thermo_muts, 60*60*24*7) # cache a week
 
             # Find residues that are >= 80% present in both sets and only TM residues
             # Do not count frequencies or others residues that are not present in both sets
@@ -2645,3 +2775,221 @@ def collectResiduePairs(pdbs, allowed_gns):
 #
 # def designStateInactive(request):
 #     return contactMutationDesign(request, "inactive")
+
+
+
+class designGprotSelector(AbsReferenceSelection):
+    step = 1
+    number_of_steps = 1
+    target_input = False
+    description = 'Select a reference target by searching or browsing.'
+    #docs = 'sequences.html#similarity-search-gpcrdb'
+    buttons = {
+        'continue': {
+            'label': 'Next',
+            'url': '/mutations/design_gprot_',
+            'color': 'success',
+        },
+    }
+
+    def get_context_data(self, **kwargs):
+        """get context from parent class (really only relevant for children of this class, as TemplateView does
+        not have any context variables)"""
+
+        context = super().get_context_data(**kwargs)
+        if "goal" in kwargs:
+            context["buttons"]["continue"]["url"] = '/mutations/design_gprot_' + kwargs["goal"]
+        else:
+            # ERROR
+            skip=1
+
+        return context
+
+
+def gprotMutationDesign(request, goal):
+    context = {}
+
+    simple_selection = request.session.get('selection', False)
+    if simple_selection.reference[0].type == 'protein':
+        # Target receptor
+        target_protein = simple_selection.reference[0].item
+        target = Protein.objects.get(entry_name=target_protein)
+        target_class = target.family.slug[:3]
+
+        # Collect GTP
+        gtp_couplings = ProteinGProteinPair.objects.filter(source="GuideToPharma")\
+                        .filter(protein__family__slug__startswith=target_class)\
+                        .values_list('protein__entry_name', 'g_protein__name', 'transduction')
+
+        gtp_data = {}
+        unique_receptors = set()
+        for pairing in gtp_couplings:
+            family = pairing[1].replace(" family", "").split("/")[0]
+            if family not in gtp_data:
+                gtp_data[family] = []
+            gtp_data[family].append(pairing[0])
+            unique_receptors.add(pairing[0])
+
+        # Other coupling data
+        # TODO - coupling source should not be hardcoded
+        other_couplings = ProteinGProteinPair.objects.filter(source__in=["Aska2", "Bouvier2"])\
+                        .filter(protein__family__slug__startswith=target_class, g_protein_subunit__family__slug__startswith="100_001", logmaxec50_deg__gt=0)\
+                        .values_list('protein__entry_name', 'g_protein__name', 'source', 'logmaxec50_deg', 'g_protein_subunit__entry_name')
+
+        coupling_data = {}
+        for pairing in other_couplings:
+            family = pairing[1].replace(" family", "").split("/")[0]
+            if family not in coupling_data:
+                coupling_data[family] = {}
+            if pairing[0] not in coupling_data[family]:
+                coupling_data[family][pairing[0]] = {}
+            if pairing[4] not in coupling_data[family][pairing[0]]:
+                coupling_data[family][pairing[0]][pairing[4]] = set()
+
+            coupling_data[family][pairing[0]][pairing[4]].add(pairing[2])
+            unique_receptors.add(pairing[0])
+
+        # Receptors must be tested at least once (apart from GtP)
+        # NOTE - now set at at least tested in two (including GtP) at the same Gprot
+        best_receptors = []
+        for entry in unique_receptors:
+            for coupling in gtp_data:
+                count = 0
+                if entry in gtp_data[coupling]:
+                    count += 1
+
+                max = 0
+                if entry in coupling_data[coupling]:
+                    for sub in coupling_data[coupling][entry]:
+                        if len(coupling_data[coupling][entry][sub]) > max:
+                            max = len(coupling_data[coupling][entry][sub])
+                if (count+max)>=2:
+                    best_receptors.append(entry)
+                    break
+
+        # Gather structure sets for comparison
+        binder = []
+        nonbinder = []
+        if goal in gtp_data.keys():
+            for entry in best_receptors:
+                if entry in gtp_data[goal] or entry in coupling_data[goal]:
+                    count = 0
+                    if entry in gtp_data[goal]:
+                        count += 1
+                    max = 0
+                    if entry in coupling_data[goal]:
+                        for sub in coupling_data[goal][entry]:
+                            if len(coupling_data[goal][entry][sub]) > max:
+                                max = len(coupling_data[goal][entry][sub])
+                        count += max
+                    if count >= 2:
+                        binder.append(entry)
+                    else:
+                        # Also single tested pairs are now going into non-binders
+                        nonbinder.append(entry)
+                        skip=1
+                else:
+                    nonbinder.append(entry)
+
+            # print(goal + " - BINDER")
+            # binder.sort()
+            # for i in binder:
+            #     print(i.replace("_human",""))
+            # print(goal+" - NONBINDER")
+            # nonbinder.sort()
+            # for i in nonbinder:
+            #     print(i.replace("_human",""))
+
+
+        if len(binder) > 0 and len(nonbinder) > 0:
+            # Collect target residues for the selected receptor
+            wt_res = Residue.objects.filter(protein_conformation__protein__entry_name=target_protein).\
+                                    exclude(generic_number__label=None).\
+                                    values("generic_number__label", "amino_acid", "sequence_number", "display_generic_number__label")
+
+            target_residues = {}
+            for residue in wt_res:
+                gn = residue["generic_number__label"]
+                class_gn = residue["display_generic_number__label"]
+                class_gn = '%sx%s' % (class_gn.split(".")[0], class_gn.split("x")[1])
+                target_residues[gn] = [residue["amino_acid"], residue["sequence_number"], class_gn]
+
+            # Gather and cache class data
+            collectAndCacheClassData(target_class)
+            cache_name = "Class_mutation_counts_"+target_class
+            class_mutations = cache.get(cache_name)
+            cache_name = "Class_AA_conservation_"+target_class
+            class_gn_cons = cache.get(cache_name)
+            cache_name = "Class_ligand_ints"+target_class
+            class_ligand_ints = cache.get(cache_name)
+            cache_name = "Class_gprot_ints"+target_class
+            class_gprot_ints = cache.get(cache_name)
+
+            # Create protein sets
+            binder_gpcrs = Protein.objects.filter(entry_name__in=binder)
+            nonbinder_gpcrs = Protein.objects.filter(entry_name__in=nonbinder)
+
+            # create signature
+            signature = SequenceSignature()
+            segments = list(ProteinSegment.objects.filter(proteinfamily="GPCR", category="helix").order_by("slug"))
+            signature.setup_alignments(segments, binder_gpcrs, nonbinder_gpcrs)
+            signature.calculate_signature()
+
+
+            context['gprot'] = goal
+            context['signature_result'] = []
+            for h, segment in enumerate(signature.common_gn["gpcrdba"]):
+                for i, gn in enumerate(signature.common_gn["gpcrdba"][segment]):
+                    # SIGNATURE - <feature>, <full_feature>, <% diff>, <coloring index> (?), <length>, "<code_length>", "<code>"
+                    gn_sign = signature.signature[segment][i]
+
+                    # CONSERVATION - <AA>, <coloring index>, <% cons>
+                    binder_aa_cons = signature.aln_pos.consensus[segment][gn]
+                    nonbinder_aa_cons = signature.aln_neg.consensus[segment][gn]
+
+                    # FEATURE - <feature>, <full_feature>, <% cons> <coloring index>, <length>, <code_length>
+                    binder_feat_cons = signature.features_consensus_pos[segment][i]
+                    nonbinder_feat_cons = signature.features_consensus_neg[segment][i]
+
+                    if gn in target_residues:
+                        wt_aa = target_residues[gn][0]
+
+                        # Collect all data for table
+                        mutations = definitions.AMINO_ACID_GROUPS[gn_sign[5]]
+                        mut_aas = ", ".join(definitions.AMINO_ACID_GROUPS[gn_sign[5]])
+                        highlight = ""
+                        row_type = "normal"
+                        if gn_sign[2] > 10 and wt_aa not in mutations and mut_aas != "-":
+                            highlight = "cell-color=\"bg-success\""
+                            row_type = "good"
+                        elif gn_sign[2] < -10 and wt_aa in mutations and mut_aas != "-":
+                            highlight = "cell-color=\"bg-danger\""
+                            row_type = "bad"
+                        mutation_text = "<span {}>{}</span>".format(highlight, mut_aas)
+
+                        # ligand interactions
+                        gprot_rec_ints = 0
+                        if gn in class_gprot_ints:
+                            gprot_rec_ints = class_gprot_ints[gn]["unique_receptors"]
+
+                        # ligand interactions
+                        ligand_rec_ints = 0
+                        if gn in class_ligand_ints:
+                            ligand_rec_ints = class_ligand_ints[gn]["unique_receptors"]
+
+                        context['signature_result'].append([segment, "<span class=\"text-danger\">{}</span>".format(target_residues[gn][1]), "<span class=\"text-danger\">{}</span>".format(target_residues[gn][2]), "<span class=\"text-danger\">{}</span>".format(wt_aa),
+                            gprot_rec_ints, ligand_rec_ints,
+                            class_mutations[gn]["fold_mutations"] if gn in class_mutations else 0, class_mutations[gn]["fold_receptors"] if gn in class_mutations else 0,
+                            gn_sign[2], "<span data-toggle=\"tooltip\" data-placement=\"right\" title=\"{}\">{}</span>".format(gn_sign[1], gn_sign[6]), gn_sign[4], mutation_text,
+                            binder_feat_cons[2], "<span data-toggle=\"tooltip\" data-placement=\"right\" title=\"{}\">{}</span>".format(binder_feat_cons[1], binder_feat_cons[0]), binder_feat_cons[4],
+                            nonbinder_feat_cons[2], "<span data-toggle=\"tooltip\" data-placement=\"right\" title   =\"{}\">{}</span>".format(nonbinder_feat_cons[1], nonbinder_feat_cons[0]), nonbinder_feat_cons[4],
+                            binder_aa_cons[2], binder_aa_cons[0],
+                            nonbinder_aa_cons[2], nonbinder_aa_cons[0],
+                            class_gn_cons[gn][2], class_gn_cons[gn][0],
+                            row_type]);
+
+            return render(request, 'mutation/gprot_mutation_design.html', context)
+        else:
+            return HttpResponse("No valid mutation goal selected, please try again.")
+    else:
+        return HttpResponse("No valid protein target selected, please try again.")
