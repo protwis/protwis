@@ -50,6 +50,20 @@
       background-color: #eee;
     }
 
+
+    #suglist1 td.expand {
+      display: inline-block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      width: 85px;
+      white-space: nowrap;
+    }
+
+    #suglist1 td.expand:hover {
+      overflow: visible;
+      white-space: normal;
+    }
+
 </style>
 
 {% endblock %}
@@ -178,7 +192,7 @@
 
 <script type="text/javascript" charset="utf-8">
   var table_options = { "paging":       true,
-                        "pageLength":   16,
+                        "pageLength":   20,
                         "lengthChange": false,
                         "buttons":      ["csv", "excel"],
                         "scrollX":      true,
@@ -196,6 +210,10 @@
           $(this).addClass("color-column");
           $(this).addClass("color-abs");
         //$(this).addClass("color-reverse");
+      });
+
+      $("#suglist1 tbody tr td").filter(":nth-child(12)").each( function() {
+          $(this).addClass("expand");
       });
 
       // set cell-color to cell (for cell coloring)
