@@ -81,6 +81,17 @@
       <div class="tab-pane active" id="mutation-table-1-tab">
           <div class="panel panel-default">
               <div class="panel-body">
+                <p>
+                  <b>Mutation design:</b><br>
+                  <span id="pos_design_text">
+                    To <span class="text-forest-highlight">strengthen coupling</span>, mutate receptor positions lacking a conserved positive (+) property by introducing the highest conserved amino acid (AA) of the {{ gprot }} binding GPCRs having that property.<br>
+                    For negative (-) properties, which contribute to non-binding, instead mutate receptor positions into the highest conserved AA of the {{ gprot }} binding GPCRs lacking that property.<br>
+                  </span>
+                  <span id="neg_design_text" class="hidden">
+                    To <span class="text-red-highlight">weaken coupling</span>, mutate receptor positions lacking a conserved negative (-) property by introducing the highest conserved amino acid (AA) of the {{ gprot }} non-binding GPCRs having that property.<br>
+                    For positive (+) properties, which contribute to binding, instead mutate receptor positions into the highest conserved AA of the {{ gprot }} non-binding GPCRs lacking that property.<br>
+                  </span>
+                </p>
                 <!--<div class="dropdown">
                   <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Select Mutation type
                   <span class="caret"></span></button>
@@ -341,13 +352,19 @@
 
     if (type === "all"){
         // simply reset all filters
+        $("#pos_design_text").show();
+        $("#neg_design_text").show();
         table1.columns(4).visible( true );
         table1.columns(5).visible( true );
         yadcf.exResetAllFilters(table1);
     } else if (type === "good"){
+        $("#pos_design_text").show();
+        $("#neg_design_text").hide();
         table1.columns(4).visible( true );
         table1.columns(5).visible( false );
     } else if (type === "bad"){
+        $("#pos_design_text").hide();
+        $("#neg_design_text").show();
         table1.columns(4).visible( false );
         table1.columns(5).visible( true );
         table1.columns(26).search(type).draw();
@@ -355,6 +372,8 @@
   }
 
   $(document).ready(function() {
+      $("#neg_design_text").hide();
+      $("#neg_design_text").removeClass("hidden");
       initTable1();
   });
 </script>
