@@ -79,31 +79,40 @@
                 <table class="display compact" id="suglist1">
                   <thead>
                     <tr>
-                      <th rowspan=2>Target<br>residue<br>number</th>
-                      <th rowspan=2>Generic<br>residue<br>number</th>
-                      <th rowspan=2>Target<br>WT AA</th>
-                      <th rowspan=2><span class="text-red-highlight">Mutant AA</span><br>Ala<br>(removes sidechain)</th>
-                      <th colspan=4 class="text-center">Sum of residue contact frequencies</th>
+                      <th rowspan=3 colspan=1 class="text-center">Target<br>residue<br>number</th>
+                      <th rowspan=3 colspan=1 class="text-center">Generic<br>residue<br>number</th>
+                      <th rowspan=3 colspan=1 class="text-center">Target<br>WT AA</th>
+                      <th rowspan=3 colspan=1 class="text-center"><span class="text-red-highlight">Ala Mutant</span><br>(removes<br>sidechain)</th>
+                      <th rowspan=1 colspan=4 class="text-center">Sum of residue contact frequencies</th>
                       <th rowspan=1 colspan=2 class="text-center">Class conservation</th>
-                      <th rowspan=1 colspan=2 class="text-center">Mutation data</th>
-                      <th rowspan=1 colspan=3 class="text-center">Thermostabilizing mutations</th>
+                      <th rowspan=1 colspan=4 class="text-center">Mutation data</th>
+                      <th rowspan=1 colspan=4 class="text-center">Thermostabilizing mutations</th>
                     </tr>
                     <tr>
-                      <!--<th rowspan=2>Ala<br>(removes<br>sidechain)</th>
-                      <th colspan=2>Reversed polarity<br>(repels contact)</th>-->
-                      <th rowspan=1>Diff</th>
-                      <th rowspan=1>Diff<br>ratio</th>
-                      <th rowspan=1>{{ desired }}</th>
-                      <th rowspan=1>{{ undesired }}</th>
-                      <th rowspan=1>AA</th>
-                      <th rowspan=1>%</th>
-                      <th rowspan=1>&#8805;5-fold&nbsp;effect<br># mut.</th>
-                      <th rowspan=1>all<br># mut.</th>
-                      <th rowspan=1>In same<br>pos.</th>
-                      <th rowspan=1>Same<br>WT AA</th>
-                      <th rowspan=1>Same<br>mutant AA</th>
+                      <th rowspan=2 colspan=1>Diff</th>
+                      <th rowspan=2 colspan=1>Diff<br>ratio</th>
+                      <th rowspan=2 colspan=1>{{ desired }}</th>
+                      <th rowspan=2 colspan=1>{{ undesired }}</th>
+                      <th rowspan=2 colspan=1>AA</th>
+                      <th rowspan=2 colspan=1>%</th>
+                      <th rowspan=1 colspan=2 class="text-center">&#8805;5-fold&nbsp;effect</th>
+                      <th rowspan=1 colspan=2 class="text-center">all</th>
+                      <th rowspan=1 colspan=2 class="text-center">Same pos.</th>
+                      <th rowspan=2 colspan=1>Same<br>WT AA</th>
+                      <th rowspan=2 colspan=1>Same<br>mutant AA</th>
                     </tr>
                     <tr>
+                      <th>#Mut.</th>
+                      <th>#Rec.</th>
+                      <th>#Mut.</th>
+                      <th>#Rec.</th>
+                      <th>Present</th>
+                      <th>#Rec.</th>
+                    </tr>
+                    <tr>
+                      <th></th>
+                      <th></th>
+                      <th></th>
                       <th></th>
                       <th></th>
                       <th></th>
@@ -153,34 +162,42 @@
                 <table width="100%" class="display compact" id="suglist2">
                   <thead>
                     <tr>
-                      <th rowspan=2>Target<br>residue<br>number</th>
-                      <th rowspan=2>Generic<br>residue<br>number</th>
-                      <th rowspan=2>Target<br>WT AA</th>
-                      <th colspan=2 class="text-center"><span class="text-red-highlight">Mutant AA</span><br>({{ desired }} conservation)</th>
-                      <th colspan=4 class="text-center">Sum of residue contact frequencies</th>
+                      <th rowspan=3 colspan=1 class="text-center">Target<br>residue<br>number</th>
+                      <th rowspan=3 colspan=1 class="text-center">Generic<br>residue<br>number</th>
+                      <th rowspan=3 colspan=1 class="text-center">Target<br>WT AA</th>
+                      <th rowspan=1 colspan=2 class="text-center"><span class="text-red-highlight">Mutant AA</span><br>({{ desired }} conservation)</th>
+                      <th rowspan=1 colspan=4 class="text-center">Sum of residue contact frequencies</th>
                       <th rowspan=1 colspan=2 class="text-center">Class conservation</th>
-                      <th rowspan=1 colspan=2 class="text-center">Mutation data</th>
+                      <th rowspan=1 colspan=4 class="text-center">Mutation data</th>
                       <th rowspan=1 colspan=3 class="text-center">Thermostabilizing mutations</th>
                     </tr>
                     <tr>
-                      <th rowspan=1>AA</th>
-                      <th rowspan=1>%</th>
-
-                      <!--<th rowspan=1>Ala<br>(removes<br>sidechain)</th>
-                      <th colspan=1>Reversed polarity<br>(repels contact)</th>-->
-                      <th rowspan=1>Diff</th>
-                      <th rowspan=1>Diff<br>ratio</th>
-                      <th rowspan=1>{{ desired }}</th>
-                      <th rowspan=1>{{ undesired }}</th>
-                      <th rowspan=1>AA</th>
-                      <th rowspan=1>%</th>
-                      <th rowspan=1>&#8805;5-fold&nbsp;effect<br># mut.</th>
-                      <th rowspan=1>all<br># mut.</th>
-                      <th rowspan=1>In same<br>pos.</th>
-                      <th rowspan=1>Same<br>WT AA</th>
-                      <th rowspan=1>Same<br>mutant AA</th>
+                      <th rowspan=2>AA</th>
+                      <th rowspan=2>%</th>
+                      <th rowspan=2>Diff</th>
+                      <th rowspan=2>Diff<br>ratio</th>
+                      <th rowspan=2>{{ desired }}</th>
+                      <th rowspan=2>{{ undesired }}</th>
+                      <th rowspan=2>AA</th>
+                      <th rowspan=2>%</th>
+                      <th rowspan=1 colspan=2>&#8805;5-fold&nbsp;effect</th>
+                      <th rowspan=1 colspan=2>all</th>
+                      <th rowspan=1 colspan=2 class="text-center">Same pos.</th>
+                      <th rowspan=2 colspan=1>Same<br>WT AA</th>
+                      <th rowspan=2 colspan=1>Same<br>mutant AA</th>
                     </tr>
                     <tr>
+                      <th>#Mut.</th>
+                      <th>#Rec.</th>
+                      <th>#Mut.</th>
+                      <th>#Rec.</th>
+                      <th>Present</th>
+                      <th>#Rec.</th>
+                    </tr>
+                    <tr>
+                      <th></th>
+                      <th></th>
+                      <th></th>
                       <th></th>
                       <th></th>
                       <th></th>
@@ -279,14 +296,14 @@
       var table_options1 = Object.assign({}, table_options);
       table_options1["order"] = [4, "asc"];
       table_options1["columnDefs"] = [
-          { className: "text-center", "targets": [ 0,1,2,3,4,5,6,7,8,9, 12,13,14 ] }
+          { className: "text-center", "targets": [...Array(18).keys()] }
         ]
 
       table1 = $("#suglist1").DataTable(table_options1);
 
       // Multi select
       var yadcf_options = [];
-      var list = [2,8,12,13,14];
+      var list = [2,8,12,14,16,17];
       for (i in list){
         yadcf_options.push({
               column_number : list[i],
@@ -310,7 +327,7 @@
                  });
 
       // Range filters
-      list = [0,4,5,6,7,9];
+      list = [0,4,5,6,7,9,10,11,12,13,15];
       for (i in list){
         yadcf_options.push({
             column_number : list[i],
@@ -322,16 +339,16 @@
         });
       }
 
-      list = [10,11];
-      for (i in list){
-        yadcf_options.push({
-          column_number: list[i],
-          filter_type: "range_number",
-          filter_default_label: ["Min", "Max"],
-          filter_reset_button_text: false,
-          html5_data: "data-search",
-        });
-      }
+      // list = [10,11];
+      // for (i in list){
+      //   yadcf_options.push({
+      //     column_number: list[i],
+      //     filter_type: "range_number",
+      //     filter_default_label: ["Min", "Max"],
+      //     filter_reset_button_text: false,
+      //     html5_data: "data-search",
+      //   });
+      // }
 
       yadcf.init(table1, yadcf_options);
     }
@@ -362,13 +379,13 @@
       var table_options2 = Object.assign({}, table_options);
       table_options2["order"] = [5, "desc"];
       table_options2["columnDefs"] = [
-          { className: "text-center", "targets": [ 0,1,2,3,4,5,6,7,8,9,10, 13,14,15 ] }
+          { className: "text-center", "targets": [...Array(19).keys()] }
         ]
       table2 = $("#suglist2").DataTable(table_options2);
 
       // Multi select
       var yadcf_options = [];
-      var list = [2,3,9,13,14,15];
+      var list = [2,3,9,15,17,18];
       for (i in list){
         yadcf_options.push({
               column_number : list[i],
@@ -392,7 +409,7 @@
                  });
 
       // Range filters
-      list = [0,4,5,6,7,8,10];
+      list = [0,4,5,6,7,8,10,11,12,13,14,16];
       for (i in list){
         yadcf_options.push({
             column_number : list[i],
@@ -404,16 +421,16 @@
         });
       }
 
-      list = [11,12];
-      for (i in list){
-        yadcf_options.push({
-          column_number: list[i],
-          filter_type: "range_number",
-          filter_default_label: ["Min", "Max"],
-          filter_reset_button_text: false,
-          html5_data: "data-search",
-        });
-      }
+      // list = [11,12];
+      // for (i in list){
+      //   yadcf_options.push({
+      //     column_number: list[i],
+      //     filter_type: "range_number",
+      //     filter_default_label: ["Min", "Max"],
+      //     filter_reset_button_text: false,
+      //     html5_data: "data-search",
+      //   });
+      // }
 
       yadcf.init(table2, yadcf_options);
     }

@@ -2165,21 +2165,26 @@ def collectAndCacheClassData(target_class):
     # Class Thermostabilizing mutations
     cache_name = "Class_thermo_muts"+target_class
     class_thermo_muts = cache.get(cache_name)
+    #class_thermo_muts = None
     if class_thermo_muts == None:
         class_thermo_muts = {}
         all_thermo = ConstructMutation.objects.filter(construct__protein__family__slug__startswith=target_class, effects__slug='thermostabilising')\
-                    .values("residue__generic_number__label", "wild_type_amino_acid", "mutated_amino_acid")
+                    .values("residue__generic_number__label", "wild_type_amino_acid", "mutated_amino_acid", "construct__structure__protein_conformation__protein__family__slug")\
+                    .order_by("residue__generic_number__label")
         for pair in all_thermo:
             gn = pair["residue__generic_number__label"]
             wt = pair["wild_type_amino_acid"]
             mutant = pair["mutated_amino_acid"]
+            receptor_slug = pair["construct__structure__protein_conformation__protein__family__slug"]
             if gn not in class_thermo_muts:
                 class_thermo_muts[gn] = {}
                 class_thermo_muts[gn]["mutations"] = set()
+                class_thermo_muts[gn]["receptors"] = set()
             if wt not in class_thermo_muts[gn]:
                 class_thermo_muts[gn][wt] = []
             class_thermo_muts[gn][wt].append(mutant)
             class_thermo_muts[gn]["mutations"].add(mutant)
+            class_thermo_muts[gn]["receptors"].add(receptor_slug)
         cache.set(cache_name, class_thermo_muts, 60*60*24*7) # cache a week
 
     # Ligand interactions
@@ -2275,69 +2280,14 @@ def contactMutationDesign(request, goal):
             # Class conservation
             cache_name = "Class_AA_conservation_"+target_class
             class_gn_cons = cache.get(cache_name)
-            #class_gn_cons = None
-            # if class_gn_cons == None:
-            #     class_aln = Alignment()
-            #     human_gpcrs_class = Protein.objects.filter(species__common_name = 'Human', sequence_type__slug = 'wt', family__slug__startswith=target_class)
-            #     class_aln.load_proteins(human_gpcrs_class)
-            #     class_aln.load_segments(ProteinSegment.objects.filter(slug__in=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7', 'H8']))
-            #     class_aln.build_alignment()
-            #     class_gn_cons = {}
-            #     for segment in class_aln.consensus:
-            #         for gn in class_aln.consensus[segment]:
-            #             class_gn_cons[gn] = class_aln.consensus[segment][gn]
-            #     cache.set(cache_name, class_gn_cons, 60*60*24*7) # cache a week
 
             # Class mutation data
             cache_name = "Class_mutation_counts_"+target_class
             class_mutations = cache.get(cache_name)
-            #class_mutations = None
-            # if class_mutations == None:
-            #     class_mutations = {}
-            #
-            #     # Collect raw counts
-            #     all_ligand_mutations = MutationExperiment.objects.filter(protein__family__slug__startswith=target_class)\
-            #                             .values("residue__generic_number__label").\
-            #                             annotate(unique_mutations=Count("pk")).annotate(unique_receptors=Count("protein__family_id", distinct=True))
-            #
-            #     for pair in all_ligand_mutations:
-            #         gn = pair["residue__generic_number__label"]
-            #         class_mutations[gn] = {}
-            #         class_mutations[gn]["unique_mutations"] = pair["unique_mutations"]
-            #         class_mutations[gn]["unique_receptors"] = pair["unique_receptors"]
-            #         # placeholder in case there are no mutations with >=5 fold effect
-            #         class_mutations[gn]["fold_mutations"] = class_mutations[gn]["fold_receptors"] = 0
-            #
-            #     # Collect counts with >=5 fold effect on ligand binding
-            #     fold_ligand_mutations = MutationExperiment.objects.filter(Q(foldchange__gte = 5) | Q(foldchange__lte = -5), protein__family__slug__startswith=target_class)\
-            #         .values("residue__generic_number__label").annotate(fold_mutations=Count("pk")).annotate(fold_receptors=Count("protein__family_id", distinct=True))
-            #
-            #     for pair in fold_ligand_mutations:
-            #         gn = pair["residue__generic_number__label"]
-            #         class_mutations[gn]["fold_mutations"] = pair["fold_mutations"]
-            #         class_mutations[gn]["fold_receptors"] = pair["fold_receptors"]
-            #
-            #     cache.set(cache_name, class_mutations, 60*60*24*7) # cache a week
 
             # Class Thermostabilizing mutations
             cache_name = "Class_thermo_muts"+target_class
             class_thermo_muts = cache.get(cache_name)
-            # if class_thermo_muts == None:
-            #     class_thermo_muts = {}
-            #     all_thermo = ConstructMutation.objects.filter(construct__protein__family__slug__startswith=target_class, effects__slug='thermostabilising')\
-            #                 .values("residue__generic_number__label", "wild_type_amino_acid", "mutated_amino_acid")
-            #     for pair in all_thermo:
-            #         gn = pair["residue__generic_number__label"]
-            #         wt = pair["wild_type_amino_acid"]
-            #         mutant = pair["mutated_amino_acid"]
-            #         if gn not in class_thermo_muts:
-            #             class_thermo_muts[gn] = {}
-            #             class_thermo_muts[gn]["mutations"] = set()
-            #         if wt not in class_thermo_muts[gn]:
-            #             class_thermo_muts[gn][wt] = []
-            #         class_thermo_muts[gn][wt].append(mutant)
-            #         class_thermo_muts[gn]["mutations"].add(mutant)
-            #     cache.set(cache_name, class_thermo_muts, 60*60*24*7) # cache a week
 
             # Find residues that are >= 80% present in both sets and only TM residues
             # Do not count frequencies or others residues that are not present in both sets
@@ -2415,23 +2365,26 @@ def contactMutationDesign(request, goal):
                 suggestion_mutant = suggestions[0] if len(suggestions)>0 else "-"
                 suggestion_mutant2 = suggestions[1] if len(suggestions)>1 else "-"
 
-                fold_mutation_text = "-"
-                total_mutation_text = "-"
-                if gn in class_mutations:
-                    fold_mutation_text = "<span data-search=\"{}\">{} ({} rec.)</span>".format(class_mutations[gn]["fold_mutations"], class_mutations[gn]["fold_mutations"], class_mutations[gn]["fold_receptors"])
-                    total_mutation_text = "<span data-search=\"{}\">{} ({} rec.)</span>".format(class_mutations[gn]["unique_mutations"], class_mutations[gn]["unique_mutations"], class_mutations[gn]["unique_receptors"])
+                # fold_mutation_text = "-"
+                # total_mutation_text = "-"
+                # if gn in class_mutations:
+                #     fold_mutation_text = "<span data-search=\"{}\">{} ({} rec.)</span>".format(class_mutations[gn]["fold_mutations"], class_mutations[gn]["fold_mutations"], class_mutations[gn]["fold_receptors"])
+                #     total_mutation_text = "<span data-search=\"{}\">{} ({} rec.)</span>".format(class_mutations[gn]["unique_mutations"], class_mutations[gn]["unique_mutations"], class_mutations[gn]["unique_receptors"])
 
-                thermo_text = ["no", "no", "no"]
+                thermo_text = ["no", 0, "no", "no"]
                 if gn in class_thermo_muts:
                     thermo_text[0] = "yes"
+                    thermo_text[1] = len(class_thermo_muts[gn]["receptors"])
                     if target_aa in class_thermo_muts[gn]:
-                        thermo_text[1] = "yes"
-                    if "A" in class_thermo_muts[gn]["mutations"]:
                         thermo_text[2] = "yes"
+                    if "A" in class_thermo_muts[gn]["mutations"]:
+                        thermo_text[3] = "yes"
 
-                #context['freq_results1'].append([target_resnum, class_specific_gn, target_aa,  class_gn_cons[gn][0], str(class_gn_cons[gn][2])+"%", ala_mutant, suggestion_mutant, suggestion_mutant2, mutation_text, freq_results[gn][2], freq_results[gn][0], freq_results[gn][1]])
-                #context['freq_results1'][gn] = [target_resnum, class_specific_gn, target_aa,  class_gn_cons[gn][0], str(class_gn_cons[gn][2])+"%", ala_mutant, mutation_text, freq_results[gn][2], freq_results[gn][0], freq_results[gn][1]]
-                context['freq_results1'][gn] = ["<span class=\"text-danger\">{}</span>".format(target_resnum), "<span class=\"text-danger\">{}</span>".format(class_specific_gn), "<span class=\"text-danger\">{}</span>".format(target_aa),  ala_mutant, freq_results[gn][2], int(round(freq_results[gn][2]/freq_results[gn][1]*100)), freq_results[gn][0], freq_results[gn][1], class_gn_cons[gn][0], class_gn_cons[gn][2], fold_mutation_text, total_mutation_text, thermo_text[0], thermo_text[1], thermo_text[2]]
+                context['freq_results1'][gn] = ["<span class=\"text-danger\">{}</span>".format(target_resnum), "<span class=\"text-danger\">{}</span>".format(class_specific_gn), "<span class=\"text-danger\">{}</span>".format(target_aa),
+                        ala_mutant, freq_results[gn][2], int(round(freq_results[gn][2]/freq_results[gn][1]*100)), freq_results[gn][0], freq_results[gn][1], class_gn_cons[gn][0], class_gn_cons[gn][2],
+                        class_mutations[gn]["fold_mutations"] if gn in class_mutations else 0, class_mutations[gn]["fold_receptors"] if gn in class_mutations else 0,
+                        class_mutations[gn]["unique_mutations"] if gn in class_mutations else 0, class_mutations[gn]["unique_receptors"] if gn in class_mutations else 0,
+                        thermo_text[0], thermo_text[1], thermo_text[2], thermo_text[3]]
             if len(context['freq_results1']) == 0:
                 context.pop('freq_results1', None)
 
@@ -2468,36 +2421,29 @@ def contactMutationDesign(request, goal):
                 target_resnum = target_residues[gn][1]
                 class_specific_gn = target_residues[gn][2]
 
-                # Collect most conserved residue in class
-                # most_conserved = "-"
-                # if gn in class_gn_cons: #and target_aa != class_gn_cons[gn][0]:
-                #     most_conserved = "{} ({}%)".format(class_gn_cons[gn][0], class_gn_cons[gn][2])
-
                 # Alanine mutation
                 ala_mutant = "A" if target_aa != "A" else "-"
 
                 # Reversed polarity suggestion
-                suggestions = definitions.DESIGN_SUBSTITUTION_DICT[target_aa] if target_aa in definitions.DESIGN_SUBSTITUTION_DICT else []
-                suggestion_mutant = suggestions[0] if len(suggestions)>0 else "-"
-                suggestion_mutant2 = suggestions[1] if len(suggestions)>1 else "-"
+                # suggestions = definitions.DESIGN_SUBSTITUTION_DICT[target_aa] if target_aa in definitions.DESIGN_SUBSTITUTION_DICT else []
+                # suggestion_mutant = suggestions[0] if len(suggestions)>0 else "-"
+                # suggestion_mutant2 = suggestions[1] if len(suggestions)>1 else "-"
 
-                fold_mutation_text = "-"
-                total_mutation_text = "-"
-                if gn in class_mutations:
-                    fold_mutation_text = "<span data-search=\"{}\">{} ({} rec.)</span>".format(class_mutations[gn]["fold_mutations"], class_mutations[gn]["fold_mutations"], class_mutations[gn]["fold_receptors"])
-                    total_mutation_text = "<span data-search=\"{}\">{} ({} rec.)</span>".format(class_mutations[gn]["unique_mutations"], class_mutations[gn]["unique_mutations"], class_mutations[gn]["unique_receptors"])
-
-                thermo_text = ["no", "no", "no"]
+                # Process thermostabilizing mutation data
+                thermo_text = ["no", 0, "no", "no"]
                 if gn in class_thermo_muts:
                     thermo_text[0] = "yes"
+                    thermo_text[1] = len(class_thermo_muts[gn]["receptors"])
                     if target_aa in class_thermo_muts[gn]:
-                        thermo_text[1] = "yes"
-                    if most_conserved_set1[gn][0] in class_thermo_muts[gn]["mutations"]:
                         thermo_text[2] = "yes"
+                    if "A" in class_thermo_muts[gn]["mutations"]:
+                        thermo_text[3] = "yes"
 
-                #context['freq_results2'].append([target_resnum, class_specific_gn, target_aa, class_gn_cons[gn][0], str(class_gn_cons[gn][2])+"%", ala_mutant, suggestion_mutant, suggestion_mutant2, mutation_text, freq_results[gn][2], freq_results[gn][0], freq_results[gn][1]])
-                #context['freq_results2'][gn] = [target_resnum, class_specific_gn, target_aa, class_gn_cons[gn][0], str(class_gn_cons[gn][2])+"%", "<span class=\"text-red-highlight font-weight-bold\"><strong>{}</strong></span>".format(most_conserved_set1[gn][0]), most_conserved_set1[gn][1], mutation_text, freq_results[gn][2], freq_results[gn][0], freq_results[gn][1]]
-                context['freq_results2'][gn] = ["<span class=\"text-danger\">{}</span>".format(target_resnum), "<span class=\"text-danger\">{}</span>".format(class_specific_gn), "<span class=\"text-danger\">{}</span>".format(target_aa), "<span class=\"text-red-highlight font-weight-bold\"><strong>{}</strong></span>".format(most_conserved_set1[gn][0]), most_conserved_set1[gn][1], freq_results[gn][2], int(round(freq_results[gn][2]/freq_results[gn][1]*100)), freq_results[gn][0], freq_results[gn][1], class_gn_cons[gn][0], class_gn_cons[gn][2], fold_mutation_text, total_mutation_text, thermo_text[0], thermo_text[1], thermo_text[2]]
+                context['freq_results2'][gn] = ["<span class=\"text-danger\">{}</span>".format(target_resnum), "<span class=\"text-danger\">{}</span>".format(class_specific_gn), "<span class=\"text-danger\">{}</span>".format(target_aa), "<span class=\"text-red-highlight font-weight-bold\"><strong>{}</strong></span>".format(most_conserved_set1[gn][0]),
+                        most_conserved_set1[gn][1], freq_results[gn][2], int(round(freq_results[gn][2]/freq_results[gn][1]*100)), freq_results[gn][0], freq_results[gn][1], class_gn_cons[gn][0], class_gn_cons[gn][2],
+                        class_mutations[gn]["fold_mutations"] if gn in class_mutations else 0, class_mutations[gn]["fold_receptors"] if gn in class_mutations else 0,
+                        class_mutations[gn]["unique_mutations"] if gn in class_mutations else 0, class_mutations[gn]["unique_receptors"] if gn in class_mutations else 0,
+                        thermo_text[0], thermo_text[1], thermo_text[2], thermo_text[3]]
 
             if len(context['freq_results2']) == 0:
                 context.pop('freq_results2', None)
