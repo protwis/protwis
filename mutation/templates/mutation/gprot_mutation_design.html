@@ -362,6 +362,7 @@
         $("#neg_design_text").hide();
         table1.columns(4).visible( true );
         table1.columns(5).visible( false );
+        table1.columns(26).search(type).draw();
     } else if (type === "bad"){
         $("#pos_design_text").hide();
         $("#neg_design_text").show();
