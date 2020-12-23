@@ -69,20 +69,19 @@
 {% endblock %}
 {% block content %}
 
+<ul class="nav nav-tabs nav-browsers">
+    <li class="active"><a href="#" id="faketab1-table-link" onClick="filterDropDown(this, 'good');">1. Mutations to increase {{ gprot }} binding</a></li>
+    <li><a href="#" id="faketab2-table-link" onClick="filterDropDown(this, 'bad');">2. Mutations to decrease {{ gprot }} binding</a></li>
+    <li><a href="#" id="faketab3-table-link" onClick="filterDropDown(this, 'all');">3. All residue positions</a></li>
+</ul>
+
 <div class="row">
   <div class="tab-content col-md-12 ">
     {% if signature_result %}
       <div class="tab-pane active" id="mutation-table-1-tab">
           <div class="panel panel-default">
-              <div class="panel-heading">
-                  <h3 class="panel-title pull-left">Mutations to increase {{ gprot }} binding</h3>
-                  <span class="pull-right">
-                      <span class="glyphicon glyphicon-download btn-download"></span><span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
-                  </span>
-                  <div class="clearfix"></div>
-              </div>
               <div class="panel-body">
-                <div class="dropdown">
+                <!--<div class="dropdown">
                   <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Select Mutation type
                   <span class="caret"></span></button>
                   <ul class="dropdown-menu">
@@ -90,49 +89,58 @@
                     <li><a href="#" onClick="filterDropDown('bad');">AAs to remove</a></li>
                     <li><a href="#" onClick="filterDropDown('all');">Show all</a></li>
                   </ul>
-                </div>
+                </div>-->
                 <table class="display compact" id="suglist1">
                   <thead>
                     <tr>
                       <th colspan=4 class="text-center">Residue</th>
+                      <th rowspan=1 class="text-center increaser"><span class="text-forest-highlight">Mutant AA</span></th>
+                      <th rowspan=1 class="text-center decreaser"><span class="text-red-highlight">Mutant AA</span></th>
                       <th colspan=2 class="text-center">Structure interactions<br>(# receptors)</th>
                       <th colspan=2 class="text-center">Mutation data<br>&#8805;5-fold&nbsp;effect</th>
                       <th colspan=4 class="text-center">{{gprot }} binders vs non-binders<br>sequence signature</th>
-                      <th colspan=3 class="text-center">Feature conservation<br>{{gprot }} binders</th>
-                      <th colspan=3 class="text-center">Feature conservation<br>{{gprot }} non-binders</th>
+                      <th colspan=3 class="text-center">Property conservation<br>{{gprot }} binders</th>
+                      <th colspan=3 class="text-center">Property conservation<br>{{gprot }} non-binders</th>
                       <th colspan=2 class="text-center">AA conservation<br>{{gprot }} binders</th>
                       <th colspan=2 class="text-center">AA conservation<br>{{gprot }} non-binders</th>
                       <th colspan=2 class="text-center">AA conservation<br>GPCR class</th>
                       <th></th>
-                    </tr>
-                    <tr>
-                      <th>Segment</th>
-                      <th>Target<br>residue<br>number</th>
-                      <th>Generic<br>residue<br>number</th>
-                      <th>Target<br>WT AA</th>
-                      <th>G protein</th>
-                      <th>Ligand</th>
-                      <th># mut.</th>
-                      <th># rec.</th>
-                      <th class="signature">Score (%)</th>
-                      <th class="signature">Feature</th>
-                      <th class="signature">Length</th>
-                      <th class="signature">Matching<br>AAs</th>
-                      <th>cons. (%)</th>
-                      <th>Feature</th>
-                      <th>Length</th>
-                      <th>cons. (%)</th>
-                      <th>Feature</th>
-                      <th>Length</th>
-                      <th>cons. (%)</th>
-                      <th>AA</th>
-                      <th>cons. (%)</th>
-                      <th>AA</th>
-                      <th>cons. (%)</th>
-                      <th>AA</th>
                       <th></th>
                     </tr>
                     <tr>
+                      <th class="text-center">Segment</th>
+                      <th class="text-center">Target<br>residue<br>number</th>
+                      <th class="text-center">Generic<br>residue<br>number</th>
+                      <th class="text-center">Target<br>WT AA</th>
+                      <th class="text-center">Increase<br>coupling</th>
+                      <th class="text-center">Decrease<br>coupling</th>
+                      <th class="text-center">G&nbsp;protein</th>
+                      <th class="text-center">Ligand</th>
+                      <th class="text-center">#Mut.</th>
+                      <th class="text-center">#Rec.</th>
+                      <th class="text-center signature">Score (%)</th>
+                      <th class="text-center signature">Property</th>
+                      <th class="text-center signature">Length</th>
+                      <th class="text-center signature">Matching<br>AAs</th>
+                      <th class="text-center">Cons. (%)</th>
+                      <th class="text-center">Property</th>
+                      <th class="text-center">Length</th>
+                      <th class="text-center">Cons. (%)</th>
+                      <th class="text-center">Property</th>
+                      <th class="text-center">Length</th>
+                      <th class="text-center">Cons. (%)</th>
+                      <th class="text-center">AA</th>
+                      <th class="text-center">Cons. (%)</th>
+                      <th class="text-center">AA</th>
+                      <th class="text-center">Cons. (%)</th>
+                      <th class="text-center">AA</th>
+                      <th></th>
+                      <th></th>
+                    </tr>
+                    <tr>
+                      <th></th>
+                      <th></th>
+                      <th></th>
                       <th></th>
                       <th></th>
                       <th></th>
@@ -194,6 +202,7 @@
   var table_options = { "paging":       true,
                         "pageLength":   20,
                         "lengthChange": false,
+                        "order":        [[ 27, "desc" ]],
                         "buttons":      ["csv", "excel"],
                         "scrollX":      true,
                         "dom":          "lfrtipB",
@@ -206,13 +215,13 @@
     // Init mutations table 1
     if ($("#suglist1").length > 0 && table1 == null){
       // Assign coloring class to each cell in freq. diff table
-      $("#suglist1 tbody tr td").filter(":nth-child(9)").each( function() {
+      $("#suglist1 tbody tr td").filter(":nth-child(11)").each( function() {
           $(this).addClass("color-column");
           $(this).addClass("color-abs");
         //$(this).addClass("color-reverse");
       });
 
-      $("#suglist1 tbody tr td").filter(":nth-child(12)").each( function() {
+      $("#suglist1 tbody tr td").filter(":nth-child(14)").each( function() {
           $(this).addClass("expand");
       });
 
@@ -226,18 +235,17 @@
       gray_scale_table($("#suglist1"));
 
       var table_options1 = Object.assign({}, table_options);
-      table_options1["order"] = [8, "desc"];
       table_options1["columnDefs"] = [
-          { className: "text-center", "targets": [ 0,1,2,3,4,5,6,7,8,9, 12,13,14 ] },
-          { "visible": false, "targets": [ 24 ] },
+          { className: "text-center", "targets": [...Array(26).keys()] },
+          { "visible": false, "targets": [ 5, 26, 27 ] },
         ]
 
       table1 = $("#suglist1").DataTable(table_options1);
 
       // Multi select
       var yadcf_options = [];
-      var list = [0, 3, 9, 10, 13, 14, 16, 17, 19, 21, 23];
-      var html_list = [3, 9, 10, 13, 16];
+      var list = [0, 3, 4, 5, 11, 12, 15, 16, 18, 19, 21, 23, 25];
+      var html_list = [3, 4, 5, 11, 12, 15, 18];
       for (i in list){
         yadcf_options.push({
               column_number : list[i],
@@ -265,7 +273,7 @@
       }
 
       // Range filters
-      list = [4, 5, 6, 7, 8, 12, 15, 18, 20, 22];
+      list = [6, 7, 8, 9, 10, 14, 17, 20, 22, 24];
       for (i in list){
         yadcf_options.push({
             column_number : list[i],
@@ -277,12 +285,15 @@
         });
       }
 
-      yadcf_options.push({
-        column_number: 24,
-        filter_container_id: "hiddenblock",
-        filter_type: "select",
-        visible: "false"
-      });
+      list = [26,27];
+      for (i in list){
+        yadcf_options.push({
+          column_number: list[i],
+          filter_container_id: "hiddenblock",
+          filter_type: "select",
+          visible: "false"
+        });
+      }
 
       // list = [10,11];
       // for (i in list){
@@ -312,27 +323,34 @@
           $(scrollBody).trigger("scroll");
       });
 
-      // filter on type "good" by default + draw
-      table1.columns(24).search("good").draw();
-
-      // Draw again
-      //table1.draw();
+      // By default: filter on type "good", hide the decrease column + draw
+      table1.columns(5).visible( false );
+      table1.columns(26).search("good").draw();
     }
   }
 
-  function filterDropDown(type) {
-    // change sort order based on selection
-    if (type == "bad"){
-      table1.order([8, "asc"]);
-    } else {
-      table1.order([8, "desc"]);
-    }
+  function filterDropDown(element, type) {
+    // Toggle tab
+    var holder = $(event.target).closest("ul")[0];
+    $(holder).children("li").each(function(){$(this).removeClass("active")})
+    var tab = $(event.target).closest("li")[0];
+    $(tab).addClass("active");
+
+    // refresh sort order
+    table1.order([27, "desc"]);
 
     if (type === "all"){
         // simply reset all filters
+        table1.columns(4).visible( true );
+        table1.columns(5).visible( true );
         yadcf.exResetAllFilters(table1);
-    } else {
-        table1.columns(24).search(type).draw();
+    } else if (type === "good"){
+        table1.columns(4).visible( true );
+        table1.columns(5).visible( false );
+    } else if (type === "bad"){
+        table1.columns(4).visible( false );
+        table1.columns(5).visible( true );
+        table1.columns(26).search(type).draw();
     }
   }
 

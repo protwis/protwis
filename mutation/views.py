@@ -2745,6 +2745,14 @@ class designGprotSelector(AbsReferenceSelection):
         context = super().get_context_data(**kwargs)
         if "goal" in kwargs:
             context["buttons"]["continue"]["url"] = '/mutations/design_gprot_' + kwargs["goal"]
+
+            # Only show class A + Class B1 for Gq/11
+            ppf = ProteinFamily.objects.get(slug="000")
+            context["ps"] = Protein.objects.filter(family=ppf)
+            if kwargs["goal"]=="Gq":
+                context["pfs"] = ProteinFamily.objects.filter(parent=ppf.id).filter(Q(slug__startswith="001") | Q(slug__startswith="002"))
+            else:
+                context["pfs"] = ProteinFamily.objects.filter(parent=ppf.id).filter(slug__startswith="001")
         else:
             # ERROR
             skip=1
@@ -2884,14 +2892,21 @@ def gprotMutationDesign(request, goal):
 
             context['gprot'] = goal
             context['signature_result'] = []
-            for h, segment in enumerate(signature.common_gn["gpcrdba"]):
-                for i, gn in enumerate(signature.common_gn["gpcrdba"][segment]):
+            scheme_key = list(signature.common_gn.keys())[0]
+            for h, segment in enumerate(signature.common_gn[scheme_key]):
+                for i, gn in enumerate(signature.common_gn[scheme_key][segment]):
                     # SIGNATURE - <feature>, <full_feature>, <% diff>, <coloring index> (?), <length>, "<code_length>", "<code>"
                     gn_sign = signature.signature[segment][i]
 
                     # CONSERVATION - <AA>, <coloring index>, <% cons>
                     binder_aa_cons = signature.aln_pos.consensus[segment][gn]
                     nonbinder_aa_cons = signature.aln_neg.consensus[segment][gn]
+
+                    # Break tie for residues with equal max conservation
+                    if binder_aa_cons[0]=="+":
+                        binder_aa_cons[0] = signature.aln_pos.forced_consensus[segment][gn]
+                    if nonbinder_aa_cons[0]=="+":
+                        nonbinder_aa_cons[0] = signature.aln_neg.forced_consensus[segment][gn]
 
                     # FEATURE - <feature>, <full_feature>, <% cons> <coloring index>, <length>, <code_length>
                     binder_feat_cons = signature.features_consensus_pos[segment][i]
@@ -2903,14 +2918,92 @@ def gprotMutationDesign(request, goal):
                         # Collect all data for table
                         mutations = definitions.AMINO_ACID_GROUPS[gn_sign[5]]
                         mut_aas = ", ".join(definitions.AMINO_ACID_GROUPS[gn_sign[5]])
+                        mut_increase = "-"
+                        mut_decrease = "-"
                         highlight = ""
-                        row_type = "normal"
-                        if gn_sign[2] > 10 and wt_aa not in mutations and mut_aas != "-":
+                        if gn_sign[2] > 10 and mut_aas != "-":
                             highlight = "cell-color=\"bg-success\""
-                            row_type = "good"
-                        elif gn_sign[2] < -10 and wt_aa in mutations and mut_aas != "-":
+
+                            # Increase coupling: exchanging the residue with the AA with highest conserved in
+                            # the coupling set AND matching the feature
+                            if wt_aa not in mutations:
+                                if binder_aa_cons[0] in mutations:
+                                    mut_increase = binder_aa_cons[0]
+                                else:
+                                    # if not the most conserved find next highest matching feature
+                                    gn_aa_count = signature.aln_pos.aa_count[segment][gn]
+                                    aa_cons_order = np.argsort([gn_aa_count[key] for key in gn_aa_count])[::-1]
+                                    aa_keys = list(gn_aa_count.keys())
+                                    for i in aa_cons_order:
+                                        new_aa = aa_keys[i]
+                                        if new_aa.isalpha() and gn_aa_count[new_aa] > 0 and new_aa in mutations:
+                                            mut_increase = new_aa
+                                            break
+                            else:
+                                # Decrease coupling: exchanging the residue with the AA with highest conserved in
+                                # the non-coupling set and not matching the feature
+                                if nonbinder_aa_cons[0] not in mutations:
+                                    mut_decrease = nonbinder_aa_cons[0]
+                                else:
+                                    # if not the most conserved find next highest not matching feature
+                                    gn_aa_count = signature.aln_neg.aa_count[segment][gn]
+                                    aa_cons_order = np.argsort([gn_aa_count[key] for key in gn_aa_count])[::-1]
+                                    aa_keys = list(gn_aa_count.keys())
+                                    for i in aa_cons_order:
+                                        new_aa = aa_keys[i]
+                                        if new_aa.isalpha() and gn_aa_count[new_aa] > 0 and new_aa not in mutations:
+                                            mut_decrease = new_aa
+                                            break
+
+                        elif gn_sign[2] < -10 and mut_aas != "-":
                             highlight = "cell-color=\"bg-danger\""
+
+                            # Increase coupling: exchanging the residue with the AA with highest conserved in
+                            # the coupling set not matching the feature
+                            if wt_aa in mutations:
+                                # not in negative feature
+                                if binder_aa_cons[0] not in mutations:
+                                    mut_increase = binder_aa_cons[0]
+                                else:
+                                    # if not the most conserved find next highest not matching feature
+                                    gn_aa_count = signature.aln_pos.aa_count[segment][gn]
+                                    aa_cons_order = np.argsort([gn_aa_count[key] for key in gn_aa_count])[::-1]
+                                    aa_keys = list(gn_aa_count.keys())
+                                    for i in aa_cons_order:
+                                        new_aa = aa_keys[i]
+                                        if new_aa.isalpha() and gn_aa_count[new_aa] > 0 and new_aa not in mutations:
+                                            mut_increase = new_aa
+                                            break
+                            else:
+                                # Decrease coupling by exchanging the residue with the AA with the highest conserved in
+                                # the non-coupling set maching the feature
+                                if nonbinder_aa_cons[0] in mutations:
+                                    mut_decrease = nonbinder_aa_cons[0]
+                                else:
+                                    # if not the most conserved find next highest not matching feature
+                                    gn_aa_count = signature.aln_neg.aa_count[segment][gn]
+                                    aa_cons_order = np.argsort([gn_aa_count[key] for key in gn_aa_count])[::-1]
+                                    aa_keys = list(gn_aa_count.keys())
+                                    for i in aa_cons_order:
+                                        new_aa = aa_keys[i]
+                                        if new_aa.isalpha() and gn_aa_count[new_aa] > 0 and new_aa in mutations:
+                                            mut_decrease = new_aa
+                                            break
+
+                        # Define row type
+                        row_type = "normal"
+                        if mut_increase != "-":
+                            row_type = "good"
+                            mut_increase = "<span class=\"text-forest-highlight\"><strong>{}</strong></span>".format(mut_increase)
+                        else:
+                            mut_increase = "<span>{}</span>".format(mut_increase)
+
+                        if mut_decrease != "-":
                             row_type = "bad"
+                            mut_decrease = "<span class=\"text-red-highlight\"><strong>{}</strong></span>".format(mut_decrease)
+                        else:
+                            mut_decrease = "<span>{}</span>".format(mut_decrease)
+
                         mutation_text = "<span {}>{}</span>".format(highlight, mut_aas)
 
                         # ligand interactions
@@ -2924,7 +3017,7 @@ def gprotMutationDesign(request, goal):
                             ligand_rec_ints = class_ligand_ints[gn]["unique_receptors"]
 
                         context['signature_result'].append([segment, "<span class=\"text-danger\">{}</span>".format(target_residues[gn][1]), "<span class=\"text-danger\">{}</span>".format(target_residues[gn][2]), "<span class=\"text-danger\">{}</span>".format(wt_aa),
-                            gprot_rec_ints, ligand_rec_ints,
+                            mut_increase, mut_decrease, gprot_rec_ints, ligand_rec_ints,
                             class_mutations[gn]["fold_mutations"] if gn in class_mutations else 0, class_mutations[gn]["fold_receptors"] if gn in class_mutations else 0,
                             gn_sign[2], "<span data-toggle=\"tooltip\" data-placement=\"right\" title=\"{}\">{}</span>".format(gn_sign[1], gn_sign[6]), gn_sign[4], mutation_text,
                             binder_feat_cons[2], "<span data-toggle=\"tooltip\" data-placement=\"right\" title=\"{}\">{}</span>".format(binder_feat_cons[1], binder_feat_cons[0]), binder_feat_cons[4],
@@ -2932,7 +3025,7 @@ def gprotMutationDesign(request, goal):
                             binder_aa_cons[2], binder_aa_cons[0],
                             nonbinder_aa_cons[2], nonbinder_aa_cons[0],
                             class_gn_cons[gn][2], class_gn_cons[gn][0],
-                            row_type]);
+                            row_type, abs(gn_sign[2])+0.1 if gn_sign[2]>0 else abs(gn_sign[2]) ]);
 
             return render(request, 'mutation/gprot_mutation_design.html', context)
         else:
