@@ -8,13 +8,12 @@ from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection, SelectionItem
 from ligand.models import *
-from protein.models import Protein, Species, ProteinFamily
+from protein.models import Protein, Species, ProteinFamily,ProteinGProteinPair
 
 from django.views.decorators.csrf import csrf_exempt
 
 from copy import deepcopy
 import itertools
-from itertools import chain
 import json
 
 
@@ -40,13 +39,16 @@ class LigandBrowser(TemplateView):
         ).annotate(num_ligands=Count('ligand', distinct=True)
         ).prefetch_related('protein', 'LigandReceptorStatistics')
         self.merge_selectivity_data(ligands)
+        for entry in ligands:
+            entry['primary'], entry['secondary'] = self.fetch_receptor_trunsducers(
+                entry['protein'])
         context['ligands'] = ligands
+
         return context
 
     def merge_selectivity_data(self, ligands):
         content = list()
         for ligand in ligands:
-            proteins = list()
             protein = ligand['protein__entry_name']
             B_selective = self.get_count_selectivity(
                 "F", protein)
@@ -69,6 +71,27 @@ class LigandBrowser(TemplateView):
         ))
         return result
 
+    def fetch_receptor_trunsducers(self, receptor):
+        primary = set()
+        temp = str()
+        temp1 = str()
+        secondary = set()
+
+        try:
+            gprotein = ProteinGProteinPair.objects.filter(protein__id = receptor)
+
+            for x in gprotein:
+                if x.transduction and x.transduction == 'primary':
+                    primary.add(x.g_protein.name)
+                elif x.transduction and x.transduction == 'secondary':
+                    secondary.add(x.g_protein.name)
+            for i in primary:
+                temp += str(i) + str(', ')
+            for i in secondary:
+                temp1 += str(i) + str(', ')
+            return temp, temp1
+        except:
+            return None, None
 
 def LigandDetails(request, ligand_id):
     """
@@ -128,7 +151,6 @@ def LigandDetails(request, ligand_id):
 def TargetDetailsCompact(request, **kwargs):
     protein_id = kwargs['pk']
     ps = AssayExperiment()
-    
     ps = AssayExperiment.objects.filter(protein_id=protein_id)
     context = dict()
     context['protein_id'] = protein_id
@@ -143,16 +165,15 @@ def TargetDetailsCompact(request, **kwargs):
         d[p.ligand][p.protein].append(p)
     ligand_data = []
     for lig, records in d.items():
-
         links = lig.properities.web_links.all()
-        chembl_id = [x for x in links if x.web_resource.slug ==
-                     'chembl_ligand'][0].index
+        # chembl_id = [x for x in links if x.web_resource.slug ==
+        #              'chembl_ligand'][0].index
 
         vendors = lig.properities.vendors.all()
-        purchasability = 'No'
+        purchasability = 0
         for v in vendors:
             if v.vendor.name not in ['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem']:
-                purchasability = 'Yes'
+                purchasability = purchasability + 1
 
         for record, vals in records.items():
             per_target_data = vals
@@ -173,18 +194,24 @@ def TargetDetailsCompact(request, **kwargs):
 
             # TEMPORARY workaround for handling string values
             values = [float(item) for item in itertools.chain(
-                *tmp.values()) if float(item)]
+                *tmp.values()) if item!= None and float(item) ]
 
             if len(values) > 0:
+
+                primary, secondary = fetch_receptor_trunsducers(
+                    protein_details.id)
                 # f_selective, b_selective = TargetSelecitivity(chembl_id)
                 # print(chembl_id, 'f\t', f_selective, '\tb', b_selective)
                 ligand_data.append({
-                    'ligand_id': chembl_id,
+                    'ligand__id':lig.id,
+                    'ligand__name':lig.name,
                     'protein_name': protein_details.entry_name,
                     'species': protein_details.species.common_name,
                     'record_count': tmp_count,
                     'assay_type': ', '.join(tmp.keys()),
                     'purchasability': purchasability,
+                    'primary' : primary,
+                    'secondary' : secondary,
                     # Flattened list of lists of dict keys:
                     'low_value': min(values),
                     'average_value': sum(values) / len(values),
@@ -197,9 +224,31 @@ def TargetDetailsCompact(request, **kwargs):
                     'hacc': lig.properities.hacc,
                     'logp': lig.properities.logp,
                 })
+
     context['ligand_data'] = ligand_data
 
     return render(request, 'target_details_compact.html', context)
+
+def fetch_receptor_trunsducers(receptor):
+    primary = set()
+    temp = str()
+    temp1 = str()
+    secondary = set()
+    try:
+        gprotein = ProteinGProteinPair.objects.filter(protein__id = receptor)
+
+        for x in gprotein:
+            if x.transduction and x.transduction == 'primary':
+                primary.add(x.g_protein.name)
+            elif x.transduction and x.transduction == 'secondary':
+                secondary.add(x.g_protein.name)
+        for i in primary:
+            temp += str(i) + str(', ')
+        for i in secondary:
+            temp1 += str(i) + str(', ')
+        return temp, temp1
+    except:
+        return None, None
 
 def TargetDetails(request, **kwargs):
     protein_id = kwargs['pk']
@@ -229,8 +278,13 @@ def TargetDetails(request, **kwargs):
                    'ligand__properities__hacc', 'protein'
                    ).annotate(num_targets=Count('protein__id', distinct=True))
     for record in ps:
-        record['purchasability'] = 'Yes' if len(LigandVendorLink.objects.filter(lp=record['ligand__properities_id']).exclude(
-            vendor__name__in=['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem'])) > 0 else 'No'
+
+        record['purchasability'] = 0
+        record['purchasability'] = record['purchasability'] + 1 if len(LigandVendorLink.objects.filter(lp=record['ligand__properities_id']).exclude(
+            vendor__name__in=['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem'])) > 0 else 0
+        record['primary'], record['secondary'] = fetch_receptor_trunsducers(
+            record['protein__id'])
+
     context['proteins'] = ps
 
     return render(request, 'target_details.html', context)
@@ -238,7 +292,7 @@ def TargetDetails(request, **kwargs):
 def TargetPurchasabilityDetails(request, **kwargs):
     protein_id = kwargs['pk']
     ps = AssayExperiment()
-    ps = AssayExperiment.objects.filter(protein_id=protein_id)
+    ps = AssayExperiment.objects.filter(protein__id=protein_id)
     context = dict()
 
     ps = ps.values('standard_type',
@@ -264,15 +318,16 @@ def TargetPurchasabilityDetails(request, **kwargs):
                    'ligand__properities__hacc', 'protein'
                    ).annotate(num_targets=Count('protein__id', distinct=True))
     purchasable = []
+
     for record in ps:
         try:
             if record['ligand__properities__vendors__vendor__name'] in ['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem', 'IUPHAR/BPS Guide to PHARMACOLOGY']:
                 continue
-            tmp = LigandVendorLink.objects.filter(
-                vendor=record['ligand__properities__vendors__vendor__id'], lp=record['ligand__properities_id'])[0]
-            record['vendor_id'] = tmp.vendor_external_id
-            record['vendor_link'] = tmp.url
-            purchasable.append(record)
+                tmp = LigandVendorLink.objects.filter(
+                    vendor=record['ligand__properities__vendors__vendor__id'], lp=record['ligand__properities_id'])[0]
+                record['vendor_id'] = tmp.vendor_external_id
+                record['vendor_link'] = tmp.url
+                purchasable.append(record)
         except:
             continue
 
@@ -287,33 +342,27 @@ class LigandStatistics(TemplateView):
 
     template_name = 'ligand_statistics.html'
 
-    def get_context_data(self, **kwargs):
+    def get_context_data (self, **kwargs):
 
         context = super().get_context_data(**kwargs)
-        assays = AssayExperiment.objects.all().prefetch_related(
-            'protein__family__parent__parent__parent', 'protein__family')
+        assays = AssayExperiment.objects.all().prefetch_related('protein__family__parent__parent__parent', 'protein__family')
 
         lig_count_dict = {}
-        assays_lig = list(AssayExperiment.objects.all().values(
-            'protein__family__parent__parent__parent__name').annotate(c=Count('ligand', distinct=True)))
+        assays_lig = list(AssayExperiment.objects.all().values('protein__family__parent__parent__parent__name').annotate(c=Count('ligand',distinct=True)))
         for a in assays_lig:
             lig_count_dict[a['protein__family__parent__parent__parent__name']] = a['c']
         target_count_dict = {}
-        assays_target = list(AssayExperiment.objects.all().values(
-            'protein__family__parent__parent__parent__name').annotate(c=Count('protein__family', distinct=True)))
+        assays_target = list(AssayExperiment.objects.all().values('protein__family__parent__parent__parent__name').annotate(c=Count('protein__family',distinct=True)))
         for a in assays_target:
             target_count_dict[a['protein__family__parent__parent__parent__name']] = a['c']
 
         prot_count_dict = {}
-        proteins_count = list(Protein.objects.all().values(
-            'family__parent__parent__parent__name').annotate(c=Count('family', distinct=True)))
+        proteins_count = list(Protein.objects.all().values('family__parent__parent__parent__name').annotate(c=Count('family',distinct=True)))
         for pf in proteins_count:
             prot_count_dict[pf['family__parent__parent__parent__name']] = pf['c']
 
-        classes = ProteinFamily.objects.filter(
-            slug__in=['001', '002', '003', '004', '005', '006', '007'])  # ugly but fast
-        proteins = Protein.objects.all().prefetch_related(
-            'family__parent__parent__parent')
+        classes = ProteinFamily.objects.filter(slug__in=['001', '002', '003', '004', '005', '006', '007']) #ugly but fast
+        proteins = Protein.objects.all().prefetch_related('family__parent__parent__parent')
         ligands = []
 
         for fam in classes:
@@ -327,21 +376,20 @@ class LigandStatistics(TemplateView):
             ligands.append({
                 'name': fam.name,
                 'num_ligands': lig_count,
-                'avg_num_ligands': lig_count / prot_count,
-                'target_percentage': target_count / prot_count * 100,
+                'avg_num_ligands': lig_count/prot_count,
+                'target_percentage': target_count/prot_count*100,
                 'target_count': target_count
-            })
+                })
         lig_count_total = sum([x['num_ligands'] for x in ligands])
-        prot_count_total = Protein.objects.filter(
-            family__slug__startswith='00').all().distinct('family').count()
+        prot_count_total = Protein.objects.filter(family__slug__startswith='00').all().distinct('family').count()
         target_count_total = sum([x['target_count'] for x in ligands])
         lig_total = {
             'num_ligands': lig_count_total,
-            'avg_num_ligands': lig_count_total / prot_count_total,
-            'target_percentage': target_count_total / prot_count_total * 100,
+            'avg_num_ligands': lig_count_total/prot_count_total,
+            'target_percentage': target_count_total/prot_count_total*100,
             'target_count': target_count_total
-        }
-        # Elegant solution but kinda slow (6s querries):
+            }
+        #Elegant solution but kinda slow (6s querries):
         """
         ligands = AssayExperiment.objects.values(
             'protein__family__parent__parent__parent__name',
@@ -356,7 +404,6 @@ class LigandStatistics(TemplateView):
                         )
             prot_class['avg_num_ligands']=class_subset[0]['avg_num_ligands']
             prot_class['p_count']=class_subset[0]['p_count']
-
         """
         context['ligands_total'] = lig_total
         context['ligands_by_class'] = ligands
@@ -364,48 +411,43 @@ class LigandStatistics(TemplateView):
         context['release_notes'] = ReleaseNotes.objects.all()[0]
 
         tree = PhylogeneticTreeGenerator()
-        class_a_data = tree.get_tree_data(
-            ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
+        class_a_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
         context['class_a_options'] = deepcopy(tree.d3_options)
         context['class_a_options']['anchor'] = 'class_a'
         context['class_a_options']['leaf_offset'] = 50
         context['class_a_options']['label_free'] = []
         context['class_a'] = json.dumps(class_a_data.get_nodes_dict('ligands'))
-        class_b1_data = tree.get_tree_data(
-            ProteinFamily.objects.get(name__startswith='Class B1 (Secretin)'))
+
+        class_b1_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B1 (Secretin)'))
         context['class_b1_options'] = deepcopy(tree.d3_options)
         context['class_b1_options']['anchor'] = 'class_b1'
         context['class_b1_options']['branch_trunc'] = 60
-        context['class_b1_options']['label_free'] = [1, ]
-        context['class_b1'] = json.dumps(
-            class_b1_data.get_nodes_dict('ligands'))
-        class_b2_data = tree.get_tree_data(
-            ProteinFamily.objects.get(name__startswith='Class B2 (Adhesion)'))
+        context['class_b1_options']['label_free'] = [1,]
+        context['class_b1'] = json.dumps(class_b1_data.get_nodes_dict('ligands'))
+        class_b2_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B2 (Adhesion)'))
         context['class_b2_options'] = deepcopy(tree.d3_options)
         context['class_b2_options']['anchor'] = 'class_b2'
-        context['class_b2_options']['label_free'] = [1, ]
-        context['class_b2'] = json.dumps(
-            class_b2_data.get_nodes_dict('ligands'))
-        class_c_data = tree.get_tree_data(
-            ProteinFamily.objects.get(name__startswith='Class C (Glutamate)'))
+        context['class_b2_options']['label_free'] = [1,]
+        context['class_b2'] = json.dumps(class_b2_data.get_nodes_dict('ligands'))
+        class_c_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class C (Glutamate)'))
         context['class_c_options'] = deepcopy(tree.d3_options)
         context['class_c_options']['anchor'] = 'class_c'
         context['class_c_options']['branch_trunc'] = 50
-        context['class_c_options']['label_free'] = [1, ]
+        context['class_c_options']['label_free'] = [1,]
         context['class_c'] = json.dumps(class_c_data.get_nodes_dict('ligands'))
-        class_f_data = tree.get_tree_data(
-            ProteinFamily.objects.get(name__startswith='Class F (Frizzled)'))
+        class_f_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class F (Frizzled)'))
         context['class_f_options'] = deepcopy(tree.d3_options)
         context['class_f_options']['anchor'] = 'class_f'
-        context['class_f_options']['label_free'] = [1, ]
+        context['class_f_options']['label_free'] = [1,]
         context['class_f'] = json.dumps(class_f_data.get_nodes_dict('ligands'))
-        class_t2_data = tree.get_tree_data(
-            ProteinFamily.objects.get(name__startswith='Class T (Taste 2)'))
-        context['class_t2_options'] = deepcopy(tree.d3_options)
-        context['class_t2_options']['anchor'] = 'class_t2'
-        context['class_t2_options']['label_free'] = [1, ]
-        context['class_t2'] = json.dumps(
-            class_t2_data.get_nodes_dict('ligands'))
+        try:
+            class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class T (Taste 2)'))
+            context['class_t2_options'] = deepcopy(tree.d3_options)
+            context['class_t2_options']['anchor'] = 'class_t2'
+            context['class_t2_options']['label_free'] = [1,]
+            context['class_t2'] = json.dumps(class_t2_data.get_nodes_dict('ligands'))
+        except:
+            pass
 
         return context
 
@@ -449,13 +491,17 @@ class LigandInformationView(TemplateView):
             temp_assay['standard_value'] = i.standard_value
             temp_assay['standard_type'] = i.standard_type
             temp_assay['protein_id'] = i.protein.entry_name
+            temp_assay['protein'] = i.protein
             temp_assay['document_chembl_id'] = i.document_chembl_id
             temp_assay['assay_description'] = i.assay_description
+            temp_assay['primary'], temp_assay['secondary'] = self.fetch_receptor_trunsducers(
+                temp_assay['protein'])
             assay.append(temp_assay)
         return assay
 
     def process_ligand(self, ligand_data):
         ld = dict()
+        ld['ligand_id'] = ligand_data[0].id
         ld['ligand_name'] = ligand_data[0].name
         ld['ligand_smiles'] = ligand_data[0].properities.smiles
         ld['ligand_inchikey'] = ligand_data[0].properities.inchikey
@@ -485,6 +531,27 @@ class LigandInformationView(TemplateView):
             selectivity.append({"type": type, "protein": i.protein.entry_name,"potency": i.value, "reference": i.reference_protein.entry_name})
         return selectivity
 
+    def fetch_receptor_trunsducers(self, receptor):
+        primary = set()
+        temp = str()
+        temp1 = str()
+        secondary = set()
+        try:
+            gprotein = ProteinGProteinPair.objects.filter(protein = receptor)
+
+            for x in gprotein:
+                if x.transduction and x.transduction == 'primary':
+                    primary.add(x.g_protein.name)
+                elif x.transduction and x.transduction == 'secondary':
+                    secondary.add(x.g_protein.name)
+            for i in primary:
+                temp += str(i) + str(', ')
+            for i in secondary:
+                temp1 += str(i) + str(', ')
+            return temp, temp1
+        except:
+            return None, None
+
 # Biased Ligands part
 class ExperimentEntryView(DetailView):
     context_object_name = 'experiment'
@@ -510,7 +577,7 @@ def test_link(request):
         datum = "".join(data)
         request.session['ids'] = datum
         request.session.set_expiry(15)
-        # print('datum',datum )
+        print('datum',datum )
 
     return HttpResponse(request)
     # except OSError as exc:
@@ -531,7 +598,7 @@ class BiasVendorBrowser(TemplateView):
         self.request.session.modified = True
         rd = list()
         for i in datum.split(','):
-            ligand = Ligand.objects.filter(id=int(i))
+            ligand = Ligand.objects.filter(id=i)
             ligand = ligand.get()
             links = LigandVendorLink.objects.filter(
                 lp=ligand.properities_id).prefetch_related('lp', 'vendor')
@@ -557,10 +624,7 @@ class BiasVendorBrowser(TemplateView):
 Bias browser between families
 access data from db, fill empty fields with empty parse_children
 '''
-
-
 class BiasBrowser(TemplateView):
-
     template_name = 'bias_browser.html'
     # @cache_page(50000)
     def get_context_data(self, *args, **kwargs):

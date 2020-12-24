@@ -1,4 +1,4 @@
-function draw_tree(data, options) {
+function draw_tree(data, options, type_request) {
 
     var branches = {};
     var branch_offset = 0;
@@ -103,15 +103,36 @@ function draw_tree(data, options) {
             }
         })
         .text(function (d) {
-            if (d.depth == options.depth) {
-                return d.name.toUpperCase();
-            } else if (options.label_free.includes(d.depth)) {
-                return "";
-            } else if (d.depth > 0) {
-                return d.name;
-            } else {
-                return "";
+            if (type_request == 'name'){
+                if (d.depth == options.depth) {
+                    return d.name.toUpperCase();
+                } else if (options.label_free.includes(d.depth)) {
+                    return "";
+                } else if (d.depth > 0) {
+                    return d.name;
+                } else {
+                    return "";
+                }
             }
+            else {
+                var a = '';
+                if (d.iuphar == '') {
+                    a = d.name;
+                }
+                else{
+                    a = d.iuphar;
+                }
+                if (d.depth == options.depth) {
+                    return a.toUpperCase();
+                } else if (options.label_free.includes(d.depth)) {
+                    return "";
+                } else if (d.depth > 0) {
+                    return a;
+                } else {
+                    return "";
+                }
+            }
+
         })
         .call(wrap, options.branch_trunc)
 

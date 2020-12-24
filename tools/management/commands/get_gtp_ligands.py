@@ -1,34 +1,19 @@
 from django.core.management.base import BaseCommand, CommandError
-from django.conf import settings
-from django.db import connection
 from django.db import IntegrityError
-from django.utils.text import slugify
-from django.http import HttpResponse, JsonResponse
-
 from build.management.commands.base_build import Command as BaseBuild
-from common.tools import fetch_from_cache, save_to_cache, fetch_from_web_api
-from residue.models import Residue
 from protein.models import Protein, ProteinGProteinPair
 from ligand.models import *
-from mutation.models import Mutation
 from ligand.functions import get_or_make_ligand
 from common.models import WebLink, WebResource, Publication
 from multiprocessing.pool import ThreadPool
-from chembl_webresource_client.new_client import new_client
 import queue
 import logging
-import os
 from datetime import datetime
-import xlrd
 import operator
-import traceback
-import time
-import math
 import json
-import threading
 import requests
 import concurrent.futures
-import pytz
+
 
 MISSING_PROTEINS = {}
 SKIPPED = 0
@@ -47,12 +32,6 @@ class Command(BaseBuild):
     publication_cache = {}
     ligand_cache = {}
     data_all = []
-    my_queue = queue.Queue()
-
-    def storeInQueue(f):
-        def wrapper(*args):
-            my_queue.put(f(*args))
-        return wrapper
 
     def add_arguments(self, parser):
         parser.add_argument('-p', '--proc',
@@ -93,10 +72,11 @@ class Command(BaseBuild):
 
     def purge_bias_data(self):
         print("# Purging data")
-        delete_bias_experiment = Ligand.objects.all()
-        delete_bias_experiment.delete()
-        delete_ligand_props = LigandProperities.objects.all()
-        delete_ligand_props.delete()
+        pass
+        # delete_bias_experiment = Ligand.objects.all()
+        # delete_bias_experiment.delete()
+        # delete_ligand_props = LigandProperities.objects.all()
+        # delete_ligand_props.delete()
         print("# Data purged")
 
     def analyse_rows(self):
@@ -111,7 +91,7 @@ class Command(BaseBuild):
         self.get_ligands()
         print("\n#3 Get Ligand assays")
         assays = self.get_ligand_assays(target_list)
-        print("\n#4 Process Ligand assays")
+        print("\n#4 Process Ligand assays", len(assays), ' assays')
         self.process_ligand_assays(assays)
         print("\n#5 Get Endogeneous ligands")
         self.get_endogenous(target_list)
@@ -146,6 +126,7 @@ class Command(BaseBuild):
 
     def upload_to_db(self, i):
         # saves data
+        print('data saved')
         chembl_data = AssayExperiment(ligand=i["ligand"],
                                       publication=i["doi"],
                                       protein=i["protein"],
@@ -190,7 +171,7 @@ class Command(BaseBuild):
             else:
                 lig = Ligand()
                 l = lig.load_by_gtop_id(name, ligand_id, type)
-        except Exception as msg:
+        except Exception:
             l = None
             # print('ligand_id---',l,'\n end')
         return l
@@ -331,7 +312,7 @@ class Command(BaseBuild):
                 except:
                     temp_dict['doi'] = None
             else:
-                temp_dict['doi'] = None            
+                temp_dict['doi'] = None
             if temp_dict['protein'] == None:
                 continue
             if temp_dict['ligand'] == None:

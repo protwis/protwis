@@ -469,7 +469,7 @@
 				<td><input class="alt" type="checkbox"></td>
 				<td>{{p.protein__entry_name}}</td>
 				<td>{{p.protein__species__common_name}}</td>
-                <td><a href="/ligand/{{ligand__name}}">{{p.ligand__name}}</a></td>
+                <td><a href="/ligand/{{p.ligand__id}}/info">{{p.ligand__name}}</a></td>
 				<td>{{p.ligand__properities__vendors__vendor__name}}</td>
 				<td><a href="{{p.vendor_link}}">{{p.vendor_id}}</a></td>
 				<td>{{p.pchembl_value|floatformat:1}}</td>

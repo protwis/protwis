@@ -9,7 +9,7 @@ urlpatterns = [
     url(r'^target/(?P<pk>[-\w]+)$',TargetDetails, name='ligand_target_detail'),
     url(r'^target/purchasable/(?P<pk>[-\w]+)$',TargetPurchasabilityDetails, name='ligand_target_detail_purchasable'),
     url(r'^(?P<ligand_id>[-\w]+)/$',LigandDetails, name='ligand_detail'),
-    url(r'^statistics', cache_page(3600*24*7)(LigandStatistics.as_view()), name='ligand_statistics'),
+    url(r'^statistics', (LigandStatistics.as_view()), name='ligand_statistics'),
     url(r'^experiment/(?P<pk>[-\w]+)/detail$', ExperimentEntryView.as_view()),
     url(r'^vendors$', test_link, name='test'),
     # url(r'^biasedbrowser$', cache_page(3600*24*7)(BiasBrowser.as_view()), name='bias_browser'),

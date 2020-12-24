@@ -82,13 +82,14 @@ class Command(BaseBuild):
                 print(msg)
                 self.logger.error(msg)
         # import the structure data
-        # self.analyse_rows()
+
         try:
             print('Updatind ChEMBL data')
             self.analyse_rows()
             self.logger.info('COMPLETED updating ChEMBL Data')
         except Exception as msg:
             print('--error--', msg, '\n')
+            self.analyse_rows()
             self.logger.info("The error appeared in def handle")
 
     def purge_bias_data(self):
@@ -118,6 +119,16 @@ class Command(BaseBuild):
         print('GPCRS ready')
         return target_list
 
+
+    def check_target_in_db(self, target):
+        protein = self.fetch_protein(target)
+        experiment = AssayExperiment.objects.filter(protein=protein)
+        if experiment:
+            print('protein already processed', protein)
+            return True
+        else:
+            return False
+
     def analyse_rows(self):
         """
         Fetch data to models
@@ -130,15 +141,17 @@ class Command(BaseBuild):
         print("#2 Get assay data for every GPCR")
         chembl_assays = list()
         for target in target_list:
-            target_assays = self.get_chembl_assay(target)
-            chembl_assays.append(target_assays)
-        print("#3 Process assays:", len(chembl_assays))
+            if self.check_target_in_db(target) == False:
+                target_assays = self.get_chembl_assay(target)
+                chembl_assays.append(target_assays)
+        print("#3 Process protein assays:", len(chembl_assays))
         total_len = 0
         for i in chembl_assays:
+            print('assays for the protein',  len(i))
             self.process_chembl(i)
             total_len = total_len + 1
             end = time.time()
-            print('---temp status---', total_len, end - start)
+            print('---one more protein processed---', total_len, end - start)
 
     def process_chembl(self, chembl_assays):
         for i in chembl_assays:
@@ -154,23 +167,26 @@ class Command(BaseBuild):
                 i['molecule_chembl_id'], i['canonical_smiles'])
             if temp_dict['ligand'] == None:
                 continue
-
-            # if(self.check_dublicates(activity=i['activity_id'],
-            #                          ligand=temp_dict["ligand"],
-            #                          protein=temp_dict["protein"],
-            #                          assay_description=i["assay_description"],
-            #                          standard_value=i["standard_value"],
-            #                          document=i['document_chembl_id'],
-            #                          pchembl_value=i["pchembl_value"]) == True):
-            #     continue
-            # TODO: end of validation
+            web_resource = WebResource.objects.get(slug='chembl')
+            try:
+                wl, created = WebLink.objects.get_or_create(index=temp_dict['ligand'], web_resource=web_resource)
+            except IntegrityError:
+                wl = Weblink.objects.get(index=temp_dict['ligand'], web_resource=web_resource)
+            temp_dict['ligand'].properities.web_links.add(wl)
             cell_line = None
             pub = None
             # TODO: uncomment when gather data
-            # cell_line = self.get_cell_line(i['assay_chembl_id'])
-            # pub  = self.get_dois(i['document_chembl_id'])
-            # if pub is not None:
-            #     temp_dict['doi'] = self.fetch_publication(pub)
+
+            cell_line = self.get_cell_line(i['assay_chembl_id'])
+            if i['document_chembl_id'] in DOIS:
+                temp_dict['doi'] = DOIS[i['document_chembl_id']]
+            else:
+                pub  = self.get_dois(i['document_chembl_id'])
+                if pub is not None:
+                    temp_dict['doi'] = self.fetch_publication(pub)
+                    DOIS.append({i['document_chembl_id']:temp_dict['doi']})
+            ASSAYS.append(i['assay_chembl_id'])
+
             temp_dict['activity_id'] = i['activity_id']
             temp_dict['activity_id'] = i['activity_id']
             temp_dict['standard_type'] = i['standard_type']
@@ -183,18 +199,23 @@ class Command(BaseBuild):
             temp_dict['pchembl_value'] = i['pchembl_value']
             temp_dict['document_chembl_id'] = i['document_chembl_id']
             temp_dict['assay_id'] = i['assay_chembl_id']
-            # ASSAYS.append(i['assay_chembl_id'])
-            # DOIS.append(i['document_chembl_id'])
             self.upload_to_db(temp_dict)
 
     def get_chembl_assay(self, target):
         # gets assays from ChEMBL (by batch sie of 20). Filters using Tsonko rules, GPCRs.
         # as arguments takes GPCR ids(targets), batch start size (prev_id) and end size(current_id)
+        # target_assay = new_client.activity.filter(target_chembl_id=target).filter(pchembl_value__isnull=False
+        #                                                                           ).filter(data_validity_comment__isnull=True
+        #                                                                            ).filter(standard_value__isnull=False
+        #                                                                             ).filter(standard_units__isnull=False
+        #                                                                              ).only(['molecule_chembl_id', 'target_chembl_id', 'standard_type',
+        #                                                                                                              'standard_value', 'standard_units', 'standard_relation', 'activity_comment',
+        #                                                                                                              'assay_description', 'assay_type',
+        #                                                                                                              'document_chembl_id', 'pchembl_value',
+        #                                                                                                              'activity_id', 'canonical_smiles', 'assay_chembl_id'])
         target_assay = new_client.activity.filter(target_chembl_id=target).filter(pchembl_value__isnull=False
                                                                                   ).filter(data_validity_comment__isnull=True
-                                                                                           ).filter(standard_value__isnull=False
-                                                                                                    ).filter(standard_units__isnull=False
-                                                                                                             ).only(['molecule_chembl_id', 'target_chembl_id', 'standard_type',
+                                                                                ).only(['molecule_chembl_id', 'target_chembl_id', 'standard_type',
                                                                                                                      'standard_value', 'standard_units', 'standard_relation', 'activity_comment',
                                                                                                                      'assay_description', 'assay_type',
                                                                                                                      'document_chembl_id', 'pchembl_value',
@@ -209,24 +230,6 @@ class Command(BaseBuild):
             return doi
         else:
             return None
-
-    def check_dublicates(self, activity, ligand, protein, assay_description,  standard_value, document, pchembl_value):
-        # Checks if assay experiment is already saved
-        experiment = AssayExperiment.objects.filter(activity=activity,
-                                                    ligand=ligand, protein=protein, assay_description=assay_description,
-                                                    standard_value=standard_value, pchembl_value=pchembl_value, document_chembl_id=document)
-        experiment = experiment.get()
-        if experiment:
-            return True
-        else:
-            return False
-        # experiment = AssayExperiment.objects.filter(activity=activity
-        #                                             ).filter(ligand=ligand
-        #                                             ).filter(protein=protein
-        #                                             ).filter(assay_description=assay_description
-        #                                             ).filter(standard_value=standard_value
-        #                                             ).filter(pchembl_value=pchembl_value
-        #                                             ).filter(document_chembl_id=document)
 
     def get_cell_line(self, assay_id):
         # gets cell line info for assays from ChEMBL
@@ -251,22 +254,26 @@ class Command(BaseBuild):
 
     def upload_to_db(self, i):
         # saves data
-        
-        assay_data = AssayExperiment(ligand=i["ligand"],
-                                     publication=i["doi"],
-                                     protein=i["protein"],
-                                     cell_line=i['cell_line'],
-                                     activity=i["activity_id"],
-                                     standard_type=i["standard_type"],
-                                     standard_value=i["standard_value"],
-                                     standard_units=i["standard_units"],
-                                     standard_relation=i["standard_relation"],
-                                     assay_description=i["assay_description"],
-                                     assay_type=i["assay_type"],
-                                     pchembl_value=i["pchembl_value"],
-                                     document_chembl_id=i["document_chembl_id"],
-                                     )
-        assay_data.save()
+        print('saving')
+        try:
+            assay_data = AssayExperiment(ligand=i["ligand"],
+                                         publication=i["doi"],
+                                         protein=i["protein"],
+                                         cell_line=i['cell_line'],
+                                         activity=i["activity_id"],
+                                         standard_type=i["standard_type"],
+                                         standard_value=i["standard_value"],
+                                         standard_units=i["standard_units"],
+                                         standard_relation=i["standard_relation"],
+                                         assay_description=i["assay_description"],
+                                         assay_type=i["assay_type"],
+                                         pchembl_value=i["pchembl_value"],
+                                         document_chembl_id=i["document_chembl_id"],
+                                         )
+            assay_data.save()
+        except :
+            print(i)
+            pass
 
     def fetch_protein(self, target):
         """

@@ -405,6 +405,10 @@ class ChemblAssay(models.Model):
     class Meta():
         db_table = 'chembl_assays'
 
+class AssayExperimentSource(models.Model):
+    assay = models.ForeignKey('AssayExperiment', on_delete=models.CASCADE)
+    database = models.CharField(max_length=20, null=True)
+    database_id =models.CharField(max_length=30, null=True)
 
 class AssayExperiment(models.Model):
 

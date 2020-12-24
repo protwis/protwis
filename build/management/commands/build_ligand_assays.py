@@ -131,8 +131,8 @@ class Command(BaseBuild):
                   publication	= self.fetch_publication(i['publication'])
             except:
                 continue
-
             assay_experiment = AssayExperiment(
+
                 ligand	= ligand,
                 protein	= protein,
                 assay	= assay,
@@ -147,18 +147,16 @@ class Command(BaseBuild):
                 standard_value	= i['standard_value'],
                 standard_relation	= i['standard_relation'],
                 standard_type	= i['standard_type'],
-                standard_units	= i['standard_units'],               
+                standard_units	= i['standard_units'],
 
                 activity	= i['activity'],
                 document_chembl_id	= i['document_chembl_id'],
-                cell_line	= 'delete_me'
+                cell_line	= None
             )
             try:
                 assay_experiment.save()
             except:
-                print("Skipped")
-                continue
-            print('saved')
+                continue            
             count.value +=1
 
 

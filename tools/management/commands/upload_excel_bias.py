@@ -14,8 +14,6 @@ from mutation.models import Mutation
 from ligand.functions import get_or_make_ligand
 from common.models import WebLink, WebResource, Publication
 from django.db import connection
-import logging
-import os
 import queue
 import logging
 import os

@@ -473,7 +473,6 @@ class Command(BaseBuild):
             result_list.append(gq)
         if len(g12) > 0:
             result_list.append(g12)
-        print('\n---result_list---', result_list)
         return result_list
 
     def fetch_chembl(self,ligand):

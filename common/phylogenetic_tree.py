@@ -5,7 +5,7 @@ Annotates crystalized targets and number of ligands/target available in ChEMBL.
 from django.db.models import Count
 
 from interaction.models import ResidueFragmentInteraction, StructureLigandInteraction
-from ligand.models import AssayExperiment
+from ligand.models import AssayExperiment, LigandReceptorStatistics
 from protein.models import Protein, ProteinFamily
 from structure.models import Structure
 
@@ -16,9 +16,10 @@ from copy import deepcopy
 
 class PhylogeneticTreeNode(object):
 
-    def __init__(self, name='', color=''):
+    def __init__(self, name='', color='', iuphar =''):
 
         self.name = name
+        self.iuphar = iuphar
         self.color = color
         self.children = OrderedDict()
         self.exp_data = {
@@ -53,13 +54,14 @@ class PhylogeneticTreeNode(object):
         for key, value in data.items():
             if self.exp_data[key] > value: continue
             self.exp_data[key] = value
-            
+
 
     def get_nodes_dict(self, param):
         return OrderedDict([
             ('name', self.name),
             ('value', self.get_value(param)),
             ('color', self.color),
+            ('iuphar', self.iuphar),
             ('children', [
                 y.get_nodes_dict(param) for x,y in self.children.items() if self.children != OrderedDict()
                 ]),
@@ -91,7 +93,7 @@ class PhylogeneticTree(object):
 
 
     def get_data(self, path):
-        
+
         parent_path = path.split('_')[1:-1]
         tmp = self.tree.children
         tmp_path = [path.split('_')[0]]
@@ -170,7 +172,7 @@ class PhylogeneticTreeGenerator(object):
 #   o	Light blue: Peptide and whole of class B1 (it also has this ligand type)
 #   o	Green: Lipid receptors
 #   o	Orange: Orphan receptors
-#   o	Dark grey: Sensory (class A opsins, class C Taste1 and whole of class Taste2) 
+#   o	Dark grey: Sensory (class A opsins, class C Taste1 and whole of class Taste2)
 #   o	Purple: Nucleotide (class A P2Y and adenosine)
 #   o	Black: All other
 
@@ -186,7 +188,8 @@ class PhylogeneticTreeGenerator(object):
         self.aux_data = {
                         'crystals': [],
                         'mutations': [],
-                        'ligands': {}
+                        'ligands': {},
+                        'selective' : {}
                         }
         self.get_aux_data()
 
@@ -235,10 +238,11 @@ class PhylogeneticTreeGenerator(object):
                                                  .distinct
                                                  ('protein_conformation__protein__parent').prefetch_related('protein_conformation__protein__parent')
                                                  ]
-        
+
         ligand_data = AssayExperiment.objects.values(
             'protein',
-            'protein__entry_name'
+            'protein__entry_name',
+            'protein__name'
             ).annotate(num_ligands=Count('ligand', distinct=True))
 
         self.aux_data['ligands'] = {
@@ -247,6 +251,21 @@ class PhylogeneticTreeGenerator(object):
             1000 : [x['protein'] for x in ligand_data if 500 < x['num_ligands'] <= 1000],
             2000 : [x['protein'] for x in ligand_data if x['num_ligands'] > 1000] #more than 1000
             }
+
+        selectivity_data = LigandReceptorStatistics.objects.values(
+            'protein',
+            'protein__entry_name',
+            'protein__name'
+            ).annotate(num_ligands=Count('ligand', distinct=True))
+
+
+        self.aux_data['selective'] = {
+            100 : [x['protein'] for x in selectivity_data if x['num_ligands'] <= 2],
+            500 : [x['protein'] for x in selectivity_data if 100 < x['num_ligands'] <= 10],
+            1000 : [x['protein'] for x in selectivity_data if 500 < x['num_ligands'] <= 20],
+            2000 : [x['protein'] for x in selectivity_data if x['num_ligands'] > 20] #more than 1000
+            }
+        
 
     def map_family_colors(self):
 
@@ -270,7 +289,7 @@ class PhylogeneticTreeGenerator(object):
         """
         self.d3_options['branch_length'] = {}
         coverage = PhylogeneticTree(self.root_lvl, self.tree_depth, family)
-        
+
         for lvl in range(self.root_lvl, self.tree_depth+1):
             if lvl+1 not in self.d3_options['branch_length']:
                 self.d3_options['branch_length'][lvl] = ''
@@ -280,8 +299,11 @@ class PhylogeneticTreeGenerator(object):
                     tmp_prots = self.proteins_index[path]
                     for protein in tmp_prots:
                         tmp_node = PhylogeneticTreeNode(
-                            protein.entry_name.split("_")[0], 
-                            self.get_color(protein.family.slug)
+                            name= protein.entry_name.split("_")[0],
+                            iuphar = protein.name.split(
+                                ' ', 1)[0].split('-adrenoceptor', 1)[0].strip().replace('<sub>',
+                                '').replace('</sub>','').replace('<i>','').replace('</i>',''),
+                            color =self.get_color(protein.family.slug)
                             )
                         if protein.id in self.aux_data['crystals']:
                             tmp_node.increment_value('crystals')
@@ -293,10 +315,11 @@ class PhylogeneticTreeGenerator(object):
             children = OrderedDict()
             if lvl+1 in self.SORTED_BRANCHES:
                 for slug, node in sorted(self.lookup[lvl+1].items(), key=lambda y: y[1].name.lower()):
+
                     if node.parent.slug.startswith(family.slug):
                         name = node.name.replace('receptors','').replace('<sub>',' ').replace('</sub>','').strip()
                         children[slug] = PhylogeneticTreeNode(name, self.get_color(node.slug))
-                        
+
                         if len(name) > len(self.d3_options['branch_length'][lvl]):
                             self.d3_options['branch_length'][lvl] = name
             else:
@@ -327,26 +350,26 @@ class PhylogeneticTreeGenerator(object):
             tmp_crystals = self.crystal_proteins.filter(family__parent=family)
             for protein in tmp_prots:
                 if tmp_root - len(protein.family.slug.split('_')) == 1:
-                    tmp_node = PhylogeneticTreeNode(protein.entry_name.split("_")[0])
+                    tmp_node = PhylogeneticTreeNode( name= protein.entry_name.split("_")[0])
                     if self.crystal_proteins.filter(id=protein.id):
                         tmp_node.increment_value("crystalized")
-                    
+
                     coverage.children[protein.family.parent.slug].children[protein.family] = deepcopy(tmp_node)
             return coverage
 
         if tmp_root+1 in self.SORTED_BRANCHES:
-            coverage.children = OrderedDict((x[0], PhylogeneticTreeNode(x[1].name)) 
+            coverage.children = OrderedDict((x[0], PhylogeneticTreeNode(x[1].name))
                                     for x in sorted(
                                         self.lookup[tmp_root+1].items(),
-                                        key=lambda y: y[1].name.lower()) 
-                                    if x[1].parent == family 
+                                        key=lambda y: y[1].name.lower())
+                                    if x[1].parent == family
                                     )
         else:
-            coverage.children = OrderedDict({x: PhylogeneticTreeNode(self.lookup[tmp_root+1][x].name) 
+            coverage.children = OrderedDict({x: PhylogeneticTreeNode(self.lookup[tmp_root+1][x].name)
                                     for x in self.lookup[tmp_root+1]
-                                    if self.lookup[tmp_root+1][x].parent == family 
+                                    if self.lookup[tmp_root+1][x].parent == family
                                     })
-        
+
         for slug, branch in coverage.children.items():
             branch.children = self.get_coverage_tree(self.families.get(slug=slug), deepcopy(coverage)).children
 

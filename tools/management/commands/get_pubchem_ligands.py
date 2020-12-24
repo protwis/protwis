@@ -37,6 +37,7 @@ class Command(BaseBuild):
     publication_cache = {}
     ligand_cache = {}
     data_all = []
+    data_point = 0
 
     def add_arguments(self, parser):
         parser.add_argument('-p', '--proc',
@@ -92,103 +93,23 @@ class Command(BaseBuild):
 
         # TODO: test part - delete
         # self.prosess_assay('asd')
-        self.prosess_assay(259977)
+        # self.prosess_assay(259977,'H0XT53')
 
         # TODO: end of test_run
 
         print("\n#1 Get Proteins from GPCRDb")
         gpcrdb_prots = self.get_proteins_from_gpcrdb()
         print("\n#2 Get assays for gpcrs")
-        # test = gpcrdb_prots[:10]
-        # aids = self.process_accessions(test)
-        # self.process_aids(aids)
-        print("\n#3 Get assays")
-        # assays = self.get_ligand_assays(target_list)
-        # print("\n#4 Process Ligand assays", len(assays), ' assays')
-        # self.process_ligand_assays(assays)
-        print("\n#5 Get Endogeneous ligands")
+        test = gpcrdb_prots[:10]
+        aids = self.process_accessions(gpcrdb_prots)
+        print('*** len aids', len(aids))
+        print("\n#3 Process assays")
+        self.process_aids(aids)
         # self.get_endogenous(target_list)
         end = time.time()
 
         print('\n\n---Finished---',end - start)
-    #processing excel part
-    def read_csv_genes(self):
-        filenames = os.listdir(self.structure_data_dir)
-        print('***Working destination: ',filenames)
-        for source_file in filenames:
-            source_file_path = os.sep.join(
-                [self.structure_data_dir, source_file]).replace('//', '/')
-            if os.path.isfile(source_file_path) and source_file[0] != '.':
-                self.logger.info('Reading file {}'.format(source_file_path))
-                # read the yaml file
-                rows = []
-                if source_file[-4:] == 'xlsx' or source_file[-3:] == 'xls':
-                    if "~$" in source_file:
-                        # ignore open excel files
-                        continue
-                    rows = self.loaddatafromexcel(source_file_path)
-                    rows = self.analyse_excel_rows(rows, source_file)
-                else:
-                    self.mylog.debug('unknown format'.source_file)
-                    continue
 
-                self.data_all += rows
-        print("***Total data points", len(self.data_all))
-        print("***Finished reading excel")
-        return self.data_all
-
-    def loaddatafromexcel(self, excelpath):
-        """
-        Reads excel file (require specific excel sheet)
-        """
-        num_rows = 0
-        try:
-            workbook = xlrd.open_workbook(excelpath)
-            worksheets = workbook.sheet_names()
-            temp = []
-            for worksheet_name in worksheets:
-                worksheet = workbook.sheet_by_name(worksheet_name)
-                num_rows = worksheet.nrows - 1
-                num_cells = worksheet.ncols - 1
-                curr_row = 0  # skip first, otherwise -1
-                while curr_row < num_rows:
-                    curr_row += 1
-                    row = worksheet.row(curr_row)
-                    curr_cell = -1
-                    temprow = []
-                    while curr_cell < num_cells:
-                        curr_cell += 1
-                        cell_value = worksheet.cell_value(curr_row, curr_cell)
-                        cell_type = worksheet.cell_type(curr_row, curr_cell)
-                        # fix wrong spaced cells
-                        if cell_value == " ":
-                            cell_value = ""
-                        temprow.append(cell_value)
-                    temp.append(temprow)
-                    # if curr_row>10: break
-            return temp
-        except:
-            self.logger.info(
-                "The error appeared during reading the excel", num_rows)
-
-    def analyse_excel_rows(self, rows, source_file):
-        """
-        Reads excel rows one by one
-        Fetch data to models
-        Saves to DB
-        """
-        print('***Accessing gen_id for every accession code')
-        skipped = 0
-        # Analyse the rows from excel and assign the right headers
-        temp = list()
-        for i, r in enumerate(rows, 1):
-            if( isinstance(r[2], str) and len(r[2].split('|')) > 1):
-                for i in r[2].split('|'):
-                    temp.append({i:int(r[0])})
-            else:
-                temp.append({r[2]:int(r[0])})
-        return temp
-    #end of processing excel part
 
     #retrieve proteins from GPCRDb and assign genes by accession
     def get_proteins_from_gpcrdb(self):
@@ -221,73 +142,105 @@ class Command(BaseBuild):
     def process_accessions(self, gpcrdb_prots):
         aids = list()
         for gpcr in gpcrdb_prots:
-            try:
-                local_aid = self.get_aids_from_pubchem(gpcr)
-                aids.extend(local_aid)
-            except:
-                pass
+            # try:
+            if gpcr:
+                local_aid = self.get_aids_from_pubchem_orig(gpcr)
+                if local_aid and local_aid != None:
+                    self.process_aids(local_aid)
+                aids.append(local_aid)
+            # except:
+            #     pass
         return aids
 
     #get sid and assay data_all
     def process_aids(self, aids):
         assays = list()
-        for aid in aids:
-            try:
-                local_aid = self.prosess_assay(aid)
-                assays.extend(local_aid)
-            except:
-                pass
-        return assays
+        # for aid in aids:
+        # try:
+        print('\n***New accession', aids)
+        accession = list(aids.keys())[0]
+        localaid = aids[accession]
+        for t_aid in localaid:
+            self.prosess_assay(t_aid, accession)
+        # except:
+        #     pass
 
-    def prosess_assay(self,aid):
-        assay = dict()
+    def prosess_assay(self,aid, accession):
+        print("\n***Getting compound data for Pubchem assays:", aid )
         assay_response = requests.get("https://pubchem.ncbi.nlm.nih.gov/rest/pug/assay/aid/"+str(aid)+"/json")
         if assay_response.status_code == 200:
-            try:
-                assay_info = dict()
-                assay_subs = list()
-                assay_data = assay_response.json()
-                assay_info['assay_id'] = assay_data['PC_AssaySubmit']['assay']['descr']['aid']['id']
-                assay_info['aid_source_db'] = assay_data['PC_AssaySubmit']['assay']['descr']['aid_source']['db']['name']
-                assay_info['aid_source_db_id'] = assay_data['PC_AssaySubmit']['assay']['descr']['aid_source']['db']['source_id']['str']
-                assay_info['assay_description'] = assay_data['PC_AssaySubmit']['assay']['descr']['name']
-                temp_dois = assay_data['PC_AssaySubmit']['assay']['descr']['xref']
-                for i in temp_dois:
-                    if any('pmid' in d for d in i['xref']) == True:
-                        assay_info['DOI/pubmed']= i['xref']['pmid']
-                assay_quantitive = assay_data['PC_AssaySubmit']['data']
-                for substance in assay_quantitive:
-                    temp_assay= dict()
-                    temp_assay['sid'] = substance['sid']
-                    for i in substance['data']:
-                        if i['tid'] == 2:
-                            temp_assay['Standard_type'] = i['value']['sval']
-                        if i['tid'] == 3:
-                            temp_assay['Standard_relation'] = i['value']['sval']
-                        if i['tid'] == 4:
-                            temp_assay['Standard_value'] = i['value']['fval']
-                        if i['tid'] == 5:
-                            temp_assay['Standard-unit'] = i['value']['sval']
+            assay_data = assay_response.json()
+            assay_quantitive = assay_data['PC_AssaySubmit']['data']
+            for substance in assay_quantitive:
+                self.process_assay_and_save(substance, aid, accession)
 
-                    assay_subs.append(temp_assay)
-                assay_info['assays'] = assay_subs
-                cid= self.get_cid(substance['sid'])
-                assay_info['ligand'] = self.get_ligand_or_create(cid)
-                print(assay_info)
-                return assay_info
-            except:
-                return None
 
-        return assay
+            # assay_info['assay_id'] = assay_data['PC_AssaySubmit']['assay']['descr']['aid']['id']
+            # assay_info['aid_source_db'] = assay_data['PC_AssaySubmit']['assay']['descr']['aid_source']['db']['name']
+            # assay_info['aid_source_db_id'] = assay_data['PC_AssaySubmit']['assay']['descr']['aid_source']['db']['source_id']['str']
+            # assay_info['assay_name'] = assay_data['PC_AssaySubmit']['assay']['descr']['name']
+            # temp_dois = assay_data['PC_AssaySubmit']['assay']['descr']['xref']
+            # for i in temp_dois:
+            #     if any('pmid' in d for d in i['xref']) == True:
+            #         assay_info['DOI/pubmed']= i['xref']['pmid']
 
-    def get_cid(self,sid):
+            #     assay_subs.append(temp_assay)
+            # assay_info['assays'] = assay_subs
 
-        substance_response = requests.get("https://pubchem.ncbi.nlm.nih.gov/rest/pug/substance/sid/"+str(sid)+"/json")
+
+    def process_assay_and_save(self, substance,aid, accession):
+
+        temp_assay= dict()
+        temp_assay['sid'] = substance['sid']
+        for i in substance['data']:
+            if i['tid'] == 2:
+                try:
+                    temp_assay['Standard_type'] = i['value']['sval']
+                except:
+                    print('error apperead', i)
+                    temp_assay['Standard_type'] = None
+            if i['tid'] == 3:
+                try:
+                    temp_assay['Standard_relation'] = i['value']['sval']
+                except:
+                    temp_assay['Standard_relation'] = '='
+            if i['tid'] == 4:
+                try:
+                    temp_assay['Standard_value'] = i['value']['fval']
+                except:
+                    print('error apperead', i)
+                    temp_assay['Standard_value'] = None
+            if i['tid'] == 5:
+                try:
+                    temp_assay['Standard_unit'] = i['value']['sval']
+                except:
+                    temp_assay['Standard_unit'] = 'nM'
+
+        cid, temp_assay['assay_description'], temp_assay['reference'] = self.get_compound_data(substance['sid'],aid)
+        temp_assay['ligand'] = self.get_ligand_or_create(cid)
+        temp_assay['compound'] = cid
+        temp_assay['protein'] = self.fetch_protein(accession)
+        temp_assay['publication'] = self.fetch_publication(temp_assay['reference'])
+        self.upload_to_db(temp_assay)
+
+    def get_compound_data(self,sid,aid):
+        substance_response = requests.get("https://pubchem.ncbi.nlm.nih.gov/rest/pug/substance/sid/"+str(sid)+"/assaysummary/json")
+        assay_description = str()
+        pubmed = str()
+        compound_id = str()
         if substance_response.status_code == 200:
             # TODO: try except
             substance_data = substance_response.json()
-            cid = substance_data['PC_Substances'][0]['compound'][1]['id']['id']['cid']
-            return cid
+            cid = substance_data['Table']['Row']
+            for i in cid:
+                temp_aid = i['Cell'][0]
+                temp_sid = i['Cell'][2]
+                if str(aid) == str(temp_aid) and str(sid) ==str(temp_sid):
+                    assay_description = i['Cell'][9]
+                    pubmed = i['Cell'][11]
+                    compound_id = i['Cell'][3]
+                    return compound_id, assay_description, pubmed
+        return compound_id, assay_description, pubmed
 
     def get_ligand_or_create(self,cid):
         ligand_name = str()
@@ -352,14 +305,16 @@ class Command(BaseBuild):
         except :
             lt =  LigandType.objects.filter(name = 'small molecule')[0]
             lp.ligand_type = lt
-        lp.smiles = structure['smiles']
-        lp.inchikey = structure['inchikey']
-        # lp.sequence= structure['sequence']
-        lp.mw = structure['mw']
-        lp.rotatable_bonds = structure['rotatable_bonds']
-        lp.hacc = structure['hacc']
-        lp.hdon = structure['hdon']
-        lp.logp = structure['logp']
+        try:
+            lp.smiles = structure['smiles']
+            lp.inchikey = structure['inchikey']
+            lp.mw = structure['mw']
+            lp.rotatable_bonds = structure['rotatable_bonds']
+            lp.hacc = structure['hacc']
+            lp.hdon = structure['hdon']
+            lp.logp = structure['logp']
+        except:
+            lp.logp = 0.0
         try:
             lp.save()
             lp.web_links.add(wl)
@@ -368,53 +323,41 @@ class Command(BaseBuild):
         return lp
 
     def get_aids_from_pubchem(self, accession):
+        result = {accession:'259977'}
+        return result
+
+    def get_aids_from_pubchem_orig(self, accession):
         structure_response = requests.get("https://pubchem.ncbi.nlm.nih.gov/rest/pug/assay/target/accession/"+accession+"/aids/json")
         if structure_response.status_code == 200:
             try:
                 ligand_data = structure_response.json()
                 temp=ligand_data['IdentifierList']
-                return temp['AID']
+                result = {accession:temp['AID']}
+                return result
             except:
                 return None
 
-    def get_endogenous(self, targets):
-        for target in targets:
-            protein = self.fetch_protein(target)
-            response = requests.get(
-                "https://www.guidetopharmacology.org/services/targets/" + str(target) + "/naturalLigands")
-            if response.status_code == 200:
-                data = response.json()
-                for i in data:
-                    try:
-                        ligand_name = str()
-                        try:
-                            ligand_name = self.ligand_cache[i['targetId']]
-                        except:
-                            ligand_name = ""
-                        ligand = self.fetch_ligand(
-                            data[0]['ligandId'], data[0]['type'],ligand_name)
-                        if ligand and protein:
-                            protein.endogenous_ligands.add(ligand)
-                            lig, created = Ligand.objects.update_or_create(
-                                id=ligand.id,
-                                defaults={'endogenous': True},
-                            )
-                        else:
-                            pass
-                    except:
-                        continue
-
+    #end of ligand Part
     def upload_to_db(self, i):
         # saves data
-        print('data saved')
-        chembl_data = AssayExperiment(ligand=i["ligand"],
-                                      publication=i["doi"],
-                                      protein=i["protein"],
-                                      published_type=i["standard_type"],
-                                      published_value=i["standard_value"],
-                                      assay_description=i["assay_description"],
-                                      )
-        chembl_data.save()
+        try:
+            chembl_data = AssayExperiment(ligand=i["ligand"],
+                                          publication=i["publication"],
+                                          protein=i["protein"],
+                                          standard_value=i["Standard_value"],
+                                          standard_relation=i["Standard_relation"],
+                                          standard_type=i["Standard_type"],
+                                          standard_units=i["Standard_unit"],
+                                          assay_description=i["assay_description"],
+                                          document_chembl_id=i['compound'],
+                                          )
+            chembl_data.save()
+            self.data_point += 1
+            if self.data_point%10==0:
+                print('\n\ndata saved',self.data_point)
+        except:
+            print('data unsaved', i)
+
 
     def fetch_protein(self, target):
         """
@@ -423,8 +366,7 @@ class Command(BaseBuild):
         """
         try:
             test = None
-            test = Protein.objects.filter(
-                web_links__index=target, web_links__web_resource__slug='gtop').first()
+            test = Protein.objects.filter(accession=target).first()
             return test
         except:
             return None
@@ -535,71 +477,84 @@ class Command(BaseBuild):
         """
         self.ligand_cache.update({ligand['entry']:ligand['name'] })
 
-    def get_ligands(self):
-        ligands = list()
-        response = requests.get(
-            "https://www.guidetopharmacology.org/services/ligands")
-        print('total ligands:', len(response.json()))
-        for entry in response.json():
-            try:
-                temp = dict()
-                temp['entry'] = entry['ligandId']
-                temp['name'] = entry['name']
-                temp['type'] = entry['type']
-                self.save_ligand_copy(temp)
-            except:
-                pass
 
-    def get_gpcrs(self):
-        target_list = list()
-        response = requests.get(
-            "https://www.guidetopharmacology.org/services/targets/families")
-        for entry in response.json():
-            try:
-                if entry['parentFamilyIds'] != None:
-                    if entry['parentFamilyIds'][0] == 694 or entry['parentFamilyIds'][0] == 115:
-                        target_list.extend(entry['targetIds'])
-            except:
-                pass
-        return target_list
 
-    def get_ligand_assays(self, targets):
-        assay_list = list()
-        response = requests.get(
-            "https://www.guidetopharmacology.org/services/interactions")
-        for entry in response.json():
-            try:
-                if entry['targetId'] != None and entry['targetId'] in targets:
-                    assay_list.append(entry)
-            except:
-                pass
-        return assay_list
 
-    def process_ligand_assays(self, assays):
+    #processing excel part
+    def read_csv_genes(self):
+        filenames = os.listdir(self.structure_data_dir)
+        print('***Working destination: ',filenames)
+        for source_file in filenames:
+            source_file_path = os.sep.join(
+                [self.structure_data_dir, source_file]).replace('//', '/')
+            if os.path.isfile(source_file_path) and source_file[0] != '.':
+                self.logger.info('Reading file {}'.format(source_file_path))
+                # read the yaml file
+                rows = []
+                if source_file[-4:] == 'xlsx' or source_file[-3:] == 'xls':
+                    if "~$" in source_file:
+                        # ignore open excel files
+                        continue
+                    rows = self.loaddatafromexcel(source_file_path)
+                    rows = self.analyse_excel_rows(rows, source_file)
+                else:
+                    self.mylog.debug('unknown format'.source_file)
+                    continue
 
-        for i in assays:
-            temp_dict = dict()
-            temp_dict['protein'] = self.fetch_protein(i['targetId'])
-            ligand_name = str()
-            try:
-                ligand_name = self.ligand_cache[i['targetId']]
-            except:
-                ligand_name = ""
-            temp_dict['ligand'] = self.fetch_ligand(i['ligandId'], i['type'], ligand_name)
-            if i['refIds']:
-                try:
-                    temp_dict['doi'] = self.fetch_publication(i['refIds'])
-                except:
-                    temp_dict['doi'] = None
+                self.data_all += rows
+        print("***Total data points", len(self.data_all))
+        print("***Finished reading excel")
+        return self.data_all
+
+    def loaddatafromexcel(self, excelpath):
+        """
+        Reads excel file (require specific excel sheet)
+        """
+        num_rows = 0
+        try:
+            workbook = xlrd.open_workbook(excelpath)
+            worksheets = workbook.sheet_names()
+            temp = []
+            for worksheet_name in worksheets:
+                worksheet = workbook.sheet_by_name(worksheet_name)
+                num_rows = worksheet.nrows - 1
+                num_cells = worksheet.ncols - 1
+                curr_row = 0  # skip first, otherwise -1
+                while curr_row < num_rows:
+                    curr_row += 1
+                    row = worksheet.row(curr_row)
+                    curr_cell = -1
+                    temprow = []
+                    while curr_cell < num_cells:
+                        curr_cell += 1
+                        cell_value = worksheet.cell_value(curr_row, curr_cell)
+                        cell_type = worksheet.cell_type(curr_row, curr_cell)
+                        # fix wrong spaced cells
+                        if cell_value == " ":
+                            cell_value = ""
+                        temprow.append(cell_value)
+                    temp.append(temprow)
+                    # if curr_row>10: break
+            return temp
+        except:
+            self.logger.info(
+                "The error appeared during reading the excel", num_rows)
+
+    def analyse_excel_rows(self, rows, source_file):
+        """
+        Reads excel rows one by one
+        Fetch data to models
+        Saves to DB
+        """
+        print('***Accessing gen_id for every accession code')
+        skipped = 0
+        # Analyse the rows from excel and assign the right headers
+        temp = list()
+        for i, r in enumerate(rows, 1):
+            if( isinstance(r[2], str) and len(r[2].split('|')) > 1):
+                for i in r[2].split('|'):
+                    temp.append({i:int(r[0])})
             else:
-                temp_dict['doi'] = None
-            if temp_dict['protein'] == None:
-                continue
-            if temp_dict['ligand'] == None:
-                continue
-            temp_dict['standard_type'] = i['affinityParameter']
-            temp_dict['standard_value'] = i['affinity']
-            temp_dict['assay_description'] = i['ligandContext']
-            if temp_dict['assay_description'] == None:
-                temp_dict['assay_description'] = "No data available"
-            self.upload_to_db(temp_dict)
+                temp.append({r[2]:int(r[0])})
+        return temp
+    #end of processing excel part

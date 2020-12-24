@@ -359,27 +359,6 @@
 				},
 			],
 
-			// buttons: [{
-			// 		text: 'Reset All Filters',
-			// 		className: 'btn btn-primary',
-			// 		titleAttr: 'Reset All Filters',
-			// 		init: function(api, node, config) {
-			// 			$(node).removeClass('dt-button buttons-excel buttons-html5');
-			// 		},
-			// 		action: function(e, dt, node, config) {
-			// 			reset_filters()
-			// 		},
-			// 	},
-			// {extend: 'excel'}
-			// ],
-            //
-			// exportOptions: {
-			// 	modifer: {
-			// 		page: 'all',
-			// 		search: 'none'
-			// 	}
-			// },
-
 			"initComplete": function(settings, json) {
 				$('#loadingSpinner').show();
 				$('#structures_scrollable_body').hide();
@@ -411,7 +390,8 @@
 					table.columns.adjust();
 				}, 1000);
 			},
-			"fnDrawCallback": function() {
+
+            "fnDrawCallback": function() {
 				$('#loadingSpinner').show();
 				$('#structures_scrollable_body').hide();
 				setTimeout(function() {
@@ -895,7 +875,8 @@
 			location.reload()
 			//yadcf.exResetAllFilters(oTable);
 		}
-		table.columns.adjust();
+
+        table.columns.adjust();
 		$('.dataTables_scrollBody #structures_scrollable').addClass("pull-left");
 
 		$('.dataTables_scrollBody').append('<div id=overlay><table id="overlay_table" class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');

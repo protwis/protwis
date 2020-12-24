@@ -67,6 +67,7 @@
 		min-width: 10px;
 	}
 
+
 	table.dataTable.compact thead th.over_header {
 		border-right: 1px solid;
 		border-left: 0px solid;
@@ -253,78 +254,108 @@
 				},
 				{
 					column_number: 5,
-					filter_type: "range_number",
-					filter_default_label: ["From", "To"],
-					filter_reset_button_text: false,
-				},
-				{
-					column_number: 6,
-					filter_type: "range_number",
-					filter_default_label: ["From", "To"],
-					filter_reset_button_text: false,
-				},
-				{
-					column_number: 7,
-					filter_type: "range_number",
-					filter_default_label: ["From", "To"],
-					filter_reset_button_text: false,
-				},
-				{
-					column_number: 8,
-					filter_type: "range_number",
-					filter_default_label: ["From", "To"],
-					filter_reset_button_text: false,
-				},
-				{
-					column_number: 9,
-					filter_type: "range_number",
-					filter_default_label: ["From", "To"],
-					filter_reset_button_text: false,
-				},
-				{
-					column_number: 10,
-					filter_type: "range_number",
-					filter_default_label: ["From", "To"],
-					filter_reset_button_text: false,
-				},
-				{
-					column_number: 11,
-					filter_type: "range_number",
-					filter_default_label: ["From", "To"],
-					filter_reset_button_text: false,
-				},
-				{
-					column_number: 12,
-					filter_type: "range_number",
-					filter_default_label: ["From", "To"],
-					filter_reset_button_text: false,
-				},
-				{
-					column_number: 13,
-					filter_type: "range_number",
-					filter_default_label: ["From", "To"],
-					filter_reset_button_text: false,
-				},
-				{
-					column_number: 14,
-					filter_type: "range_number",
-					filter_default_label: ["From", "To"],
-					filter_reset_button_text: false,
-				},
-				{
-					column_number: 15,
-					filter_type: "range_number",
-					filter_default_label: ["From", "To"],
-					filter_reset_button_text: false,
-				},
-				{
-					column_number: 16,
 					filter_type: "multi_select",
 					select_type: 'select2',
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
 					select_type_options: {
-						width: '150px',
+						width: '75px',
+					}
+				},
+{
+    column_number: 6,
+    filter_type: "range_number",
+    filter_default_label: ["Min", "Max"],
+    filter_reset_button_text: false,
+},
+				{
+					column_number: 7,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 6,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+					select_type_options: {
+						width: '75px',
+					}
+				},
+				{
+					column_number: 8,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+					select_type_options: {
+						width: '75px',
+					}
+				},
+				{
+					column_number: 9,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 10,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 11,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 12,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 13,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 14,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 15,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 16,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 17,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 18,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+					select_type_options: {
+						width: '250px',
 					},
 
 				}
@@ -371,6 +402,8 @@
 				a.click();
 			}
 		});
+
+
 		$('#smi_btn').click(function() {
 			var checked_data = table.rows('.alt_selected').data();
 			var smi_data = [];
@@ -432,7 +465,7 @@
 	</ul>
 </div>
 <div class="btn-group">
-	<a class="btn btn-primary btn-mini " href="/ligand/target/purchasable/{{protein_id}}">>Purchasability</a>
+	<a class="btn btn-primary btn-mini " href="/ligand/target/purchasable/{{protein_id}}">Get vendors</a>
 </div>
 <!--<div class="btn-group">-->
 <!--    <a id="concise_funtional_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Show Concise Functional Assay Information</a>-->
@@ -450,24 +483,25 @@
 		<thead>
 			<tr rowspan="2">
 				<th><a href="#"></a></th>
-				<th style="border-left: 1px solid black; text-align:left" colspan="2">
+				<th style="border-left: 1px solid black; text-align:center" colspan="2">
 					Receptor</th>
-				<th style="border-left: 1px solid black; text-align:left" colspan="2">
+				<th style="border-left: 1px solid black; text-align:center" colspan="2">
+					Receptor Transducers</th>
+				<th style="border-left: 1px solid black; text-align:center" colspan="2">
 					Ligand</th>
-				<th style="border-left: 1px solid black; text-align:left" colspan="6">
+				<th style="border-left: 1px solid black; text-align:center" colspan="6">
 					Assay</th>
-				<th style="border-left: 1px solid black; text-align:left" colspan="6">
+				<th style="border-left: 1px solid black;border-right: 1px solid black; text-align:center" colspan="6">
 					Ligand Properties</th>
-
-
 			</tr>
 			<tr>
 				<th><input class="select-all" type="checkbox"> Select all</th>
-
 				<th style="border-left: 1px solid black;">Receptor</th>
 				<th>Species</th>
+				<th style="border-left: 1px solid black;">Primary</th>
+				<th>Secondary</th>
 				<th style="border-left: 1px solid black;">Ligand</th>
-				<th>Purchasable</th>
+				<th>Vendors</th>
 				<th style="border-left: 1px solid black;">No. records</th>
 				<th>Assay Type</th>
 				<th>Min.</th>
@@ -479,9 +513,8 @@
 				<th>H don</th>
 				<th>H acc</th>
 				<th>LogP</th>
-				<th>Smiles</th>
+				<th style="border-right: 1px solid black;">Smiles</th>
 			</tr>
-
 		</thead>
 		<tbody>
 			{% for record in ligand_data %}
@@ -489,7 +522,9 @@
 				<td><input class="alt" type="checkbox"></td>
 				<td>{{record.protein_name}}</td>
 				<td>{{record.species}}</td>
-				<td><a class="struct" rel="http://www.ebi.ac.uk/chembl/api/data/image/{{record.ligand_id}}" href="/ligand/{{record.ligand_id}}">{{record.ligand_id}}</a></td>
+				<td>{{record.primary}}</td>
+				<td>{{record.secondary}}</td>
+				<td><a class="struct" rel="http://www.ebi.ac.uk/chembl/api/data/image/{{record.ligand_id}}" href="/ligand/{{record.ligand__id}}/info">{{record.ligand__name}}</a></td>
 				<td>{{record.purchasability}}</td>
 				<td>{{record.record_count}}</td>
 				<td>{{record.assay_type}}</td>
@@ -503,7 +538,7 @@
 				<td>{{record.hdon}}</td>
 				<td>{{record.hacc}}</td>
 				<td>{{record.logp|floatformat:1}}</td>
-				<td class="dt-left">{{record.smiles}}</td>
+				<td style="width:250px">{{record.smiles}}</td>
 
 			</tr>
 			{% endfor %}
