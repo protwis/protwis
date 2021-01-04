@@ -2119,7 +2119,8 @@ def collectAndCacheClassData(target_class):
         class_aln = Alignment()
         human_gpcrs_class = Protein.objects.filter(species__common_name = 'Human', sequence_type__slug = 'wt', family__slug__startswith=target_class)
         class_aln.load_proteins(human_gpcrs_class)
-        class_aln.load_segments(ProteinSegment.objects.filter(slug__in=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7', 'H8']))
+        #class_aln.load_segments(ProteinSegment.objects.filter(slug__in=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7', 'H8']))
+        class_aln.load_segments(ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR'))
         class_aln.build_alignment()
         class_gn_cons = {}
         for segment in class_aln.consensus:
@@ -2381,7 +2382,7 @@ def contactMutationDesign(request, goal):
                         thermo_text[3] = "yes"
 
                 context['freq_results1'][gn] = ["<span class=\"text-danger\">{}</span>".format(target_resnum), "<span class=\"text-danger\">{}</span>".format(class_specific_gn), "<span class=\"text-danger\">{}</span>".format(target_aa),
-                        ala_mutant, freq_results[gn][2], int(round(freq_results[gn][2]/freq_results[gn][1]*100)), freq_results[gn][0], freq_results[gn][1], class_gn_cons[gn][0], class_gn_cons[gn][2],
+                        ala_mutant, freq_results[gn][2], freq_results[gn][0], freq_results[gn][1], class_gn_cons[gn][0], class_gn_cons[gn][2],
                         class_mutations[gn]["fold_mutations"] if gn in class_mutations else 0, class_mutations[gn]["fold_receptors"] if gn in class_mutations else 0,
                         class_mutations[gn]["unique_mutations"] if gn in class_mutations else 0, class_mutations[gn]["unique_receptors"] if gn in class_mutations else 0,
                         thermo_text[0], thermo_text[1], thermo_text[2], thermo_text[3]]
@@ -2440,7 +2441,7 @@ def contactMutationDesign(request, goal):
                         thermo_text[3] = "yes"
 
                 context['freq_results2'][gn] = ["<span class=\"text-danger\">{}</span>".format(target_resnum), "<span class=\"text-danger\">{}</span>".format(class_specific_gn), "<span class=\"text-danger\">{}</span>".format(target_aa), "<span class=\"text-red-highlight font-weight-bold\"><strong>{}</strong></span>".format(most_conserved_set1[gn][0]),
-                        most_conserved_set1[gn][1], freq_results[gn][2], int(round(freq_results[gn][2]/freq_results[gn][1]*100)), freq_results[gn][0], freq_results[gn][1], class_gn_cons[gn][0], class_gn_cons[gn][2],
+                        most_conserved_set1[gn][1], freq_results[gn][2], freq_results[gn][0], freq_results[gn][1], class_gn_cons[gn][0], class_gn_cons[gn][2],
                         class_mutations[gn]["fold_mutations"] if gn in class_mutations else 0, class_mutations[gn]["fold_receptors"] if gn in class_mutations else 0,
                         class_mutations[gn]["unique_mutations"] if gn in class_mutations else 0, class_mutations[gn]["unique_receptors"] if gn in class_mutations else 0,
                         thermo_text[0], thermo_text[1], thermo_text[2], thermo_text[3]]
@@ -2458,8 +2459,10 @@ def contactMutationDesign(request, goal):
 # TODO consider matching at least X% of receptors instead of structures
 def collectGNsMatchingOccupancy(structures, occupancy):
     lowercase = [pdb.lower() for pdb in structures]
+    segment_slugs = list(ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').values_list("slug", flat = True))
     gn_occurrences = Residue.objects.filter(protein_conformation__protein__entry_name__in=lowercase,
-                            protein_segment__slug__in=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7', 'H8'])\
+                            #protein_segment__slug__in=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7', 'H8'])\
+                            protein_segment__slug__in=segment_slugs)\
                             .exclude(generic_number_id=None).\
                             order_by('generic_number__label').values("generic_number__label").distinct().\
                             annotate(count_structures=Count("protein_conformation__protein__entry_name", distinct=True))
@@ -2885,7 +2888,8 @@ def gprotMutationDesign(request, goal):
 
             # create signature
             signature = SequenceSignature()
-            segments = list(ProteinSegment.objects.filter(proteinfamily="GPCR", category="helix").order_by("slug"))
+            #segments = list(ProteinSegment.objects.filter(proteinfamily="GPCR", category="helix").order_by("slug"))
+            segments = list(ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').order_by("slug"))
             signature.setup_alignments(segments, binder_gpcrs, nonbinder_gpcrs)
             signature.calculate_signature()
 

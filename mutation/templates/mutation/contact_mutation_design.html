@@ -83,14 +83,13 @@
                       <th rowspan=3 colspan=1 class="text-center">Generic<br>residue<br>number</th>
                       <th rowspan=3 colspan=1 class="text-center">Target<br>WT AA</th>
                       <th rowspan=3 colspan=1 class="text-center"><span class="text-red-highlight">Ala Mutant</span><br>(removes<br>sidechain)</th>
-                      <th rowspan=1 colspan=4 class="text-center">Sum of residue contact frequencies</th>
+                      <th rowspan=1 colspan=3 class="text-center">Sum of residue contact frequencies</th>
                       <th rowspan=1 colspan=2 class="text-center">Class conservation</th>
                       <th rowspan=1 colspan=4 class="text-center">Mutation data</th>
                       <th rowspan=1 colspan=4 class="text-center">Thermostabilizing mutations</th>
                     </tr>
                     <tr>
                       <th rowspan=2 colspan=1>Diff</th>
-                      <th rowspan=2 colspan=1>Diff<br>ratio</th>
                       <th rowspan=2 colspan=1>{{ desired }}</th>
                       <th rowspan=2 colspan=1>{{ undesired }}</th>
                       <th rowspan=2 colspan=1>AA</th>
@@ -110,7 +109,6 @@
                       <th>#Rec.</th>
                     </tr>
                     <tr>
-                      <th></th>
                       <th></th>
                       <th></th>
                       <th></th>
@@ -166,7 +164,7 @@
                       <th rowspan=3 colspan=1 class="text-center">Generic<br>residue<br>number</th>
                       <th rowspan=3 colspan=1 class="text-center">Target<br>WT AA</th>
                       <th rowspan=1 colspan=2 class="text-center"><span class="text-red-highlight">Mutant AA</span><br>({{ desired }} conservation)</th>
-                      <th rowspan=1 colspan=4 class="text-center">Sum of residue contact frequencies</th>
+                      <th rowspan=1 colspan=3 class="text-center">Sum of residue contact frequencies</th>
                       <th rowspan=1 colspan=2 class="text-center">Class conservation</th>
                       <th rowspan=1 colspan=4 class="text-center">Mutation data</th>
                       <th rowspan=1 colspan=3 class="text-center">Thermostabilizing mutations</th>
@@ -175,7 +173,6 @@
                       <th rowspan=2>AA</th>
                       <th rowspan=2>%</th>
                       <th rowspan=2>Diff</th>
-                      <th rowspan=2>Diff<br>ratio</th>
                       <th rowspan=2>{{ desired }}</th>
                       <th rowspan=2>{{ undesired }}</th>
                       <th rowspan=2>AA</th>
@@ -195,7 +192,6 @@
                       <th>#Rec.</th>
                     </tr>
                     <tr>
-                      <th></th>
                       <th></th>
                       <th></th>
                       <th></th>
@@ -261,7 +257,7 @@
 
 
 <script type="text/javascript" charset="utf-8">
-  var table_options = {"paging":        true,
+  var table_options = {"paging":        false,
                         "pageLength":   20,
                         "lengthChange": false,
                         "buttons":      ["csv", "excel"],
@@ -275,7 +271,7 @@
     if ($("#suglist1").length > 0 && table1 == null){
       // Assign coloring class to each cell in freq. diff table
       // NOTE: Adjust color index when changing table - currently 8
-      $("#suglist1 tbody tr td").filter(":nth-child(5), :nth-child(6)").each( function() {
+      $("#suglist1 tbody tr td").filter(":nth-child(5)").each( function() {
           $(this).addClass("color-column");
           $(this).addClass("color-reverse");
       });
@@ -296,14 +292,14 @@
       var table_options1 = Object.assign({}, table_options);
       table_options1["order"] = [4, "asc"];
       table_options1["columnDefs"] = [
-          { className: "text-center", "targets": [...Array(18).keys()] }
+          { className: "text-center", "targets": [...Array(17).keys()] }
         ]
 
       table1 = $("#suglist1").DataTable(table_options1);
 
       // Multi select
       var yadcf_options = [];
-      var list = [2,8,12,14,16,17];
+      var list = [2,7,11,13,15,16];
       for (i in list){
         yadcf_options.push({
               column_number : list[i],
@@ -327,7 +323,7 @@
                  });
 
       // Range filters
-      list = [0,4,5,6,7,9,10,11,12,13,15];
+      list = [0,4,5,6,8,9,10,11,12,14];
       for (i in list){
         yadcf_options.push({
             column_number : list[i],
@@ -359,7 +355,7 @@
     if ($("#suglist2").length > 0 && table2 == null){
       // Assign coloring class to each cell in freq. diff table
       // NOTE: Adjust color index when changing table - currently 8
-      $("#suglist2 tbody tr td").filter(":nth-child(6), :nth-child(7)").each( function() {
+      $("#suglist2 tbody tr td").filter(":nth-child(6)").each( function() {
           $(this).addClass("color-column");
       });
 
@@ -379,13 +375,13 @@
       var table_options2 = Object.assign({}, table_options);
       table_options2["order"] = [5, "desc"];
       table_options2["columnDefs"] = [
-          { className: "text-center", "targets": [...Array(19).keys()] }
+          { className: "text-center", "targets": [...Array(18).keys()] }
         ]
       table2 = $("#suglist2").DataTable(table_options2);
 
       // Multi select
       var yadcf_options = [];
-      var list = [2,3,9,15,17,18];
+      var list = [2,3,8,14,16,17];
       for (i in list){
         yadcf_options.push({
               column_number : list[i],
@@ -409,7 +405,7 @@
                  });
 
       // Range filters
-      list = [0,4,5,6,7,8,10,11,12,13,14,16];
+      list = [0,4,5,6,7,9,10,11,12,13,15];
       for (i in list){
         yadcf_options.push({
             column_number : list[i],
