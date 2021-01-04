@@ -2,7 +2,7 @@ function citation_tool(url) {
 	// Modal part
 	$('#modal_table tbody').empty();
     var modal = document.getElementById('citation-tool');
-    var span = document.getElementsByClassName("close-citation")[0];
+    var span = document.getElementById("close-citation");
     modal.classList.add("modal");
     setTimeout(function(){
     	modal.style.display = "block";
@@ -52,7 +52,12 @@ function citation_tool(url) {
 				data[i].push($('a[href="'+link+'"]').first().parent().parent().parent().parent().parent().first().find(">:first-child").text().trim());
 			}
 			else {
-				data[i].push($('a[href="'+link+'"]').first().parent().parent().parent().first().find(">:first-child").text().trim());
+				if (link==="/protein/ste2_yeast") {
+					data[i].push("Receptors");
+				}
+				else {
+					data[i].push($('a[href="'+link+'"]').first().parent().parent().parent().first().find(">:first-child").text().trim());
+				}
 			}
 		}
 
@@ -222,27 +227,38 @@ function parse_url(url) {
 
 function parse_url_long(url) {
 	var url_split = url.split('/');
-	if (url_split[url_split.length-1]==="" || url_split.length===4) {
-		return url_split[3];
+	if (url_split[url_split.length-1]==="") {
+		if (url_split.length>5) {
+			return url_split[3]+"-"+url_split[4];
+		}
+		else {
+			return url_split[3];	
+		}
 	}
+	else if (url_split.length===4) {
+		return url_split[3];
+	} 
 	else {
 		return url_split[3]+"-"+url_split[4];
 	}
 }
 
 function toggle_widget() {
-	$('#ref_widget').animate({width: 'toggle'});
-    if ($('#ref_widget_openclose').hasClass('glyphicon glyphicon-chevron-left')) {
-        $('#ref_widget_openclose').removeClass('glyphicon glyphicon-chevron-left')
-        $('#ref_widget_openclose').addClass('glyphicon glyphicon-chevron-right')
+	$("#ref_widget").animate({width: "toggle"});
+    if ($("#widget_chevron").hasClass("glyphicon glyphicon-chevron-left")) {
+        $("#widget_chevron").removeClass("glyphicon glyphicon-chevron-left");
+        $("#widget_chevron").addClass("glyphicon glyphicon-chevron-right");
+        $("#widget_infosign").show();
     }
     else {
-        $('#ref_widget_openclose').removeClass('glyphicon glyphicon-chevron-right')
-        $('#ref_widget_openclose').addClass('glyphicon glyphicon-chevron-left')
+        $("#widget_chevron").removeClass("glyphicon glyphicon-chevron-right");
+        $("#widget_chevron").addClass("glyphicon glyphicon-chevron-left");
+        $("#widget_infosign").hide();
         setTimeout(function() {
-        	$('#ref_widget').animate({width: 'toggle'});
-        	$('#ref_widget_openclose').removeClass('glyphicon glyphicon-chevron-left')
-        	$('#ref_widget_openclose').addClass('glyphicon glyphicon-chevron-right')
+        	$("#ref_widget").animate({width: "toggle"});
+        	$("#widget_chevron").removeClass("glyphicon glyphicon-chevron-left");
+        	$("#widget_chevron").addClass("glyphicon glyphicon-chevron-right");
+        	$("#widget_infosign").show();
         }, 8000)
     }
 }

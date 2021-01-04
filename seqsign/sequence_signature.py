@@ -142,6 +142,7 @@ class SequenceSignature:
         self.common_segments = OrderedDict([
             (x, sorted(list(set(self.aln_pos.segments[x]) | set(self.aln_neg.segments[x])), key=lambda x: x.split('x'))) for x in self.aln_neg.segments
         ])
+
         # tweaking alignment
         self.aln_pos.calculate_statistics()
         self._update_alignment(self.aln_pos)
@@ -609,6 +610,39 @@ class SequenceSignature:
                             tooltip += "Set 2: GAP<br/>"
 
                         self.zscales_signature[zscale][segment][entry] = ["-", -1, tooltip] # diff, P-value, tooltip
+
+    def suggest_mutations(self, ref_prot):
+        """
+        A function that returns a list of suggestions for point mutations based on sequence signature.No cut-off on signature strength is applied here, the function iterates over all residues in the signature.
+
+        Args:
+            ref_prot ([Protein]): A protein to suggest the mutations for.
+        """
+        residues =  { x.generic_number.label: x for x in Residue.objects.filter(protein_conformation=ref_prot) if x.generic_number is not None }
+        output = OrderedDict() # A list of lists in the values
+        for s, gns in self.common_segments.items():
+            for pos, resi in enumerate(gns):
+                if resi not in residues:
+                    continue
+                segment = residues[resi].protein_segment.slug
+                signature_prop_group = self.signature[s][pos][5]
+                if residues[resi].amino_acid in AMINO_ACID_GROUPS[signature_prop_group]:
+                    continue
+                signature_strength = self.signature[s][pos][2]
+                mutation = ", ".join(AMINO_ACID_GROUPS[signature_prop_group])
+                #Adds a list with mutation suggestion. Fields:
+                # GN, WT aa, Suggested aa, Signature strnength, Set 1/2
+                try:
+                    output[segment].append(
+                        [resi,
+                        residues[resi].amino_acid,
+                        mutation,
+                        abs(signature_strength), "Set 1 " if signature_strength >= 0 else "Set 2"
+                        ])
+                except KeyError:
+                    output[segment] = [ [resi, residues[resi].amino_acid, mutation, abs(signature_strength), "Set 1 " if signature_strength >= 0 else "Set 2"] ]
+
+        return output
 
     def prepare_display_data_onesided(self):
 
