@@ -2288,7 +2288,7 @@ def collectAndCacheClassData(target_class):
 
 
 def contactMutationDesign(request, goal):
-    cutoff = 32 # Only select GNs with a minimum % difference of 32%
+    cutoff = -100000 # Only select GNs with a minimum % difference of 32%
     context = {}
     simple_selection = request.session.get('selection', False)
     if simple_selection.reference[0].type == 'protein':
@@ -2303,7 +2303,7 @@ def contactMutationDesign(request, goal):
 
         # 05-01-21 - new "quality" filters for the structure selection
         # 1. Resolution <=  3.7
-        # 2. Degree active >= 90 (active) or <= 20 (inactive)
+        # 2. Degree active <= 20 (inactive) or >= 90 (active)
         # 3. Modality agreement - ACTIVE with apo/agonist/PAM
         #                       - INACTIVE with apo/anta/inverse/NAM
         # 4. Sequence identify with human protein > 90
@@ -2320,10 +2320,8 @@ def contactMutationDesign(request, goal):
                     .prefetch_related(
                                 "pdb_code",
                                 "state",
-                                "stabilizing_agents",
                                 "structureligandinteraction_set__ligand__properities__ligand_type",
                                 "structureligandinteraction_set__ligand_role",
-                                "structure_type",
                                 "protein_conformation__protein__parent__parent__parent",
                                 "protein_conformation__protein__parent__family__parent",
                                 "protein_conformation__protein__parent__family__parent__parent__parent",
