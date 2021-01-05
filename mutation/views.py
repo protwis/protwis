@@ -2381,7 +2381,9 @@ def contactMutationDesign(request, goal):
                             continue
                     except:
                         # Has no G-protein subunit - skip
-                        continue
+                        # NOTE: hardcoded exception for class C 7C7Q
+                        if s.pdb_code.index!="7C7Q":
+                            continue
 
                     # Verify ligand modality agreement
                     good_roles =["Agonist", "Apo (no ligand)", "PAM" ]
@@ -2689,7 +2691,7 @@ def contactMutationDesign(request, goal):
 
             return render(request, 'mutation/contact_mutation_design.html', context)
         else:
-            return HttpResponse("No valid protein target selected, please try again.")
+            return HttpResponse("There is unfortunately not enough structural data available for the GPCR class of this target.")
     else:
         return HttpResponse("No valid mutation goal selected, please try again.")
 
