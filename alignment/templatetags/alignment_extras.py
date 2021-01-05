@@ -5,10 +5,6 @@ import re
 register = template.Library()
 
 @register.filter
-def gap_correction(value):
-    return value.replace("_", "-")
-
-@register.filter
 def zscales_color_scale ( objs ):
     if objs[2] <= 1:
         return '0'
