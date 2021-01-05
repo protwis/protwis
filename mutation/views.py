@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.template import loader, Context
 from django.contrib.postgres.aggregates import ArrayAgg
-from django.db.models import Count, Min, Sum, Avg, Q, F
+from django.db.models import Count, Min, Sum, Avg, Q, F, Case, When, IntegerField, Prefetch
 from django.http import HttpResponse
 from django.conf import settings
 from django.core.cache import cache
@@ -2300,27 +2300,172 @@ def contactMutationDesign(request, goal):
         # Gather structure sets for comparison
         set1 = []
         set2 = []
-        if goal == "active":
-            set1 = list(Structure.objects.filter(refined=False, \
-                protein_conformation__protein__family__slug__startswith=target_class, \
-                state__name='Active').values_list("pdb_code__index", flat=True))
-            set2 = list(Structure.objects.filter(refined=False, \
-                protein_conformation__protein__family__slug__startswith=target_class, \
-                state__name='Inactive').values_list("pdb_code__index", flat=True))
-            context["desired"] = "active-state"
-            context["undesired"] = "inactive-state"
-        elif goal == "inactive":
-            set1 = list(Structure.objects.filter(refined=False, \
-                protein_conformation__protein__family__slug__startswith=target_class, \
-                state__name='Inactive').values_list("pdb_code__index", flat=True))
-            set2 = list(Structure.objects.filter(refined=False, \
-                protein_conformation__protein__family__slug__startswith=target_class, \
-                state__name='Active').values_list("pdb_code__index", flat=True))
-            context["desired"] = "inactive-state"
-            context["undesired"] = "active-state"
-        elif goal == "xxxx": # Extend the options here
-            skip = True
 
+        # 05-01-21 - new "quality" filters for the structure selection
+        # 1. Resolution <=  3.7
+        # 2. Degree active >= 90 (active) or <= 20 (inactive)
+        # 3. Modality agreement - ACTIVE with apo/agonist/PAM
+        #                       - INACTIVE with apo/anta/inverse/NAM
+        # 4. Sequence identify with human protein > 90
+        # 5. % of full sequence >= 86
+        # 6. ACTIVE - Ga-subunit % sequence >= 43
+        if goal == "active" or goal == "inactive":
+            cache_name = "state_mutation_actives_"+target_class
+            actives = cache.get(cache_name)
+            if actives == None:
+                actives = []
+                active_structs = Structure.objects.filter(refined=False, \
+                    protein_conformation__protein__family__slug__startswith=target_class, \
+                    state__name='Active', resolution__lte=3.7, gprot_bound_likeness__gte=90)\
+                    .prefetch_related(
+                                "pdb_code",
+                                "state",
+                                "stabilizing_agents",
+                                "structureligandinteraction_set__ligand__properities__ligand_type",
+                                "structureligandinteraction_set__ligand_role",
+                                "structure_type",
+                                "protein_conformation__protein__parent__parent__parent",
+                                "protein_conformation__protein__parent__family__parent",
+                                "protein_conformation__protein__parent__family__parent__parent__parent",
+                                "protein_conformation__protein__species", Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
+                                annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role')))\
+                    .annotate(res_count = Sum(Case(When(protein_conformation__residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
+
+                for s in active_structs:
+                    # Verify if species identity to human > 90
+                    if s.protein_conformation.protein.species.common_name != "Human":
+                        # Use same cache as contact network => should be separate function to ensure consistency
+                        key = 'identity_to_human_{}_{}'.format(s.protein_conformation.protein.parent.family.slug,s.protein_conformation.protein.species.pk)
+                        identity = cache.get(key)
+                        if identity == None:
+                            try:
+                                a = Alignment()
+                                ref_p = Protein.objects.get(family = s.protein_conformation.protein.parent.family, species__common_name = 'Human', sequence_type__slug = 'wt')
+                                a.load_reference_protein(ref_p)
+                                a.load_proteins([s.protein_conformation.protein.parent])
+                                a.load_segments(ProteinSegment.objects.filter(slug__in=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7']))
+                                a.build_alignment()
+                                a.calculate_similarity()
+                                a.calculate_statistics()
+                                identity = int(a.proteins[1].identity)
+                            except:
+                                identity = 0
+                            cache.set(key, identity, 24*7*60*60)
+                        if identity <= 90:
+                            continue
+                    else:
+                        identity = 100
+
+
+                    # NOTE This comparison differs from the structure browser
+                    # Verify coverage WT receptor (>= 86)
+                    wt_count = list(ProteinConformation.objects.filter(protein__pk=s.protein_conformation.protein.parent.pk).values('protein__pk').annotate(res_count = Sum(Case(When(residue__generic_number=None, then=0), default=1, output_field=IntegerField()))))
+                    coverage = round((s.res_count / wt_count[0]["res_count"])*100)
+                    if coverage < 86:
+                        continue
+
+                    # Verify coverage Ga subunit (>= 43)
+                    try:
+                        gprot_pconf = ProteinConformation.objects.get(protein__entry_name=s.pdb_code.index.lower()+"_a")
+                        structure_residues = Residue.objects.filter(protein_conformation=gprot_pconf, protein_segment__isnull=False)
+                        subcoverage = round((len(structure_residues) / len(gprot_pconf.protein.parent.sequence))*100)
+                        if subcoverage < 43:
+                            continue
+                    except:
+                        # Has no G-protein subunit - skip
+                        continue
+
+                    # Verify ligand modality agreement
+                    good_roles =["Agonist", "Apo (no ligand)", "PAM" ]
+                    for l in s.ligands.all():
+                        if l.ligand_role.name not in good_roles:
+                            continue
+
+                    # MAKE A LIST AND MATCH
+                    #print("ACTIVE", s.pdb_code.index, "receptor", coverage, "subunit", subcoverage, "identity", identity)
+                    actives.append(s.pdb_code.index)
+                cache.set(cache_name, actives, 24*7*60*60)
+
+            cache_name = "state_mutation_inactives_"+target_class
+            inactives = cache.get(cache_name)
+            if inactives == None:
+                inactives = []
+                inactive_structs = Structure.objects.filter(refined=False, \
+                    protein_conformation__protein__family__slug__startswith=target_class, \
+                    state__name='Inactive', resolution__lte=3.7, gprot_bound_likeness__lte=20)\
+                    .prefetch_related(
+                                "pdb_code",
+                                "state",
+                                "stabilizing_agents",
+                                "structureligandinteraction_set__ligand__properities__ligand_type",
+                                "structureligandinteraction_set__ligand_role",
+                                "structure_type",
+                                "protein_conformation__protein__parent__parent__parent",
+                                "protein_conformation__protein__parent__family__parent",
+                                "protein_conformation__protein__parent__family__parent__parent__parent",
+                                "protein_conformation__protein__species", Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
+                                annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role')))\
+                    .annotate(res_count = Sum(Case(When(protein_conformation__residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
+
+                for s in inactive_structs:
+                    # Verify if species identity to human > 90
+                    if s.protein_conformation.protein.species.common_name != "Human":
+                        # Use same cache as contact network => should be separate function to ensure consistency
+                        key = 'identity_to_human_{}_{}'.format(s.protein_conformation.protein.parent.family.slug,s.protein_conformation.protein.species.pk)
+                        identity = cache.get(key)
+                        if identity == None:
+                            try:
+                                a = Alignment()
+                                ref_p = Protein.objects.get(family = s.protein_conformation.protein.parent.family, species__common_name = 'Human', sequence_type__slug = 'wt')
+                                a.load_reference_protein(ref_p)
+                                a.load_proteins([s.protein_conformation.protein.parent])
+                                a.load_segments(ProteinSegment.objects.filter(slug__in=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7']))
+                                a.build_alignment()
+                                a.calculate_similarity()
+                                a.calculate_statistics()
+                                identity = int(a.proteins[1].identity)
+                            except:
+                                identity = 0
+                            cache.set(key, identity, 24*7*60*60)
+                        if identity <= 90:
+                            continue
+                    else:
+                        identity = 100
+
+
+                    # NOTE This comparison differs from the structure browser
+                    # Verify coverage WT receptor (>= 86)
+                    wt_count = list(ProteinConformation.objects.filter(protein__pk=s.protein_conformation.protein.parent.pk).values('protein__pk').annotate(res_count = Sum(Case(When(residue__generic_number=None, then=0), default=1, output_field=IntegerField()))))
+                    coverage = round((s.res_count / wt_count[0]["res_count"])*100)
+                    if coverage < 86:
+                        continue
+
+                    # Verify ligand modality agreement
+                    good_roles =["Antagonist", "Inverse agonist", "Apo (no ligand)", "NAM" ]
+                    for l in s.ligands.all():
+                        if l.ligand_role.name not in good_roles:
+                            continue
+
+                    # MAKE A LIST AND MATCH
+                    #print("INACTIVE", s.pdb_code.index, "receptor", coverage, "subunit", subcoverage, "identity", identity)
+                    inactives.append(s.pdb_code.index)
+                cache.set(cache_name, inactives, 24*7*60*60)
+
+            # Set context variables
+            if goal == "active":
+                set1 = actives
+                set2 = inactives
+
+                context["desired"] = "active-state"
+                context["undesired"] = "inactive-state"
+            elif goal == "inactive":
+                set1 = inactives
+                set2 = actives
+
+                context["desired"] = "inactive-state"
+                context["undesired"] = "active-state"
+        elif goal == "xxxx": # FUTURE extend with other options here
+            skip = True
 
         if len(set1) > 0 and len(set2) > 0:
             # Collect data about this GPCR class
