@@ -2288,7 +2288,7 @@ def collectAndCacheClassData(target_class):
 
 
 def contactMutationDesign(request, goal):
-    cutoff = 999999 # Only select top X suggestions
+    cutoff = 32 # Only select GNs with a minimum % difference of 32%
     context = {}
     simple_selection = request.session.get('selection', False)
     if simple_selection.reference[0].type == 'protein':
@@ -2541,7 +2541,7 @@ def contactMutationDesign(request, goal):
             top_diff_order = np.argsort([freq_results[gn][2] for gn in freq_keys])
 
             # Also make sure at least a frequency different < 0 is observed (higher occurrence in set 2)
-            top_gns = [ freq_keys[i] for i in list(top_diff_order) if freq_results[freq_keys[i]][2] < 0]
+            top_gns = [ freq_keys[i] for i in list(top_diff_order) if freq_results[freq_keys[i]][2] < -1*cutoff]
 
             context['freq_results1'] = {}
             for gn in top_gns:
@@ -2600,7 +2600,7 @@ def contactMutationDesign(request, goal):
             # TABLE 2 - introducing desired AAs
 
             # All GNs with a higher freq. in set 1
-            top_set1_gns = [ freq_keys[i] for i in list(top_diff_order[::-1]) if freq_results[freq_keys[i]][2] > 0]
+            top_set1_gns = [ freq_keys[i] for i in list(top_diff_order[::-1]) if freq_results[freq_keys[i]][2] > cutoff]
             conservation_set1 = collectAAConservation(set1, top_set1_gns)
 
             receptor_slugs = list(Structure.objects.filter(pdb_code__index__in=set1).values_list("protein_conformation__protein__family__slug", flat=True).distinct())
@@ -2633,7 +2633,7 @@ def contactMutationDesign(request, goal):
                 # Alanine mutation
                 ala_mutant = "A" if target_aa != "A" else "-"
 
-                # Reversed polarity suggestion
+                # Reversed polarity suggestion - removed for the time being
                 # suggestions = definitions.DESIGN_SUBSTITUTION_DICT[target_aa] if target_aa in definitions.DESIGN_SUBSTITUTION_DICT else []
                 # suggestion_mutant = suggestions[0] if len(suggestions)>0 else "-"
                 # suggestion_mutant2 = suggestions[1] if len(suggestions)>1 else "-"
