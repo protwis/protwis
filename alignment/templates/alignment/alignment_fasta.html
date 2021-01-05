@@ -1,4 +1,3 @@
-{% load alignment_extras %}
 {% for row in a.proteins %}>{{ row.protein.entry_name }}
 {% for segment, s in row.alignment.items %}{% for r in s %}{{ r.2 }}{% endfor %}{% endfor %}
 {% endfor %}
