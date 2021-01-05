@@ -2188,6 +2188,54 @@ def collectAndCacheClassData(target_class):
             class_thermo_muts[gn]["receptors"].add(receptor_slug)
         cache.set(cache_name, class_thermo_muts, 60*60*24*7) # cache a week
 
+    # Class Expression increasing mutations
+    cache_name = "Class_expr_incr_muts"+target_class
+    class_expr_incr_muts = cache.get(cache_name)
+    #class_thermo_muts = None
+    if class_expr_incr_muts == None:
+        class_expr_incr_muts = {}
+        all_expr = ConstructMutation.objects.filter(construct__protein__family__slug__startswith=target_class, effects__slug='receptor-expression')\
+                    .values("residue__generic_number__label", "wild_type_amino_acid", "mutated_amino_acid", "construct__structure__protein_conformation__protein__family__slug")\
+                    .order_by("residue__generic_number__label")
+
+        for pair in all_expr:
+            gn = pair["residue__generic_number__label"]
+            wt = pair["wild_type_amino_acid"]
+            mutant = pair["mutated_amino_acid"]
+            receptor_slug = pair["construct__structure__protein_conformation__protein__family__slug"]
+            if gn not in class_expr_incr_muts:
+                class_expr_incr_muts[gn] = {}
+                class_expr_incr_muts[gn]["mutations"] = set()
+                class_expr_incr_muts[gn]["receptors"] = set()
+            if wt not in class_expr_incr_muts[gn]:
+                class_expr_incr_muts[gn][wt] = []
+            class_expr_incr_muts[gn][wt].append(mutant)
+            class_expr_incr_muts[gn]["mutations"].add(mutant)
+            class_expr_incr_muts[gn]["receptors"].add(receptor_slug)
+
+        # Mininum increase in expression randomly set to 25%
+        all_mutant_expr = MutationExperiment.objects.filter(protein__family__slug__startswith=target_class, opt_receptor_expression__gt=125)\
+                    .exclude(residue__generic_number_id=None)\
+                    .values("residue__generic_number__label", "residue__amino_acid", "mutation__amino_acid", "protein__family__slug")\
+                    .order_by("residue__generic_number__label")
+
+        for pair in all_mutant_expr:
+            gn = pair["residue__generic_number__label"]
+            wt = pair["residue__amino_acid"]
+            mutant = pair["mutation__amino_acid"]
+            receptor_slug = pair["protein__family__slug"]
+            if gn not in class_expr_incr_muts:
+                class_expr_incr_muts[gn] = {}
+                class_expr_incr_muts[gn]["mutations"] = set()
+                class_expr_incr_muts[gn]["receptors"] = set()
+            if wt not in class_expr_incr_muts[gn]:
+                class_expr_incr_muts[gn][wt] = []
+            class_expr_incr_muts[gn][wt].append(mutant)
+            class_expr_incr_muts[gn]["mutations"].add(mutant)
+            class_expr_incr_muts[gn]["receptors"].add(receptor_slug)
+
+        cache.set(cache_name, class_expr_incr_muts, 60*60*24*7) # cache a week
+
     # Ligand interactions
     cache_name = "Class_ligand_ints"+target_class
     class_ligand_ints = cache.get(cache_name)
@@ -2290,6 +2338,10 @@ def contactMutationDesign(request, goal):
             cache_name = "Class_thermo_muts"+target_class
             class_thermo_muts = cache.get(cache_name)
 
+            # Class Expression increasing mutations
+            cache_name = "Class_expr_incr_muts"+target_class
+            class_expr_incr_muts = cache.get(cache_name)
+
             # Find residues that are >= 80% present in both sets and only TM residues
             # Do not count frequencies or others residues that are not present in both sets
             gns_set1 = collectGNsMatchingOccupancy(set1, 0.8)
@@ -2381,11 +2433,22 @@ def contactMutationDesign(request, goal):
                     if "A" in class_thermo_muts[gn]["mutations"]:
                         thermo_text[3] = "yes"
 
+                expr_text = ["no", 0, "no", "no"]
+                if gn in class_expr_incr_muts:
+                    expr_text[0] = "yes"
+                    expr_text[1] = len(class_expr_incr_muts[gn]["receptors"])
+                    if target_aa in class_expr_incr_muts[gn]:
+                        expr_text[2] = "yes"
+                    if "A" in class_expr_incr_muts[gn]["mutations"]:
+                        expr_text[3] = "yes"
+
                 context['freq_results1'][gn] = ["<span class=\"text-danger\">{}</span>".format(target_resnum), "<span class=\"text-danger\">{}</span>".format(class_specific_gn), "<span class=\"text-danger\">{}</span>".format(target_aa),
                         ala_mutant, freq_results[gn][2], freq_results[gn][0], freq_results[gn][1], class_gn_cons[gn][0], class_gn_cons[gn][2],
                         class_mutations[gn]["fold_mutations"] if gn in class_mutations else 0, class_mutations[gn]["fold_receptors"] if gn in class_mutations else 0,
                         class_mutations[gn]["unique_mutations"] if gn in class_mutations else 0, class_mutations[gn]["unique_receptors"] if gn in class_mutations else 0,
-                        thermo_text[0], thermo_text[1], thermo_text[2], thermo_text[3]]
+                        thermo_text[0], thermo_text[1], thermo_text[2], thermo_text[3],
+                        expr_text[0], expr_text[1], expr_text[2], expr_text[3]]
+
             if len(context['freq_results1']) == 0:
                 context.pop('freq_results1', None)
 
@@ -2440,11 +2503,21 @@ def contactMutationDesign(request, goal):
                     if "A" in class_thermo_muts[gn]["mutations"]:
                         thermo_text[3] = "yes"
 
+                expr_text = ["no", 0, "no", "no"]
+                if gn in class_expr_incr_muts:
+                    expr_text[0] = "yes"
+                    expr_text[1] = len(class_expr_incr_muts[gn]["receptors"])
+                    if target_aa in class_expr_incr_muts[gn]:
+                        expr_text[2] = "yes"
+                    if "A" in class_expr_incr_muts[gn]["mutations"]:
+                        expr_text[3] = "yes"
+
                 context['freq_results2'][gn] = ["<span class=\"text-danger\">{}</span>".format(target_resnum), "<span class=\"text-danger\">{}</span>".format(class_specific_gn), "<span class=\"text-danger\">{}</span>".format(target_aa), "<span class=\"text-red-highlight font-weight-bold\"><strong>{}</strong></span>".format(most_conserved_set1[gn][0]),
                         most_conserved_set1[gn][1], freq_results[gn][2], freq_results[gn][0], freq_results[gn][1], class_gn_cons[gn][0], class_gn_cons[gn][2],
                         class_mutations[gn]["fold_mutations"] if gn in class_mutations else 0, class_mutations[gn]["fold_receptors"] if gn in class_mutations else 0,
                         class_mutations[gn]["unique_mutations"] if gn in class_mutations else 0, class_mutations[gn]["unique_receptors"] if gn in class_mutations else 0,
-                        thermo_text[0], thermo_text[1], thermo_text[2], thermo_text[3]]
+                        thermo_text[0], thermo_text[1], thermo_text[2], thermo_text[3],
+                        expr_text[0], expr_text[1], expr_text[2], expr_text[3]]
 
             if len(context['freq_results2']) == 0:
                 context.pop('freq_results2', None)
@@ -2463,9 +2536,9 @@ def collectGNsMatchingOccupancy(structures, occupancy):
     gn_occurrences = Residue.objects.filter(protein_conformation__protein__entry_name__in=lowercase,
                             #protein_segment__slug__in=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7', 'H8'])\
                             protein_segment__slug__in=segment_slugs)\
-                            .exclude(generic_number_id=None).\
-                            order_by('generic_number__label').values("generic_number__label").distinct().\
-                            annotate(count_structures=Count("protein_conformation__protein__entry_name", distinct=True))
+                            .exclude(generic_number_id=None)\
+                            .order_by('generic_number__label').values("generic_number__label").distinct()\
+                            .annotate(count_structures=Count("protein_conformation__protein__entry_name", distinct=True))
     gns_set = []
     for presence in gn_occurrences:
         if presence["count_structures"] >= occupancy*len(structures):
@@ -2477,9 +2550,9 @@ def collectGNsMatchingOccupancy(structures, occupancy):
 def collectAAConservation(structures, allowed_gns):
     lowercase = [pdb.lower() for pdb in structures]
     gn_aas = Residue.objects.filter(protein_conformation__protein__entry_name__in=lowercase,
-                            generic_number__label__in=allowed_gns).\
-                            order_by('generic_number__label').values("generic_number__label", "amino_acid").distinct().\
-                            annotate(count_slugs=Count("protein_conformation__protein__family__slug", distinct=True))
+                            generic_number__label__in=allowed_gns)\
+                            .order_by('generic_number__label').values("generic_number__label", "amino_acid").distinct()\
+                            .annotate(count_slugs=Count("protein_conformation__protein__family__slug", distinct=True))
 
     gns_set = {}
     for gn_aa in gn_aas:
