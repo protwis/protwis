@@ -2288,7 +2288,17 @@ def collectAndCacheClassData(target_class):
 
 
 def contactMutationDesign(request, goal):
-    cutoff = -100000 # Only select GNs with a minimum % difference of 32%
+    cutoff = 32 # Only select GNs with a minimum % difference of 32%
+    occupancy = 0.75
+
+    # Debug toggle - show all GNs matching at least the occupancy filter
+    # For really all GNs - uncomment the line that sets occupancy to 0 -
+    # NOTE: that in the latter case the interaction frequencies will change
+    debug_show_all_gns = False
+    if debug_show_all_gns:
+        cutoff = -100000
+        # occupancy = 0
+
     context = {}
     simple_selection = request.session.get('selection', False)
     if simple_selection.reference[0].type == 'protein':
@@ -2485,10 +2495,10 @@ def contactMutationDesign(request, goal):
             cache_name = "Class_expr_incr_muts"+target_class
             class_expr_incr_muts = cache.get(cache_name)
 
-            # Find residues that are >= 80% present in both sets and only TM residues
+            # Find residues that are >= 75% present in both sets and only TM residues
             # Do not count frequencies or others residues that are not present in both sets
-            gns_set1 = collectGNsMatchingOccupancy(set1, 0.8)
-            gns_set2 = collectGNsMatchingOccupancy(set2, 0.8)
+            gns_set1 = collectGNsMatchingOccupancy(set1, occupancy)
+            gns_set2 = collectGNsMatchingOccupancy(set2, occupancy)
             gns_both = [gn for gn in gns_set1 if gn in gns_set2]
             gns_both.sort()
 
@@ -2513,15 +2523,17 @@ def contactMutationDesign(request, goal):
                 class_gn = '%sx%s' % (class_gn.split(".")[0], class_gn.split("x")[1])
                 target_residues[gn] = [residue["amino_acid"], residue["sequence_number"], class_gn]
 
+
             # Find interacting residue pairs in structures of set2 that match the WT AAs
             # Only GNs matching at least one WT pair in set2 will be added to the analysis
-            residue_pairs = collectResiduePairs(set2, gns_both)
             hit_residues = set()
+            residue_pairs = collectResiduePairs(set2, gns_both)
             for pair in residue_pairs:
-                if pair[0] in target_residues and target_residues[pair[0]][0] == pair[1] and \
-                    pair[2] in target_residues and target_residues[pair[2]][0] == pair[3]:
+                if debug_show_all_gns or (pair[0] in target_residues and target_residues[pair[0]][0] == pair[1] and \
+                    pair[2] in target_residues and target_residues[pair[2]][0] == pair[3]):
                     hit_residues.add(pair[0])
                     hit_residues.add(pair[2])
+
 
             # Analyze interaction frequencies and presence in target set
             freq_keys = list(set(freq_set1.keys()) | set(freq_set2.keys()))
@@ -2544,9 +2556,14 @@ def contactMutationDesign(request, goal):
             context['freq_results1'] = {}
             for gn in top_gns:
                 # Collect residue for target
-                target_aa = target_residues[gn][0]
-                target_resnum = target_residues[gn][1]
-                class_specific_gn = target_residues[gn][2]
+                if gn in target_residues:
+                    target_aa = target_residues[gn][0]
+                    target_resnum = target_residues[gn][1]
+                    class_specific_gn = target_residues[gn][2]
+                else:
+                    target_aa = "-"
+                    target_resnum = "-"
+                    class_specific_gn = gn
 
                 # Collect most conserved residue in class
                 # most_conserved = "-"
@@ -2604,7 +2621,7 @@ def contactMutationDesign(request, goal):
             receptor_slugs = list(Structure.objects.filter(pdb_code__index__in=set1).values_list("protein_conformation__protein__family__slug", flat=True).distinct())
             num_receptor_slugs = len(receptor_slugs)
 
-            #1. calculate conserved AA for these GNs in set 1  and identify which are different from WT
+            #1. calculate conserved AA for these GNs in set 1 and identify which are different from WT
             table2_gns = []
             most_conserved_set1 = {}
             for gn in top_set1_gns:
@@ -2617,16 +2634,21 @@ def contactMutationDesign(request, goal):
                         most_conserved = aa
 
                 # Different from WT - then add to table
-                if target_residues[gn][0] != most_conserved:
+                if debug_show_all_gns or (gn in target_residues and target_residues[gn][0] != most_conserved):
                     table2_gns.append(gn)
                     most_conserved_set1[gn] = [most_conserved, int(round(conservation/num_receptor_slugs*100))]
 
             context['freq_results2'] = {}
             for gn in table2_gns:
                 # Collect residue for target
-                target_aa = target_residues[gn][0]
-                target_resnum = target_residues[gn][1]
-                class_specific_gn = target_residues[gn][2]
+                if gn in target_residues:
+                    target_aa = target_residues[gn][0]
+                    target_resnum = target_residues[gn][1]
+                    class_specific_gn = target_residues[gn][2]
+                else:
+                    target_aa = "-"
+                    target_resnum = "-"
+                    class_specific_gn = gn
 
                 # Alanine mutation
                 ala_mutant = "A" if target_aa != "A" else "-"
