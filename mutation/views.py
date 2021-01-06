@@ -2191,7 +2191,7 @@ def collectAndCacheClassData(target_class):
     # Class Expression increasing mutations
     cache_name = "Class_expr_incr_muts"+target_class
     class_expr_incr_muts = cache.get(cache_name)
-    #class_thermo_muts = None
+    #class_expr_incr_muts = None
     if class_expr_incr_muts == None:
         class_expr_incr_muts = {}
         all_expr = ConstructMutation.objects.filter(construct__protein__family__slug__startswith=target_class, effects__slug='receptor-expression')\
@@ -2207,11 +2207,13 @@ def collectAndCacheClassData(target_class):
                 class_expr_incr_muts[gn] = {}
                 class_expr_incr_muts[gn]["mutations"] = set()
                 class_expr_incr_muts[gn]["receptors"] = set()
+                class_expr_incr_muts[gn]["sources"] = set()
             if wt not in class_expr_incr_muts[gn]:
                 class_expr_incr_muts[gn][wt] = []
             class_expr_incr_muts[gn][wt].append(mutant)
             class_expr_incr_muts[gn]["mutations"].add(mutant)
             class_expr_incr_muts[gn]["receptors"].add(receptor_slug)
+            class_expr_incr_muts[gn]["sources"].add("Structure")
 
         # Mininum increase in expression randomly set to 25%
         all_mutant_expr = MutationExperiment.objects.filter(protein__family__slug__startswith=target_class, opt_receptor_expression__gt=130)\
@@ -2228,11 +2230,13 @@ def collectAndCacheClassData(target_class):
                 class_expr_incr_muts[gn] = {}
                 class_expr_incr_muts[gn]["mutations"] = set()
                 class_expr_incr_muts[gn]["receptors"] = set()
+                class_expr_incr_muts[gn]["sources"] = set()
             if wt not in class_expr_incr_muts[gn]:
                 class_expr_incr_muts[gn][wt] = []
             class_expr_incr_muts[gn][wt].append(mutant)
             class_expr_incr_muts[gn]["mutations"].add(mutant)
             class_expr_incr_muts[gn]["receptors"].add(receptor_slug)
+            class_expr_incr_muts[gn]["sources"].add("LigSiteMut")
 
         cache.set(cache_name, class_expr_incr_muts, 60*60*24*7) # cache a week
 
@@ -2595,21 +2599,25 @@ def contactMutationDesign(request, goal):
                     if "A" in class_thermo_muts[gn]["mutations"]:
                         thermo_text[3] = "yes"
 
-                expr_text = ["no", 0, "no", "no"]
+                expr_text = ["no", 0, "-", "no", "no"]
                 if gn in class_expr_incr_muts:
                     expr_text[0] = "yes"
                     expr_text[1] = len(class_expr_incr_muts[gn]["receptors"])
+                    if len(class_expr_incr_muts[gn]["sources"])==2:
+                        expr_text[2] = "Both"
+                    else:
+                        expr_text[2] = next(iter(class_expr_incr_muts[gn]["sources"]))
                     if target_aa in class_expr_incr_muts[gn]:
-                        expr_text[2] = "yes"
-                    if "A" in class_expr_incr_muts[gn]["mutations"]:
                         expr_text[3] = "yes"
+                    if "A" in class_expr_incr_muts[gn]["mutations"]:
+                        expr_text[4] = "yes"
 
                 context['freq_results1'][gn] = ["<span class=\"text-danger\">{}</span>".format(target_resnum), "<span class=\"text-danger\">{}</span>".format(class_specific_gn), "<span class=\"text-danger\">{}</span>".format(target_aa),
                         ala_mutant, freq_results[gn][2], freq_results[gn][0], freq_results[gn][1], class_gn_cons[gn][0], class_gn_cons[gn][2],
                         class_mutations[gn]["fold_mutations"] if gn in class_mutations else 0, class_mutations[gn]["fold_receptors"] if gn in class_mutations else 0,
                         class_mutations[gn]["unique_mutations"] if gn in class_mutations else 0, class_mutations[gn]["unique_receptors"] if gn in class_mutations else 0,
                         thermo_text[0], thermo_text[1], thermo_text[2], thermo_text[3],
-                        expr_text[0], expr_text[1], expr_text[2], expr_text[3]]
+                        expr_text[0], expr_text[1], expr_text[2], expr_text[3], expr_text[4]]
 
             if len(context['freq_results1']) == 0:
                 context.pop('freq_results1', None)
@@ -2670,21 +2678,25 @@ def contactMutationDesign(request, goal):
                     if "A" in class_thermo_muts[gn]["mutations"]:
                         thermo_text[3] = "yes"
 
-                expr_text = ["no", 0, "no", "no"]
+                expr_text = ["no", 0, "-", "no", "no"]
                 if gn in class_expr_incr_muts:
                     expr_text[0] = "yes"
                     expr_text[1] = len(class_expr_incr_muts[gn]["receptors"])
+                    if len(class_expr_incr_muts[gn]["sources"])==2:
+                        expr_text[2] = "Both"
+                    else:
+                        expr_text[2] = next(iter(class_expr_incr_muts[gn]["sources"]))
                     if target_aa in class_expr_incr_muts[gn]:
-                        expr_text[2] = "yes"
-                    if "A" in class_expr_incr_muts[gn]["mutations"]:
                         expr_text[3] = "yes"
+                    if "A" in class_expr_incr_muts[gn]["mutations"]:
+                        expr_text[4] = "yes"
 
                 context['freq_results2'][gn] = ["<span class=\"text-danger\">{}</span>".format(target_resnum), "<span class=\"text-danger\">{}</span>".format(class_specific_gn), "<span class=\"text-danger\">{}</span>".format(target_aa), "<span class=\"text-red-highlight font-weight-bold\"><strong>{}</strong></span>".format(most_conserved_set1[gn][0]),
                         most_conserved_set1[gn][1], freq_results[gn][2], freq_results[gn][0], freq_results[gn][1], class_gn_cons[gn][0], class_gn_cons[gn][2],
                         class_mutations[gn]["fold_mutations"] if gn in class_mutations else 0, class_mutations[gn]["fold_receptors"] if gn in class_mutations else 0,
                         class_mutations[gn]["unique_mutations"] if gn in class_mutations else 0, class_mutations[gn]["unique_receptors"] if gn in class_mutations else 0,
                         thermo_text[0], thermo_text[1], thermo_text[2], thermo_text[3],
-                        expr_text[0], expr_text[1], expr_text[2], expr_text[3]]
+                        expr_text[0], expr_text[1], expr_text[2], expr_text[3], expr_text[4]]
 
             if len(context['freq_results2']) == 0:
                 context.pop('freq_results2', None)
