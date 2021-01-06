@@ -2214,7 +2214,7 @@ def collectAndCacheClassData(target_class):
             class_expr_incr_muts[gn]["receptors"].add(receptor_slug)
 
         # Mininum increase in expression randomly set to 25%
-        all_mutant_expr = MutationExperiment.objects.filter(protein__family__slug__startswith=target_class, opt_receptor_expression__gt=125)\
+        all_mutant_expr = MutationExperiment.objects.filter(protein__family__slug__startswith=target_class, opt_receptor_expression__gt=130)\
                     .exclude(residue__generic_number_id=None)\
                     .values("residue__generic_number__label", "residue__amino_acid", "mutation__amino_acid", "protein__family__slug")\
                     .order_by("residue__generic_number__label")
