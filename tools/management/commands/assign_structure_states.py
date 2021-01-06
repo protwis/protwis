@@ -45,7 +45,7 @@ class Command(BaseCommand):
                 active_ids = list(SignprotComplex.objects.filter(structure__pdb_code__index__in=structure_ids) \
                                     .exclude(structure__pdb_code__index="6CMO") \
                                     .values_list("structure__pdb_code__index"))
-                active_ids = [x[0] for x in active_ids] # flatten
+                active_ids = [x[0] for x in active_ids if x[0][0].isnumeric()] # flatten
 
                 # Hardcoded active structures
                 if slug[0] == "001":
@@ -74,7 +74,7 @@ class Command(BaseCommand):
                                     .exclude(structure__pdb_code__index__in=active_ids) \
                                     .values_list("structure__pdb_code__index"))
 
-                inactive_ids = [x[0] for x in inactive_ids]
+                inactive_ids = [x[0] for x in inactive_ids if x[0][0].isnumeric()]
 
                 # HARDCODED INACTIVE STRUCTURES
                 if slug[0] == "004":
