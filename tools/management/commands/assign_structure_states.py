@@ -170,7 +170,7 @@ class Command(BaseCommand):
                         # Classification
                         score = scoring_results[pdb]
                         structure_state = "inactive"
-                        if score < 30 and slug[0] == "001": # above this score always inactive structure
+                        if score < 40 and slug[0] == "001": # above this score always inactive structure
                             structure_state = "active"
                             if slug[0] == "001" and score > -70:
                                 structure_state = "intermediate"
