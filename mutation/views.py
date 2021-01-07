@@ -2292,7 +2292,7 @@ def collectAndCacheClassData(target_class):
 
 
 def contactMutationDesign(request, goal):
-    cutoff = 32 # Only select GNs with a minimum % difference of 32%
+    cutoff = 50 # Only select GNs with a minimum % difference of 50%
     occupancy = 0.75
 
     # Debug toggle - show all GNs matching at least the occupancy filter
