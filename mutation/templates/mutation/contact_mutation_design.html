@@ -335,6 +335,11 @@
       $("#suglist1 tbody tr td").filter(":nth-child(5)").each( function() {
           $(this).addClass("color-column");
           $(this).addClass("color-reverse");
+          $(this).addClass("color-gradient_white_indianred");
+      });
+
+      $("#suglist1 tbody tr td").filter(":nth-child(10),:nth-child(11),:nth-child(15),:nth-child(19),:nth-child(23)").each( function() {
+          $(this).addClass("color-column");
       });
 
       // Enable detail pane by clicking on row
@@ -409,6 +414,11 @@
       // Assign coloring class to each cell in freq. diff table
       // NOTE: Adjust color index when changing table - currently 8
       $("#suglist2 tbody tr td").filter(":nth-child(6)").each( function() {
+          $(this).addClass("color-column");
+          $(this).addClass("color-gradient_white_limegreen");
+      });
+
+      $("#suglist2 tbody tr td").filter(":nth-child(11),:nth-child(12),:nth-child(16),:nth-child(20),:nth-child(24)").each( function() {
           $(this).addClass("color-column");
       });
 

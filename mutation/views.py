@@ -2605,6 +2605,7 @@ def contactMutationDesign(request, goal):
 
                 # Alanine mutation
                 ala_mutant = "<span class=\"text-red-highlight\"><strong>A</strong></span>" if target_aa != "A" else "-"
+                support = 0
 
                 # Reversed polarity suggestion
                 suggestions = definitions.DESIGN_SUBSTITUTION_DICT[target_aa] if target_aa in definitions.DESIGN_SUBSTITUTION_DICT else []
@@ -2613,6 +2614,7 @@ def contactMutationDesign(request, goal):
 
                 thermo_text = [0, 0, "", ""]
                 if gn in class_thermo_muts:
+                    support += 1
                     thermo_text[0] = class_thermo_muts[gn]["count"]
                     thermo_text[1] = len(class_thermo_muts[gn]["receptors"])
                     if target_aa in class_thermo_muts[gn]:
@@ -2622,6 +2624,8 @@ def contactMutationDesign(request, goal):
 
                 expr_struct_text = [0, 0, "-", "", ""]
                 if gn in class_struct_expr_incr_muts:
+                    support += 1
+
                     expr_struct_text[0] = class_struct_expr_incr_muts[gn]["count"]
                     expr_struct_text[1] = len(class_struct_expr_incr_muts[gn]["receptors"])
                     # if len(class_struct_expr_incr_muts[gn]["sources"])==2:
@@ -2636,6 +2640,8 @@ def contactMutationDesign(request, goal):
                 expr_ligmut_text = [0, 0, "-", "", ""]
                 if gn in class_ligmut_expr_incr_muts:
                     expr_ligmut_text[0] = class_ligmut_expr_incr_muts[gn]["count"]
+                    if expr_ligmut_text[0] > 1:
+                        support += 1
                     expr_ligmut_text[1] = len(class_ligmut_expr_incr_muts[gn]["receptors"])
                     # if len(class_ligmut_expr_incr_muts[gn]["sources"])==2:
                     #     expr_ligmut_text[2] = "Both"
@@ -2646,7 +2652,10 @@ def contactMutationDesign(request, goal):
                     if "A" in class_ligmut_expr_incr_muts[gn]["mutations"]:
                         expr_ligmut_text[4] = "yes"
 
-                support=0
+                # Calculate support from lig mutation column
+                if gn in class_mutations and class_mutations[gn]["fold_mutations"]>1:
+                    support += 1
+
                 context['freq_results1'][gn] = ["<span class=\"text-danger\">{}</span>".format(target_resnum), "<span class=\"text-danger\">{}</span>".format(class_specific_gn), "<span class=\"text-danger\">{}</span>".format(target_aa),
                         ala_mutant, freq_results[gn][2], freq_results[gn][0], freq_results[gn][1], class_gn_cons[gn][0], class_gn_cons[gn][2],
                         support,
@@ -2699,6 +2708,7 @@ def contactMutationDesign(request, goal):
 
                 # Propose most-conserved residue in other set as mutation
                 mutant = most_conserved_set1[gn][0]
+                support = 0
 
                 # Reversed polarity suggestion - removed for the time being
                 # suggestions = definitions.DESIGN_SUBSTITUTION_DICT[target_aa] if target_aa in definitions.DESIGN_SUBSTITUTION_DICT else []
@@ -2708,6 +2718,7 @@ def contactMutationDesign(request, goal):
                 # Process thermostabilizing mutation data
                 thermo_text = [0, 0, "", ""]
                 if gn in class_thermo_muts:
+                    support += 1
                     thermo_text[0] = class_thermo_muts[gn]["count"]
                     thermo_text[1] = len(class_thermo_muts[gn]["receptors"])
                     if target_aa in class_thermo_muts[gn]:
@@ -2717,6 +2728,7 @@ def contactMutationDesign(request, goal):
 
                 expr_struct_text = [0, 0, "-", "", ""]
                 if gn in class_struct_expr_incr_muts:
+                    support += 1
                     expr_struct_text[0] = class_struct_expr_incr_muts[gn]["count"]
                     expr_struct_text[1] = len(class_struct_expr_incr_muts[gn]["receptors"])
                     # if len(class_struct_expr_incr_muts[gn]["sources"])==2:
@@ -2731,6 +2743,8 @@ def contactMutationDesign(request, goal):
                 expr_ligmut_text = [0, 0, "-", "", ""]
                 if gn in class_ligmut_expr_incr_muts:
                     expr_ligmut_text[0] = class_ligmut_expr_incr_muts[gn]["count"]
+                    if expr_ligmut_text[0]>1:
+                        support += 1
                     expr_ligmut_text[1] = len(class_ligmut_expr_incr_muts[gn]["receptors"])
                     # if len(class_ligmut_expr_incr_muts[gn]["sources"])==2:
                     #     expr_ligmut_text[2] = "Both"
@@ -2741,7 +2755,11 @@ def contactMutationDesign(request, goal):
                     if mutant in class_ligmut_expr_incr_muts[gn]["mutations"]:
                         expr_ligmut_text[4] = "yes"
 
-                support = 0
+
+                # Calculate support from lig mutation column
+                if gn in class_mutations and class_mutations[gn]["fold_mutations"]>1:
+                    support += 1
+
                 context['freq_results2'][gn] = ["<span class=\"text-danger\">{}</span>".format(target_resnum), "<span class=\"text-danger\">{}</span>".format(class_specific_gn), "<span class=\"text-danger\">{}</span>".format(target_aa), "<span class=\"text-red-highlight font-weight-bold\"><strong>{}</strong></span>".format(most_conserved_set1[gn][0]),
                         most_conserved_set1[gn][1], freq_results[gn][2], freq_results[gn][0], freq_results[gn][1], class_gn_cons[gn][0], class_gn_cons[gn][2],
                         support,
