@@ -2673,6 +2673,8 @@ def contactMutationDesign(request, goal):
 
                 if gn not in freq_results:
                     freq_results[gn] = ["-", "-", "-"]
+                if gn not in class_gn_cons:
+                    class_gn_cons[gn] = ["-", "-", "-"]
 
                 context['freq_results1'][gn] = ["<span class=\"text-danger\">{}</span>".format(target_resnum), "<span class=\"text-danger\">{}</span>".format(class_specific_gn), "<span class=\"text-danger\">{}</span>".format(target_aa),
                         ala_mutant, freq_results[gn][2], freq_results[gn][0], freq_results[gn][1], class_gn_cons[gn][0], class_gn_cons[gn][2],
@@ -2788,6 +2790,8 @@ def contactMutationDesign(request, goal):
                 # DEBUG mode
                 if gn not in freq_results:
                     freq_results[gn] = ["-", "-", "-"]
+                if gn not in class_gn_cons:
+                    class_gn_cons[gn] = ["-", "-", "-"]
 
                 context['freq_results2'][gn] = ["<span class=\"text-danger\">{}</span>".format(target_resnum), "<span class=\"text-danger\">{}</span>".format(class_specific_gn), "<span class=\"text-danger\">{}</span>".format(target_aa), "<span class=\"text-red-highlight font-weight-bold\"><strong>{}</strong></span>".format(most_conserved_set1[gn][0]),
                         most_conserved_set1[gn][1], freq_results[gn][2], freq_results[gn][0], freq_results[gn][1], class_gn_cons[gn][0], class_gn_cons[gn][2],
