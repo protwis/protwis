@@ -2549,6 +2549,13 @@ def contactMutationDesign(request, goal):
             freq_set1 = calculateResidueContactFrequency(set1, gns_both)
             freq_set2 = calculateResidueContactFrequency(set2, gns_both)
 
+            # DEBUG: in case of debugging collect all GNs
+            if debug_show_all_gns:
+                gns_set1 = collectGNsMatchingOccupancy(set1, 0)
+                gns_set2 = collectGNsMatchingOccupancy(set2, 0)
+                gns_both = [gn for gn in gns_set1 if gn in gns_set2]
+                gns_both.sort()
+
             # Collect target residues for the selected receptor
             wt_res = Residue.objects.filter(generic_number__label__in=gns_both,
                                     protein_conformation__protein__entry_name=target_protein).\
@@ -2565,13 +2572,15 @@ def contactMutationDesign(request, goal):
             # Find interacting residue pairs in structures of set2 that match the WT AAs
             # Only GNs matching at least one WT pair in set2 will be added to the analysis
             hit_residues = set()
-            residue_pairs = collectResiduePairs(set2, gns_both)
-            for pair in residue_pairs:
-                if debug_show_all_gns or (pair[0] in target_residues and target_residues[pair[0]][0] == pair[1] and \
-                    pair[2] in target_residues and target_residues[pair[2]][0] == pair[3]):
-                    hit_residues.add(pair[0])
-                    hit_residues.add(pair[2])
-
+            if not debug_show_all_gns:
+                residue_pairs = collectResiduePairs(set2, gns_both)
+                for pair in residue_pairs:
+                    if (pair[0] in target_residues and target_residues[pair[0]][0] == pair[1] and \
+                        pair[2] in target_residues and target_residues[pair[2]][0] == pair[3]):
+                        hit_residues.add(pair[0])
+                        hit_residues.add(pair[2])
+            else:
+                hit_residues = gns_both
 
             # Analyze interaction frequencies and presence in target set
             freq_keys = list(set(freq_set1.keys()) | set(freq_set2.keys()))
@@ -2590,6 +2599,10 @@ def contactMutationDesign(request, goal):
 
             # Also make sure at least a frequency different < 0 is observed (higher occurrence in set 2)
             top_gns = [ freq_keys[i] for i in list(top_diff_order) if freq_results[freq_keys[i]][2] < -1*cutoff]
+
+            # Show all GNs
+            if debug_show_all_gns:
+                top_gns = gns_both
 
             context['freq_results1'] = {}
             for gn in top_gns:
@@ -2658,6 +2671,9 @@ def contactMutationDesign(request, goal):
                 if gn in class_mutations and class_mutations[gn]["fold_mutations"]>1:
                     support += 1
 
+                if gn not in freq_results:
+                    freq_results[gn] = ["-", "-", "-"]
+
                 context['freq_results1'][gn] = ["<span class=\"text-danger\">{}</span>".format(target_resnum), "<span class=\"text-danger\">{}</span>".format(class_specific_gn), "<span class=\"text-danger\">{}</span>".format(target_aa),
                         ala_mutant, freq_results[gn][2], freq_results[gn][0], freq_results[gn][1], class_gn_cons[gn][0], class_gn_cons[gn][2],
                         support,
@@ -2674,6 +2690,11 @@ def contactMutationDesign(request, goal):
 
             # All GNs with a higher freq. in set 1
             top_set1_gns = [ freq_keys[i] for i in list(top_diff_order[::-1]) if freq_results[freq_keys[i]][2] > cutoff]
+
+            # DEBUG: in case of debugging collect all GNs
+            if debug_show_all_gns:
+                top_set1_gns = gns_both
+
             conservation_set1 = collectAAConservation(set1, top_set1_gns)
 
             receptor_slugs = list(Structure.objects.filter(pdb_code__index__in=set1).values_list("protein_conformation__protein__family__slug", flat=True).distinct())
@@ -2763,6 +2784,10 @@ def contactMutationDesign(request, goal):
                 # Calculate support from lig mutation column
                 if gn in class_mutations and class_mutations[gn]["fold_mutations"]>1:
                     support += 1
+
+                # DEBUG mode
+                if gn not in freq_results:
+                    freq_results[gn] = ["-", "-", "-"]
 
                 context['freq_results2'][gn] = ["<span class=\"text-danger\">{}</span>".format(target_resnum), "<span class=\"text-danger\">{}</span>".format(class_specific_gn), "<span class=\"text-danger\">{}</span>".format(target_aa), "<span class=\"text-red-highlight font-weight-bold\"><strong>{}</strong></span>".format(most_conserved_set1[gn][0]),
                         most_conserved_set1[gn][1], freq_results[gn][2], freq_results[gn][0], freq_results[gn][1], class_gn_cons[gn][0], class_gn_cons[gn][2],
