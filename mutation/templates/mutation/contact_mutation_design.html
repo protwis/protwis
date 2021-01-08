@@ -132,7 +132,7 @@
                       <th class="rightborder">#Rec.</th>
                       <th>Present</th>
                       <th class="rightborder-light">#Rec.</th>
-                      <th>#Mut.</th>
+                      <th>Present</th>
                       <th class="rightborder-light">#Rec.</th>
                       <th>#Mut.</th>
                       <th class="rightborder-light">#Rec.</th>
@@ -235,9 +235,9 @@
                       <th class="rightborder-light">#Rec.</th>
                       <th>#Mut.</th>
                       <th class="rightborder">#Rec.</th>
-                      <th>#Mut.</th>
+                      <th>Present</th>
                       <th class="rightborder-light">#Rec.</th>
-                      <th>#Mut.</th>
+                      <th>Present</th>
                       <th class="rightborder-light">#Rec.</th>
                       <th>#Mut.</th>
                       <th class="rightborder-light">#Rec.</th>
@@ -338,8 +338,15 @@
           $(this).addClass("color-gradient_white_indianred");
       });
 
-      $("#suglist1 tbody tr td").filter(":nth-child(10),:nth-child(11),:nth-child(15),:nth-child(19),:nth-child(23)").each( function() {
+      //$("#suglist1 tbody tr td").filter(":nth-child(10),:nth-child(11),:nth-child(15),:nth-child(19),:nth-child(23)").each( function() {
+      $("#suglist1 tbody tr td").filter(":nth-child(10),:nth-child(11),:nth-child(23)").each( function() {
           $(this).addClass("color-column");
+      });
+
+      $("#suglist1 tbody tr td").filter(":nth-child(15),:nth-child(19)").each( function() {
+          if (this.textContent=="yes"){
+            this.style.backgroundColor = "#aaa";
+          }
       });
 
       // Enable detail pane by clicking on row
@@ -418,8 +425,15 @@
           $(this).addClass("color-gradient_white_limegreen");
       });
 
-      $("#suglist2 tbody tr td").filter(":nth-child(11),:nth-child(12),:nth-child(16),:nth-child(20),:nth-child(24)").each( function() {
+      //$("#suglist2 tbody tr td").filter(":nth-child(11),:nth-child(12),:nth-child(16),:nth-child(20),:nth-child(24)").each( function() {
+      $("#suglist2 tbody tr td").filter(":nth-child(11),:nth-child(12),:nth-child(24)").each( function() {
           $(this).addClass("color-column");
+      });
+
+      $("#suglist2 tbody tr td").filter(":nth-child(16),:nth-child(20)").each( function() {
+          if (this.textContent=="yes"){
+            this.style.backgroundColor = "#aaa";
+          }
       });
 
       // Enable detail pane by clicking on row

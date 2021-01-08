@@ -2612,21 +2612,23 @@ def contactMutationDesign(request, goal):
                 suggestion_mutant = suggestions[0] if len(suggestions)>0 else "-"
                 suggestion_mutant2 = suggestions[1] if len(suggestions)>1 else "-"
 
-                thermo_text = [0, 0, "", ""]
+                thermo_text = ["", 0, "", ""]
                 if gn in class_thermo_muts:
                     support += 1
-                    thermo_text[0] = class_thermo_muts[gn]["count"]
+                    #thermo_text[0] = class_thermo_muts[gn]["count"]
+                    thermo_text[0] = "yes"
                     thermo_text[1] = len(class_thermo_muts[gn]["receptors"])
                     if target_aa in class_thermo_muts[gn]:
                         thermo_text[2] = "yes"
                     if "A" in class_thermo_muts[gn]["mutations"]:
                         thermo_text[3] = "yes"
 
-                expr_struct_text = [0, 0, "-", "", ""]
+                expr_struct_text = ["", 0, "-", "", ""]
                 if gn in class_struct_expr_incr_muts:
                     support += 1
 
-                    expr_struct_text[0] = class_struct_expr_incr_muts[gn]["count"]
+                    #expr_struct_text[0] = class_struct_expr_incr_muts[gn]["count"]
+                    expr_struct_text[0] = "yes"
                     expr_struct_text[1] = len(class_struct_expr_incr_muts[gn]["receptors"])
                     # if len(class_struct_expr_incr_muts[gn]["sources"])==2:
                     #     expr_struct_text[2] = "Both"
@@ -2716,20 +2718,22 @@ def contactMutationDesign(request, goal):
                 # suggestion_mutant2 = suggestions[1] if len(suggestions)>1 else "-"
 
                 # Process thermostabilizing mutation data
-                thermo_text = [0, 0, "", ""]
+                thermo_text = ["", 0, "", ""]
                 if gn in class_thermo_muts:
                     support += 1
-                    thermo_text[0] = class_thermo_muts[gn]["count"]
+                    # thermo_text[0] = class_thermo_muts[gn]["count"]
+                    thermo_text[0] = "yes"
                     thermo_text[1] = len(class_thermo_muts[gn]["receptors"])
                     if target_aa in class_thermo_muts[gn]:
                         thermo_text[2] = "yes"
                     if mutant in class_thermo_muts[gn]["mutations"]:
                         thermo_text[3] = "yes"
 
-                expr_struct_text = [0, 0, "-", "", ""]
+                expr_struct_text = ["", 0, "-", "", ""]
                 if gn in class_struct_expr_incr_muts:
                     support += 1
-                    expr_struct_text[0] = class_struct_expr_incr_muts[gn]["count"]
+                    #expr_struct_text[0] = class_struct_expr_incr_muts[gn]["count"]
+                    expr_struct_text[0] = "yes"
                     expr_struct_text[1] = len(class_struct_expr_incr_muts[gn]["receptors"])
                     # if len(class_struct_expr_incr_muts[gn]["sources"])==2:
                     #     expr_struct_text[2] = "Both"
