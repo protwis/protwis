@@ -152,22 +152,22 @@ function hexToRGB(h) {
     b = 0;
 
   // 3 digits
-  if (h.length == 4) {
+  if (h.length === 4) {
     r = "0x" + h[1] + h[1];
     g = "0x" + h[2] + h[2];
     b = "0x" + h[3] + h[3];
 
     // 6 digits
-  } else if (h.length == 7) {
+  } else if (h.length === 7) {
     r = "0x" + h[1] + h[2];
     g = "0x" + h[3] + h[4];
     b = "0x" + h[5] + h[6];
   }
 
   return {
-    red: parseInt(r),
-    green: parseInt(g),
-    blue: parseInt(b)
+    red: parseInt(r, 16),
+    green: parseInt(g, 16),
+    blue: parseInt(b, 16)
   };
 }
 
@@ -272,7 +272,7 @@ function gray_scale_table(table, colorSetIds = []) {
   var colorGradients = {};
   for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
     for (let [j, cell] of [...row.cells].entries()) {
-      cols[parseInt(j)] = cols[j] || [];
+      cols[parseInt(j,10)] = cols[j] || [];
       var colored = false;
       if (cell.innerText !== "-" && cell.classList.contains("color-column")) {
         cols[j].push(cell.innerText);
@@ -284,7 +284,7 @@ function gray_scale_table(table, colorSetIds = []) {
               sets[String(colorSetIds[k])].push(cell.innerText);
             }
             if (i === 0) {
-              colIdColorSet[parseInt(j)] = colorSetIds[k];
+              colIdColorSet[parseInt(j,10)] = colorSetIds[k];
             }
             colored = true;
             break;
@@ -300,16 +300,16 @@ function gray_scale_table(table, colorSetIds = []) {
             var gradientName = gradScheme.split("_");
             gradientName.shift(); // remove first part
             if (! (gradScheme in colorGradients)){
-              colorGradients[gradScheme] = []
-              for (var k = 0; k < gradientName.length; k++) {
-                if (gradientName[k] in color_set){
-                  colorGradients[gradScheme].push(hexToRGB(color_set[gradientName[k]]));
+              colorGradients[gradScheme] = [];
+              for (var l = 0; l < gradientName.length; l++) {
+                if (gradientName[l] in color_set){
+                  colorGradients[gradScheme].push(hexToRGB(color_set[gradientName[l]]));
                 }
               }
             }
 
-            // Also assign gradient to column
-            colorGradientAssigned[parseInt(j)] = gradScheme;
+            // Also assign gradient to column for increased performance
+            colorGradientAssigned[parseInt(j, 10)] = gradScheme;
 
             // Found the gradient class so we can stop
             break;
@@ -372,9 +372,9 @@ function gray_scale_table(table, colorSetIds = []) {
           scale = (value - c_maxmin[1]) / (c_maxmin[0] - c_maxmin[1]);
           // Calculate color
           if (Array.isArray(gradient)) {
-            if (gradient.length==2){
+            if (gradient.length === 2){
               color = colorGradient(scale, reverse, gradient[0], gradient[1]);
-            } else if (gradient.length==3){
+            } else if (gradient.length === 3){
               color = colorGradient(scale, reverse, gradient[0], gradient[1], gradient[2]);
             }
           } else {
