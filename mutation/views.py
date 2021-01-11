@@ -2312,16 +2312,14 @@ def collectAndCacheClassData(target_class):
 
 
 def contactMutationDesign(request, goal):
-    cutoff = 50 # Only select GNs with a minimum % difference of 50%
+    cutoff = 1 # Only select GNs with a minimum contact freq diff of this %
+    max_rows = 30 # Maximally show this many rows
     occupancy = 0.75
 
-    # Debug toggle - show all GNs matching at least the occupancy filter
-    # For really all GNs - uncomment the line that sets occupancy to 0 -
-    # NOTE: that in the latter case the interaction frequencies will change
+    # Debug toggle - show all GNs
     debug_show_all_gns = False
     if debug_show_all_gns:
         cutoff = -100000
-        # occupancy = 0
 
     context = {}
     simple_selection = request.session.get('selection', False)
@@ -2605,7 +2603,7 @@ def contactMutationDesign(request, goal):
                 top_gns = gns_both
 
             context['freq_results1'] = {}
-            for gn in top_gns:
+            for gn in top_gns[:max_rows]:
                 # Collect residue for target
                 if gn in target_residues:
                     target_aa = target_residues[gn][0]
@@ -2625,23 +2623,26 @@ def contactMutationDesign(request, goal):
                 suggestion_mutant = suggestions[0] if len(suggestions)>0 else "-"
                 suggestion_mutant2 = suggestions[1] if len(suggestions)>1 else "-"
 
-                thermo_text = ["", 0, "", ""]
+                thermo_text = [0, "", "", ""]
                 if gn in class_thermo_muts:
                     support += 1
-                    #thermo_text[0] = class_thermo_muts[gn]["count"]
-                    thermo_text[0] = "yes"
+
+                    #thermo_text[0] = "yes"
+                    thermo_text[0] = class_thermo_muts[gn]["count"]
+
                     thermo_text[1] = len(class_thermo_muts[gn]["receptors"])
                     if target_aa in class_thermo_muts[gn]:
                         thermo_text[2] = "yes"
                     if "A" in class_thermo_muts[gn]["mutations"]:
                         thermo_text[3] = "yes"
 
-                expr_struct_text = ["", 0, "-", "", ""]
+                expr_struct_text = [0, "", "-", "", ""]
                 if gn in class_struct_expr_incr_muts:
                     support += 1
 
-                    #expr_struct_text[0] = class_struct_expr_incr_muts[gn]["count"]
-                    expr_struct_text[0] = "yes"
+                    #expr_struct_text[0] = "yes"
+                    expr_struct_text[0] = class_struct_expr_incr_muts[gn]["count"]
+
                     expr_struct_text[1] = len(class_struct_expr_incr_muts[gn]["receptors"])
                     # if len(class_struct_expr_incr_muts[gn]["sources"])==2:
                     #     expr_struct_text[2] = "Both"
@@ -2652,12 +2653,13 @@ def contactMutationDesign(request, goal):
                     if "A" in class_struct_expr_incr_muts[gn]["mutations"]:
                         expr_struct_text[4] = "yes"
 
-                expr_ligmut_text = [0, 0, "-", "", ""]
+                expr_ligmut_text = [0, "", "-", "", ""]
                 if gn in class_ligmut_expr_incr_muts:
                     expr_ligmut_text[0] = class_ligmut_expr_incr_muts[gn]["count"]
-                    if expr_ligmut_text[0] > 1:
-                        support += 1
+
                     expr_ligmut_text[1] = len(class_ligmut_expr_incr_muts[gn]["receptors"])
+                    if expr_ligmut_text[1] > 1:
+                        support += 1
                     # if len(class_ligmut_expr_incr_muts[gn]["sources"])==2:
                     #     expr_ligmut_text[2] = "Both"
                     # else:
@@ -2668,7 +2670,7 @@ def contactMutationDesign(request, goal):
                         expr_ligmut_text[4] = "yes"
 
                 # Calculate support from lig mutation column
-                if gn in class_mutations and class_mutations[gn]["fold_mutations"]>1:
+                if gn in class_mutations and class_mutations[gn]["fold_receptors"]>1:
                     support += 1
 
                 if gn not in freq_results:
@@ -2679,8 +2681,8 @@ def contactMutationDesign(request, goal):
                 context['freq_results1'][gn] = ["<span class=\"text-danger\">{}</span>".format(target_resnum), "<span class=\"text-danger\">{}</span>".format(class_specific_gn), "<span class=\"text-danger\">{}</span>".format(target_aa),
                         ala_mutant, freq_results[gn][2], freq_results[gn][0], freq_results[gn][1], class_gn_cons[gn][0], class_gn_cons[gn][2],
                         support,
-                        class_mutations[gn]["fold_mutations"] if gn in class_mutations else 0, class_mutations[gn]["fold_receptors"] if gn in class_mutations else 0,
-                        class_mutations[gn]["unique_mutations"] if gn in class_mutations else 0, class_mutations[gn]["unique_receptors"] if gn in class_mutations else 0,
+                        class_mutations[gn]["fold_mutations"] if gn in class_mutations else 0, class_mutations[gn]["fold_receptors"] if gn in class_mutations and class_mutations[gn]["fold_receptors"] > 0 else "",
+                        class_mutations[gn]["unique_mutations"] if gn in class_mutations else 0, class_mutations[gn]["unique_receptors"] if gn in class_mutations and class_mutations[gn]["unique_receptors"] >0 else "",
                         thermo_text[0], thermo_text[1], thermo_text[2], thermo_text[3],
                         expr_struct_text[0], expr_struct_text[1], expr_struct_text[3], expr_struct_text[4],
                         expr_ligmut_text[0], expr_ligmut_text[1], expr_ligmut_text[3], expr_ligmut_text[4]]
@@ -2720,7 +2722,7 @@ def contactMutationDesign(request, goal):
                     most_conserved_set1[gn] = [most_conserved, int(round(conservation/num_receptor_slugs*100))]
 
             context['freq_results2'] = {}
-            for gn in table2_gns:
+            for gn in table2_gns[:max_rows]:
                 # Collect residue for target
                 if gn in target_residues:
                     target_aa = target_residues[gn][0]
@@ -2741,22 +2743,23 @@ def contactMutationDesign(request, goal):
                 # suggestion_mutant2 = suggestions[1] if len(suggestions)>1 else "-"
 
                 # Process thermostabilizing mutation data
-                thermo_text = ["", 0, "", ""]
+                thermo_text = [0, "", "", ""]
                 if gn in class_thermo_muts:
                     support += 1
-                    # thermo_text[0] = class_thermo_muts[gn]["count"]
-                    thermo_text[0] = "yes"
+
+                    thermo_text[0] = class_thermo_muts[gn]["count"]
+                    # thermo_text[0] = "yes"
                     thermo_text[1] = len(class_thermo_muts[gn]["receptors"])
                     if target_aa in class_thermo_muts[gn]:
                         thermo_text[2] = "yes"
                     if mutant in class_thermo_muts[gn]["mutations"]:
                         thermo_text[3] = "yes"
 
-                expr_struct_text = ["", 0, "-", "", ""]
+                expr_struct_text = [0, "", "-", "", ""]
                 if gn in class_struct_expr_incr_muts:
                     support += 1
-                    #expr_struct_text[0] = class_struct_expr_incr_muts[gn]["count"]
-                    expr_struct_text[0] = "yes"
+                    expr_struct_text[0] = class_struct_expr_incr_muts[gn]["count"]
+                    #expr_struct_text[0] = "yes"
                     expr_struct_text[1] = len(class_struct_expr_incr_muts[gn]["receptors"])
                     # if len(class_struct_expr_incr_muts[gn]["sources"])==2:
                     #     expr_struct_text[2] = "Both"
@@ -2767,12 +2770,14 @@ def contactMutationDesign(request, goal):
                     if mutant in class_struct_expr_incr_muts[gn]["mutations"]:
                         expr_struct_text[4] = "yes"
 
-                expr_ligmut_text = [0, 0, "-", "", ""]
+                expr_ligmut_text = [0, "", "-", "", ""]
                 if gn in class_ligmut_expr_incr_muts:
                     expr_ligmut_text[0] = class_ligmut_expr_incr_muts[gn]["count"]
-                    if expr_ligmut_text[0]>1:
-                        support += 1
+
                     expr_ligmut_text[1] = len(class_ligmut_expr_incr_muts[gn]["receptors"])
+
+                    if expr_ligmut_text[1] > 1:
+                        support += 1
                     # if len(class_ligmut_expr_incr_muts[gn]["sources"])==2:
                     #     expr_ligmut_text[2] = "Both"
                     # else:
@@ -2784,7 +2789,7 @@ def contactMutationDesign(request, goal):
 
 
                 # Calculate support from lig mutation column
-                if gn in class_mutations and class_mutations[gn]["fold_mutations"]>1:
+                if gn in class_mutations and class_mutations[gn]["fold_receptors"]>1:
                     support += 1
 
                 # DEBUG mode
@@ -2796,8 +2801,8 @@ def contactMutationDesign(request, goal):
                 context['freq_results2'][gn] = ["<span class=\"text-danger\">{}</span>".format(target_resnum), "<span class=\"text-danger\">{}</span>".format(class_specific_gn), "<span class=\"text-danger\">{}</span>".format(target_aa), "<span class=\"text-red-highlight font-weight-bold\"><strong>{}</strong></span>".format(most_conserved_set1[gn][0]),
                         most_conserved_set1[gn][1], freq_results[gn][2], freq_results[gn][0], freq_results[gn][1], class_gn_cons[gn][0], class_gn_cons[gn][2],
                         support,
-                        class_mutations[gn]["fold_mutations"] if gn in class_mutations else 0, class_mutations[gn]["fold_receptors"] if gn in class_mutations else 0,
-                        class_mutations[gn]["unique_mutations"] if gn in class_mutations else 0, class_mutations[gn]["unique_receptors"] if gn in class_mutations else 0,
+                        class_mutations[gn]["fold_mutations"] if gn in class_mutations else 0, class_mutations[gn]["fold_receptors"] if gn in class_mutations and class_mutations[gn]["fold_receptors"] > 0 else "",
+                        class_mutations[gn]["unique_mutations"] if gn in class_mutations else 0, class_mutations[gn]["unique_receptors"] if gn in class_mutations and class_mutations[gn]["unique_receptors"] >0 else "",
                         thermo_text[0], thermo_text[1], thermo_text[2], thermo_text[3],
                         expr_struct_text[0], expr_struct_text[1], expr_struct_text[3], expr_struct_text[4],
                         expr_ligmut_text[0], expr_ligmut_text[1], expr_ligmut_text[3], expr_ligmut_text[4]]

@@ -8,12 +8,31 @@
 <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
 
 <style type="text/css">
+    @media (min-width: 1600px){
+        #content {
+            width: 1570px;
+        }
+    }
+
+    @media (min-width: 2000px){
+        #content {
+            width: 1970px;
+        }
+    }
+
+    @media (min-width: 2400px){
+        #content {
+            width: 2370px;
+        }
+    }
+
     div.dt-buttons {
       clear: both;
     }
 
     table#suglist1, table#suglist2 {
       width: 100%;
+      margin-left: 0px;
     }
 
     table.yadcf-datatables-table--suglist1 thead th, table.yadcf-datatables-table--suglist2 thead th {
@@ -87,7 +106,8 @@
               <div class="panel-heading">
                   <h3 class="panel-title pull-left">Mutations to destabilize the <i>{{ undesired }}</i></h3>
                   <span class="pull-right">
-                      <span class="glyphicon glyphicon-download btn-download"></span><span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                      <!-- <span class="glyphicon glyphicon-download btn-download"></span> -->
+                      <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
                   </span>
                   <div class="clearfix"></div>
               </div>
@@ -130,9 +150,9 @@
                       <th class="rightborder-light">#Rec.</th>
                       <th>#Mut.</th>
                       <th class="rightborder">#Rec.</th>
-                      <th>Present</th>
+                      <th>#Mut.</th>
                       <th class="rightborder-light">#Rec.</th>
-                      <th>Present</th>
+                      <th>#Mut.</th>
                       <th class="rightborder-light">#Rec.</th>
                       <th>#Mut.</th>
                       <th class="rightborder-light">#Rec.</th>
@@ -235,9 +255,9 @@
                       <th class="rightborder-light">#Rec.</th>
                       <th>#Mut.</th>
                       <th class="rightborder">#Rec.</th>
-                      <th>Present</th>
+                      <th>#Mut.</th>
                       <th class="rightborder-light">#Rec.</th>
-                      <th>Present</th>
+                      <th>#Mut.</th>
                       <th class="rightborder-light">#Rec.</th>
                       <th>#Mut.</th>
                       <th class="rightborder-light">#Rec.</th>
@@ -323,6 +343,7 @@
                         "buttons":      ["csv", "excel"],
                         "scrollX":      true,
                         "dom":          "lfrtipB",
+                        "deferRender":  true
                       }
 
   var table1, table2 = null;
@@ -339,13 +360,19 @@
       });
 
       //$("#suglist1 tbody tr td").filter(":nth-child(10),:nth-child(11),:nth-child(15),:nth-child(19),:nth-child(23)").each( function() {
-      $("#suglist1 tbody tr td").filter(":nth-child(10),:nth-child(11),:nth-child(23)").each( function() {
+      $("#suglist1 tbody tr td").filter(":nth-child(10)").each( function() {
           $(this).addClass("color-column");
       });
 
+      $("#suglist1 tbody tr td").filter(":nth-child(12),:nth-child(24)").each( function() {
+        if (this.textContent > 1){
+          this.style.backgroundColor = "#ccc";
+        }
+      });
+
       $("#suglist1 tbody tr td").filter(":nth-child(15),:nth-child(19)").each( function() {
-          if (this.textContent=="yes"){
-            this.style.backgroundColor = "#aaa";
+          if (this.textContent > 0){
+            this.style.backgroundColor = "#ccc";
           }
       });
 
@@ -412,6 +439,8 @@
 
       // table redraw
       table1.draw();
+    } else if (table1 !== null){
+      table1.draw();
     }
   }
 
@@ -426,15 +455,22 @@
       });
 
       //$("#suglist2 tbody tr td").filter(":nth-child(11),:nth-child(12),:nth-child(16),:nth-child(20),:nth-child(24)").each( function() {
-      $("#suglist2 tbody tr td").filter(":nth-child(11),:nth-child(12),:nth-child(24)").each( function() {
+      $("#suglist2 tbody tr td").filter(":nth-child(11)").each( function() {
           $(this).addClass("color-column");
       });
 
+      $("#suglist2 tbody tr td").filter(":nth-child(13),:nth-child(25)").each( function() {
+        if (this.textContent > 1){
+          this.style.backgroundColor = "#ccc";
+        }
+      });
+
       $("#suglist2 tbody tr td").filter(":nth-child(16),:nth-child(20)").each( function() {
-          if (this.textContent=="yes"){
-            this.style.backgroundColor = "#aaa";
+          if (this.textContent > 0){
+            this.style.backgroundColor = "#ccc";
           }
       });
+
 
       // Enable detail pane by clicking on row
       $("#suglist2 tbody tr").each( function() {
@@ -498,6 +534,8 @@
 
       // table redraw
       table2.draw();
+    } else if (table2 !== null){
+      table2.draw();
     }
   }
 
@@ -546,8 +584,24 @@
     });
   }
 
-  $("#mutation-table-1-tab-link").on("click", function(){setTimeout(initTable1,100);});
-  $("#mutation-table-2-tab-link").on("click", function(){setTimeout(initTable2,100);});
+  function toggleFullScreen(fullScreenElement) {
+      if (!document.mozFullScreen && !document.webkitFullScreen) {
+          if (fullScreenElement.mozRequestFullScreen) {
+              fullScreenElement.mozRequestFullScreen();
+          } else {
+              fullScreenElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+          }
+      } else {
+          if (document.mozCancelFullScreen) {
+            document.mozCancelFullScreen();
+          } else {
+            document.webkitCancelFullScreen();
+          }
+      }
+  }
+
+  $("#mutation-table-1-tab-link").on("click", function(){setTimeout(initTable1, 1000);});
+  $("#mutation-table-2-tab-link").on("click", function(){setTimeout(initTable2, 1000);});
 
   $(document).ready(function() {
     {% if freq_results1 %}
@@ -555,6 +609,14 @@
     {% else %}
       initTable2();
     {% endif %}
+
+    // Prepare fullscreen toggle
+    $('.btn-fullscreen').click(function() {
+        var fullScreenElement = $(this).closest("div.tab-content");
+        console.log("fullscreen", fullScreenElement)
+        fullScreenElement.css('background-color','white');
+        toggleFullScreen(fullScreenElement.get(0));
+    });
   });
 </script>
 {% endblock %}
