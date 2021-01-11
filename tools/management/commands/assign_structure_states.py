@@ -51,7 +51,7 @@ class Command(BaseCommand):
                 if slug[0] == "001":
                     active_ids.extend(["6LI3"])
                 elif slug[0] == "004":
-                    active_ids = ["6UO8", "7C7Q"]
+                    active_ids = ["7C7Q"]
 
                 # print("The following PDBs are G-prot complex structures:")
                 # print(slug[0], active_ids)
@@ -132,6 +132,7 @@ class Command(BaseCommand):
                         "5LWE" : "inactive", # Cannot be determined using this method because of missing TM in annotation
                         "6KUX" : "inactive", #
                         "5NX2" : "intermediate", # Closer to active + groups together but internally more inactive
+                        "6N51" : "intermediate"
                     }
 
                     # Percentage score for TM2-TM6 opening
