@@ -64,7 +64,7 @@ class Command(BaseCommand):
                 class_pair_inactives['001'] = ["2x46_6x37", 11.9] #A
                 class_pair_inactives['002'] = ["2x46_6x37", 13] #B1
                 class_pair_inactives['003'] = ["2x47_6x37", 1000] #B2 PLACEHOLDER
-                class_pair_inactives['004'] = ["2x47_6x37", 14.3] #C
+                class_pair_inactives['004'] = ["2x47_6x37", 14.5] #C
                 class_pair_inactives['005'] = ["2x47_6x37", 1000] #D PLACEHOLDER
                 class_pair_inactives['006'] = ["2x44_6x31", 13] #F
 
