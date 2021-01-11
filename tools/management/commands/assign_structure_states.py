@@ -132,7 +132,8 @@ class Command(BaseCommand):
                         "5LWE" : "inactive", # Cannot be determined using this method because of missing TM in annotation
                         "6KUX" : "inactive", #
                         "5NX2" : "intermediate", # Closer to active + groups together but internally more inactive
-                        "6N51" : "intermediate"
+                        "6N51" : "intermediate", # Holds middle between active and inactive
+                        "7CA5" : "intermediate"  # Apo state holds middle between active and inactive
                     }
 
                     # Percentage score for TM2-TM6 opening
