@@ -2592,8 +2592,8 @@ def contactMutationDesign(request, goal):
                     freq_results[gn][1] = int(round(freq_set2[gn]))
                 freq_results[gn][2] = freq_results[gn][0]-freq_results[gn][1]
 
-            # Sort and possibly apply cutoff (maximize occurrence in set 2)
-            top_diff_order = np.argsort([freq_results[gn][2] for gn in freq_keys])
+            # Get sort order according to frequency differences + grab max entries
+            top_diff_order = np.argsort([abs(freq_results[gn][2]) for gn in freq_keys])[::-1][:max_rows]
 
             # Also make sure at least a frequency different < 0 is observed (higher occurrence in set 2)
             top_gns = [ freq_keys[i] for i in list(top_diff_order) if freq_results[freq_keys[i]][2] < -1*cutoff]
@@ -2603,7 +2603,7 @@ def contactMutationDesign(request, goal):
                 top_gns = gns_both
 
             context['freq_results1'] = {}
-            for gn in top_gns[:max_rows]:
+            for gn in top_gns:
                 # Collect residue for target
                 if gn in target_residues:
                     target_aa = target_residues[gn][0]
@@ -2687,13 +2687,14 @@ def contactMutationDesign(request, goal):
                         expr_struct_text[0], expr_struct_text[1], expr_struct_text[3], expr_struct_text[4],
                         expr_ligmut_text[0], expr_ligmut_text[1], expr_ligmut_text[3], expr_ligmut_text[4]]
 
-            if len(context['freq_results1']) == 0:
-                context.pop('freq_results1', None)
+            #if len(context['freq_results1']) == 0:
+            #    context.pop('freq_results1', None)
 
             # TABLE 2 - introducing desired AAs
 
             # All GNs with a higher freq. in set 1
-            top_set1_gns = [ freq_keys[i] for i in list(top_diff_order[::-1]) if freq_results[freq_keys[i]][2] > cutoff]
+            #top_set1_gns = [ freq_keys[i] for i in list(top_diff_order[::-1]) if freq_results[freq_keys[i]][2] > cutoff]
+            top_set1_gns = [ freq_keys[i] for i in list(top_diff_order) if freq_results[freq_keys[i]][2] > cutoff]
 
             # DEBUG: in case of debugging collect all GNs
             if debug_show_all_gns:
@@ -2722,7 +2723,7 @@ def contactMutationDesign(request, goal):
                     most_conserved_set1[gn] = [most_conserved, int(round(conservation/num_receptor_slugs*100))]
 
             context['freq_results2'] = {}
-            for gn in table2_gns[:max_rows]:
+            for gn in table2_gns:
                 # Collect residue for target
                 if gn in target_residues:
                     target_aa = target_residues[gn][0]
@@ -2807,8 +2808,8 @@ def contactMutationDesign(request, goal):
                         expr_struct_text[0], expr_struct_text[1], expr_struct_text[3], expr_struct_text[4],
                         expr_ligmut_text[0], expr_ligmut_text[1], expr_ligmut_text[3], expr_ligmut_text[4]]
 
-            if len(context['freq_results2']) == 0:
-                context.pop('freq_results2', None)
+            #if len(context['freq_results2']) == 0:
+            #    context.pop('freq_results2', None)
 
             return render(request, 'mutation/contact_mutation_design.html', context)
         else:
