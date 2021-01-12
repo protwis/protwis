@@ -20,10 +20,13 @@ class Command(BaseBuild):
 				   'GNAI1':'Gi1', 'GNAI2':'Gi2', 'GNAI3':'Gi3', 'GNAT1':'Gt1', 'GNAT2':'Gt2', 'GNAT3':'Gt3', 'GNAZ':'Gz', 'GNAO':'Go',
 				   'GNAQ':'Gq', 'GNA11':'G11', 'GNA14':'G14', 'GNA15':'G15',
 				   'GNA12':'G12', 'GNA13':'G13',
+				   'GPa1':'GPa1',
 				   # Beta
 				   'G(I)/G(S)/G(T) subunit beta-1':'G&beta;1',
+				   'BJ4_G0051350.mRNA.1.CDS.1':'STE4 isoform 1',
 				   # Gamma
-				   'G(T) subunit gamma-T1':'G&gamma;T1', 'G(I)/G(S)/G(O) subunit gamma-2':'G&gamma;2'}
+				   'G(T) subunit gamma-T1':'G&gamma;T1', 'G(I)/G(S)/G(O) subunit gamma-2':'G&gamma;2',
+				   'subunit gamma':'G&gamma;'}
 
 	arrestin_dict = {'arrs_mouse':'S-arrestin', 'arrs_bovin':'S-arrestin', 'arrb1_human':'Beta-arrestin-1', 'arrb1_rat':'Beta-arrestin-1'}
 
