@@ -111,92 +111,98 @@
                   </span>
                   <div class="clearfix"></div>
               </div>
-              <div class="panel-body">
-                <table class="display compact" id="suglist1">
-                  <thead>
-                    <tr>
-                      <th rowspan=3 colspan=1 class="text-center">Target<br>residue<br>number</th>
-                      <th rowspan=3 colspan=1 class="text-center">Generic<br>residue<br>number</th>
-                      <th rowspan=3 colspan=1 class="text-center">Target<br>WT AA</th>
-                      <th rowspan=3 colspan=1 class="text-center rightborder"><span class="text-red-highlight">Ala Mutant</span><br>(removes<br>sidechain)</th>
-                      <th rowspan=1 colspan=3 class="text-center rightborder">Sum of residue contact frequencies</th>
-                      <th rowspan=1 colspan=2 class="text-center rightborder">Class conservation</th>
-                      <th rowspan=3 colspan=1 class="text-center rightborder">#Supporting data types</th>
-                      <th rowspan=1 colspan=4 class="text-center rightborder">Mutation data</th>
-                      <th rowspan=1 colspan=4 class="text-center rightborder">Thermostabilizing mutations</th>
-                      <th rowspan=1 colspan=4 class="text-center rightborder">Expression-increasing mutations<br>(structure constructs)</th>
-                      <th rowspan=1 colspan=4 class="text-center">Expression-increasing mutations<br>(ligand site mutations)</th>
-                    </tr>
-                    <tr>
-                      <th rowspan=2 colspan=1 class="text-center">Diff</th>
-                      <th rowspan=2 colspan=1 class="text-center">{{ desired }}</th>
-                      <th rowspan=2 colspan=1 class="text-center rightborder">{{ undesired }}</th>
-                      <th rowspan=2 colspan=1 class="text-center">AA</th>
-                      <th rowspan=2 colspan=1 class="text-center rightborder">%</th>
-                      <th rowspan=1 colspan=2 class="text-center rightborder-light">&#8805;5-fold&nbsp;effect</th>
-                      <th rowspan=1 colspan=2 class="text-center rightborder">all</th>
-                      <th rowspan=1 colspan=2 class="text-center rightborder-light">Same pos.</th>
-                      <th rowspan=2 colspan=1 class="text-center">Same<br>WT AA</th>
-                      <th rowspan=2 colspan=1 class="text-center rightborder">Same<br>mutant AA</th>
-                      <th rowspan=1 colspan=2 class="text-center rightborder-light">Same pos.</th>
-                      <th rowspan=2 colspan=1 class="text-center">Same<br>WT AA</th>
-                      <th rowspan=2 colspan=1 class="text-center rightborder">Same<br>mutant AA</th>
-                      <th rowspan=1 colspan=2 class="text-center rightborder-light">Same pos.</th>
-                      <th rowspan=2 colspan=1 class="text-center">Same<br>WT AA</th>
-                      <th rowspan=2 colspan=1 class="text-center">Same<br>mutant AA</th>
-                    </tr>
-                    <tr>
-                      <th>#Mut.</th>
-                      <th class="rightborder-light">#Rec.</th>
-                      <th>#Mut.</th>
-                      <th class="rightborder">#Rec.</th>
-                      <th>#Mut.</th>
-                      <th class="rightborder-light">#Rec.</th>
-                      <th>#Mut.</th>
-                      <th class="rightborder-light">#Rec.</th>
-                      <th>#Mut.</th>
-                      <th class="rightborder-light">#Rec.</th>
-                    </tr>
-                    <tr class="filterrow">
-                      <th></th>
-                      <th></th>
-                      <th></th>
-                      <th class="rightborder"></th>
-                      <th></th>
-                      <th></th>
-                      <th class="rightborder"></th>
-                      <th></th>
-                      <th class="rightborder"></th>
-                      <th class="rightborder"></th>
-                      <th></th>
-                      <th></th>
-                      <th></th>
-                      <th class="rightborder"></th>
-                      <th></th>
-                      <th></th>
-                      <th></th>
-                      <th class="rightborder"></th>
-                      <th></th>
-                      <th></th>
-                      <th></th>
-                      <th class="rightborder"></th>
-                      <th></th>
-                      <th></th>
-                      <th></th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for gn, entry in freq_results1.items %}
-                    <tr data-generic_gn="{{ gn }}">
-                      {% for data in entry %}
-                      <td>{{ data | safe}}</td>
+              {% if freq_results1_length > 0 %}
+                <div class="panel-body">
+                  <table class="display compact" id="suglist1">
+                    <thead>
+                      <tr>
+                        <th rowspan=3 colspan=1 class="text-center">Target<br>residue<br>number</th>
+                        <th rowspan=3 colspan=1 class="text-center">Generic<br>residue<br>number</th>
+                        <th rowspan=3 colspan=1 class="text-center">Target<br>WT AA</th>
+                        <th rowspan=3 colspan=1 class="text-center rightborder"><span class="text-red-highlight">Ala Mutant</span><br>(removes<br>sidechain)</th>
+                        <th rowspan=1 colspan=3 class="text-center rightborder">Sum of residue contact frequencies</th>
+                        <th rowspan=1 colspan=2 class="text-center rightborder">Class conservation</th>
+                        <th rowspan=3 colspan=1 class="text-center rightborder">#Supporting data types</th>
+                        <th rowspan=1 colspan=4 class="text-center rightborder">Mutation data</th>
+                        <th rowspan=1 colspan=4 class="text-center rightborder">Thermostabilizing mutations</th>
+                        <th rowspan=1 colspan=4 class="text-center rightborder">Expression-increasing mutations<br>(structure constructs)</th>
+                        <th rowspan=1 colspan=4 class="text-center">Expression-increasing mutations<br>(ligand site mutations)</th>
+                      </tr>
+                      <tr>
+                        <th rowspan=2 colspan=1 class="text-center">Diff</th>
+                        <th rowspan=2 colspan=1 class="text-center">{{ desired }}</th>
+                        <th rowspan=2 colspan=1 class="text-center rightborder">{{ undesired }}</th>
+                        <th rowspan=2 colspan=1 class="text-center">AA</th>
+                        <th rowspan=2 colspan=1 class="text-center rightborder">%</th>
+                        <th rowspan=1 colspan=2 class="text-center rightborder-light">&#8805;5-fold&nbsp;effect</th>
+                        <th rowspan=1 colspan=2 class="text-center rightborder">all</th>
+                        <th rowspan=1 colspan=2 class="text-center rightborder-light">Same pos.</th>
+                        <th rowspan=2 colspan=1 class="text-center">Same<br>WT AA</th>
+                        <th rowspan=2 colspan=1 class="text-center rightborder">Same<br>mutant AA</th>
+                        <th rowspan=1 colspan=2 class="text-center rightborder-light">Same pos.</th>
+                        <th rowspan=2 colspan=1 class="text-center">Same<br>WT AA</th>
+                        <th rowspan=2 colspan=1 class="text-center rightborder">Same<br>mutant AA</th>
+                        <th rowspan=1 colspan=2 class="text-center rightborder-light">Same pos.</th>
+                        <th rowspan=2 colspan=1 class="text-center">Same<br>WT AA</th>
+                        <th rowspan=2 colspan=1 class="text-center">Same<br>mutant AA</th>
+                      </tr>
+                      <tr>
+                        <th>#Mut.</th>
+                        <th class="rightborder-light">#Rec.</th>
+                        <th>#Mut.</th>
+                        <th class="rightborder">#Rec.</th>
+                        <th>#Mut.</th>
+                        <th class="rightborder-light">#Rec.</th>
+                        <th>#Mut.</th>
+                        <th class="rightborder-light">#Rec.</th>
+                        <th>#Mut.</th>
+                        <th class="rightborder-light">#Rec.</th>
+                      </tr>
+                      <tr class="filterrow">
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th class="rightborder"></th>
+                        <th></th>
+                        <th></th>
+                        <th class="rightborder"></th>
+                        <th></th>
+                        <th class="rightborder"></th>
+                        <th class="rightborder"></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th class="rightborder"></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th class="rightborder"></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th class="rightborder"></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for gn, entry in freq_results1.items %}
+                      <tr data-generic_gn="{{ gn }}">
+                        {% for data in entry %}
+                        <td>{{ data | safe}}</td>
+                        {% endfor %}
+                      </tr>
                       {% endfor %}
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
+                    </tbody>
+                  </table>
+                </div>
+              {% else %}
+                <div class="panel-body">
+                  No {{ undesired }} destabilizing mutation suggestions were identified in the top ranked results for the selected target.
+                </div>
+              {% endif %}
           </div>
       </div>
     {% endif %}
@@ -215,95 +221,101 @@
                   </span>
                   <div class="clearfix"></div>
               </div>
-              <div class="panel-body">
-                <table width="100%" class="display compact" id="suglist2">
-                  <thead>
-                    <tr>
-                      <th rowspan=3 colspan=1 class="text-center">Target<br>residue<br>number</th>
-                      <th rowspan=3 colspan=1 class="text-center">Generic<br>residue<br>number</th>
-                      <th rowspan=3 colspan=1 class="text-center rightborder-light">Target<br>WT AA</th>
-                      <th rowspan=1 colspan=2 class="text-center rightborder"><span class="text-red-highlight">Mutant AA</span><br>({{ desired }} conservation)</th>
-                      <th rowspan=1 colspan=3 class="text-center rightborder">Sum of residue contact frequencies</th>
-                      <th rowspan=1 colspan=2 class="text-center rightborder">Class conservation</th>
-                      <th rowspan=3 colspan=1 class="text-center rightborder">#Supporting data types</th>
-                      <th rowspan=1 colspan=4 class="text-center rightborder">Mutation data</th>
-                      <th rowspan=1 colspan=4 class="text-center rightborder">Thermostabilizing mutations</th>
-                      <th rowspan=1 colspan=4 class="text-center rightborder">Expression-increasing mutations<br>(structure constructs)</th>
-                      <th rowspan=1 colspan=4 class="text-center">Expression-increasing mutations<br>(ligand activity studies)</th>
-                    </tr>
-                    <tr>
-                      <th rowspan=2 class="text-center">AA</th>
-                      <th rowspan=2 class="text-center rightborder">%</th>
-                      <th rowspan=2 class="text-center">Diff</th>
-                      <th rowspan=2 class="text-center">{{ desired }}</th>
-                      <th rowspan=2 class="text-center rightborder">{{ undesired }}</th>
-                      <th rowspan=2 class="text-center">AA</th>
-                      <th rowspan=2 class="text-center rightborder">%</th>
-                      <th rowspan=1 colspan=2 class="text-center rightborder-light">&#8805;5-fold&nbsp;effect</th>
-                      <th rowspan=1 colspan=2 class="text-center rightborder">all</th>
-                      <th rowspan=1 colspan=2 class="text-center rightborder-light">Same pos.</th>
-                      <th rowspan=2 colspan=1 class="text-center" >Same<br>WT AA</th>
-                      <th rowspan=2 colspan=1 class="text-center rightborder">Same<br>mutant AA</th>
-                      <th rowspan=1 colspan=2 class="text-center rightborder-light">Same pos.</th>
-                      <th rowspan=2 colspan=1 class="text-center">Same<br>WT AA</th>
-                      <th rowspan=2 colspan=1 class="text-center rightborder">Same<br>mutant AA</th>
-                      <th rowspan=1 colspan=2 class="text-center rightborder-light">Same pos.</th>
-                      <th rowspan=2 colspan=1 class="text-center">Same<br>WT AA</th>
-                      <th rowspan=2 colspan=1 class="text-center">Same<br>mutant AA</th>
-                    </tr>
-                    <tr>
-                      <th>#Mut.</th>
-                      <th class="rightborder-light">#Rec.</th>
-                      <th>#Mut.</th>
-                      <th class="rightborder">#Rec.</th>
-                      <th>#Mut.</th>
-                      <th class="rightborder-light">#Rec.</th>
-                      <th>#Mut.</th>
-                      <th class="rightborder-light">#Rec.</th>
-                      <th>#Mut.</th>
-                      <th class="rightborder-light">#Rec.</th>
-                    </tr>
-                    <tr class="filterrow">
-                      <th></th>
-                      <th></th>
-                      <th></th>
-                      <th></th>
-                      <th class="rightborder"></th>
-                      <th></th>
-                      <th></th>
-                      <th class="rightborder"></th>
-                      <th></th>
-                      <th class="rightborder"></th>
-                      <th class="rightborder"></th>
-                      <th></th>
-                      <th></th>
-                      <th></th>
-                      <th class="rightborder"></th>
-                      <th></th>
-                      <th></th>
-                      <th></th>
-                      <th class="rightborder"></th>
-                      <th></th>
-                      <th></th>
-                      <th></th>
-                      <th class="rightborder"></th>
-                      <th></th>
-                      <th></th>
-                      <th></th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for gn, entry in freq_results2.items %}
-                    <tr data-generic_gn="{{ gn }}">
-                      {% for data in entry %}
-                      <td>{{ data | safe}}</td>
+              {% if freq_results2_length > 0 %}
+                <div class="panel-body">
+                  <table width="100%" class="display compact" id="suglist2">
+                    <thead>
+                      <tr>
+                        <th rowspan=3 colspan=1 class="text-center">Target<br>residue<br>number</th>
+                        <th rowspan=3 colspan=1 class="text-center">Generic<br>residue<br>number</th>
+                        <th rowspan=3 colspan=1 class="text-center rightborder-light">Target<br>WT AA</th>
+                        <th rowspan=1 colspan=2 class="text-center rightborder"><span class="text-red-highlight">Mutant AA</span><br>({{ desired }} conservation)</th>
+                        <th rowspan=1 colspan=3 class="text-center rightborder">Sum of residue contact frequencies</th>
+                        <th rowspan=1 colspan=2 class="text-center rightborder">Class conservation</th>
+                        <th rowspan=3 colspan=1 class="text-center rightborder">#Supporting data types</th>
+                        <th rowspan=1 colspan=4 class="text-center rightborder">Mutation data</th>
+                        <th rowspan=1 colspan=4 class="text-center rightborder">Thermostabilizing mutations</th>
+                        <th rowspan=1 colspan=4 class="text-center rightborder">Expression-increasing mutations<br>(structure constructs)</th>
+                        <th rowspan=1 colspan=4 class="text-center">Expression-increasing mutations<br>(ligand activity studies)</th>
+                      </tr>
+                      <tr>
+                        <th rowspan=2 class="text-center">AA</th>
+                        <th rowspan=2 class="text-center rightborder">%</th>
+                        <th rowspan=2 class="text-center">Diff</th>
+                        <th rowspan=2 class="text-center">{{ desired }}</th>
+                        <th rowspan=2 class="text-center rightborder">{{ undesired }}</th>
+                        <th rowspan=2 class="text-center">AA</th>
+                        <th rowspan=2 class="text-center rightborder">%</th>
+                        <th rowspan=1 colspan=2 class="text-center rightborder-light">&#8805;5-fold&nbsp;effect</th>
+                        <th rowspan=1 colspan=2 class="text-center rightborder">all</th>
+                        <th rowspan=1 colspan=2 class="text-center rightborder-light">Same pos.</th>
+                        <th rowspan=2 colspan=1 class="text-center" >Same<br>WT AA</th>
+                        <th rowspan=2 colspan=1 class="text-center rightborder">Same<br>mutant AA</th>
+                        <th rowspan=1 colspan=2 class="text-center rightborder-light">Same pos.</th>
+                        <th rowspan=2 colspan=1 class="text-center">Same<br>WT AA</th>
+                        <th rowspan=2 colspan=1 class="text-center rightborder">Same<br>mutant AA</th>
+                        <th rowspan=1 colspan=2 class="text-center rightborder-light">Same pos.</th>
+                        <th rowspan=2 colspan=1 class="text-center">Same<br>WT AA</th>
+                        <th rowspan=2 colspan=1 class="text-center">Same<br>mutant AA</th>
+                      </tr>
+                      <tr>
+                        <th>#Mut.</th>
+                        <th class="rightborder-light">#Rec.</th>
+                        <th>#Mut.</th>
+                        <th class="rightborder">#Rec.</th>
+                        <th>#Mut.</th>
+                        <th class="rightborder-light">#Rec.</th>
+                        <th>#Mut.</th>
+                        <th class="rightborder-light">#Rec.</th>
+                        <th>#Mut.</th>
+                        <th class="rightborder-light">#Rec.</th>
+                      </tr>
+                      <tr class="filterrow">
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th class="rightborder"></th>
+                        <th></th>
+                        <th></th>
+                        <th class="rightborder"></th>
+                        <th></th>
+                        <th class="rightborder"></th>
+                        <th class="rightborder"></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th class="rightborder"></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th class="rightborder"></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th class="rightborder"></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for gn, entry in freq_results2.items %}
+                      <tr data-generic_gn="{{ gn }}">
+                        {% for data in entry %}
+                        <td>{{ data | safe}}</td>
+                        {% endfor %}
+                      </tr>
                       {% endfor %}
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
+                    </tbody>
+                  </table>
+                </div>
+              {% else %}
+                <div class="panel-body">
+                  No {{ desired }} stabilizing mutation suggestions were identified in the top ranked results for the selected target.
+                </div>
+              {% endif %}
           </div>
       </div>
     {% endif %}
@@ -347,11 +359,11 @@
                         "deferRender":  true
                       }
 
-  var table1, table2 = null;
+  var table1, table2 = undefined;
 
   function initTable1() {
     // Init mutations table 1
-    if ($("#suglist1").length > 0 && table1 == null){
+    if ($("#suglist1").length > 0 && table1 === undefined){
       // Assign coloring class to each cell in freq. diff table
       // NOTE: Adjust color index when changing table - currently 8
       $("#suglist1 tbody tr td").filter(":nth-child(5)").each( function() {
@@ -440,14 +452,14 @@
 
       // table redraw
       table1.draw();
-    } else if (table1 !== null){
+    } else if (table1 !== undefined){
       table1.draw();
     }
   }
 
   function initTable2() {
     // Init mutations table 2
-    if ($("#suglist2").length > 0 && table2 == null){
+    if ($("#suglist2").length > 0 && table2 === undefined){
       // Assign coloring class to each cell in freq. diff table
       // NOTE: Adjust color index when changing table - currently 8
       $("#suglist2 tbody tr td").filter(":nth-child(6)").each( function() {
@@ -535,7 +547,7 @@
 
       // table redraw
       table2.draw();
-    } else if (table2 !== null){
+    } else if (table2 !== undefined){
       table2.draw();
     }
   }

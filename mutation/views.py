@@ -2687,8 +2687,11 @@ def contactMutationDesign(request, goal):
                         expr_struct_text[0], expr_struct_text[1], expr_struct_text[3], expr_struct_text[4],
                         expr_ligmut_text[0], expr_ligmut_text[1], expr_ligmut_text[3], expr_ligmut_text[4]]
 
-            #if len(context['freq_results1']) == 0:
+            context["freq_results1_length"] = len(context['freq_results1'])
+            if len(context['freq_results1']) == 0:
+                context['freq_results1'] = "placeholder"
             #    context.pop('freq_results1', None)
+
 
             # TABLE 2 - introducing desired AAs
 
@@ -2808,8 +2811,11 @@ def contactMutationDesign(request, goal):
                         expr_struct_text[0], expr_struct_text[1], expr_struct_text[3], expr_struct_text[4],
                         expr_ligmut_text[0], expr_ligmut_text[1], expr_ligmut_text[3], expr_ligmut_text[4]]
 
-            #if len(context['freq_results2']) == 0:
+            context["freq_results2_length"] = len(context['freq_results2'])
+            if len(context['freq_results2']) == 0:
+                context['freq_results2'] = "placeholder"
             #    context.pop('freq_results2', None)
+
 
             return render(request, 'mutation/contact_mutation_design.html', context)
         else:
