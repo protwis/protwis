@@ -278,7 +278,7 @@ function gray_scale_table(table, colorSetIds = []) {
         cols[j].push(cell.innerText);
         colored = true;
       } else {
-        for (var k = 0; k < colorSetIds.length; k++) {
+        for (let k = 0; k < colorSetIds.length; k++) {
           if (cell.classList.contains(colorSetIds[k])) {
             if (cell.innerText !== "-") {
               sets[String(colorSetIds[k])].push(cell.innerText);
@@ -294,7 +294,7 @@ function gray_scale_table(table, colorSetIds = []) {
 
       // Check for gradients and prepare them
       if (colored) {
-        for (var k = 0; k < cell.classList.length; k++) {
+        for (let k = 0; k < cell.classList.length; k++) {
           if (cell.classList[k].startsWith("color-gradient_")) {
             var gradScheme = cell.classList[k];
             var gradientName = gradScheme.split("_");
