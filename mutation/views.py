@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.template import loader, Context
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models import Count, Min, Sum, Avg, Q, F, Case, When, IntegerField, Prefetch
@@ -2082,31 +2082,25 @@ def importmutation(request):
     #return HttpResponse(ref_id)
     return render(request,'mutation/index.html',context)
 
-class designStateSelectorActive(AbsReferenceSelection):
+class designStateSelector(AbsReferenceSelection):
     step = 1
     number_of_steps = 1
     target_input = False
-    description = 'Select a reference target by searching or browsing.'
+    title = "SELECT A TARGET AND STATE"
+    description = 'First, select a reference target by searching or browsing.\nSubsequently click the desired state to stabilize.'
     #docs = 'sequences.html#similarity-search-gpcrdb'
     buttons = {
-        'continue': {
-            'label': 'Next',
-            'url': '/mutations/design_state_active',
-            'color': 'success',
+        "continue": {
+            "label": "Active state",
+            "url": "/mutations/state_stabilizing_active",
+            "color": "success",
+            "sameSize": True
         },
-    }
-
-class designStateSelectorInactive(AbsReferenceSelection):
-    step = 1
-    number_of_steps = 1
-    target_input = False
-    description = 'Select a reference target by searching or browsing.'
-    #docs = 'sequences.html#similarity-search-gpcrdb'
-    buttons = {
-        'continue': {
-            'label': 'Next',
-            'url': '/mutations/design_state_inactive',
-            'color': 'success',
+        "continue2": {
+            "label": "Inactive state",
+            "url": "/mutations/state_stabilizing_inactive",
+            "color": "danger",
+            "sameSize": True
         },
     }
 
@@ -2323,7 +2317,7 @@ def contactMutationDesign(request, goal):
 
     context = {}
     simple_selection = request.session.get('selection', False)
-    if simple_selection.reference[0].type == 'protein':
+    if simple_selection and len(simple_selection.reference) > 0 and simple_selection.reference[0].type == 'protein':
         # Target receptor
         target_protein = simple_selection.reference[0].item
         target = Protein.objects.get(entry_name=target_protein)
@@ -2821,7 +2815,7 @@ def contactMutationDesign(request, goal):
         else:
             return HttpResponse("There is unfortunately not enough structural data available for the GPCR class of this target.")
     else:
-        return HttpResponse("No valid mutation goal selected, please try again.")
+        return redirect("design_state_selector")
 
 # Collect GNs that have at least a presence of X% in the provided structure set
 # TODO consider matching at least X% of receptors instead of structures
@@ -2950,31 +2944,6 @@ def calculateResidueContactFrequency(pdbs, allowed_gns, detail_gn = None):
 
         i_options_filter = inter_options_filter | intra_options_filter
 
-        # Grab all interactions with the applied filters
-        # pairs = Interaction.objects.filter(interacting_pair__res1__generic_number__label__in = allowed_gns,
-        #                 interacting_pair__res2__generic_number__label__in = allowed_gns,
-        #                 interacting_pair__referenced_structure__pdb_code__index__in=pdbs,
-        #                 interacting_pair__res1__protein_conformation_id=F('interacting_pair__res2__protein_conformation_id'),
-        #                 interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')
-        #             ).values(
-        #                     'interaction_type',
-        #                     'interacting_pair__referenced_structure__pdb_code__index',
-        #                     'interacting_pair__res1__generic_number__label',
-        #                     'interacting_pair__res2__generic_number__label',
-        #             ).distinct(
-        #             ).annotate(Count('pk'))
-        #
-        # results = {}
-        # for pair in pairs:
-        #     gn1 = pair["interacting_pair__res1__generic_number__label"]
-        #     gn2 = pair["interacting_pair__res2__generic_number__label"]
-        #
-        #     for gn in [pair["interacting_pair__res1__generic_number__label"], pair["interacting_pair__res2__generic_number__label"]]:
-        #         if gn in results:
-        #             results[gn] += 1
-        #         else:
-        #             results[gn] = 1
-
         pairs = Interaction.objects.filter(
             interacting_pair__referenced_structure__pdb_code__index__in=pdbs
         ).filter(interacting_pair__res1__generic_number__label__in = allowed_gns,
@@ -3087,25 +3056,72 @@ def collectResiduePairs(pdbs, allowed_gns):
 
     return pairs
 
-# def designStateActive(request):
-#     return contactMutationDesign(request, "active")
+# class designGprotSelector(AbsReferenceSelection):
+#     step = 1
+#     number_of_steps = 1
+#     target_input = False
+#     description = 'Select a reference target by searching or browsing.'
+#     #docs = 'sequences.html#similarity-search-gpcrdb'
+#     buttons = {
+#         'continue': {
+#             'label': 'Next',
+#             'url': '/mutations/design_gprot_',
+#             'color': 'success',
+#         },
+#     }
 #
-# def designStateInactive(request):
-#     return contactMutationDesign(request, "inactive")
-
-
+#     def get_context_data(self, **kwargs):
+#         """get context from parent class (really only relevant for children of this class, as TemplateView does
+#         not have any context variables)"""
+#
+#         context = super().get_context_data(**kwargs)
+#         if "goal" in kwargs:
+#             context["buttons"]["continue"]["url"] = '/mutations/design_gprot_' + kwargs["goal"]
+#
+#             # Only show class A + Class B1 for Gq/11
+#             ppf = ProteinFamily.objects.get(slug="000")
+#             context["ps"] = Protein.objects.filter(family=ppf)
+#             if kwargs["goal"]=="Gq":
+#                 context["pfs"] = ProteinFamily.objects.filter(parent=ppf.id).filter(Q(slug__startswith="001") | Q(slug__startswith="002"))
+#             else:
+#                 context["pfs"] = ProteinFamily.objects.filter(parent=ppf.id).filter(slug__startswith="001")
+#         else:
+#             # ERROR
+#             skip=1
+#
+#         return context
 
 class designGprotSelector(AbsReferenceSelection):
     step = 1
     number_of_steps = 1
     target_input = False
-    description = 'Select a reference target by searching or browsing.'
+    title = "SELECT A TARGET AND G PROTEIN"
+    description = 'First, select a reference target by searching or browsing.\nSubsequently click on the desired G protein to design (de)coupling mutations for.'
     #docs = 'sequences.html#similarity-search-gpcrdb'
     buttons = {
-        'continue': {
-            'label': 'Next',
-            'url': '/mutations/design_gprot_',
-            'color': 'success',
+        "continue": {
+            "label": "Gs",
+            "url": "/mutations/gprot_coupling_Gs",
+            "color": "info",
+            "sameSize": True
+        },
+        "continue2": {
+            "label": "Gi/o",
+            "url": "/mutations/gprot_coupling_Gi",
+            "color": "info",
+            "sameSize": True
+        },
+        "continue3": {
+            "label": "Gq/11",
+            "url": "/mutations/gprot_coupling_Gq",
+            "color": "info",
+            "sameSize": True
+        },
+        "continue4": {
+            "label": "G12/13",
+            "url": "/mutations/gprot_coupling_G12",
+            "color": "info",
+            "sameSize": True
         },
     }
 
@@ -3114,28 +3130,38 @@ class designGprotSelector(AbsReferenceSelection):
         not have any context variables)"""
 
         context = super().get_context_data(**kwargs)
-        if "goal" in kwargs:
-            context["buttons"]["continue"]["url"] = '/mutations/design_gprot_' + kwargs["goal"]
 
-            # Only show class A + Class B1 for Gq/11
-            ppf = ProteinFamily.objects.get(slug="000")
-            context["ps"] = Protein.objects.filter(family=ppf)
-            if kwargs["goal"]=="Gq":
-                context["pfs"] = ProteinFamily.objects.filter(parent=ppf.id).filter(Q(slug__startswith="001") | Q(slug__startswith="002"))
-            else:
-                context["pfs"] = ProteinFamily.objects.filter(parent=ppf.id).filter(slug__startswith="001")
-        else:
-            # ERROR
-            skip=1
+        # Currently only enough data for Class A and partially B1
+        # Class B1 is only for Gq but with the desired single URL setup we cannot distinguish anymore beforehand
+        ppf = ProteinFamily.objects.get(slug="000")
+        context["pfs"] = ProteinFamily.objects.filter(parent=ppf.id).filter(Q(slug__startswith="001") | Q(slug__startswith="002"))
 
         return context
 
+    # def get_context_data(self, **kwargs):
+    #     """get context from parent class (really only relevant for children of this class, as TemplateView does
+    #     not have any context variables)"""
+    #
+    #     context = super().get_context_data(**kwargs)
+    #     if "goal" in kwargs:
+    #         # Only show class A + Class B1 for Gq/11
+    #         ppf = ProteinFamily.objects.get(slug="000")
+    #         context["ps"] = Protein.objects.filter(family=ppf)
+    #         if kwargs["goal"]=="Gq":
+    #             context["pfs"] = ProteinFamily.objects.filter(parent=ppf.id).filter(Q(slug__startswith="001") | Q(slug__startswith="002"))
+    #         else:
+    #             context["pfs"] = ProteinFamily.objects.filter(parent=ppf.id).filter(slug__startswith="001")
+    #     else:
+    #         # ERROR
+    #         skip=1
+    #
+    #     return context
 
 def gprotMutationDesign(request, goal):
     context = {}
 
     simple_selection = request.session.get('selection', False)
-    if simple_selection.reference[0].type == 'protein':
+    if simple_selection and len(simple_selection.reference) > 0 and simple_selection.reference[0].type == 'protein':
         # Target receptor
         target_protein = simple_selection.reference[0].item
         target = Protein.objects.get(entry_name=target_protein)
@@ -3399,8 +3425,8 @@ def gprotMutationDesign(request, goal):
                             class_gn_cons[gn][2], class_gn_cons[gn][0],
                             row_type, abs(gn_sign[2])+0.1 if gn_sign[2]>0 else abs(gn_sign[2]) ]);
 
-            return render(request, 'mutation/gprot_mutation_design.html', context)
+            return render(request, "mutation/gprot_mutation_design.html", context)
         else:
             return HttpResponse("No valid mutation goal selected, please try again.")
     else:
-        return HttpResponse("No valid protein target selected, please try again.")
+        return redirect("design_gprot_selector")

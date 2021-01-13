@@ -11,14 +11,13 @@ urlpatterns = [
     path('designpdb', views.designPDB.as_view(), name='design'),
     path('design', cache_page(60*60*24*7)(views.design.as_view()), name='design'),
 
-    # CHANGE TO PARAMETER-based urls
-    path('design_state_selector/active', views.designStateSelectorActive.as_view(), name='design_state_selector'),
-    path('design_state_selector/inactive', views.designStateSelectorInactive.as_view(), name='design_state_selector'),
-    path('design_state_detail_gn', views.designStateDetailsGN, name='design_state_detail_gn'),
-    path('design_state_<goal>', views.contactMutationDesign, name='design_state_mutations'),
 
-    path('design_gprot_selector_<goal>', views.designGprotSelector.as_view(), name='design_gprot_selector'),
-    path('design_gprot_<goal>', views.gprotMutationDesign, name='design_gprot_mutations'),
+    path('state_stabilizing', views.designStateSelector.as_view(), name='design_state_selector'),
+    path('state_stabilizing_<goal>', views.contactMutationDesign, name='design_state_mutations'),
+    path('state_detail_gn', views.designStateDetailsGN, name='design_state_detail_gn'),
+
+    path('gprot_coupling', views.designGprotSelector.as_view(), name='design_gprot_selector'),
+    path('gprot_coupling_<goal>', views.gprotMutationDesign, name='design_gprot_mutations'),
 
     path('pocket', views.pocket, name='pocket'),
     path('statistics', views.coverage, name='statistics'),

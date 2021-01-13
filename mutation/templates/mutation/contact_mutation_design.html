@@ -575,13 +575,13 @@
 
     // Ajax query to backend and populate a modal
     $.ajax({
-        'url': '/mutations/design_state_detail_gn',
-        'data': {
+        "url": "/mutations/state_detail_gn",
+        "data": {
             "gn": gn
         },
-        'type': 'POST',
-        'async': false,
-        'success': function (data) {
+        "type": "POST",
+        "async": false,
+        "success": function (data) {
             $("#detailGNModal .modal-title").text("Contact frequencies for " + gn)
             $("#detailGNModal .modal-body").html(data)
             $('#detailGNModal').modal('show');
