@@ -902,7 +902,7 @@ class ConstructStatistics(TemplateView):
                     # print('\n ### doing range',site, sites,max_pos_range2[site],val['range'])
                 val['receptors'] = unique_sites
                 val['fusions'] = distinct_fusion
-                if site in truncations_maximums:
+                if site in truncations_maximums and pclass in truncations_maximums[site]:
                     val['range'] = list(range(min_cut,truncations_maximums[site][pclass]+1))
                     if min_cut < max_pos_range3[site][0]:
                         max_pos_range3[site][0] = min_cut
