@@ -613,7 +613,8 @@ class SequenceSignature:
 
     def suggest_mutations(self, ref_prot):
         """
-        A function that returns a list of suggestions for point mutations based on sequence signature.No cut-off on signature strength is applied here, the function iterates over all residues in the signature.
+        A function that returns a list of suggestions for point mutations based on sequence signature.
+        No cut-off on signature strength is applied here, the function iterates over all residues in the signature.
 
         Args:
             ref_prot ([Protein]): A protein to suggest the mutations for.
@@ -631,7 +632,7 @@ class SequenceSignature:
                 signature_strength = self.signature[s][pos][2]
                 mutation = ", ".join(AMINO_ACID_GROUPS[signature_prop_group])
                 #Adds a list with mutation suggestion. Fields:
-                # GN, WT aa, Suggested aa, Signature strnength, Set 1/2
+                # GN, WT aa, Suggested aa, Signature strength, Set 1/2
                 try:
                     output[segment].append(
                         [resi,

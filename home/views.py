@@ -67,7 +67,7 @@ def index(request):
         # Adjusted formatting for release notes
 
         # To be extended wtih G proteins and Arrestins
-        context['release_statistics'].insert(2, {"statistics_type": "Structures", "value": "GPCRs: {}".format(stats["Exp. GPCR structures"]) })
+        context['release_statistics'].insert(2, {"statistics_type": "Structures", "value": "GPCRs: {}, G proteins: {}".format(stats["Exp. GPCR structures"], stats["Exp. Gprotein structures"]) })
         #context['release_statistics'].insert(2, {"statistics_type": "Structures", "value": "GPCRs: {}, G proteins: {}, Arrestins: {}".format(stats["Exp. GPCR structures"], stats["Exp. Gprotein structures"], stats["Exp. Arrestin structures"]) })
         context['release_statistics'].insert(3, {"statistics_type": "Structure models", "value": "GPCRs: {}, GPCR-G protein complexes: {}".format(stats["GPCR structure models"], stats["GPCR-G protein structure models"]) })
 
