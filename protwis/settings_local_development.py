@@ -9,7 +9,8 @@ BUILD_CACHE_DIR = DATA_DIR + '/cache'
 DEFAULT_NUMBERING_SCHEME = 'gpcrdb'
 DEFAULT_PROTEIN_STATE = 'inactive'
 REFERENCE_POSITIONS = {'TM1': '1x50', 'ICL1': '12x50', 'TM2': '2x50', 'ECL1': '23x50', 'TM3': '3x50', 'ICL2': '34x50',
-    'TM4': '4x50', 'ECL2': '45x50', 'TM5': '5x50', 'TM6': '6x50', 'TM7': '7x50', 'H8': '8x50'}
+    'TM4': '4x50', 'ECL2': '45x50', 'TM5': '5x50', 'TM6': '6x50', 'TM7': '7x50', 'H8': '8x50',
+    'D1S1': 'D1S1x50', 'D1T1': 'D1T1x50', 'D1S2': 'D1S2x50', 'D1e1': 'D1e1x50'}
 DOCUMENTATION_URL = 'https://docs.gpcrdb.org/'
 
 # Analytics

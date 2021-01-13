@@ -599,7 +599,7 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
 
                 temp = f.replace('.yaml', '').split("_")
                 temp.append([output])
-                temp.append(round(output['score'][0][0]))
+                temp.append(round(output['score']))
                 temp.append((output['inchikey']).strip())
                 temp.append((output['smiles']).strip())
                 results.append(temp)
