@@ -1078,9 +1078,9 @@ def showcalculation(request):
     residues = Residue.objects.filter(protein_conformation__protein=context['proteins'][0]).prefetch_related('protein_segment','display_generic_number','generic_number')
 
     HelixBox = DrawHelixBox(
-                residues, context['proteins'][0], str(p), nobuttons=1)
+                residues, context['proteins'][0].get_protein_class(), str(p), nobuttons=1)
     SnakePlot = DrawSnakePlot(
-                residues, context['proteins'][0], str(p), nobuttons=1)
+                residues, context['proteins'][0].get_protein_class(), str(p), nobuttons=1)
 
     lookup = {}
     lookup_with_pos = {}
