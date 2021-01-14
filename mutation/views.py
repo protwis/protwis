@@ -120,62 +120,64 @@ def render_mutations(request, protein = None, family = None, download = None, re
     used_schemes = {}
     # print("receptor_class",receptor_class,family)
     if receptor_class==None:
+        try:
+            if protein: # if protein static page
 
-        if protein: # if protein static page
+                proteins.append(Protein.objects.get(entry_name = protein))
+                segments_ids = ProteinSegment.objects.filter(proteinfamily='GPCR').values('id')
+                original_segments = ProteinSegment.objects.all()
 
-            proteins.append(Protein.objects.get(entry_name = protein))
-            segments_ids = ProteinSegment.objects.filter(proteinfamily='GPCR').values('id')
-            original_segments = ProteinSegment.objects.all()
+            elif family:
 
-        elif family:
+                family_proteins = Protein.objects.filter(family__slug__startswith=family, sequence_type__slug='wt')
+                for fp in family_proteins:
+                    proteins.append(fp)
+                    if fp.residue_numbering_scheme.slug not in used_schemes:
+                        used_schemes[fp.residue_numbering_scheme.slug] = 0
+                    used_schemes[fp.residue_numbering_scheme.slug] += 1
+                segments_ids = ProteinSegment.objects.filter(proteinfamily='GPCR').values('id')
+                original_segments = ProteinSegment.objects.filter(proteinfamily='GPCR')
+                used_scheme = max(used_schemes, key=used_schemes.get)
 
-            family_proteins = Protein.objects.filter(family__slug__startswith=family, sequence_type__slug='wt')
-            for fp in family_proteins:
-                proteins.append(fp)
-                if fp.residue_numbering_scheme.slug not in used_schemes:
-                    used_schemes[fp.residue_numbering_scheme.slug] = 0
-                used_schemes[fp.residue_numbering_scheme.slug] += 1
-            segments_ids = ProteinSegment.objects.filter(proteinfamily='GPCR').values('id')
-            original_segments = ProteinSegment.objects.filter(proteinfamily='GPCR')
-            used_scheme = max(used_schemes, key=used_schemes.get)
+            else:
 
-        else:
+                # flatten the selection into individual proteins
+                for target in simple_selection.targets:
+                    if target.type == 'protein':
+                        proteins.append(target.item)
+                    elif target.type == 'family':
+                        # species filter
+                        species_list = []
+                        for species in simple_selection.species:
+                            species_list.append(species.item)
 
-            # flatten the selection into individual proteins
-            for target in simple_selection.targets:
-                if target.type == 'protein':
-                    proteins.append(target.item)
-                elif target.type == 'family':
-                    # species filter
-                    species_list = []
-                    for species in simple_selection.species:
-                        species_list.append(species.item)
+                        # annotation filter
+                        protein_source_list = []
+                        for protein_source in simple_selection.annotation:
+                            protein_source_list.append(protein_source.item)
 
-                    # annotation filter
-                    protein_source_list = []
-                    for protein_source in simple_selection.annotation:
-                        protein_source_list.append(protein_source.item)
+                        if species_list:
+                            family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
+                                species__in=(species_list),
+                                source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
+                        else:
+                            family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
+                                source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
 
-                    if species_list:
-                        family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
-                            species__in=(species_list),
-                            source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
+                        for fp in family_proteins:
+                            proteins.append(fp)
+
+                original_segments = []
+                original_positions = []
+                segments_ids = []
+                for segment in simple_selection.segments:
+                    if segment.type=='residue':
+                        original_positions.append(segment.item.default_generic_number.label)
                     else:
-                        family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
-                            source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
-
-                    for fp in family_proteins:
-                        proteins.append(fp)
-
-            original_segments = []
-            original_positions = []
-            segments_ids = []
-            for segment in simple_selection.segments:
-                if segment.type=='residue':
-                    original_positions.append(segment.item.default_generic_number.label)
-                else:
-                    original_segments.append(segment.item)
-                segments_ids.append(segment.item.id)
+                        original_segments.append(segment.item)
+                    segments_ids.append(segment.item.id)
+        except:
+            return redirect("/mutations/")
 
         #scheme
         used_schemes = {}

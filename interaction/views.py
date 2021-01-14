@@ -1133,7 +1133,9 @@ def ajax(request, slug, **response_kwargs):
     for interaction in interactions:
         if interaction.rotamer.residue.generic_number:
             sequence_number = interaction.rotamer.residue.sequence_number
-            sequence_number = lookup[interaction.rotamer.residue.generic_number.label]
+            if interaction.rotamer.residue.generic_number.label in lookup:
+                sequence_number = lookup[interaction.rotamer.residue.generic_number.label]
+
             label = interaction.rotamer.residue.generic_number.label
             aa = interaction.rotamer.residue.amino_acid
             interactiontype = interaction.interaction_type.name
