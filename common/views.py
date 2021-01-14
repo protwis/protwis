@@ -204,7 +204,7 @@ def getTargetTable():
             </tr> \n".format(
                 t['slug'],
                 t['name'],
-                ("No" if t['slug'] in missing_slugs else "Yes"),    
+                ("No" if t['slug'] in missing_slugs else "Yes"),
                 t['class'],
                 t['ligandtype'],
                 t['family'],
