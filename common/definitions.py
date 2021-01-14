@@ -376,6 +376,27 @@ AMINO_ACID_GROUP_NAMES_OLD = OrderedDict([
         ('custom', 'Custom'),
     ])
 
+DESIGN_SUBSTITUTION_DICT = {"A":  ["S"],
+                            "C":  ["S"],
+                            "D":  ["L", "K"],
+                            "E":  ["M", "K"],
+                            "F":  ["N", "D"],
+                            "G":  ["S"],
+                            "H":  ["E", "K"],
+                            "I":  ["S"],
+                            "K":  ["M", "E"],
+                            "L":  ["N", "D"],
+                            "M":  ["Q", "K"],
+                            "N":  ["L"],
+                            "P":  ["-"],
+                            "Q":  ["M"],
+                            "R":  ["M", "E"],
+                            "S":  ["V"],
+                            "T":  ["V"],
+                            "V":  ["S"],
+                            "W":  ["Q", "E"],
+                            "Y":  ["N", "D"]}
+
 DESIGN_SUBSTITUTION_MATRIX = OrderedDict([
         ('hydrophobic', {
             #'A':[[['L', 'V', 'I']],['Increase size to "block" binding']],

@@ -210,16 +210,16 @@
                         {% else %}
                             <td><a target='_blank' href="/signprot/{{ structure.extra_proteins.all|only_one_subunit:'Alpha,entry_name' }}">{{ structure.extra_proteins.all|only_one_subunit:"Alpha,name"|safe }}</a></td>
                         {% endif %}
-                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha,species"|safe }}</td>
+                        <td class='expand'>{{ structure.extra_proteins.all|only_one_subunit:"Alpha,species"|safe }}</td>
                         
                         <td class='expand'>
                             {{ structure.extra_proteins.all|only_one_subunit:"Alpha,note"|safe }}
                         </td>
                         <td class="text-center">{{ structure.extra_proteins.all|only_one_subunit:"Alpha,coverage"|safe }}</td>
                         <td>{{ structure.extra_proteins.all|only_one_subunit:"Beta,name"|safe }}</td>
-                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Beta,species"|safe }}</td>
+                        <td class='expand'>{{ structure.extra_proteins.all|only_one_subunit:"Beta,species"|safe }}</td>
                         <td>{{ structure.extra_proteins.all|only_one_subunit:"Gamma,name"|safe }}</td>
-                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Gamma,species"|safe }}</td>
+                        <td class='expand'>{{ structure.extra_proteins.all|only_one_subunit:"Gamma,species"|safe }}</td>
                         <td>
                             {{ structure.structure_type.type_short|escape }}
                         </td>
@@ -244,8 +244,8 @@
                             <td>-</td>
                         {% endif %}
                         <td><span>{{ structure.protein_conformation.protein.family.parent.short|safe|dashwhenempty }}</span></td>
-                        <td><span>{{ structure.protein_conformation.protein.family.parent.parent.parent.short|safe|dashwhenempty }}</span></td>
-                        <td>{{ structure.protein_conformation.protein.species.common_name|dashwhenempty }}</td>
+                        <td class='expand'><span>{{ structure.protein_conformation.protein.family.parent.parent.parent.short|safe|dashwhenempty }}</span></td>
+                        <td class='expand'>{{ structure.protein_conformation.protein.species.common_name|dashwhenempty }}</td>
                         <td>
                             {{ structure.stabilizing_agents.all|only_fusions|linebreaksbr }}
                         </td>

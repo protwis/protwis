@@ -186,7 +186,7 @@ def getTargetTable():
                     t[gprotein] = "-"
 
             data_table += "<tr> \
-            <td data-sort=\"0\"><input class=\"form-check-input\" type=\"checkbox\" name=\"targets\" id=\"{}\" data-entry=\"{}\"></td> \
+            <td data-sort=\"0\"><input class=\"form-check-input\" type=\"checkbox\" name=\"targets\" id=\"{}\" data-entry=\"{}\" data-human=\"{}\"></td> \
             <td>{}</td> \
             <td>{}</td> \
             <td>{}</td> \
@@ -204,6 +204,7 @@ def getTargetTable():
             </tr> \n".format(
                 t['slug'],
                 t['name'],
+                ("No" if t['slug'] in missing_slugs else "Yes"),
                 t['class'],
                 t['ligandtype'],
                 t['family'],

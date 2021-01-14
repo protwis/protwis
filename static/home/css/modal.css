@@ -63,7 +63,7 @@
     text-decoration: none;
     cursor: pointer;
 }
-#modal_table tbody tr:hover {
-      background-color: #b8d1f3;
-      cursor: pointer;
+#superposition_modal_table tbody tr:hover {
+    background-color: #b8d1f3;
+    cursor: pointer;
 }

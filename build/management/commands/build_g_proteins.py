@@ -233,7 +233,15 @@ class Command(BaseCommand):
             acc = f.split('.')[0]
             up = self.parse_uniprot_file(acc)
             pst = ProteinSequenceType.objects.get(slug='wt')
-            species = Species.objects.get(common_name=up['species_common_name'])
+            try:
+                species, created = Species.objects.get_or_create(latin_name=up['species_latin_name'],
+                                                                 defaults={
+                                                                     'common_name': up['species_common_name'],
+                                                                 })
+                if created:
+                    self.logger.info('Created species ' + species.latin_name)
+            except IntegrityError:
+                species = Species.objects.get(latin_name=up['species_latin_name'])
             source = ProteinSource.objects.get(name=up['source'])
             try:
                 name = up['names'][0].split('Guanine nucleotide-binding protein ')[1]
@@ -1033,7 +1041,7 @@ class Command(BaseCommand):
         #pprint(data['AVPR2'])
         #pprint(data['AVP2R'])
         #pprint(data['BDKRB1'])
-        source = 'Aska2'
+        source = 'Inoue'
         lookup = {}
 
         for entry_name, couplings in data.items():
@@ -1097,7 +1105,7 @@ class Command(BaseCommand):
         data = self.read_bouvier(filepath)
         #pprint(data['AVP2R'])
         #pprint(data['BDKRB1'])
-        source = 'Bouvier'
+        source = 'Bouvier1'
         lookup = {}
 
         for entry_name, couplings in data.items():
@@ -1167,7 +1175,7 @@ class Command(BaseCommand):
         #pprint(data['AVPR2'])
         #pprint(data['AVP2R'])
         #pprint(data['BDKRB1'])
-        source = 'Bouvier2'
+        source = 'Bouvier'
         lookup = {}
 
         for entry_name, couplings in data.items():

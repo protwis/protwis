@@ -1,0 +1,381 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% block addon_css %}
+
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+<link href="{% static 'home/css/buttons.dataTables.min.css' %}" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+
+<style type="text/css">
+    div.dt-buttons {
+      clear: both;
+    }
+
+    table#suglist1, table#suglist2 {
+      width: 100%;
+    }
+
+    .yadcf-filter-wrapper {
+      margin-top: 0;
+    }
+
+    input.yadcf-filter  {
+      width: 60px;
+      font-family: sans-serif;
+      font-size: 100%;
+    }
+
+    .yadcf-filter-range-number {
+      width: 40px;
+      font-family: sans-serif;
+      font-size: 100%;
+    }
+
+    .yadcf-filter-range {
+      min-width: 30px;
+    }
+
+    .yadcf-filter-range-number-seperator {
+      display: none;
+    }
+
+    @media (min-width: 2000px) {
+      .container {
+          width: 1970px;
+      }
+    }
+
+    th.signature {
+      background-color: #eee;
+    }
+
+
+    #suglist1 td.expand {
+      display: inline-block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      width: 85px;
+      white-space: nowrap;
+    }
+
+    #suglist1 td.expand:hover {
+      overflow: visible;
+      white-space: normal;
+    }
+
+</style>
+
+{% endblock %}
+{% block content %}
+
+<ul class="nav nav-tabs nav-browsers">
+    <li class="active"><a href="#" id="faketab1-table-link" onClick="filterDropDown(this, 'good');">1. Mutations to increase {{ gprot }} binding</a></li>
+    <li><a href="#" id="faketab2-table-link" onClick="filterDropDown(this, 'bad');">2. Mutations to decrease {{ gprot }} binding</a></li>
+    <li><a href="#" id="faketab3-table-link" onClick="filterDropDown(this, 'all');">3. All residue positions</a></li>
+</ul>
+
+<div class="row">
+  <div class="tab-content col-md-12 ">
+    {% if signature_result %}
+      <div class="tab-pane active" id="mutation-table-1-tab">
+          <div class="panel panel-default">
+              <div class="panel-body">
+                <p>
+                  <b>Mutation design:</b><br>
+                  <span id="pos_design_text">
+                    To <span class="text-forest-highlight">strengthen coupling</span>, mutate receptor positions lacking a conserved positive (+) property by introducing the highest conserved amino acid (AA) of the {{ gprot }} binding GPCRs having that property.<br>
+                    For negative (-) properties, which contribute to non-binding, instead mutate receptor positions into the highest conserved AA of the {{ gprot }} binding GPCRs lacking that property.<br>
+                  </span>
+                  <span id="neg_design_text" class="hidden">
+                    To <span class="text-red-highlight">weaken coupling</span>, mutate receptor positions lacking a conserved negative (-) property by introducing the highest conserved amino acid (AA) of the {{ gprot }} non-binding GPCRs having that property.<br>
+                    For positive (+) properties, which contribute to binding, instead mutate receptor positions into the highest conserved AA of the {{ gprot }} non-binding GPCRs lacking that property.<br>
+                  </span>
+                </p>
+                <!--<div class="dropdown">
+                  <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Select Mutation type
+                  <span class="caret"></span></button>
+                  <ul class="dropdown-menu">
+                    <li><a href="#" onClick="filterDropDown('good');">AAs to introduce</a></li>
+                    <li><a href="#" onClick="filterDropDown('bad');">AAs to remove</a></li>
+                    <li><a href="#" onClick="filterDropDown('all');">Show all</a></li>
+                  </ul>
+                </div>-->
+                <table class="display compact" id="suglist1">
+                  <thead>
+                    <tr>
+                      <th colspan=4 class="text-center">Residue</th>
+                      <th rowspan=1 class="text-center increaser"><span class="text-forest-highlight">Mutant AA</span></th>
+                      <th rowspan=1 class="text-center decreaser"><span class="text-red-highlight">Mutant AA</span></th>
+                      <th colspan=2 class="text-center">Structure interactions<br>(# receptors)</th>
+                      <th colspan=2 class="text-center">Mutation data<br>&#8805;5-fold&nbsp;effect</th>
+                      <th colspan=4 class="text-center">{{gprot }} binders vs non-binders<br>sequence signature</th>
+                      <th colspan=3 class="text-center">Property conservation<br>{{gprot }} binders</th>
+                      <th colspan=3 class="text-center">Property conservation<br>{{gprot }} non-binders</th>
+                      <th colspan=2 class="text-center">AA conservation<br>{{gprot }} binders</th>
+                      <th colspan=2 class="text-center">AA conservation<br>{{gprot }} non-binders</th>
+                      <th colspan=2 class="text-center">AA conservation<br>GPCR class</th>
+                      <th></th>
+                      <th></th>
+                    </tr>
+                    <tr>
+                      <th class="text-center">Segment</th>
+                      <th class="text-center">Target<br>residue<br>number</th>
+                      <th class="text-center">Generic<br>residue<br>number</th>
+                      <th class="text-center">Target<br>WT AA</th>
+                      <th class="text-center">Increase<br>coupling</th>
+                      <th class="text-center">Decrease<br>coupling</th>
+                      <th class="text-center">G&nbsp;protein</th>
+                      <th class="text-center">Ligand</th>
+                      <th class="text-center">#Mut.</th>
+                      <th class="text-center">#Rec.</th>
+                      <th class="text-center signature">Score (%)</th>
+                      <th class="text-center signature">Property</th>
+                      <th class="text-center signature">Length</th>
+                      <th class="text-center signature">Matching<br>AAs</th>
+                      <th class="text-center">Cons. (%)</th>
+                      <th class="text-center">Property</th>
+                      <th class="text-center">Length</th>
+                      <th class="text-center">Cons. (%)</th>
+                      <th class="text-center">Property</th>
+                      <th class="text-center">Length</th>
+                      <th class="text-center">Cons. (%)</th>
+                      <th class="text-center">AA</th>
+                      <th class="text-center">Cons. (%)</th>
+                      <th class="text-center">AA</th>
+                      <th class="text-center">Cons. (%)</th>
+                      <th class="text-center">AA</th>
+                      <th></th>
+                      <th></th>
+                    </tr>
+                    <tr>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for entry in signature_result %}
+                    <tr >
+                      {% for data in entry %}
+                      <td>{{ data | safe}}</td>
+                      {% endfor %}
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+          </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<div id="hiddenblock" class="hidden">
+</div>
+
+{% endblock %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/datatables.min.js' %}"> </script>
+<script src="{% static 'home/js/dataTables.buttons.min.js' %}"> </script>
+<script src="{% static 'home/js/grayscale.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+<script src="{% static 'home/js/select2.js' %}"> </script>
+
+
+<script type="text/javascript" charset="utf-8">
+  var table_options = { "paging":       true,
+                        "pageLength":   20,
+                        "lengthChange": false,
+                        "order":        [[ 27, "desc" ]],
+                        "buttons":      ["csv", "excel"],
+                        "scrollX":      true,
+                        "dom":          "lfrtipB",
+                        "deferRender": true,
+                      }
+
+  var table1, table2 = null;
+
+  function initTable1() {
+    // Init mutations table 1
+    if ($("#suglist1").length > 0 && table1 == null){
+      // Assign coloring class to each cell in freq. diff table
+      $("#suglist1 tbody tr td").filter(":nth-child(11)").each( function() {
+          $(this).addClass("color-column");
+          $(this).addClass("color-abs");
+        //$(this).addClass("color-reverse");
+      });
+
+      $("#suglist1 tbody tr td").filter(":nth-child(14)").each( function() {
+          $(this).addClass("expand");
+      });
+
+      // set cell-color to cell (for cell coloring)
+      $("#suglist1 tbody tr td span[cell-color]").each( function() {
+        var cell = $(this).closest("td")[0];
+        $(cell).addClass($(this).attr("cell-color"));
+        $(cell).css("font-weight", "bold"); ;
+      });
+
+      gray_scale_table($("#suglist1"));
+
+      var table_options1 = Object.assign({}, table_options);
+      table_options1["columnDefs"] = [
+          { className: "text-center", "targets": [...Array(26).keys()] },
+          { "visible": false, "targets": [ 5, 26, 27 ] },
+        ]
+
+      table1 = $("#suglist1").DataTable(table_options1);
+
+      // Multi select
+      var yadcf_options = [];
+      var list = [0, 3, 4, 5, 11, 12, 15, 16, 18, 19, 21, 23, 25];
+      var html_list = [3, 4, 5, 11, 12, 15, 18];
+      for (i in list){
+        yadcf_options.push({
+              column_number : list[i],
+              filter_type: "multi_select",
+              select_type: "select2",
+              filter_default_label: "",
+              filter_reset_button_text: false,
+          });
+
+          if (html_list.includes(list[i])){
+            yadcf_options[yadcf_options.length-1]["column_data_type"] = "html";
+          }
+      }
+
+      var list = [1, 2, 11];
+      for (i in list){
+        yadcf_options.push({
+                       column_number: list[i],
+                       filter_type: "text",
+                       select_type: "select2",
+                       filter_default_label: "",
+                       filter_reset_button_text: false,
+                       filter_match_mode : "contains",
+                   });
+      }
+
+      // Range filters
+      list = [6, 7, 8, 9, 10, 14, 17, 20, 22, 24];
+      for (i in list){
+        yadcf_options.push({
+            column_number : list[i],
+            filter_type: "range_number",
+            filter_reset_button_text: false,
+            column_data_type: "html",
+            html_data_type: "value",
+            filter_default_label: ["Min", "Max"],
+        });
+      }
+
+      list = [26,27];
+      for (i in list){
+        yadcf_options.push({
+          column_number: list[i],
+          filter_container_id: "hiddenblock",
+          filter_type: "select",
+          visible: "false"
+        });
+      }
+
+      // list = [10,11];
+      // for (i in list){
+      //   yadcf_options.push({
+      //     column_number: list[i],
+      //     filter_type: "range_number",
+      //     filter_default_label: ["Min", "Max"],
+      //     filter_reset_button_text: false,
+      //     html5_data: "data-search",
+      //   });
+      // }
+
+      yadcf.init(table1, yadcf_options);
+
+      // Enable tooltips in table
+      $(function () {
+        $('table#suglist1 [data-toggle="tooltip"]').tooltip()
+      })
+
+      // Put top scroller
+      // https://stackoverflow.com/questions/35147038/how-to-place-the-datatables-horizontal-scrollbar-on-top-of-the-table
+      $(".dataTables_scrollHead").css({
+          "overflow-x": "scroll"
+      }).on("scroll", function(e){
+          var scrollBody = $(this).parent().find(".dataTables_scrollBody").get(0);
+          scrollBody.scrollLeft = this.scrollLeft;
+          $(scrollBody).trigger("scroll");
+      });
+
+      // By default: filter on type "good", hide the decrease column + draw
+      table1.columns(5).visible( false );
+      table1.columns(26).search("good").draw();
+    }
+  }
+
+  function filterDropDown(element, type) {
+    // Toggle tab
+    var holder = $(event.target).closest("ul")[0];
+    $(holder).children("li").each(function(){$(this).removeClass("active")})
+    var tab = $(event.target).closest("li")[0];
+    $(tab).addClass("active");
+
+    // refresh sort order
+    table1.order([27, "desc"]);
+
+    if (type === "all"){
+        // simply reset all filters
+        $("#pos_design_text").show();
+        $("#neg_design_text").show();
+        table1.columns(4).visible( true );
+        table1.columns(5).visible( true );
+        yadcf.exResetAllFilters(table1);
+    } else if (type === "good"){
+        $("#pos_design_text").show();
+        $("#neg_design_text").hide();
+        table1.columns(4).visible( true );
+        table1.columns(5).visible( false );
+        table1.columns(26).search(type).draw();
+    } else if (type === "bad"){
+        $("#pos_design_text").hide();
+        $("#neg_design_text").show();
+        table1.columns(4).visible( false );
+        table1.columns(5).visible( true );
+        table1.columns(26).search(type).draw();
+    }
+  }
+
+  $(document).ready(function() {
+      $("#neg_design_text").hide();
+      $("#neg_design_text").removeClass("hidden");
+      initTable1();
+  });
+</script>
+{% endblock %}

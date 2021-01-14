@@ -663,17 +663,13 @@ class DrawSnakePlot(Diagram):
                 orientation = 1
                 name = "ICL"+str(number)
 
-            # TEMP FIX for Class D1 D1e1
+            # TEMP FIX for Class D1 - D1e1
             if name not in self.segments:
                 if self.family.startswith("Class D1") and i==2:
                     name = 'D1e1'
                 else:
                     continue
             rs = self.segments[name] # get residues
-
-            if self.family.startswith("Class D1") and i==2:
-                rs = rs + self.segments["D1e1"]
-                print(rs)
 
             start = 1
             res_before = []

@@ -105,6 +105,14 @@ h4 {
   width: 100px;
 }
 
+span.text-red-highlight {
+  color: red !important;
+}
+
+span.text-forest-highlight {
+  color: #4E9258 !important;
+}
+
 #target-table-container .text-highlight input.select2-default {
   color: red !important;
 }

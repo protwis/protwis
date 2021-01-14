@@ -45,13 +45,13 @@ class Command(BaseCommand):
                 active_ids = list(SignprotComplex.objects.filter(structure__pdb_code__index__in=structure_ids) \
                                     .exclude(structure__pdb_code__index="6CMO") \
                                     .values_list("structure__pdb_code__index"))
-                active_ids = [x[0] for x in active_ids] # flatten
+                active_ids = [x[0] for x in active_ids if x[0][0].isnumeric()] # flatten
 
                 # Hardcoded active structures
                 if slug[0] == "001":
                     active_ids.extend(["6LI3"])
                 elif slug[0] == "004":
-                    active_ids = ["6UO8", "7C7Q"]
+                    active_ids = ["7C7Q"]
 
                 # print("The following PDBs are G-prot complex structures:")
                 # print(slug[0], active_ids)
@@ -64,7 +64,7 @@ class Command(BaseCommand):
                 class_pair_inactives['001'] = ["2x46_6x37", 11.9] #A
                 class_pair_inactives['002'] = ["2x46_6x37", 13] #B1
                 class_pair_inactives['003'] = ["2x47_6x37", 1000] #B2 PLACEHOLDER
-                class_pair_inactives['004'] = ["2x47_6x37", 14.3] #C
+                class_pair_inactives['004'] = ["2x47_6x37", 14.5] #C
                 class_pair_inactives['005'] = ["2x47_6x37", 1000] #D PLACEHOLDER
                 class_pair_inactives['006'] = ["2x44_6x31", 13] #F
 
@@ -74,7 +74,7 @@ class Command(BaseCommand):
                                     .exclude(structure__pdb_code__index__in=active_ids) \
                                     .values_list("structure__pdb_code__index"))
 
-                inactive_ids = [x[0] for x in inactive_ids]
+                inactive_ids = [x[0] for x in inactive_ids if x[0][0].isnumeric()]
 
                 # HARDCODED INACTIVE STRUCTURES
                 if slug[0] == "004":
@@ -132,6 +132,8 @@ class Command(BaseCommand):
                         "5LWE" : "inactive", # Cannot be determined using this method because of missing TM in annotation
                         "6KUX" : "inactive", #
                         "5NX2" : "intermediate", # Closer to active + groups together but internally more inactive
+                        "6N51" : "intermediate", # Holds middle between active and inactive
+                        "7CA5" : "intermediate"  # Apo state holds middle between active and inactive
                     }
 
                     # Percentage score for TM2-TM6 opening
@@ -170,7 +172,7 @@ class Command(BaseCommand):
                         # Classification
                         score = scoring_results[pdb]
                         structure_state = "inactive"
-                        if score < 30 and slug[0] == "001": # above this score always inactive structure
+                        if score < 40 and slug[0] == "001": # above this score always inactive structure
                             structure_state = "active"
                             if slug[0] == "001" and score > -70:
                                 structure_state = "intermediate"
