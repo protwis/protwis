@@ -1057,9 +1057,12 @@ def StructureInfo(request, pdbname):
     """
     Show structure details
     """
-    protein = Protein.objects.get(signprotstructure__pdb_code__index=pdbname)
 
-    crystal = SignprotStructure.objects.get(pdb_code__index=pdbname)
+    #protein = Protein.objects.get(signprotstructure__pdb_code__index=pdbname)
+    protein = Protein.objects.filter(signprotstructure__pdb_code__index=pdbname).first()
+
+    #crystal = SignprotStructure.objects.get(pdb_code__index=pdbname)
+    crystal = SignprotStructure.objects.filter(pdb_code__index=pdbname).first()
 
     return render(request,
                   'signprot/structure_info.html',
