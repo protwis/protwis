@@ -40,11 +40,17 @@ function updateTargetCount(){
  * @param {object} checkbox Checkbox element of the target to select
  */
 function addTarget(checkbox){
-  var slug = $(checkbox).attr("id");
-  $(checkbox).prop("checked", true);
-  $(checkbox).closest("tr").addClass("selected");
+  var species = $("div#filters-species a.btn.active")[0].innerText.trim();
 
-  selected_targets.add(slug);
+  if (species === "Human" && $(checkbox).attr("data-human")==="No"){
+    showAlert("Note that <b>"+$(checkbox).attr("data-entry")+"</b> does not have a human ortholog.<br>Adjust the species selection to include it.", "warning");
+  } else {
+    var slug = $(checkbox).attr("id");
+    $(checkbox).prop("checked", true);
+    $(checkbox).closest("tr").addClass("selected");
+
+    selected_targets.add(slug);
+  }
 }
 
 /**
