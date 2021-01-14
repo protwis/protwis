@@ -80,7 +80,7 @@ def detail(request, slug):
 
     # get genes
     genes = Gene.objects.filter(proteins=p).values_list('name', flat=True)
-    
+
     gene = None
     alt_genes = None
     if len(genes)>0:
