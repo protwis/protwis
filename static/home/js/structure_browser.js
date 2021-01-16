@@ -482,6 +482,10 @@ function structurebrowser() {
     $("#align_btn").click(function () {
         var checked_data = oTable2.rows(".alt_selected").data();
         ClearSelection("targets");
+        if (checked_data.length === 0) {
+            showAlert("No entries selected for sequence alignment", "danger");
+            return 0;
+        }
         for (var i = 0; i < checked_data.length; i++) {
             var div = document.createElement("div");
             div.innerHTML = checked_data[i][7];
@@ -501,15 +505,26 @@ function structurebrowser() {
     $("#download_btn").click(function () {
         ClearSelection("targets");
         var checked_data = oTable2.rows(".alt_selected").data();
-        for (var i = 0; i < checked_data.length; i++) {
+        if (checked_data.length === 0) {
+            showAlert("No structures selected for download", "danger");
+            return 0;
+        }
+        else if (checked_data.length > 100) {
+            showAlert("Maximum number of selected entries is 100", "warning");
+            return 0;
+        }
+        var selected_ids = [];
+        for (i = 0; i < checked_data.length; i++) {
             var div = document.createElement("div");
             div.innerHTML = checked_data[i][7];
             if (typeof div.innerText !== "undefined") {
-                AddToSelection("targets", "structure",  div.innerText.replace(/\s+/g, "") );
+                selected_ids.push(div.innerText.replace(/\s+/g, ''));
             } else {
-                AddToSelection("targets", "structure", div.textContent.replace(/\s+/g, ""));
+                selected_ids.push(div.textContent.replace(/\s+/g, ''));
             }
         }
+        AddToSelection('targets', 'structure_many', selected_ids.join(","));
+
         window.location.href = "/structure/pdb_download_index";
     });
 

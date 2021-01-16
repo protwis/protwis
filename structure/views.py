@@ -12,7 +12,7 @@ from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from protein.models import Gene, ProteinSegment, IdentifiedSites, ProteinGProteinPair
 from structure.models import Structure, StructureModel, StructureComplexModel, StructureModelStatsRotamer, StructureComplexModelStatsRotamer, StructureModelSeqSim, StructureComplexModelSeqSim, StructureRefinedStatsRotamer, StructureRefinedSeqSim, StructureExtraProteins, StructureModelRMSD
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn, PdbStateIdentifier
-from structure.assign_generic_numbers_gpcr import GenericNumbering
+from structure.assign_generic_numbers_gpcr import GenericNumbering, GenericNumberingFromDB
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
 from structure.forms import *
 from signprot.models import SignprotComplex, SignprotStructure, SignprotStructureExtraProteins
@@ -1775,7 +1775,8 @@ class PDBClean(TemplateView):
 						lig_names = [x.pdb_reference for x in StructureLigandInteraction.objects.filter(structure=selected_struct.item, annotated=True)]
 					else:
 						lig_names = None
-					gn_assigner = GenericNumbering(structure=PDBParser(QUIET=True).get_structure(struct_name, StringIO(selected_struct.item.get_cleaned_pdb(pref, water, lig_names)))[0])
+					# gn_assigner = GenericNumbering(structure=PDBParser(QUIET=True).get_structure(struct_name, StringIO(selected_struct.item.get_cleaned_pdb(pref, water, lig_names)))[0])
+					gn_assigner = GenericNumberingFromDB(selected_struct.item, PDBParser(QUIET=True).get_structure(struct_name, StringIO(selected_struct.item.get_cleaned_pdb(pref, water, lig_names)))[0])
 					tmp = StringIO()
 					io.set_structure(gn_assigner.assign_generic_numbers())
 					request.session['substructure_mapping'] = gn_assigner.get_substructure_mapping_dict()
