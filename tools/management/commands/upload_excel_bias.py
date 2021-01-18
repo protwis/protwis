@@ -27,7 +27,7 @@ import json
 import threading
 import concurrent.futures
 import pytz
-
+import re
 
 MISSING_PROTEINS = {}
 SKIPPED = 0
@@ -83,10 +83,11 @@ class Command(BaseBuild):
                 print(msg)
                 self.logger.error(msg)
         # import the structure data
+        self.prepare_all_data(options['filename'])
         try:
             print('CREATING BIAS DATA')
             print(options['filename'])
-            self.prepare_all_data(options['filename'])
+            # self.prepare_all_data(options['filename'])
             self.logger.info('COMPLETED CREATING BIAS')
         except Exception as msg:
             print('--error--', msg, '\n')
@@ -134,118 +135,154 @@ class Command(BaseBuild):
             self.logger.info(
                 "The error appeared during reading the excel", num_rows)
 
+    def initialize_return_row(self,excel_row):
+        d = dict()
+        d['submitting_group'] = None
+        d['reference'] = None
+        d['ligand_name'] = None
+        d['ligand_type'] = None
+        d['ligand_id'] = None
+        d['ligand_reference'] = None
+        d['emax_ligand_name'] = None
+        d['emax_ligand_type'] = None
+        d['emax_ligand_id'] = None
+        d['receptor'] = None
+        d['receptor_uniprot_id'] = None
+        d['cell_line'] = None
+        d['protein'] = None
+        d['protein_assay'] = None
+        d['protein_assay_method'] = None
+        d['protein_time_resolved'] = None
+        d['protein_ligand_function'] = None
+        d['protein_mtype'] = None
+        d['protein_relation'] = None
+        d['protein_activity_quantity'] = 0.0
+        d['protein_activity_quantity_unit'] = None
+        d['protein_activity_quality'] = None
+        d['protein_efficacy_measure'] = None
+        d['protein_efficacy_relation'] = None
+        d['protein_efficacy_quantity'] = 0.0
+        d['protein_efficacy_quantity_unit'] = None
+        d['pathway_bias_initial'] = 0.0
+        d['pathway_bias'] = 0.0
+        d['protein_activity_equation'] = None
+        d['protein_efficacy_equation'] = None
+        d['auxiliary_protein'] = None
+        d['source_file'] = excel_row
+        return d
+
+    def return_row(self, r,excel_row):
+        d = self.initialize_return_row(excel_row)
+        d['submitting_group'] = r[0]
+        d['reference'] = r[1]
+        try:
+            d['ligand_name'] = str(int(r[4]))
+        except:
+            d['ligand_name'] = r[4]
+        d['ligand_type'] = r[5]
+        try:
+            d['ligand_id'] = int(r[6])
+        except:
+            d['ligand_id'] = r[6]
+        d['ligand_reference'] = r[7]
+        d['emax_ligand_name'] = r[8]
+        d['emax_ligand_type'] = r[9]
+        try:
+            d['emax_ligand_id'] = int(r[10])
+        except:
+            d['emax_ligand_id'] = r[10]
+
+        d['receptor'] = r[11].lower().strip()
+        d['receptor_uniprot_id'] = r[12]
+        d['cell_line'] = r[13]
+        d['protein'] = r[14].strip().replace('α','a').replace('β','B').replace('g','G').lower()
+        d['protein_assay'] = r[15].strip()
+        d['protein_assay_method'] = r[16]
+        d['protein_time_resolved'] = r[17]
+        d['protein_ligand_function'] = r[18]
+        d['protein_mtype'] = r[19]
+        d['protein_relation'] = r[20]
+        d['protein_activity_quantity_unit'] = r[22]
+        d['protein_activity_quality'] = r[23]
+        d['protein_efficacy_measure'] = r[24]
+        d['protein_efficacy_relation'] = r[25]
+        d['protein_efficacy_quantity_unit'] = r[27]
+        if r[21] is not None and r[21] != '':
+            d['protein_activity_quantity'] = r[21]
+        if r[26] is not None and r[26] != '':
+            d['protein_efficacy_quantity'] = r[26]
+        if r[28] is not None and r[28] != '':
+            try:
+                d['pathway_bias_initial'] = float(r[28])
+            except:
+                try:
+                    d['pathway_bias_initial'] = float(r[28].replace('\U00002013', '-'))
+                except:
+                    d['pathway_bias_initial'] = r[28]
+
+
+        if r[29] is not None and r[29] != '':
+            try:
+                d['pathway_bias'] = float(r[29])
+            except:
+                try:
+                    d['pathway_bias'] = float(r[29].replace('\U00002013', '-'))
+                except:
+                    d['pathway_bias'] = 0.0
+        d['auxiliary_protein'] = r[30]
+        d['source_file'] = excel_row
+        return d
+
     def analyse_rows(self, rows, source_file):
         """
         Reads excel rows one by one
         Fetch data to models
         Saves to DB
         """
-        skipped = 0
+        skipped = list()
         # Analyse the rows from excel and assign the right headers
         temp = []
         for i, r in enumerate(rows, 1):
-            # code to skip rows in excel for faster testing
-            # if i < 15:
-            #     continue
-            # if i > 1200:
-            #     break
-            if i % 100 == 0:
-                print(i)
             d = dict()
+            # code to skip rows in excel for faster testing
+            # if i < 7609:
+            #     continue
+            # if i > 838:
+            #     break
+            # if i % 100 == 0:
+            #     print(i)
 
-            res = ''
-            mut = ''
-            d['submitting_group'] = r[0]
-            d['reference'] = r[1]
-            d['ligand_name'] = r[4]
-            d['ligand_type'] = r[5]
-            d['ligand_id'] = r[6]
-            d['bias_reference'] = r[7]
-            d['bias_ligand_name'] = r[8]
-            d['bias_ligand_type'] = r[9]
-            d['bias_ligand_id'] = r[10]
-
-            d['receptor'] = r[11].lower().strip()
-            d['receptor_isoform'] = r[12]
-            d['cell_line'] = r[13]
-            d['protein'] = r[14].strip().replace('α','a').replace('β','B').replace('g','G').lower()
-            d['protein_assay'] = r[15].strip()
-            d['protein_assay_method'] = r[16]
-            d['protein_time_resolved'] = r[17]
-
-            d['protein_ligand_function'] = r[18]
-            d['protein_mtype'] = r[19]
-
-            d['protein_activity_quantity'] = r[21]
-            d['protein_activity_quantity_unit'] = r[22]
-            d['protein_activity_quality'] = r[23]
-            d['protein_efficacy_measure'] = r[24]
-
-            d['protein_efficacy_quantity'] = r[26]
-            d['protein_efficacy_quantity_unit'] = r[27]
-            d['pathway_bias_initial'] = r[28]
-            d['pathway_bias'] = r[29]
-
-            d['protein_activity_equation'] = '='
-            d['protein_efficacy_equation'] = '='
+            d = self.return_row(r=r,excel_row=i)
             try:
-                if len(r[19])<3 and len(r[24])<3:
-                    d['protein_activity_equation'] = r[20]
-                    d['protein_efficacy_equation'] = r[25]
+                d['protein_activity_quantity'] = re.sub('[^\d\.,]', '', d['protein_activity_quantity'])
+                d['protein_activity_quantity'] = round(float(d['protein_activity_quantity']),2)
             except:
-                print(r[19],r[24])
+                d['protein_activity_quantity'] = float(d['protein_activity_quantity'])
+            try:
+                d['protein_efficacy_quantity'] = round(d['protein_efficacy_quantity'],0)
+            except:
+                d['protein_efficacy_quantity'] = d['protein_efficacy_quantity']
 
-            d['source_file'] = source_file + str(i)
-
-            if not isinstance(d['ligand_id'], str):
-                d['ligand_id'] = int(d['ligand_id'])
-            if not isinstance(d['bias_ligand_id'], str):
-                d['bias_ligand_id'] = int(d['bias_ligand_id'])
-            # coverts string to object
-            if d['protein_activity_quantity'] == "":
-                d['protein_activity_quantity'] = None
-            if d['protein_efficacy_quantity'] == "":
-                d['protein_efficacy_quantity'] = None
-            elif d['protein_efficacy_quantity'] !=None:
-                try:
-                    d['protein_efficacy_quantity'] = round(d['protein_efficacy_quantity'],0)
-                except:
-                    print(d['protein_efficacy_quantity'])
-                    d['protein_efficacy_quantity'] = None
-            if not isinstance(d['pathway_bias'], float):
-                d['pathway_bias'] = None
-            if not isinstance(d['pathway_bias_initial'], float):
-                d['pathway_bias_initial'] = None
-
-            #fetch bias measurements
-            if not isinstance(d['protein_activity_quantity'], (int, float)):
-                d['protein_activity_quantity'] = None
-            else:
-                d['protein_activity_quantity'],d['protein_mtype'] = self.fetch_measurements(d['protein_activity_quantity'],
+            d['protein_activity_quantity'],d['protein_mtype'] = self.fetch_measurements(d['protein_activity_quantity'],
 																	     d['protein_mtype'],
 																	     d['protein_activity_quantity_unit'])
 
-            if not isinstance(d['pathway_bias_initial'], (int, float)):
-                d['pathway_bias_initial'] = None
-            if not isinstance(d['pathway_bias'], (int, float)):
-                bias_value=d['pathway_bias'] = None
-            if d['protein'] == None or d['protein'] == "":
-                d['protein'] = 'G-protein'
+            if (d['protein'] == '' or
+                  d['protein'] == None):
+                if d['protein_assay'] == 'pERK1/2 activation' or d['protein_assay'] =="pERK1-2":
+                    d['protein'] = 'pERK1-2'
             family = self.define_g_family(d['protein'], d['protein_assay'])
             pub = self.fetch_publication(d['reference'])
 
-            # fetch main ligand
             l = self.fetch_ligand(
                 d['ligand_id'], d['ligand_type'], d['ligand_name'], d['source_file'])
-            if not l:
-                continue
+
             #fetch endogenous ligand
             protein = self.fetch_protein(d['receptor'], d['source_file'])
 
             # fetch reference_ligand
             reference_ligand = self.fetch_ligand(
-                d['bias_ligand_id'], d['bias_ligand_type'], d['bias_ligand_name'], d['source_file'])
-
+                d['emax_ligand_id'], d['emax_ligand_type'], d['emax_ligand_name'], d['source_file'])
 
             #fetch ChEMBL
             chembl = None
@@ -254,8 +291,10 @@ class Command(BaseBuild):
             # fetch protein
             protein = self.fetch_protein(d['receptor'], d['source_file'])
             if protein == None:
+                skipped.append(d)
                 continue
             end_ligand  = self.fetch_endogenous(protein)
+            auxiliary_protein = self.fetch_protein(d['auxiliary_protein'], d['source_file'])
             try:
                 if d['ligand_type']=="PubChem CID":
                     lignad_pubchem = d['ligand_id']
@@ -263,54 +302,52 @@ class Command(BaseBuild):
                     lignad_pubchem = None
             except:
                 lignad_pubchem = None
-
-## TODO:  check if it was already uploaded
+            if l == None:
+                print('*************error row',d,l)
+            ## TODO:  check if it was already uploaded
             experiment_entry = BiasedExperiment(submission_author=d['submitting_group'],
                                                 publication=pub,
                                                 ligand=l,
-                                                lignad_pubchem = lignad_pubchem,
                                                 receptor=protein,
-                                                chembl = chembl,
+                                                auxiliary_protein = auxiliary_protein,
                                                 endogenous_ligand = end_ligand
                                                 )
-            try:
-                experiment_entry.save()
-                self.fetch_vendor(l,experiment_entry)
-            except:
-                print('ligand pubchem', lignad_pubchem)
-                print('publication',publication)
-                print('chembl', chembl)
-                continue
+            # try:
+            experiment_entry.save()
+            self.fetch_vendor(l,experiment_entry)
+            # except:
+            #     print('skipping line', d)
+            #     continue
 
             experiment_assay = ExperimentAssay(biased_experiment=experiment_entry,
-                                               signalling_protein=d['protein'],
-                                               family = family,
-                                               cell_line=d['cell_line'],
-                                               assay_type=d['protein_assay'],
-                                               assay_measure=d['protein_assay_method'],
-                                               assay_time_resolved=d['protein_time_resolved'],
-                                               ligand_function=d['protein_ligand_function'],
-                                               quantitive_measure_type=d['protein_mtype'],
-                                               quantitive_activity=d['protein_activity_quantity'],
-                                               quantitive_activity_sign=d['protein_activity_equation'],
-                                               quantitive_unit=d['protein_activity_quantity_unit'],
-                                               qualitative_activity=d['protein_activity_quality'],
-                                               quantitive_efficacy=d['protein_efficacy_quantity'],
-                                               efficacy_measure_type=d['protein_efficacy_measure'],
-                                               efficacy_sign=d['protein_efficacy_equation'],
-                                               efficacy_unit=d['protein_efficacy_quantity_unit'],
-                                               bias_reference=d['bias_reference'],
-                                               bias_value=d['pathway_bias'],
-                                               bias_value_initial=d['pathway_bias_initial'],
-                                               emax_ligand_reference=reference_ligand
-                                               )
-
+                                                   signalling_protein=d['protein'],
+                                                   family = family,
+                                                   cell_line=d['cell_line'],
+                                                   assay_type=d['protein_assay'],
+                                                   assay_measure=d['protein_assay_method'],
+                                                   assay_time_resolved=d['protein_time_resolved'],
+                                                   ligand_function=d['protein_ligand_function'],
+                                                   quantitive_measure_type=d['protein_mtype'],
+                                                   quantitive_activity=d['protein_activity_quantity'],
+                                                   quantitive_activity_sign=d['protein_activity_equation'],
+                                                   quantitive_unit=d['protein_activity_quantity_unit'],
+                                                   qualitative_activity=d['protein_activity_quality'],
+                                                   quantitive_efficacy=d['protein_efficacy_quantity'],
+                                                   efficacy_measure_type=d['protein_efficacy_measure'],
+                                                   efficacy_sign=d['protein_efficacy_equation'],
+                                                   efficacy_unit=d['protein_efficacy_quantity_unit'],
+                                                   bias_reference=d['ligand_reference'],
+                                                   bias_value=d['pathway_bias'],
+                                                   bias_value_initial=d['pathway_bias_initial'],
+                                                   emax_ligand_reference=reference_ligand
+                                                   )
             experiment_assay.save()
-            #fetch authors
+                #fetch authors
             self.fetch_publication_authors(pub,experiment_assay)
 
-
             temp.append(d)
+        print('\n*********total skipped*********', skipped)
+        print('\n*********total saved*********', len(skipped))
         return temp
 
 
@@ -331,8 +368,6 @@ class Command(BaseBuild):
                     assay_author.save()
                     counter=counter+1
             # assay_author = ExperimentAssayAuthors(experiment = experiment_assay,
-
-
 
     def fetch_measurements(self, potency, p_type, unit):
         if p_type.lower()  == 'pec50':
@@ -358,8 +393,6 @@ class Command(BaseBuild):
                 potency = potency* 10**(-12)
             elif unit.lower() == 'mm':
                 potency = potency* 10**(-6)
-            else:
-                pass
         if p_type.lower()  == 'ic50':
             if unit.lower() == 'nm':
                 potency = potency* 10**(-9)
@@ -369,12 +402,7 @@ class Command(BaseBuild):
                 potency = potency* 10**(-12)
             elif unit.lower() == 'mm':
                 potency = potency* 10**(-6)
-            else:
-                pass
-        # if potency:
-        #     potency = (-1)*math.log10(potency)
-        #     p_type = 'pec50'
-        #     # potency = "{:.2E}".format(Decimal(potency))
+
         return potency,p_type
 
     def define_g_family(self, protein, assay_type):
@@ -425,11 +453,9 @@ class Command(BaseBuild):
               protein == 'gas' or
               protein == 'gaolf'):
             family = 'Gs'
-
-        elif (protein == '' or
-              protein == None):
-            if assay_type == 'pERK1/2 activation' or assay_type =="pERK1-2":
-                family = 'pERK1-2'
+        elif (protein == 'pERK1/2 activation' or
+                protein =="pERK1-2"):
+            family = 'pERK1-2'
         else:
             family == 'G-protein'
 
@@ -461,14 +487,16 @@ class Command(BaseBuild):
         # return vendor_count
 
     def fetch_chembl(self,ligand):
-        temp = ligand
-        chembl_id = None
-        links = temp.properities.web_links.all()
-
-        for x in links:
-            if x.web_resource.slug=='chembl_ligand':
-                chembl_id = [x for x in links if x.web_resource.slug=='chembl_ligand'][0].index
-        return chembl_id
+        try:
+            temp = ligand
+            chembl_id = None
+            links = temp.properities.web_links.all()
+            for x in links:
+                if x.web_resource.slug=='chembl_ligand':
+                    chembl_id = [x for x in links if x.web_resource.slug=='chembl_ligand'][0].index
+            return chembl_id
+        except:
+            return None
 
     def fetch_protein(self,protein_from_excel, source):
         """
@@ -494,18 +522,23 @@ class Command(BaseBuild):
         requires: source_file name
         """
         l = None
-
         try:
             if ligand_id in self.ligand_cache:
                 l = self.ligand_cache[ligand_id]
             else:
                 l = get_or_make_ligand(ligand_id, ligand_type, ligand_name)
                 self.ligand_cache[ligand_id] = l
-        except Exception as msg:
-            l = None
-            # print('ligand_id---',l,'\n end')
+            if l == None:
+                l = self.create_empty_ligand(ligand_name)
+        except:
+            web_resource = WebResource.objects.get(slug='pubchem')
+            try:
+                l = Ligand.objects.get(properities__web_links__web_resource=web_resource,
+                properities__web_links__index=ligand_id)
+            except:
+                l = self.create_empty_ligand(ligand_name)
+                # print('null ligand', l)
         return l
-
 
     def fetch_publication(self, publication_doi):
         """
@@ -603,3 +636,35 @@ class Command(BaseBuild):
                 self.data_all += rows
         print(len(self.data_all), " total data points")
         print("Finished")
+
+    def create_empty_ligand(self, ligand_name):
+        web_resource = False
+        # gtoplig webresource
+        lp = self.build_ligand_properties()
+        ligand = Ligand()
+        ligand.properities = lp
+        ligand.name = ligand_name
+        ligand.canonical = True
+        ligand.ambigious_alias = False
+        ligand.pdbe = None
+        try:
+            ligand.save()
+        except IntegrityError:
+            return Ligand.objects.get(name=ligand_name, canonical=True)
+        return ligand
+        # return self.update_ligand(ligand_name, {}, ligand_type, web_resource, gtop_id)
+
+    def build_ligand_properties(self):
+        lp = LigandProperities()
+        lt =  LigandType.objects.filter(name = 'small molecule')[0]
+        lp.ligand_type = lt
+        lp.smiles = None
+        lp.inchikey = None
+        lp.sequence= None
+        lp.mw = None
+        lp.rotatable_bonds = None
+        lp.hacc = None
+        lp.hdon = None
+        lp.logp = None
+        lp.save()
+        return lp

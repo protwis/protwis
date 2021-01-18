@@ -414,25 +414,25 @@ class AssayExperiment(models.Model):
 
     ligand = models.ForeignKey('Ligand', on_delete=models.CASCADE)
     protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
-    assay = models.ForeignKey('ChemblAssay', on_delete=models.CASCADE, null= True)
+    assay = models.ForeignKey('ChemblAssay', on_delete=models.CASCADE, null=True)
     assay_type = models.CharField(max_length=10)
     assay_description = models.TextField(max_length=1500)
     pchembl_value = models.CharField(max_length=10, null=True)
 
-    published_value = models.CharField(max_length=20, null= True)
-    published_relation = models.CharField(max_length=10, null= True)
-    published_type = models.CharField(max_length=20, null= True)
-    published_units = models.CharField(max_length=20, null= True)
+    published_value = models.CharField(max_length=20, null=True)
+    published_relation = models.CharField(max_length=10, null=True)
+    published_type = models.CharField(max_length=20, null=True)
+    published_units = models.CharField(max_length=20, null=True)
 
-    standard_value =  models.DecimalField(max_digits=9, decimal_places=3, null= True)
-    standard_relation = models.CharField(max_length=10, null= True)
-    standard_type = models.CharField(max_length=20, null= True)
-    standard_units = models.CharField(max_length=20, null= True)
+    standard_value =  models.DecimalField(max_digits=20, decimal_places=1, null=True)
+    standard_relation = models.CharField(max_length=10, null=True)
+    standard_type = models.CharField(max_length=20, null=True)
+    standard_units = models.CharField(max_length=20, null=True)
 
-    publication = models.ForeignKey(Publication, on_delete = models.CASCADE, null= True)
-    activity = models.CharField(max_length=50,null = True)
-    document_chembl_id = models.CharField(max_length=50,null = True)
-    cell_line = models.TextField(null = True)
+    publication = models.ForeignKey(Publication, on_delete = models.CASCADE, null=True)
+    activity = models.CharField(max_length=50,null=True)
+    document_chembl_id = models.CharField(max_length=50,null=True)
+    cell_line = models.TextField(null=True)
 
 
 class LigandVendors(models.Model):
@@ -450,14 +450,11 @@ class LigandVendorLink(models.Model):
 #Biased Signalling - start
 class BiasedExperiment(models.Model):
     submission_author = models.CharField(max_length=50)
-    ligand = models.ForeignKey(Ligand, on_delete = models.CASCADE)
-    lignad_pubchem = models.CharField(max_length=100,null = True)
-    publication = models.ForeignKey(Publication, on_delete = models.CASCADE)
-    receptor = models.ForeignKey('protein.Protein', on_delete = models.CASCADE)
-    chembl = models.CharField(max_length=100,null = True)
-    endogenous_ligand = models.ForeignKey(Ligand, related_name='endogenous_ligand_bias', on_delete = models.CASCADE,  null = True)
-    residue = models.CharField(max_length=5,null = True)
-    mutation = models.CharField(max_length=5,null = True)
+    ligand = models.ForeignKey(Ligand, on_delete=models.CASCADE)
+    publication = models.ForeignKey(Publication, on_delete=models.CASCADE)
+    receptor = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
+    endogenous_ligand = models.ForeignKey(Ligand, related_name='endogenous_ligand_bias', on_delete = models.CASCADE,  null=True)
+    auxiliary_protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE, related_name='auxiliary_protein', null=True)
 
 class ExperimentAssay(models.Model):
     biased_experiment = models.ForeignKey(
@@ -503,18 +500,15 @@ class BiasedExperimentVendors(models.Model):
 
 class AnalyzedExperiment(models.Model):
     ligand = models.ForeignKey(Ligand, on_delete = models.CASCADE)
-    lignad_pubchem = models.CharField(max_length=40,null = True)
     publication = models.ForeignKey(Publication, on_delete = models.CASCADE, null = True)
     receptor = models.ForeignKey('protein.Protein', on_delete = models.CASCADE)
     source = models.CharField(max_length=60)
-    chembl = models.CharField(max_length=60,null = True)
-    endogenous_ligand = models.ForeignKey(Ligand, related_name='endogenous_ligand_bias_analyzed', on_delete = models.CASCADE,  null = True)
-    reference_ligand = models.ForeignKey(Ligand, related_name='ref_ligand_bias_analyzed', on_delete = models.CASCADE,  null = True)
+    endogenous_ligand = models.ForeignKey(Ligand, related_name='endogenous_ligand_bias_analyzed', on_delete = models.CASCADE, null = True)
+    reference_ligand = models.ForeignKey(Ligand, related_name='ref_ligand_bias_analyzed', on_delete = models.CASCADE, null = True)
     vendor_quantity = models.CharField(max_length=5)
     article_quantity = models.CharField(max_length=5)
     labs_quantity = models.CharField(max_length=5)
-    residue = models.CharField(max_length=5,null = True)
-    mutation = models.CharField(max_length=5,null = True)
+    auxiliary_protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE, related_name='bias_auxiliary_protein', null = True)
     primary= models.CharField(max_length=100,null = True)
     secondary= models.CharField(max_length=100,null = True)
 
