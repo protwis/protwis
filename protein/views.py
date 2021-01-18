@@ -80,8 +80,12 @@ def detail(request, slug):
 
     # get genes
     genes = Gene.objects.filter(proteins=p).values_list('name', flat=True)
-    gene = genes[0]
-    alt_genes = genes[1:]
+
+    gene = None
+    alt_genes = None
+    if len(genes)>0:
+        gene = genes[0]
+        alt_genes = genes[1:]
 
     # get structures of this protein
     structures = Structure.objects.filter(protein_conformation__protein__parent=p).select_related(

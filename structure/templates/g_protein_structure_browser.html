@@ -117,7 +117,7 @@
                             </div>
                         </th>
                     </tr>
-                    <tr class='over_header'>
+                    <tr class='over_header centered-header'>
                         <th></th>
                         <th>Fam.</th>
                         <th>&alpha;</th>
@@ -135,7 +135,7 @@
                                 <div><button class='icon-button' type='button'><i id='pdb_copy' class="glyphicon glyphicon-export pdb-export"></i></button></div>
                             </div>
                         </th>
-                        <th><a href="https://academic.oup.com/nar/article/44/D1/D356/2502664" target="_blank">Refined<br>structure</a></th>
+                        <th>Refined<br>structure<br><a href="https://docs.gpcrdb.org/structures.html#refined-structures" target="_blank"><span class="glyphicon glyphicon-info-sign"></span></a></th>
                         <th class='rightborder'>Resolution</th>
                         <th>
                             <div>
@@ -155,7 +155,7 @@
                         <th class='rightborder'>Function</th>
                         <th>Name</th>
                         <th class='rightborder'>Type</th>
-                        <th>Last author</th>
+                        <th>Authors</th>
                         <th>Reference</th>
                         <th class='rightborder'>PDB Date</th>
                         <th style='display: none;'></th>
@@ -210,20 +210,16 @@
                         {% else %}
                             <td><a target='_blank' href="/signprot/{{ structure.extra_proteins.all|only_one_subunit:'Alpha,entry_name' }}">{{ structure.extra_proteins.all|only_one_subunit:"Alpha,name"|safe }}</a></td>
                         {% endif %}
-                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha,species"|safe }}</td>
+                        <td class='expand'>{{ structure.extra_proteins.all|only_one_subunit:"Alpha,species"|safe }}</td>
                         
-                        <td>
-                            {% if structure.extra_proteins.all|only_one_subunit:"Alpha,note"|length > 20 %}
-                                <span title="{{ structure.extra_proteins.all|only_one_subunit:'Alpha,note' }}">{{ structure.extra_proteins.all|only_one_subunit:"Alpha,note"|safe|cut_at_20 }}...</span>
-                            {% else %}
-                                {{ structure.extra_proteins.all|only_one_subunit:"Alpha,note"|safe }}
-                            {% endif %}
+                        <td class='expand'>
+                            {{ structure.extra_proteins.all|only_one_subunit:"Alpha,note"|safe }}
                         </td>
-                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha,coverage"|safe }}</td>
+                        <td class="text-center">{{ structure.extra_proteins.all|only_one_subunit:"Alpha,coverage"|safe }}</td>
                         <td>{{ structure.extra_proteins.all|only_one_subunit:"Beta,name"|safe }}</td>
-                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Beta,species"|safe }}</td>
+                        <td class='expand'>{{ structure.extra_proteins.all|only_one_subunit:"Beta,species"|safe }}</td>
                         <td>{{ structure.extra_proteins.all|only_one_subunit:"Gamma,name"|safe }}</td>
-                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Gamma,species"|safe }}</td>
+                        <td class='expand'>{{ structure.extra_proteins.all|only_one_subunit:"Gamma,species"|safe }}</td>
                         <td>
                             {{ structure.structure_type.type_short|escape }}
                         </td>
@@ -248,24 +244,20 @@
                             <td>-</td>
                         {% endif %}
                         <td><span>{{ structure.protein_conformation.protein.family.parent.short|safe|dashwhenempty }}</span></td>
-                        <td><span>{{ structure.protein_conformation.protein.family.parent.parent.parent.short|safe|dashwhenempty }}</span></td>
-                        <td>{{ structure.protein_conformation.protein.species.common_name|dashwhenempty }}</td>
+                        <td class='expand'><span>{{ structure.protein_conformation.protein.family.parent.parent.parent.short|safe|dashwhenempty }}</span></td>
+                        <td class='expand'>{{ structure.protein_conformation.protein.species.common_name|dashwhenempty }}</td>
                         <td>
                             {{ structure.stabilizing_agents.all|only_fusions|linebreaksbr }}
                         </td>
                         <td>
                             {{ structure.stabilizing_agents.all|only_antibodies|linebreaksbr }}
                         </td>
-                        <td>
+                        <td class="expand">
                             {{ structure.stabilizing_agents.all|only_other_proteins|linebreaksbr }}
                         </td>
-                        <td>
+                        <td class='expand'>
                             {% for ligand in structure.ligands.all %}
-                                {% if ligand.ligand.name|safe|length > 20 %}
-                                    <span title="{{ ligand.ligand.name|safe }}">{{ ligand.ligand.name|safe|cut_at_20 }}...</span>
-                                {% else %}
-                                    {{ ligand.ligand.name|safe }}
-                                {% endif %}
+                                {{ ligand.ligand.name|safe }}
                             {% for link in ligand.ligand.properities.web_links.all %}
                                 <a href="{{ link}}" target="_blank">{{link.web_resource.slug}}</a>
                             {% endfor %}
@@ -280,26 +272,26 @@
                         <td>
                             {{ structure.ligands.all|ligandrole|linebreaksbr }}
                         </td>
-                        <td>
+                        <td class='expand'>
                             {% autoescape off %}
-                            {% if structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat|length > 20 %}
-                                <span title="{% autoescape off %}{{ structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat }}{% endautoescape %}">{{ structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat|cut_at_20 }}...</span>
-                            {% else %}
                                 {{ structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat }}
-                            {% endif %}
                             {% endautoescape %}
                         </td>
                         <td>{{ structure.protein_conformation.protein.parent.endogenous_ligands.all.0.properities.ligand_type|dashwhenempty }}</td>
-                        <td>
-                            {{ structure.publication.authors|last_author}}
+                        <td class='expand'>
+                            {% if structure.publication %}
+                                {{ structure.publication.authors}}
+                            {% else %}
+                                -
+                            {% endif %}
                         </td>
                         <td>
                             {% if structure.publication %}
                             <a href="{{ structure.publication.web_link }}">
-                            {{ structure.publication.web_link.index }}
+                                {{ structure.publication.web_link.index }}
                             </a>
                             {% else %}
-                            -
+                                -
                             {% endif %}
                         </td>
                         <td>{{ structure.publication_date|date:"Y-m-d" }}</td>

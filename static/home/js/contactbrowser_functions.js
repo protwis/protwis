@@ -1912,7 +1912,7 @@ var settingsSubmit = false;
 function updateInteractionSettings() {
     settingsSubmit = false;
     // TODO modulate size of modal: display in center and resize to content?
-    $("#resModal").find(".modal-dialog").removeClass("modal-wide").addClass("modal-sm")
+    $("#resModal").find(".modal-dialog").removeClass("modal-wide")
     $("#resModal").find(".modal-title").html("Settings")
     $("#resModal").find(".modal-body").html("<div id='interaction_settings' style='height:100%;width:100%;display: inline-block;'></div>");
     //$("#resModal").find(".modal-footer .btn-default").addClass("hidden")
@@ -2019,7 +2019,7 @@ function updateInteractionSettings() {
 function closeInteractionSettings(e) {
     // Reset modal
     $(e.currentTarget).off('hidden'); //DEPRECATED: $(e.currentTarget).unbind();
-    $("#resModal").find(".modal-dialog").removeClass("modal-sm").addClass("modal-wide")
+    $("#resModal").find(".modal-dialog").addClass("modal-wide")
     $("#resModal").find(".modal-footer .btn-process").remove()
 
     // Save settings
@@ -2047,7 +2047,7 @@ var selecttab = { "single-crystal-tab": "structure", "single-crystal-group-tab":
 function showVisualizationPanel(plot_destination, table_number, datatype, column_number) {
     // TODO modulate size of modal: display in center and resize to content?
     $("#resModal").addClass("plot_settings")
-    $("#resModal").find(".modal-dialog").removeClass("modal-wide").addClass("modal-sm")
+    $("#resModal").find(".modal-dialog").removeClass("modal-wide")
     $("#resModal").find(".modal-title").html("Plotting options")
     $("#resModal").find(".modal-body").html("<div id='interaction_settings' style='height:100%;width:100%;display: inline-block;'></div>");
     $("#resModal").find(".modal-footer").addClass("hidden");
@@ -2169,7 +2169,7 @@ function closeVisualizationPanel(e) {
 
     // Reset modal
     $(e.currentTarget).off('hidden');
-    $("#resModal").find(".modal-dialog").removeClass("modal-sm").addClass("modal-wide")
+    $("#resModal").find(".modal-dialog").addClass("modal-wide")
     $("#resModal").find(".modal-footer .btn-process").remove()
 }
 

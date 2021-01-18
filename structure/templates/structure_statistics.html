@@ -180,8 +180,8 @@ body {
 **Receptor-orthologues are only counted once.
 <br />
 <br />
-Specific sets of structures can be downloaded from the <a href="/structure">structure browser</a><br />
-The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }}</strong><br />
+Specific sets of structures can be downloaded from the <a href="/structure">Structures</a> page.<br />
+The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }}</strong>.<br />
 <br />
 <br />
 <br />
@@ -233,6 +233,9 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
             {scale: 3});">TIFF</a>
                     </a>
                 </li>
+                <li>
+                    <a href="javascript:saveSvg(document.getElementById('unique_cryst'), 'unique_crystalized_receptors.svg');">SVG</a>
+                </li>
             </ul>
         </div>
     </div>
@@ -260,6 +263,9 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
             {scale: 3});">TIFF</a>
                     </a>
                 </li>
+                <li>
+                    <a href="javascript:saveSvg(document.getElementById('unique_cryst_year'), 'unique_crystalized_receptors_by_year.svg');">SVG</a>
+                </li>
             </ul>
         </div>
     </div>
@@ -286,6 +292,9 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
                     <a href="javascript:saveSvgAsTiff(document.getElementById('data_cryst_year'), 'crystalized_receptors_by_year.tiff',
             {scale: 3});">TIFF</a>
                     </a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvg(document.getElementById('data_cryst_year'), 'crystalized_receptors_by_year.svg');">SVG</a>
                 </li>
             </ul>
         </div>
@@ -328,6 +337,9 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
             {scale: 3});">TIFF</a>
                     </a>
                 </li>
+                <li>
+                    <a href="javascript:saveSvg(document.getElementById('unique_class_cryst'), 'unique_crystalized_receptors.svg');">SVG</a>
+                </li>
             </ul>
         </div>
     </div>
@@ -355,6 +367,9 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
             {scale: 3});">TIFF</a>
                     </a>
                 </li>
+                <li>
+                    <a href="javascript:saveSvg(document.getElementById('unique_class_cryst_year'), 'unique_crystalized_receptors_by_year.svg');">SVG</a>
+                </li>
             </ul>
         </div>
     </div>
@@ -381,6 +396,9 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
                     <a href="javascript:saveSvgAsTiff(document.getElementById('data_class_cryst_year'), 'crystalized_receptors_by_year.tiff',
             {scale: 3});">TIFF</a>
                     </a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvg(document.getElementById('data_class_cryst_year'), 'crystalized_receptors_by_year.svg');">SVG</a>
                 </li>
             </ul>
         </div>

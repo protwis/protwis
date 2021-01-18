@@ -19,21 +19,21 @@ logger = logging.getLogger("protwis")
 #==============================================================================
 #Class for annotating the pdb structures with generic numbers
 class GenericNumbering(object):
-    
-    
+
+
     residue_list = ["ARG","ASP","GLU","HIS","ASN","GLN","LYS","SER","THR","HID","PHE","LEU","ILE","TYR","TRP","VAL","MET","PRO","CYS","ALA","GLY"]
     exceptions = {'6GDG':[255, 10]}
-  
+
     def __init__ (self, pdb_file=None, pdb_filename=None, structure=None, pdb_code=None, blast_path='blastp',
         blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_blastdb']),top_results=1, sequence_parser=False, signprot=False):
-    
+
         # pdb_file can be either a name/path or a handle to an open file
         self.pdb_file = pdb_file
         self.pdb_filename = pdb_filename
 
         # if pdb 4 letter code is specified
         self.pdb_code = pdb_code
-        
+
         # dictionary of 'MappedResidue' object storing information about alignments and bw numbers
         self.residues = {}
         self.pdb_seq = {} #Seq('')
@@ -41,7 +41,7 @@ class GenericNumbering(object):
         self.prot_id_list = []
         #setup for local blast search
         self.blast = BlastSearch(blast_path=blast_path, blastdb=blastdb,top_results=top_results)
-        
+
         # calling sequence parser
         if sequence_parser:
             if pdb_code:
@@ -65,7 +65,7 @@ class GenericNumbering(object):
                 self.pdb_structure = structure
 
             self.parse_structure(self.pdb_structure)
-        
+
 
     def parse_structure(self, pdb_struct):
         """
@@ -75,7 +75,7 @@ class GenericNumbering(object):
         for chain in pdb_struct:
             self.residues[chain.id] = {}
             self.pdb_seq[chain.id] = Seq('')
-            
+
             for res in chain:
             #in bio.pdb the residue's id is a tuple of (hetatm flag, residue number, insertion code)
                 if res.resname == "HID":
@@ -84,9 +84,9 @@ class GenericNumbering(object):
                     if res.resname not in self.residue_list:
                         continue
                     self.residues[chain.id][res.id[1]] = MappedResidue(res.id[1], polypeptide.three_to_one(res.resname))
-    
+
             self.pdb_seq[chain.id] = ''.join([self.residues[chain.id][x].name for x in sorted(self.residues[chain.id].keys())])
-            
+
             for pos, res in enumerate(sorted(self.residues[chain.id].keys()), start=1):
                 self.residues[chain.id][res].pos_in_aln = pos
 
@@ -100,13 +100,13 @@ class GenericNumbering(object):
 
 
     def map_blast_seq (self, prot_id, hsps, chain):
-    
+
         #find uniprot residue numbers corresponding to those in pdb file
         q_seq = list(hsps.query)
         tmp_seq = list(hsps.sbjct)
-        subj_counter = hsps.sbjct_start	
+        subj_counter = hsps.sbjct_start
         q_counter = hsps.query_start
-        
+
         logger.info("{}\n{}".format(hsps.query, hsps.sbjct))
         logger.info("{:d}\t{:d}".format(hsps.query_start, hsps.sbjct_start))
 
@@ -133,7 +133,7 @@ class GenericNumbering(object):
                 if resn != 0:
                     if subj_counter in residues:
                         db_res = residues[subj_counter]
-                        
+
                         if db_res.protein_segment:
                             segment = db_res.protein_segment.slug
                             self.residues[chain][resn].add_segment(segment)
@@ -141,24 +141,25 @@ class GenericNumbering(object):
                         if db_res.display_generic_number:
                             num = db_res.display_generic_number.label
                             bw, gpcrdb = num.split('x')
-                            gpcrdb = "{}.{}".format(bw.split('.')[0], gpcrdb)
-                            self.residues[chain][resn].add_bw_number(bw)
-                            self.residues[chain][resn].add_gpcrdb_number(gpcrdb)
-                            self.residues[chain][resn].add_gpcrdb_number_id(db_res.display_generic_number.id)
-                            self.residues[chain][resn].add_display_number(num)
-                            self.residues[chain][resn].add_residue_record(db_res)
+                            if bw[0].isnumeric():
+                                gpcrdb = "{}.{}".format(bw.split('.')[0], gpcrdb)
+                                self.residues[chain][resn].add_bw_number(bw)
+                                self.residues[chain][resn].add_gpcrdb_number(gpcrdb)
+                                self.residues[chain][resn].add_gpcrdb_number_id(db_res.display_generic_number.id)
+                                self.residues[chain][resn].add_display_number(num)
+                                self.residues[chain][resn].add_residue_record(db_res)
                     else:
                         logger.warning("Could not find residue {} {} in the database.".format(resn, subj_counter))
 
-                    
+
                     if prot_id not in self.prot_id_list:
                         self.prot_id_list.append(prot_id)
             q_counter += 1
             subj_counter += 1
             tmp_seq.pop(0)
-            q_seq.pop(0)        
-    
-                    
+            q_seq.pop(0)
+
+
     def get_substructure_mapping_dict(self):
 
         mapping_dict = {}
@@ -180,12 +181,12 @@ class GenericNumbering(object):
                         residue["CA"].set_bfactor(float(self.residues[chain.id][residue.id[1]].gpcrdb))
                     if self.residues[chain.id][residue.id[1]].bw != 0.:
                         residue["N"].set_bfactor(float(self.residues[chain.id][residue.id[1]].bw))
-      
+
         return self.pdb_structure
-  
-  
+
+
     def save_gn_to_pdb(self):
-    
+
         #replace bfactor field of CA atoms with b-w numbers and return filehandle with the structure written
         for chain in self.pdb_structure:
             for residue in chain:
@@ -200,10 +201,10 @@ class GenericNumbering(object):
         io=PDBIO()
         io.set_structure(self.pdb_structure)
         io.save("%s_GPCRDB%s" %(root, ext))
-           
-    
+
+
     def assign_generic_numbers(self):
-        
+
         alignments = {}
         #blast search goes first, looping through all the chains
         for chain in self.pdb_seq.keys():
@@ -262,4 +263,3 @@ class GenericNumbering(object):
                 pdb_array[segment][vals.gpcrdb] = 'x'
             j+=1
         return pdb_array
-

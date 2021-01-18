@@ -2,7 +2,7 @@ from django.contrib.postgres.aggregates import ArrayAgg
 from django.core.cache import cache
 from django.db.models import F, Q
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.views.decorators.cache import cache_page
 from django.views.generic import TemplateView
 
@@ -1057,9 +1057,12 @@ def StructureInfo(request, pdbname):
     """
     Show structure details
     """
-    protein = Protein.objects.get(signprotstructure__pdb_code__index=pdbname)
 
-    crystal = SignprotStructure.objects.get(pdb_code__index=pdbname)
+    #protein = Protein.objects.get(signprotstructure__pdb_code__index=pdbname)
+    protein = Protein.objects.filter(signprotstructure__pdb_code__index=pdbname).first()
+
+    #crystal = SignprotStructure.objects.get(pdb_code__index=pdbname)
+    crystal = SignprotStructure.objects.filter(pdb_code__index=pdbname).first()
 
     return render(request,
                   'signprot/structure_info.html',
@@ -1074,6 +1077,10 @@ def signprotdetail(request, slug):
 
     slug = slug.lower()
     p = Protein.objects.prefetch_related('web_links__web_resource').get(entry_name=slug, sequence_type__slug='wt')
+
+    # Redirect to protein page
+    if p.family.slug.startswith("001"):
+        return redirect("/protein/"+slug)
 
     # get family list
     pf = p.family

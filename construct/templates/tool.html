@@ -56,7 +56,7 @@
 
 <h2> Construct Design Tool  </h2>
 
-<p> This is a tool to help aid structural biologist design constructs.<a href=#  onclick='modifications_overview();showModal("Introduction",tables["help"]);'> Press here for an introduction.</a> <button id=toolvideo mp4="http://files.gpcrdb.org/video/constructtool1.mp4" type="button" class="videoLink btn btn-xs btn-default">
+<p> This is a tool to help aid structural biologist design constructs.<a href=#  onclick='modifications_overview();showModal("Introduction",tables["help"]);'> Press here for an introduction.</a> <button id=toolvideo mp4="https://files.gpcrdb.org/video/constructtool1.mp4" type="button" class="videoLink btn btn-xs btn-default">
                           <span class="glyphicon glyphicon-film"></span>
                         </button></p>
 
@@ -353,7 +353,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     tables["custom"].push( "Deletion: <input type='text' id='custom_del_start' placeholder='from (sequence position)'> - <input type='text' id='custom_del_end' placeholder='to (sequence number)'> <input type='text'  id='custom_del_reason' placeholder='Reason'><input type=button value=Add onclick='custom_del()'><div id=confirm_cus_del></del><br>");
     tables["custom"] = tables["custom"].join( "" );
 
-    tables["help"] = ['See small movie with a sample usage of tool: <button onclick="$(\'#toolvideo\').click();" mp4="http://files.gpcrdb.org/video/constructtool1.mp4" type="button" class="videoLink btn btn-xs btn-default">' +
+    tables["help"] = ['See small movie with a sample usage of tool: <button onclick="$(\'#toolvideo\').click();" mp4="https://files.gpcrdb.org/video/constructtool1.mp4" type="button" class="videoLink btn btn-xs btn-default">' +
                         '<span class="glyphicon glyphicon-film"></span>' +
                         '</button>']
 
@@ -400,7 +400,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       }
     }
 
-    other_inserts_dropdown = "Please see <a href='http://files.gpcrdb.org/Insert_sequences.xlsx'>here</a> for exact sequences used in inserts. They are based on sequences used in published structures.<br><table><tr class='fusion_site_inserts'><th colspan=2 id=fusion_text>Fusion Protein</th></tr><tr class='fusion_site_inserts'><td colspan=2>"+fusion_protein_dropdown + "</td></tr><tr><th colspan=2>Other inserts</th></tr>";
+    other_inserts_dropdown = "Please see <a href='https://files.gpcrdb.org/Insert_sequences.xlsx'>here</a> for exact sequences used in inserts. They are based on sequences used in published structures.<br><table><tr class='fusion_site_inserts'><th colspan=2 id=fusion_text>Fusion Protein</th></tr><tr class='fusion_site_inserts'><td colspan=2>"+fusion_protein_dropdown + "</td></tr><tr><th colspan=2>Other inserts</th></tr>";
     // other_inserts_dropdown += `<select id="insert_type_where"  class="form-control">
     //               <option value="" >Please select Type</option>
     //               <option value="nterm">N-term</option>

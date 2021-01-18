@@ -19,7 +19,7 @@
         #filters{
 
             font-size: 10px;
-            padding:  7px 15px; 
+            padding:  7px 15px;
         }
 
         @media (min-width: 1600px){
@@ -196,7 +196,7 @@
                         select_type_options: {
                             width: '80px',
                         }
-                    }, 
+                    },
                     {
                         column_number: 6,
                         filter_type: "multi_select",
@@ -218,7 +218,7 @@
                         select_type_options: {
                             width: '100px',
                         }
-                    }, 
+                    },
                     {
                         column_number : 8,
                         filter_type: "multi_select",
@@ -228,7 +228,7 @@
                         select_type_options: {
                             width: '100px',
                         }
-                    }, 
+                    },
                     {
                         column_number : 9,
                         filter_type: "multi_select",
@@ -280,7 +280,7 @@
                 $('.alt').parent().parent().toggleClass('alt_selected');
             });
 
-            $("#remove_sel").click(function () { 
+            $("#remove_sel").click(function () {
                 var oTable = $('#constructs').dataTable();
                 $('input:checkbox:checked').each(function () {
                     if ( $(this).is(':visible') ) {
@@ -294,7 +294,7 @@
                oTable.fnDraw();
             });
 
-            $("#remove_non_sel").click(function () { 
+            $("#remove_non_sel").click(function () {
                 var oTable = $('#constructs').dataTable();
                 $('input:checkbox:not(:checked)').each(function () {
                     if ( $(this).is(':visible') ) {
@@ -406,10 +406,10 @@
             //     AddToSelection('targets', 'structure_models_many', selected_ids.join(","));
             //     window.location.href = '/structure/superposition_workflow_index';
             // });
-            
+
             $('#download_btn').click(function () {
                 var selected_ids = [];
-                 $.each($(".alt_selected"), function(){            
+                 $.each($(".alt_selected"), function(){
                     hom_id = $(this).closest('tr').attr('model_id');
                     if ($(this).closest('tr').children().eq(4).text()==='Yes') {
                         hom_id = hom_id.toString()+'r';
@@ -510,7 +510,7 @@
         //     console.log(ids);
 
         //     current_align_ids = ids
-        //     var url = '/construct/align'; 
+        //     var url = '/construct/align';
         //     var posting = $.post( url, { ids: JSON.stringify(current_align_ids)  } );
         //       posting.done(function( data ) {
         //         $("#align_div").html('').append(data)
@@ -533,7 +533,7 @@
         // };
 
 
-    </script> 
+    </script>
 {% endblock %}
 
 {% block content %}
@@ -560,30 +560,19 @@
             <span class="glyphicon glyphicon-download"></span> Archive <span class="caret"></span>
         </button>
         <ul class="dropdown-menu" style="left:auto;right:0;margin-right:-10px;">
-            <li>
-                <a href="http://files.gpcrdb.org/GPCRdb_homology_models_2016-06-12.zip"> 2016-06-12 models </a>
-            </li>
-            <li>
-                <a href="http://files.gpcrdb.org/GPCRdb_homology_models_2017-04-10.zip"> 2017-04-10 models </a>
-            </li>
-            <li>
-                <a href="http://files.gpcrdb.org/GPCRdb_homology_models_2017-09-27.zip"> 2017-09-27 models </a>
-            </li>
-            <li>
-                <a href="http://files.gpcrdb.org/GPCRdb_homology_models_2018-01-18.zip"> 2018-01-18 models </a>
-            </li>
-            <li>
-                <a href="http://files.gpcrdb.org/GPCRdb_homology_models_2018-04-06.zip"> 2018-04-06 models </a>
-            </li>
-            <li>
-                <a href="http://files.gpcrdb.org/GPCRdb_homology_models_2018-07-17.zip"> 2018-07-17 models </a>
-            </li>
-            <li>
-                <a href="http://files.gpcrdb.org/GPCRdb_homology_models_2019-01-31.zip"> 2019-01-31 models </a>
-            </li>
-            <li>
-                <a href="http://files.gpcrdb.org/GPCRdb_homology_models_2019-03-14.zip"> 2019-03-14 models </a>
-            </li>
+          <li><a href="https://files.gpcrdb.org/GPCRdb_homology_models_2021-01-12.zip"> 2021 January models </a></li>
+          <li><a href="https://files.gpcrdb.org/GPCRdb_homology_models_2020-12-07.zip"> 2020 December models </a></li>
+          <li><a href="https://files.gpcrdb.org/GPCRdb_homology_models_2020-11-04.zip"> 2020 November models </a></li>
+          <li><a href="https://files.gpcrdb.org/GPCRdb_homology_models_2020-09-02.zip"> 2020 September models </a></li>
+          <li><a href="https://files.gpcrdb.org/GPCRdb_homology_models_2020-07-30.zip"> 2020 July models </a></li>
+          <li><a href="https://files.gpcrdb.org/GPCRdb_homology_models_2019-03-14.zip"> 2019 March models </a></li>
+          <li><a href="https://files.gpcrdb.org/GPCRdb_homology_models_2019-01-31.zip"> 2019 January models </a></li>
+          <li><a href="https://files.gpcrdb.org/GPCRdb_homology_models_2018-07-17.zip"> 2018 July models </a></li>
+          <li><a href="https://files.gpcrdb.org/GPCRdb_homology_models_2018-04-06.zip"> 2018 April models </a></li>
+          <li><a href="https://files.gpcrdb.org/GPCRdb_homology_models_2018-01-18.zip"> 2018 January models </a><li>
+          <li><a href="https://files.gpcrdb.org/GPCRdb_homology_models_2017-09-27.zip"> 2017 September models </a></li>
+          <li><a href="https://files.gpcrdb.org/GPCRdb_homology_models_2017-04-10.zip"> 2017 April models </a></li>
+          <li><a href="https://files.gpcrdb.org/GPCRdb_homology_models_2016-06-12.zip"> 2016 June models </a></li>
         </ul>
 </div>
 
@@ -592,7 +581,7 @@
     <div style="padding-top: 0px; font-size: 15px; white-space: nowrap;" id="loading_div">
     <br>Loading...
     </div>
-</div>    
+</div>
 <div id="browser">
     <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;" id="constructs_div">
         <table width="100%" class="display compact" id="constructs">
@@ -650,7 +639,7 @@
                         <td><a href="/protein/{{ model.protein_conformation.protein.entry_name }}">{{ model.protein_conformation.protein.family.name|safe }}</a></td>
                         <td><a href="{{ model.pdb_code.index|cut_refined }}">{{ model.pdb_code.index|cut_refined}}</a></td>
                         <td style="display:none;">{{ model.protein_conformation.protein.entry_name }}</td>
-                    {% endif %}         
+                    {% endif %}
                 </tr>
             {% endfor %}
             </tbody>
@@ -687,5 +676,3 @@
   </div>
 </div>
 {% endblock %}
-
-

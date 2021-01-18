@@ -373,11 +373,14 @@ class ProteinGProteinPair(models.Model):
     emax_mean = models.FloatField(null=True, blank=True)
     emax_sem = models.FloatField(null=True, blank=True)
     emax_dnorm = models.FloatField(null=True, blank=True)
+    emax_deg = models.FloatField(null=True, blank=True)  # Value from David Gloriam
     pec50_mean = models.FloatField(null=True, blank=True)
     pec50_sem = models.FloatField(null=True, blank=True)
     pec50_dnorm = models.FloatField(null=True, blank=True)
+    pec50_deg = models.FloatField(null=True, blank=True)  # Value from David Gloriam
     log_rai_mean = models.FloatField(null=True, blank=True)
     log_rai_sem  = models.FloatField(null=True, blank=True)
+    logmaxec50_deg = models.FloatField(null=True, blank=True) # Value from David Gloriam
     g_protein_subunit = models.ForeignKey('Protein', on_delete=models.CASCADE, related_name='gprotein', null=True)
     references = models.ManyToManyField('common.Publication')
 
@@ -385,11 +388,50 @@ class ProteinGProteinPair(models.Model):
     def __str__(self):
         # NOTE: The following return breaks when there's no data for transduction since a null
         # can't be concatenated with strings.
-        return self.protein.entry_name + ", " + self.g_protein.name + ", " + self.transduction
+        # return self.protein.entry_name + ", " + self.g_protein.name + ", " + self.transduction
+        return "{} {} {}".format(self.protein.entry_name,  self.g_protein.name, self.transduction)
 
     class Meta():
         db_table = 'protein_gprotein_pair'
 
+
+# class ProteinArrestin(models.Model):
+#     proteins = models.ManyToManyField('Protein', through='ProteinArrestinPair', through_fields=('arrestin_protein', 'protein'))
+#     name = models.CharField(max_length=100, unique=True)
+#     slug = models.SlugField(max_length=20, unique=True)
+#
+#     def __str__(self):
+#         return self.name
+#
+#     class Meta():
+#         db_table = 'protein_arrestin'
+#
+#
+# class ProteinArrestinPair(models.Model):
+#     protein = models.ForeignKey('Protein', on_delete=models.CASCADE)
+#     arrestin_protein = models.ForeignKey('ProteinArrestin', on_delete=models.CASCADE)
+#     transduction = models.TextField(null=True)
+#     source = models.TextField(null=True) # GuideToPharma, Aska, Bouvier
+#     emax_mean = models.FloatField(null=True, blank=True)
+#     emax_sem = models.FloatField(null=True, blank=True)
+#     emax_dnorm = models.FloatField(null=True, blank=True)
+#     emax_deg = models.FloatField(null=True, blank=True)  # Value from David Gloriam
+#     pec50_mean = models.FloatField(null=True, blank=True)
+#     pec50_sem = models.FloatField(null=True, blank=True)
+#     pec50_dnorm = models.FloatField(null=True, blank=True)
+#     pec50_deg = models.FloatField(null=True, blank=True)  # Value from David Gloriam
+#     log_rai_mean = models.FloatField(null=True, blank=True)
+#     log_rai_sem  = models.FloatField(null=True, blank=True)
+#     logmaxec50_deg = models.FloatField(null=True, blank=True) # Value from David Gloriam
+#     arrestin_subtype = models.ForeignKey('Protein', on_delete=models.CASCADE, related_name='arrestin', null=True)
+#     references = models.ManyToManyField('common.Publication')
+#
+#
+#     def __str__(self):
+#         return "{} {} {}".format(self.protein.entry_name,  self.g_protein.name, self.transduction)
+#
+#     class Meta():
+#         db_table = 'protein_arrestin_pair'
 
 def dgn(gn, protein_conformation):
     ''' Converts generic number to display generic number.

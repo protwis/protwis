@@ -457,8 +457,7 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
     mypath = '/tmp/interactions/results/' + pdbname + '/output'
     module_dir = '/tmp/interactions'
     results = []
-    web_resource, created = WebResource.objects.get_or_create(
-        slug='pdb', url='http://www.rcsb.org/pdb/explore/explore.do?structureId=$index')
+    web_resource = web_resource = WebResource.objects.get(slug='pdb')
     web_link, created = WebLink.objects.get_or_create(
         web_resource=web_resource, index=pdbname)
 
@@ -600,7 +599,7 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
 
                 temp = f.replace('.yaml', '').split("_")
                 temp.append([output])
-                temp.append(round(output['score'][0][0]))
+                temp.append(round(output['score']))
                 temp.append((output['inchikey']).strip())
                 temp.append((output['smiles']).strip())
                 results.append(temp)
@@ -1075,21 +1074,22 @@ def excel(request, slug, **response_kwargs):
         # return HttpResponse("Hello, world. You're at the polls index. "+slug)
         data = []
         for interaction in interactions:
-
             row = {}
             row['Sequence Number'] = interaction.rotamer.residue.sequence_number
             row['Amino Acid'] = interaction.rotamer.residue.amino_acid
             if interaction.rotamer.residue.display_generic_number:
                 row['Generic Number'] = interaction.rotamer.residue.display_generic_number.label
+                row['Segment'] = interaction.rotamer.residue.protein_segment.slug
             else:
                 row['Generic Number'] = 'N/A'
+                row['Segment'] = '-'
 
-            row['Segment'] = interaction.rotamer.residue.protein_segment.slug
             row['Interaction'] = interaction.interaction_type.name
             row['Interaction Slug'] = interaction.interaction_type.slug
             row['Ligand'] = interaction.structure_ligand_pair.ligand.name
 
             data.append(row)
+
 
     headers = ['Ligand','Amino Acid','Sequence Number','Generic Number','Segment','Interaction','Interaction Slug']
 
@@ -1133,7 +1133,9 @@ def ajax(request, slug, **response_kwargs):
     for interaction in interactions:
         if interaction.rotamer.residue.generic_number:
             sequence_number = interaction.rotamer.residue.sequence_number
-            sequence_number = lookup[interaction.rotamer.residue.generic_number.label]
+            if interaction.rotamer.residue.generic_number.label in lookup:
+                sequence_number = lookup[interaction.rotamer.residue.generic_number.label]
+
             label = interaction.rotamer.residue.generic_number.label
             aa = interaction.rotamer.residue.amino_acid
             interactiontype = interaction.interaction_type.name
@@ -1199,8 +1201,7 @@ def pdb(request):
                        '/pdbs/' + pdbname + '.pdb', 'r').read()
         response = HttpResponse(pdbdata, content_type='text/plain')
     else:
-        web_resource, created = WebResource.objects.get_or_create(
-            slug='pdb', url='http://www.rcsb.org/pdb/explore/explore.do?structureId=$index')
+        web_resource = WebResource.objects.get(slug='pdb')
         web_link, created = WebLink.objects.get_or_create(
             web_resource=web_resource, index=pdbname)
 

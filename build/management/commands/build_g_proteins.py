@@ -18,7 +18,6 @@ import requests
 import xlrd
 import xmltodict, json
 import yaml
-import pprint
 
 import Bio.PDB as PDB
 from Bio import SeqIO, pairwise2
@@ -57,6 +56,8 @@ class Command(BaseCommand):
     iupharcoupling_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', '200416_iuphar_coupling_data.csv'])
     inoue_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', '200204_inoue.xlsx'])
     bouvier_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', '200127_bouvier.xlsx'])
+    inoue_file2 = os.sep.join([settings.DATA_DIR, 'g_protein_data', '201025_inoue_gloriam.xlsx'])
+    bouvier_file2 = os.sep.join([settings.DATA_DIR, 'g_protein_data', '201025_bouvier_gloriam.xlsx'])
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot'])
     local_uniprot_beta_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot_beta'])
     local_uniprot_gamma_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot_gamma'])
@@ -103,15 +104,25 @@ class Command(BaseCommand):
             self.create_g_proteins(filenames)
             self.logger.info('PASS: create_g_proteins')
             if os.path.exists(self.inoue_file):
-                self.add_inoue_coupling_data()
-                self.logger.info('PASS: add_inoue_coupling_data')
+               self.add_inoue_coupling_data()
+               self.logger.info('PASS: add_inoue_coupling_data')
             else:
-                self.logger.warning('Inoue source data ' + self.inoue_file + ' not found')
+               self.logger.warning('Inoue source data ' + self.inoue_file + ' not found')
             if os.path.exists(self.bouvier_file):
-                self.add_bouvier_coupling_data()
-                self.logger.info('PASS: add_bouvier_coupling_data')
+               self.add_bouvier_coupling_data()
+               self.logger.info('PASS: add_bouvier_coupling_data')
             else:
-                self.logger.warning('Bouvier source data ' + self.bouvier_file + ' not found')
+               self.logger.warning('Bouvier source data ' + self.bouvier_file + ' not found')
+            if os.path.exists(self.inoue_file2):
+               self.add_inoue_coupling_data2()
+               self.logger.info('PASS: add_inoue_coupling_data2')
+            else:
+               self.logger.warning('Inoue-DEG source data ' + self.inoue_file2 + ' not found')
+            if os.path.exists(self.bouvier_file2):
+               self.add_bouvier_coupling_data2()
+               self.logger.info('PASS: add_bouvier_coupling_data2')
+            else:
+               self.logger.warning('Bouvier source data ' + self.bouvier_file2 + ' not found')
         else:
             # Add G-proteins from CGN-db Common G-alpha Numbering <https://www.mrc-lmb.cam.ac.uk/CGN/>
             try:
@@ -165,7 +176,16 @@ class Command(BaseCommand):
                     self.logger.info('PASS: add_bouvier_coupling_data')
                 else:
                     self.logger.warning('Bouvier source data ' + self.bouvier_file + ' not found')
-
+                if os.path.exists(self.inoue_file2):
+                    self.add_inoue_coupling_data2()
+                    self.logger.info('PASS: add_inoue_coupling_data2')
+                else:
+                    self.logger.warning('Inoue-DEG source data ' + self.inoue_file2 + ' not found')
+                if os.path.exists(self.bouvier_file2):
+                    self.add_bouvier_coupling_data2()
+                    self.logger.info('PASS: add_bouvier_coupling_data2')
+                else:
+                    self.logger.warning('Bouvier source data ' + self.bouvier_file2 + ' not found')
 
             except Exception as msg:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -213,7 +233,15 @@ class Command(BaseCommand):
             acc = f.split('.')[0]
             up = self.parse_uniprot_file(acc)
             pst = ProteinSequenceType.objects.get(slug='wt')
-            species = Species.objects.get(common_name=up['species_common_name'])
+            try:
+                species, created = Species.objects.get_or_create(latin_name=up['species_latin_name'],
+                                                                 defaults={
+                                                                     'common_name': up['species_common_name'],
+                                                                 })
+                if created:
+                    self.logger.info('Created species ' + species.latin_name)
+            except IntegrityError:
+                species = Species.objects.get(latin_name=up['species_latin_name'])
             source = ProteinSource.objects.get(name=up['source'])
             try:
                 name = up['names'][0].split('Guanine nucleotide-binding protein ')[1]
@@ -329,7 +357,7 @@ class Command(BaseCommand):
                     if column != '':
                         if '_' in column:
                             entry_name = column
-                            BASE = 'http://www.uniprot.org'
+                            BASE = 'https://www.uniprot.org'
                             KB_ENDPOINT = '/uniprot/'
                             result = requests.get(BASE + KB_ENDPOINT,
                                                   params={'query': 'mnemonic:{}'.format(entry_name), 'format': 'list'})
@@ -361,7 +389,7 @@ class Command(BaseCommand):
                 for i, j in val.items():
                     f.write('>sp|{}|{}|{}\n{}\n'.format(j[0], i, j[1], j[2]))
 
-    def add_entry(self):
+    def add_entry(self, pdbs_path=None):
         if not self.options['wt']:
             raise AssertionError('Error: Missing wt name')
         residue_data = pd.read_csv(self.gprotein_data_file, sep="\t", low_memory=False)
@@ -413,13 +441,23 @@ class Command(BaseCommand):
 
     def purge_coupling_data(self):
         # Connect to postgres to tell the table ID to be reset to start at 1.
+        # TODO: Also delete the values of the protein_gprotein_pair_references first since
+        # there's a many to many field which doesn't allow the direct
+        # ProteinGProteinPair.objects.filter().delete() call.
         with connection.cursor() as cursor:
             sql1 = 'ALTER SEQUENCE protein_gprotein_pair_id_seq RESTART WITH 1;'
             cursor.execute(sql1)
+            #sql2 = 'delete from protein_gprotein_pair_references;'
+            #cursor.execute(sql2)
         try:
+            # ProteinGProteinPair.objects.filter().clear()
+            # ProteinGProteinPair.objects.all().remove()
+            # ProteinGProteinPair.references.through.objects.filter().delete()
+            # ProteinGProteinPair.references.through.objects.all().delete()
             ProteinGProteinPair.objects.filter().delete()
             ProteinGProtein.all().delete()
             ProteinAlias.objects.filter(protein__family__slug__startswith='100').delete()
+
         except:
             self.logger.warning('Existing protein_gprotein and protein_gprotein_pair data cannot be deleted')
 
@@ -670,7 +708,7 @@ class Command(BaseCommand):
         peculiar format the submitter chooses, furthermore, which G-proteins were used in the experiments.
         """
         book = xlrd.open_workbook(filenames)
-        #        sheet = book.sheet_by_name(sheetname)
+        # sheet = book.sheet_by_name(sheetname)
         sheet1 = book.sheet_by_name("LogRA")
         sheet2 = book.sheet_by_name("pEC50")
         sheet3 = book.sheet_by_name("Emax")
@@ -839,6 +877,75 @@ class Command(BaseCommand):
 
         return data
 
+    def read_coupling(self, filenames=False):
+        """
+        Yet another function to read G-protein coupling data coming in Excel files.
+        The idea is that now the format will hopefully be fixed in the same way for data
+        coming from different groups. For now the data comes from Bouvier and Inoue and has been
+        processed by David Gloriam.
+        """
+        book = xlrd.open_workbook(filenames)
+        sheet1 = book.sheet_by_name("plain")
+        rows = sheet1.nrows
+        beglogmaxec50 = 22
+        endlogmaxec50 = 35
+        begpec50 = 38
+        endpec50 = 51
+        begemax = 54
+        endemax = 67
+
+        data = {}
+        """data is a dictionary and must have a format:
+        {'<protein>':
+            {'<gproteinsubunit>':
+                {'logmaxec50': <logmaxec50>,
+                 'pec50deg': <pec50deg>}
+            }
+        }"""
+
+        def cleanValue(s):
+            """
+            Function to return a 0.0 (a value which means no coupling) since returning
+            an NA string to the database field declared as a float won't work, also
+            because NULL might have a meaning. In Python to return NULL one uses None
+
+            :param s:
+            :return: float
+            """
+            if s == '':
+                # return None
+                return float(0.0)
+            else:
+                # return float(str(s).strip())
+                return format(float(s), '.2f').strip()
+                # return str(s).strip()
+
+        for i in range(3, rows):
+            protein = sheet1.cell_value(i, 0)
+            protein_dict = {}
+
+            # logemaxec50
+            for j in range(beglogmaxec50, endlogmaxec50):
+                gproteinsubunit = sheet1.cell_value(2, j)
+                protein_dict[gproteinsubunit] = {}
+                protein_dict[gproteinsubunit]['logmaxec50'] = cleanValue(sheet1.cell_value(i, j))
+
+            # pec50 deg = david e gloriam
+            for j in range(begpec50, endpec50):
+                gproteinsubunit = sheet1.cell_value(2, j)
+                protein_dict[gproteinsubunit]['pec50deg'] = cleanValue(sheet1.cell_value(i, j))
+
+            # emax deg = david e gloriam
+            for j in range(begemax, endemax):
+                gproteinsubunit = sheet1.cell_value(2, j)
+                protein_dict[gproteinsubunit]['emaxdeg'] = cleanValue(sheet1.cell_value(i, j))
+
+            data[protein] = protein_dict
+#            pprint(protein_dict[gprotein_subunit])
+        #pprint(data)
+
+        return data
+
     def add_inoue_coupling_data(self):
         """
         This function adds coupling data coming from Asuka Inoue
@@ -913,6 +1020,71 @@ class Command(BaseCommand):
 
         self.logger.info('COMPLETED ADDING Inoue\'s G-protein coupling data')
 
+    def add_inoue_coupling_data2(self):
+        """
+        This function adds coupling data coming from Asuka Inoue processed by David Gloriam
+
+        @return:
+        p, g, source, values['logmaxec50'], values['pec50deg'], ..., gp
+        p = protein_name
+        g = g_protein subfamily slug
+        source = One of GuideToPharma, Aska, Bouvier
+        values = selfdescriptive
+        gp = gprotein uniprot name, e.g. gna13_human
+        """
+        self.logger.info('BEGIN ADDING Inoue-Gloriam data')
+
+        # read source files
+        filepath = self.inoue_file2
+        self.logger.info('Reading file ' + filepath)
+        data = self.read_coupling(filepath)
+        #pprint(data['AVPR2'])
+        #pprint(data['AVP2R'])
+        #pprint(data['BDKRB1'])
+        source = 'Inoue'
+        lookup = {}
+
+        for entry_name, couplings in data.items():
+            # if it has / then pick first, since it gets same protein
+            entry_name = entry_name.split("/")[0]
+            # append _human to entry name
+            #entry_name = "{}_HUMAN".format(entry_name).lower()
+
+            # Fetch protein
+            try:
+                p = Protein.objects.filter(genes__name=entry_name, species__common_name="Human")[0]
+
+            except Protein.DoesNotExist:
+                self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
+                print("protein not found for ", entry_name)
+                continue
+
+            for gprotein, values in couplings.items():
+                if gprotein not in lookup:
+                    gp = Protein.objects.filter(family__name=gprotein, species__common_name="Human")[0]
+                    lookup[gprotein] = gp
+                else:
+                    gp = lookup[gprotein]
+                # Assume they are there.
+                if gp.family.slug not in lookup:
+                    g = ProteinGProtein.objects.get(slug="_".join(gp.family.slug.split("_")[:3]))
+                    lookup[gp.family.slug] = g
+                else:
+                    g = lookup[gp.family.slug]
+
+                #print(p, g, source, gp)
+                #print(p, g, source, values['logmaxec50'], values['pec50deg'], values['emaxdeg'], gp)
+                gpair = ProteinGProteinPair(protein=p,
+                                           g_protein=g,
+                                           source=source,
+                                           logmaxec50_deg=values['logmaxec50'],
+                                           pec50_deg=values['pec50deg'],
+                                           emax_deg=values['emaxdeg'],
+                                           g_protein_subunit=gp)
+                gpair.save()
+
+        self.logger.info('COMPLETED ADDING Inoue-Gloriam data')
+
     def add_bouvier_coupling_data(self):
         """
         This function adds coupling data coming from Michel Bouvier's lab.
@@ -933,7 +1105,7 @@ class Command(BaseCommand):
         data = self.read_bouvier(filepath)
         #pprint(data['AVP2R'])
         #pprint(data['BDKRB1'])
-        source = 'Bouvier'
+        source = 'Bouvier1'
         lookup = {}
 
         for entry_name, couplings in data.items():
@@ -981,6 +1153,71 @@ class Command(BaseCommand):
                 gpair.save()
 
         self.logger.info('COMPLETED ADDING Bouvier\'s G-protein coupling data')
+
+    def add_bouvier_coupling_data2(self):
+        """
+        This function adds coupling data coming from Michel Bouvier processed by David Gloriam
+
+        @return:
+        p, g, source, values['logemaxec50'], values['pec50deg'], ..., gp
+        p = protein_name
+        g = g_protein subfamily slug
+        source = One of GuideToPharma, Aska, Bouvier
+        values = selfdescriptive
+        gp = gprotein uniprot name, e.g. gna13_human
+        """
+        self.logger.info('BEGIN ADDING Bouvier-Gloriam coupling data')
+
+        # read source files
+        filepath = self.bouvier_file2
+        self.logger.info('Reading file ' + filepath)
+        data = self.read_coupling(filepath)
+        #pprint(data['AVPR2'])
+        #pprint(data['AVP2R'])
+        #pprint(data['BDKRB1'])
+        source = 'Bouvier'
+        lookup = {}
+
+        for entry_name, couplings in data.items():
+            # if it has / then pick first, since it gets same protein
+            entry_name = entry_name.split("/")[0]
+            # append _human to entry name
+            #entry_name = "{}_HUMAN".format(entry_name).lower()
+
+            # Fetch protein
+            try:
+                p = Protein.objects.filter(genes__name=entry_name, species__common_name="Human")[0]
+
+            except Protein.DoesNotExist:
+                self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
+                print("protein not found for ", entry_name)
+                continue
+
+            for gprotein, values in couplings.items():
+                if gprotein not in lookup:
+                    gp = Protein.objects.filter(family__name=gprotein, species__common_name="Human")[0]
+                    lookup[gprotein] = gp
+                else:
+                    gp = lookup[gprotein]
+                # Assume they are there.
+                if gp.family.slug not in lookup:
+                    g = ProteinGProtein.objects.get(slug="_".join(gp.family.slug.split("_")[:3]))
+                    lookup[gp.family.slug] = g
+                else:
+                    g = lookup[gp.family.slug]
+
+                #print(p, g, source, gp)
+                #print(p, g, source, values['logmaxec50'], values['pec50deg'], values['emaxdeg'], gp)
+                gpair = ProteinGProteinPair(protein=p,
+                                           g_protein=g,
+                                           source=source,
+                                           logmaxec50_deg=values['logmaxec50'],
+                                           pec50_deg=values['pec50deg'],
+                                           emax_deg=values['emaxdeg'],
+                                           g_protein_subunit=gp)
+                gpair.save()
+
+        self.logger.info('COMPLETED ADDING Bouvier-Gloriam coupling data')
 
     def purge_cgn_proteins(self):
         try:
@@ -1148,7 +1385,7 @@ class Command(BaseCommand):
         prot_type = 'purge'
         pfm = ProteinFamily()
 
-        # Human proteins from CGN with families as keys: http://www.mrc-lmb.cam.ac.uk/CGN/about.html
+        # Human proteins from CGN with families as keys: https://www.mrc-lmb.cam.ac.uk/CGN/about.html
         cgn_dict = {}
         cgn_dict['G-Protein'] = ['Gs', 'Gi/o', 'Gq/11', 'G12/13', 'GPa1']
         cgn_dict['100_001_001_001'] = ['GNAS2_HUMAN']
@@ -1388,7 +1625,7 @@ class Command(BaseCommand):
         ProteinFamily.objects.filter(slug__startswith="100").delete()
         self.cgn_parent_protein_family()
 
-        # Human proteins from CGN: http://www.mrc-lmb.cam.ac.uk/CGN/about.html
+        # Human proteins from CGN: https://www.mrc-lmb.cam.ac.uk/CGN/about.html
         cgn_dict = {}
 
         levels = ['2', '3']

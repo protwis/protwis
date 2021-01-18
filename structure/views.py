@@ -10,8 +10,7 @@ from django.shortcuts import redirect
 
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from protein.models import Gene, ProteinSegment, IdentifiedSites, ProteinGProteinPair
-from structure.models import (Structure, StructureModel, StructureComplexModel, StructureModelStatsRotamer, StructureComplexModelStatsRotamer,
-							 StructureModelSeqSim, StructureComplexModelSeqSim, StructureRefinedStatsRotamer, StructureRefinedSeqSim, StructureExtraProteins)
+from structure.models import Structure, StructureModel, StructureComplexModel, StructureModelStatsRotamer, StructureComplexModelStatsRotamer, StructureModelSeqSim, StructureComplexModelSeqSim, StructureRefinedStatsRotamer, StructureRefinedSeqSim, StructureExtraProteins, StructureModelRMSD
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn, PdbStateIdentifier
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
@@ -25,7 +24,7 @@ from common.views import AbsSegmentSelection,AbsReferenceSelection
 from common.selection import Selection, SelectionItem
 from common.extensions import MultiFileField
 from common.models import ReleaseNotes
-from common.alignment import GProteinAlignment
+from common.alignment import Alignment, GProteinAlignment
 from residue.models import Residue
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
@@ -63,7 +62,7 @@ class StructureBrowser(TemplateView):
 
 		context = super(StructureBrowser, self).get_context_data(**kwargs)
 		try:
-			context['structures'] = Structure.objects.filter(refined=False).select_related(
+			structures = Structure.objects.filter(refined=False).select_related(
 				"state",
 				"pdb_code__web_resource",
 				"protein_conformation__protein__species",
@@ -79,6 +78,13 @@ class StructureBrowser(TemplateView):
 					'protein_conformation','wt_protein')))
 		except Structure.DoesNotExist as e:
 			pass
+
+		structs_and_coverage = []
+		for s in structures:
+			structure_residues = Residue.objects.filter(protein_conformation=s.protein_conformation, protein_segment__isnull=False)
+			coverage = round((len(structure_residues) / len(s.protein_conformation.protein.parent.sequence))*100)
+			structs_and_coverage.append([s, coverage])
+		context['structures'] = structs_and_coverage
 
 		return context
 
@@ -174,6 +180,22 @@ class ServeComplexModels(TemplateView):
 				"main_template__signprot_complex")
 		except StructureComplexModel.DoesNotExist as e:
 			pass
+
+		return context
+
+
+class ServeModelStatistics(TemplateView):
+
+	template_name = "model_statistics.html"
+	def get_context_data(self, **kwargs):
+		context = super(ServeModelStatistics, self).get_context_data(**kwargs)
+		smr = StructureModelRMSD.objects.all()
+		try:
+			context['structure_model_rmsds'] = smr.prefetch_related(
+				"target_structure__protein_conformation__protein__parent",
+				"target_structure__protein_conformation__protein__parent__family")
+		except StructureModelRMSD.DoesNotExist as e:
+			print(e)
 
 		return context
 
@@ -456,8 +478,8 @@ class StructureStatistics(TemplateView):
 
 		all_structs = Structure.objects.all().prefetch_related('protein_conformation__protein__family').exclude(refined=True)
 		all_complexes = all_structs.exclude(ligands=None)
-		#FIXME G protein list is hard-coded for now. Table structure needs to be expanded for fully automatic approach.
-		all_gprots = all_structs.filter(stabilizing_agents__slug='gs')
+
+		all_gprots = all_structs.filter(id__in=SignprotComplex.objects.filter(protein__family__slug__startswith='100').values_list("structure__id", flat=True))
 		all_active = all_structs.filter(protein_conformation__state__slug = 'active')
 
 		years = self.get_years_range(list(set([x.publication_date.year for x in all_structs])))
@@ -467,8 +489,7 @@ class StructureStatistics(TemplateView):
 		# unique_complexes = all_complexes.distinct('ligands', 'protein_conformation__protein__family__name')
 		unique_complexes = StructureLigandInteraction.objects.filter(annotated=True).distinct('ligand', 'structure__protein_conformation__protein__family')
 
-		#FIXME G protein list is hard-coded for now. Table structure needs to be expanded for fully automatic approach.
-		unique_gprots = unique_structs.filter(stabilizing_agents__slug='gs')
+		unique_gprots = unique_structs.filter(id__in=SignprotComplex.objects.filter(protein__family__slug__startswith='100').values_list("structure__id", flat=True))
 		unique_active = unique_structs.filter(protein_conformation__state__slug = 'active')
 
 		#Stats

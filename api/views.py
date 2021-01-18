@@ -393,13 +393,16 @@ class FamilyAlignment(views.APIView):
 
             # convert the list to a dict
             ali_dict = OrderedDict({})
+            protein = "reference"
             for row in response:
-                if row.startswith(">"):
-                    k = row[1:]
-                else:
-                    ali_dict[k] = row
-                    k = False
-            ali_dict['CONSENSUS'] = ''.join(residue_list)
+                if row.strip() != "":
+                    if row.startswith(">"):
+                        protein = row[1:]
+                    else:
+                        ali_dict[protein] = row
+                        protein = False
+
+            ali_dict["CONSENSUS"] = "".join(residue_list)
 
             # render statistics for output
             if statistics == True:
@@ -848,7 +851,7 @@ class HelixBoxView(views.APIView):
         if entry_name is not None:
             p = Protein.objects.get(entry_name=entry_name)
 
-            return Response(str(p.get_helical_box()).split('\n'))
+            return Response(str(p.get_helical_box()).split("\n"))
 
 
 class SnakePlotView(views.APIView):
@@ -862,4 +865,4 @@ class SnakePlotView(views.APIView):
         if entry_name is not None:
             p = Protein.objects.get(entry_name=entry_name)
 
-            return Response(str(p.get_snake_plot()).split('\n'))
+            return Response(str(p.get_snake_plot()).split("\n"))

@@ -28,7 +28,7 @@ from interaction.views import ajax #import x-tal interactions
 
 from common import definitions
 from collections import OrderedDict
-from common.views import AbsTargetSelection
+from common.views import AbsTargetSelectionTable
 from common.views import AbsSegmentSelection
 from family.views import linear_gradient, color_dict, RGB_to_hex, hex_to_RGB
 
@@ -47,25 +47,45 @@ import xlsxwriter #sudo pip3 install XlsxWriter
 import operator
 import string
 
-class TargetSelection(AbsTargetSelection):
+class TargetSelection(AbsTargetSelectionTable):
     step = 1
     number_of_steps = 1
-    filters = False
-    psets = False
-    # docs = 'mutations.html#mutation-browser'
+    docs = "sequences.html#structure-based-alignments"
+    title = "SELECT RECEPTORS"
+    description = "Select receptors in the table (below) or browse the classification tree (right). You can select entire" \
+        + " families or individual receptors.\n\nOnce you have selected all your receptors, click the green button."
     selection_boxes = OrderedDict([
-        ('reference', False),
-        ('targets', True),
-        ('segments', False),
+        ("reference", False),
+        ("targets", True),
+        ("segments", False),
     ])
     buttons = {
-        'continue': {
-            'label': 'Show missense variants',
-            'url': '/mutational_landscape/render',
-            'color': 'success',
+        "continue": {
+            "label": "Next",
+            "onclick": "submitSelection('/mutational_landscape/render');",
+            "color": "success",
         },
     }
-    default_species = False
+
+# class TargetSelection(AbsTargetSelectionTable):
+#     step = 1
+#     number_of_steps = 1
+#     filters = False
+#     psets = False
+#     # docs = 'mutations.html#mutation-browser'
+#     selection_boxes = OrderedDict([
+#         ('reference', False),
+#         ('targets', True),
+#         ('segments', False),
+#     ])
+#     buttons = {
+#         'continue': {
+#             'label': 'Show missense variants',
+#             'url': '/mutational_landscape/render',
+#             'color': 'success',
+#         },
+#     }
+#     default_species = False
 
 #@cache_page(60*60*24*21)
 def render_variants(request, protein=None, family=None, download=None, receptor_class=None, gn=None, aa=None, **response_kwargs):

@@ -1,3 +1,6 @@
+/*global showAlert*/
+/*eslint no-undef: "error"*/
+
 function superposition(oTable, columns, site, hide_first_column) {
     // oTable: DataTable object of table of entries
     // columns: Column indeces of oTable to be extracted to build table for reference selection. First column has to be structure/model string used for superposition workflow
@@ -10,11 +13,10 @@ function superposition(oTable, columns, site, hide_first_column) {
 
     var checked_data = oTable.rows('.alt_selected').data();
     if (checked_data.length===0) {
-        window.alert('No entries selected for superposition')
+        showAlert("No entries selected for superposition", "danger");
         return 0;
     }
     var selected_ids = []
-    console.log(checked_data);
     if (site==='structure_browser') {
         for (i = 0; i < checked_data.length; i++) {
             var div = document.createElement("div");
@@ -26,7 +28,7 @@ function superposition(oTable, columns, site, hide_first_column) {
             }
         }
         AddToSelection('targets', 'structure_many', selected_ids.join(","));
-        console.log(selected_ids);
+
     } else if (site==='homology_model_browser') {
         for (i = 0; i < checked_data.length; i++) {
             var div = document.createElement("div");
@@ -43,22 +45,18 @@ function superposition(oTable, columns, site, hide_first_column) {
             else {
                 if (typeof div.innerText !== "undefined") {
                     selected_ids.push(div.innerText.replace(/\s+/g, '')+"_"+state);
-                    console.log(div.textContent.replace(/\s+/g, '')+"_"+state);
                 } else {
                     selected_ids.push(div.textContent.replace(/\s+/g, '')+"_"+state);
-                    console.log(div.textContent.replace(/\s+/g, '')+"_"+state);
                 }
             }
         }
         AddToSelection('targets', 'structure_models_many', selected_ids.join(","));
     } // add new logic here for new site
 
-    $('#modal_table tbody').empty();
-    var modal = document.getElementById('myModal');
-    var span = document.getElementsByClassName("close")[0];
-    modal.classList.add("modal");
-    // console.log('hasclass',$('#myModal').hasClass('modal'));
-    // console.log(modal);
+    $('#superposition_modal_table tbody').empty();
+    var modal = document.getElementById("superposition-modal");
+    var span = document.getElementById("close_superposition_modal");
+    
     modal.style.display = "block";
     span.onclick = function() {
         modal.style.display = "none";
@@ -89,22 +87,18 @@ function superposition(oTable, columns, site, hide_first_column) {
             row.appendChild(cell);
             column_count++;
         });
-        $('#modal_table tbody').append(row)
+        $('#superposition_modal_table tbody').append(row)
     }
-    $('#modal_table tbody tr').click(function() {
+    $("#superposition_modal_table tbody tr").click(function() {
         if (site==='structure_browser') {
             AddToSelection('reference', 'structure', $(this).children().eq(1).text());
-        } else if (site==='homology_model_browser') {
-            console.log($(this).children().eq(9));
-            console.log($(this).children().eq(8));
+        } else if (site==='homology_model_browser') { //FIXME
             if ($(this).children().eq(9).text()==='Yes') {
                 AddToSelection('reference', 'structure',  $(this).children().eq(11).text()+"_refined");
-                console.log($(this).children().eq(11).text()+"_refined");
             }
             else {
                 var state = $(this).children().eq(8).text();
                 AddToSelection('reference', 'structure_model', $(this).children().eq(1).text()+"_"+state);
-                console.log($(this).children().eq(1).text()+"_"+state);
             }
         } // Add logic here for new site
         $(this).children(':first').prop("checked",true);
@@ -319,4 +313,80 @@ function match_scroll_position() {
         $(frozen_table).scrollTop($(this).scrollTop());
         isRightScrollTopCalled = true;
     });
+}
+
+var tableToExcel = function () {
+    var uri = "data:application/vnd.ms-excel;base64,",
+        template = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:x='urn:schemas-microsoft-com:office:excel' xmlns='http://www.w3.org/TR/REC-html40'><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>",
+        base64 = function (s) {
+            return window.btoa(unescape(encodeURIComponent(s)));
+        }, format = function (s, c) {
+            return s.replace(/{(\w+)}/g, function (m, p) {
+                return c[p];
+            });
+        };
+    return function (table, name, filename) {
+            table= $("#"+table).clone();
+            $("#excel_table").html(table);
+            // Clean up table to remove yadcf stuff
+            $("#excel_table thead tr").css("height","");
+            $("#excel_table thead th").css("height","");
+            $("#excel_table thead div").css("height","");
+            $("#excel_table thead .yadcf-filter-wrapper").remove();
+            $("#excel_table thead button").remove();
+            var tr = $("#excel_table thead tr:eq(1)");
+            // reattach th titles
+            tr.find("th").each (function( column, th) {
+                if ($(th).attr("title")) {
+                    $(th).html($(th).attr("title"))
+                }
+            });
+
+        var ctx = {
+            worksheet: name || "Worksheet",
+            table: $("#excel_table").html()
+        };
+        $("#excel_table").html("");
+        document.getElementById("dlink").href = uri + base64(format(template, ctx));
+        document.getElementById("dlink").download = filename;
+        document.getElementById("dlink").click();
+    }
+}();
+
+function copyToClipboard(array, delimiter, data_name, powertip_object=false) {
+    var link = array;
+    console.log(link);
+    var out = "";
+    link.each(function() {
+        var ele = $(this).attr("href").split("/");
+        out+=ele[ele.length-1]+delimiter;
+    });
+    if (out.length===0) {
+        window.alert("No entries selected for copying");
+        return 0;
+    }
+    var textArea = document.createElement("textarea");
+    textArea.value = out;
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+        var successful = document.execCommand("copy");
+        var msg = successful ? "Successful" : "Unsuccessful";
+        if (powertip_object!==false) {
+            $.powerTip.hide();
+            powertip_object.data("powertipjq", $([
+                "<p>Copied to clipboard!</p>"
+                ].join("\n")));
+            powertip_object.powerTip("show");
+            setTimeout(function() {
+            powertip_object.data("powertipjq", $([
+                "<p>Export "+data_name+"</p>"
+                ].join("\n")));
+            },1000);
+        }
+    } catch (err) {
+        window.alert("Oops, unable to copy");
+    }
+    document.body.removeChild(textArea);
 }

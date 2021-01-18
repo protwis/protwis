@@ -3,10 +3,10 @@
     {% for button_name, button in buttons.items %}
         <a id='selection-button'
         {% if button.url %}href="{{ button.url }}" {% endif %} class="btn btn-{{ button.color }}
-        {% if forloop.counter > 1 %}
-        btn-sm
+        {% if forloop.counter > 1 and button.sameSize is None %}
+          btn-sm
         {% else %}
-        btn-lg
+          btn-lg
         {% endif %}
         btn-block has-spinner"
         {% if button.onclick %}onclick="{{ button.onclick | safe }}" {% endif %}>

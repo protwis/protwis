@@ -231,6 +231,10 @@ class Command(BaseBuild):
             deletions = list(range(240,265))
         elif structure.pdb_code.index=='7C6A':
             removed = list(range(1,35))
+        elif structure.pdb_code.index=="6S0L":
+            removed = removed + list(range(1068,1107))
+        elif structure.pdb_code.index=="7D7M":
+            deletions = list(range(1,4)) + list(range(367,489))
         # print('removed',removed)
         # removed = []
         if len(deletions)>len(d['wt_seq'])*0.9:
@@ -281,7 +285,7 @@ class Command(BaseBuild):
             print(structure,'More (or almost) sequence set to be removed from sequence',len(removed),' than exists',all_pdb_residues_in_chain,' removing removed[]')
             #print(removed)
             removed = []
-        
+
         for pp in ppb.build_peptides(chain, aa_only=False): #remove >1000 pos (fusion protein / gprotein)
             for i,res in enumerate(pp,1 ):
                 id = res.id
@@ -325,7 +329,7 @@ class Command(BaseBuild):
                 if residue.resname != "NH2": # skip amidation of peptide
                     pdbseq[chain][pos] = [i, AA[residue.resname]]
                     i += 1
-        
+
         parent_seq_protein = str(structure.protein_conformation.protein.parent.sequence)
         # print(structure.protein_conformation.protein.parent.entry_name)
         rs = Residue.objects.filter(protein_conformation__protein=structure.protein_conformation.protein.parent).prefetch_related('display_generic_number','generic_number','protein_segment')
@@ -434,9 +438,7 @@ class Command(BaseBuild):
                 # if r!=ref_seq[i-1]:
                 #     print('aa mismatch')
         # print("seg res not mapped",gaps)
-        # import pprint
-        # print(deletions)
-        # pprint.pprint(mapped_seq)
+
         pdb = structure.pdb_data.pdb
         protein_conformation=structure.protein_conformation
         temp = ''
@@ -1246,7 +1248,7 @@ class Command(BaseBuild):
                                 else:
                                     pdb_reference = ligand['name']
                                     db_lig = Ligand.objects.filter(pdbe=ligand['name'])
-                                    
+
                                 # check if ligand exists already
                                 if len(db_lig)>0:
                                     l = db_lig[0]
@@ -1287,8 +1289,8 @@ class Command(BaseBuild):
                                                 self.logger.info('Created ligand {}'.format(ligand['name']))
                                             else:
                                                 pass
-                                        except IntegrityError:
-                                            l = Ligand.objects.get(name=ligand_title, canonical=True, pdbe=ligand['name'])
+                                        except:
+                                            l = Ligand.objects.get(name=ligand_title, canonical=True)
 
                                         # save ligand
                                         l.save()
