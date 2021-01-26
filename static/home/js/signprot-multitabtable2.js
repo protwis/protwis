@@ -43,7 +43,7 @@ var tableToExcel = (function () {
         document.getElementById("dlink").download = filename;
         document.getElementById("dlink").click();
     };
-})();
+}());
 
 function select_all(e) {
     var checkedStatus = $(e).prop("checked");
