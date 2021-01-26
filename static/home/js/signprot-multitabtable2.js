@@ -5,7 +5,7 @@ let oTable1 = [];
 let oTable2 = [];
 
 
-var tableToExcel = (function () {
+var tableToExcel = function () {
 //function tableToExcel() {
     var uri = "data:application/vnd.ms-excel;base64,",
         template = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:x='urn:schemas-microsoft-com:office:excel' xmlns='http://www.w3.org/TR/REC-html40'><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>",
@@ -42,7 +42,7 @@ var tableToExcel = (function () {
         document.getElementById("dlink").download = filename;
         document.getElementById("dlink").click();
     };
-})();
+}();
 
 function select_all(e) {
     var checkedStatus = $(e).prop("checked");
@@ -106,8 +106,8 @@ function reset_tab2() {
  */
 function supportFilter(filterVal, columnVal, rowValues, stateVal){
     //console.log(!/^\d+$/.test(columnVal), columnVal, filterVal);
-    //console.log(columnVal == filterVal);
-    return (!/^\d+$/.test(columnVal) || columnVal == filterVal);
+    //console.log(columnVal === filterVal);
+    return (!/^\d+$/.test(columnVal) || columnVal === filterVal);
 }
 
 /**
@@ -116,13 +116,13 @@ function supportFilter(filterVal, columnVal, rowValues, stateVal){
  * the range_number filter_type.
  */
 function make_range_number_cols(start_column, repeat_number) {
-    from_to = {
+    var from_to = {
         filter_type: "range_number",
         filter_default_label: ["Min", "Max"],
         filter_reset_button_text: false
     };
-    repeated_from_to = []
-    for (i = start_column; i < start_column + repeat_number; i++) {
+    var repeated_from_to = [];
+    for (var i = start_column; i < start_column + repeat_number; i++) {
         var column_info = Object.assign({}, from_to);
         column_info["column_number"] = i;
         repeated_from_to.push(column_info);
@@ -382,7 +382,7 @@ $(function() {
         if (event.target.type !== "checkbox") {
             $(":checkbox", this).trigger("click");
             $(this).eq(0).toggleClass("alt_selected");
-            $(this).find("td").toggleClass('highlight');
+            $(this).find("td").toggleClass("highlight");
         }
         $(this).eq(0).toggleClass("alt_selected");
         $(this).find("td").toggleClass("highlight");
