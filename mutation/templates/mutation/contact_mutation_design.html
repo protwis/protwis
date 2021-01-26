@@ -1,0 +1,635 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% block addon_css %}
+
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+<link href="{% static 'home/css/buttons.dataTables.min.css' %}" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+
+<style type="text/css">
+    @media (min-width: 1600px){
+        #content {
+            width: 1570px;
+        }
+    }
+
+    @media (min-width: 2000px){
+        #content {
+            width: 1970px;
+        }
+    }
+
+    @media (min-width: 2400px){
+        #content {
+            width: 2370px;
+        }
+    }
+
+    div.dt-buttons {
+      clear: both;
+    }
+
+    table#suglist1, table#suglist2 {
+      width: 100%;
+      margin-left: 0px;
+    }
+
+    table.yadcf-datatables-table--suglist1 thead th, table.yadcf-datatables-table--suglist2 thead th {
+      border-bottom: 1px solid #ddd;
+    }
+
+    table tr.filterrow th {
+      border-bottom: 2px solid;
+    }
+
+    th.rightborder {
+      border-right: 1px solid;
+    }
+
+    th.rightborder-light {
+      border-right: 1px solid #ddd;
+    }
+
+    .yadcf-filter-wrapper {
+      margin-top: 0;
+    }
+
+    input.yadcf-filter  {
+      width: 60px;
+      font-family: sans-serif;
+      font-size: 100%;
+      font-weight: bold;
+    }
+
+    .yadcf-filter-range-number {
+      width: 40px;
+      font-family: sans-serif;
+      font-size: 100%;
+      font-weight: bold;
+    }
+
+    .yadcf-filter-range {
+      min-width: 30px;
+    }
+
+    .yadcf-filter-range-number-seperator {
+      display: none;
+    }
+
+</style>
+
+{% endblock %}
+{% block content %}
+
+<ul class="nav nav-tabs nav-browsers">
+  {% if freq_results1 %}
+    <li class="active"><a href="#mutation-table-1-tab" data-toggle="tab" id="mutation-table-1-tab-link">1. Removing {{ undesired }} stabilizing AAs</a></li>
+  {% endif %}
+
+  {% if freq_results2 %}
+    {% if freq_results1 %}
+      <li>
+    {% else %}
+      <li class="active">
+    {% endif %}
+
+    <a href="#mutation-table-2-tab" data-toggle="tab" id="mutation-table-2-tab-link">2. Introducing {{ desired }} stabilizing AAs</a></li>
+  {% endif %}
+</ul>
+
+<div class="row">
+  <div class="tab-content col-md-12 ">
+    {% if freq_results1 %}
+      <div class="tab-pane active" id="mutation-table-1-tab">
+          <div class="panel panel-default">
+              <div class="panel-heading">
+                  <h3 class="panel-title pull-left">Mutations to destabilize the <i>{{ undesired }}</i></h3>
+                  <span class="pull-right">
+                      <!-- <span class="glyphicon glyphicon-download btn-download"></span> -->
+                      <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                  </span>
+                  <div class="clearfix"></div>
+              </div>
+              {% if freq_results1_length > 0 %}
+                <div class="panel-body">
+                  <table class="display compact" id="suglist1">
+                    <thead>
+                      <tr>
+                        <th rowspan=3 colspan=1 class="text-center">Target<br>residue<br>number</th>
+                        <th rowspan=3 colspan=1 class="text-center">Generic<br>residue<br>number</th>
+                        <th rowspan=3 colspan=1 class="text-center">Target<br>WT AA</th>
+                        <th rowspan=3 colspan=1 class="text-center rightborder"><span class="text-red-highlight">Ala Mutant</span><br>(removes<br>sidechain)</th>
+                        <th rowspan=1 colspan=3 class="text-center rightborder">Sum of residue contact frequencies</th>
+                        <th rowspan=1 colspan=2 class="text-center rightborder">Class conservation</th>
+                        <th rowspan=3 colspan=1 class="text-center rightborder">#Supporting data types</th>
+                        <th rowspan=1 colspan=4 class="text-center rightborder">Mutation data</th>
+                        <th rowspan=1 colspan=4 class="text-center rightborder">Thermostabilizing mutations</th>
+                        <th rowspan=1 colspan=4 class="text-center rightborder">Expression-increasing mutations<br>(structure constructs)</th>
+                        <th rowspan=1 colspan=4 class="text-center">Expression-increasing mutations<br>(ligand site mutations)</th>
+                      </tr>
+                      <tr>
+                        <th rowspan=2 colspan=1 class="text-center">Diff</th>
+                        <th rowspan=2 colspan=1 class="text-center">{{ desired }}</th>
+                        <th rowspan=2 colspan=1 class="text-center rightborder">{{ undesired }}</th>
+                        <th rowspan=2 colspan=1 class="text-center">AA</th>
+                        <th rowspan=2 colspan=1 class="text-center rightborder">%</th>
+                        <th rowspan=1 colspan=2 class="text-center rightborder-light">&#8805;5-fold&nbsp;effect</th>
+                        <th rowspan=1 colspan=2 class="text-center rightborder">all</th>
+                        <th rowspan=1 colspan=2 class="text-center rightborder-light">Same pos.</th>
+                        <th rowspan=2 colspan=1 class="text-center">Same<br>WT AA</th>
+                        <th rowspan=2 colspan=1 class="text-center rightborder">Same<br>mutant AA</th>
+                        <th rowspan=1 colspan=2 class="text-center rightborder-light">Same pos.</th>
+                        <th rowspan=2 colspan=1 class="text-center">Same<br>WT AA</th>
+                        <th rowspan=2 colspan=1 class="text-center rightborder">Same<br>mutant AA</th>
+                        <th rowspan=1 colspan=2 class="text-center rightborder-light">Same pos.</th>
+                        <th rowspan=2 colspan=1 class="text-center">Same<br>WT AA</th>
+                        <th rowspan=2 colspan=1 class="text-center">Same<br>mutant AA</th>
+                      </tr>
+                      <tr>
+                        <th>#Mut.</th>
+                        <th class="rightborder-light">#Rec.</th>
+                        <th>#Mut.</th>
+                        <th class="rightborder">#Rec.</th>
+                        <th>#Mut.</th>
+                        <th class="rightborder-light">#Rec.</th>
+                        <th>#Mut.</th>
+                        <th class="rightborder-light">#Rec.</th>
+                        <th>#Mut.</th>
+                        <th class="rightborder-light">#Rec.</th>
+                      </tr>
+                      <tr class="filterrow">
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th class="rightborder"></th>
+                        <th></th>
+                        <th></th>
+                        <th class="rightborder"></th>
+                        <th></th>
+                        <th class="rightborder"></th>
+                        <th class="rightborder"></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th class="rightborder"></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th class="rightborder"></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th class="rightborder"></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for gn, entry in freq_results1.items %}
+                      <tr data-generic_gn="{{ gn }}">
+                        {% for data in entry %}
+                        <td>{{ data | safe}}</td>
+                        {% endfor %}
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% else %}
+                <div class="panel-body">
+                  No {{ undesired }} destabilizing mutation suggestions were identified in the top ranked results for the selected target.
+                </div>
+              {% endif %}
+          </div>
+      </div>
+    {% endif %}
+    {% if freq_results2 %}
+      {% if freq_results1 %}
+        <div class="tab-pane" id="mutation-table-2-tab">
+      {% else %}
+        <div class="tab-pane active" id="mutation-table-2-tab">
+      {% endif %}
+          <div class="panel panel-default">
+              <div class="panel-heading">
+                  <h3 class="panel-title pull-left">Mutations to stabilize the <i>{{ desired }}</i></h3>
+                  <span class="pull-right">
+                      <!--<span class="glyphicon glyphicon-download btn-download"></span>-->
+                      <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
+                  </span>
+                  <div class="clearfix"></div>
+              </div>
+              {% if freq_results2_length > 0 %}
+                <div class="panel-body">
+                  <table width="100%" class="display compact" id="suglist2">
+                    <thead>
+                      <tr>
+                        <th rowspan=3 colspan=1 class="text-center">Target<br>residue<br>number</th>
+                        <th rowspan=3 colspan=1 class="text-center">Generic<br>residue<br>number</th>
+                        <th rowspan=3 colspan=1 class="text-center rightborder-light">Target<br>WT AA</th>
+                        <th rowspan=1 colspan=2 class="text-center rightborder"><span class="text-red-highlight">Mutant AA</span><br>({{ desired }} conservation)</th>
+                        <th rowspan=1 colspan=3 class="text-center rightborder">Sum of residue contact frequencies</th>
+                        <th rowspan=1 colspan=2 class="text-center rightborder">Class conservation</th>
+                        <th rowspan=3 colspan=1 class="text-center rightborder">#Supporting data types</th>
+                        <th rowspan=1 colspan=4 class="text-center rightborder">Mutation data</th>
+                        <th rowspan=1 colspan=4 class="text-center rightborder">Thermostabilizing mutations</th>
+                        <th rowspan=1 colspan=4 class="text-center rightborder">Expression-increasing mutations<br>(structure constructs)</th>
+                        <th rowspan=1 colspan=4 class="text-center">Expression-increasing mutations<br>(ligand activity studies)</th>
+                      </tr>
+                      <tr>
+                        <th rowspan=2 class="text-center">AA</th>
+                        <th rowspan=2 class="text-center rightborder">%</th>
+                        <th rowspan=2 class="text-center">Diff</th>
+                        <th rowspan=2 class="text-center">{{ desired }}</th>
+                        <th rowspan=2 class="text-center rightborder">{{ undesired }}</th>
+                        <th rowspan=2 class="text-center">AA</th>
+                        <th rowspan=2 class="text-center rightborder">%</th>
+                        <th rowspan=1 colspan=2 class="text-center rightborder-light">&#8805;5-fold&nbsp;effect</th>
+                        <th rowspan=1 colspan=2 class="text-center rightborder">all</th>
+                        <th rowspan=1 colspan=2 class="text-center rightborder-light">Same pos.</th>
+                        <th rowspan=2 colspan=1 class="text-center" >Same<br>WT AA</th>
+                        <th rowspan=2 colspan=1 class="text-center rightborder">Same<br>mutant AA</th>
+                        <th rowspan=1 colspan=2 class="text-center rightborder-light">Same pos.</th>
+                        <th rowspan=2 colspan=1 class="text-center">Same<br>WT AA</th>
+                        <th rowspan=2 colspan=1 class="text-center rightborder">Same<br>mutant AA</th>
+                        <th rowspan=1 colspan=2 class="text-center rightborder-light">Same pos.</th>
+                        <th rowspan=2 colspan=1 class="text-center">Same<br>WT AA</th>
+                        <th rowspan=2 colspan=1 class="text-center">Same<br>mutant AA</th>
+                      </tr>
+                      <tr>
+                        <th>#Mut.</th>
+                        <th class="rightborder-light">#Rec.</th>
+                        <th>#Mut.</th>
+                        <th class="rightborder">#Rec.</th>
+                        <th>#Mut.</th>
+                        <th class="rightborder-light">#Rec.</th>
+                        <th>#Mut.</th>
+                        <th class="rightborder-light">#Rec.</th>
+                        <th>#Mut.</th>
+                        <th class="rightborder-light">#Rec.</th>
+                      </tr>
+                      <tr class="filterrow">
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th class="rightborder"></th>
+                        <th></th>
+                        <th></th>
+                        <th class="rightborder"></th>
+                        <th></th>
+                        <th class="rightborder"></th>
+                        <th class="rightborder"></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th class="rightborder"></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th class="rightborder"></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th class="rightborder"></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for gn, entry in freq_results2.items %}
+                      <tr data-generic_gn="{{ gn }}">
+                        {% for data in entry %}
+                        <td>{{ data | safe}}</td>
+                        {% endfor %}
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% else %}
+                <div class="panel-body">
+                  No {{ desired }} stabilizing mutation suggestions were identified in the top ranked results for the selected target.
+                </div>
+              {% endif %}
+          </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal" id="detailGNModal" role="dialog">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title"></h4>
+      </div>
+
+      <div class="modal-body">
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/datatables.min.js' %}"> </script>
+<script src="{% static 'home/js/dataTables.buttons.min.js' %}"> </script>
+<script src="{% static 'home/js/grayscale.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+<script src="{% static 'home/js/select2.js' %}"> </script>
+
+
+<script type="text/javascript" charset="utf-8">
+  var table_options = {"paging":        false,
+                        "pageLength":   20,
+                        "lengthChange": false,
+                        "buttons":      ["csv", "excel"],
+                        "scrollX":      true,
+                        "dom":          "lfrtipB",
+                        "deferRender":  true
+                      }
+
+  var table1, table2 = undefined;
+
+  function initTable1() {
+    // Init mutations table 1
+    if ($("#suglist1").length > 0 && table1 === undefined){
+      // Assign coloring class to each cell in freq. diff table
+      // NOTE: Adjust color index when changing table - currently 8
+      $("#suglist1 tbody tr td").filter(":nth-child(5)").each( function() {
+          $(this).addClass("color-column");
+          $(this).addClass("color-reverse");
+          //$(this).addClass("color-gradient_white_indianred");
+      });
+
+      //$("#suglist1 tbody tr td").filter(":nth-child(10),:nth-child(11),:nth-child(15),:nth-child(19),:nth-child(23)").each( function() {
+      $("#suglist1 tbody tr td").filter(":nth-child(10)").each( function() {
+          $(this).addClass("color-column");
+      });
+
+      $("#suglist1 tbody tr td").filter(":nth-child(12),:nth-child(24)").each( function() {
+        if (this.textContent > 1){
+          this.style.backgroundColor = "#ccc";
+        }
+      });
+
+      $("#suglist1 tbody tr td").filter(":nth-child(15),:nth-child(19)").each( function() {
+          if (this.textContent > 0){
+            this.style.backgroundColor = "#ccc";
+          }
+      });
+
+      // Enable detail pane by clicking on row
+      $("#suglist1 tbody tr").each( function() {
+          $(this).on("click", detailGN);
+      });
+
+      // set data-search to cell (for mutation data filtering)
+      $("#suglist1 tbody tr td span[data-search]").each( function() {
+        var cell = $(this).closest("td")[0];
+        $(cell).attr("data-search", $(this).attr("data-search"));
+      });
+
+      gray_scale_table($("#suglist1"));
+
+      var table_options1 = Object.assign({}, table_options);
+      table_options1["order"] = [4, "asc"];
+      table_options1["columnDefs"] = [
+          { className: "text-center", "targets": [...Array(26).keys()] }
+        ]
+
+      table1 = $("#suglist1").DataTable(table_options1);
+
+      // Multi select
+      var yadcf_options = [];
+      var list = [2,7,12,16,17,20,21,24,25];
+      for (i in list){
+        yadcf_options.push({
+              column_number : list[i],
+              filter_type: "multi_select",
+              select_type: "select2",
+              filter_default_label: "",
+              filter_reset_button_text: false,
+          });
+
+          if (list[i] <= 2)
+            yadcf_options[yadcf_options.length-1]["column_data_type"] = "html";
+      }
+
+      yadcf_options.push({
+                     column_number: 1,
+                     filter_type: "text",
+                     select_type: "select2",
+                     filter_default_label: "",
+                     filter_reset_button_text: false,
+                     filter_match_mode : "contains",
+                 });
+
+      // Range filters
+      list = [0,4,5,6,8,9,10,11,12,13,14,15,18,19,22,23];
+      for (i in list){
+        yadcf_options.push({
+            column_number : list[i],
+            filter_type: "range_number",
+            filter_reset_button_text: false,
+            column_data_type: "html",
+            html_data_type: "value",
+            filter_default_label: ["Min", "Max"],
+        });
+      }
+
+      yadcf.init(table1, yadcf_options);
+
+      // table redraw
+      table1.draw();
+    } else if (table1 !== undefined){
+      table1.draw();
+    }
+  }
+
+  function initTable2() {
+    // Init mutations table 2
+    if ($("#suglist2").length > 0 && table2 === undefined){
+      // Assign coloring class to each cell in freq. diff table
+      // NOTE: Adjust color index when changing table - currently 8
+      $("#suglist2 tbody tr td").filter(":nth-child(6)").each( function() {
+          $(this).addClass("color-column");
+          //$(this).addClass("color-gradient_white_limegreen");
+      });
+
+      //$("#suglist2 tbody tr td").filter(":nth-child(11),:nth-child(12),:nth-child(16),:nth-child(20),:nth-child(24)").each( function() {
+      $("#suglist2 tbody tr td").filter(":nth-child(11)").each( function() {
+          $(this).addClass("color-column");
+      });
+
+      $("#suglist2 tbody tr td").filter(":nth-child(13),:nth-child(25)").each( function() {
+        if (this.textContent > 1){
+          this.style.backgroundColor = "#ccc";
+        }
+      });
+
+      $("#suglist2 tbody tr td").filter(":nth-child(16),:nth-child(20)").each( function() {
+          if (this.textContent > 0){
+            this.style.backgroundColor = "#ccc";
+          }
+      });
+
+
+      // Enable detail pane by clicking on row
+      $("#suglist2 tbody tr").each( function() {
+          $(this).on("click", detailGN);
+      });
+
+      // set data-search to cell (for mutation data filtering)
+      $("#suglist2 tbody tr td span[data-search]").each( function() {
+        var cell = $(this).closest("td")[0];
+        $(cell).attr("data-search", $(this).attr("data-search"));
+      });
+
+      gray_scale_table($("#suglist2"));
+
+      var table_options2 = Object.assign({}, table_options);
+      table_options2["order"] = [5, "desc"];
+      table_options2["columnDefs"] = [
+          { className: "text-center", "targets": [...Array(27).keys()] }
+        ]
+      table2 = $("#suglist2").DataTable(table_options2);
+
+      // Multi select
+      var yadcf_options = [];
+      var list = [2,3,8,17,18,21,22,25,26];
+      for (i in list){
+        yadcf_options.push({
+              column_number : list[i],
+              filter_type: "multi_select",
+              select_type: "select2",
+              filter_default_label: "",
+              filter_reset_button_text: false,
+          });
+
+          if (list[i] <= 3)
+            yadcf_options[yadcf_options.length-1]["column_data_type"] = "html";
+      }
+
+      yadcf_options.push({
+                     column_number: 1,
+                     filter_type: "text",
+                     select_type: "select2",
+                     filter_default_label: "",
+                     filter_reset_button_text: false,
+                     filter_match_mode : "contains",
+                 });
+
+      // Range filters
+      list = [0,4,5,6,7,9,10,11,12,13,14,15,16,19,20,23,24];
+      for (i in list){
+        yadcf_options.push({
+            column_number : list[i],
+            filter_type: "range_number",
+            filter_reset_button_text: false,
+            column_data_type: "html",
+            html_data_type: "value",
+            filter_default_label: ["Min", "Max"],
+        });
+      }
+
+      yadcf.init(table2, yadcf_options);
+
+      // table redraw
+      table2.draw();
+    } else if (table2 !== undefined){
+      table2.draw();
+    }
+  }
+
+  function detailGN(event) {
+    var row = $(event.target).closest("tr")[0];
+    var gn = $(row).attr("data-generic_gn");
+
+    //Dealing with csrf token
+    function getCookie(c_name) {
+        if (document.cookie.length > 0) {
+            c_start = document.cookie.indexOf(c_name + "=");
+            if (c_start != -1) {
+                c_start = c_start + c_name.length + 1;
+                c_end = document.cookie.indexOf(";", c_start);
+                if (c_end == -1) c_end = document.cookie.length;
+                return unescape(document.cookie.substring(c_start, c_end));
+            }
+        }
+        return "";
+    }
+    $.ajaxSetup({
+        headers: { "X-CSRFToken": getCookie("csrftoken") }
+    });
+
+    // Ajax query to backend and populate a modal
+    $.ajax({
+        "url": "/mutations/state_detail_gn",
+        "data": {
+            "gn": gn
+        },
+        "type": "POST",
+        "async": false,
+        "success": function (data) {
+            $("#detailGNModal .modal-title").text("Contact frequencies for " + gn)
+            $("#detailGNModal .modal-body").html(data)
+            $('#detailGNModal').modal('show');
+            gray_scale_table($("#detailGNModal table"));
+            $('#detailGNModal table').DataTable({
+              "order": [[ 3, "desc" ]],
+              "paging":        true,
+              "pageLength":   15,
+              "lengthChange": false,
+              "searching":    false,
+            });
+        }
+    });
+  }
+
+  function toggleFullScreen(fullScreenElement) {
+      if (!document.mozFullScreen && !document.webkitFullScreen) {
+          if (fullScreenElement.mozRequestFullScreen) {
+              fullScreenElement.mozRequestFullScreen();
+          } else {
+              fullScreenElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+          }
+      } else {
+          if (document.mozCancelFullScreen) {
+            document.mozCancelFullScreen();
+          } else {
+            document.webkitCancelFullScreen();
+          }
+      }
+  }
+
+  $("#mutation-table-1-tab-link").on("click", function(){setTimeout(initTable1, 1000);});
+  $("#mutation-table-2-tab-link").on("click", function(){setTimeout(initTable2, 1000);});
+
+  $(document).ready(function() {
+    {% if freq_results1 %}
+      initTable1();
+    {% else %}
+      initTable2();
+    {% endif %}
+
+    // Prepare fullscreen toggle
+    $('.btn-fullscreen').click(function() {
+        var fullScreenElement = $(this).closest("div.tab-content");
+        console.log("fullscreen", fullScreenElement)
+        fullScreenElement.css('background-color','white');
+        toggleFullScreen(fullScreenElement.get(0));
+    });
+  });
+</script>
+{% endblock %}

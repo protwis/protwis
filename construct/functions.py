@@ -359,11 +359,11 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     # elif pdbname=='5VBL': # fixed by pdb_range
     #     chain_over_ride = 'B'
     # print(pdb_range)
-    #http://files.gpcrdb.org/uniprot_mapping.txt
+    #https://files.gpcrdb.org/uniprot_mapping.txt
     ## get uniprot to name mapping
     uniprot_mapping = cache.get('gpcrdb_uniprot_mapping')
     if not uniprot_mapping:
-        url = 'http://files.gpcrdb.org/uniprot_mapping.txt'
+        url = 'https://files.gpcrdb.org/uniprot_mapping.txt'
         req = urlopen(url)
         uniprot_mapping = req.read().decode('UTF-8')
         rows = ( line.split(' ') for line in uniprot_mapping.split('\n') )
@@ -847,6 +847,17 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                 seg_resid_list = seg_resid_list[:-3]
             mutations = None
 
+            # Custom fix for 6S0L
+            if pdbname=="6S0L":
+                if elem.attrib['segId']=="6s0l_A_11_221":
+                    max_pos = 208
+                    seg_resid_list = seg_resid_list[:-4]
+                elif elem.attrib['segId']=="6s0l_A_222_260":
+                    min_pos = 1001
+                    seg_resid_list = [1001,1002,1003,1004] + seg_resid_list
+                elif elem.attrib['segId']=="6s0l_A_261_263" or elem.attrib['segId']=="6s0l_A_285_287":
+                    seg_uniprot_ids = ["Not_Observed"]
+
             if receptor==False and u_id_source=='UniProt':
                 if seg_uniprot_ids[0] in d['construct_sequences']:
                     if 'mutations' in d['construct_sequences'][seg_uniprot_ids[0]]:
@@ -881,7 +892,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
             # print("end of segment",elem.attrib['segId'],seg_uniprot_ids,max_pos)
             if [elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,seg_had_receptor] not in d['xml_segments']:
                 d['xml_segments'].append([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,seg_had_receptor])
-            
+
             if receptor == False and receptor_chain==chain: #not receptor, but is in same chain
                 if len(seg_uniprot_ids):
                     subtype =seg_uniprot_ids[0]

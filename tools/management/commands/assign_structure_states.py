@@ -45,12 +45,13 @@ class Command(BaseCommand):
                 active_ids = list(SignprotComplex.objects.filter(structure__pdb_code__index__in=structure_ids) \
                                     .exclude(structure__pdb_code__index="6CMO") \
                                     .values_list("structure__pdb_code__index"))
-                active_ids = [x[0] for x in active_ids] # flatten
+                active_ids = [x[0] for x in active_ids if x[0][0].isnumeric()] # flatten
 
+                # Hardcoded active structures
                 if slug[0] == "001":
                     active_ids.extend(["6LI3"])
-                elif slug[0] == "004": # hardcoded custom YZ03 as active
-                    active_ids = ["6N51", "6UO8", "7C7Q"]
+                elif slug[0] == "004":
+                    active_ids = ["7C7Q"]
 
                 # print("The following PDBs are G-prot complex structures:")
                 # print(slug[0], active_ids)
@@ -63,7 +64,7 @@ class Command(BaseCommand):
                 class_pair_inactives['001'] = ["2x46_6x37", 11.9] #A
                 class_pair_inactives['002'] = ["2x46_6x37", 13] #B1
                 class_pair_inactives['003'] = ["2x47_6x37", 1000] #B2 PLACEHOLDER
-                class_pair_inactives['004'] = ["2x47_6x37", 14.3] #C
+                class_pair_inactives['004'] = ["2x47_6x37", 14.5] #C
                 class_pair_inactives['005'] = ["2x47_6x37", 1000] #D PLACEHOLDER
                 class_pair_inactives['006'] = ["2x44_6x31", 13] #F
 
@@ -73,9 +74,18 @@ class Command(BaseCommand):
                                     .exclude(structure__pdb_code__index__in=active_ids) \
                                     .values_list("structure__pdb_code__index"))
 
-                inactive_ids = [x[0] for x in inactive_ids]
-                # print(inactive_ids)
+                inactive_ids = [x[0] for x in inactive_ids if x[0][0].isnumeric()]
 
+                # HARDCODED INACTIVE STRUCTURES
+                if slug[0] == "004":
+                    inactive_ids.extend(["4OR2", "6FFI"])
+                elif slug[0] == "006":
+                    inactive_ids.extend(["4JKV", "6D35", "6D32", "5V57", "5V56", "4N4W"])
+
+                if "6FJ3" in inactive_ids:
+                    inactive_ids.remove("6FJ3")
+
+                #print(slug[0], len(inactive_ids),len(active_ids))
                 if len(active_ids) > 0 and len(inactive_ids) > 0:
                     # create distance matrix for given structures on lower half TM + G-Prot only residues
                     dis = Distances()
@@ -120,7 +130,10 @@ class Command(BaseCommand):
                         "6CMO" : "active", # Complex with G prot - irregular conformation
                         "5ZKP" : "other", # Unknown/other activation states (in this case auto-inhibited with H8?)
                         "5LWE" : "inactive", # Cannot be determined using this method because of missing TM in annotation
+                        "6KUX" : "inactive", #
                         "5NX2" : "intermediate", # Closer to active + groups together but internally more inactive
+                        "6N51" : "intermediate", # Holds middle between active and inactive
+                        "7CA5" : "intermediate"  # Apo state holds middle between active and inactive
                     }
 
                     # Percentage score for TM2-TM6 opening
@@ -159,13 +172,15 @@ class Command(BaseCommand):
                         # Classification
                         score = scoring_results[pdb]
                         structure_state = "inactive"
-                        if score < 25 and slug[0] == "001": # above this score always inactive structure
+                        if score < 40 and slug[0] == "001": # above this score always inactive structure
                             structure_state = "active"
-                            if slug[0] == "001" and score > -75:
+                            if slug[0] == "001" and score > -70:
                                 structure_state = "intermediate"
-                        elif score < -5 and slug[0] == "004": # above this score always inactive structure
+                        elif score < 0 and slug[0] == "004": # above this score always inactive structure
                             structure_state = "active"
-                        elif score < 0 and slug[0] not in ["001", "004"]: # above this score always inactive structure
+                        elif score < 0 and slug[0] == "006": # above this score always inactive structure
+                            structure_state = "active"
+                        elif score < 0 and slug[0] not in ["001", "004", "006"]: # above this score always inactive structure
                             structure_state = "active"
 
                                 #print(slug[0], entry[0], structure_state, score)
@@ -187,7 +202,6 @@ class Command(BaseCommand):
 
                         # Percentage Gprot-bound likeness
                         gprot_likeness = 100 - int(round((score-min_score)/(max_score-min_score)*100))
-                        #print(slug[0], pdb, score, min_score, max_score, gprot_likeness, all_scoring_results[pdb])
 
                         if pdb in active_ids:
                             gprot_likeness = 100
@@ -195,6 +209,8 @@ class Command(BaseCommand):
                         elif structure_state == "other":
                             gprot_likeness = None
                             percentage = None
+
+                        #print(slug[0], pdb, score, min_score, max_score, gprot_likeness, structure_state)
 
                         # Store for structure
                         struct = Structure.objects.get(pdb_code__index=pdb)

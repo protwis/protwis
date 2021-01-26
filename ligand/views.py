@@ -156,6 +156,7 @@ def TargetDetailsCompact(request, **kwargs):
     context['protein_id'] = protein_id
     ps = ps.prefetch_related(
         'protein', 'ligand__properities__web_links__web_resource', 'ligand__properities__vendors__vendor')
+
     d = {}
     for p in ps:
         if p.ligand not in d:
@@ -250,11 +251,13 @@ def fetch_receptor_trunsducers(receptor):
     except:
         return None, None
 
+
 def TargetDetails(request, **kwargs):
     protein_id = kwargs['pk']
     context = dict()
     context['protein_id'] = protein_id
     ps = AssayExperiment.objects.filter(protein_id=protein_id)
+
     ps = ps.values('standard_type',
                    'standard_relation',
                    'standard_value',

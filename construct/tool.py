@@ -937,7 +937,7 @@ def structure_rules(request, slug, **response_kwargs):
 def mutations(request, slug, **response_kwargs):
     from django.db import connection
     start_time = time.time()
-    print('hi')
+
     protein = Protein.objects.get(entry_name=slug)
     protein_class_slug = protein.family.slug.split("_")[0]
     protein_rf_name = protein.family.parent.name
@@ -1233,9 +1233,9 @@ def mutations(request, slug, **response_kwargs):
         if not xtals_conservation:
             c_proteins = Construct.objects.filter(protein__family__slug__startswith = protein_class_slug).all().values_list('protein__pk', flat = True).distinct()
             xtal_proteins = Protein.objects.filter(pk__in=c_proteins)
-            print(xtal_proteins)
-            xtals_conservation = calculate_conservation(proteins=xtal_proteins)
-            cache.set("CD_xtal_cons_"+protein_class_slug,xtals_conservation,60*60*24)
+            if len(xtal_proteins)>0:
+                xtals_conservation = calculate_conservation(proteins=xtal_proteins)
+                cache.set("CD_xtal_cons_"+protein_class_slug,xtals_conservation,60*60*24)
 
         xtals_cutoff = 7
         xtals_cutoff_pos = 4
