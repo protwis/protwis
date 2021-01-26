@@ -763,7 +763,7 @@ class CouplingBrowser2(TemplateView):
 
 
         #pprint(dictotemplate[348]) # only Bouvier
-        pprint(dictotemplate[1]) # Inoue and Bouvier
+        #pprint(dictotemplate[1]) # Inoue and Bouvier
 
         return dictotemplate, coupling_header_names
 
