@@ -378,14 +378,14 @@ $(function() {
 //        console.timeEnd("table1load");
 //    }, );
 
-    $('#familiestabletab'+' > tbody > tr').click(function(event) {
-        if (event.target.type !== 'checkbox') {
-            $(':checkbox', this).trigger('click');
-            $(this).eq(0).toggleClass('alt_selected');
-            $(this).find('td').toggleClass('highlight');
+    $("#familiestabletab"+" > tbody > tr").click(function(event) {
+        if (event.target.type !== "checkbox") {
+            $(":checkbox", this).trigger("click");
+            $(this).eq(0).toggleClass("alt_selected");
+            $(this).find("td").toggleClass('highlight');
         }
-        $(this).eq(0).toggleClass('alt_selected');
-        $(this).find('td').toggleClass('highlight');
+        $(this).eq(0).toggleClass("alt_selected");
+        $(this).find("td").toggleClass("highlight");
     });
 
     $(".select-all").click(function() {
@@ -973,16 +973,6 @@ $(function() {
 // Gaspar's functions to copy to clipboard selected checkboxes as a newline separated list.
 // copied from structure_browser.js and browser_functions.js. Notice that they depend on
 // the jquery plugin PowerTip.js
-    $(".uniprot-export").data("powertipjq", $([
-        "<p>Export UniProt IDs</p>"
-    ].join("\n")));
-    $(".glyphicon-export").powerTip({
-        placement: "n",
-        smartPlacement: true
-    });
-    $("#uniprot_copy").click(function () {
-        copyToClipboard($(".alt_selected > .uniprot > a"), "\n", "UniProt IDs", $(".uniprot-export"));
-    });
 
     function copyToClipboard(array, delimiter, data_name, powertip_object=false) {
         var link = array;
@@ -1021,5 +1011,18 @@ $(function() {
         }
         document.body.removeChild(textArea);
     }
+
+    $(".uniprot-export").data("powertipjq", $([
+        "<p>Export UniProt IDs</p>"
+    ].join("\n")));
+    $(".glyphicon-export").powerTip({
+        placement: "n",
+        smartPlacement: true
+    });
+    $("#uniprot_copy").click(function () {
+        copyToClipboard($(".alt_selected > .uniprot > a"), "\n", "UniProt IDs", $(".uniprot-export"));
+    });
+
+
 
 });
