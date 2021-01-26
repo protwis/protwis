@@ -5,9 +5,11 @@
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css"/>
     <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css"/>
     <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'home/css/jquery.powertip.css' %}" />
 {#        <link rel="stylesheet" href="https://cdn.datatables.net/1.10.22/css/jquery.dataTables.min.css">#}
 {#        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css">#}
     <link rel="stylesheet" href="{% static 'home/css/signprot-multitabtable.css' %}" type="text/css"/>
+
     <style type="text/css">
         div#hide_filter1 {
             display: none;
@@ -56,9 +58,9 @@
                         <span class="sr-only">Toggle Dropdown</span>
                     </button>
                     <ul class="dropdown-menu">
-                        <li><a href="#" onclick="yadcf.exFilterColumn(oTable1, [[21, 2]]);">Default (At least in 2)</a></li>
-                        <li><a href="#" onclick="yadcf.exFilterColumn(oTable1, [[21, 1]]);">All</a></li>
-                        <li><a href="#" onclick="yadcf.exFilterColumn(oTable1, [[21, 3]]);">At least in 3</a></li>
+                        <li><a href="#" onclick="yadcf.exFilterColumn(oTable1, [[22, 2]]);">Default (At least in 2)</a></li>
+                        <li><a href="#" onclick="yadcf.exFilterColumn(oTable1, [[22, 3]]);">At least in 3</a></li>
+                        <li><a href="#" onclick="yadcf.exFilterColumn(oTable1, [[22, 1]]);">All</a></li>
                     </ul>
                 </div>
 
@@ -84,7 +86,7 @@
             <table class="compact stripe display" id="familiestabletab" >
                 <thead>
                 <tr>
-                    <th colspan=1 style='height:35px; text-align:left;'>
+                    <th colspan=2 style='height:35px; text-align:left;'>
                         Source
                     </th>
                     <th colspan=4 style='height:35px; text-align:left;'>
@@ -121,9 +123,15 @@
 
                 <tr>
                     <th></th>
+                    <th></th>
                     <th>Cl</th>
                     <th>ResFam</th>
-                    <th>Uniprot</th>
+                        <th>
+                            <div>
+                                <div>Uniprot</div>
+                                <div><button class='icon-button' type='button'><i id='uniprot_copy' class="glyphicon glyphicon-export uniprot-export"></i></button></div>
+                            </div>
+                        </th>
                     <th>IUPHAR</th>
                     {% for n in "x"|rjust:"4" %}
                         {% for p, subval in header.items  %}
@@ -133,6 +141,7 @@
                 </tr>
 
                 <tr>
+                    <th class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
                     {% for n in "x"|rjust:"21" %}
                         <th></th>
                     {% endfor %}
@@ -145,6 +154,7 @@
                 {% for p, pvals in tabfields.items %}
                     {% for c, cvals in pvals.couplingmax.items %}
                             <tr data-source="{{ c }}"> {# And then use the data to apply the javascript filters.#}
+                            <td class="text-center"><input class="alt" type="checkbox"></td>
 {#                            <td><span data-toggle="tooltip" data-html="true" data-placement="bottom" title="{{ c}}"#}
 {#                                      data-search="{{ c }}">{{ c }}</span></td>#}
                             {% if c == "1" or c == 2 or c == 3 %}
@@ -155,7 +165,7 @@
                             <td>{{ pvals.protein.class }}</td>
                             <td>{{ pvals.protein.family }}</td>
                             <td class="uniprot">
-                                <span><a href="https://www.uniprot.org/uniprot/{{ pvals.protein.accession }}" target="_blank">{{ pvals.protein.uniprot|safe }}</a></span>
+                                <a href="https://www.uniprot.org/uniprot/{{ pvals.protein.accession }}" target="_blank">{{ pvals.protein.uniprot|safe }}</a>
                             </td>
                             <td class="text-left">
                                 <a href="https://gpcrdb.org/protein/{{ pvals.protein.entryname }}" target="_blank">{{ pvals.protein.iuphar|safe }}</a>
@@ -381,6 +391,7 @@
     <script src="{% static 'home/js/jquery.dataTables.min.js' %}"></script>
     <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"></script>
     <script src="{% static 'home/js/select2.js' %}"></script>
+    <script src="{% static 'home/js/jquery.powertip.js' %}"></script>
     {#    <script src="{% static 'home/js/datatables.min.js' %}"></script>#}
 {#        <script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>#}
 {#        <script src="https://cdnjs.cloudflare.com/ajax/libs/yadcf/0.9.4/jquery.dataTables.yadcf.min.js"></script>#}

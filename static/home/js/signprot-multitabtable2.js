@@ -4,7 +4,9 @@
 let oTable1 = [];
 let oTable2 = [];
 
+
 var tableToExcel = (function () {
+//function tableToExcel() {
     var uri = "data:application/vnd.ms-excel;base64,",
         template = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:x='urn:schemas-microsoft-com:office:excel' xmlns='http://www.w3.org/TR/REC-html40'><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>",
         base64 = function (s) {
@@ -15,21 +17,21 @@ var tableToExcel = (function () {
             });
         };
     return function (table, name, filename) {
-            table= $("#"+table).clone();
-            $("#excel_table").html(table);
-            // Clean up table to remove yadcf stuff
-            $("#excel_table thead tr").css("height","");
-            $("#excel_table thead th").css("height","");
-            $("#excel_table thead div").css("height","");
-            $("#excel_table thead .yadcf-filter-wrapper").remove();
-            $("#excel_table thead button").remove();
-            var tr = $("#excel_table thead tr:eq(1)");
-            // reattach th titles
-            tr.find("th").each (function( column, th) {
-                if ($(th).attr("title")) {
-                    $(th).html($(th).attr("title"));
-                }
-            });
+        table= $("#"+table).clone();
+        $("#excel_table").html(table);
+        // Clean up table to remove yadcf stuff
+        $("#excel_table thead tr").css("height","");
+        $("#excel_table thead th").css("height","");
+        $("#excel_table thead div").css("height","");
+        $("#excel_table thead .yadcf-filter-wrapper").remove();
+        $("#excel_table thead button").remove();
+        var tr = $("#excel_table thead tr:eq(1)");
+        // reattach th titles
+        tr.find("th").each (function( column, th) {
+            if ($(th).attr("title")) {
+                $(th).html($(th).attr("title"));
+            }
+        });
 
         var ctx = {
             worksheet: name || "Worksheet",
@@ -93,69 +95,6 @@ function reset_tab2() {
     window.location.href = "/signprot/couplings2";
 }
 
-
-// Draft for calculation if normalized rank for a given column
-// NOTE: the support is currently not taken into account
-//       function createRank(column) {
-//         // Step 1 - collect all values for a given column
-//         var min_max = [];
-//         $("#tablesomething tbody tr td").filter(":nth-child("+column+")").each( function() {
-//             var cell_value = $(this).text();
-//             if (/^\d+$/.test(cell_value))
-//               min_max.append(parseFloat(cell_value));
-//         });
-//         // Step 2 - normalize all values and add them to a data attribute
-//         var min = Math.min(min_max);
-//         var max = Math.max(min_max);
-//         $("#tablesomething tbody tr td").filter(":nth-child("+column+")").each( function() {
-//             var cell_value = $(this).text();
-//             if (/^\d+$/.test(cell_value))
-//               $(this).attr("data-normalized", (parseFloat(cell_value)-min)/(max-min)*100);
-//         });
-//       }
-
-// # use a place holder for data-normalized
-
-
-
-// // # custom rankedRangeFilter draft for YADCF
-// /**
-//  * This is a custom YADCF function that checks ....
-//  * ....
-//  * @param {object} filterVal Value to filter on (not applicable)
-//  * @param {object} columnVal Element in the filtered column
-//  * @param {object} rowValues All elements in this row (not used)
-//  * @param {object} stateVal Current DOM state of the row (not sufficient in this case)
-//  * @returns {boolean} true if row contains selected target otherwise false
-//  */
-// function rankedRangeFilter(filterVal, columnVal, rowValues, stateVal){
-//   // Check range or rank filter
-//   if (filterVal.contains("range")){
-//       var range_value = parseFloat($(columnVal).text());
-//       var actual_filtering = parseFloat(filterVal.split("_")[2]);
-//       if (filterVal.contains("min")){
-//         // Example filterVal would be range_min_5
-//         return range_value >= actual_filtering;
-//       } else {
-//         // Example filterVal would be range_max_10
-//         return range_value <= actual_filtering;
-//       }
-//   } else {
-//       var ranked_value = parseFloat($(columnVal).attr("data-normalized"));
-//       // Example filterVal would be 15 (always a number)
-//       return ranked_value<=filterVal;
-//   }
-// }
-// // # YADCF setting for ranked range column
-//  {
-//                   column_number: X,
-//                   filter_type: "custom_func",
-//                   custom_func: rankedRangeFilter,
-//                 }
-// //# Add two input boxes above the automatically added filter
-// //# Link boxes to filter by, for example:
-// yadcf.exFilterColumn(targetTable, [[X, "range_min_5"]]);
-
 /**
  * This is a custom YADCF function that checks ....
  * ....
@@ -170,8 +109,6 @@ function supportFilter(filterVal, columnVal, rowValues, stateVal){
     //console.log(columnVal == filterVal);
     return (!/^\d+$/.test(columnVal) || columnVal == filterVal);
 }
-
-
 
 /**
  * Function copied from contactbrowser-tabtables.js
@@ -194,16 +131,15 @@ function make_range_number_cols(start_column, repeat_number) {
 }
 
 $(function() {
-
 // Activate tooltips and popovers from Bootstrap   * Bootstrap v3.3.7 (http://getbootstrap.com)
     $("[data-toggle='tooltip']").tooltip();
     $("[data-toggle='popover']").popover();
 
-    $('a[data-toggle="tab"]').on("shown.bs.tab", function (e) {
-//      console.log( 'show tab' );
-        $($.fn.dataTable.tables(true)).DataTable()
-            .columns.adjust().responsive;
-    });
+//     $('a[data-toggle="tab"]').on("shown.bs.tab", function (e) {
+// //      console.log( 'show tab' );
+//         $($.fn.dataTable.tables(true)).DataTable()
+//             .columns.adjust().responsive;
+//     });
 
     console.time("table1load");
     oTable1 = $("#familiestabletab").DataTable({
@@ -215,21 +151,32 @@ $(function() {
         paging: false,
         bSortCellsTop: false, //prevent sort arrows going on bottom row
         aaSorting: [],
-        order: [[4,"asc"], [21, "desc"]],
+        order: [[4,"asc"], [22, "desc"]],
         autoWidth: false,
         bInfo: true,
         columnDefs: [
             {
-                targets: [21],
+                targets: [22],
                 visible: false
             }
         ],
     });
 
+    //Uncheck every row when using back button on browser
+    $(".alt_selected").prop("checked",false);
+    $(".alt").prop("checked",false);
+    $(".select-all").prop("checked",false);
+
     yadcf.init(oTable1,
         [
             {
                 column_number: 0,
+                filter_type: "none",
+                filter_default_label: "",
+                filter_reset_button_text: false,
+            },
+            {
+                column_number: 1,
                 filter_type: "multi_select",
                 select_type: "select2",
                 filter_default_label: "",
@@ -240,7 +187,7 @@ $(function() {
             },
 
             {
-                column_number: 1,
+                column_number: 2,
                 filter_type: "multi_select",
                 select_type: "select2",
                 filter_default_label: "",
@@ -250,7 +197,7 @@ $(function() {
                 }
             },
             {
-                column_number: 2,
+                column_number: 3,
                 filter_type: "multi_select",
                 select_type: "select2",
                 filter_default_label: "",
@@ -260,7 +207,7 @@ $(function() {
                 }
             },
             {
-                column_number: 3,
+                column_number: 4,
                 filter_type: "multi_select",
                 select_type: "select2",
                 column_data_type: "html",
@@ -273,7 +220,7 @@ $(function() {
                 }
             },
             {
-                column_number: 4,
+                column_number: 5,
                 filter_type: "multi_select",
                 select_type: "select2",
                 column_data_type: "html",
@@ -287,16 +234,6 @@ $(function() {
             },
 
 // Guide to Pharmacology
-            {
-                column_number: 5,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "40px"
-                },
-            },
             {
                 column_number: 6,
                 filter_type: "multi_select",
@@ -327,14 +264,18 @@ $(function() {
                     width: "40px"
                 },
             },
+            {
+                column_number: 9,
+                filter_type: "multi_select",
+                select_type: "select2",
+                filter_default_label: "",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: "40px"
+                },
+            },
 
 // log(Emax/EC50)
-            {
-                column_number : 9,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
             {
                 column_number : 10,
                 filter_type: "range_number",
@@ -353,14 +294,14 @@ $(function() {
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
-
-// pEC50
             {
                 column_number : 13,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
+
+// pEC50
             {
                 column_number : 14,
                 filter_type: "range_number",
@@ -379,14 +320,14 @@ $(function() {
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
-
-// Emax
             {
                 column_number : 17,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
+
+// Emax
             {
                 column_number : 18,
                 filter_type: "range_number",
@@ -405,9 +346,17 @@ $(function() {
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
-
             {
-                column_number: 21,
+                column_number : 21,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+
+
+// Hidden column calling a customized function
+            {
+                column_number: 22,
                 filter_type: "custom_func",
                 custom_func: supportFilter,
                 filter_container_id: "hide_filter1",
@@ -422,12 +371,37 @@ $(function() {
         }
     );
 
-    yadcf.exFilterColumn(oTable1, [[21, 2]]);
+    yadcf.exFilterColumn(oTable1, [[22, 2]]);
 
 //    yadcf.exResetAllFilters(oTable1);
 //    setTimeout(() => {
 //        console.timeEnd("table1load");
 //    }, );
+
+    $('#familiestabletab'+' > tbody > tr').click(function(event) {
+        if (event.target.type !== 'checkbox') {
+            $(':checkbox', this).trigger('click');
+            $(this).eq(0).toggleClass('alt_selected');
+            $(this).find('td').toggleClass('highlight');
+        }
+        $(this).eq(0).toggleClass('alt_selected');
+        $(this).find('td').toggleClass('highlight');
+    });
+
+    $(".select-all").click(function() {
+        $(":checkbox", this).trigger("click");
+        if ($(this).prop("checked")===true) {
+            $(".alt").prop("checked", true);
+            $(".alt").parent().parent().addClass("alt_selected");
+            $(".alt").parent().parent().find("td").addClass("highlight");
+        }
+        if ($(this).prop("checked")===false) {
+            $(".alt").prop("checked", false);
+            $(".alt").parent().parent().removeClass("alt_selected");
+            $(".alt").parent().parent().find("td").removeClass("highlight");
+        }
+    });
+
     console.timeEnd("table1load");
 
     console.time("table2load");
@@ -864,7 +838,6 @@ $(function() {
 
 // Put top scroller
 // https://stackoverflow.com/questions/35147038/how-to-place-the-datatables-horizontal-scrollbar-on-top-of-the-table
-// https://stackoverflow.com/questions/35147038/how-to-place-the-datatables-horizontal-scrollbar-on-top-of-the-table
 //    console.time("scroll to top");
     $(".dataTables_scrollHead").css({
         "overflow-x":"scroll"
@@ -996,5 +969,57 @@ $(function() {
 // =============================================================================
 // END OVERLAY COLUMNS CODE HERE
 // =============================================================================
+
+// Gaspar's functions to copy to clipboard selected checkboxes as a newline separated list.
+// copied from structure_browser.js and browser_functions.js. Notice that they depend on
+// the jquery plugin PowerTip.js
+    $(".uniprot-export").data("powertipjq", $([
+        "<p>Export UniProt IDs</p>"
+    ].join("\n")));
+    $(".glyphicon-export").powerTip({
+        placement: "n",
+        smartPlacement: true
+    });
+    $("#uniprot_copy").click(function () {
+        copyToClipboard($(".alt_selected > .uniprot > a"), "\n", "UniProt IDs", $(".uniprot-export"));
+    });
+
+    function copyToClipboard(array, delimiter, data_name, powertip_object=false) {
+        var link = array;
+//    console.log(link);
+        var out = "";
+        link.each(function() {
+            var ele = $(this).attr("href").split("/");
+            out+=ele[ele.length-1]+delimiter;
+        });
+        if (out.length===0) {
+            window.alert("No entries selected for copying");
+            return 0;
+        }
+        var textArea = document.createElement("textarea");
+        textArea.value = out;
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            var successful = document.execCommand("copy");
+            var msg = successful ? "Successful" : "Unsuccessful";
+            if (powertip_object!==false) {
+                $.powerTip.hide();
+                powertip_object.data("powertipjq", $([
+                    "<p>Copied to clipboard!</p>"
+                ].join("\n")));
+                powertip_object.powerTip("show");
+                setTimeout(function() {
+                    powertip_object.data("powertipjq", $([
+                        "<p>Export "+data_name+"</p>"
+                    ].join("\n")));
+                },1000);
+            }
+        } catch (err) {
+            window.alert("Oops, unable to copy");
+        }
+        document.body.removeChild(textArea);
+    }
 
 });
