@@ -5,19 +5,10 @@
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css"/>
     <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css"/>
     <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css"/>
-    <link rel="stylesheet" type="text/css" href="{% static 'home/css/jquery.powertip.css' %}" />
+    <link rel="stylesheet" href="{% static 'home/css/jquery.powertip.css' %}" type="text/css"/>
 {#        <link rel="stylesheet" href="https://cdn.datatables.net/1.10.22/css/jquery.dataTables.min.css">#}
 {#        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css">#}
     <link rel="stylesheet" href="{% static 'home/css/signprot-multitabtable.css' %}" type="text/css"/>
-
-    <style type="text/css">
-        div#hide_filter1 {
-            display: none;
-        }
-        div#hide_filter2 {
-            display: none;
-        }
-    </style>
 {% endblock %}
 
 {% block content %}
@@ -166,10 +157,12 @@
                             <td>{{ pvals.protein.class }}</td>
                             <td>{{ pvals.protein.family }}</td>
                             <td class="uniprot">
+{#                                <a href="{{ pvals.protein.uniprot_link }}" target="_blank">{{ pvals.protein.uniprot|safe }}</a>#}
                                 <a href="https://www.uniprot.org/uniprot/{{ pvals.protein.accession }}" target="_blank">{{ pvals.protein.uniprot|safe }}</a>
                             </td>
                             <td class="text-left">
-                                <a href="https://gpcrdb.org/protein/{{ pvals.protein.entryname }}" target="_blank">{{ pvals.protein.iuphar|safe }}</a>
+                                <a href="{{ pvals.protein.gtp_link }}" target="_blank">{{ pvals.protein.iuphar|safe }}</a>
+{#                                <a href="https://gpcrdb.org/protein/{{ pvals.protein.entryname }}" target="_blank">{{ pvals.protein.iuphar|safe }}</a>#}
                             </td>
                             <td>{{ pvals.protein.gs }}</td>
                             <td>{{ pvals.protein.gio }}</td>
@@ -188,21 +181,13 @@
                                 <td>{{ maxval }}</td>
                             {% endfor %}
 
-{#                            {% if c == 2  %}#}
-{#                                <td>Default (At least in two)</td>#}
-{#                            {% elif c == 3 %}#}
-{#                                <td>At least in three</td>#}
-{#                            {% else %}#}
-{#                                <td>All</td>#}
-{#                            {% endif %}#}
-                                <td>{{ c }}</td>
+                            <td>{{ c }}</td>
 
                         </tr>
                     {% endfor %}
                 {% endfor %}
 
                 </tbody>
-
 
 
             </table>
@@ -216,20 +201,20 @@
         <div class="tab-pane fade" id="table_2" role="tabpanel" aria-labelledby="table2-tab">
             <br>
 
-                <!-- Dropdown button -->
-                <div class="btn-group">
-                    <button type="button" class="btn btn-primary btn-sm">Confidence</button>
-                    <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown"
-                            aria-haspopup="true" aria-expanded="false">
-                        <span class="caret"></span>
-                        <span class="sr-only">Toggle Dropdown</span>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a href="#" onclick="yadcf.exFilterColumn(oTable2, [[48, 2]]);">Default (At least in 2)</a></li>
-                        <li><a href="#" onclick="yadcf.exFilterColumn(oTable2, [[48, 1]]);">All</a></li>
-                        <li><a href="#" onclick="yadcf.exFilterColumn(oTable2, [[48, 3]]);">At least in 3</a></li>
-                    </ul>
-                </div>
+            <!-- Dropdown button -->
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary btn-sm">Confidence</button>
+                <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                    <span class="caret"></span>
+                    <span class="sr-only">Toggle Dropdown</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a href="#" onclick="yadcf.exFilterColumn(oTable2, [[48, 2]]);">Default (At least in 2)</a></li>
+                    <li><a href="#" onclick="yadcf.exFilterColumn(oTable2, [[48, 1]]);">All</a></li>
+                    <li><a href="#" onclick="yadcf.exFilterColumn(oTable2, [[48, 3]]);">At least in 3</a></li>
+                </ul>
+            </div>
 
             <div style="width:100%; display:inline;">
                 <div class="btn-group" style="padding-left:10px;">
@@ -289,17 +274,12 @@
                         <th>{{ p }}</th>
                     {% endfor %}
 
-                    {% for p, subval in header.items  %}
-                        <th colspan={{ subval|length }}>{{ p }}</th>
+                    {% for n in "x"|rjust:"3" %}
+                        {% for p, subval in header.items  %}
+                            <th colspan={{ subval|length }}>{{ p }}</th>
+                        {% endfor %}
                     {% endfor %}
 
-                    {% for p, subval in header.items  %}
-                        <th colspan={{ subval|length }}>{{ p }}</th>
-                    {% endfor %}
-
-                    {% for p, subval in header.items  %}
-                        <th colspan={{ subval|length }}>{{ p }}</th>
-                    {% endfor %}
                     <th></th>
                 </tr>
 
@@ -312,22 +292,13 @@
                     {% for p, subval in header.items  %}
                         <th></th>
                     {% endfor %}
-                    {% for subval in subunitheader %}
-                        <th>
-                            {{ subval}}
-                        </th>
-                    {% endfor %}
 
-                    {% for subval in subunitheader %}
-                        <th>
-                            {{ subval}}
-                        </th>
-                    {% endfor %}
-
-                    {% for subval in subunitheader %}
-                        <th>
-                            {{ subval}}
-                        </th>
+                    {% for n in "x"|rjust:"3" %}
+                        {% for subval in subunitheader %}
+                            <th>
+                                {{ subval}}
+                            </th>
+                        {% endfor %}
                     {% endfor %}
 
                     <th></th>
@@ -393,7 +364,7 @@
     <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"></script>
     <script src="{% static 'home/js/select2.js' %}"></script>
     <script src="{% static 'home/js/jquery.powertip.js' %}"></script>
-    {#    <script src="{% static 'home/js/datatables.min.js' %}"></script>#}
+{#        <script src="{% static 'home/js/datatables.min.js' %}"></script>#}
 {#        <script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>#}
 {#        <script src="https://cdnjs.cloudflare.com/ajax/libs/yadcf/0.9.4/jquery.dataTables.yadcf.min.js"></script>#}
 {#        <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>#}

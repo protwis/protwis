@@ -557,7 +557,8 @@ class CouplingBrowser2(TemplateView):
                                           family__slug__startswith='00',
                                           species__common_name='Human').prefetch_related(
             'family',
-            'family__parent__parent__parent'
+            'family__parent__parent__parent',
+            'web_links__web_resource'
         )
 
         couplings = ProteinGProteinPair.objects.filter(source="GuideToPharma").values_list('protein__entry_name',
@@ -584,14 +585,11 @@ class CouplingBrowser2(TemplateView):
             # MAKES 2396 SQL QUERIES, have to find out how to make it faster.
             # uniprot_links = prot.web_links.filter(web_resource__slug='uniprot')
             # if uniprot_links.count() > 0:
-            #     protein_data[prot.id]['uniprot_link'] = uniprot_links
-            #print(prot.web_links.index.filter(web_resource__name="Guide To Pharmacology", protein__entry_name=prot.entry_name))
-            # if uniprot_links.count() > 0:
-            #     protein_data[prot.id]['uniprot_link'] = uniprot_links
-
-            # gtop_links = prot.web_links.filter(web_resource__slug='gtop')
-            # if gtop_links.count() > 0:
-            #     protein_data[prot.id]['gtp_link'] = prot.web_links.filter(web_resource__slug='gtop')
+            #     protein_data[prot.id]['uniprot_link'] = uniprot_links[0]
+            # MAKES 970 SQL QUERIES. Even with prefetch_related of web_links__web_resource
+            gtop_links = prot.web_links.filter(web_resource__slug='gtop')
+            if gtop_links.count() > 0:
+                protein_data[prot.id]['gtp_link'] = gtop_links[0]
 
             gprotein_families = ["Gs family", "Gi/Go family", "Gq/G11 family", "G12/G13 family"]
             for gprotein in gprotein_families:
@@ -1296,7 +1294,7 @@ def signprotdetail(request, slug):
     p = Protein.objects.prefetch_related('web_links__web_resource').get(entry_name=slug, sequence_type__slug='wt')
 
     # Redirect to protein page
-    if p.family.slug.startswith("001"):
+    if p.family.slug.startswith("00"):
         return redirect("/protein/"+slug)
 
     # get family list
