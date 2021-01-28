@@ -220,9 +220,16 @@ class SubstructureSelector(Select):
         self.residues = []
 
         for tm in parsed_selection.helices:
-            self.residues.extend(segment_mapping['TM{}'.format(tm)])
+            if tm==8:
+                seg_str = 'H'
+            else:
+                seg_str = 'TM'
+            segname = seg_str+str(tm)
+            if segname in segment_mapping:
+                self.residues.extend(segment_mapping[segname])
         for substr in parsed_selection.substructures:
-            self.residues.extend(segment_mapping[substr])
+            if substr in segment_mapping:
+                self.residues.extend(segment_mapping[substr])
 
     def accept_residue(self, residue):
 

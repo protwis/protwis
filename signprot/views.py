@@ -1079,7 +1079,7 @@ def signprotdetail(request, slug):
     p = Protein.objects.prefetch_related('web_links__web_resource').get(entry_name=slug, sequence_type__slug='wt')
 
     # Redirect to protein page
-    if p.family.slug.startswith("001"):
+    if p.family.slug.startswith("00"):
         return redirect("/protein/"+slug)
 
     # get family list
