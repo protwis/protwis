@@ -1,25 +1,47 @@
 ﻿{% extends "home/base.html" %}
 {% load static %}
 
-{% block content %}
 {% block addon_css %}
 <link rel="stylesheet" href="{% static 'home/css/button_spinner.css' %}" type="text/css" />
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
 {% endblock %}
+
+{% block content %}
 <h4>Your structures </h4>
 <div class='row-fluid well well-small selection-box'>
     {% if success %}
-    PDB structures retrieved successfully.
+        <p>
+            {% for target in targets %}
+                {{ target.item.pdb_code.index }}
+            {% endfor %}
+        </p>
+        {% if prepared_structures %}
+            PDB structures prepared successfully.
+        {% else %}
+            PDB structures retrieved successfully.
+        {% endif %}
     {% endif %}
 </div>
 <br />
 <hr />
 <h4>Structure cleaning options</h4>
 <div class='row-fluid well well-small selection-box'>
-    <form id="cleanup-form" action="/structure/pdb_download_index"  method="post" enctype="multipart/form-data"> {% csrf_token %}
-        <input checked="checked" id="pref_chain" name="pref_chain" type="checkbox" {% if posted %} disabled="disabled" {% endif %} /> Extract the preferred chain only</br>
-        <input  id="water" name="water" type="checkbox" {% if posted %} disabled="disabled" {% endif %} /> Remove crystalline water</br>
-        <input id="hets" name="hets" type="checkbox" {% if posted %} disabled="disabled" {% endif %}/> Remove non-ligand heteroatom groups</br>
+    <form id="cleanup-form" action="/structure/pdb_download"  method="post" enctype="multipart/form-data"> {% csrf_token %}
+        {% if not pref %}
+            <input id="pref_chain" name="pref_chain" type="checkbox" {% if posted %} disabled="disabled" {% endif %} /> Extract the preferred chain only</br>
+        {% else %}
+            <input checked="checked" id="pref_chain" name="pref_chain" type="checkbox" {% if posted %} disabled="disabled" {% endif %} /> Extract the preferred chain only</br>
+        {% endif %}
+        {% if water %}
+            <input checked="checked" id="water" name="water" type="checkbox" {% if posted %} disabled="disabled" {% endif %} /> Remove crystalline water</br>
+        {% else %}
+            <input  id="water" name="water" type="checkbox" {% if posted %} disabled="disabled" {% endif %} /> Remove crystalline water</br>
+        {% endif %}
+        {% if hets %}
+            <input checked="checked" id="hets" name="hets" type="checkbox" {% if posted %} disabled="disabled" {% endif %}/> Remove non-ligand heteroatom groups</br>
+        {% else %}
+            <input id="hets" name="hets" type="checkbox" {% if posted %} disabled="disabled" {% endif %}/> Remove non-ligand heteroatom groups</br>
+        {% endif %}
     </form>
 </div>
 {% if posted %}
@@ -30,14 +52,32 @@
         </button>
         <ul class="dropdown-menu">
             <li><a href="/structure/pdb_download/full" onclick='document.getElementById("cleanup-form").submit()'>Full proteins</a></li>
-            <!-- <li><a href="/structure/pdb_download/select" onclick='document.getElementById("cleanup-form").submit()'>Advanced segment selection</a></li> -->
+            <li><a href="/structure/pdb_download/select" onclick='document.getElementById("cleanup-form").submit()'>Advanced segment selection</a></li>
         </ul>
     </div>
 {% else %}
     <div class="col-md-4">
-        <a href="#" class="btn btn-success btn-lg btn-block has-spinner" onclick='document.getElementById("cleanup-form").submit()'>
+        <a href="#" id="prepare-structures-btn" class="btn btn-success btn-lg btn-block has-spinner" onclick='prepare_structures()'>
             <span class="spinner"><i class="fa fa-spinner fa-spin icon-download"></i></span> Prepare structures
         </a>
     </div>
 {% endif %}
+{% endblock %}
+
+
+{% block addon_js %}
+<script>
+function prepare_structures() {
+    $("#prepare-structures-btn").addClass("active");
+    document.getElementById("cleanup-form").submit();
+}
+
+{% if trigger_download %}
+    $(document).ready(function(){
+        window.location.href = "/structure/pdb_download/custom";
+        showAlert("Download successful", "success");
+});
+
+{% endif %}
+</script>
 {% endblock %}

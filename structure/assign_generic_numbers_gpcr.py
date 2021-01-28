@@ -141,13 +141,16 @@ class GenericNumbering(object):
                         if db_res.display_generic_number:
                             num = db_res.display_generic_number.label
                             bw, gpcrdb = num.split('x')
-                            if bw[0].isnumeric():
-                                gpcrdb = "{}.{}".format(bw.split('.')[0], gpcrdb)
-                                self.residues[chain][resn].add_bw_number(bw)
-                                self.residues[chain][resn].add_gpcrdb_number(gpcrdb)
-                                self.residues[chain][resn].add_gpcrdb_number_id(db_res.display_generic_number.id)
-                                self.residues[chain][resn].add_display_number(num)
-                                self.residues[chain][resn].add_residue_record(db_res)
+                            # Handle non-numerical GNs - still add segment number
+                            if not bw[0].isnumeric():
+                                bw[0] = "0"
+
+                            gpcrdb = "{}.{}".format(bw.split('.')[0], gpcrdb)
+                            self.residues[chain][resn].add_bw_number(bw)
+                            self.residues[chain][resn].add_gpcrdb_number(gpcrdb)
+                            self.residues[chain][resn].add_gpcrdb_number_id(db_res.display_generic_number.id)
+                            self.residues[chain][resn].add_display_number(num)
+                            self.residues[chain][resn].add_residue_record(db_res)
                     else:
                         logger.warning("Could not find residue {} {} in the database.".format(resn, subj_counter))
 
@@ -271,6 +274,11 @@ class GenericNumbering(object):
 class GenericNumberingFromDB(GenericNumbering):
 
     def __init__(self, structure_obj, pdbdata):
+        """
+        Assigns generic numbers based on DB info instead of BLAST search
+        Residues get fetched and structure gets parsed upon init
+        """
+
         self.residues = {}
         self.pdb_seq = {}
         self.structure = structure_obj

@@ -1,5 +1,5 @@
 /*eslint complexity: ["error", 8]*/
-/*global ClearSelection, AddToSelection, superposition, copyToClipboard */
+/*global ClearSelection, AddToSelection, superposition, copyToClipboard, showAlert*/
 
 function structurebrowser() {
 
@@ -514,18 +514,18 @@ function structurebrowser() {
             return 0;
         }
         var selected_ids = [];
-        for (i = 0; i < checked_data.length; i++) {
+        for (var i = 0; i < checked_data.length; i++) {
             var div = document.createElement("div");
             div.innerHTML = checked_data[i][7];
             if (typeof div.innerText !== "undefined") {
-                selected_ids.push(div.innerText.replace(/\s+/g, ''));
+                selected_ids.push(div.innerText.replace(/\s+/g, ""));
             } else {
-                selected_ids.push(div.textContent.replace(/\s+/g, ''));
+                selected_ids.push(div.textContent.replace(/\s+/g, ""));
             }
         }
-        AddToSelection('targets', 'structure_many', selected_ids.join(","));
+        AddToSelection("targets", "structure_many", selected_ids.join(","));
 
-        window.location.href = "/structure/pdb_download_index";
+        window.location.href = "/structure/pdb_download";
     });
 
     $(".uniprot-export").data("powertipjq", $([
