@@ -3,21 +3,14 @@ from django.db import IntegrityError
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import Protein
 from ligand.models import *
-
 from common.models import WebLink, WebResource, Publication
-
-
 import logging
-
-
 import json
 import requests
 
 
-
 MISSING_PROTEINS = {}
 SKIPPED = 0
-
 
 class Command(BaseBuild):
     mylog = logging.getLogger(__name__)
