@@ -1,40 +1,17 @@
 from django.core.management.base import BaseCommand, CommandError
-from django.conf import settings
-from django.db import connection
-from django.db import IntegrityError
-from django.utils.text import slugify
-from django.http import HttpResponse, JsonResponse
 from decimal import Decimal
 from build.management.commands.base_build import Command as BaseBuild
-from common.tools import fetch_from_cache, save_to_cache, fetch_from_web_api
-from residue.models import Residue
 from protein.models import Protein, ProteinGProteinPair
 from ligand.models import *
-from mutation.models import Mutation
-from ligand.functions import get_or_make_ligand
 from common.models import WebLink, WebResource, Publication
-from django.db import connection
 from operator import itemgetter
 import logging
-import os
-import queue
-import logging
-import os
 from datetime import datetime
-import xlrd
-
-import traceback
-import time
 import math
 import json
-import threading
-import concurrent.futures
-import pytz
-
 
 MISSING_PROTEINS = {}
 SKIPPED = 0
-
 
 class Command(BaseBuild):
     mylog = logging.getLogger(__name__)
@@ -82,7 +59,7 @@ class Command(BaseBuild):
                 print('Started purging bias data')
                 self.purge_bias_data()
                 print('Ended purging bias data')
-            except Exception as msg:
+            except E xception as msg:
                 print(msg)
                 self.logger.error(msg)
         # import the structure data
@@ -284,7 +261,6 @@ class Command(BaseBuild):
         return content
 
     def limit_family(self, send):
-        assay = list()
         families = list()
         G12 = dict()
         Gio = dict()
@@ -367,7 +343,6 @@ class Command(BaseBuild):
     def process_calculation(self, context):
         for i in context.items():
             test = dict()
-            lgb_refine = dict()
             temp_obj = list()
             for j in i[1]['assay_list']:
                 if j not in temp_obj:
@@ -586,7 +561,7 @@ class Command(BaseBuild):
         except Exception as msg:
             experiment = None
             self.mylog.exception(
-                "Experiment AnalyzedExperiment error | module: AnalyzedExperiment.")
+                "Experiment AnalyzedExperiment error | module: AnalyzedExperiment.", msg)
             return False
 
     def fetch_receptor_trunsducers(self, receptor):
@@ -622,7 +597,6 @@ class Command(BaseBuild):
     def build_bias_data(self):
         print('Build bias data gproteins')
         context = dict()
-        context_subtypes = dict()
         content = self.get_from_model()
         print('stage # 1 : Getting data finished, data points: ', len(content))
         content_with_children = self.process_data(content)
@@ -648,7 +622,6 @@ class Command(BaseBuild):
     def build_bias_data_subtypes(self):
         print('Build bias data gproteins')
         context = dict()
-        context_subtypes = dict()
         content = self.get_from_model()
         print('stage # 1 : Getting data finished, data points: ', len(content))
         content_with_children = self.process_data(content)
@@ -699,6 +672,5 @@ class Command(BaseBuild):
             temp_obj = 0
             name = str(i[1]['ref_ligand_experiment']) + \
                 '/' + str(i[1]['ligand']) + '/' + str(i[1]['receptor'])
-            counter = 0
             if(name in temp):
                 i[1]['article_quantity'] = temp[name]

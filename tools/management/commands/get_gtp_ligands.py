@@ -1,18 +1,18 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.db import IntegrityError
 from build.management.commands.base_build import Command as BaseBuild
-from protein.models import Protein, ProteinGProteinPair
+from protein.models import Protein
 from ligand.models import *
-from ligand.functions import get_or_make_ligand
+
 from common.models import WebLink, WebResource, Publication
-from multiprocessing.pool import ThreadPool
-import queue
+
+
 import logging
-from datetime import datetime
-import operator
+
+
 import json
 import requests
-import concurrent.futures
+
 
 
 MISSING_PROTEINS = {}
@@ -72,7 +72,7 @@ class Command(BaseBuild):
 
     def purge_bias_data(self):
         print("# Purging data")
-        pass
+
         # delete_bias_experiment = Ligand.objects.all()
         # delete_bias_experiment.delete()
         # delete_ligand_props = LigandProperities.objects.all()
@@ -122,7 +122,7 @@ class Command(BaseBuild):
                         else:
                             pass
                     except:
-                        continue
+                        pass
 
     def upload_to_db(self, i):
         # saves data
