@@ -588,7 +588,7 @@ class CouplingBrowser2(TemplateView):
             #     protein_data[prot.id]['uniprot_link'] = uniprot_links[0]
             # MAKES 970 SQL QUERIES. Even with prefetch_related of web_links__web_resource
             gtop_links = prot.web_links.filter(web_resource__slug='gtop')
-            if gtop_links.count() > 0:
+            if len(gtop_links) > 0:
                 protein_data[prot.id]['gtp_link'] = gtop_links[0]
 
             gprotein_families = ["Gs family", "Gi/Go family", "Gq/G11 family", "G12/G13 family"]

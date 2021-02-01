@@ -171,11 +171,265 @@ $(function() {
     yadcf.init(oTable1,
         [
             {
-                column_number: 0,
+                column_number: [0],
                 filter_type: "none",
                 filter_default_label: "",
                 filter_reset_button_text: false,
             },
+            {
+                column_number: [1],
+                filter_type: "multi_select",
+                select_type: "select2",
+                filter_default_label: "",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: "80px",
+                }
+            },
+
+            {
+                column_number: [2],
+                filter_type: "multi_select",
+                select_type: "select2",
+                filter_default_label: "",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: "40px",
+                }
+            },
+            {
+                column_number: [3],
+                filter_type: "multi_select",
+                select_type: "select2",
+                filter_default_label: "",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: "200px",
+                }
+            },
+            {
+                column_number: [4],
+                filter_type: "multi_select",
+                select_type: "select2",
+                column_data_type: "html",
+                html_data_type: "text",
+                filter_default_label: "",
+                filter_match_mode : "exact",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: "60px",
+                }
+            },
+            {
+                column_number: [5],
+                filter_type: "multi_select",
+                select_type: "select2",
+                column_data_type: "html",
+                html_data_type: "text",
+                filter_default_label: "",
+                filter_match_mode : "exact",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: "80px",
+                }
+            },
+
+// Guide to Pharmacology
+            {
+                column_number: [6],
+                filter_type: "multi_select",
+                select_type: "select2",
+                filter_default_label: "",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: "40px"
+                },
+            },
+            {
+                column_number: [7],
+                filter_type: "multi_select",
+                select_type: "select2",
+                filter_default_label: "",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: "40px"
+                },
+            },
+            {
+                column_number: [8],
+                filter_type: "multi_select",
+                select_type: "select2",
+                filter_default_label: "",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: "40px"
+                },
+            },
+            {
+                column_number: [9],
+                filter_type: "multi_select",
+                select_type: "select2",
+                filter_default_label: "",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: "40px"
+                },
+            },
+
+// log(Emax/EC50)
+            {
+                column_number : [10],
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+            {
+                column_number : [11],
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+            {
+                column_number : [12],
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+            {
+                column_number : [13],
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+
+// pEC50
+            {
+                column_number : [14],
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+            {
+                column_number : [15],
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+            {
+                column_number : [16],
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+            {
+                column_number : [17],
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+
+// Emax
+            {
+                column_number : [18],
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+            {
+                column_number : [19],
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+            {
+                column_number : [20],
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+            {
+                column_number : [21],
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+
+
+// Hidden column calling a customized function
+            {
+                column_number: [22],
+                filter_type: "custom_func",
+                custom_func: supportFilter,
+                filter_container_id: "hide_filter1",
+            },
+
+        ],
+
+        {filters_tr_index: 2},
+
+        {
+            cumulative_filtering: true
+        }
+    );
+
+    yadcf.exFilterColumn(oTable1, [[22, 2]]);
+
+//    yadcf.exResetAllFilters(oTable1);
+//    setTimeout(() => {
+//        console.timeEnd("table1load");
+//    }, );
+
+    $("#familiestabletab"+" > tbody > tr").click(function(event) {
+        if (event.target.type !== "checkbox") {
+            $(":checkbox", this).trigger("click");
+            $(this).eq(0).toggleClass("alt_selected");
+            $(this).find("td").toggleClass("highlight");
+        }
+        $(this).eq(0).toggleClass("alt_selected");
+        $(this).find("td").toggleClass("highlight");
+    });
+
+    $(".select-all").click(function() {
+        $(":checkbox", this).trigger("click");
+        if ($(this).prop("checked")===true) {
+            $(".alt").prop("checked", true);
+            $(".alt").parent().parent().addClass("alt_selected");
+            $(".alt").parent().parent().find("td").addClass("highlight");
+        }
+        if ($(this).prop("checked")===false) {
+            $(".alt").prop("checked", false);
+            $(".alt").parent().parent().removeClass("alt_selected");
+            $(".alt").parent().parent().find("td").removeClass("highlight");
+        }
+    });
+
+    console.timeEnd("table1load");
+
+    console.time("table2load");
+    oTable2 = $("#subtypestabletab").DataTable({
+        deferRender: true,
+        scrollY: "50vh",
+        scrollX: true,
+        scrollCollapse: true,
+        scroller: true,
+        paging: false,
+        bSortCellsTop: false, //prevent sort arrows going on bottom row
+        aaSorting: [],
+        order: [4,"asc"],
+        autoWidth: false,
+        bInfo: true,
+        columnDefs: [
+            {
+                targets: [49],
+                visible: false
+            }
+        ],
+    });
+
+//    repeated_from_to_1 = make_range_number_cols(35, 14);
+
+    yadcf.init(oTable2,
+        [
             {
                 column_number: 1,
                 filter_type: "multi_select",
@@ -301,266 +555,6 @@ $(function() {
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
-
-// pEC50
-            {
-                column_number : 14,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 15,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 16,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 17,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-
-// Emax
-            {
-                column_number : 18,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 19,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 20,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 21,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-
-
-// Hidden column calling a customized function
-            {
-                column_number: 22,
-                filter_type: "custom_func",
-                custom_func: supportFilter,
-                filter_container_id: "hide_filter1",
-            },
-
-        ],
-
-        {filters_tr_index: 2},
-
-        {
-            cumulative_filtering: true
-        }
-    );
-
-    yadcf.exFilterColumn(oTable1, [[22, 2]]);
-
-//    yadcf.exResetAllFilters(oTable1);
-//    setTimeout(() => {
-//        console.timeEnd("table1load");
-//    }, );
-
-    $("#familiestabletab"+" > tbody > tr").click(function(event) {
-        if (event.target.type !== "checkbox") {
-            $(":checkbox", this).trigger("click");
-            $(this).eq(0).toggleClass("alt_selected");
-            $(this).find("td").toggleClass("highlight");
-        }
-        $(this).eq(0).toggleClass("alt_selected");
-        $(this).find("td").toggleClass("highlight");
-    });
-
-    $(".select-all").click(function() {
-        $(":checkbox", this).trigger("click");
-        if ($(this).prop("checked")===true) {
-            $(".alt").prop("checked", true);
-            $(".alt").parent().parent().addClass("alt_selected");
-            $(".alt").parent().parent().find("td").addClass("highlight");
-        }
-        if ($(this).prop("checked")===false) {
-            $(".alt").prop("checked", false);
-            $(".alt").parent().parent().removeClass("alt_selected");
-            $(".alt").parent().parent().find("td").removeClass("highlight");
-        }
-    });
-
-    console.timeEnd("table1load");
-
-    console.time("table2load");
-    oTable2 = $("#subtypestabletab").DataTable({
-        deferRender: true,
-        scrollY: "50vh",
-        scrollX: true,
-        scrollCollapse: true,
-        scroller: true,
-        paging: false,
-        bSortCellsTop: false, //prevent sort arrows going on bottom row
-        aaSorting: [],
-        order: [4,"asc"],
-        autoWidth: false,
-        bInfo: true,
-        columnDefs: [
-            {
-                targets: [48],
-                visible: false
-            }
-        ],
-    });
-
-//    repeated_from_to_1 = make_range_number_cols(35, 14);
-
-    yadcf.init(oTable2,
-        [
-            {
-                column_number: 0,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "80px",
-                }
-            },
-
-            {
-                column_number: 1,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "40px",
-                }
-            },
-            {
-                column_number: 2,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "200px",
-                }
-            },
-            {
-                column_number: 3,
-                filter_type: "multi_select",
-                select_type: "select2",
-                column_data_type: "html",
-                html_data_type: "text",
-                filter_default_label: "",
-                filter_match_mode : "exact",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "60px",
-                }
-            },
-            {
-                column_number: 4,
-                filter_type: "multi_select",
-                select_type: "select2",
-                column_data_type: "html",
-                html_data_type: "text",
-                filter_default_label: "",
-                filter_match_mode : "exact",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "80px",
-                }
-            },
-
-// Guide to Pharmacology
-            {
-                column_number: 5,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "40px"
-                },
-            },
-            {
-                column_number: 6,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "40px"
-                },
-            },
-            {
-                column_number: 7,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "40px"
-                },
-            },
-            {
-                column_number: 8,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "40px"
-                },
-            },
-
-// log(Emax/EC50)
-            {
-                column_number : 9,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 10,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 11,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 12,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 13,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
             {
                 column_number : 14,
                 filter_type: "range_number",
@@ -609,14 +603,14 @@ $(function() {
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
-
-// pEC50
             {
                 column_number : 22,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
+
+// pEC50
             {
                 column_number : 23,
                 filter_type: "range_number",
@@ -689,14 +683,14 @@ $(function() {
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
-
-// Emax
             {
                 column_number : 35,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
+
+// Emax
             {
                 column_number : 36,
                 filter_type: "range_number",
@@ -770,12 +764,19 @@ $(function() {
                 filter_reset_button_text: false,
             },
             {
-                column_number: 48,
+                column_number : 48,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+
+
+            {
+                column_number: 49,
                 filter_type: "custom_func",
                 custom_func: supportFilter,
                 filter_container_id: "hide_filter2",
             },
-
         ],
 //        ].concat(repeated_from_to_1),
 
@@ -788,7 +789,7 @@ $(function() {
         }
     );
 
-    yadcf.exFilterColumn(oTable2, [[48, 2]]);
+    yadcf.exFilterColumn(oTable2, [[49, 2]]);
 
 //    yadcf.exResetAllFilters(oTable2);
 //    setTimeout(() => {
