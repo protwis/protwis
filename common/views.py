@@ -1025,6 +1025,8 @@ def SelectAlignableResidues(request):
                     t_prot = proteins[0]
                 elif t.type == 'protein':
                     t_prot = t.item
+                elif t.type == 'structure':
+                    t_prot = t.item.protein_conformation.protein
                 seg_ids_all = get_protein_segment_ids(t_prot, seg_ids_all)
                 if t_prot.residue_numbering_scheme not in numbering_schemes:
                     numbering_schemes.append(t_prot.residue_numbering_scheme)
