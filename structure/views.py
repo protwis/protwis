@@ -1904,8 +1904,10 @@ class PDBSegmentSelection(AbsSegmentSelection):
 			selection.importer(simple_selection)
 
 		context['selection'] = {}
-		context['selection']['site_residue_groups'] = selection.site_residue_groups
-		context['selection']['active_site_residue_group'] = selection.active_site_residue_group
+		# context['selection']['site_residue_groups'] = selection.site_residue_groups
+		# context['selection']['active_site_residue_group'] = selection.active_site_residue_group
+
+		context['ignore_residue_selection'] = True
 		for selection_box, include in self.selection_boxes.items():
 			if include:
 				context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
