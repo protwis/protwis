@@ -194,3 +194,10 @@ div.dataTables_wrapper {
 }
 
 
+
+div#hide_filter1 {
+    display: none;
+}
+div#hide_filter2 {
+    display: none;
+}
