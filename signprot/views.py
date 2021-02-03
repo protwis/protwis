@@ -1,6 +1,6 @@
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.core.cache import cache
-from django.db.models import F, Q
+from django.db.models import F, Q, Count
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
 from django.views.decorators.cache import cache_page
@@ -567,6 +567,69 @@ def GProtein(request, dataset="GuideToPharma", render_part="both"):
 
     return render(request,
                   'signprot/gprotein.html',
+                  context
+    )
+
+def CouplingProfiles(request):
+    name_of_cache = 'coupling_profiles'
+
+    context = cache.get(name_of_cache)
+    context = None
+    if context == None:
+
+        context = OrderedDict()
+        i = 0
+        gproteins = ProteinGProtein.objects.all()
+
+        slug_translate = {'001': "ClassA", '002': "ClassB1", '004': "ClassC", '006': "ClassF"}
+        selectivitydata = {}
+        for slug in slug_translate.keys():
+            jsondata = {}
+            for gp in gproteins:
+                # Collect GTP
+                gtp_couplings = list(ProteinGProteinPair.objects.filter(protein__family__slug__startswith=slug, source="GuideToPharma", g_protein=gp)\
+                                .order_by("protein__entry_name")\
+                                .values_list("protein__entry_name", flat=True)\
+                                .distinct())
+
+                # Other coupling data with logmaxec50 greater than 0
+                # TODO - coupling source should not be hardcoded
+                other_couplings = list(ProteinGProteinPair.objects.filter(protein__family__slug__startswith=slug, source__in=["Aska2", "Bouvier2"])\
+                                .filter(g_protein=gp, logmaxec50_deg__gt=0)\
+                                .order_by("protein__entry_name")\
+                                .values_list("protein__entry_name").distinct()\
+                                .annotate(num_sources=Count("source", distinct=True)))
+
+                # Initialize selectivity array
+                all_receptors = other_couplings
+                for couplings in other_couplings:
+                    jsondata[str(gp)] = []
+                    for coupling in other_couplings:
+                        receptor_name = coupling[0]
+                        receptor_only = receptor_name.split('_')[0].upper()
+                        count = coupling[1] + (1 if receptor_name in gtp_couplings else 0)
+
+                        # Data from at least two sources:
+                        if count >= 2:
+                            # Add to selectivity data (for tree)
+                            if receptor_only not in selectivitydata:
+                                selectivitydata[receptor_only] = []
+                            selectivitydata[receptor_only].append(str(gp))
+
+                            # Add to json data for Venn diagram
+                            jsondata[str(gp)].append(str(receptor_name) + '\n')
+
+                    jsondata[str(gp)] = ''.join(jsondata[str(gp)])
+
+            context[slug_translate[slug]] = jsondata
+
+        context["selectivitydata"] = selectivitydata
+
+    cache.set(name_of_cache, context, 60 * 60 * 24 * 7)  # seven days timeout on cache
+    context["render_part"] = "both"
+
+    return render(request,
+                  'signprot/coupling_profiles.html',
                   context
     )
 
