@@ -180,10 +180,13 @@ class GenericNumbering(object):
         for chain in self.pdb_structure:
             for residue in chain:
                 if residue.id[1] in self.residues[chain.id].keys():
-                    if self.residues[chain.id][residue.id[1]].gpcrdb != 0.:
-                        residue["CA"].set_bfactor(float(self.residues[chain.id][residue.id[1]].gpcrdb))
-                    if self.residues[chain.id][residue.id[1]].bw != 0.:
-                        residue["N"].set_bfactor(float(self.residues[chain.id][residue.id[1]].bw))
+                    try:
+                        if self.residues[chain.id][residue.id[1]].gpcrdb != 0.:
+                            residue["CA"].set_bfactor(float(self.residues[chain.id][residue.id[1]].gpcrdb))
+                        if self.residues[chain.id][residue.id[1]].bw != 0.:
+                            residue["N"].set_bfactor(float(self.residues[chain.id][residue.id[1]].bw))
+                    except ValueError:
+                        continue
 
         return self.pdb_structure
 
@@ -266,3 +269,44 @@ class GenericNumbering(object):
                 pdb_array[segment][vals.gpcrdb] = 'x'
             j+=1
         return pdb_array
+
+
+class GenericNumberingFromDB(GenericNumbering):
+
+    def __init__(self, structure_obj, pdbdata):
+        """
+        Assigns generic numbers based on DB info instead of BLAST search
+        Residues get fetched and structure gets parsed upon init
+        """
+
+        self.residues = {}
+        self.pdb_seq = {}
+        self.structure = structure_obj
+        self.pdb_structure = pdbdata
+        resis = Residue.objects.filter(protein_conformation=structure_obj.protein_conformation, protein_segment__isnull=False).prefetch_related('display_generic_number', 'protein_segment')
+        self.resis = OrderedDict()
+        for r in resis:
+            self.resis[r.sequence_number] = r
+        self.parse_structure(self.pdb_structure)
+
+    def assign_generic_numbers(self):
+        #map the results onto pdb sequence from db
+        chain = self.structure.preferred_chain
+        for resn in self.residues[chain].keys():
+            if resn in self.residues[chain] and resn in self.resis:
+                db_res = self.resis[resn]
+                # print(db_res)
+                if db_res.protein_segment:
+                    segment = db_res.protein_segment.slug
+                    self.residues[chain][resn].add_segment(segment)
+                if db_res.display_generic_number:
+                    num = db_res.display_generic_number.label
+                    bw, gpcrdb = num.split('x')
+                    gpcrdb = "{}.{}".format(bw.split('.')[0], gpcrdb)
+                    self.residues[chain][resn].add_bw_number(bw)
+                    self.residues[chain][resn].add_gpcrdb_number(gpcrdb)
+                    self.residues[chain][resn].add_gpcrdb_number_id(db_res.display_generic_number.id)
+                    self.residues[chain][resn].add_display_number(num)
+                    self.residues[chain][resn].add_residue_record(db_res)
+
+        return self.get_annotated_structure()

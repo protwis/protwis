@@ -41,7 +41,7 @@
             <a id="dlink"  style="display:none;"></a>
             <div id="excel_table"  style="display:none;"></div>
             <input class="btn btn-default btn-s btn-success" type="button" onclick="tableToExcel('structures_scrollable', 'Structure model statistics', 'GPCRdb_structure_model_statistics.xls')" value="Export Excel"></input>
-            <div style="padding: 0px 0px 0px 10px; display: inline;">The RMSD values compare the latest model before a structure of the same receptor in the same state was published. <a href="https:docs.gpcrdb.org/structures.html#structure-model-statistics" target="_blank">Documentation</a></div>
+            <div style="padding: 0px 0px 0px 10px; display: inline;">The RMSD values compare the latest model before a structure of the same receptor in the same state was published. <a href="https://docs.gpcrdb.org/structures.html#structure-model-statistics" target="_blank">Documentation</a></div>
         </div>
     </div>
     <br />
@@ -232,7 +232,7 @@
                         </td>
                         
                         <!-- Receptor -->
-                        <td><span><a target="_blank" href="http://www.uniprot.org/uniprot/{{ smr.target_structure.protein_conformation.protein.parent.accession }}">{{ smr.target_structure.protein_conformation.protein.parent.entry_short|safe }}</a></span></td>
+                        <td><span><a target="_blank" href="https://www.uniprot.org/uniprot/{{ smr.target_structure.protein_conformation.protein.parent.accession }}">{{ smr.target_structure.protein_conformation.protein.parent.entry_short|safe }}</a></span></td>
                         <td class="uniprot"><a target="_blank" href="/protein/{{ smr.target_structure.protein_conformation.protein.parent.entry_name }}">{{ smr.target_structure.protein_conformation.protein.parent.short|safe }}</a></td>
                         <td class="expand" style="max-width: 80px;"><span>{{ smr.target_structure.protein_conformation.protein.family.parent.short|safe }}</span></td>
                         <td class="expand" style="max-width: 30px;"><span>{{ smr.target_structure.protein_conformation.protein.family.parent.parent.parent.short|safe }}</span></td>
@@ -254,7 +254,7 @@
                         <!-- Main template -->
                         <td class="text-center color-column">{{ smr.seq_id }}</td>
                         <td class="text-center color-column">{{ smr.seq_sim }}</td>
-                        <td><span><a target="_blank" href="http://www.uniprot.org/uniprot/{{ smr.main_template.protein_conformation.protein.parent.accession }}">{{ smr.main_template.protein_conformation.protein.parent.entry_short|safe }}</a></span></td>
+                        <td><span><a target="_blank" href="https://www.uniprot.org/uniprot/{{ smr.main_template.protein_conformation.protein.parent.accession }}">{{ smr.main_template.protein_conformation.protein.parent.entry_short|safe }}</a></span></td>
                         <td class="uniprot"><a target="_blank" href="/protein/{{ smr.main_template.protein_conformation.protein.parent.entry_name }}">{{ smr.main_template.protein_conformation.protein.parent.short|safe }}</a></td>
                         <td class="expand" style="max-width: 80px;"><span>{{ smr.main_template.protein_conformation.protein.family.parent.short|safe }}</span></td>
                         <td>{{ smr.main_template.protein_conformation.protein.species.common_name }}</td>

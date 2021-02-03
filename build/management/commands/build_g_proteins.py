@@ -1041,7 +1041,7 @@ class Command(BaseCommand):
         #pprint(data['AVPR2'])
         #pprint(data['AVP2R'])
         #pprint(data['BDKRB1'])
-        source = 'Aska2'
+        source = 'Inoue'
         lookup = {}
 
         for entry_name, couplings in data.items():
@@ -1105,7 +1105,7 @@ class Command(BaseCommand):
         data = self.read_bouvier(filepath)
         #pprint(data['AVP2R'])
         #pprint(data['BDKRB1'])
-        source = 'Bouvier'
+        source = 'Bouvier1'
         lookup = {}
 
         for entry_name, couplings in data.items():
@@ -1175,7 +1175,7 @@ class Command(BaseCommand):
         #pprint(data['AVPR2'])
         #pprint(data['AVP2R'])
         #pprint(data['BDKRB1'])
-        source = 'Bouvier2'
+        source = 'Bouvier'
         lookup = {}
 
         for entry_name, couplings in data.items():
