@@ -75,7 +75,7 @@ class Command(BaseBuild):
     # Disable all the no-member violations in this function
     # pylint: disable=no-member
 
-        delete_bias_experiment = AnalyzedExperiment.objects.all()
+        delete_bias_experiment = AnalyzedExperiment.objects.all()  # NOQA
         delete_bias_experiment.delete()
 
     # Bias data block #
@@ -83,17 +83,17 @@ class Command(BaseBuild):
     # Disable all the no-member violations in this function
     # pylint: disable=no-member
         try:
-            content = BiasedExperiment.objects.all().prefetch_related(
+            content = BiasedExperiment.objects.all().prefetch_related(  # NOQA
                 'experiment_data', 'ligand', 'receptor', 'publication', 'publication__web_link', 'experiment_data__emax_ligand_reference',
-            ).order_by('publication', 'receptor', 'ligand')
-        except EmptyResultSet:
+            ).order_by('publication', 'receptor', 'ligand')  # NOQA
+        except EmptyResultSet:  # NOQA
             print('no data returned')
             content = None
         return content
 
     def process_data(self, content):
     # Disable all the no-member violations in this function
-    # pylint: disable=no-member        
+    # pylint: disable=no-member
         '''
         Merge BiasedExperiment with its children
         and pass it back to loop through dublicates
@@ -280,7 +280,7 @@ class Command(BaseBuild):
                     if assay['quantitive_activity'] < compare_val['quantitive_activity']:
                         families[:]=[d for d in families if d.get('family') != compare_val['family']]
                         families.append(assay)
-                except:
+                except:  # NOQA
                     continue
 
         return families
@@ -389,7 +389,7 @@ class Command(BaseBuild):
 
     def caclulate_bias_factor_variables(self, a, b, c, d):
         """calculations for log bias factor inputs"""
-        lgb = 0
+        lgb = 0  # NOQA
         try:
             lgb = (a - b) - (c - d)
         except:
@@ -443,7 +443,7 @@ class Command(BaseBuild):
                 primary, secondary = self.fetch_receptor_trunsducers(
                     i[1]['receptor'])
 
-                experiment_entry = AnalyzedExperiment(publication=i[1]['publication'],
+                experiment_entry = AnalyzedExperiment(publication=i[1]['publication'],  # NOQA
                                                       ligand=i[1]['ligand'],
                                                       receptor=i[1]['receptor'],
                                                       source=source,
@@ -516,10 +516,8 @@ class Command(BaseBuild):
                 pass
 
     def fetch_experiment(self, publication, ligand, receptor, source):
-        """
-        fetch receptor with Protein model
-        requires: protein id, source
-        """
+        """fetch receptor with Protein model
+        requires: protein id, source"""
         try:
             experiment = AnalyzedExperiment.objects.filter(
                 publication=publication, ligand=ligand, receptor=receptor, source=source)
