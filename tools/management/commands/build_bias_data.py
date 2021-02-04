@@ -1,14 +1,14 @@
-from django.core.management.base import BaseCommand, CommandError
+
 from decimal import Decimal
 from build.management.commands.base_build import Command as BaseBuild
-from protein.models import Protein, ProteinGProteinPair
+from protein.models import ProteinGProteinPair
 from ligand.models import *
-from common.models import WebLink, WebResource, Publication
-from operator import itemgetter
+from common.models import WebResource, Publication
+
 import logging
-from datetime import datetime
+
 import math
-import json
+
 
 MISSING_PROTEINS = {}
 SKIPPED = 0
@@ -72,12 +72,16 @@ class Command(BaseBuild):
             print('--error--', msg, '\n')
 
     def purge_bias_data(self):
+    # Disable all the no-member violations in this function
+    # pylint: disable=no-member
 
         delete_bias_experiment = AnalyzedExperiment.objects.all()
         delete_bias_experiment.delete()
 
     # Bias data block #
     def get_from_model(self):
+    # Disable all the no-member violations in this function
+    # pylint: disable=no-member
         try:
             content = BiasedExperiment.objects.all().prefetch_related(
                 'experiment_data', 'ligand', 'receptor', 'publication', 'publication__web_link', 'experiment_data__emax_ligand_reference',
@@ -88,6 +92,8 @@ class Command(BaseBuild):
         return content
 
     def process_data(self, content):
+    # Disable all the no-member violations in this function
+    # pylint: disable=no-member        
         '''
         Merge BiasedExperiment with its children
         and pass it back to loop through dublicates
@@ -211,6 +217,8 @@ class Command(BaseBuild):
         return data
 
     def return_refenced_assays(self, assays):
+        # pylint: disable=no-member
+        # no error
         main, reference = list(), list()
         for assay in assays:
             if assay['bias_reference'] != '':
@@ -218,7 +226,7 @@ class Command(BaseBuild):
             else:
                 main.append(assay)
         sorted_main = sorted(main, key=lambda k: k['quantitive_activity']
-                      if k['quantitive_activity'] else 999999,  reverse=True)
+                      if k['quantitive_activity'] else 999999, reverse=True)
         sorted_reference = reference
         if len(sorted_reference) == 0:
             self.get_reference_from_emax(assays)
@@ -258,6 +266,8 @@ class Command(BaseBuild):
         return content
 
     def limit_family_set(self, assay_list):
+        # pylint: disable=no-member
+        # no error
         families = list()
         proteins = set()
         for assay in assay_list:
