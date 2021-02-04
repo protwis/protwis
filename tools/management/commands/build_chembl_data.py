@@ -46,13 +46,6 @@ class Command(BaseBuild):
     publication_cache = {}
     ligand_cache = {}
     data_all = []
-    my_queue = queue.Queue()
-
-    def storeInQueue(f):
-        def wrapper(*args):
-            my_queue.put(f(*args))
-        return wrapper
-
 
     def add_arguments(self, parser):
         parser.add_argument('-p', '--proc',
@@ -174,26 +167,26 @@ class Command(BaseBuild):
         increment = 0
         for i in chembl_assays:
             temp_increment = temp_increment + 1
-            if self.valdiate_data(i) == False:
+            if self.valdiate_data(i) is False:
                 continue
             temp_dict = dict()
             temp_dict['protein'] = self.fetch_protein(i['target_chembl_id'])
             temp_dict['doi'] = None
-            if temp_dict['protein'] == None:
+            if temp_dict['protein'] is None:
                 continue
 
             temp_dict['smiles'] = i['canonical_smiles']
             temp_dict['ligand'] = self.fetch_ligand(
-                i['molecule_chembl_id'], i['canonical_smiles'])
+                i['molecule_chembl_id'], i['canonical_szmiles'])
             if temp_dict['ligand'] == None:
                 continue
-
-            if(self.check_dublicates(ligand=temp_dict["ligand"], protein=temp_dict["protein"], assay_description=i["assay_description"],
-                                     document=i['document_chembl_id'],
-                                     standard_value=i["standard_value"],
-                                     activity=i["activity_id"],
-                                     pchembl_value=i["pchembl_value"]) == True):
-
+            valid = self.check_dublicates(ligand=temp_dict["ligand"], protein=temp_dict["protein"],
+                                          assay_description=i["assay_description"],
+                                          document=i['document_chembl_id'],
+                                          standard_value=i["standard_value"],
+                                          activity=i["activity_id"],
+                                          pchembl_value=i["pchembl_value"])
+            if valid == True:
                 continue
                 # q = queue.Queue()
                 # x=threading.Thread(target=self.get_cell_line, args=(i['assay_chembl_id'], q)).start()

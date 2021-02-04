@@ -59,11 +59,9 @@ class Command(BaseBuild):
                 print('Started purging bias data')
                 self.purge_bias_data()
                 print('Ended purging bias data')
-            except E xception as msg:
+            except Exception as msg:
                 print(msg)
-                self.logger.error(msg)
         # import the structure data
-
         try:
             print('CREATING BIAS DATA')
             print(options['filename'])
@@ -72,7 +70,6 @@ class Command(BaseBuild):
             self.logger.info('COMPLETED CREATING BIAS')
         except Exception as msg:
             print('--error--', msg, '\n')
-            self.logger.info("The error appeared in def handle")
 
     def purge_bias_data(self):
 
@@ -147,7 +144,7 @@ class Command(BaseBuild):
                 temp_dict['log_bias_factor'] = ''
                 temp_dict['order_no'] = 0
                 temp_dict['reference_ligand'] = None
-                temp_dict['signalling_protein'] = j['children'][0].signalling_protein
+                temp_dict['signalling_protein'] = j['children'][0].signalling_protein.lower()
                 temp_dict['cell_line'] = j['children'][0].cell_line
                 temp_dict['family'] = j['children'][0].family
                 temp_dict['assay_type'] = j['children'][0].assay_type
@@ -183,7 +180,6 @@ class Command(BaseBuild):
             send.append(temp)
         return send
 
-    # TODO: count labs and publication
     def combine_unique(self, data):
         context = dict()
         print('data len', len(data))
@@ -210,7 +206,7 @@ class Command(BaseBuild):
             j[1].pop('assay')
             j[1]['assay_list'] = assays
             j[1]['reference_assays_list'] = reference
-            assay_counter=assay_counter+len(j[1]['assay_list'])+len(j[1]['reference_assays_list'])
+            assay_counter = assay_counter+len(j[1]['assay_list'])+len(j[1]['reference_assays_list'])
         print('assay_counter len', assay_counter)
         return data
 
@@ -258,98 +254,60 @@ class Command(BaseBuild):
                     content[name]['assay_list'] = list()
                     content[name]['assay_list'].append(assay)
                     content[name]['reference_assays_list'] = i[1]['reference_assays_list']
+
         return content
 
-    def limit_family(self, send):
+    def limit_family_set(self, assay_list):
         families = list()
-        G12 = dict()
-        Gio = dict()
-        Gq = dict()
-        GS = dict()
-        Barr = dict()
-        G_prot = dict()
-        for i in send:
-            try:
-                if i['family'] == 'B-arr':
-                    if bool(Barr) == False:
-                        Barr = i
-                    else:
-                        if i['quantitive_activity'] < Barr['quantitive_activity']:
-                            Barr = i
-            except:
-                continue
-            try:
-                if i['family'] == 'G12/13':
-                    if bool(G12) == False:
-                        G12 = i
-                    else:
-                        if i['quantitive_activity'] < G12['quantitive_activity']:
-                            G12 = i
-            except:
-                continue
+        proteins = set()
+        for assay in assay_list:
+            if assay['family'] not in proteins:
+                proteins.add(assay['family'])
+                families.append(assay)
+            else:
+                compare_val = next(item for item in families if item["family"] == assay['family'])
+                try:
+                    if assay['quantitive_activity'] < compare_val['quantitive_activity']:
+                        families[:]=[d for d in families if d.get('family') != compare_val['family']]
+                        families.append(assay)
+                except:
+                    continue
 
-            try:
-                if i['family'] == 'G-protein' or i['family'] == '':
-                    if bool(G_prot) == False:
-                        G_prot = i
-                    else:
-                        if i['quantitive_activity'] < G_prot['quantitive_activity']:
-                            G_prot = i
-            except:
-                continue
+        return families
 
-            try:
-                if i['family'] == 'Gi/o':
-                    if bool(Gio) == False:
-                        Gio = i
-                    else:
-                        if i['quantitive_activity'] < Gio['quantitive_activity']:
-                            Gio = i
-            except:
-                continue
-            try:
-                if i['family'] == 'Gq/11':
-                    if bool(Gq) == False:
-                        Gq = i
-                    else:
-                        if i['quantitive_activity'] < Gq['quantitive_activity']:
-                            Gq = i
-            except:
-                continue
-            try:
-                if i['family'] == 'Gs':
-                    if bool(GS) == False:
-                        GS = i
-                    else:
-                        if i['quantitive_activity'] < GS['quantitive_activity']:
-                            GS = i
-            except:
-                continue
-
-        if Barr:
-            families.append(Barr)
-        if G12:
-            families.append(G12)
-        if Gio:
-            families.append(Gio)
-        if Gq:
-            families.append(Gq)
-        if GS:
-            families.append(GS)
-        if G_prot:
-            families.append(G_prot)
+    def limit_family_set_subs(self, assay_list):
+        families = list()
+        proteins = set()
+        for assay in assay_list:
+            if assay['signalling_protein'] not in proteins:
+                proteins.add(assay['signalling_protein'])
+                families.append(assay)
+            else:
+                compare_val = next(item for item in families if item["signalling_protein"] == assay['signalling_protein'])
+                # print('\n***dublicate', compare_val['signalling_protein'], compare_val['quantitive_activity'])
+                try:
+                    if assay['quantitive_activity'] < compare_val['quantitive_activity']:
+                        families[:]=[d for d in families if d.get('signalling_protein') != compare_val['signalling_protein']]
+                        families.append(assay)
+                        # print('\n***swap', assay['signalling_protein'], assay['quantitive_activity'])
+                except:
+                    families.append(assay)
+        print(proteins)
         return families
 
     def process_calculation(self, context):
         for i in context.items():
             test = dict()
             temp_obj = list()
+
             for j in i[1]['assay_list']:
                 if j not in temp_obj:
                     temp_obj.append(j)
                 else:
                     pass
             i[1]['assay_list'] = temp_obj
+
+
             test = sorted(i[1]['assay_list'], key=lambda k: k['quantitive_activity']
                           if k['quantitive_activity'] else 999999, reverse=False)
 
@@ -471,7 +429,6 @@ class Command(BaseBuild):
 
     def save_data_to_model(self, context, source):
         for i in context['data'].items():
-
             if self.fetch_experiment(i[1]['publication'], i[1]['ligand'], i[1]['receptor'], source) == False:
                 primary, secondary = self.fetch_receptor_trunsducers(
                     i[1]['receptor'])
@@ -560,8 +517,6 @@ class Command(BaseBuild):
             return True
         except Exception as msg:
             experiment = None
-            self.mylog.exception(
-                "Experiment AnalyzedExperiment error | module: AnalyzedExperiment.", msg)
             return False
 
     def fetch_receptor_trunsducers(self, receptor):
@@ -588,10 +543,12 @@ class Command(BaseBuild):
 
     def process_signalling_proteins (self,context) :
         for i in context.items():
-            # print('before',i[1]['assay_list'])
-            i[1]['assay_list'] = self.limit_family(i[1]['assay_list'])
-            # print('after',i[1]['assay_list'])
+            i[1]['assay_list'] = self.limit_family_set(i[1]['assay_list'])
+        return context
 
+    def process_signalling_proteins_subs (self,context) :
+        for i in context.items():
+            i[1]['assay_list'] = self.limit_family_set_subs(i[1]['assay_list'])
         return context
 
     def build_bias_data(self):
@@ -632,8 +589,9 @@ class Command(BaseBuild):
         referenced_assay = self.process_referenced_assays(send)
         print('stage # 4: Separating reference assays is finished', len(referenced_assay))
         ligand_data = self.separate_ligands(referenced_assay)
-        print('stage # 5: Separate ligands', len(ligand_data))
-        calculated_assay = self.process_calculation(ligand_data)
+        limit_family = self.process_signalling_proteins_subs(ligand_data)
+        print('stage # 5: Separate ligands', len(limit_family))
+        calculated_assay = self.process_calculation(limit_family)
         print('stage # 6: Merging assays with same ligand/receptor/publication is finished')
         self.count_publications(calculated_assay)
         print('stage # 7: labs and publications counted')

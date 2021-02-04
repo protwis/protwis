@@ -1,12 +1,12 @@
 from django.core.management.base import BaseCommand, CommandError
 from build.management.commands.base_build import Command as BaseBuild
-from residue.models import Residue
+
 from protein.models import Protein
 from ligand.models import *
 from common.models import WebLink, WebResource, Publication
-from django.db.models import Q, Count
+
 import logging
-from datetime import datetime
+
 import time
 
 MISSING_PROTEINS = {}
@@ -91,7 +91,7 @@ class Command(BaseBuild):
         end = time.time()
         print('---temp_increment time---', end - start)
 
-    def process_data(self, assay,type):
+    def process_data(self, assay,type_d):
         assay_list = list()
         assay_list = self.process_assays(assay)
         try:
@@ -100,7 +100,7 @@ class Command(BaseBuild):
             print('sorting error')
 
         # compare assays by standard value, leave only ones with 1p fold selectivity
-        self.analyze_assay(sorted_assay_list,type)
+        self.analyze_assay(sorted_assay_list,type_d)
         # if final_assay, then save it to db
 
 
@@ -149,7 +149,7 @@ class Command(BaseBuild):
     def sort_assay(self, assays):
         return sorted(assays, key=lambda i: i['standard_value'], reverse=True)
 
-    def analyze_assay(self, assays,type):
+    def analyze_assay(self, assays,type_d):
         # select most potent if more than 10 folds
 
         try:
@@ -169,7 +169,7 @@ class Command(BaseBuild):
                             i_value = self.fetch_measurements(i['standard_value'], i['standard_type'], 'nm')
                             most_potent['value'] = round(i_value - mp_value,3)
                             # print('\n stabdard value and protein of I',most_potent,'\nidata:', i )
-                            self.save_data(most_potent, type)
+                            self.save_data(most_potent, type_d)
                 except:
                     continue
 
@@ -177,13 +177,13 @@ class Command(BaseBuild):
         # for assay in assays:
         #     if most_potent['pchembl_value']
 
-    def save_data(self, final_assay,type):
+    def save_data(self, final_assay,type_d):
         #saving assay ---', final_assay
         if self.check_dublicate(final_assay) == False:
             save_assay = LigandReceptorStatistics(
                 ligand=final_assay['ligand'],
                 protein=final_assay['protein'],
-                type=type,
+                type=type_d,
                 value=final_assay['value'],
                 reference_protein = final_assay['reference_protein']
             )

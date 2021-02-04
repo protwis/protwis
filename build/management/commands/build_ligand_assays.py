@@ -99,9 +99,8 @@ class Command(BaseBuild):
                     return l
                 else:
                     l = get_or_make_ligand(smiles, 'SMILES', ligand_id,  )
-        except Exception as msg:
-            l = None
-            # print('ligand_id---',l,'\n end')
+        except:
+            l = None            
         return l
 
     def fetch_assay(self, assay_id):
@@ -132,7 +131,7 @@ class Command(BaseBuild):
             except:
                 continue
             assay_experiment = AssayExperiment(
-
+                source = source,
                 ligand	= ligand,
                 protein	= protein,
                 assay	= assay,
@@ -156,7 +155,7 @@ class Command(BaseBuild):
             try:
                 assay_experiment.save()
             except:
-                continue            
+                continue
             count.value +=1
 
 

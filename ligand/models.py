@@ -394,30 +394,21 @@ class LigandReceptorStatistics(models.Model):
     value  = models.DecimalField(max_digits=9, decimal_places=3, null= True)
     reference_protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE, related_name="reference_protein")
 
-class ChemblAssay(models.Model):
-     #slug = models.SlugField(max_length=50, unique=True)
-    web_links = models.ManyToManyField('common.WebLink')
-    assay_id = models.CharField(max_length=50, unique = True)
-
-    def __str__(self):
-        return self.assay_id
-
-    class Meta():
-        db_table = 'chembl_assays'
 
 class AssayExperimentSource(models.Model):
-    assay = models.ForeignKey('AssayExperiment', on_delete=models.CASCADE)
+    web_links = models.ManyToManyField('common.WebLink')
     database = models.CharField(max_length=20, null=True)
-    database_id =models.CharField(max_length=30, null=True)
+    database_id=models.CharField(max_length=30, null=True)
 
 class AssayExperiment(models.Model):
-
+    source = models.ForeignKey('AssayExperimentSource', on_delete=models.CASCADE)
     ligand = models.ForeignKey('Ligand', on_delete=models.CASCADE)
     protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
-    assay = models.ForeignKey('ChemblAssay', on_delete=models.CASCADE, null=True)
+    publication = models.ForeignKey(Publication, on_delete = models.CASCADE, null=True)
+
     assay_type = models.CharField(max_length=10)
-    assay_description = models.TextField(max_length=1500)
-    pchembl_value = models.CharField(max_length=10, null=True)
+    assay_description = models.TextField(null=True)
+    p_value = models.CharField(max_length=10, null=True)
 
     published_value = models.CharField(max_length=20, null=True)
     published_relation = models.CharField(max_length=10, null=True)
@@ -428,10 +419,6 @@ class AssayExperiment(models.Model):
     standard_relation = models.CharField(max_length=10, null=True)
     standard_type = models.CharField(max_length=20, null=True)
     standard_units = models.CharField(max_length=20, null=True)
-
-    publication = models.ForeignKey(Publication, on_delete = models.CASCADE, null=True)
-    activity = models.CharField(max_length=50,null=True)
-    document_chembl_id = models.CharField(max_length=50,null=True)
     cell_line = models.TextField(null=True)
 
 

@@ -326,11 +326,11 @@ def TargetPurchasabilityDetails(request, **kwargs):
         try:
             if record['ligand__properities__vendors__vendor__name'] in ['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem', 'IUPHAR/BPS Guide to PHARMACOLOGY']:
                 continue
-                tmp = LigandVendorLink.objects.filter(
-                    vendor=record['ligand__properities__vendors__vendor__id'], lp=record['ligand__properities_id'])[0]
-                record['vendor_id'] = tmp.vendor_external_id
-                record['vendor_link'] = tmp.url
-                purchasable.append(record)
+            tmp = LigandVendorLink.objects.filter(
+                vendor=record['ligand__properities__vendors__vendor__id'], lp=record['ligand__properities_id'])[0]
+            record['vendor_id'] = tmp.vendor_external_id
+            record['vendor_link'] = tmp.url
+            purchasable.append(record)
         except:
             continue
 
@@ -528,10 +528,10 @@ class LigandInformationView(TemplateView):
         for i in data:
             type = str()
             if i.type.lower() == "f":
-                type = "Functional"
+                type_i = "Functional"
             else:
                 type = "Binding"
-            selectivity.append({"type": type, "protein": i.protein.entry_name,"potency": i.value, "reference": i.reference_protein.entry_name})
+            selectivity.append({"type": type_i, "protein": i.protein.entry_name,"potency": i.value, "reference": i.reference_protein.entry_name})
         return selectivity
 
     def fetch_receptor_trunsducers(self, receptor):
@@ -639,7 +639,7 @@ class BiasBrowser(TemplateView):
             'receptor__family__parent__parent', 'receptor__family', 'receptor__species',
             'publication', 'publication__web_link', 'publication__web_link__web_resource',
             'publication__journal', 'ligand__ref_ligand_bias_analyzed',
-            'analyzed_data__emax_ligand_reference')
+            'analyzed_data__emax_ligand_reference')[:250]
         context = dict()
         prepare_data = self.process_data(content)
 
@@ -669,7 +669,7 @@ class BiasBrowser(TemplateView):
             temp['publication'] = instance.publication
             temp['ligand'] = instance.ligand
             temp['source'] = instance.source
-            temp['chembl'] = instance.chembl
+
             temp['endogenous_ligand'] = instance.endogenous_ligand
             temp['vendor_quantity'] = instance.vendor_quantity
             temp['publication_quantity'] = instance.article_quantity
@@ -691,56 +691,57 @@ class BiasBrowser(TemplateView):
             increment_assay = 0
             for entry in instance.analyzed_data.all():
                 if entry.order_no < 5:
+                    if entry.assay_description is None:
+                        temp_dict = dict()
+                        temp_dict['emax_reference_ligand'] = entry.emax_ligand_reference
+                        temp_dict['family'] = entry.family
+                        temp_dict['show_family'] = entry.signalling_protein
+                        temp_dict['signalling_protein'] = entry.signalling_protein
+                        temp_dict['cell_line'] = entry.cell_line
+                        temp_dict['assay_type'] = entry.assay_type
+                        temp_dict['assay_measure'] = entry.assay_measure
+                        temp_dict['assay_time_resolved'] = entry.assay_time_resolved
+                        temp_dict['ligand_function'] = entry.ligand_function
+                        temp_dict['quantitive_measure_type'] = entry.quantitive_measure_type
+                        temp_dict['quantitive_activity'] = entry.quantitive_activity
+                        temp_dict['quantitive_activity_initial'] = entry.quantitive_activity_initial
+                        temp_dict['quantitive_unit'] = entry.quantitive_unit
+                        temp_dict['qualitative_activity'] = entry.qualitative_activity
+                        temp_dict['quantitive_efficacy'] = entry.quantitive_efficacy
+                        temp_dict['efficacy_measure_type'] = entry.efficacy_measure_type
+                        temp_dict['efficacy_unit'] = entry.efficacy_unit
+                        temp_dict['order_no'] = int(entry.order_no)
+                        temp_dict['t_coefficient'] = entry.t_coefficient
+                        if entry.t_value != None and entry.t_value != 'None':
+                            temp_dict['t_value'] = entry.t_value
+                        else:
+                            temp_dict['t_value'] = ''
 
-                    temp_dict = dict()
-                    temp_dict['emax_reference_ligand'] = entry.emax_ligand_reference
-                    temp_dict['family'] = entry.family
-                    temp_dict['show_family'] = entry.signalling_protein
-                    temp_dict['signalling_protein'] = entry.signalling_protein
-                    temp_dict['cell_line'] = entry.cell_line
-                    temp_dict['assay_type'] = entry.assay_type
-                    temp_dict['assay_measure'] = entry.assay_measure
-                    temp_dict['assay_time_resolved'] = entry.assay_time_resolved
-                    temp_dict['ligand_function'] = entry.ligand_function
-                    temp_dict['quantitive_measure_type'] = entry.quantitive_measure_type
-                    temp_dict['quantitive_activity'] = entry.quantitive_activity
-                    temp_dict['quantitive_activity_initial'] = entry.quantitive_activity_initial
-                    temp_dict['quantitive_unit'] = entry.quantitive_unit
-                    temp_dict['qualitative_activity'] = entry.qualitative_activity
-                    temp_dict['quantitive_efficacy'] = entry.quantitive_efficacy
-                    temp_dict['efficacy_measure_type'] = entry.efficacy_measure_type
-                    temp_dict['efficacy_unit'] = entry.efficacy_unit
-                    temp_dict['order_no'] = int(entry.order_no)
-                    temp_dict['t_coefficient'] = entry.t_coefficient
-                    if entry.t_value != None and entry.t_value != 'None':
-                        temp_dict['t_value'] = entry.t_value
+                        if entry.t_factor != None and entry.t_factor != 'None':
+                            temp_dict['t_factor'] = entry.t_factor
+                        else:
+                            temp_dict['t_factor'] = ''
+
+                        if entry.potency != None and entry.potency != 'None':
+                            temp_dict['potency'] = entry.potency
+                        else:
+                            temp_dict['potency'] = ''
+
+                        if entry.log_bias_factor != None and entry.log_bias_factor != 'None':
+                            temp_dict['log_bias_factor'] = entry.log_bias_factor
+                        else:
+                            temp_dict['log_bias_factor'] = ''
+
+                        temp_dict['emax_ligand_reference'] = entry.emax_ligand_reference
+
+                        temp['biasdata'].append(temp_dict)
+
+                        doubles.append(temp_dict)
+                        increment_assay += 1
                     else:
-                        temp_dict['t_value'] = ''
-
-                    if entry.t_factor != None and entry.t_factor != 'None':
-                        temp_dict['t_factor'] = entry.t_factor
-                    else:
-                        temp_dict['t_factor'] = ''
-
-                    if entry.potency != None and entry.potency != 'None':
-                        temp_dict['potency'] = entry.potency
-                    else:
-                        temp_dict['potency'] = ''
-
-                    if entry.log_bias_factor != None and entry.log_bias_factor != 'None':
-                        temp_dict['log_bias_factor'] = entry.log_bias_factor
-                    else:
-                        temp_dict['log_bias_factor'] = ''
-
-                    temp_dict['emax_ligand_reference'] = entry.emax_ligand_reference
-
-                    temp['biasdata'].append(temp_dict)
-
-                    doubles.append(temp_dict)
-                    increment_assay += 1
+                        continue
                 else:
                     continue
-
             rd[increment] = temp
             increment += 1
 
@@ -791,7 +792,7 @@ class BiasBrowserGSubbtype(TemplateView):
         for x in keys:
             del prepare_data[x]
 
-        self.multply_assay(prepare_data)
+        prepare_data = self.multply_assay(prepare_data)
         context.update({'data': prepare_data})
         return context
 
@@ -813,7 +814,7 @@ class BiasBrowserGSubbtype(TemplateView):
             temp['publication'] = instance.publication
             temp['ligand'] = instance.ligand
             temp['source'] = instance.source
-            temp['chembl'] = instance.chembl
+
             temp['endogenous_ligand'] = instance.endogenous_ligand
             temp['vendor_quantity'] = instance.vendor_quantity
             temp['publication_quantity'] = instance.article_quantity
@@ -833,83 +834,84 @@ class BiasBrowserGSubbtype(TemplateView):
             temp['biasdata'] = list()
             increment_assay = 0
             for entry in instance.analyzed_data.all():
-                if entry.order_no < 5:
+                if entry.assay_description is None:
+                    if entry.order_no < 5:
 
-                    temp_dict = dict()
-                    temp_dict['emax_reference_ligand'] = entry.emax_ligand_reference
-                    temp_dict['family'] = entry.family
-                    temp_dict['show_family'] = entry.signalling_protein
-                    temp_dict['signalling_protein'] = entry.signalling_protein
-                    temp_dict['cell_line'] = entry.cell_line
-                    temp_dict['assay_type'] = entry.assay_type
-                    temp_dict['assay_measure'] = entry.assay_measure
-                    temp_dict['assay_time_resolved'] = entry.assay_time_resolved
-                    temp_dict['ligand_function'] = entry.ligand_function
-                    temp_dict['quantitive_measure_type'] = entry.quantitive_measure_type
-                    temp_dict['quantitive_activity'] = entry.quantitive_activity
-                    temp_dict['quantitive_activity_initial'] = entry.quantitive_activity_initial
-                    temp_dict['quantitive_unit'] = entry.quantitive_unit
-                    temp_dict['qualitative_activity'] = entry.qualitative_activity
-                    temp_dict['quantitive_efficacy'] = entry.quantitive_efficacy
-                    temp_dict['efficacy_measure_type'] = entry.efficacy_measure_type
-                    temp_dict['efficacy_unit'] = entry.efficacy_unit
-                    temp_dict['order_no'] = int(entry.order_no)
-                    temp_dict['t_coefficient'] = entry.t_coefficient
-                    if entry.t_value != None and entry.t_value != 'None':
-                        temp_dict['t_value'] = entry.t_value
+                        temp_dict = dict()
+                        temp_dict['emax_reference_ligand'] = entry.emax_ligand_reference
+                        temp_dict['family'] = entry.family
+                        temp_dict['show_family'] = entry.signalling_protein
+                        temp_dict['signalling_protein'] = entry.signalling_protein
+                        temp_dict['cell_line'] = entry.cell_line
+                        temp_dict['assay_type'] = entry.assay_type
+                        temp_dict['assay_measure'] = entry.assay_measure
+                        temp_dict['assay_time_resolved'] = entry.assay_time_resolved
+                        temp_dict['ligand_function'] = entry.ligand_function
+                        temp_dict['quantitive_measure_type'] = entry.quantitive_measure_type
+                        temp_dict['quantitive_activity'] = entry.quantitive_activity
+                        temp_dict['quantitive_activity_initial'] = entry.quantitive_activity_initial
+                        temp_dict['quantitive_unit'] = entry.quantitive_unit
+                        temp_dict['qualitative_activity'] = entry.qualitative_activity
+                        temp_dict['quantitive_efficacy'] = entry.quantitive_efficacy
+                        temp_dict['efficacy_measure_type'] = entry.efficacy_measure_type
+                        temp_dict['efficacy_unit'] = entry.efficacy_unit
+                        temp_dict['order_no'] = int(entry.order_no)
+                        temp_dict['t_coefficient'] = entry.t_coefficient
+                        if entry.t_value != None and entry.t_value != 'None':
+                            temp_dict['t_value'] = entry.t_value
+                        else:
+                            temp_dict['t_value'] = ''
+
+                        if entry.t_factor != None and entry.t_factor != 'None':
+                            temp_dict['t_factor'] = entry.t_factor
+                        else:
+                            temp_dict['t_factor'] = ''
+
+                        if entry.potency != None and entry.potency != 'None':
+                            temp_dict['potency'] = entry.potency
+                        else:
+                            temp_dict['potency'] = ''
+
+                        if entry.log_bias_factor != None and entry.log_bias_factor != 'None':
+                            temp_dict['log_bias_factor'] = entry.log_bias_factor
+                        else:
+                            temp_dict['log_bias_factor'] = ''
+
+                        temp_dict['emax_ligand_reference'] = entry.emax_ligand_reference
+
+                        temp['biasdata'].append(temp_dict)
+
+                        doubles.append(temp_dict)
+                        increment_assay += 1
                     else:
-                        temp_dict['t_value'] = ''
-
-                    if entry.t_factor != None and entry.t_factor != 'None':
-                        temp_dict['t_factor'] = entry.t_factor
-                    else:
-                        temp_dict['t_factor'] = ''
-
-                    if entry.potency != None and entry.potency != 'None':
-                        temp_dict['potency'] = entry.potency
-                    else:
-                        temp_dict['potency'] = ''
-
-                    if entry.log_bias_factor != None and entry.log_bias_factor != 'None':
-                        temp_dict['log_bias_factor'] = entry.log_bias_factor
-                    else:
-                        temp_dict['log_bias_factor'] = ''
-
-                    temp_dict['emax_ligand_reference'] = entry.emax_ligand_reference
-
-                    temp['biasdata'].append(temp_dict)
-
-                    doubles.append(temp_dict)
-                    increment_assay += 1
+                        continue
                 else:
                     continue
-
             rd[increment] = temp
             increment += 1
 
         return rd
 
     def multply_assay(self, data):
-
         for i in data.items():
-
             lenght = len(i[1]['biasdata'])
-            for key in range(lenght, 5):
-                temp_dict = dict()
-                temp_dict['pathway'] = ''
-                temp_dict['bias'] = ''
-                temp_dict['cell_line'] = ''
-                temp_dict['assay_type'] = ''
-                temp_dict['log_bias_factor'] = ''
-                temp_dict['t_factor'] = ''
-                temp_dict['ligand_function'] = ''
-                temp_dict['order_no'] = lenght
-                i[1]['biasdata'].append(temp_dict)
-                lenght += 1
+            if lenght <6:
+                for key in range(lenght, 5):
+                    temp_dict = dict()
+                    temp_dict['pathway'] = ''
+                    temp_dict['bias'] = ''
+                    temp_dict['cell_line'] = ''
+                    temp_dict['assay_type'] = ''
+                    temp_dict['log_bias_factor'] = ''
+                    temp_dict['t_factor'] = ''
+                    temp_dict['ligand_function'] = ''
+                    temp_dict['order_no'] = lenght
+                    i[1]['biasdata'].append(temp_dict)
+                    lenght += 1
             test = sorted(i[1]['biasdata'], key=lambda x: x['order_no'],
                           reverse=True)
-            i[1]['biasdata'] = test
-
+            i[1]['biasdata'] = test[:5]
+        return data
 
 '''
 Bias browser between families
@@ -998,9 +1000,7 @@ class BiasBrowserChembl(TemplateView):
         return rd
 
     def multply_assay(self, data):
-
         for i in data.items():
-
             lenght = len(i[1]['biasdata'])
             for key in range(lenght, 5):
                 temp_dict = dict()
@@ -1010,7 +1010,7 @@ class BiasBrowserChembl(TemplateView):
                 lenght += 1
             test = sorted(i[1]['biasdata'], key=lambda x: x['order_no'],
                           reverse=True)
-            i[1]['biasdata'] = test
+            i[1]['biasdata'] = test[:5]
 
     '''
     End  of Bias Browser

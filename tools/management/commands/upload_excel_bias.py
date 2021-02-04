@@ -271,7 +271,7 @@ class Command(BaseBuild):
                   d['protein'] == None):
                 if d['protein_assay'] == 'pERK1/2 activation' or d['protein_assay'] =="pERK1-2":
                     d['protein'] = 'pERK1-2'
-            family = self.define_g_family(d['protein'], d['protein_assay'])
+            family = self.define_g_family(d['protein'].lower(), d['protein_assay'])
             pub = self.fetch_publication(d['reference'])
 
             l = self.fetch_ligand(
@@ -406,7 +406,6 @@ class Command(BaseBuild):
         return potency,p_type
 
     def define_g_family(self, protein, assay_type):
-
         family = None
         if (protein == 'b-arrestin' or
             protein == 'b-arrestin-1 (non-visual arrestin-2)' or
@@ -432,7 +431,7 @@ class Command(BaseBuild):
                 protein == 'gat2' or
                 protein == 'gat3' or
                 protein == 'gaz' or
-                protein == 'gaoB'):
+                protein == 'gaob'):
             family = 'Gi/o'
 
         elif (protein == 'gq-family' or
@@ -454,8 +453,13 @@ class Command(BaseBuild):
               protein == 'gaolf'):
             family = 'Gs'
         elif (protein == 'pERK1/2 activation' or
-                protein =="pERK1-2"):
+                protein =="perk1-2"):
             family = 'pERK1-2'
+
+        elif (protein == ''):
+            if assay_type == 'Ca2+ accumulation':
+                family = 'CA2'
+
         else:
             family == 'G-protein'
 
