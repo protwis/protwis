@@ -71,33 +71,23 @@ class Command(BaseBuild):
         except Exception as msg:
             print('--error--', msg, '\n')
 
+    # pylint: disable=R0201
     def purge_bias_data(self):
-    # Disable all the no-member violations in this function
-    # pylint: disable=no-member
-
         delete_bias_experiment = AnalyzedExperiment.objects.all()  # NOQA
         delete_bias_experiment.delete()
 
-    # Bias data block #
+    # pylint: disable=F405
     def get_from_model(self):
-    # Disable all the no-member violations in this function
-    # pylint: disable=no-member
         try:
-            content = BiasedExperiment.objects.all().prefetch_related(  # eslint-disable-line no-eval
+            content = BiasedExperiment.objects.all().prefetch_related(
                 'experiment_data', 'ligand', 'receptor', 'publication', 'publication__web_link', 'experiment_data__emax_ligand_reference',
-            ).order_by('publication', 'receptor', 'ligand')  # eslint-disable-line no-eval
-        except EmptyResultSet:  # eslint-disable-line no-eval
+            ).order_by('publication', 'receptor', 'ligand')
+        except EmptyResultSet:
             print('no data returned')
             content = None
         return content
 
     def process_data(self, content):
-    # Disable all the no-member violations in this function
-    # pylint: disable=no-member
-        '''
-        Merge BiasedExperiment with its children
-        and pass it back to loop through dublicates
-        '''
         rd = []
         counter = 0
         for instance in enumerate(content):
@@ -265,6 +255,7 @@ class Command(BaseBuild):
 
         return content
 
+    # pylint: disable=B112
     def limit_family_set(self, assay_list):
         # pylint: disable=no-member
         # no error
@@ -280,11 +271,12 @@ class Command(BaseBuild):
                     if assay['quantitive_activity'] < compare_val['quantitive_activity']:
                         families[:]=[d for d in families if d.get('family') != compare_val['family']]
                         families.append(assay)
-                except:  # NOQA
+                except:
                     continue
 
         return families
 
+    # pylint: disable=R0201
     def limit_family_set_subs(self, assay_list):
         families = list()
         proteins = set()
@@ -387,9 +379,11 @@ class Command(BaseBuild):
             return return_assay
         return return_assay
 
+    # pylint: disable=R0201
     def caclulate_bias_factor_variables(self, a, b, c, d):
-        """calculations for log bias factor inputs"""
-        lgb = 0  # NOQA
+        """calculations for log bias factor inputs!."""
+        # pylint: disable=F841
+        lgb = 0
         try:
             lgb = (a - b) - (c - d)
         except:
@@ -437,12 +431,13 @@ class Command(BaseBuild):
                     return i[1]['biasdata']
         return i[1]['biasdata']
 
+    # pylint: disable=F405
     def save_data_to_model(self, context, source):
         for i in context['data'].items():
             if self.fetch_experiment(i[1]['publication'], i[1]['ligand'], i[1]['receptor'], source) == False:
                 primary, secondary = self.fetch_receptor_trunsducers(
                     i[1]['receptor'])
-
+                # pylint: disable=F405
                 experiment_entry = AnalyzedExperiment(publication=i[1]['publication'],  # NOQA
                                                       ligand=i[1]['ligand'],
                                                       receptor=i[1]['receptor'],
@@ -485,6 +480,7 @@ class Command(BaseBuild):
                     experiment_assay.save()
                 for ex in i[1]['reference_assays_list']:
                     emax_ligand = ex['emax_reference_ligand']
+                    # pylint: disable=F405
                     experiment_assay = AnalyzedAssay(experiment=experiment_entry,
                                                      assay_description = 'reference_assay',
                                                      family=ex['family'],
@@ -516,18 +512,16 @@ class Command(BaseBuild):
                 pass
 
     def fetch_experiment(self, publication, ligand, receptor, source):
-        # eslint-disable-line no-eval
-        """fetch receptor with Protein model
-        requires: protein id, source"""
         try:
             experiment = AnalyzedExperiment.objects.filter(
                 publication=publication, ligand=ligand, receptor=receptor, source=source)
             experiment = experiment.get()
             return True
-        except Exception as msg:
+        except:
             experiment = None
             return False
 
+    # pylint: disable=F405
     def fetch_receptor_trunsducers(self, receptor):
         primary = set()
         temp = str()
