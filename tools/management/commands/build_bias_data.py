@@ -3,7 +3,7 @@ from decimal import Decimal
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import ProteinGProteinPair
 from ligand.models import *
-from common.models import WebResource, Publication
+from common.models import Publication
 
 import logging
 
@@ -83,10 +83,10 @@ class Command(BaseBuild):
     # Disable all the no-member violations in this function
     # pylint: disable=no-member
         try:
-            content = BiasedExperiment.objects.all().prefetch_related(  # NOQA
+            content = BiasedExperiment.objects.all().prefetch_related(  # eslint-disable-line no-eval
                 'experiment_data', 'ligand', 'receptor', 'publication', 'publication__web_link', 'experiment_data__emax_ligand_reference',
-            ).order_by('publication', 'receptor', 'ligand')  # NOQA
-        except EmptyResultSet:  # NOQA
+            ).order_by('publication', 'receptor', 'ligand')  # eslint-disable-line no-eval
+        except EmptyResultSet:  # eslint-disable-line no-eval
             print('no data returned')
             content = None
         return content
@@ -516,6 +516,7 @@ class Command(BaseBuild):
                 pass
 
     def fetch_experiment(self, publication, ligand, receptor, source):
+        # eslint-disable-line no-eval
         """fetch receptor with Protein model
         requires: protein id, source"""
         try:
