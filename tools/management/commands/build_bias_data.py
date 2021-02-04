@@ -76,7 +76,7 @@ class Command(BaseBuild):
         delete_bias_experiment = AnalyzedExperiment.objects.all()  # NOQA
         delete_bias_experiment.delete()
 
-    # pylint: disable=F405
+    # pylint: disable=C0321, F405
     def get_from_model(self):
         try:
             content = BiasedExperiment.objects.all().prefetch_related(
