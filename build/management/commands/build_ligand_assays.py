@@ -98,9 +98,9 @@ class Command(BaseBuild):
                 if l:
                     return l
                 else:
-                    l = get_or_make_ligand(smiles, 'SMILES', ligand_id,  )
+                    l = get_or_make_ligand(smiles, 'SMILES', ligand_id)
         except:
-            l = None            
+            l = None
         return l
 
     def fetch_assay(self, assay_id):
@@ -131,7 +131,6 @@ class Command(BaseBuild):
             except:
                 continue
             assay_experiment = AssayExperiment(
-                source = source,
                 ligand	= ligand,
                 protein	= protein,
                 assay	= assay,

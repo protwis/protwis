@@ -1,16 +1,26 @@
 from django.db.models import Count, Avg, Min, Max
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from django.shortcuts import render
+from django.conf import settings
 from django.http import HttpResponse, HttpResponseRedirect
 from django.views.generic import TemplateView, View, DetailView, ListView
+from django.db import models
+from django.views.decorators.csrf import csrf_exempt
 
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection, SelectionItem
 from ligand.models import *
 from protein.models import Protein, Species, ProteinFamily,ProteinGProteinPair
+Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
+from alignment.functions import get_proteins_from_selection
+from common import definitions
+from common.selection import Selection
+from common.views import AbsTargetSelection, AbsTargetSelectionTable
+from common.views import AbsSegmentSelection
+from common.views import AbsMiscSelection
+from structure.functions import BlastSearch
 
-from django.views.decorators.csrf import csrf_exempt
 
 from copy import deepcopy
 import itertools
@@ -60,6 +70,7 @@ class LigandBrowser(TemplateView):
             content.append(ligand)
         return content
 
+# pylint: disable=R0201
     def get_count_selectivity(self, letter, protein):
         result = LigandReceptorStatistics.objects.values('protein__entry_name', 'type'
         ).filter(protein__entry_name=protein
@@ -71,15 +82,14 @@ class LigandBrowser(TemplateView):
         ))
         return result
 
+# pylint: disable=R0201
     def fetch_receptor_trunsducers(self, receptor):
         primary = set()
         temp = str()
         temp1 = str()
         secondary = set()
-
         try:
-            gprotein = ProteinGProteinPair.objects.filter(protein__id = receptor)
-
+            gprotein = ProteinGProteinPair.objects.filter(protein__id=receptor)
             for x in gprotein:
                 if x.transduction and x.transduction == 'primary':
                     primary.add(x.g_protein.name)
@@ -450,7 +460,7 @@ class LigandStatistics(TemplateView):
             context['class_t2_options']['label_free'] = [1,]
             context['class_t2'] = json.dumps(class_t2_data.get_nodes_dict('ligands'))
         except:
-            pass
+            print('error in phy tree')
 
         return context
 
@@ -502,6 +512,7 @@ class LigandInformationView(TemplateView):
             assay.append(temp_assay)
         return assay
 
+# pylint: disable=R0201
     def process_ligand(self, ligand_data):
         ld = dict()
         ld['ligand_id'] = ligand_data[0].id
@@ -523,6 +534,7 @@ class LigandInformationView(TemplateView):
                 ld['picture'] = i.index
         return ld
 
+# pylint: disable=R0201
     def process_selectivity(self, data):
         selectivity = list()
         for i in data:
@@ -533,7 +545,8 @@ class LigandInformationView(TemplateView):
                 type = "Binding"
             selectivity.append({"type": type_i, "protein": i.protein.entry_name,"potency": i.value, "reference": i.reference_protein.entry_name})
         return selectivity
-
+        
+# pylint: disable=R0201
     def fetch_receptor_trunsducers(self, receptor):
         primary = set()
         temp = str()
@@ -622,7 +635,63 @@ class BiasVendorBrowser(TemplateView):
         # except:
         #     raise
 
-
+'''
+target selection for biased browser
+'''
+class BiasTargetSelection(AbsTargetSelectionTable):
+    step = 1
+    number_of_steps = 1
+    filter_tableselect = False
+    docs = 'sequences.html#structure-based-alignments'
+    title = "SELECT RECEPTORS"
+    description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
+        + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
+    selection_boxes = OrderedDict([
+        ('reference', False),
+        ('targets', True),
+        ('segments', False),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Next',
+            'onclick': "submitSelection('/ligand/biasedbrowser');",
+            'color': 'success',
+        },
+    }
+class BiasGTargetSelection(AbsTargetSelectionTable):
+    step = 1
+    number_of_steps = 1
+    filter_tableselect = False
+    docs = 'sequences.html#structure-based-alignments'
+    title = "SELECT RECEPTORS"
+    description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
+        + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
+    selection_boxes = OrderedDict([
+        ('reference', False),
+        ('targets', True),
+        ('segments', False),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Next',
+            'onclick': "submitSelection('/ligand/biasedgbrowser');",
+            'color': 'success',
+        },
+    }
+# class TestSelection(TemplateView):
+#     template_name = 'bias_browser.html'
+#     # get the user selection from session
+#     def get_context_data(self, **kwargs):
+#         context = dict()
+#         simple_selection = self.request.session.get('selection', False)
+#         a = Alignment()
+#
+#         # load data from selection into the alignment
+#         a.load_proteins_from_selection(simple_selection)
+#         print('\n result of alignment a :', a.proteins)
+#
+#
+#         return context
 '''
 Bias browser between families
 access data from db, fill empty fields with empty parse_children
@@ -631,15 +700,21 @@ class BiasBrowser(TemplateView):
     template_name = 'bias_browser.html'
     # @cache_page(50000)
     def get_context_data(self, *args, **kwargs):
-
-        content = AnalyzedExperiment.objects.filter(source='different_family').prefetch_related(
+        protein_list = list()
+        simple_selection = self.request.session.get('selection', False)
+        a = Alignment()
+        # load data from selection into the alignment
+        a.load_proteins_from_selection(simple_selection)
+        for items in a.proteins:
+            protein_list.append(items.protein)
+        content = AnalyzedExperiment.objects.filter(source='different_family').filter(receptor__in=protein_list).prefetch_related(
             'analyzed_data', 'ligand', 'ligand__reference_ligand', 'reference_ligand',
             'endogenous_ligand', 'ligand__properities', 'receptor', 'receptor', 'receptor__family',
             'receptor__family__parent', 'receptor__family__parent__parent__parent',
             'receptor__family__parent__parent', 'receptor__family', 'receptor__species',
             'publication', 'publication__web_link', 'publication__web_link__web_resource',
             'publication__journal', 'ligand__ref_ligand_bias_analyzed',
-            'analyzed_data__emax_ligand_reference')[:250]
+            'analyzed_data__emax_ligand_reference')
         context = dict()
         prepare_data = self.process_data(content)
 
@@ -777,8 +852,15 @@ class BiasBrowserGSubbtype(TemplateView):
     template_name = 'bias_browser_g.html'
     # @cache_page(50000)
     def get_context_data(self, *args, **kwargs):
+        protein_list = list()
+        simple_selection = self.request.session.get('selection', False)
+        a = Alignment()
+        # load data from selection into the alignment
+        a.load_proteins_from_selection(simple_selection)
+        for items in a.proteins:
+            protein_list.append(items.protein)
 
-        content = AnalyzedExperiment.objects.filter(source='same_family').prefetch_related(
+        content = AnalyzedExperiment.objects.filter(source='same_family').filter(receptor__in=protein_list).prefetch_related(
             'analyzed_data', 'ligand', 'ligand__reference_ligand', 'reference_ligand',
             'endogenous_ligand', 'ligand__properities', 'receptor', 'receptor__family__parent', 'receptor__family__parent__parent__parent',
             'receptor__family__parent__parent', 'receptor__species',

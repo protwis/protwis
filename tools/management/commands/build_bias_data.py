@@ -281,9 +281,8 @@ class Command(BaseBuild):
                     if assay['quantitive_activity'] < compare_val['quantitive_activity']:
                         families[:] = [d for d in families if d.get('family') != compare_val['family']]
                         families.append(assay)
-                except:  # NOQA
+                except:
                     continue
-
         return families
 
 # pylint: disable=C0301
@@ -391,12 +390,14 @@ class Command(BaseBuild):
         return return_assay
 
     def caclulate_bias_factor_variables(self, a, b, c, d):
-        """calculations for log bias factor inputs"""
-        lgb = 0  # NOQA
+        '''
+        calculations for log bias factor inputs
+        '''
+        lgb = 0
         try:
             lgb = (a - b) - (c - d)
         except:
-            lbg = 0
+            lgb = 0
         return lgb
 
     def calc_potency_and_transduction(self, biasdata):
@@ -517,15 +518,16 @@ class Command(BaseBuild):
                 pass
 
     def fetch_experiment(self, publication, ligand, receptor, source):
-
-        """fetch receptor with Protein model
-        requires: protein id, source"""
+        '''
+        fetch receptor with Protein model
+        requires: protein id, source
+        '''
         try:
             experiment = AnalyzedExperiment.objects.filter(
                 publication=publication, ligand=ligand, receptor=receptor, source=source)
             experiment = experiment.get()
             return True
-        except Exception as msg:
+        except Exception:
             experiment = None
             return False
 
