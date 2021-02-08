@@ -11,16 +11,10 @@ from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection, SelectionItem
 from ligand.models import *
-from protein.models import Protein, Species, ProteinFamily,ProteinGProteinPair
+from protein.models import Protein, ProteinFamily, ProteinGProteinPair
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
-from alignment.functions import get_proteins_from_selection
-from common import definitions
-from common.selection import Selection
-from common.views import AbsTargetSelection, AbsTargetSelectionTable
-from common.views import AbsSegmentSelection
-from common.views import AbsMiscSelection
-from structure.functions import BlastSearch
 
+from common.views import AbsTargetSelectionTable
 
 from copy import deepcopy
 import itertools
@@ -488,6 +482,7 @@ class LigandInformationView(TemplateView):
 
         return context
 
+# pylint: disable=R0201
     def process_assay_selectivity(self, assay_data, selectivity):
         for data in selectivity:
             for assay in assay_data:
@@ -538,14 +533,14 @@ class LigandInformationView(TemplateView):
     def process_selectivity(self, data):
         selectivity = list()
         for i in data:
-            type = str()
-            if i.type.lower() == "f":
-                type_i = "Functional"
+            data_type = str()
+            if i.data_type.lower() == "f":
+                data_type = "Functional"
             else:
-                type = "Binding"
-            selectivity.append({"type": type_i, "protein": i.protein.entry_name,"potency": i.value, "reference": i.reference_protein.entry_name})
+                data_type = "Binding"
+            selectivity.append({"type": data_type, "protein": i.protein.entry_name,"potency": i.value, "reference": i.reference_protein.entry_name})
         return selectivity
-        
+
 # pylint: disable=R0201
     def fetch_receptor_trunsducers(self, receptor):
         primary = set()
@@ -553,8 +548,7 @@ class LigandInformationView(TemplateView):
         temp1 = str()
         secondary = set()
         try:
-            gprotein = ProteinGProteinPair.objects.filter(protein = receptor)
-
+            gprotein = ProteinGProteinPair.objects.filter(protein=receptor)
             for x in gprotein:
                 if x.transduction and x.transduction == 'primary':
                     primary.add(x.g_protein.name)

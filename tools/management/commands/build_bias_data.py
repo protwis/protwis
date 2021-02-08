@@ -90,12 +90,10 @@ class Command(BaseBuild):
             content = None
         return content
 
+# pylint: disable=R0201
     def process_data(self, content):
-    # Disable all the no-member violations in this function
-    # pylint: disable=no-member
         '''
         Merge BiasedExperiment with its children
-        and pass it back to loop through dublicates
         '''
         rd = []
         counter = 0
@@ -445,7 +443,7 @@ class Command(BaseBuild):
                 primary, secondary = self.fetch_receptor_trunsducers(
                     i[1]['receptor'])
 
-                experiment_entry = AnalyzedExperiment(publication=i[1]['publication'],  # NOQA
+                experiment_entry = AnalyzedExperiment(publication=i[1]['publication'],
                                                       ligand=i[1]['ligand'],
                                                       receptor=i[1]['receptor'],
                                                       source=source,
