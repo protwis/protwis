@@ -25,7 +25,7 @@ import time
 import math
 import json
 import threading
-import concurrent.futures
+
 import pytz
 import re
 
@@ -100,9 +100,9 @@ class Command(BaseBuild):
         delete_bias_experiment.delete()
 
     def loaddatafromexcel(self, excelpath):
-        """
+        '''
         Reads excel file (require specific excel sheet)
-        """
+        '''
         num_rows = 0
         try:
             workbook = xlrd.open_workbook(excelpath)
@@ -135,6 +135,7 @@ class Command(BaseBuild):
             self.logger.info(
                 "The error appeared during reading the excel", num_rows)
 
+# pylint: disable=C0301
     def initialize_return_row(self,excel_row):
         d = dict()
         d['submitting_group'] = None
@@ -242,6 +243,7 @@ class Command(BaseBuild):
         skipped = list()
         # Analyse the rows from excel and assign the right headers
         temp = []
+        print('\nstarting rows')
         for i, r in enumerate(rows, 1):
             d = dict()
             # code to skip rows in excel for faster testing
@@ -249,8 +251,8 @@ class Command(BaseBuild):
             #     continue
             # if i > 838:
             #     break
-            # if i % 100 == 0:
-            #     print(i)
+            if i % 100 == 0:
+                print(i)
 
             d = self.return_row(r=r,excel_row=i)
             try:
@@ -284,10 +286,6 @@ class Command(BaseBuild):
             reference_ligand = self.fetch_ligand(
                 d['emax_ligand_id'], d['emax_ligand_type'], d['emax_ligand_name'], d['source_file'])
 
-            #fetch ChEMBL
-            chembl = None
-            chembl = self.fetch_chembl(l)
-
             # fetch protein
             protein = self.fetch_protein(d['receptor'], d['source_file'])
             if protein == None:
@@ -295,13 +293,7 @@ class Command(BaseBuild):
                 continue
             end_ligand  = self.fetch_endogenous(protein)
             auxiliary_protein = self.fetch_protein(d['auxiliary_protein'], d['source_file'])
-            try:
-                if d['ligand_type']=="PubChem CID":
-                    lignad_pubchem = d['ligand_id']
-                else:
-                    lignad_pubchem = None
-            except:
-                lignad_pubchem = None
+
             if l == None:
                 print('*************error row',d,l)
             ## TODO:  check if it was already uploaded
@@ -456,7 +448,7 @@ class Command(BaseBuild):
                 protein =="perk1-2"):
             family = 'pERK1-2'
 
-        elif (protein == ''):
+        elif (protein == '' or protein is None):
             if assay_type == 'Ca2+ accumulation':
                 family = 'CA2'
 
@@ -489,18 +481,6 @@ class Command(BaseBuild):
             # vendor_count = vendor_count + 1
 
         # return vendor_count
-
-    def fetch_chembl(self,ligand):
-        try:
-            temp = ligand
-            chembl_id = None
-            links = temp.properities.web_links.all()
-            for x in links:
-                if x.web_resource.slug=='chembl_ligand':
-                    chembl_id = [x for x in links if x.web_resource.slug=='chembl_ligand'][0].index
-            return chembl_id
-        except:
-            return None
 
     def fetch_protein(self,protein_from_excel, source):
         """
@@ -642,7 +622,6 @@ class Command(BaseBuild):
         print("Finished")
 
     def create_empty_ligand(self, ligand_name):
-        web_resource = False
         # gtoplig webresource
         lp = self.build_ligand_properties()
         ligand = Ligand()
@@ -658,6 +637,7 @@ class Command(BaseBuild):
         return ligand
         # return self.update_ligand(ligand_name, {}, ligand_type, web_resource, gtop_id)
 
+# pylint: disable=C0301
     def build_ligand_properties(self):
         lp = LigandProperities()
         lt =  LigandType.objects.filter(name = 'small molecule')[0]

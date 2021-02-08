@@ -170,7 +170,6 @@ def TargetDetailsCompact(request, **kwargs):
         d[p.ligand][p.protein].append(p)
     ligand_data = []
     for lig, records in d.items():
-        links = lig.properities.web_links.all()
         # chembl_id = [x for x in links if x.web_resource.slug ==
         #              'chembl_ligand'][0].index
 
@@ -229,9 +228,7 @@ def TargetDetailsCompact(request, **kwargs):
                     'hacc': lig.properities.hacc,
                     'logp': lig.properities.logp,
                 })
-
     context['ligand_data'] = ligand_data
-
     return render(request, 'target_details_compact.html', context)
 
 def fetch_receptor_trunsducers(receptor):
