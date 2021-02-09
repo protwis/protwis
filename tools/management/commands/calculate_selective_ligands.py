@@ -5,7 +5,7 @@ from build.management.commands.base_build import Command as BaseBuild
 from django.db import models
 from protein.models import Protein
 from ligand.models import *
-from common.models import WebResource, Publication
+from common.models import Publication
 
 
 
@@ -171,7 +171,7 @@ class Command(BaseBuild):
                             # print('\n stabdard value and protein of I',most_potent,'\nidata:', i )
                             self.save_data(most_potent, type_d)
                 except:
-                    continue
+                    pass
 
         return most_potent
         # for assay in assays:

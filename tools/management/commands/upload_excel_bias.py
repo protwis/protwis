@@ -102,6 +102,7 @@ class Command(BaseBuild):
     def loaddatafromexcel(self, excelpath):
         '''
         Reads excel file (require specific excel sheet)
+
         '''
         num_rows = 0
         try:
@@ -638,6 +639,7 @@ class Command(BaseBuild):
         # return self.update_ligand(ligand_name, {}, ligand_type, web_resource, gtop_id)
 
 # pylint: disable=C0301
+# pylint: disable=R0201
     def build_ligand_properties(self):
         lp = LigandProperities()
         lt =  LigandType.objects.filter(name = 'small molecule')[0]

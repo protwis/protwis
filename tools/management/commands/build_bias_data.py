@@ -1,15 +1,10 @@
 from decimal import Decimal
 import logging
 import math
-
 from django.db import models
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import ProteinGProteinPair
 from ligand.models import *
-from common.models import Publication
-
-
-
 
 MISSING_PROTEINS = {}
 SKIPPED = 0
@@ -94,6 +89,7 @@ class Command(BaseBuild):
     def process_data(self, content):
         '''
         Merge BiasedExperiment with its children
+
         '''
         rd = []
         counter = 0

@@ -5,7 +5,7 @@ from protein.models import Protein
 from ligand.models import *
 from common.models import WebLink, WebResource, Publication
 import logging
-import json
+
 import requests
 
 
@@ -63,6 +63,7 @@ class Command(BaseBuild):
             print('--error--', msg, '\n')
             self.logger.info("The error appeared in def handle")
 
+# pylint: disable=R0201
     def purge_bias_data(self):
         print("# Purging data")
 
@@ -108,7 +109,7 @@ class Command(BaseBuild):
                             data[0]['ligandId'], data[0]['type'],ligand_name)
                         if ligand and protein:
                             protein.endogenous_ligands.add(ligand)
-                            lig, created = Ligand.objects.update_or_create(
+                            Ligand.objects.update_or_create(
                                 id=ligand.id,
                                 defaults={'endogenous': True},
                             )
@@ -129,6 +130,7 @@ class Command(BaseBuild):
                                       )
         chembl_data.save()
 
+# pylint: disable=R0201
     def fetch_protein(self, target):
         """
         fetch receptor with Protein model
@@ -142,7 +144,8 @@ class Command(BaseBuild):
         except:
             return None
 
-    def fetch_ligand(self, ligand_id, type, name):
+# pylint: disable=R0201
+    def fetch_ligand(self, ligand_id, ligand_type, name):
         """
         fetch ligands with Ligand model
         requires: ligand id, ligand id type, ligand name
@@ -160,19 +163,19 @@ class Command(BaseBuild):
                     return l
                 else:
                     lig = Ligand()
-                    l = lig.load_by_gtop_id(name, ligand_id, type)
+                    l = lig.load_by_gtop_id(name, ligand_id, ligand_type)
             else:
                 lig = Ligand()
-                l = lig.load_by_gtop_id(name, ligand_id, type)
+                l = lig.load_by_gtop_id(name, ligand_id, ligand_type)
         except Exception:
             l = None
-            # print('ligand_id---',l,'\n end')
         return l
 
     def fetch_publication(self, refs):
         """
         fetch publication with Publication model
         requires: publication doi or pmid
+
         """
         publication_doi = None
         reference_response = requests.get(
@@ -249,7 +252,6 @@ class Command(BaseBuild):
         self.ligand_cache.update({ligand['entry']:ligand['name'] })
 
     def get_ligands(self):
-        ligands = list()
         response = requests.get(
             "https://www.guidetopharmacology.org/services/ligands")
         print('total ligands:', len(response.json()))
@@ -263,6 +265,7 @@ class Command(BaseBuild):
             except:
                 pass
 
+# pylint: disable=R0201
     def get_gpcrs(self):
         target_list = list()
         response = requests.get(
@@ -276,6 +279,7 @@ class Command(BaseBuild):
                 pass
         return target_list
 
+# pylint: disable=R0201
     def get_ligand_assays(self, targets):
         assay_list = list()
         response = requests.get(
@@ -289,7 +293,6 @@ class Command(BaseBuild):
         return assay_list
 
     def process_ligand_assays(self, assays):
-
         for i in assays:
             temp_dict = dict()
             temp_dict['protein'] = self.fetch_protein(i['targetId'])
