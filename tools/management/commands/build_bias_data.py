@@ -86,11 +86,7 @@ class Command(BaseBuild):
         return content
 
 # pylint: disable=R0201
-    def process_data(self, content):
-        '''
-        Merge BiasedExperiment with its children
-
-        '''
+    def process_data(self, content):        
         rd = []
         counter = 0
         for instance in enumerate(content):

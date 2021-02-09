@@ -239,13 +239,11 @@ class Command(BaseBuild):
         """
         Reads excel rows one by one
 
-        Fetch data to models
-        Saves to Database
         """
         skipped = list()
         # Analyse the rows from excel and assign the right headers
         temp = []
-        print('\nstarting rows')
+
         for i, r in enumerate(rows, 1):
             d = dict()
             # code to skip rows in excel for faster testing

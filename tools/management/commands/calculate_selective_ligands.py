@@ -5,9 +5,6 @@ from build.management.commands.base_build import Command as BaseBuild
 from django.db import models
 from protein.models import Protein
 from ligand.models import *
-from common.models import Publication
-
-
 
 MISSING_PROTEINS = {}
 SKIPPED = 0
