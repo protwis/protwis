@@ -238,6 +238,7 @@ class Command(BaseBuild):
     def analyse_rows(self, rows, source_file):
         """
         Reads excel rows one by one
+        
         Fetch data to models
         Saves to DB
         """

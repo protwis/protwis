@@ -65,6 +65,7 @@ class Command(BaseBuild):
     def fetch_protein(self, protein_json):
         """
         fetch receptor with Protein model
+
         requires: protein id, source
         """
         protein = None

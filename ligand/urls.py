@@ -1,6 +1,7 @@
 from django.conf.urls import url
 from django.views.decorators.cache import cache_page
 from django.views.generic import TemplateView
+from django.db import models
 from ligand.views import *
 
 urlpatterns = [
@@ -21,4 +22,7 @@ urlpatterns = [
     url(r'^biasedpathways$', BiasPathways.as_view(), name='pathways'),
     url(r'^pathwaydata/(?P<pk>[-\w]+)/detail$', PathwayExperimentEntryView.as_view()),
     url(r'^(?P<pk>[-\w]+)/info$', LigandInformationView.as_view()),
+    # url(r'^targetselection', BiasTargetSelection.as_view(), name='targetselection'),
+    # url(r'^gtargetselection', BiasGTargetSelection.as_view(), name='gtargetselection'),
+
 ]
