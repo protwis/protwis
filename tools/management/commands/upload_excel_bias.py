@@ -238,9 +238,9 @@ class Command(BaseBuild):
     def analyse_rows(self, rows, source_file):
         """
         Reads excel rows one by one
-        
+
         Fetch data to models
-        Saves to DB
+        Saves to Database
         """
         skipped = list()
         # Analyse the rows from excel and assign the right headers
