@@ -74,7 +74,7 @@ function resetHidden1() {
 function resetHidden2() {
     var columns = Array.from(new Array(28), (x,i) => i + 3);
     columns.forEach(function(column) {
-        console.log("columns variable " + columns);
+//        console.log("columns variable " + columns);
         column = oTable2.column( column );
         try {
             column.visible( true, false );
@@ -107,7 +107,7 @@ function createRank(table_id, column) {
     // Step 2 - normalize all values and add them to a data attribute
     var min = Math.min(...min_max);
     var max = Math.max(...min_max);
-    console.log(min_max, min, max);
+//    console.log(min_max, min, max);
 
     $(table_id+" tbody tr td").filter(":nth-child("+column+")").each( function() {
         var cell_value = $(this).text();
@@ -231,13 +231,13 @@ $(document).ready(function() {
     yadcf.init(oTable1,
         [
             {
-                column_number: [0],
+                column_number: 0,
                 filter_type: "none",
                 filter_default_label: "",
                 filter_reset_button_text: false,
             },
             {
-                column_number: [1],
+                column_number: 1,
                 filter_type: "multi_select",
                 select_type: "select2",
                 filter_default_label: "",
@@ -248,7 +248,7 @@ $(document).ready(function() {
             },
 
             {
-                column_number: [2],
+                column_number: 2,
                 filter_type: "multi_select",
                 select_type: "select2",
                 filter_default_label: "",
@@ -258,7 +258,7 @@ $(document).ready(function() {
                 }
             },
             {
-                column_number: [3],
+                column_number: 3,
                 filter_type: "multi_select",
                 select_type: "select2",
                 filter_default_label: "",
@@ -268,12 +268,12 @@ $(document).ready(function() {
                 }
             },
             {
-                column_number: [4],
+                column_number: 4,
                 filter_type: "multi_select",
                 select_type: "select2",
                 column_data_type: "html",
                 html_data_type: "text",
-                filter_default_label: "",
+                filter_default_label: "UniProt",
                 filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
@@ -281,7 +281,7 @@ $(document).ready(function() {
                 }
             },
             {
-                column_number: [5],
+                column_number: 5,
                 filter_type: "multi_select",
                 select_type: "select2",
                 column_data_type: "html",
@@ -296,7 +296,7 @@ $(document).ready(function() {
 
 // Guide to Pharmacology
             {
-                column_number: [6],
+                column_number: 6,
                 filter_type: "multi_select",
                 select_type: "select2",
                 filter_default_label: "",
@@ -306,7 +306,7 @@ $(document).ready(function() {
                 },
             },
             {
-                column_number: [7],
+                column_number: 7,
                 filter_type: "multi_select",
                 select_type: "select2",
                 filter_default_label: "",
@@ -316,7 +316,7 @@ $(document).ready(function() {
                 },
             },
             {
-                column_number: [8],
+                column_number: 8,
                 filter_type: "multi_select",
                 select_type: "select2",
                 filter_default_label: "",
@@ -326,7 +326,7 @@ $(document).ready(function() {
                 },
             },
             {
-                column_number: [9],
+                column_number: 9,
                 filter_type: "multi_select",
                 select_type: "select2",
                 filter_default_label: "",
@@ -338,25 +338,25 @@ $(document).ready(function() {
 
 // log(Emax/EC50)
             {
-                column_number : [10],
+                column_number : 10,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
             {
-                column_number : [11],
+                column_number : 11,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
             {
-                column_number : [12],
+                column_number : 12,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
             {
-                column_number : [13],
+                column_number : 13,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
@@ -364,25 +364,25 @@ $(document).ready(function() {
 
 // pEC50
             {
-                column_number : [14],
+                column_number : 14,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
             {
-                column_number : [15],
+                column_number : 15,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
             {
-                column_number : [16],
+                column_number : 16,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
             {
-                column_number : [17],
+                column_number : 17,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
@@ -390,25 +390,25 @@ $(document).ready(function() {
 
 // Emax
             {
-                column_number : [18],
+                column_number : 18,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
             {
-                column_number : [19],
+                column_number : 19,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
             {
-                column_number : [20],
+                column_number : 20,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
             {
-                column_number : [21],
+                column_number : 21,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
@@ -417,7 +417,7 @@ $(document).ready(function() {
 
 // Hidden column calling a customized function
             {
-                column_number: [22],
+                column_number: 22,
                 filter_type: "custom_func",
                 custom_func: supportFilter,
                 filter_container_id: "hide_filter1",
@@ -530,7 +530,7 @@ $(document).ready(function() {
                 select_type: "select2",
                 column_data_type: "html",
                 html_data_type: "text",
-                filter_default_label: "",
+                filter_default_label: "UniProt",
                 filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
@@ -875,10 +875,10 @@ $(document).ready(function() {
     $("#couplingtabs a:first").tab("show");
 //    $('#couplingtabs a[href="#table_1"]').tab('show');
 
-// Just a button to go back to the main page.
-    $("#reset_tab1").click(function () {
-        window.location.href = "/signprot/couplings2";
-    });
+// // Just a button to go back to the main page.
+//     $("#reset_tab").click(function () {
+//         window.location.href = "/signprot/couplings";
+//     });
 
 // Hide column button for table1
     $(".hide_columns1").click(function(evt) {
@@ -1061,7 +1061,7 @@ $(document).ready(function() {
 
     function copyToClipboard(array, delimiter, data_name, powertip_object=false) {
         var link = array;
-        console.log(link);
+//        console.log(link);
         var out = "";
         link.each(function() {
             var ele = $(this).attr("href").split("/");
@@ -1082,7 +1082,7 @@ $(document).ready(function() {
             if (powertip_object!==false) {
                 $.powerTip.hide();
                 powertip_object.data("powertipjq", $([
-                    "<p>Copied to clipboard!</p>"
+                    "<p>"+array.length+" ID's copied to clipboard!</p>"
                 ].join("\n")));
                 powertip_object.powerTip("show");
                 setTimeout(function() {
@@ -1097,7 +1097,11 @@ $(document).ready(function() {
         document.body.removeChild(textArea);
     }
 
-    $(".uniprot-export").data("powertipjq", $([
+    $(".uniprot-export1").data("powertipjq", $([
+        "<p>Export UniProt IDs</p>"
+    ].join("\n")));
+
+    $(".uniprot-export2").data("powertipjq", $([
         "<p>Export UniProt IDs</p>"
     ].join("\n")));
 
@@ -1106,14 +1110,18 @@ $(document).ready(function() {
         smartPlacement: true
     });
 
-    $("#uniprot_copy").click(function () {
-        copyToClipboard($(".alt_selected > .uniprot > a"), "\n", "UniProt IDs", $(".uniprot-export"));
+    $("#uniprot_copy1").click(function () {
+        copyToClipboard($(".alt_selected > .uniprot1 > a"), "\n", "UniProt IDs", $(".uniprot-export1"));
+    });
+
+    $("#uniprot_copy2").click(function () {
+        copyToClipboard($(".alt_selected > .uniprot2 > a"), "\n", "UniProt IDs", $(".uniprot-export2"));
     });
 
     //Uncheck every row when using back button on browser
-    // $(".alt_selected").prop("checked",false);
-    // $(".alt").prop("checked",false);
-    // $(".select-all").prop("checked",false);
+    $(".alt_selected").prop("checked",false);
+    $(".alt").prop("checked",false);
+    $(".select-all").prop("checked",false);
 
 
 });

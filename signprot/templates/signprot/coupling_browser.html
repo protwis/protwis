@@ -68,9 +68,7 @@
                     <input class="btn btn-primary btn-sm" type="button"
                            onclick="tableToExcel('familiestabletab', 'Families data', 'families_coupling.xls')"
                            value="Export Excel">
-                    <input class="btn btn-primary btn-sm" type="button"
-                           onclick="reset_tab()"
-                           value="Reset All">
+                    <input class="btn btn-primary btn-sm" type="button" onclick="reset_tab()" value="Reset All">
                 </div>
             </div>
 
@@ -130,7 +128,8 @@
                     <th>
                         <div>
                             <div>Uniprot</div>
-                            <div><button class='icon-button' type='button'><i id='uniprot_copy' class="glyphicon glyphicon-export uniprot-export"></i></button></div>
+                            <div><button class='icon-button' type='button'><i id='uniprot_copy1' class="glyphicon
+                            glyphicon-export uniprot-export1"></i></button></div>
                         </div>
                     </th>
                     <th>IUPHAR</th>
@@ -165,7 +164,7 @@
                             {% endif %}
                             <td>{{ pvals.protein.class }}</td>
                             <td>{{ pvals.protein.family }}</td>
-                            <td class="uniprot">
+                            <td class="uniprot1">
 {#                                <a href="{{ pvals.protein.uniprot_link }}" target="_blank">{{ pvals.protein.uniprot|safe }}</a>#}
                                 <a href="https://www.uniprot.org/uniprot/{{ pvals.protein.accession }}" target="_blank">{{ pvals.protein.uniprot|safe }}</a>
                             </td>
@@ -288,7 +287,7 @@
                     <th>
                         <div>
                             <div>Uniprot</div>
-                            <div><button class='icon-button' type='button'><i id='uniprot_copy' class="glyphicon glyphicon-export uniprot-export"></i></button></div>
+                            <div><button class='icon-button' type='button'><i id='uniprot_copy2' class="glyphicon glyphicon-export uniprot-export2"></i></button></div>
                         </div>
                     </th>
                     <th>IUPHAR</th>
@@ -342,7 +341,7 @@
                             {% endif %}
                             <td>{{ pvals.protein.class }}</td>
                             <td>{{ pvals.protein.family }}</td>
-                            <td class="uniprot">
+                            <td class="uniprot2">
                                 <a href="https://www.uniprot.org/uniprot/{{ pvals.protein.accession }}" target="_blank">{{ pvals.protein.uniprot|safe }}</a>
                             </td>
                             <td class="text-left">
