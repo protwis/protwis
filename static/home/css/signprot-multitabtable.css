@@ -28,7 +28,6 @@ word-wrap:break-word;
 }
 */
 
-
 table.dataTable.compact thead th.over_header {
     border-right: 1px solid;
     border-left: 0px solid;
@@ -87,12 +86,10 @@ input.yadcf-filter {
     background-color: rgb(215, 215, 215);
 }
 
-/*
 .wrapper {
     overflow-x: scroll;
     overflow-y: hidden;
 }
-*/
 
 #overlay1 {
     top: 0px;
@@ -120,21 +117,12 @@ input.yadcf-filter {
     background-color: #f8f8f8;
 }
 
-#overlay3 {
-    top: 0px;
-    position: absolute;
-    background: #f8f8f8;
-    /*border: 1px solid #333;*/
-    -webkit-box-shadow: 5px 0 2px -2px #888;
-    box-shadow: 5px 0 2px -2px #888;
-}
-
-#overlay3 tbody tr {
-    background-color: #f8f8f8;
-}
-
 .highlight {
     background-color: rgb(204, 229, 255);
+}
+
+.glyphicon.glyphicon-export {
+  font-size: 20px;
 }
 
 .dropdown {
@@ -167,6 +155,7 @@ input.yadcf-filter {
     width: auto;
     height: 12px;
 }
+
 /*
         .dataTables_scrollBody table {
             transform:rotateX(180deg);
@@ -176,6 +165,7 @@ input.yadcf-filter {
 
 /* NOTE -- THIS HAS TO GO LAST SO THAT IT OVERRIDES ALL */
 th, td { white-space: nowrap; }
+
 div.dataTables_wrapper {
 /*    width: 100%;*/
     margin: 0 auto;
@@ -185,19 +175,10 @@ div.dataTables_wrapper {
     height: 40px;
 }
 
-#bouviertabletab tr {
-    height: 40px;
-}
-
-#inouetabletab tr {
-    height: 40px;
-}
-
-
-
 div#hide_filter1 {
     display: none;
 }
+
 div#hide_filter2 {
     display: none;
 }
