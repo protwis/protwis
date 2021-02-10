@@ -1,16 +1,18 @@
-
+from concurrent.futures import ProcessPoolExecutor
+from multiprocessing import Pool
 from django.db import IntegrityError
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import Protein
 from ligand.models import *
 from common.models import WebLink, WebResource, Publication
 import logging
-
+import time
 import requests
-
+from multiprocessing.dummy import Pool as ThreadPool
 
 MISSING_PROTEINS = {}
 SKIPPED = 0
+
 
 class Command(BaseBuild):
     mylog = logging.getLogger(__name__)
@@ -55,9 +57,10 @@ class Command(BaseBuild):
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
+        self.analyse_rows()
         try:
             print('Updatind ligand data from GuideToPharma')
-            self.analyse_rows()
+
             print('COMPLETED updating GuideToPharma Data')
         except Exception as msg:
             print('--error--', msg, '\n')
@@ -88,7 +91,7 @@ class Command(BaseBuild):
         print("\n#4 Process Ligand assays", len(assays), ' assays')
         self.process_ligand_assays(assays)
         print("\n#5 Get Endogeneous ligands")
-        self.get_endogenous(target_list)
+        # self.get_endogenous(target_list)
         print('\n\n---Finished---')
 
     def get_endogenous(self, targets):
@@ -106,7 +109,7 @@ class Command(BaseBuild):
                         except:
                             ligand_name = ""
                         ligand = self.fetch_ligand(
-                            data[0]['ligandId'], data[0]['type'],ligand_name)
+                            data[0]['ligandId'], data[0]['type'], ligand_name)
                         if ligand and protein:
                             protein.endogenous_ligands.add(ligand)
                             Ligand.objects.update_or_create(
@@ -120,8 +123,8 @@ class Command(BaseBuild):
 
     def upload_to_db(self, i):
         # saves data
-        print('data saved')
-        chembl_data = AssayExperiment(ligand=i["ligand"],
+        chembl_data = AssayExperiment(source=i["source"],
+                                      ligand=i["ligand"],
                                       publication=i["doi"],
                                       protein=i["protein"],
                                       published_type=i["standard_type"],
@@ -249,7 +252,7 @@ class Command(BaseBuild):
         requires: ligand id, ligand id type, ligand name
         requires: source_file name
         """
-        self.ligand_cache.update({ligand['entry']:ligand['name'] })
+        self.ligand_cache.update({ligand['entry']: ligand['name']})
 
     def get_ligands(self):
         response = requests.get(
@@ -268,8 +271,20 @@ class Command(BaseBuild):
 # pylint: disable=R0201
     def get_gpcrs(self):
         target_list = list()
-        response = requests.get(
-            "https://www.guidetopharmacology.org/services/targets/families")
+        url = "https://www.guidetopharmacology.org/services/targets/families"
+        response = ''
+        while response == '':
+            try:
+                response = requests.get(url)
+                break
+            except:
+                print("Connection refused by the server..")
+                print("Let me sleep for 1 second")
+                print("ZZzzzz...")
+                time.sleep(1)
+                print("Was a nice sleep, now let me continue...")
+                continue
+
         for entry in response.json():
             try:
                 if entry['parentFamilyIds'] != None:
@@ -292,30 +307,64 @@ class Command(BaseBuild):
                 pass
         return assay_list
 
+    def create_source(self, ligand_id):
+        source = AssayExperimentSource()
+        web_resource = WebResource.objects.get(slug='gtoplig')
+        try:
+            wl, created = WebLink.objects.get_or_create(index=ligand_id,
+                                                        web_resource=web_resource)
+        except IntegrityError:
+            wl = Weblink.objects.get(
+                index=ligand_id, web_resource=web_resource)
+
+        source.database = 'GuideToPharmacology'
+        source.database_id = ligand_id
+        try:
+            source.save()
+            source.web_links.add(wl)
+        except IntegrityError:
+            return AssayExperimentSource.objects.get(web_links=wl,
+                                                    database='GuideToPharmacology',
+                                                    database_id=ligand_id)
+        return source
+
     def process_ligand_assays(self, assays):
-        for i in assays:
-            temp_dict = dict()
-            temp_dict['protein'] = self.fetch_protein(i['targetId'])
-            ligand_name = str()
+        start = time.time()
+        data = assays
+        print('type assay', type(data))
+
+        pool = ThreadPool(4)
+        pool.map(self.process_save, data)
+        pool.close()
+        pool.join()
+        print('5 process/thread total time: ', time.time() - start, '\n\n')
+
+    def do_something(self, data):
+        print(data)
+
+    def process_save(self, i):
+        temp_dict = dict()
+        temp_dict['protein'] = self.fetch_protein(i['targetId'])
+        ligand_name = str()
+        try:
+            ligand_name = self.ligand_cache[i['targetId']]
+        except:
+            ligand_name = i['ligandId']
+        temp_dict['ligand'] = self.fetch_ligand(
+            i['ligandId'], i['type'], ligand_name)
+        if i['refIds']:
             try:
-                ligand_name = self.ligand_cache[i['targetId']]
+                temp_dict['doi'] = self.fetch_publication(i['refIds'])
             except:
-                ligand_name = ""
-            temp_dict['ligand'] = self.fetch_ligand(i['ligandId'], i['type'], ligand_name)
-            if i['refIds']:
-                try:
-                    temp_dict['doi'] = self.fetch_publication(i['refIds'])
-                except:
-                    temp_dict['doi'] = None
-            else:
                 temp_dict['doi'] = None
-            if temp_dict['protein'] == None:
-                continue
-            if temp_dict['ligand'] == None:
-                continue
-            temp_dict['standard_type'] = i['affinityParameter']
-            temp_dict['standard_value'] = i['affinity']
-            temp_dict['assay_description'] = i['ligandContext']
-            if temp_dict['assay_description'] == None:
-                temp_dict['assay_description'] = "No data available"
-            self.upload_to_db(temp_dict)
+        else:
+            temp_dict['doi'] = None
+        if temp_dict['protein'] is not None:
+            if temp_dict['ligand'] is not None:
+                temp_dict['source'] = self.create_source(i['ligandId'])
+                temp_dict['standard_type'] = i['affinityParameter']
+                temp_dict['standard_value'] = i['affinity']
+                temp_dict['assay_description'] = i['ligandContext']
+                if temp_dict['assay_description'] == None:
+                    temp_dict['assay_description'] = "No data available"
+                self.upload_to_db(temp_dict)

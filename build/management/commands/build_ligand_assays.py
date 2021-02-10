@@ -6,7 +6,7 @@ from django.db import IntegrityError
 from ligand.functions import get_or_make_ligand
 from common.models import WebLink, WebResource, Publication
 from protein.models import Protein
-from ligand.models import Ligand, LigandProperities, LigandRole, LigandType, ChemblAssay, AssayExperiment
+from ligand.models import Ligand, LigandProperities, LigandRole, LigandType, AssayExperiment
 from ligand.models import LigandVendorLink, LigandVendors
 from ligand.functions import get_or_make_ligand
 from common.tools import fetch_from_web_api
