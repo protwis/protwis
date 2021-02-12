@@ -95,19 +95,22 @@ class DrawGproteinPlot(Diagram):
         self.traceoutput = ""
         self.helixoutput = ""
 
+        # Draw sheets and helices
         self.count = 1
         self.count_sheet = 0
         for s in G_PROTEIN_SEGMENTS['Full']:
-            if self.segments_full[s].category=='helix':
-                self.helixoutput += self.drawSnakePlotHelix(s)
-                self.count += 1
-            if self.segments_full[s].category=='sheet':
-                self.helixoutput += self.drawSnakePlotSheet(s)
-                self.count += 1
-                self.count_sheet += 1
+            if s in self.segments_full:
+                if self.segments_full[s].category=='helix':
+                    self.helixoutput += self.drawSnakePlotHelix(s)
+                    self.count += 1
+                elif self.segments_full[s].category=='sheet':
+                    self.helixoutput += self.drawSnakePlotSheet(s)
+                    self.count += 1
+                    self.count_sheet += 1
+        # Draw loops
         self.count = 0
         for s in G_PROTEIN_SEGMENTS['Full']:
-            if self.segments_full[s].category=='loop':
+            if s in self.segments_full and self.segments_full[s].category=='loop':
                 #pass
                 self.drawSnakePlotLoop(s)
             else:
