@@ -1,4 +1,4 @@
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.http import HttpResponse
 from django.core.cache import cache
 from django.core.cache import caches
@@ -299,7 +299,7 @@ def render_variants(request, protein=None, family=None, download=None, receptor_
 
         return render(request, 'browser.html', cache_data)
     else:
-        return HttpResponse()
+        return redirect("targetselection")
 
 def ajaxNaturalMutation(request, slug, **response_kwargs):
 
