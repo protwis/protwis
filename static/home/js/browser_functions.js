@@ -16,6 +16,10 @@ function superposition(oTable, columns, site, hide_first_column) {
         showAlert("No entries selected for superposition", "danger");
         return 0;
     }
+    else if (checked_data.length > 100) {
+        showAlert("Maximum number of selected entries is 100", "warning");
+        return 0;
+    }
     var selected_ids = []
     if (site==='structure_browser') {
         for (i = 0; i < checked_data.length; i++) {

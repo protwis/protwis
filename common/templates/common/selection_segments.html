@@ -1,7 +1,7 @@
 <h4>Sequence segment selection</h4> <hr>
         <a href="javascript:void(0)" onclick="SelectAlignableResidues('segments')"
         class="btn btn-primary btn-md  btn-block selection_buttons">
-            Structually conserved (generic) positions
+            Structurally conserved (generic) positions
         </a>
         <a href="javascript:void(0)" onclick="SelectFullSequence('segments')"
         class="btn btn-primary btn-md  btn-block selection_buttons">
@@ -32,7 +32,7 @@
             class="btn btn-primary btn-sm">
                 {{ s.slug }}
             </a>
-            {% if s.generic_numbers.all %}
+            {% if not ignore_residue_selection and s.generic_numbers.all %}
             <a href="javascript:void(0)" onclick="ExpandSegment('{{ s.id }}', '{{ position_type }}')"
             class="btn btn-primary btn-sm">
                 <span class="glyphicon glyphicon-arrow-down"></span>
@@ -48,22 +48,24 @@
 </div>
 
 </p>
+{% if not ignore_residue_selection %}
 <p>
     <a data-toggle="modal" data-target="#PositionsFileSelector"
         class="btn btn-primary btn-xs">
         <span class="glyphicon glyphicon-plus"></span> Read residue positions from a file
     </a>
 </p>
+{% endif %}
 </div>
 
-
-<a href="javascript:void(0)" onclick="ToggleResidueSets()" class="btn btn-info btn-md btn-block selection_buttons"> Residue sets<span class="glyphicon glyphicon-arrow-down pull-right"></span></a>
-{% if rsets %}
-            <div id="residue_sets"  style="display: none">
-                {% include 'common/segmentselection_predefined.html' %}
-            </div>
+{% if not ignore_residue_selection %}
+    <a href="javascript:void(0)" onclick="ToggleResidueSets()" class="btn btn-info btn-md btn-block selection_buttons"> Residue sets<span class="glyphicon glyphicon-arrow-down pull-right"></span></a>
+    {% if rsets %}
+                <div id="residue_sets"  style="display: none">
+                    {% include 'common/segmentselection_predefined.html' %}
+                </div>
+    {% endif %}
 {% endif %}
-
 
 <div class="modal fade" id="PositionsFileSelector" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">
     <div class="modal-dialog">
