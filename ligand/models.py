@@ -11,6 +11,7 @@ from urllib.request import urlopen, quote
 import json
 import yaml
 import logging
+import requests
 
 class Ligand(models.Model):
     properities = models.ForeignKey('LigandProperities', on_delete=models.CASCADE)
@@ -368,13 +369,11 @@ class LigandVendorLink(models.Model):
 #Biased Signalling - start
 class BiasedExperiment(models.Model):
     submission_author = models.CharField(max_length=50)
-    ligand = models.ForeignKey(Ligand, on_delete = models.CASCADE)
-    publication = models.ForeignKey(Publication, on_delete = models.CASCADE)
-    receptor = models.ForeignKey('protein.Protein', on_delete = models.CASCADE)
-    chembl = models.CharField(max_length=40,null = True)
-    endogenous_ligand = models.ForeignKey(Ligand, related_name='endogenous_ligand_bias', on_delete = models.CASCADE,  null = True)
-    residue = models.CharField(max_length=5,null = True)
-    mutation = models.CharField(max_length=5,null = True)
+    ligand = models.ForeignKey(Ligand, on_delete=models.CASCADE)
+    publication = models.ForeignKey(Publication, on_delete=models.CASCADE)
+    receptor = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
+    endogenous_ligand = models.ForeignKey(Ligand, related_name='endogenous_ligand_bias', on_delete = models.CASCADE,  null=True)
+    auxiliary_protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE, related_name='auxiliary_protein', null=True)
 
 class ExperimentAssay(models.Model):
     biased_experiment = models.ForeignKey(
@@ -423,14 +422,12 @@ class AnalyzedExperiment(models.Model):
     publication = models.ForeignKey(Publication, on_delete = models.CASCADE, null = True)
     receptor = models.ForeignKey('protein.Protein', on_delete = models.CASCADE)
     source = models.CharField(max_length=60)
-    chembl = models.CharField(max_length=60,null = True)
-    endogenous_ligand = models.ForeignKey(Ligand, related_name='endogenous_ligand_bias_analyzed', on_delete = models.CASCADE,  null = True)
-    reference_ligand = models.ForeignKey(Ligand, related_name='ref_ligand_bias_analyzed', on_delete = models.CASCADE,  null = True)
+    endogenous_ligand = models.ForeignKey(Ligand, related_name='endogenous_ligand_bias_analyzed', on_delete = models.CASCADE, null = True)
+    reference_ligand = models.ForeignKey(Ligand, related_name='ref_ligand_bias_analyzed', on_delete = models.CASCADE, null = True)
     vendor_quantity = models.CharField(max_length=5)
     article_quantity = models.CharField(max_length=5)
     labs_quantity = models.CharField(max_length=5)
-    residue = models.CharField(max_length=5,null = True)
-    mutation = models.CharField(max_length=5,null = True)
+    auxiliary_protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE, related_name='bias_auxiliary_protein', null = True)
     primary= models.CharField(max_length=100,null = True)
     secondary= models.CharField(max_length=100,null = True)
 
@@ -472,6 +469,7 @@ class AnalyzedAssay(models.Model):
 class BiasedPathways(models.Model):
     submission_author = models.CharField(max_length=50)
     ligand = models.ForeignKey(Ligand, on_delete = models.CASCADE)
+    lignad_pubchem = models.CharField(max_length=40,null = True)
     publication = models.ForeignKey(Publication, on_delete = models.CASCADE)
     receptor = models.ForeignKey('protein.Protein', on_delete = models.CASCADE)
     chembl = models.CharField(max_length=40,null = True)
