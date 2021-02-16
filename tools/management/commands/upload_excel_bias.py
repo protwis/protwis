@@ -242,7 +242,7 @@ class Command(BaseBuild):
         skipped = list()
         # Analyse the rows from excel and assign the right headers
         temp = []
-        
+
         for i, r in enumerate(rows, 1):
             d = dict()
             # code to skip rows in excel for faster testing
@@ -452,7 +452,7 @@ class Command(BaseBuild):
                 family = 'CA2'
 
         else:
-            family == 'G-protein'
+            family = 'G-protein'
 
         return family
 
@@ -640,7 +640,7 @@ class Command(BaseBuild):
 # pylint: disable=R0201
     def build_ligand_properties(self):
         lp = LigandProperities()
-        lt =  LigandType.objects.filter(name = 'small molecule')[0]
+        lt =  LigandType.objects.get(name = 'small molecule')
         lp.ligand_type = lt
         lp.smiles = None
         lp.inchikey = None

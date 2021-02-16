@@ -315,6 +315,14 @@ class LigandRole(models.Model):
         db_table = 'ligand_role'
 
 
+class LigandReceptorStatistics(models.Model):
+    ligand = models.ForeignKey('Ligand', on_delete=models.CASCADE)
+    protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE, related_name='target_protein')
+    type = models.CharField(max_length=3, null= True)
+    value  = models.DecimalField(max_digits=9, decimal_places=3, null= True)
+    reference_protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE, related_name="reference_protein")
+
+
 class ChemblAssay(models.Model):
      #slug = models.SlugField(max_length=50, unique=True)
     web_links = models.ManyToManyField('common.WebLink')
@@ -469,7 +477,7 @@ class AnalyzedAssay(models.Model):
 class BiasedPathways(models.Model):
     submission_author = models.CharField(max_length=50)
     ligand = models.ForeignKey(Ligand, on_delete = models.CASCADE)
-    lignad_pubchem = models.CharField(max_length=40,null = True)
+    ligand_pubchem = models.CharField(max_length=40,null = True)
     publication = models.ForeignKey(Publication, on_delete = models.CASCADE)
     receptor = models.ForeignKey('protein.Protein', on_delete = models.CASCADE)
     chembl = models.CharField(max_length=40,null = True)
