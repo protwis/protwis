@@ -1,8 +1,6 @@
-﻿from django.utils.text import slugify
-from common.diagrams_arrestin import DrawArrestinPlot
+﻿from common.diagrams_arrestin import DrawArrestinPlot
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 from common.diagrams_gprotein import DrawGproteinPlot
-from django.core.cache import cache
 from django.db import models
 from residue.models import (Residue, ResidueDataPoint, ResidueDataType,
                             ResidueGenericNumberEquivalent,
@@ -395,43 +393,21 @@ class ProteinGProteinPair(models.Model):
         db_table = 'protein_gprotein_pair'
 
 
-# class ProteinArrestin(models.Model):
-#     proteins = models.ManyToManyField('Protein', through='ProteinArrestinPair', through_fields=('arrestin_protein', 'protein'))
-#     name = models.CharField(max_length=100, unique=True)
-#     slug = models.SlugField(max_length=20, unique=True)
-#
-#     def __str__(self):
-#         return self.name
-#
-#     class Meta():
-#         db_table = 'protein_arrestin'
-#
-#
-# class ProteinArrestinPair(models.Model):
-#     protein = models.ForeignKey('Protein', on_delete=models.CASCADE)
-#     arrestin_protein = models.ForeignKey('ProteinArrestin', on_delete=models.CASCADE)
-#     transduction = models.TextField(null=True)
-#     source = models.TextField(null=True) # GuideToPharma, Aska, Bouvier
-#     emax_mean = models.FloatField(null=True, blank=True)
-#     emax_sem = models.FloatField(null=True, blank=True)
-#     emax_dnorm = models.FloatField(null=True, blank=True)
-#     emax_deg = models.FloatField(null=True, blank=True)  # Value from David Gloriam
-#     pec50_mean = models.FloatField(null=True, blank=True)
-#     pec50_sem = models.FloatField(null=True, blank=True)
-#     pec50_dnorm = models.FloatField(null=True, blank=True)
-#     pec50_deg = models.FloatField(null=True, blank=True)  # Value from David Gloriam
-#     log_rai_mean = models.FloatField(null=True, blank=True)
-#     log_rai_sem  = models.FloatField(null=True, blank=True)
-#     logmaxec50_deg = models.FloatField(null=True, blank=True) # Value from David Gloriam
-#     arrestin_subtype = models.ForeignKey('Protein', on_delete=models.CASCADE, related_name='arrestin', null=True)
-#     references = models.ManyToManyField('common.Publication')
-#
-#
-#     def __str__(self):
-#         return "{} {} {}".format(self.protein.entry_name,  self.g_protein.name, self.transduction)
-#
-#     class Meta():
-#         db_table = 'protein_arrestin_pair'
+class ProteinArrestinPair(models.Model):
+    protein = models.ForeignKey('Protein', on_delete=models.CASCADE)
+    source = models.TextField(null=True) # Bouvier
+    emax_deg = models.FloatField(null=True, blank=True)  # Value from David Gloriam
+    pec50_deg = models.FloatField(null=True, blank=True)  # Value from David Gloriam
+    logmaxec50_deg = models.FloatField(null=True, blank=True) # Value from David Gloriam
+    arrestin_subtype = models.ForeignKey('Protein', on_delete=models.CASCADE, related_name='arrestin', null=True)
+    references = models.ManyToManyField('common.Publication')
+
+
+    def __str__(self):
+        return "{}".format(self.protein.entry_name)
+
+    class Meta():
+        db_table = 'protein_arrestin_pair'
 
 def dgn(gn, protein_conformation):
     ''' Converts generic number to display generic number.

@@ -1,18 +1,19 @@
 import logging
 import os
+import sys
 from urllib.request import urlopen
 from xml.etree.ElementTree import fromstring
 
 import pandas as pd
 import requests
+import xlrd
 
-from common.models import WebLink, WebResource
 from django.conf import settings
-from django.core.management.base import BaseCommand, CommandError
-from django.db import IntegrityError, connection
+from django.core.management.base import BaseCommand
+from django.db import IntegrityError
 from protein.models import (Gene, Protein, ProteinAlias, ProteinConformation,
-                            ProteinFamily, ProteinSegment, ProteinSequenceType,
-                            ProteinSource, ProteinState, Species)
+                            ProteinFamily, ProteinArrestinPair, ProteinSegment,
+                            ProteinSequenceType, ProteinSource, ProteinState, Species)
 from residue.models import (Residue, ResidueGenericNumber,
                             ResidueGenericNumberEquivalent,
                             ResidueNumberingScheme)
@@ -25,8 +26,9 @@ class Command(BaseCommand):
 
     # source files
     arrestin_data_file = os.sep.join([settings.DATA_DIR, 'arrestin_data', 'ortholog_alignment.xlsx'])
+    bouvier_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', '201025_bouvier_gloriam.xlsx'])
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'protein_data', 'uniprot'])
-    remote_uniprot_dir = 'https://www.uniprot.org/uniprot/'
+    remote_uniprot_dir = 'https://uniprot.org/uniprot/'
 
     logger = logging.getLogger(__name__)
 
@@ -35,6 +37,10 @@ class Command(BaseCommand):
                             action='append',
                             dest='filename',
                             help='Filename to import. Can be used multiple times')
+        parser.add_argument('--coupling',
+                            default=False,
+                            action='store_true',
+                            help='Purge and import GPCR-Arrestin coupling data')
 
     def handle(self, *args, **options):
         self.options = options
@@ -42,21 +48,46 @@ class Command(BaseCommand):
             filenames = options['filename']
         else:
             filenames = False
+        if self.options['coupling']:
+            self.purge_coupling_data()
+            self.logger.info('PASS: purge_coupling_data')
+            if os.path.exists(self.bouvier_file):
+                self.add_bouvier_coupling_data()
+                self.logger.info('PASS: add_bouvier_coupling_data')
+            else:
+                self.logger.warning('Bouvier source data ' + self.bouvier_file + ' not found')
 
-        # try:
-        self.purge_can_residues()
-        self.purge_can_proteins()
+        else:
+            try:
+                self.purge_can_residues()
+                self.logger.info('PASS: purge_can_residues')
+                self.purge_can_proteins()
+                self.logger.info('PASS: purge_can_proteins')
 
-        # add proteins
-        self.can_create_families()
-        self.can_add_proteins()
+                # add proteins
+                self.can_create_families()
+                self.logger.info('PASS: can_create_families')
+                self.can_add_proteins()
+                self.logger.info('PASS: can_add_proteins')
 
-        # add residues
-        self.add_can_residues()
+                # add residues
+                self.add_can_residues()
+                self.logger.info('PASS: add_can_residues')
 
-        # except Exception as msg:
-        #     print(msg)
-        #     self.logger.error(msg)
+                # add coupling data
+                self.purge_coupling_data()
+                self.logger.info('PASS: purge_coupling_data')
+                if os.path.exists(self.bouvier_file):
+                    # self.add_bouvier_coupling_data()
+                    self.logger.info('PASS: add_bouvier_coupling_data')
+                else:
+                    self.logger.warning('Bouvier source data ' + self.bouvier_file + ' not found')
+
+            except Exception as msg:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                print(exc_type, fname, exc_tb.tb_lineno)
+                self.logger.error(msg)
 
     def purge_can_residues(self):
         """Purge residues."""
@@ -70,7 +101,140 @@ class Command(BaseCommand):
         try:
             Protein.objects.filter(residue_numbering_scheme__slug='can').delete()
         except Exception as msg:
-            self.logger.info('Protein to delete not found', msg)
+            self.logger.warning('Protein to delete not found', msg)
+
+    def purge_coupling_data(self):
+        """DROP data from the protein_arrestin_pair table"""
+        try:
+            ProteinArrestinPair.objects.filter().delete()
+        except Exception as msg:
+            self.logger.warning('Existing protein_arrestin_pair data cannot be deleted', msg)
+
+    def read_coupling(self, filenames=False):
+        """
+        Function to read Coupling data from Excel files.
+        The ideal would be for the excel organization to hopefully be fixed in the same way for data
+        coming from different groups. For now the data comes from Bouvier and has been processed by David E. Gloriam.
+        """
+        book = xlrd.open_workbook(filenames)
+        sheet1 = book.sheet_by_name("plain")
+        rows = sheet1.nrows
+        beglogmaxec50 = 36
+        endlogmaxec50 = 38
+        begpec50 = 52
+        endpec50 = 54
+        begemax = 68
+        endemax = 70
+
+        data = {}
+        """data is a dictionary and must have a format:
+        {'<protein>':
+            {'<arrestinsubtype>':
+                {'logmaxec50': <logmaxec50>,
+                 'pec50deg': <pec50deg>}
+            }
+        }"""
+
+        def cleanValue(s):
+            """
+            Function to return a 0.0 (a value which means no coupling) since returning
+            an NA string to the database field declared as a float won't work, also
+            because NULL might have a meaning. In Python to return NULL one uses None
+
+            :param s:
+            :return: float
+            """
+            if s == '':
+                # return None
+                return float(0.0)
+            else:
+                # return float(str(s).strip())
+                return format(float(s), '.2f').strip()
+                # return str(s).strip()
+
+        for i in range(3, rows):
+            protein = sheet1.cell_value(i, 0)
+            protein_dict = {}
+
+            # logemaxec50
+            for j in range(beglogmaxec50, endlogmaxec50):
+                arrestinsubtype = sheet1.cell_value(2, j)
+                protein_dict[arrestinsubtype] = {}
+                protein_dict[arrestinsubtype]['logmaxec50'] = cleanValue(sheet1.cell_value(i, j))
+
+            # pec50 deg = david e gloriam
+            for j in range(begpec50, endpec50):
+                arrestinsubtype = sheet1.cell_value(2, j)
+                protein_dict[arrestinsubtype]['pec50deg'] = cleanValue(sheet1.cell_value(i, j))
+
+            # emax deg = david e gloriam
+            for j in range(begemax, endemax):
+                arrestinsubtype = sheet1.cell_value(2, j)
+                protein_dict[arrestinsubtype]['emaxdeg'] = cleanValue(sheet1.cell_value(i, j))
+
+            data[protein] = protein_dict
+        #            pprint(protein_dict[arrestin_subtype])
+        # pprint(data)
+
+        return data
+
+    def add_bouvier_coupling_data(self):
+        """
+        This function adds coupling data coming from Michel Bouvier processed by David Gloriam
+
+        @return:
+        p, a, source, values['logemaxec50'], values['pec50deg'], ..., ap
+        p = protein_name
+        a = arrestin subtype slug
+        source = One of GuideToPharma, Aska, Bouvier
+        values = selfdescriptive
+        ap = arrestin uniprot name, e.g.
+        """
+        self.logger.info('BEGIN ADDING Bouvier-Gloriam coupling data')
+
+        # read source files
+        filepath = self.bouvier_file
+        self.logger.info('Reading file ' + filepath)
+        data = self.read_coupling(filepath)
+        # pprint(data['AVPR2'])
+        #pprint(data['AVP2R'])
+        #pprint(data['BDKRB1'])
+        source = 'Bouvier'
+        lookup = {}
+
+        for entry_name, couplings in data.items():
+            # if it has / then pick first, since it gets same protein
+            entry_name = entry_name.split("/")[0]
+            # append _human to entry name
+            #entry_name = "{}_HUMAN".format(entry_name).lower()
+
+            # Fetch protein
+            try:
+                p = Protein.objects.filter(genes__name=entry_name, species__common_name="Human")[0]
+
+            except Protein.DoesNotExist:
+                self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
+                print("protein not found for ", entry_name)
+                continue
+
+            for arrestin, values in couplings.items():
+                if arrestin not in lookup:
+                    ap = Protein.objects.filter(family__name=arrestin, species__common_name="Human")[0]
+                    lookup[arrestin] = ap
+                else:
+                    ap = lookup[arrestin]
+
+                # print(p, a, source, ap)
+                # print(p, a, source, values['logmaxec50'], values['pec50deg'], values['emaxdeg'], ap)
+                apair = ProteinArrestinPair(protein=p,
+                                            source=source,
+                                            logmaxec50_deg=values['logmaxec50'],
+                                            pec50_deg=values['pec50deg'],
+                                            emax_deg=values['emaxdeg'],
+                                            arrestin_subtype=ap)
+                apair.save()
+
+        self.logger.info('COMPLETED ADDING Bouvier-Gloriam coupling data')
 
     def add_can_residues(self):
         """Add CAN residues from source file provided by Andrija Sente."""
@@ -97,7 +261,7 @@ class Command(BaseCommand):
                 else:
                     continue
             except:
-                print('error making/getting protein',row['AccessionID'])
+                print('error making/getting protein', row['AccessionID'])
                 continue
 
             # loop over residue generic number
@@ -107,7 +271,7 @@ class Command(BaseCommand):
                 canId = can_dict[aln_pos][0]
 
                 # Add '0' infront of single digit positions
-                if(int(canId.split('.')[2]) < 10):
+                if (int(canId.split('.')[2]) < 10):
                     rgnsp = canId.split('.')
                     canId = rgnsp[0] + '.' + rgnsp[1] + '.0' + rgnsp[2]
 
@@ -119,29 +283,35 @@ class Command(BaseCommand):
                 if not row[aln_pos] == '-':
 
                     try:
-                        Residue.objects.get_or_create(sequence_number=sequence_number, protein_conformation=pc, amino_acid=row[aln_pos], generic_number=rgn, display_generic_number=rgn, protein_segment=ps)
+                        Residue.objects.get_or_create(sequence_number=sequence_number, protein_conformation=pc,
+                                                      amino_acid=row[aln_pos], generic_number=rgn, display_generic_number=rgn,
+                                                      protein_segment=ps)
                         sequence_number += 1
                     except Exception as msg:
                         print("failed to add residue", msg)
                         self.logger.error("Failed to add residues", msg)
 
                     # Add also to the ResidueGenericNumberEquivalent table needed for single residue selection
-
                     try:
-                        ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label, default_generic_number=rgn, scheme=can_scheme)  # Update scheme_id
+                        ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label, default_generic_number=rgn,
+                                                                             scheme=can_scheme)  # Update scheme_id
                     except Exception as msg:
                         print("failed to add residue generic number", msg)
                         self.logger.error("Failed to add residues to ResidueGenericNumberEquivalent")
 
     def get_uniprot_accession_id(self, response_xml):
+        # TODO: This function seems to be legacy, perhaps it can be deleted?
         """Get Uniprot accession ID."""
         root = fromstring(response_xml)
         return next(
-            el for el in root.getchildren()[0].getchildren()
+            # el for el in root.getchildren()[0].getchildren()
+            el for el in root[0]
             if el.attrib['dbSource'] == 'UniProt'
         ).attrib['dbAccessionId']
 
     def map_pdb_to_uniprot(self, pdb_id):
+        # TODO: This function seems to be legacy, perhaps it can be deleted?
+        # Due to the new RCSB API this doesn't even work after December 2020
         """Get uniprot ID from PDB ID."""
         pdb_mapping_url = 'https://www.rcsb.org/pdb/rest/das/pdb_uniprot_mapping/alignment'
         pdb_mapping_response = requests.get(
@@ -155,7 +325,7 @@ class Command(BaseCommand):
         self.logger.info('Start adding ARRESTIN proteins')
         self.logger.info('Parsing file ' + self.arrestin_data_file)
 
-        # parsing file for accessions
+        # Import ortholog alignment as pandas dataframe
         residue_data = pd.read_excel(self.arrestin_data_file)
 
         # Create new residue numbering scheme
@@ -174,13 +344,13 @@ class Command(BaseCommand):
                 # only allow uniprot accession:
                 if not accession.startswith('ENS'):
                     up = self.parse_uniprot_file(accession)
-                    if len(up['genes']) == 0:
-                        print('Accession not found on uniprot!', accession)
-                        self.logger.error('Accession not found on uniprot! {}'.format(accession))
-                        continue
+                    #     if len(up['genes']) == 0:
+                    #         print('There is no GN field in the uniprot!', accession)
+                    #         self.logger.error('There is no GN field in the uniprot! {}'.format(accession))
+                    #         continue
                     if not 'source' in up:
-                        print('Accession not found on uniprot!', accession)
-                        self.logger.error('Accession not found on uniprot! {}'.format(accession))
+                        print('No source found, probably deprecated!', accession)
+                        self.logger.error('No source found, probably deprecated! {}'.format(accession))
                         continue
 
                     # Create new Protein
@@ -199,7 +369,7 @@ class Command(BaseCommand):
         # get/create protein source
         try:
             source, created = ProteinSource.objects.get_or_create(name=uniprot['source'],
-                defaults={'name': uniprot['source']})
+                                                                  defaults={'name': uniprot['source']})
             if created:
                 self.logger.info('Created protein source ' + source.name)
         except IntegrityError:
@@ -208,9 +378,9 @@ class Command(BaseCommand):
         # get/create species
         try:
             species, created = Species.objects.get_or_create(latin_name=uniprot['species_latin_name'],
-                defaults={
-                'common_name': uniprot['species_common_name'],
-                })
+                                                             defaults={
+                                                                 'common_name': uniprot['species_common_name'],
+                                                             })
             if created:
                 self.logger.info('Created species ' + species.latin_name)
         except IntegrityError:
@@ -220,14 +390,14 @@ class Command(BaseCommand):
         # Wild-type for all sequences from source file
         try:
             sequence_type, created = ProteinSequenceType.objects.get_or_create(slug='wt',
-                defaults={
-                'slug': 'wt',
-                'name': 'Wild-type',
-                })
+                                                                               defaults={
+                                                                                   'slug': 'wt',
+                                                                                   'name': 'Wild-type',
+                                                                               })
             if created:
                 self.logger.info('Created protein sequence type Wild-type')
         except:
-                self.logger.error('Failed creating protein sequence type Wild-type')
+            self.logger.error('Failed creating protein sequence type Wild-type')
 
         # create protein
         p = Protein()
@@ -293,14 +463,23 @@ class Command(BaseCommand):
         s_structs = SignprotStructure.objects.count()
         offset = 1000
         if s_structs == None:
-            return structs+1+offset
+            return structs + 1 + offset
         else:
-            return structs+s_structs+1+offset
+            return structs + s_structs + 1 + offset
 
     def create_can_rns(self):
         """Add new numbering scheme entry_name."""
-        rns_can, created= ResidueNumberingScheme.objects.get_or_create(slug='can', short_name='CAN', defaults={
-            'name': 'Common arrestin numbering scheme'})
+        #        rns_can, created= ResidueNumberingScheme.objects.get_or_create(slug='can', short_name='CAN', defaults={
+        #            'name': 'Common arrestin numbering scheme'})
+
+        try:
+            rns_can, created = ResidueNumberingScheme.objects.get_or_create(slug='can', short_name='CAN',
+                                                                            defaults={'name': 'Common arrestin numbering scheme'})
+            if created:
+                self.logger.info('Created Arrestin Numbering ' + rns_can.slug)
+        except IntegrityError:
+            rns_can = ResidueNumberingScheme.objects.get(slug='can')
+            self.logger.info('Integrity Error on creating can numbering')
 
     def can_create_families(self):
         """Purge and create arrestin in protein_family."""
@@ -326,7 +505,6 @@ class Command(BaseCommand):
             new_pf, created = ProteinFamily.objects.get_or_create(slug=fam_slug, name=family, parent=pff_can)
 
             for i, protein in enumerate(can_dict[family]):
-
                 prot_slug = fam_slug + '_00' + str(i + 1)
 
                 pff_fam = ProteinFamily.objects.get(slug=fam_slug)
@@ -337,10 +515,11 @@ class Command(BaseCommand):
         local_file_path = os.sep.join([self.local_uniprot_dir, filename])
         remote_file_path = self.remote_uniprot_dir + filename
 
-        up = {}
-        up['genes'] = []
-        up['names'] = []
-        up['structures'] = []
+        up = {
+            'genes': [],
+            'names': [],
+            'structures': []
+        }
 
         read_sequence = False
         remote = False
@@ -418,7 +597,7 @@ class Command(BaseCommand):
                 # structures
                 elif line.startswith('DR') and 'PDB' in line and not 'sum' in line:
                     split_gn_line = line.split(';')
-                    up['structures'].append([split_gn_line[1].lstrip(),split_gn_line[3].lstrip().split(" A")[0]])
+                    up['structures'].append([split_gn_line[1].lstrip(), split_gn_line[3].lstrip().split(" A")[0]])
 
                 # sequence
                 elif line.startswith('SQ'):
