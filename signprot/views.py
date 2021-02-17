@@ -843,7 +843,8 @@ def CouplingProfiles(request):
                 # Initialize selectivity array
                 all_receptors = other_couplings
                 for couplings in other_couplings:
-                    jsondata[str(gp)] = []
+                    key = str(gp).split(' ')[0]
+                    jsondata[key] = []
                     for coupling in other_couplings:
                         receptor_name = coupling[0]
                         receptor_only = receptor_name.split('_')[0].upper()
@@ -854,14 +855,18 @@ def CouplingProfiles(request):
                             # Add to selectivity data (for tree)
                             if receptor_only not in selectivitydata:
                                 selectivitydata[receptor_only] = []
-                            selectivitydata[receptor_only].append(str(gp))
+                            selectivitydata[receptor_only].append(key)
 
                             # Add to json data for Venn diagram
-                            jsondata[str(gp)].append(str(receptor_name) + '\n')
+                            jsondata[key].append(str(receptor_name) + '\n')
 
-                    jsondata[str(gp)] = ''.join(jsondata[str(gp)])
+                    if len(jsondata[key]) == 0:
+                        jsondata.pop(key, None)
+                    else:
+                        jsondata[key] = ''.join(jsondata[key])
 
             context[slug_translate[slug]] = jsondata
+            context[slug_translate[slug]+"_keys"] = list(jsondata.keys())
 
         context["selectivitydata"] = selectivitydata
 
