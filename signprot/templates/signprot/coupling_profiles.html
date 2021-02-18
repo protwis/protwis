@@ -405,9 +405,10 @@
 
 
 <script type="text/javascript" charset="utf-8">
+  var receptor_dictionary = {{ receptor_dictionary|safe }};
   var selectivitydata = {{ selectivitydata|safe }};
-  var data = {{ ClassA|safe }};
-  var list = {{ ClassA_keys|safe }};
+  var selectivitydata_gtp_plus = {{ selectivitydata_gtp_plus|safe }};
+
 
   function auto_grow(element) {
     element.style.height = "5px";

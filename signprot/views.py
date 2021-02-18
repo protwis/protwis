@@ -814,6 +814,7 @@ def CouplingProfiles(request):
     name_of_cache = 'coupling_profiles'
 
     context = cache.get(name_of_cache)
+    # NOTE cache disabled for development only!
     context = None
     if context == None:
 
@@ -823,8 +824,11 @@ def CouplingProfiles(request):
 
         slug_translate = {'001': "ClassA", '002': "ClassB1", '004': "ClassC", '006': "ClassF"}
         selectivitydata = {}
+        selectivitydata_gtp_plus = {}
+        receptor_dictionary = []
         for slug in slug_translate.keys():
             jsondata = {}
+            jsondata_gtp_plus = {}
             for gp in gproteins:
                 # Collect GTP
                 gtp_couplings = list(ProteinGProteinPair.objects.filter(protein__family__slug__startswith=slug, source="GuideToPharma", g_protein=gp)\
@@ -845,8 +849,10 @@ def CouplingProfiles(request):
                 for couplings in other_couplings:
                     key = str(gp).split(' ')[0]
                     jsondata[key] = []
+                    jsondata_gtp_plus[key] = []
                     for coupling in other_couplings:
                         receptor_name = coupling[0]
+                        receptor_dictionary.append(receptor_name)
                         receptor_only = receptor_name.split('_')[0].upper()
                         count = coupling[1] + (1 if receptor_name in gtp_couplings else 0)
 
@@ -855,20 +861,60 @@ def CouplingProfiles(request):
                             # Add to selectivity data (for tree)
                             if receptor_only not in selectivitydata:
                                 selectivitydata[receptor_only] = []
-                            selectivitydata[receptor_only].append(key)
+
+                                if receptor_only not in selectivitydata_gtp_plus:
+                                    selectivitydata_gtp_plus[receptor_only] = []
+
+                            if key not in selectivitydata[receptor_only]:
+                                selectivitydata[receptor_only].append(key)
+                                if key not in selectivitydata_gtp_plus[receptor_only]:
+                                    selectivitydata_gtp_plus[receptor_only].append(key)
 
                             # Add to json data for Venn diagram
                             jsondata[key].append(str(receptor_name) + '\n')
+                            jsondata_gtp_plus[key].append(str(receptor_name) + '\n')
+                        elif receptor_name in gtp_couplings:
+                            if receptor_only not in selectivitydata_gtp_plus:
+                                selectivitydata_gtp_plus[receptor_only] = []
+
+                            selectivitydata_gtp_plus[receptor_only].append(v)
+                            # Add to json data for Venn diagram
+                            if str(gp) not in selectivitydata_gtp_plus[receptor_only]:
+                                selectivitydata_gtp_plus[receptor_only].append(key)
 
                     if len(jsondata[key]) == 0:
                         jsondata.pop(key, None)
                     else:
                         jsondata[key] = ''.join(jsondata[key])
 
+                    if len(jsondata_gtp_plus[key]) == 0:
+                        jsondata_gtp_plus.pop(key, None)
+                    else:
+                        jsondata_gtp_plus[key] = ''.join(jsondata_gtp_plus[key])
+
             context[slug_translate[slug]] = jsondata
             context[slug_translate[slug]+"_keys"] = list(jsondata.keys())
+            context[slug_translate[slug]+"_gtp_plus"] = jsondata_gtp_plus
+
 
         context["selectivitydata"] = selectivitydata
+        context["selectivitydata_gtp_plus"] = selectivitydata_gtp_plus
+
+        # Collect receptor information
+        receptor_panel = Protein.objects.filter(entry_name__in=receptor_dictionary)\
+                                .prefetch_related("family", "family__parent__parent__parent")
+
+        receptor_dictionary = {}
+        for p in receptor_panel:
+            # Collect receptor data
+            rec_class = p.family.parent.parent.parent.short().split(' ')[0]
+            rec_ligandtype = p.family.parent.parent.short()
+            rec_family = p.family.parent.short()
+            rec_uniprot = p.entry_short()
+            rec_iuphar = p.family.name.replace("receptor", '').strip()
+            receptor_dictionary[rec_uniprot] = [rec_class, rec_ligandtype, rec_family, rec_uniprot, rec_iuphar]
+
+        context["receptor_dictionary"] = json.dumps(receptor_dictionary)
 
     cache.set(name_of_cache, context, 60 * 60 * 24 * 7)  # seven days timeout on cache
     context["render_part"] = "both"
