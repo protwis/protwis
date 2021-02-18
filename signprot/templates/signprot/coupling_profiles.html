@@ -551,7 +551,10 @@
 
 
 <script type="text/javascript" charset="utf-8">
+  var receptor_dictionary = {{ receptor_dictionary|safe }};
   var selectivitydata = {{ selectivitydata|safe }};
+  var selectivitydata_gtp_plus = {{ selectivitydata_gtp_plus|safe }};
+
 
   $(document).ready(function(){
     initVenn(selectivitydata);
