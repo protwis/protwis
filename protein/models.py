@@ -395,7 +395,7 @@ class ProteinGProteinPair(models.Model):
 
 class ProteinArrestinPair(models.Model):
     protein = models.ForeignKey('Protein', on_delete=models.CASCADE)
-    source = models.TextField(null=True) # Bouvier
+    source = models.TextField(null=True)  # Bouvier
     emax_deg = models.FloatField(null=True, blank=True)  # Value from David Gloriam
     pec50_deg = models.FloatField(null=True, blank=True)  # Value from David Gloriam
     logmaxec50_deg = models.FloatField(null=True, blank=True) # Value from David Gloriam
@@ -404,14 +404,14 @@ class ProteinArrestinPair(models.Model):
 
 
     def __str__(self):
-        return "{}".format(self.protein.entry_name)
+        return "{} {}".format(self.protein.entry_name, self.arrestin_subtype)
 
     class Meta():
         db_table = 'protein_arrestin_pair'
 
 def dgn(gn, protein_conformation):
-    ''' Converts generic number to display generic number.
-    '''
+    """ Converts generic number to display generic number.
+    """
     scheme = ResidueNumberingScheme.objects.get(slug=protein_conformation.protein.residue_numbering_scheme.slug)
     convert_gn = ResidueGenericNumberEquivalent.objects.get(label=gn, scheme=scheme).default_generic_number.label
     return Residue.objects.get(protein_conformation=protein_conformation, generic_number__label=convert_gn).display_generic_number.label

@@ -78,7 +78,7 @@ class Command(BaseCommand):
                 self.purge_coupling_data()
                 self.logger.info('PASS: purge_coupling_data')
                 if os.path.exists(self.bouvier_file):
-                    # self.add_bouvier_coupling_data()
+                    self.add_bouvier_coupling_data()
                     self.logger.info('PASS: add_bouvier_coupling_data')
                 else:
                     self.logger.warning('Bouvier source data ' + self.bouvier_file + ' not found')
@@ -183,9 +183,8 @@ class Command(BaseCommand):
         This function adds coupling data coming from Michel Bouvier processed by David Gloriam
 
         @return:
-        p, a, source, values['logemaxec50'], values['pec50deg'], ..., ap
+        p, source, values['logemaxec50'], values['pec50deg'], ..., ap
         p = protein_name
-        a = arrestin subtype slug
         source = One of GuideToPharma, Aska, Bouvier
         values = selfdescriptive
         ap = arrestin uniprot name, e.g.
@@ -197,8 +196,8 @@ class Command(BaseCommand):
         self.logger.info('Reading file ' + filepath)
         data = self.read_coupling(filepath)
         # pprint(data['AVPR2'])
-        #pprint(data['AVP2R'])
-        #pprint(data['BDKRB1'])
+        # pprint(data['AVP2R'])
+        # pprint(data['BDKRB1'])
         source = 'Bouvier'
         lookup = {}
 
@@ -206,7 +205,7 @@ class Command(BaseCommand):
             # if it has / then pick first, since it gets same protein
             entry_name = entry_name.split("/")[0]
             # append _human to entry name
-            #entry_name = "{}_HUMAN".format(entry_name).lower()
+            # entry_name = "{}_HUMAN".format(entry_name).lower()
 
             # Fetch protein
             try:
@@ -224,8 +223,8 @@ class Command(BaseCommand):
                 else:
                     ap = lookup[arrestin]
 
-                # print(p, a, source, ap)
-                # print(p, a, source, values['logmaxec50'], values['pec50deg'], values['emaxdeg'], ap)
+                # print(p, source, ap)
+                # print(p, source, values['logmaxec50'], values['pec50deg'], values['emaxdeg'], ap)
                 apair = ProteinArrestinPair(protein=p,
                                             source=source,
                                             logmaxec50_deg=values['logmaxec50'],
