@@ -10,7 +10,7 @@ from operator import itemgetter
 import numpy as np
 
 from alignment.functions import prepare_aa_group_preference
-from Bio.SubsMat import MatrixInfo
+from Bio.Align import substitution_matrices
 from common.definitions import *
 from common.selection import Selection
 from django.conf import settings
@@ -1243,7 +1243,7 @@ class Alignment:
                     if not (reference_residue in self.gaps or protein_residue in self.gaps):
                         pair = (protein_residue, reference_residue)
                         # Similarity lookup is slow -> disabling results in 1/3 reduction calc. time
-                        similarity = self.score_match(pair, MatrixInfo.blosum62)
+                        similarity = self.score_match(pair, substitution_matrices.load("BLOSUM62"))
                         #                        similarity = 1
                         if similarity > 0:
                             similarityscore += 1
@@ -1291,7 +1291,7 @@ class Alignment:
                         pass
                     else:
                         pair = (protein_residue, reference_residue)
-                        similarity = self.score_match(pair, MatrixInfo.blosum62)
+                        similarity = self.score_match(pair, substitution_matrices.load("BLOSUM62"))
                         if similarity > 0:
                             similarities[p[0]] = 1
                         else:
