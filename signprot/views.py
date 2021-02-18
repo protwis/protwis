@@ -823,8 +823,10 @@ def CouplingProfiles(request):
 
         slug_translate = {'001': "ClassA", '002': "ClassB1", '004': "ClassC", '006': "ClassF"}
         selectivitydata = {}
+        selectivitydata_gtp_plus = {}
         for slug in slug_translate.keys():
             jsondata = {}
+            jsondata_gtp_plus = {}
             for gp in gproteins:
                 # Collect GTP
                 gtp_couplings = list(ProteinGProteinPair.objects.filter(protein__family__slug__startswith=slug, source="GuideToPharma", g_protein=gp)\
@@ -844,8 +846,10 @@ def CouplingProfiles(request):
                 all_receptors = other_couplings
                 for couplings in other_couplings:
                     jsondata[str(gp)] = []
+                    jsondata_gtp_plus[str(gp)] = []
                     for coupling in other_couplings:
                         receptor_name = coupling[0]
+                        receptor_dictionary.append(receptor_name)
                         receptor_only = receptor_name.split('_')[0].upper()
                         count = coupling[1] + (1 if receptor_name in gtp_couplings else 0)
 
@@ -854,16 +858,31 @@ def CouplingProfiles(request):
                             # Add to selectivity data (for tree)
                             if receptor_only not in selectivitydata:
                                 selectivitydata[receptor_only] = []
+                                if receptor_only not in selectivitydata_gtp_plus:
+                                    selectivitydata_gtp_plus[receptor_only] = []
+
                             selectivitydata[receptor_only].append(str(gp))
+                            selectivitydata_gtp_plus[receptor_only].append(str(gp))
 
                             # Add to json data for Venn diagram
                             jsondata[str(gp)].append(str(receptor_name) + '\n')
+                            jsondata_gtp_plus[str(gp)].append(str(receptor_name) + '\n')
+                        elif receptor_name in gtp_couplings:
+                            if receptor_only not in selectivitydata_gtp_plus:
+                                selectivitydata_gtp_plus[receptor_only] = []
+
+                            selectivitydata_gtp_plus[receptor_only].append(str(gp))
+                            # Add to json data for Venn diagram
+                            jsondata_gtp_plus[str(gp)].append(str(receptor_name) + '\n')
 
                     jsondata[str(gp)] = ''.join(jsondata[str(gp)])
+                    jsondata_gtp_plus[str(gp)] = ''.join(jsondata_gtp_plus[str(gp)])
 
             context[slug_translate[slug]] = jsondata
+            context[slug_translate[slug]+"_gtp_plus"] = jsondata_gtp_plus
 
         context["selectivitydata"] = selectivitydata
+        context["selectivitydata_gtp_plus"] = selectivitydata_gtp_plus
 
     cache.set(name_of_cache, context, 60 * 60 * 24 * 7)  # seven days timeout on cache
     context["render_part"] = "both"
