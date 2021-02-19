@@ -113,7 +113,6 @@ class Command(BaseCommand):
     @staticmethod
     def read_coupling(filenames=False):
         """Function to read Coupling data from Excel files.
-
         The ideal would be for the excel organization to hopefully be fixed in the same way for data
         coming from different groups. For now the data comes from Bouvier and has been processed by David E. Gloriam.
         """
