@@ -86,7 +86,7 @@ class Command(BaseCommand):
             except Exception as msg:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                print(exc_type, fname, exc_tb.tb_lineno)
+                print(exc_type, exc_obj, fname, exc_tb.tb_lineno)
                 self.logger.error(msg)
 
     def purge_can_residues(self):
@@ -101,18 +101,19 @@ class Command(BaseCommand):
         try:
             Protein.objects.filter(residue_numbering_scheme__slug='can').delete()
         except Exception as msg:
-            self.logger.warning('Protein to delete not found', msg)
+            self.logger.warning('Protein to delete not found' + str(msg))
 
     def purge_coupling_data(self):
-        """DROP data from the protein_arrestin_pair table"""
+        """DROP data from the protein_arrestin_pair table."""
         try:
             ProteinArrestinPair.objects.filter().delete()
         except Exception as msg:
-            self.logger.warning('Existing protein_arrestin_pair data cannot be deleted', msg)
+            self.logger.warning('Existing protein_arrestin_pair data cannot be deleted' + str(msg))
 
-    def read_coupling(self, filenames=False):
-        """
-        Function to read Coupling data from Excel files.
+    @staticmethod
+    def read_coupling(filenames=False):
+        """Function to read Coupling data from Excel files.
+
         The ideal would be for the excel organization to hopefully be fixed in the same way for data
         coming from different groups. For now the data comes from Bouvier and has been processed by David E. Gloriam.
         """
@@ -127,13 +128,13 @@ class Command(BaseCommand):
         endemax = 70
 
         data = {}
-        """data is a dictionary and must have a format:
-        {'<protein>':
-            {'<arrestinsubtype>':
-                {'logmaxec50': <logmaxec50>,
-                 'pec50deg': <pec50deg>}
-            }
-        }"""
+        # data dictionary format:
+        # {'<protein>':
+        #     {'<arrestinsubtype>':
+        #         {'logmaxec50': <logmaxec50>,
+        #          'pec50deg': <pec50deg>}
+        #     }
+        # }
 
         def cleanValue(s):
             """
