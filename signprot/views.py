@@ -846,56 +846,57 @@ def CouplingProfiles(request):
 
                 # Initialize selectivity array
                 all_receptors = other_couplings
-                for couplings in other_couplings:
-                    key = str(gp).split(' ')[0]
-                    jsondata[key] = []
-                    jsondata_gtp_plus[key] = []
-                    for coupling in other_couplings:
-                        receptor_name = coupling[0]
-                        receptor_dictionary.append(receptor_name)
-                        receptor_only = receptor_name.split('_')[0].upper()
-                        count = coupling[1] + (1 if receptor_name in gtp_couplings else 0)
+                processed_receptors = []
+                key = str(gp).split(' ')[0]
+                jsondata[key] = []
+                jsondata_gtp_plus[key] = []
+                for coupling in other_couplings:
+                    receptor_name = coupling[0]
+                    receptor_dictionary.append(receptor_name)
+                    receptor_only = receptor_name.split('_')[0].upper()
+                    count = coupling[1] + (1 if receptor_name in gtp_couplings else 0)
 
-                        # Data from at least two sources:
-                        if count >= 2:
-                            # Add to selectivity data (for tree)
-                            if receptor_only not in selectivitydata:
-                                selectivitydata[receptor_only] = []
+                    # Data from at least two sources:
+                    if count >= 2:
+                        # Add to selectivity data (for tree)
+                        if receptor_only not in selectivitydata:
+                            selectivitydata[receptor_only] = []
 
-                                if receptor_only not in selectivitydata_gtp_plus:
-                                    selectivitydata_gtp_plus[receptor_only] = []
-
-                            if key not in selectivitydata[receptor_only]:
-                                selectivitydata[receptor_only].append(key)
-                                if key not in selectivitydata_gtp_plus[receptor_only]:
-                                    selectivitydata_gtp_plus[receptor_only].append(key)
-
-                            # Add to json data for Venn diagram
-                            jsondata[key].append(str(receptor_name) + '\n')
-                            jsondata_gtp_plus[key].append(str(receptor_name) + '\n')
-                        elif receptor_name in gtp_couplings:
                             if receptor_only not in selectivitydata_gtp_plus:
                                 selectivitydata_gtp_plus[receptor_only] = []
 
-                            selectivitydata_gtp_plus[receptor_only].append(v)
-                            # Add to json data for Venn diagram
-                            if str(gp) not in selectivitydata_gtp_plus[receptor_only]:
+                        if key not in selectivitydata[receptor_only]:
+                            selectivitydata[receptor_only].append(key)
+                            if key not in selectivitydata_gtp_plus[receptor_only]:
                                 selectivitydata_gtp_plus[receptor_only].append(key)
 
-                    if len(jsondata[key]) == 0:
-                        jsondata.pop(key, None)
-                    else:
-                        jsondata[key] = ''.join(jsondata[key])
+                        # Add to json data for Venn diagram
+                        jsondata[key].append(str(receptor_name) + '\n')
+                        jsondata_gtp_plus[key].append(str(receptor_name) + '\n')
+                        processed_receptors.append(receptor_name)
 
-                    if len(jsondata_gtp_plus[key]) == 0:
-                        jsondata_gtp_plus.pop(key, None)
-                    else:
-                        jsondata_gtp_plus[key] = ''.join(jsondata_gtp_plus[key])
+                unique_gtp_plus = set(gtp_couplings) - set(processed_receptors)
+                for receptor_name in unique_gtp_plus:
+                    receptor_dictionary.append(receptor_name)
+                    receptor_only = receptor_name.split('_')[0].upper()
+                    if receptor_only not in selectivitydata_gtp_plus:
+                        selectivitydata_gtp_plus[receptor_only] = []
+                    jsondata_gtp_plus[key].append(str(receptor_name) + '\n')
+
+                if len(jsondata[key]) == 0:
+                    jsondata.pop(key, None)
+                else:
+                    jsondata[key] = ''.join(jsondata[key])
+
+                if len(jsondata_gtp_plus[key]) == 0:
+                    jsondata_gtp_plus.pop(key, None)
+                else:
+                    jsondata_gtp_plus[key] = ''.join(jsondata_gtp_plus[key])
 
             context[slug_translate[slug]] = jsondata
             context[slug_translate[slug]+"_keys"] = list(jsondata.keys())
             context[slug_translate[slug]+"_gtp_plus"] = jsondata_gtp_plus
-
+            context[slug_translate[slug]+"_gtp_plus_keys"] = list(jsondata_gtp_plus.keys())
 
         context["selectivitydata"] = selectivitydata
         context["selectivitydata_gtp_plus"] = selectivitydata_gtp_plus
