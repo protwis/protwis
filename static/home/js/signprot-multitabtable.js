@@ -98,8 +98,9 @@ function createRank(table_id, column) {
     // Step 1 - collect all values for a given column
     var min_max = [];
     $(table_id+" tbody tr td").filter(":nth-child("+column+")").each( function() {
+        // OPTIONAL CHECK - grab support for this row and verify if matches variable
         var cell_value = $(this).text();
-        if (/^-?\d*(\.\d+)?$/.test(cell_value)){
+        if (/^-?\d*(\.\d+)?$/.test(cell_value) && cell_value!=="-"){
             min_max.push(parseFloat(cell_value));
         }
     });
@@ -107,47 +108,162 @@ function createRank(table_id, column) {
     // Step 2 - normalize all values and add them to a data attribute
     var min = Math.min(...min_max);
     var max = Math.max(...min_max);
-//    console.log(min_max, min, max);
-
     $(table_id+" tbody tr td").filter(":nth-child("+column+")").each( function() {
-        var cell_value = $(this).text();
-        if (/^-?\d*(\.\d+)?$/.test(cell_value)) {
-            $(this).attr("data-normalized", Math.round((parseFloat(cell_value)-min)/(max-min)*100),0);
-            $(this).attr("data-raw", cell_value);
+        let cell_span = $(this.firstChild);
+        let cell_value = cell_span.text();
+        cell_span.attr("data-raw", cell_value);
+        cell_span.attr("data-column-nr", column-1);
+        if (/^-?\d*(\.\d+)?$/.test(cell_value) && cell_value!=="-"){
+            cell_span.attr("data-normalized", Math.round((1-(parseFloat(cell_value)-min)/(max-min))*100),0);
+        } else {
+            // not value - empty init
+            cell_span.attr("data-normalized","-");
         }
     });
 }
 
 // # use a place holder for data-normalized
 
-// // # custom rankedRangeFilter draft for YADCF
-// /**
-//  * This is a custom YADCF function that checks ....
-//  * ....
-//  * @param {object} filterVal Value to filter on (not applicable)
-//  * @param {object} columnVal Element in the filtered column
-//  * @param {object} rowValues All elements in this row (not used)
-//  * @param {object} stateVal Current DOM state of the row (not sufficient in this case)
-//  * @returns {boolean} true if row contains selected target otherwise false
-//  */
-// function rankedRangeFilter(filterVal, columnVal, rowValues, stateVal){
-//   // Check range or rank filter
-//   if (filterVal.contains("range")){
-//       var range_value = parseFloat($(columnVal).text());
-//       var actual_filtering = parseFloat(filterVal.split("_")[2]);
-//       if (filterVal.contains("min")){
-//         // Example filterVal would be range_min_5
-//         return range_value >= actual_filtering;
-//       } else {
-//         // Example filterVal would be range_max_10
-//         return range_value <= actual_filtering;
-//       }
-//   } else {
-//       var ranked_value = parseFloat($(columnVal).attr("data-normalized"));
-//       // Example filterVal would be 15 (always a number)
-//       return ranked_value<=filterVal;
-//   }
+// # custom rankedRangeFilter draft for YADCF
+/**
+ * This is a custom YADCF function that checks ....
+ * ....
+ * @param {object} filterVal Value to filter on (not applicable)
+ * @param {object} columnVal Element in the filtered column
+ * @param {object} rowValues All elements in this row (not used)
+ * @param {object} stateVal Current DOM state of the row (not sufficient in this case)
+ * @returns {boolean} true if row contains selected target otherwise false
+ */
+var counter = 0;
+function rankedRangeFilter(filterVal, columnVal, rowValues, stateVal) {
+      // DEBUG
+    if (counter < 1) {
+        counter++;
+        console.log("FILTERING FOR", filterVal);
+        console.log(columnVal);
+        console.log(rowValues);
+        console.log(stateVal);
+    }
+
+    if (filterVal === null){
+        // Should never happen anymore
+        return true;
+    } else {
+        let column_nr = $(filterVal).attr("data-column-nr");
+        let min_filtering = parseFloat($("#ranked_range_min_" + column_nr).val());
+        let max_filtering = parseFloat($("#ranked_range_max_" + column_nr).val());
+        let rank_filtering = parseFloat($("#ranked_range_rank_" + column_nr).val());
+
+        if (!isNaN(rank_filtering) && lastRangeRankFilter!=="max" && lastRangeRankFilter!=="min") {
+          // If filtering on rank - clean range filter
+          $("#ranked_range_min_" + column_nr).val("");
+          $("#ranked_range_max_" + column_nr).val("");
+
+          let ranked_value = parseFloat($(stateVal[column_nr]).attr("data-normalized"));
+          if (isNaN(ranked_value)) {
+              return false;
+          } else {
+              return ranked_value <= rank_filtering;
+          }
+        } else if (!isNaN(min_filtering) || !isNaN(max_filtering)) {
+            // If filtering on range - clean rank filter
+            $("#ranked_range_rank_" + column_nr).val("");
+
+            // Filter range on current columnVal
+            let range_value = parseFloat(columnVal);
+             if (isNaN(range_value)) {
+                  return false;
+              } else {
+                 if (!isNaN(min_filtering) && !isNaN(max_filtering)) {
+                    return range_value >= min_filtering && range_value <= max_filtering;
+                 } else if (!isNaN(min_filtering)) {
+                      return range_value >= min_filtering;
+                  } else if(!isNaN(max_filtering)) {
+                     return range_value <= max_filtering;
+                 } else {
+                      // Should never happen
+                  }
+              }
+        } else {
+            return true;
+        }
+    }
+}
+
+function innerValueSort(a, b){
+    let value_a = parseFloat($(a).text());
+    let value_b = parseFloat($(b).text());
+
+    if (isNaN(value_a) || isNaN(value_b)) {
+        if (isNaN(value_a) && isNaN(value_b)) {
+            console.log("first =" + value_a, value_b, false);
+            return false;
+        } else if (isNaN(value_a)) { // B is number
+            console.log("second =" + value_a, value_b, false);
+            return false;
+        } else { // A is number
+            console.log("third =" + value_a, value_b, true);
+            return value_a - value_b;
+        }
+    } else {
+        console.log("fourth =" + value_a, value_b, value_a > value_b);
+        return value_a > value_b;
+    }
+}
+
+// function innerValueSort(a, b) {
+//     let value_a = parseFloat($(a).text());
+//     let value_b = parseFloat($(b).text());
+//     if (value_a == 0 || value_b == 0) {
+//         return value_a == value_b ? 1 : -1;
+//     }
+//     else if (value_a == 1 || value_b == 1) {
+//         return value_a > value_b ? 1 : -1;
+//     }
+//     else if (value_a == -1 || value_b == -1) {
+//         return value_a - value_b ? 1 : -1;
+//     }
+//     else {
+//         return true;
+//     }
 // }
+
+
+// function innerValueSort(a, b) {
+//     if (!isNaN(a) || !isNaN(b)) {
+//         console.log("first =" + a, b, a-b, a > b)
+//         return a - b;
+//     } else {
+//         console.log("second =" + a, b, a-b, a > b)
+//         return false
+//     }
+// }
+
+
+// 0 = equal
+// 1 = higher
+// -1 = lower
+
+// function testcustom1(filterVal, columnVal) {
+//     var found = false;
+//     // debugger;
+//     console.log(filterVal, columnVal);
+//     switch (filterVal) {
+//         case 'empty':
+//             found = columnVal ? false : true;
+//             //break;
+//         case 'notempty':
+//             found = columnVal ? true : false;
+//             //break;
+//         default:
+//             //break;
+//     }
+//     return found;
+//
+// }
+
+
+
 // // # YADCF setting for ranked range column
 //  {
 //                   column_number: X,
@@ -195,6 +311,7 @@ function make_range_number_cols(start_column, repeat_number) {
     return repeated_from_to;
 }
 
+var lastRangeRankFilter = "";
 $(document).ready(function() {
 // Activate tooltips and popovers from Bootstrap   * Bootstrap v3.3.7 (http://getbootstrap.com)
     $("[data-toggle='tooltip']").tooltip();
@@ -206,6 +323,13 @@ $(document).ready(function() {
 //             .columns.adjust().responsive;
 //     });
 
+    // Try initializing the rank
+    // TODO - add support filter while creating ranks
+    createRank("#familiestabletab", 11); // GS
+
+// ===============
+// Families Table
+// ===============
     console.time("table1load");
     oTable1 = $("#familiestabletab").DataTable({
         deferRender: true,
@@ -222,7 +346,7 @@ $(document).ready(function() {
         columnDefs: [
             {
                 targets: [22],
-                visible: false
+                visible: true
             }
         ],
     });
@@ -338,10 +462,15 @@ $(document).ready(function() {
 
 // log(Emax/EC50)
             {
-                column_number : 10,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
+                column_number: 10,
+                filter_type: "custom_func",
+                custom_func: rankedRangeFilter,
+//                sort_as: "Alpha",
+                sort_as: "custom",
+                sort_as_custom_func: innerValueSort,
+                filter_container_id: "hide_ranked1",
+//                column_data_type: "text",
+//                html_data_type: "text",
             },
             {
                 column_number : 11,
@@ -428,20 +557,47 @@ $(document).ready(function() {
         {filters_tr_index: 2},
 
         {
-            cumulative_filtering: true
+            cumulative_filtering: false
         }
     );
 
-    // Try intializing the rank
-//    createRank("#familiestabletab", 11); // GS
+    // Initialize ranked Range Filtering options
+    // $(".ranked_range_min").on("input", function(event){
+    $(".ranked_range_min, .ranked_range_max, .ranked_range_rank").on("click", function(event) {
+        event.stopPropagation();
+    });
 
+    $(".ranked_range_min, .ranked_range_max, .ranked_range_rank").on("input", function(event){
+        // Get column #
+        let column_nr = event.target.id.split("_")[3];
+
+        // Store current type of filtering globally
+        lastRangeRankFilter = event.target.id.split("_")[2];
+
+        // SELECT one option in real YADCF filter
+        let adjust_node = $("#yadcf-filter--familiestabletab-" + column_nr + " option").filter(":nth-child(2)").first();
+        adjust_node.prop("selected", true);
+
+        // Invoke filtering
+        $("#yadcf-filter--familiestabletab-" + column_nr).change();
+
+        // Clean filter type
+        lastRangeRankFilter = "";
+    });
+
+
+
+
+
+
+
+// This prefilters the value 2 in the hidden column 22 which corresponds to being in at least two of the supporting GPCRdb
+// datasets
     yadcf.exFilterColumn(oTable1, [[22, 2]]);
-
 //    yadcf.exResetAllFilters(oTable1);
-//    setTimeout(() => {
-//        console.timeEnd("table1load");
-//    }, );
 
+
+//  Select clicked-on boxes
     $("#familiestabletab"+" > tbody > tr").click(function(event) {
         if (event.target.type !== "checkbox") {
             $(":checkbox", this).trigger("click");
@@ -452,6 +608,7 @@ $(document).ready(function() {
         $(this).find("td").toggleClass("highlight");
     });
 
+// Select all boxes in table
     $(".select-all").click(function() {
         $(":checkbox", this).trigger("click");
         if ($(this).prop("checked")===true) {
@@ -468,6 +625,17 @@ $(document).ready(function() {
 
     console.timeEnd("table1load");
 
+
+
+
+
+
+
+
+
+// ===============
+// Subtypes Table
+// ===============
     console.time("table2load");
     oTable2 = $("#subtypestabletab").DataTable({
         deferRender: true,
