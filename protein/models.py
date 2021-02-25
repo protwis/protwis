@@ -410,8 +410,7 @@ class ProteinArrestinPair(models.Model):
         db_table = 'protein_arrestin_pair'
 
 def dgn(gn, protein_conformation):
-    """ Converts generic number to display generic number.
-    """
+    """Convert generic number to display generic number."""
     scheme = ResidueNumberingScheme.objects.get(slug=protein_conformation.protein.residue_numbering_scheme.slug)
     convert_gn = ResidueGenericNumberEquivalent.objects.get(label=gn, scheme=scheme).default_generic_number.label
     return Residue.objects.get(protein_conformation=protein_conformation, generic_number__label=convert_gn).display_generic_number.label
