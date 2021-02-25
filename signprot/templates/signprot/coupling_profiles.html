@@ -72,7 +72,7 @@
       $(document).ready(function () {
         // "#C0C0C0","#F5F5F5","#696969","#303030"
         // var colorDefault = ["#5a9bd4", "#f15a60", "#808080", "#006600"],
-        var colorDefault = ["#C0C0C0","#F5F5F5","#696969","#303030"],
+        var colorDefault = ["#5a9bd4", "#f15a60", "#808080", "#006600"],
           displayMode  = "classic",
           displaySwitch = false,
           displayStat  = false,
@@ -174,12 +174,6 @@
               });
               $( "#copytoclip" ).unbind( "click" );
               $( "#copytoclip" ).bind( "click", function(event){copyToClipboard(value);});
-              // var cpbutton = document.getElementById("copytoclip");
-              //   cpbutton.addEventListener('click', function(event) {
-              //     copyToClipboard(value);
-              //   });
-              // $("#input-targets").val(value);
-              // $("#input-targets").trigger('input');
             }
 
           });
@@ -198,7 +192,7 @@
             paper_paths[index].rotate(transform.rotate.a);
             paper_paths[index].strokeColor = new paper.Color(0, 0, 0);
             // Viz
-            paper_paths[index].fillColor = '#77f';
+            paper_paths[index].fillColor = '#000000';
           });
 
 
@@ -229,7 +223,7 @@
               var newElement = document.createElementNS("http://www.w3.org/2000/svg", 'path');
               newElement.setAttribute("d", dPath); //Set path's data
               newElement.setAttribute("fill-opacity", 0.5);
-              newElement.style.stroke = "#000000";
+              newElement.style.stroke = "black";
               newElement.style.strokeWidth = "1px";
               newElement.style.fill = color;
               g.appendChild(newElement);
@@ -526,6 +520,50 @@
   }
 </style>
 
+<style>
+  .node circle {
+    /*fill: #fff;*/
+    /*stroke: DarkGreen;*/
+    /*fill: DarkGreen;*/
+    stroke: #000000 ;
+    stroke-width: .3px;
+  }
+  .node {
+    font: 8px sans-serif;
+  }
+  .link {
+    fill: none;
+    stroke: #eee;
+    stroke-width: 1px;
+  }
+  .node text {
+    font: 8px sans-serif;
+  }
+  .links {
+    fill: none;
+    stroke: #000;
+  }
+  .link-extensions {
+    fill: none;
+    stroke: #000;
+    stroke-opacity: .25;
+  }
+  .labels {
+    font: 14px Palatino;
+    font-weight: bold;
+  }
+  .link--active {
+    stroke: #000 !important;
+    stroke-width: 3.5px;
+  }
+  .link-extension--active {
+    stroke-opacity: .6;
+  }
+  .label--active {
+    font-weight: bold;
+  }
+</style>
+
 {% if render_part != "tree" %}
 <div class="container">
   <div class="row-fluid">
@@ -560,10 +598,6 @@
           <div>
             <p> Click on an area of the venn diagram or a receptor clade on the phylogenetic G-protein selectivity tree to display the respective receptor sets: </p>
           </div>
-          <!-- <form id='target-input-form' method="post" enctype="multipart/form-data">
-            <textarea name="input-targets" id="input-targets" style="width: 50%;" oninput="auto_grow(this)"></textarea>
-            <button onclick="clear_select_segmentselection(document.getElementById('target-input-form'))" type="button" class="btn btn-success" style="float: right;"> Make sequence alignment </button>
-          </form> -->
           <table class="compact text-nowrap" id="receptor_table">
             <thead>
               <tr>
@@ -583,8 +617,6 @@
             </thead>
           </table>
 
-
-          <!--             <button onclick="location.href='/alignment/segmentselection'" type="button" class="btn btn-success"> Make sequence alignment </button> -->
         </div>
         <button id="copytoclip" type="button" class="btn btn-info" style="float:right;margin-top:10px;"> Copy to clipboard </button>
         <input id="cb" type="text" hidden>
@@ -609,11 +641,23 @@
         gtp.style.display = "block";
         a2s.style.display = "none";
         clickgtp.click();
+        DrawCircles('tree_class_a',selectivitydata_gtp_plus);
+        DrawCircles('tree_class_b1',selectivitydata_gtp_plus);
+        DrawCircles('tree_class_b2',selectivitydata_gtp_plus);
+        DrawCircles('tree_class_c',selectivitydata_gtp_plus);
+        DrawCircles('tree_class_f',selectivitydata_gtp_plus);
+        // DrawCircles('tree_class_t2',selectivitydata_gtp_plus);
         $("#ClassA").addClass("active");
       } else {
         gtp.style.display = "none";
         a2s.style.display = "block";
         click2s.click();
+        DrawCircles('tree_class_a',selectivitydata);
+        DrawCircles('tree_class_b1',selectivitydata);
+        DrawCircles('tree_class_b2',selectivitydata);
+        DrawCircles('tree_class_c',selectivitydata);
+        DrawCircles('tree_class_f',selectivitydata);
+        // DrawCircles('tree_class_t2',selectivitydata);
         $("#ClassA2s").addClass("active");
       }
     })
@@ -635,17 +679,99 @@
   var receptor_dictionary = {{ receptor_dictionary|safe }};
   var selectivitydata = {{ selectivitydata|safe }};
   var selectivitydata_gtp_plus = {{ selectivitydata_gtp_plus|safe }};
-  // function auto_grow(element) {
-  //   element.style.height = "5px";
-  //   element.style.height = (element.scrollHeight)+"px";
-  // }
   $(document).ready(function(){
     paper.install(window);
     });
 </script>
 
 {% if render_part != "venn" %}
-  <div id="selectivitydata" class="text-center">
+<script type="text/javascript" charset="utf-8">
+    tree_class_a = {{ tree_class_a|safe }};
+    tree_class_a_options = {{ tree_class_a_options|safe }};
+    tree_class_b1 = {{ tree_class_b1|safe }};
+    tree_class_b1_options = {{ tree_class_b1_options|safe }};
+    tree_class_b2 = {{ tree_class_b2|safe }};
+    tree_class_b2_options = {{ tree_class_b2_options|safe }};
+    tree_class_c = {{ tree_class_c|safe }};
+    tree_class_c_options = {{ tree_class_c_options|safe }};
+    tree_class_f = {{ tree_class_f|safe }};
+    tree_class_f_options = {{ tree_class_f_options|safe }};
+    tree_class_t2 = {{ tree_class_t2|safe }};
+    tree_class_t2_options = {{ tree_class_t2_options|safe }};
+</script>
+<script type="text/javascript" charset="utf-8">
+
+function DrawCircles(location, data){
+    var svg = d3.select('#'+location);
+    var node = svg.selectAll(".node");
+    node.selectAll("circle").remove();
+    for (var x in data){
+      var spacer = 8
+      if (data[x].indexOf("Gs")>= 0) {
+        var leafwithname = svg.selectAll('g[id^=X'+x+']')
+            .append("circle")
+            .attr("r", 3.25)
+            .style("fill", "blue")
+            .attr("transform", "translate(" + (42 + spacer) + ",0)");
+          }
+
+      if (data[x].indexOf("Gi/Go")>= 0) {
+        var leafwithname = svg.selectAll('g[id^=X'+x+']')
+            .append("circle")
+            .attr("r", 3.25)
+            .style("fill", "red")
+            .attr("transform", "translate(" + (42 + 2*spacer) + ",0)");
+          }
+
+      if (data[x].indexOf("Gq/G11")>= 0) {
+        var leafwithname = svg.selectAll('g[id^=X'+x+']')
+            .append("circle")
+            .attr("r", 3.25)
+            .style("fill", "black")
+            .attr("transform", "translate(" + (42 + 3*spacer) + ",0)");
+        }
+
+      if (data[x].indexOf("G12/G13")>= 0) {
+        var leafwithname = svg.selectAll('g[id^=X'+x+']')
+            .append("circle")
+            .attr("r", 3.25)
+            .style("fill", "green")
+            .attr("transform", "translate(" + (42 + 4*spacer) + ",0)");
+        }
+    }
+  }
+
+$(window).on("load",function() {
+    draw_tree(tree_class_a, tree_class_a_options);
+    DrawCircles('tree_class_a',selectivitydata_gtp_plus);
+    draw_tree(tree_class_b1, tree_class_b1_options);
+    DrawCircles('tree_class_b1',selectivitydata_gtp_plus);
+    draw_tree(tree_class_b2, tree_class_b2_options);
+    DrawCircles('tree_class_b2',selectivitydata_gtp_plus);
+    draw_tree(tree_class_c, tree_class_c_options);
+    DrawCircles('tree_class_c',selectivitydata_gtp_plus);
+    draw_tree(tree_class_f, tree_class_f_options);
+    DrawCircles('tree_class_f',selectivitydata_gtp_plus);
+    draw_tree(tree_class_t2, tree_class_t2_options);
+    DrawCircles('tree_class_t2',selectivitydata);
+    $("#tree_class_a svg g").first().attr('transform', 'translate(555,555) scale(0.9,0.9) ');
+    $("#tree_class_b1 svg g").first().attr('transform', 'translate(220,220) scale(0.85,0.85) ');
+    $("#tree_class_b2 svg g").first().attr('transform', 'translate(220,182) scale(0.85,0.85) ');
+    $("#tree_class_c svg g").first().attr('transform', 'translate(200,200) scale(0.85,0.85) ');
+    $("#tree_class_f svg g").first().attr('transform', 'translate(180,180) scale(0.85,0.85) ');
+    $("#tree_class_t2 svg g").first().attr('transform', 'translate(172,172) scale(0.85,0.85) ');
+});
+</script>
+
+  <div class="row">
+    <div class="col-md-12">
+      <div class="panel-body">
+        <div class='text-center'>
+          <p><strong>GPCR selectivity tree.</strong> The four dots depict both primary and secondary G protein coupling (from inside to outside: <a href="family/100_001_001/">G&alpha;<sub>s</sub></a>,
+            <a href="family/100_001_002/">G&alpha;<sub>i/o</sub></a>, <a href="family/100_001_003/">G&alpha;<sub>q/11</sub></a>, <a href="family/100_001_004/">G&alpha;<sub>12/13</sub></a>).</p>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="row text-center">
@@ -655,17 +781,206 @@
       <span class="gprot_green">&#11044; G&alpha;<sub>12/13</sub></span>
   </div>
 
-  <div class="row">
-    <div class="col-md-12">
-      <div class="panel-body">
-        <div class='col-md-10'>
-          <p><strong>GPCR selectivity tree.</strong> Concentric circles illustrate the G protein-coupling selectivity of each GPCR: the four dots depict both primary and secondary G protein coupling (from inside to outside: <a href="family/100_001_001/">G&alpha;<sub>s</sub></a>,
-            <a href="family/100_001_002/">G&alpha;<sub>i/o</sub></a>, <a href="family/100_001_003/">G&alpha;<sub>q/11</sub></a>, <a href="family/100_001_004/">G&alpha;<sub>12/13</sub></a>). Tree nodes can be highlighted and selected to retrieve
-            clade-specific receptor sets, which can be used in dedicated segment specific sequence alignments.</p>
-        </div>
-      </div>
+  <br />
+
+<div id="tree_class_a" class="text-center">
+  <h4>Class A<br />(Rhodopsin)</h4>
+</div>
+
+<!-- adding the section of graphs from StructureStatistics -->
+
+<p>
+  <div class="text-center">
+    <div class="btn-group">
+        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                aria-haspopup="true" aria-expanded="false">
+            <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+            <li>
+                <a href="javascript:saveSvgAsPng(document.getElementById('tree_class_a_svg'), 'xtals_tree_class_a.png');">PNG</a>
+            </li>
+            <li>
+                <a href="javascript:saveSvgAsJpg(document.getElementById('tree_class_a_svg'), 'xtals_tree_class_a.jpg');">JPG</a>
+            </li>
+            <li>
+                <a href="javascript:saveSvgAsTiff(document.getElementById('tree_class_a_svg'), 'xtals_tree_class_a.tiff');">TIFF</a>
+            </li>
+            <li>
+                <a href="javascript:saveSvg(document.getElementById('tree_class_a_svg'), 'xtals_tree_class_a.svg');">SVG</a>
+            </li>
+        </ul>
     </div>
   </div>
+
+    <br />
+    <br />
+    <br />
+    <table>
+        <tr>
+            <td align="center">
+                <h4>Class B1<br />(Secretin)</h4>
+            </td>
+            <td align="center">
+                <h4>Class B2<br />(Adhesion)</h4>
+            </td>
+            <td align="center">
+                <h4>Class C<br />(Glutamate)</h4>
+            </td>
+        </tr>
+        <tr>
+            <td width="33%" style="padding: 20px">
+                <div id="tree_class_b1"></div>
+            </td>
+            <td width="33%" style="padding: 20px">
+                <div id="tree_class_b2"></div>
+            </td>
+            <td width="33%" style="padding: 20px">
+                <div id="tree_class_c"></div>
+
+            </td>
+        </tr>
+        <tr>
+            <td width="33%" style="padding: 20px" class="text-center">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                            aria-haspopup="true" aria-expanded="false">
+                        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a href="javascript:saveSvgAsPng(document.getElementById('tree_class_b1_svg'), 'xtal_coverage_tree_class_b1.png');">PNG</a>
+                        </li>
+                        <li>
+                            <a href="javascript:saveSvgAsJpg(document.getElementById('tree_class_b1_svg'), 'xtal_coverage_tree_class_b1.jpg');">JPG</a>
+                        </li>
+                        <li>
+                            <a href="javascript:saveSvgAsTiff(document.getElementById('tree_class_b1_svg'), 'xtal_coverage_tree_class_b1.tiff');">TIFF</a>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="javascript:saveSvg(document.getElementById('tree_class_b1_svg'), 'xtal_coverage_tree_class_b1.svg');">SVG</a>
+                        </li>
+                    </ul>
+                </div>
+            </td>
+            <td width="33%" style="padding: 20px" class="text-center">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                            aria-haspopup="true" aria-expanded="false">
+                        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a href="javascript:saveSvgAsPng(document.getElementById('tree_class_b2_svg'), 'xtal_coverage_tree_class_b2.png');">PNG</a>
+                        </li>
+                        <li>
+                            <a href="javascript:saveSvgAsJpg(document.getElementById('tree_class_b2_svg'), 'xtal_coverage_tree_class_b2.jpg');">JPG</a>
+                        </li>
+                        <li>
+                            <a href="javascript:saveSvgAsTiff(document.getElementById('tree_class_b2_svg'), 'xtal_coverage_tree_class_b2.tiff');">TIFF</a>
+                        </li>
+                        <li>
+                            <a href="javascript:saveSvg(document.getElementById('tree_class_b2_svg'), 'xtal_coverage_tree_class_b2.svg');">SVG</a>
+                        </li>
+                    </ul>
+                </div>
+            </td>
+            <td width="33%" style="padding: 20px" class="text-center">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                            aria-haspopup="true" aria-expanded="false">
+                        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a href="javascript:saveSvgAsPng(document.getElementById('tree_class_c_svg'), 'xtal_coverage_tree_class_c.png');">PNG</a>
+                        </li>
+                        <li>
+                            <a href="javascript:saveSvgAsJpg(document.getElementById('tree_class_c_svg'), 'xtal_coverage_tree_class_c.jpg');">JPG</a>
+                        </li>
+                        <li>
+                            <a href="javascript:saveSvgAsTiff(document.getElementById('tree_class_c_svg'), 'xtal_coverage_tree_class_c.tiff');">TIFF</a>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="javascript:saveSvg(document.getElementById('tree_class_c_svg'), 'xtal_coverage_tree_class_c.svg');">SVG</a>
+                        </li>
+                    </ul>
+                </div>
+            </td>
+        </tr>
+    </table>
+    <table width="100%">
+        <tr>
+            <td width="50%" align="center">
+                <h4>Class F<br />(Frizzled)</h4>
+            </td>
+            <td width="50%" align="center">
+                <h4>Class T (Taste 2)</h4>
+            </td>
+        </tr>
+        <tr>
+            <td width="50%" align="center" style="padding: 20px">
+                <div id="tree_class_f"></div>
+            </td>
+            <td width="50%" align="center" style="padding: 20px">
+                <div id="tree_class_t2"></div>
+            </td>
+        </tr>
+        <tr>
+            <td width="50%" style="padding: 20px" class="text-center">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                            aria-haspopup="true" aria-expanded="false">
+                        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a href="javascript:saveSvgAsPng(document.getElementById('tree_class_f_svg'), 'xtal_coverage_tree_class_f.png');">PNG</a>
+                        </li>
+                        <li>
+                            <a href="javascript:saveSvgAsJpg(document.getElementById('tree_class_f_svg'), 'xtal_coverage_tree_class_f.jpg');">JPG</a>
+                        </li>
+                        <li>
+                            <a href="javascript:saveSvgAsTiff(document.getElementById('tree_class_f_svg'), 'xtal_coverage_tree_class_f.tiff');">TIFF</a>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="javascript:saveSvg(document.getElementById('tree_class_f_svg'), 'xtal_coverage_tree_class_f.svg');">SVG</a>
+                                </a>
+                        </li>
+                    </ul>
+                </div>
+            </td>
+            <td width="50%" style="padding: 20px" class="text-center">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                            aria-haspopup="true" aria-expanded="false">
+                        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a href="javascript:saveSvgAsPng(document.getElementById('tree_class_t2_svg'), 'xtal_coverage_tree_t2.png');">PNG</a>
+                        </li>
+                        <li>
+                            <a href="javascript:saveSvgAsJpg(document.getElementById('tree_class_t2_svg'), 'xtal_coverage_tree_t2.jpg');">JPG</a>
+                        </li>
+                        <li>
+                            <a href="javascript:saveSvgAsTiff(document.getElementById('tree_class_t2_svg'), 'xtal_coverage_tree_t2.tiff');">TIFF</a>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="javascript:saveSvg(document.getElementById('tree_class_t2_svg'), 'xtal_coverage_tree_t2.svg');">SVG</a>
+                                </a>
+                        </li>
+                    </ul>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+<!-- end added section -->
   <hr>
 {% endif %}
 
@@ -703,6 +1018,7 @@
 <script src="{% static 'home/js/newick.js' %}"></script>
 {% if render_part != "venn" %}
   <script src="{% static 'home/js/gprotselectivitytree.js' %}"></script>
+  <script src="{% static 'home/js/phylo_tree.js' %}"></script>
 {% endif %}
 <script src="{% static 'home/js/bootstrap-toggle.min.js' %}"></script>
 <script src="{% static 'home/js/targetselect_functions.js' %}"></script>
@@ -716,5 +1032,4 @@
 <script src="{% static 'home/js/jvenn.js' %}"></script>
 <script src="{% static 'home/js/nv.d3.min.js' %}"></script>
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
-
 {% endblock %}
