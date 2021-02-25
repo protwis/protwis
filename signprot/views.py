@@ -12,6 +12,7 @@ from django.views.generic import TemplateView
 from common import definitions
 from common.diagrams_gpcr import DrawSnakePlot
 from common.diagrams_gprotein import DrawGproteinPlot
+from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.tools import fetch_from_web_api
 from common.views import AbsTargetSelection
 from contactnetwork.models import InteractingResiduePair
@@ -821,7 +822,42 @@ def CouplingProfiles(request):
         context = OrderedDict()
         i = 0
         gproteins = ProteinGProtein.objects.all()
-
+        # adding info for tree from StructureStatistics View
+        tree = PhylogeneticTreeGenerator()
+        class_a_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
+        context['tree_class_a_options'] = deepcopy(tree.d3_options)
+        context['tree_class_a_options']['anchor'] = 'tree_class_a'
+        context['tree_class_a_options']['leaf_offset'] = 50
+        context['tree_class_a_options']['label_free'] = []
+        context['tree_class_a'] = json.dumps(class_a_data.get_nodes_dict(None))
+        class_b1_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B1 (Secretin)'))
+        context['tree_class_b1_options'] = deepcopy(tree.d3_options)
+        context['tree_class_b1_options']['anchor'] = 'tree_class_b1'
+        context['tree_class_b1_options']['branch_trunc'] = 60
+        context['tree_class_b1_options']['label_free'] = [1,]
+        context['tree_class_b1'] = json.dumps(class_b1_data.get_nodes_dict(None))
+        class_b2_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B2 (Adhesion)'))
+        context['tree_class_b2_options'] = deepcopy(tree.d3_options)
+        context['tree_class_b2_options']['anchor'] = 'tree_class_b2'
+        context['tree_class_b2_options']['label_free'] = [1,]
+        context['tree_class_b2'] = json.dumps(class_b2_data.get_nodes_dict(None))
+        class_c_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class C (Glutamate)'))
+        context['tree_class_c_options'] = deepcopy(tree.d3_options)
+        context['tree_class_c_options']['anchor'] = 'tree_class_c'
+        context['tree_class_c_options']['branch_trunc'] = 50
+        context['tree_class_c_options']['label_free'] = [1,]
+        context['tree_class_c'] = json.dumps(class_c_data.get_nodes_dict(None))
+        class_f_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class F (Frizzled)'))
+        context['tree_class_f_options'] = deepcopy(tree.d3_options)
+        context['tree_class_f_options']['anchor'] = 'tree_class_f'
+        context['tree_class_f_options']['label_free'] = [1,]
+        context['tree_class_f'] = json.dumps(class_f_data.get_nodes_dict(None))
+        class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class T (Taste 2)'))
+        context['tree_class_t2_options'] = deepcopy(tree.d3_options)
+        context['tree_class_t2_options']['anchor'] = 'tree_class_t2'
+        context['tree_class_t2_options']['label_free'] = [1,]
+        context['tree_class_t2'] = json.dumps(class_t2_data.get_nodes_dict(None))
+        # end copied section from StructureStatistics View
         slug_translate = {'001': "ClassA", '002': "ClassB1", '004': "ClassC", '006': "ClassF"}
         selectivitydata = {}
         selectivitydata_gtp_plus = {}
@@ -881,6 +917,10 @@ def CouplingProfiles(request):
                     receptor_only = receptor_name.split('_')[0].upper()
                     if receptor_only not in selectivitydata_gtp_plus:
                         selectivitydata_gtp_plus[receptor_only] = []
+                #added by jimmy, will it change something?
+                    if key not in selectivitydata_gtp_plus[receptor_only]:
+                        selectivitydata_gtp_plus[receptor_only].append(key)
+                #end of addition by jimmy
                     jsondata_gtp_plus[key].append(str(receptor_name) + '\n')
 
                 if len(jsondata[key]) == 0:
@@ -894,9 +934,15 @@ def CouplingProfiles(request):
                     jsondata_gtp_plus[key] = ''.join(jsondata_gtp_plus[key])
 
             context[slug_translate[slug]] = jsondata
-            context[slug_translate[slug]+"_keys"] = list(jsondata.keys())
+            if len(list(jsondata.keys())) == 4:
+                context[slug_translate[slug]+"_keys"] = ['Gs','Gi/Go','Gq/G11','G12/G13']
+            else:
+                context[slug_translate[slug]+"_keys"] = list(jsondata.keys())
             context[slug_translate[slug]+"_gtp_plus"] = jsondata_gtp_plus
-            context[slug_translate[slug]+"_gtp_plus_keys"] = list(jsondata_gtp_plus.keys())
+            if len(list(jsondata_gtp_plus.keys())) == 4:
+                context[slug_translate[slug]+"_gtp_plus_keys"] = ['Gs','Gi/Go','Gq/G11','G12/G13']
+            else:
+                context[slug_translate[slug]+"_gtp_plus_keys"] = list(jsondata_gtp_plus.keys())
 
         context["selectivitydata"] = selectivitydata
         context["selectivitydata_gtp_plus"] = selectivitydata_gtp_plus

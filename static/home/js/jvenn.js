@@ -885,22 +885,6 @@
 				drawEllipse(242,177,10,18.5,11.5,40,  changeOpacity(opts.colors[1], $("#label2").css('opacity')));
 				drawEllipse(259,177,10,18.5,11.5,140, changeOpacity(opts.colors[2], $("#label3").css('opacity')));
 				drawEllipse(320,238,10,18.5,11.5,140, changeOpacity(opts.colors[3], $("#label4").css('opacity')));
-
-				var totalPercentage = +($("#resultC100000").text()) +
-															+($("#resultC010000").text()) +
-															+($("#resultC001000").text()) +
-															+($("#resultC000100").text()) +
-															+($("#resultC110000").text()) +
-															+($("#resultC101000").text()) +
-															+($("#resultC100100").text()) +
-															+($("#resultC011000").text()) +
-															+($("#resultC010100").text()) +
-															+($("#resultC001100").text()) +
-															+($("#resultC111000").text()) +
-															+($("#resultC110100").text()) +
-															+($("#resultC101100").text()) +
-															+($("#resultC011100").text()) +
-															+($("#resultC111100").text());
 				$("#label1").css("left", 5).css("top", 70).css("color",   "rgba(0,0,0)"); //opts.colors[0]
 				$("#label2").css("left", 85).css("top", 5).css("color",   "rgba(0,0,0)"); //opts.colors[1]
 				$("#label3").css("left", 350).css("top", 5).css("color",  "rgba(0,0,0)"); //opts.colors[2]

@@ -68,8 +68,10 @@ function draw_tree(data, options) {
         .enter().append("g")
         .attr("class", "node")
         .attr("transform", function (d) { if (d.name == '') { return "rotate(" + (d.x) + ")translate(" + d.y + ")"; } else { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; } })
-
-    node.filter(function (d) { return (d.depth == options.depth) }).append("circle")
+//TODO: add a check to remove circles when nothing is passed (?)
+    node.filter(function (d) { return (d.depth == options.depth) })
+        .filter(function (d) { return (d.value != 3000) })
+        .append("circle")
         .attr("r", function (d) { if (d.name == '') { return "0" } else { return "4.0" } })
         .style("fill", function (d) {
             if (d.color && d.depth < options.depth) { return d.color }
@@ -92,12 +94,16 @@ function draw_tree(data, options) {
         })
         .style("opacity", .99);
 
+    node.filter(function (d) { return (d.depth == options.depth) })
+        .attr("id", function (d) { if (d.name == '') { return "innerNode" } else { return 'X'+d.name.toUpperCase() } });
+
     node.append("text")
         .attr("dy", ".31em")
+        .attr("name", function (d) { if (d.name == '') { return "branch" } else { return d.name } })
         .attr("text-anchor", function (d) { return d.x < 180 ? "end" : "start"; })
         .attr("transform", function (d) {
             if (d.depth == 3) {
-                return d.x < 180 ? "translate(50)" : "rotate(180)translate(-50)";
+                return d.x < 180 ? "translate(43)" : "rotate(180)translate(-43)";
             } else {
                 return d.x < 180 ? "translate(-12)" : "rotate(180)translate(12)";
             }
