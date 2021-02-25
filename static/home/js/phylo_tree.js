@@ -70,7 +70,7 @@ function draw_tree(data, options) {
         .attr("transform", function (d) { if (d.name == '') { return "rotate(" + (d.x) + ")translate(" + d.y + ")"; } else { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; } })
 //TODO: add a check to remove circles when nothing is passed (?)
     node.filter(function (d) { return (d.depth == options.depth) })
-        .filter(function (d) { return (d.value != 3000) })
+        .filter(function (d) { return (d.value !== 3000) })
         .append("circle")
         .attr("r", function (d) { if (d.name == '') { return "0" } else { return "4.0" } })
         .style("fill", function (d) {

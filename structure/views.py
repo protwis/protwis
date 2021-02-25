@@ -496,8 +496,6 @@ class StructureStatistics(TemplateView):
 		struct_count = Structure.objects.all().annotate(Count('id'))
 		struct_lig_count = Structure.objects.exclude(ligands=None)
 
-		gproteins = ProteinGProtein.objects.all()
-
 		context['all_structures'] = len(all_structs)
 		context['all_structures_by_class'] = self.count_by_class(all_structs, lookup)
 		context['all_complexes'] = len(all_complexes)
