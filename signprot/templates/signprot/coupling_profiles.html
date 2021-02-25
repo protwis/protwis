@@ -70,6 +70,11 @@
 }
     {% if render_part != "tree" %}
       $(document).ready(function () {
+<<<<<<< HEAD
+=======
+        // "#C0C0C0","#F5F5F5","#696969","#303030"
+        // var colorDefault = ["#5a9bd4", "#f15a60", "#808080", "#006600"],
+>>>>>>> 45d3f0e0c389a7b270f440d9b656d8d4236dcad4
         var colorDefault = ["#5a9bd4", "#f15a60", "#808080", "#006600"],
           displayMode  = "classic",
           displaySwitch = false,
@@ -518,6 +523,12 @@
 
 <style>
   .node circle {
+<<<<<<< HEAD
+=======
+    /*fill: #fff;*/
+    /*stroke: DarkGreen;*/
+    /*fill: DarkGreen;*/
+>>>>>>> 45d3f0e0c389a7b270f440d9b656d8d4236dcad4
     stroke: #000000 ;
     stroke-width: .3px;
   }
@@ -639,7 +650,11 @@
         DrawCircles('tree_class_b2',selectivitydata_gtp_plus);
         DrawCircles('tree_class_c',selectivitydata_gtp_plus);
         DrawCircles('tree_class_f',selectivitydata_gtp_plus);
+<<<<<<< HEAD
         DrawCircles('tree_class_t2',selectivitydata_gtp_plus);
+=======
+        // DrawCircles('tree_class_t2',selectivitydata_gtp_plus);
+>>>>>>> 45d3f0e0c389a7b270f440d9b656d8d4236dcad4
         $("#ClassA").addClass("active");
       } else {
         gtp.style.display = "none";
@@ -650,7 +665,11 @@
         DrawCircles('tree_class_b2',selectivitydata);
         DrawCircles('tree_class_c',selectivitydata);
         DrawCircles('tree_class_f',selectivitydata);
+<<<<<<< HEAD
         DrawCircles('tree_class_t2',selectivitydata);
+=======
+        // DrawCircles('tree_class_t2',selectivitydata);
+>>>>>>> 45d3f0e0c389a7b270f440d9b656d8d4236dcad4
         $("#ClassA2s").addClass("active");
       }
     })
@@ -1010,6 +1029,10 @@ $(window).on("load",function() {
 <script src="{% static 'home/js/d3.min.js' %}"></script>
 <script src="{% static 'home/js/newick.js' %}"></script>
 {% if render_part != "venn" %}
+<<<<<<< HEAD
+=======
+  <script src="{% static 'home/js/gprotselectivitytree.js' %}"></script>
+>>>>>>> 45d3f0e0c389a7b270f440d9b656d8d4236dcad4
   <script src="{% static 'home/js/phylo_tree.js' %}"></script>
 {% endif %}
 <script src="{% static 'home/js/bootstrap-toggle.min.js' %}"></script>
