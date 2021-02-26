@@ -12,7 +12,7 @@ from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from protein.models import Gene, ProteinSegment, IdentifiedSites, ProteinGProteinPair
 from structure.models import Structure, StructureModel, StructureComplexModel, StructureModelStatsRotamer, StructureComplexModelStatsRotamer, StructureModelSeqSim, StructureComplexModelSeqSim, StructureRefinedStatsRotamer, StructureRefinedSeqSim, StructureExtraProteins, StructureModelRMSD
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn, PdbStateIdentifier
-from structure.assign_generic_numbers_gpcr import GenericNumbering
+from structure.assign_generic_numbers_gpcr import GenericNumbering, GenericNumberingFromDB
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
 from structure.forms import *
 from signprot.models import SignprotComplex, SignprotStructure, SignprotStructureExtraProteins
@@ -1743,20 +1743,48 @@ class PDBClean(TemplateView):
 	"""
 	template_name = "pdb_download.html"
 
+	def get(self, request, *args, **kwargs):
+		context = super(PDBClean, self).get_context_data(**kwargs)
+		if request.path.endswith('pdb_download_custom'):
+			context['trigger_download'] = True
+
+		self.success = False
+		self.posted = False
+		context['pref'] = True
+
+		# get simple selection from session
+		simple_selection = self.request.session.get('selection', False)
+		selection = Selection()
+		if simple_selection:
+			selection.importer(simple_selection)
+
+		if len(selection.targets)>100:
+			return HttpResponse("Cannot process more than 100 structures", status=400)
+		elif selection.targets != []:
+			self.success = True
+			context['targets'] = selection.targets
+
+		attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
+		for a in attributes:
+			if not(a[0].startswith('__') and a[0].endswith('__')):
+				context[a[0]] = a[1]
+
+		return render(request, self.template_name, context)
+
 	def post(self, request, *args, **kwargs):
 		context = super(PDBClean, self).get_context_data(**kwargs)
 
 		self.posted = True
-		pref = True
-		water = False
-		hets = False
+		pref, context['pref'] = True, True
+		water, context['water'] = False, False
+		hets, context['hets'] = False, False
 
 		if 'pref_chain' not in request.POST.keys():
-			pref = False
+			pref, context['pref'] = False, False
 		if 'water' in request.POST.keys():
-			water = True
+			water, context['water'] = True, True
 		if 'hets' in request.POST.keys():
-			hets = True
+			hets, context['hets'] = True, True
 
 		# get simple selection from session
 		simple_selection = request.session.get('selection', False)
@@ -1766,24 +1794,30 @@ class PDBClean(TemplateView):
 		out_stream = BytesIO()
 		io = PDBIO()
 		zipf = zipfile.ZipFile(out_stream, 'w', zipfile.ZIP_DEFLATED)
-
+		structs = []
 		if selection.targets != []:
 			if selection.targets != [] and selection.targets[0].type == 'structure':
+				request.session['substructure_mapping'] = OrderedDict()
 				for selected_struct in [x for x in selection.targets if x.type == 'structure']:
 					struct_name = '{}_{}.pdb'.format(selected_struct.item.protein_conformation.protein.parent.entry_name, selected_struct.item.pdb_code.index)
 					if hets:
 						lig_names = [x.pdb_reference for x in StructureLigandInteraction.objects.filter(structure=selected_struct.item, annotated=True)]
 					else:
 						lig_names = None
-					gn_assigner = GenericNumbering(structure=PDBParser(QUIET=True).get_structure(struct_name, StringIO(selected_struct.item.get_cleaned_pdb(pref, water, lig_names)))[0])
+					gn_assigner = GenericNumberingFromDB(selected_struct.item, PDBParser(QUIET=True).get_structure(struct_name, StringIO(selected_struct.item.get_cleaned_pdb(pref, water, lig_names)))[0])
 					tmp = StringIO()
 					io.set_structure(gn_assigner.assign_generic_numbers())
-					request.session['substructure_mapping'] = gn_assigner.get_substructure_mapping_dict()
+					request.session['substructure_mapping'][struct_name] = gn_assigner.get_substructure_mapping_dict()
 					io.save(tmp)
 					zipf.writestr(struct_name, tmp.getvalue())
 					del gn_assigner, tmp
+					structs.append(selected_struct.item.id)
 				for struct in selection.targets:
 					selection.remove('targets', 'structure', struct.item.id)
+				for struct_id in structs:
+					s = Structure.objects.get(id=struct_id)
+					selection.add('targets', 'structure', SelectionItem('structure', s))
+
 			elif selection.targets != [] and selection.targets[0].type in ['structure_model', 'structure_model_Inactive', 'structure_model_Intermediate', 'structure_model_Active']:
 				for hommod in [x for x in selection.targets if x.type in ['structure_model', 'structure_model_Inactive', 'structure_model_Intermediate', 'structure_model_Active']]:
 					mod_name = 'Class{}_{}_{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.item.protein.family.slug[:3]], hommod.item.protein.entry_name,
@@ -1822,7 +1856,9 @@ class PDBClean(TemplateView):
 
 			request.session['selection'] = simple_selection
 			request.session['cleaned_structures'] = out_stream
-
+		self.success = True
+		context['prepared_structures'] = True
+		context['targets'] = selection.targets
 		attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
 		for a in attributes:
 			if not(a[0].startswith('__') and a[0].endswith('__')):
@@ -1832,28 +1868,6 @@ class PDBClean(TemplateView):
 			return zipf
 		else:
 			return render(request, self.template_name, context)
-
-
-	def get_context_data (self, **kwargs):
-
-		context = super(PDBClean, self).get_context_data(**kwargs)
-		self.success = False
-		self.posted = False
-
-		# get simple selection from session
-		simple_selection = self.request.session.get('selection', False)
-		selection = Selection()
-		if simple_selection:
-			selection.importer(simple_selection)
-		if selection.targets != []:
-			self.success = True
-
-		attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
-		for a in attributes:
-			if not(a[0].startswith('__') and a[0].endswith('__')):
-				context[a[0]] = a[1]
-
-		return context
 
 
 class PDBSegmentSelection(AbsSegmentSelection):
@@ -1878,7 +1892,7 @@ class PDBSegmentSelection(AbsSegmentSelection):
 		self.buttons = {
 			'continue': {
 				'label': 'Download substructures',
-				'url': '/structure/pdb_download/custom',
+				'url': '/structure/pdb_download_custom',
 				'color': 'success',
 			},
 		}
@@ -1890,8 +1904,10 @@ class PDBSegmentSelection(AbsSegmentSelection):
 			selection.importer(simple_selection)
 
 		context['selection'] = {}
-		context['selection']['site_residue_groups'] = selection.site_residue_groups
-		context['selection']['active_site_residue_group'] = selection.active_site_residue_group
+		# context['selection']['site_residue_groups'] = selection.site_residue_groups
+		# context['selection']['active_site_residue_group'] = selection.active_site_residue_group
+
+		context['ignore_residue_selection'] = True
 		for selection_box, include in self.selection_boxes.items():
 			if include:
 				context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
@@ -1928,12 +1944,12 @@ class PDBDownload(View):
 			for name in zipf_in.namelist():
 				tmp = StringIO()
 				io.set_structure(PDBParser(QUIET=True).get_structure(name, StringIO(zipf_in.read(name).decode('utf-8')))[0])
-				io.save(tmp, SubstructureSelector(request.session['substructure_mapping'], parsed_selection=SelectionParser(selection)))
+				io.save(tmp, SubstructureSelector(request.session['substructure_mapping'][name], parsed_selection=SelectionParser(selection)))
 				zipf_out.writestr(name, tmp.getvalue())
 
 			zipf_in.close()
 			zipf_out.close()
-			del request.session['substructure_mapping']
+
 		if len(out_stream.getvalue()) > 0:
 			response = HttpResponse(content_type="application/zip")
 			if hommods == False:

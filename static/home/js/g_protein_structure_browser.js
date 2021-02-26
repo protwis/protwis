@@ -520,7 +520,7 @@ function gproteinstructurebrowser() {
                 AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
             }
         }
-        window.location.href = '/structure/pdb_download_index';
+        window.location.href = '/structure/pdb_download';
     });
 
     // $('.glyphicon-export').mouseover(function() {
