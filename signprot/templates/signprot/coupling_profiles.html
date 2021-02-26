@@ -149,6 +149,7 @@
             shortNumber: shortNumber,
             displaySwitch: displaySwitch,
             displayStat: displayStat,
+            exporting: true,
             fnClickCallback: function() {
               var dict = {{ receptor_dictionary|safe }};
               var value = "";
@@ -511,7 +512,7 @@
     resize: none;
     overflow: hidden;
   }
-  canvas {
+  canvas#test-canvas {
     display: none;
   }
 </style>
@@ -701,7 +702,7 @@ function DrawCircles(location, data){
     for (var x in data){
       var spacer = 8
       if (data[x].indexOf("Gs")>= 0) {
-        var leafwithname = svg.selectAll('g[id^=X'+x+']')
+        var leafwithname = svg.selectAll('g[id=X'+x+']')
             .append("circle")
             .attr("r", 3.25)
             .style("fill", "blue")
@@ -709,7 +710,7 @@ function DrawCircles(location, data){
           }
 
       if (data[x].indexOf("Gi/Go")>= 0) {
-        var leafwithname = svg.selectAll('g[id^=X'+x+']')
+        var leafwithname = svg.selectAll('g[id=X'+x+']')
             .append("circle")
             .attr("r", 3.25)
             .style("fill", "red")
@@ -717,7 +718,7 @@ function DrawCircles(location, data){
           }
 
       if (data[x].indexOf("Gq/G11")>= 0) {
-        var leafwithname = svg.selectAll('g[id^=X'+x+']')
+        var leafwithname = svg.selectAll('g[id=X'+x+']')
             .append("circle")
             .attr("r", 3.25)
             .style("fill", "black")
@@ -725,7 +726,7 @@ function DrawCircles(location, data){
         }
 
       if (data[x].indexOf("G12/G13")>= 0) {
-        var leafwithname = svg.selectAll('g[id^=X'+x+']')
+        var leafwithname = svg.selectAll('g[id=X'+x+']')
             .append("circle")
             .attr("r", 3.25)
             .style("fill", "green")

@@ -816,7 +816,7 @@ def CouplingProfiles(request):
 
     context = cache.get(name_of_cache)
     # NOTE cache disabled for development only!
-    context = None
+    #context = None
     if context == None:
 
         context = OrderedDict()
@@ -917,10 +917,10 @@ def CouplingProfiles(request):
                     receptor_only = receptor_name.split('_')[0].upper()
                     if receptor_only not in selectivitydata_gtp_plus:
                         selectivitydata_gtp_plus[receptor_only] = []
-                #added by jimmy, will it change something?
+
                     if key not in selectivitydata_gtp_plus[receptor_only]:
                         selectivitydata_gtp_plus[receptor_only].append(key)
-                #end of addition by jimmy
+
                     jsondata_gtp_plus[key].append(str(receptor_name) + '\n')
 
                 if len(jsondata[key]) == 0:
