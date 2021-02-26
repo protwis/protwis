@@ -429,7 +429,7 @@ def CouplingProfiles(request):
 
     context = cache.get(name_of_cache)
     # NOTE cache disabled for development only!
-    #context = None
+    context = None
     if context == None:
 
         context = OrderedDict()
@@ -486,8 +486,8 @@ def CouplingProfiles(request):
                                 .distinct())
 
                 # Other coupling data with logmaxec50 greater than 0
-                # TODO - coupling source should not be hardcoded
-                other_couplings = list(ProteinGProteinPair.objects.filter(protein__family__slug__startswith=slug, source__in=["Aska2", "Bouvier2"])\
+                other_couplings = list(ProteinGProteinPair.objects.filter(protein__family__slug__startswith=slug)\
+                                .exclude(source="GuideToPharma")
                                 .filter(g_protein=gp, logmaxec50_deg__gt=0)\
                                 .order_by("protein__entry_name")\
                                 .values_list("protein__entry_name").distinct()\

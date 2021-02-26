@@ -590,7 +590,7 @@
 
         <div class="span6">
           <div>
-            <p> Click on an area of the venn diagram or a receptor clade on the phylogenetic G-protein selectivity tree to display the respective receptor sets: </p>
+            <p> Click on an area of the venn diagram to display the respective receptor sets: </p>
           </div>
           <table class="compact text-nowrap" id="receptor_table">
             <thead>
@@ -696,42 +696,22 @@
 <script type="text/javascript" charset="utf-8">
 
 function DrawCircles(location, data){
+    var fam = {1:"Gs",2:"Gi/Go",3:"Gq/G11",4:"G12/G13"};
+    var fill = {1:"blue",2:"red",3:"black",4:"green"};
+    var spacer = 8;
     var svg = d3.select('#'+location);
     var node = svg.selectAll(".node");
     node.selectAll("circle").remove();
     for (var x in data){
-      var spacer = 8
-      if (data[x].indexOf("Gs")>= 0) {
-        var leafwithname = svg.selectAll('g[id=X'+x+']')
-            .append("circle")
-            .attr("r", 3.25)
-            .style("fill", "blue")
-            .attr("transform", "translate(" + (42 + spacer) + ",0)");
-          }
-
-      if (data[x].indexOf("Gi/Go")>= 0) {
-        var leafwithname = svg.selectAll('g[id=X'+x+']')
-            .append("circle")
-            .attr("r", 3.25)
-            .style("fill", "red")
-            .attr("transform", "translate(" + (42 + 2*spacer) + ",0)");
-          }
-
-      if (data[x].indexOf("Gq/G11")>= 0) {
-        var leafwithname = svg.selectAll('g[id=X'+x+']')
-            .append("circle")
-            .attr("r", 3.25)
-            .style("fill", "black")
-            .attr("transform", "translate(" + (42 + 3*spacer) + ",0)");
-        }
-
-      if (data[x].indexOf("G12/G13")>= 0) {
-        var leafwithname = svg.selectAll('g[id=X'+x+']')
-            .append("circle")
-            .attr("r", 3.25)
-            .style("fill", "green")
-            .attr("transform", "translate(" + (42 + 4*spacer) + ",0)");
-        }
+      for (var f in fam){
+        if (data[x].indexOf(fam[f])>= 0) {
+          var leafwithname = svg.selectAll('g[id=X'+x+']')
+              .append("circle")
+              .attr("r", 3.25)
+              .style("fill", fill[f])
+              .attr("transform", "translate(" + (42 + f*spacer) + ",0)");
+            }
+      }
     }
   }
 
@@ -750,7 +730,7 @@ $(window).on("load",function() {
     DrawCircles('tree_class_t2',selectivitydata);
     $("#tree_class_a svg g").first().attr('transform', 'translate(555,555) scale(0.9,0.9) ');
     $("#tree_class_b1 svg g").first().attr('transform', 'translate(220,220) scale(0.85,0.85) ');
-    $("#tree_class_b2 svg g").first().attr('transform', 'translate(220,182) scale(0.85,0.85) ');
+    $("#tree_class_b2 svg g").first().attr('transform', 'translate(182,182) scale(0.85,0.85) ');
     $("#tree_class_c svg g").first().attr('transform', 'translate(200,200) scale(0.85,0.85) ');
     $("#tree_class_f svg g").first().attr('transform', 'translate(180,180) scale(0.85,0.85) ');
     $("#tree_class_t2 svg g").first().attr('transform', 'translate(172,172) scale(0.85,0.85) ');
@@ -810,179 +790,202 @@ $(window).on("load",function() {
     <br />
     <br />
     <br />
-    <table>
-        <tr>
-            <td align="center">
-                <h4>Class B1<br />(Secretin)</h4>
-            </td>
-            <td align="center">
-                <h4>Class B2<br />(Adhesion)</h4>
-            </td>
-            <td align="center">
-                <h4>Class C<br />(Glutamate)</h4>
-            </td>
-        </tr>
-        <tr>
-            <td width="33%" style="padding: 20px">
-                <div id="tree_class_b1"></div>
-            </td>
-            <td width="33%" style="padding: 20px">
-                <div id="tree_class_b2"></div>
-            </td>
-            <td width="33%" style="padding: 20px">
-                <div id="tree_class_c"></div>
 
-            </td>
-        </tr>
-        <tr>
-            <td width="33%" style="padding: 20px" class="text-center">
-                <div class="btn-group">
-                    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                            aria-haspopup="true" aria-expanded="false">
-                        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li>
-                            <a href="javascript:saveSvgAsPng(document.getElementById('tree_class_b1_svg'), 'xtal_coverage_tree_class_b1.png');">PNG</a>
-                        </li>
-                        <li>
-                            <a href="javascript:saveSvgAsJpg(document.getElementById('tree_class_b1_svg'), 'xtal_coverage_tree_class_b1.jpg');">JPG</a>
-                        </li>
-                        <li>
-                            <a href="javascript:saveSvgAsTiff(document.getElementById('tree_class_b1_svg'), 'xtal_coverage_tree_class_b1.tiff');">TIFF</a>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="javascript:saveSvg(document.getElementById('tree_class_b1_svg'), 'xtal_coverage_tree_class_b1.svg');">SVG</a>
-                        </li>
-                    </ul>
-                </div>
-            </td>
-            <td width="33%" style="padding: 20px" class="text-center">
-                <div class="btn-group">
-                    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                            aria-haspopup="true" aria-expanded="false">
-                        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li>
-                            <a href="javascript:saveSvgAsPng(document.getElementById('tree_class_b2_svg'), 'xtal_coverage_tree_class_b2.png');">PNG</a>
-                        </li>
-                        <li>
-                            <a href="javascript:saveSvgAsJpg(document.getElementById('tree_class_b2_svg'), 'xtal_coverage_tree_class_b2.jpg');">JPG</a>
-                        </li>
-                        <li>
-                            <a href="javascript:saveSvgAsTiff(document.getElementById('tree_class_b2_svg'), 'xtal_coverage_tree_class_b2.tiff');">TIFF</a>
-                        </li>
-                        <li>
-                            <a href="javascript:saveSvg(document.getElementById('tree_class_b2_svg'), 'xtal_coverage_tree_class_b2.svg');">SVG</a>
-                        </li>
-                    </ul>
-                </div>
-            </td>
-            <td width="33%" style="padding: 20px" class="text-center">
-                <div class="btn-group">
-                    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                            aria-haspopup="true" aria-expanded="false">
-                        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li>
-                            <a href="javascript:saveSvgAsPng(document.getElementById('tree_class_c_svg'), 'xtal_coverage_tree_class_c.png');">PNG</a>
-                        </li>
-                        <li>
-                            <a href="javascript:saveSvgAsJpg(document.getElementById('tree_class_c_svg'), 'xtal_coverage_tree_class_c.jpg');">JPG</a>
-                        </li>
-                        <li>
-                            <a href="javascript:saveSvgAsTiff(document.getElementById('tree_class_c_svg'), 'xtal_coverage_tree_class_c.tiff');">TIFF</a>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="javascript:saveSvg(document.getElementById('tree_class_c_svg'), 'xtal_coverage_tree_class_c.svg');">SVG</a>
-                        </li>
-                    </ul>
-                </div>
-            </td>
-        </tr>
-    </table>
-    <table width="100%">
-        <tr>
-            <td width="50%" align="center">
-                <h4>Class F<br />(Frizzled)</h4>
-            </td>
-            <td width="50%" align="center">
-                <h4>Class T (Taste 2)</h4>
-            </td>
-        </tr>
-        <tr>
-            <td width="50%" align="center" style="padding: 20px">
-                <div id="tree_class_f"></div>
-            </td>
-            <td width="50%" align="center" style="padding: 20px">
-                <div id="tree_class_t2"></div>
-            </td>
-        </tr>
-        <tr>
-            <td width="50%" style="padding: 20px" class="text-center">
-                <div class="btn-group">
-                    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                            aria-haspopup="true" aria-expanded="false">
-                        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li>
-                            <a href="javascript:saveSvgAsPng(document.getElementById('tree_class_f_svg'), 'xtal_coverage_tree_class_f.png');">PNG</a>
-                        </li>
-                        <li>
-                            <a href="javascript:saveSvgAsJpg(document.getElementById('tree_class_f_svg'), 'xtal_coverage_tree_class_f.jpg');">JPG</a>
-                        </li>
-                        <li>
-                            <a href="javascript:saveSvgAsTiff(document.getElementById('tree_class_f_svg'), 'xtal_coverage_tree_class_f.tiff');">TIFF</a>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="javascript:saveSvg(document.getElementById('tree_class_f_svg'), 'xtal_coverage_tree_class_f.svg');">SVG</a>
-                                </a>
-                        </li>
-                    </ul>
-                </div>
-            </td>
-            <td width="50%" style="padding: 20px" class="text-center">
-                <div class="btn-group">
-                    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                            aria-haspopup="true" aria-expanded="false">
-                        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li>
-                            <a href="javascript:saveSvgAsPng(document.getElementById('tree_class_t2_svg'), 'xtal_coverage_tree_t2.png');">PNG</a>
-                        </li>
-                        <li>
-                            <a href="javascript:saveSvgAsJpg(document.getElementById('tree_class_t2_svg'), 'xtal_coverage_tree_t2.jpg');">JPG</a>
-                        </li>
-                        <li>
-                            <a href="javascript:saveSvgAsTiff(document.getElementById('tree_class_t2_svg'), 'xtal_coverage_tree_t2.tiff');">TIFF</a>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="javascript:saveSvg(document.getElementById('tree_class_t2_svg'), 'xtal_coverage_tree_t2.svg');">SVG</a>
-                                </a>
-                        </li>
-                    </ul>
-                </div>
-            </td>
-        </tr>
-    </table>
+    <div class="row-fluid">
+      <div class="span12">
+        <div class="row-fluid">
+          <div class="span4">
+            <div id="tree_class_b1" class="text-center">
+              <h4>Class B1<br />(Secretin)</h4>
+            </div>
+          </div>
+
+          <div class="span4">
+            <div id="tree_class_b2" class="text-center">
+              <h4>Class B2<br />(Adhesion)</h4>
+            </div>
+          </div>
+
+          <div class="span4">
+            <div id="tree_class_c" class="text-center">
+              <h4>Class C<br />(Glutamate)</h4>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row-fluid">
+      <div class="span12">
+        <div class="row-fluid">
+          <div class="span4">
+            <div class="text-center">
+              <div class="btn-group">
+                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                          aria-haspopup="true" aria-expanded="false">
+                      <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu">
+                      <li>
+                          <a href="javascript:saveSvgAsPng(document.getElementById('tree_class_b1_svg'), 'xtal_coverage_tree_class_b1.png');">PNG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsJpg(document.getElementById('tree_class_b1_svg'), 'xtal_coverage_tree_class_b1.jpg');">JPG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsTiff(document.getElementById('tree_class_b1_svg'), 'xtal_coverage_tree_class_b1.tiff');">TIFF</a>
+                          </a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvg(document.getElementById('tree_class_b1_svg'), 'xtal_coverage_tree_class_b1.svg');">SVG</a>
+                      </li>
+                  </ul>
+              </div>
+            </div>
+          </div>
+          <div class="span4">
+            <div class="text-center">
+              <div class="btn-group">
+                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                          aria-haspopup="true" aria-expanded="false">
+                      <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu">
+                      <li>
+                          <a href="javascript:saveSvgAsPng(document.getElementById('tree_class_b2_svg'), 'xtal_coverage_tree_class_b2.png');">PNG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsJpg(document.getElementById('tree_class_b2_svg'), 'xtal_coverage_tree_class_b2.jpg');">JPG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsTiff(document.getElementById('tree_class_b2_svg'), 'xtal_coverage_tree_class_b2.tiff');">TIFF</a>
+                          </a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvg(document.getElementById('tree_class_b2_svg'), 'xtal_coverage_tree_class_b2.svg');">SVG</a>
+                      </li>
+                  </ul>
+              </div>
+            </div>
+          </div>
+          <div class="span4">
+            <div class="text-center">
+              <div class="btn-group">
+                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                          aria-haspopup="true" aria-expanded="false">
+                      <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu">
+                      <li>
+                          <a href="javascript:saveSvgAsPng(document.getElementById('tree_class_c_svg'), 'xtal_coverage_tree_class_c.png');">PNG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsJpg(document.getElementById('tree_class_c_svg'), 'xtal_coverage_tree_class_c.jpg');">JPG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsTiff(document.getElementById('tree_class_c_svg'), 'xtal_coverage_tree_class_c.tiff');">TIFF</a>
+                          </a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvg(document.getElementById('tree_class_c_svg'), 'xtal_coverage_tree_class_c.svg');">SVG</a>
+                      </li>
+                  </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <br />
+    <br />
+    <br />
+
+    <div class="row-fluid">
+      <div class="span12">
+        <div class="row-fluid">
+          <div class="span6">
+            <div id="tree_class_f" class="text-center">
+              <h4>Class F<br />(Frizzled)</h4>
+            </div>
+          </div>
+
+          <div class="span6">
+            <div id="tree_class_t2" class="text-center">
+              <h4>Class T<br />(Taste 2)</h4>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row-fluid">
+      <div class="span12">
+        <div class="row-fluid">
+          <div class="span6">
+            <div class="text-center">
+              <div class="btn-group">
+                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                          aria-haspopup="true" aria-expanded="false">
+                      <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu">
+                      <li>
+                          <a href="javascript:saveSvgAsPng(document.getElementById('tree_class_f_svg'), 'xtal_coverage_tree_class_f.png');">PNG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsJpg(document.getElementById('tree_class_f_svg'), 'xtal_coverage_tree_class_f.jpg');">JPG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsTiff(document.getElementById('tree_class_f_svg'), 'xtal_coverage_tree_class_f.tiff');">TIFF</a>
+                          </a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvg(document.getElementById('tree_class_f_svg'), 'xtal_coverage_tree_class_f.svg');">SVG</a>
+                      </li>
+                  </ul>
+              </div>
+            </div>
+          </div>
+          <div class="span6">
+            <div class="text-center">
+              <div class="btn-group">
+                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                          aria-haspopup="true" aria-expanded="false">
+                      <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu">
+                      <li>
+                          <a href="javascript:saveSvgAsPng(document.getElementById('tree_class_t2_svg'), 'xtal_coverage_tree_class_t2.png');">PNG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsJpg(document.getElementById('tree_class_t2_svg'), 'xtal_coverage_tree_class_t2.jpg');">JPG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsTiff(document.getElementById('tree_class_t2_svg'), 'xtal_coverage_tree_class_t2.tiff');">TIFF</a>
+                          </a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvg(document.getElementById('tree_class_t2_svg'), 'xtal_coverage_tree_class_t2.svg');">SVG</a>
+                      </li>
+                  </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
 
 <!-- end added section -->
   <hr>
 {% endif %}
 
 <div class='col-md-12'>
-  <h4>Reference:</h4>
+  <h4>References:</h4>
   <p>
-    We used the G protein transducer imformation from the
-    <a href='http://www.guidetopharmacology.org'>GuideToPharmacology</a> (IUPHAR): </p>
+    We used the G protein transducer information from both the
+    <a href='http://www.guidetopharmacology.org'>GuideToPharmacology</a> (IUPHAR) and the following datasets: </p>
   <p>
 
 
