@@ -494,7 +494,6 @@ def CouplingProfiles(request):
                                 .annotate(num_sources=Count("source", distinct=True)))
 
                 # Initialize selectivity array
-                all_receptors = other_couplings
                 processed_receptors = []
                 key = str(gp).split(' ')[0]
                 jsondata[key] = []
