@@ -947,8 +947,11 @@ def signprotdetail(request, slug):
 
     # get genes
     genes = Gene.objects.filter(proteins=p).values_list('name', flat=True)
-    gene = genes[0]
-    alt_genes = genes[1:]
+    gene = ""
+    alt_genes = ""
+    if len(gene) > 0:
+        gene = genes[0]
+        alt_genes = genes[1:]
 
     # get structures of this signal protein
     structures = SignprotStructure.objects.filter(protein=p)
