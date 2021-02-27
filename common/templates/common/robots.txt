@@ -1,12 +1,17 @@
 ####
-#	Block specific problematic URL for crawler
+#	Block specific problematic URL for some bots/crawlers
 ####
+
 User-agent: SemrushBot
+Disallow: /signprot/statistics/family
+
+User-agent: MJ12bot
 Disallow: /signprot/statistics/family
 
 ####
 #	Block fake traffic bots
 ####
+
 User-agent: bot-traffic,bottraffic,trafficbot,trafficbot.live
 Disallow: /
 
