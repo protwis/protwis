@@ -2,7 +2,7 @@ from django.conf import settings
 from django.http import HttpResponse
 from django.db import connection
 
-import time,datetime,os
+import time, datetime, os, sys
 
 import uuid
 
@@ -18,9 +18,9 @@ class StatsMiddleware:
 
         request_id = uuid.uuid4().hex
 
-        text_file = open(os.path.join(settings.BASE_DIR, "logs/stats_start_stop.log"), "a")
-        text_file.write('%s %s %s START %s %s\n' % (datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),request.META.get('REMOTE_ADDR'),request_id, request.method, request.path ))
-        text_file.close()
+#        text_file = open(os.path.join(settings.BASE_DIR, "logs/stats_start_stop.log"), "a")
+#        text_file.write('%s %s %s START %s %s\n' % (datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),request.META.get('REMOTE_ADDR'),request_id, request.method, request.path ))
+#        text_file.close()
 
         response = self.get_response(request)
 
@@ -31,22 +31,25 @@ class StatsMiddleware:
             print(request.path,"Time to execute", round(total,2), "SQL queries",len(connection.queries))
 
         text_file = open(os.path.join(settings.BASE_DIR, "logs/stats.log"), "a")
-        text_file.write('%s %s %s %s %s\n' % (datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), round(total,2),request.META.get('REMOTE_ADDR'), request.method, request.path ))
+        text_file.write('%s %s %s %s %s\n' % (datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), round(total,2),request.META.get('HTTP_X_FORWARDED_FOR'), request.method, request.path))
+#        text_file.write('%s %s %s %s %s %s\n' % (datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), round(total,2),request.META.get('HTTP_X_FORWARDED_FOR'), request.method, request.path, request.META.get('HTTP_USER_AGENT') ))
         text_file.close()
 
-        text_file = open(os.path.join(settings.BASE_DIR, "logs/stats_start_stop.log"), "a")
-        text_file.write('%s %s %s FINISH %s %s %s\n' % (datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),request.META.get('REMOTE_ADDR'),request_id, round(total,2), request.method, request.path ))
-        text_file.close()
+#        text_file = open(os.path.join(settings.BASE_DIR, "logs/stats_start_stop.log"), "a")
+#        text_file.write('%s %s %s FINISH %s %s %s\n' % (datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),request.META.get('REMOTE_ADDR'),request_id, round(total,2), request.method, request.path ))
+#        text_file.close()
 
         if total>5:
             # If slower than 5 seconds
             text_file = open(os.path.join(settings.BASE_DIR, "logs/stats_slow.log"), "a")
-            text_file.write('%s %s %s %s %s\n' % (datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), round(total,2),request.META.get('REMOTE_ADDR'), request.method, request.path ))
+            text_file.write('%s %s %s %s %s\n' % (datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), round(total,2),request.META.get('HTTP_X_FORWARDED_FOR'), request.method, request.path ))
             text_file.close()
 
         return response
 
     def process_exception(self, request, exception):
         text_file = open(os.path.join(settings.BASE_DIR, "logs/errors.log"), "a")
-        text_file.write('%s %s %s %s "%s"\n' % (datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),request.META.get('REMOTE_ADDR'), request.method, request.path,str(exception) ))
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        text_file.write('%s %s %s %s - %s %s - %s "%s" "%s"\n' % (datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), request.method, request.path, fname, str(exc_tb.tb_lineno), request.META.get('HTTP_REFERER'), request.META.get('HTTP_X_FORWARDED_FOR'), request.META.get('HTTP_USER_AGENT'), str(exception) ))
         text_file.close()
