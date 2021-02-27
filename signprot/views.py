@@ -424,7 +424,7 @@ def GProtein(request, dataset="GuideToPharma", render_part="both"):
                   context
                   )
 
-def CouplingProfiles(request):
+def CouplingProfiles(request, render_part="both"):
     name_of_cache = 'coupling_profiles'
 
     context = cache.get(name_of_cache)
@@ -472,6 +472,8 @@ def CouplingProfiles(request):
         context['tree_class_t2'] = json.dumps(class_t2_data.get_nodes_dict(None))
         # end copied section from StructureStatistics View
         slug_translate = {'001': "ClassA", '002': "ClassB1", '004': "ClassC", '006': "ClassF"}
+        key_translate ={'Gs':"G<sub>s</sub>", 'Gi/Go':"G<sub>i/o</sub>",
+                        'Gq/G11':"G<sub>q/11</sub>", 'G12/G13':"G<sub>12/13</sub>"}
         selectivitydata = {}
         selectivitydata_gtp_plus = {}
         receptor_dictionary = []
@@ -496,6 +498,7 @@ def CouplingProfiles(request):
                 # Initialize selectivity array
                 processed_receptors = []
                 key = str(gp).split(' ')[0]
+                # key = key_translate[id]
                 jsondata[key] = []
                 jsondata_gtp_plus[key] = []
                 for coupling in other_couplings:
@@ -545,16 +548,16 @@ def CouplingProfiles(request):
                 else:
                     jsondata_gtp_plus[key] = ''.join(jsondata_gtp_plus[key])
 
+            for item in key_translate:
+                try:
+                    jsondata_gtp_plus[key_translate[item]] = jsondata_gtp_plus.pop(item)
+                except KeyError:
+                    continue
+
             context[slug_translate[slug]] = jsondata
-            if len(list(jsondata.keys())) == 4:
-                context[slug_translate[slug]+"_keys"] = ['Gs','Gi/Go','Gq/G11','G12/G13']
-            else:
-                context[slug_translate[slug]+"_keys"] = list(jsondata.keys())
+            context[slug_translate[slug]+"_keys"] = list(jsondata.keys())
             context[slug_translate[slug]+"_gtp_plus"] = jsondata_gtp_plus
-            if len(list(jsondata_gtp_plus.keys())) == 4:
-                context[slug_translate[slug]+"_gtp_plus_keys"] = ['Gs','Gi/Go','Gq/G11','G12/G13']
-            else:
-                context[slug_translate[slug]+"_gtp_plus_keys"] = list(jsondata_gtp_plus.keys())
+            context[slug_translate[slug]+"_gtp_plus_keys"] = list(jsondata_gtp_plus.keys())
 
         context["selectivitydata"] = selectivitydata
         context["selectivitydata_gtp_plus"] = selectivitydata_gtp_plus
@@ -570,24 +573,24 @@ def CouplingProfiles(request):
             rec_ligandtype = p.family.parent.parent.short()
             rec_family = p.family.parent.short()
             rec_uniprot = p.entry_short()
-            rec_iuphar = p.family.name.replace("receptor", '').strip()
+            rec_iuphar = p.family.name.replace("receptor", '').replace("<i>","").replace("</i>","").strip()
             receptor_dictionary[rec_uniprot] = [rec_class, rec_ligandtype, rec_family, rec_uniprot, rec_iuphar]
 
         context["receptor_dictionary"] = json.dumps(receptor_dictionary)
 
     cache.set(name_of_cache, context, 60 * 60 * 24 * 7)  # seven days timeout on cache
-    context["render_part"] = "both"
+    context["render_part"] = render_part
 
     return render(request,
                   'signprot/coupling_profiles.html',
                   context
     )
 
-def GProteinTree(request, dataset="GuideToPharma"):
-    return GProtein(request, dataset, "tree")
+def GProteinTree(request):
+    return CouplingProfiles(request, "tree")
 
-def GProteinVenn(request, dataset="GuideToPharma"):
-    return GProtein(request, dataset, "venn")
+def GProteinVenn(request):
+    return CouplingProfiles(request, "venn")
 
 #@cache_page(60*60*24*7)
 def familyDetail(request, slug):

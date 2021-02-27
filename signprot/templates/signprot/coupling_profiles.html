@@ -92,6 +92,9 @@
         }
 
         function getArrayFromData(gprotein) {
+          console.log(gdata);
+          console.log(gprotein);
+          console.log(gdata[gprotein]);
           var lines = gdata[gprotein].split("\n");
           var table = new Array();
           for (var lindex in lines) {
@@ -226,7 +229,11 @@
               g.appendChild(newElement);
             }
           }
-
+          $("#label1").css("font-weight", "bold");
+          $("#label2").css("font-weight", "bold");
+          $("#label3").css("font-weight", "bold");
+          $("#label4").css("font-weight", "bold");
+          $(".number-empty").remove();
         }
 
         updateJvenn(gprotein_ID)
@@ -245,20 +252,6 @@
           updateJvenn(gprotein_list);
         });
 
-        $("#ClassA2s").click(function() {
-            datatable.clear().draw();
-            $("#input-targets").val('');
-            $("#input-targets").trigger('input');
-            gprotein_list = {{ ClassA_keys|safe }}
-            gdata = {{ ClassA|safe }}
-            $("#ClassA2s").addClass("active");
-            $("#ClassB12s").removeClass("active");
-            $("#ClassC2s").removeClass("active");
-            $("#ClassF2s").removeClass("active");
-            $("#CrossClass2s").removeClass("active");
-          updateJvenn(gprotein_list);
-        });
-
         $("#ClassB1").click(function() {
             datatable.clear().draw();
             $("#input-targets").val('');
@@ -273,20 +266,6 @@
           updateJvenn(gprotein_list);
         });
 
-        $("#ClassB12s").click(function() {
-            datatable.clear().draw();
-            $("#input-targets").val('');
-            $("#input-targets").trigger('input');
-            gprotein_list = {{ ClassB1_keys|safe }}
-            gdata = {{ ClassB1|safe }}
-            $("#ClassA2s").removeClass("active");
-            $("#ClassB12s").addClass("active");
-            $("#ClassC2s").removeClass("active");
-            $("#ClassF2s").removeClass("active");
-            $("#CrossClass2s").removeClass("active");
-          updateJvenn(gprotein_list);
-        });
-
         $("#CrossClass").click(function() {
             datatable.clear().draw();
             $("#input-targets").val('');
@@ -297,37 +276,15 @@
             gdataC = {{ ClassC_gtp_plus|safe }}
             gdataF = {{ ClassF_gtp_plus|safe }}
 
-            gdata['Gs'] = gdataA['Gs']+gdataB1['Gs']+gdataC['Gs']+gdataF['Gs']
-            gdata['Gi/Go'] = gdataA['Gi/Go']+gdataB1['Gi/Go']+gdataC['Gi/Go']+gdataF['Gi/Go']
-            gdata['Gq/G11'] = gdataA['Gq/G11']+gdataB1['Gq/G11']+gdataC['Gq/G11']+gdataF['Gq/G11']
-            gdata['G12/G13'] = gdataA['G12/G13']+gdataB1['G12/G13']+gdataC['G12/G13']+gdataF['G12/G13']
+            gdata['G<sub>s</sub>'] = gdataA['G<sub>s</sub>']+gdataB1['G<sub>s</sub>']+gdataC['G<sub>s</sub>']+gdataF['G<sub>s</sub>']
+            gdata['G<sub>i/o</sub>'] = gdataA['G<sub>i/o</sub>']+gdataB1['G<sub>i/o</sub>']+gdataC['G<sub>i/o</sub>']+gdataF['G<sub>i/o</sub>']
+            gdata['G<sub>q/11</sub>'] = gdataA['G<sub>q/11</sub>']+gdataB1['G<sub>q/11</sub>']+gdataC['G<sub>q/11</sub>']+gdataF['G<sub>q/11</sub>']
+            gdata['G<sub>12/13</sub>'] = gdataA['G<sub>12/13</sub>']+gdataB1['G<sub>12/13</sub>']+gdataC['G<sub>12/13</sub>']+gdataF['G<sub>12/13</sub>']
             $("#ClassA").removeClass("active");
             $("#ClassB1").removeClass("active");
             $("#ClassC").removeClass("active");
             $("#ClassF").removeClass("active");
             $("#CrossClass").addClass("active");
-          updateJvenn(gprotein_list);
-        });
-
-        $("#CrossClass2s").click(function() {
-            datatable.clear().draw();
-            $("#input-targets").val('');
-            $("#input-targets").trigger('input');
-            gprotein_list = {{ ClassA_keys|safe }}
-            gdataA = {{ ClassA|safe }}
-            gdataB1 = {{ ClassB1|safe }}
-            gdataC = {{ ClassC|safe }}
-            gdataF = {{ ClassF|safe }}
-
-            gdata['Gs'] = gdataA['Gs']+gdataB1['Gs']+gdataC['Gs']+gdataF['Gs']
-            gdata['Gi/Go'] = gdataA['Gi/Go']+gdataB1['Gi/Go']+gdataC['Gi/Go']+gdataF['Gi/Go']
-            gdata['Gq/G11'] = gdataA['Gq/G11']+gdataB1['Gq/G11']+gdataC['Gq/G11']+gdataF['Gq/G11']
-            gdata['G12/G13'] = gdataA['G12/G13']+gdataB1['G12/G13']+gdataC['G12/G13']+gdataF['G12/G13']
-            $("#ClassA2s").removeClass("active");
-            $("#ClassB12s").removeClass("active");
-            $("#ClassC2s").removeClass("active");
-            $("#ClassF2s").removeClass("active");
-            $("#CrossClass2s").addClass("active");
           updateJvenn(gprotein_list);
         });
 
@@ -344,19 +301,6 @@
           updateJvenn(gprotein_list);
         });
 
-        $("#ClassC2s").click(function() {
-            datatable.clear().draw();
-            $("#input-targets").val('');
-            gprotein_list = {{ ClassC_keys|safe }}
-            gdata = {{ ClassC|safe }}
-            $("#ClassA2s").removeClass("active");
-            $("#ClassB12s").removeClass("active");
-            $("#ClassC2s").addClass("active");
-            $("#ClassF2s").removeClass("active");
-            $("#CrossClass2s").removeClass("active");
-          updateJvenn(gprotein_list);
-        });
-
         $("#ClassF").click(function() {
             datatable.clear().draw();
             $("#input-targets").val('');
@@ -368,20 +312,6 @@
             $("#ClassC").removeClass("active");
             $("#ClassF").addClass("active");
             $("#CrossClass").removeClass("active");
-          updateJvenn(gprotein_list);
-        });
-
-        $("#ClassF2s").click(function() {
-            datatable.clear().draw();
-            $("#input-targets").val('');
-            $("#input-targets").trigger('input');
-            gprotein_list = {{ ClassF_keys|safe }}
-            gdata = {{ ClassF|safe }}
-            $("#ClassA2s").removeClass("active");
-            $("#ClassB12s").removeClass("active");
-            $("#ClassC2s").removeClass("active");
-            $("#ClassF2s").addClass("active");
-            $("#CrossClass2s").removeClass("active");
           updateJvenn(gprotein_list);
         });
 
@@ -562,10 +492,12 @@
 <div class="container">
   <div class="row-fluid">
     <div class="span12">
+      <div class="text-center">
+        <p>	Click a Venn area to retrieve the receptors with the given G protein family profile. </p>
+      </div>
       <div class="row-fluid">
         <div class="span6">
-          <div class="btn-toolbar" role="toolbar">
-            <p style="clear:both;text-align:center;">
+        <b>Class: </b>
               <div class="btn-group" role="group" id="gtp_plus">
                   <button id="ClassA" class="btn btn-primary active">A</button>
                   <button id="ClassB1" class="btn btn-primary">B1</button>
@@ -573,31 +505,18 @@
                   <button id="ClassF" class="btn btn-primary">F</button>
                   <button id="CrossClass" class="btn btn-primary">Cross</button>
               </div>
-              <div class="btn-group" role="group" id="any_2_srcs" style="display:none">
-                  <button id="ClassA2s" class="btn btn-info">A</button>
-                  <button id="ClassB12s" class="btn btn-info">B1</button>
-                  <button id="ClassC2s" class="btn btn-info">C</button>
-                  <button id="ClassF2s" class="btn btn-info">F</button>
-                  <button id="CrossClass2s" class="btn btn-info">Cross</button>
-              </div>
-                <input id="toggleswitch" type="checkbox" checked data-toggle="toggle" data-onstyle="primary" data-offstyle="info" data-on="GtP +" data-off="Any 2 sources" style="margin-left:10px;">
-            </p>
-          </div>
           <div class="row-fluid">
             <div id="jvenn-container"></div>
           </div>
         </div>
 
         <div class="span6">
-          <div>
-            <p> Click on an area of the venn diagram to display the respective receptor sets: </p>
-          </div>
           <table class="compact text-nowrap" id="receptor_table">
             <thead>
               <tr>
                   <th>Class</th>
                   <th>Ligand type</th>
-                  <th>Family</th>
+                  <th>Receptor Family</th>
                   <th>Receptor<br>(UniProt)</th>
                   <th>Receptor<br>(GtP)</th>
               </tr>
@@ -612,7 +531,7 @@
           </table>
 
         </div>
-        <button id="copytoclip" type="button" class="btn btn-info" style="float:right;margin-top:10px;"> Copy to clipboard </button>
+        <button id="copytoclip" type="button" class="btn btn-info" style="float:right;margin-top:10px;"> Copy receptor names to clipboard </button>
         <input id="cb" type="text" hidden>
         <canvas id="test-canvas"></canvas>
         </div>
@@ -622,43 +541,6 @@
   <hr>
 </div>
 {% endif %}
-
-<script>
-  $(function() {
-    $('#toggleswitch').change(function() {
-      var gtp = document.getElementById("gtp_plus");
-      var a2s = document.getElementById("any_2_srcs");
-      var click2s = document.getElementById("ClassA2s");
-      var clickgtp = document.getElementById("ClassA");
-      a2s.style.display = "none";
-      if (gtp.style.display === "none") {
-        gtp.style.display = "block";
-        a2s.style.display = "none";
-        clickgtp.click();
-        DrawCircles('tree_class_a',selectivitydata_gtp_plus);
-        DrawCircles('tree_class_b1',selectivitydata_gtp_plus);
-        DrawCircles('tree_class_b2',selectivitydata_gtp_plus);
-        DrawCircles('tree_class_c',selectivitydata_gtp_plus);
-        DrawCircles('tree_class_f',selectivitydata_gtp_plus);
-        DrawCircles('tree_class_t2',selectivitydata_gtp_plus);
-        $("#ClassA").addClass("active");
-      } else {
-        gtp.style.display = "none";
-        a2s.style.display = "block";
-        click2s.click();
-        DrawCircles('tree_class_a',selectivitydata);
-        DrawCircles('tree_class_b1',selectivitydata);
-        DrawCircles('tree_class_b2',selectivitydata);
-        DrawCircles('tree_class_c',selectivitydata);
-        DrawCircles('tree_class_f',selectivitydata);
-        DrawCircles('tree_class_t2',selectivitydata);
-        $("#ClassA2s").addClass("active");
-      }
-    })
-  })
-</script>
-
-
 
 <script>
   ! function($) {
@@ -741,8 +623,7 @@ $(window).on("load",function() {
     <div class="col-md-12">
       <div class="panel-body">
         <div class='text-center'>
-          <p><strong>GPCR selectivity tree.</strong> The four dots depict both primary and secondary G protein coupling (from inside to outside: <a href="family/100_001_001/">G&alpha;<sub>s</sub></a>,
-            <a href="family/100_001_002/">G&alpha;<sub>i/o</sub></a>, <a href="family/100_001_003/">G&alpha;<sub>q/11</sub></a>, <a href="family/100_001_004/">G&alpha;<sub>12/13</sub></a>).</p>
+          <p><strong>GPCR selectivity tree.</strong> The four dots depict both primary and secondary G protein coupling.</p>
         </div>
       </div>
     </div>
@@ -912,7 +793,7 @@ $(window).on("load",function() {
 
           <div class="span6">
             <div id="tree_class_t2" class="text-center">
-              <h4>Class T<br />(Taste 2)</h4>
+              <h4>Class T <br /> (Taste 2)</h4>
             </div>
           </div>
         </div>
