@@ -23,7 +23,7 @@ class StatsMiddleware:
 
         # Handle request
         response = self.get_response(request)
-        
+
         # Code below is executed after handling the request
 
         # End timer
@@ -79,5 +79,5 @@ class StatsMiddleware:
         Analyzed Feb-2021 on listings at useragentstring.com.
         '''
         bot_IDs = ["bot", "slurp", "crawler", "spider", "curl"]
-        user_agent = request.META.get("HTTP_USER_AGENT", "")
+        user_agent = request.META.get("HTTP_USER_AGENT", "").lower()
         return any(bot_ID in user_agent for bot_ID in bot_IDs)
