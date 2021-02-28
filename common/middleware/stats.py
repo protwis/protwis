@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.http import HttpResponse
 from django.db import connection
 
 import time
@@ -9,6 +8,13 @@ import os
 
 
 class StatsMiddleware:
+    """
+    Class that handles request and error logging.
+
+    Each response is timed and the user agent is checked for a bot/crawler tag.
+    Slow responses are separately logged and so are errors.
+    """
+
     def __init__(self, get_response):
         self.get_response = get_response
         # One-time configuration and initialization.
