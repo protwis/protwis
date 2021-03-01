@@ -249,14 +249,14 @@
             leftColumns: 2
         },
 			"serverSide": true,
-			"ajax": "/ligand/bias/api/?format=datatables",
+			"ajax": "/ligand/biasg/api/?format=datatables",
 			"columns": [{
                     "data": "id",
                 	"sortable": false,
                 	"render": function (data, type, row ) {
                 		var ligand_id = row.ligand_id;
 		                var my_func = "window.open('experiment/"+ data +"/detail')";
-		                var return_String = "<a href='#'><span class='glyphicon glyphicon-info-sign' onclick=("+my_func+")></span></a>";
+		                var return_String = "<span class='glyphicon glyphicon-info-sign' onclick=("+my_func+")></span>";
 		                var return_span = "<span style=\"display: none;\">" + ligand_id + "</span>";
 		                return return_span + return_String;
 	                }
@@ -1347,7 +1347,7 @@
                 document.getElementById("ligand_counter").innerHTML = ligand_counter;
                 document.getElementById("receptor_counter").innerHTML = receptor_counter;
                 // shadeTable(table, ["shade"], 120, 200);
-            },2000);
+            },4000);
 
 		});
 
@@ -1396,7 +1396,7 @@
 		var temp_lenght = table.rows.length;
 		var l = 0;
 		for (var i = 2; i < temp_lenght; i++) {
-			var x = table.rows[i].cells[3];
+			var x = table.rows[i].cells[2];
 			ids.push($(x)[0].innerText)
 		}
 		l = countUnique(ids);

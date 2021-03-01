@@ -1,0 +1,498 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+
+{% block content %}
+{% autoescape off %}
+
+<div class="container body-content">
+	<h2 class="sub-header">Ligand Data</h2>
+	<div class="row align-items-start justify-content-center">
+		<div class="col-md-4 ml-auto">
+			<h3>Ligand</h3>
+			<table class="table table-striped table-bordered" style="margin-right:10px">
+                <tr style=display:none>
+					<td>id </td>
+					<td id='ligand_id'>{{ligand.ligand_id}}</td>
+				</tr>
+				<tr>
+				<tr>
+					<td>Name </td>
+					<td>{{ligand.ligand_name}}</td>
+				</tr>
+				<tr>
+					<td>SMILES</td>
+					<td class="name" style="max-width: 350px">{{ligand.ligand_smiles}}</td>
+				</tr>
+				<tr>
+					<td>InChIKey</td>
+					<td>
+						{{ligand.ligand_inchikey}}</td>
+				</tr>
+				<tr>
+					<td>Type</td>
+					<td>
+						{{ligand.type}}</td>
+				</tr>
+				{% if ligand.sequence%}
+				<tr>
+					<td>Sequence</td>
+					<td class="name">
+						{{ligand.sequence}}</td>
+				</tr>
+				{% endif %}
+				<tr>
+					<td>External Links</td>
+					<td>
+						<ul style="padding: 0; list-style-type:none">
+							{% for ex in ligand.wl|dictsort:'name' %}
+							<li><a href="{{ex.link}}" target="_blank">{{ex.name}}</a></li>
+							{%endfor%}
+						</ul>
+					</td>
+				</tr>
+			</table>
+		</div>
+
+		<div class="col-md-4 ml-auto">
+			<h3>Structure</h3>
+            {% if ligand.picture is not None %}
+			<img style="margin-top: -25%;" src="http://www.ebi.ac.uk/chembl/api/data/image/{{ligand.picture}}" />
+            {%else%}
+            <h3>Image temporarily not available</h3>
+            {%endif%}
+    	</div>
+
+		<div class="col-md-4 ml-auto">
+			<h3>Properties</h3>
+			<table class="table table-striped table-bordered">
+				<tr>
+					<td>Hydrogen bond acceptors</td>
+					<td>
+						{{ligand.hacc}}</td>
+				</tr>
+				<tr>
+					<td>Hydrogen bond donors</td>
+					<td>
+						{{ligand.hdon}}</td>
+				</tr>
+				<tr>
+					<td>Rotatable bonds</td>
+					<td>
+						{{ligand.rotatable}}</td>
+				</tr>
+				<tr>
+					<td>Molecular weight</td>
+					<td>
+						{{ligand.mw|floatformat:1}}</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+	<table class="display" id='structures_scrollable_ligand' style="width: 100%">
+		<thead>
+			<tr rowspan="2">
+				<th style="text-align:center" colspan="5">
+					Receptor</th>
+				<th style=" text-align:center" colspan="3">
+					Affinity (nM)</th>
+				<th style=" text-align:center" colspan="3">
+					Potency (nM)</th>
+			</tr>
+			<tr>
+				<th>GTP</th>
+                <th>Uniprot</th>
+                <th>Species</th>
+                <th>family</th>
+				<th style="border-right: 1px solid black; text-align:center">Class</th>
+
+                <th>Min</th>
+                <th>Avg</th>
+				<th style="border-right: 1px solid black; text-align:center">Max</th>
+
+                <th>Min</th>
+                <th>Avg</th>
+				<th style="border-right: 1px solid black; text-align:center">Max</th>
+            </tr>
+		</thead>
+		<tbody>
+			{%for data in assay%}
+			<tr>
+				<td>{{data.receptor_gtp}}</td>
+				<td>{{data.receptor_uniprot}}</td>
+				<td>{{data.receptor_species}}</td>
+				<td>{{data.receptor_family}}</td>
+				<td>{{data.receptor_class}}</td>
+
+				<td>{{data.affinity_min}}</td>
+				<td>{{data.affinity_avg}}</td>
+				<td>{{data.affinity_max}}</td>
+
+				<td>{{data.potency_min}}</td>
+                <td>{{data.potency_avg}}</td>
+				<td>{{data.potency_max}}</td>
+			</tr>
+			{%endfor%}
+		</tbody>
+	</table>
+
+	{% endautoescape %}
+</div>
+<br>
+	{% endblock %}
+
+	{% block addon_js %}
+	<script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+	<script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+	<script src="{% static 'home/js/dataTables.buttons.min.js' %}"> </script>
+	<script src="{% static 'home/js/select2.js' %}"> </script>
+	<script src="{% static 'home/js/shading.js' %}"></script>
+	<script src="{% static 'home/js/datatables_buttons_altered_header_export.js' %}"></script>
+
+	<script type="text/javascript">
+        function myFunction(url, title, win, w, h) {
+    		const y = win.top.outerHeight / 2 + win.top.screenY - (h / 2);
+    		const x = win.top.outerWidth / 2 + win.top.screenX - (w / 2);
+    		return win.open(url, title, 'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width=' + w + ', height=' + h + ', top=' + y + ', left=' + x);
+    	}
+
+        function getCookie(c_name) {
+    		if (document.cookie.length > 0) {
+    			c_start = document.cookie.indexOf(c_name + "=");
+    			if (c_start != -1) {
+    				c_start = c_start + c_name.length + 1;
+    				c_end = document.cookie.indexOf(";", c_start);
+    				if (c_end == -1) c_end = document.cookie.length;
+    				return unescape(document.cookie.substring(c_start, c_end));
+    			}
+    		}
+    		return "";
+    	}
+
+		$(document).ready(function() {
+			var table = $('#structures_scrollable_ligand').DataTable({
+				dom: 'B<>ftrip',
+				StateSave: true,
+				scrollX: '100%',
+				scrollY: '60vh',
+				paging: false,
+				scrollCollapse: true,
+				AutoWidth: true,
+				pageLength: 75,
+				"order": [
+					[3, "desc"]
+				],
+				"deferRender": true,
+				buttons: [{
+						text: 'Excel',
+						className: 'btn btn-primary',
+						titleAttr: 'Download excel',
+						init: function(api, node, config) {
+							$(node).removeClass('dt-button buttons-excel buttons-html5');
+						},
+						action: function(e, dt, node, config) {
+							tableToExcel('structures_scrollable_ligand', 'Biased Ligand Data', 'GPCRdb_biased_ligands.xls')
+						},
+					},
+					{
+						text: 'Reset All Filters',
+						className: 'btn btn-primary',
+						titleAttr: 'Reset All Filters',
+						init: function(api, node, config) {
+							$(node).removeClass('dt-button buttons-excel buttons-html5');
+						},
+						action: function(e, dt, node, config) {
+							reset_filters()
+						},
+					},
+					{
+						text: 'Get Vendors',
+						className: 'btn btn-primary',
+						titleAttr: 'Vendors info for top 20 ligands',
+						init: function(api, node, config) {
+							$(node).removeClass('dt-button buttons-excel buttons-html5');
+						},
+						action: function(e, dt, node, config) {
+							var id = read_ids()
+							var result
+							$.ajaxSetup({
+								headers: {
+									"X-CSRFToken": getCookie("csrftoken")
+								}
+							});
+							$.ajax({
+								type: 'POST',
+								url: '/ligand/vendors',
+								data: {
+									ids: id,
+									csrfmiddlewaretoken: '{{csrf_token }}',
+									action: 'post',
+								},
+								success: function() {
+									myFunction('/ligand/browservendors', 'Detail View', window, 850, 1000)
+								}
+							});
+						},
+					},
+				],
+			});
+			yadcf.init(table,
+				[{
+						column_number: 0,
+						filter_type: "multi_select",
+						select_type: 'select2',
+						filter_default_label: "Select",
+						filter_reset_button_text: false,
+						select_type_options: {
+							width: '100px',
+						}
+					}, {
+						column_number: 1,
+						filter_type: "multi_select",
+						select_type: 'select2',
+						filter_default_label: "Select",
+						filter_reset_button_text: false,
+						select_type_options: {
+							width: '75px',
+						}
+					},
+					{
+						column_number: 2,
+						filter_type: "multi_select",
+						select_type: 'select2',
+						filter_default_label: "Select",
+						filter_reset_button_text: false,
+						select_type_options: {
+							width: '75px',
+						}
+					},
+                    {
+						column_number: 3,
+						filter_type: "multi_select",
+						select_type: 'select2',
+						filter_default_label: "Select",
+						filter_reset_button_text: false,
+						select_type_options: {
+							width: '125px',
+						}
+					},
+                    {
+						column_number: 4,
+						filter_type: "multi_select",
+						select_type: 'select2',
+						filter_default_label: "Select",
+						filter_reset_button_text: false,
+						select_type_options: {
+							width: '125px',
+						}
+					},
+					{
+						column_number: 5,
+						filter_type: "range_number",
+						filter_default_label: ["Min", "Max"],
+						filter_reset_button_text: false,
+					},
+					{
+						column_number: 6,
+						filter_type: "range_number",
+						filter_default_label: ["Min", "Max"],
+						filter_reset_button_text: false,
+					},
+					{
+						column_number: 7,
+						filter_type: "range_number",
+						filter_default_label: ["Min", "Max"],
+						filter_reset_button_text: false,
+					},
+					{
+						column_number: 8,
+						filter_type: "range_number",
+						filter_default_label: ["Min", "Max"],
+						filter_reset_button_text: false,
+					},
+					{
+						column_number: 9,
+						filter_type: "range_number",
+						filter_default_label: ["Min", "Max"],
+						filter_reset_button_text: false,
+					},
+                    	{
+    						column_number: 10,
+    						filter_type: "range_number",
+    						filter_default_label: ["Min", "Max"],
+    						filter_reset_button_text: false,
+    					},
+    					{
+    						column_number: 11,
+    						filter_type: "range_number",
+    						filter_default_label: ["Min", "Max"],
+    						filter_reset_button_text: false,
+    					}
+
+				], {
+					cumulative_filtering: true
+				}
+			);
+
+			function reset_filters() {
+				location.reload()
+			}
+			table.columns.adjust();
+
+			var tableToExcel = (function() {
+				var uri = 'data:application/vnd.ms-excel;base64,',
+					template =
+					'<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>',
+					base64 = function(s) {
+						return window.btoa(unescape(encodeURIComponent(s)))
+					},
+					format = function(s, c) {
+						return s.replace(/{(\w+)}/g, function(m, p) {
+							return c[p];
+						})
+					}
+				return function(table, name, filename) {
+					var table = $("#" + table).clone();
+					$("#excel_table").html(table);
+					// Clean up table to remove yadcf stuff
+					$("#excel_table thead tr").css('height', '');
+					$("#excel_table thead th").css('height', '');
+					$("#excel_table thead div").css('height', '');
+					$("#excel_table thead .yadcf-filter-wrapper").remove();
+					$("#excel_table thead button").remove();
+					var tr = $("#excel_table thead tr:eq(1)");
+					// reattach th titles
+					tr.find('th').each(function(column, th) {
+						if ($(th).attr('title')) $(th).html($(th).attr('title'));
+					});
+
+					var ctx = {
+						worksheet: name || 'Worksheet',
+						table: $("#excel_table").html()
+					}
+					$("#excel_table").html("");
+					document.getElementById("dlink").href = uri + base64(format(template, ctx));
+					document.getElementById("dlink").download = filename;
+					document.getElementById("dlink").click();
+				}
+			})()
+		});
+	</script>
+    <script type="text/javascript">
+        	function read_ids() {
+        		var ids = [];
+        		var table = document.getElementById("ligand_id")
+                var ligand_id = table.childNodes[0].data;
+        		return ligand_id
+        	}
+    </script>
+	{% endblock %}
+
+	{% block addon_css %}
+	<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+	<link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
+	<link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+	<link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+	<link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet">
+	<link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
+	<link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
+	<link rel="stylesheet" type="text/css" href="{% static 'home/css/jquery.powertip.css' %}" />
+	<style type="text/css">
+		.select2-result-label {
+			font-size: x-small;
+			font-size: 10px;
+		}
+
+		#filters {
+			font-size: 10px;
+			padding: 7px 15px;
+		}
+
+		@media (min-width: 1800px) {
+			#content {
+				width: 1770px;
+			}
+		}
+
+		table.dataTable.compact thead th.over_header {
+			border-right: 1px solid;
+			border-left: 0px solid;
+			text-align: left;
+			padding: 4px 4px 4px 4px;
+		}
+
+		table.dataTable.compact thead tr.over_header th {
+			border-bottom: 1px solid #ccc;
+		}
+
+		table.dataTable.compact thead th.leftborder {
+			border-left: 1px solid;
+		}
+
+		table.dataTable.compact thead th.rightborder {
+			border-right: 1px solid;
+		}
+
+		table.dataTable.compact thead th.checkbox_tr {
+			text-align: left;
+			padding: 4px 4px 4px 4px;
+		}
+
+		table.dataTable.compact thead th {
+			padding: 4px 16px 4px 2px;
+		}
+
+		.yadcf-filter-wrapper {
+			margin-top: 0px;
+		}
+
+		input.yadcf-filter {
+			width: 100px;
+			font-family: sans-serif;
+			font-size: 100%;
+			font-weight: bold;
+		}
+
+		.yadcf-filter-range-date,
+		.yadcf-filter-range-number {
+			width: 30px;
+			font-family: sans-serif;
+			font-size: 100%;
+			font-weight: bold;
+		}
+
+		.highlight {
+			background-color: rgb(204, 229, 255);
+		}
+
+		.name {
+			width: 70%;
+			text-overflow: ellipsis;
+			cursor: pointer;
+			word-break: break-all;
+			overflow: hidden;
+			white-space: nowrap;
+		}
+
+		.name:hover {
+			overflow: visible;
+			white-space: normal;
+
+		}
+
+		.zoom {
+			transition: transform .2s;
+		}
+
+		.zoom:hover {
+			ms-transform: scale(2.5);
+
+			-webkit-transform: scale(2.5);
+
+			transform: scale(2.5);
+			background-color: white;
+			border: solid 1px;
+			transform: scale(2.5);
+		}
+	</style>
+	{% endblock %}

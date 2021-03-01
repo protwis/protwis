@@ -164,8 +164,8 @@ class Command(BaseBuild):
         d['protein_efficacy_relation'] = None
         d['protein_efficacy_quantity'] = 0.0
         d['protein_efficacy_quantity_unit'] = None
-        d['pathway_bias_initial'] = 0.0
-        d['pathway_bias'] = 0.0
+        d['pathway_bias_initial'] = None
+        d['pathway_bias'] = None
         d['protein_activity_equation'] = None
         d['protein_efficacy_equation'] = None
         d['auxiliary_protein'] = None
@@ -229,7 +229,7 @@ class Command(BaseBuild):
                 try:
                     d['pathway_bias'] = float(r[29].replace('\U00002013', '-'))
                 except:
-                    d['pathway_bias'] = 0.0
+                    d['pathway_bias'] = None
         d['auxiliary_protein'] = r[30]
         d['source_file'] = excel_row
         return d
@@ -264,7 +264,7 @@ class Command(BaseBuild):
             except:
                 d['protein_efficacy_quantity'] = d['protein_efficacy_quantity']
 
-            d['protein_activity_quantity'],d['protein_mtype'] = self.fetch_measurements(d['protein_activity_quantity'],
+            d['protein_activity_quantity'], d['protein_mtype'] = self.fetch_measurements(d['protein_activity_quantity'],
 																	     d['protein_mtype'],
 																	     d['protein_activity_quantity_unit'])
 
