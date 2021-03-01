@@ -2,216 +2,225 @@
 {% load static %}
 {% load filters %}
 {% block addon_css %}
-    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
 {% endblock %}
 
 
 {% block addon_js %}
-  <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
 
 <script type="text/javascript">
+  dynamine_data = {{ rs_annotations | safe }};
 
-    dynamine_data = {{rs_annotations|safe}};
-    
-    $( document ).ready(function() {
+  $(document).ready(function() {
+    console.log("ready!");
 
-
-      if(window.location.hash) {
-        $("#display_options").hide();
-      }
-        console.log( "ready!" );
-        $( ".adddynamine_nterm" ).each(function( index ) {
-          // console.log( index + ": " + $( this ).attr('entryname'));
-          entry_name = $( this ).attr('entryname').split("_").slice(0, 2).join('_');
-          // console.log(entry_name);
-          cut = $( this ).attr('entryname').split("_").slice(-1);
-          // console.log( index + ": " + entry_name + ' ' + cut);
-          pos = $( this ).attr('position');
-          if (pos>0) {
-              test = dynamine_data[entry_name];
-              try {
-                d = dynamine_data[entry_name]['N-term'];
-              } catch (e) {
-                  console.log('ERROR:' +  index + ": " + entry_name + ' ' + cut);
-                  return true;
-              }
-              length = Object.keys(d).length;
-              seq_pos = length-pos+1;
-              a = d[seq_pos];
-              if (a<0.7) {
-                // disordered / flexible
-                color = '#3D9970'; //green
-                if ($(this).attr('bgcolor')=='lightgrey') color = '#99C799';
-              } else if (a>0.8) {
-                // ordered / rigid
-                color = '#0074D9'; //blue
-                if ($(this).attr('bgcolor')=='lightgrey') color = '#999DFF';
-              } else {
-                color = '#FF851B'; //red
-                if ($(this).attr('bgcolor')=='lightgrey') color = '#FFA3A3';
-              }
-              // console.log( index + ": " + entry_name + ' pos:' + pos + ' seq_pos:' + seq_pos + ' ' +a);
-              $(this).html("<font size=1 color='"+color+"'></font>");
-              // if ($(this).attr('bgcolor')=='lightgrey') $(this).css('opacity',0.4);
-              $(this).attr('bgcolor',color);
-          }
-        });
-        $( ".adddynamine_cterm" ).each(function( index ) {
-          // console.log( index + ": " + $( this ).attr('entryname'));
-          entry_name = $( this ).attr('entryname').split("_").slice(0, -1).join('_');
-          cut = $( this ).attr('entryname').split("_").slice(-1);
-          // console.log( index + ": " + entry_name + ' ' + cut);
-          pos = $( this ).attr('position');
-          if (pos>0) {
-              test = dynamine_data[entry_name];
-
-              try {
-                d = dynamine_data[entry_name]['C-term'];
-              } catch (e) {
-                  console.log('ERROR:' +  index + ": " + entry_name + ' ' + cut);
-                  return true;
-              }
-              length = Object.keys(d).length;
-              seq_pos = Object.keys(d)[pos-1];
-              a = d[seq_pos];
-              if (a<0.7) {
-                // disordered / flexible
-                color = '#3D9970'; //green
-                if ($(this).attr('bgcolor')=='lightgrey') color = '#99C799';
-              } else if (a>0.8) {
-                // ordered / rigid
-                color = '#0074D9'; //blue
-                if ($(this).attr('bgcolor')=='lightgrey') color = '#999DFF';
-              } else {
-                color = '#FF851B'; //red
-                if ($(this).attr('bgcolor')=='lightgrey') color = '#FFA3A3';
-              }
-              // console.log( index + ": " + entry_name + ' pos:' + pos + ' seq_pos:' + seq_pos + ' ' +a);
-              $(this).html("<font size=1 color='"+color+"'></font>");
-              // if ($(this).attr('bgcolor')=='lightgrey') $(this).css('opacity',0.4);
-              $(this).attr('bgcolor',color);
-          } else {
-            color = '#999DFF';
-            if ($(this).attr('bgcolor')=='lightgrey') {
-              $(this).html("<font size=1 color='"+color+"'></font>");
-              $(this).attr('bgcolor',color);
-            }
-          }
-        });
-
-    $('.table-nterm').DataTable( 
-      {
-          "paging":   false,
-          "ordering": true,
-          "info":     false,
-          "searching": false,
-          "order": [],
-          columnDefs: [
-            { targets: 'no-sort', orderable: false }
-          ],
-      } 
-    ); 
-
-    $('.table-nterm').css("width","");
-    $('[data-toggle="popover"]').on('click',function(e){e.preventDefault();}).popover(); 
-    });
-
-    $("input[name=display_type]").change(function () {
-      $(".figure").hide();
-      $(".sub_figures").hide();
-      $("."+this.value).show();
-      console.log($("."+this.value).closest('.sub_figures'));
-      $("."+this.value).find('.sub_figures').first().show();
-      $("."+this.value+" label").removeClass('active');
-      $("."+this.value).find('label').first().addClass('active');
-      $("input[name=display_sub_type]").change(function () {
-        $(".sub_figures").hide();
-        $("."+this.value).show();
-      });
-
-    });
-
-    $(window).on('hashchange', function() {
-        var hash = window.location.hash.substring(1); //Puts hash in variable, and removes the # character
-        $(".figure").hide();
-        $(".sub_figures").hide();
-        $("."+hash).show();
-        console.log($("."+hash).closest('.sub_figures'));
-        $("."+hash).find('.sub_figures').first().show();
-        $("."+hash+" label").removeClass('active');
-        $("."+hash).find('label').first().addClass('active');
-        $("input[name=display_sub_type]").change(function () {
-          $(".sub_figures").hide();
-          $("."+this.value).show();
-        });
-    });
-
-     if(window.location.hash) {
+    if (window.location.hash) {
       $("#display_options").hide();
-        var hash = window.location.hash.substring(1); //Puts hash in variable, and removes the # character
-        $(".figure").hide();
-        $(".sub_figures").hide();
-        $("."+hash).show();
-        console.log($("."+hash).closest('.sub_figures'));
-        $("."+hash).find('.sub_figures').first().show();
-        $("."+hash+" label").removeClass('active');
-        $("."+hash).find('label').first().addClass('active');
-        $("input[name=display_sub_type]").change(function () {
-          $(".sub_figures").hide();
-          $("."+this.value).show();
-        });
+    }
 
-      } 
+    $(".adddynamine_nterm").each(function(index) {
+      // console.log( index + ": " + $( this ).attr('entryname'));
+      entry_name = $(this).attr('entryname').split("_").slice(0, 2).join('_');
+      // console.log(entry_name);
+      cut = $(this).attr('entryname').split("_").slice(-1);
+      // console.log( index + ": " + entry_name + ' ' + cut);
+      pos = $(this).attr('position');
+      if (pos > 0) {
+        test = dynamine_data[entry_name];
+        try {
+          d = dynamine_data[entry_name]['N-term'];
+        } catch (e) {
+          console.log('ERROR:' + index + ": " + entry_name + ' ' + cut);
+          return true;
+        }
+        length = Object.keys(d).length;
+        seq_pos = length - pos + 1;
+        a = d[seq_pos];
+        if (a < 0.7) {
+          // disordered / flexible
+          color = '#3D9970'; //green
+          if ($(this).attr('bgcolor') == 'lightgrey') color = '#99C799';
+        } else if (a > 0.8) {
+          // ordered / rigid
+          color = '#0074D9'; //blue
+          if ($(this).attr('bgcolor') == 'lightgrey') color = '#999DFF';
+        } else {
+          color = '#FF851B'; //red
+          if ($(this).attr('bgcolor') == 'lightgrey') color = '#FFA3A3';
+        }
+        // console.log( index + ": " + entry_name + ' pos:' + pos + ' seq_pos:' + seq_pos + ' ' +a);
+        $(this).html("<font size=1 color='" + color + "'></font>");
+        // if ($(this).attr('bgcolor')=='lightgrey') $(this).css('opacity',0.4);
+        $(this).attr('bgcolor', color);
+      }
+    });
 
+    $(".adddynamine_cterm").each(function(index) {
+      // console.log( index + ": " + $( this ).attr('entryname'));
+      entry_name = $(this).attr('entryname').split("_").slice(0, -1).join('_');
+      cut = $(this).attr('entryname').split("_").slice(-1);
+      // console.log( index + ": " + entry_name + ' ' + cut);
+      pos = $(this).attr('position');
+      if (pos > 0) {
+        test = dynamine_data[entry_name];
+
+        try {
+          d = dynamine_data[entry_name]['C-term'];
+        } catch (e) {
+          console.log('ERROR:' + index + ": " + entry_name + ' ' + cut);
+          return true;
+        }
+        length = Object.keys(d).length;
+        seq_pos = Object.keys(d)[pos - 1];
+        a = d[seq_pos];
+        if (a < 0.7) {
+          // disordered / flexible
+          color = '#3D9970'; //green
+          if ($(this).attr('bgcolor') == 'lightgrey') color = '#99C799';
+        } else if (a > 0.8) {
+          // ordered / rigid
+          color = '#0074D9'; //blue
+          if ($(this).attr('bgcolor') == 'lightgrey') color = '#999DFF';
+        } else {
+          color = '#FF851B'; //red
+          if ($(this).attr('bgcolor') == 'lightgrey') color = '#FFA3A3';
+        }
+        // console.log( index + ": " + entry_name + ' pos:' + pos + ' seq_pos:' + seq_pos + ' ' +a);
+        $(this).html("<font size=1 color='" + color + "'></font>");
+        // if ($(this).attr('bgcolor')=='lightgrey') $(this).css('opacity',0.4);
+        $(this).attr('bgcolor', color);
+      } else {
+        color = '#999DFF';
+        if ($(this).attr('bgcolor') == 'lightgrey') {
+          $(this).html("<font size=1 color='" + color + "'></font>");
+          $(this).attr('bgcolor', color);
+        }
+      }
+    });
+
+    $('.table-nterm').DataTable({
+      "paging": false,
+      "ordering": true,
+      "info": false,
+      "searching": false,
+      "order": [],
+      columnDefs: [{
+        targets: 'no-sort',
+        orderable: false
+      }],
+    });
+
+    $('.table-nterm').css("width", "");
+
+    $('[data-toggle="popover"]').on('click', function(e) {
+      e.preventDefault();
+    }).popover();
+  });
+
+  $("input[name=display_type]").change(function() {
+    $(".figure").hide();
+    $(".sub_figures").hide();
+    $("." + this.value).show();
+    //console.log($("."+this.value).closest('.sub_figures'));
+    $("." + this.value).find('.sub_figures').first().show();
+    $("." + this.value + " label").removeClass('active');
+    $("." + this.value).find('label').first().addClass('active');
+    $("input[name=display_sub_type]").change(function() {
+      $(".sub_figures").hide();
+      $("." + this.value).show();
+    });
+
+  });
+  $(window).on('hashchange', function() {
+    var hash = window.location.hash.substring(1); //Puts hash in variable, and removes the # character
+    $(".figure").hide();
+    $(".sub_figures").hide();
+    $("." + hash).show();
+    //console.log($("."+hash).closest('.sub_figures'));
+    $("." + hash).find('.sub_figures').first().show();
+    $("." + hash + " label").removeClass('active');
+    $("." + hash).find('label').first().addClass('active');
+    $("input[name=display_sub_type]").change(function() {
+      $(".sub_figures").hide();
+      $("." + this.value).show();
+    });
+  });
+  if (window.location.hash) {
+    $("#display_options").hide();
+    var hash = window.location.hash.substring(1); //Puts hash in variable, and removes the # character
+    $(".figure").hide();
+    $(".sub_figures").hide();
+    $("." + hash).show();
+    //console.log($("."+hash).closest('.sub_figures'));
+    $("." + hash).find('.sub_figures').first().show();
+    $("." + hash + " label").removeClass('active');
+    $("." + hash).find('label').first().addClass('active');
+    $("input[name=display_sub_type]").change(function() {
+      $(".sub_figures").hide();
+      $("." + this.value).show();
+    });
+
+  }
 </script>
 {% endblock %}
 
 {% block content %}
 
 <style type="text/css">
-
-.explain {
+  .explain {
     width: 10px;
     height: 10px;
     display: inline-block;
     left: 5px;
     top: 5px;
-}
-.explain.flexible {
-    background-color: #3D9970;  /*green*/
-}
-.explain.rigid {
-    background-color: #0074D9; /*blue*/
-}
-.explain.context {
-    background-color: #FF851B; /*red*/
-}
+  }
 
-.verticalTableHeader {
-    text-align:center;
-    white-space:nowrap;
+  .explain.flexible {
+    background-color: #3D9970;
+    /*green*/
+  }
+
+  .explain.rigid {
+    background-color: #0074D9;
+    /*blue*/
+  }
+
+  .explain.context {
+    background-color: #FF851B;
+    /*red*/
+  }
+
+  .verticalTableHeader {
+    text-align: center;
+    white-space: nowrap;
     transform: rotate(90deg);
-}
-.table-nterm > thead > tr > .verticalTableHeader {
-    border-bottom: 0px;
-}
-.verticalTableHeader p {
-    margin:0 -999px;/* virtually reduce space needed on width to very little */
-    display:inline-block;
-}
-.verticalTableHeader p:before {
-    content:'';
-    width:0;
-    padding-top:110%;
-    /* takes width as reference, + 10% for faking some extra padding */
-    display:inline-block;
-    vertical-align:middle;
-}
-table {
-    text-align:center;
-}
+  }
 
-.table-nterm {
+  .table-nterm>thead>tr>.verticalTableHeader {
+    border-bottom: 0px;
+  }
+
+  .verticalTableHeader p {
+    margin: 0 -999px;
+    /* virtually reduce space needed on width to very little */
+    display: inline-block;
+  }
+
+  .verticalTableHeader p:before {
+    content: '';
+    width: 0;
+    padding-top: 110%;
+    /* takes width as reference, + 10% for faking some extra padding */
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  table {
+    text-align: center;
+  }
+
+  .table-nterm {
     font-size: 10px;
     padding: 0px;
     table-layout: fixed;
@@ -219,218 +228,243 @@ table {
     border-spacing: 0px;
     float: left;
     display: block;
-}
-.table-nterm > tbody > tr > td{
+  }
+
+  .table-nterm>tbody>tr>td {
     padding: 0px;
     width: 2px;
-}
+  }
 
-.table-nterm > thead > tr > .seq_pos {
-  padding:0px;
-  width: 1px;
-  text-align:center;
-}
+  .table-nterm>thead>tr>.seq_pos {
+    padding: 0px;
+    width: 1px;
+    text-align: center;
+  }
 
-.table-nterm > thead > tr > .gn_pos {
-  padding:2px;
-  width: 1px;
-  text-align:center;
-}
+  .table-nterm>thead>tr>.gn_pos {
+    padding: 2px;
+    width: 1px;
+    text-align: center;
+  }
 
-.table-nterm > thead > tr > .seq_pos2 {
-  padding:0px;
-  width: 10px;
-  text-align:center;
-}
+  .table-nterm>thead>tr>.seq_pos2 {
+    padding: 0px;
+    width: 10px;
+    text-align: center;
+  }
 
-.table-nterm > tbody > td {
-  padding:0px;
-  text-align:center;
-}
-.table-nterm > tfoot > tr > .seq_pos  {
-  padding:0px;
-  width: 1px;
-  text-align:center;
-}
+  .table-nterm>tbody>td {
+    padding: 0px;
+    text-align: center;
+  }
 
-.species_HUMAN {
-  color: grey;
-}
+  .table-nterm>tfoot>tr>.seq_pos {
+    padding: 0px;
+    width: 1px;
+    text-align: center;
+  }
 
-table.dataTable {
-  width: auto;
-}
-.table-cterm {
+  .species_HUMAN {
+    color: grey;
+  }
+
+  table.dataTable {
+    width: auto;
+  }
+
+  .table-cterm {
     float: left;
-}
+  }
 
-.table-cterm > tbody > tr > td{
+  .table-cterm>tbody>tr>td {
     padding: 0px;
     width: 6px;
-}
+  }
 
-.figure {
-  display: none;
-}
+  .figure {
+    display: none;
+  }
 
 
-#display_options {
-  display: none;
-}
-
+  #display_options {
+    display: none;
+  }
 </style>
 <br><br>
 
 <div class="row">
   <div class="col-md-12">
-  <div class="btn-group" id='display_options' data-toggle="buttons">
+    <div class="btn-group" id='display_options' data-toggle="buttons">
 
       <label class="btn btn-default form-check-label">
-          <input name="display_type" value='truncations' class="form-check-input" type="radio" autocomplete="off"> Truncations
+        <input name="display_type" value='truncations' class="form-check-input" type="radio" autocomplete="off"> Truncations
       </label>
 
       <label class="btn btn-default form-check-label">
-          <input name="display_type" value='fusions'  class="form-check-input" type="radio" autocomplete="off"> Fusions
+        <input name="display_type" value='fusions' class="form-check-input" type="radio" autocomplete="off"> Fusions
       </label>
 
       <label class="btn btn-default form-check-label">
-          <input name="display_type"  value='loopdeletions' class="form-check-input" type="radio" autocomplete="off"> Loop deletions (without fusion)
+        <input name="display_type" value='loopdeletions' class="form-check-input" type="radio" autocomplete="off"> Loop deletions (without fusion)
       </label>
 
 
       <label class="btn btn-default form-check-label">
-          <input name="display_type" value='mutations'  class="form-check-input" type="radio" autocomplete="off"> Mutations
+        <input name="display_type" value='mutations' class="form-check-input" type="radio" autocomplete="off"> Mutations
       </label>
 
       <label class="btn btn-default form-check-label">
-          <input name="display_type"  value='old' class="form-check-input" type="radio" autocomplete="off"> Old
+        <input name="display_type" value='old' class="form-check-input" type="radio" autocomplete="off"> Old
       </label>
 
+    </div>
   </div>
- </div>
 </div>
 
-<div class='figure truncations'>  
+<div class='figure truncations'>
   <br>
   <div class="btn-group" data-toggle="buttons">
     <label class="btn btn-default active form-check-label">
-        <input name="display_sub_type" value='truncation_nterm' class="form-check-input" type="radio" autocomplete="off"> N-term
+      <input name="display_sub_type" value='truncation_nterm' class="form-check-input" type="radio" autocomplete="off"> N-term
     </label>
 
     <label class="btn btn-default form-check-label">
-        <input name="display_sub_type" value='truncation_cterm'  class="form-check-input" type="radio" autocomplete="off"> C-term
+      <input name="display_sub_type" value='truncation_cterm' class="form-check-input" type="radio" autocomplete="off"> C-term
     </label>
   </div>
   <div class='sub_figures truncation_nterm'>
-  N-terminal truncations sites by class and residue position (<span class="explain flexible"></span>flexible <span class="explain rigid"></span>rigid and <span class="explain context"></span>context-dependent)
+    N-terminal truncations sites by class and residue position (<span class="explain flexible"></span>flexible <span class="explain rigid"></span>rigid and <span class="explain context"></span>context-dependent)
     {% for class, values in truncations_new.nterm.items %}
     <div class="row">
-        <div class="col-md-12">
-    <table border=0 cellpadding=0 cellspacing=0 class="table-nterm stripe">
-    <thead>
-      <tr><th colspan={{values.range|length}}></th><th colspan=2>{{class}}</th><th></th><th colspan=3>No. PDBs each state***</th><th colspan=3></th></tr>
-      <tr>
-        {% for pos in values.range reversed %}
-        <th class="seq_pos"></th>
-        {% endfor %}
-        <th>Receptor</th><th>Uniprot</th><th>Species*</th><th>Ina</th><th>Int</th><th>Act</th><th>Pos**</th><th>No.PDBs</th>
-      </tr>
-    </thead>
-        <tbody>
-        {% for recp, t_pos in values.receptors.items %}
-        <tr>
-        {% for pos in values.range reversed %}
-            {% if pos in t_pos.0 %}
-                    <td class='adddynamine_nterm' entryname='{{recp}}' position='{{pos}}'  bgcolor='green' align='center' style='border: none;'></td>
-            {% elif pos in t_pos.1 %}
-                    <td class='adddynamine_nterm' entryname='{{recp}}' position='{{pos}}'  bgcolor='red' align='center' style='border: none;'></td>
-            {% elif pos < t_pos.0.0 %}
-                    <td class='adddynamine_nterm' entryname='{{recp}}' position='{{pos}}'  bgcolor='#0074D9' align='center' style='border: none;'></td>
-            {% elif pos < t_pos.1.0 %}
-                    <td class='adddynamine_nterm' entryname='{{recp}}' position='{{pos}}'  bgcolor='#0074D9' align='center' style='border: none;'></td>
-            {% elif pos <= t_pos.2.0 %}
-                    <td class='adddynamine_nterm' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'></td>
-            {% else %}
-                <td bgcolor='white' style='border: none;'></td>
-            {% endif %}
-        {% endfor %}
-        <td>{{t_pos.8|safe}}</td>
-        <td>{{t_pos.4}}</td>
-        <td>{{t_pos.5}}</td>
-        <td>{{t_pos.6.inactive}}</td>
-        <td>{{t_pos.6.intermediate}}</td>
-        <td>{{t_pos.6.active}}</td>
-        <td>{{t_pos.7}}</td>
-        <td><a href="#" data-toggle="popover" title="PDBs" data-content="{{t_pos.3|join:", "}}">{{t_pos.3|length}}</a></td>
-        </tr>
-    {% endfor %}
-        </tbody>
-    </table>
-        </div>
+      <div class="col-md-12">
+        <table border=0 cellpadding=0 cellspacing=0 class="table-nterm stripe">
+          <thead>
+            <tr>
+              <th colspan={{values.range|length}}></th>
+              <th colspan=2>{{class}}</th>
+              <th></th>
+              <th colspan=3>No. PDBs each state***</th>
+              <th colspan=3></th>
+            </tr>
+            <tr>
+              {% for pos in values.range reversed %}
+              <th class="seq_pos"></th>
+              {% endfor %}
+              <th>Receptor</th>
+              <th>Uniprot</th>
+              <th>Species*</th>
+              <th>Ina</th>
+              <th>Int</th>
+              <th>Act</th>
+              <th>Pos**</th>
+              <th>No.PDBs</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for recp, t_pos in values.receptors.items %}
+            <tr>
+              {% for pos in values.range reversed %}
+              {% if pos in t_pos.0 %}
+              <td class='adddynamine_nterm' entryname='{{recp}}' position='{{pos}}' bgcolor='green' align='center' style='border: none;'></td>
+              {% elif pos in t_pos.1 %}
+              <td class='adddynamine_nterm' entryname='{{recp}}' position='{{pos}}' bgcolor='red' align='center' style='border: none;'></td>
+              {% elif pos < t_pos.0.0 %} <td class='adddynamine_nterm' entryname='{{recp}}' position='{{pos}}' bgcolor='#0074D9' align='center' style='border: none;'>
+                </td>
+                {% elif pos < t_pos.1.0 %} <td class='adddynamine_nterm' entryname='{{recp}}' position='{{pos}}' bgcolor='#0074D9' align='center' style='border: none;'>
+                  </td>
+                  {% elif pos <= t_pos.2.0 %} <td class='adddynamine_nterm' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'>
+                    </td>
+                    {% else %}
+                    <td bgcolor='white' style='border: none;'></td>
+                    {% endif %}
+                    {% endfor %}
+                    <td>{{t_pos.8|safe}}</td>
+                    <td>{{t_pos.4}}</td>
+                    <td>{{t_pos.5}}</td>
+                    <td>{{t_pos.6.inactive}}</td>
+                    <td>{{t_pos.6.intermediate}}</td>
+                    <td>{{t_pos.6.active}}</td>
+                    <td>{{t_pos.7}}</td>
+                    <td><a href="#" data-toggle="popover" title="PDBs" data-content="{{t_pos.3|join:", "}}">{{t_pos.3|length}}</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
     {% endfor %}
-  * Empty species cell is human<br>
-  ** Position is the last kept residue in relation to the start of Transmembrane Helix 1 (TM1)<br>
-  *** <strong>Ina</strong>ctive | <strong>Int</strong>ermediate | <strong>Act</strong>ive<br>
-  <span class="explain flexible"></span>flexible <span class="explain rigid"></span>rigid and <span class="explain context"></span>context-dependent
+    * Empty species cell is human<br>
+    ** Position is the last kept residue in relation to the start of Transmembrane Helix 1 (TM1)<br>
+    *** <strong>Ina</strong>ctive | <strong>Int</strong>ermediate | <strong>Act</strong>ive<br>
+    <span class="explain flexible"></span>flexible <span class="explain rigid"></span>rigid and <span class="explain context"></span>context-dependent
   </div>
   <div class='sub_figures truncation_cterm'>
-  C-terminal truncations sites by class and residue position (<span class="explain flexible"></span>flexible <span class="explain rigid"></span>rigid and <span class="explain context"></span>context-dependent)
-  {% for class, values in truncations_new.cterm.items %}
-  <div class="row">
-      <div class="col-md-12">
-  <table border=0 cellpadding=0 cellspacing=0 class="table-nterm stripe table-cterm">
-  <thead>
-    <tr><th colspan=2>{{class}}</th><th></th><th colspan=3>No. PDBs each state***</th><th colspan=3></th><th colspan={{values.range|length}}></th></tr>
-    <tr>
-      <th>No.PDBs</th>
-      <th>Ina</th><th>Int</th><th>Act</th>
-      <th>Pos**</th>
-      <th>Species*</th>
-      <th>Uniprot</th>
-      <th>Receptor</th>
-      {% for pos in values.range  %}
-      <th class="seq_pos"></th>
-      {% endfor %}
-    </tr>
-  </thead>
-      <tbody>
-      {% for recp, t_pos in values.receptors.items %}
-      <tr>
-        <td><a href="#" data-toggle="popover" title="PDBs" data-content="{{t_pos.3|join:", "}}">{{t_pos.3|length}}</a></td>
-        <td>{{t_pos.6.inactive}}</td>
-        <td>{{t_pos.6.intermediate}}</td>
-        <td>{{t_pos.6.active}}</td>
-        <td>{{t_pos.7}}</td>
-        <td>{{t_pos.5}}</td>
-        <td>{{t_pos.4}}</td>
-        <td>{{t_pos.8|safe}}</td>
-      {% for pos in values.range %}
-          {% if pos in t_pos.0 %}
-                  <td class='adddynamine_cterm' entryname='{{recp}}' position='{{pos}}'  bgcolor='#0074D9' align='center' style='border: none;'></td>
-          {% elif pos in t_pos.1 %}
-                  <td class='adddynamine_cterm' entryname='{{recp}}' position='{{pos}}'  bgcolor='red' align='center' style='border: none;'></td>
-          {% elif pos < t_pos.0.0 %}
-                  <td class='adddynamine_cterm' entryname='{{recp}}' position='{{pos}}'  bgcolor='#0074D9' align='center' style='border: none;'></td>
-          {% elif pos < t_pos.1.0 %}
-                  <td class='adddynamine_cterm' entryname='{{recp}}' position='{{pos}}'  bgcolor='#0074D9' align='center' style='border: none;'></td>
-          {% elif pos <= t_pos.2.0 %}
-                  <td class='adddynamine_cterm' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% else %}
-              <td bgcolor='white' style='border: none;'></td>
-          {% endif %}
-      {% endfor %}
-      </tr>
-  {% endfor %}
-      </tbody>
-  </table>
+    C-terminal truncations sites by class and residue position (<span class="explain flexible"></span>flexible <span class="explain rigid"></span>rigid and <span class="explain context"></span>context-dependent)
+    {% for class, values in truncations_new.cterm.items %}
+      <div class="row">
+        <div class="col-md-12">
+          <table border=0 cellpadding=0 cellspacing=0 class="table-nterm stripe table-cterm">
+            <thead>
+              <tr>
+                <th colspan=2>{{class}}</th>
+                <th></th>
+                <th colspan=3>No. PDBs each state***</th>
+                <th colspan=3></th>
+                {% if values.range|length > 0 %}
+                  <th colspan={{values.range|length}}></th>
+                {% endif %}
+              </tr>
+              <tr>
+                <th>No.PDBs</th>
+                <th>Ina</th>
+                <th>Int</th>
+                <th>Act</th>
+                <th>Pos**</th>
+                <th>Species*</th>
+                <th>Uniprot</th>
+                <th>Receptor</th>
+                {% for pos in values.range %}
+                  <th class="seq_pos"></th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for recp, t_pos in values.receptors.items %}
+              <tr>
+                <td><a href="#" data-toggle="popover" title="PDBs" data-content="{{t_pos.3|join:", "}}">{{t_pos.3|length}}</a></td>
+                <td>{{t_pos.6.inactive}}</td>
+                <td>{{t_pos.6.intermediate}}</td>
+                <td>{{t_pos.6.active}}</td>
+                <td>{{t_pos.7}}</td>
+                <td>{{t_pos.5}}</td>
+                <td>{{t_pos.4}}</td>
+                <td>{{t_pos.8|safe}}</td>
+                {% for pos in values.range %}
+                  {% if pos in t_pos.0 %}
+                    <td class='adddynamine_cterm' entryname='{{recp}}' position='{{pos}}' bgcolor='#0074D9' align='center' style='border: none;'></td>
+                  {% elif pos in t_pos.1 %}
+                    <td class='adddynamine_cterm' entryname='{{recp}}' position='{{pos}}' bgcolor='red' align='center' style='border: none;'></td>
+                  {% elif pos < t_pos.0.0 %} <td class='adddynamine_cterm' entryname='{{recp}}' position='{{pos}}' bgcolor='#0074D9' align='center' style='border: none;'>
+                    </td>
+                  {% elif pos < t_pos.1.0 %} <td class='adddynamine_cterm' entryname='{{recp}}' position='{{pos}}' bgcolor='#0074D9' align='center' style='border: none;'>
+                    </td>
+                  {% elif pos <= t_pos.2.0 %} <td class='adddynamine_cterm' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'>
+                    </td>
+                  {% else %}
+                    <td bgcolor='white' style='border: none;'></td>
+                  {% endif %}
+                {% endfor %}
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
-  </div>
-  {% endfor %}
-  * Empty species cell is human<br>
-  ** Position is the last kept residue in relation to the end of Helix 8 (H8)<br>
-  *** <strong>Ina</strong>ctive | <strong>Int</strong>ermediate | <strong>Act</strong>ive<br>
-  <span class="explain flexible"></span>flexible <span class="explain rigid"></span>rigid and <span class="explain context"></span>context-dependent
+    {% endfor %}
+    * Empty species cell is human<br>
+    ** Position is the last kept residue in relation to the end of Helix 8 (H8)<br>
+    *** <strong>Ina</strong>ctive | <strong>Int</strong>ermediate | <strong>Act</strong>ive<br>
+    <span class="explain flexible"></span>flexible <span class="explain rigid"></span>rigid and <span class="explain context"></span>context-dependent
   </div>
 </div>
 
@@ -438,807 +472,1005 @@ table.dataTable {
   <br>
   <div class="btn-group" data-toggle="buttons">
     <label class="btn btn-default active form-check-label">
-        <input name="display_sub_type" value='fusion_nterm' class="form-check-input" type="radio" autocomplete="off"> N-term
+      <input name="display_sub_type" value='fusion_nterm' class="form-check-input" type="radio" autocomplete="off"> N-term
     </label>
 
     <label class="btn btn-default form-check-label">
-        <input name="display_sub_type" value='fusion_icl2'  class="form-check-input" type="radio" autocomplete="off"> ICL2
+      <input name="display_sub_type" value='fusion_icl2' class="form-check-input" type="radio" autocomplete="off"> ICL2
     </label>
 
     <label class="btn btn-default form-check-label">
-        <input name="display_sub_type"  value='fusion_icl3' class="form-check-input" type="radio" autocomplete="off"> ICL3
+      <input name="display_sub_type" value='fusion_icl3' class="form-check-input" type="radio" autocomplete="off"> ICL3
     </label>
   </div>
 
-  
+
   <div class='sub_figures fusion_nterm'>
-  <h3>N-terminal protein fusion sites by class and residue position</h3>
-  {% for class, values in truncations_new.nterm_fusion.items %}
-  <div class="row">
-        <div class="col-md-12">
-    <table border=0 cellpadding=0 cellspacing=0 class="table-nterm stripe">
-    <thead>
-    <tr><th colspan={{values.fusions|length}}>{{class}}</th><th colspan={{values.range|length}}></th><th colspan=3></th><th colspan=3></th><th colspan=3></th></tr>
-    {% if forloop.first %}
-      <tr><th colspan={{values.fusions|length}}>Fusion protein</th><th colspan={{values.range|length}}></th><th colspan=4></th><th colspan=3>No. PDBs each state<sup>1</sup></th><th colspan=2></th></tr>
-    {% endif %}
-    <tr>
-      {% for fusion, number in values.fusions.items %}
-      <th>{{fusion}}</th>
-      {% endfor %}
-      {% for pos in values.range reversed %}
-      <th class="seq_pos2 no-sort verticalTableHeader">{{pos}}</th>
-      {% endfor %}
-      <th>Pos<sup>3</sup></th><th>Receptor</th><th>UniPort</th><th>Species<sup>2</sup></th><th>Ina</th><th>Int</th><th>Act</th><th>#PDB</th>
+    <h3>N-terminal protein fusion sites by class and residue position</h3>
+    {% for class, values in truncations_new.nterm_fusion.items %}
+    <div class="row">
+      <div class="col-md-12">
+        <table border=0 cellpadding=0 cellspacing=0 class="table-nterm stripe">
+          <thead>
+            <tr>
+              <th colspan={{values.fusions|length}}>{{class}}</th>
+              <th colspan={{values.range|length}}></th>
+              <th colspan=3></th>
+              <th colspan=3></th>
+              <th colspan=3></th>
+            </tr>
+            {% if forloop.first %}
+            <tr>
+              <th colspan={{values.fusions|length}}>Fusion protein</th>
+              <th colspan={{values.range|length}}></th>
+              <th colspan=4></th>
+              <th colspan=3>No. PDBs each state<sup>1</sup></th>
+              <th colspan=2></th>
+            </tr>
+            {% endif %}
+            <tr>
+              {% for fusion, number in values.fusions.items %}
+              <th>{{fusion}}</th>
+              {% endfor %}
+              {% for pos in values.range reversed %}
+              <th class="seq_pos2 no-sort verticalTableHeader">{{pos}}</th>
+              {% endfor %}
+              <th>Pos<sup>3</sup></th>
+              <th>Receptor</th>
+              <th>UniPort</th>
+              <th>Species<sup>2</sup></th>
+              <th>Ina</th>
+              <th>Int</th>
+              <th>Act</th>
+              <th>#PDB</th>
 
-    </tr>
-  </thead>
-      <tbody>
-      {% for recp, t_pos in values.receptors.items %}
-      <tr>
-      {% for fusion, number in values.fusions.items %}
-        {% if fusion in t_pos.9 %}
-            <td>&#x25C9;</td>
-        {% else %}
-            <td></td>
-        {% endif %}
-      {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for recp, t_pos in values.receptors.items %}
+            <tr>
+              {% for fusion, number in values.fusions.items %}
+              {% if fusion in t_pos.9 %}
+              <td>&#x25C9;</td>
+              {% else %}
+              <td></td>
+              {% endif %}
+              {% endfor %}
 
-      {% for pos in values.range reversed %}
-          {% if pos in t_pos.0 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% elif pos in t_pos.1 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% elif pos < t_pos.0.0 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% elif pos < t_pos.1.0 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% elif pos <= t_pos.2.0 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='white' align='center' style='border: none;'></td>
-          {% else %}
-              <td bgcolor='white' style='border: none;'></td>
-          {% endif %}
-      {% endfor %}
-      <td>{{t_pos.7}}</td>
-      <td>{{t_pos.8|safe}}</td>
-      <td>{{t_pos.4}}</td>
-      <td>{{t_pos.5}}</td>
-      <td>{{t_pos.6.inactive}}</td>
-      <td>{{t_pos.6.intermediate}}</td>
-      <td>{{t_pos.6.active}}</td>
-      <td><a href="#" data-toggle="popover" title="PDBs" data-content="{{t_pos.3|join:", "}}">{{t_pos.3|length}}</a></td>
-      </tr>
-  {% endfor %}
-      </tbody>
-  </table>
+              {% for pos in values.range reversed %}
+              {% if pos in t_pos.0 %}
+              <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'></td>
+              {% elif pos in t_pos.1 %}
+              <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'></td>
+              {% elif pos < t_pos.0.0 %} <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'>
+                </td>
+                {% elif pos < t_pos.1.0 %} <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'>
+                  </td>
+                  {% elif pos <= t_pos.2.0 %} <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='white' align='center' style='border: none;'>
+                    </td>
+                    {% else %}
+                    <td bgcolor='white' style='border: none;'></td>
+                    {% endif %}
+                    {% endfor %}
+                    <td>{{t_pos.7}}</td>
+                    <td>{{t_pos.8|safe}}</td>
+                    <td>{{t_pos.4}}</td>
+                    <td>{{t_pos.5}}</td>
+                    <td>{{t_pos.6.inactive}}</td>
+                    <td>{{t_pos.6.intermediate}}</td>
+                    <td>{{t_pos.6.active}}</td>
+                    <td><a href="#" data-toggle="popover" title="PDBs" data-content="{{t_pos.3|join:", "}}">{{t_pos.3|length}}</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
-  </div>
-  {% endfor %}
-  1 <strong>Ina</strong>ctive | <strong>Int</strong>ermediate | <strong>Act</strong>ive<br>
-  2 Empty species cell is human<br>
-  3 Position is the last kept residue in relation to the start of Transmembrane Helix 1 (TM1)<br>
+    </div>
+    {% endfor %}
+    1 <strong>Ina</strong>ctive | <strong>Int</strong>ermediate | <strong>Act</strong>ive<br>
+    2 Empty species cell is human<br>
+    3 Position is the last kept residue in relation to the start of Transmembrane Helix 1 (TM1)<br>
   </div>
 
 
   <div class='sub_figures fusion_icl3'>
     <br>
-  <h4>Fusion start (ICL3) truncations sites by class and residue position</h4>
-  {% for class, values in truncations_new.icl3_fusion_start.items %}
-  <div class="row">
+    <h4>Fusion start (ICL3) truncations sites by class and residue position</h4>
+    {% for class, values in truncations_new.icl3_fusion_start.items %}
+    <div class="row">
       <div class="col-md-12">
-  <table border=0 cellpadding=0 cellspacing=0 class="table-nterm stripe table-cterm">
-  <thead>
-    <tr><th colspan=3>No. PDBs each state<sup>1</sup></th><th colspan=2>{{class}}</th><th></th><th colspan=3></th><th colspan={{values.range|length}}></th><th colspan={{values.fusions|length}}></th></tr>
-    <tr>
-      <th>Ina</th>
-      <th>Int</th>
-      <th>Act</th>
-      <th>#PDB</th>
-      <th>Linker<sup>2</sup></th>
-      <th>Species<sup>3</sup></th>
-      <th>UniProt</th>
-      <th>Receptor</th>
-      <th>Pos<sup>4</sup></th>
+        <table border=0 cellpadding=0 cellspacing=0 class="table-nterm stripe table-cterm">
+          <thead>
+            <tr>
+              <th colspan=3>No. PDBs each state<sup>1</sup></th>
+              <th colspan=2>{{class}}</th>
+              <th></th>
+              <th colspan=3></th>
+              <th colspan={{values.range|length}}></th>
+              <th colspan={{values.fusions|length}}></th>
+            </tr>
+            <tr>
+              <th>Ina</th>
+              <th>Int</th>
+              <th>Act</th>
+              <th>#PDB</th>
+              <th>Linker<sup>2</sup></th>
+              <th>Species<sup>3</sup></th>
+              <th>UniProt</th>
+              <th>Receptor</th>
+              <th>Pos<sup>4</sup></th>
 
 
-      {% for pos in values.range  %}
-      <th class="gn_pos no-sort">{{pos|splitGN|safe}}</th>
-      {% endfor %}
+              {% for pos in values.range %}
+              <th class="gn_pos no-sort">{{pos|splitGN|safe}}</th>
+              {% endfor %}
 
-      {% for fusion, number in values.fusions.items %}
-      <th>{{fusion}}</th>
-      {% endfor %}
-    </tr>
-  </thead>
-      <tbody>
-      {% for recp, t_pos in values.receptors.items %}
-      <tr>
-      <td>{{t_pos.6.inactive}}</td>
-      <td>{{t_pos.6.intermediate}}</td>
-      <td>{{t_pos.6.active}}</td>
-      <td><a href="#" data-toggle="popover" title="PDBs" data-content="{{t_pos.3|join:", "}}">{{t_pos.3|length}}</a></td>
-      <td>{{t_pos.10}}</td>
-      <td>{{t_pos.5}}</td>
-      <td>{{t_pos.4}}</td>
-      <td>{{t_pos.8|safe}}</td>
-      <td>{{t_pos.7}}</td>
-    
+              {% for fusion, number in values.fusions.items %}
+              <th>{{fusion}}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for recp, t_pos in values.receptors.items %}
+            <tr>
+              <td>{{t_pos.6.inactive}}</td>
+              <td>{{t_pos.6.intermediate}}</td>
+              <td>{{t_pos.6.active}}</td>
+              <td><a href="#" data-toggle="popover" title="PDBs" data-content="{{t_pos.3|join:", "}}">{{t_pos.3|length}}</a></td>
+              <td>{{t_pos.10}}</td>
+              <td>{{t_pos.5}}</td>
+              <td>{{t_pos.4}}</td>
+              <td>{{t_pos.8|safe}}</td>
+              <td>{{t_pos.7}}</td>
 
 
-      {% for pos in values.range %}
-          {% if pos in t_pos.0 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% elif pos in t_pos.1 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% elif pos < t_pos.0.0 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% elif pos < t_pos.1.0 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% elif pos <= t_pos.2.0 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% else %}
-              <td bgcolor='white' style='border: none;'></td>
-          {% endif %}
-      {% endfor %}
-      {% for fusion, number in values.fusions.items %}
-        {% if fusion in t_pos.9 %}
-            <td>&#x25C9;</td>
-        {% else %}
-            <td></td>
-        {% endif %}
-      {% endfor %}
-      </tr>
-  {% endfor %}
-      </tbody>
-      <tfoot>
-        <tr><th></th><th colspan="8"></th>
-        {% for sum in values.sum  %}
-            <th class="seq_pos">{{sum}}</th>
-        {% endfor %}
-        {% for fusion, number in values.fusions.items %}
-          <th class="seq_pos">{{number}}</th>
-        {% endfor %}
 
-        </tr>
-      </tfoot>
-  </table>
+              {% for pos in values.range %}
+              {% if pos in t_pos.0 %}
+              <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'></td>
+              {% elif pos in t_pos.1 %}
+              <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'></td>
+              {% elif pos < t_pos.0.0 %} <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'>
+                </td>
+                {% elif pos < t_pos.1.0 %} <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'>
+                  </td>
+                  {% elif pos <= t_pos.2.0 %} <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'>
+                    </td>
+                    {% else %}
+                    <td bgcolor='white' style='border: none;'></td>
+                    {% endif %}
+                    {% endfor %}
+                    {% for fusion, number in values.fusions.items %}
+                    {% if fusion in t_pos.9 %}
+                    <td>&#x25C9;</td>
+                    {% else %}
+                    <td></td>
+                    {% endif %}
+                    {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr>
+              <th></th>
+              <th colspan="8"></th>
+              {% for sum in values.sum %}
+              <th class="seq_pos">{{sum}}</th>
+              {% endfor %}
+              {% for fusion, number in values.fusions.items %}
+              <th class="seq_pos">{{number}}</th>
+              {% endfor %}
+
+            </tr>
+          </tfoot>
+        </table>
       </div>
-  </div>
-  {% endfor %}
+    </div>
+    {% endfor %}
   </div>
 
   <div class='sub_figures fusion_icl3'>
-  <h4>Fusion end (ICL3) truncations sites by class and residue position</h4>
-  {% for class, values in truncations_new.icl3_fusion_end.items %}
-  <div class="row">
+    <h4>Fusion end (ICL3) truncations sites by class and residue position</h4>
+    {% for class, values in truncations_new.icl3_fusion_end.items %}
+    <div class="row">
       <div class="col-md-12">
-  <table border=0 cellpadding=0 cellspacing=0 class="table-nterm stripe table-cterm">
-  <thead>
-    <tr><th colspan={{values.fusions|length}}></th><th colspan={{values.range|length}}></th><th colspan=2>{{class}}</th><th></th><th colspan=3>No. PDBs each state<sup>1</sup></th><th colspan=3></th></tr>
-    <tr>
-      {% for fusion, number in values.fusions.items %}
-      <th>{{fusion}}</th>
-      {% endfor %}
-      {% for pos in values.range  %}
-      <th class="gn_pos no-sort">{{pos|splitGN|safe}}</th>
-      {% endfor %}
-      <th>Pos<sup>4</sup><th>Receptor</th><th>UniProt</th><th>Species<sup>3</sup></th><th>Ina</th><th>Int</th><th>Act</th></th><th>#PDB</th><th>Linker<sup>2</sup></th>
+        <table border=0 cellpadding=0 cellspacing=0 class="table-nterm stripe table-cterm">
+          <thead>
+            <tr>
+              <th colspan={{values.fusions|length}}></th>
+              <th colspan={{values.range|length}}></th>
+              <th colspan=2>{{class}}</th>
+              <th></th>
+              <th colspan=3>No. PDBs each state<sup>1</sup></th>
+              <th colspan=3></th>
+            </tr>
+            <tr>
+              {% for fusion, number in values.fusions.items %}
+              <th>{{fusion}}</th>
+              {% endfor %}
+              {% for pos in values.range %}
+              <th class="gn_pos no-sort">{{pos|splitGN|safe}}</th>
+              {% endfor %}
+              <th>Pos<sup>4</sup>
+              <th>Receptor</th>
+              <th>UniProt</th>
+              <th>Species<sup>3</sup></th>
+              <th>Ina</th>
+              <th>Int</th>
+              <th>Act</th>
+              </th>
+              <th>#PDB</th>
+              <th>Linker<sup>2</sup></th>
 
-    </tr>
-  </thead>
-      <tbody>
-      {% for recp, t_pos in values.receptors.items %}
-      <tr>
-        {% for fusion, number in values.fusions.items %}
-        {% if fusion in t_pos.9 %}
-            <td>&#x25C9;</td>
-        {% else %}
-            <td></td>
-        {% endif %}
-      {% endfor %}
-      {% for pos in values.range %}
-          {% if pos in t_pos.0 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% elif pos in t_pos.1 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% elif pos < t_pos.0.0 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='white' align='center' style='border: none;'></td>
-          {% elif pos < t_pos.1.0 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% elif pos <= t_pos.2.0 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% else %}
-              <td bgcolor='lightgrey' style='border: none;'></td>
-          {% endif %}
-      {% endfor %}
-      <td>{{t_pos.7}}</td>
-      <td>{{t_pos.8|safe}}</td>
-      <td>{{t_pos.4}}</td>
-      <td class='species_{{t_pos.5}}'>{{t_pos.5}}</td>
-      <td>{{t_pos.6.inactive}}</td><td>{{t_pos.6.intermediate}}</td><td>{{t_pos.6.active}}</td>
-      <td><a href="#" data-toggle="popover" title="PDBs" data-content="{{t_pos.3|join:", "}}">{{t_pos.3|length}}</a></td>
-      <td>{{t_pos.10}}</td>
-      
+            </tr>
+          </thead>
+          <tbody>
+            {% for recp, t_pos in values.receptors.items %}
+            <tr>
+              {% for fusion, number in values.fusions.items %}
+              {% if fusion in t_pos.9 %}
+              <td>&#x25C9;</td>
+              {% else %}
+              <td></td>
+              {% endif %}
+              {% endfor %}
+              {% for pos in values.range %}
+              {% if pos in t_pos.0 %}
+              <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'></td>
+              {% elif pos in t_pos.1 %}
+              <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'></td>
+              {% elif pos < t_pos.0.0 %} <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='white' align='center' style='border: none;'>
+                </td>
+                {% elif pos < t_pos.1.0 %} <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'>
+                  </td>
+                  {% elif pos <= t_pos.2.0 %} <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'>
+                    </td>
+                    {% else %}
+                    <td bgcolor='lightgrey' style='border: none;'></td>
+                    {% endif %}
+                    {% endfor %}
+                    <td>{{t_pos.7}}</td>
+                    <td>{{t_pos.8|safe}}</td>
+                    <td>{{t_pos.4}}</td>
+                    <td class='species_{{t_pos.5}}'>{{t_pos.5}}</td>
+                    <td>{{t_pos.6.inactive}}</td>
+                    <td>{{t_pos.6.intermediate}}</td>
+                    <td>{{t_pos.6.active}}</td>
+                    <td><a href="#" data-toggle="popover" title="PDBs" data-content="{{t_pos.3|join:", "}}">{{t_pos.3|length}}</a></td>
+                    <td>{{t_pos.10}}</td>
 
-      </tr>
-  {% endfor %}
-      </tbody>
-      <tfoot>
-        <tr>
-        {% for fusion, number in values.fusions.items %}
-          <th class="seq_pos">{{number}}</th>
-        {% endfor %}
-        {% for sum in values.sum  %}
-            <th class="seq_pos">{{sum}}</th>
-        {% endfor %}
-        <th></th><th colspan="8"></th>
-        </tr>
-      </tfoot>
-  </table>
+
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr>
+              {% for fusion, number in values.fusions.items %}
+              <th class="seq_pos">{{number}}</th>
+              {% endfor %}
+              {% for sum in values.sum %}
+              <th class="seq_pos">{{sum}}</th>
+              {% endfor %}
+              <th></th>
+              <th colspan="8"></th>
+            </tr>
+          </tfoot>
+        </table>
       </div>
-  </div>
-  {% endfor %}
-  1 <strong>Ina</strong>ctive | <strong>Int</strong>ermediate | <strong>Act</strong>ive<br>
-  2 In cases where a linker is used, this number indicates the number of residues of the linker used before the fusion protein.<br>
-  3 Empty species cell is human<br>
-  4 Position is the last kept residue in relation to the previous and next helix<br>
+    </div>
+    {% endfor %}
+    1 <strong>Ina</strong>ctive | <strong>Int</strong>ermediate | <strong>Act</strong>ive<br>
+    2 In cases where a linker is used, this number indicates the number of residues of the linker used before the fusion protein.<br>
+    3 Empty species cell is human<br>
+    4 Position is the last kept residue in relation to the previous and next helix<br>
   </div>
 
   <div class='sub_figures fusion_icl2'>
     <br>
-  <h4>Fusion start (ICL2) truncations sites by class and residue position</h4>
-  {% for class, values in truncations_new.icl2_fusion_start.items %}
-  <div class="row">
+    <h4>Fusion start (ICL2) truncations sites by class and residue position</h4>
+    {% for class, values in truncations_new.icl2_fusion_start.items %}
+    <div class="row">
       <div class="col-md-12">
-  <table border=0 cellpadding=0 cellspacing=0 class="table-nterm stripe table-cterm">
-  <thead>
-    <tr><th colspan=3>No. PDBs each state<sup>1</sup></th><th colspan=2>{{class}}</th><th></th><th colspan=3></th><th colspan={{values.range|length}}></th><th colspan={{values.fusions|length}}></th></tr>
-    <tr>
-      <th>Ina</th>
-      <th>Int</th>
-      <th>Act</th>
-      <th>#PDB</th>
-      <th>Linker<sup>2</sup></th>
-      <th>Species<sup>3</sup></th>
-      <th>UniProt</th>
-      <th>Receptor</th>
-      <th>Pos<sup>4</sup></th>
+        <table border=0 cellpadding=0 cellspacing=0 class="table-nterm stripe table-cterm">
+          <thead>
+            <tr>
+              <th colspan=3>No. PDBs each state<sup>1</sup></th>
+              <th colspan=2>{{class}}</th>
+              <th></th>
+              <th colspan=3></th>
+              <th colspan={{values.range|length}}></th>
+              <th colspan={{values.fusions|length}}></th>
+            </tr>
+            <tr>
+              <th>Ina</th>
+              <th>Int</th>
+              <th>Act</th>
+              <th>#PDB</th>
+              <th>Linker<sup>2</sup></th>
+              <th>Species<sup>3</sup></th>
+              <th>UniProt</th>
+              <th>Receptor</th>
+              <th>Pos<sup>4</sup></th>
 
 
-      {% for pos in values.range  %}
-      <th class="gn_pos no-sort">{{pos|splitGN|safe}}</th>
-      {% endfor %}
+              {% for pos in values.range %}
+              <th class="gn_pos no-sort">{{pos|splitGN|safe}}</th>
+              {% endfor %}
 
-      {% for fusion, number in values.fusions.items %}
-      <th>{{fusion}}</th>
-      {% endfor %}
-    </tr>
-  </thead>
-      <tbody>
-      {% for recp, t_pos in values.receptors.items %}
-      <tr>
-      <td>{{t_pos.6.inactive}}</td>
-      <td>{{t_pos.6.intermediate}}</td>
-      <td>{{t_pos.6.active}}</td>
-      <td><a href="#" data-toggle="popover" title="PDBs" data-content="{{t_pos.3|join:", "}}">{{t_pos.3|length}}</a></td>
-      <td>{{t_pos.10}}</td>
-      <td>{{t_pos.5}}</td>
-      <td>{{t_pos.4}}</td>
-      <td>{{t_pos.8|safe}}</td>
-      <td>{{t_pos.7}}</td>
-    
+              {% for fusion, number in values.fusions.items %}
+              <th>{{fusion}}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for recp, t_pos in values.receptors.items %}
+            <tr>
+              <td>{{t_pos.6.inactive}}</td>
+              <td>{{t_pos.6.intermediate}}</td>
+              <td>{{t_pos.6.active}}</td>
+              <td><a href="#" data-toggle="popover" title="PDBs" data-content="{{t_pos.3|join:", "}}">{{t_pos.3|length}}</a></td>
+              <td>{{t_pos.10}}</td>
+              <td>{{t_pos.5}}</td>
+              <td>{{t_pos.4}}</td>
+              <td>{{t_pos.8|safe}}</td>
+              <td>{{t_pos.7}}</td>
 
 
-      {% for pos in values.range %}
-          {% if pos in t_pos.0 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% elif pos in t_pos.1 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% elif pos < t_pos.0.0 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% elif pos < t_pos.1.0 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% elif pos <= t_pos.2.0 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% else %}
-              <td bgcolor='white' style='border: none;'></td>
-          {% endif %}
-      {% endfor %}
-      {% for fusion, number in values.fusions.items %}
-        {% if fusion in t_pos.9 %}
-            <td>&#x25C9;</td>
-        {% else %}
-            <td></td>
-        {% endif %}
-      {% endfor %}
-      </tr>
-  {% endfor %}
-      </tbody>
-      <tfoot>
-        <tr><th></th><th colspan="8"></th>
-        {% for sum in values.sum  %}
-            <th class="seq_pos">{{sum}}</th>
-        {% endfor %}
-        {% for fusion, number in values.fusions.items %}
-          <th class="seq_pos">{{number}}</th>
-        {% endfor %}
 
-        </tr>
-      </tfoot>
-  </table>
+              {% for pos in values.range %}
+              {% if pos in t_pos.0 %}
+              <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'></td>
+              {% elif pos in t_pos.1 %}
+              <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'></td>
+              {% elif pos < t_pos.0.0 %} <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'>
+                </td>
+                {% elif pos < t_pos.1.0 %} <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'>
+                  </td>
+                  {% elif pos <= t_pos.2.0 %} <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'>
+                    </td>
+                    {% else %}
+                    <td bgcolor='white' style='border: none;'></td>
+                    {% endif %}
+                    {% endfor %}
+                    {% for fusion, number in values.fusions.items %}
+                    {% if fusion in t_pos.9 %}
+                    <td>&#x25C9;</td>
+                    {% else %}
+                    <td></td>
+                    {% endif %}
+                    {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr>
+              <th></th>
+              <th colspan="8"></th>
+              {% for sum in values.sum %}
+              <th class="seq_pos">{{sum}}</th>
+              {% endfor %}
+              {% for fusion, number in values.fusions.items %}
+              <th class="seq_pos">{{number}}</th>
+              {% endfor %}
+
+            </tr>
+          </tfoot>
+        </table>
       </div>
-  </div>
-  {% endfor %}
+    </div>
+    {% endfor %}
   </div>
 
   <div class='sub_figures fusion_icl2'>
     <br><br>
-  <h4>Fusion end (ICL2) truncations sites by class and residue position</h4>
-  {% for class, values in truncations_new.icl2_fusion_end.items %}
-  <div class="row">
+    <h4>Fusion end (ICL2) truncations sites by class and residue position</h4>
+    {% for class, values in truncations_new.icl2_fusion_end.items %}
+    <div class="row">
       <div class="col-md-12">
-  <table border=0 cellpadding=0 cellspacing=0 class="table-nterm stripe table-cterm">
-  <thead>
-    <tr><th colspan={{values.fusions|length}}></th><th colspan={{values.range|length}}></th><th colspan=2>{{class}}</th><th></th><th colspan=3>No. PDBs each state<sup>1</sup></th><th colspan=3></th></tr>
-    <tr>
-      {% for fusion, number in values.fusions.items %}
-      <th>{{fusion}}</th>
-      {% endfor %}
-      {% for pos in values.range  %}
-      <th class="gn_pos no-sort">{{pos|splitGN|safe}}</th>
-      {% endfor %}
-      <th>Pos<sup>4</sup><th>Receptor</th><th>UniProt</th><th>Species<sup>3</sup></th><th>Ina</th><th>Int</th><th>Act</th></th><th>#PDB</th><th>Linker<sup>2</sup></th>
+        <table border=0 cellpadding=0 cellspacing=0 class="table-nterm stripe table-cterm">
+          <thead>
+            <tr>
+              <th colspan={{values.fusions|length}}></th>
+              <th colspan={{values.range|length}}></th>
+              <th colspan=2>{{class}}</th>
+              <th></th>
+              <th colspan=3>No. PDBs each state<sup>1</sup></th>
+              <th colspan=3></th>
+            </tr>
+            <tr>
+              {% for fusion, number in values.fusions.items %}
+              <th>{{fusion}}</th>
+              {% endfor %}
+              {% for pos in values.range %}
+              <th class="gn_pos no-sort">{{pos|splitGN|safe}}</th>
+              {% endfor %}
+              <th>Pos<sup>4</sup>
+              <th>Receptor</th>
+              <th>UniProt</th>
+              <th>Species<sup>3</sup></th>
+              <th>Ina</th>
+              <th>Int</th>
+              <th>Act</th>
+              </th>
+              <th>#PDB</th>
+              <th>Linker<sup>2</sup></th>
 
-    </tr>
-  </thead>
-      <tbody>
-      {% for recp, t_pos in values.receptors.items %}
-      <tr>
-        {% for fusion, number in values.fusions.items %}
-        {% if fusion in t_pos.9 %}
-            <td>&#x25C9;</td>
-        {% else %}
-            <td></td>
-        {% endif %}
-      {% endfor %}
-      {% for pos in values.range %}
-          {% if pos in t_pos.0 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% elif pos in t_pos.1 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% elif pos < t_pos.0.0 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='white' align='center' style='border: none;'></td>
-          {% elif pos < t_pos.1.0 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% elif pos <= t_pos.2.0 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% else %}
-              <td bgcolor='lightgrey' style='border: none;'></td>
-          {% endif %}
-      {% endfor %}
-      <td>{{t_pos.7}}</td>
-      <td>{{t_pos.8|safe}}</td>
-      <td>{{t_pos.4}}</td>
-      <td class='species_{{t_pos.5}}'>{{t_pos.5}}</td>
-      <td>{{t_pos.6.inactive}}</td><td>{{t_pos.6.intermediate}}</td><td>{{t_pos.6.active}}</td>
-      <td><a href="#" data-toggle="popover" title="PDBs" data-content="{{t_pos.3|join:", "}}">{{t_pos.3|length}}</a></td>
-      <td>{{t_pos.10}}</td>
-      
+            </tr>
+          </thead>
+          <tbody>
+            {% for recp, t_pos in values.receptors.items %}
+            <tr>
+              {% for fusion, number in values.fusions.items %}
+              {% if fusion in t_pos.9 %}
+              <td>&#x25C9;</td>
+              {% else %}
+              <td></td>
+              {% endif %}
+              {% endfor %}
+              {% for pos in values.range %}
+              {% if pos in t_pos.0 %}
+              <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'></td>
+              {% elif pos in t_pos.1 %}
+              <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'></td>
+              {% elif pos < t_pos.0.0 %} <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='white' align='center' style='border: none;'>
+                </td>
+                {% elif pos < t_pos.1.0 %} <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'>
+                  </td>
+                  {% elif pos <= t_pos.2.0 %} <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'>
+                    </td>
+                    {% else %}
+                    <td bgcolor='lightgrey' style='border: none;'></td>
+                    {% endif %}
+                    {% endfor %}
+                    <td>{{t_pos.7}}</td>
+                    <td>{{t_pos.8|safe}}</td>
+                    <td>{{t_pos.4}}</td>
+                    <td class='species_{{t_pos.5}}'>{{t_pos.5}}</td>
+                    <td>{{t_pos.6.inactive}}</td>
+                    <td>{{t_pos.6.intermediate}}</td>
+                    <td>{{t_pos.6.active}}</td>
+                    <td><a href="#" data-toggle="popover" title="PDBs" data-content="{{t_pos.3|join:", "}}">{{t_pos.3|length}}</a></td>
+                    <td>{{t_pos.10}}</td>
 
-      </tr>
-  {% endfor %}
-      </tbody>
-      <tfoot>
-        <tr>
-        {% for fusion, number in values.fusions.items %}
-          <th class="seq_pos">{{number}}</th>
-        {% endfor %}
-        {% for sum in values.sum  %}
-            <th class="seq_pos">{{sum}}</th>
-        {% endfor %}
-        <th></th><th colspan="8"></th>
-        </tr>
-      </tfoot>
-  </table>
+
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr>
+              {% for fusion, number in values.fusions.items %}
+              <th class="seq_pos">{{number}}</th>
+              {% endfor %}
+              {% for sum in values.sum %}
+              <th class="seq_pos">{{sum}}</th>
+              {% endfor %}
+              <th></th>
+              <th colspan="8"></th>
+            </tr>
+          </tfoot>
+        </table>
       </div>
-  </div>
-  {% endfor %}
-  1 <strong>Ina</strong>ctive | <strong>Int</strong>ermediate | <strong>Act</strong>ive<br>
-  2 In cases where a linker is used, this number indicates the number of residues of the linker used before the fusion protein.<br>
-  3 Empty species cell is human<br>
-  4 Position is the last kept residue in relation to the previous and next helix<br>
+    </div>
+    {% endfor %}
+    1 <strong>Ina</strong>ctive | <strong>Int</strong>ermediate | <strong>Act</strong>ive<br>
+    2 In cases where a linker is used, this number indicates the number of residues of the linker used before the fusion protein.<br>
+    3 Empty species cell is human<br>
+    4 Position is the last kept residue in relation to the previous and next helix<br>
   </div>
 </div>
 
 <div class='figure loopdeletions'>
- <br>
+  <br>
 
   <h4>Deletion start (ICL3) by class and residue position</h4>
   {% for class, values in truncations_new.icl3_start.items %}
   <div class="row">
-      <div class="col-md-12">
-  <table border=0 cellpadding=0 cellspacing=0 class="table-nterm stripe table-cterm">
-  <thead>
-    <tr><th colspan=3 style='white-space: nowrap;'>No. PDBs for each state<sup>1</sup></th><th colspan=2>{{class}}</th><th></th><th colspan=2></th><th colspan={{values.range|length}}></th></tr>
-    <tr>
-      <th>Ina</th>
-      <th>Int</th>
-      <th>Act</th>
-      <th>#PDB</th>
-      <th>Species<sup>2</sup></th>
-      <th>UniProt</th>
-      <th>Receptor</th>
-      <th>Pos<sup>3</sup></th>
+    <div class="col-md-12">
+      <table border=0 cellpadding=0 cellspacing=0 class="table-nterm stripe table-cterm">
+        <thead>
+          <tr>
+            <th colspan=3 style='white-space: nowrap;'>No. PDBs for each state<sup>1</sup></th>
+            <th colspan=2>{{class}}</th>
+            <th></th>
+            <th colspan=2></th>
+            <th colspan={{values.range|length}}></th>
+          </tr>
+          <tr>
+            <th>Ina</th>
+            <th>Int</th>
+            <th>Act</th>
+            <th>#PDB</th>
+            <th>Species<sup>2</sup></th>
+            <th>UniProt</th>
+            <th>Receptor</th>
+            <th>Pos<sup>3</sup></th>
 
-      {% for pos in values.range  %}
-      <th class="gn_pos no-sort">{{pos|splitGN|safe}}</th>
-      {% endfor %}
-    </tr>
-  </thead>
-      <tbody>
-      {% for recp, t_pos in values.receptors.items %}
-      <tr>
-      <td>{{t_pos.6.inactive}}</td>
-      <td>{{t_pos.6.intermediate}}</td>
-      <td>{{t_pos.6.active}}</td>
-      <td><a href="#" data-toggle="popover" title="PDBs" data-content="{{t_pos.3|join:", "}}">{{t_pos.3|length}}</a></td>
-      <td>{{t_pos.5}}</td>
-      <td>{{t_pos.4}}</td>
-      <td>{{t_pos.8|safe}}</td>
-      <td>{{t_pos.7}}</td>
-    
+            {% for pos in values.range %}
+            <th class="gn_pos no-sort">{{pos|splitGN|safe}}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for recp, t_pos in values.receptors.items %}
+          <tr>
+            <td>{{t_pos.6.inactive}}</td>
+            <td>{{t_pos.6.intermediate}}</td>
+            <td>{{t_pos.6.active}}</td>
+            <td><a href="#" data-toggle="popover" title="PDBs" data-content="{{t_pos.3|join:", "}}">{{t_pos.3|length}}</a></td>
+            <td>{{t_pos.5}}</td>
+            <td>{{t_pos.4}}</td>
+            <td>{{t_pos.8|safe}}</td>
+            <td>{{t_pos.7}}</td>
 
 
-      {% for pos in values.range %}
-          {% if pos in t_pos.0 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% elif pos in t_pos.1 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% elif pos < t_pos.0.0 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% elif pos < t_pos.1.0 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% elif pos <= t_pos.2.0 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% else %}
-              <td bgcolor='white' style='border: none;'></td>
-          {% endif %}
-      {% endfor %}
-      </tr>
-  {% endfor %}
-      </tbody>
-      <tfoot>
-        <tr><th></th><th colspan="7"></th>
-        {% for sum in values.sum  %}
+
+            {% for pos in values.range %}
+            {% if pos in t_pos.0 %}
+            <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'></td>
+            {% elif pos in t_pos.1 %}
+            <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'></td>
+            {% elif pos < t_pos.0.0 %} <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'>
+              </td>
+              {% elif pos < t_pos.1.0 %} <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'>
+                </td>
+                {% elif pos <= t_pos.2.0 %} <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'>
+                  </td>
+                  {% else %}
+                  <td bgcolor='white' style='border: none;'></td>
+                  {% endif %}
+                  {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <th></th>
+            <th colspan="7"></th>
+            {% for sum in values.sum %}
             <th class="seq_pos">{{sum}}</th>
-        {% endfor %}
+            {% endfor %}
 
-        </tr>
-      </tfoot>
-  </table>
-      </div>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
   </div>
   {% endfor %}
 
   <h4>Deletion end (ICL3) by class and residue position</h4>
   {% for class, values in truncations_new.icl3_end.items %}
   <div class="row">
-      <div class="col-md-12">
-  <table border=0 cellpadding=0 cellspacing=0 class="table-nterm stripe table-cterm">
-  <thead>
-    <tr><th colspan={{values.range|length}}></th><th colspan=2>{{class}}</th><th></th><th colspan=3>No. PDBs for each state<sup>1</sup></th><th colspan=3></th></tr>
-    <tr>
-      {% for pos in values.range  %}
-      <th class="gn_pos no-sort">{{pos|splitGN|safe}}</th>
-      {% endfor %}
-      <th>Pos<sup>3</sup></th><th>Receptor</th><th>UniProt</th><th>Species<sup>2</sup></th><th>Ina</th><th>Int</th><th>Act</th><th>#PDB</th>
+    <div class="col-md-12">
+      <table border=0 cellpadding=0 cellspacing=0 class="table-nterm stripe table-cterm">
+        <thead>
+          <tr>
+            <th colspan={{values.range|length}}></th>
+            <th colspan=2>{{class}}</th>
+            <th></th>
+            <th colspan=3>No. PDBs for each state<sup>1</sup></th>
+            <th colspan=3></th>
+          </tr>
+          <tr>
+            {% for pos in values.range %}
+            <th class="gn_pos no-sort">{{pos|splitGN|safe}}</th>
+            {% endfor %}
+            <th>Pos<sup>3</sup></th>
+            <th>Receptor</th>
+            <th>UniProt</th>
+            <th>Species<sup>2</sup></th>
+            <th>Ina</th>
+            <th>Int</th>
+            <th>Act</th>
+            <th>#PDB</th>
 
-    </tr>
-  </thead>
-      <tbody>
-      {% for recp, t_pos in values.receptors.items %}
-      <tr>
-      {% for pos in values.range %}
-          {% if pos in t_pos.0 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% elif pos in t_pos.1 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% elif pos < t_pos.0.0 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='white' align='center' style='border: none;'></td>
-          {% elif pos < t_pos.1.0 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}'  bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% elif pos <= t_pos.2.0 %}
-                  <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'></td>
-          {% else %}
-              <td bgcolor='lightgrey' style='border: none;'></td>
-          {% endif %}
-      {% endfor %}
-      <td>{{t_pos.7}}</td>
-      <td>{{t_pos.8|safe}}</td>
-      <td>{{t_pos.4}}</td>
-      <td class='species_{{t_pos.5}}'>{{t_pos.5}}</td>
-      <td>{{t_pos.6.inactive}}</td><td>{{t_pos.6.intermediate}}</td><td>{{t_pos.6.active}}</td>
-      <td><a href="#" data-toggle="popover" title="PDBs" data-content="{{t_pos.3|join:", "}}">{{t_pos.3|length}}</a></td>
-      
+          </tr>
+        </thead>
+        <tbody>
+          {% for recp, t_pos in values.receptors.items %}
+          <tr>
+            {% for pos in values.range %}
+            {% if pos in t_pos.0 %}
+            <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'></td>
+            {% elif pos in t_pos.1 %}
+            <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'></td>
+            {% elif pos < t_pos.0.0 %} <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='white' align='center' style='border: none;'>
+              </td>
+              {% elif pos < t_pos.1.0 %} <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'>
+                </td>
+                {% elif pos <= t_pos.2.0 %} <td class='' entryname='{{recp}}' position='{{pos}}' bgcolor='lightgrey' align='center' style='border: none;'>
+                  </td>
+                  {% else %}
+                  <td bgcolor='lightgrey' style='border: none;'></td>
+                  {% endif %}
+                  {% endfor %}
+                  <td>{{t_pos.7}}</td>
+                  <td>{{t_pos.8|safe}}</td>
+                  <td>{{t_pos.4}}</td>
+                  <td class='species_{{t_pos.5}}'>{{t_pos.5}}</td>
+                  <td>{{t_pos.6.inactive}}</td>
+                  <td>{{t_pos.6.intermediate}}</td>
+                  <td>{{t_pos.6.active}}</td>
+                  <td><a href="#" data-toggle="popover" title="PDBs" data-content="{{t_pos.3|join:", "}}">{{t_pos.3|length}}</a></td>
 
-      </tr>
-  {% endfor %}
-      </tbody>
-      <tfoot>
-        <tr>
-        {% for sum in values.sum  %}
+
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            {% for sum in values.sum %}
             <th class="seq_pos">{{sum}}</th>
-        {% endfor %}
-        <th></th><th colspan="7"></th>
-        </tr>
-      </tfoot>
-  </table>
-      </div>
+            {% endfor %}
+            <th></th>
+            <th colspan="7"></th>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
   </div>
   {% endfor %}
   1 <strong>Ina</strong>ctive | <strong>Int</strong>ermediate | <strong>Act</strong>ive<br>
   2 Empty species cell is human<br>
   3 Position is the last kept residue, not the first deleted<br>
-  </div>
+</div>
 
 <div class='figure mutations'>
 
   <div class="row">
-      <div class="col-md-12">
-  <h5>Frequencies (no. GPCRs) of thermostabilising mutant amino acid substitutions across all positions of the receptor sequences/structures.</h5>
-  <table border=1>
-  <tr><th style="text-align: center;">WT / MUT</th>
-  {% for aa,vals in mutation_matrix.items %}
-  <th width=25 style="text-align: center;">{{aa}}</th>
-  {% endfor %}
-  <th width=25 style="text-align: center;">WT FREQ</th>
-  </tr>
-  {% for aa,vals in mutation_matrix.items %}
-  <tr>
-  <th width=25 style="text-align: center;">{{aa}}</th>
-  {% for aa,vals2 in vals.items %}
-  <td width=25 style="text-align: center;background: rgba(120,120,120,  {{vals2.0}})">{{vals2.1}}</td>
-  {% endfor %}
-  </tr>
-  {% endfor %}
-  <tr>
-  <th width=25 style="text-align: center;">MUT FREQ</th>
-  {% for aa,vals2 in mutation_matrix_sum_mut.items %}
-  <td width=25 style="text-align: center;background: rgba(120,120,120,  {{vals2.0}})">{{vals2.1}}</td>
-  {% endfor %}
-  <th style="text-align: center;">{{mutation_matrix_total_sum}}</th>
-  </tr>
-  </table>
-  </div>
+    <div class="col-md-12">
+      <h5>Frequencies (no. GPCRs) of thermostabilising mutant amino acid substitutions across all positions of the receptor sequences/structures.</h5>
+      <table border=1>
+        <tr>
+          <th style="text-align: center;">WT / MUT</th>
+          {% for aa,vals in mutation_matrix.items %}
+          <th width=25 style="text-align: center;">{{aa}}</th>
+          {% endfor %}
+          <th width=25 style="text-align: center;">WT FREQ</th>
+        </tr>
+        {% for aa,vals in mutation_matrix.items %}
+        <tr>
+          <th width=25 style="text-align: center;">{{aa}}</th>
+          {% for aa,vals2 in vals.items %}
+          <td width=25 style="text-align: center;background: rgba(120,120,120,  {{vals2.0}})">{{vals2.1}}</td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+        <tr>
+          <th width=25 style="text-align: center;">MUT FREQ</th>
+          {% for aa,vals2 in mutation_matrix_sum_mut.items %}
+          <td width=25 style="text-align: center;background: rgba(120,120,120,  {{vals2.0}})">{{vals2.1}}</td>
+          {% endfor %}
+          <th style="text-align: center;">{{mutation_matrix_total_sum}}</th>
+        </tr>
+      </table>
+    </div>
   </div>
 </div>
 <div class='figure old'>
   <br>
-  Supplementary Table FusionSites (and loop deletion sites, typically active state structures) 
+  Supplementary Table FusionSites (and loop deletion sites, typically active state structures)
   <table width="1800" border=1>
-  <tr><th colspan=3>Classification</th><th>GPCR</th>
-  <th colspan={{truncations_new_possibilties.nterm_fusion|length}}>N-term</th>
-  <th> </th>
-  <th colspan={{truncations_new_possibilties.icl2_fusion_start|length}}>ICL2 Start</th>
-  <th> Length </th>
-  <th> No Aas </th>
-  <th colspan={{truncations_new_possibilties.icl2_fusion_end|length}}>ICL2 End</th>
-  <th> </th>
-  <th colspan={{truncations_new_possibilties.icl3_fusion_start|length}}>ICL3 Start</th>
-  <th> Length </th>
-  <th> No Aas </th>
-  <th colspan={{truncations_new_possibilties.icl3_fusion_end|length}}>ICL3 End</th>
-  </tr>
-  <tr><th width=120>Class</th><th>Lig</th><th>Rec</th><th>Entry name</th>
-  {% for pos in truncations_new_possibilties.nterm_fusion reversed %}
-  <th width=25 class="verticalTableHeader" style="text-align: center;"><p>{{pos}}</p></th>
-  {% endfor %}
-  <th> </th>
-  {% for pos in truncations_new_possibilties.icl2_fusion_start %}
-  <th width=25 class="verticalTableHeader" style="text-align: center;"><p>{{pos}}</p></th>
-  {% endfor %}
-  <th> 3x50-4x50 </th>
-  <th> Deleted </th>
-  {% for pos in truncations_new_possibilties.icl2_fusion_end %}
-  <th width=25 class="verticalTableHeader" style="text-align: center;"><p>{{pos}}</p></th>
-  {% endfor %}
-  <th> </th>
-  {% for pos in truncations_new_possibilties.icl3_fusion_start %}
-  <th width=25 class="verticalTableHeader" style="text-align: center;"><p>{{pos}}</p></th>
-  {% endfor %}
-  <th> 5x50-6x50 </th>
-  <th> Deleted </th>
-  {% for pos in truncations_new_possibilties.icl3_fusion_end %}
-  <th width=25 class="verticalTableHeader" style="text-align: center;"><p>{{pos}}</p></th>
-  {% endfor %}
-  </tr>
-  {% for class, values in test.items %}
-      {% for recp, vals in values.items %}
-          <tr><td>{{class}}</td><td></td><td></td><td>{{recp}}</td>
-          {% for pos in vals.for_print %}
-              {% if pos == 'C' %}
-                  <td bgcolor='green' align='center'>C</td>
-              {% elif pos > 0 %}
-                  <td bgcolor='red' align='center'>{{pos}}</td>
-              {% else %}
-                  <td></td>
-              {% endif %}
-          {% endfor %}
-          </tr>
+    <tr>
+      <th colspan=3>Classification</th>
+      <th>GPCR</th>
+      <th colspan={{truncations_new_possibilties.nterm_fusion|length}}>N-term</th>
+      <th> </th>
+      <th colspan={{truncations_new_possibilties.icl2_fusion_start|length}}>ICL2 Start</th>
+      <th> Length </th>
+      <th> No Aas </th>
+      <th colspan={{truncations_new_possibilties.icl2_fusion_end|length}}>ICL2 End</th>
+      <th> </th>
+      <th colspan={{truncations_new_possibilties.icl3_fusion_start|length}}>ICL3 Start</th>
+      <th> Length </th>
+      <th> No Aas </th>
+      <th colspan={{truncations_new_possibilties.icl3_fusion_end|length}}>ICL3 End</th>
+    </tr>
+    <tr>
+      <th width=120>Class</th>
+      <th>Lig</th>
+      <th>Rec</th>
+      <th>Entry name</th>
+      {% for pos in truncations_new_possibilties.nterm_fusion reversed %}
+      <th width=25 class="verticalTableHeader" style="text-align: center;">
+        <p>{{pos}}</p>
+      </th>
       {% endfor %}
-  {% endfor %}
-  {% for class, values in track_fusion_sums.items %}
-      <tr><td>{{class}}</td><td></td><td></td><td>Sum</td>
-      {% for pos, vals in values.items %}
-          {% if vals != 0 %}
-              <td>{{vals}}</td>
-          {% else %}
-              <td> </td>
-          {% endif %}
+      <th> </th>
+      {% for pos in truncations_new_possibilties.icl2_fusion_start %}
+      <th width=25 class="verticalTableHeader" style="text-align: center;">
+        <p>{{pos}}</p>
+      </th>
       {% endfor %}
-      </tr>
-  {% endfor %}
-  {% for fus, vals in test2.items %}
-      <tr><td> - </td><td></td><td></td><td>{{fus}}</td>
+      <th> 3x50-4x50 </th>
+      <th> Deleted </th>
+      {% for pos in truncations_new_possibilties.icl2_fusion_end %}
+      <th width=25 class="verticalTableHeader" style="text-align: center;">
+        <p>{{pos}}</p>
+      </th>
+      {% endfor %}
+      <th> </th>
+      {% for pos in truncations_new_possibilties.icl3_fusion_start %}
+      <th width=25 class="verticalTableHeader" style="text-align: center;">
+        <p>{{pos}}</p>
+      </th>
+      {% endfor %}
+      <th> 5x50-6x50 </th>
+      <th> Deleted </th>
+      {% for pos in truncations_new_possibilties.icl3_fusion_end %}
+      <th width=25 class="verticalTableHeader" style="text-align: center;">
+        <p>{{pos}}</p>
+      </th>
+      {% endfor %}
+    </tr>
+    {% for class, values in test.items %}
+    {% for recp, vals in values.items %}
+    <tr>
+      <td>{{class}}</td>
+      <td></td>
+      <td></td>
+      <td>{{recp}}</td>
       {% for pos in vals.for_print %}
-          {% if pos == 1 %}
-              <td bgcolor='green' align='center'>C</td>
-          {% else %}
-              <td></td>
-          {% endif %}
+      {% if pos == 'C' %}
+      <td bgcolor='green' align='center'>C</td>
+      {% elif pos > 0 %}
+      <td bgcolor='red' align='center'>{{pos}}</td>
+      {% else %}
+      <td></td>
+      {% endif %}
       {% endfor %}
-      </tr>
-  {% endfor %}
+    </tr>
+    {% endfor %}
+    {% endfor %}
+    {% for class, values in track_fusion_sums.items %}
+    <tr>
+      <td>{{class}}</td>
+      <td></td>
+      <td></td>
+      <td>Sum</td>
+      {% for pos, vals in values.items %}
+      {% if vals != 0 %}
+      <td>{{vals}}</td>
+      {% else %}
+      <td> </td>
+      {% endif %}
+      {% endfor %}
+    </tr>
+    {% endfor %}
+    {% for fus, vals in test2.items %}
+    <tr>
+      <td> - </td>
+      <td></td>
+      <td></td>
+      <td>{{fus}}</td>
+      {% for pos in vals.for_print %}
+      {% if pos == 1 %}
+      <td bgcolor='green' align='center'>C</td>
+      {% else %}
+      <td></td>
+      {% endif %}
+      {% endfor %}
+    </tr>
+    {% endfor %}
   </table>
 
   <br>
   ICL3 NON FUSION PROTEINS CUTS
   <table width="1800" border=1>
-  <tr><th colspan=3>Classification</th><th>GPCR</th>
-  <th colspan={{truncations_new_possibilties.icl3_start|length}}>ICL3 Start</th>
-  <th> Length </th>
-  <th> No Aas </th>
-  <th colspan={{truncations_new_possibilties.icl3_end|length}}>ICL3 End</th>
-  </tr>
-  <tr><th width=120>Class</th><th>Lig</th><th>Rec</th><th>Entry name</th>
-  {% for pos in truncations_new_possibilties.icl3_start %}
-  <th width=25 style="text-align: center;">{{pos}}</th>
-  {% endfor %}
-  <th> 5x50-6x50 </th>
-  <th> Deleted </th>
-  {% for pos in truncations_new_possibilties.icl3_end %}
-  <th width=25 style="text-align: center;">{{pos}}</th>
-  {% endfor %}
-  </tr>
-  {% for class, values in track_without_fusions.items %}
-      {% for recp, vals in values.items %}
-          <tr><td>{{class}}</td><td></td><td></td><td>{{recp}}</td>
-          {% for pos in vals.for_print %}
-              {% if pos == 'C' %}
-                  <td bgcolor='green' align='center'>C</td>
-              {% elif pos > 0 %}
-                  <td bgcolor='red' align='center'>{{pos}}</td>
-              {% else %}
-                  <td></td>
-              {% endif %}
-          {% endfor %}
-          </tr>
+    <tr>
+      <th colspan=3>Classification</th>
+      <th>GPCR</th>
+      <th colspan={{truncations_new_possibilties.icl3_start|length}}>ICL3 Start</th>
+      <th> Length </th>
+      <th> No Aas </th>
+      <th colspan={{truncations_new_possibilties.icl3_end|length}}>ICL3 End</th>
+    </tr>
+    <tr>
+      <th width=120>Class</th>
+      <th>Lig</th>
+      <th>Rec</th>
+      <th>Entry name</th>
+      {% for pos in truncations_new_possibilties.icl3_start %}
+      <th width=25 style="text-align: center;">{{pos}}</th>
       {% endfor %}
-  {% endfor %}
+      <th> 5x50-6x50 </th>
+      <th> Deleted </th>
+      {% for pos in truncations_new_possibilties.icl3_end %}
+      <th width=25 style="text-align: center;">{{pos}}</th>
+      {% endfor %}
+    </tr>
+    {% for class, values in track_without_fusions.items %}
+    {% for recp, vals in values.items %}
+    <tr>
+      <td>{{class}}</td>
+      <td></td>
+      <td></td>
+      <td>{{recp}}</td>
+      {% for pos in vals.for_print %}
+      {% if pos == 'C' %}
+      <td bgcolor='green' align='center'>C</td>
+      {% elif pos > 0 %}
+      <td bgcolor='red' align='center'>{{pos}}</td>
+      {% else %}
+      <td></td>
+      {% endif %}
+      {% endfor %}
+    </tr>
+    {% endfor %}
+    {% endfor %}
   </table>
 
 
   <br>
   N-TERM (non fused)
   <table width="100%">
-  {% for class, values in truncations.nterm.items %}
-  <tr><td colspan="2">{{class}}</td></tr>
-  {% for position, proteins in values.items %}
-  <tr><td>{{position}}</td><td>{{proteins|length}}</td><td>{{proteins|join:", "}}</td></tr>
-  {% endfor %}
-  {% endfor %}
+    {% for class, values in truncations.nterm.items %}
+    <tr>
+      <td colspan="2">{{class}}</td>
+    </tr>
+    {% for position, proteins in values.items %}
+    <tr>
+      <td>{{position}}</td>
+      <td>{{proteins|length}}</td>
+      <td>{{proteins|join:", "}}</td>
+    </tr>
+    {% endfor %}
+    {% endfor %}
   </table>
 
   <br>
   N-TERM (fused)
   <table width="100%">
-  {% for class, values in truncations.nterm_fusion.items %}
-  <tr><td colspan="2">{{class}}</td></tr>
-  {% for position, proteins in values.items %}
-  <tr><td>{{position}}</td><td>{{proteins|length}}</td><td>{{proteins|join:", "}}</td></tr>
-  {% endfor %}
-  {% endfor %}
+    {% for class, values in truncations.nterm_fusion.items %}
+    <tr>
+      <td colspan="2">{{class}}</td>
+    </tr>
+    {% for position, proteins in values.items %}
+    <tr>
+      <td>{{position}}</td>
+      <td>{{proteins|length}}</td>
+      <td>{{proteins|join:", "}}</td>
+    </tr>
+    {% endfor %}
+    {% endfor %}
   </table>
 
   <br>
   C-TERM
   <table width="100%">
-  {% for class, values in truncations.cterm.items %}
-  <tr><td colspan="2">{{class}}</td></tr>
-  {% for position, proteins in values.items %}
-  <tr><td>{{position}}</td><td>{{proteins|length}}</td><td>{{proteins|join:", "}}</td></tr>
-  {% endfor %}
-  {% endfor %}
+    {% for class, values in truncations.cterm.items %}
+    <tr>
+      <td colspan="2">{{class}}</td>
+    </tr>
+    {% for position, proteins in values.items %}
+    <tr>
+      <td>{{position}}</td>
+      <td>{{proteins|length}}</td>
+      <td>{{proteins|join:", "}}</td>
+    </tr>
+    {% endfor %}
+    {% endfor %}
   </table>
 
 
   <br>
   ICL3 (non fused)
   <table width="100%">
-  {% for class, values in truncations.icl3.items %}
-  <tr><td colspan="2">{{class}}</td></tr>
-  {% for position, proteins in values.items %}
-  <tr><td>{{position}}</td><td>{{proteins|length}}</td><td>{{proteins|join:", "}}</td></tr>
-  {% endfor %}
-  {% endfor %}
+    {% for class, values in truncations.icl3.items %}
+    <tr>
+      <td colspan="2">{{class}}</td>
+    </tr>
+    {% for position, proteins in values.items %}
+    <tr>
+      <td>{{position}}</td>
+      <td>{{proteins|length}}</td>
+      <td>{{proteins|join:", "}}</td>
+    </tr>
+    {% endfor %}
+    {% endfor %}
   </table>
 
 
   <br>
   ICL3 (fused)
   <table width="100%">
-  {% for class, values in truncations.icl3_fusion.items %}
-  <tr><td colspan="2">{{class}}</td></tr>
-  {% for position, proteins in values.items %}
-  <tr><td>{{position}}</td><td>{{proteins|length}}</td><td>{{proteins|join:", "}}</td></tr>
-  {% endfor %}
-  {% endfor %}
+    {% for class, values in truncations.icl3_fusion.items %}
+    <tr>
+      <td colspan="2">{{class}}</td>
+    </tr>
+    {% for position, proteins in values.items %}
+    <tr>
+      <td>{{position}}</td>
+      <td>{{proteins|length}}</td>
+      <td>{{proteins|join:", "}}</td>
+    </tr>
+    {% endfor %}
+    {% endfor %}
   </table>
 
   <br>
   ICL2 (fused)
   <table width="100%">
-  {% for class, values in truncations.icl2_fusion.items %}
-  <tr><td colspan="2">{{class}}</td></tr>
-  {% for position, proteins in values.items %}
-  <tr><td>{{position}}</td><td>{{proteins|length}}</td><td>{{proteins|join:", "}}</td></tr>
-  {% endfor %}
-  {% endfor %}
+    {% for class, values in truncations.icl2_fusion.items %}
+    <tr>
+      <td colspan="2">{{class}}</td>
+    </tr>
+    {% for position, proteins in values.items %}
+    <tr>
+      <td>{{position}}</td>
+      <td>{{proteins|length}}</td>
+      <td>{{proteins|join:", "}}</td>
+    </tr>
+    {% endfor %}
+    {% endfor %}
   </table>
 
   <br>
   MUTATION HOTSPOTS
   <table width="100%">
-  {% for class, vals in mutation_list.items %}
-  <tr><td colspan="2">{{class}}</td></tr>
-  {% for gn, values in vals.items %}
-  <tr><td>{{gn}}</td><td>{{values.hits}}</td><td>{{values.proteins|join:", "}}</td></tr>
-  {% endfor %}
-  {% endfor %}
+    {% for class, vals in mutation_list.items %}
+    <tr>
+      <td colspan="2">{{class}}</td>
+    </tr>
+    {% for gn, values in vals.items %}
+    <tr>
+      <td>{{gn}}</td>
+      <td>{{values.hits}}</td>
+      <td>{{values.proteins|join:", "}}</td>
+    </tr>
+    {% endfor %}
+    {% endfor %}
   </table>
 
   <br>
   MUTATION TYPES
   <table width="100%">
-  {% for class, vals in mutation_type.items %}
-  <tr><td colspan="2">{{class}}</td></tr>
-  {% for gn, values in vals.items %}
-  <tr><td>{{gn}}</td><td>{{values.hits}}</td><td>{{values.proteins|join:", "}}</td></tr>
-  {% endfor %}
-  {% endfor %}
+    {% for class, vals in mutation_type.items %}
+    <tr>
+      <td colspan="2">{{class}}</td>
+    </tr>
+    {% for gn, values in vals.items %}
+    <tr>
+      <td>{{gn}}</td>
+      <td>{{values.hits}}</td>
+      <td>{{values.proteins|join:", "}}</td>
+    </tr>
+    {% endfor %}
+    {% endfor %}
   </table>
 
   <br>
   MUTATION TYPES (only WT aa)
   <table width="100%">
-  {% for class, vals in mutation_wt.items %}
-  <tr><td colspan="2">{{class}}</td></tr>
-  {% for gn, values in vals.items %}
-  <tr><td>{{gn}}</td><td>{{values.hits}}</td><td>{{values.proteins|join:", "}}</td></tr>
-  {% endfor %}
-  {% endfor %}
+    {% for class, vals in mutation_wt.items %}
+    <tr>
+      <td colspan="2">{{class}}</td>
+    </tr>
+    {% for gn, values in vals.items %}
+    <tr>
+      <td>{{gn}}</td>
+      <td>{{values.hits}}</td>
+      <td>{{values.proteins|join:", "}}</td>
+    </tr>
+    {% endfor %}
+    {% endfor %}
   </table>
 
 
   <br>
   MUTATION TYPES (only mutated aa)
   <table width="100%">
-  {% for class, vals in mutation_mut.items %}
-  <tr><td colspan="2">{{class}}</td></tr>
-  {% for gn, values in vals.items %}
-  <tr><td>{{gn}}</td><td>{{values.hits}}</td><td>{{values.proteins|join:", "}}</td></tr>
-  {% endfor %}
-  {% endfor %}
+    {% for class, vals in mutation_mut.items %}
+    <tr>
+      <td colspan="2">{{class}}</td>
+    </tr>
+    {% for gn, values in vals.items %}
+    <tr>
+      <td>{{gn}}</td>
+      <td>{{values.hits}}</td>
+      <td>{{values.proteins|join:", "}}</td>
+    </tr>
+    {% endfor %}
+    {% endfor %}
   </table>
 </div>
 {% endblock %}
