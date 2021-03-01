@@ -1901,7 +1901,7 @@ def conservation_table(prot_classes, gen_nums):
     return table
 
 def get_calculated_columns(rule_tree, mutant, wild_type, g_n, prot_class, rec_fam, conservation): # pylint: disable=too-many-arguments
-     """Calculate the propensity, hydrophobicity and site info for the given mut & wt for each grouping."""
+    """Calculate the propensity, hydrophobicity and site info for the given mut & wt for each grouping."""
     # Get the conservation values for the protein class and receptor family
     class_cons = conservation.get((prot_class, g_n), {})
     fam_cons = conservation.get((rec_fam, g_n), {})
