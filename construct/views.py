@@ -960,14 +960,14 @@ class ConstructStatistics(TemplateView):
         for pos, p_vals in truncations_new_sum.items():
             for pclass, c_vals in p_vals.items():
                 new_list = OrderedDict()
-                try:
-                    for position in truncations_new_possibilties[pos]:
-                        if position in c_vals:
-                            new_list[position] = c_vals[position]
-                        else:
-                            new_list[position] = ''
-                except:
-                    skip_this_one = 1
+                if pos not in truncations_new_possibilties:
+                    truncations_new_possibilties[pos] = []
+
+                for position in truncations_new_possibilties[pos]:
+                    if position in c_vals:
+                        new_list[position] = c_vals[position]
+                    else:
+                        new_list[position] = ''
 
                 # print(pclass,c_vals,new_list)
                 if pos!='cterm':
