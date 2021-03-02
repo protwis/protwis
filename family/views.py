@@ -190,11 +190,11 @@ def detail(request, slug):
         try:
             # In case of single members, not all families have a set consensus - grab the consensus of that single member
             pc = ProteinConformation.objects.get(protein__family__slug__startswith=slug, protein__sequence_type__slug='consensus')
-        except:
+        except ProteinConformation.DoesNotExist:
             try:
                 pc = ProteinConformation.objects.get(protein__family__slug=slug, protein__species_id=1,
                     protein__sequence_type__slug='wt')
-            except:
+            except ProteinConformation.DoesNotExist:
                 # In case of single members, not all families have a set consensus - grab the human representative of that single member
                 pc = ProteinConformation.objects.get(protein__family__slug__startswith=slug, protein__species_id=1,
                     protein__sequence_type__slug='wt')
