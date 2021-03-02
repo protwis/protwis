@@ -93,39 +93,43 @@ function reset_tab() {
 }
 
 // Draft for calculation of normalized rank for a given column
-// NOTE: the support is currently not taken into account
 function createRank(table_id, column) {
-    // Step 1 - collect all values for a given column
-    var min_max = [];
+    // Set default values for all cells
     $(table_id+" tbody tr td").filter(":nth-child("+column+")").each( function() {
-        // OPTIONAL CHECK - grab support for this row and verify if matches variable
-        var cell_value = $(this).text();
-        if (/^-?\d*(\.\d+)?$/.test(cell_value) && cell_value!=="-"){
-            min_max.push(parseFloat(cell_value));
-        }
-    });
-
-    // Step 2 - normalize all values and add them to a data attribute
-    var min = Math.min(...min_max);
-    var max = Math.max(...min_max);
-    $(table_id+" tbody tr td").filter(":nth-child("+column+")").each( function() {
-        let cell_data_source = $(this).closest("tr").attr("data-source");
         let cell_span = $(this.firstChild);
         let cell_value = cell_span.text();
         cell_span.attr("data-raw", cell_value);
         cell_span.attr("data-column-nr", column-1);
         $(this).attr("data-sort", cell_value);
+    });
 
-        // Check if data source is a number, if so confidence value for GPCRdb source
-        if (/^\d$/.test(cell_data_source)) {
+    // Looping over the support values (GPCRdb # 1-3)
+    for (let i=1; i <= 3; i++){
+      // Step 1 - collect all values for a given column
+      let min_max = [];
+      $(table_id+" tbody tr[data-source='" + i + "'] td").filter(":nth-child("+column+")").each( function() {
+          var cell_value = $(this).text();
+          if (/^-?\d*(\.\d+)?$/.test(cell_value) && cell_value!=="-"){
+              min_max.push(parseFloat(cell_value));
+          }
+      });
+
+      // Step 2 - normalize all values and add them to a data attribute
+      let min = Math.min(...min_max);
+      let max = Math.max(...min_max);
+      $(table_id+" tbody tr[data-source='" + i + "'] td").filter(":nth-child("+column+")").each( function() {
+          let cell_span = $(this.firstChild);
+          let cell_value = cell_span.text();
+
+          // Check if data source is a number, if so confidence value for GPCRdb source
           if (/^-?\d*(\.\d+)?$/.test(cell_value) && cell_value!=="-"){
               cell_span.attr("data-normalized", Math.round((1-(parseFloat(cell_value)-min)/(max-min))*100),0);
           } else {
               // not value - empty init
               cell_span.attr("data-normalized","-");
           }
-        }
-    });
+      });
+    }
 }
 
 // # use a place holder for data-normalized
