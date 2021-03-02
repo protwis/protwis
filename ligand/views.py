@@ -4,28 +4,23 @@ from copy import deepcopy
 from common.views import AbsTargetSelectionTable
 from .serializers import AnalyzedExperimentSerializer, AnalyzedExperimentFilter
 from django.db.models import Count, Avg, Min, Max
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
 from django.shortcuts import render, redirect
 from django.conf import settings
-from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.views.generic import TemplateView, View, DetailView, ListView
 from django.db.models import *
-from django.db.models.functions import Cast, Coalesce
 from django.views.decorators.csrf import csrf_exempt
 
 from rest_framework_datatables.django_filters.backends import DatatablesFilterBackend
-from rest_framework import generics, status
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.renderers import JSONRenderer
+from rest_framework import generics
 
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection, SelectionItem
 from ligand.models import *
 from protein.models import Protein, ProteinFamily, ProteinGProteinPair
-Alignment = getattr(__import__('common.alignment_' +
-                               settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
+
 
 
 class LigandBrowser(TemplateView):
@@ -534,8 +529,6 @@ class BiasVendorBrowser(TemplateView):
         return context
         # except:
         #     raise
-
-
 
 class BiasAPI(generics.ListAPIView):
     serializer_class = AnalyzedExperimentSerializer
