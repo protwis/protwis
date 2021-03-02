@@ -113,6 +113,7 @@ function createRank(table_id, column) {
         let cell_value = cell_span.text();
         cell_span.attr("data-raw", cell_value);
         cell_span.attr("data-column-nr", column-1);
+        $(this).attr("data-sort", cell_value);
         if (/^-?\d*(\.\d+)?$/.test(cell_value) && cell_value!=="-"){
             cell_span.attr("data-normalized", Math.round((1-(parseFloat(cell_value)-min)/(max-min))*100),0);
         } else {
@@ -136,131 +137,56 @@ function createRank(table_id, column) {
  */
 var counter = 0;
 function rankedRangeFilter(filterVal, columnVal, rowValues, stateVal) {
-      // DEBUG
-    if (counter < 1) {
+    // DEBUG
+    /*if (counter < 1) {
         counter++;
         console.log("FILTERING FOR", filterVal);
         console.log(columnVal);
         console.log(rowValues);
         console.log(stateVal);
-    }
+    }*/
 
-    if (filterVal === null){
-        // Should never happen anymore
-        return true;
-    } else {
-        let column_nr = $(filterVal).attr("data-column-nr");
-        let min_filtering = parseFloat($("#ranked_range_min_" + column_nr).val());
-        let max_filtering = parseFloat($("#ranked_range_max_" + column_nr).val());
-        let rank_filtering = parseFloat($("#ranked_range_rank_" + column_nr).val());
+    let column_value = $(columnVal).text();
+    let column_nr = $(columnVal).attr("data-column-nr");
+    let min_filtering = parseFloat($("#ranked_range_min_" + column_nr).val());
+    let max_filtering = parseFloat($("#ranked_range_max_" + column_nr).val());
+    let rank_filtering = parseFloat($("#ranked_range_rank_" + column_nr).val());
 
-        if (!isNaN(rank_filtering) && lastRangeRankFilter!=="max" && lastRangeRankFilter!=="min") {
-          // If filtering on rank - clean range filter
-          $("#ranked_range_min_" + column_nr).val("");
-          $("#ranked_range_max_" + column_nr).val("");
+    if (!isNaN(rank_filtering) && lastRangeRankFilter!=="max" && lastRangeRankFilter!=="min") {
+      // If filtering on rank - clean range filter
+      $("#ranked_range_min_" + column_nr).val("");
+      $("#ranked_range_max_" + column_nr).val("");
 
-          let ranked_value = parseFloat($(stateVal[column_nr]).attr("data-normalized"));
-          if (isNaN(ranked_value)) {
+      let ranked_value = parseFloat($(columnVal).attr("data-normalized"));
+      if (isNaN(ranked_value)) {
+          return false;
+      } else {
+          return ranked_value <= rank_filtering;
+      }
+    } else if (!isNaN(min_filtering) || !isNaN(max_filtering)) {
+        // If filtering on range - clean rank filter
+        $("#ranked_range_rank_" + column_nr).val("");
+
+        // Filter range on current columnVal
+        let range_value = parseFloat(column_value);
+         if (isNaN(range_value)) {
               return false;
           } else {
-              return ranked_value <= rank_filtering;
-          }
-        } else if (!isNaN(min_filtering) || !isNaN(max_filtering)) {
-            // If filtering on range - clean rank filter
-            $("#ranked_range_rank_" + column_nr).val("");
-
-            // Filter range on current columnVal
-            let range_value = parseFloat(columnVal);
-             if (isNaN(range_value)) {
-                  return false;
-              } else {
-                 if (!isNaN(min_filtering) && !isNaN(max_filtering)) {
-                    return range_value >= min_filtering && range_value <= max_filtering;
-                 } else if (!isNaN(min_filtering)) {
-                      return range_value >= min_filtering;
-                  } else if(!isNaN(max_filtering)) {
-                     return range_value <= max_filtering;
-                 } else {
-                      // Should never happen
-                  }
+             if (!isNaN(min_filtering) && !isNaN(max_filtering)) {
+                return range_value >= min_filtering && range_value <= max_filtering;
+             } else if (!isNaN(min_filtering)) {
+                  return range_value >= min_filtering;
+              } else if(!isNaN(max_filtering)) {
+                 return range_value <= max_filtering;
+             } else {
+                  // Should never happen
               }
-        } else {
-            return true;
-        }
-    }
-}
-
-function innerValueSort(a, b){
-    let value_a = parseFloat($(a).text());
-    let value_b = parseFloat($(b).text());
-
-    if (isNaN(value_a) || isNaN(value_b)) {
-        if (isNaN(value_a) && isNaN(value_b)) {
-            console.log("first =" + value_a, value_b, false);
-            return false;
-        } else if (isNaN(value_a)) { // B is number
-            console.log("second =" + value_a, value_b, false);
-            return false;
-        } else { // A is number
-            console.log("third =" + value_a, value_b, true);
-            return value_a - value_b;
-        }
+          }
     } else {
-        console.log("fourth =" + value_a, value_b, value_a > value_b);
-        return value_a > value_b;
+        return true;
     }
 }
 
-// function innerValueSort(a, b) {
-//     let value_a = parseFloat($(a).text());
-//     let value_b = parseFloat($(b).text());
-//     if (value_a == 0 || value_b == 0) {
-//         return value_a == value_b ? 1 : -1;
-//     }
-//     else if (value_a == 1 || value_b == 1) {
-//         return value_a > value_b ? 1 : -1;
-//     }
-//     else if (value_a == -1 || value_b == -1) {
-//         return value_a - value_b ? 1 : -1;
-//     }
-//     else {
-//         return true;
-//     }
-// }
-
-
-// function innerValueSort(a, b) {
-//     if (!isNaN(a) || !isNaN(b)) {
-//         console.log("first =" + a, b, a-b, a > b)
-//         return a - b;
-//     } else {
-//         console.log("second =" + a, b, a-b, a > b)
-//         return false
-//     }
-// }
-
-
-// 0 = equal
-// 1 = higher
-// -1 = lower
-
-// function testcustom1(filterVal, columnVal) {
-//     var found = false;
-//     // debugger;
-//     console.log(filterVal, columnVal);
-//     switch (filterVal) {
-//         case 'empty':
-//             found = columnVal ? false : true;
-//             //break;
-//         case 'notempty':
-//             found = columnVal ? true : false;
-//             //break;
-//         default:
-//             //break;
-//     }
-//     return found;
-//
-// }
 
 
 
@@ -465,12 +391,7 @@ $(document).ready(function() {
                 column_number: 10,
                 filter_type: "custom_func",
                 custom_func: rankedRangeFilter,
-//                sort_as: "Alpha",
-                sort_as: "custom",
-                sort_as_custom_func: innerValueSort,
                 filter_container_id: "hide_ranked1",
-//                column_data_type: "text",
-//                html_data_type: "text",
             },
             {
                 column_number : 11,
@@ -574,7 +495,7 @@ $(document).ready(function() {
         // Store current type of filtering globally
         lastRangeRankFilter = event.target.id.split("_")[2];
 
-        // SELECT one option in real YADCF filter
+        // SELECT one option in real YADCF filter to trick YADCF into calling the filter function
         let adjust_node = $("#yadcf-filter--familiestabletab-" + column_nr + " option").filter(":nth-child(2)").first();
         adjust_node.prop("selected", true);
 
