@@ -233,7 +233,6 @@
         }
         const csrftoken = getCookie('csrftoken');
 
-
 		function myFunction(url, title, win, w, h) {
 			const y = win.top.outerHeight / 2 + win.top.screenY - (h / 2);
 			const x = win.top.outerWidth / 2 + win.top.screenX - (w / 2);
@@ -242,7 +241,7 @@
 
 		var table = $('#structures_scrollable').DataTable({
 			stateSave: false,
-			processing: false,
+			processing: true,
 			deferRender: true,
 			dom: 'B<>flrtip',
             fixedColumns:   {
@@ -619,7 +618,7 @@
             },
 			],
 
-			pageLength: 50,
+			pageLength: 35,
 			"lengthChange": false,
 			"buttons": [{
 					extend: 'csv',

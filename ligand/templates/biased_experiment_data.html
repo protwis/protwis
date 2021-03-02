@@ -157,7 +157,7 @@
 					</tr>
 					<tr>
 						<td>Quantitive Activity</td>
-						<td>{{data.quantitive_activity_initial}}</td>
+						<td>{{data.quantitive_activity|stringformat:".2e"}}</td>
 					</tr>
 					<tr>
 						<td>Qualitative Activity</td>
@@ -200,7 +200,7 @@
 		{%for data in experiment.analyzed_data.all%}
 		{%if data.assay_description != None %}
 		<div class="col-xs-6">
-			<h3 class="sub-header" style="text-transform: capitalize;">Pathway: {{data.family}} </h3>
+			<h3 class="sub-header" style="text-transform: capitalize;">Pathway:{{data.family}}</h3>
 
 			<div class="table-responsive">
 				<table class="table table-striped" id="vendors_table">
