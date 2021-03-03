@@ -75,31 +75,31 @@ function draw_tree(data, options) {
         .attr("r", function (d) { if (d.name == '') { return "0" } else { return "4.0" } })
         .style("fill", function (d) {
             if (d.color && d.depth < options.depth) { return d.color }
-            else if ( d.value == 1) {
+            else if ( d.value === 1) {
                 return "FireBrick";
             }
-            else if ( d.value == 10) {
+            else if ( d.value === 10) {
                 return "LightSkyBlue";
             }
-            else if ( d.value == 20) {
+            else if ( d.value === 20) {
                 return "CornflowerBlue";
             }
-            else if ( d.value == 30) {
+            else if ( d.value === 30) {
                 return "Blue";
             }
-            else if ( d.value == 40) {
+            else if ( d.value === 40) {
                 return "DarkBlue";
             }
-            else if (d.value == 100) {
+            else if (d.value === 100) {
                 return 'LightGray';
             }
-            else if (d.value == 500) {
+            else if (d.value === 500) {
                 return 'DarkGray';
             }
-            else if (d.value == 1000) {
+            else if (d.value === 1000) {
                 return 'Gray';
             }
-            else if (d.value == 2000) {
+            else if (d.value === 2000) {
                 return 'Black';
             }
             else { return "White" };
