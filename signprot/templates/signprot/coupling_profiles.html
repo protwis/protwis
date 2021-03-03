@@ -68,6 +68,16 @@
     });
     return false;
 }
+
+function copyToClipboard(txt) {
+    var cb = document.getElementById("cb");
+    cb.value = txt.slice(0, -1);
+    cb.style.display='block';
+    cb.select();
+    document.execCommand('copy');
+    cb.style.display='none';
+    showAlert("Selected receptors have been copied to your clipboard.", "info");
+}
     {% if render_part != "tree" %}
       $(document).ready(function () {
         var colorDefault = ["#5a9bd4", "#f15a60", "#808080", "#006600"],
@@ -81,20 +91,7 @@
           gdata = {{ ClassA_gtp_plus|safe }};
           gprotein_ID = {{ ClassA_gtp_plus_keys|safe }};
 
-        function copyToClipboard(txt) {
-            var cb = document.getElementById("cb");
-            cb.value = txt.slice(0, -1);
-            cb.style.display='block';
-            cb.select();
-            document.execCommand('copy');
-            cb.style.display='none';
-            showAlert("Shown receptors have been copied to your clipboard.", "info");
-        }
-
         function getArrayFromData(gprotein) {
-          console.log(gdata);
-          console.log(gprotein);
-          console.log(gdata[gprotein]);
           var lines = gdata[gprotein].split("\n");
           var table = new Array();
           for (var lindex in lines) {
@@ -229,11 +226,11 @@
               g.appendChild(newElement);
             }
           }
-          $("#label1").css("font-weight", "bold");
-          $("#label2").css("font-weight", "bold");
-          $("#label3").css("font-weight", "bold");
-          $("#label4").css("font-weight", "bold");
-          $(".number-empty").remove();
+          $("#label1").css("font-weight", "bold").css("font-size", "20px");
+          $("#label2").css("font-weight", "bold").css("font-size", "20px");
+          $("#label3").css("font-weight", "bold").css("font-size", "20px");
+          $("#label4").css("font-weight", "bold").css("font-size", "20px");
+          $(".number-empty").html("-");
         }
 
         updateJvenn(gprotein_ID)
@@ -392,7 +389,6 @@
 
 
   function getCombinations(array) {
-      console.log(array);
       function iter(temp, index) {
           if (index >= array.length) {
               result.push(temp);
@@ -574,6 +570,8 @@
     tree_class_f_options = {{ tree_class_f_options|safe }};
     tree_class_t2 = {{ tree_class_t2|safe }};
     tree_class_t2_options = {{ tree_class_t2_options|safe }};
+    tree_orphan_a = {{ tree_orphan_a|safe }};
+    tree_orphan_options = {{ tree_orphan_options|safe }};
 </script>
 <script type="text/javascript" charset="utf-8">
 
@@ -609,15 +607,74 @@ $(window).on("load",function() {
     draw_tree(tree_class_f, tree_class_f_options);
     DrawCircles('tree_class_f',selectivitydata_gtp_plus);
     draw_tree(tree_class_t2, tree_class_t2_options);
-    DrawCircles('tree_class_t2',selectivitydata);
+    DrawCircles('tree_class_t2',selectivitydata_gtp_plus);
+    draw_tree(tree_orphan_a, tree_orphan_options);
+    DrawCircles('tree_orphan',selectivitydata_gtp_plus);
     $("#tree_class_a svg g").first().attr('transform', 'translate(555,555) scale(0.9,0.9) ');
-    $("#tree_class_b1 svg g").first().attr('transform', 'translate(220,220) scale(0.85,0.85) ');
+    $("#tree_class_b1 svg g").first().attr('transform', 'translate(170,220) scale(0.85,0.85) ');
     $("#tree_class_b2 svg g").first().attr('transform', 'translate(182,182) scale(0.85,0.85) ');
     $("#tree_class_c svg g").first().attr('transform', 'translate(200,200) scale(0.85,0.85) ');
     $("#tree_class_f svg g").first().attr('transform', 'translate(180,180) scale(0.85,0.85) ');
     $("#tree_class_t2 svg g").first().attr('transform', 'translate(172,172) scale(0.85,0.85) ');
+    $("#tree_orphan svg").attr('width', '360').attr('height', '360');
+    $("#tree_orphan svg g").first().attr('transform', 'translate(180,180)');
 });
 </script>
+<script language='Javascript'>
+function highlightBG(element, color) {
+    element.style.backgroundColor = color;
+}
+</script>
+
+<input id="cb" type="text" hidden>
+<h4>Placeholder Table</h4>
+<table style="width:60% !important" class="table table-stripped">
+    <thead>
+        <tr>
+            <td><b>Class<br />(Family)</b></td>
+            {% for key in table.Class %}
+            <td align="center"><b>{{ key }}</b></td>
+            {% endfor %}
+            <td  align="center"><b>Total</b></td>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>G<sub>s</sub></td>
+            {% for text in table.Gs %}
+            <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='copyToClipboard("{{ text.1 }}")' align="center">{{ text.0 }}</td>
+            {% endfor %}
+        </tr>
+        <tr>
+            <td nowrap>G<sub>i/o</sub></td>
+            {% for text in table.GiGo %}
+            <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='copyToClipboard("{{ text.1 }}")' align="center">{{ text.0 }}</td>
+            {% endfor %}
+        </tr>
+        <tr>
+            <td nowrap>G<sub>q/11</sub></td>
+            {% for text in table.GqG11 %}
+            <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='copyToClipboard("{{ text.1 }}")' align="center">{{ text.0 }}</td>
+            {% endfor %}
+        </tr>
+        <tr>
+            <td nowrap>G<sub>12/13</sub></td>
+            {% for text in table.G12G13 %}
+            <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='copyToClipboard("{{ text.1 }}")' align="center">{{ text.0 }}</td>
+            {% endfor %}
+        </tr>
+        <tr>
+            <td nowrap>Total unique</td>
+            {% for text in table.Total %}
+            <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='copyToClipboard("{{ text.1 }}")' align="center">{{ text.0 }}</td>
+            {% endfor %}
+        </tr>
+    </tbody>
+    <tr> </tr>
+
+</table>
+
+<hr>
 
   <div class="row">
     <div class="col-md-12">
@@ -641,8 +698,6 @@ $(window).on("load",function() {
 <div id="tree_class_a" class="text-center">
   <h4>Class A<br />(Rhodopsin)</h4>
 </div>
-
-<!-- adding the section of graphs from StructureStatistics -->
 
 <p>
   <div class="text-center">
@@ -785,15 +840,21 @@ $(window).on("load",function() {
     <div class="row-fluid">
       <div class="span12">
         <div class="row-fluid">
-          <div class="span6">
+          <div class="span4">
             <div id="tree_class_f" class="text-center">
               <h4>Class F<br />(Frizzled)</h4>
             </div>
           </div>
 
-          <div class="span6">
+          <div class="span4">
             <div id="tree_class_t2" class="text-center">
               <h4>Class T <br /> (Taste 2)</h4>
+            </div>
+          </div>
+
+          <div class="span4">
+            <div id="tree_orphan" class="text-center">
+              <h4>Class A <br /> Orphans</h4>
             </div>
           </div>
         </div>
@@ -803,7 +864,7 @@ $(window).on("load",function() {
     <div class="row-fluid">
       <div class="span12">
         <div class="row-fluid">
-          <div class="span6">
+          <div class="span4">
             <div class="text-center">
               <div class="btn-group">
                   <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
@@ -828,7 +889,7 @@ $(window).on("load",function() {
               </div>
             </div>
           </div>
-          <div class="span6">
+          <div class="span4">
             <div class="text-center">
               <div class="btn-group">
                   <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
@@ -853,12 +914,35 @@ $(window).on("load",function() {
               </div>
             </div>
           </div>
+          <div class="span4">
+            <div class="text-center">
+              <div class="btn-group">
+                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                          aria-haspopup="true" aria-expanded="false">
+                      <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu">
+                      <li>
+                          <a href="javascript:saveSvgAsPng(document.getElementById('tree_orphan_svg'), 'xtal_coverage_tree_class_a_orphan.png');">PNG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsJpg(document.getElementById('tree_orphan_svg'), 'xtal_coverage_tree_class_a_orphan.jpg');">JPG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsTiff(document.getElementById('tree_orphan_svg'), 'xtal_coverage_tree_class_a_orphan.tiff');">TIFF</a>
+                          </a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvg(document.getElementById('tree_orphan_svg'), 'xtal_coverage_tree_class_a_orphan.svg');">SVG</a>
+                      </li>
+                  </ul>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
-
-<!-- end added section -->
   <hr>
 {% endif %}
 
@@ -908,4 +992,5 @@ $(window).on("load",function() {
 <script src="{% static 'home/js/jvenn.js' %}"></script>
 <script src="{% static 'home/js/nv.d3.min.js' %}"></script>
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/saveSvg.js' %}"></script>
 {% endblock %}

@@ -434,7 +434,8 @@ def CouplingProfiles(request, render_part="both"):
 
         context = OrderedDict()
         i = 0
-        gproteins = ProteinGProtein.objects.all()
+        # gprot_id = ProteinGProteinPair.objects.all().values_list('g_protein_id', flat=True).order_by('g_protein_id').distinct()
+        gproteins = ProteinGProtein.objects.filter(pk__lte = 4) #here GPa1 is fetched
         # adding info for tree from StructureStatistics View
         tree = PhylogeneticTreeGenerator()
         class_a_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
@@ -442,7 +443,13 @@ def CouplingProfiles(request, render_part="both"):
         context['tree_class_a_options']['anchor'] = 'tree_class_a'
         context['tree_class_a_options']['leaf_offset'] = 50
         context['tree_class_a_options']['label_free'] = []
-        context['tree_class_a'] = json.dumps(class_a_data.get_nodes_dict(None))
+        whole_class_a = class_a_data.get_nodes_dict(None)
+        # section to remove Orphan from Class A tree and apply to a different tree
+        for item in whole_class_a['children']:
+            if item['name'] == 'Orphan':
+                orphan_data = OrderedDict([('name', ''), ('value', 3000), ('color', ''), ('children',[item])])
+                whole_class_a['children'].remove(item)
+        context['tree_class_a'] = json.dumps(whole_class_a)
         class_b1_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B1 (Secretin)'))
         context['tree_class_b1_options'] = deepcopy(tree.d3_options)
         context['tree_class_b1_options']['anchor'] = 'tree_class_b1'
@@ -470,14 +477,26 @@ def CouplingProfiles(request, render_part="both"):
         context['tree_class_t2_options']['anchor'] = 'tree_class_t2'
         context['tree_class_t2_options']['label_free'] = [1,]
         context['tree_class_t2'] = json.dumps(class_t2_data.get_nodes_dict(None))
+        # definition of the class a orphan tree
+        class_orphan = tree.get_tree_data(ProteinFamily.objects.get(name='Class A orphans'))
+        context['tree_orphan_options'] = deepcopy(tree.d3_options)
+        context['tree_orphan_options']['anchor'] = 'tree_orphan'
+        context['tree_orphan_options']['label_free'] = [1,]
+        context['tree_orphan_a'] = json.dumps(orphan_data)
         # end copied section from StructureStatistics View
-        slug_translate = {'001': "ClassA", '002': "ClassB1", '004': "ClassC", '006': "ClassF"}
+        slug_translate = {'001': "ClassA", '002': "ClassB1", '003': "ClassB2", '004': "ClassC", '006': "ClassF", '007': "ClassT"}
         key_translate ={'Gs':"G<sub>s</sub>", 'Gi/Go':"G<sub>i/o</sub>",
                         'Gq/G11':"G<sub>q/11</sub>", 'G12/G13':"G<sub>12/13</sub>"}
         selectivitydata = {}
         selectivitydata_gtp_plus = {}
         receptor_dictionary = []
+        table = {'Class':[], 'Gs': [], 'GiGo': [], 'GqG11': [], 'G12G13': [], 'Total': []}
+        clickTable = {'Gs': [], 'GiGo': [], 'GqG11': [], 'G12G13': [], 'Total': []}
         for slug in slug_translate.keys():
+            tot = 0
+            txttot = ''
+            fam = str(ProteinFamily.objects.get(slug=(slug)))
+            table['Class'].append(fam)
             jsondata = {}
             jsondata_gtp_plus = {}
             for gp in gproteins:
@@ -498,7 +517,6 @@ def CouplingProfiles(request, render_part="both"):
                 # Initialize selectivity array
                 processed_receptors = []
                 key = str(gp).split(' ')[0]
-                # key = key_translate[id]
                 jsondata[key] = []
                 jsondata_gtp_plus[key] = []
                 for coupling in other_couplings:
@@ -522,7 +540,7 @@ def CouplingProfiles(request, render_part="both"):
                                 selectivitydata_gtp_plus[receptor_only].append(key)
 
                         # Add to json data for Venn diagram
-                        jsondata[key].append(str(receptor_name) + '\n')
+                        # jsondata[key].append(str(receptor_name) + '\n')
                         jsondata_gtp_plus[key].append(str(receptor_name) + '\n')
                         processed_receptors.append(receptor_name)
 
@@ -538,15 +556,23 @@ def CouplingProfiles(request, render_part="both"):
 
                     jsondata_gtp_plus[key].append(str(receptor_name) + '\n')
 
-                if len(jsondata[key]) == 0:
-                    jsondata.pop(key, None)
-                else:
-                    jsondata[key] = ''.join(jsondata[key])
+                # if len(jsondata[key]) == 0:
+                #     jsondata.pop(key, None)
+                # else:
+                #     jsondata[key] = ''.join(jsondata[key])
+
+                tot += len(jsondata_gtp_plus[key])
+                txttot = ' '.join([txttot,' '.join(jsondata_gtp_plus[key]).replace('\n','')])
 
                 if len(jsondata_gtp_plus[key]) == 0:
                     jsondata_gtp_plus.pop(key, None)
+                    table[key.replace('/','')].append((0,''))
                 else:
+                    table[key.replace('/','')].append((len(jsondata_gtp_plus[key]), ' '.join(jsondata_gtp_plus[key]).replace('\n','')))
                     jsondata_gtp_plus[key] = ''.join(jsondata_gtp_plus[key])
+
+            tot = len(list(set(txttot.split(' ')))) -1
+            table['Total'].append((tot,txttot))
 
             for item in key_translate:
                 try:
@@ -554,13 +580,18 @@ def CouplingProfiles(request, render_part="both"):
                 except KeyError:
                     continue
 
-            context[slug_translate[slug]] = jsondata
-            context[slug_translate[slug]+"_keys"] = list(jsondata.keys())
+            # context[slug_translate[slug]] = jsondata
+            # context[slug_translate[slug]+"_keys"] = list(jsondata.keys())
             context[slug_translate[slug]+"_gtp_plus"] = jsondata_gtp_plus
             context[slug_translate[slug]+"_gtp_plus_keys"] = list(jsondata_gtp_plus.keys())
-
+        table['Gs'].append((sum([pair[0] for pair in table['Gs']]),' '.join([pair[1] for pair in table['Gs']])+' '))
+        table['GiGo'].append((sum([pair[0] for pair in table['GiGo']]),' '.join([pair[1] for pair in table['GiGo']])+' '))
+        table['GqG11'].append((sum([pair[0] for pair in table['GqG11']]),' '.join([pair[1] for pair in table['GqG11']])+' '))
+        table['G12G13'].append((sum([pair[0] for pair in table['G12G13']]),' '.join([pair[1] for pair in table['G12G13']])+' '))
+        table['Total'].append((sum([pair[0] for pair in table['Total']]),' '.join([pair[1] for pair in table['Total']])+' '))
         context["selectivitydata"] = selectivitydata
         context["selectivitydata_gtp_plus"] = selectivitydata_gtp_plus
+        context["table"] = table
 
         # Collect receptor information
         receptor_panel = Protein.objects.filter(entry_name__in=receptor_dictionary)\
