@@ -12,6 +12,7 @@ from protein.models import Protein, Species, ProteinFamily
 
 from django.views.decorators.csrf import csrf_exempt
 
+from collections import OrderedDict
 from copy import deepcopy
 import itertools
 import json
@@ -393,7 +394,13 @@ class LigandStatistics(TemplateView):
         context['class_a_options']['anchor'] = 'class_a'
         context['class_a_options']['leaf_offset'] = 50
         context['class_a_options']['label_free'] = []
-        context['class_a'] = json.dumps(class_a_data.get_nodes_dict('ligands'))
+        # section to remove Orphan from Class A tree and apply to a different tree
+        whole_class_a = class_a_data.get_nodes_dict('ligands')
+        for item in whole_class_a['children']:
+            if item['name'] == 'Orphan':
+                orphan_data = OrderedDict([('name', ''), ('value', 3000), ('color', ''), ('children',[item])])
+                whole_class_a['children'].remove(item)
+        context['class_a'] = json.dumps(whole_class_a)
         class_b1_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B1 (Secretin)'))
         context['class_b1_options'] = deepcopy(tree.d3_options)
         context['class_b1_options']['anchor'] = 'class_b1'
@@ -421,7 +428,11 @@ class LigandStatistics(TemplateView):
         context['class_t2_options']['anchor'] = 'class_t2'
         context['class_t2_options']['label_free'] = [1,]
         context['class_t2'] = json.dumps(class_t2_data.get_nodes_dict('ligands'))
-
+        # definition of the class a orphan tree
+        context['orphan_options'] = deepcopy(tree.d3_options)
+        context['orphan_options']['anchor'] = 'orphan'
+        context['orphan_options']['label_free'] = [1,]
+        context['orphan'] = json.dumps(orphan_data)
         return context
 
 #Biased Ligands part

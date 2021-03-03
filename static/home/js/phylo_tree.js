@@ -78,6 +78,18 @@ function draw_tree(data, options) {
             else if ( d.value == 1) {
                 return "FireBrick";
             }
+            else if ( d.value == 10) {
+                return "LightSkyBlue";
+            }
+            else if ( d.value == 20) {
+                return "CornflowerBlue";
+            }
+            else if ( d.value == 30) {
+                return "Blue";
+            }
+            else if ( d.value == 40) {
+                return "DarkBlue";
+            }
             else if (d.value == 100) {
                 return 'LightGray';
             }

@@ -663,7 +663,7 @@ function highlightBG(element, color) {
             {% endfor %}
         </tr>
         <tr>
-            <td nowrap>Total unique</td>
+            <td nowrap>Total (unique)</td>
             {% for text in table.Total %}
             <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='copyToClipboard("{{ text.1 }}")' align="center">{{ text.0 }}</td>
             {% endfor %}
