@@ -478,7 +478,6 @@ def CouplingProfiles(request, render_part="both"):
         context['tree_class_t2_options']['label_free'] = [1,]
         context['tree_class_t2'] = json.dumps(class_t2_data.get_nodes_dict(None))
         # definition of the class a orphan tree
-        class_orphan = tree.get_tree_data(ProteinFamily.objects.get(name='Class A orphans'))
         context['tree_orphan_options'] = deepcopy(tree.d3_options)
         context['tree_orphan_options']['anchor'] = 'tree_orphan'
         context['tree_orphan_options']['label_free'] = [1,]
@@ -491,7 +490,6 @@ def CouplingProfiles(request, render_part="both"):
         selectivitydata_gtp_plus = {}
         receptor_dictionary = []
         table = {'Class':[], 'Gs': [], 'GiGo': [], 'GqG11': [], 'G12G13': [], 'Total': []}
-        clickTable = {'Gs': [], 'GiGo': [], 'GqG11': [], 'G12G13': [], 'Total': []}
         for slug in slug_translate.keys():
             tot = 0
             txttot = ''
