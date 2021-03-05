@@ -1,13 +1,13 @@
 import json
 import itertools
 from copy import deepcopy
-from common.views import AbsTargetSelectionTable
+
 from .serializers import AnalyzedExperimentSerializer, AnalyzedExperimentFilter
 from django.db.models import Count, Avg, Min, Max
 from collections import defaultdict
-from django.shortcuts import render, redirect
-from django.conf import settings
-from django.http import HttpResponse, JsonResponse
+from django.shortcuts import render
+
+from django.http import HttpResponse
 from django.views.generic import TemplateView, View, DetailView, ListView
 from django.db.models import *
 from django.views.decorators.csrf import csrf_exempt
@@ -19,7 +19,7 @@ from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection, SelectionItem
 from ligand.models import *
-from protein.models import Protein, ProteinFamily, ProteinGProteinPair
+from protein.models import Protein, ProteinFamily
 
 
 
@@ -346,8 +346,8 @@ class LigandStatistics(TemplateView):
     def get_context_data(self, **kwargs):
 
         context = super().get_context_data(**kwargs)
-        assays = AssayExperiment.objects.all().prefetch_related(
-            'protein__family__parent__parent__parent', 'protein__family')
+
+
 
         lig_count_dict = {}
         assays_lig = list(AssayExperiment.objects.all().values(
@@ -368,8 +368,7 @@ class LigandStatistics(TemplateView):
 
         classes = ProteinFamily.objects.filter(
             slug__in=['001', '002', '003', '004', '005', '006', '007'])  # ugly but fast
-        proteins = Protein.objects.all().prefetch_related(
-            'family__parent__parent__parent')
+
         ligands = []
 
         for fam in classes:
@@ -530,6 +529,7 @@ class BiasVendorBrowser(TemplateView):
         # except:
         #     raise
 
+# pylint: disable=F405
 class BiasAPI(generics.ListAPIView):
     serializer_class = AnalyzedExperimentSerializer
     filter_backends = (DatatablesFilterBackend,)

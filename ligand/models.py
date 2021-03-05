@@ -11,7 +11,7 @@ from urllib.request import urlopen, quote
 import json
 import yaml
 import logging
-import requests
+
 
 class Ligand(models.Model):
     properities = models.ForeignKey('LigandProperities', on_delete=models.CASCADE)

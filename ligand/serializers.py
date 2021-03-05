@@ -113,16 +113,16 @@ class AnalyzedExperimentFilter(DatatablesFilterSet):
     )
 
     potency_p2_p1 = filters.CharFilter(
-        method='yadcf_range_filter', required=False
+        method='yadcf_range_filter_with_float_cast', required=False
     )
     potency_p3_p1 = filters.CharFilter(
-        method='yadcf_range_filter', required=False
+        method='yadcf_range_filter_with_float_cast', required=False
     )
     potency_p4_p1 = filters.CharFilter(
-        method='yadcf_range_filter', required=False
+        method='yadcf_range_filter_with_float_cast', required=False
     )
     potency_p5_p1 = filters.CharFilter(
-        method='yadcf_range_filter', required=False
+        method='yadcf_range_filter_with_float_cast', required=False
     )
 
     activity_p1 = filters.CharFilter(
