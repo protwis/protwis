@@ -411,26 +411,95 @@
 					"data": "activity_p1",
 					"sortable": true,
                     "className":"shade",
+                    "render": function(data, type, row) {
+
+                        if (row.quality_activity_p1 || row.quality_activity_p1!=='') {
+            				var return_String = row.quality_activity_p1;
+    						return return_String;
+            			} else {
+                            if (row.standard_type_p1 || row.standard_type_p1==='IC50') {
+                				var return_String = "<td style='font color='red';'>"+data+"</td>";
+        						return return_String;
+                			}
+            				var return_String = data;
+    						return return_String;
+            			}
+
+					},
 				},
 				{
 					"data": "activity_p2",
 					"sortable": true,
                     "className":"shade",
+                    "render": function(data, type, row) {
+                        if (row.quality_activity_p2 || row.quality_activity_p2!=='') {
+            				var return_String = row.quality_activity_p2;
+    						return return_String;
+            			} else {
+                            if (row.standard_type_p2 || row.standard_type_p2==='IC50') {
+                            var return_String = "<font color='red'>"+data+"</font>";
+                            return return_String;
+                        }
+            				var return_String = data;
+    						return return_String;
+            			}
+
+					},
 				},
 				{
 					"data": "activity_p3",
 					"sortable": true,
-                    "className":"shade",
+                    "className":"shade","render": function(data, type, row) {
+                        if (row.quality_activity_p3 || row.quality_activity_p3!=='') {
+            				var return_String = row.quality_activity_p3;
+    						return return_String;
+            			} else {
+                            if (row.standard_type_p3 || row.standard_type_p3==='IC50') {
+                            var return_String = "<td style='color:red'>"+data+"</td>";
+
+                            return return_String;
+                        }
+            				var return_String = data;
+    						return return_String;
+            			}
+
+					},
 				},
 				{
 					"data": "activity_p4",
 					"sortable": true,
-                    "className":"shade",
+                    "className":"shade","render": function(data, type, row) {
+                        if (row.quality_activity_p4 || row.quality_activity_p4!=='') {
+            				var return_String = row.quality_activity_p4;
+    						return return_String;
+            			} else {
+                            if (row.standard_type_p4 || row.standard_type_p4==='IC50') {
+                            var return_String = "<td style='color:red'>"+data+"</td>";
+                            return return_String;
+                        }
+            				var return_String = data;
+    						return return_String;
+            			}
+
+					},
 				},
 				{
 					"data": "activity_p5",
 					"sortable": true,
-                    "className":"shade",
+                    "className":"shade","render": function(data, type, row) {
+                        if (row.quality_activity_p5 || row.quality_activity_p5!=='') {
+            				var return_String = row.quality_activity_p5;
+    						return return_String;
+            			} else {
+                            if (row.standard_type_p5 || row.standard_type_p5==='IC50') {
+                            var return_String = "<td style='color:red'>"+data+"</td>";
+                            return return_String;
+                        }
+            				var return_String = data;
+    						return return_String;
+            			}
+
+					},
 				},
 				{
 					"data": "emax_p1",
@@ -577,9 +646,68 @@
                 	"sortable": false,
                 	"visible": false,
 				},
+                {
+                    "data": "quality_activity_p1",
+                	"sortable": false,
+                	"visible": false,
+				},
+                {
+                    "data": "quality_activity_p2",
+                	"sortable": false,
+                	"visible": false,
+				},
+                {
+                    "data": "quality_activity_p3",
+                	"sortable": false,
+                	"visible": false,
+				},
+                {
+                    "data": "quality_activity_p4",
+                	"sortable": false,
+                	"visible": false,
+				},
+                {
+                    "data": "quality_activity_p5",
+                	"sortable": false,
+                	"visible": false,
+				},
+
+                {
+                    "data": "standard_type_p1",
+                	"sortable": false,
+                	"visible": false,
+				},
+                {
+                    "data": "standard_type_p2",
+                	"sortable": false,
+                	"visible": false,
+				},
+                {
+                    "data": "standard_type_p3",
+                	"sortable": false,
+                	"visible": false,
+				},
+                {
+                    "data": "standard_type_p4",
+                	"sortable": false,
+                	"visible": false,
+				},
+                {
+                    "data": "standard_type_p5",
+                	"sortable": false,
+                	"visible": false,
+				},
+
 
 			],
 			"columnDefs": [
+                // {
+                //     "targets":[31,32,33,34,35], "render": function(data, type, row) {
+                //         var return_String = "<a href ='" + row.publication_link + "'target='_blank'>"+data+"</a>";
+				// 		return return_String;
+				// 	},
+                //
+                // },
 				{
             	"targets": [ 19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45 ],
             	"createdCell": function (td, cellData, rowData, row, col) {

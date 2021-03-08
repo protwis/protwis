@@ -590,6 +590,19 @@ class BiasAPI(generics.ListAPIView):
             activity_p5=Subquery(assay_qs.values(
                 'quantitive_activity_initial')[4:5]),
 
+            # quality_activity
+            quality_activity_p1=Subquery(assay_qs.values('qualitative_activity')[:1]),
+            quality_activity_p2=Subquery(assay_qs.values('qualitative_activity')[1:2]),
+            quality_activity_p3=Subquery(assay_qs.values('qualitative_activity')[2:3]),
+            quality_activity_p4=Subquery(assay_qs.values('qualitative_activity')[3:4]),
+            quality_activity_p5=Subquery(assay_qs.values('qualitative_activity')[4:5]),
+            # quality_activity
+            standard_type_p1=Subquery(assay_qs.values('quantitive_measure_type')[:1]),
+            standard_type_p2=Subquery(assay_qs.values('quantitive_measure_type')[1:2]),
+            standard_type_p3=Subquery(assay_qs.values('quantitive_measure_type')[2:3]),
+            standard_type_p4=Subquery(assay_qs.values('quantitive_measure_type')[3:4]),
+            standard_type_p5=Subquery(assay_qs.values('quantitive_measure_type')[4:5]),
+
             # E Max
             emax_p1=Subquery(assay_qs.values('quantitive_efficacy')[:1]),
             emax_p2=Subquery(assay_qs.values('quantitive_efficacy')[1:2]),
@@ -948,16 +961,11 @@ class GBiasAPI(generics.ListAPIView):
             potency_p5_p1=Subquery(assay_qs.values('potency')[4:5]),
 
             # Potency
-            activity_p1=Subquery(assay_qs.values(
-                'quantitive_activity_initial')[:1]),
-            activity_p2=Subquery(assay_qs.values(
-                'quantitive_activity_initial')[1:2]),
-            activity_p3=Subquery(assay_qs.values(
-                'quantitive_activity_initial')[2:3]),
-            activity_p4=Subquery(assay_qs.values(
-                'quantitive_activity_initial')[3:4]),
-            activity_p5=Subquery(assay_qs.values(
-                'quantitive_activity_initial')[4:5]),
+            activity_p1=Subquery(assay_qs.values('quantitive_activity_initial')[:1]),
+            activity_p2=Subquery(assay_qs.values('quantitive_activity_initial')[1:2]),
+            activity_p3=Subquery(assay_qs.values('quantitive_activity_initial')[2:3]),
+            activity_p4=Subquery(assay_qs.values('quantitive_activity_initial')[3:4]),
+            activity_p5=Subquery(assay_qs.values('quantitive_activity_initial')[4:5]),
 
             # E Max
             emax_p1=Subquery(assay_qs.values('quantitive_efficacy')[:1]),

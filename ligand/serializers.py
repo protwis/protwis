@@ -113,16 +113,16 @@ class AnalyzedExperimentFilter(DatatablesFilterSet):
     )
 
     potency_p2_p1 = filters.CharFilter(
-        method='yadcf_range_filter_with_float_cast', required=False
+        method='yadcf_range_filter', required=False
     )
     potency_p3_p1 = filters.CharFilter(
-        method='yadcf_range_filter_with_float_cast', required=False
+        method='yadcf_range_filter', required=False
     )
     potency_p4_p1 = filters.CharFilter(
-        method='yadcf_range_filter_with_float_cast', required=False
+        method='yadcf_range_filter', required=False
     )
     potency_p5_p1 = filters.CharFilter(
-        method='yadcf_range_filter_with_float_cast', required=False
+        method='yadcf_range_filter', required=False
     )
 
     activity_p1 = filters.CharFilter(
@@ -246,7 +246,10 @@ class AnalyzedExperimentFilter(DatatablesFilterSet):
             'assay_p1', 'assay_p2', 'assay_p3', 'assay_p4', 'assay_p5',
             'cell_p1', 'cell_p2', 'cell_p3', 'cell_p4', 'cell_p5',
             'time_p1', 'time_p2', 'time_p3', 'time_p4', 'time_p5',
-            'authors', 'doi_reference','ligand_id','publication_link',
+            'authors', 'doi_reference','ligand_id','publication_link','quality_activity_p1',
+            'quality_activity_p2','quality_activity_p3','quality_activity_p4','quality_activity_p5',
+            'standard_type_p1','standard_type_p2','standard_type_p3','standard_type_p4','standard_type_p5'
+
         ]
         read_only_fields = fields
 
@@ -315,10 +318,10 @@ class AnalyzedExperimentFilter(DatatablesFilterSet):
         except:
             max_value = None
 
-        if min_value is not None:
+        if min_value:
             queryset = queryset.filter(**{f'{field_name}__gte': min_value})
 
-        if max_value is not None:
+        if max_value:
             queryset = queryset.filter(**{f'{field_name}__lte': max_value})
 
         return queryset
@@ -379,6 +382,18 @@ class AnalyzedExperimentSerializer(serializers.ModelSerializer):
     potency_p4_p1 = serializers.CharField()
     potency_p5_p1 = serializers.CharField()
 
+    quality_activity_p1 = serializers.CharField()
+    quality_activity_p2 = serializers.CharField()
+    quality_activity_p3 = serializers.CharField()
+    quality_activity_p4 = serializers.CharField()
+    quality_activity_p5 = serializers.CharField()
+
+    standard_type_p1 = serializers.CharField()
+    standard_type_p2 = serializers.CharField()
+    standard_type_p3 = serializers.CharField()
+    standard_type_p4 = serializers.CharField()
+    standard_type_p5 = serializers.CharField()
+
     # Potency
     activity_p1 = serializers.CharField()
     activity_p2 = serializers.CharField()
@@ -438,24 +453,31 @@ class AnalyzedExperimentSerializer(serializers.ModelSerializer):
             'assay_p1', 'assay_p2', 'assay_p3', 'assay_p4', 'assay_p5',
             'cell_p1', 'cell_p2', 'cell_p3', 'cell_p4', 'cell_p5',
             'time_p1', 'time_p2', 'time_p3', 'time_p4', 'time_p5',
-            'authors', 'doi_reference','ligand_id', 'publication_link'
+            'authors', 'doi_reference','ligand_id', 'publication_link','quality_activity_p1',
+            'quality_activity_p2','quality_activity_p3','quality_activity_p4','quality_activity_p5',
+            'standard_type_p1','standard_type_p2','standard_type_p3','standard_type_p4','standard_type_p5'
         ]
 
-    def get_class_(self, obj):
+    @staticmethod
+    def get_class_(obj):
         class_receptor = obj.receptor.family.parent.parent.parent.name
         return class_receptor.replace('Class', '').strip()
 
-    def get_iuphar(self, obj):
+    @staticmethod
+    def get_iuphar(obj):
         iuphar_name = obj.receptor.name.split(' ', 1)[0].split('-adrenoceptor', 1)[0].strip()
         return iuphar_name
 
-    def get_uniprot(self, obj):
+    @staticmethod
+    def get_uniprot(obj):
         uniprot = obj.receptor.entry_short()
 
         return uniprot
 
-    def get_primary(self, obj):
+    @staticmethod
+    def get_primary(obj):
         return obj.primary.replace(' family,', '')
 
-    def get_secondary(self, obj):
+    @staticmethod
+    def get_secondary(obj):
         return obj.secondary.replace(' family,', '')
