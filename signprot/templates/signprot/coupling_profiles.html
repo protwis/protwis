@@ -549,7 +549,7 @@ function copyToClipboard(txt) {
 
 <script type="text/javascript" charset="utf-8">
   var receptor_dictionary = {{ receptor_dictionary|safe }};
-  var selectivitydata = {{ selectivitydata|safe }};
+  // var selectivitydata = {{ selectivitydata|safe }};
   var selectivitydata_gtp_plus = {{ selectivitydata_gtp_plus|safe }};
   $(document).ready(function(){
     paper.install(window);
@@ -572,10 +572,18 @@ function copyToClipboard(txt) {
     tree_class_t2_options = {{ tree_class_t2_options|safe }};
     tree_orphan_a = {{ tree_orphan_a|safe }};
     tree_orphan_options = {{ tree_orphan_options|safe }};
+    whole_dict = {{ whole_receptors|safe }};
 </script>
-<script type="text/javascript" charset="utf-8">
+<script language='Javascript'>
+function highlightBG(element, color) {
+    element.style.backgroundColor = color;
+}
+function linkLikeClick(element, color) {
+    element.style.color = color;
+    element.style.textDecoration = 'underline';
+}
 
-function DrawCircles(location, data){
+function DrawCircles(location, data, starter){
     var fam = {1:"Gs",2:"Gi/Go",3:"Gq/G11",4:"G12/G13"};
     var fill = {1:"blue",2:"red",3:"black",4:"green"};
     var spacer = 8;
@@ -589,42 +597,74 @@ function DrawCircles(location, data){
               .append("circle")
               .attr("r", 3.25)
               .style("fill", fill[f])
-              .attr("transform", "translate(" + (42 + f*spacer) + ",0)");
+              .attr("transform", "translate(" + (Math.ceil(starter) + f*spacer) + ",0)");
             }
       }
     }
   }
-
+</script>
+<script type="text/javascript" charset="utf-8">
 $(window).on("load",function() {
-    draw_tree(tree_class_a, tree_class_a_options);
-    DrawCircles('tree_class_a',selectivitydata_gtp_plus);
+    maxLeafNodeLenght = 46;
+    $("#name_toggle").change(function(){
+      if($(this).prop("checked") == true){
+        changeLeavesLabels("tree_class_a","UniProt", whole_dict);
+        DrawCircles('tree_class_a',selectivitydata_gtp_plus, maxLeafNodeLenght);
+        changeLeavesLabels("tree_class_b1","UniProt", whole_dict);
+        DrawCircles('tree_class_b1',selectivitydata_gtp_plus, maxLeafNodeLenght);
+        changeLeavesLabels("tree_class_b2","UniProt", whole_dict);
+        DrawCircles('tree_class_b2',selectivitydata_gtp_plus, maxLeafNodeLenght);
+        changeLeavesLabels("tree_class_c","UniProt", whole_dict);
+        DrawCircles('tree_class_c',selectivitydata_gtp_plus, maxLeafNodeLenght);
+        changeLeavesLabels("tree_class_f","UniProt", whole_dict);
+        DrawCircles('tree_class_f',selectivitydata_gtp_plus, maxLeafNodeLenght);
+        changeLeavesLabels("tree_class_t2","UniProt", whole_dict);
+        DrawCircles('tree_class_t2',selectivitydata_gtp_plus, maxLeafNodeLenght);
+        changeLeavesLabels("tree_orphan","UniProt", whole_dict);
+        DrawCircles('tree_orphan',selectivitydata_gtp_plus, maxLeafNodeLenght);
+      }else{
+        changeLeavesLabels("tree_class_a","IUPHAR", whole_dict);
+        DrawCircles('tree_class_a',selectivitydata_gtp_plus, maxLeafNodeLenght);
+        changeLeavesLabels("tree_class_b1","IUPHAR", whole_dict);
+        DrawCircles('tree_class_b1',selectivitydata_gtp_plus, maxLeafNodeLenght);
+        changeLeavesLabels("tree_class_b2","IUPHAR", whole_dict);
+        DrawCircles('tree_class_b2',selectivitydata_gtp_plus, maxLeafNodeLenght);
+        changeLeavesLabels("tree_class_c","IUPHAR", whole_dict);
+        DrawCircles('tree_class_c',selectivitydata_gtp_plus, maxLeafNodeLenght);
+        changeLeavesLabels("tree_class_f","IUPHAR", whole_dict);
+        DrawCircles('tree_class_f',selectivitydata_gtp_plus, maxLeafNodeLenght);
+        changeLeavesLabels("tree_class_t2","IUPHAR", whole_dict);
+        DrawCircles('tree_class_t2',selectivitydata_gtp_plus, maxLeafNodeLenght);
+        changeLeavesLabels("tree_orphan","IUPHAR", whole_dict);
+        DrawCircles('tree_orphan',selectivitydata_gtp_plus, maxLeafNodeLenght);
+      }
+    });
+    draw_tree(tree_class_a, tree_class_a_options); //, "IUPHAR", receptor_dictionary);
     draw_tree(tree_class_b1, tree_class_b1_options);
-    DrawCircles('tree_class_b1',selectivitydata_gtp_plus);
     draw_tree(tree_class_b2, tree_class_b2_options);
-    DrawCircles('tree_class_b2',selectivitydata_gtp_plus);
     draw_tree(tree_class_c, tree_class_c_options);
-    DrawCircles('tree_class_c',selectivitydata_gtp_plus);
     draw_tree(tree_class_f, tree_class_f_options);
-    DrawCircles('tree_class_f',selectivitydata_gtp_plus);
     draw_tree(tree_class_t2, tree_class_t2_options);
-    DrawCircles('tree_class_t2',selectivitydata_gtp_plus);
     draw_tree(tree_orphan_a, tree_orphan_options);
-    DrawCircles('tree_orphan',selectivitydata_gtp_plus);
+    DrawCircles('tree_class_a',selectivitydata_gtp_plus, maxLeafNodeLenght);
+    DrawCircles('tree_class_b1',selectivitydata_gtp_plus, maxLeafNodeLenght);
+    DrawCircles('tree_class_b2',selectivitydata_gtp_plus, maxLeafNodeLenght);
+    DrawCircles('tree_class_c',selectivitydata_gtp_plus, maxLeafNodeLenght);
+    DrawCircles('tree_class_f',selectivitydata_gtp_plus, maxLeafNodeLenght);
+    DrawCircles('tree_class_t2',selectivitydata_gtp_plus, maxLeafNodeLenght);
+    DrawCircles('tree_orphan',selectivitydata_gtp_plus, maxLeafNodeLenght);
     $("#tree_class_a svg g").first().attr('transform', 'translate(555,555) scale(0.9,0.9) ');
-    $("#tree_class_b1 svg g").first().attr('transform', 'translate(170,220) scale(0.85,0.85) ');
-    $("#tree_class_b2 svg g").first().attr('transform', 'translate(182,182) scale(0.85,0.85) ');
+    $("#tree_class_a_svg").attr('height', 1210);
+    $("#tree_class_b1 svg g").first().attr('transform', 'translate(190,220) scale(0.80,0.80) ');
+    $("#tree_class_b2 svg g").first().attr('transform', 'translate(195,182) scale(0.85,0.85) ');
+    $("#tree_class_b2_svg").attr('height', 390);
     $("#tree_class_c svg g").first().attr('transform', 'translate(200,200) scale(0.85,0.85) ');
     $("#tree_class_f svg g").first().attr('transform', 'translate(180,180) scale(0.85,0.85) ');
     $("#tree_class_t2 svg g").first().attr('transform', 'translate(172,172) scale(0.85,0.85) ');
-    $("#tree_orphan svg g").first().attr('transform', 'translate(170,170) scale(0.85,0.85)');
+    $("#tree_orphan svg g").first().attr('transform', 'translate(175,180) scale(0.85,0.85)');
+    $("#tree_orphan_svg").attr('height', 360).attr('width', 360);
 });
 </script>
-<script language='Javascript'>
-function highlightBG(element, color) {
-    element.style.backgroundColor = color;
-}
-</script>
-
 <input id="cb" type="text" hidden>
 <h4>Number of coupled receptor per receptor class</h4>
 <table style="width:60% !important" class="table table-stripped">
@@ -641,31 +681,31 @@ function highlightBG(element, color) {
         <tr>
             <td>G<sub>s</sub></td>
             {% for text in table.Gs %}
-            <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='copyToClipboard("{{ text.1 }}")' align="center">{{ text.0 }}</td>
+            <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='copyToClipboard("{{ text.1 }}"); linkLikeClick(this, "purple")' align="center">{{ text.0 }}</td>
             {% endfor %}
         </tr>
         <tr>
             <td nowrap>G<sub>i/o</sub></td>
             {% for text in table.GiGo %}
-            <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='copyToClipboard("{{ text.1 }}")' align="center">{{ text.0 }}</td>
+            <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='copyToClipboard("{{ text.1 }}"); linkLikeClick(this, "purple")' align="center">{{ text.0 }}</td>
             {% endfor %}
         </tr>
         <tr>
             <td nowrap>G<sub>q/11</sub></td>
             {% for text in table.GqG11 %}
-            <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='copyToClipboard("{{ text.1 }}")' align="center">{{ text.0 }}</td>
+            <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='copyToClipboard("{{ text.1 }}"); linkLikeClick(this, "purple")' align="center">{{ text.0 }}</td>
             {% endfor %}
         </tr>
         <tr>
             <td nowrap>G<sub>12/13</sub></td>
             {% for text in table.G12G13 %}
-            <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='copyToClipboard("{{ text.1 }}")' align="center">{{ text.0 }}</td>
+            <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='copyToClipboard("{{ text.1 }}"); linkLikeClick(this, "purple")' align="center">{{ text.0 }}</td>
             {% endfor %}
         </tr>
         <tr>
             <td nowrap>Total (unique)</td>
             {% for text in table.Total %}
-            <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='copyToClipboard("{{ text.1 }}")' align="center">{{ text.0 }}</td>
+            <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='copyToClipboard("{{ text.1 }}"); linkLikeClick(this, "purple")' align="center">{{ text.0 }}</td>
             {% endfor %}
         </tr>
     </tbody>
@@ -681,6 +721,7 @@ function highlightBG(element, color) {
         <div class='text-center'>
           <p><strong>GPCR selectivity tree.</strong> The four dots depict both primary and secondary G protein coupling.</p>
         </div>
+          <p><input id="name_toggle" type="checkbox" checked data-toggle="toggle" data-on="UniProt" data-off="IUPHAR" data-onstyle="info" data-offstyle="info">  Use the toggle to switch from UniProt names (default setting), to IUPHAR names for receptors </p>
       </div>
     </div>
   </div>

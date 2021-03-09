@@ -4,6 +4,7 @@
 <link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/nvd3-update.css' %}" type="text/css" />
 <link href="{% static 'home/css/bootstrap-responsive.css' %}" rel="stylesheet" media="screen">
+<link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
 <style>
 .node circle {
   /*fill: #fff;*/
@@ -434,7 +435,10 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
     </ul>
 </div></p>
 <br />-->
-<h4>Structural coverage of GPCR Classes</h4><br />
+<h4>Structural coverage of GPCR Classes</h4>
+<br />
+<p><input id="name_toggle" type="checkbox" checked data-toggle="toggle" data-on="UniProt" data-off="IUPHAR" data-onstyle="info" data-offstyle="info"></p>
+<br />
 <script type="text/javascript" charset="utf-8">
     class_a = {{ class_a|safe }};
     class_a_options = {{ class_a_options|safe }};
@@ -450,6 +454,30 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
     class_t2_options = {{ class_t2_options|safe }};
     orphan = {{ orphan | safe }};
     orphan_options = {{ orphan_options | safe }};
+    whole_dict = {{ whole_receptors|safe }};
+</script>
+<script language='javascript'>
+  document.getElementById("name_toggle").onchange = function(e){
+    if(e.target.checked){
+      console.log('checked');
+      changeLeavesLabels("class_a","UniProt", whole_dict);
+      changeLeavesLabels("class_b1","UniProt", whole_dict);
+      changeLeavesLabels("class_b2","UniProt", whole_dict);
+      changeLeavesLabels("class_c","UniProt", whole_dict);
+      changeLeavesLabels("class_f","UniProt", whole_dict);
+      changeLeavesLabels("class_t2","UniProt", whole_dict);
+      changeLeavesLabels("orphan","UniProt", whole_dict);
+    }else{
+      console.log('unchecked');
+      changeLeavesLabels("class_a","IUPHAR", whole_dict);
+      changeLeavesLabels("class_b1","IUPHAR", whole_dict);
+      changeLeavesLabels("class_b2","IUPHAR", whole_dict);
+      changeLeavesLabels("class_c","IUPHAR", whole_dict);
+      changeLeavesLabels("class_f","IUPHAR", whole_dict);
+      changeLeavesLabels("class_t2","IUPHAR", whole_dict);
+      changeLeavesLabels("orphan","IUPHAR", whole_dict);
+    }
+  };
 </script>
 <div id="class_a" class="text-center">
   <h4>Class A<br />(Rhodopsin)</h4>
@@ -701,6 +729,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
 {% endblock %}
 
 {% block addon_js %}
+<script src="{% static 'home/js/bootstrap-toggle.min.js' %}"></script>
 <script src="{% static 'home/js/jquery.js' %}"></script>
 <script src="{% static 'home/js/d3.min.js' %}"></script>
 <script src="{% static 'home/js/nv.d3.min.js' %}"></script>
@@ -717,6 +746,8 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
         draw_tree(class_f, class_f_options);
         draw_tree(class_t2, class_t2_options);
         draw_tree(orphan, orphan_options);
+        $("#class_a svg g").first().attr('transform', 'translate(555,575)');
+        $("#class_a_svg").attr('height', 1210);
         $("#class_b1 svg g").first().attr('transform', 'translate(180,220) scale(0.85,0.85)');
         $("#class_b2 svg g").first().attr('transform', 'translate(182,200) scale(0.85,0.85) ');
         $("#class_c svg g").first().attr('transform', 'translate(200,200) scale(0.85,0.85) ');

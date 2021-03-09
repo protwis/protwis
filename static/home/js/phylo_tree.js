@@ -112,10 +112,16 @@ function draw_tree(data, options) {
     node.append("text")
         .attr("dy", ".31em")
         .attr("name", function (d) { if (d.name == '') { return "branch" } else { return d.name } })
-        .attr("text-anchor", function (d) { return d.x < 180 ? "end" : "start"; })
+        .attr("text-anchor", function (d) {
+            if (d.depth == 3 ) {
+              return d.x < 180 ? "start" : "end";
+            } else {
+              return d.x < 180 ? "end" : "start";
+            }
+        })
         .attr("transform", function (d) {
             if (d.depth == 3) {
-                return d.x < 180 ? "translate(43)" : "rotate(180)translate(-43)";
+                return d.x < 180 ? "translate(7)" : "rotate(180)translate(-7)";
             } else {
                 return d.x < 180 ? "translate(-12)" : "rotate(180)translate(12)";
             }
@@ -199,4 +205,49 @@ function draw_tree(data, options) {
             }
         });
     }
+}
+
+function changeLeavesLabels(location, value, dict){
+  maxLeafNodeLenght = 0;
+  // Find longest label
+  gNodes = d3.select('#'+location).selectAll('g');
+  gNodes.each(function(d) {
+    if (d3.select(this).attr("id") !== null) {
+      name = d3.select(this).attr("id").substring(1);
+      labelName = dict[name][0];
+      labelName = labelName.replace("-adrenoceptor", '');
+      labelName = labelName.replace(" receptor-", '-');
+      labelName = labelName.replace("<sub>", '</tspan><tspan baseline-shift = "sub">');
+      labelName = labelName.replace("</sub>", '</tspan><tspan>');
+      labelName = labelName.replace("<i>", '</tspan><tspan font-style = "italic">');
+      labelName = labelName.replace("</i>", '</tspan><tspan>');
+      labelName = labelName.replace("Long-wave-sensitive",'LWS');
+      labelName = labelName.replace("Medium-wave-sensitive",'MWS');
+      labelName = labelName.replace("Short-wave-sensitive",'SWS');
+      labelName = labelName.replace("Olfactory", 'OLF');
+      labelName = labelName.replace("calcitonin ", 'CAL');
+      node = d3.select('#X'+name);
+      if (node.size() !== 0){
+        if (value === "IUPHAR"){
+          node.selectAll("text")[0].forEach(
+            function(node_label){
+              node_label.innerHTML = labelName;
+              labelSize = node_label.getBBox().width*1.05 + 0.5 * 10
+              if (labelSize > maxLeafNodeLenght){
+                maxLeafNodeLenght = labelSize
+              }
+            });
+        } else if (value === "UniProt"){
+          node.selectAll("text")[0].forEach(
+            function(node_label){
+              node_label.innerHTML = name;
+              labelSize = node_label.getBBox().width*1.05 + 0.5 * 10
+              if (labelSize > maxLeafNodeLenght){
+                maxLeafNodeLenght = labelSize
+              }
+            });
+        }
+      }
+    }
+  });
 }

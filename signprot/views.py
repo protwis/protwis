@@ -587,7 +587,7 @@ def CouplingProfiles(request, render_part="both"):
         table['GqG11'].append((sum([pair[0] for pair in table['GqG11']]),' '.join([pair[1] for pair in table['GqG11']])+' '))
         table['G12G13'].append((sum([pair[0] for pair in table['G12G13']]),' '.join([pair[1] for pair in table['G12G13']])+' '))
         table['Total'].append((sum([pair[0] for pair in table['Total']]),' '.join([pair[1] for pair in table['Total']])+' '))
-        context["selectivitydata"] = selectivitydata
+        # context["selectivitydata"] = selectivitydata
         context["selectivitydata_gtp_plus"] = selectivitydata_gtp_plus
         context["table"] = table
 
@@ -605,6 +605,14 @@ def CouplingProfiles(request, render_part="both"):
             rec_iuphar = p.family.name.replace("receptor", '').replace("<i>","").replace("</i>","").strip()
             receptor_dictionary[rec_uniprot] = [rec_class, rec_ligandtype, rec_family, rec_uniprot, rec_iuphar]
 
+        whole_receptors = Protein.objects.prefetch_related("family", "family__parent__parent__parent")
+        whole_rec_dict = {}
+        for rec in whole_receptors:
+            rec_uniprot = rec.entry_short()
+            rec_iuphar = rec.family.name.replace("receptor", '').replace("<i>","").replace("</i>","").strip()
+            whole_rec_dict[rec_uniprot] = [rec_iuphar]
+
+        context["whole_receptors"] = json.dumps(whole_rec_dict)
         context["receptor_dictionary"] = json.dumps(receptor_dictionary)
 
     cache.set(name_of_cache, context, 60 * 60 * 24 * 7)  # seven days timeout on cache

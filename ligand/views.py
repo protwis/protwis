@@ -433,6 +433,15 @@ class LigandStatistics(TemplateView):
         context['orphan_options']['anchor'] = 'orphan'
         context['orphan_options']['label_free'] = [1,]
         context['orphan'] = json.dumps(orphan_data)
+
+        whole_receptors = Protein.objects.prefetch_related("family", "family__parent__parent__parent")
+        whole_rec_dict = {}
+        for rec in whole_receptors:
+            rec_uniprot = rec.entry_short()
+            rec_iuphar = rec.family.name.replace("receptor", '').replace("<i>","").replace("</i>","").strip()
+            whole_rec_dict[rec_uniprot] = [rec_iuphar]
+        context["whole_receptors"] = json.dumps(whole_rec_dict)
+
         return context
 
 #Biased Ligands part
