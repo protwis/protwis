@@ -75,7 +75,14 @@ input.yadcf-filter {
     font-weight: bold;
 }
 
-.yadcf-filter-range-date, .yadcf-filter-range-number {
+.yadcf-filter-range-date {
+    width: 30px;
+    font-family: sans-serif;
+    font-size: 100%;
+    font-weight: bold;
+}
+
+.yadcf-filter-range-number {
     width: 30px;
     font-family: sans-serif;
     font-size: 100%;
@@ -155,13 +162,6 @@ input.yadcf-filter {
     width: auto;
     height: 12px;
 }
-
-/*
-        .dataTables_scrollBody table {
-            transform:rotateX(180deg);
-}
- */
-
 
 /* NOTE -- THIS HAS TO GO LAST SO THAT IT OVERRIDES ALL */
 th, td { white-space: nowrap; }

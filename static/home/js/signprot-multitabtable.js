@@ -92,10 +92,10 @@ function reset_tab() {
     window.location.href = "/signprot/couplings";
 }
 
-// Draft for calculation of normalized rank for a given column
+// Calculation of normalized rank for a given column
 function createRank(table_id, column) {
     // Set default values for all cells
-    $(table_id+" tbody tr td").filter(":nth-child("+column+")").each( function() {
+    $(table_id+" tbody tr td").filter(":nth-child(" + column + ")").each( function() {
         let cell_span = $(this.firstChild);
         let cell_value = cell_span.text();
         cell_span.attr("data-raw", cell_value);
@@ -107,7 +107,7 @@ function createRank(table_id, column) {
     for (let i=1; i <= 3; i++){
       // Step 1 - collect all values for a given column
       let min_max = [];
-      $(table_id+" tbody tr[data-source='" + i + "'] td").filter(":nth-child("+column+")").each( function() {
+      $(table_id+" tbody tr[data-source='" + i + "'] td").filter(":nth-child(" + column + ")").each( function() {
           var cell_value = $(this).text();
           if (/^-?\d*(\.\d+)?$/.test(cell_value) && cell_value!=="-"){
               min_max.push(parseFloat(cell_value));
@@ -117,7 +117,7 @@ function createRank(table_id, column) {
       // Step 2 - normalize all values and add them to a data attribute
       let min = Math.min(...min_max);
       let max = Math.max(...min_max);
-      $(table_id+" tbody tr[data-source='" + i + "'] td").filter(":nth-child("+column+")").each( function() {
+      $(table_id+" tbody tr[data-source='" + i + "'] td").filter(":nth-child(" + column + ")").each( function() {
           let cell_span = $(this.firstChild);
           let cell_value = cell_span.text();
 
@@ -131,8 +131,6 @@ function createRank(table_id, column) {
       });
     }
 }
-
-// # use a place holder for data-normalized
 
 // # custom rankedRangeFilter draft for YADCF
 /**
@@ -197,20 +195,6 @@ function rankedRangeFilter(filterVal, columnVal, rowValues, stateVal) {
 }
 
 
-
-
-// // # YADCF setting for ranked range column
-//  {
-//                   column_number: X,
-//                   filter_type: "custom_func",
-//                   custom_func: rankedRangeFilter,
-//                 }
-// //# Add two input boxes above the automatically added filter
-// //# Link boxes to filter by, for example:
-// yadcf.exFilterColumn(targetTable, [[X, "range_min_5"]]);
-
-
-
 /**
  * This is a custom YADCF function that checks ....
  * ....
@@ -238,8 +222,8 @@ function make_range_number_cols(start_column, repeat_number) {
         filter_reset_button_text: false
     };
     var repeated_from_to = [];
-    for (var i = start_column; i < start_column + repeat_number; i++) {
-        var column_info = Object.assign({}, from_to);
+    for (let i = start_column; i < start_column + repeat_number; i++) {
+        let column_info = Object.assign({}, from_to);
         column_info["column_number"] = i;
         repeated_from_to.push(column_info);
     }
@@ -259,8 +243,9 @@ $(document).ready(function() {
 //     });
 
     // Try initializing the rank
-    // TODO - add support filter while creating ranks
-    createRank("#familiestabletab", 11); // GS
+for (let i=11; i <= 22; i++) {
+    createRank("#familiestabletab", i); // GS
+}
 
 // ===============
 // Families Table
@@ -275,13 +260,13 @@ $(document).ready(function() {
         paging: false,
         bSortCellsTop: false, //prevent sort arrows going on bottom row
         aaSorting: [],
-        order: [[4,"asc"], [22, "desc"]],
+        order: [[4, "asc"], [22, "desc"]],
         autoWidth: false,
         bInfo: true,
         columnDefs: [
             {
                 targets: [22],
-                visible: true
+                visible: false
             }
         ],
     });
@@ -400,77 +385,77 @@ $(document).ready(function() {
                 column_number: 10,
                 filter_type: "custom_func",
                 custom_func: rankedRangeFilter,
-                filter_container_id: "hide_ranked1",
+                filter_container_id: "hide_ranked10",
             },
             {
                 column_number : 11,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
+                filter_type: "custom_func",
+                custom_func: rankedRangeFilter,
+                filter_container_id: "hide_ranked11",
             },
             {
                 column_number : 12,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
+                filter_type: "custom_func",
+                custom_func: rankedRangeFilter,
+                filter_container_id: "hide_ranked12",
             },
             {
                 column_number : 13,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
+                filter_type: "custom_func",
+                custom_func: rankedRangeFilter,
+                filter_container_id: "hide_ranked13",
             },
 
 // pEC50
             {
                 column_number : 14,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
+                filter_type: "custom_func",
+                custom_func: rankedRangeFilter,
+                filter_container_id: "hide_ranked14",
             },
             {
                 column_number : 15,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
+                filter_type: "custom_func",
+                custom_func: rankedRangeFilter,
+                filter_container_id: "hide_ranked15",
             },
             {
                 column_number : 16,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
+                filter_type: "custom_func",
+                custom_func: rankedRangeFilter,
+                filter_container_id: "hide_ranked16",
             },
             {
                 column_number : 17,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
+                filter_type: "custom_func",
+                custom_func: rankedRangeFilter,
+                filter_container_id: "hide_ranked17",
             },
 
 // Emax
             {
                 column_number : 18,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
+                filter_type: "custom_func",
+                custom_func: rankedRangeFilter,
+                filter_container_id: "hide_ranked18",
             },
             {
                 column_number : 19,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
+                filter_type: "custom_func",
+                custom_func: rankedRangeFilter,
+                filter_container_id: "hide_ranked19",
             },
             {
                 column_number : 20,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
+                filter_type: "custom_func",
+                custom_func: rankedRangeFilter,
+                filter_container_id: "hide_ranked20",
             },
             {
                 column_number : 21,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
+                filter_type: "custom_func",
+                custom_func: rankedRangeFilter,
+                filter_container_id: "hide_ranked21",
             },
 
 
@@ -514,11 +499,6 @@ $(document).ready(function() {
         // Clean filter type
         lastRangeRankFilter = "";
     });
-
-
-
-
-
 
 
 // This prefilters the value 2 in the hidden column 22 which corresponds to being in at least two of the supporting GPCRdb
