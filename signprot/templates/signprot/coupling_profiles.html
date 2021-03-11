@@ -582,61 +582,42 @@ function linkLikeClick(element, color) {
     element.style.color = color;
     element.style.textDecoration = 'underline';
 }
-
-function DrawCircles(location, data, starter){
-    var fam = {1:"Gs",2:"Gi/Go",3:"Gq/G11",4:"G12/G13"};
-    var fill = {1:"blue",2:"red",3:"black",4:"green"};
-    var spacer = 8;
-    var svg = d3.select('#'+location);
-    var node = svg.selectAll(".node");
-    node.selectAll("circle").remove();
-    for (var x in data){
-      for (var f in fam){
-        if (data[x].indexOf(fam[f])>= 0) {
-          var leafwithname = svg.selectAll('g[id=X'+x+']')
-              .append("circle")
-              .attr("r", 3.25)
-              .style("fill", fill[f])
-              .attr("transform", "translate(" + (Math.ceil(starter) + f*spacer) + ",0)");
-            }
-      }
-    }
-  }
 </script>
 <script type="text/javascript" charset="utf-8">
 $(window).on("load",function() {
     maxLeafNodeLenght = 46;
+    conversion = {"Gs":"blue", "Gi/Go":"red", "Gq/G11":"black", "G12/G13":"green"};
     $("#name_toggle").change(function(){
       if($(this).prop("checked") == true){
         changeLeavesLabels("tree_class_a","UniProt", whole_dict);
-        DrawCircles('tree_class_a',selectivitydata_gtp_plus, maxLeafNodeLenght);
+        DrawCircles('tree_class_a',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion);
         changeLeavesLabels("tree_class_b1","UniProt", whole_dict);
-        DrawCircles('tree_class_b1',selectivitydata_gtp_plus, maxLeafNodeLenght);
+        DrawCircles('tree_class_b1',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion);
         changeLeavesLabels("tree_class_b2","UniProt", whole_dict);
-        DrawCircles('tree_class_b2',selectivitydata_gtp_plus, maxLeafNodeLenght);
+        DrawCircles('tree_class_b2',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion);
         changeLeavesLabels("tree_class_c","UniProt", whole_dict);
-        DrawCircles('tree_class_c',selectivitydata_gtp_plus, maxLeafNodeLenght);
+        DrawCircles('tree_class_c',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion);
         changeLeavesLabels("tree_class_f","UniProt", whole_dict);
-        DrawCircles('tree_class_f',selectivitydata_gtp_plus, maxLeafNodeLenght);
+        DrawCircles('tree_class_f',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion);
         changeLeavesLabels("tree_class_t2","UniProt", whole_dict);
-        DrawCircles('tree_class_t2',selectivitydata_gtp_plus, maxLeafNodeLenght);
+        DrawCircles('tree_class_t2',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion);
         changeLeavesLabels("tree_orphan","UniProt", whole_dict);
-        DrawCircles('tree_orphan',selectivitydata_gtp_plus, maxLeafNodeLenght);
+        DrawCircles('tree_orphan',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion);
       }else{
         changeLeavesLabels("tree_class_a","IUPHAR", whole_dict);
-        DrawCircles('tree_class_a',selectivitydata_gtp_plus, maxLeafNodeLenght);
+        DrawCircles('tree_class_a',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
         changeLeavesLabels("tree_class_b1","IUPHAR", whole_dict);
-        DrawCircles('tree_class_b1',selectivitydata_gtp_plus, maxLeafNodeLenght);
+        DrawCircles('tree_class_b1',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
         changeLeavesLabels("tree_class_b2","IUPHAR", whole_dict);
-        DrawCircles('tree_class_b2',selectivitydata_gtp_plus, maxLeafNodeLenght);
+        DrawCircles('tree_class_b2',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
         changeLeavesLabels("tree_class_c","IUPHAR", whole_dict);
-        DrawCircles('tree_class_c',selectivitydata_gtp_plus, maxLeafNodeLenght);
+        DrawCircles('tree_class_c',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
         changeLeavesLabels("tree_class_f","IUPHAR", whole_dict);
-        DrawCircles('tree_class_f',selectivitydata_gtp_plus, maxLeafNodeLenght);
+        DrawCircles('tree_class_f',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
         changeLeavesLabels("tree_class_t2","IUPHAR", whole_dict);
-        DrawCircles('tree_class_t2',selectivitydata_gtp_plus, maxLeafNodeLenght);
+        DrawCircles('tree_class_t2',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
         changeLeavesLabels("tree_orphan","IUPHAR", whole_dict);
-        DrawCircles('tree_orphan',selectivitydata_gtp_plus, maxLeafNodeLenght);
+        DrawCircles('tree_orphan',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
       }
     });
     draw_tree(tree_class_a, tree_class_a_options); //, "IUPHAR", receptor_dictionary);
@@ -646,13 +627,13 @@ $(window).on("load",function() {
     draw_tree(tree_class_f, tree_class_f_options);
     draw_tree(tree_class_t2, tree_class_t2_options);
     draw_tree(tree_orphan_a, tree_orphan_options);
-    DrawCircles('tree_class_a',selectivitydata_gtp_plus, maxLeafNodeLenght);
-    DrawCircles('tree_class_b1',selectivitydata_gtp_plus, maxLeafNodeLenght);
-    DrawCircles('tree_class_b2',selectivitydata_gtp_plus, maxLeafNodeLenght);
-    DrawCircles('tree_class_c',selectivitydata_gtp_plus, maxLeafNodeLenght);
-    DrawCircles('tree_class_f',selectivitydata_gtp_plus, maxLeafNodeLenght);
-    DrawCircles('tree_class_t2',selectivitydata_gtp_plus, maxLeafNodeLenght);
-    DrawCircles('tree_orphan',selectivitydata_gtp_plus, maxLeafNodeLenght);
+    DrawCircles('tree_class_a',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
+    DrawCircles('tree_class_b1',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
+    DrawCircles('tree_class_b2',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
+    DrawCircles('tree_class_c',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
+    DrawCircles('tree_class_f',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
+    DrawCircles('tree_class_t2',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
+    DrawCircles('tree_orphan',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
     $("#tree_class_a svg g").first().attr('transform', 'translate(555,555) scale(0.9,0.9) ');
     $("#tree_class_a_svg").attr('height', 1210);
     $("#tree_class_b1 svg g").first().attr('transform', 'translate(190,220) scale(0.80,0.80) ');

@@ -208,6 +208,7 @@ function draw_tree(data, options) {
 }
 
 function changeLeavesLabels(location, value, dict){
+  // Initialize leaf node length
   maxLeafNodeLenght = 0;
   // Find longest label
   gNodes = d3.select('#'+location).selectAll('g');
@@ -215,6 +216,7 @@ function changeLeavesLabels(location, value, dict){
     if (d3.select(this).attr("id") !== null) {
       name = d3.select(this).attr("id").substring(1);
       labelName = dict[name][0];
+      // replaces labels derived from view
       labelName = labelName.replace("-adrenoceptor", '');
       labelName = labelName.replace(" receptor-", '-');
       labelName = labelName.replace("<sub>", '</tspan><tspan baseline-shift = "sub">');
@@ -234,6 +236,7 @@ function changeLeavesLabels(location, value, dict){
               node_label.innerHTML = labelName;
               labelSize = node_label.getBBox().width*1.05 + 0.5 * 10
               if (labelSize > maxLeafNodeLenght){
+                // change initialization label length, needed for outer circles
                 maxLeafNodeLenght = labelSize
               }
             });
@@ -251,3 +254,27 @@ function changeLeavesLabels(location, value, dict){
     }
   });
 }
+
+// location: svg in which to draw outer circles
+// data: data provided by the view
+// starter: the max length of the leaves, to start drawing the circles
+// dict: the translation dictionary for color codes
+function DrawCircles(location, data, starter, dict){
+    var spacer = 8;
+    var svg = d3.select('#'+location);
+    var node = svg.selectAll(".node");
+    node.selectAll("circle").remove();
+    for (var x in data){
+      for (var unit in dict){
+        if (data[x].indexOf(unit)>= 0) {
+          // variable to set the location of the different circle drawing
+          multiply = 1+Object.keys(dict).indexOf(unit);
+          var leafwithname = svg.selectAll('g[id=X'+x+']')
+              .append("circle")
+              .attr("r", 3.25)
+              .style("fill", dict[unit])
+              .attr("transform", "translate(" + (Math.ceil(starter) + multiply*spacer) + ",0)");
+            }
+      }
+    }
+  }
