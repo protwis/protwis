@@ -3,15 +3,15 @@
 *
 *  (c) 2014 PF bioinformatique de Toulouse
 *  All rights reserved
-* 
+*
 *
 *  This script is an adaptation of the venny script developed by
 *  Juan Carlos Oliveros, BioinfoGP, CNB-CSIC:
-*  Oliveros, J.C. (2007) VENNY. An interactive tool for comparing 
+*  Oliveros, J.C. (2007) VENNY. An interactive tool for comparing
 *  lists with Venn Diagrams.
 *  http://bioinfogp.cnb.csic.es/tools/venny/index.html.
-*  It is distributed under the terms of the GNU General Public 
-*  License as published by the Free Software Foundation; either 
+*  It is distributed under the terms of the GNU General Public
+*  License as published by the Free Software Foundation; either
 *  version 2 of the License, or (at your option) any later version.
 *
 *  The GNU General Public License can be found at
@@ -58,12 +58,12 @@
             colors: ["rgb(0,102,0)","rgb(90,155,212)","rgb(241,90,96)","rgb(250,220,91)","rgb(255,117,0)","rgb(192,152,83)"],
             fontSize: "12px",
             fontFamily: "Arial"
-        };  
+        };
 		var opts = $.extend(defaults, options),
 			__canvasWidth = 500,
 			__canvasHeight = 415,
 			__context = null;
-		
+
 		function drawEllipse(x, y, r, w, h, a, fillcolor) {
 			__context.beginPath();
 			__context.save();
@@ -71,11 +71,14 @@
 			__context.rotate(a*Math.PI/180);
 			__context.scale(w, h);
 			__context.arc(0, 0, r, 0, Math.PI * 2);
-			__context.fillStyle = fillcolor;
-			__context.fill();
+			// __context.fillStyle = fillcolor;
+			// __context.fill();
+			__context.lineWidth = 0.1;
+			__context.strokeStyle="#000000";
+			__context.stroke();
 			__context.restore();
 		};
-		
+
 		function drawTriangle(x1, y1, x2, y2, x3, y3, fillcolor) {
 			__context.beginPath();
 			__context.save();
@@ -86,7 +89,7 @@
 			__context.fill();
 			__context.restore();
 		};
-		
+
 		function drawLine(x1, y1, x2, y2, strokecolor) {
 		    __context.lineWidth = 1;
 		    __context.beginPath();
@@ -95,7 +98,7 @@
 			__context.strokeStyle = strokecolor;
 		    __context.stroke();
 		};
-		
+
 		function drawCircle(x, y, r, w, h, a, strokecolor) {
 			__context.beginPath();
 			__context.save();
@@ -112,7 +115,7 @@
 		    __context.stroke();
 			__context.restore();
 		};
-		
+
 		function drawDoubleCircle(strokecolor) {
 			var counterClockwise = false;
 			__context.strokeStyle = strokecolor;
@@ -189,7 +192,7 @@
 	    		__context.restore();
 		    }
 		};
-		
+
 		function drawCross(strokecolor) {
 			var counterClockwise = false;
 			__context.strokeStyle = strokecolor;
@@ -293,7 +296,7 @@
 				__context.restore();
 		    }
 		};
-		
+
 		function drawCross2(strokecolor) {
 			var counterClockwise = false;
 			__context.strokeStyle = strokecolor;
@@ -430,7 +433,7 @@
 				__context.restore();
 		    }
 		};
-		
+
 		function drawRoundRect(x, y, width, height, strokecolor) {
 		    var radius = 10;
 		    __context.beginPath();
@@ -452,7 +455,7 @@
 		    }
 		    __context.stroke();
 		};
-		
+
 		function drawAxis(ctx, startx, starty, endx, endy) {
 			ctx.beginPath();
 			ctx.moveTo(startx, starty);
@@ -460,7 +463,7 @@
 			ctx.closePath();
 			ctx.stroke();
 		}
-		
+
 		function drawRectangle(ctx, x, y, w, h, fillcolor, strokecolor) {
 			ctx.beginPath();
 			ctx.rect(x, y, w, h);
@@ -477,26 +480,26 @@
 			ctx.fill();
 			//ctx.restore();
 		}
-		
+
 		function changeOpacity(rgba, opacity) {
 			var	colorStr = rgba.slice(rgba.indexOf('(') + 1, rgba.indexOf(')'));
 			var	colorArr = colorStr.split(',');
 			return "rgba("+colorArr[0] + "," + colorArr[1] + "," + colorArr[2] + "," + opacity + ")";
 		}
-		
+
 		function getOpacity(rgba) {
 			var	colorStr = rgba.slice(rgba.indexOf('(') + 1, rgba.indexOf(')'));
 			var	colorArr = colorStr.split(',');
 			return colorArr[3];
 		}
-		
+
 		function clearCanvas() {
 			__context.clearRect(0, 0, __canvasWidth, __canvasHeight);
 		}
 
 		function placeStat(vennSize) {
 			var axiscolor = "rgba(0,0,0, 0.7)";
-			/* 
+			/*
 			 * Bar chart
 			*/
 			var	h = 120,
@@ -505,7 +508,7 @@
 				xspacer = 20,
 				barwidth = (370-(vennSize*xspacer))/vennSize,
 				ytext = 265;
-			
+
 			// Data
 			var	data = sizeOfClass(),
 				dataplot = new Array();
@@ -516,7 +519,7 @@
 			for (var i=0; i<vennSize; i++) {
 				dataplot.push(data[i]/max * (h-50));
 			}
-		
+
 			// Draw the bar chart
 			__context.fillStyle = "#000";
 			__context.font = 'italic 10pt Arial';
@@ -554,19 +557,19 @@
 				__context.lineWidth = 0.4;
 				drawAxis(__context, (xmargin + i*barwidth + i*xspacer) + barwidth/2, ymargin + h, (xmargin + i*barwidth + i*xspacer) + barwidth/2, ymargin + h+5);
 			}
-			
+
 			// Draw the x and y axes
 			__context.lineWidth = 1;
 			__context.strokeStyle = axiscolor;
-			drawAxis(__context, 50, ymargin + h, 50, ymargin + 35); 
+			drawAxis(__context, 50, ymargin + h, 50, ymargin + 35);
 			drawAxis(__context, 50, ymargin + h, 450, ymargin + h);
 			__context.lineWidth = 0.4;
 			drawAxis(__context, 47, ymargin + (h+48)/2, 53, ymargin + (h+48)/2);
 			drawAxis(__context, 47, ymargin + 50, 53, ymargin + 50);
 			drawTriangle(50, ymargin+25,  46,ymargin+35,   54,ymargin+35, axiscolor);
 			drawTriangle(460,ymargin+h, 450,ymargin+h-4, 450,ymargin+h+4, axiscolor);
-			
-			/* 
+
+			/*
 			 * Stacked bar chart
 			*/
 			// Data
@@ -591,7 +594,7 @@
 		    __context.font = 'normal 8pt Arial';
 			var	xprev = 0,
 				ylegend = 0;
-			
+
 			for (var i=vennSize-1; i>=0; i--) {
 				if(data2plot[i] == 0) { continue };
 			    drawRectangle(__context,
@@ -629,7 +632,7 @@
 			__context.strokeStyle = axiscolor;
 			drawAxis(__context, 50, ymargin+40, 460, ymargin+40);
 		}
-		
+
 		function placeNumber(div, left, top, space) {
 			// if shortNumber option && lenght>space
             if(opts.shortNumber  &&  div.text().length > space) {
@@ -638,7 +641,7 @@
             var l = left - ((div.text().length-1)/2 * 4);
 			div.css("left", l).css("top", top);
 		}
-		
+
 		function transpose (a) {
 			// Calculate the width and height of the Array
 			var	w = a.length ? a.length : 0,
@@ -663,10 +666,10 @@
 			}
 			return t;
 		}
-		
+
 		function placeClassicVenn(vennSize) {
 			var	grey = "rgba(0,0,0,0.1)";
-						
+
 			if (vennSize == 6) {
 				drawTriangle(0,11,    254,160, 174,235, changeOpacity(opts.colors[0], $("#label1").css('opacity')));
 				drawTriangle(188,0,   134,242, 236,202, changeOpacity(opts.colors[1], $("#label2").css('opacity')));
@@ -674,7 +677,7 @@
 				drawTriangle(500,260, 163,117, 134,219, changeOpacity(opts.colors[3], $("#label4").css('opacity')));
 				drawTriangle(250,415, 133,150, 203,67,  changeOpacity(opts.colors[4], $("#label5").css('opacity')));
 				drawTriangle(11,307,  263,81,  214,220, changeOpacity(opts.colors[5], $("#label6").css('opacity')));
-				
+
 				$("#label1").css("left",  35).css("top",  10).css("color", opts.colors[0]);
 				$("#label2").css("left", 200).css("top",   5).css("color", opts.colors[1]);
 				$("#label3").css("left", 335).css("top",  60).css("color", opts.colors[2]);
@@ -714,7 +717,7 @@
 				placeNumber($("#resultC000101"),  55, 197, 6);
 				drawLine(150,270, 183,230, grey);
 				placeNumber($("#resultC000011"), 145, 268, 6);
-				
+
 				placeNumber($("#resultC111110"), 170, 130, 6);
 				$("#resultC111110").hide();
 				placeNumber($("#resultC111101"), 218, 155, 6);
@@ -727,7 +730,7 @@
 				$("#resultC101111").hide();
 				placeNumber($("#resultC011111"), 208, 197, 6);
 				$("#resultC011111").hide();
-				
+
 				placeNumber($("#resultC111100"), 225, 170, 6);
 				$("#resultC111100").hide();
 				placeNumber($("#resultC111010"), 182, 113, 6);
@@ -758,7 +761,7 @@
 				$("#resultC010111").hide();
 				placeNumber($("#resultC001111"), 200, 208, 6);
 				$("#resultC001111").hide();
-				
+
 				placeNumber($("#resultC111000"), 156, 105, 6);
 				$("#resultC111000").hide();
 				placeNumber($("#resultC110100"), 145, 174, 6);
@@ -799,14 +802,14 @@
 				$("#resultC001011").hide();
 				placeNumber($("#resultC000111"), 209, 207, 6);
 				$("#resultC000111").hide();
-				
+
 			} else if (vennSize == 5) {
 				drawEllipse(214,230,10,18.6,9.5,25,  changeOpacity(opts.colors[0], $("#label1").css('opacity')));
 				drawEllipse(232,187,10,18.6,9.5,98,  changeOpacity(opts.colors[1], $("#label2").css('opacity')));
 				drawEllipse(273,196,10,18.6,9.5,170, changeOpacity(opts.colors[2], $("#label3").css('opacity')));
 				drawEllipse(282,238,10,18.6,9.5,62,  changeOpacity(opts.colors[3], $("#label4").css('opacity')));
 				drawEllipse(242,260,10,18.6,9.5,134, changeOpacity(opts.colors[4], $("#label5").css('opacity')));
-				
+
 				$("#label1").css("left",   0).css("top", 100).css("color",   opts.colors[0]);
 				$("#label2").css("left", 310).css("top",  15).css("color",  opts.colors[1]);
 				$("#label3").css("left", 450).css("top", 120).css("color", opts.colors[2]);
@@ -843,7 +846,7 @@
 				placeNumber($("#resultC110110"), 250, 310, 6);
 				placeNumber($("#resultC101110"), 330, 240, 6);
 				placeNumber($("#resultC011110"), 290, 133, 6);
-				placeNumber($("#resultC111110"), 245, 210, 6);				
+				placeNumber($("#resultC111110"), 245, 210, 6);
 				$("#resultC000001").css("left", -1000).css("top", -2200);
 				$("#resultC100001").css("left", -1000).css("top", -2200);
 				$("#resultC010001").css("left", -1000).css("top", -2200);
@@ -877,16 +880,15 @@
 				$("#resultC011111").css("left", -1000).css("top", -2200);
 				$("#resultC111111").css("left", -1000).css("top", -2200);
 
-			} else if (vennSize == 4) {	
+			} else if (vennSize == 4) {
 				drawEllipse(181,238,10,18.5,11.5,40,  changeOpacity(opts.colors[0], $("#label1").css('opacity')));
 				drawEllipse(242,177,10,18.5,11.5,40,  changeOpacity(opts.colors[1], $("#label2").css('opacity')));
 				drawEllipse(259,177,10,18.5,11.5,140, changeOpacity(opts.colors[2], $("#label3").css('opacity')));
 				drawEllipse(320,238,10,18.5,11.5,140, changeOpacity(opts.colors[3], $("#label4").css('opacity')));
-				
-				$("#label1").css("left", 5).css("top", 70).css("color",   opts.colors[0]);
-				$("#label2").css("left", 85).css("top", 5).css("color",   opts.colors[1]);
-				$("#label3").css("left", 350).css("top", 5).css("color",  opts.colors[2]);
-				$("#label4").css("left", 428).css("top", 70).css("color", opts.colors[3]);
+				$("#label1").css("left", 5).css("top", 70).css("color",   "rgba(0,0,0)"); //opts.colors[0]
+				$("#label2").css("left", 85).css("top", 5).css("color",   "rgba(0,0,0)"); //opts.colors[1]
+				$("#label3").css("left", 350).css("top", 5).css("color",  "rgba(0,0,0)"); //opts.colors[2]
+				$("#label4").css("left", 428).css("top", 70).css("color", "rgba(0,0,0)"); //opts.colors[3]
 				$("#label5").css("left", -1000).css("top", -2200);
 				$("#label6").css("left", -1000).css("top", -2200);
 				placeNumber($("#resultC100000"),  55, 190, 6);
@@ -952,15 +954,15 @@
 				$("#resultC101111").css("left", -1000).css("top", -2200);
 				$("#resultC011111").css("left", -1000).css("top", -2200);
 				$("#resultC111111").css("left", -1000).css("top", -2200);
-			
+
 			} else if (vennSize == 3) {
 				drawEllipse(171,142,120,1,1,0, changeOpacity(opts.colors[0], $("#label1").css('opacity')));
 				drawEllipse(327,142,120,1,1,0, changeOpacity(opts.colors[1], $("#label2").css('opacity')));
 				drawEllipse(249,271,120,1,1,0, changeOpacity(opts.colors[2], $("#label3").css('opacity')));
-				
-				$("#label1").css("left", 55).css("top", 5).css("color",    opts.colors[0]);
-				$("#label2").css("left", 380).css("top", 5).css("color",   opts.colors[1]);
-				$("#label3").css("left", 220).css("top", 400).css("color", opts.colors[2]);
+
+				$("#label1").css("left", 55).css("top", 5).css("color",    "rgba(0,0,0)"); //opts.colors[0]);
+				$("#label2").css("left", 380).css("top", 5).css("color",   "rgba(0,0,0)"); //opts.colors[1]);
+				$("#label3").css("left", 220).css("top", 400).css("color", "rgba(0,0,0)"); //opts.colors[2]);
 				$("#label4").css("left", -1000).css("top", -2200);
 				$("#label5").css("left", -1000).css("top", -2200);
 				$("#label6").css("left", -1000).css("top", -2200);
@@ -1027,13 +1029,13 @@
 				$("#resultC101111").css("left", -1000).css("top", -2200);
 				$("#resultC011111").css("left", -1000).css("top", -2200);
 				$("#resultC111111").css("left", -1000).css("top", -2200);
-			
-			} else if (vennSize == 2) {	
+
+			} else if (vennSize == 2) {
 				drawEllipse(171,206,140,1,1,0, changeOpacity(opts.colors[0], $("#label1").css('opacity')));
 				drawEllipse(327,206,140,1,1,0, changeOpacity(opts.colors[1], $("#label2").css('opacity')));
-				
-				$("#label1").css("left", 95).css("top", 40).css("color",  opts.colors[0]);
-				$("#label2").css("left", 360).css("top", 40).css("color", opts.colors[1]);
+
+				$("#label1").css("left", 95).css("top", 40).css("color",  "rgba(0,0,0)"); //opts.colors[0]);
+				$("#label2").css("left", 360).css("top", 40).css("color", "rgba(0,0,0)"); //opts.colors[1]);
 				$("#label3").css("left", -1000).css("top", -2200);
 				$("#label4").css("left", -1000).css("top", -2200);
 				$("#label5").css("left", -1000).css("top", -2200);
@@ -1101,11 +1103,11 @@
 				$("#resultC101111").css("left", -1000).css("top", -2200);
 				$("#resultC011111").css("left", -1000).css("top", -2200);
 				$("#resultC111111").css("left", -1000).css("top", -2200);
-			
+
 			} else {
 				drawEllipse(246,210,140,1,1,0, changeOpacity(opts.colors[0], $("#label1").css('opacity')));
-				
-				$("#label1").css("left", 225).css("top", 30).css("color", opts.colors[0]);
+
+				$("#label1").css("left", 225).css("top", 30).css("color", "rgba(0,0,0)"); //opts.colors[0]);
 				$("#label2").css("left", -1000).css("top", -2200);
 				$("#label3").css("left", -1000).css("top", -2200);
 				$("#label4").css("left", -1000).css("top", -2200);
@@ -1176,7 +1178,7 @@
 				$("#resultC111111").css("left", -1000).css("top", -2200);
 			}
 		}
-		
+
 		function placeEdwardsVenn(vennSize) {
 			if (vennSize == 6) {
 				drawCircle(246,206,90,1,1,0, changeOpacity(opts.colors[0], $("#label1").css('opacity')));
@@ -1185,7 +1187,7 @@
 				drawDoubleCircle(changeOpacity(opts.colors[3], $("#label4").css('opacity')));
 				drawCross(changeOpacity(opts.colors[4], $("#label5").css('opacity')));
 				drawCross2(changeOpacity(opts.colors[5], $("#label6").css('opacity')));
-				
+
 				$("#label1").css("left", 297).css("top", 90).css("color", opts.colors[0]);
 				$("#label2").css("left", 267).css("top",  0).css("color", opts.colors[1]);
 				$("#label3").css("left",  27).css("top",400).css("color", opts.colors[2]);
@@ -1255,14 +1257,14 @@
 				placeNumber($("#resultC101111"), 213, 212, 6);
 				placeNumber($("#resultC011111"), 342, 203, 1);
 				placeNumber($("#resultC111111"), 270, 212, 6);
-				
+
 			} else if (vennSize == 5) {
 				drawCircle(246,206,90,1,1,0, changeOpacity(opts.colors[0], $("#label1").css('opacity')));
 				drawRoundRect(245,25,250,365,changeOpacity(opts.colors[1], $("#label2").css('opacity')));
 				drawRoundRect(5,205,490,185, changeOpacity(opts.colors[2], $("#label3").css('opacity')));
 				drawDoubleCircle(changeOpacity(opts.colors[3], $("#label4").css('opacity')));
 				drawCross(changeOpacity(opts.colors[4], $("#label5").css('opacity')));
-			
+
 				$("#label1").css("left", 297).css("top", 90).css("color", opts.colors[0]);
 				$("#label2").css("left", 267).css("top",  0).css("color", opts.colors[1]);
 				$("#label3").css("left",  27).css("top",400).css("color", opts.colors[2]);
@@ -1332,7 +1334,7 @@
 				$("#resultC101111").css("left", -1000).css("top", -2200);
 				$("#resultC011111").css("left", -1000).css("top", -2200);
 				$("#resultC111111").css("left", -1000).css("top", -2200);
-				
+
 			} else if (vennSize == 4) {
 				drawCircle(246,206,90,1,1,0,  changeOpacity(opts.colors[0], $("#label1").css('opacity')));
 				drawRoundRect(245,25,250,365, changeOpacity(opts.colors[1], $("#label2").css('opacity')));
@@ -1361,7 +1363,7 @@
 				placeNumber($("#resultC011100"), 390, 240, 6);
 				placeNumber($("#resultC111100"), 280, 220, 6);
 				$("#resultC000010").css("left", -1000).css("top", -2200);
-				$("#resultC100010").css("left", -1000).css("top", -2200);			
+				$("#resultC100010").css("left", -1000).css("top", -2200);
 				$("#resultC010010").css("left", -1000).css("top", -2200);
 				$("#resultC001010").css("left", -1000).css("top", -2200);
 				$("#resultC000110").css("left", -1000).css("top", -2200);
@@ -1408,12 +1410,12 @@
 				$("#resultC101111").css("left", -1000).css("top", -2200);
 				$("#resultC011111").css("left", -1000).css("top", -2200);
 				$("#resultC111111").css("left", -1000).css("top", -2200);
-			
+
 			} else if (vennSize == 3) {
 				drawCircle(246,206,110,1,1,0, changeOpacity(opts.colors[0], $("#label1").css('opacity')));
 				drawRoundRect(245,25,250,365, changeOpacity(opts.colors[1], $("#label2").css('opacity')));
 				drawRoundRect(5,205,490,185,  changeOpacity(opts.colors[2], $("#label3").css('opacity')));
-				
+
 				$("#label1").css("left", 95).css("top", 75).css("color",  opts.colors[0]);
 				$("#label2").css("left", 267).css("top",  0).css("color", opts.colors[1]);
 				$("#label3").css("left",  27).css("top",400).css("color", opts.colors[2]);
@@ -1483,11 +1485,11 @@
 				$("#resultC101111").css("left", -1000).css("top", -2200);
 				$("#resultC011111").css("left", -1000).css("top", -2200);
 				$("#resultC111111").css("left", -1000).css("top", -2200);
-			
+
 			} else if (vennSize == 2) {
 				drawCircle(246,206,110,1,1,0, changeOpacity(opts.colors[0], $("#label1").css('opacity')));
 				drawRoundRect(245,25,250,365, changeOpacity(opts.colors[1], $("#label2").css('opacity')));
-				
+
 				$("#label1").css("left", 95).css("top", 75).css("color",  opts.colors[0]);
 				$("#label2").css("left", 267).css("top",  0).css("color", opts.colors[1]);
 				$("#label3").css("left", -1000).css("top", -2200);
@@ -1557,10 +1559,10 @@
 				$("#resultC101111").css("left", -1000).css("top", -2200);
 				$("#resultC011111").css("left", -1000).css("top", -2200);
 				$("#resultC111111").css("left", -1000).css("top", -2200);
-			
+
 			} else {
 				drawCircle(246,210,140,1,1,0, changeOpacity(opts.colors[0], $("#label1").css('opacity')));
-				
+
 				$("#label1").css("left", 225).css("top", 30).css("color", opts.colors[0]);
 				$("#label2").css("left", -1000).css("top", -2200);
 				$("#label3").css("left", -1000).css("top", -2200);
@@ -1632,7 +1634,7 @@
 				$("#resultC111111").css("left", -1000).css("top", -2200);
 			}
 		}
-		
+
 		function addLegend(div, vennSize) {
 			$t = div;
 			var i=1;
@@ -1648,7 +1650,7 @@
 			});
 			div_legend += '</div>';
 			$t.append(div_legend);
-			
+
 			$("*[id^=item]").hover(function(){
 		        $(this).css('opacity', 0.75);
 		        $(this).css('box-shadow',  '0px 0px 8px 1px lightgrey');
@@ -1683,12 +1685,12 @@
             	if (opts.displayStat) {
             		placeStat(vennSize);
                 }
-            	if (visible_id != "resultC000000") { 
+            	if (visible_id != "resultC000000") {
             		$("#" + visible_id).show();
             	}
 			});
 		}
-		
+
 		function fillListVenn() {
 			var classified=new Array();
 			var actualList=new Array();
@@ -1696,7 +1698,7 @@
 			actualList[1]=new Array();
 			actualList[2]=new Array();
 			actualList[3]=new Array();
-			
+
 			for (m=0;m<opts.series.length;m++) {
 				actualList[m]=new Array();
 				var list = opts.series[m].data;
@@ -1717,7 +1719,7 @@
 						classified[tt]=classified[tt]+"1";
 					}
 				}
-				
+
 				for (cl in classified) {
 					if (classified[cl].length<t+2) {
 						classified[cl]=classified[cl]+"0";
@@ -1740,7 +1742,7 @@
 				$("#result"+classified[cl]).html(value);
 				$("#result"+classified[cl]).removeClass("number-empty");
 			}
-			
+
 			// Update the labels
 			if (opts.series.length == 6) {
 				$("#label1").html(opts.series[0].name);
@@ -1770,7 +1772,7 @@
 			} else if (opts.series.length == 1) {
 				$("#label1").html(opts.series[0].name);
 			}
-			
+
 			if (!opts.disableClick) {
 				// Add some eventlistener
 				$("*[id^=resultC]").mouseover(function(){
@@ -1778,10 +1780,10 @@
 	            });
 	            $("*[id^=resultC]").mouseout(function(){
 	            	$(this).removeClass("number-over");
-	            }); 
+	            });
 	            $("*[id^=resultC]").click(opts.fnClickCallback);
 			}
-            
+
             // Add info to the number
             $("*[id^=resultC]").each(function(){
             	this.listnames = new Array();
@@ -1801,8 +1803,8 @@
 				}
             });
 		}
-		
-		// Return an Array with number of common and specific element (x in 1 class, y in 2 class...) 
+
+		// Return an Array with number of common and specific element (x in 1 class, y in 2 class...)
 		function countByNbClass() {
 			var data = new Array(0,0,0,0,0,0);
 			$("*[id^=resultC]").each(function(){
@@ -1818,14 +1820,14 @@
 			});
 			return data;
 		}
-		
-		// Return an Array with size of each class 
+
+		// Return an Array with size of each class
 		function sizeOfClass() {
 			var data = new Array(0,0,0,0,0,0);
 			$("*[id^=resultC]").each(function(){
 				for (var i=6; i<$(this).attr("id").length; i++) {
 					if ($(this).attr("id").substring(i+1,i+2) == "1") {
-						
+
 						var val = $(this).text();
 						if(val == '?') {
 							val = $(this).children("span").attr('title');
@@ -1836,7 +1838,7 @@
 			});
 			return data;
 		}
-		
+
 		function setValuesforFillCountVenn (values) {
 			if (values.A) { $("#resultC100000").html(values.A); }
 			if (values.B) { $("#resultC010000").html(values.B); }
@@ -1904,7 +1906,7 @@
 		}
 
 		function fillCountVenn() {
-			
+
 			// Update the labels
 			if (opts.series[0].name.A) { $("#label1").html(opts.series[0].name.A); }
 			if (opts.series[0].name.B) { $("#label2").html(opts.series[0].name.B); }
@@ -1912,7 +1914,7 @@
 			if (opts.series[0].name.D) { $("#label4").html(opts.series[0].name.D); }
 			if (opts.series[0].name.E) { $("#label5").html(opts.series[0].name.E); }
 			if (opts.series[0].name.F) { $("#label6").html(opts.series[0].name.F); }
-			
+
 			// if values and data are given
 			if (opts.series[0].hasOwnProperty("values") && opts.series[0].hasOwnProperty("data")) {
 				setValuesforFillCountVenn(opts.series[0].values);
@@ -1935,7 +1937,7 @@
             		if ($(this).attr("id").substring(i+1,i+2) == "1") {
             			try {
             				if(i-6 == 0)		{ this.listnames.push(opts.series[0].name.A); }
-            				else if(i-6 == 1)	{ this.listnames.push(opts.series[0].name.B); } 
+            				else if(i-6 == 1)	{ this.listnames.push(opts.series[0].name.B); }
             				else if(i-6 == 2)	{ this.listnames.push(opts.series[0].name.C); }
             				else if(i-6 == 3)	{ this.listnames.push(opts.series[0].name.D); }
             				else if(i-6 == 4)	{ this.listnames.push(opts.series[0].name.E); }
@@ -1965,18 +1967,18 @@
 			            });
 			            $(this).mouseout(function(){
 			            	$(this).removeClass("number-over");
-			            }); 
+			            });
 			            $(this).click(opts.fnClickCallback);
 					}
             	}
-					
+
 				if($(this).text() > 0) {
             		$(this).removeClass("number-empty");
             	}
             });
-            
+
 		}
-		
+
 		function getVennType() {
 			// If more than 1 sample, it's a list venn
 			if (opts.series.length > 1) {
@@ -1991,7 +1993,7 @@
 				}
 			}
 		}
-		
+
 		function addSVGText(text, x, y, color, opacity, ffamily, fsize, fweight, isLabel) {
 			if (isLabel) {
 				x = parseInt(x.replace("px", "")) + 20;
@@ -2002,10 +2004,10 @@
 			}
 			return '<text fill="'+color+'" fill-opacity="'+opacity+'" stroke="none" font-family="'+ffamily+'" font-size="'+fsize+'"pt font-style="normal" font-weight="'+fweight+'" text-decoration="none" x="'+x+'"pt y="'+y+'"pt text-anchor="middle" dominant-baseline="alphabetic">'+text+'</text>';
 		}
-		
+
 		function addExportModule(div, extraheight, type){
 			$t = div;
-			
+
 			var div_export = '<div id="module-export" style="position: relative; left:475px; top: -'+(418+extraheight)+'px; width: 25px; height: 20px;">';
 			div_export += '<a id="data-export" href="" download="" style="display:none;"></a>';
 			div_export += '<canvas id="canvasExport" style="border:1px solid white" width="25" height="20"></canvas>';
@@ -2020,7 +2022,7 @@
 			div_export += '</div>';
 			div_export += '</div>';
 			$t.append(div_export);
-			
+
 			//draw canvas button
 			var ecanvas = $("#canvasExport")[0],
 				econtext = ecanvas.getContext("2d");
@@ -2033,7 +2035,7 @@
 				econtext.strokeStyle = "#666";
 				econtext.stroke();
 			}
-			
+
 			var select_form = $("#export-menu");
 			var ceColorOri = $("#canvasExport").css('background');
 			$("#format-png").click(function(event) {
@@ -2055,15 +2057,15 @@
 				var img = document.createElement( "img" ),
 					$expDiv = $("<div></div>");
 				$expDiv.append(__context.getSerializedSvg(true));
-				
-				$("[id^=resultC]").each(function(){					
+
+				$("[id^=resultC]").each(function(){
 					if($(this).css("display") != "none") {
 						if ($(this).html().indexOf("<span") === 0) {
 							value = "?";
 						} else {
 							value = $(this).html();
 						}
-						$expDiv.children("svg").children("g").append(addSVGText(value, 
+						$expDiv.children("svg").children("g").append(addSVGText(value,
 							$(this).css("left"),  $(this).css("top"),
 							$(this).css("color"), $(this).css("opacity"),
 							$(this).css("font-family"), $(this).css("font-size"),
@@ -2071,8 +2073,8 @@
 					}
 				});
 				$("[id^=label]").each(function(){
-					$expDiv.children("svg").children("g").append(addSVGText($(this).html(), 
-							$(this).css("left"),  $(this).css("top"), 
+					$expDiv.children("svg").children("g").append(addSVGText($(this).html(),
+							$(this).css("left"),  $(this).css("top"),
 							$(this).css("color"), $(this).css("opacity"),
 							$(this).css("font-family"), $(this).css("font-size"),
 							$(this).css("font-weight"), true));
@@ -2101,18 +2103,18 @@
 					$(this).css('border-color', "white");
 				});
 				select_form.hide();
-				
+
 				var $expDiv = $("<div></div>");
 				$expDiv.append(__context.getSerializedSvg(true));
-				
-				$("[id^=resultC]").each(function(){					
+
+				$("[id^=resultC]").each(function(){
 					if($(this).css("display") != "none") {
 						if ($(this).html().indexOf("<span") === 0) {
 							value = "?";
 						} else {
 							value = $(this).html();
 						}
-						$expDiv.children("svg").children("g").append(addSVGText(value, 
+						$expDiv.children("svg").children("g").append(addSVGText(value,
 							$(this).css("left"),  $(this).css("top"),
 							$(this).css("color"), $(this).css("opacity"),
 							$(this).css("font-family"), $(this).css("font-size"),
@@ -2120,19 +2122,19 @@
 					}
 				});
 				$("[id^=label]").each(function(){
-					$expDiv.children("svg").children("g").append(addSVGText($(this).html(), 
-							$(this).css("left"),  $(this).css("top"), 
+					$expDiv.children("svg").children("g").append(addSVGText($(this).html(),
+							$(this).css("left"),  $(this).css("top"),
 							$(this).css("color"), $(this).css("opacity"),
 							$(this).css("font-family"), $(this).css("font-size"),
 							$(this).css("font-weight"), true));
 				});
-				
+
 				var svgContent = "data:image/svg+xml;base64," + window.btoa($expDiv.html()),
 					encodedUri = encodeURI(svgContent);
 				$('#data-export').attr("href", encodedUri);
 				$('#data-export').attr("download", "jVenn_chart.svg");
 				$('#data-export')[0].click();
-				
+
 			});
 			$("#format-csv").click(function(event) {
 				$("#canvasExport").css('background', ceColorOri);
@@ -2152,13 +2154,13 @@
 					if (!this.empty) {
 						var	currentRow = new Array(),
 							tmpline = this.listnames.join("|");
-						
+
 						if (tmpline.indexOf(',') >= 0) {
 							comma = true;
 							tmpline = tmpline.replace(/,/g, '_');
 						}
 						currentRow.push(tmpline);
-						
+
 						for (var i=0 ; i < this.list.length ; i++) {
 							tmpline = this.list[i];
 							if (this.list[i].indexOf(",") >= 0) {
@@ -2222,7 +2224,7 @@
 				$(this).css('border-color', "white");
 			});
 		}
-		
+
 		function unselect( unselected_name, init ) {
 			var init = (init == null ? true : init);
 			var unselected_idx = null ;
@@ -2265,7 +2267,7 @@
 			}
 			return( visible_id );
 		}
-		
+
 		function select( selected_name ) {
 			var selected_idx = null ;
 			// Find group index and show label
@@ -2312,7 +2314,7 @@
 					groups_status[$(this).html()] = 'unselected';
 				}
 			});
-			
+
 			if (val == "" || min_size > val.length) { // Search is empty
 				for (var group_name in  groups_status) {
 					visible_id = unselect( group_name );
@@ -2353,7 +2355,7 @@
 					}
 				}
 			}
-			
+
 			// Update status
 			if( opts.searchStatus != null ) {
 				if (val == "" || min_size > val.length) {
@@ -2364,9 +2366,9 @@
 					opts.searchStatus.text( "found" );
 				} else if (nb_find > 1) {
 					opts.searchStatus.text( "ambiguous" );
-				} 
+				}
 			}
-			
+
 			// Display
 			clearCanvas();
         	if (opts.displayMode == 'edwards') {
@@ -2377,11 +2379,11 @@
         	if (opts.displayStat) {
         		placeStat( getVennType()[1] );
             }
-        	if (visible_id != "resultC000000") { 
+        	if (visible_id != "resultC000000") {
         		$("#" + visible_id).show();
         	}
 		}
-		
+
         this.each(function() {
             var $t = $(this);
             var extraheight = 0;
@@ -2391,7 +2393,7 @@
             }
             $t.css({"width": "500px", "height": ""+(450+extraheight)+"px"});
             $('<style>.number-black{font-weight:bold;color:#000000;text-decoration:none;font-size:12px;}.number-over{font-weight:bold;cursor:pointer;color:#0000FF;text-decoration:underline;}.number-empty{font-weight:normal;font-size:12px;}</style>').appendTo('body');
-           
+
             var	legleft = 434,
             	legtop  = 130;
             if (opts.displayMode == 'edwards') {
@@ -2400,7 +2402,7 @@
             }
             $('<style>.module-legend{border:1px solid lightgrey;border-radius:5px;position:relative;left:'+legleft+'px;top:-'+(legtop+extraheight)+'px;width:35px;padding-bottom:3px}</style>').appendTo('body');
             $('<style>.leg-items{padding-top:1px;margin:3px 3px 0px 3px;cursor:pointer;border: 1px solid grey;border-radius:2px;width:27px;height:11px;font-size:0.65em;line-height:10px;opacity:0.75}</style>').appendTo('body');
-            
+
             var div_content = '<div id="frame" style="position: relative; left: 0pt; top: 5pt; width: 500px; height: "'+(445+extraheight)+'px;">';
 			div_content += '<div id="canvasEllipse" width="500px" height="'+(415+extraheight)+'px;"></div>';
 			div_content += '<div class="number-black" style="position: absolute; left: -1000px; top: -2200px;" id="resultC100000"></div>';
@@ -2474,10 +2476,10 @@
 			div_content += '<div style="position: absolute; left: -1000px; top: -1000px; opacity:0.5;" id="label6"></div>';
 			div_content += '</div>';
             $t.html(div_content);
-           
+
             // define internal variable
             __context = new C2S(__canvasWidth,__canvasHeight);
-			
+
             // init with 0
             $("*[id^=resultC]").each(function(){
 				$(this).html(0);
@@ -2488,19 +2490,19 @@
             $("*[id^=label]").each(function(){
 				$(this).css("font-family", opts.fontFamily);
             });
-            var type = getVennType(); 
+            var type = getVennType();
             if (type[0] == "list") {
             	fillListVenn();
             } else if (type[0] == "count") {
             	fillCountVenn();
             }
-            
+
 			if( opts.searchInput != null ) {
 				opts.searchInput.keyup( function() {
 					search( opts.searchInput.val(), opts.searchMinSize );
 				});
 			}
-			
+
         	if (opts.displayMode == 'edwards') {
         		placeEdwardsVenn(type[1]);
         	} else {
@@ -2509,11 +2511,11 @@
             if (opts.displayStat) {
             	placeStat(type[1]);
             }
-            
+
             // if the exporting modul is requested
             if (opts.exporting === true){ addExportModule($t, extraheight, type[0]); }
             // if min 4 classes diagram is requested add legend
-            if (type[1] >= 4) { addLegend($t, type[1]); }
+            // if (type[1] >= 4) { addLegend($t, type[1]); }
             // number hover action
             $(".number-black").hover(
             	function(){

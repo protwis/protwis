@@ -1,7 +1,7 @@
 #mccabe complexity: ["error", 31]
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.core.cache import cache
-from django.db.models import F, Q
+from django.db.models import F, Q, Count
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
 from django.utils.decorators import method_decorator
@@ -12,6 +12,7 @@ from django.views.generic import TemplateView
 from common import definitions
 from common.diagrams_gpcr import DrawSnakePlot
 from common.diagrams_gprotein import DrawGproteinPlot
+from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.tools import fetch_from_web_api
 from common.views import AbsTargetSelection
 from contactnetwork.models import InteractingResiduePair
@@ -134,400 +135,13 @@ class TargetSelection(AbsTargetSelection):
 class CouplingBrowser(TemplateView):
     """
     Class based generic view which serves coupling data between Receptors and G-proteins.
-    Data coming from Guide to Pharmacology, Asuka Inuoue and Michel Bouvier.
-    More data might come later from Roth and Strachan TRUPATH biosensor.
-    :param dataset: ProteinGProteinPair (see build/management/commands/build_g_proteins.py)
-    :return: context
-    """
-    template_name = "signprot/coupling_browser1.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        fam_tab = self.fams_tab()
-
-        context['famtab'] = fam_tab
-
-        return context
-
-    @staticmethod
-    def fams_tab():
-        """
-        This function returns what is needed in the families (maybe others - needs refactoring) tab of the coupling
-        browser.
-        :return: key.value pairs from fd dictionary
-        keys = gene names of proteins
-        values = gpcrDB general values and emax-double-normalized, pec50-double-normalized, emax-mean, pec50-mean
-        emax-sem, pec50sem.
-        """
-        threshold_primary_inoue = 0.5  # -0.1
-        threshold_secondary_inoue = 0.01  # -1
-        threshold_primary_bouvier = 0.5  # -0.1
-        threshold_secondary_bouvier = 0.01  # -1
-        proteins = Protein.objects.filter(sequence_type__slug='wt',
-                                          family__slug__startswith='00',
-                                          species__common_name='Human').all().prefetch_related('family')
-        data = {}
-        class_names = {}
-        family_names = {}
-        for p in proteins:
-            p_class = p.family.slug.split('_')[0]
-            if p_class not in class_names:
-                class_names[p_class] = p.family.parent.parent.parent.name
-                family_names[p_class] = p.family.parent.name
-            p_class_name = class_names[p_class].replace('Class', '').strip()
-            p_family_name = family_names[p_class].replace('receptors', '').strip()
-            p_accession = p.accession
-            p_entryname = p.entry_name
-            data[p.entry_short()] = {'class': p_class_name,
-                                     'family': p_family_name,
-                                     'accession': p_accession,
-                                     'entryname': p_entryname,
-                                     'pretty': p.short(),
-                                     'GuideToPharma': {},
-                                     'Aska': {},
-                                     'Bouvier1': {}}
-
-        distinct_g_families = []
-        distinct_g_subunit_families = {}
-        couplings = ProteinGProteinPair.objects.prefetch_related('protein',
-                                                                 'g_protein_subunit',
-                                                                 'g_protein')
-        for c in couplings:
-            p = c.protein.entry_short()
-
-            # Skip entries without any annotation
-            if p not in data:
-                continue
-
-            s = c.source
-            t = c.transduction
-            emdn = c.emax_dnorm
-            pec50dn = c.pec50_dnorm
-            emmean = c.emax_mean
-            pec50mean = c.pec50_mean
-            emsem = c.emax_sem
-            pec50sem = c.pec50_sem
-            gf = c.g_protein.name
-            gf = gf.replace(" family", "")
-
-            if gf not in distinct_g_families:
-                distinct_g_families.append(gf)
-                distinct_g_subunit_families[gf] = []
-
-            if c.g_protein_subunit:
-                g = c.g_protein_subunit.entry_name
-                g = g.replace("_human", "")
-                if g not in distinct_g_subunit_families[gf]:
-                    distinct_g_subunit_families[gf].append(g)
-                    distinct_g_subunit_families[gf] = sorted(distinct_g_subunit_families[gf])
-
-            if s not in data[p]:
-                data[p][s] = {}
-
-            if gf not in data[p][s]:
-                data[p][s][gf] = {}
-
-            # If transduction (primary, secondary) in Guide To Pharmacology data
-            if t:
-                data[p][s][gf] = t
-
-            # Else t (primary secondary classification) doesn't exist, such as
-            # source [s]  Aska (Inoue) or Bouvier.
-            else:
-                if 'emdn' not in data[p][s][gf]:
-                    data[p][s][gf] = {'emdn': {}, 'max': 0.00, 'maxid': str()}
-                if emdn is None:
-                    data[p][s][gf]['emdn'][g] = round(Decimal(0), 2)
-                    continue
-                data[p][s][gf]['emdn'][g] = round(Decimal(emdn), 2)
-                # get the highest number into 'max'
-                # TODO: Who is max? It will eventually be needed, count on it!
-                if emdn > data[p][s][gf]['max']:
-                    data[p][s][gf]['max'] = round(Decimal(emdn), 2)
-                    data[p][s][gf]['maxid'] = g
-                # pec50dn
-                if 'pec50dn' not in data[p][s][gf]:
-                    data[p][s][gf]['pec50dn'] = {}
-                if pec50dn is None:
-                    data[p][s][gf]['pec50dn'][g] = round(Decimal(0), 2)
-                    continue
-                data[p][s][gf]['pec50dn'][g] = round(Decimal(pec50dn), 2)
-                # emmean
-                if 'emmean' not in data[p][s][gf]:
-                    data[p][s][gf]['emmean'] = {}
-                if emmean is None:
-                    data[p][s][gf]['emmean'][g] = round(Decimal(0), 2)
-                    continue
-                data[p][s][gf]['emmean'][g] = round(Decimal(emmean), 2)
-                # pec50mean
-                if 'pec50mean' not in data[p][s][gf]:
-                    data[p][s][gf]['pec50mean'] = {}
-                if pec50mean is None:
-                    data[p][s][gf]['pec50mean'][g] = round(Decimal(0), 2)
-                    continue
-                data[p][s][gf]['pec50mean'][g] = round(Decimal(pec50mean), 2)
-                # emsem
-                if 'emsem' not in data[p][s][gf]:
-                    data[p][s][gf]['emsem'] = {}
-                if emsem is None:
-                    data[p][s][gf]['emsem'][g] = round(Decimal(0), 2)
-                    continue
-                data[p][s][gf]['emsem'][g] = round(Decimal(emsem), 2)
-                # pec50sem
-                if 'pec50sem' not in data[p][s][gf]:
-                    data[p][s][gf]['pec50sem'] = {}
-                if pec50sem is None:
-                    data[p][s][gf]['pec50sem'][g] = round(Decimal(0), 2)
-                    continue
-                data[p][s][gf]['pec50sem'][g] = round(Decimal(pec50sem), 2)
-
-        fd = {}  # final data
-        distinct_g_families = ['Gs', 'Gi/Go', 'Gq/G11', 'G12/G13']
-        distinct_g_subunit_families = OrderedDict(
-            [('Gs', ['gnas2', 'gnal']),
-             ('Gi/Go', ['gnai1', 'gnai2', 'gnai3', 'gnat1', 'gnat2', 'gnat3', 'gnao', 'gnaz']),
-             ('Gq/G11', ['gnaq', 'gna11', 'gna14', 'gna15']),
-             ('G12/G13', ['gna12', 'gna13'])])
-
-        # This for loop, does the job of putting together
-        # data-sets, GuideToPharma, Asuka's and Bouvier.
-        for p, v in data.items():
-            fd[p] = [v['class'], v['family'], v['accession'], v['entryname'], p, v['pretty']]
-            s = 'GuideToPharma'
-            # MERGED CRITERIA FOR COUPLING
-            # merge primary, secondary, coupling, no coupling classification currently from
-            # three sources, GtP, Inoue, Bouvier. Exact rules being worked on.
-            for gf in distinct_g_families:
-                values = []
-                if 'GuideToPharma' in v and gf in v['GuideToPharma']:
-                    values.append(v['GuideToPharma'][gf])
-                else:
-                    values.append('na gtf')
-                if 'Aska' in v and gf in v['Aska']:
-                    max = v['Aska'][gf]['max']
-                    if max > threshold_primary_inoue:
-                        values.append('primary')
-                    elif max > threshold_secondary_inoue:
-                        values.append('secondary')
-                    elif max == 0:
-                        values.append('NCI')
-                else:
-                    values.append('na inoue')
-                if 'Bouvier1' in v and gf in v['Bouvier1']:
-                    max = v['Bouvier1'][gf]['max']
-                    if max > threshold_primary_bouvier:
-                        values.append('primary')
-                    elif max > threshold_secondary_bouvier:
-                        values.append('secondary')
-                    elif max == 0:
-                        values.append('NCB')
-                else:
-                    values.append('na bouvier')
-                if 'primary' in values:
-                    fd[p].append('primary')
-                elif 'secondary' in values:
-                    fd[p].append('secondary')
-                #                elif 'NCI' or 'NCB' in values:
-                #                    fd[p].append('no coupling')
-                else:
-                    fd[p].append('NA')  # Should this be NA of no-coupling? What's the GtP meaning?
-                # if (len(values) >= 2):
-                #     print(values, gf, p)
-
-            # Loop over GuideToPharma
-            s = 'GuideToPharma'
-            for gf in distinct_g_families:
-                if gf in v[s]:
-                    fd[p].append(v[s][gf])
-                else:
-                    # fd[p].append("NAg")
-                    fd[p].append('')
-
-            # Loop over Aska
-            s = 'Aska'
-            for gf in distinct_g_families:
-                if gf in v[s]:
-                    if v[s][gf]['max'] > threshold_primary_inoue:
-                        fd[p].append("primaryino")
-                    elif v[s][gf]['max'] > threshold_secondary_inoue:
-                        fd[p].append("secondaryino")
-                    else:
-                        fd[p].append("No coup. Ino")
-                else:
-                    fd[p].append('NAino')  # This last empty one means not-available, NOT no-coupling
-
-            # Last bit adds values in subfamilies (i.e. subtypes)
-            for gf, sfs in distinct_g_subunit_families.items():
-                for sf in sfs:
-                    if gf in v[s]:
-                        if sf in v[s][gf]['emdn']:
-                            fd[p].append(v[s][gf]['emdn'][sf])
-                        else:
-                            # fd[p].append("NAi1")
-                            fd[p].append('')
-                    else:
-                        # fd[p].append("emdn nai")
-                        fd[p].append('')
-
-                    if gf in v[s]:
-                        if sf in v[s][gf]['pec50dn']:
-                            fd[p].append(v[s][gf]['pec50dn'][sf])
-                        else:
-                            # fd[p].append("NAi1")
-                            fd[p].append('')
-                    else:
-                        # fd[p].append("pec50dn nai")
-                        fd[p].append('')
-
-                    if gf in v[s]:
-                        if sf in v[s][gf]['emmean']:
-                            fd[p].append(v[s][gf]['emmean'][sf])
-                        else:
-                            # fd[p].append("NAi1")
-                            fd[p].append('')
-                    else:
-                        # fd[p].append("emmean nai")
-                        fd[p].append('')
-
-                    if gf in v[s]:
-                        if sf in v[s][gf]['pec50mean']:
-                            fd[p].append(v[s][gf]['pec50mean'][sf])
-                        else:
-                            # fd[p].append("NAi1")
-                            fd[p].append('')
-                    else:
-                        # fd[p].append("pec50mean nai")
-                        fd[p].append('')
-
-                    if gf in v[s]:
-                        if sf in v[s][gf]['emsem']:
-                            fd[p].append(v[s][gf]['emsem'][sf])
-                        else:
-                            # fd[p].append("NAi1")
-                            fd[p].append('')
-                    else:
-                        # fd[p].append("emsem nai")
-                        fd[p].append('')
-
-                    if gf in v[s]:
-                        if sf in v[s][gf]['pec50sem']:
-                            fd[p].append(v[s][gf]['pec50sem'][sf])
-                        else:
-                            # fd[p].append("NAi1")
-                            fd[p].append('')
-                    else:
-                        # fd[p].append("pec50sem nai")
-                        fd[p].append('')
-
-            # Loop over Bouvier
-            s = 'Bouvier1'
-            for gf in distinct_g_families:
-                if gf in v[s]:
-                    if v[s][gf]['max'] > threshold_primary_bouvier:
-                        fd[p].append("primary")
-                    elif v[s][gf]['max'] > threshold_secondary_bouvier:
-                        fd[p].append("secondary")
-                    else:
-                        fd[p].append("NC")
-                else:
-                    fd[p].append('NA')  # This last empty one means not-available, NOT no-coupling
-
-            # Last bit adds values to subfamilies (i.e. subtypes)
-            for gf, sfs in distinct_g_subunit_families.items():
-                for sf in sfs:
-                    if gf in v[s]:
-                        if sf in v[s][gf]['emdn']:
-                            fd[p].append(v[s][gf]['emdn'][sf])
-                        else:
-                            # fd[p].append("NAb1")
-                            fd[p].append('')
-                    else:
-                        # fd[p].append("emdn nab")
-                        fd[p].append('')
-
-                    if gf in v[s]:
-                        if sf in v[s][gf]['pec50dn']:
-                            fd[p].append(v[s][gf]['pec50dn'][sf])
-                        else:
-                            # fd[p].append("NAb1")
-                            fd[p].append('')
-                    else:
-                        # fd[p].append("pec50dn nab")
-                        fd[p].append('')
-
-                    if gf in v[s]:
-                        if sf in v[s][gf]['emmean']:
-                            fd[p].append(v[s][gf]['emmean'][sf])
-                        else:
-                            # fd[p].append("NAb1")
-                            fd[p].append('')
-                    else:
-                        # fd[p].append("emmean nab")
-                        fd[p].append('')
-
-                    if gf in v[s]:
-                        if sf in v[s][gf]['pec50mean']:
-                            fd[p].append(v[s][gf]['pec50mean'][sf])
-                        else:
-                            # fd[p].append("NAb1")
-                            fd[p].append('')
-                    else:
-                        # fd[p].append("pec50mean nab")
-                        fd[p].append('')
-
-                    if gf in v[s]:
-                        if sf in v[s][gf]['emsem']:
-                            fd[p].append(v[s][gf]['emsem'][sf])
-                        else:
-                            # fd[p].append("NAb1")
-                            fd[p].append('')
-                    else:
-                        # fd[p].append("emsem nab")
-                        fd[p].append('')
-
-                    if gf in v[s]:
-                        if sf in v[s][gf]['pec50sem']:
-                            fd[p].append(v[s][gf]['pec50sem'][sf])
-                        else:
-                            # fd[p].append("NAb1")
-                            fd[p].append('')
-                    else:
-                        # fd[p].append("pec50sem nab")
-                        fd[p].append('')
-
-            # max Values for Gs, Gi/Go, Gq/G11, G12/13 and source Inoue
-            s = 'Aska'
-            for gf in distinct_g_families:
-                if gf in v[s]:
-                    # fd[p].append(v[s][gf]['max'] + 100)
-                    fd[p].append(v[s][gf]['max'])
-                else:
-                    # fd[p].append("NAi max")
-                    fd[p].append('')
-
-            # max Values for Gs, Gi/Go, Gq/G11, G12/13 and source Bouvier
-            s = 'Bouvier1'
-            for gf in distinct_g_families:
-                if gf in v[s]:
-                    # fd[p].append(v[s][gf]['max'] + 200)
-                    fd[p].append(v[s][gf]['max'])
-                else:
-                    # fd[p].append("NAb max")
-                    fd[p].append('')
-
-        return fd
-
-
-class CouplingBrowser2(TemplateView):
-    """
-    Class based generic view which serves coupling data between Receptors and G-proteins.
     Data coming from Guide to Pharmacology, Asuka Inuoue and Michel Bouvier at the moment.
     More data might come later from Roth and Strachan TRUPATH biosensor and Neville Lambert.
     :param dataset: ProteinGProteinPair (see build/management/commands/build_g_proteins.py)
     :return: context
     """
 
-    template_name = "signprot/coupling_browser2.html"
+    template_name = "signprot/coupling_browser.html"
 
     @method_decorator(csrf_exempt)
     def get_context_data(self, **kwargs):
@@ -558,7 +172,7 @@ class CouplingBrowser2(TemplateView):
                                           species__common_name='Human').prefetch_related(
             'family',
             'family__parent__parent__parent',
-            'web_links__web_resource'
+            'web_links'
         )
 
         couplings = ProteinGProteinPair.objects.filter(source="GuideToPharma").values_list('protein__entry_name',
@@ -608,13 +222,13 @@ class CouplingBrowser2(TemplateView):
             protein_data[prot.id]['gq11'] = protein_data[prot.id][gprotein_families[2]]
             protein_data[prot.id]['g1213'] = protein_data[prot.id][gprotein_families[3]]
 
-        couplings2 = ProteinGProteinPair.objects.filter(source__in=["Inoue", "Bouvier"])\
-            .filter(g_protein_subunit__family__slug__startswith="100_001").order_by("g_protein_subunit__family__slug", "source")\
+        couplings2 = ProteinGProteinPair.objects.filter(source__in=["Inoue", "Bouvier"]) \
+            .filter(g_protein_subunit__family__slug__startswith="100_001").order_by("g_protein_subunit__family__slug", "source") \
             .prefetch_related('g_protein_subunit__family', 'g_protein')
 
-        coupling_headers = ProteinGProteinPair.objects.filter(source__in=["Inoue", "Bouvier"])\
-            .filter(g_protein_subunit__family__slug__startswith="100_001")\
-            .order_by("g_protein_subunit__family__slug", "source").distinct("g_protein_subunit__family__slug")\
+        coupling_headers = ProteinGProteinPair.objects.filter(source__in=["Inoue", "Bouvier"]) \
+            .filter(g_protein_subunit__family__slug__startswith="100_001") \
+            .order_by("g_protein_subunit__family__slug", "source").distinct("g_protein_subunit__family__slug") \
             .values_list("g_protein_subunit__family__name", "g_protein_subunit__family__parent__name")
 
         coupling_header_names = {}
@@ -810,147 +424,170 @@ def GProtein(request, dataset="GuideToPharma", render_part="both"):
                   context
                   )
 
+def CouplingProfiles(request):
+    name_of_cache = 'coupling_profiles'
+
+    context = cache.get(name_of_cache)
+    # NOTE cache disabled for development only!
+    #context = None
+    if context == None:
+
+        context = OrderedDict()
+        i = 0
+        gproteins = ProteinGProtein.objects.all()
+        # adding info for tree from StructureStatistics View
+        tree = PhylogeneticTreeGenerator()
+        class_a_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
+        context['tree_class_a_options'] = deepcopy(tree.d3_options)
+        context['tree_class_a_options']['anchor'] = 'tree_class_a'
+        context['tree_class_a_options']['leaf_offset'] = 50
+        context['tree_class_a_options']['label_free'] = []
+        context['tree_class_a'] = json.dumps(class_a_data.get_nodes_dict(None))
+        class_b1_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B1 (Secretin)'))
+        context['tree_class_b1_options'] = deepcopy(tree.d3_options)
+        context['tree_class_b1_options']['anchor'] = 'tree_class_b1'
+        context['tree_class_b1_options']['branch_trunc'] = 60
+        context['tree_class_b1_options']['label_free'] = [1,]
+        context['tree_class_b1'] = json.dumps(class_b1_data.get_nodes_dict(None))
+        class_b2_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B2 (Adhesion)'))
+        context['tree_class_b2_options'] = deepcopy(tree.d3_options)
+        context['tree_class_b2_options']['anchor'] = 'tree_class_b2'
+        context['tree_class_b2_options']['label_free'] = [1,]
+        context['tree_class_b2'] = json.dumps(class_b2_data.get_nodes_dict(None))
+        class_c_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class C (Glutamate)'))
+        context['tree_class_c_options'] = deepcopy(tree.d3_options)
+        context['tree_class_c_options']['anchor'] = 'tree_class_c'
+        context['tree_class_c_options']['branch_trunc'] = 50
+        context['tree_class_c_options']['label_free'] = [1,]
+        context['tree_class_c'] = json.dumps(class_c_data.get_nodes_dict(None))
+        class_f_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class F (Frizzled)'))
+        context['tree_class_f_options'] = deepcopy(tree.d3_options)
+        context['tree_class_f_options']['anchor'] = 'tree_class_f'
+        context['tree_class_f_options']['label_free'] = [1,]
+        context['tree_class_f'] = json.dumps(class_f_data.get_nodes_dict(None))
+        class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class T (Taste 2)'))
+        context['tree_class_t2_options'] = deepcopy(tree.d3_options)
+        context['tree_class_t2_options']['anchor'] = 'tree_class_t2'
+        context['tree_class_t2_options']['label_free'] = [1,]
+        context['tree_class_t2'] = json.dumps(class_t2_data.get_nodes_dict(None))
+        # end copied section from StructureStatistics View
+        slug_translate = {'001': "ClassA", '002': "ClassB1", '004': "ClassC", '006': "ClassF"}
+        selectivitydata = {}
+        selectivitydata_gtp_plus = {}
+        receptor_dictionary = []
+        for slug in slug_translate.keys():
+            jsondata = {}
+            jsondata_gtp_plus = {}
+            for gp in gproteins:
+                # Collect GTP
+                gtp_couplings = list(ProteinGProteinPair.objects.filter(protein__family__slug__startswith=slug, source="GuideToPharma", g_protein=gp)\
+                                .order_by("protein__entry_name")\
+                                .values_list("protein__entry_name", flat=True)\
+                                .distinct())
+
+                # Other coupling data with logmaxec50 greater than 0
+                # TODO - coupling source should not be hardcoded
+                other_couplings = list(ProteinGProteinPair.objects.filter(protein__family__slug__startswith=slug, source__in=["Aska2", "Bouvier2"])\
+                                .filter(g_protein=gp, logmaxec50_deg__gt=0)\
+                                .order_by("protein__entry_name")\
+                                .values_list("protein__entry_name").distinct()\
+                                .annotate(num_sources=Count("source", distinct=True)))
+
+                # Initialize selectivity array
+                processed_receptors = []
+                key = str(gp).split(' ')[0]
+                jsondata[key] = []
+                jsondata_gtp_plus[key] = []
+                for coupling in other_couplings:
+                    receptor_name = coupling[0]
+                    receptor_dictionary.append(receptor_name)
+                    receptor_only = receptor_name.split('_')[0].upper()
+                    count = coupling[1] + (1 if receptor_name in gtp_couplings else 0)
+
+                    # Data from at least two sources:
+                    if count >= 2:
+                        # Add to selectivity data (for tree)
+                        if receptor_only not in selectivitydata:
+                            selectivitydata[receptor_only] = []
+
+                            if receptor_only not in selectivitydata_gtp_plus:
+                                selectivitydata_gtp_plus[receptor_only] = []
+
+                        if key not in selectivitydata[receptor_only]:
+                            selectivitydata[receptor_only].append(key)
+                            if key not in selectivitydata_gtp_plus[receptor_only]:
+                                selectivitydata_gtp_plus[receptor_only].append(key)
+
+                        # Add to json data for Venn diagram
+                        jsondata[key].append(str(receptor_name) + '\n')
+                        jsondata_gtp_plus[key].append(str(receptor_name) + '\n')
+                        processed_receptors.append(receptor_name)
+
+                unique_gtp_plus = set(gtp_couplings) - set(processed_receptors)
+                for receptor_name in unique_gtp_plus:
+                    receptor_dictionary.append(receptor_name)
+                    receptor_only = receptor_name.split('_')[0].upper()
+                    if receptor_only not in selectivitydata_gtp_plus:
+                        selectivitydata_gtp_plus[receptor_only] = []
+
+                    if key not in selectivitydata_gtp_plus[receptor_only]:
+                        selectivitydata_gtp_plus[receptor_only].append(key)
+
+                    jsondata_gtp_plus[key].append(str(receptor_name) + '\n')
+
+                if len(jsondata[key]) == 0:
+                    jsondata.pop(key, None)
+                else:
+                    jsondata[key] = ''.join(jsondata[key])
+
+                if len(jsondata_gtp_plus[key]) == 0:
+                    jsondata_gtp_plus.pop(key, None)
+                else:
+                    jsondata_gtp_plus[key] = ''.join(jsondata_gtp_plus[key])
+
+            context[slug_translate[slug]] = jsondata
+            if len(list(jsondata.keys())) == 4:
+                context[slug_translate[slug]+"_keys"] = ['Gs','Gi/Go','Gq/G11','G12/G13']
+            else:
+                context[slug_translate[slug]+"_keys"] = list(jsondata.keys())
+            context[slug_translate[slug]+"_gtp_plus"] = jsondata_gtp_plus
+            if len(list(jsondata_gtp_plus.keys())) == 4:
+                context[slug_translate[slug]+"_gtp_plus_keys"] = ['Gs','Gi/Go','Gq/G11','G12/G13']
+            else:
+                context[slug_translate[slug]+"_gtp_plus_keys"] = list(jsondata_gtp_plus.keys())
+
+        context["selectivitydata"] = selectivitydata
+        context["selectivitydata_gtp_plus"] = selectivitydata_gtp_plus
+
+        # Collect receptor information
+        receptor_panel = Protein.objects.filter(entry_name__in=receptor_dictionary)\
+                                .prefetch_related("family", "family__parent__parent__parent")
+
+        receptor_dictionary = {}
+        for p in receptor_panel:
+            # Collect receptor data
+            rec_class = p.family.parent.parent.parent.short().split(' ')[0]
+            rec_ligandtype = p.family.parent.parent.short()
+            rec_family = p.family.parent.short()
+            rec_uniprot = p.entry_short()
+            rec_iuphar = p.family.name.replace("receptor", '').strip()
+            receptor_dictionary[rec_uniprot] = [rec_class, rec_ligandtype, rec_family, rec_uniprot, rec_iuphar]
+
+        context["receptor_dictionary"] = json.dumps(receptor_dictionary)
+
+    cache.set(name_of_cache, context, 60 * 60 * 24 * 7)  # seven days timeout on cache
+    context["render_part"] = "both"
+
+    return render(request,
+                  'signprot/coupling_profiles.html',
+                  context
+    )
+
 def GProteinTree(request, dataset="GuideToPharma"):
     return GProtein(request, dataset, "tree")
 
 def GProteinVenn(request, dataset="GuideToPharma"):
     return GProtein(request, dataset, "venn")
-
-#@cache_page(60*60*24*7)
-def couplings(request):
-    """
-    Presents coupling data between Receptors and G-proteins.
-    Data coming from Guide to Pharmacology, Asuka Inuoue and Michel Bouvier
-    """
-    context = OrderedDict()
-    threshold_primary = -0.1
-    threshold_secondary = -1
-    proteins = Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith='00',
-                                      species__common_name='Human').all().prefetch_related('family')
-    data = {}
-    class_names = {}
-
-    for p in proteins:
-        p_class = p.family.slug.split('_')[0]
-        if p_class not in class_names:
-            class_names[p_class] = re.sub(r'\([^)]*\)', '', p.family.parent.parent.parent.name)
-        p_class_name = class_names[p_class].replace('Class','').strip()
-        data[p.entry_short()] = {'class': p_class_name, 'pretty': p.short()[:15], 'GuideToPharma': {}, 'Aska': {}}
-    distinct_g_families = []
-    distinct_g_subunit_families = {}
-    # distinct_sources = ['GuideToPharma', 'Aska']
-    couplings = ProteinGProteinPair.objects.all().prefetch_related('protein', 'g_protein_subunit', 'g_protein')
-
-    for c in couplings:
-        p = c.protein.entry_short()
-        # Skip entries without any annotation
-        if p not in data:
-            continue
-
-        s = c.source
-        t = c.transduction
-        m = c.log_rai_mean
-        gf = c.g_protein.name
-        # print(gf)
-        gf = gf.replace(" family", "")
-
-        if gf not in distinct_g_families:
-            distinct_g_families.append(gf)
-            distinct_g_subunit_families[gf] = []
-
-        if c.g_protein_subunit:
-            g = c.g_protein_subunit.entry_name
-            g = g.replace("_human", "")
-            # print("g",g)
-            if g not in distinct_g_subunit_families[gf]:
-                distinct_g_subunit_families[gf].append(g)
-                distinct_g_subunit_families[gf] = sorted(distinct_g_subunit_families[gf])
-
-        if s not in data[p]:
-            data[p][s] = {}
-
-        if gf not in data[p][s]:
-            data[p][s][gf] = {}
-
-        # If transduction in GuideToPharma data
-        if t:
-            data[p][s][gf] = t
-        else:
-            if 'subunits' not in data[p][s][gf]:
-                data[p][s][gf] = {'subunits': {}, 'best': -2.00}
-            if m is None:
-                data[p][s][gf]['subunits'][g] = round(Decimal(0), 2)
-                continue
-            data[p][s][gf]['subunits'][g] = round(Decimal(m), 2)
-
-
-            if round(Decimal(m), 2) == -0.00:
-                data[p][s][gf]['subunits'][g] = 0.00
-            # get the lowest number into 'best'
-            if m > data[p][s][gf]['best']:
-                data[p][s][gf]['best'] = round(Decimal(m), 2)
-    fd = {}  # final data
-    distinct_g_families = sorted(distinct_g_families)
-    distinct_g_families = ['Gs', 'Gi/Go', 'Gq/G11', 'G12/G13', ]
-    distinct_g_subunit_families = OrderedDict([('Gs', ['gnas2', 'gnal']), ('Gi/Go', ['gnai1', 'gnai3', 'gnao', 'gnaz']),
-                                               ('Gq/G11', ['gnaq', 'gna14', 'gna15']), ('G12/G13', ['gna12', 'gna13'])])
-
-
-
-    # This for loop, which perhaps should be a function in itself, perhaps an instance of a Couplings class, does
-    # the job of merging together two data-sets, that of the GuideToPharma and Aska's results.
-    for p, v in data.items():
-        fd[p] = [v['class'], p, v['pretty']]
-        s = 'GuideToPharma'
-        # Merge
-        for gf in distinct_g_families:
-            values = []
-            if 'GuideToPharma' in v and gf in v['GuideToPharma']:
-                values.append(v['GuideToPharma'][gf])
-            if 'Aska' in v and gf in v['Aska']:
-                best = v['Aska'][gf]['best']
-                if best > threshold_primary:
-                    values.append('primary')
-                elif best > threshold_secondary:
-                    values.append('secondary')
-            if 'primary' in values:
-                fd[p].append('primary')
-            elif 'secondary' in values:
-                fd[p].append('secondary')
-            else:
-                fd[p].append('')
-        s = 'GuideToPharma'
-        # First loop over GuideToPharma
-        for gf in distinct_g_families:
-            if gf in v[s]:
-                fd[p].append(v[s][gf])
-            else:
-                fd[p].append("")
-        s = 'Aska'
-        for gf in distinct_g_families:
-            if gf in v[s]:
-                if v[s][gf]['best'] > threshold_primary:
-                    fd[p].append("primary")
-                elif v[s][gf]['best'] > threshold_secondary:
-                    fd[p].append("secondary")
-                else:
-                    fd[p].append("No coupling")
-            else:
-                fd[p].append("")
-        for gf, sfs in distinct_g_subunit_families.items():
-            for sf in sfs:
-                if gf in v[s]:
-                    if sf in v[s][gf]['subunits']:
-                        fd[p].append(v[s][gf]['subunits'][sf])
-                    else:
-                        fd[p].append("")
-                else:
-                    fd[p].append("")
-
-    context['data'] = fd
-    context['distinct_gf'] = distinct_g_families
-    context['distinct_sf'] = distinct_g_subunit_families
-    return render(request, 'signprot/coupling_browser.html', context)
 
 #@cache_page(60*60*24*7)
 def familyDetail(request, slug):
