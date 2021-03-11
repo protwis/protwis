@@ -105,6 +105,38 @@
         border-radius: 5px;
         background: Black;
     }
+    #circle_10 {
+        width: 10px;
+        height: 10px;
+        -webkit-border-radius: 5px;
+        -moz-border-radius: 5px;
+        border-radius: 5px;
+        background: LightSkyBlue;
+    }
+    #circle_20 {
+        width: 10px;
+        height: 10px;
+        -webkit-border-radius: 5px;
+        -moz-border-radius: 5px;
+        border-radius: 5px;
+        background: CornflowerBlue;
+    }
+    #circle_30 {
+        width: 10px;
+        height: 10px;
+        -webkit-border-radius: 5px;
+        -moz-border-radius: 5px;
+        border-radius: 5px;
+        background: Blue;
+    }
+    #circle_40 {
+        width: 10px;
+        height: 10px;
+        -webkit-border-radius: 5px;
+        -moz-border-radius: 5px;
+        border-radius: 5px;
+        background: DarkBlue;
+    }
 </style>
 {% endblock %}
 
@@ -113,7 +145,11 @@
 
 {% block content %}
 
+{% if render != "bias" %}
 <h4>Number of unique ligands per receptor class</h4>
+{% else %}
+<h4>Number of unique ligands bias per receptor class</h4>
+{% endif %}
 <table style="width:85% !important" class="table table-stripped">
     <thead>
         <tr>
@@ -141,7 +177,7 @@
         </tr>
         <tr>
             <td nowrap>No. GPCRs with ligand (%)</td>
-            <td align="center" style="vertical-align:middle !important"> {{ ligands_total.target_count|floatformat:0 }} ({{ ligands_total.target_percentage|floatformat:0 }})</td>
+            <td align="center" style="vertical-align:middle !important; white-space: nowrap; overflow: hidden;"> {{ ligands_total.target_count|floatformat:0 }} ({{ ligands_total.target_percentage|floatformat:0 }})</td>
             {% for data in ligands_by_class %}
             <td align="center" style="vertical-align:middle !important">{{ data.target_count|floatformat:0 }} ({{ data.target_percentage|floatformat:0 }})</td>
             {% endfor %}
@@ -155,9 +191,14 @@ Specific sets of ligands can be downloaded from the <a href="/ligand">ligand bro
 Ligand statistics were last updated: <strong>{{ release_notes.date|date:"Y-m-d" }}</strong><br />
 <br />
 <br />
+{% if render != "bias" %}
 <h4>Ligand coverage of GPCR Classes</h4><br />
+{% else %}
+<h4>Ligand bias coverage of GPCR Classes</h4><br />
+{% endif %}
 
 Circle colors indicate a number of ligands:
+{% if render != "bias" %}
 <table style="width:30%">
     <tr>
         <td ><div id="circle_100"></div></td>
@@ -170,6 +211,20 @@ Circle colors indicate a number of ligands:
         <td> 1000+</td>
     </tr>
 </table>
+{% else %}
+<table style="width:30%">
+    <tr>
+        <td ><div id="circle_10"></div></td>
+        <td> < 10 </td>
+        <td ><div id="circle_20"></div></td>
+        <td> < 20 </td>
+        <td ><div id="circle_30"></div></td>
+        <td> < 30 </td>
+        <td ><div id="circle_40"></div></td>
+        <td> 30+</td>
+    </tr>
+</table>
+{% endif %}
 <br />
 <p><input id="name_toggle" type="checkbox" checked data-toggle="toggle" data-on="UniProt" data-off="IUPHAR" data-onstyle="info" data-offstyle="info"></p>
 <br />

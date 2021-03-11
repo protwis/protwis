@@ -429,7 +429,7 @@ def CouplingProfiles(request, render_part="both"):
 
     context = cache.get(name_of_cache)
     # NOTE cache disabled for development only!
-    context = None
+    # context = None
     if context == None:
 
         context = OrderedDict()
