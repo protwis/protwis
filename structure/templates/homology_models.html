@@ -307,13 +307,13 @@
                 oTable.fnDraw();
             });
 
-            $('#apply_filter').click(function() {
-                // $("#filters").toggle();
-            });
+            // $('#apply_filter').click(function() {
+            //     $("#filters").toggle();
+            // });
 
-            $("#OpenFilters").click(function () {
-                // $("#filters").toggle();
-            });
+            // $("#OpenFilters").click(function () {
+            //     $("#filters").toggle();
+            // });
 
             $('.slider').slider({
               min: 30,
@@ -411,9 +411,6 @@
                 var selected_ids = [];
                  $.each($(".alt_selected"), function(){
                     hom_id = $(this).closest('tr').attr('model_id');
-                    if ($(this).closest('tr').children().eq(4).text()==='Yes') {
-                        hom_id = hom_id.toString()+'r';
-                    }
                     selected_ids.push(hom_id);
                 });
                 window.location.href = '/structure/hommod_download?ids='+selected_ids.join(",");
@@ -422,24 +419,9 @@
                 var checked_data = oTable.rows('.alt_selected').data();
                 ClearSelection('targets');
                 for (i = 0; i < checked_data.length; i++) {
-                    var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][12];
-                    var state = checked_data[i][3];
-                    if (checked_data[i][4]==='Yes') {
-                        div.innerHTML = checked_data[i][11];
-                        if (typeof div.innerText !== "undefined") {
-                            AddToSelection('targets', 'structure',  div.innerText.replace(/\s+/g, '') );
-                        } else {
-                            AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
-                        }
-                    }
-                    else {
-                        if (typeof div.innerText !== "undefined") {
-                            AddToSelection('targets', 'structure_model',  div.innerText.replace(/\s+/g, '')+"_"+state);
-                        } else {
-                            AddToSelection('targets', 'structure_model', div.textContent.replace(/\s+/g, '')+"_"+state);
-                        }
-                    }
+                    
+                    AddToSelection('targets', 'structure_model',  checked_data[i][12]+"_"+checked_data[i][3]);
+                    
                 }
                 window.location.href = '/structure/selection_convert_model';
             });
@@ -494,51 +476,10 @@
             }
           });
         }
-
-        // function realign() {
-
-        //     ids = JSON.parse($("#c_ids").val());
-
-        //     // $('input:checkbox:not(:checked)').each(function () {
-        //     $('input:checkbox:checked').each(function () {
-        //         if ( $(this).is(':visible') ) {
-        //            id = $(this).attr('value');
-        //            if (id) { ids.push(id); }
-        //         }
-        //     });
-
-        //     console.log(ids);
-
-        //     current_align_ids = ids
-        //     var url = '/construct/align';
-        //     var posting = $.post( url, { ids: JSON.stringify(current_align_ids)  } );
-        //       posting.done(function( data ) {
-        //         $("#align_div").html('').append(data)
-
-        //         $(function () {$('[data-toggle="tooltip"]').tooltip()})
-
-        //         $(function(){
-        //             $('.ali-scroll-div').scroll(function(){
-        //                 $('.ali-main-div')
-        //                     .scrollLeft($('.ali-scroll-div').scrollLeft());
-        //             });
-        //             $('.ali-main-div').scroll(function(){
-        //                 $('.ali-scroll-div')
-        //                     .scrollLeft($('.ali-main-div').scrollLeft());
-        //             });
-        //         });
-
-        //         $(function () {$('.internal-scroll-div').css('width', $('.dynamic-div').outerWidth() );});
-        //       });
-        // };
-
-
     </script>
 {% endblock %}
 
 {% block content %}
-<h2>GPCR Homology Model Browser</h2>
-
 <div class="btn-group">
     <label class="btn btn-default btn-s" id="align_btn" href="javascript:void(0)">Align</label>
     <label class="btn btn-default btn-s" id="download_btn" href="javascript:void(0)">Download</label>
@@ -611,35 +552,41 @@
             <tbody>
             {% for model in structure_model %}
                 <tr model_id='{{model.pk}}'>
-                    {% if model.protein %}
-                        <td class="text-center"><input class="alt" type="checkbox" id="{{ model.pk }}"></td>
-                        <td><a href="homology_models/{{ model.protein.entry_name }}_{{ model.state.slug }}">{{ model.protein.family.name|safe }}</a></td>
-                        <td>{{ model.version|date:"Y-m-d" }}</td>
-                        <td>{{ model.state.name }}</td>
-                        <td>No</td>
-                        <td><span><a href="http://www.uniprot.org/uniprot/{{ model.protein.accession }}">{{ model.protein.entry_short|safe }}</a></span></td>
-                        <td><span><a href="/protein/{{ model.protein.entry_name }}">{{ model.protein.short|safe }}</span></td>
-                        <td><span>{{ model.protein.family.parent.short|safe }}</span></td>
-                        <td>{{ model.protein.family.parent.parent.parent.short }}</td>
-                        <td>{{ model.protein.species.common_name }}</td>
-                        <td><a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a></td>
-                        <td><a href="{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index}}</a></td>
-                        <td style="display:none;">{{ model.protein.entry_name }}</td>
+                    <td class="text-center"><input class="alt" type="checkbox" id="{{ model.pk }}"></td>
+                    <td><a href="homology_models/{{ model.protein.entry_name }}_{{ model.state.slug }}">{{ model.protein.family.name|safe }}</a></td>
+                    <td>{{ model.version|date:"Y-m-d" }}</td>
+                    <td>{{ model.state.name }}</td>
+                    <td>
+                    {% if not model.protein.accession %}
+                        Yes
                     {% else %}
-                        <td class="text-center"><input class="alt" type="checkbox" id="{{ model.pk }}"></td>
-                        <td><a href="homology_models/{{ model.pdb_code.index }}">{{ model.protein_conformation.protein.family.name|safe }}</a></td>
-                        <td>{{ model|get_refined_model_version }}</td>
-                        <td>{{ model.state.name }}</td>
-                        <td>Yes</td>
-                        <td><span><a href="http://www.uniprot.org/uniprot/{{ model.protein_conformation.protein.accession }}">{{ model.protein_conformation.protein.entry_short|safe }}</a></span></td>
-                        <td><span><a href="/protein/{{ model.protein_conformation.protein.entry_name }}">{{ model.protein_conformation.protein.short|safe }}</span></td>
-                        <td><span>{{ model.protein_conformation.protein.family.parent.short|safe }}</span></td>
-                        <td>{{ model.protein_conformation.protein.family.parent.parent.parent.short }}</td>
-                        <td>{{ model.protein_conformation.protein.species.common_name }}</td>
-                        <td><a href="/protein/{{ model.protein_conformation.protein.entry_name }}">{{ model.protein_conformation.protein.family.name|safe }}</a></td>
-                        <td><a href="{{ model.pdb_code.index|cut_refined }}">{{ model.pdb_code.index|cut_refined}}</a></td>
-                        <td style="display:none;">{{ model.protein_conformation.protein.entry_name }}</td>
+                        No
                     {% endif %}
+                    </td>
+                    <td>
+                        <span>
+                            {% if not model.protein.accession %}
+                                <a href="http://www.uniprot.org/uniprot/{{ model.protein.parent.accession }}">{{ model.protein.parent.entry_short|safe }}</a>
+                            {% else %}
+                                <a href="http://www.uniprot.org/uniprot/{{ model.protein.accession }}">{{ model.protein.entry_short|safe }}</a>
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        <span>
+                            {% if not model.protein.accession %}
+                                <a href="/protein/{{ model.protein.parent.entry_name }}">{{ model.protein.parent.short|safe }}
+                            {% else %}
+                                <a href="/protein/{{ model.protein.entry_name }}">{{ model.protein.short|safe }}
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td><span>{{ model.protein.family.parent.short|safe }}</span></td>
+                    <td>{{ model.protein.family.parent.parent.parent.short }}</td>
+                    <td>{{ model.protein.species.common_name }}</td>
+                    <td><a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a></td>
+                    <td><a href="{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index}}</a></td>
+                    <td style="display:none;">{{ model.protein.entry_name }}</td>
                 </tr>
             {% endfor %}
             </tbody>

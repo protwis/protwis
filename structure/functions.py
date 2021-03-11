@@ -818,6 +818,8 @@ class PossibleKnots():
         if self.receptor and self.signprot:
             for knot_label, values in self.possible_knots.items():
                 chain1, chain2 = values[0]
+                if not self.receptor.accession:
+                    self.receptor = self.receptor.parent
                 region1 = list(Residue.objects.filter(protein_conformation__protein=self.receptor, protein_segment__slug=knot_label.split('-')[0]).values_list('sequence_number', flat=True))
                 if len(region1)==0:
                     region1 = list(Residue.objects.filter(protein_conformation__protein=self.signprot, protein_segment__slug=knot_label.split('-')[0]).values_list('sequence_number', flat=True))
@@ -1118,33 +1120,53 @@ class StructureSeqNumOverwrite():
 
 
 class StructureBuildCheck():
+    local_yaml_dir = os.sep.join([settings.DATA_DIR, "structure_data", "structures"])
+    local_annotation_dir = os.sep.join([settings.DATA_DIR, "structure_data", "annotation"])
+    
     def __init__(self):
-        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'xtal_segends.yaml']), 'r') as f:
-            self.annotation_data = yaml.load(f, Loader=yaml.FullLoader)
+        with open(self.local_annotation_dir+"/xtal_segends.yaml", "r") as f:
+            self.segends_dict = yaml.load(f, Loader=yaml.FullLoader)
 
-    def check_rotamers(self, pdb):
-        structure = Structure.objects.get(pdb_code__index=pdb)
-        structure_residues = Residue.objects.filter(protein_conformation=structure.protein_conformation)
-        wt_residues = Residue.objects.filter(protein_conformation__protein=structure.protein_conformation.protein.parent)
-        key = structure.protein_conformation.protein.parent.entry_name+'_'+pdb
-        try:
-            annotation = self.annotation_data[key]
-        except:
-            raise Exception('Warning: {} not annotated'.format(pdb))
-        errors = []
-        for i in range(1,9):
-            if annotation[str(i)+'e']!='-':
-                anno_len = int(annotation[str(i)+'e']-annotation[str(i)+'b']+1)
-                if i==8:
-                    struct_len = len(structure_residues.filter(protein_segment__slug='H8'))
-                    wt_len = len(wt_residues.filter(protein_segment__slug='H8'))
+    def check_structures(self):
+        yamls = os.listdir(self.local_yaml_dir)
+        for y in yamls:
+            pdb = y.split('.')[0]
+            try:
+                Structure.objects.get(pdb_code__index=pdb)
+            except Structure.DoesNotExist:
+                print("Error: {} Structure object has not been built".format(pdb))
+
+    def check_structure_residues(self, structure):
+        key = structure.protein_conformation.protein.parent.entry_name + "_" + structure.pdb_code.index
+        if key in self.segends_dict:
+            structure_residues = Residue.objects.filter(protein_conformation=structure.protein_conformation)
+            annotation = self.segends_dict[key]
+            for i in range(1,9):
+                if annotation[str(i)+'e']=='-':
+                    continue
                 else:
-                    struct_len = len(structure_residues.filter(protein_segment__slug='TM'+str(i)))
-                    wt_len = len(wt_residues.filter(protein_segment__slug='TM'+str(i)))
-                if anno_len!=struct_len:
-                    if wt_len!=struct_len:
-                        errors.append(['H'+str(i), anno_len, struct_len])
-        return errors
+                    anno_b = int(annotation[str(i)+'b'])
+                    anno_e = int(annotation[str(i)+'e'])
+                    if i==8:
+                        seg = 'H8'
+                    else:
+                        seg = 'TM'+str(i)
+                    seg_resis = structure_residues.filter(protein_segment__slug=seg)
+                    if len(seg_resis)==0:
+                        print("Error: Missing segment {} {} has no residue objects. Should have {} to {}".format(structure, seg, anno_b, anno_e))
+                        continue
+                    if seg_resis[0].sequence_number!=anno_b:
+                        print("Error: {} {} starts at {} instead of annotated {}".format(structure, seg, seg_resis[0].sequence_number, anno_b))
+                    if seg_resis.reverse()[0].sequence_number!=anno_e:
+                        print("Error: {} {} ends at {} instead of annotated {}".format(structure, seg, seg_resis.reverse()[0].sequence_number, anno_e))   
+        else:
+            print("Warning: {} not annotated".format(key))
+
+
+class ModelRotamer():
+    def __init__(self):
+        self.backbone_template = None
+        self.rotamer_template = None
 
 
 def update_template_source(template_source, keys, struct, segment, just_rot=False):

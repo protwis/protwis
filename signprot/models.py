@@ -1,6 +1,6 @@
 from django.db import models
 from protein.models import Protein, ProteinConformation
-from structure.models import Structure, StructureType, StructureExtraProteins, StructureStabilizingAgent
+from structure.models import Structure, StructureType, StructureExtraProteins, StructureStabilizingAgent, PdbData
 from common.models import WebLink, Publication
 
 
@@ -12,6 +12,7 @@ class SignprotStructure(models.Model):
     publication = models.ForeignKey('common.Publication', null=True, on_delete=models.CASCADE)
     stabilizing_agents = models.ManyToManyField('structure.StructureStabilizingAgent')
     resolution = models.DecimalField(max_digits=5, decimal_places=3)
+    pdb_data = models.ForeignKey('structure.PdbData', null=True, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.pdb_code.index

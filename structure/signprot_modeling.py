@@ -1,6 +1,6 @@
 from django.conf import settings
 
-from protein.models import Protein, ProteinConformation, ProteinAnomaly, ProteinState, ProteinSegment
+from protein.models import Protein, ProteinConformation, ProteinAnomaly, ProteinState, ProteinSegment, ProteinFamily
 from residue.models import Residue
 from residue.functions import dgn, ggn
 from structure.models import *
@@ -32,9 +32,14 @@ gprotein_segments = ProteinSegment.objects.filter(proteinfamily='Alpha')
 gprotein_segment_slugs = [i.slug for i in gprotein_segments]
 atom_num_dict = {'E':9, 'S':6, 'Y':12, 'G':4, 'A':5, 'V':7, 'M':8, 'L':8, 'I':8, 'T':7, 'F':11, 'H':10, 'K':9, 
                          'D':8, 'C':6, 'R':11, 'P':7, 'Q':9, 'N':8, 'W':14, '-':0}
+subfam_template_preference = {'Gs': ['Gs','Gi/o','Gq/11','G12/13','GPa1 family'],
+                              'Gi/o': ['Gi/o','Gq/11','G12/13','Gs','GPa1 family'],
+                              'Gq/11': ['Gq/11','Gi/o','G12/13','Gs','GPa1 family'],
+                              'G12/13': ['G12/13','Gq/11','Gi/o','Gs','GPa1 family'],
+                              'GPa1': ['GPa1 family','Gi/o','Gq/11','G12/13','Gs']}
 
 class SignprotModeling():
-    def __init__(self, main_structure, signprot, template_source, trimmed_residues, alignment, main_pdb_array):
+    def __init__(self, main_structure, signprot, template_source, trimmed_residues, alignment, main_pdb_array, debug=False):
         self.main_structure = main_structure
         self.signprot = signprot
         self.template_source = template_source
@@ -42,46 +47,61 @@ class SignprotModeling():
         self.a = alignment
         self.main_pdb_array = main_pdb_array
         self.target_signprot = None
+        self.debug = debug
 
-    def get_full_alpha_templates(self):
+    def get_alpha_templates(self, only_full=False):
         sc_all = SignprotComplex.objects.all().values_list('structure', flat=True)
         sep_all = StructureExtraProteins.objects.filter(structure__in=sc_all, category='G alpha')
-        sep_filtered = sep_all.filter(wt_coverage__gte=85)
+        if only_full:
+            sep_filtered = sep_all.filter(wt_coverage__gte=85)
+        else:
+            sep_filtered = sep_all
         return sep_filtered, sep_filtered.values_list('structure', flat=True)
 
-    def group_full_alpha_templates(self, templates, group_by_subfam=False):
-        h_domain_template_dict = OrderedDict()
+    def group_alpha_templates(self, templates, group_by_subfam=False):
+        template_dict = OrderedDict()
         for i in templates:
             if group_by_subfam:
-                if i.wt_protein.family.parent not in h_domain_template_dict:
-                    h_domain_template_dict[i.wt_protein.family.parent] = [i.structure]
+                if i.wt_protein.family.parent not in template_dict:
+                    template_dict[i.wt_protein.family.parent] = [i.structure]
                 else:
-                    h_domain_template_dict[i.wt_protein.family.parent].append(i.structure)
+                    template_dict[i.wt_protein.family.parent].append(i.structure)
             else:
-                if i.wt_protein.family not in h_domain_template_dict:
-                    h_domain_template_dict[i.wt_protein.family] = [i.structure]
+                if i.wt_protein.family not in template_dict:
+                    template_dict[i.wt_protein.family] = [i.structure]
                 else:
-                    h_domain_template_dict[i.wt_protein.family].append(i.structure)
-        for i, j in h_domain_template_dict.items():
+                    template_dict[i.wt_protein.family].append(i.structure)
+        for i, j in template_dict.items():
             j = sorted(j, key=lambda x: x.resolution)
-            h_domain_template_dict[i] = j
-        return h_domain_template_dict
+            template_dict[i] = j
+        return template_dict
 
     def find_h_domain_template(self, signprot, templates):
-        template_dict = self.group_full_alpha_templates(templates)
+        template_dict = self.group_alpha_templates(templates)
         if signprot.family in template_dict:
             return template_dict[signprot.family][0]
         else:
-            subfam_dict = self.group_full_alpha_templates(templates, group_by_subfam=True)
+            subfam_dict = self.group_alpha_templates(templates, group_by_subfam=True)
             if signprot.family.parent in subfam_dict:
                 return subfam_dict[signprot.family.parent][0]
             else:
                 return Structure.objects.get(pdb_code__index='3SN6')
 
+    def get_ordered_alpha_templates(self, signprot):
+        target_subfam = signprot.family.parent
+        template_dict = self.group_alpha_templates(self.get_alpha_templates()[0], True)
+        template_pool = []
+        for subfam in subfam_template_preference[target_subfam.name]:
+            subfam_obj = ProteinFamily.objects.get(name=subfam)
+            if subfam_obj in template_dict:
+                for t in template_dict[subfam_obj]:
+                    template_pool.append(t)
+        return template_pool
+
     def run(self):
         parse = GPCRDBParsingPDB()
         self.signprot_complex = SignprotComplex.objects.get(structure=self.main_structure)
-        structure_signprot= self.signprot_complex.protein
+        structure_signprot = self.signprot_complex.protein
         if self.signprot!=False:
             self.target_signprot = Protein.objects.get(entry_name=self.signprot)
         else:
@@ -89,9 +109,7 @@ class SignprotModeling():
         self.signprot_protconf = ProteinConformation.objects.get(protein=self.target_signprot)
         sign_a = GProteinAlignment()
         sign_a.run_alignment(self.target_signprot, structure_signprot)
-        io = StringIO(self.main_structure.pdb_data.pdb)
-        assign_cgn = as_gn.GenericNumbering(pdb_file=io, pdb_code=self.main_structure.pdb_code.index, sequence_parser=True, signprot=structure_signprot)
-        signprot_pdb_array = assign_cgn.assign_cgn_with_sequence_parser(self.signprot_complex.alpha)
+        signprot_pdb_array = parse.create_g_alpha_pdb_array(self.signprot_complex)
         
         # Alignment exception in HN for 6OIJ, shifting alignment by 6 residues
         if self.main_structure.pdb_code.index=='6OIJ':
@@ -119,15 +137,13 @@ class SignprotModeling():
         # Superimpose missing regions H1 - hfs2
         alt_complex_struct = None
         segs_for_alt_complex_struct = []
-        alt_templates_H_domain = self.get_full_alpha_templates()
+        alt_templates_H_domain = self.get_alpha_templates(True)
 
         if self.main_structure.id not in alt_templates_H_domain[1]:
             segs_for_alt_complex_struct = ['H1', 'h1ha', 'HA', 'hahb', 'HB', 'hbhc', 'HC', 'hchd', 'HD', 'hdhe', 'HE', 'hehf', 'HF', 'hfs2']
             alt_complex_struct = self.find_h_domain_template(self.target_signprot, alt_templates_H_domain[0]) #Structure.objects.get(pdb_code__index='3SN6')
-            io = StringIO(alt_complex_struct.pdb_data.pdb)
             alt_signprot_complex = SignprotComplex.objects.get(structure=alt_complex_struct)
-            alt_assign_cgn = as_gn.GenericNumbering(pdb_file=io, pdb_code=alt_complex_struct.pdb_code.index, sequence_parser=True, signprot=alt_signprot_complex.protein)
-            alt_signprot_pdb_array = alt_assign_cgn.assign_cgn_with_sequence_parser(alt_signprot_complex.alpha) 
+            alt_signprot_pdb_array = parse.create_g_alpha_pdb_array(alt_signprot_complex)
             before_cgns = ['G.HN.50', 'G.HN.51', 'G.HN.52', 'G.HN.53']
             after_cgns =  ['G.H5.03', 'G.H5.04', 'G.H5.05', 'G.H5.06']
             orig_residues1 = parse.fetch_residues_from_array(signprot_pdb_array['HN'], before_cgns)
@@ -136,14 +152,6 @@ class SignprotModeling():
 
             alt_residues1 = parse.fetch_residues_from_array(alt_signprot_pdb_array['HN'], before_cgns)
             alt_residues2 = parse.fetch_residues_from_array(alt_signprot_pdb_array['H5'], after_cgns)
-
-            # for i,j in orig_residues.items():
-            #     print(i, j, j[0].get_parent())
-            # print('ALTERNATIVES')
-            # for i,j in alt_residues1.items():
-            #     print(i, j, j[0].get_parent())
-            # for i,j in alt_residues2.items():
-            #     print(i, j, j[0].get_parent())
             
             alt_middle = OrderedDict()
             for s in segs_for_alt_complex_struct:
@@ -163,8 +171,10 @@ class SignprotModeling():
             key_list = list(new_residues.keys())[4:-4]
             for key in key_list:
                 seg = key.split('.')[1]
+                if key in signprot_pdb_array[seg] and signprot_pdb_array[seg][key]!='x':
+                    continue
                 signprot_pdb_array[seg][key] = new_residues[key]
-
+            
             # alt local loop alignment
             alt_sign_a = GProteinAlignment()
             alt_sign_a.run_alignment(self.target_signprot, alt_signprot_complex.protein, segments=segs_for_alt_complex_struct)
@@ -353,6 +363,41 @@ class SignprotModeling():
                 
                 align_loop = list(sign_a.alignment_dict[a_seg].values())
 
+        # Updating template dict with pdb_array
+        for seg, resis in signprot_pdb_array.items():
+            for cgn, atoms in resis.items():
+                if len(atoms)>1 and PDB.Polypeptide.three_to_one(atoms[0].get_parent().get_resname())!=sign_a.template_dict[seg][cgn]:
+                    sign_a.template_dict[seg][cgn] = PDB.Polypeptide.three_to_one(atoms[0].get_parent().get_resname())
+                    if sign_a.template_dict[seg][cgn]!=sign_a.reference_dict[seg][cgn]:
+                        sign_a.alignment_dict[seg][cgn] = '.'
+                elif atoms=='x':
+                    sign_a.alignment_dict[seg][cgn] = 'x'
+
+
+        # Rotamer switching
+        rotamer_templates = self.get_ordered_alpha_templates(self.target_signprot)
+        if self.debug:
+            print("Signprot rotamer switching")
+            print(rotamer_templates)
+        for seg, resis in sign_a.alignment_dict.items():
+            for cgn, pos in resis.items():
+                if pos=='.':
+                    for alt_temp in rotamer_templates:
+                        ref_AA = sign_a.reference_dict[seg][cgn]
+                        new_coords = self.non_conserved_switcher(cgn, ref_AA, signprot_pdb_array[seg][cgn], alt_temp)
+                        if not new_coords:
+                            continue
+                        signprot_pdb_array[seg][cgn] = new_coords
+                        sign_a.alignment_dict[seg][cgn] = ref_AA
+                        self.template_source = update_template_source(self.template_source, [cgn], alt_temp, seg, just_rot=True)
+                        if self.debug:
+                            print(cgn, alt_temp, new_coords)
+                        break
+                    # If no alternative rotamer template, cut back to 5 atoms
+                    signprot_pdb_array[seg][cgn] = [i for i in signprot_pdb_array[seg][cgn] if str(i.get_id()) in ['N','CA','C','O','CB']]
+                    if self.debug:
+                        print("No rotamer template, mutating to ALA: ", cgn)
+        
         self.a.reference_dict = deepcopy(self.a.reference_dict)
         self.a.template_dict = deepcopy(self.a.template_dict)
         self.a.alignment_dict = deepcopy(self.a.alignment_dict)
@@ -438,7 +483,7 @@ class SignprotModeling():
             self.trimmed_residues.append('G.HG.14')
             self.trimmed_residues.append('G.HG.16')
             self.trimmed_residues.append('G.HG.17')
-        if structure_signprot!=self.target_signprot or alt_signprot_complex.protein not in [None, self.target_signprot]:
+        if structure_signprot!=self.target_signprot or ("alt_signprot_complex" in locals() and alt_signprot_complex.protein not in [None, self.target_signprot]):
             # hbhc
             hbhc_keys = list(self.a.reference_dict['hbhc'].keys())
             self.trimmed_residues.append(hbhc_keys[2])
@@ -498,10 +543,31 @@ class SignprotModeling():
             self.main_pdb_array['Gamma'][key] = atoms
             self.template_source['Gamma'][key] = [self.main_structure, self.main_structure]
 
-        # raise AssertionError
         # for i,j,k,l in zip(sign_a.reference_dict, sign_a.template_dict, sign_a.alignment_dict, signprot_pdb_array):
         #     pprint.pprint(self.template_source[i])
         #     for v,b,n,m in zip(sign_a.reference_dict[i], sign_a.template_dict[j], sign_a.alignment_dict[k], signprot_pdb_array[l]):
         #         print(v, b, n, m, sign_a.reference_dict[i][v], sign_a.template_dict[j][b], sign_a.alignment_dict[k][n], signprot_pdb_array[l][m])
+        # raise AssertionError
+
+    def non_conserved_switcher(self, cgn, AA, ref_atoms, template):
+        try:
+            print(cgn, template, AA, ref_atoms[0].get_parent().get_resname())
+            rot = Rotamer.objects.get(structure=template, residue__display_generic_number__label=cgn)
+            print(rot.residue.amino_acid)
+            if rot.residue.amino_acid!=AA or rot.missing_atoms:
+                return False
+            parse = GPCRDBParsingPDB()
+            parsed_atoms = parse.parse_rotamer_pdb(rot)
+            superpose = sp.RotamerSuperpose(ref_atoms, parsed_atoms)
+            new_atoms = superpose.run()
+            if self.debug:
+                print(template, cgn, superpose.backbone_rmsd)
+            if superpose.backbone_rmsd>0.45:
+                return False
+            return new_atoms
+        except Exception as msg:
+            if self.debug:
+                print("WARNING: Rotamer swap-in {} at {} failed with {}".format(template, cgn, msg))
+            return False
 
 
