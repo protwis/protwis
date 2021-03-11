@@ -157,7 +157,7 @@ class Command(BaseBuild):
         d['protein_ligand_function'] = None
         d['protein_mtype'] = None
         d['protein_relation'] = None
-        d['protein_activity_quantity'] = 0.0
+        d['protein_activity_quantity'] = None
         d['protein_activity_quantity_unit'] = None
         d['protein_activity_quality'] = None
         d['protein_efficacy_measure'] = None
@@ -258,7 +258,7 @@ class Command(BaseBuild):
                 d['protein_activity_quantity'] = re.sub('[^\d\.,]', '', d['protein_activity_quantity'])
                 d['protein_activity_quantity'] = round(float(d['protein_activity_quantity']),2)
             except:
-                d['protein_activity_quantity'] = float(d['protein_activity_quantity'])
+                d['protein_activity_quantity'] = d['protein_activity_quantity']
             try:
                 d['protein_efficacy_quantity'] = round(d['protein_efficacy_quantity'],0)
             except:
@@ -301,7 +301,9 @@ class Command(BaseBuild):
                                                 ligand=l,
                                                 receptor=protein,
                                                 auxiliary_protein = auxiliary_protein,
-                                                endogenous_ligand = end_ligand
+                                                endogenous_ligand = end_ligand,
+                                                ligand_source_id = d['ligand_id'],
+                                                ligand_source_type = d['ligand_type'],
                                                 )
             # try:
             experiment_entry.save()
@@ -337,8 +339,6 @@ class Command(BaseBuild):
             self.fetch_publication_authors(pub,experiment_assay)
 
             temp.append(d)
-        print('\n*********total skipped*********', skipped)
-        print('\n*********total saved*********', len(skipped))
         return temp
 
 
@@ -361,40 +361,43 @@ class Command(BaseBuild):
             # assay_author = ExperimentAssayAuthors(experiment = experiment_assay,
 
     def fetch_measurements(self, potency, p_type, unit):
-        if p_type.lower()  == 'pec50':
-            potency = 10**(potency*(-1))
-            # pp = (-1)*log(potency)
-            p_type = 'EC50'
-        elif p_type.lower() == 'logec50':
-            potency = 10**(potency)
-            p_type = 'EC50'
-        elif p_type.lower() == 'pic50':
-            potency = 10**(potency*(-1))
-            p_type = 'IC50'
-        elif p_type.lower() == 'logic50':
-            potency = 10**(potency)
-            p_type = 'IC50'
+        if potency is not None:
+            if p_type.lower()  == 'pec50':
+                potency = 10**(potency*(-1))
+                p_type = 'EC50'
+            elif p_type.lower() == 'logec50':
+                potency = 10**(potency)
+                p_type = 'EC50'
+            elif p_type.lower() == 'pic50':
+                potency = 10**(potency*(-1))
+                p_type = 'IC50'
+            elif p_type.lower() == 'logic50':
+                potency = 10**(potency)
+                p_type = 'IC50'
+        if potency is not None:
+            if p_type.lower()  == 'ec50':
+                if unit.lower() == 'nm':
+                    potency = potency* 10**(-9)
+                elif unit.lower() == 'µm':
+                    potency = potency* 10**(-6)
+                elif unit.lower() == 'pm':
+                    potency = potency* 10**(-12)
+                elif unit.lower() == 'mm':
+                    potency = potency* 10**(-3)
+            if p_type.lower()  == 'ic50':
+                if unit.lower() == 'nm':
+                    potency = potency* 10**(-9)
+                elif unit.lower() == 'µm':
+                    potency = potency* 10**(-6)
+                elif unit.lower() == 'pm':
+                    potency = potency* 10**(-12)
+                elif unit.lower() == 'mm':
+                    potency = potency* 10**(-3)
+            return potency,p_type
+        else:
+            return None, None
 
-        if p_type.lower()  == 'ec50':
-            if unit.lower() == 'nm':
-                potency = potency* 10**(-9)
-            elif unit.lower() == 'µm':
-                potency = potency* 10**(-9)
-            elif unit.lower() == 'pm':
-                potency = potency* 10**(-12)
-            elif unit.lower() == 'mm':
-                potency = potency* 10**(-6)
-        if p_type.lower()  == 'ic50':
-            if unit.lower() == 'nm':
-                potency = potency* 10**(-9)
-            elif unit.lower() == 'µm':
-                potency = potency* 10**(-9)
-            elif unit.lower() == 'pm':
-                potency = potency* 10**(-12)
-            elif unit.lower() == 'mm':
-                potency = potency* 10**(-6)
 
-        return potency,p_type
 
     def define_g_family(self, protein, assay_type):
         family = None
