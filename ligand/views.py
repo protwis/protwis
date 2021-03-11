@@ -7,7 +7,7 @@ from django.views.generic import TemplateView, View, DetailView, ListView
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection, SelectionItem
-from ligand.models import *
+from ligand.models import Ligand, BiasedPathways, AssayExperiment, AnalyzedExperiment, LigandVendorLink
 from protein.models import Protein, Species, ProteinFamily
 
 from django.views.decorators.csrf import csrf_exempt
@@ -322,7 +322,7 @@ class LigandStatistics(TemplateView):
     def get_context_data (self, **kwargs):
 
         context = super().get_context_data(**kwargs)
-        assays = AssayExperiment.objects.all().prefetch_related('protein__family__parent__parent__parent', 'protein__family')
+        # assays = AssayExperiment.objects.all().prefetch_related('protein__family__parent__parent__parent', 'protein__family')
 
         lig_count_dict = {}
         assays_lig = list(AssayExperiment.objects.all().values('protein__family__parent__parent__parent__name').annotate(c=Count('ligand',distinct=True)))
@@ -456,7 +456,7 @@ class LigandBiasStatistics(TemplateView):
     def get_context_data (self, **kwargs):
 
         context = super().get_context_data(**kwargs)
-        assays = AnalyzedExperiment.objects.all().prefetch_related('receptor__family__parent__parent__parent', 'receptor__family')
+        # assays = AnalyzedExperiment.objects.all().prefetch_related('receptor__family__parent__parent__parent', 'receptor__family')
 
         lig_count_dict = {}
         assays_lig = list(AnalyzedExperiment.objects.all().values('receptor__family__parent__parent__parent__name').annotate(c=Count('ligand_id',distinct=True)))
