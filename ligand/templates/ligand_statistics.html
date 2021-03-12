@@ -517,13 +517,12 @@ Circle colors indicate a number of ligands:
 
 {% block addon_js %}
 <script src="{% static 'home/js/bootstrap-toggle.min.js' %}"></script>
-<script src="{% static 'home/js/jquery.js' %}"></script>
 <script src="{% static 'home/js/d3.min.js' %}"></script>
 <script src="{% static 'home/js/nv.d3.min.js' %}"></script>
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
 <script src="{% static 'home/js/phylo_tree.js' %}"></script>
 <script type="text/javascript" charset="utf-8">
-  $(window).on("load",function() {
+    $(window).on("load", function () {
         draw_tree(class_a, class_a_options);
         draw_tree(class_b1, class_b1_options);
         draw_tree(class_b2, class_b2_options);

@@ -54,9 +54,7 @@ def detail(request, slug):
     return render(request,'construct/construct_detail.html',context)
 
 class ConstructStatistics(TemplateView):
-    """
-    Fetching construct data for browser
-    """
+    """Fetching construct data for browser."""
 
     template_name = "construct/statistics.html"
 
@@ -902,6 +900,7 @@ class ConstructStatistics(TemplateView):
                     # print('\n ### doing range',site, sites,max_pos_range2[site],val['range'])
                 val['receptors'] = unique_sites
                 val['fusions'] = distinct_fusion
+
                 if site in truncations_maximums and pclass in truncations_maximums[site]:
                     val['range'] = list(range(min_cut,truncations_maximums[site][pclass]+1))
                     if min_cut < max_pos_range3[site][0]:
@@ -960,14 +959,14 @@ class ConstructStatistics(TemplateView):
         for pos, p_vals in truncations_new_sum.items():
             for pclass, c_vals in p_vals.items():
                 new_list = OrderedDict()
-                try:
-                    for position in truncations_new_possibilties[pos]:
-                        if position in c_vals:
-                            new_list[position] = c_vals[position]
-                        else:
-                            new_list[position] = ''
-                except:
-                    skip_this_one = 1
+                if pos not in truncations_new_possibilties:
+                    truncations_new_possibilties[pos] = []
+
+                for position in truncations_new_possibilties[pos]:
+                    if position in c_vals:
+                        new_list[position] = c_vals[position]
+                    else:
+                        new_list[position] = ''
 
                 # print(pclass,c_vals,new_list)
                 if pos!='cterm':
@@ -1203,9 +1202,7 @@ class ConstructStatistics(TemplateView):
 
 
 class ConstructTable(TemplateView):
-    """
-    Fetching construct data for browser
-    """
+    """Fetching construct data for browser."""
 
     template_name = "construct/residuetable.html"
 
@@ -1395,9 +1392,7 @@ class ConstructTable(TemplateView):
         return context
 
 class ConstructMutations(TemplateView):
-    """
-    Fetching construct data for browser
-    """
+    """Fetching construct data for browser."""
 
     template_name = "construct/mutations.html"
 
@@ -1502,7 +1497,7 @@ class ConstructMutations(TemplateView):
 
 
 def stabilisation_browser(request):
-    ''' View to display and summarise mutation data for thermostabilising mutational constructs. '''
+    """View to display and summarise mutation data for thermostabilising mutational constructs."""
 
 
     gpcr_class = ['001','002','003','004','005','006','007', '008']
@@ -1853,7 +1848,7 @@ def stabilisation_browser(request):
                    'position_only': mutation_groups["position_only"]})
 
 def conservation_table(prot_classes, gen_nums):
-    '''Calculate the conservation values needed for the thermostabilisation view'''
+    """Calculate the conservation values needed for the thermostabilisation view."""
     table = {}
 
     # Collect residue counts for all residues in the protein classes and at the generic number positions within the
@@ -1906,9 +1901,7 @@ def conservation_table(prot_classes, gen_nums):
     return table
 
 def get_calculated_columns(rule_tree, mutant, wild_type, g_n, prot_class, rec_fam, conservation): # pylint: disable=too-many-arguments
-
-    ''' Calculate the propensity, hydrophobicity and site info for the given mut & wt for each grouping'''
-
+    """Calculate the propensity, hydrophobicity and site info for the given mut & wt for each grouping."""
     # Get the conservation values for the protein class and receptor family
     class_cons = conservation.get((prot_class, g_n), {})
     fam_cons = conservation.get((rec_fam, g_n), {})
@@ -1931,9 +1924,7 @@ def get_calculated_columns(rule_tree, mutant, wild_type, g_n, prot_class, rec_fa
 
 
 def get_data_pos_grouping(rules):
-    '''
-    Calculate the Data and Site columns in the browser view for the position only analysis mode
-    '''
+    """Calculate the Data and Site columns in the browser view for the position only analysis mode."""
     # Note: an empty dictionary evaluates to False in an if statement,
     ionic_lock = 'Pos Match' if rules['ionic_lock_tree'] else u'\u2014'
     sodium_ion = 'Pos Match' if rules['sodium_ion_tree'] else u'\u2014'
@@ -1943,10 +1934,7 @@ def get_data_pos_grouping(rules):
     return (u'\u2014', u'\u2014', u'\u2014', u'\u2014', ionic_lock, sodium_ion, residue_switch)
 
 def get_data_mut_grouping(rules, mutant, class_cons, fam_cons):
-    '''
-    Calculate the Data and Site columns in the browser view for the pos & mut analysis mode
-    '''
-
+    """Calculate the Data and Site columns in the browser view for the pos & mut analysis mode."""
     # Note: an empty dictionary evaluates to False in an if statement,
     # Check that rules exist that apply to the class, position and gn.
     if rules['ionic_lock_tree']:
@@ -1984,9 +1972,7 @@ def get_data_mut_grouping(rules, mutant, class_cons, fam_cons):
 
 
 def get_data_wt_grouping(rules, wild_type, class_cons, fam_cons):
-    '''
-    Calculate the Data and Site columns in the browser view for the pos & wt analysis mode
-    '''
+    """Calculate the Data and Site columns in the browser view for the pos & wt analysis mode."""
     # # Note: an empty dictionary evaluates to False in an if statement,
     if rules['ionic_lock_tree']:
         # Note:  This is the simpliest, but not the most concise code.
@@ -2037,9 +2023,7 @@ def get_data_wt_grouping(rules, wild_type, class_cons, fam_cons):
             ionic_lock, sodium_ion, residue_switch)
 
 def get_data_all_grouping(rules, mutant, wild_type, class_cons, fam_cons):
-    '''
-    Calculate the Data and Site columns in the browser view for the pos, mut & wt analysis mode
-    '''
+    """Calculate the Data and Site columns in the browser view for the pos, mut & wt analysis mode."""
     # Get propensity fold change where possible
     mut = AA_PROPENSITY.get(mutant, u'\u2014')
     w_t = AA_PROPENSITY.get(wild_type, u'\u2014')
@@ -2224,9 +2208,7 @@ def fetch_pdb_for_webform(request, slug, **response_kwargs):
     return HttpResponse(jsondata, **response_kwargs)
 
 class ConstructBrowser(TemplateView):
-    """
-    Fetching construct data for browser
-    """
+    """Fetching construct data for browser."""
 
     template_name = "construct_browser.html"
 
@@ -2252,9 +2234,7 @@ class ConstructBrowser(TemplateView):
         return context
 
 class ExperimentBrowser(TemplateView):
-    """
-    Fetching construct data for browser
-    """
+    """Fetching construct data for browser."""
 
     template_name = "experimental_browser.html"
 

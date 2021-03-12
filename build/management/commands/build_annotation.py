@@ -11,7 +11,7 @@ from residue.functions import *
 from protein.models import Protein, ProteinConformation, ProteinSegment, ProteinFamily
 
 from Bio import pairwise2
-from Bio.SubsMat import MatrixInfo as matlist
+from Bio.Align import substitution_matrices
 
 import logging
 import os
@@ -277,7 +277,7 @@ class Command(BaseBuild):
         # if not positions[1]:
         #     pconfs = self.pconfs[positions[0]:]
         # else:
-        #     
+        #
         pconfs = self.pconfs
         proteins = list(self.non_xtal_seg_end)
 
@@ -442,7 +442,7 @@ class Command(BaseBuild):
             if len(s)<10:
                 print(counter,entry_name,"Something wrong with sequence")
             for i,aa in enumerate(s, start=1):
-                
+
 
                 # if i<170 or i>190:
                 #     continue
@@ -475,7 +475,7 @@ class Command(BaseBuild):
                 except:
                     print('failed 2nd try')
                 self.logger.error('Error saving residues for {}'.format(pconf))
-                    
+
             rs = Residue.objects.filter(protein_conformation=pconf).order_by('sequence_number')
 
             ThroughModel = Residue.alternative_generic_numbers.through
@@ -529,7 +529,7 @@ class Command(BaseBuild):
 
             al.append(res)
 
-        matrix = matlist.blosum62
+        matrix = substitution_matrices.load("BLOSUM62")
         gap_open = -10
         gap_extend = -0.5
 

@@ -6,85 +6,58 @@
 <link href="{% static 'home/css/bootstrap-responsive.css' %}" rel="stylesheet" media="screen">
 <link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
 <style>
-.node circle {
-  /*fill: #fff;*/
-  /*stroke: DarkGreen;*/
-  /*fill: DarkGreen;*/
-  stroke: #000000 ;
-  stroke-width: .3px;
-}
+  .node circle {
+    /*fill: #fff;*/
+    /*stroke: DarkGreen;*/
+    /*fill: DarkGreen;*/
+    stroke: #000000 ;
+    stroke-width: .3px;
+  }
 
-.node {
-  font: 8px sans-serif;
-}
+  .node {
+    font: 8px sans-serif;
+  }
 
-.link {
-  fill: none;
-  stroke: #eee;
-  stroke-width: 1px;
-}
+  .link {
+    fill: none;
+    stroke: #eee;
+    stroke-width: 1px;
+  }
 
-.node text {
-  font: 8px sans-serif;
-}
+  .node text {
+    font: 8px sans-serif;
+  }
 
-.links {
-  fill: none;
-  stroke: #000;
-}
+  .links {
+    fill: none;
+    stroke: #000;
+  }
 
-.link-extensions {
-  fill: none;
-  stroke: #000;
-  stroke-opacity: .25;
-}
+  .link-extensions {
+    fill: none;
+    stroke: #000;
+    stroke-opacity: .25;
+  }
 
+  .labels {
+    font: 14px Palatino;
+    font-weight: bold;
+  }
 
-body {
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  margin: 0;
-}
+  .link--active {
+    stroke: #000 !important;
+    stroke-width: 3.5px;
+  }
 
-/*#show-length {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-}*/
+  .link-extension--active {
+    stroke-opacity: .6;
+  }
 
-.links {
-  fill: none;
-  stroke: #000;
-}
-
-.link-extensions {
-  fill: none;
-  stroke: #000;
-  stroke-opacity: .25;
-}
-
-.labels {
-  font: 14px Palatino;
-  font-weight: bold;
-}
-
-.link--active {
-  stroke: #000 !important;
-  stroke-width: 3.5px;
-}
-
-.link-extension--active {
-  stroke-opacity: .6;
-}
-
-.label--active {
-  font-weight: bold;
-}
-
-
+  .label--active {
+    font-weight: bold;
+  }
 </style>
 {% endblock %}
-
-
 
 
 {% block content %}
@@ -214,7 +187,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
     <div id="unique" class="chart_container" style="display: none;">
         <div id="unique_cryst_container"><svg id="unique_cryst" style="width:800px;height:600px;"></svg></div>
         <script>
-        data_unique_cryst_container={{ chartdata|safe }};
+        data_unique_cryst_container = {{ chartdata|safe }};
         </script>
         <div class="btn-group">
             <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
@@ -730,7 +703,6 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
 
 {% block addon_js %}
 <script src="{% static 'home/js/bootstrap-toggle.min.js' %}"></script>
-<script src="{% static 'home/js/jquery.js' %}"></script>
 <script src="{% static 'home/js/d3.min.js' %}"></script>
 <script src="{% static 'home/js/nv.d3.min.js' %}"></script>
 <script src="{% static 'home/js/statistics.js' %}"></script>
@@ -738,7 +710,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
 <script src="{% static 'home/js/saveSvg.js' %}"></script>
 <script src="{% static 'home/js/phylo_tree.js' %}"></script>
 <script type="text/javascript" charset="utf-8">
-    $(window).on("load",function() {
+    $(window).on("load", function() {
         draw_tree(class_a, class_a_options);
         draw_tree(class_b1, class_b1_options);
         draw_tree(class_b2, class_b2_options);
