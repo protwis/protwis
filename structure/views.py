@@ -534,7 +534,14 @@ class StructureStatistics(TemplateView):
 		context['class_a_options']['anchor'] = 'class_a'
 		context['class_a_options']['leaf_offset'] = 50
 		context['class_a_options']['label_free'] = []
-		context['class_a'] = json.dumps(class_a_data.get_nodes_dict('crystals'))
+        # section to remove Orphan from Class A tree and apply to a different tree
+		whole_class_a = class_a_data.get_nodes_dict('crystals')
+		for item in whole_class_a['children']:
+			if item['name'] == 'Orphan':
+				orphan_data = OrderedDict([('name', ''), ('value', 3000), ('color', ''), ('children',[item])])
+				whole_class_a['children'].remove(item)
+				break
+		context['class_a'] = json.dumps(whole_class_a)
 		class_b1_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B1 (Secretin)'))
 		context['class_b1_options'] = deepcopy(tree.d3_options)
 		context['class_b1_options']['anchor'] = 'class_b1'
@@ -563,7 +570,18 @@ class StructureStatistics(TemplateView):
 		context['class_t2_options']['anchor'] = 'class_t2'
 		context['class_t2_options']['label_free'] = [1,]
 		context['class_t2'] = json.dumps(class_t2_data.get_nodes_dict('crystals'))
-
+		# definition of the class a orphan tree
+		context['orphan_options'] = deepcopy(tree.d3_options)
+		context['orphan_options']['anchor'] = 'orphan'
+		context['orphan_options']['label_free'] = [1,]
+		context['orphan'] = json.dumps(orphan_data)
+		whole_receptors = Protein.objects.prefetch_related("family", "family__parent__parent__parent").filter(sequence_type__slug="wt", family__slug__startswith="00")
+		whole_rec_dict = {}
+		for rec in whole_receptors:
+			rec_uniprot = rec.entry_short()
+			rec_iuphar = rec.family.name.replace("receptor", '').replace("<i>","").replace("</i>","").strip()
+			whole_rec_dict[rec_uniprot] = [rec_iuphar]
+		context["whole_receptors"] = json.dumps(whole_rec_dict)
 		return context
 
 	def get_families_dict(self, queryset, lookup):
