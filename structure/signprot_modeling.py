@@ -126,6 +126,7 @@ class SignprotModeling():
 
         # Superimpose missing regions H1 - hfs2
         alt_complex_struct = None
+        alt_signprot_complex = None
         segs_for_alt_complex_struct = []
         alt_templates_H_domain = self.get_alpha_templates(True)
 
@@ -473,7 +474,7 @@ class SignprotModeling():
             self.trimmed_residues.append('G.HG.14')
             self.trimmed_residues.append('G.HG.16')
             self.trimmed_residues.append('G.HG.17')
-        if structure_signprot!=self.target_signprot or ("alt_signprot_complex" in locals() and alt_signprot_complex.protein not in [None, self.target_signprot]):
+        if structure_signprot!=self.target_signprot or (alt_signprot_complex and alt_signprot_complex.protein not in [None, self.target_signprot]):
             # hbhc
             hbhc_keys = list(self.a.reference_dict['hbhc'].keys())
             self.trimmed_residues.append(hbhc_keys[2])

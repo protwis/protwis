@@ -75,7 +75,7 @@ class GPCRDBParsingPDB(object):
     def __init__(self):
         self.segment_coding = OrderedDict([(1,'TM1'),(2,'TM2'),(3,'TM3'),(4,'TM4'),(5,'TM5'),(6,'TM6'),(7,'TM7'),(8,'H8')])
 
-    @classmethod
+    @staticmethod
     def parse_rotamer_pdb(rotamer):
         atoms_list = []
         io = StringIO(rotamer.pdbdata.pdb)
@@ -348,7 +348,7 @@ class GPCRDBParsingPDB(object):
                             output[found_res.protein_segment.slug][found_gn] = res
         return output
 
-    @classmethod
+    @staticmethod
     def create_g_alpha_pdb_array(signprot_complex):
         parent_residues = Residue.objects.filter(protein_conformation__protein=signprot_complex.protein)
         pdb_array = OrderedDict()
@@ -661,14 +661,6 @@ class LoopRemodel(automodel):
         self.model_chains = model_chains
         self.start_resnums = start_resnums
         self.icl3_delete = icl3_delete
-        print('gaps')
-        print(self.gaps)
-        print('chains')
-        print(self.model_chains)
-        print('start resnums')
-        print(self.start_resnums)
-        print('icl3 delete')
-        print(self.icl3_delete)
         
     def special_patches(self, aln):
         # Rename chains and renumber the residues in each

@@ -230,7 +230,7 @@
                         {% endif %}
                         <td>
                             {% if structure.refined %}
-                            <a href="homology_models/{{ structure.pdb_code.index }}_refined">{{structure.pdb_code.index}}_refined</a>
+                            <a href="homology_models/{{ structure.pdb_code.index }}_{{structure.state.slug}}">{{structure.pdb_code.index}}_refined</a>
                             {% else %}
                             -
                             {% endif %}

@@ -292,10 +292,7 @@ class Command(BaseBuild):
         io.set_structure(PDB_residue)
         io.save(out_stream)
         pdbdata = PdbData.objects.get_or_create(pdb=out_stream.getvalue())[0]
-        if not atom_num_dict[Polypeptide.three_to_one(PDB_residue.get_resname())] > len(PDB_residue.get_unpacked_list()):
-            missing_atoms = False
-        else:
-            missing_atoms = True
+        missing_atoms = atom_num_dict[Polypeptide.three_to_one(PDB_residue.get_resname())] > len(PDB_residue.get_unpacked_list())
         rot = Rotamer(missing_atoms=missing_atoms, pdbdata=pdbdata, residue=residue_object, structure=structure)
         return rot
 
