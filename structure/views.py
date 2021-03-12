@@ -540,6 +540,7 @@ class StructureStatistics(TemplateView):
 			if item['name'] == 'Orphan':
 				orphan_data = OrderedDict([('name', ''), ('value', 3000), ('color', ''), ('children',[item])])
 				whole_class_a['children'].remove(item)
+				break
 		context['class_a'] = json.dumps(whole_class_a)
 		class_b1_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B1 (Secretin)'))
 		context['class_b1_options'] = deepcopy(tree.d3_options)
@@ -574,7 +575,7 @@ class StructureStatistics(TemplateView):
 		context['orphan_options']['anchor'] = 'orphan'
 		context['orphan_options']['label_free'] = [1,]
 		context['orphan'] = json.dumps(orphan_data)
-		whole_receptors = Protein.objects.prefetch_related("family", "family__parent__parent__parent")
+		whole_receptors = Protein.objects.prefetch_related("family", "family__parent__parent__parent").filter(sequence_type__slug="wt", family__slug__startswith="00")
 		whole_rec_dict = {}
 		for rec in whole_receptors:
 			rec_uniprot = rec.entry_short()

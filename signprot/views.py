@@ -429,7 +429,7 @@ def CouplingProfiles(request, render_part="both"):
 
     context = cache.get(name_of_cache)
     # NOTE cache disabled for development only!
-    # context = None
+    context = None
     if context == None:
 
         context = OrderedDict()
@@ -449,6 +449,7 @@ def CouplingProfiles(request, render_part="both"):
             if item['name'] == 'Orphan':
                 orphan_data = OrderedDict([('name', ''), ('value', 3000), ('color', ''), ('children',[item])])
                 whole_class_a['children'].remove(item)
+                break
         context['tree_class_a'] = json.dumps(whole_class_a)
         class_b1_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B1 (Secretin)'))
         context['tree_class_b1_options'] = deepcopy(tree.d3_options)
@@ -582,11 +583,9 @@ def CouplingProfiles(request, render_part="both"):
             # context[slug_translate[slug]+"_keys"] = list(jsondata.keys())
             context[slug_translate[slug]+"_gtp_plus"] = jsondata_gtp_plus
             context[slug_translate[slug]+"_gtp_plus_keys"] = list(jsondata_gtp_plus.keys())
-        table['Gs'].append((sum([pair[0] for pair in table['Gs']]),' '.join([pair[1] for pair in table['Gs']])+' '))
-        table['GiGo'].append((sum([pair[0] for pair in table['GiGo']]),' '.join([pair[1] for pair in table['GiGo']])+' '))
-        table['GqG11'].append((sum([pair[0] for pair in table['GqG11']]),' '.join([pair[1] for pair in table['GqG11']])+' '))
-        table['G12G13'].append((sum([pair[0] for pair in table['G12G13']]),' '.join([pair[1] for pair in table['G12G13']])+' '))
-        table['Total'].append((sum([pair[0] for pair in table['Total']]),' '.join([pair[1] for pair in table['Total']])+' '))
+
+        for key in list(table.keys())[1:]:
+            table[key].append((sum([pair[0] for pair in table[key]]),' '.join([pair[1] for pair in table[key]])+' '))
         # context["selectivitydata"] = selectivitydata
         context["selectivitydata_gtp_plus"] = selectivitydata_gtp_plus
         context["table"] = table
@@ -605,7 +604,7 @@ def CouplingProfiles(request, render_part="both"):
             rec_iuphar = p.family.name.replace("receptor", '').replace("<i>","").replace("</i>","").strip()
             receptor_dictionary[rec_uniprot] = [rec_class, rec_ligandtype, rec_family, rec_uniprot, rec_iuphar]
 
-        whole_receptors = Protein.objects.prefetch_related("family", "family__parent__parent__parent")
+        whole_receptors = Protein.objects.prefetch_related("family", "family__parent__parent__parent").filter(sequence_type__slug="wt", family__slug__startswith="00")
         whole_rec_dict = {}
         for rec in whole_receptors:
             rec_uniprot = rec.entry_short()

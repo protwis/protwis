@@ -207,6 +207,17 @@ function draw_tree(data, options) {
     }
 }
 
+
+/**
+* changeLeavesLabels
+*
+* Function designed to change label names of phylo tree
+*
+* @location {string} argOne - svg in which to draw outer circles
+* @value {string} argTwo - either IUPHAR or UniProt for label names
+* @dict {dictionary} argFour - the translation dictionary for label names (from IUPHAR to UniProt and vice versa)
+*/
+
 function changeLeavesLabels(location, value, dict){
   // Initialize leaf node length
   maxLeafNodeLenght = 0;
@@ -255,10 +266,17 @@ function changeLeavesLabels(location, value, dict){
   });
 }
 
-// location: svg in which to draw outer circles
-// data: data provided by the view
-// starter: the max length of the leaves, to start drawing the circles
-// dict: the translation dictionary for color codes
+/**
+* DrawCircles
+*
+* Function designed to append data circles on the external part of phylo tree
+*
+* @location {string} argOne - svg in which to draw outer circles
+* @data {Object} argTwo - data provided by the view (json dict usually)
+* @starter {integer} argThree - the max length of the leaves, to start drawing the circles (calculated by changeLeavesLabels)
+* @dict {dictionary} argFour - the translation dictionary for color codes
+*/
+
 function DrawCircles(location, data, starter, dict){
     var spacer = 8;
     var svg = d3.select('#'+location);
