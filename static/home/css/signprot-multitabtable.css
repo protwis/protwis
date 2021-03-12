@@ -168,12 +168,9 @@ input.yadcf-filter {
 }
 
 /* NOTE -- THIS HAS TO GO LAST SO THAT IT OVERRIDES ALL */
-th, td {
-  white-space: nowrap;
-}
+th, td { white-space: nowrap; }
 
 div.dataTables_wrapper {
-  /*    width: 100%;*/
   margin: 0 auto;
 }
 
