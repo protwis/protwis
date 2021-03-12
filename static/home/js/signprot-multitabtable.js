@@ -142,8 +142,8 @@ function createRank(table_id, column) {
  * @param {object} stateVal Current DOM state of the row (not sufficient in this case)
  * @returns {boolean} true if row contains selected target otherwise false
  */
-var counter = 0;
-function rankedRangeFilter(filterVal, columnVal, rowValues, stateVal) {
+let counter = 0;
+function rankedRangeFiltert1(filterVal, columnVal, rowValues, stateVal) {
     // DEBUG
     /*if (counter < 1) {
         counter++;
@@ -155,14 +155,14 @@ function rankedRangeFilter(filterVal, columnVal, rowValues, stateVal) {
 
     let column_value = $(columnVal).text();
     let column_nr = $(columnVal).attr("data-column-nr");
-    let min_filtering = parseFloat($("#ranked_range_min_" + column_nr).val());
-    let max_filtering = parseFloat($("#ranked_range_max_" + column_nr).val());
-    let rank_filtering = parseFloat($("#ranked_range_rank_" + column_nr).val());
+    let min_filtering = parseFloat($("#ranked_range_min1_" + column_nr).val());
+    let max_filtering = parseFloat($("#ranked_range_max1_" + column_nr).val());
+    let rank_filtering = parseFloat($("#ranked_range_rank1_" + column_nr).val());
 
     if (!isNaN(rank_filtering) && lastRangeRankFilter!=="max" && lastRangeRankFilter!=="min") {
       // If filtering on rank - clean range filter
-      $("#ranked_range_min_" + column_nr).val("");
-      $("#ranked_range_max_" + column_nr).val("");
+      $("#ranked_range_min1_" + column_nr).val("");
+      $("#ranked_range_max1_" + column_nr).val("");
 
       let ranked_value = parseFloat($(columnVal).attr("data-normalized"));
       if (isNaN(ranked_value)) {
@@ -172,7 +172,7 @@ function rankedRangeFilter(filterVal, columnVal, rowValues, stateVal) {
       }
     } else if (!isNaN(min_filtering) || !isNaN(max_filtering)) {
         // If filtering on range - clean rank filter
-        $("#ranked_range_rank_" + column_nr).val("");
+        $("#ranked_range_rank1_" + column_nr).val("");
 
         // Filter range on current columnVal
         let range_value = parseFloat(column_value);
@@ -194,6 +194,56 @@ function rankedRangeFilter(filterVal, columnVal, rowValues, stateVal) {
     }
 }
 
+function rankedRangeFiltert2(filterVal, columnVal, rowValues, stateVal) {
+    // DEBUG
+    /*if (counter < 1) {
+        counter++;
+        console.log("FILTERING FOR", filterVal);
+        console.log(columnVal);
+        console.log(rowValues);
+        console.log(stateVal);
+    }*/
+
+    let column_value = $(columnVal).text();
+    let column_nr = $(columnVal).attr("data-column-nr");
+    let min_filtering = parseFloat($("#ranked_range_min2_" + column_nr).val());
+    let max_filtering = parseFloat($("#ranked_range_max2_" + column_nr).val());
+    let rank_filtering = parseFloat($("#ranked_range_rank2_" + column_nr).val());
+
+    if (!isNaN(rank_filtering) && lastRangeRankFilter!=="max" && lastRangeRankFilter!=="min") {
+      // If filtering on rank - clean range filter
+      $("#ranked_range_min2_" + column_nr).val("");
+      $("#ranked_range_max2_" + column_nr).val("");
+
+      let ranked_value = parseFloat($(columnVal).attr("data-normalized"));
+      if (isNaN(ranked_value)) {
+          return false;
+      } else {
+          return ranked_value <= rank_filtering;
+      }
+    } else if (!isNaN(min_filtering) || !isNaN(max_filtering)) {
+        // If filtering on range - clean rank filter
+        $("#ranked_range_rank2_" + column_nr).val("");
+
+        // Filter range on current columnVal
+        let range_value = parseFloat(column_value);
+         if (isNaN(range_value)) {
+              return false;
+          } else {
+             if (!isNaN(min_filtering) && !isNaN(max_filtering)) {
+                return range_value >= min_filtering && range_value <= max_filtering;
+             } else if (!isNaN(min_filtering)) {
+                  return range_value >= min_filtering;
+              } else if(!isNaN(max_filtering)) {
+                 return range_value <= max_filtering;
+             } else {
+                  // Should never happen
+              }
+          }
+    } else {
+        return true;
+    }
+}
 
 /**
  * This is a custom YADCF function that checks ....
@@ -215,34 +265,49 @@ function supportFilter(filterVal, columnVal, rowValues, stateVal){
  * When there's a need to repeat the same yadcf filter_type one can use this function to concatenate
  * the range_number filter_type.
  */
-function make_range_number_cols(start_column, repeat_number) {
-    var from_to = {
-        filter_type: "range_number",
-        filter_default_label: ["Min", "Max"],
-        filter_reset_button_text: false
+function make_range_number_cols(start_column, repeat_number, tab) {
+    let from_to1 = {
+        filter_type: "custom_func",
+        custom_func: rankedRangeFiltert1,
     };
-    var repeated_from_to = [];
-    for (let i = start_column; i < start_column + repeat_number; i++) {
-        let column_info = Object.assign({}, from_to);
-        column_info["column_number"] = i;
-        repeated_from_to.push(column_info);
+    let from_to2 = {
+        filter_type: "custom_func",
+        custom_func: rankedRangeFiltert2,
+    };
+    let repeated_from_to1 = [];
+    let repeated_from_to2 = [];
+    if (tab == "famtab") {
+        for (let i = start_column; i < start_column + repeat_number; i++) {
+            let column_info = Object.assign({}, from_to1);
+            column_info["column_number"] = i;
+            column_info["filter_container_id"] = "hide_rankfam" + i;
+            repeated_from_to1.push(column_info);
+        }
+        return repeated_from_to1;
+    } else if (tab == "subtab") {
+        for (let i = start_column; i < start_column + repeat_number; i++) {
+            let column_info = Object.assign({}, from_to2);
+            column_info["column_number"] = i;
+            column_info["filter_container_id"] = "hide_ranksub" + i;
+            repeated_from_to2.push(column_info);
+        }
+        return repeated_from_to2;
+    } else {
+        //
     }
-    return repeated_from_to;
 }
 
-var lastRangeRankFilter = "";
+repfilterfamtab = make_range_number_cols(10, 12, "famtab");
+repfiltersubtab = make_range_number_cols(10, 40, "subtab");
+
+let lastRangeRankFilter = "";
+
 $(document).ready(function() {
 // Activate tooltips and popovers from Bootstrap   * Bootstrap v3.3.7 (http://getbootstrap.com)
     $("[data-toggle='tooltip']").tooltip();
     $("[data-toggle='popover']").popover();
 
-//     $('a[data-toggle="tab"]').on("shown.bs.tab", function (e) {
-// //      console.log( 'show tab' );
-//         $($.fn.dataTable.tables(true)).DataTable()
-//             .columns.adjust().responsive;
-//     });
-
-    // Try initializing the rank
+// Create the ranks for the families table
 for (let i=11; i <= 22; i++) {
     createRank("#familiestabletab", i); // GS
 }
@@ -380,94 +445,14 @@ for (let i=11; i <= 22; i++) {
                 },
             },
 
-// log(Emax/EC50)
-            {
-                column_number: 10,
-                filter_type: "custom_func",
-                custom_func: rankedRangeFilter,
-                filter_container_id: "hide_ranked10",
-            },
-            {
-                column_number : 11,
-                filter_type: "custom_func",
-                custom_func: rankedRangeFilter,
-                filter_container_id: "hide_ranked11",
-            },
-            {
-                column_number : 12,
-                filter_type: "custom_func",
-                custom_func: rankedRangeFilter,
-                filter_container_id: "hide_ranked12",
-            },
-            {
-                column_number : 13,
-                filter_type: "custom_func",
-                custom_func: rankedRangeFilter,
-                filter_container_id: "hide_ranked13",
-            },
-
-// pEC50
-            {
-                column_number : 14,
-                filter_type: "custom_func",
-                custom_func: rankedRangeFilter,
-                filter_container_id: "hide_ranked14",
-            },
-            {
-                column_number : 15,
-                filter_type: "custom_func",
-                custom_func: rankedRangeFilter,
-                filter_container_id: "hide_ranked15",
-            },
-            {
-                column_number : 16,
-                filter_type: "custom_func",
-                custom_func: rankedRangeFilter,
-                filter_container_id: "hide_ranked16",
-            },
-            {
-                column_number : 17,
-                filter_type: "custom_func",
-                custom_func: rankedRangeFilter,
-                filter_container_id: "hide_ranked17",
-            },
-
-// Emax
-            {
-                column_number : 18,
-                filter_type: "custom_func",
-                custom_func: rankedRangeFilter,
-                filter_container_id: "hide_ranked18",
-            },
-            {
-                column_number : 19,
-                filter_type: "custom_func",
-                custom_func: rankedRangeFilter,
-                filter_container_id: "hide_ranked19",
-            },
-            {
-                column_number : 20,
-                filter_type: "custom_func",
-                custom_func: rankedRangeFilter,
-                filter_container_id: "hide_ranked20",
-            },
-            {
-                column_number : 21,
-                filter_type: "custom_func",
-                custom_func: rankedRangeFilter,
-                filter_container_id: "hide_ranked21",
-            },
-
-
-// Hidden column calling a customized function
+// Hidden GPCRdb support type column calls customized function
             {
                 column_number: 22,
                 filter_type: "custom_func",
                 custom_func: supportFilter,
                 filter_container_id: "hide_filter1",
             },
-
-        ],
+        ].concat(repfilterfamtab),
 
         {filters_tr_index: 2},
 
@@ -477,12 +462,11 @@ for (let i=11; i <= 22; i++) {
     );
 
     // Initialize ranked Range Filtering options
-    // $(".ranked_range_min").on("input", function(event){
-    $(".ranked_range_min, .ranked_range_max, .ranked_range_rank").on("click", function(event) {
+    $(".ranked_range_min1, .ranked_range_max1, .ranked_range_rank1").on("click", function(event) {
         event.stopPropagation();
     });
 
-    $(".ranked_range_min, .ranked_range_max, .ranked_range_rank").on("input", function(event){
+    $(".ranked_range_min1, .ranked_range_max1, .ranked_range_rank1").on("input", function(event) {
         // Get column #
         let column_nr = event.target.id.split("_")[3];
 
@@ -490,8 +474,8 @@ for (let i=11; i <= 22; i++) {
         lastRangeRankFilter = event.target.id.split("_")[2];
 
         // SELECT one option in real YADCF filter to trick YADCF into calling the filter function
-        let adjust_node = $("#yadcf-filter--familiestabletab-" + column_nr + " option").filter(":nth-child(2)").first();
-        adjust_node.prop("selected", true);
+        let adjust_node1 = $("#yadcf-filter--familiestabletab-" + column_nr + " option").filter(":nth-child(2)").first();
+        adjust_node1.prop("selected", true);
 
         // Invoke filtering
         $("#yadcf-filter--familiestabletab-" + column_nr).change();
@@ -506,8 +490,7 @@ for (let i=11; i <= 22; i++) {
     yadcf.exFilterColumn(oTable1, [[22, 2]]);
 //    yadcf.exResetAllFilters(oTable1);
 
-
-//  Select clicked-on boxes
+//  Select clicked-on boxes for families table
     $("#familiestabletab"+" > tbody > tr").click(function(event) {
         if (event.target.type !== "checkbox") {
             $(":checkbox", this).trigger("click");
@@ -516,21 +499,6 @@ for (let i=11; i <= 22; i++) {
         }
         $(this).eq(0).toggleClass("alt_selected");
         $(this).find("td").toggleClass("highlight");
-    });
-
-// Select all boxes in table
-    $(".select-all").click(function() {
-        $(":checkbox", this).trigger("click");
-        if ($(this).prop("checked")===true) {
-            $(".alt").prop("checked", true);
-            $(".alt").parent().parent().addClass("alt_selected");
-            $(".alt").parent().parent().find("td").addClass("highlight");
-        }
-        if ($(this).prop("checked")===false) {
-            $(".alt").prop("checked", false);
-            $(".alt").parent().parent().removeClass("alt_selected");
-            $(".alt").parent().parent().find("td").removeClass("highlight");
-        }
     });
 
     console.timeEnd("table1load");
@@ -542,7 +510,10 @@ for (let i=11; i <= 22; i++) {
 
 
 
-
+// Create the ranks for the subtypes table
+for (let i=11; i <= 49; i++) {
+    createRank("#subtypestabletab", i); // GS
+}
 // ===============
 // Subtypes Table
 // ===============
@@ -567,10 +538,14 @@ for (let i=11; i <= 22; i++) {
         ],
     });
 
-//    repeated_from_to_1 = make_range_number_cols(35, 14);
-
     yadcf.init(oTable2,
         [
+            {
+                column_number: 0,
+                filter_type: "none",
+                filter_default_label: "",
+                filter_reset_button_text: false,
+            },
             {
                 column_number: 1,
                 filter_type: "multi_select",
@@ -671,267 +646,52 @@ for (let i=11; i <= 22; i++) {
                 },
             },
 
-// log(Emax/EC50)
-            {
-                column_number : 10,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 11,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 12,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 13,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 14,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 15,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 16,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 17,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 18,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 19,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 20,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 21,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 22,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-
-// pEC50
-            {
-                column_number : 23,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 24,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 25,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 26,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 27,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 28,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 29,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 30,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 31,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 32,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 33,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 34,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 35,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-
-// Emax
-            {
-                column_number : 36,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 37,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 38,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 39,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 40,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 41,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 42,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 43,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 44,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 45,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 46,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 47,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 48,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-
-
+// Hidden GPCRdb support type column calls customized function
             {
                 column_number: 49,
                 filter_type: "custom_func",
                 custom_func: supportFilter,
                 filter_container_id: "hide_filter2",
             },
-        ],
-//        ].concat(repeated_from_to_1),
+        ].concat(repfiltersubtab),
 
         {
-            filters_tr_index: 2
+            filters_tr_index: 3
         },
 
         {
-            cumulative_filtering: true
+            cumulative_filtering: false
         }
     );
 
+    // Initialize ranked Range Filtering options
+    $(".ranked_range_min2, .ranked_range_max2, .ranked_range_rank2").on("click", function(event) {
+        event.stopPropagation();
+    });
+
+    $(".ranked_range_min2, .ranked_range_max2, .ranked_range_rank2").on("input", function(event) {
+        // Get column #
+        let column_nr = event.target.id.split("_")[3];
+
+        // Store current type of filtering globally
+        lastRangeRankFilter = event.target.id.split("_")[2];
+
+        // SELECT one option in real YADCF filter to trick YADCF into calling the filter function
+        let adjust_node1 = $("#yadcf-filter--subtypestabletab-" + column_nr + " option").filter(":nth-child(2)").first();
+        adjust_node1.prop("selected", true);
+
+        // Invoke filtering
+        $("#yadcf-filter--subtypestabletab-" + column_nr).change();
+
+        // Clean filter type
+        lastRangeRankFilter = "";
+    });
+
+
+
     yadcf.exFilterColumn(oTable2, [[49, 2]]);
 
+//  Select clicked-on boxes for subtypes table
     $("#subtypestabletab"+" > tbody > tr").click(function(event) {
         if (event.target.type !== "checkbox") {
             $(":checkbox", this).trigger("click");
@@ -942,21 +702,37 @@ for (let i=11; i <= 22; i++) {
         $(this).find("td").toggleClass("highlight");
     });
 
+// Select all boxes in table
+    $(".select-all").click(function() {
+        $(":checkbox", this).trigger("click");
+        if ($(this).prop("checked")===true) {
+            $(".alt").prop("checked", true);
+            $(".alt").parent().parent().addClass("alt_selected");
+            $(".alt").parent().parent().find("td").addClass("highlight");
+        }
+        if ($(this).prop("checked")===false) {
+            $(".alt").prop("checked", false);
+            $(".alt").parent().parent().removeClass("alt_selected");
+            $(".alt").parent().parent().find("td").removeClass("highlight");
+        }
+    });
+
 //    yadcf.exResetAllFilters(oTable2);
-//    setTimeout(() => {
-//        console.timeEnd("table2load");
-//    }, );
     console.timeEnd("table2load");
 
+
+
+
+
+
+
+// =============================================================================
+// GENERAL OPTIONS
+// =============================================================================
 
 // By default display the first tab. If this is not ON, one has to click on the tab for display.
     $("#couplingtabs a:first").tab("show");
 //    $('#couplingtabs a[href="#table_1"]').tab('show');
-
-// // Just a button to go back to the main page.
-//     $("#reset_tab").click(function () {
-//         window.location.href = "/signprot/couplings";
-//     });
 
 // Hide column button for table1
     $(".hide_columns1").click(function(evt) {
@@ -988,7 +764,6 @@ for (let i=11; i <= 22; i++) {
         oTable2.draw();
     } );
 
-
 // Put top scroller
 // https://stackoverflow.com/questions/35147038/how-to-place-the-datatables-horizontal-scrollbar-on-top-of-the-table
 //    console.time("scroll to top");
@@ -1001,12 +776,10 @@ for (let i=11; i <= 22; i++) {
     });
 //    console.timeEnd("scroll to top");
 
-
-
 // =============================================================================
 // START OVERLAY COLUMNS CODE HERE
 // =============================================================================
-    let toggle_enabled = true;
+    let toggle_enabled = false;
     $("#toggle_fixed_btn1").click(function() {
         if (toggle_enabled) {
             toggle_enabled = false;
@@ -1196,10 +969,9 @@ for (let i=11; i <= 22; i++) {
         copyToClipboard($(".alt_selected > .uniprot2 > a"), "\n", "UniProt IDs", $(".uniprot-export2"));
     });
 
-    //Uncheck every row when using back button on browser
-    $(".alt_selected").prop("checked",false);
-    $(".alt").prop("checked",false);
-    $(".select-all").prop("checked",false);
-
+//Uncheck every row when using back button on browser
+    $(".alt_selected").prop("checked", false);
+    $(".alt").prop("checked", false);
+    $(".select-all").prop("checked", false);
 
 });

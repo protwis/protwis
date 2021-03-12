@@ -46,7 +46,7 @@
                     <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown"
                             aria-haspopup="true" aria-expanded="false">
                         <span class="caret"></span>
-                        {#                        <span class="sr-only">Toggle Dropdown</span>#}
+                        <span class="sr-only">Toggle Dropdown</span>
                     </button>
                     <ul class="dropdown-menu">
                         <li><a href="#" onclick="yadcf.exFilterColumn(oTable1, [[22, 2]]);">Default (At least in 2)</a></li>
@@ -91,9 +91,9 @@
                     </th>
                     <th colspan=4 style='height:35px; text-align:left;'>
                         Log(Emax/EC50)
-                        {#                        <span data-toggle="tooltip" data-placement="rigth" class="glyphicon glyphicon-info-sign"#}
-                        {#                              title="Max of G protein family members">#}
-                        {#                        </span>#}
+{#                        <span data-toggle="tooltip" data-placement="rigth" class="glyphicon glyphicon-info-sign"#}
+{#                              title="Max of G protein family members">#}
+{#                        </span>#}
                         <span data-toggle="popover" data-placement="bottom" class="glyphicon glyphicon-info-sign"
                               title="Info" data-content="Max of G protein family members">
                         </span>
@@ -149,14 +149,14 @@
 
                     {% for n in "x"|rjust:"12" %}
 <th>
-<input  placeholder="Min" id="ranked_range_min_{{ forloop.counter|add:"9" }}"
- class="yadcf-filter-range-number yadcf-filter-range ranked_range_min">
+<input  placeholder="Min" id="ranked_range_min1_{{ forloop.counter|add:"9" }}"
+ class="yadcf-filter-range-number yadcf-filter-range ranked_range_min1">
 <span class="yadcf-filter-range-number-seperator"></span><br>
-<input  placeholder="Max" id="ranked_range_max_{{ forloop.counter|add:"9" }}"
- class="yadcf-filter-range-number yadcf-filter-range ranked_range_max">
+<input  placeholder="Max" id="ranked_range_max1_{{ forloop.counter|add:"9" }}"
+ class="yadcf-filter-range-number yadcf-filter-range ranked_range_max1">
 <span class="yadcf-filter-range-number-seperator"></span><br>
-<input  placeholder="Rank" id="ranked_range_rank_{{ forloop.counter|add:"9" }}"
-class="yadcf-filter-range-number yadcf-filter-range ranked_range_rank">
+<input  placeholder="Rank" id="ranked_range_rank1_{{ forloop.counter|add:"9" }}"
+class="yadcf-filter-range-number yadcf-filter-range ranked_range_rank1">
 </th>
                     {% endfor %}
                     <th></th>
@@ -196,11 +196,11 @@ class="yadcf-filter-range-number yadcf-filter-range ranked_range_rank">
                             {% endfor %}
 
                             {% for q, pecval in cvals.pec50.items %}
-                                <td>{{ pecval }}</td>
+                                <td><span>{{ pecval }}</span></td>
                             {% endfor %}
 
                             {% for q, maxval in cvals.emax.items %}
-                                <td>{{ maxval }}</td>
+                                <td><span>{{ maxval }}</span></td>
                             {% endfor %}
 
                             <td>{{ c }}</td>
@@ -213,12 +213,17 @@ class="yadcf-filter-range-number yadcf-filter-range ranked_range_rank">
 
 
             </table>
-            <div id="hide_filter1" style="display: none;">></div>
+            <div id="hide_filter1"></div>
             {% for n in "x"|rjust:"12" %}
-                <div id="hide_ranked{{ forloop.counter|add:"9" }}" style="display: none;">></div>
+                <div id="hide_rankfam{{ forloop.counter|add:"9" }}" style="display: none;"></div>
             {% endfor %}
 
         </div>
+
+
+
+
+
 
         {# ====================================================================== #}
         {# SUBTYPES TAB STARTS HERE id='subtypestabletab' connects to js #}
@@ -322,6 +327,28 @@ class="yadcf-filter-range-number yadcf-filter-range ranked_range_rank">
                     <th></th>
                 </tr>
 
+                <tr class="under_header">
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    {% for p, subval in header.items  %}
+                        <th></th>
+                    {% endfor %}
+                    {% for n in "x"|rjust:"3" %}
+                        {% for subval in subunitheader %}
+                            <th>
+                                {{ subval}}
+                            </th>
+                        {% endfor %}
+                    {% endfor %}
+                    <th></th>
+                </tr>
+
+
+
                 <tr>
                     <th class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
                     <th></th>
@@ -333,12 +360,17 @@ class="yadcf-filter-range-number yadcf-filter-range ranked_range_rank">
                         <th></th>
                     {% endfor %}
 
-                    {% for n in "x"|rjust:"3" %}
-                        {% for subval in subunitheader %}
-                            <th>
-                                {{ subval}}
-                            </th>
-                        {% endfor %}
+                    {% for n in "x"|rjust:"39" %}
+<th>
+<input  placeholder="Min" id="ranked_range_min2_{{ forloop.counter|add:"9" }}"
+ class="yadcf-filter-range-number yadcf-filter-range ranked_range_min2">
+<span class="yadcf-filter-range-number-seperator"></span><br>
+<input  placeholder="Max" id="ranked_range_max2_{{ forloop.counter|add:"9" }}"
+ class="yadcf-filter-range-number yadcf-filter-range ranked_range_max2">
+<span class="yadcf-filter-range-number-seperator"></span><br>
+<input  placeholder="Rank" id="ranked_range_rank2_{{ forloop.counter|add:"9" }}"
+class="yadcf-filter-range-number yadcf-filter-range ranked_range_rank2">
+</th>
                     {% endfor %}
 
                     <th></th>
@@ -363,7 +395,7 @@ class="yadcf-filter-range-number yadcf-filter-range ranked_range_rank">
                             </td>
                             <td class="text-left">
                                 <a href="{{ pvals.protein.gtp_link }}" target="_blank">{{ pvals.protein.iuphar|safe }}</a>
-                                {#                                <a href="https://gpcrdb.org/protein/{{ pvals.protein.entryname }}" target="_blank">{{ pvals.protein.iuphar|safe }}</a>#}
+{#                                <a href="https://gpcrdb.org/protein/{{ pvals.protein.entryname }}" target="_blank">{{ pvals.protein.iuphar|safe }}</a>#}
                             </td>
                             <td>{{ pvals.protein.gs }}</td>
                             <td>{{ pvals.protein.gio }}</td>
@@ -371,15 +403,15 @@ class="yadcf-filter-range-number yadcf-filter-range ranked_range_rank">
                             <td>{{ pvals.protein.g1213 }}</td>
 
                             {% for q, logval in cvals.logemaxec50.items %}
-                                <td>{{ logval }}</td>
+                                <td><span>{{ logval }}</span></td>
                             {% endfor %}
 
                             {% for q, pecval in cvals.pec50.items %}
-                                <td>{{ pecval }}</td>
+                                <td><span>{{ pecval }}</span></td>
                             {% endfor %}
 
                             {% for q, maxval in cvals.emax.items %}
-                                <td>{{ maxval }}</td>
+                                <td><span>{{ maxval }}</span></td>
                             {% endfor %}
 
                             <td>{{ c }}</td>
@@ -392,6 +424,11 @@ class="yadcf-filter-range-number yadcf-filter-range ranked_range_rank">
 
             </table>
             <div id="hide_filter2"></div>
+            {% for n in "x"|rjust:"40" %}
+                <div id="hide_ranksub{{ forloop.counter|add:"9" }}" style="display: none;"></div>
+            {% endfor %}
+
+
         </div>
 
     </div>

@@ -39,6 +39,10 @@ table.dataTable.compact thead tr.over_header th {
     border-bottom: 1px solid #ccc;
 }
 
+table.dataTable.compact thead tr.under_header th {
+    border-style: none;
+}
+
 table.dataTable.compact thead th.leftborder {
     border-left: 1px solid;
 }
