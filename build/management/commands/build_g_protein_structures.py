@@ -284,13 +284,14 @@ class Command(BaseBuild):
         if options["debug"]:
             print(datetime.datetime.now() - startTime)
 
-    def create_structure_rotamer(self, PDB_residue, residue_object, structure):
+    @classmethod
+    def create_structure_rotamer(PDB_residue, residue_object, structure):
         out_stream = StringIO()
         io = PDBIO()
         # print(PDB_residue)
         io.set_structure(PDB_residue)
         io.save(out_stream)
-        pdbdata, created = PdbData.objects.get_or_create(pdb=out_stream.getvalue())
+        pdbdata = PdbData.objects.get_or_create(pdb=out_stream.getvalue())[0]
         if not atom_num_dict[Polypeptide.three_to_one(PDB_residue.get_resname())] > len(PDB_residue.get_unpacked_list()):
             missing_atoms = False
         else:
@@ -298,7 +299,8 @@ class Command(BaseBuild):
         rot = Rotamer(missing_atoms=missing_atoms, pdbdata=pdbdata, residue=residue_object, structure=structure)
         return rot
 
-    def get_next_presumed_cgn(self, res):
+    @classmethod
+    def get_next_presumed_cgn(res):
         try:
             next_num = str(int(res.display_generic_number.label[-2:])+1)
             if len(next_num)==1:
@@ -418,8 +420,10 @@ class Command(BaseBuild):
                 pub = None
         # PDB data
         url = 'https://www.rcsb.org/pdb/files/{}.pdb'.format(pdb)
-        pdbdata_raw = urllib.request.urlopen(url).read().decode('utf-8')
-        pdbdata_object, pdbdata_object_created = PdbData.objects.get_or_create(pdb=pdbdata_raw)
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req) as response:
+            pdbdata_raw = response.read().decode('utf-8')
+        pdbdata_object = PdbData.objects.get_or_create(pdb=pdbdata_raw)[0]
         ss.pdb_code = pdb_code
         ss.structure_type = structure_type
         ss.resolution = data["resolution"]

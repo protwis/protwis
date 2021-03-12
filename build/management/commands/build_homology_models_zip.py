@@ -5,7 +5,7 @@ from django.db import connection
 
 from protein.models import Protein, ProteinConformation, ProteinAnomaly, ProteinState, ProteinSegment, ProteinGProteinPair
 from residue.functions import dgn, ggn
-from structure.models import *
+from structure.models import Structure, StructureModel, StructureComplexModel, StatsText
 from structure.functions import HSExposureCB, PdbStateIdentifier
 from common.alignment import AlignedReferenceTemplate, GProteinAlignment
 from common.definitions import *
@@ -158,7 +158,7 @@ class Command(BaseBuild):
         # with open(os.sep.join([path, modelname, modelname+'.template_similarities.csv']), 'r') as sim_file:
         #     similarities = sim_file.readlines()
 
-        stats_text, created = StatsText.objects.get_or_create(stats_text=''.join(templates))
+        stats_text = StatsText.objects.get_or_create(stats_text=''.join(templates))[0]
         pdb,created = PdbData.objects.get_or_create(pdb=pdb_data)
         
         if self.complex:
