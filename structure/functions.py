@@ -1125,7 +1125,7 @@ class StructureBuildCheck():
     
     def __init__(self):
         with open(self.local_annotation_dir+"/xtal_segends.yaml", "r") as f:
-            self.segends_dict = yaml.load(f, Loader=yaml.FullLoader)
+            self.segends_dict = yaml.safe_load(f)
 
     def check_structures(self):
         yamls = os.listdir(self.local_yaml_dir)
@@ -1158,12 +1158,12 @@ class StructureBuildCheck():
                     if seg_resis[0].sequence_number!=anno_b:
                         print("Error: {} {} starts at {} instead of annotated {}".format(structure, seg, seg_resis[0].sequence_number, anno_b))
                     if seg_resis.reverse()[0].sequence_number!=anno_e:
-                        print("Error: {} {} ends at {} instead of annotated {}".format(structure, seg, seg_resis.reverse()[0].sequence_number, anno_e))   
+                        print("Error: {} {} ends at {} instead of annotated {}".format(structure, seg, seg_resis.reverse()[0].sequence_number, anno_e))
         else:
             print("Warning: {} not annotated".format(key))
 
 
-class ModelRotamer():
+class ModelRotamer(object):
     def __init__(self):
         self.backbone_template = None
         self.rotamer_template = None

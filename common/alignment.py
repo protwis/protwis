@@ -1901,7 +1901,7 @@ class ClosestReceptorHomolog():
         else:
             if p.family.slug[:3]=='008':
                 structures = Structure.objects.all().exclude(annotated=False).exclude(refined=True).exclude(protein_conformation__protein__parent__entry_name__in=exclusion_list)
-            elif type(self.family_mapping[p.family.slug[:3]])==type([]):
+            elif isinstance(self.family_mapping[p.family.slug[:3]], list):
                 structures = []
                 for slug in self.family_mapping[p.family.slug[:3]]:
                     structures+=list(Structure.objects.filter(protein_conformation__protein__parent__family__slug__istartswith=slug).exclude(

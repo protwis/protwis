@@ -11,7 +11,7 @@ from django.shortcuts import redirect
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from protein.models import Gene, ProteinSegment, IdentifiedSites, ProteinGProteinPair
 from structure.models import Structure, StructureModel, StructureComplexModel, StructureExtraProteins, StructureModelRMSD
-from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn, PdbStateIdentifier, ModelRotamer
+from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, PdbStateIdentifier, ModelRotamer
 from structure.assign_generic_numbers_gpcr import GenericNumbering, GenericNumberingFromDB
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
 from structure.forms import *
@@ -204,8 +204,8 @@ def HomologyModelDetails(request, modelname, state):
 	"""
 	modelname = modelname
 
-	color_palette = ["orange","cyan","yellow","lime","fuchsia","green","teal","olive","thistle","grey","chocolate","blue","red","pink","maroon",]
-	
+	color_palette = ["orange","cyan","yellow","lime","fuchsia","green","teal","olive","thistle","grey","chocolate","blue","red","pink","maroon"]
+
 	model = StructureModel.objects.get(protein__entry_name=modelname, state__slug=state)
 	model_main_template = model.main_template
 	
@@ -244,16 +244,8 @@ def ComplexModelDetails(request, modelname, signprot):
 	color_palette = ["orange","cyan","yellow","lime","fuchsia","green","teal","olive","thistle","grey","chocolate","blue","red","pink","mahogany",]
 	model = StructureComplexModel.objects.get(receptor_protein__entry_name=modelname, sign_protein__entry_name=signprot)
 	model_main_template = model.main_template
-	receptor_rotamers = StructureComplexModelStatsRotamer.objects.filter(homology_model=model, protein__entry_name=modelname).prefetch_related(
-		"homology_model", "residue__generic_number","rotamer_template__protein_conformation__protein__parent__family",
-		"residue__protein_segment", "backbone_template__pdb_code", "rotamer_template",
-		"backbone_template__protein_conformation__protein__parent", "rotamer_template__pdb_code"
-		).order_by('residue__sequence_number').all()
-	signprot_rotamers = StructureComplexModelStatsRotamer.objects.filter(homology_model=model, protein__entry_name=signprot).prefetch_related(
-		"homology_model", "residue__generic_number","rotamer_template__protein_conformation__protein__parent__family",
-		"residue__protein_segment", "backbone_template__pdb_code", "rotamer_template",
-		"backbone_template__protein_conformation__protein__parent", "rotamer_template__pdb_code"
-		).order_by('residue__sequence_number').all()
+	receptor_rotamers = []
+	signprot_rotamers = []
 
 	main_template_seqsim = StructureComplexModelSeqSim.objects.get(homology_model=model, template=model_main_template).similarity
 	loop_segments = ProteinSegment.objects.filter(category='loop', proteinfamily='Alpha')
@@ -307,7 +299,7 @@ def parse_model_statsfile(statstext, residues):
 			rotamer_struct = structure_dict[rotamer_pdb]
 		mr.backbone_template = backbone_struct
 		mr.rotamer_template = rotamer_struct
-		mr.residue = residues.get(sequence_number=int(seqnum))
+		mr.residue = residues.get(protein_segment__slug=segment, sequence_number=int(seqnum))
 		rotamers.append(mr)
 	return rotamers
 

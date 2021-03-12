@@ -28,15 +28,15 @@ import subprocess
 import pprint
 
 
-structs_with_missing_x50 = ['5EM9', '5AER', '3BEF', '3LU9', '3HKI', '3HKJ', '1NRR', '1NRQ', '1NRP', '1NRO', '1NRN', '3QDZ', '2ZPK', '1YTV', '4JQI', '6NI2', '5YD3', 
-                            '5YD5', '5YD4', '5YY4', '6KVA', '6KVF', '4NUU', '4NUV', '6K3F', '1XWD', '4AY9', '4MQW', '2XWT', '3G04', '4KT1', '4QXE', '4QXF', '4UFR', 
-                            '4UFS', '4BSU', '4BSR', '4BSS', '4BST', '5II0', '6PFO', '6PGQ', '3AQF', '4RWF', '4RWG', '5V6Y', '6D1U', '6ZHO', '6ZIS', '6UMG', '6V2E', 
-                            '2XDG', '2QKH', '3C59', '3C5T', '3IOL', '5E94', '4ZGM', '5OTW', '2A83', '3CZF', '4ERS', '4LF3', '3L2J', '3H3G', '3C4M', '5EMB', '4Z8J', 
-                            '3N94', '3B3I', '3B6S', '3DTX', '3HCV', '5IB1', '5IB3', '5IB2', '5IB5', '5IB4', '5DEG', '5DEF', '1OF2', '1OGT', '2X57', '5AFB', '5CMN', 
-                            '6VHH', '2BO2', '2BOU', '2BOX', '4DLO', '5K5T', '5K5S', '5FBK', '5FBH', '4PAS', '4MR7', '4MR8', '4MQE', '4MQF', '4MS3', '4MS4', '4MRM', 
-                            '4MS1', '4MR9', '4F11', '4F12', '6M8R', '6OCP', '3KS9', '4XAQ', '4XAS', '5CNI', '5CNJ', '5KZN', '5KZQ', '3SM9', '4XAR', '5CNK', '5CNM', 
-                            '6B7H', '3LMK', '6N4Y', '6N4X', '6N50', '3MQ4', '5C5C', '6E5V', '6BSZ', '6BT5', '6C0B', '5BPB', '5BQC', '5UWG', '5BPQ', '5BQE', '6NE1', 
-                            '5CL1', '5CM4', '5URZ', '5URY', '6O39', '5URV', '4Z33', '6NE2', '6NE4', '6O3B', '6O3A', '5WBS', '5T44', '5UN6', '5UN5', '6NDZ', '5KZV', 
+structs_with_missing_x50 = ['5EM9', '5AER', '3BEF', '3LU9', '3HKI', '3HKJ', '1NRR', '1NRQ', '1NRP', '1NRO', '1NRN', '3QDZ', '2ZPK', '1YTV', '4JQI', '6NI2', '5YD3',
+                            '5YD5', '5YD4', '5YY4', '6KVA', '6KVF', '4NUU', '4NUV', '6K3F', '1XWD', '4AY9', '4MQW', '2XWT', '3G04', '4KT1', '4QXE', '4QXF', '4UFR',
+                            '4UFS', '4BSU', '4BSR', '4BSS', '4BST', '5II0', '6PFO', '6PGQ', '3AQF', '4RWF', '4RWG', '5V6Y', '6D1U', '6ZHO', '6ZIS', '6UMG', '6V2E',
+                            '2XDG', '2QKH', '3C59', '3C5T', '3IOL', '5E94', '4ZGM', '5OTW', '2A83', '3CZF', '4ERS', '4LF3', '3L2J', '3H3G', '3C4M', '5EMB', '4Z8J',
+                            '3N94', '3B3I', '3B6S', '3DTX', '3HCV', '5IB1', '5IB3', '5IB2', '5IB5', '5IB4', '5DEG', '5DEF', '1OF2', '1OGT', '2X57', '5AFB', '5CMN',
+                            '6VHH', '2BO2', '2BOU', '2BOX', '4DLO', '5K5T', '5K5S', '5FBK', '5FBH', '4PAS', '4MR7', '4MR8', '4MQE', '4MQF', '4MS3', '4MS4', '4MRM',
+                            '4MS1', '4MR9', '4F11', '4F12', '6M8R', '6OCP', '3KS9', '4XAQ', '4XAS', '5CNI', '5CNJ', '5KZN', '5KZQ', '3SM9', '4XAR', '5CNK', '5CNM',
+                            '6B7H', '3LMK', '6N4Y', '6N4X', '6N50', '3MQ4', '5C5C', '6E5V', '6BSZ', '6BT5', '6C0B', '5BPB', '5BQC', '5UWG', '5BPQ', '5BQE', '6NE1',
+                            '5CL1', '5CM4', '5URZ', '5URY', '6O39', '5URV', '4Z33', '6NE2', '6NE4', '6O3B', '6O3A', '5WBS', '5T44', '5UN6', '5UN5', '6NDZ', '5KZV',
                             '5KZY', '5KZZ']
 
 

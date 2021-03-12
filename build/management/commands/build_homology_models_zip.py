@@ -4,14 +4,11 @@ from django.conf import settings
 from django.db import connection
 
 from protein.models import Protein, ProteinConformation, ProteinAnomaly, ProteinState, ProteinSegment, ProteinGProteinPair
-from residue.models import Residue
 from residue.functions import dgn, ggn
 from structure.models import *
 from structure.functions import HSExposureCB, PdbStateIdentifier
 from common.alignment import AlignedReferenceTemplate, GProteinAlignment
 from common.definitions import *
-from common.models import WebLink
-from signprot.models import SignprotComplex
 import structure.structural_superposition as sp
 import structure.assign_generic_numbers_gpcr as as_gn
 import structure.homology_models_tests as tests
@@ -158,8 +155,8 @@ class Command(BaseBuild):
             pdb_data = pdb_file.read()
         with open(os.sep.join([path, modelname, modelname+'.templates.csv']), 'r') as templates_file:
             templates = templates_file.readlines()
-        with open(os.sep.join([path, modelname, modelname+'.template_similarities.csv']), 'r') as sim_file:
-            similarities = sim_file.readlines()
+        # with open(os.sep.join([path, modelname, modelname+'.template_similarities.csv']), 'r') as sim_file:
+        #     similarities = sim_file.readlines()
 
         stats_text, created = StatsText.objects.get_or_create(stats_text=''.join(templates))
         pdb,created = PdbData.objects.get_or_create(pdb=pdb_data)
@@ -168,12 +165,12 @@ class Command(BaseBuild):
             m_s = self.get_structures(main_structure)
             r_prot = Protein.objects.get(entry_name=gpcr_prot)
             s_prot = Protein.objects.get(entry_name=sign_prot)
-            hommod, created = StructureComplexModel.objects.get_or_create(receptor_protein=r_prot, sign_protein=s_prot, main_template=m_s, pdb_data=pdb, version=build_date, stats_text=stats_text)
+            StructureComplexModel.objects.get_or_create(receptor_protein=r_prot, sign_protein=s_prot, main_template=m_s, pdb_data=pdb, version=build_date, stats_text=stats_text)
         else:
             s_state = ProteinState.objects.get(name=state)
             m_s = self.get_structures(main_structure)
             prot = Protein.objects.get(entry_name=gpcr_prot)
-            hommod, created = StructureModel.objects.get_or_create(protein=prot, state=s_state, main_template=m_s, pdb_data=pdb, version=build_date, stats_text=stats_text)
+            StructureModel.objects.get_or_create(protein=prot, state=s_state, main_template=m_s, pdb_data=pdb, version=build_date, stats_text=stats_text)
         if self.revise_xtal:
             m_s.refined = True
             m_s.save()

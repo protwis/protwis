@@ -75,7 +75,7 @@ class GPCRDBParsingPDB(object):
     def __init__(self):
         self.segment_coding = OrderedDict([(1,'TM1'),(2,'TM2'),(3,'TM3'),(4,'TM4'),(5,'TM5'),(6,'TM6'),(7,'TM7'),(8,'H8')])
 
-    def parse_rotamer_pdb(self, rotamer):
+    def parse_rotamer_pdb(rotamer):
         atoms_list = []
         io = StringIO(rotamer.pdbdata.pdb)
         rota_struct = PDB.PDBParser(QUIET=True).get_structure('structure', io)[0]
@@ -347,9 +347,8 @@ class GPCRDBParsingPDB(object):
                             output[found_res.protein_segment.slug][found_gn] = res
         return output
 
-    def create_g_alpha_pdb_array(self, signprot_complex):
+    def create_g_alpha_pdb_array(signprot_complex):
         parent_residues = Residue.objects.filter(protein_conformation__protein=signprot_complex.protein)
-        struct_residues = Residue.objects.filter(protein_conformation__protein__entry_name=signprot_complex.structure.pdb_code.index.lower()+'_a')
         pdb_array = OrderedDict()
         for r in parent_residues:
             if r.protein_segment.slug not in pdb_array:
@@ -695,7 +694,7 @@ class LoopRemodel(automodel):
 class LoopRemodel2(loopmodel):
 
     def __init__(self, env, alnfile, knowns, sequence, assess_methods, gaps=[], model_chains=[], start_resnums=[], icl3_delete=[]):
-        super(LoopRemodel2, self).__init__(env, alnfile=alnfile, knowns=knowns, sequence=sequence, 
+        super(LoopRemodel2, self).__init__(env, alnfile=alnfile, knowns=knowns, sequence=sequence,
                                                assess_methods=assess_methods)
 
         self.alnfile = alnfile

@@ -1,6 +1,6 @@
 from django.conf import settings
 
-from protein.models import Protein, ProteinConformation, ProteinAnomaly, ProteinState, ProteinSegment, ProteinFamily
+from protein.models import Protein, ProteinConformation, ProteinState, ProteinSegment, ProteinFamily
 from residue.models import Residue
 from residue.functions import dgn, ggn
 from structure.models import *
@@ -10,7 +10,6 @@ from common.definitions import *
 from common.models import WebLink
 from signprot.models import SignprotComplex
 import structure.structural_superposition as sp
-import structure.assign_generic_numbers_gpcr as as_gn
 from structure.homology_modeling_functions import GPCRDBParsingPDB
 
 import Bio.PDB as PDB
@@ -49,7 +48,7 @@ class SignprotModeling():
         self.target_signprot = None
         self.debug = debug
 
-    def get_alpha_templates(self, only_full=False):
+    def get_alpha_templates(only_full=False):
         sc_all = SignprotComplex.objects.all().values_list('structure', flat=True)
         sep_all = StructureExtraProteins.objects.filter(structure__in=sc_all, category='G alpha')
         if only_full:
