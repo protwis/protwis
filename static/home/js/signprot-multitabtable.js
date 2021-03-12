@@ -1,5 +1,5 @@
 /*global yadcf*/
-/*eslint complexity: ["error", 8]*/
+/*eslint complexity: ["error", 15]*/
 /*eslint wrap-iife: ["error", "outside"]*/
 /*eslint quotes: ["error", "double", { "avoidEscape": true }]*/
 let oTable1 = [];
