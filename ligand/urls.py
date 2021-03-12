@@ -1,25 +1,24 @@
 from django.conf.urls import url
 from django.views.decorators.cache import cache_page
-from django.views.generic import TemplateView
-from ligand.views import *
-
+from ligand import views
 urlpatterns = [
-    url(r'^$', cache_page(3600*24*7)(LigandBrowser.as_view()), name='ligand_browser'),
-    url(r'^target/all/(?P<slug>[-\w]+)/$',TargetDetails, name='ligand_target_detail'),
-    url(r'^target/compact/(?P<slug>[-\w]+)/$',TargetDetailsCompact, name='ligand_target_detail_compact'),
-    url(r'^targets$',TargetDetails, name='ligand_target_detail'),
-    url(r'^targets_compact',TargetDetailsCompact, name='ligand_target_detail_compact'),
-    url(r'^targets_purchasable',TargetPurchasabilityDetails, name='ligand_target_detail_purchasable'),
-    url(r'^(?P<ligand_id>[-\w]+)/$',LigandDetails, name='ligand_detail'),
-    url(r'^statistics', cache_page(3600*24*7)(LigandStatistics.as_view()), name='ligand_statistics'),
-    url(r'^experiment/(?P<pk>[-\w]+)/detail$', ExperimentEntryView.as_view()),
-    url(r'^vendors$', test_link, name='test'),
-    url(r'^biasedbrowser$', cache_page(3600*24*7)(BiasBrowser.as_view()), name='bias_browser'),
-    url(r'^biasedgbrowser$', cache_page(3600*24*7)(BiasBrowserGSubbtype.as_view()), name='bias_g_browser'),
-    # url(r'^biasedbrowser$', BiasBrowser.as_view(), name='bias_browser'),
-    # url(r'^biasedgbrowser$', BiasBrowserGSubbtype.as_view(), name='bias_g_browser'),
-    url(r'^browserchembl$', BiasBrowserChembl.as_view(), name='bias_chembl_browser'),
-    url(r'^browservendors$', BiasVendorBrowser.as_view(), name='browservendor'),
-    url(r'^biasedpathways$', BiasPathways.as_view(), name='pathways'),
-    url(r'^pathwaydata/(?P<pk>[-\w]+)/detail$', PathwayExperimentEntryView.as_view()),
+    url(r'^$', cache_page(3600*24*7)(views.LigandBrowser.as_view()), name='ligand_browser'),
+    url(r'^target/all/(?P<slug>[-\w]+)/$', views.TargetDetails, name='ligand_target_detail'),
+    url(r'^target/compact/(?P<slug>[-\w]+)/$', views.TargetDetailsCompact, name='ligand_target_detail_compact'),
+    url(r'^targets$', views.TargetDetails, name='ligand_target_detail'),
+    url(r'^targets_compact', views.TargetDetailsCompact, name='ligand_target_detail_compact'),
+    url(r'^targets_purchasable', views.TargetPurchasabilityDetails, name='ligand_target_detail_purchasable'),
+    url(r'^(?P<ligand_id>[-\w]+)/$', views.LigandDetails, name='ligand_detail'),
+    url(r'^statistics', cache_page(3600*24*7)(views.LigandStatistics.as_view()), name='ligand_statistics'),
+    url(r'^bias_statistics', cache_page(3600*24*7)(views.LigandBiasStatistics.as_view()), name='ligand_statistics'),
+    url(r'^experiment/(?P<pk>[-\w]+)/detail$', views.ExperimentEntryView.as_view()),
+    url(r'^vendors$', views.test_link, name='test'),
+    url(r'^biasedbrowser$', cache_page(3600*24*7)(views.BiasBrowser.as_view()), name='bias_browser'),
+    url(r'^biasedgbrowser$', cache_page(3600*24*7)(views.BiasBrowserGSubbtype.as_view()), name='bias_g_browser'),
+    # url(r'^biasedbrowser$', views.BiasBrowser.as_view(), name='bias_browser'),
+    # url(r'^biasedgbrowser$', views.BiasBrowserGSubbtype.as_view(), name='bias_g_browser'),
+    url(r'^browserchembl$', views.BiasBrowserChembl.as_view(), name='bias_chembl_browser'),
+    url(r'^browservendors$', views.BiasVendorBrowser.as_view(), name='browservendor'),
+    url(r'^biasedpathways$', views.BiasPathways.as_view(), name='pathways'),
+    url(r'^pathwaydata/(?P<pk>[-\w]+)/detail$', views.PathwayExperimentEntryView.as_view()),
 ]
