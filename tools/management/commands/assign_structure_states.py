@@ -1,18 +1,15 @@
-from django.core.management.base import BaseCommand, CommandError
-from django.core.management import call_command
-from django.conf import settings
+from django.core.management.base import BaseCommand
 from django.contrib.postgres.aggregates import ArrayAgg
-from django.db import connection
-from django.db.models import Count, Max, Min
+from django.db.models import Max, Min
 
-from contactnetwork.distances import *
-from contactnetwork.models import *
-from protein.models import *
-from signprot.models import *
-from structure.models import *
+from contactnetwork.distances import Distance, Distances
+from contactnetwork.models import distance_scaling_factor
+from protein.models import ProteinFamily, ProteinState
+from residue.models import Residue
+from signprot.models import SignprotComplex
+from structure.models import Structure
 
-import logging, json, os
-
+import logging
 import pandas as pd
 import scipy.cluster.hierarchy as sch
 import scipy.spatial.distance as ssd
@@ -219,7 +216,7 @@ class Command(BaseCommand):
 
                             # Store for structure
                             struct = Structure.objects.get(pdb_code__index=pdb)
-                            struct.state, created = ProteinState.objects.get_or_create(slug=structure_state, defaults={'name': structure_state.capitalize()})
+                            struct.state = ProteinState.objects.get_or_create(slug=structure_state, defaults={'name': structure_state.capitalize()})[0]
                             struct.tm6_angle = percentage
                             struct.gprot_bound_likeness = gprot_likeness
                             struct.save()
@@ -248,12 +245,12 @@ class Command(BaseCommand):
 
                             # Definitely an inactive state structure When distance is smaller than 13Å
                             if entry[1] < 13*distance_scaling_factor:
-                                struct.state, created = ProteinState.objects.get_or_create(slug="inactive", defaults={'name': "Inactive"})
+                                struct.state = ProteinState.objects.get_or_create(slug="inactive", defaults={'name': "Inactive"})[0]
 
                             # UGLY: knowledge-based hardcoded corrections
                             if entry[0] in hardcoded:
                                 structure_state = hardcoded[entry[0]]
-                                struct.state, created = ProteinState.objects.get_or_create(slug=structure_state, defaults={'name': structure_state.capitalize()})
+                                struct.state = ProteinState.objects.get_or_create(slug=structure_state, defaults={'name': structure_state.capitalize()})[0]
 
                             # Save changes
                             struct.save()
