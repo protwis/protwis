@@ -33,7 +33,7 @@ class Command(BaseCommand):
             print("Processing class {}".format(slug[0]))
 
             # grab all PDB-codes for this class
-            structure_ids = list(Structure.objects.exclude(refined=True).filter(protein_conformation__protein__family__slug__startswith=slug[0]) \
+            structure_ids = list(Structure.objects.filter(protein_conformation__protein__family__slug__startswith=slug[0]) \
                                 .values_list("pdb_code__index"))
 
             structure_ids = [x[0] for x in structure_ids]

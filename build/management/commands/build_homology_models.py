@@ -140,7 +140,7 @@ class Command(BaseBuild):
             all_receptors = Protein.objects.filter(entry_name__in=options['r'])
         # Only refined structures
         elif options['x']:
-            structs = Structure.objects.filter(refined=False, annotated=True).order_by('pdb_code__index')
+            structs = Structure.objects.filter(annotated=True).order_by('pdb_code__index')
             all_receptors = [i.protein_conformation.protein for i in structs]
         # Build all
         elif options['c']==False:
@@ -152,7 +152,7 @@ class Command(BaseBuild):
                                                                                                                                       Q(family__slug__istartswith='005') |
                                                                                                                                       Q(family__slug__istartswith='006') |
                                                                                                                                       Q(family__slug__istartswith='007')).order_by('entry_name')
-            structs = Structure.objects.filter(refined=False, annotated=True).order_by('pdb_code__index')
+            structs = Structure.objects.filter(annotated=True).order_by('pdb_code__index')
             all_receptors = list(all_receptors)+[i.protein_conformation.protein for i in structs]
         elif options['c'].upper() not in GPCR_class_codes:
             raise AssertionError('Error: Incorrect class name given. Use argument -c with class name A, B1, B2, D1, C, F or T')
@@ -247,14 +247,14 @@ class Command(BaseBuild):
 
     def get_states_to_model(self, receptor):
         rec_class = ProteinFamily.objects.get(name=receptor.get_protein_class())
-        structs_in_class = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=rec_class.slug, refined=False, annotated=True)
+        structs_in_class = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=rec_class.slug, annotated=True)
         possible_states = structs_in_class.exclude(protein_conformation__protein__parent=receptor).exclude(state__name='Other').values_list('state__name', flat=True).distinct()
         if len(possible_states)==0:
             if rec_class.name=='Class B2 (Adhesion)':
                 rec_class = ProteinFamily.objects.get(name='Class B1 (Secretin)')
             elif rec_class.name=='Class T (Taste 2)':
                 rec_class = ProteinFamily.objects.get(name='Class A (Rhodopsin)')
-            structs_in_class = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=rec_class.slug, refined=False, annotated=True)
+            structs_in_class = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=rec_class.slug, annotated=True)
             possible_states = structs_in_class.exclude(protein_conformation__protein__parent=receptor).exclude(state__name='Other').values_list('state__name', flat=True).distinct()
         structs = structs_in_class.filter(protein_conformation__protein__parent=receptor)
         li1 = list(possible_states)

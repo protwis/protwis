@@ -152,7 +152,7 @@ def detail(request, slug):
                'gene': gene, 'alt_genes': alt_genes, 'structures': structures, 'mutations': mutations, 'protein_links': protein_links,'homology_models': homology_models}
 
     # sb = StructureBrowser()
-    # sb_context = sb.get_context_data(protein=p, refined=True)
+    # sb_context = sb.get_context_data(protein=p)
     # context['structures'] = sb_context['structures']
     return render(request, 'protein/protein_detail.html', context)
 

@@ -284,7 +284,7 @@ class Command(BaseBuild):
         if options["debug"]:
             print(datetime.datetime.now() - startTime)
 
-    @classmethod
+    @staticmethod
     def create_structure_rotamer(PDB_residue, residue_object, structure):
         out_stream = StringIO()
         io = PDBIO()
@@ -299,7 +299,7 @@ class Command(BaseBuild):
         rot = Rotamer(missing_atoms=missing_atoms, pdbdata=pdbdata, residue=residue_object, structure=structure)
         return rot
 
-    @classmethod
+    @staticmethod
     def get_next_presumed_cgn(res):
         try:
             next_num = str(int(res.display_generic_number.label[-2:])+1)

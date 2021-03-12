@@ -1,6 +1,6 @@
 from django.db import models
 from protein.models import Protein, ProteinConformation
-from structure.models import StructureExtraProteins, StructureStabilizingAgent, PdbData
+from structure.models import StructureStabilizingAgent, PdbData
 from common.models import WebLink, Publication
 
 

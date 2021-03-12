@@ -29,7 +29,7 @@ class Command(BaseBuild):
     def handle(self, *args, **options):
 
         # All human proteins and xtaled
-        self.structures = Structure.objects.filter(refined=False).all()
+        self.structures = Structure.objects.all()
 
         self.dssp_type, created = ResidueDataType.objects.get_or_create(slug=slugify('dssp'), name='DSSP')
 

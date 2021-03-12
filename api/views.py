@@ -226,7 +226,7 @@ class StructureList(views.APIView):
         else:
             structures = Structure.objects.all()
 
-        structures = structures.exclude(refined=True).prefetch_related('protein_conformation__protein__parent__species', 'pdb_code',
+        structures = structures.prefetch_related('protein_conformation__protein__parent__species', 'pdb_code',
             'protein_conformation__protein__parent__family', 'protein_conformation__protein__parent__species',
             'publication__web_link', 'structureligandinteraction_set__ligand__properities', 'structure_type',
             'structureligandinteraction_set__ligand__properities__ligand_type',

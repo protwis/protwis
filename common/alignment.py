@@ -1412,7 +1412,7 @@ class AlignedReferenceTemplate(Alignment):
         self.structures_data = Structure.objects.filter(
             state__name__in=self.query_states, protein_conformation__protein__parent__family__parent__parent__parent=
             template_family).order_by('protein_conformation__protein__parent',
-                                      'resolution').filter(annotated=True).exclude(refined=True).distinct()
+                                      'resolution').filter(annotated=True).distinct()
         if self.revise_xtal==None:
             if self.force_main_temp:
                 main_st = Structure.objects.get(pdb_code__index=self.force_main_temp.upper())
@@ -1900,7 +1900,7 @@ class ClosestReceptorHomolog():
             return this_structs[0].protein_conformation.protein.parent
         else:
             if p.family.slug[:3]=='008':
-                structures = Structure.objects.all().exclude(annotated=False).exclude(refined=True).exclude(protein_conformation__protein__parent__entry_name__in=exclusion_list)
+                structures = Structure.objects.all().exclude(annotated=False).exclude(protein_conformation__protein__parent__entry_name__in=exclusion_list)
             elif isinstance(self.family_mapping[p.family.slug[:3]], list):
                 structures = []
                 for slug in self.family_mapping[p.family.slug[:3]]:

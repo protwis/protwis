@@ -106,19 +106,6 @@ class Structure(models.Model):
                 tmp.append(line)
         return '\n'.join(tmp)
 
-    @property
-    def is_refined(self):
-        # Ugly way of speeding up -- preferable the DB should create a relationship between the entries.
-        refined = cache.get(self.pdb_code.index+'_refined')
-        if refined == None:
-            s = Structure.objects.filter(refined=True, pdb_code__index=self.pdb_code.index+'_refined')
-            if len(s)>0:
-                refined = True
-            else:
-                refined = False
-            cache.set(self.pdb_code.index+'_refined',refined, 24*60*60)
-        return refined
-
     class Meta():
         db_table = 'structure'
 

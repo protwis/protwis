@@ -403,10 +403,7 @@ def format_model_details(rotamers, model_main_template, color_palette, chain=Non
 	return bb_temps, backbone_templates, r_temps, rotamer_templates, segments_out, bb_main, bb_alt, bb_none, sc_main, sc_alt, sc_none, template_list, colors
 
 def ServeHomModDiagram(request, modelname, state):
-	if state=='refined':
-		model=Structure.objects.filter(pdb_code__index=modelname+'_refined')
-	else:
-		model=StructureModel.objects.filter(protein__entry_name=modelname, state__slug=state)
+	model=StructureModel.objects.filter(protein__entry_name=modelname, state__slug=state)
 	if model.exists():
 		model=model.get()
 	else:
@@ -485,7 +482,7 @@ class StructureStatistics(TemplateView):
 		for f in families:
 			lookup[f.slug] = f.name
 
-		all_structs = Structure.objects.all().prefetch_related('protein_conformation__protein__family').exclude(refined=True)
+		all_structs = Structure.objects.all().prefetch_related('protein_conformation__protein__family')
 		all_complexes = all_structs.exclude(ligands=None)
 
 		all_gprots = all_structs.filter(id__in=SignprotComplex.objects.filter(protein__family__slug__startswith='100').values_list("structure__id", flat=True))
@@ -1709,7 +1706,7 @@ class TemplateBrowser(TemplateView):
 		a.load_reference_protein_from_selection(simple_selection)
 
 		# fetch
-		qs = Structure.objects.filter(refined=False).select_related(
+		qs = Structure.objects.all().select_related(
 			"pdb_code__web_resource",
 			"protein_conformation__protein__species",
 			"protein_conformation__protein__source",
@@ -2119,7 +2116,7 @@ def ComplexmodDownload(request):
 def SingleModelDownload(request, modelname, state, fullness, csv=False):
 	"Download single homology model"
 	zip_io = BytesIO()
-	
+
 	hommod = StructureModel.objects.get(protein__entry_name=modelname, state__slug=state)
 	if not hommod.protein.accession:
 		version = hommod.pdb_data.pdb.split('\n')[0][-10:]

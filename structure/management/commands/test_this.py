@@ -52,7 +52,7 @@ class Command(BaseBuild):
 
 
 	def handle(self, *args, **options):
-		# strs = Structure.objects.filter(refined=False).exclude(protein_conformation__protein__parent__family__parent__parent__parent__slug__in=['002','006'])
+		# strs = Structure.objects.all().exclude(protein_conformation__protein__parent__family__parent__parent__parent__slug__in=['002','006'])
 		# for s in strs:
 		# 	print(s,',',s.state.slug)
 		# return 0
@@ -442,7 +442,7 @@ class TestStateIdentifier(object):
 		self.only_xtals = only_xtals
 
 	def run(self):
-		strs = Structure.objects.filter(refined=False).exclude(protein_conformation__protein__parent__family__parent__parent__parent__slug__in=['001','004','006'])
+		strs = Structure.objects.all().exclude(protein_conformation__protein__parent__family__parent__parent__parent__slug__in=['001','004','006'])
 		self.match, self.mismatch, self.exceptions = 0,0,0
 		for s in strs:
 			try:

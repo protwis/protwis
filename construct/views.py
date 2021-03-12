@@ -2168,7 +2168,7 @@ def create_structural_rule_trees(rule_dictionary):
 
 def fetch_all_pdb(request):
 
-    structures = Structure.objects.filter(refined=False)
+    structures = Structure.objects.all()
 
     for s in structures:
         pdbname = str(s)

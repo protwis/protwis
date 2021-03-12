@@ -1,5 +1,3 @@
-from django.conf import settings
-
 from protein.models import Protein, ProteinConformation, ProteinSegment, ProteinFamily
 from residue.models import Residue
 from structure.models import *
@@ -15,7 +13,7 @@ from collections import OrderedDict
 import pprint
 from io import StringIO
 import math
-from copy import 
+from copy import deepcopy
 
 
 gprotein_segments = ProteinSegment.objects.filter(proteinfamily='Alpha')
@@ -39,7 +37,7 @@ class SignprotModeling():
         self.target_signprot = None
         self.debug = debug
 
-    @classmethod
+    @staticmethod
     def get_alpha_templates(only_full=False):
         sc_all = SignprotComplex.objects.all().values_list('structure', flat=True)
         sep_all = StructureExtraProteins.objects.filter(structure__in=sc_all, category='G alpha')
@@ -49,7 +47,7 @@ class SignprotModeling():
             sep_filtered = sep_all
         return sep_filtered, sep_filtered.values_list('structure', flat=True)
 
-    @classmethod
+    @staticmethod
     def group_alpha_templates(templates, group_by_subfam=False):
         template_dict = OrderedDict()
         for i in templates:

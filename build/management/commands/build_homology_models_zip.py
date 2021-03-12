@@ -1,34 +1,16 @@
 from build.management.commands.base_build import Command as BaseBuild
-from django.db.models import Q
-from django.conf import settings
 from django.db import connection
 
-from protein.models import Protein, ProteinConformation, ProteinAnomaly, ProteinState, ProteinSegment, ProteinGProteinPair
-from residue.functions import dgn, ggn
+from protein.models import Protein, ProteinState
 from structure.models import Structure, StructureModel, StructureComplexModel, StatsText
-from structure.functions import HSExposureCB, PdbStateIdentifier
-from common.alignment import AlignedReferenceTemplate, GProteinAlignment
 from common.definitions import *
-import structure.structural_superposition as sp
-import structure.assign_generic_numbers_gpcr as as_gn
-import structure.homology_models_tests as tests
 
 import Bio.PDB as PDB
-from collections import OrderedDict
 import os
-import shlex
 import logging
-import pprint
-from io import StringIO, BytesIO
-import sys
-import re
 import zipfile
 import shutil
-import math
-from copy import deepcopy
 from datetime import datetime, date
-import yaml
-import traceback
 import time
 
 
@@ -159,7 +141,7 @@ class Command(BaseBuild):
         #     similarities = sim_file.readlines()
 
         stats_text = StatsText.objects.get_or_create(stats_text=''.join(templates))[0]
-        pdb,created = PdbData.objects.get_or_create(pdb=pdb_data)
+        pdb = PdbData.objects.get_or_create(pdb=pdb_data)[0]
         
         if self.complex:
             m_s = self.get_structures(main_structure)

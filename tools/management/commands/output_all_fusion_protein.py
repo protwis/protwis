@@ -27,7 +27,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        structures = Structure.objects.filter(refined=False)
+        structures = Structure.objects.all()
         self.fusions = {}
         self.fusions_mutations = {}
         self.fusions_starts = {}
