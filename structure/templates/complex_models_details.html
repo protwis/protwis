@@ -97,7 +97,7 @@ canvas {
             <br>
 
             <!-- <div class="btn-group">
-                {% if model.refined %}
+                {% if not model.receptor_protein.accession %}
                     <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.pdb_code.index}}/download_pdb">Download .pdb</a>
                 {% else %}
                     <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.receptor_protein.entry_name}}-{{model.sign_protein.entry_name}}/download_pdb">Download .pdb</a>

@@ -72,7 +72,8 @@ class Command(BaseBuild):
         parser.add_argument('-f', '--filename',
             action='append',
             dest='filename',
-            help='Filename to import. Can be used multiple times')
+            help='Filename to import. Can be used multiple times',
+            nargs='+')
         parser.add_argument('-u', '--purge',
             action='store_true',
             dest='purge',
@@ -129,7 +130,7 @@ class Command(BaseBuild):
 
         # where filenames specified?
         if options['filename']:
-            self.filenames = options['filename']
+            self.filenames = options['filename'][0]
 
         if options['incremental']:
             self.incremental_mode = True
@@ -235,8 +236,10 @@ class Command(BaseBuild):
             removed = removed + list(range(1068,1107))
         elif structure.pdb_code.index=="7D7M":
             deletions = list(range(1,4)) + list(range(367,489))
-        # print('removed',removed)
-        # removed = []
+        elif structure.pdb_code.index in ["7D77", "7D76", "4GRV"]:
+            deletions = []
+        # print(deletions)
+        # print(removed)
         if len(deletions)>len(d['wt_seq'])*0.9:
             #if too many deletions
             removed = []
@@ -580,8 +583,8 @@ class Command(BaseBuild):
                                             if seg_ends['i1b']!='-' and seg_ends['i1e']!='-':
                                                 if residue.sequence_number<seg_ends['i1b'] and residue.sequence_number<=seg_ends['1e']:
                                                     residue.protein_segment = self.segments['TM1']
-                                                elif residue.sequence_number>seg_ends['i1e']:
-                                                    residue.protein_segment = self.segments['TM2']
+                                                # elif residue.sequence_number>seg_ends['i1e']:
+                                                #     residue.protein_segment = self.segments['TM2']
                                                 elif (residue.sequence_number>=seg_ends['i1b'] and residue.sequence_number<=seg_ends['i1e']) and residue.generic_number is None:
                                                     if debug: print("Missing GN in loop!",residue.sequence_number)
                                                     residue.missing_gn = True
@@ -1134,9 +1137,10 @@ class Command(BaseBuild):
                     else:
                         self.logger.warning('Preferred chain not specified for structure {}'.format(sd['pdb']))
                     if 'resolution' in sd:
-                        s.resolution = float(sd['resolution'])
                         if sd['pdb']=='6ORV':
                             s.resolution = 3.00
+                        else:
+                            s.resolution = float(sd['resolution'])
                     else:
                         self.logger.warning('Resolution not specified for structure {}'.format(sd['pdb']))
                     if sd['pdb']=='6ORV':

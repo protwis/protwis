@@ -282,7 +282,7 @@ class Command(BaseCommand):
         p2pdb = {}
         pdb2p = {}
         new_pdbs = ['5O9H', '5OLG', '5OLH', '5OLO', '5OLV', '5OLZ', '5OM1', '5OM4', '5V54', '5WF5', '5WF6', '5YQZ', '6AQF', '6B3J', '6B73', '6BQG', '6BQH', '6CM4', '6FFH', '6FFI']
-        for s in Structure.objects.filter(refined=False).all():
+        for s in Structure.objects.all():
            # print(s)
             #print(s.protein_conformation.protein.parent.entry_name)
             proteins.add(s.protein_conformation.protein.parent.entry_name)

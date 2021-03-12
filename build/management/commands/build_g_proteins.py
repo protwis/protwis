@@ -1387,7 +1387,7 @@ class Command(BaseCommand):
 
         # Human proteins from CGN with families as keys: https://www.mrc-lmb.cam.ac.uk/CGN/about.html
         cgn_dict = {}
-        cgn_dict['G-Protein'] = ['Gs', 'Gi/o', 'Gq/11', 'G12/13', 'GPa1']
+        cgn_dict['G-Protein'] = ['Gs', 'Gi/o', 'Gq/11', 'G12/13', 'GPa1 family']
         cgn_dict['100_001_001_001'] = ['GNAS2_HUMAN']
         cgn_dict['100_001_001_002'] = ['GNAL_HUMAN']
         cgn_dict['100_001_002_001'] = ['GNAI1_HUMAN']
@@ -1635,13 +1635,13 @@ class Command(BaseCommand):
         i = 1
 
         cgn_dict['Alpha'] = ['001']
-        cgn_dict['001'] = ['Gs', 'Gi/o', 'Gq/11', 'G12/13', 'GPa1']
+        cgn_dict['001'] = ['Gs', 'Gi/o', 'Gq/11', 'G12/13', 'GPa1 family']
 
         # Protein families to be added
         # Key of dictionary is level in hierarchy
         cgn_dict['1'] = ['Alpha']
         cgn_dict['2'] = ['001']
-        cgn_dict['3'] = ['Gs', 'Gi/o', 'Gq/11', 'G12/13', 'GPa1']
+        cgn_dict['3'] = ['Gs', 'Gi/o', 'Gq/11', 'G12/13', 'GPa1 family']
 
         # Protein lines not to be added to Protein families
         cgn_dict['4'] = ['GNAS2', 'GNAL', 'GNAI1', 'GNAI2', 'GNAI3', 'GNAT1', 'GNAT2', 'GNAT3', 'GNAZ', 'GNAO', 'GNAQ',
@@ -1659,7 +1659,7 @@ class Command(BaseCommand):
                     grouped_subtypes[j].append(k)
                 elif j == 'G12/13' and k in ['GNA12', 'GNA13']:
                     grouped_subtypes[j].append(k)
-                elif j =='GPa1' and k=='GPa1':
+                elif j =='GPa1 family' and k=='GPa1':
                     grouped_subtypes[j].append(k)
 
         for entry in cgn_dict['001']:
