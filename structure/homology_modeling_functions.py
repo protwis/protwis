@@ -75,7 +75,7 @@ class GPCRDBParsingPDB(object):
     def __init__(self):
         self.segment_coding = OrderedDict([(1,'TM1'),(2,'TM2'),(3,'TM3'),(4,'TM4'),(5,'TM5'),(6,'TM6'),(7,'TM7'),(8,'H8')])
 
-    def parse_rotamer_pdb(rotamer):
+    def parse_rotamer_pdb(self, rotamer):
         atoms_list = []
         io = StringIO(rotamer.pdbdata.pdb)
         rota_struct = PDB.PDBParser(QUIET=True).get_structure('structure', io)[0]
@@ -347,7 +347,7 @@ class GPCRDBParsingPDB(object):
                             output[found_res.protein_segment.slug][found_gn] = res
         return output
 
-    def create_g_alpha_pdb_array(signprot_complex):
+    def create_g_alpha_pdb_array(self, signprot_complex):
         parent_residues = Residue.objects.filter(protein_conformation__protein=signprot_complex.protein)
         pdb_array = OrderedDict()
         for r in parent_residues:

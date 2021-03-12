@@ -208,7 +208,6 @@ def HomologyModelDetails(request, modelname, state):
 
 	model = StructureModel.objects.get(protein__entry_name=modelname, state__slug=state)
 	model_main_template = model.main_template
-	
 	if model.protein.accession:
 		residues = Residue.objects.filter(protein_conformation__protein=model.protein)
 		a = Alignment()
@@ -247,7 +246,7 @@ def ComplexModelDetails(request, modelname, signprot):
 	receptor_rotamers = []
 	signprot_rotamers = []
 
-	main_template_seqsim = StructureComplexModelSeqSim.objects.get(homology_model=model, template=model_main_template).similarity
+	main_template_seqsim = 0
 	loop_segments = ProteinSegment.objects.filter(category='loop', proteinfamily='Alpha')
 
 

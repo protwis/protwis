@@ -48,7 +48,7 @@ class SignprotModeling():
         self.target_signprot = None
         self.debug = debug
 
-    def get_alpha_templates(only_full=False):
+    def get_alpha_templates(self, only_full=False):
         sc_all = SignprotComplex.objects.all().values_list('structure', flat=True)
         sep_all = StructureExtraProteins.objects.filter(structure__in=sc_all, category='G alpha')
         if only_full:

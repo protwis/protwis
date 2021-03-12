@@ -236,7 +236,7 @@ class Command(BaseBuild):
                                         while res and res.display_generic_number.label in mapped_cgns:
                                             res = self.get_next_presumed_cgn(res)
                                     else:
-                                        print("Error: {} CGN does not exist. Incorrect mapping of {} in {}".format(next_cgn, chain[nums[temp_i]], sc.structure))
+                                        print("Error: {} CGN does not exist. Incorrect mapping of {} in {}".format(next_presumed_cgn, chain[nums[temp_i]], sc.structure))
                                 mapped_cgns.append(res.display_generic_number.label)
                                 pdb_num_dict[nums[temp_i]] = [chain[nums[temp_i]], res]
                                 temp_i+=1
@@ -284,7 +284,7 @@ class Command(BaseBuild):
         if options["debug"]:
             print(datetime.datetime.now() - startTime)
 
-    def create_structure_rotamer(PDB_residue, residue_object, structure):
+    def create_structure_rotamer(self, PDB_residue, residue_object, structure):
         out_stream = StringIO()
         io = PDBIO()
         # print(PDB_residue)
@@ -298,7 +298,7 @@ class Command(BaseBuild):
         rot = Rotamer(missing_atoms=missing_atoms, pdbdata=pdbdata, residue=residue_object, structure=structure)
         return rot
 
-    def get_next_presumed_cgn(res):
+    def get_next_presumed_cgn(self, res):
         try:
             next_num = str(int(res.display_generic_number.label[-2:])+1)
             if len(next_num)==1:
