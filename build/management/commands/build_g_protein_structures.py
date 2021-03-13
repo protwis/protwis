@@ -9,7 +9,7 @@ from protein.models import (Protein, ProteinGProtein,ProteinGProteinPair, Protei
 from residue.models import (ResidueNumberingScheme, ResidueGenericNumber, Residue, ResidueGenericNumberEquivalent)
 from signprot.models import SignprotComplex, SignprotStructure, SignprotStructureExtraProteins
 from common.models import WebResource, WebLink, Publication
-from structure.models import StructureType, StructureStabilizingAgent, Structure
+from structure.models import StructureType, StructureStabilizingAgent, PdbData, Rotamer
 from structure.functions import get_pdb_ids
 
 import re
@@ -18,7 +18,7 @@ from collections import OrderedDict
 import logging
 import shlex, subprocess
 from io import StringIO
-from Bio.PDB import PDBParser,PPBuilder
+from Bio.PDB import PDBParser, PPBuilder, PDBIO, Polypeptide
 from Bio import pairwise2
 import pprint
 import json
@@ -37,6 +37,9 @@ AA = {"ALA":"A", "ARG":"R", "ASN":"N", "ASP":"D",
      "THR":"T", "TRP":"W", "TYR":"Y", "VAL":"V",
      "YCM":"C", "CSD":"C", "TYS":"Y", "SEP":"S"} #non-standard AAs
 
+atom_num_dict = {'E':9, 'S':6, 'Y':12, 'G':4, 'A':5, 'V':7, 'M':8, 'L':8, 'I':8, 'T':7, 'F':11, 'H':10, 'K':9,
+                 'D':8, 'C':6, 'R':11, 'P':7, 'Q':9, 'N':8, 'W':14, '-':0}
+
 
 class Command(BaseBuild):
 
@@ -53,6 +56,7 @@ class Command(BaseBuild):
         parser.add_argument("--debug", default=False, action="store_true", help="Debug mode")
 
     def handle(self, *args, **options):
+        startTime = datetime.datetime.now()
         self.options = options
         if self.options["purge"]:
             Residue.objects.filter(protein_conformation__protein__entry_name__endswith="_a", protein_conformation__protein__family__parent__parent__name="Alpha").delete()
@@ -64,7 +68,7 @@ class Command(BaseBuild):
         if not options["only_signprot_structures"]:
             # Building protein and protconf objects for g protein structure in complex
             if options["s"]:
-                scs = SignprotComplex.objects.filter(structure__pdb_code__index__in=options["s"])
+                scs = SignprotComplex.objects.filter(structure__pdb_code__index__in=[i.upper() for i in options["s"]])
             else:    
                 scs = SignprotComplex.objects.all()
             for sc in scs:
@@ -219,14 +223,25 @@ class Command(BaseBuild):
                         pdb_num_dict = OrderedDict()
                         temp_resis = [res for res in chain]
                         temp_i = 0
+                        mapped_cgns = []
                         for i, aa in enumerate(temp_seq):
                             if aa!="-":
                                 ref_split_on_gaps = ref_seq[:i+1].split("-")
                                 ref_seqnum = i-(len(ref_split_on_gaps)-1)+1
-                                pdb_num_dict[nums[temp_i]] = [chain[nums[temp_i]], resis.get(sequence_number=ref_seqnum)]
+                                res = resis.get(sequence_number=ref_seqnum)
+                                if res.display_generic_number.label in mapped_cgns:
+                                    next_presumed_cgn = self.get_next_presumed_cgn(res)
+                                    if next_presumed_cgn:
+                                        res = next_presumed_cgn
+                                        while res and res.display_generic_number.label in mapped_cgns:
+                                            res = self.get_next_presumed_cgn(res)
+                                    else:
+                                        print("Error: {} CGN does not exist. Incorrect mapping of {} in {}".format(next_presumed_cgn, chain[nums[temp_i]], sc.structure))
+                                mapped_cgns.append(res.display_generic_number.label)
+                                pdb_num_dict[nums[temp_i]] = [chain[nums[temp_i]], res]
                                 temp_i+=1
-
-                    bulked_residues = []
+                                
+                    bulked_rotamers = []
                     for key, val in pdb_num_dict.items():
                         # print(key, val) # sanity check
                         if not isinstance(val[1], int):
@@ -237,14 +252,18 @@ class Command(BaseBuild):
                             res_obj.generic_number = val[1].generic_number
                             res_obj.protein_conformation = alpha_protconf
                             res_obj.protein_segment = val[1].protein_segment
-                            bulked_residues.append(res_obj)
+                            res_obj.save()
+                            rot = self.create_structure_rotamer(val[0], res_obj, sc.structure)
+                            bulked_rotamers.append(rot)
                         else:
                             self.logger.info("Skipped {} as no annotation was present, while building for alpha subunit of {}".format(val[1], sc))
                     if options["debug"]:
                         pprint.pprint(pdb_num_dict)
-                    Residue.objects.bulk_create(bulked_residues)
+                    Rotamer.objects.bulk_create(bulked_rotamers)
                     self.logger.info("Protein, ProteinConformation and Residue build for alpha subunit of {} is finished".format(sc))
                 except Exception as msg:
+                    if options["debug"]:
+                        print("Error: ", sc, msg)
                     self.logger.info("Protein, ProteinConformation and Residue build for alpha subunit of {} has failed".format(sc))
 
         if not options["s"]:
@@ -261,6 +280,34 @@ class Command(BaseBuild):
                                 self.build_g_prot_struct(a, pdb, data)
                         except Exception as msg:
                             self.logger.error("SignprotStructure of {} {} failed\n{}: {}".format(a.entry_name, pdb, type(msg), msg))
+
+        if options["debug"]:
+            print(datetime.datetime.now() - startTime)
+
+    @staticmethod
+    def create_structure_rotamer(PDB_residue, residue_object, structure):
+        out_stream = StringIO()
+        io = PDBIO()
+        # print(PDB_residue)
+        io.set_structure(PDB_residue)
+        io.save(out_stream)
+        pdbdata = PdbData.objects.get_or_create(pdb=out_stream.getvalue())[0]
+        missing_atoms = atom_num_dict[Polypeptide.three_to_one(PDB_residue.get_resname())] > len(PDB_residue.get_unpacked_list())
+        rot = Rotamer(missing_atoms=missing_atoms, pdbdata=pdbdata, residue=residue_object, structure=structure)
+        return rot
+
+    @staticmethod
+    def get_next_presumed_cgn(res):
+        try:
+            next_num = str(int(res.display_generic_number.label[-2:])+1)
+            if len(next_num)==1:
+                next_num = "0"+next_num
+            next_cgn = res.display_generic_number.label[:-2]+next_num
+            presumed_cgn = ResidueGenericNumber.objects.get(label=next_cgn)
+            res = Residue.objects.filter(display_generic_number=presumed_cgn)[0]
+            return res
+        except ResidueGenericNumber.DoesNotExist:
+            return False
 
     def fetch_gprot_data(self, pdb, alpha_protein):
         data = {}
@@ -368,12 +415,19 @@ class Command(BaseBuild):
                     self.logger.info("Created Publication:"+str(pub))
             else:
                 pub = None
+        # PDB data
+        url = 'https://www.rcsb.org/pdb/files/{}.pdb'.format(pdb)
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req) as response:
+            pdbdata_raw = response.read().decode('utf-8')
+        pdbdata_object = PdbData.objects.get_or_create(pdb=pdbdata_raw)[0]
         ss.pdb_code = pdb_code
         ss.structure_type = structure_type
         ss.resolution = data["resolution"]
         ss.publication_date = pub_date
         ss.publication = pub
         ss.protein = alpha_prot
+        ss.pdb_data = pdbdata_object
         ss.save()
         # Stabilizing agent
         for o in data["other"]:

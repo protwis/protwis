@@ -59,7 +59,7 @@ def getTargetTable():
             )
             proteins = proteins | missing[:1]
 
-        pdbids = list(Structure.objects.filter(refined=False).values_list("pdb_code__index", "protein_conformation__protein__family_id"))
+        pdbids = list(Structure.objects.all().values_list("pdb_code__index", "protein_conformation__protein__family_id"))
 
         allpdbs = {}
         for pdb in pdbids:
@@ -679,33 +679,20 @@ def AddToSelection(request):
             o.append(ProteinSet.objects.get(pk=selection_id))
 
         elif selection_subtype == 'structure':
-            if 'refined' in selection_id:
-                sel1, sel2 = selection_id.split('_')
-                o.append(Structure.objects.get(pdb_code__index=sel1.upper()+'_refined'))
-            else:
-                o.append(Structure.objects.get(pdb_code__index=selection_id.upper()))
+            o.append(Structure.objects.get(pdb_code__index=selection_id.upper()))
 
         elif selection_subtype == 'structure_many':
             selection_subtype = 'structure'
             for pdb_code in selection_id.split(","):
-                if 'refined' in pdb_code:
-                    sel1, sel2 = pdb_code.split('_')
-                    o.append(Structure.objects.get(pdb_code__index=sel1.upper()+'_refined'))
-                else:
-                    o.append(Structure.objects.get(pdb_code__index=pdb_code.upper()))
-
-        # elif selection_subtype == 'structure_model_Inactive':
-        #     entry_name = '_'.join(selection_id.split('_')[:-1])
-        #     o.append(StructureModel.objects.defer('pdb').filter(protein__entry_name=entry_name, state__name='Inactive')[0])
-        # elif selection_subtype == 'structure_model_Intermediate':
-        #     entry_name = '_'.join(selection_id.split('_')[:-1])
-        #     o.append(StructureModel.objects.defer('pdb').filter(protein__entry_name=entry_name, state__name='Intermediate')[0])
-        # elif selection_subtype == 'structure_model_Active':
-        #     entry_name = '_'.join(selection_id.split('_')[:-1])
-        #     o.append(StructureModel.objects.defer('pdb').filter(protein__entry_name=entry_name, state__name='Active')[0])
+                o.append(Structure.objects.get(pdb_code__index=pdb_code.upper()))
 
         elif selection_subtype == 'structure_complex_receptor':
-            o.append(StructureComplexModel.objects.filter(receptor_protein__entry_name=selection_id)[0])
+            receptor, signprot = selection_id.split('-')
+            try:
+                scm = StructureComplexModel.objects.get(receptor_protein__entry_name=receptor, sign_protein__entry_name=signprot)
+            except StructureComplexModel.DoesNotExist:
+                scm = StructureComplexModel.objects.get(receptor_protein__parent__entry_name=selection_id, sign_protein__entry_name=signprot)
+            o.append(scm)
 
         elif selection_subtype == 'structure_complex_signprot':
             o.append(StructureComplexModel.objects.filter(sign_protein__entry_name=selection_id)[0])
@@ -713,19 +700,18 @@ def AddToSelection(request):
         elif selection_subtype == 'structure_model':
             state = selection_id.split('_')[-1]
             entry_name = '_'.join(selection_id.split('_')[:-1])
-            # print(entry_name, state)
-            o.append(StructureModel.objects.filter(protein__entry_name=entry_name, state__name=state)[0])
+            try:
+                sm = StructureModel.objects.get(protein__entry_name=entry_name, state__name=state)
+            except StructureModel.DoesNotExist:
+                sm = StructureModel.objects.get(protein__parent__entry_name=entry_name, state__name=state)
+            o.append(sm)
 
         elif selection_subtype == 'structure_models_many':
             selection_subtype = 'structure_model'
             for model in selection_id.split(","):
-                if 'refined' in model:
-                    sel1, sel2 = model.split('_')
-                    o.append(Structure.objects.get(pdb_code__index=sel1.upper()+'_refined'))
-                else:
-                    state = model.split('_')[-1]
-                    entry_name = '_'.join(model.split('_')[:-1])
-                    o.append(StructureModel.objects.get(protein__entry_name=entry_name, state__name=state))
+                state = model.split('_')[-1]
+                entry_name = '_'.join(model.split('_')[:-1])
+                o.append(StructureModel.objects.get(protein__entry_name=entry_name, state__name=state))
 
 
     elif selection_type == 'segments':

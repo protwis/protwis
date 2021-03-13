@@ -11,7 +11,6 @@
 <link href="{% static 'home/css/color_picker.css' %}" rel="stylesheet" media="screen">
 <link href="{% static 'home/css/bootstrap-responsive.css' %}" rel="stylesheet" media="screen">
 
-<script src="{% static 'home/js/jquery.min.js' %}"></script>
 <script src="{% static 'home/js/selection.js' %}"></script>
 
 <script language="Javascript">
@@ -551,7 +550,7 @@
 
 
 <script type="text/javascript" charset="utf-8">
-  selectivitydata = {{ selectivitydata|safe }};
+  var selectivitydata = {{ selectivitydata|safe }};
 </script>
 
 {% if render_part != "venn" %}

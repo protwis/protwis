@@ -5,7 +5,7 @@ Annotates crystalized targets and number of ligands/target available in ChEMBL.
 from django.db.models import Count
 
 from interaction.models import ResidueFragmentInteraction, StructureLigandInteraction
-from ligand.models import AssayExperiment
+from ligand.models import AssayExperiment, AnalyzedExperiment
 from protein.models import Protein, ProteinFamily
 from structure.models import Structure
 
@@ -25,6 +25,7 @@ class PhylogeneticTreeNode(object):
             'crystals': 0,
             'mutations': 0,
             'ligands': 0,
+            'ligand_bias': 0,
             }
 
     def get_value(self, param):
@@ -165,7 +166,7 @@ class PhylogeneticTreeGenerator(object):
         ("", "Lipid receptors") : 'Gold',
         ("", "Melatonin receptors") : 'Yellow',
         ("", "Nucleotide receptors") : 'YellowGreen',
-        ("", "Orphan receptors") : 'LimeGreen',
+        ("", "Orphan receptors") : 'Gold',
         ("", "Other") : 'Green',
         ("", "Peptide receptors") : 'SkyBlue',
         ("", "Protein receptors") : 'SteelBlue',
@@ -196,7 +197,8 @@ class PhylogeneticTreeGenerator(object):
         self.aux_data = {
                         'crystals': [],
                         'mutations': [],
-                        'ligands': {}
+                        'ligands': {},
+                        'ligand_bias': {}
                         }
         self.get_aux_data()
 
@@ -241,7 +243,7 @@ class PhylogeneticTreeGenerator(object):
     def get_aux_data(self):
 
         self.aux_data['crystals'] = [x.protein_conformation.protein.parent.id for x in
-                                                 Structure.objects.filter(refined=False)
+                                                 Structure.objects.all()
                                                  .distinct
                                                  ('protein_conformation__protein__parent').prefetch_related('protein_conformation__protein__parent')
                                                  ]
@@ -256,6 +258,18 @@ class PhylogeneticTreeGenerator(object):
             500 : [x['protein'] for x in ligand_data if 100 < x['num_ligands'] <= 500],
             1000 : [x['protein'] for x in ligand_data if 500 < x['num_ligands'] <= 1000],
             2000 : [x['protein'] for x in ligand_data if x['num_ligands'] > 1000] #more than 1000
+            }
+
+        ligand_bias_data = AnalyzedExperiment.objects.values(
+            'receptor',
+            'receptor__entry_name'
+            ).annotate(num_ligands=Count('ligand_id', distinct=True))
+
+        self.aux_data['ligand_bias'] = {
+            10 : [x['receptor'] for x in ligand_bias_data if x['num_ligands'] <= 10],
+            20 : [x['receptor'] for x in ligand_bias_data if 10 < x['num_ligands'] <= 20],
+            30 : [x['receptor'] for x in ligand_bias_data if 20 < x['num_ligands'] <= 30],
+            40 : [x['receptor'] for x in ligand_bias_data if x['num_ligands'] > 30] #more than 1000
             }
 
     def map_family_colors(self):
@@ -298,6 +312,9 @@ class PhylogeneticTreeGenerator(object):
                         for key in self.aux_data['ligands']:
                             if protein.id in self.aux_data['ligands'][key]:
                                 tmp_node.increment_value('ligands', key)
+                        for key in self.aux_data['ligand_bias']:
+                            if protein.id in self.aux_data['ligand_bias'][key]:
+                                tmp_node.increment_value('ligand_bias', key)
                         coverage.add_data(protein.family.slug, tmp_node)
                 return coverage
             children = OrderedDict()

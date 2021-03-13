@@ -10,7 +10,7 @@ from operator import itemgetter
 import numpy as np
 
 from alignment.functions import prepare_aa_group_preference
-from Bio.SubsMat import MatrixInfo
+from Bio.Align import substitution_matrices
 from common.definitions import *
 from common.selection import Selection
 from django.conf import settings
@@ -1243,7 +1243,7 @@ class Alignment:
                     if not (reference_residue in self.gaps or protein_residue in self.gaps):
                         pair = (protein_residue, reference_residue)
                         # Similarity lookup is slow -> disabling results in 1/3 reduction calc. time
-                        similarity = self.score_match(pair, MatrixInfo.blosum62)
+                        similarity = self.score_match(pair, substitution_matrices.load("BLOSUM62"))
                         #                        similarity = 1
                         if similarity > 0:
                             similarityscore += 1
@@ -1291,7 +1291,7 @@ class Alignment:
                         pass
                     else:
                         pair = (protein_residue, reference_residue)
-                        similarity = self.score_match(pair, MatrixInfo.blosum62)
+                        similarity = self.score_match(pair, substitution_matrices.load("BLOSUM62"))
                         if similarity > 0:
                             similarities[p[0]] = 1
                         else:
@@ -1412,7 +1412,7 @@ class AlignedReferenceTemplate(Alignment):
         self.structures_data = Structure.objects.filter(
             state__name__in=self.query_states, protein_conformation__protein__parent__family__parent__parent__parent=
             template_family).order_by('protein_conformation__protein__parent',
-                                      'resolution').filter(annotated=True).exclude(refined=True).distinct()
+                                      'resolution').filter(annotated=True).distinct()
         if self.revise_xtal==None:
             if self.force_main_temp:
                 main_st = Structure.objects.get(pdb_code__index=self.force_main_temp.upper())
@@ -1434,7 +1434,6 @@ class AlignedReferenceTemplate(Alignment):
         i = 1
         if self.complex:
             complex_templates = self.get_template_from_gprotein(self.signprot)
-        # try:
         for st in self.similarity_table:
             if st.pdb_code.index=='5LWE' and st.protein_conformation.protein.parent==self.ordered_proteins[i].protein:
                 i+=1
@@ -1448,8 +1447,6 @@ class AlignedReferenceTemplate(Alignment):
                 # if self.core_alignment and st.pdb_code.index in self.seq_num_overwrite_files:
                 #     self.overwrite_db_seq_nums(st, st.pdb_code.index)
                 return st
-        # except:
-        #     pass
 
     def get_template_from_gprotein(self, signprot):
         gprotein = Protein.objects.get(entry_name=signprot)
@@ -1889,35 +1886,47 @@ class ClosestReceptorHomolog():
 
         # TOFIX this is a bad workaround to select similar receptor family
         # slugs can change and the selection updates based on the available structures
-        self.family_mapping = {'001':'001','002':'002','003':'002','004':'004','005':'005','006':'006','007':'001','008':['001','002','004','005']}
+        self.family_mapping = {'001':'001','002':'002','003':['002','003'],'004':'004','005':'005','006':'006','007':'001','008':['001','002','003','004','005','006']}
         self.all_proteins = []
 
     def find_closest_receptor_homolog(self):
         a = Alignment()
         p = Protein.objects.get(entry_name=self.protein)
-        exclusion_list = ['opsd_todpa', 'adrb1_melga', 'g1sgd4_rabit', 'us28_hcmva', 'q08bg4_danre', 'q9wtk1_cavpo', 'q80km9_hcmv', 'q98sw5_xenla', 'b1b1u5_9arac']
+        exclusion_list = ['opsd_todpa', 'g1sgd4_rabit', 'us28_hcmva', 'q08bg4_danre', 'q9wtk1_cavpo', 'q80km9_hcmv', 'q98sw5_xenla', 'b1b1u5_9arac']
         if self.protein in exclusion_list:
             exclusion_list.remove(self.protein)
-        if p.family.slug[:3]=='008':
-            structures = Structure.objects.all().exclude(annotated=False).exclude(refined=True).exclude(protein_conformation__protein__parent__entry_name__in=exclusion_list)
+        this_structs = Structure.objects.filter(protein_conformation__protein__parent__entry_name=self.protein)
+        if len(this_structs)>0:
+            return this_structs[0].protein_conformation.protein.parent
         else:
-            structures = Structure.objects.filter(protein_conformation__protein__parent__family__slug__istartswith=self.family_mapping[p.family.slug[:3]]).exclude(
-                annotated=False).exclude(refined=True).exclude(protein_conformation__protein__parent__entry_name__in=exclusion_list)
-        a.load_reference_protein(p)
-        structure_proteins = [i.protein_conformation.protein.parent for i in list(structures)]
-        a.load_proteins(structure_proteins)
-        a.load_segments(ProteinSegment.objects.filter(slug__in=self.protein_segments))
-        a.build_alignment()
-        a.calculate_similarity(normalized=self.normalized)
-        self.all_proteins = a.proteins
-        max_sim, max_id, max_i = 0, 0, 1
-        for i, p in enumerate(self.all_proteins):
-            if int(p.similarity)>max_sim:
-                max_sim = int(p.similarity)
-                max_id = int(p.identity)
-                max_i = i
-            elif int(p.similarity)==max_sim and int(p.identity)>max_id:
-                max_sim = int(p.similarity)
-                max_id = int(p.identity)
-                max_i = i
-        return a.proteins[max_i]
+            if p.family.slug[:3]=='008':
+                structures = Structure.objects.all().exclude(annotated=False).exclude(protein_conformation__protein__parent__entry_name__in=exclusion_list)
+            elif isinstance(self.family_mapping[p.family.slug[:3]], list):
+                structures = []
+                for slug in self.family_mapping[p.family.slug[:3]]:
+                    structures+=list(Structure.objects.filter(protein_conformation__protein__parent__family__slug__istartswith=slug).exclude(
+                    annotated=False).exclude(protein_conformation__protein__parent__entry_name__in=exclusion_list))
+            else:
+                structures = Structure.objects.filter(protein_conformation__protein__parent__family__slug__istartswith=self.family_mapping[p.family.slug[:3]]).exclude(
+                    annotated=False).exclude(protein_conformation__protein__parent__entry_name__in=exclusion_list)
+            a.load_reference_protein(p)
+            structure_proteins = []
+            for i in structures:
+                if i.protein_conformation.protein.parent not in structure_proteins:
+                    structure_proteins.append(i.protein_conformation.protein.parent)
+            a.load_proteins(structure_proteins)
+            a.load_segments(ProteinSegment.objects.filter(slug__in=self.protein_segments))
+            a.build_alignment()
+            a.calculate_similarity(normalized=self.normalized)
+            self.all_proteins = a.proteins
+            max_sim, max_id, max_i = 0, 0, 1
+            for i, p in enumerate(self.all_proteins):
+                if int(p.similarity)>max_sim:
+                    max_sim = int(p.similarity)
+                    max_id = int(p.identity)
+                    max_i = i
+                elif int(p.similarity)==max_sim and int(p.identity)>max_id:
+                    max_sim = int(p.similarity)
+                    max_id = int(p.identity)
+                    max_i = i
+            return a.proteins[max_i].protein
