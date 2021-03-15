@@ -159,7 +159,7 @@ class Command(BaseBuild):
             except:
                 print("Skipped")
                 continue
-            print('saved')
+
             count.value +=1
 
 
