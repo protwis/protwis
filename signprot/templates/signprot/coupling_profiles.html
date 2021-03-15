@@ -14,7 +14,6 @@
 <link href="{% static 'home/css/yadcf_bootstrap_version.css' %}" rel="stylesheet" media="screen">
 <link href="{% static 'home/css/targetselect_functions.css' %}" rel="stylesheet" media="screen">
 <link href="{% static 'home/css/select2.css' %}" rel="stylesheet" media="screen">
-<link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
 
 
 <script src="{% static 'home/js/jquery.min.js' %}"></script>
@@ -101,8 +100,7 @@ function copyToClipboard(txt) {
         }
 
         var table_options = {
-                         "paging":       true,
-                         "pageLength":   10,
+                         "paging":       false,
                          "lengthChange": false,
                          "order":        [[ 3, "desc" ]],
                          "scrollX":      false,
@@ -587,8 +585,9 @@ function linkLikeClick(element, color) {
 $(window).on("load",function() {
     maxLeafNodeLenght = 46;
     conversion = {"Gs":"blue", "Gi/Go":"red", "Gq/G11":"black", "G12/G13":"green"};
-    $("#name_toggle").change(function(){
-      if($(this).prop("checked") == true){
+    $("#UniProtNames").click(function(){
+        $("#UniProtNames").addClass("active");
+        $("#IUPHARNames").removeClass("active");
         changeLeavesLabels("tree_class_a","UniProt", whole_dict);
         DrawCircles('tree_class_a',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion);
         changeLeavesLabels("tree_class_b1","UniProt", whole_dict);
@@ -603,7 +602,10 @@ $(window).on("load",function() {
         DrawCircles('tree_class_t2',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion);
         changeLeavesLabels("tree_orphan","UniProt", whole_dict);
         DrawCircles('tree_orphan',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion);
-      }else{
+      });
+    $("#IUPHARNames").click(function() {
+        $("#UniProtNames").removeClass("active");
+        $("#IUPHARNames").addClass("active");
         changeLeavesLabels("tree_class_a","IUPHAR", whole_dict);
         DrawCircles('tree_class_a',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
         changeLeavesLabels("tree_class_b1","IUPHAR", whole_dict);
@@ -618,7 +620,6 @@ $(window).on("load",function() {
         DrawCircles('tree_class_t2',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
         changeLeavesLabels("tree_orphan","IUPHAR", whole_dict);
         DrawCircles('tree_orphan',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
-      }
     });
     draw_tree(tree_class_a, tree_class_a_options); //, "IUPHAR", receptor_dictionary);
     draw_tree(tree_class_b1, tree_class_b1_options);
@@ -647,15 +648,16 @@ $(window).on("load",function() {
 });
 </script>
 <input id="cb" type="text" hidden>
-<h4>Number of coupled receptor per receptor class</h4>
-<table style="width:60% !important" class="table table-stripped">
+<h4>Number of coupled receptors per receptor class</h4>
+<p>Click in a cell to copy receptor UniProt names to clipboard</p>
+<table style="width:55% !important" class="table table-stripped">
     <thead>
         <tr>
-            <td><b>Class<br />(Family)</b></td>
+            <td style="font-size:15px;"><b>Class <br /> (Family)</td>
             {% for key in table.Class %}
-            <td align="center"><b>{{ key }}</b></td>
+            <td align="center" style="font-size:15px;"><b>{% if key == "Class T (Taste 2)" %}Taste&nbsp;2{% else %}{{ key}}{% endif %}</b></td>
             {% endfor %}
-            <td  align="center"><b>Total</b></td>
+            <td  align="center" style="font-size:15px;"><b>Total</b></td>
         </tr>
     </thead>
     <tbody>
@@ -699,10 +701,16 @@ $(window).on("load",function() {
   <div class="row">
     <div class="col-md-12">
       <div class="panel-body">
-        <div class='text-center'>
-          <p><strong>GPCR selectivity tree.</strong> The four dots depict both primary and secondary G protein coupling.</p>
+        <div>
+          <p><h4><strong>GPCR selectivity tree.</strong> The four dots depict both primary and secondary G protein coupling.</h4></p>
         </div>
-          <p><input id="name_toggle" type="checkbox" checked data-toggle="toggle" data-on="UniProt" data-off="IUPHAR" data-onstyle="info" data-offstyle="info">  Use the toggle to switch from UniProt names (default setting), to IUPHAR names for receptors </p>
+        <div>
+          Receptor names:
+            <div class="btn-group" role="group" id="gtp_plus">
+                <button id="UniProtNames" class="btn btn-info active">UniProt</button>
+                <button id="IUPHARNames" class="btn btn-info">IUPHAR</button>
+            </div>
+        </div>
       </div>
     </div>
   </div>
@@ -751,6 +759,13 @@ $(window).on("load",function() {
     <div class="row-fluid">
       <div class="span12">
         <div class="row-fluid">
+
+          <div class="span4">
+            <div id="tree_orphan" class="text-center">
+              <h4>Class A <br /> Orphans</h4>
+            </div>
+          </div>
+
           <div class="span4">
             <div id="tree_class_b1" class="text-center">
               <h4>Class B1<br />(Secretin)</h4>
@@ -763,11 +778,6 @@ $(window).on("load",function() {
             </div>
           </div>
 
-          <div class="span4">
-            <div id="tree_class_c" class="text-center">
-              <h4>Class C<br />(Glutamate)</h4>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -775,6 +785,33 @@ $(window).on("load",function() {
     <div class="row-fluid">
       <div class="span12">
         <div class="row-fluid">
+
+          <div class="span4">
+            <div class="text-center">
+              <div class="btn-group">
+                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                          aria-haspopup="true" aria-expanded="false">
+                      <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu">
+                      <li>
+                          <a href="javascript:saveSvgAsPng(document.getElementById('tree_orphan_svg'), 'xtal_coverage_tree_class_a_orphan.png');">PNG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsJpg(document.getElementById('tree_orphan_svg'), 'xtal_coverage_tree_class_a_orphan.jpg');">JPG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsTiff(document.getElementById('tree_orphan_svg'), 'xtal_coverage_tree_class_a_orphan.tiff');">TIFF</a>
+                          </a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvg(document.getElementById('tree_orphan_svg'), 'xtal_coverage_tree_class_a_orphan.svg');">SVG</a>
+                      </li>
+                  </ul>
+              </div>
+            </div>
+          </div>
+
           <div class="span4">
             <div class="text-center">
               <div class="btn-group">
@@ -825,6 +862,42 @@ $(window).on("load",function() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <br />
+    <br />
+    <br />
+
+    <div class="row-fluid">
+      <div class="span12">
+        <div class="row-fluid">
+          <div class="span4">
+            <div id="tree_class_c" class="text-center">
+              <h4>Class C<br />(Glutamate)</h4>
+            </div>
+          </div>
+
+          <div class="span4">
+            <div id="tree_class_f" class="text-center">
+              <h4>Class F<br />(Frizzled)</h4>
+            </div>
+          </div>
+
+          <div class="span4">
+            <div id="tree_class_t2" class="text-center">
+              <h4>Class T <br /> (Taste 2)</h4>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="row-fluid">
+      <div class="span12">
+        <div class="row-fluid">
           <div class="span4">
             <div class="text-center">
               <div class="btn-group">
@@ -850,41 +923,6 @@ $(window).on("load",function() {
               </div>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <br />
-    <br />
-    <br />
-
-    <div class="row-fluid">
-      <div class="span12">
-        <div class="row-fluid">
-          <div class="span4">
-            <div id="tree_class_f" class="text-center">
-              <h4>Class F<br />(Frizzled)</h4>
-            </div>
-          </div>
-
-          <div class="span4">
-            <div id="tree_class_t2" class="text-center">
-              <h4>Class T <br /> (Taste 2)</h4>
-            </div>
-          </div>
-
-          <div class="span4">
-            <div id="tree_orphan" class="text-center">
-              <h4>Class A <br /> Orphans</h4>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="row-fluid">
-      <div class="span12">
-        <div class="row-fluid">
           <div class="span4">
             <div class="text-center">
               <div class="btn-group">
@@ -935,31 +973,6 @@ $(window).on("load",function() {
               </div>
             </div>
           </div>
-          <div class="span4">
-            <div class="text-center">
-              <div class="btn-group">
-                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                          aria-haspopup="true" aria-expanded="false">
-                      <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-                  </button>
-                  <ul class="dropdown-menu">
-                      <li>
-                          <a href="javascript:saveSvgAsPng(document.getElementById('tree_orphan_svg'), 'xtal_coverage_tree_class_a_orphan.png');">PNG</a>
-                      </li>
-                      <li>
-                          <a href="javascript:saveSvgAsJpg(document.getElementById('tree_orphan_svg'), 'xtal_coverage_tree_class_a_orphan.jpg');">JPG</a>
-                      </li>
-                      <li>
-                          <a href="javascript:saveSvgAsTiff(document.getElementById('tree_orphan_svg'), 'xtal_coverage_tree_class_a_orphan.tiff');">TIFF</a>
-                          </a>
-                      </li>
-                      <li>
-                          <a href="javascript:saveSvg(document.getElementById('tree_orphan_svg'), 'xtal_coverage_tree_class_a_orphan.svg');">SVG</a>
-                      </li>
-                  </ul>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -967,30 +980,26 @@ $(window).on("load",function() {
   <hr>
 {% endif %}
 
-<div class='col-md-12'>
-  <h4>References:</h4>
+<div class='container' style="font-size: 12px;">
+  <h4>References</h4>
   <p>
-    We used the G protein transducer information from both the
-    <a href='http://www.guidetopharmacology.org'>GuideToPharmacology</a> (IUPHAR) and the following datasets: </p>
+    G protein transducer information data shown in this page were obtained from the
+    <a href='http://www.guidetopharmacology.org'>GuideToPharmacology</a> (IUPHAR) and the above referenced datasets: </p>
   <p>
 
-
-    Armstrong, J. F., Faccenda, E., Harding, S. D., Pawson, A. J., Southan, C., Sharman, J. L., Campo, B., Cavanagh, D. R., Alexander, S. P. H., Davenport, A. P., Spedding, M., Davies, J. A. & NC-IUPHAR.<br>
     <b>The IUPHAR/BPS Guide to PHARMACOLOGY in 2020: extending immunopharmacology content and introducing the IUPHAR/MMV Guide to MALARIA PHARMACOLOGY.</b><br>
-    <a href="https://doi.org/10.1093/nar/gkz951" target="_blank"><i>Nucleic Acids Res</i></a> <b>48</b>, D1006–D1021 (2020).<br>
-    [PMID:<a href="http://www.ncbi.nlm.nih.gov/pubmed/31691834" target="_blank">31691834</a>]
+    Armstrong, J. F., Faccenda, E., Harding, S. D., Pawson, A. J., Southan, C., Sharman, J. L., Campo, B., Cavanagh, D. R., Alexander, S. P. H., Davenport, A. P., Spedding, M., Davies, J. A. & NC-IUPHAR.<br>
+    <i>Nucleic Acids Res</i> <b>48</b>, D1006–D1021 (2020). [PMID:<a href="http://www.ncbi.nlm.nih.gov/pubmed/31691834" target="_blank">31691834</a>]
   </p>
   <p>
-    Inoue, A., Raimondi, F., Kadji, F. M. N., Singh, G., Kishi, T., Uwamizu, A., Ono, Y., Shinjo, Y., Ishida, S., Arang, N., Kawakami, K., Gutkind, J. S., Aoki, J. & Russell, R. B.<br>
     <b>Illuminating G-Protein-Coupling Selectivity of GPCRs.</b> <br>
-    <i><a href="https://doi.org/10.1016/j.cell.2019.04.044" target="_blank">Cell</a></i> <b>177</b>, 1933-1947.e25 (2019).<br>
-    [PMID:<a href="https://pubmed.ncbi.nlm.nih.gov/31160049/" target="_blank">31160049</a>]
+    Inoue, A., Raimondi, F., Kadji, F. M. N., Singh, G., Kishi, T., Uwamizu, A., Ono, Y., Shinjo, Y., Ishida, S., Arang, N., Kawakami, K., Gutkind, J. S., Aoki, J. & Russell, R. B.<br>
+    <i>Cell</i> <b>177</b>, 1933-1947.e25 (2019). [PMID:<a href="https://pubmed.ncbi.nlm.nih.gov/31160049/" target="_blank">31160049</a>]
   </p>
   <p>
-    Avet, C., Mancini, A., Breton, B., Gouill, C. L., Hauser, A. S., Normand, C., Kobayashi, H., Gross, F., Hogue, M., Lukasheva, V., Morissette, S., Fauman, E., Fortin, J.-P., Schann, S., Leroy, X., Gloriam, D. E. & Bouvier, M.<br>
     <b>Selectivity Landscape of 100 Therapeutically Relevant GPCR Profiled by an Effector Translocation-Based BRET Platform.</b><br>
-    <i><a href="https://www.biorxiv.org/content/10.1101/2020.04.20.052027v1" target="_blank">bioRxiv</a></i> 2020.04.20.052027 (2020).<br>
-    <b>doi:</b> <a href=" https://doi.org/10.1101/2020.04.20.052027" target="_blank">10.1101/2020.04.20.052027</a>
+    Avet, C., Mancini, A., Breton, B., Gouill, C. L., Hauser, A. S., Normand, C., Kobayashi, H., Gross, F., Hogue, M., Lukasheva, V., Morissette, S., Fauman, E., Fortin, J.-P., Schann, S., Leroy, X., Gloriam, D. E. & Bouvier, M.<br>
+    <i>bioRxiv</i> 2020.04.20.052027 (2020). <b>doi:</b> <a href=" https://doi.org/10.1101/2020.04.20.052027" target="_blank">10.1101/2020.04.20.052027</a>
   </p>
 
 </div>
@@ -1002,7 +1011,6 @@ $(window).on("load",function() {
 {% if render_part != "venn" %}
   <script src="{% static 'home/js/phylo_tree.js' %}"></script>
 {% endif %}
-<script src="{% static 'home/js/bootstrap-toggle.min.js' %}"></script>
 <script src="{% static 'home/js/targetselect_functions.js' %}"></script>
 <script src="{% static 'home/js/select2.js' %}"></script>
 <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"></script>

@@ -5,7 +5,6 @@
 <link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/nvd3-update.css' %}" type="text/css" />
 <link href="{% static 'home/css/bootstrap-responsive.css' %}" rel="stylesheet" media="screen">
-<link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
 <style>
         .node circle {
             /*fill: #fff;*/
@@ -226,7 +225,13 @@ Circle colors indicate a number of ligands:
 </table>
 {% endif %}
 <br />
-<p><input id="name_toggle" type="checkbox" checked data-toggle="toggle" data-on="UniProt" data-off="IUPHAR" data-onstyle="info" data-offstyle="info"></p>
+<div>
+  Receptor names:
+    <div class="btn-group" role="group" id="gtp_plus">
+        <button id="UniProtNames" class="btn btn-info active">UniProt</button>
+        <button id="IUPHARNames" class="btn btn-info">IUPHAR</button>
+    </div>
+</div>
 <br />
 <script type="text/javascript" charset="utf-8">
     class_a = {{ class_a | safe }};
@@ -246,8 +251,9 @@ Circle colors indicate a number of ligands:
     whole_dict = {{ whole_receptors|safe }};
 </script>
 <script language='javascript'>
-  document.getElementById("name_toggle").onchange = function(e){
-    if(e.target.checked){
+  $("#UniProtNames").click(function() {
+      $("#UniProtNames").addClass("active");
+      $("#IUPHARNames").removeClass("active");
       changeLeavesLabels("class_a","UniProt", whole_dict);
       changeLeavesLabels("class_b1","UniProt", whole_dict);
       changeLeavesLabels("class_b2","UniProt", whole_dict);
@@ -255,7 +261,11 @@ Circle colors indicate a number of ligands:
       changeLeavesLabels("class_f","UniProt", whole_dict);
       changeLeavesLabels("class_t2","UniProt", whole_dict);
       changeLeavesLabels("orphan","UniProt", whole_dict);
-    }else{
+  });
+
+  $("#IUPHARNames").click(function() {
+      $("#UniProtNames").removeClass("active");
+      $("#IUPHARNames").addClass("active");
       changeLeavesLabels("class_a","IUPHAR", whole_dict);
       changeLeavesLabels("class_b1","IUPHAR", whole_dict);
       changeLeavesLabels("class_b2","IUPHAR", whole_dict);
@@ -263,8 +273,7 @@ Circle colors indicate a number of ligands:
       changeLeavesLabels("class_f","IUPHAR", whole_dict);
       changeLeavesLabels("class_t2","IUPHAR", whole_dict);
       changeLeavesLabels("orphan","IUPHAR", whole_dict);
-    }
-  };
+  });
 </script>
 <div id="class_a" class="text-center">
   <h4>Class A<br />(Rhodopsin)</h4>
@@ -300,6 +309,13 @@ Circle colors indicate a number of ligands:
 <div class="row-fluid">
   <div class="span12">
     <div class="row-fluid">
+
+      <div class="span4">
+        <div id="orphan" class="text-center">
+          <h4>Class A <br /> Orphans</h4>
+        </div>
+      </div>
+
       <div class="span4">
         <div id="class_b1" class="text-center">
           <h4>Class B1<br />(Secretin)</h4>
@@ -312,11 +328,6 @@ Circle colors indicate a number of ligands:
         </div>
       </div>
 
-      <div class="span4">
-        <div id="class_c" class="text-center">
-          <h4>Class C<br />(Glutamate)</h4>
-        </div>
-      </div>
     </div>
   </div>
 </div>
@@ -324,6 +335,33 @@ Circle colors indicate a number of ligands:
 <div class="row-fluid">
   <div class="span12">
     <div class="row-fluid">
+
+      <div class="span4">
+        <div class="text-center">
+          <div class="btn-group">
+              <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                      aria-haspopup="true" aria-expanded="false">
+                  <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a href="javascript:saveSvgAsPng(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.png');">PNG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvgAsJpg(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.jpg');">JPG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvgAsTiff(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.tiff');">TIFF</a>
+                      </a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvg(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.svg');">SVG</a>
+                  </li>
+              </ul>
+          </div>
+        </div>
+      </div>
+
       <div class="span4">
         <div class="text-center">
           <div class="btn-group">
@@ -374,6 +412,42 @@ Circle colors indicate a number of ligands:
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<br />
+<br />
+<br />
+
+<div class="row-fluid">
+  <div class="span12">
+    <div class="row-fluid">
+      <div class="span4">
+        <div id="class_c" class="text-center">
+          <h4>Class C<br />(Glutamate)</h4>
+        </div>
+      </div>
+
+      <div class="span4">
+        <div id="class_f" class="text-center">
+          <h4>Class F<br />(Frizzled)</h4>
+        </div>
+      </div>
+
+      <div class="span4">
+        <div id="class_t2" class="text-center">
+          <h4>Class T <br /> (Taste 2)</h4>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="row-fluid">
+  <div class="span12">
+    <div class="row-fluid">
       <div class="span4">
         <div class="text-center">
           <div class="btn-group">
@@ -399,124 +473,64 @@ Circle colors indicate a number of ligands:
           </div>
         </div>
       </div>
+      <div class="span4">
+        <div class="text-center">
+          <div class="btn-group">
+              <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                      aria-haspopup="true" aria-expanded="false">
+                  <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a href="javascript:saveSvgAsPng(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.png');">PNG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvgAsJpg(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.jpg');">JPG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvgAsTiff(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.tiff');">TIFF</a>
+                      </a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvg(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.svg');">SVG</a>
+                  </li>
+              </ul>
+          </div>
+        </div>
+      </div>
+      <div class="span4">
+        <div class="text-center">
+          <div class="btn-group">
+              <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                      aria-haspopup="true" aria-expanded="false">
+                  <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a href="javascript:saveSvgAsPng(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.png');">PNG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvgAsJpg(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.jpg');">JPG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvgAsTiff(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.tiff');">TIFF</a>
+                      </a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvg(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.svg');">SVG</a>
+                  </li>
+              </ul>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
-    <br />
-    <br />
-    <br />
-
-    <div class="row-fluid">
-      <div class="span12">
-        <div class="row-fluid">
-          <div class="span4">
-            <div id="class_f" class="text-center">
-              <h4>Class F<br />(Frizzled)</h4>
-            </div>
-          </div>
-
-          <div class="span4">
-            <div id="class_t2" class="text-center">
-              <h4>Class T <br /> (Taste 2)</h4>
-            </div>
-          </div>
-
-          <div class="span4">
-            <div id="orphan" class="text-center">
-              <h4>Class A <br /> Orphans</h4>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="row-fluid">
-      <div class="span12">
-        <div class="row-fluid">
-          <div class="span4">
-            <div class="text-center">
-              <div class="btn-group">
-                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                          aria-haspopup="true" aria-expanded="false">
-                      <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-                  </button>
-                  <ul class="dropdown-menu">
-                      <li>
-                          <a href="javascript:saveSvgAsPng(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.png');">PNG</a>
-                      </li>
-                      <li>
-                          <a href="javascript:saveSvgAsJpg(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.jpg');">JPG</a>
-                      </li>
-                      <li>
-                          <a href="javascript:saveSvgAsTiff(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.tiff');">TIFF</a>
-                          </a>
-                      </li>
-                      <li>
-                          <a href="javascript:saveSvg(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.svg');">SVG</a>
-                      </li>
-                  </ul>
-              </div>
-            </div>
-          </div>
-          <div class="span4">
-            <div class="text-center">
-              <div class="btn-group">
-                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                          aria-haspopup="true" aria-expanded="false">
-                      <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-                  </button>
-                  <ul class="dropdown-menu">
-                      <li>
-                          <a href="javascript:saveSvgAsPng(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.png');">PNG</a>
-                      </li>
-                      <li>
-                          <a href="javascript:saveSvgAsJpg(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.jpg');">JPG</a>
-                      </li>
-                      <li>
-                          <a href="javascript:saveSvgAsTiff(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.tiff');">TIFF</a>
-                          </a>
-                      </li>
-                      <li>
-                          <a href="javascript:saveSvg(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.svg');">SVG</a>
-                      </li>
-                  </ul>
-              </div>
-            </div>
-          </div>
-          <div class="span4">
-            <div class="text-center">
-              <div class="btn-group">
-                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                          aria-haspopup="true" aria-expanded="false">
-                      <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-                  </button>
-                  <ul class="dropdown-menu">
-                      <li>
-                          <a href="javascript:saveSvgAsPng(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.png');">PNG</a>
-                      </li>
-                      <li>
-                          <a href="javascript:saveSvgAsJpg(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.jpg');">JPG</a>
-                      </li>
-                      <li>
-                          <a href="javascript:saveSvgAsTiff(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.tiff');">TIFF</a>
-                          </a>
-                      </li>
-                      <li>
-                          <a href="javascript:saveSvg(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.svg');">SVG</a>
-                      </li>
-                  </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
 
 {% endblock %}
 
 {% block addon_js %}
-<script src="{% static 'home/js/bootstrap-toggle.min.js' %}"></script>
 <script src="{% static 'home/js/jquery.js' %}"></script>
 <script src="{% static 'home/js/d3.min.js' %}"></script>
 <script src="{% static 'home/js/nv.d3.min.js' %}"></script>
