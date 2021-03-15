@@ -247,14 +247,17 @@ class Command(BaseBuild):
 
     def get_states_to_model(self, receptor):
         rec_class = ProteinFamily.objects.get(name=receptor.get_protein_class())
-        structs_in_class = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=rec_class.slug, annotated=True)
+        if rec_class.name=='Class B2 (Adhesion)':
+            rec_class = ProteinFamily.objects.filter(name__in=['Class B1 (Secretin)', 'Class B2 (Adhesion)'])
+            structs_in_class = Structure.objects.filter(annotated=True).filter(Q(protein_conformation__protein__parent__family__slug__startswith=rec_class[0].slug) |
+                                                                               Q(protein_conformation__protein__parent__family__slug__startswith=rec_class[1].slug))
+        else:
+            structs_in_class = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=rec_class.slug, annotated=True)
         possible_states = structs_in_class.exclude(protein_conformation__protein__parent=receptor).exclude(state__name='Other').values_list('state__name', flat=True).distinct()
         if len(possible_states)==0:
-            if rec_class.name=='Class B2 (Adhesion)':
-                rec_class = ProteinFamily.objects.get(name='Class B1 (Secretin)')
-            elif rec_class.name=='Class T (Taste 2)':
+            if rec_class.name=='Class T (Taste 2)':
                 rec_class = ProteinFamily.objects.get(name='Class A (Rhodopsin)')
-            structs_in_class = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=rec_class.slug, annotated=True)
+                structs_in_class = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=rec_class.slug, annotated=True)
             possible_states = structs_in_class.exclude(protein_conformation__protein__parent=receptor).exclude(state__name='Other').values_list('state__name', flat=True).distinct()
         structs = structs_in_class.filter(protein_conformation__protein__parent=receptor)
         li1 = list(possible_states)
@@ -1144,11 +1147,13 @@ class HomologyModeling(object):
         else:
             del_H8_prot = self.reference_protein
         if len(Residue.objects.filter(protein_conformation__protein=del_H8_prot, protein_segment__slug='H8'))==0:
-            del a.reference_dict['H8']
-            del a.template_dict['H8']
-            del a.alignment_dict['H8']
-            del main_pdb_array['H8']
-
+            try:
+                del a.reference_dict['H8']
+                del a.template_dict['H8']
+                del a.alignment_dict['H8']
+                del main_pdb_array['H8']
+            except:
+                pass
         trimmed_residues=[]
 
         # loops

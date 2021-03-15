@@ -2,7 +2,7 @@ from build.management.commands.base_build import Command as BaseBuild
 from django.db import connection
 
 from protein.models import Protein, ProteinState
-from structure.models import Structure, StructureModel, StructureComplexModel, StatsText
+from structure.models import Structure, StructureModel, StructureComplexModel, StatsText, PdbData
 from common.definitions import *
 
 import Bio.PDB as PDB
