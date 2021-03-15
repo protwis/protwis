@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.conf import settings
 
 from common.views import AbsReferenceSelection
@@ -84,6 +84,9 @@ class TargetSelection(AbsTargetSelectionTable):
 def render_alignment(request):
     # get the user selection from session
     simple_selection = request.session.get('selection', False)
+
+    if simple_selection == False or not simple_selection.targets or not simple_selection.reference:
+        return redirect("/similaritysearch/referenceselection")
 
     # create an alignment object
     a = Alignment()

@@ -187,8 +187,17 @@ def detail(request, slug):
     try:
         pc = ProteinConformation.objects.get(protein__family__slug=slug, protein__sequence_type__slug='consensus')
     except ProteinConformation.DoesNotExist:
-        pc = ProteinConformation.objects.get(protein__family__slug=slug, protein__species_id=1,
-            protein__sequence_type__slug='wt')
+        try:
+            # In case of single members, not all families have a set consensus - grab the consensus of that single member
+            pc = ProteinConformation.objects.get(protein__family__slug__startswith=slug, protein__sequence_type__slug='consensus')
+        except ProteinConformation.DoesNotExist:
+            try:
+                pc = ProteinConformation.objects.get(protein__family__slug=slug, protein__species_id=1,
+                    protein__sequence_type__slug='wt')
+            except ProteinConformation.DoesNotExist:
+                # In case of single members, not all families have a set consensus - grab the human representative of that single member
+                pc = ProteinConformation.objects.get(protein__family__slug__startswith=slug, protein__species_id=1,
+                    protein__sequence_type__slug='wt')
 
     residues = Residue.objects.filter(protein_conformation=pc).order_by('sequence_number').prefetch_related(
         'protein_segment', 'generic_number', 'display_generic_number')

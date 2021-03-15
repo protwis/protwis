@@ -2,6 +2,7 @@
 from django.contrib import admin
 from django.conf import settings
 from protwis import views
+from django.views.generic import TemplateView
 
 
 urlpatterns = [
@@ -32,6 +33,7 @@ urlpatterns = [
     url(r'^seqsign/', include('seqsign.urls')),
     url(r'^angles/', include('angles.urls')),
     url(r'^hotspots/', include('hotspots.urls')),
+    url("robots.txt", TemplateView.as_view(template_name="common/robots.txt", content_type="text/plain")),
 ]
 
 handler404 = views.error404

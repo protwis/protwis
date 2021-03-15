@@ -72,14 +72,14 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        self.ss = Structure.objects.filter(refined=False).all()
+        self.ss = Structure.objects.all()
         self.structure_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'structures'])
         if self.purge:
             self.purge_contact_network()
         print(len(self.ss),'structures')
         self.prepare_input(self.processes, self.ss)
 
-        # for s in Structure.objects.filter(refined=False).all():
+        # for s in Structure.objects.all():
         #   self.purge_contact_network(s)
         #   self.build_contact_network(s,s.pdb_code.index)
 

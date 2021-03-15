@@ -20,7 +20,7 @@
          $(SVG).append(legend.children[i]);
      };
  };
- window.onload = function () {
+ $(window).on("load", function () {
     //Unique crystallized receptors graph
     nv.addGraph(function () {
         var datum = data_unique_cryst_container;
@@ -243,11 +243,11 @@
             $(this).css("display", 'none');
         });
     };
- 
+
 
     $(document).ready(function () {
         $('#unique_class.chart_type').css("fill", '#000000');
         $('#unique_class.chart_container').css("display", '');
     });
 
-};
+});

@@ -1,4 +1,4 @@
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.http import HttpResponse
 from django.core.cache import cache
 from django.core.cache import caches
@@ -127,7 +127,7 @@ def render_variants(request, protein=None, family=None, download=None, receptor_
 
     # Caching results for unique protein sets
     cache_key = "VARIATION_"+hashlib.md5(str(proteins).encode('utf-8')).hexdigest()
-    if not cache_variation.has_key(cache_key):
+    if not cache_variation.has_key(cache_key) and len(proteins)>0:
         NMs = NaturalMutations.objects.filter(Q(protein__in=proteins)).prefetch_related('residue__generic_number','residue__display_generic_number','residue__protein_segment','protein')
         ptms = PTMs.objects.filter(Q(protein__in=proteins)).prefetch_related('residue')
         ptms_dict = {}
@@ -260,43 +260,46 @@ def render_variants(request, protein=None, family=None, download=None, receptor_
         cache_data = cache_variation.get(cache_key)
 
     # EXCEL TABLE EXPORT
-    if download:
-        data = []
-        for r in cache_data['mutations']:
-            values = r.__dict__
-            complete = {'protein': r.protein.name, 'sequence_number': r.residue.sequence_number, 'orig_amino_acid': r.residue.amino_acid}
-            complete.update(values)
-            data.append(complete)
-        headers = ['protein', 'sequence_number', 'orig_amino_acid', 'type', 'amino_acid', 'allele_count', 'allele_number', 'allele_frequency', 'polyphen_score', 'sift_score', 'number_homozygotes', 'functional_annotation']
+    if cache_data:
+        if download:
+            data = []
+            for r in cache_data['mutations']:
+                values = r.__dict__
+                complete = {'protein': r.protein.name, 'sequence_number': r.residue.sequence_number, 'orig_amino_acid': r.residue.amino_acid}
+                complete.update(values)
+                data.append(complete)
+            headers = ['protein', 'sequence_number', 'orig_amino_acid', 'type', 'amino_acid', 'allele_count', 'allele_number', 'allele_frequency', 'polyphen_score', 'sift_score', 'number_homozygotes', 'functional_annotation']
 
-        # EXCEL SOLUTION
-        output = BytesIO()
-        workbook = xlsxwriter.Workbook(output)
-        worksheet = workbook.add_worksheet()
+            # EXCEL SOLUTION
+            output = BytesIO()
+            workbook = xlsxwriter.Workbook(output)
+            worksheet = workbook.add_worksheet()
 
-        col = 0
-        for h in headers:
-            worksheet.write(0, col, h)
-            col += 1
-        row = 1
-        for d in data:
             col = 0
             for h in headers:
-                worksheet.write(row, col, str(d[h]))
+                worksheet.write(0, col, h)
                 col += 1
-            row += 1
-        workbook.close()
-        output.seek(0)
-        xlsx_data = output.read()
+            row = 1
+            for d in data:
+                col = 0
+                for h in headers:
+                    worksheet.write(row, col, str(d[h]))
+                    col += 1
+                row += 1
+            workbook.close()
+            output.seek(0)
+            xlsx_data = output.read()
 
-        response = HttpResponse(xlsx_data, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        if target_type == 'family':
-            response['Content-Disposition'] = 'attachment; filename=' + clean_filename('GPCRdb_' + str(familyname) + '_variant_data.xlsx')  # % 'mutations'
-        else:
-            response['Content-Disposition'] = 'attachment; filename=GPCRdb_' + proteins[0].entry_name + '_variant_data.xlsx'  # % 'mutations'
-        return response
+            response = HttpResponse(xlsx_data, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            if target_type == 'family':
+                response['Content-Disposition'] = 'attachment; filename=' + clean_filename('GPCRdb_' + str(familyname) + '_variant_data.xlsx')  # % 'mutations'
+            else:
+                response['Content-Disposition'] = 'attachment; filename=GPCRdb_' + proteins[0].entry_name + '_variant_data.xlsx'  # % 'mutations'
+            return response
 
-    return render(request, 'browser.html', cache_data)
+        return render(request, 'browser.html', cache_data)
+    else:
+        return redirect("targetselection")
 
 def ajaxNaturalMutation(request, slug, **response_kwargs):
 
