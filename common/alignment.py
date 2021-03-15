@@ -15,6 +15,7 @@ from common.definitions import *
 from common.selection import Selection
 from django.conf import settings
 from django.core.cache import cache, caches
+from django.db.models import Q
 from protein.models import (Protein, ProteinConformation, ProteinFamily,
                             ProteinFusionProtein, ProteinSegment, ProteinState)
 from residue.functions import dgn, ggn
@@ -1409,10 +1410,16 @@ class AlignedReferenceTemplate(Alignment):
             template_family = ProteinFamily.objects.get(slug='001')
         else:
             template_family = self.reference_protein.family.parent.parent.parent
-        self.structures_data = Structure.objects.filter(
-            state__name__in=self.query_states, protein_conformation__protein__parent__family__parent__parent__parent=
-            template_family).order_by('protein_conformation__protein__parent',
-                                      'resolution').filter(annotated=True).distinct()
+        if self.reference_protein.family.parent.parent.parent.name == 'Class B2 (Adhesion)':
+            self.structures_data = Structure.objects.filter(
+                state__name__in=self.query_states).filter(Q(protein_conformation__protein__parent__family__parent__parent__parent=template_family) |
+                                                          Q(protein_conformation__protein__parent__family__parent__parent__parent=self.reference_protein.family.parent.parent.parent)
+                                                          ).order_by('protein_conformation__protein__parent','resolution').filter(annotated=True).distinct()
+        else:
+            self.structures_data = Structure.objects.filter(
+                state__name__in=self.query_states, protein_conformation__protein__parent__family__parent__parent__parent=
+                template_family).order_by('protein_conformation__protein__parent',
+                                          'resolution').filter(annotated=True).distinct()
         if self.revise_xtal==None:
             if self.force_main_temp:
                 main_st = Structure.objects.get(pdb_code__index=self.force_main_temp.upper())
@@ -1435,7 +1442,7 @@ class AlignedReferenceTemplate(Alignment):
         if self.complex:
             complex_templates = self.get_template_from_gprotein(self.signprot)
         for st in self.similarity_table:
-            if st.pdb_code.index=='5LWE' and st.protein_conformation.protein.parent==self.ordered_proteins[i].protein:
+            if st.pdb_code.index in ['5LWE','4Z9G'] and st.protein_conformation.protein.parent==self.ordered_proteins[i].protein:
                 i+=1
                 continue
             # only use complex main template in table signprot_complex
