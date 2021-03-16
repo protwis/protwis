@@ -143,7 +143,7 @@ function createRank(table_id, column) {
  * @returns {boolean} true if row contains selected target otherwise false
  */
 let counter = 0;
-function rankedRangeFiltert1(filterVal, columnVal, rowValues, stateVal) {
+function rankedRangeFilter(filterVal, columnVal, rowValues, stateVal, tableNum) {
     // DEBUG
     /*if (counter < 1) {
         counter++;
@@ -153,16 +153,18 @@ function rankedRangeFiltert1(filterVal, columnVal, rowValues, stateVal) {
         console.log(stateVal);
     }*/
 
+    let table_nr = tableNum;
     let column_value = $(columnVal).text();
     let column_nr = $(columnVal).attr("data-column-nr");
-    let min_filtering = parseFloat($("#ranked_range_min1_" + column_nr).val());
-    let max_filtering = parseFloat($("#ranked_range_max1_" + column_nr).val());
-    let rank_filtering = parseFloat($("#ranked_range_rank1_" + column_nr).val());
+    let min_filtering = parseFloat($("#ranked_range_min" + table_nr + "_" + column_nr).val());
+    let max_filtering = parseFloat($("#ranked_range_max" + table_nr + "_"  + column_nr).val());
+    let rank_filtering = parseFloat($("#ranked_range_rank" + table_nr + "_"  + column_nr).val());
+
 
     if (!isNaN(rank_filtering) && lastRangeRankFilter!=="max" && lastRangeRankFilter!=="min") {
       // If filtering on rank - clean range filter
-      $("#ranked_range_min1_" + column_nr).val("");
-      $("#ranked_range_max1_" + column_nr).val("");
+      $("#ranked_range_min" + table_nr + "_"  + column_nr).val("");
+      $("#ranked_range_max" + table_nr + "_"  + column_nr).val("");
 
       let ranked_value = parseFloat($(columnVal).attr("data-normalized"));
       if (isNaN(ranked_value)) {
@@ -172,7 +174,7 @@ function rankedRangeFiltert1(filterVal, columnVal, rowValues, stateVal) {
       }
     } else if (!isNaN(min_filtering) || !isNaN(max_filtering)) {
         // If filtering on range - clean rank filter
-        $("#ranked_range_rank1_" + column_nr).val("");
+        $("#ranked_range_rank" + table_nr + "_" + column_nr).val("");
 
         // Filter range on current columnVal
         let range_value = parseFloat(column_value);
@@ -194,55 +196,12 @@ function rankedRangeFiltert1(filterVal, columnVal, rowValues, stateVal) {
     }
 }
 
-function rankedRangeFiltert2(filterVal, columnVal, rowValues, stateVal) {
-    // DEBUG
-    /*if (counter < 1) {
-        counter++;
-        console.log("FILTERING FOR", filterVal);
-        console.log(columnVal);
-        console.log(rowValues);
-        console.log(stateVal);
-    }*/
+function rankedRangeFiltert1(filterVal, columnVal, rowValues, stateVal){
+     return rankedRangeFilter(filterVal, columnVal, rowValues, stateVal, "1");
+}
 
-    let column_value = $(columnVal).text();
-    let column_nr = $(columnVal).attr("data-column-nr");
-    let min_filtering = parseFloat($("#ranked_range_min2_" + column_nr).val());
-    let max_filtering = parseFloat($("#ranked_range_max2_" + column_nr).val());
-    let rank_filtering = parseFloat($("#ranked_range_rank2_" + column_nr).val());
-
-    if (!isNaN(rank_filtering) && lastRangeRankFilter!=="max" && lastRangeRankFilter!=="min") {
-      // If filtering on rank - clean range filter
-      $("#ranked_range_min2_" + column_nr).val("");
-      $("#ranked_range_max2_" + column_nr).val("");
-
-      let ranked_value = parseFloat($(columnVal).attr("data-normalized"));
-      if (isNaN(ranked_value)) {
-          return false;
-      } else {
-          return ranked_value <= rank_filtering;
-      }
-    } else if (!isNaN(min_filtering) || !isNaN(max_filtering)) {
-        // If filtering on range - clean rank filter
-        $("#ranked_range_rank2_" + column_nr).val("");
-
-        // Filter range on current columnVal
-        let range_value = parseFloat(column_value);
-         if (isNaN(range_value)) {
-              return false;
-          } else {
-             if (!isNaN(min_filtering) && !isNaN(max_filtering)) {
-                return range_value >= min_filtering && range_value <= max_filtering;
-             } else if (!isNaN(min_filtering)) {
-                  return range_value >= min_filtering;
-              } else if(!isNaN(max_filtering)) {
-                 return range_value <= max_filtering;
-             } else {
-                  // Should never happen
-              }
-          }
-    } else {
-        return true;
-    }
+function rankedRangeFiltert2(filterVal, columnVal, rowValues, stateVal){
+     return rankedRangeFilter(filterVal, columnVal, rowValues, stateVal, "2");
 }
 
 /**
