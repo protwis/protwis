@@ -106,9 +106,7 @@
 
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function () {
-            // 'use strict';
 
-            // var oTable;
             var oTable = $('#homology_models').DataTable({
                 scrollY:        "65vh",
                 scrollX:        true,
@@ -118,10 +116,7 @@
                   columnDefs: [
                     { targets: 'no-sort', orderable: false }
 
-                  ],
-                // fixedColumns:   {
-                //     leftColumns: 4,
-                // }
+                  ]
             });
 
             $("#homology_models_div").show();
@@ -262,9 +257,6 @@
 
             yadcf.exResetAllFilters(oTable);
 
-            // $.datepicker.regional[""].dateFormat = "yy-mm-dd";
-            // $.datepicker.setDefaults($.datepicker.regional['']);
-
             $('.alt').change(function () {
                 $(this).parent().parent().toggleClass('alt_selected');
             });
@@ -274,132 +266,8 @@
                 $('.alt').parent().parent().toggleClass('alt_selected');
             });
 
-            // $("#remove_sel").click(function () {
-            //     var oTable = $('#constructs').dataTable();
-            //     $('input:checkbox:checked').each(function () {
-            //         if ( $(this).is(':visible') ) {
-            //            id = $(this).attr('id');
-
-            //            if (id) {
-            //                oTable.fnDeleteRow("#"+id, null, false);
-            //            }
-            //         }
-            //     });
-            //    oTable.fnDraw();
-            // });
-
-            // $("#remove_non_sel").click(function () {
-            //     var oTable = $('#constructs').dataTable();
-            //     $('input:checkbox:not(:checked)').each(function () {
-            //         if ( $(this).is(':visible') ) {
-            //            id = $(this).attr('id');
-            //            if (id) {
-            //                oTable.fnDeleteRow("#"+id, null, false);
-            //            }
-            //        }
-            //     });
-            //     oTable.fnDraw();
-            // });
-
-            // $('#apply_filter').click(function() {
-            //     $("#filters").toggle();
-            // });
-
-            // $("#OpenFilters").click(function () {
-            //     $("#filters").toggle();
-            // });
-
-            // $('.slider').slider({
-            //   min: 30,
-            //   max: 200,
-            //   value: 70,
-            //   change: function( event, ui ) {
-            //     console.log(ui.value);
-            //     $(".schematic-block").width(ui.value);
-            //   }
-            // });
-
             $('[data-toggle="tooltip"]').tooltip({ container: 'body' })
             $('.table_tooltip').tooltip({ container: 'body', html: true, placement: "top"})
-
-
-            // $('.column_toggle').change(function(evt) {
-            //     console.log('start toggle');
-            //     // evt.stopPropagation();
-            //     // evt.stopImmediatePropagation();
-            //     // evt.preventDefault();
-            //     columns = $(this).attr('data-column').split(",");
-            //     var checked = this.checked;
-            //     var checked = (this.checked ? false : true);
-            //     columns.forEach(function(column) {
-            //         // console.log('hiding column');
-            //         var column = oTable.column( column );
-            //         try {
-            //             column.visible( checked );
-            //         }
-            //         catch(err) {
-            //             column.visible( checked );
-            //         }
-            //     });
-            //     // var Table = $('#constructs').dataTable();
-            //     // Table.fnDraw();
-            //     console.log('done toggle');
-            //     oTable.draw();
-            //     console.log('done draw');
-            // } );
-
-            // $('#superpose_btn').click(function() {
-            //     superposition(oTable, [12,5,6,7,8,9,2,3,4,10,11], "homology_model_browser", true);
-            // });
-
-            // $('#superpose_btn').click(function () {
-            //     ClearSelection('targets');
-            //     ClearSelection('reference');
-            //     if (oTable.rows('.selected').data().length == 1) {
-            //         var div = document.createElement("div");
-            //         div.innerHTML = oTable.rows('.selected').data()[0][12];
-            //         var state1 = oTable.rows('.selected').data()[0][3];
-            //         if (oTable.rows('.selected').data()[0][4]==='Yes') {
-            //             div.innerHTML = oTable.rows('.selected').data()[0][11];
-            //             if (typeof div.innerText !== "undefined") {
-            //                 AddToSelection('targets', 'structure',  div.innerText.replace(/\s+/g, '')+"_refined");
-            //             } else {
-            //                 AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, '')+"_refined");
-            //             }
-            //         }
-            //         else {
-            //             if (typeof div.innerText !== "undefined") {
-            //                 AddToSelection('reference', 'structure_model', div.innerText.replace(/\s+/g, ''));
-            //             } else {
-            //                 AddToSelection('reference', 'structure_model', div.textContent.replace(/\s+/g, ''));
-            //             }
-            //         }
-            //     }
-            //     var checked_data = oTable.rows('.alt_selected').data();
-            //     var selected_ids = [];
-            //     for (i = 0; i < checked_data.length; i++) {
-            //         var div = document.createElement("div");
-            //         div.innerHTML = checked_data[i][12];
-            //         var state2 = checked_data[i][3];
-            //         if (checked_data[i][4]==='Yes') {
-            //             div.innerHTML = checked_data[i][11];
-            //             if (typeof div.innerText !== "undefined") {
-            //                 selected_ids.push(div.innerText.replace(/\s+/g, '')+"_refined");
-            //             } else {
-            //                 selected_ids.push(div.textContent.replace(/\s+/g, '')+"_refined");
-            //             }
-            //         }
-            //         else {
-            //             if (typeof div.innerText !== "undefined") {
-            //                 selected_ids.push(div.innerText.replace(/\s+/g, '')+"_"+state2);
-            //             } else {
-            //                 selected_ids.push(div.textContent.replace(/\s+/g, '')+"_"+state2);
-            //             }
-            //         }
-            //     }
-            //     AddToSelection('targets', 'structure_models_many', selected_ids.join(","));
-            //     window.location.href = '/structure/superposition_workflow_index';
-            // });
 
             $('#download_btn').click(function () {
                 var selected_ids = [];
