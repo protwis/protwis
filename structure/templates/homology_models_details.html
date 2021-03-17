@@ -20,7 +20,7 @@ canvas {
 <div class="row text-success">
     <div class="text-center">
         {% if not model.protein.accession %}
-        <h2>{{ model.protein.entry_name }}_refined</h2>
+        <h2>{{ model.protein.entry_name }} refined</h2>
         {% else %}
         <h2>{{ model.protein.family.name|safe }} homology model</h2>
         {% endif %}
