@@ -114,7 +114,8 @@ class GProteinStructureBrowser(TemplateView):
 				Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
 				annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role','ligand__properities__web_links__web_resource')),
 				Prefetch("extra_proteins", queryset=StructureExtraProteins.objects.all().prefetch_related(
-					'protein_conformation','wt_protein')))
+					'protein_conformation','wt_protein')),
+				Prefetch("signprot_complex", queryset=SignprotComplex.objects.all().prefetch_related('protein')))
 		except Structure.DoesNotExist as e:
 			pass
 		# Fetch non-complex g prot structures and filter for overlaps preferring SignprotComplex
@@ -2023,10 +2024,7 @@ def ConvertStructuresToProteins(request):
 		selection.importer(simple_selection)
 	if selection.targets != []:
 		for struct in selection.targets:
-			if 'refined' in struct.item.pdb_code.index:
-				prot = struct.item.protein_conformation.protein
-			else:
-				prot = struct.item.protein_conformation.protein.parent
+			prot = struct.item.protein_conformation.protein.parent
 			selection.remove('targets', 'structure', struct.item.id)
 			selection.add('targets', 'protein', SelectionItem('protein', prot))
 		if selection.reference != []:
@@ -2143,7 +2141,7 @@ def ComplexmodDownload(request):
 		for hommod in hommodels:
 			io = StringIO(hommod.pdb_data.pdb)
 			stats_text = StringIO(hommod.stats_text.stats_text)
-			if hommod.main_template.refined:
+			if hommod.receptor_protein.accession:
 				mod_name = 'Class{}_{}-{}_{}_refined_{}_GPCRDB.pdb'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.parent.entry_name,
 																   hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
 				stat_name = 'Class{}_{}-{}_{}_refined_{}_GPCRDB.templates.csv'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.parent.entry_name,

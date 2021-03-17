@@ -296,9 +296,9 @@
                         </td>
                         <td>{{ structure.publication_date|date:"Y-m-d" }}</td>
                         {% if structure.protein %}
-                            <td style='display: none;'>{{ structure.protein.id }}</td>
+                            <td class='hidden'>{{ structure.protein.id }}</td>
                         {% else %}
-                            <td style='display: none;'>{{ structure.extra_proteins.all|only_one_subunit:"Alpha,id" }}</td>
+                            <td class='hidden'>{{ structure.signprot_complex.protein.id }}</td>
                         {% endif %}
                     </tr>
                 {% endfor %}

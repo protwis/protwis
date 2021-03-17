@@ -20,7 +20,7 @@ canvas {
 <div class="row text-success">
     <div class="text-center">
         {% if not model.protein.accession %}
-        <h2>{{ model.protein.entry_name }} refined</h2>
+        <h2>{{ model.protein.entry_name|upper }} refined</h2>
         {% else %}
         <h2>{{ model.protein.family.name|safe }} homology model</h2>
         {% endif %}
@@ -295,18 +295,10 @@ canvas {
 
             var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( color_residues );
 
-            if ("{{state}}"=="refined") {
-                stage.loadFile( "../pdb/{{modelname}}_{{state}}", { ext: "pdb" }  ).then( function( o ){
-                    o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId }
-                    o.centerView();
-                } );
-            }
-            else {
-                stage.loadFile( "view/{{modelname}}_{{model.state.slug}}", { ext: "pdb" }  ).then( function( o ){
-                    o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId }
-                    o.centerView();
-                } );
-            }
+            stage.loadFile( "view/{{modelname}}_{{model.state.slug}}", { ext: "pdb" }  ).then( function( o ){
+                o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId }
+                o.centerView();
+            } );
         } );
 
         $( "#fullscreen" ).click(function() {
