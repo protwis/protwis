@@ -284,7 +284,10 @@ for (let i=11; i <= 22; i++) {
         paging: false,
         bSortCellsTop: false, //prevent sort arrows going on bottom row
         aaSorting: [],
-        order: [[4, "asc"], [22, "desc"]],
+        order: [
+            [4, "asc"],
+            [22, "asc"]
+        ],
         autoWidth: false,
         bInfo: true,
         columnDefs: [
