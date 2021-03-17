@@ -1691,7 +1691,7 @@ class AlignedReferenceTemplate(Alignment):
                     break
             main_t = None
             if self.revise_xtal.upper() in self.loop_partial_except_list[self.segment_labels[0]+ECL2_part]:
-                main_t = temp_list[0]
+                main_t = combined[0]
                 temp_list = []
             main_t_added = False
             for i in combined:

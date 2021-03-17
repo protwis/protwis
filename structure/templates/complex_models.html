@@ -106,7 +106,6 @@
             var prev_ids = Array()
             var current_align_ids = Array()
 
-            console.log(oTable);
             $("#constructs_div").show();
             assign_to_row();
             $("#loading_div").hide();
@@ -116,6 +115,9 @@
             $('.alt').prop('checked',false)
             $('.select-all').prop('checked',false)
             //
+
+            ClearSelection('reference');
+            ClearSelection('targets');
 
             yadcf.init(oTable,
                 [
@@ -411,7 +413,6 @@
                 var checked_data = oTable.rows('.alt_selected').data();
                 ClearSelection('targets');
                 for (i = 0; i < checked_data.length; i++) {
-
                     AddToSelection('targets', 'structure_complex_receptor',  checked_data[i][15]+'-'+checked_data[i][16] );
 
                 }
@@ -422,7 +423,6 @@
                 var checked_data = oTable.rows('.alt_selected').data();
                 ClearSelection('targets');
                 for (i = 0; i < checked_data.length; i++) {
-                    
                     AddToSelection('targets', 'structure_complex_signprot',  checked_data[i][16] );
                     
                 }
@@ -491,8 +491,6 @@
                    if (id) { ids.push(id); }
                 }
             });
-
-            console.log(ids);
 
             current_align_ids = ids
             var url = '/construct/align';

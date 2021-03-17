@@ -19,7 +19,11 @@ canvas {
 
 <div class="row text-success">
     <div class="text-center">
-        <h2>{{ model.receptor_protein.family.name|safe }} - {{ model.sign_protein.name|safe }} complex homology model</h2>
+        {% if model.receptor_protein.accession %}
+            <h2>{{ model.receptor_protein.family.name|safe }} - {{ model.sign_protein.name|safe }} complex homology model</h2>
+        {% else %}
+            <h2>{{ model.receptor_protein.entry_name|upper }} refined </h2>
+        {% endif %}
     </div>
 </div>
 
@@ -37,7 +41,11 @@ canvas {
         <h4>RECEPTOR</h4>
     </div>
     <div class="col-md-9">
-        <a href="/protein/{{ model.receptor_protein.entry_name }}">{{ model.receptor_protein.name|safe }}</a>
+        {% if model.receptor_protein.accession %}
+            <a href="/protein/{{ model.receptor_protein.entry_name }}">{{ model.receptor_protein.name|safe }}</a>
+        {% else %}
+            <a href="/protein/{{ model.receptor_protein.parent.entry_name }}">{{ model.receptor_protein.parent.name|safe }}</a>
+        {% endif %}
     </div>
 </div>
 
@@ -121,10 +129,11 @@ canvas {
     </div>
     <div class="col-md-9">
         <a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a> (sequence similarity: {{ main_template_seqsim }}%) PDB: <a href="../{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index }}</a>
-
-        <div class="btn-group", style="padding: 0px 0px 5px 5px;">
-            <a id="align_btn1" class="btn btn-primary btn-mini " href="javascript:void(0)" style="padding: 2px 5px;">Align</a>
-        </div>
+        {% if model.receptor_protein.accession %}
+            <div class="btn-group", style="padding: 0px 0px 5px 5px;">
+                <a id="align_btn1" class="btn btn-primary btn-mini " href="javascript:void(0)" style="padding: 2px 5px;">Align</a>
+            </div>
+        {% endif %}
         <br>
         <a href="/signprot/{{ signprot_template.entry_name }}">{{ signprot_template.name|safe }}</a> (sequence similarity: {{ signprot_sim }}%)
         {% if signprot_template.entry_name != model.sign_protein.entry_name %}
@@ -298,14 +307,14 @@ canvas {
                         <td>{{ rota.residue.amino_acid }}</td>
                         <td>{{ rota.residue.generic_number.label }}</td>
                         {% if rota.backbone_template %}
-                            <td><a href="/protein/{{ rota.backbone_template.protein_conformation.protein.parent.entry_name }}">{{ rota.backbone_template.protein_conformation.protein.parent.name|safe }}</a></td>
+                            <td><a href="/signprot/{{ rota.backbone_template.signprot_complex.protein.entry_name }}"> {{ rota.backbone_template.signprot_complex.protein.name}}</a></td>
                             <td><a href="../{{ rota.backbone_template.pdb_code.index }}">{{ rota.backbone_template.pdb_code.index }}</a></td>
                         {% else %}
                             <td>-</td>
                             <td>-</td>
                         {% endif %}
                         {% if rota.rotamer_template %}
-                            <td><a href="/protein/{{ rota.rotamer_template.protein_conformation.protein.parent.entry_name }}">{{ rota.rotamer_template.protein_conformation.protein.parent.name|safe }}</a></td>
+                            <td><a href="/signprot/{{ rota.rotamer_template.signprot_complex.protein.entry_name }}"> {{ rota.rotamer_template.signprot_complex.protein.name}}</a></td>
                             <td><a href="../{{ rota.rotamer_template.pdb_code.index }}">{{ rota.rotamer_template.pdb_code.index }}</a></td>
                         {% else %}
                             <td>-</td>
@@ -453,17 +462,10 @@ canvas {
                 },
             });
             $('#align_btn1').click(function () {
-                var checked_data = ["{{model.receptor_protein.entry_name}}", "{{model.main_template.pdb_code.index}}"];
-                ClearSelection('targets');
-                for (i = 0; i < checked_data.length; i++) {
-                    var div = document.createElement("div");
-                    div.innerHTML = checked_data[i];
-                    if (i==0) {
-                        AddToSelection('targets', 'structure_complex_receptor',  div.innerText.replace(/\s+/g, '') );
-                    } else {
-                        AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
-                    }
-                }
+                ClearSelection("targets");
+                AddToSelection("targets", "structure_complex_receptor", "{{model.receptor_protein.entry_name}}");
+                AddToSelection("targets", "structure", "{{model.main_template}}");
+                
                 window.location.href = '/structure/selection_convert_model';
             });
             $('#align_btn2').click(function () {

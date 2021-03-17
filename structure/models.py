@@ -176,7 +176,10 @@ class StructureComplexModel(models.Model):
         return self.pdb_data.pdb
 
     def get_prot_gprot_pair(self):
-        pgp = ProteinGProteinPair.objects.filter(protein=self.receptor_protein, g_protein__slug=self.sign_protein.family.parent.slug, source='GuideToPharma')
+        if self.receptor_protein.accession:
+            pgp = ProteinGProteinPair.objects.filter(protein=self.receptor_protein, g_protein__slug=self.sign_protein.family.parent.slug, source='GuideToPharma')
+        else:
+            pgp = ProteinGProteinPair.objects.filter(protein=self.receptor_protein.parent, g_protein__slug=self.sign_protein.family.parent.slug, source='GuideToPharma')
         if len(pgp)>0:
             return pgp[0].transduction
         else:
