@@ -65,41 +65,46 @@
 <table style="width:75% !important" class="table table-stripped">
     <thead>
         <tr>
-            <td><b>Class (Family)</b></td>
-            <td align="center"><b>Total</b></td>
+            <td><b>Class<br />(Family)</b></td>
             {% for class in all_structures_by_class.items %}
-            <td align="center"><b>{% if class.0 == "Class T (Taste 2)" %}Taste&nbsp;2{% else %}{{ class.0 }}{% endif %}</b></td>
+            <td align="center"><b>
+              {% if class.0 == " T (Taste 2)" %}T2 (Taste&nbsp;2)
+              {% elif class.0 == " D1 (Ste2-like fungal pheromone)" %}D1<br \>(Ste2-like fungal pheromone)
+              {% else %}{{ class.0 }}
+              {% endif %}
+            </b></td>
             {% endfor %}
+            <td align="center"><b>Total</b></td>
         </tr>
     </thead>
     <tbody>
         <tr>
             <td>Receptors</td>
-            <td align="center" style="vertical-align:middle !important">{{ all_structures }}</td>
             {% for class in all_structures_by_class.items %}
             <td align="center" style="vertical-align:middle !important">{{ class.1 }}</td>
             {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_structures }}</td>
         </tr>
         <tr>
             <td>Receptor - ligand complexes</td>
-            <td align="center" style="vertical-align:middle !important">{{ all_complexes }}</td>
             {% for class in all_complexes_by_class.items %}
             <td align="center"  style="vertical-align:middle !important">{{ class.1 }}</td>
             {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_complexes }}</td>
         </tr>
         <tr>
             <td>Receptor - G protein complexes</td>
-            <td align="center" style="vertical-align:middle !important">{{ all_gprots }}</td>
             {% for class in all_gprots_by_class.items %}
             <td align="center"  style="vertical-align:middle !important">{{ class.1 }}</td>
             {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_gprots }}</td>
         </tr>
         <tr>
             <td>Active-state receptors*</td>
-            <td align="center" style="vertical-align:middle !important">{{ all_active }}</td>
             {% for class in all_active_by_class.items %}
             <td align="center"  style="vertical-align:middle !important">{{ class.1 }}</td>
             {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_active }}</td>
         </tr>
     </tbody>
     <tr> </tr>
@@ -111,41 +116,46 @@
 <table style="width:75% !important" class="table table-stripped">
     <thead>
         <tr>
-            <td><b>Class (Family)</b></td>
-            <td align="center">Total</td>
+            <td><b>Class<br />(Family)</b></td>
             {% for class in unique_structures_by_class.items %}
-            <td align="center"><b>{% if class.0 == "Class T (Taste 2)" %}Taste&nbsp;2{% else %}{{ class.0 }}{% endif %}</b></td>
+            <td align="center"><b>
+              {% if class.0 == " T (Taste 2)" %}T2 (Taste&nbsp;2)
+              {% elif class.0 == " D1 (Ste2-like fungal pheromone)" %}D1<br \>(Ste2-like fungal pheromone)
+              {% else %}{{ class.0 }}
+              {% endif %}
+            </b></td>
             {% endfor %}
+            <td align="center"><b>Total</b></td>
         </tr>
     </thead>
     <tbody>
         <tr>
             <td>Receptors**</td>
-            <td align="center" style="vertical-align:middle !important">{{ unique_structures }}</td>
             {% for class in unique_structures_by_class.items %}
             <td align="center" style="vertical-align:middle !important">{{ class.1 }}</td>
             {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ unique_structures }}</td>
         </tr>
         <tr>
             <td>Receptor - ligand complexes</td>
-            <td align="center" style="vertical-align:middle !important">{{ unique_complexes }}</td>
             {% for class in unique_complexes_by_class.items %}
             <td align="center" style="vertical-align:middle !important">{{ class.1 }}</td>
             {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ unique_complexes }}</td>
         </tr>
         <tr>
             <td>Receptor - G protein complexes</td>
-            <td align="center" style="vertical-align:middle !important">{{ unique_gprots }}</td>
             {% for class in unique_gprots_by_class.items %}
             <td align="center" style="vertical-align:middle !important">{{ class.1 }}</td>
             {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ unique_gprots }}</td>
         </tr>
         <tr>
             <td>Active-state receptors*</td>
-            <td align="center" style="vertical-align:middle !important">{{ unique_active }}</td>
             {% for class in unique_active_by_class.items %}
             <td align="center" style="vertical-align:middle !important">{{ class.1 }}</td>
             {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ unique_active }}</td>
         </tr>
     </tbody>
     <tr> </tr>
@@ -410,7 +420,13 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
 <br />-->
 <h4>Structural coverage of GPCR Classes</h4>
 <br />
-<p><input id="name_toggle" type="checkbox" checked data-toggle="toggle" data-on="UniProt" data-off="IUPHAR" data-onstyle="info" data-offstyle="info"></p>
+<div>
+  Receptor names:
+    <div class="btn-group" role="group" id="gtp_plus">
+        <button id="UniProtNames" class="btn btn-info active">UniProt</button>
+        <button id="IUPHARNames" class="btn btn-info">IUPHAR</button>
+    </div>
+</div>
 <br />
 <script type="text/javascript" charset="utf-8">
     class_a = {{ class_a|safe }};
@@ -430,9 +446,9 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
     whole_dict = {{ whole_receptors|safe }};
 </script>
 <script language='javascript'>
-  document.getElementById("name_toggle").onchange = function(e){
-    if(e.target.checked){
-      console.log('checked');
+  $("#UniProtNames").click(function() {
+      $("#UniProtNames").addClass("active");
+      $("#IUPHARNames").removeClass("active");
       changeLeavesLabels("class_a","UniProt", whole_dict);
       changeLeavesLabels("class_b1","UniProt", whole_dict);
       changeLeavesLabels("class_b2","UniProt", whole_dict);
@@ -440,8 +456,11 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
       changeLeavesLabels("class_f","UniProt", whole_dict);
       changeLeavesLabels("class_t2","UniProt", whole_dict);
       changeLeavesLabels("orphan","UniProt", whole_dict);
-    }else{
-      console.log('unchecked');
+  });
+
+  $("#IUPHARNames").click(function() {
+      $("#UniProtNames").removeClass("active");
+      $("#IUPHARNames").addClass("active");
       changeLeavesLabels("class_a","IUPHAR", whole_dict);
       changeLeavesLabels("class_b1","IUPHAR", whole_dict);
       changeLeavesLabels("class_b2","IUPHAR", whole_dict);
@@ -449,8 +468,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
       changeLeavesLabels("class_f","IUPHAR", whole_dict);
       changeLeavesLabels("class_t2","IUPHAR", whole_dict);
       changeLeavesLabels("orphan","IUPHAR", whole_dict);
-    }
-  };
+  });
 </script>
 <div id="class_a" class="text-center">
   <h4>Class A<br />(Rhodopsin)</h4>
@@ -482,10 +500,16 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
 <br />
 <br />
 
-
 <div class="row-fluid">
   <div class="span12">
     <div class="row-fluid">
+
+      <div class="span4">
+        <div id="orphan" class="text-center">
+          <h4>Class A <br /> Orphans</h4>
+        </div>
+      </div>
+
       <div class="span4">
         <div id="class_b1" class="text-center">
           <h4>Class B1<br />(Secretin)</h4>
@@ -498,11 +522,6 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
         </div>
       </div>
 
-      <div class="span4">
-        <div id="class_c" class="text-center">
-          <h4>Class C<br />(Glutamate)</h4>
-        </div>
-      </div>
     </div>
   </div>
 </div>
@@ -510,6 +529,33 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
 <div class="row-fluid">
   <div class="span12">
     <div class="row-fluid">
+
+      <div class="span4">
+        <div class="text-center">
+          <div class="btn-group">
+              <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                      aria-haspopup="true" aria-expanded="false">
+                  <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a href="javascript:saveSvgAsPng(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.png');">PNG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvgAsJpg(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.jpg');">JPG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvgAsTiff(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.tiff');">TIFF</a>
+                      </a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvg(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.svg');">SVG</a>
+                  </li>
+              </ul>
+          </div>
+        </div>
+      </div>
+
       <div class="span4">
         <div class="text-center">
           <div class="btn-group">
@@ -560,6 +606,42 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<br />
+<br />
+<br />
+
+<div class="row-fluid">
+  <div class="span12">
+    <div class="row-fluid">
+      <div class="span4">
+        <div id="class_c" class="text-center">
+          <h4>Class C<br />(Glutamate)</h4>
+        </div>
+      </div>
+
+      <div class="span4">
+        <div id="class_f" class="text-center">
+          <h4>Class F<br />(Frizzled)</h4>
+        </div>
+      </div>
+
+      <div class="span4">
+        <div id="class_t2" class="text-center">
+          <h4>Class T <br /> (Taste 2)</h4>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="row-fluid">
+  <div class="span12">
+    <div class="row-fluid">
       <div class="span4">
         <div class="text-center">
           <div class="btn-group">
@@ -585,119 +667,60 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
           </div>
         </div>
       </div>
+      <div class="span4">
+        <div class="text-center">
+          <div class="btn-group">
+              <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                      aria-haspopup="true" aria-expanded="false">
+                  <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a href="javascript:saveSvgAsPng(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.png');">PNG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvgAsJpg(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.jpg');">JPG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvgAsTiff(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.tiff');">TIFF</a>
+                      </a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvg(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.svg');">SVG</a>
+                  </li>
+              </ul>
+          </div>
+        </div>
+      </div>
+      <div class="span4">
+        <div class="text-center">
+          <div class="btn-group">
+              <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                      aria-haspopup="true" aria-expanded="false">
+                  <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a href="javascript:saveSvgAsPng(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.png');">PNG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvgAsJpg(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.jpg');">JPG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvgAsTiff(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.tiff');">TIFF</a>
+                      </a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvg(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.svg');">SVG</a>
+                  </li>
+              </ul>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
-    <br />
-    <br />
-    <br />
-
-    <div class="row-fluid">
-      <div class="span12">
-        <div class="row-fluid">
-          <div class="span4">
-            <div id="class_f" class="text-center">
-              <h4>Class F<br />(Frizzled)</h4>
-            </div>
-          </div>
-
-          <div class="span4">
-            <div id="class_t2" class="text-center">
-              <h4>Class T <br /> (Taste 2)</h4>
-            </div>
-          </div>
-
-          <div class="span4">
-            <div id="orphan" class="text-center">
-              <h4>Class A <br /> Orphans</h4>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="row-fluid">
-      <div class="span12">
-        <div class="row-fluid">
-          <div class="span4">
-            <div class="text-center">
-              <div class="btn-group">
-                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                          aria-haspopup="true" aria-expanded="false">
-                      <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-                  </button>
-                  <ul class="dropdown-menu">
-                      <li>
-                          <a href="javascript:saveSvgAsPng(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.png');">PNG</a>
-                      </li>
-                      <li>
-                          <a href="javascript:saveSvgAsJpg(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.jpg');">JPG</a>
-                      </li>
-                      <li>
-                          <a href="javascript:saveSvgAsTiff(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.tiff');">TIFF</a>
-                          </a>
-                      </li>
-                      <li>
-                          <a href="javascript:saveSvg(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.svg');">SVG</a>
-                      </li>
-                  </ul>
-              </div>
-            </div>
-          </div>
-          <div class="span4">
-            <div class="text-center">
-              <div class="btn-group">
-                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                          aria-haspopup="true" aria-expanded="false">
-                      <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-                  </button>
-                  <ul class="dropdown-menu">
-                      <li>
-                          <a href="javascript:saveSvgAsPng(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.png');">PNG</a>
-                      </li>
-                      <li>
-                          <a href="javascript:saveSvgAsJpg(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.jpg');">JPG</a>
-                      </li>
-                      <li>
-                          <a href="javascript:saveSvgAsTiff(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.tiff');">TIFF</a>
-                          </a>
-                      </li>
-                      <li>
-                          <a href="javascript:saveSvg(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.svg');">SVG</a>
-                      </li>
-                  </ul>
-              </div>
-            </div>
-          </div>
-          <div class="span4">
-            <div class="text-center">
-              <div class="btn-group">
-                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                          aria-haspopup="true" aria-expanded="false">
-                      <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-                  </button>
-                  <ul class="dropdown-menu">
-                      <li>
-                          <a href="javascript:saveSvgAsPng(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.png');">PNG</a>
-                      </li>
-                      <li>
-                          <a href="javascript:saveSvgAsJpg(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.jpg');">JPG</a>
-                      </li>
-                      <li>
-                          <a href="javascript:saveSvgAsTiff(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.tiff');">TIFF</a>
-                          </a>
-                      </li>
-                      <li>
-                          <a href="javascript:saveSvg(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.svg');">SVG</a>
-                      </li>
-                  </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
 
 {% endblock %}
 

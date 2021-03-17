@@ -495,7 +495,7 @@ def CouplingProfiles(request, render_part="both"):
             tot = 0
             txttot = ''
             fam = str(ProteinFamily.objects.get(slug=(slug)))
-            table['Class'].append(fam)
+            table['Class'].append(fam.replace('Class',''))
             jsondata = {}
             jsondata_gtp_plus = {}
             for gp in gproteins:
