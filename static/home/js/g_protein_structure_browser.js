@@ -313,7 +313,7 @@ function gproteinstructurebrowser() {
                 select_type_options: {
                     width: '100px',
                 },
-                data: ['none', 'peptide', 'peptidesmall molecule', 'protein', 'small molecule', 'small moleculesmall molecule']
+                data: ['none', 'peptide', 'peptidesmall molecule', 'protein', 'small molecule', 'small moleculesmall molecule','-']
             },
             {
                 column_number : 24,
@@ -325,7 +325,7 @@ function gproteinstructurebrowser() {
                 select_type_options: {
                     width: '100px',
                 },
-                data: ['AgonistPAM', 'Agonist', 'Apo (no ligand)']
+                data: ['AgonistPAM', 'Agonist', 'Apo (no ligand)', 'PAMAgonist','-']
             },
             {
                 column_number : 25,
@@ -491,15 +491,8 @@ function gproteinstructurebrowser() {
     $('#align_btn_g_prot').click(function () {
         var checked_data = oTable2.rows('.alt_selected').data();
         ClearSelection('targets');
-        console.log(checked_data);
         for (i = 0; i < checked_data.length; i++) {
-            var div = document.createElement("div");
-            div.innerHTML = checked_data[i][30];
-            if (typeof div.innerText !== "undefined") {
-                AddToSelection('targets', 'protein', div.innerText.replace(/\s+/g, ''));
-            } else {
-                AddToSelection('targets', 'protein', div.textContent.replace(/\s+/g, ''));
-            }
+            AddToSelection('targets', 'protein', checked_data[i][30]);
         }
         window.location.href = '/alignment/segmentselectiongprot';
     });
