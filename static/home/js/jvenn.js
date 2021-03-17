@@ -2016,10 +2016,10 @@
 			div_export += '<canvas id="canvasExport" style="border:1px solid white" width="25" height="20"></canvas>';
         	div_export += '<div id="export-menu" style="position: relative;width:150px; height:30px; display:none; right:123px; top:-4px;">';
         	div_export += '<div style="box-shadow: 3px 3px 10px rgb(136, 136, 136); border: 1px solid rgb(160, 160, 160); background: none repeat scroll 0% 0% rgb(255, 255, 255);padding: 5px 0px;">';
-        	div_export += '<div id="format-png" style="padding: 0px 10px; background: none repeat scroll 0% 0% transparent; color: rgb(48, 48, 48); font-size: 12px;">Download PNG image</div>';
-        	div_export += '<div id="format-svg" style="padding: 0px 10px; background: none repeat scroll 0% 0% transparent; color: rgb(48, 48, 48); font-size: 12px;">Download SVG image</div>';
+        	div_export += '<div id="format-png" style="padding: 0px 10px; background: none repeat scroll 0% 0% transparent; color: rgb(48, 48, 48); font-size: 12px;">Venn as PNG Figure</div>';
+        	div_export += '<div id="format-svg" style="padding: 0px 10px; background: none repeat scroll 0% 0% transparent; color: rgb(48, 48, 48); font-size: 12px;">Venn as SVG Figure</div>';
         	if (type == "list") {
-        		div_export += '<div id="format-csv" style="padding: 0px 10px; background: none repeat scroll 0% 0% transparent; color: rgb(48, 48, 48); font-size: 12px;">Download CSV lists</div>';
+        		div_export += '<div id="format-csv" style="padding: 0px 10px; background: none repeat scroll 0% 0% transparent; color: rgb(48, 48, 48); font-size: 12px;">Venn data as CSV lists</div>';
         	}
         	div_export += '</div>';
 			div_export += '</div>';
