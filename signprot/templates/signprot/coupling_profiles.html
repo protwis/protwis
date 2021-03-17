@@ -15,8 +15,6 @@
 <link href="{% static 'home/css/targetselect_functions.css' %}" rel="stylesheet" media="screen">
 <link href="{% static 'home/css/select2.css' %}" rel="stylesheet" media="screen">
 
-
-<script src="{% static 'home/js/jquery.min.js' %}"></script>
 <script src="{% static 'home/js/selection.js' %}"></script>
 
 
@@ -653,9 +651,9 @@ $(window).on("load",function() {
 <table style="width:60% !important" class="table table-stripped">
     <thead>
         <tr>
-            <td style="font-size:15px;"><b>Class <br /> (Family)</td>
+            <td style="font-size:15px;"><b>Class<br />(Family)</td>
             {% for key in table.Class %}
-            <td align="center"><b>{{ key }}</b></td>
+            <td align="center"><b>{% if key == " T (Taste 2)" %}T2 (Taste&nbsp;2){% else %}{{ key }}{% endif %}</b></td>
             {% endfor %}
             <td  align="center"><b>Total</b></td>
         </tr>

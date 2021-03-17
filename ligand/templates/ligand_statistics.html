@@ -149,12 +149,17 @@
 {% else %}
 <h4>Number of unique ligands bias per receptor class</h4>
 {% endif %}
-<table style="width:85% !important" class="table table-stripped">
+<table style="width:80% !important" class="table table-stripped">
     <thead>
         <tr>
             <td><b>Class<br />(Family)</b></td>
             {% for data in ligands_by_class %}
-            <td align="center"><b>{{ data.name }}</b></td>
+            <td align="center"><b>
+              {% if data.name == " T (Taste 2)" %}T2 (Taste&nbsp;2)
+              {% elif data.name == " D1 (Ste2-like fungal pheromone)" %}D1<br \>(Ste2-like fungal pheromone)
+              {% else %}{{ data.name }}
+              {% endif %}
+            </b></td>
             {% endfor %}
             <td align="center"><b>Total</b></td>
         </tr>
@@ -531,7 +536,6 @@ Circle colors indicate a number of ligands:
 {% endblock %}
 
 {% block addon_js %}
-<script src="{% static 'home/js/jquery.js' %}"></script>
 <script src="{% static 'home/js/d3.min.js' %}"></script>
 <script src="{% static 'home/js/nv.d3.min.js' %}"></script>
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>

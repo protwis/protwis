@@ -62,12 +62,17 @@
 
 {% block content %}
 <h4>Number of structures, including multiple of same receptor (complex)</h4>
-<table style="width:85% !important" class="table table-stripped">
+<table style="width:75% !important" class="table table-stripped">
     <thead>
         <tr>
-            <td><b>Class (Family)</b></td>
+            <td><b>Class<br />(Family)</b></td>
             {% for class in all_structures_by_class.items %}
-            <td align="center"><b>{{ class.0 }}</b></td>
+            <td align="center"><b>
+              {% if class.0 == " T (Taste 2)" %}T2 (Taste&nbsp;2)
+              {% elif class.0 == " D1 (Ste2-like fungal pheromone)" %}D1<br \>(Ste2-like fungal pheromone)
+              {% else %}{{ class.0 }}
+              {% endif %}
+            </b></td>
             {% endfor %}
             <td align="center"><b>Total</b></td>
         </tr>
@@ -108,12 +113,17 @@
 <br />
 <br />
 <h4>Number of unique receptor complexes</h4>
-<table style="width:85% !important" class="table table-stripped">
+<table style="width:75% !important" class="table table-stripped">
     <thead>
         <tr>
-            <td><b>Class (Family)</b></td>
+            <td><b>Class<br />(Family)</b></td>
             {% for class in unique_structures_by_class.items %}
-            <td align="center"><b>{{ class.0 }}</b></td>
+            <td align="center"><b>
+              {% if class.0 == " T (Taste 2)" %}T2 (Taste&nbsp;2)
+              {% elif class.0 == " D1 (Ste2-like fungal pheromone)" %}D1<br \>(Ste2-like fungal pheromone)
+              {% else %}{{ class.0 }}
+              {% endif %}
+            </b></td>
             {% endfor %}
             <td align="center"><b>Total</b></td>
         </tr>
