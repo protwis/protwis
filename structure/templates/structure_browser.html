@@ -238,7 +238,11 @@
                         </td>
                         <td>
                             {% if structure.refined %}
-                            <a target='_blank' href="homology_models/{{ structure.pdb_code.index }}_refined">{{structure.pdb_code.index}}_refined</a>
+                                {% if structure.signprotcomplex_set.all|length > 0 %}
+                                    <a target='_blank' href="complex_models/{{ structure.pdb_code.index|lower }}-{% with structure.signprotcomplex_set.all|first as sc %}{{ sc.protein.entry_name }}{% endwith %}">{{structure.pdb_code.index}}_refined</a>
+                                {% else %}
+                                    <a target='_blank' href="homology_models/{{ structure.pdb_code.index|lower }}_{{ structure.state.slug }}">{{structure.pdb_code.index}}_refined</a>
+                                {% endif %}
                             {% else %}
                             -
                             {% endif %}
