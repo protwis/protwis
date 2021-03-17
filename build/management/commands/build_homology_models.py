@@ -22,6 +22,7 @@ import Bio.PDB as PDB
 from modeller import *
 from modeller.automodel import *
 from collections import OrderedDict
+import glob
 import os
 import shlex
 import logging
@@ -87,6 +88,7 @@ class Command(BaseBuild):
         parser.add_argument('--force_main_temp', help='Build model using this xtal as main template', default=False, type=str)
         parser.add_argument('--fast_refinement', help='Chose fastest refinement option in MODELLER', default=False, action='store_true')
         parser.add_argument('--keep_hetatoms', help='Keep hetero atoms from main template, this includes ligands', default=False, action='store_true')
+        parser.add_argument('--rerun', help='Skip models with matching zip archives and only run the missing models.', default=False, action='store_true')
 
 
     def handle(self, *args, **options):
@@ -113,6 +115,7 @@ class Command(BaseBuild):
         self.force_main_temp = options['force_main_temp']
         self.fast_refinement = options['fast_refinement']
         self.keep_hetatoms = options['keep_hetatoms']
+        self.rerun = options['rerun']
 
         GPCR_class_codes = {'A':'001', 'B1':'002', 'B2':'003', 'C':'004', 'D1':'005', 'F':'006', 'T':'007'}
         self.modeller_iterations = options['i']
@@ -223,23 +226,27 @@ class Command(BaseBuild):
             i += 1
             with lock:
                 receptor = self.receptor_list[count.value]
-                logger.info('Generating model for  \'{}\' ({})... ({} out of {}) (processor:{} count:{})'.format(receptor[0].entry_name, receptor[1],count.value, len(self.receptor_list),processor_id,i))
                 count.value +=1
 
-            # TODO maybe make check make sense -- since homology_models are deleted, then it doesnt make sense now
-            # check
-            # sm = StructureModel.objects.filter(protein__entry_name=receptor[0].entry_name, state__name=receptor[1]).first()
-            # if sm:
-            #     print('receptor',receptor,'already done',sm)
-            #     main_structure = sm.main_structure.pdb_code.index
-            #     # class_name = 'Class'+class_tree[Protein.objects.get(entry_name=self.reference_entry_name).family.parent.slug[:3]]
-            #     # modelname = '{}_{}_{}_{}_GPCRdb'.format(self.class_name, self.reference_entry_name, self.state,
-            #     #                          self.main_structure)
-            #     continue
+            # RERUN: if a model zip file already exists, skip it and move to the next
+            if self.rerun:
+                # Init temporary model object for checks regarding signaling protein complexes etc.
+                temp_model_check = HomologyModeling(receptor[0].entry_name, receptor[1], [receptor[1]], iterations=self.modeller_iterations, complex_model=self.complex, signprot=self.signprot, debug=self.debug,
+                                                  force_main_temp=self.force_main_temp, fast_refinement=self.fast_refinement, keep_hetatoms=self.keep_hetatoms)
 
-            # then check db
+                path = './structure/complex_models_zip/' if temp_model_check.complex else './structure/homology_models_zip/'
+                # Differentiate between structure refinement and homology modeling
+                if temp_model_check.revise_xtal:
+                    filepath = "{}*{}_refined_*.zip".format(path, receptor[0].entry_name.upper())
+                else:
+                    filepath = "{}*{}_{}_*.zip".format(path, receptor[0].entry_name, receptor[1])
+
+                # Check if model zip file exists
+                if len(glob.glob(filepath)) > 0:
+                    continue
 
             mod_startTime = datetime.now()
+            logger.info('Generating model for  \'{}\' ({})... ({} out of {}) (processor:{} count:{})'.format(receptor[0].entry_name, receptor[1],count.value, len(self.receptor_list),processor_id,i))
             chm = CallHomologyModeling(receptor[0].entry_name, receptor[1], iterations=self.modeller_iterations, debug=self.debug,
                                        update=self.update, complex_model=self.complex, signprot=self.signprot, force_main_temp=self.force_main_temp, keep_hetatoms=self.keep_hetatoms)
             chm.run(fast_refinement=self.fast_refinement)
