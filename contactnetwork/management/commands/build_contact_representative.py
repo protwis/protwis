@@ -23,7 +23,7 @@ class Command(BaseCommand):
     def receptor_representatives(self):
         print('Script to decide contact representative for a conformation. Maximising highest frequence of common contacts, while minimizing uncommon (50%)')
 
-        structures = Structure.objects.filter(refined=False).prefetch_related(
+        structures = Structure.objects.all().prefetch_related(
             "pdb_code",
             "state",
             "protein_conformation__protein__parent__family")

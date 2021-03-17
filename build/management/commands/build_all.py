@@ -55,7 +55,8 @@ class Command(BaseCommand):
             ['build_signprot_complex'],
             ['build_g_protein_structures'],
             ['build_structure_extra_proteins'],
-            ['build_structure_model_rmsd']
+            ['build_structure_model_rmsd'],
+            ['build_blast_database']
         ]
         phase2 = [
             ['build_structure_angles', {'proc': options['proc']}],

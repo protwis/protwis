@@ -10,8 +10,8 @@ from django.shortcuts import redirect
 
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from protein.models import Gene, ProteinSegment, IdentifiedSites, ProteinGProteinPair
-from structure.models import Structure, StructureModel, StructureComplexModel, StructureModelStatsRotamer, StructureComplexModelStatsRotamer, StructureModelSeqSim, StructureComplexModelSeqSim, StructureRefinedStatsRotamer, StructureRefinedSeqSim, StructureExtraProteins, StructureModelRMSD
-from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn, PdbStateIdentifier
+from structure.models import Structure, StructureModel, StructureComplexModel, StructureExtraProteins, StructureModelRMSD
+from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, PdbStateIdentifier, ModelRotamer
 from structure.assign_generic_numbers_gpcr import GenericNumbering, GenericNumberingFromDB
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
 from structure.forms import *
@@ -62,7 +62,7 @@ class StructureBrowser(TemplateView):
 
 		context = super(StructureBrowser, self).get_context_data(**kwargs)
 		try:
-			structures = Structure.objects.filter(refined=False).select_related(
+			structures = Structure.objects.all().select_related(
 				"state",
 				"pdb_code__web_resource",
 				"protein_conformation__protein__species",
@@ -100,7 +100,7 @@ class GProteinStructureBrowser(TemplateView):
 		context = super(GProteinStructureBrowser, self).get_context_data(**kwargs)
 		complexstructs = SignprotComplex.objects.filter(protein__family__slug__startswith='100')
 		try:
-			context['structures'] = Structure.objects.filter(refined=False, id__in=complexstructs.values_list('structure', flat=True)).select_related(
+			context['structures'] = Structure.objects.filter(id__in=complexstructs.values_list('structure', flat=True)).select_related(
 				"state",
 				"pdb_code__web_resource",
 				"protein_conformation__protein__species",
@@ -142,19 +142,13 @@ class ServeHomologyModels(TemplateView):
 	def get_context_data(self, **kwargs):
 		context = super(ServeHomologyModels, self).get_context_data(**kwargs)
 		try:
-			models = StructureModel.objects.all().prefetch_related(
+			context['structure_model'] = StructureModel.objects.all().prefetch_related(
 				"protein__family",
 				"state",
 				"protein__family__parent__parent__parent",
 				"protein__species",
 				"main_template__protein_conformation__protein__parent__family",
 				"main_template__pdb_code")
-			refined_models = Structure.objects.filter(refined=True).prefetch_related(
-				"protein_conformation__protein__family",
-				"state",
-				"protein_conformation__protein__family__parent__parent__parent",
-				"protein_conformation__protein__species")
-			context['structure_model'] = list(models)+list(refined_models)
 		except StructureModel.DoesNotExist as e:
 			pass
 
@@ -210,28 +204,25 @@ def HomologyModelDetails(request, modelname, state):
 	"""
 	modelname = modelname
 
-	color_palette = ["orange","cyan","yellow","lime","fuchsia","green","teal","olive","thistle","grey","chocolate","blue","red","pink","maroon",]
+	color_palette = ["orange","cyan","yellow","lime","fuchsia","green","teal","olive","thistle","grey","chocolate","blue","red","pink","maroon"]
 
-	if state=='refined':
-		model = Structure.objects.get(pdb_code__index=modelname+'_refined')
-		model_main_template = Structure.objects.get(pdb_code__index=modelname)
-		rotamers = StructureRefinedStatsRotamer.objects.filter(structure=model).prefetch_related(
-			"structure", "residue__generic_number","rotamer_template__protein_conformation__protein__parent__family",
-			"residue__protein_segment", "backbone_template__pdb_code", "rotamer_template",
-			"backbone_template__protein_conformation__protein__parent", "rotamer_template__pdb_code"
-			).order_by('residue__sequence_number').all()
-		main_template_seqsim = StructureRefinedSeqSim.objects.get(structure=model, template=model_main_template).similarity
-		version = model.pdb_data.pdb.split('\n')[0][-10:]
+	model = StructureModel.objects.get(protein__entry_name=modelname, state__slug=state)
+	model_main_template = model.main_template
+	if model.protein.accession:
+		residues = Residue.objects.filter(protein_conformation__protein=model.protein)
+		a = Alignment()
+		a.load_reference_protein(model.protein)
+		a.load_proteins([model.main_template.protein_conformation.protein.parent])
+		segs = ProteinSegment.objects.filter(id__in=residues.order_by("protein_segment__slug").distinct("protein_segment__slug").values_list("protein_segment", flat=True))
+		a.load_segments(segs)
+		a.build_alignment()
+		a.calculate_similarity()
+		main_template_seqsim = a.proteins[1].similarity
 	else:
-		model = StructureModel.objects.get(protein__entry_name=modelname, state__slug=state)
-		model_main_template = model.main_template
-		rotamers = StructureModelStatsRotamer.objects.filter(homology_model=model).prefetch_related(
-			"homology_model", "residue__generic_number","rotamer_template__protein_conformation__protein__parent__family",
-			"residue__protein_segment", "backbone_template__pdb_code", "rotamer_template",
-			"backbone_template__protein_conformation__protein__parent", "rotamer_template__pdb_code"
-			).order_by('residue__sequence_number').all()
-		main_template_seqsim = StructureModelSeqSim.objects.get(homology_model=model, template=model_main_template).similarity
-		version = model.version
+		residues = Residue.objects.filter(protein_conformation__protein=model.protein.parent)
+		main_template_seqsim = 100
+	rotamers = parse_model_statsfile(model.stats_text.stats_text, residues)
+	version = model.version
 
 	bb_temps, backbone_templates, r_temps, rotamer_templates, segments_out, bb_main, bb_alt, bb_none, sc_main, sc_alt, sc_none, template_list, colors = format_model_details(rotamers, model_main_template, color_palette)
 
@@ -252,18 +243,10 @@ def ComplexModelDetails(request, modelname, signprot):
 	color_palette = ["orange","cyan","yellow","lime","fuchsia","green","teal","olive","thistle","grey","chocolate","blue","red","pink","mahogany",]
 	model = StructureComplexModel.objects.get(receptor_protein__entry_name=modelname, sign_protein__entry_name=signprot)
 	model_main_template = model.main_template
-	receptor_rotamers = StructureComplexModelStatsRotamer.objects.filter(homology_model=model, protein__entry_name=modelname).prefetch_related(
-		"homology_model", "residue__generic_number","rotamer_template__protein_conformation__protein__parent__family",
-		"residue__protein_segment", "backbone_template__pdb_code", "rotamer_template",
-		"backbone_template__protein_conformation__protein__parent", "rotamer_template__pdb_code"
-		).order_by('residue__sequence_number').all()
-	signprot_rotamers = StructureComplexModelStatsRotamer.objects.filter(homology_model=model, protein__entry_name=signprot).prefetch_related(
-		"homology_model", "residue__generic_number","rotamer_template__protein_conformation__protein__parent__family",
-		"residue__protein_segment", "backbone_template__pdb_code", "rotamer_template",
-		"backbone_template__protein_conformation__protein__parent", "rotamer_template__pdb_code"
-		).order_by('residue__sequence_number').all()
+	receptor_rotamers = []
+	signprot_rotamers = []
 
-	main_template_seqsim = StructureComplexModelSeqSim.objects.get(homology_model=model, template=model_main_template).similarity
+	main_template_seqsim = 0
 	loop_segments = ProteinSegment.objects.filter(category='loop', proteinfamily='Alpha')
 
 
@@ -290,6 +273,35 @@ def ComplexModelDetails(request, modelname, signprot):
 														 'sc_alt': round(sc_alt/len(receptor_rotamers)*100, 1), 'sc_none': round(sc_none/len(receptor_rotamers)*100, 1), 'main_template_seqsim': main_template_seqsim,
 														 'template_list': template_list, 'model_main_template': model_main_template, 'state': None, 'signprot_sim': int(gp.proteins[1].similarity),
 														 'signprot_color_residues': json.dumps(segments_out2), 'loop_segments': loop_segments})#, 'delta_distance': delta_distance})
+
+def parse_model_statsfile(statstext, residues):
+	rotamers = []
+	structure_dict = {}
+	for line in statstext.split('\n')[1:-1]:
+		mr = ModelRotamer()
+		segment, seqnum, gn, backbone_pdb, rotamer_pdb = line.split(',')
+		if backbone_pdb not in structure_dict:
+			if backbone_pdb=='None':
+				backbone_struct = None
+			else:
+				backbone_struct = Structure.objects.get(pdb_code__index=backbone_pdb)
+				structure_dict[backbone_pdb] = backbone_struct
+		else:
+			backbone_struct = structure_dict[backbone_pdb]
+		if rotamer_pdb not in structure_dict:
+			if rotamer_pdb=='None':
+				rotamer_struct = None
+			else:
+				rotamer_struct = Structure.objects.get(pdb_code__index=rotamer_pdb)
+				structure_dict[rotamer_pdb] = rotamer_struct
+		else:
+			rotamer_struct = structure_dict[rotamer_pdb]
+		mr.backbone_template = backbone_struct
+		mr.rotamer_template = rotamer_struct
+		mr.residue = residues.get(protein_segment__slug=segment, sequence_number=int(seqnum))
+		rotamers.append(mr)
+	return rotamers
+
 
 def format_model_details(rotamers, model_main_template, color_palette, chain=None, used_colors=None):
 	backbone_templates, rotamer_templates = [],[]
@@ -391,10 +403,7 @@ def format_model_details(rotamers, model_main_template, color_palette, chain=Non
 	return bb_temps, backbone_templates, r_temps, rotamer_templates, segments_out, bb_main, bb_alt, bb_none, sc_main, sc_alt, sc_none, template_list, colors
 
 def ServeHomModDiagram(request, modelname, state):
-	if state=='refined':
-		model=Structure.objects.filter(pdb_code__index=modelname+'_refined')
-	else:
-		model=StructureModel.objects.filter(protein__entry_name=modelname, state__slug=state)
+	model=StructureModel.objects.filter(protein__entry_name=modelname, state__slug=state)
 	if model.exists():
 		model=model.get()
 	else:
@@ -437,11 +446,8 @@ def StructureDetails(request, pdbname):
 	ligands = StructureLigandInteraction.objects.filter(structure=crystal, annotated=True)
 	p = Protein.objects.get(protein=crystal.protein_conformation.protein)
 	residues = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__pdb_code__index=pdbname, structure_ligand_pair__annotated=True).order_by('rotamer__residue__sequence_number')
-	try:
-		refined = Structure.objects.get(pdb_code__index=pdbname+'_refined')
-	except:
-		refined = False
-	return render(request,'structure_details.html',{'pdbname': pdbname, 'structures': structures, 'crystal': crystal, 'protein':p, 'residues':residues, 'annotated_resn': resn_list, 'main_ligand': main_ligand, 'refined': refined, 'ligands': ligands})
+
+	return render(request,'structure_details.html',{'pdbname': pdbname, 'structures': structures, 'crystal': crystal, 'protein':p, 'residues':residues, 'annotated_resn': resn_list, 'main_ligand': main_ligand, 'ligands': ligands})
 
 def ServePdbDiagram(request, pdbname):
 	structure=Structure.objects.filter(pdb_code__index=pdbname)
@@ -476,7 +482,7 @@ class StructureStatistics(TemplateView):
 		for f in families:
 			lookup[f.slug] = f.name
 
-		all_structs = Structure.objects.all().prefetch_related('protein_conformation__protein__family').exclude(refined=True)
+		all_structs = Structure.objects.all().prefetch_related('protein_conformation__protein__family')
 		all_complexes = all_structs.exclude(ligands=None)
 
 		all_gprots = all_structs.filter(id__in=SignprotComplex.objects.filter(protein__family__slug__startswith='100').values_list("structure__id", flat=True))
@@ -534,7 +540,14 @@ class StructureStatistics(TemplateView):
 		context['class_a_options']['anchor'] = 'class_a'
 		context['class_a_options']['leaf_offset'] = 50
 		context['class_a_options']['label_free'] = []
-		context['class_a'] = json.dumps(class_a_data.get_nodes_dict('crystals'))
+        # section to remove Orphan from Class A tree and apply to a different tree
+		whole_class_a = class_a_data.get_nodes_dict('crystals')
+		for item in whole_class_a['children']:
+			if item['name'] == 'Orphan':
+				orphan_data = OrderedDict([('name', ''), ('value', 3000), ('color', ''), ('children',[item])])
+				whole_class_a['children'].remove(item)
+				break
+		context['class_a'] = json.dumps(whole_class_a)
 		class_b1_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B1 (Secretin)'))
 		context['class_b1_options'] = deepcopy(tree.d3_options)
 		context['class_b1_options']['anchor'] = 'class_b1'
@@ -563,7 +576,18 @@ class StructureStatistics(TemplateView):
 		context['class_t2_options']['anchor'] = 'class_t2'
 		context['class_t2_options']['label_free'] = [1,]
 		context['class_t2'] = json.dumps(class_t2_data.get_nodes_dict('crystals'))
-
+		# definition of the class a orphan tree
+		context['orphan_options'] = deepcopy(tree.d3_options)
+		context['orphan_options']['anchor'] = 'orphan'
+		context['orphan_options']['label_free'] = [1,]
+		context['orphan'] = json.dumps(orphan_data)
+		whole_receptors = Protein.objects.prefetch_related("family", "family__parent__parent__parent").filter(sequence_type__slug="wt", family__slug__startswith="00")
+		whole_rec_dict = {}
+		for rec in whole_receptors:
+			rec_uniprot = rec.entry_short()
+			rec_iuphar = rec.family.name.replace("receptor", '').replace("<i>","").replace("</i>","").strip()
+			whole_rec_dict[rec_uniprot] = [rec_iuphar]
+		context["whole_receptors"] = json.dumps(whole_rec_dict)
 		return context
 
 	def get_families_dict(self, queryset, lookup):
@@ -1700,7 +1724,7 @@ class TemplateBrowser(TemplateView):
 		a.load_reference_protein_from_selection(simple_selection)
 
 		# fetch
-		qs = Structure.objects.filter(refined=False).select_related(
+		qs = Structure.objects.all().select_related(
 			"pdb_code__web_resource",
 			"protein_conformation__protein__species",
 			"protein_conformation__protein__source",
@@ -1995,19 +2019,25 @@ def ConvertStructureModelsToProteins(request):
 		selection.importer(simple_selection)
 	if selection.targets != []:
 		for struct_mod in selection.targets:
-			try:
-				prot = struct_mod.item.protein
+			if hasattr(struct_mod.item, 'protein'):
+				if not struct_mod.item.protein.accession:
+					prot = struct_mod.item.protein.parent
+				else:
+					prot = struct_mod.item.protein
 				selection.remove('targets', 'structure_model', struct_mod.item.id)
 				selection.add('targets', 'protein', SelectionItem('protein', prot))
-			except:
-				try:
+			elif hasattr(struct_mod.item, 'receptor_protein'):
+				if not struct_mod.item.receptor_protein.accession:
+					prot = struct_mod.item.receptor_protein.parent
+				else:
 					prot = struct_mod.item.receptor_protein
-					selection.remove('targets', 'structure_complex_receptor', struct_mod.item.id)
-					selection.add('targets', 'protein', SelectionItem('protein', prot))
-				except:
-					prot = struct_mod.item.protein_conformation.protein.parent
-					selection.remove('targets', 'structure', struct_mod.item.id)
-					selection.add('targets', 'protein', SelectionItem('protein', prot))
+				selection.remove('targets', 'structure_complex_receptor', struct_mod.item.id)
+				selection.add('targets', 'protein', SelectionItem('protein', prot))
+			elif hasattr(struct_mod.item, 'pdb_code'):
+				prot = struct_mod.item.protein_conformation.protein.parent
+				selection.remove('targets', 'structure', struct_mod.item.id)
+				selection.add('targets', 'protein', SelectionItem('protein', prot))
+
 		if selection.reference != []:
 			selection.add('targets', 'protein', selection.reference[0])
 	# export simple selection that can be serialized
@@ -2049,26 +2079,19 @@ def HommodDownload(request):
 	"Download selected homology models in zip file"
 	pks = request.GET['ids'].split(',')
 
-	hommodels = []
-	for pk in pks:
-		if 'r' in pk:
-			hommodels.append(Structure.objects.get(pk=int(pk[:-1])))
-		else:
-			hommodels.append(StructureModel.objects.get(pk=pk))
+	hommodels = [StructureModel.objects.get(pk=pk) for pk in pks]
 
 	zip_io = BytesIO()
 	with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as backup_zip:
 		for hommod in hommodels:
 			io = StringIO(hommod.pdb_data.pdb)
 			stats_text = StringIO(hommod.stats_text.stats_text)
-			try:
-				hommod.refined
-				version = hommod.pdb_data.pdb.split('\n')[0][-10:]
-				mod_name = 'Class{}_{}_{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein_conformation.protein.family.slug[:3]], hommod.protein_conformation.protein.entry_name,
-																   hommod.pdb_code.index, hommod.state.name, version)
-				stat_name = 'Class{}_{}_{}_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.protein_conformation.protein.family.slug[:3]], hommod.protein_conformation.protein.entry_name,
-																   hommod.pdb_code.index, hommod.state.name, version)
-			except:
+			if not hommod.protein.accession:
+				mod_name = 'Class{}_{}_{}_refined_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.parent.entry_name,
+																   hommod.main_template.pdb_code.index, hommod.state.name, hommod.version)
+				stat_name = 'Class{}_{}_{}_refined_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.parent.entry_name,
+																   hommod.main_template.pdb_code.index, hommod.state.name, hommod.version)
+			else:
 				mod_name = 'Class{}_{}_{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name,
 																		  hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
 				stat_name = 'Class{}_{}_{}_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name,
@@ -2091,10 +2114,16 @@ def ComplexmodDownload(request):
 		for hommod in hommodels:
 			io = StringIO(hommod.pdb_data.pdb)
 			stats_text = StringIO(hommod.stats_text.stats_text)
-			mod_name = 'Class{}_{}-{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name,
-															   hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
-			stat_name = 'Class{}_{}-{}_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name,
-															   hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
+			if hommod.main_template.refined:
+				mod_name = 'Class{}_{}-{}_{}_refined_{}_GPCRDB.pdb'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.parent.entry_name,
+																   hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
+				stat_name = 'Class{}_{}-{}_{}_refined_{}_GPCRDB.templates.csv'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.parent.entry_name,
+																   hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
+			else:
+				mod_name = 'Class{}_{}-{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name,
+																   hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
+				stat_name = 'Class{}_{}-{}_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name,
+																   hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
 			backup_zip.writestr(mod_name, io.getvalue())
 			backup_zip.writestr(stat_name, stats_text.getvalue())
 	response = HttpResponse(zip_io.getvalue(), content_type='application/x-zip-compressed')
@@ -2105,16 +2134,14 @@ def ComplexmodDownload(request):
 def SingleModelDownload(request, modelname, state, fullness, csv=False):
 	"Download single homology model"
 	zip_io = BytesIO()
-	if state=='refined':
-		hommod = Structure.objects.get(pdb_code__index=modelname+'_refined')
-	else:
-		hommod = StructureModel.objects.get(protein__entry_name=modelname, state__slug=state)
-	if state=='refined':
+
+	hommod = StructureModel.objects.get(protein__entry_name=modelname, state__slug=state)
+	if not hommod.protein.accession:
 		version = hommod.pdb_data.pdb.split('\n')[0][-10:]
-		mod_name = 'Class{}_{}_{}_{}_{}_GPCRdb.pdb'.format(class_dict[hommod.protein_conformation.protein.family.slug[:3]], hommod.protein_conformation.protein.entry_name,
-																 hommod.pdb_code.index, hommod.state.name, version)
-		stat_name = 'Class{}_{}_{}_{}_{}_GPCRdb.templates.csv'.format(class_dict[hommod.protein_conformation.protein.family.slug[:3]], hommod.protein_conformation.protein.entry_name,
-																 hommod.pdb_code.index, hommod.state.name, version)
+		mod_name = 'Class{}_{}_{}_refined_{}_{}_GPCRdb.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.parent.entry_name,
+																 hommod.main_template.pdb_code.index, hommod.state.name, version)
+		stat_name = 'Class{}_{}_{}_refined_{}_{}_GPCRdb.templates.csv'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.parent.entry_name,
+																 hommod.main_template.pdb_code.index, hommod.state.name, version)
 	else:
 		mod_name = 'Class{}_{}_{}_{}_{}_GPCRdb.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name,
 																	   hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
@@ -2130,8 +2157,8 @@ def SingleModelDownload(request, modelname, state, fullness, csv=False):
 				filtered_lines+=line+'\n'
 				remark_line_count+=1
 		filtered_lines+='REMARK    {} ALL LOOPS REMOVED AFTER MODELING\n'.format(remark_line_count+1)
-		if state=='refined':
-			helix_resis = Residue.objects.filter(protein_conformation__protein=hommod.protein_conformation.protein, protein_segment__category='helix').values_list('sequence_number', flat=True)
+		if not hommod.protein.accession:
+			helix_resis = Residue.objects.filter(protein_conformation__protein=hommod.protein.parent, protein_segment__category='helix').values_list('sequence_number', flat=True)
 		else:
 			helix_resis = Residue.objects.filter(protein_conformation__protein=hommod.protein, protein_segment__category='helix').values_list('sequence_number', flat=True)
 		p = PDBParser(get_header=True)

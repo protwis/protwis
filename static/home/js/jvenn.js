@@ -1996,13 +1996,16 @@
 
 		function addSVGText(text, x, y, color, opacity, ffamily, fsize, fweight, isLabel) {
 			if (isLabel) {
+				text = text.replace("</sub>","");
+				text = text.split("<sub>");
 				x = parseInt(x.replace("px", "")) + 20;
 				y = parseInt(y.replace("px", "")) + 14;
+				return '<text fill="'+color+'" fill-opacity="'+opacity+'" stroke="none" font-family="'+ffamily+'" font-size="'+fsize+'"pt font-style="normal" font-weight="'+fweight+'" text-decoration="none" x="'+x+'" y="'+y+'" text-anchor="middle" dominant-baseline="alphabetic">'+text[0]+'<tspan dy="3" font-size=".7em">'+text[1]+'</tspan></text>'
 			} else {
 				x = parseInt(x.replace("px", "")) + 5;
 				y = parseInt(y.replace("px", "")) + 14;
+				return '<text fill="'+color+'" fill-opacity="'+opacity+'" stroke="none" font-family="'+ffamily+'" font-size="'+fsize+'"pt font-style="normal" font-weight="'+fweight+'" text-decoration="none" x="'+x+'"pt y="'+y+'"pt text-anchor="middle" dominant-baseline="alphabetic">'+text+'</text>';
 			}
-			return '<text fill="'+color+'" fill-opacity="'+opacity+'" stroke="none" font-family="'+ffamily+'" font-size="'+fsize+'"pt font-style="normal" font-weight="'+fweight+'" text-decoration="none" x="'+x+'"pt y="'+y+'"pt text-anchor="middle" dominant-baseline="alphabetic">'+text+'</text>';
 		}
 
 		function addExportModule(div, extraheight, type){

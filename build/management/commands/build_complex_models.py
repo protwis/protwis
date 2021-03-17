@@ -263,7 +263,7 @@ class Command(BaseBuild):
     def purge_complex_entries(self):
         if os.path.exists('./structure/complex_models_zip/'):
             for i in os.listdir('./structure/complex_models_zip/'):
-                shutil.rmtree('./structure/complex_models_zip/'+i)
+                os.remove('./structure/complex_models_zip/'+i)
         try:
             StructureComplexModelSeqSim.objects.all().delete()
         except:

@@ -20,7 +20,7 @@ class Command(BaseCommand):
     def receptor_representatives(self):
         print('Script to decide distance representative for a state/receptor combination. Lowest average distance to all other structures for the same receptor/state')
 
-        structures = Structure.objects.filter(refined=False).prefetch_related(
+        structures = Structure.objects.all().prefetch_related(
             "pdb_code",
             "state",
             "protein_conformation__protein__parent__family")

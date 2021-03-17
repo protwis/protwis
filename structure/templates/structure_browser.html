@@ -237,7 +237,7 @@
                             <a target='_blank' href="{{ structure.pdb_code.index}}">{{ structure.pdb_code.index}}</a>
                         </td>
                         <td>
-                            {% if structure.is_refined %}
+                            {% if structure.refined %}
                             <a target='_blank' href="homology_models/{{ structure.pdb_code.index }}_refined">{{structure.pdb_code.index}}_refined</a>
                             {% else %}
                             -

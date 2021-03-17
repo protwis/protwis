@@ -147,6 +147,17 @@
                         column_number : 3,
                         filter_type: "multi_select",
                         select_type: 'select2',
+                        filter_default_label: "Refined",
+                        filter_reset_button_text: false,
+                        filter_match_mode : "exact",
+                        select_type_options: {
+                            width: '55px',
+                        }
+                    },
+                    {
+                        column_number : 4,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
                         column_data_type: "html",
                         html_data_type: "text",
                         filter_default_label: "UniProt",
@@ -157,7 +168,7 @@
                         }
                     },
                     {
-                        column_number: 4,
+                        column_number: 5,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         column_data_type: "html",
@@ -169,7 +180,7 @@
                         }
                     },
                     {
-                        column_number: 5,
+                        column_number: 6,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Rec. family",
@@ -179,7 +190,7 @@
                         }
                     },
                     {
-                        column_number : 6,
+                        column_number : 7,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Class",
@@ -189,7 +200,7 @@
                         }
                     },
                     {
-                        column_number : 7,
+                        column_number : 8,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Species",
@@ -199,21 +210,11 @@
                         }
                     },
                     {
-                        column_number : 8,
+                        column_number : 9,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "G protein",
                         column_data_type: "html",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '100px',
-                        }
-                    },
-                    {
-                        column_number : 9,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "G protein family",
                         filter_reset_button_text: false,
                         select_type_options: {
                             width: '100px',
@@ -223,7 +224,7 @@
                         column_number : 10,
                         filter_type: "multi_select",
                         select_type: 'select2',
-                        filter_default_label: "Transducer",
+                        filter_default_label: "G protein family",
                         filter_reset_button_text: false,
                         select_type_options: {
                             width: '100px',
@@ -231,6 +232,16 @@
                     },
                     {
                         column_number : 11,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Transducer",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    },
+                    {
+                        column_number : 12,
                         filter_type: "text",
                         select_type: 'select2',
                         filter_default_label: "Receptor",
@@ -240,7 +251,7 @@
                         }
                     },
                     {
-                        column_number : 12,
+                        column_number : 13,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         column_data_type: "html",
@@ -251,7 +262,7 @@
                         }
                     },
                     {
-                        column_number : 13,
+                        column_number : 14,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         column_data_type: "html",
@@ -360,7 +371,7 @@
                 ClearSelection('reference');
                 if (oTable.rows('.selected').data().length == 1) {
                     var div = document.createElement("div");
-                    div.innerHTML = oTable.rows('.selected').data()[0][14];
+                    div.innerHTML = oTable.rows('.selected').data()[0][15];
                     // var state1 = table.rows('.selected').data()[0][5];
 
                     if (typeof div.innerText !== "undefined") {
@@ -374,7 +385,7 @@
                 var selected_ids = [];
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][14];
+                    div.innerHTML = checked_data[i][15];
                     // var state2 = checked_data[i][5];
                     if (typeof div.innerText !== "undefined") {
                         selected_ids.push(div.innerText.replace(/\s+/g, '')+"_active");
@@ -400,14 +411,9 @@
                 var checked_data = oTable.rows('.alt_selected').data();
                 ClearSelection('targets');
                 for (i = 0; i < checked_data.length; i++) {
-                    var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][14];
 
-                    if (typeof div.innerText !== "undefined") {
-                        AddToSelection('targets', 'structure_complex_receptor',  div.innerText.replace(/\s+/g, '') );
-                    } else {
-                        AddToSelection('targets', 'structure_complex_receptor', div.textContent.replace(/\s+/g, ''));
-                    }
+                    AddToSelection('targets', 'structure_complex_receptor',  checked_data[i][15]+'-'+checked_data[i][16] );
+
                 }
                 window.location.href = '/structure/selection_convert_model';
             });
@@ -416,14 +422,9 @@
                 var checked_data = oTable.rows('.alt_selected').data();
                 ClearSelection('targets');
                 for (i = 0; i < checked_data.length; i++) {
-                    var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][15];
-
-                    if (typeof div.innerText !== "undefined") {
-                        AddToSelection('targets', 'structure_complex_signprot',  div.innerText.replace(/\s+/g, '') );
-                    } else {
-                        AddToSelection('targets', 'structure_complex_signprot', div.textContent.replace(/\s+/g, ''));
-                    }
+                    
+                    AddToSelection('targets', 'structure_complex_signprot',  checked_data[i][16] );
+                    
                 }
                 window.location.href = '/structure/selection_convert_signprot_model';
             });
@@ -521,8 +522,6 @@
 {% endblock %}
 
 {% block content %}
-<h2>GPCR - G Protein Complex Model Browser</h2>
-
 <div class="btn-group">
     <label class="btn btn-default btn-s" id="align_btn1" href="javascript:void(0)">Align Receptors</label>
     <label class="btn btn-default btn-s" id="align_btn2" href="javascript:void(0)">Align G-proteins</label>
@@ -555,7 +554,7 @@
         <table width="100%" class="display compact" id="constructs">
             <thead>
                 <tr class='over_header' style='max-height: 20px'>
-                    <th colspan=3 class="over_header">MODEL</th>
+                    <th colspan=4 class="over_header">MODEL</th>
                     <th colspan=5 class="over_header">RECEPTOR</th>
                     <th colspan=3 class="over_header">G PROTEIN</th>
                     <th colspan=3 class="over_header">TEMPLATE</th>
@@ -563,20 +562,21 @@
                 <tr>
                     <th  class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
                     <th></th>
-                    <th  class='rightborder'>Date</th>
+                    <th>Date</th>
+                    <th class='rightborder'></th>
                     <th></th>
                     <th></th>
                     <th></th>
                     <th></th>
-                    <th  class='rightborder'></th>
+                    <th class='rightborder'></th>
                     <th></th>
                     <th></th>
-                    <th  class='rightborder'></th>
+                    <th class='rightborder'></th>
                     <th></th>
                     <th></th>
-                    <th  class='rightborder'></th>
-                    <th style="display:none;"></th>
-                    <th style="display:none;"></th>
+                    <th class='rightborder'></th>
+                    <th class='hidden'></th>
+                    <th class='hidden'></th>
                 </tr>
 
             </thead>
@@ -586,8 +586,32 @@
                     <td class="text-center"><input class="alt" type="checkbox" id="{{ model.pk }}"></td>
                     <td><a href="complex_models/{{ model.receptor_protein.entry_name }}-{{ model.sign_protein.entry_name }}">{{ model.receptor_protein.family.name|safe }} - {{ model.sign_protein.entry_name }}</a></td>
                     <td>{{ model.version|date:"Y-m-d" }}</td>
-                    <td><span><a href="http://www.uniprot.org/uniprot/{{ model.receptor_protein.accession }}">{{ model.receptor_protein.entry_short|safe }}</a></span></td>
-                    <td><span><a href="/protein/{{ model.receptor_protein.entry_name }}">{{ model.receptor_protein.short|safe }}</span></td>
+                    <td>
+                        {% if not model.receptor_protein.accession %}
+                            Yes
+                        {% else %}
+                            No
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span>
+                            {% if not model.receptor_protein.accession %}
+                                <a href="http://www.uniprot.org/uniprot/{{ model.receptor_protein.parent.accession }}">{{ model.receptor_protein.parent.entry_short|safe }}</a>
+                            {% else %}
+                                <a href="http://www.uniprot.org/uniprot/{{ model.receptor_protein.accession }}">{{ model.receptor_protein.entry_short|safe }}</a>
+                            {% endif %}
+                            
+                        </span>
+                    </td>
+                    <td>
+                        <span>
+                            {% if not model.receptor_protein.accession %}
+                                <a href="/protein/{{ model.receptor_protein.parent.entry_name }}">{{ model.receptor_protein.parent.short|safe }}
+                            {% else %}
+                                <a href="/protein/{{ model.receptor_protein.entry_name }}">{{ model.receptor_protein.short|safe }}
+                            {% endif %}
+                        </span>
+                    </td>
                     <td><span>{{ model.receptor_protein.family.parent.short|safe }}</span></td>
                     <td>{{ model.receptor_protein.family.parent.parent.parent.short }}</td>
                     <td>{{ model.receptor_protein.species.common_name }}</td>

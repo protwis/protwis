@@ -2342,7 +2342,7 @@ def contactMutationDesign(request, goal):
             actives = cache.get(cache_name)
             if actives == None:
                 actives = []
-                active_structs = Structure.objects.filter(refined=False, \
+                active_structs = Structure.objects.filter(\
                     protein_conformation__protein__family__slug__startswith=target_class, \
                     state__name='Active', resolution__lte=3.7, gprot_bound_likeness__gte=90)\
                     .prefetch_related(
@@ -2422,7 +2422,7 @@ def contactMutationDesign(request, goal):
             inactives = cache.get(cache_name)
             if inactives == None:
                 inactives = []
-                inactive_structs = Structure.objects.filter(refined=False, \
+                inactive_structs = Structure.objects.filter(\
                     protein_conformation__protein__family__slug__startswith=target_class, \
                     state__name='Inactive', resolution__lte=3.7, gprot_bound_likeness__lte=20)\
                     .prefetch_related(
