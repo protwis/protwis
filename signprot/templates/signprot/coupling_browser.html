@@ -6,8 +6,8 @@
     <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css"/>
     <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css"/>
     <link rel="stylesheet" href="{% static 'home/css/jquery.powertip.css' %}" type="text/css"/>
-{#        <link rel="stylesheet" href="https://cdn.datatables.net/1.10.22/css/jquery.dataTables.min.css">#}
-{#        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css">#}
+    {#        <link rel="stylesheet" href="https://cdn.datatables.net/1.10.22/css/jquery.dataTables.min.css">#}
+    {#        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css">#}
     <link rel="stylesheet" href="{% static 'home/css/signprot-multitabtable.css' %}" type="text/css"/>
 {% endblock %}
 
@@ -74,6 +74,7 @@
 
             <table class="compact display" id="familiestabletab">
                 <thead>
+
                 <tr>
                     <th colspan=1></th>
                     <th colspan=1 style='height:35px; text-align:left;'>
@@ -142,8 +143,21 @@
 
                 <tr>
                     <th class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
-                    {% for n in "x"|rjust:"21" %}
+                    {% for n in "x"|rjust:"9" %}
                         <th></th>
+                    {% endfor %}
+
+                    {% for n in "x"|rjust:"12" %}
+<th>
+<input  placeholder="Min" id="ranked_range_min1_{{ forloop.counter|add:"9" }}"
+ class="yadcf-filter-range-number yadcf-filter-range ranked_range_min1">
+<span class="yadcf-filter-range-number-seperator"></span><br>
+<input  placeholder="Max" id="ranked_range_max1_{{ forloop.counter|add:"9" }}"
+ class="yadcf-filter-range-number yadcf-filter-range ranked_range_max1">
+<span class="yadcf-filter-range-number-seperator"></span><br>
+<input  placeholder="Rank" id="ranked_range_rank1_{{ forloop.counter|add:"9" }}"
+class="yadcf-filter-range-number yadcf-filter-range ranked_range_rank1">
+</th>
                     {% endfor %}
                     <th></th>
                 </tr>
@@ -153,7 +167,7 @@
                 <tbody>
                 {% for p, pvals in tabfields.items %}
                     {% for c, cvals in pvals.couplingmax.items %}
-                            <tr data-source="{{ c }}"> {# And then use the data to apply the javascript filters.#}
+                        <tr data-source="{{ c }}"> {# And then use the data to apply the javascript filters.#}
                             <td class="text-center"><input class="alt" type="checkbox"></td>
 {#                            <td><span data-toggle="tooltip" data-html="true" data-placement="bottom" title="{{ c}}"#}
 {#                                      data-search="{{ c }}">{{ c }}</span></td>#}
@@ -178,15 +192,15 @@
                             <td>{{ pvals.protein.g1213 }}</td>
 
                             {% for q, logval in cvals.logemaxec50.items %}
-                                <td>{{ logval }}</td>
+                                <td><span>{{ logval }}</span></td>
                             {% endfor %}
 
                             {% for q, pecval in cvals.pec50.items %}
-                                <td>{{ pecval }}</td>
+                                <td><span>{{ pecval }}</span></td>
                             {% endfor %}
 
                             {% for q, maxval in cvals.emax.items %}
-                                <td>{{ maxval }}</td>
+                                <td><span>{{ maxval }}</span></td>
                             {% endfor %}
 
                             <td>{{ c }}</td>
@@ -199,9 +213,17 @@
 
 
             </table>
-        <div id="hide_filter1"></div>
+            <div id="hide_filter1"></div>
+            {% for n in "x"|rjust:"12" %}
+                <div id="hide_rankfam{{ forloop.counter|add:"9" }}" style="display: none;"></div>
+            {% endfor %}
 
         </div>
+
+
+
+
+
 
         {# ====================================================================== #}
         {# SUBTYPES TAB STARTS HERE id='subtypestabletab' connects to js #}
@@ -305,6 +327,28 @@
                     <th></th>
                 </tr>
 
+                <tr class="under_header">
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    {% for p, subval in header.items  %}
+                        <th></th>
+                    {% endfor %}
+                    {% for n in "x"|rjust:"3" %}
+                        {% for subval in subunitheader %}
+                            <th>
+                                {{ subval}}
+                            </th>
+                        {% endfor %}
+                    {% endfor %}
+                    <th></th>
+                </tr>
+
+
+
                 <tr>
                     <th class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
                     <th></th>
@@ -316,12 +360,17 @@
                         <th></th>
                     {% endfor %}
 
-                    {% for n in "x"|rjust:"3" %}
-                        {% for subval in subunitheader %}
-                            <th>
-                                {{ subval}}
-                            </th>
-                        {% endfor %}
+                    {% for n in "x"|rjust:"39" %}
+<th>
+<input  placeholder="Min" id="ranked_range_min2_{{ forloop.counter|add:"9" }}"
+ class="yadcf-filter-range-number yadcf-filter-range ranked_range_min2">
+<span class="yadcf-filter-range-number-seperator"></span><br>
+<input  placeholder="Max" id="ranked_range_max2_{{ forloop.counter|add:"9" }}"
+ class="yadcf-filter-range-number yadcf-filter-range ranked_range_max2">
+<span class="yadcf-filter-range-number-seperator"></span><br>
+<input  placeholder="Rank" id="ranked_range_rank2_{{ forloop.counter|add:"9" }}"
+class="yadcf-filter-range-number yadcf-filter-range ranked_range_rank2">
+</th>
                     {% endfor %}
 
                     <th></th>
@@ -354,15 +403,15 @@
                             <td>{{ pvals.protein.g1213 }}</td>
 
                             {% for q, logval in cvals.logemaxec50.items %}
-                                <td>{{ logval }}</td>
+                                <td><span>{{ logval }}</span></td>
                             {% endfor %}
 
                             {% for q, pecval in cvals.pec50.items %}
-                                <td>{{ pecval }}</td>
+                                <td><span>{{ pecval }}</span></td>
                             {% endfor %}
 
                             {% for q, maxval in cvals.emax.items %}
-                                <td>{{ maxval }}</td>
+                                <td><span>{{ maxval }}</span></td>
                             {% endfor %}
 
                             <td>{{ c }}</td>
@@ -374,7 +423,12 @@
                 </tbody>
 
             </table>
-        <div id="hide_filter2"></div>
+            <div id="hide_filter2"></div>
+            {% for n in "x"|rjust:"40" %}
+                <div id="hide_ranksub{{ forloop.counter|add:"9" }}" style="display: none;"></div>
+            {% endfor %}
+
+
         </div>
 
     </div>
@@ -386,9 +440,9 @@
     <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"></script>
     <script src="{% static 'home/js/select2.js' %}"></script>
     <script src="{% static 'home/js/jquery.powertip.js' %}"></script>
-{#        <script src="{% static 'home/js/datatables.min.js' %}"></script>#}
-{#        <script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>#}
-{#        <script src="https://cdnjs.cloudflare.com/ajax/libs/yadcf/0.9.4/jquery.dataTables.yadcf.min.js"></script>#}
-{#        <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>#}
+    {#        <script src="{% static 'home/js/datatables.min.js' %}"></script>#}
+    {#        <script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>#}
+    {#        <script src="https://cdnjs.cloudflare.com/ajax/libs/yadcf/0.9.4/jquery.dataTables.yadcf.min.js"></script>#}
+    {#        <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>#}
     <script src="{% static 'home/js/signprot-multitabtable.js' %}"></script>
 {% endblock %}
