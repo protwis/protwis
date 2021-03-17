@@ -534,6 +534,13 @@ class StructureStatistics(TemplateView):
 		#{
 		#    'depth': 3,
 		#    'anchor': '#crystals'}
+		
+		# relabeling table columns for sake of consistency
+		for key in list(context['unique_structures_by_class'].keys()):
+			context['unique_structures_by_class'][key.replace('Class','')] = context['unique_structures_by_class'].pop(key)
+		for key in list(context['all_structures_by_class'].keys()):
+			context['all_structures_by_class'][key.replace('Class','')] = context['all_structures_by_class'].pop(key)
+
 		tree = PhylogeneticTreeGenerator()
 		class_a_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
 		context['class_a_options'] = deepcopy(tree.d3_options)

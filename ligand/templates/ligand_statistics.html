@@ -153,33 +153,33 @@
     <thead>
         <tr>
             <td><b>Class<br />(Family)</b></td>
-            <td align="center"><b>Total</b></td>
             {% for data in ligands_by_class %}
-            <td align="center"><b>{% if data.name == "Class T (Taste 2)" %}Taste&nbsp;2{% else %}{{ data.name }}{% endif %}</b></td>
+            <td align="center"><b>{{ data.name }}</b></td>
             {% endfor %}
+            <td align="center"><b>Total</b></td>
         </tr>
     </thead>
     <tbody>
         <tr>
             <td>No. ligands</td>
-            <td align="center" style="vertical-align:middle !important">{{ ligands_total.num_ligands|floatformat:0|intcomma }}</td>
             {% for data in ligands_by_class %}
             <td align="center" style="vertical-align:middle !important">{{ data.num_ligands|floatformat:0|intcomma }}</td>
             {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ ligands_total.num_ligands|floatformat:0|intcomma }}</td>
         </tr>
         <tr>
             <td nowrap>Average no. ligands/GPCR</td>
-            <td align="center" style="vertical-align:middle !important">{{ ligands_total.avg_num_ligands|floatformat:0|intcomma }}</td>
             {% for data in ligands_by_class %}
             <td align="center" style="vertical-align:middle !important">{{ data.avg_num_ligands|floatformat:0|intcomma }}</td>
             {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ ligands_total.avg_num_ligands|floatformat:0|intcomma }}</td>
         </tr>
         <tr>
             <td nowrap>No. GPCRs with ligand (%)</td>
-            <td align="center" style="vertical-align:middle !important; white-space: nowrap; overflow: hidden;"> {{ ligands_total.target_count|floatformat:0 }} ({{ ligands_total.target_percentage|floatformat:0 }})</td>
             {% for data in ligands_by_class %}
             <td align="center" style="vertical-align:middle !important">{{ data.target_count|floatformat:0 }} ({{ data.target_percentage|floatformat:0 }})</td>
             {% endfor %}
+            <td align="center" style="vertical-align:middle !important; white-space: nowrap; overflow: hidden;"> {{ ligands_total.target_count|floatformat:0 }} ({{ ligands_total.target_percentage|floatformat:0 }})</td>
         </tr>
     </tbody>
     <tr> </tr>

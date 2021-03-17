@@ -62,44 +62,44 @@
 
 {% block content %}
 <h4>Number of structures, including multiple of same receptor (complex)</h4>
-<table style="width:75% !important" class="table table-stripped">
+<table style="width:85% !important" class="table table-stripped">
     <thead>
         <tr>
             <td><b>Class (Family)</b></td>
-            <td align="center"><b>Total</b></td>
             {% for class in all_structures_by_class.items %}
-            <td align="center"><b>{% if class.0 == "Class T (Taste 2)" %}Taste&nbsp;2{% else %}{{ class.0 }}{% endif %}</b></td>
+            <td align="center"><b>{{ class.0 }}</b></td>
             {% endfor %}
+            <td align="center"><b>Total</b></td>
         </tr>
     </thead>
     <tbody>
         <tr>
             <td>Receptors</td>
-            <td align="center" style="vertical-align:middle !important">{{ all_structures }}</td>
             {% for class in all_structures_by_class.items %}
             <td align="center" style="vertical-align:middle !important">{{ class.1 }}</td>
             {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_structures }}</td>
         </tr>
         <tr>
             <td>Receptor - ligand complexes</td>
-            <td align="center" style="vertical-align:middle !important">{{ all_complexes }}</td>
             {% for class in all_complexes_by_class.items %}
             <td align="center"  style="vertical-align:middle !important">{{ class.1 }}</td>
             {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_complexes }}</td>
         </tr>
         <tr>
             <td>Receptor - G protein complexes</td>
-            <td align="center" style="vertical-align:middle !important">{{ all_gprots }}</td>
             {% for class in all_gprots_by_class.items %}
             <td align="center"  style="vertical-align:middle !important">{{ class.1 }}</td>
             {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_gprots }}</td>
         </tr>
         <tr>
             <td>Active-state receptors*</td>
-            <td align="center" style="vertical-align:middle !important">{{ all_active }}</td>
             {% for class in all_active_by_class.items %}
             <td align="center"  style="vertical-align:middle !important">{{ class.1 }}</td>
             {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_active }}</td>
         </tr>
     </tbody>
     <tr> </tr>
@@ -108,44 +108,44 @@
 <br />
 <br />
 <h4>Number of unique receptor complexes</h4>
-<table style="width:75% !important" class="table table-stripped">
+<table style="width:85% !important" class="table table-stripped">
     <thead>
         <tr>
             <td><b>Class (Family)</b></td>
-            <td align="center"><b>Total</b></td>
             {% for class in unique_structures_by_class.items %}
-            <td align="center"><b>{% if class.0 == "Class T (Taste 2)" %}Taste&nbsp;2{% else %}{{ class.0 }}{% endif %}</b></td>
+            <td align="center"><b>{{ class.0 }}</b></td>
             {% endfor %}
+            <td align="center"><b>Total</b></td>
         </tr>
     </thead>
     <tbody>
         <tr>
             <td>Receptors**</td>
-            <td align="center" style="vertical-align:middle !important">{{ unique_structures }}</td>
             {% for class in unique_structures_by_class.items %}
             <td align="center" style="vertical-align:middle !important">{{ class.1 }}</td>
             {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ unique_structures }}</td>
         </tr>
         <tr>
             <td>Receptor - ligand complexes</td>
-            <td align="center" style="vertical-align:middle !important">{{ unique_complexes }}</td>
             {% for class in unique_complexes_by_class.items %}
             <td align="center" style="vertical-align:middle !important">{{ class.1 }}</td>
             {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ unique_complexes }}</td>
         </tr>
         <tr>
             <td>Receptor - G protein complexes</td>
-            <td align="center" style="vertical-align:middle !important">{{ unique_gprots }}</td>
             {% for class in unique_gprots_by_class.items %}
             <td align="center" style="vertical-align:middle !important">{{ class.1 }}</td>
             {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ unique_gprots }}</td>
         </tr>
         <tr>
             <td>Active-state receptors*</td>
-            <td align="center" style="vertical-align:middle !important">{{ unique_active }}</td>
             {% for class in unique_active_by_class.items %}
             <td align="center" style="vertical-align:middle !important">{{ class.1 }}</td>
             {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ unique_active }}</td>
         </tr>
     </tbody>
     <tr> </tr>

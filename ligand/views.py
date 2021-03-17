@@ -351,7 +351,7 @@ class LigandStatistics(TemplateView):
                 target_count = 0
             prot_count = prot_count_dict[fam.name]
             ligands.append({
-                'name': fam.name,
+                'name': fam.name.replace('Class',''),
                 'num_ligands': lig_count,
                 'avg_num_ligands': lig_count/prot_count,
                 'target_percentage': target_count/prot_count*100,
@@ -486,7 +486,7 @@ class LigandBiasStatistics(TemplateView):
                 target_count = 0
             prot_count = prot_count_dict[fam.name]
             ligands.append({
-                'name': fam.name,
+                'name': fam.name.replace('Class',''),
                 'num_ligands': lig_count,
                 'avg_num_ligands': lig_count/prot_count,
                 'target_percentage': target_count/prot_count*100,

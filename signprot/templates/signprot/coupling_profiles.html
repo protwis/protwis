@@ -650,14 +650,14 @@ $(window).on("load",function() {
 <input id="cb" type="text" hidden>
 <h4>Number of coupled receptors per receptor class</h4>
 <p>Click in a cell to copy receptor UniProt names to clipboard</p>
-<table style="width:55% !important" class="table table-stripped">
+<table style="width:60% !important" class="table table-stripped">
     <thead>
         <tr>
             <td style="font-size:15px;"><b>Class <br /> (Family)</td>
             {% for key in table.Class %}
-            <td align="center" style="font-size:15px;"><b>{% if key == "Class T (Taste 2)" %}Taste&nbsp;2{% else %}{{ key}}{% endif %}</b></td>
+            <td align="center"><b>{{ key }}</b></td>
             {% endfor %}
-            <td  align="center" style="font-size:15px;"><b>Total</b></td>
+            <td  align="center"><b>Total</b></td>
         </tr>
     </thead>
     <tbody>
