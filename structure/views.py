@@ -534,7 +534,6 @@ class StructureStatistics(TemplateView):
 		#{
 		#    'depth': 3,
 		#    'anchor': '#crystals'}
-		
 		# relabeling table columns for sake of consistency
 		for key in list(context['unique_structures_by_class'].keys()):
 			context['unique_structures_by_class'][key.replace('Class','')] = context['unique_structures_by_class'].pop(key)
