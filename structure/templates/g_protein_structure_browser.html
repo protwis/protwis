@@ -256,7 +256,7 @@
                             {{ structure.stabilizing_agents.all|only_other_proteins|linebreaksbr }}
                         </td>
                         <td class='expand'>
-                            {% for ligand in structure.ligands.all %}
+                            {% for ligand in structure.ligands.all|dictsort:"ligand_role.name" %}
                                 {{ ligand.ligand.name|safe }}
                             {% for link in ligand.ligand.properities.web_links.all %}
                                 <a href="{{ link}}" target="_blank">{{link.web_resource.slug}}</a>

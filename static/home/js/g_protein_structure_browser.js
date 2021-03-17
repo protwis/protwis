@@ -325,7 +325,7 @@ function gproteinstructurebrowser() {
                 select_type_options: {
                     width: '100px',
                 },
-                data: ['AgonistPAM', 'Agonist', 'Apo (no ligand)', 'PAMAgonist','-']
+                data: ['AgonistPAM', 'Agonist', 'Apo (no ligand)', '-']
             },
             {
                 column_number : 25,
