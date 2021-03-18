@@ -2,7 +2,7 @@ from django.contrib.postgres.aggregates import ArrayAgg
 from django.conf import settings
 from django.core.files import File
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
 
 #from common.views import AbsTargetSelection
@@ -107,23 +107,7 @@ class TreeSettings(AbsMiscSelection):
             'color': 'success',
         },
     }
-    # buttons = OrderedDict({
-    #     'continue_v3': {
-    #         'label': 'Draw tree using v3 code',
-    #         'url': '/phylogenetic_trees/render_v3',
-    #         'color': 'success',
-    #     },
-    #     'continue_v2': {
-    #         'label': 'Draw tree using new code',
-    #         'url': '/phylogenetic_trees/render_v2',
-    #         'color': 'success',
-    #     },
-    #     'continue': {
-    #         'label': 'Draw tree using previous code',
-    #         'url': '/phylogenetic_trees/render',
-    #         'color': 'success',
-    #     }
-    # })
+
     tree_settings = True
 
 
@@ -451,35 +435,18 @@ def signature_selection(request):
         return JsonResponse({"response": "error"})
 
 def render_tree_v3(request):
-    Tree_class=Treeclass()
+    # Verify the user selection from session and if not present redirect
+    simple_selection = request.session.get('selection', False)
+    if simple_selection == False or not simple_selection.targets :
+        return redirect("/phylogenetic_trees/targetselection")
 
+    Tree_class=Treeclass()
     phylogeny_input, branches, ttype, total, legend, box, Additional_info, buttons, proteins=Tree_class.Prepare_file(request)
     if phylogeny_input == 'too big':
         return render(request, 'phylogenetic_trees/too_big.html')
 
     if phylogeny_input == 'More_prots':
         return render(request, 'phylogenetic_trees/warning.html')
-
-    # if ttype == '1':
-    #     float(total)/4*100
-    # else:
-    #     count = 1900 - 1400/math.sqrt(float(total))
-
-    #protein_data = []
-    #
-    #FIXME remove
-    # import random
-    # for pc in proteins:
-    #     v = {}
-    #     p = pc.protein
-    #     v['name'] = p.entry_name
-    #     v['GPCR_class'] = p.family.parent.parent.parent.name
-    #     v['selectivity'] = ["Gq/G11 family"]
-    #     v['ligand_type'] = p.family.parent.parent.name
-    #     v['coverage'] = random.uniform(0, 1)
-    #     v['receptor_page'] = ''
-    #     print(v)
-    #     protein_data.append(v)
 
     request.session['Tree'] = Tree_class
 

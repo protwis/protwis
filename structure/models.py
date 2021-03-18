@@ -106,19 +106,6 @@ class Structure(models.Model):
                 tmp.append(line)
         return '\n'.join(tmp)
 
-    @property
-    def is_refined(self):
-        # Ugly way of speeding up -- preferable the DB should create a relationship between the entries.
-        refined = cache.get(self.pdb_code.index+'_refined')
-        if refined == None:
-            s = Structure.objects.filter(refined=True, pdb_code__index=self.pdb_code.index+'_refined')
-            if len(s)>0:
-                refined = True
-            else:
-                refined = False
-            cache.set(self.pdb_code.index+'_refined',refined, 24*60*60)
-        return refined
-
     class Meta():
         db_table = 'structure'
 
@@ -189,7 +176,10 @@ class StructureComplexModel(models.Model):
         return self.pdb_data.pdb
 
     def get_prot_gprot_pair(self):
-        pgp = ProteinGProteinPair.objects.filter(protein=self.receptor_protein, g_protein__slug=self.sign_protein.family.parent.slug, source='GuideToPharma')
+        if self.receptor_protein.accession:
+            pgp = ProteinGProteinPair.objects.filter(protein=self.receptor_protein, g_protein__slug=self.sign_protein.family.parent.slug, source='GuideToPharma')
+        else:
+            pgp = ProteinGProteinPair.objects.filter(protein=self.receptor_protein.parent, g_protein__slug=self.sign_protein.family.parent.slug, source='GuideToPharma')
         if len(pgp)>0:
             return pgp[0].transduction
         else:
@@ -215,82 +205,6 @@ class StatsText(models.Model):
 
     class Meta():
         db_table = 'stats_text'
-
-
-class StructureModelStatsRotamer(models.Model):
-    homology_model = models.ForeignKey('structure.StructureModel', on_delete=models.CASCADE)
-    residue = models.ForeignKey('residue.Residue', null=True, on_delete=models.CASCADE)
-    rotamer_template = models.ForeignKey('structure.Structure', related_name='+', null=True, on_delete=models.CASCADE)
-    backbone_template = models.ForeignKey('structure.Structure', related_name='+', null=True, on_delete=models.CASCADE)
-
-    def __repr__(self):
-        return '<StructureModelStatsRotamer: seqnum '+str(self.residue.sequence_number)+' hommod '+str(self.homology_model.protein)+'>'
-
-    class Meta():
-        db_table = 'structure_model_stats_rotamer'
-
-
-class StructureComplexModelStatsRotamer(models.Model):
-    homology_model = models.ForeignKey('structure.StructureComplexModel', on_delete=models.CASCADE)
-    protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
-    residue = models.ForeignKey('residue.Residue', null=True, on_delete=models.CASCADE)
-    rotamer_template = models.ForeignKey('structure.Structure', related_name='+', null=True, on_delete=models.CASCADE)
-    backbone_template = models.ForeignKey('structure.Structure', related_name='+', null=True, on_delete=models.CASCADE)
-
-    def __repr__(self):
-        return '<StructureComplexModelStatsRotamer: seqnum '+str(self.residue.sequence_number)+' hommod '+str(self.homology_model.protein)+'>'
-
-    class Meta():
-        db_table = 'structure_complex_model_stats_rotamer'
-
-
-class StructureRefinedStatsRotamer(models.Model):
-    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
-    residue = models.ForeignKey('residue.Residue', null=True, on_delete=models.CASCADE)
-    rotamer_template = models.ForeignKey('structure.Structure', related_name='+', null=True, on_delete=models.CASCADE)
-    backbone_template = models.ForeignKey('structure.Structure', related_name='+', null=True, on_delete=models.CASCADE)
-
-    def __repr__(self):
-        return '<StructureRefinedStatsRotamer: seqnum '+str(self.residue.sequence_number)+' '+str(self.structure.pdb_code.index)+'>'
-
-    class Meta():
-        db_table = 'structure_refined_stats_rotamer'
-
-
-class StructureModelSeqSim(models.Model):
-    homology_model = models.ForeignKey('structure.StructureModel', on_delete=models.CASCADE)
-    template = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
-    similarity = models.IntegerField()
-
-    def __repr__(self):
-        return '<StructureModelSeqSim: {}>'.format(self.homology_model.protein.entry_name)
-
-    class Meta():
-        db_table = 'structure_model_seqsim'
-
-
-class StructureComplexModelSeqSim(models.Model):
-    homology_model = models.ForeignKey('structure.StructureComplexModel', on_delete=models.CASCADE)
-    template = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
-    similarity = models.IntegerField()
-
-    def __repr__(self):
-        return '<StructureComplexModelSeqSim: {}>'.format(self.homology_model.protein.entry_name)
-
-    class Meta():
-        db_table = 'structure_complex_model_seqsim'
-
-
-class StructureRefinedSeqSim(models.Model):
-    structure = models.ForeignKey('structure.Structure', related_name='+', null=True, on_delete=models.CASCADE)
-    template = models.ForeignKey('structure.Structure', related_name='+', null=True, on_delete=models.CASCADE)
-    similarity = models.IntegerField()
-
-    def __repr__(self):
-        return '<StructureRefinedSeqSim: {}>'.format(self.structure.pdb_code.index)
-
-    class Meta():
-        db_table = 'structure_refined_seqsim'
 
 
 class StructureModelRMSD(models.Model):

@@ -1,0 +1,1023 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% load structure_extras %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/gprottree.css' %}" media="screen" />
+{% endblock %}
+{% block content %}
+
+<!-- styles needed? -->
+<!-- <link href="{% static 'home/css/prettify.css' %}" rel="stylesheet" media="screen"> -->
+<link href="{% static 'home/css/color_picker.css' %}" rel="stylesheet" media="screen">
+<link href="{% static 'home/css/bootstrap-responsive.css' %}" rel="stylesheet" media="screen">
+<link href="{% static 'home/css/jquery.dataTables.min.css' %}" rel="stylesheet" media="screen">
+<link href="{% static 'home/css/yadcf_bootstrap_version.css' %}" rel="stylesheet" media="screen">
+<link href="{% static 'home/css/targetselect_functions.css' %}" rel="stylesheet" media="screen">
+<link href="{% static 'home/css/select2.css' %}" rel="stylesheet" media="screen">
+
+<script src="{% static 'home/js/selection.js' %}"></script>
+
+
+<script language="Javascript">
+  //creating a dictionary for the path translation
+  const trackTranslate = {
+    '0123': "resultC111100",  '023': "resultC101100",  '123': "resultC011100",
+    '012': "resultC111000",  '02': "resultC101000",  '12': "resultC011000",
+    '013': "resultC110100",  '03': "resultC100100",  '13': "resultC010100",
+    '01': "resultC110000",  '0': "resultC100000",  '1': "resultC010000",
+    '23': "resultC001100", '2': "resultC001000", '3': "resultC000100"
+  };
+
+  function clear_select_segmentselection(form) {
+
+    ClearSelection('targets')
+    //Dealing with csrf token
+    function getCookie(c_name) {
+        if (document.cookie.length > 0) {
+            c_start = document.cookie.indexOf(c_name + "=");
+            if (c_start != -1) {
+                c_start = c_start + c_name.length + 1;
+                c_end = document.cookie.indexOf(";", c_start);
+                if (c_end == -1) c_end = document.cookie.length;
+                return unescape(document.cookie.substring(c_start, c_end));
+            }
+        }
+        return "";
+    }
+    $.ajaxSetup({
+        headers: { "X-CSRFToken": getCookie("csrftoken") }
+    });
+    //Actual post
+    var fd = new FormData(form);
+    $.ajax({
+        type: 'POST',
+        url: '/common/targetformread',
+        data: fd,
+        cache: false,
+        processData: false,
+        contentType: false,
+        'success': function (data) {
+            location.href="/alignment/segmentselection";
+            console.log('ready!');
+        },
+    }).fail(function (jqXHR, textStatus, error) {
+        alert("Request failed: " + textStatus + error);
+    });
+    return false;
+}
+
+function copyToClipboard(txt) {
+    var cb = document.getElementById("cb");
+    cb.value = txt.slice(0, -1);
+    cb.style.display='block';
+    cb.select();
+    document.execCommand('copy');
+    cb.style.display='none';
+    showAlert("Selected receptors have been copied to your clipboard.", "info");
+}
+    {% if render_part != "tree" %}
+      $(document).ready(function () {
+        var colorDefault = ["#5a9bd4", "#f15a60", "#808080", "#006600"],
+          displayMode  = "classic",
+          displaySwitch = false,
+          displayStat  = false,
+          shortNumber  = true,
+          fontSize     = "16px",
+          fontFamily   = "Arial";
+
+          gdata = {{ ClassA_gtp_plus|safe }};
+          gprotein_ID = {{ ClassA_gtp_plus_keys|safe }};
+
+        function getArrayFromData(gprotein) {
+          var lines = gdata[gprotein].split("\n");
+          var table = new Array();
+          for (var lindex in lines) {
+            table.push(lines[lindex].trim());
+          }
+          return (table);
+        }
+
+        var table_options = {
+                         "paging":       false,
+                         "lengthChange": false,
+                         "order":        [[ 3, "desc" ]],
+                         "scrollX":      false,
+                         "deferRender": true,
+                        }
+        // init datattable
+        datatable = $("#receptor_table").DataTable(table_options);
+
+        var yadcf_options = [];
+        var list = [0, 1, 2, 3, 4];
+        for (i in list){
+          yadcf_options.push({
+            column_number : list[i],
+            filter_type: "multi_select",
+            select_type: "select2",
+            filter_default_label: "",
+            filter_reset_button_text: false,
+            select_type_options: {
+                width: "100%",
+            }
+          });
+        }
+        // init yadcf
+        yadcf.init(datatable, yadcf_options);
+        function updateJvenn(gprotein_ID) {
+          displaySwitch = false;
+          var seriesTable = new Array();
+          var num = 0;
+          for(var i=1; i<=gprotein_ID.length; i++) {
+            seriesTable.push({
+              name: gprotein_ID[i-1],
+              data: getArrayFromData(gprotein_ID[i-1])
+            });
+          }
+
+            $("#jvenn-container").jvenn({
+            series: seriesTable,
+            colors: ["rgb(255,255,255)","rgb(255,255,255)","rgb(255,255,255)","rgb(255,255,255)","rgb(255,255,255)"],//["rgb(0,102,0)","rgb(90,155,212)","rgb(241,90,96)","rgb(250,220,91)","rgb(255,117,0)","rgb(192,152,83)"],
+            fontSize:   fontSize,
+            fontFamily: fontFamily,
+            searchInput:  $("#search-field"),
+            searchStatus: $("#search-status"),
+            displayMode: displayMode,
+            shortNumber: shortNumber,
+            displaySwitch: displaySwitch,
+            displayStat: displayStat,
+            exporting: true,
+            fnClickCallback: function() {
+              var dict = {{ receptor_dictionary|safe }};
+              var value = "";
+              datatable.clear().draw();
+              for (val in this.list) {
+                item = this.list[val].split('_')[0].toUpperCase();
+                datatable.row.add([
+                  dict[item][0],
+                  dict[item][1],
+                  dict[item][2],
+                  dict[item][3],
+                  dict[item][4],
+                ]);
+                value += this.list[val] + " ";
+              }
+              datatable.draw();
+              $("td").each(function(){
+                 $(this).addClass("expand");
+              });
+              $( "#copytoclip" ).unbind( "click" );
+              $( "#copytoclip" ).bind( "click", function(event){copyToClipboard(value);});
+            }
+
+          });
+          var totalCount = 0;
+          $(".number-black").each(function(){
+            totalCount = totalCount + parseInt($(this).text());
+          });
+
+          var paper_paths = [];
+          paper.setup("test-canvas");
+          $("#canvasEllipse svg g g").each(function(index){
+            var transform = this.getAttribute("transform").parseTransform();
+            paper_paths[index] = new paper.Path(this.firstChild.getAttribute("d"));
+            paper_paths[index].scale(transform.scale.x, transform.scale.y);
+            paper_paths[index].translate(transform.translate.x, transform.translate.y);
+            paper_paths[index].rotate(transform.rotate.a);
+            paper_paths[index].strokeColor = new paper.Color(0, 0, 0);
+            // Viz
+            paper_paths[index].fillColor = '#000000';
+          });
+
+
+          // All possible combinations
+          var sets = Array.from(Array(paper_paths.length).keys())
+          var combinations = getCombinations([...sets]);
+          for (var i=0; i <combinations.length; i++){
+            var included = combinations[i];
+            track = trackTranslate[included.join('')];
+            if (included.length > 0){
+              var excluded = sets.filter(value => !included.includes(value));
+              // create unique path
+              var result = paper_paths[included[0]];  // intersect circle 1 with circle 2
+              for (var j=1; j < included.length; j++){
+                result = result.intersect(paper_paths[included[j]])
+              }
+              for (var j=0; j < excluded.length; j++){
+                result = result.subtract(paper_paths[excluded[j]])
+              }
+              // draw path
+              var svgPathElement = result.exportSVG(),
+              dPath = svgPathElement.getAttribute('d');
+              // find the correct ID number location
+              var percentage = 200*(parseInt(document.getElementById(track).textContent)/totalCount);
+              var gray=componentToHex(255-Math.round(percentage/100*255));
+              var color="#"+gray+gray+gray;
+              let g = $("#canvasEllipse svg g").get(0); // grab svg panel
+              var newElement = document.createElementNS("http://www.w3.org/2000/svg", 'path');
+              newElement.setAttribute("d", dPath); //Set path's data
+              newElement.setAttribute("fill-opacity", 0.5);
+              newElement.style.stroke = "black";
+              newElement.style.strokeWidth = "1px";
+              newElement.style.fill = color;
+              g.appendChild(newElement);
+            }
+          }
+          $("#label1").css("font-weight", "bold").css("font-size", "20px");
+          $("#label2").css("font-weight", "bold").css("font-size", "20px");
+          $("#label3").css("font-weight", "bold").css("font-size", "20px");
+          $("#label4").css("font-weight", "bold").css("font-size", "20px");
+          $(".number-empty").html("-");
+        }
+
+        updateJvenn(gprotein_ID)
+
+        $("#ClassA").click(function() {
+            datatable.clear().draw();
+            $("#input-targets").val('');
+            $("#input-targets").trigger('input');
+            gprotein_list = {{ ClassA_gtp_plus_keys|safe }}
+            gdata = {{ ClassA_gtp_plus|safe }}
+            $("#ClassA").addClass("active");
+            $("#ClassB1").removeClass("active");
+            $("#ClassC").removeClass("active");
+            $("#ClassF").removeClass("active");
+            $("#CrossClass").removeClass("active");
+          updateJvenn(gprotein_list);
+        });
+
+        $("#ClassB1").click(function() {
+            datatable.clear().draw();
+            $("#input-targets").val('');
+            $("#input-targets").trigger('input');
+            gprotein_list = {{ ClassB1_gtp_plus_keys|safe }}
+            gdata = {{ ClassB1_gtp_plus|safe }}
+            $("#ClassA").removeClass("active");
+            $("#ClassB1").addClass("active");
+            $("#ClassC").removeClass("active");
+            $("#ClassF").removeClass("active");
+            $("#CrossClass").removeClass("active");
+          updateJvenn(gprotein_list);
+        });
+
+        $("#CrossClass").click(function() {
+            datatable.clear().draw();
+            $("#input-targets").val('');
+            $("#input-targets").trigger('input');
+            gprotein_list = {{ ClassA_gtp_plus_keys|safe }}
+            gdataA = {{ ClassA_gtp_plus|safe }}
+            gdataB1 = {{ ClassB1_gtp_plus|safe }}
+            gdataC = {{ ClassC_gtp_plus|safe }}
+            gdataF = {{ ClassF_gtp_plus|safe }}
+
+            gdata['G<sub>s</sub>'] = gdataA['G<sub>s</sub>']+gdataB1['G<sub>s</sub>']+gdataC['G<sub>s</sub>']+gdataF['G<sub>s</sub>']
+            gdata['G<sub>i/o</sub>'] = gdataA['G<sub>i/o</sub>']+gdataB1['G<sub>i/o</sub>']+gdataC['G<sub>i/o</sub>']+gdataF['G<sub>i/o</sub>']
+            gdata['G<sub>q/11</sub>'] = gdataA['G<sub>q/11</sub>']+gdataB1['G<sub>q/11</sub>']+gdataC['G<sub>q/11</sub>']+gdataF['G<sub>q/11</sub>']
+            gdata['G<sub>12/13</sub>'] = gdataA['G<sub>12/13</sub>']+gdataB1['G<sub>12/13</sub>']+gdataC['G<sub>12/13</sub>']+gdataF['G<sub>12/13</sub>']
+            $("#ClassA").removeClass("active");
+            $("#ClassB1").removeClass("active");
+            $("#ClassC").removeClass("active");
+            $("#ClassF").removeClass("active");
+            $("#CrossClass").addClass("active");
+          updateJvenn(gprotein_list);
+        });
+
+        $("#ClassC").click(function() {
+            datatable.clear().draw();
+            $("#input-targets").val('');
+            gprotein_list = {{ ClassC_gtp_plus_keys|safe }}
+            gdata = {{ ClassC_gtp_plus|safe }}
+            $("#ClassA").removeClass("active");
+            $("#ClassB1").removeClass("active");
+            $("#ClassC").addClass("active");
+            $("#ClassF").removeClass("active");
+            $("#CrossClass").removeClass("active");
+          updateJvenn(gprotein_list);
+        });
+
+        $("#ClassF").click(function() {
+            datatable.clear().draw();
+            $("#input-targets").val('');
+            $("#input-targets").trigger('input');
+            gprotein_list = {{ ClassF_gtp_plus_keys|safe }}
+            gdata = {{ ClassF_gtp_plus|safe }}
+            $("#ClassA").removeClass("active");
+            $("#ClassB1").removeClass("active");
+            $("#ClassC").removeClass("active");
+            $("#ClassF").addClass("active");
+            $("#CrossClass").removeClass("active");
+          updateJvenn(gprotein_list);
+        });
+
+      });
+
+      {% endif %}
+  </script>
+
+<script>
+  // Transform parser
+  String.prototype.parseTransform = function() {
+  	var prop = ['translate', 'matrix', 'rotate', 'skewX', 'skewY', 'scale'];
+  	var val = this.match(/(translate|matrix|rotate|skewX|skewY|scale)\(.*?\)/g);
+  	var obj = {};
+  	if (val) {
+  		for (var i = 0, length = val.length; i < length; i++) {
+  			var item = val[i];
+  			var index = item.indexOf('(');
+  			var v = item.substring(index + 1, item.length - 1).split(/\,|\s/);
+  			var n = item.substring(0, index);
+  			obj[n] = {};
+  			switch (n) {
+  				case 'translate':
+  				case 'scale':
+  					obj[n].x = +v[0] || 0;
+  					obj[n].y = +v[1] || 0;
+  					break;
+  				case 'rotate':
+  					obj[n].a = +v[0] || 0;
+  					obj[n].x = +v[1] || 0;
+  					obj[n].y = +v[2] || 0;
+  					break;
+  				case 'skewX':
+  				case 'skewY':
+  					obj[n].a = +v[0];
+  					break;
+  				case 'matrix':
+  					obj[n].a = +v[0] || 0;
+  					obj[n].b = +v[1] || 0;
+  					obj[n].c = +v[2] || 0;
+  					obj[n].d = +v[3] || 0;
+  					obj[n].e = +v[4] || 0;
+  					obj[n].f = +v[5] || 0;
+  					break;
+  			}
+  		}
+  	}
+
+  	obj.toString = function() {
+  		var builder = [];
+  		for (var i = 0, length = prop.length; i < length; i++) {
+  			var n = prop[i];
+  			var o = this[n];
+  			if (!o)
+  				continue;
+  			switch (n) {
+  				case 'translate':
+  				case 'scale':
+  					builder.push(n + '(' + o.x + ',' + o.y + ')');
+  					break;
+  				case 'rotate':
+  					builder.push(n + '(' + o.a + ' ' + o.x + ' ' + o.y + ')');
+  					break;
+  				case 'skewX':
+  				case 'skewY':
+  					builder.push(n + '(' + o.a + ')');
+  					break;
+  				case 'matrix':
+  					builder.push(n + '(' + o.a + ',' + o.b + ',' + o.c + ',' + o.d + ',' + o.e + ',' + o.f + ')');
+  					break;
+  			}
+  		}
+  		return builder.join(' ');
+  	};
+
+  	return obj;
+  };
+
+
+  function getCombinations(array) {
+      function iter(temp, index) {
+          if (index >= array.length) {
+              result.push(temp);
+              return;
+          }
+
+          iter([...temp, array[index]], index + 1);
+          iter(temp, index + 1);
+      }
+
+      var result = [];
+      iter([], 0);
+      return result;
+  }
+  function componentToHex(c)
+  {
+      var hex = c.toString(16);
+      return hex.length == 1 ? "0" + hex : hex;
+  }
+</script>
+
+<style type="text/css">
+  /* Maintain original width of page */
+  @media (min-width: 1600px) {
+    #content.container {
+      width: 1170px;
+    }
+  }
+
+  .gprot_blue {
+    color: blue;
+  }
+
+  .gprot_red {
+    color: red;
+  }
+
+  .gprot_black {
+    color: black;
+  }
+
+  .gprot_green {
+    color: forestgreen;
+  }
+
+  textarea {
+    resize: none;
+    overflow: hidden;
+  }
+  canvas#test-canvas {
+    display: none;
+  }
+</style>
+
+<style>
+  .node circle {
+    stroke: #000000 ;
+    stroke-width: .3px;
+  }
+  .node {
+    font: 8px sans-serif;
+  }
+  .link {
+    fill: none;
+    stroke: #eee;
+    stroke-width: 1px;
+  }
+  .node text {
+    font: 8px sans-serif;
+  }
+  .links {
+    fill: none;
+    stroke: #000;
+  }
+  .link-extensions {
+    fill: none;
+    stroke: #000;
+    stroke-opacity: .25;
+  }
+  .labels {
+    font: 14px Palatino;
+    font-weight: bold;
+  }
+  .link--active {
+    stroke: #000 !important;
+    stroke-width: 3.5px;
+  }
+  .link-extension--active {
+    stroke-opacity: .6;
+  }
+  .label--active {
+    font-weight: bold;
+  }
+</style>
+
+{% if render_part != "tree" %}
+<div class="container">
+  <div class="row-fluid">
+    <div class="span12">
+      <div class="text-center">
+        <p>	Click a Venn area to retrieve the receptors with the given G protein family profile. </p>
+      </div>
+      <div class="row-fluid">
+        <div class="span6">
+        <b>Class: </b>
+              <div class="btn-group" role="group" id="gtp_plus">
+                  <button id="ClassA" class="btn btn-primary active">A</button>
+                  <button id="ClassB1" class="btn btn-primary">B1</button>
+                  <button id="ClassC" class="btn btn-primary">C</button>
+                  <button id="ClassF" class="btn btn-primary">F</button>
+                  <button id="CrossClass" class="btn btn-primary">Cross</button>
+              </div>
+          <div class="row-fluid">
+            <div id="jvenn-container"></div>
+          </div>
+        </div>
+
+        <div class="span6">
+          <table class="compact text-nowrap" id="receptor_table">
+            <thead>
+              <tr>
+                  <th>Class</th>
+                  <th>Ligand type</th>
+                  <th>Receptor Family</th>
+                  <th>Receptor<br>(UniProt)</th>
+                  <th>Receptor<br>(GtP)</th>
+              </tr>
+              <tr>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+              </tr>
+            </thead>
+          </table>
+
+        </div>
+        <button id="copytoclip" type="button" class="btn btn-info" style="float:right;margin-top:10px;"> Copy receptor names to clipboard </button>
+        <input id="cb" type="text" hidden>
+        <canvas id="test-canvas"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  <hr>
+</div>
+{% endif %}
+
+<script>
+  ! function($) {
+    $(function() {
+      window.prettyPrint && prettyPrint()
+    })
+  }(window.jQuery)
+</script>
+
+
+<script type="text/javascript" charset="utf-8">
+  var receptor_dictionary = {{ receptor_dictionary|safe }};
+  // var selectivitydata = {{ selectivitydata|safe }};
+  var selectivitydata_gtp_plus = {{ selectivitydata_gtp_plus|safe }};
+  $(document).ready(function(){
+    paper.install(window);
+    });
+</script>
+
+{% if render_part != "venn" %}
+<script type="text/javascript" charset="utf-8">
+    tree_class_a = {{ tree_class_a|safe }};
+    tree_class_a_options = {{ tree_class_a_options|safe }};
+    tree_class_b1 = {{ tree_class_b1|safe }};
+    tree_class_b1_options = {{ tree_class_b1_options|safe }};
+    tree_class_b2 = {{ tree_class_b2|safe }};
+    tree_class_b2_options = {{ tree_class_b2_options|safe }};
+    tree_class_c = {{ tree_class_c|safe }};
+    tree_class_c_options = {{ tree_class_c_options|safe }};
+    tree_class_f = {{ tree_class_f|safe }};
+    tree_class_f_options = {{ tree_class_f_options|safe }};
+    tree_class_t2 = {{ tree_class_t2|safe }};
+    tree_class_t2_options = {{ tree_class_t2_options|safe }};
+    tree_orphan_a = {{ tree_orphan_a|safe }};
+    tree_orphan_options = {{ tree_orphan_options|safe }};
+    whole_dict = {{ whole_receptors|safe }};
+</script>
+<script language='Javascript'>
+function highlightBG(element, color) {
+    element.style.backgroundColor = color;
+}
+function linkLikeClick(element, color) {
+    element.style.color = color;
+    element.style.textDecoration = 'underline';
+}
+</script>
+<script type="text/javascript" charset="utf-8">
+$(window).on("load",function() {
+    maxLeafNodeLenght = 46;
+    conversion = {"Gs":"blue", "Gi/Go":"red", "Gq/G11":"black", "G12/G13":"green"};
+    $("#UniProtNames").click(function(){
+        $("#UniProtNames").addClass("active");
+        $("#IUPHARNames").removeClass("active");
+        changeLeavesLabels("tree_class_a","UniProt", whole_dict);
+        DrawCircles('tree_class_a',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion);
+        changeLeavesLabels("tree_class_b1","UniProt", whole_dict);
+        DrawCircles('tree_class_b1',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion);
+        changeLeavesLabels("tree_class_b2","UniProt", whole_dict);
+        DrawCircles('tree_class_b2',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion);
+        changeLeavesLabels("tree_class_c","UniProt", whole_dict);
+        DrawCircles('tree_class_c',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion);
+        changeLeavesLabels("tree_class_f","UniProt", whole_dict);
+        DrawCircles('tree_class_f',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion);
+        changeLeavesLabels("tree_class_t2","UniProt", whole_dict);
+        DrawCircles('tree_class_t2',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion);
+        changeLeavesLabels("tree_orphan","UniProt", whole_dict);
+        DrawCircles('tree_orphan',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion);
+      });
+    $("#IUPHARNames").click(function() {
+        $("#UniProtNames").removeClass("active");
+        $("#IUPHARNames").addClass("active");
+        changeLeavesLabels("tree_class_a","IUPHAR", whole_dict);
+        DrawCircles('tree_class_a',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
+        changeLeavesLabels("tree_class_b1","IUPHAR", whole_dict);
+        DrawCircles('tree_class_b1',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
+        changeLeavesLabels("tree_class_b2","IUPHAR", whole_dict);
+        DrawCircles('tree_class_b2',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
+        changeLeavesLabels("tree_class_c","IUPHAR", whole_dict);
+        DrawCircles('tree_class_c',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
+        changeLeavesLabels("tree_class_f","IUPHAR", whole_dict);
+        DrawCircles('tree_class_f',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
+        changeLeavesLabels("tree_class_t2","IUPHAR", whole_dict);
+        DrawCircles('tree_class_t2',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
+        changeLeavesLabels("tree_orphan","IUPHAR", whole_dict);
+        DrawCircles('tree_orphan',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
+    });
+    draw_tree(tree_class_a, tree_class_a_options); //, "IUPHAR", receptor_dictionary);
+    draw_tree(tree_class_b1, tree_class_b1_options);
+    draw_tree(tree_class_b2, tree_class_b2_options);
+    draw_tree(tree_class_c, tree_class_c_options);
+    draw_tree(tree_class_f, tree_class_f_options);
+    draw_tree(tree_class_t2, tree_class_t2_options);
+    draw_tree(tree_orphan_a, tree_orphan_options);
+    DrawCircles('tree_class_a',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
+    DrawCircles('tree_class_b1',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
+    DrawCircles('tree_class_b2',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
+    DrawCircles('tree_class_c',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
+    DrawCircles('tree_class_f',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
+    DrawCircles('tree_class_t2',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
+    DrawCircles('tree_orphan',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
+    $("#tree_class_a svg g").first().attr('transform', 'translate(555,555) scale(0.9,0.9) ');
+    $("#tree_class_a_svg").attr('height', 1210);
+    $("#tree_class_b1 svg g").first().attr('transform', 'translate(190,220) scale(0.80,0.80) ');
+    $("#tree_class_b2 svg g").first().attr('transform', 'translate(195,182) scale(0.85,0.85) ');
+    $("#tree_class_b2_svg").attr('height', 390);
+    $("#tree_class_c svg g").first().attr('transform', 'translate(200,200) scale(0.85,0.85) ');
+    $("#tree_class_f svg g").first().attr('transform', 'translate(180,180) scale(0.85,0.85) ');
+    $("#tree_class_t2 svg g").first().attr('transform', 'translate(172,172) scale(0.85,0.85) ');
+    $("#tree_orphan svg g").first().attr('transform', 'translate(175,180) scale(0.85,0.85)');
+    $("#tree_orphan_svg").attr('height', 360).attr('width', 360);
+});
+</script>
+<input id="cb" type="text" hidden>
+<h4>Number of coupled receptors per receptor class</h4>
+<p>Click in a cell to copy receptor UniProt names to clipboard</p>
+<table style="width:60% !important" class="table table-stripped">
+    <thead>
+        <tr>
+            <td style="font-size:15px;"><b>Class<br />(Family)</td>
+            {% for key in table.Class %}
+            <td align="center"><b>{% if key == " T (Taste 2)" %}T2 (Taste&nbsp;2){% else %}{{ key }}{% endif %}</b></td>
+            {% endfor %}
+            <td  align="center"><b>Total</b></td>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>G<sub>s</sub></td>
+            {% for text in table.Gs %}
+            <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='copyToClipboard("{{ text.1 }}"); linkLikeClick(this, "purple")' align="center">{{ text.0 }}</td>
+            {% endfor %}
+        </tr>
+        <tr>
+            <td nowrap>G<sub>i/o</sub></td>
+            {% for text in table.GiGo %}
+            <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='copyToClipboard("{{ text.1 }}"); linkLikeClick(this, "purple")' align="center">{{ text.0 }}</td>
+            {% endfor %}
+        </tr>
+        <tr>
+            <td nowrap>G<sub>q/11</sub></td>
+            {% for text in table.GqG11 %}
+            <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='copyToClipboard("{{ text.1 }}"); linkLikeClick(this, "purple")' align="center">{{ text.0 }}</td>
+            {% endfor %}
+        </tr>
+        <tr>
+            <td nowrap>G<sub>12/13</sub></td>
+            {% for text in table.G12G13 %}
+            <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='copyToClipboard("{{ text.1 }}"); linkLikeClick(this, "purple")' align="center">{{ text.0 }}</td>
+            {% endfor %}
+        </tr>
+        <tr>
+            <td nowrap>Total (unique)</td>
+            {% for text in table.Total %}
+            <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='copyToClipboard("{{ text.1 }}"); linkLikeClick(this, "purple")' align="center">{{ text.0 }}</td>
+            {% endfor %}
+        </tr>
+    </tbody>
+    <tr> </tr>
+
+</table>
+
+<hr>
+
+  <div class="row">
+    <div class="col-md-12">
+      <div class="panel-body">
+        <div>
+          <p><h4><strong>GPCR selectivity tree.</strong> The four dots depict both primary and secondary G protein coupling.</h4></p>
+        </div>
+        <div>
+          Receptor names:
+            <div class="btn-group" role="group" id="gtp_plus">
+                <button id="UniProtNames" class="btn btn-info active">UniProt</button>
+                <button id="IUPHARNames" class="btn btn-info">IUPHAR</button>
+            </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row text-center">
+      <span class="gprot_blue">&#11044; G&alpha;<sub>s</sub></span>
+      <span class="gprot_red">&#11044; G&alpha;<sub>i/o</sub></span>
+      <span class="gprot_black">&#11044; G&alpha;<sub>q/11</sub></span>
+      <span class="gprot_green">&#11044; G&alpha;<sub>12/13</sub></span>
+  </div>
+
+  <br />
+
+<div id="tree_class_a" class="text-center">
+  <h4>Class A<br />(Rhodopsin)</h4>
+</div>
+
+<p>
+  <div class="text-center">
+    <div class="btn-group">
+        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                aria-haspopup="true" aria-expanded="false">
+            <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+            <li>
+                <a href="javascript:saveSvgAsPng(document.getElementById('tree_class_a_svg'), 'xtals_tree_class_a.png');">PNG</a>
+            </li>
+            <li>
+                <a href="javascript:saveSvgAsJpg(document.getElementById('tree_class_a_svg'), 'xtals_tree_class_a.jpg');">JPG</a>
+            </li>
+            <li>
+                <a href="javascript:saveSvgAsTiff(document.getElementById('tree_class_a_svg'), 'xtals_tree_class_a.tiff');">TIFF</a>
+            </li>
+            <li>
+                <a href="javascript:saveSvg(document.getElementById('tree_class_a_svg'), 'xtals_tree_class_a.svg');">SVG</a>
+            </li>
+        </ul>
+    </div>
+  </div>
+
+    <br />
+    <br />
+    <br />
+
+    <div class="row-fluid">
+      <div class="span12">
+        <div class="row-fluid">
+
+          <div class="span4">
+            <div id="tree_orphan" class="text-center">
+              <h4>Class A <br /> Orphans</h4>
+            </div>
+          </div>
+
+          <div class="span4">
+            <div id="tree_class_b1" class="text-center">
+              <h4>Class B1<br />(Secretin)</h4>
+            </div>
+          </div>
+
+          <div class="span4">
+            <div id="tree_class_b2" class="text-center">
+              <h4>Class B2<br />(Adhesion)</h4>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="row-fluid">
+      <div class="span12">
+        <div class="row-fluid">
+
+          <div class="span4">
+            <div class="text-center">
+              <div class="btn-group">
+                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                          aria-haspopup="true" aria-expanded="false">
+                      <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu">
+                      <li>
+                          <a href="javascript:saveSvgAsPng(document.getElementById('tree_orphan_svg'), 'xtal_coverage_tree_class_a_orphan.png');">PNG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsJpg(document.getElementById('tree_orphan_svg'), 'xtal_coverage_tree_class_a_orphan.jpg');">JPG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsTiff(document.getElementById('tree_orphan_svg'), 'xtal_coverage_tree_class_a_orphan.tiff');">TIFF</a>
+                          </a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvg(document.getElementById('tree_orphan_svg'), 'xtal_coverage_tree_class_a_orphan.svg');">SVG</a>
+                      </li>
+                  </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="span4">
+            <div class="text-center">
+              <div class="btn-group">
+                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                          aria-haspopup="true" aria-expanded="false">
+                      <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu">
+                      <li>
+                          <a href="javascript:saveSvgAsPng(document.getElementById('tree_class_b1_svg'), 'xtal_coverage_tree_class_b1.png');">PNG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsJpg(document.getElementById('tree_class_b1_svg'), 'xtal_coverage_tree_class_b1.jpg');">JPG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsTiff(document.getElementById('tree_class_b1_svg'), 'xtal_coverage_tree_class_b1.tiff');">TIFF</a>
+                          </a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvg(document.getElementById('tree_class_b1_svg'), 'xtal_coverage_tree_class_b1.svg');">SVG</a>
+                      </li>
+                  </ul>
+              </div>
+            </div>
+          </div>
+          <div class="span4">
+            <div class="text-center">
+              <div class="btn-group">
+                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                          aria-haspopup="true" aria-expanded="false">
+                      <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu">
+                      <li>
+                          <a href="javascript:saveSvgAsPng(document.getElementById('tree_class_b2_svg'), 'xtal_coverage_tree_class_b2.png');">PNG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsJpg(document.getElementById('tree_class_b2_svg'), 'xtal_coverage_tree_class_b2.jpg');">JPG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsTiff(document.getElementById('tree_class_b2_svg'), 'xtal_coverage_tree_class_b2.tiff');">TIFF</a>
+                          </a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvg(document.getElementById('tree_class_b2_svg'), 'xtal_coverage_tree_class_b2.svg');">SVG</a>
+                      </li>
+                  </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <br />
+    <br />
+    <br />
+
+    <div class="row-fluid">
+      <div class="span12">
+        <div class="row-fluid">
+          <div class="span4">
+            <div id="tree_class_c" class="text-center">
+              <h4>Class C<br />(Glutamate)</h4>
+            </div>
+          </div>
+
+          <div class="span4">
+            <div id="tree_class_f" class="text-center">
+              <h4>Class F<br />(Frizzled)</h4>
+            </div>
+          </div>
+
+          <div class="span4">
+            <div id="tree_class_t2" class="text-center">
+              <h4>Class T <br /> (Taste 2)</h4>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="row-fluid">
+      <div class="span12">
+        <div class="row-fluid">
+          <div class="span4">
+            <div class="text-center">
+              <div class="btn-group">
+                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                          aria-haspopup="true" aria-expanded="false">
+                      <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu">
+                      <li>
+                          <a href="javascript:saveSvgAsPng(document.getElementById('tree_class_c_svg'), 'xtal_coverage_tree_class_c.png');">PNG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsJpg(document.getElementById('tree_class_c_svg'), 'xtal_coverage_tree_class_c.jpg');">JPG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsTiff(document.getElementById('tree_class_c_svg'), 'xtal_coverage_tree_class_c.tiff');">TIFF</a>
+                          </a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvg(document.getElementById('tree_class_c_svg'), 'xtal_coverage_tree_class_c.svg');">SVG</a>
+                      </li>
+                  </ul>
+              </div>
+            </div>
+          </div>
+          <div class="span4">
+            <div class="text-center">
+              <div class="btn-group">
+                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                          aria-haspopup="true" aria-expanded="false">
+                      <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu">
+                      <li>
+                          <a href="javascript:saveSvgAsPng(document.getElementById('tree_class_f_svg'), 'xtal_coverage_tree_class_f.png');">PNG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsJpg(document.getElementById('tree_class_f_svg'), 'xtal_coverage_tree_class_f.jpg');">JPG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsTiff(document.getElementById('tree_class_f_svg'), 'xtal_coverage_tree_class_f.tiff');">TIFF</a>
+                          </a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvg(document.getElementById('tree_class_f_svg'), 'xtal_coverage_tree_class_f.svg');">SVG</a>
+                      </li>
+                  </ul>
+              </div>
+            </div>
+          </div>
+          <div class="span4">
+            <div class="text-center">
+              <div class="btn-group">
+                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                          aria-haspopup="true" aria-expanded="false">
+                      <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu">
+                      <li>
+                          <a href="javascript:saveSvgAsPng(document.getElementById('tree_class_t2_svg'), 'xtal_coverage_tree_class_t2.png');">PNG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsJpg(document.getElementById('tree_class_t2_svg'), 'xtal_coverage_tree_class_t2.jpg');">JPG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsTiff(document.getElementById('tree_class_t2_svg'), 'xtal_coverage_tree_class_t2.tiff');">TIFF</a>
+                          </a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvg(document.getElementById('tree_class_t2_svg'), 'xtal_coverage_tree_class_t2.svg');">SVG</a>
+                      </li>
+                  </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  <hr>
+{% endif %}
+
+<div class='container' style="font-size: 12px;">
+  <h4>References</h4>
+  <p>
+    G protein transducer information data shown in this page were obtained from the
+    <a href='http://www.guidetopharmacology.org'>GuideToPharmacology</a> (IUPHAR) and the above referenced datasets: </p>
+  <p>
+
+    <b>The IUPHAR/BPS Guide to PHARMACOLOGY in 2020: extending immunopharmacology content and introducing the IUPHAR/MMV Guide to MALARIA PHARMACOLOGY.</b><br>
+    Armstrong, J. F., Faccenda, E., Harding, S. D., Pawson, A. J., Southan, C., Sharman, J. L., Campo, B., Cavanagh, D. R., Alexander, S. P. H., Davenport, A. P., Spedding, M., Davies, J. A. & NC-IUPHAR.<br>
+    <i>Nucleic Acids Res</i> <b>48</b>, D1006–D1021 (2020). [PMID:<a href="http://www.ncbi.nlm.nih.gov/pubmed/31691834" target="_blank">31691834</a>]
+  </p>
+  <p>
+    <b>Illuminating G-Protein-Coupling Selectivity of GPCRs.</b> <br>
+    Inoue, A., Raimondi, F., Kadji, F. M. N., Singh, G., Kishi, T., Uwamizu, A., Ono, Y., Shinjo, Y., Ishida, S., Arang, N., Kawakami, K., Gutkind, J. S., Aoki, J. & Russell, R. B.<br>
+    <i>Cell</i> <b>177</b>, 1933-1947.e25 (2019). [PMID:<a href="https://pubmed.ncbi.nlm.nih.gov/31160049/" target="_blank">31160049</a>]
+  </p>
+  <p>
+    <b>Selectivity Landscape of 100 Therapeutically Relevant GPCR Profiled by an Effector Translocation-Based BRET Platform.</b><br>
+    Avet, C., Mancini, A., Breton, B., Gouill, C. L., Hauser, A. S., Normand, C., Kobayashi, H., Gross, F., Hogue, M., Lukasheva, V., Morissette, S., Fauman, E., Fortin, J.-P., Schann, S., Leroy, X., Gloriam, D. E. & Bouvier, M.<br>
+    <i>bioRxiv</i> 2020.04.20.052027 (2020). <b>doi:</b> <a href=" https://doi.org/10.1101/2020.04.20.052027" target="_blank">10.1101/2020.04.20.052027</a>
+  </p>
+
+</div>
+
+{% endblock %}
+{% block addon_js %}
+<script src="{% static 'home/js/d3.min.js' %}"></script>
+<script src="{% static 'home/js/newick.js' %}"></script>
+{% if render_part != "venn" %}
+  <script src="{% static 'home/js/phylo_tree.js' %}"></script>
+{% endif %}
+<script src="{% static 'home/js/targetselect_functions.js' %}"></script>
+<script src="{% static 'home/js/select2.js' %}"></script>
+<script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"></script>
+<script src="{% static 'home/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'home/js/paper-full.min.js' %}"></script>
+<script src="{% static 'home/js/bootstrap-colorpicker.min.js' %}"></script>
+<script src="{% static 'home/js/canvas2svg.js' %}"></script>
+<script src="{% static 'home/js/jvenn.js' %}"></script>
+<script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/saveSvg.js' %}"></script>
+{% endblock %}

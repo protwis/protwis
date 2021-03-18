@@ -19,8 +19,8 @@ canvas {
 
 <div class="row text-success">
     <div class="text-center">
-        {% if model.refined %}
-        <h2>{{ model.pdb_code.index }}</h2>
+        {% if not model.protein.accession %}
+        <h2>{{ model.protein.entry_name|upper }} refined</h2>
         {% else %}
         <h2>{{ model.protein.family.name|safe }} homology model</h2>
         {% endif %}
@@ -32,11 +32,7 @@ canvas {
         <h4>PROTEIN CLASS</h4>
     </div>
     <div class="col-md-9">
-        {% if model.refined %}
-        {{ model.protein_conformation.protein.get_protein_class }}
-        {% else %}
         {{ model.protein.get_protein_class }}
-        {% endif %}
     </div>
 </div>
 
@@ -45,8 +41,8 @@ canvas {
         <h4>RECEPTOR</h4>
     </div>
     <div class="col-md-9">
-        {% if model.refined %}
-        <a href="/protein/{{ model.protein_conformation.protein.entry_name }}">{{ model.protein_conformation.protein.name|safe }}</a>
+        {% if not model.protein.accession %}
+        <a href="/protein/{{ model.protein.parent.entry_name }}">{{ model.protein.parent.name|safe }}</a>
         {% else %}
         <a href="/protein/{{ model.protein.entry_name }}">{{ model.protein.name|safe }}</a>
         {% endif %}
@@ -58,11 +54,7 @@ canvas {
         <h4>SPECIES</h4>
     </div>
     <div class="col-md-9">
-        {% if model.refined %}
-        {{ model.protein_conformation.protein.species.latin_name }}
-        {% else %}
         {{ model.protein.species.latin_name }}
-        {% endif %}
     </div>
 </div>
 
@@ -81,11 +73,7 @@ canvas {
         <h4>VERSION</h4>
     </div>
     <div class="col-md-9">
-        {% if model.refined %}
-            {{ version }}
-        {% else %}
-            {{ version|date:"Y-m-d" }}
-        {% endif %}
+        {{ version|date:"Y-m-d" }}
     </div>
 </div>
 
@@ -103,13 +91,8 @@ canvas {
         <div class="btn-group">
             <a href="/" class="dropdown-toggle btn btn-primary btn-mini" data-toggle="dropdown" role="button" aria-expanded="false">Download <span class='caret'></span></a>
             <ul class="dropdown-menu" role="menu" style="min-width:50%;">
-                {% if model.refined %}
-                    <li><a id="download_btn" href="./{{model.pdb_code.index}}_full/download_pdb">Full</a></li>
-                    <li><a id="download_btn" href="./{{model.pdb_code.index}}_noloops/download_pdb">Without loops and termini</a></li>
-                {% else %}
-                    <li><a id="download_btn" href="./{{model.protein.entry_name}}_{{model.state.slug}}_full/download_pdb">Full</a></li>
-                    <li><a id="download_btn" href="./{{model.protein.entry_name}}_{{model.state.slug}}_noloops/download_pdb">Without loops</a></li>
-                {% endif %}
+                <li><a id="download_btn" href="./{{model.protein.entry_name}}_{{model.state.slug}}_full/download_pdb">Full</a></li>
+                <li><a id="download_btn" href="./{{model.protein.entry_name}}_{{model.state.slug}}_noloops/download_pdb">Without loops</a></li>
             </ul>
         </div>
         <div>
@@ -129,7 +112,7 @@ canvas {
         <h4>MAIN TEMPLATE</h4>
     </div>
     <div class="col-md-9">
-        {% if model.refined %}
+        {% if not model.protein.accession %}
             <a href="/protein/{{ model_main_template.protein_conformation.protein.parent.entry_name }}">{{ model_main_template.protein_conformation.protein.parent.family.name|safe }}</a> (sequence similarity: {{ main_template_seqsim }}%) PDB: <a href="../{{ model_main_template.pdb_code.index }}">{{ model_main_template.pdb_code.index }}</a>
         {% else %}
             <a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a> (sequence similarity: {{ main_template_seqsim }}%) PDB: <a href="../{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index }}</a>
@@ -273,8 +256,11 @@ canvas {
                             <td>{{ rota.residue.protein_segment.slug }}</td>
                             <td>{{ rota.residue.sequence_number }}</td>
                             <td>{{ rota.residue.amino_acid }}</td>
-                            <td>{{ rota.residue.display_generic_number.label }}</td>
-
+                            {% if rota.residue.display_generic_number %}
+                                <td>{{ rota.residue.display_generic_number.label }}</td>
+                            {% else %}
+                                <td>-</td>
+                            {% endif %}
                             {% if rota.backbone_template %}
                                 <td><a href="/protein/{{ rota.backbone_template.protein_conformation.protein.parent.entry_name }}">{{ rota.backbone_template.protein_conformation.protein.parent.name|safe }}</a></td>
                                 <td><a href="../{{ rota.backbone_template.pdb_code.index }}">{{ rota.backbone_template.pdb_code.index|safe }}</a></td>
@@ -309,18 +295,10 @@ canvas {
 
             var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( color_residues );
 
-            if ("{{state}}"=="refined") {
-                stage.loadFile( "../pdb/{{modelname}}_{{state}}", { ext: "pdb" }  ).then( function( o ){
-                    o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId }
-                    o.centerView();
-                } );
-            }
-            else {
-                stage.loadFile( "view/{{modelname}}_{{model.state.slug}}", { ext: "pdb" }  ).then( function( o ){
-                    o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId }
-                    o.centerView();
-                } );
-            }
+            stage.loadFile( "view/{{modelname}}_{{model.state.slug}}", { ext: "pdb" }  ).then( function( o ){
+                o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId }
+                o.centerView();
+            } );
         } );
 
         $( "#fullscreen" ).click(function() {
@@ -371,18 +349,10 @@ canvas {
                 },
             });
             $('#align_btn').click(function () {
-                var checked_data = ["{{model.protein.entry_name}}", "{{model.main_template.pdb_code.index}}"];
                 ClearSelection('targets');
-                for (i = 0; i < checked_data.length; i++) {
-                    var div = document.createElement("div");
-                    div.innerHTML = checked_data[i];
-                    console.log(div.textContent.replace(/\s+/g, ''))
-                    if (i==0) {
-                        AddToSelection('targets', 'structure_model',  div.innerText.replace(/\s+/g, '')+"_"+"{{model.state.name}}");
-                    } else {
-                        AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
-                    }
-                }
+                AddToSelection('targets', 'structure_model', "{{model.protein.entry_name}}"+"_"+"{{model.state.name}}");
+                AddToSelection('targets', 'structure', "{{model.main_template}}");
+                
                 window.location.href = '/structure/selection_convert_model';
             });
             $('#superpose_btn').click(function () {

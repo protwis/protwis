@@ -5,7 +5,6 @@ from django.db import connection
 from protein.models import Protein
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
-from Bio.Alphabet import IUPAC
 from Bio.Seq import Seq
 
 import logging, sys, os, tempfile
@@ -33,7 +32,7 @@ class Command(BaseCommand):
         # fetch proteins
         proteins = Protein.objects.filter(sequence_type__slug='wt')
         for protein in proteins:
-            sequences.append(SeqRecord(Seq(protein.sequence, IUPAC.protein), id=str(protein.id),
+            sequences.append(SeqRecord(Seq(protein.sequence), id=str(protein.id),
                 description=protein.entry_name))
         try:
             if os.path.exists(self.tmp_file_path):
@@ -71,7 +70,7 @@ class Command(BaseCommand):
         # fetch proteins
         proteins = Protein.objects.filter(sequence_type__slug='wt', species__common_name='Human')
         for protein in proteins:
-            sequences.append(SeqRecord(Seq(protein.sequence, IUPAC.protein), id=str(protein.id),
+            sequences.append(SeqRecord(Seq(protein.sequence), id=str(protein.id),
                 description=protein.entry_name))
         try:
             if os.path.exists(self.tmp_file_path):

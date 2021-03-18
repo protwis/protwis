@@ -74,6 +74,18 @@ class GPCRDBParsingPDB(object):
     '''
     def __init__(self):
         self.segment_coding = OrderedDict([(1,'TM1'),(2,'TM2'),(3,'TM3'),(4,'TM4'),(5,'TM5'),(6,'TM6'),(7,'TM7'),(8,'H8')])
+
+    @staticmethod
+    def parse_rotamer_pdb(rotamer):
+        atoms_list = []
+        io = StringIO(rotamer.pdbdata.pdb)
+        rota_struct = PDB.PDBParser(QUIET=True).get_structure('structure', io)[0]
+        for chain in rota_struct:
+            for residue in chain:
+                for atom in residue:
+                    atoms_list.append(atom)
+        return atoms_list
+
     
     def gn_num_extract(self, gn, delimiter):
         ''' Extract TM number and position for formatting.
@@ -133,8 +145,9 @@ class GPCRDBParsingPDB(object):
                         residue__display_generic_number__label=dgn(gn,structure.protein_conformation), 
                         structure__preferred_chain=structure.preferred_chain))
             else:
+                residue = Residue.objects.get(protein_conformation=structure.protein_conformation, sequence_number=gn)
                 rotamer = list(Rotamer.objects.filter(structure__protein_conformation=structure.protein_conformation, 
-                        residue__sequence_number=gn, structure__preferred_chain=structure.preferred_chain))
+                        residue=residue, structure__preferred_chain=structure.preferred_chain))
                 if just_nums==False:
                     try:
                         gn = ggn(Residue.objects.get(protein_conformation=structure.protein_conformation,
@@ -221,7 +234,6 @@ class GPCRDBParsingPDB(object):
             residues = residues.filter(protein_segment__slug__in=['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8']).order_by('sequence_number')
             output = OrderedDict()
             for r in residues:
-                print(r, r.display_generic_number.label, r.protein_segment.slug)
                 if r.protein_segment.slug==None:
                     continue
                 if r.protein_segment.slug not in output:
@@ -336,6 +348,26 @@ class GPCRDBParsingPDB(object):
                             output[found_res.protein_segment.slug][found_gn] = res
         return output
 
+    @staticmethod
+    def create_g_alpha_pdb_array(signprot_complex):
+        parent_residues = Residue.objects.filter(protein_conformation__protein=signprot_complex.protein)
+        pdb_array = OrderedDict()
+        for r in parent_residues:
+            if r.protein_segment.slug not in pdb_array:
+                pdb_array[r.protein_segment.slug] = OrderedDict()
+            try:
+                rotamer = Rotamer.objects.get(structure=signprot_complex.structure, residue__display_generic_number__label=r.display_generic_number.label)
+                p = PDB.PDBParser(QUIET=True).get_structure('structure', StringIO(rotamer.pdbdata.pdb))[0]
+                atoms = []
+                for chain in p:
+                    for res in chain:
+                        for atom in res:
+                            atoms.append(atom)
+            except Rotamer.DoesNotExist:
+                atoms = 'x'
+            pdb_array[r.protein_segment.slug][r.display_generic_number.label] = atoms
+        return pdb_array
+
 
 class ImportHomologyModel():
     ''' Imports receptor homology model for complex model building pipeline. The idea is to save time by not rerunning the receptor modeling
@@ -435,22 +467,22 @@ class ImportHomologyModel():
                 key = split_line[2]
             else:
                 key = split_line[1]
-            if split_line[4] not in structure_dict:
-                if split_line[4]!='None':
-                    s1 = Structure.objects.get(pdb_code__index=split_line[4])
-                    structure_dict[split_line[4]] = s1
+            if split_line[3] not in structure_dict:
+                if split_line[3]!='None':
+                    s1 = Structure.objects.get(pdb_code__index=split_line[3])
+                    structure_dict[split_line[3]] = s1
                 else:
                     s1 = None
             else:
-                s1 = structure_dict[split_line[4]]
-            if split_line[5][:-1] not in structure_dict:
-                if split_line[5][:-1]!='None':
-                    s2 = Structure.objects.get(pdb_code__index=split_line[5][:-1])
-                    structure_dict[split_line[5][:-1]] = s2
+                s1 = structure_dict[split_line[3]]
+            if split_line[4][:-1] not in structure_dict:
+                if split_line[4][:-1]!='None':
+                    s2 = Structure.objects.get(pdb_code__index=split_line[4][:-1])
+                    structure_dict[split_line[4][:-1]] = s2
                 else:
                     s2 = None
             else:
-                s2 = structure_dict[split_line[4]]
+                s2 = structure_dict[split_line[3]]
             if split_line[0] in template_source:
                 template_source[split_line[0]][key] = [s1, s2]
         return template_source
@@ -593,8 +625,8 @@ sequence:{uniprot}::::::::
             icl3_delete=self.icl3_delete)
 
         m.starting_model= 1           # index of the first loop model
-        m.ending_model  = 1           # index of the last loop model
-        m.md_level = refine.slow  # loop refinement method
+        m.ending_model  = 3           # index of the last loop model
+        m.md_level = refine.fast  # loop refinement method
 
         m.make()
 
@@ -624,6 +656,7 @@ class LoopRemodel(automodel):
     def __init__(self, env, alnfile, knowns, sequence, assess_methods, gaps=[], model_chains=[], start_resnums=[], icl3_delete=[]):
         super(LoopRemodel, self).__init__(env, alnfile=alnfile, knowns=knowns, sequence=sequence, 
                                                assess_methods=assess_methods)
+        self.alnfile = alnfile
         self.gaps = gaps
         self.model_chains = model_chains
         self.start_resnums = start_resnums
@@ -650,6 +683,39 @@ class LoopRemodel(automodel):
     # def make(self):
     #     with SilentModeller():
     #         super(LoopRemodel, self).make()
+
+
+class LoopRemodel2(loopmodel):
+
+    def __init__(self, env, alnfile, knowns, sequence, assess_methods, gaps=[], model_chains=[], start_resnums=[], icl3_delete=[]):
+        super(LoopRemodel2, self).__init__(env, alnfile=alnfile, knowns=knowns, sequence=sequence,
+                                               assess_methods=assess_methods)
+
+        self.alnfile = alnfile
+        self.gaps = gaps
+        self.model_chains = model_chains
+        self.start_resnums = start_resnums
+        self.icl3_delete = icl3_delete
+        
+    def special_patches(self, aln):
+        # Rename chains and renumber the residues in each
+        self.rename_segments(segment_ids=self.model_chains,
+                             renumber_residues=self.start_resnums)
+
+    def select_loop_atoms(self):
+        selection_list = []
+        for chain, gap_resis in self.gaps.items():
+            # ICL3
+            if chain=='R':
+                for loop_section in gap_resis:
+                    end_range = loop_section[1]-len(self.icl3_delete["R"])
+                    selection_list.append(self.residue_range("{}:R".format(loop_section[0]),"{}:R".format(end_range)))
+        if len(selection_list)==1:
+            return selection(selection_list[0])
+        else:
+            ### FIXME
+            print("WARNING: Need to fix multiple loop remodeling")
+
 
 class SilentModeller(object):
     ''' No text to console.
