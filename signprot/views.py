@@ -272,9 +272,9 @@ class CouplingBrowser(TemplateView):
                 dictotemplate[pair.protein_id]['couplingmax'][pair.source]['pec50'] = deepcopy(coupling_placeholder3)
                 dictotemplate[pair.protein_id]['couplingmax'][pair.source]['emax'] = deepcopy(coupling_placeholder3)
             subunit = pair.g_protein_subunit.family.name
-            dictotemplate[pair.protein_id]['coupling'][pair.source]['logemaxec50'][subunit] = pair.logmaxec50_deg
-            dictotemplate[pair.protein_id]['coupling'][pair.source]['pec50'][subunit] = pair.pec50_deg
-            dictotemplate[pair.protein_id]['coupling'][pair.source]['emax'][subunit] = pair.emax_deg
+            dictotemplate[pair.protein_id]['coupling'][pair.source]['logemaxec50'][subunit] = round(pair.logmaxec50_deg, 1)
+            dictotemplate[pair.protein_id]['coupling'][pair.source]['pec50'][subunit] = round(pair.pec50_deg, 1)
+            dictotemplate[pair.protein_id]['coupling'][pair.source]['emax'][subunit] = round(pair.emax_deg, 1)
             dictotemplate[pair.protein_id]['coupling']['1']['logemaxec50'][subunit].append(pair.logmaxec50_deg)
             dictotemplate[pair.protein_id]['coupling']['1']['pec50'][subunit].append(pair.pec50_deg)
             dictotemplate[pair.protein_id]['coupling']['1']['emax'][subunit].append(pair.emax_deg)
@@ -295,7 +295,7 @@ class CouplingBrowser(TemplateView):
                     # elif len(valuelist) == 1:
                     #     dictotemplate[prot]['coupling']['1'][propval][sub] = valuelist[0]
                     else:
-                        dictotemplate[prot]['coupling']['1'][propval][sub] = round(mean(valuelist), 2)
+                        dictotemplate[prot]['coupling']['1'][propval][sub] = round(mean(valuelist), 1)
 
         #dict_name = 'confidence'
         dict_name = 'coupling'
@@ -339,7 +339,7 @@ class CouplingBrowser(TemplateView):
                         # elif len(valuelist) == 1:
                         #     dictotemplate[prot]['coupling'][source][propval][fam] = valuelist[0]
                         else:
-                            dictotemplate[prot]['couplingmax'][source][propval][fam] = max(valuelist)
+                            dictotemplate[prot]['couplingmax'][source][propval][fam] = round(max(valuelist), 1)
 
         #dict_name = 'confidence'
         dict_name = 'couplingmax'
