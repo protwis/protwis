@@ -174,9 +174,9 @@ div.dataTables_wrapper {
   margin: 0 auto;
 }
 
-#subtypestabletab tr {
-  height: 40px;
-}
+/*#subtypestabletab tr {*/
+/*  height: 40px;*/
+/*}*/
 
 div#hide_filter1 {
   display: none;
