@@ -11,7 +11,7 @@ from django.shortcuts import redirect
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from protein.models import Gene, ProteinSegment, IdentifiedSites, ProteinGProteinPair
 from structure.models import Structure, StructureModel, StructureComplexModel, StructureExtraProteins, StructureModelRMSD
-from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, PdbStateIdentifier, ModelRotamer
+from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, ModelRotamer
 from structure.assign_generic_numbers_gpcr import GenericNumbering, GenericNumberingFromDB
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
 from structure.forms import *
@@ -228,15 +228,11 @@ def HomologyModelDetails(request, modelname, state):
 
 	bb_temps, backbone_templates, r_temps, rotamer_templates, segments_out, bb_main, bb_alt, bb_none, sc_main, sc_alt, sc_none, template_list, colors = format_model_details(rotamers, model_main_template, color_palette)
 
-	psi = PdbStateIdentifier(model)
-	psi.run()
-	delta_distance = round(float(psi.activation_value), 2)
-
 	return render(request,'homology_models_details.html',{'model': model, 'modelname': modelname, 'rotamers': rotamers, 'backbone_templates': bb_temps, 'backbone_templates_number': len(backbone_templates),
 														  'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_residues': json.dumps(segments_out), 'bb_main': round(bb_main/len(rotamers)*100, 1),
 														  'bb_alt': round(bb_alt/len(rotamers)*100, 1), 'bb_none': round(bb_none/len(rotamers)*100, 1), 'sc_main': round(sc_main/len(rotamers)*100, 1), 'sc_alt': round(sc_alt/len(rotamers)*100, 1),
 														  'sc_none': round(sc_none/len(rotamers)*100, 1), 'main_template_seqsim': main_template_seqsim, 'template_list': template_list, 'model_main_template': model_main_template,
-														  'state': state, 'delta_distance': delta_distance, 'version': version})
+														  'state': state, 'version': version})
 
 def ComplexModelDetails(request, modelname, signprot):
 	"""
