@@ -291,8 +291,6 @@ class LigandProperities(models.Model):
     class Meta():
         db_table = 'ligand_properities'
 
-
-
 class LigandType(models.Model):
     slug = models.SlugField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
@@ -302,7 +300,6 @@ class LigandType(models.Model):
 
     class Meta():
         db_table = 'ligand_type'
-
 
 class LigandRole(models.Model):
     slug = models.SlugField(max_length=50, unique=True)
@@ -314,14 +311,12 @@ class LigandRole(models.Model):
     class Meta():
         db_table = 'ligand_role'
 
-
 class LigandReceptorStatistics(models.Model):
     ligand = models.ForeignKey('Ligand', on_delete=models.CASCADE)
     protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE, related_name='target_protein')
     type = models.CharField(max_length=3, null= True)
     value  = models.DecimalField(max_digits=9, decimal_places=3, null= True)
     reference_protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE, related_name="reference_protein")
-
 
 class ChemblAssay(models.Model):
      #slug = models.SlugField(max_length=50, unique=True)
@@ -333,7 +328,6 @@ class ChemblAssay(models.Model):
 
     class Meta():
         db_table = 'chembl_assays'
-
 
 class AssayExperiment(models.Model):
 
@@ -361,7 +355,6 @@ class AssayExperiment(models.Model):
     document_chembl_id = models.CharField(max_length=50,null = True)
     cell_line = models.TextField(null = True)
 
-
 class LigandVendors(models.Model):
     slug = models.SlugField(max_length=100, unique=True)
     name = models.CharField(max_length=200, default='')
@@ -382,6 +375,9 @@ class BiasedExperiment(models.Model):
     receptor = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
     endogenous_ligand = models.ForeignKey(Ligand, related_name='endogenous_ligand_bias', on_delete = models.CASCADE,  null=True)
     auxiliary_protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE, related_name='auxiliary_protein', null=True)
+    ligand_source_id = models.TextField(null = True)
+    ligand_source_type = models.TextField(null = True)
+
 
 class ExperimentAssay(models.Model):
     biased_experiment = models.ForeignKey(
@@ -436,8 +432,10 @@ class AnalyzedExperiment(models.Model):
     article_quantity = models.CharField(max_length=5)
     labs_quantity = models.CharField(max_length=5)
     auxiliary_protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE, related_name='bias_auxiliary_protein', null = True)
-    primary= models.CharField(max_length=100,null = True)
-    secondary= models.CharField(max_length=100,null = True)
+    primary = models.CharField(max_length=100,null = True)
+    secondary = models.CharField(max_length=100,null = True)
+    ligand_source_id = models.TextField(null = True)
+    ligand_source_type = models.TextField(null = True)
 
 class AnalyzedAssay(models.Model):
     experiment = models.ForeignKey(

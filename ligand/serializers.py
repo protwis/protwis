@@ -248,7 +248,8 @@ class AnalyzedExperimentFilter(DatatablesFilterSet):
             'time_p1', 'time_p2', 'time_p3', 'time_p4', 'time_p5',
             'authors', 'doi_reference','ligand_id','publication_link','quality_activity_p1',
             'quality_activity_p2','quality_activity_p3','quality_activity_p4','quality_activity_p5',
-            'standard_type_p1','standard_type_p2','standard_type_p3','standard_type_p4','standard_type_p5'
+            'standard_type_p1','standard_type_p2','standard_type_p3','standard_type_p4','standard_type_p5',
+            'ligand_source_id','ligand_source_type'
 
         ]
         read_only_fields = fields
@@ -436,7 +437,9 @@ class AnalyzedExperimentSerializer(serializers.ModelSerializer):
     id = serializers.CharField()
     ligand_id =serializers.CharField(source='ligand.id')
     publication_link = serializers.CharField(source='publication.web_link')
-
+    ligand_source_id= serializers.CharField()
+    ligand_source_type= serializers.CharField()
+    
     class Meta:
         model = AnalyzedExperiment
         fields = [
@@ -455,7 +458,8 @@ class AnalyzedExperimentSerializer(serializers.ModelSerializer):
             'time_p1', 'time_p2', 'time_p3', 'time_p4', 'time_p5',
             'authors', 'doi_reference','ligand_id', 'publication_link','quality_activity_p1',
             'quality_activity_p2','quality_activity_p3','quality_activity_p4','quality_activity_p5',
-            'standard_type_p1','standard_type_p2','standard_type_p3','standard_type_p4','standard_type_p5'
+            'standard_type_p1','standard_type_p2','standard_type_p3','standard_type_p4','standard_type_p5',
+            'ligand_source_id','ligand_source_type'
         ]
 
     @staticmethod
