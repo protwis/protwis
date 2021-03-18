@@ -349,21 +349,10 @@ canvas {
                 },
             });
             $('#align_btn').click(function () {
-                // var checked_data = ["{{model.protein.entry_name}}"];//, "{{model.main_template.pdb_code.index}}"];
                 ClearSelection('targets');
-                // for (i = 0; i < checked_data.length; i++) {
-                    // var div = document.createElement("div");
-                    // div.innerHTML = checked_data[i];
-                    // console.log(div.textContent.replace(/\s+/g, ''))
-                    // AddToSelection('targets', 'structure_model', checked_data[i]);
-                    // if (i==0) {
-                    //     AddToSelection('targets', 'structure_model',  div.innerText.replace(/\s+/g, '')+"_"+"{{model.state.name}}");
-                    // } else {
-                    //     AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
-                    // }
-                // }
                 AddToSelection('targets', 'structure_model', "{{model.protein.entry_name}}"+"_"+"{{model.state.name}}");
                 AddToSelection('targets', 'structure', "{{model.main_template}}");
+                
                 window.location.href = '/structure/selection_convert_model';
             });
             $('#superpose_btn').click(function () {
