@@ -448,9 +448,9 @@ class Command(BaseCommand):
             values = self.data['Xtal_Templ'][protein]
             crh = ClosestReceptorHomolog(protein)
             closest_hom = crh.find_closest_receptor_homolog()
-            if values['Template']!=closest_hom.protein.entry_name:
-                changes[protein] = [values['Template'], closest_hom.protein.entry_name]
-            output_csv+='{},{}\n'.format(protein, closest_hom.protein.entry_name)
+            if values['Template']!=closest_hom.entry_name:
+                changes[protein] = [values['Template'], closest_hom.entry_name]
+            output_csv+='{},{}\n'.format(protein, closest_hom.entry_name)
             counter+=1
         with open(os.sep.join([settings.DATA_DIR,'structure_data','annotation','xtal_templates.csv']),'w') as f:
             f.write(output_csv)

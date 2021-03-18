@@ -1,39 +1,43 @@
-from django.core.management.base import BaseCommand, CommandError
-from django.core.management import call_command
-from django.conf import settings
-from django.db import connection
+from django.core.management.base import BaseCommand
+from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models import Max, Min
 
-from contactnetwork.distances import *
-from contactnetwork.models import *
-from protein.models import *
-from signprot.models import *
-from structure.models import *
+from contactnetwork.distances import Distance, Distances
+from contactnetwork.models import distance_scaling_factor
+from protein.models import ProteinFamily, ProteinState
+from residue.models import Residue
+from signprot.models import SignprotComplex
+from structure.models import Structure
 
-import logging, json, os
-
+import logging
 import pandas as pd
 import scipy.cluster.hierarchy as sch
 import scipy.spatial.distance as ssd
 from statistics import mean
 
 class Command(BaseCommand):
-
-    help = "Evaluate activation states and level of IC opening."
-
+    help = "Evaluate activation states and level of IC \"opening\"."
     logger = logging.getLogger(__name__)
 
+    def add_arguments(self, parser):
+        super(Command, self).add_arguments(parser=parser)
+        parser.add_argument('--states_only', help='Only (re)determine the activation states of GPCR structures.', default=False, action='store_true')
+        parser.add_argument('--representatives_only', help='Only (re)assign the representative tags to GPCR structures.', default=False, action='store_true')
+
     def handle(self, *args, **options):
-        self.logger.info('ASSIGNING the "Degree Active" levels and activation states')
+        self.logger.info("ASSIGNING the \"Degree Active\" levels and activation states")
+
         # Loop over classes
-        class_slugs = list(ProteinFamily.objects.filter(parent__slug="000") \
-                            .filter(slug__startswith="00").values_list("slug"))
+        class_slugs = []
+        if not options["representatives_only"]:
+            class_slugs = list(ProteinFamily.objects.filter(parent__slug="000") \
+                                .filter(slug__startswith="00").values_list("slug"))
 
         for slug in class_slugs:
             print("Processing class {}".format(slug[0]))
 
             # grab all PDB-codes for this class
-            structure_ids = list(Structure.objects.exclude(refined=True).filter(protein_conformation__protein__family__slug__startswith=slug[0]) \
+            structure_ids = list(Structure.objects.filter(protein_conformation__protein__family__slug__startswith=slug[0]) \
                                 .values_list("pdb_code__index"))
 
             structure_ids = [x[0] for x in structure_ids]
@@ -52,10 +56,6 @@ class Command(BaseCommand):
                     active_ids.extend(["6LI3"])
                 elif slug[0] == "004":
                     active_ids = ["7C7Q"]
-
-                # print("The following PDBs are G-prot complex structures:")
-                # print(slug[0], active_ids)
-
 
                 # V1: Grab most inactive PDB per ligandType -> 2x46 - 6x37 distance should be present and < 13Å (all classes)
                 # V2: Grab most inactive PDB per Receptor family -> 2x46 - 6x37 distance should be present and < 13Å (cut-off valid for all classes)
@@ -163,12 +163,6 @@ class Command(BaseCommand):
                     # find smallest distance between any active structure and any inactive structure
                     # lowest_inactive_distance = min([ finalMap[y+"_"+x] for y in inactive_ids for x in active_ids ])
                     for pdb in structure_ids:
-                        #if entry[1] >= 13: # below this distance always inactive structure
-                        #    if score < -0.95*lowest_inactive_distance:
-                        #        structure_state = "active"
-                        #    elif score < 0:
-                        #        structure_state = "intermediate"
-
                         # Classification
                         score = scoring_results[pdb]
                         structure_state = "inactive"
@@ -183,7 +177,6 @@ class Command(BaseCommand):
                         elif score < 0 and slug[0] not in ["001", "004", "006"]: # above this score always inactive structure
                             structure_state = "active"
 
-                                #print(slug[0], entry[0], structure_state, score)
                             #if slug=="002" and score > -20:
                             #    structure_state = "intermediate"
                             #elif slug=="004" and score > 0:
@@ -214,7 +207,7 @@ class Command(BaseCommand):
 
                         # Store for structure
                         struct = Structure.objects.get(pdb_code__index=pdb)
-                        struct.state, created = ProteinState.objects.get_or_create(slug=structure_state, defaults={'name': structure_state.capitalize()})
+                        struct.state = ProteinState.objects.get_or_create(slug=structure_state, defaults={'name': structure_state.capitalize()})[0]
                         struct.tm6_angle = percentage
                         struct.gprot_bound_likeness = gprot_likeness
                         struct.save()
@@ -243,21 +236,97 @@ class Command(BaseCommand):
 
                         # Definitely an inactive state structure When distance is smaller than 13Å
                         if entry[1] < 13*distance_scaling_factor:
-                            struct.state, created = ProteinState.objects.get_or_create(slug="inactive", defaults={'name': "Inactive"})
+                            struct.state = ProteinState.objects.get_or_create(slug="inactive", defaults={'name': "Inactive"})[0]
 
                         # UGLY: knowledge-based hardcoded corrections
                         if entry[0] in hardcoded:
                             structure_state = hardcoded[entry[0]]
-                            struct.state, created = ProteinState.objects.get_or_create(slug=structure_state, defaults={'name': structure_state.capitalize()})
+                            struct.state = ProteinState.objects.get_or_create(slug=structure_state, defaults={'name': structure_state.capitalize()})[0]
 
                         # Save changes
                         struct.save()
 
-        self.logger.info('DONE assiging the "Degree Active" levels and activation states')
+        self.logger.info("DONE assiging the \"Degree Active\" levels and activation states")
+
+        if not options["states_only"]:
+            # Assigning the representative tag for the "best" structure with the same receptor-state combinations
+            self.logger.info("ASSIGNING the \"representative\" tag for unique structure-state complexes")
+
+            # Set the representative state of all GPCR structure to False
+            Structure.objects.filter(protein_conformation__protein__family__slug__startswith="00").update(representative=False)
+
+
+            # Select all GPCR structures and get unique slug-state combinations
+            struct_combs = list(Structure.objects.filter(protein_conformation__protein__family__slug__startswith="00") \
+                                .values_list("protein_conformation__protein__family__slug", "state", "pk", "resolution", "protein_conformation__pk", "protein_conformation__protein__parent__pk"))
+
+            # Grab protein conformations IDs and receptor slugs
+            struct_conf_pks = [struct[4] for struct in struct_combs]
+            struct_parent_pks = set([struct[5] for struct in struct_combs])
+
+            # Collect unique wildtype GNs per parent protein ID
+            wildtype_gns = Residue.objects.filter(protein_conformation__protein_id__in=struct_parent_pks,
+                protein_conformation__protein__sequence_type__slug="wt") \
+                .exclude(generic_number=None) \
+                .values_list("protein_conformation__protein_id") \
+                .order_by("protein_conformation__protein_id") \
+                .annotate(gns=ArrayAgg("generic_number_id"))
+
+            wildtype_gns_dict = {entry[0]:set(entry[1]) for entry in wildtype_gns}
+
+            # Collect bundle GNs + H8 per structure
+            gns_bundle = Residue.objects.filter(protein_conformation_id__in=struct_conf_pks) \
+                .filter(protein_segment__slug__in=['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8']) \
+                .exclude(generic_number=None) \
+                .values_list("protein_conformation_id") \
+                .order_by("protein_conformation_id") \
+                .annotate(gns=ArrayAgg("generic_number_id"))
+
+            gns_bundle_dict = {entry[0]:set(entry[1]) for entry in gns_bundle}
+
+            # Collect remaining (mainly loop) GNs per structure
+            gns_other = Residue.objects.filter(protein_conformation_id__in=struct_conf_pks) \
+                .exclude(protein_segment__slug__in=['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8']) \
+                .exclude(generic_number=None) \
+                .values_list("protein_conformation_id") \
+                .order_by("protein_conformation_id") \
+                .annotate(gns=ArrayAgg("generic_number_id"))
+
+            gns_other_dict = {entry[0]:set(entry[1]) for entry in gns_other}
+
+            # Find and annotate unique combinations with decision criteria
+            unique_combs = {}
+            for struct in struct_combs:
+                combo_id = struct[0] + "_" + str(struct[1])
+                if combo_id not in unique_combs:
+                    unique_combs[combo_id] = []
+
+                gns_bundle_count = len(wildtype_gns_dict[struct[5]].intersection(gns_bundle_dict[struct[4]]))
+
+                # A couple of structures have no GNs outside of the main bundle
+                gns_other_count = 0
+                if struct[4] in gns_other_dict:
+                    gns_other_count = len(wildtype_gns_dict[struct[5]].intersection(gns_other_dict[struct[4]]))
+
+                unique_combs[combo_id].append([struct[2], gns_bundle_count, gns_other_count, float(struct[3])])
+
+            # Rank and assign representative tag
+            for combo in unique_combs:
+                if len(unique_combs[combo]) > 1:
+                    # Rank by 1. wildtype GNs bundle, 2. # wildtype GNs other, 3. structure resolution
+                    unique_combs[combo].sort(
+                      key = lambda l: (-1*l[1], -1*l[2], l[3])
+                    )
+
+                # Assign "representative" tag to #1
+                ref_struct = Structure.objects.get(pk=unique_combs[combo][0][0])
+                ref_struct.representative = True
+                ref_struct.save()
+
+            self.logger.info("DONE assigning the \"representative\" tag for unique structure-state complexes")
 
 def getDistanceMatrix(node, pdbs):
     if node.is_leaf():
-#        print("Found {} with {}".format(node.id, node.dist))
         return [{pdbs[node.id]: node.dist}, {pdbs[node.id]+"_"+pdbs[node.id]: node.dist}]
     else:
         # Get the left half

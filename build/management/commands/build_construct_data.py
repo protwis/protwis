@@ -112,7 +112,7 @@ class Command(BaseCommand):
     #             add_construct(d)
 
     #     if not filenames:
-    #         structures = Structure.objects.all().exclude(refined=True)
+    #         structures = Structure.objects.all()
     #         for s in structures:
     #             pdbname = str(s)
     #             print(pdbname)
@@ -149,7 +149,7 @@ class Command(BaseCommand):
                     add_construct(d)
 
         if do_all:
-            structures = Structure.objects.all().exclude(refined=True)
+            structures = Structure.objects.all()
             for s in structures:
                 pdbname = str(s)
                 try:

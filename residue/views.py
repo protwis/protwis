@@ -1,7 +1,7 @@
 ﻿from django.conf import settings
 from django.core.cache import cache
 from django.db.models import Count, F, Q
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.views.generic import TemplateView
 from django.http import HttpResponse
 
@@ -69,6 +69,17 @@ class ResidueTablesDisplay(TemplateView):
     """
     template_name = 'residue_table.html'
 
+
+    def get(self, request, *args, **kwargs):
+        # get the user selection from session
+        simple_selection = self.request.session.get('selection', False)
+        if simple_selection == False or not simple_selection.targets :
+            return redirect("residuetableselect")
+
+        # check rendering
+        context = self.get_context_data(**kwargs)
+        return render(request, self.template_name, context)
+
     def get_context_data(self, **kwargs):
         """
         Get the selection data (proteins and numbering schemes) and prepare it for display.
@@ -123,6 +134,7 @@ class ResidueTablesDisplay(TemplateView):
 
                 if len(re.sub('<[^>]*>', '', protein.name)+" "+name)>longest_name:
                     longest_name = len(re.sub('<[^>]*>', '', protein.name)+" "+name)
+
 
         # get the selection from session
         selection = Selection()

@@ -237,8 +237,12 @@
                             <a target='_blank' href="{{ structure.pdb_code.index}}">{{ structure.pdb_code.index}}</a>
                         </td>
                         <td>
-                            {% if structure.is_refined %}
-                            <a target='_blank' href="homology_models/{{ structure.pdb_code.index }}_refined">{{structure.pdb_code.index}}_refined</a>
+                            {% if structure.refined %}
+                                {% if structure.signprotcomplex_set.all|length > 0 %}
+                                    <a target='_blank' href="complex_models/{{ structure.pdb_code.index|lower }}-{% with structure.signprotcomplex_set.all|first as sc %}{{ sc.protein.entry_name }}{% endwith %}">{{structure.pdb_code.index}}_refined</a>
+                                {% else %}
+                                    <a target='_blank' href="homology_models/{{ structure.pdb_code.index|lower }}_{{ structure.state.slug }}">{{structure.pdb_code.index}}_refined</a>
+                                {% endif %}
                             {% else %}
                             -
                             {% endif %}
@@ -264,7 +268,7 @@
                         <td class="expand">{{ structure.stabilizing_agents.all|only_antibodies|linebreaksbr }}</td>
                         <!-- Structure ligand -->
                         <td class='expand'>
-                            {% for ligand in structure.ligands.all %}
+                            {% for ligand in structure.ligands.all|dictsort:"ligand_role.name" %}
                                 {{ ligand.ligand.name|safe }}
                             {% for link in ligand.ligand.properities.web_links.all %}
                                 <a href="{{ link}}" target="_blank">{{link.web_resource.slug}}</a>

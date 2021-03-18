@@ -158,7 +158,7 @@ def PdbTreeData(request):
         'protein_conformation__protein__parent__family__parent__slug',
         'protein_conformation__protein__parent__family__slug',
         'protein_conformation__state__slug'
-        ).exclude(refined=True)
+        )
 
     # TODO: Use ordereddict
     l = lambda:defaultdict(l)
@@ -208,7 +208,7 @@ def PdbTableData(request):
     #        method = "N/A"
     #    methods[c.name] = method
 
-    data = Structure.objects.filter(refined=False).prefetch_related(
+    data = Structure.objects.all().prefetch_related(
                 "pdb_code",
                 "state",
                 "stabilizing_agents",
@@ -228,14 +228,14 @@ def PdbTableData(request):
         data = data.filter(id__in=complex_structure_ids)
 
     # get a gn residue count for all WT proteins
-    proteins_pks = Structure.objects.filter(refined=False).values_list("protein_conformation__protein__parent__pk", flat=True).distinct()
+    proteins_pks = Structure.objects.all().values_list("protein_conformation__protein__parent__pk", flat=True).distinct()
     residue_counts = ProteinConformation.objects.filter(protein__pk__in=proteins_pks).values('protein__pk').annotate(res_count = Sum(Case(When(residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
     rcs = {}
     for rc in residue_counts:
         rcs[rc['protein__pk']] = rc['res_count']
 
     # get minimum resolution for every receptor/state pair
-    resolutions = Structure.objects.filter(refined=False).values('protein_conformation__protein__parent','state__name').order_by().annotate(res = Min('resolution'))
+    resolutions = Structure.objects.all().values('protein_conformation__protein__parent','state__name').order_by().annotate(res = Min('resolution'))
     best_resolutions = {}
     for r in resolutions:
         key = '{}_{}'.format(r['protein_conformation__protein__parent'], r['state__name'])
@@ -1003,7 +1003,7 @@ def InteractionBrowserData(request):
                 all_interaction_residues.add(i[1])
             all_interaction_residues = sorted(list(all_interaction_residues), key=functools.cmp_to_key(gpcrdb_number_comparator))
 
-            all_pdbs = list(Structure.objects.filter(refined=False).values_list('pdb_code__index', flat=True))
+            all_pdbs = list(Structure.objects.all().values_list('pdb_code__index', flat=True))
             all_pdbs = [x.lower() for x in all_pdbs]
             #generic_number__label__in=all_interaction_residues)
             residues = Residue.objects.filter(protein_conformation__protein__entry_name__in=all_pdbs).exclude(generic_number=None).values(

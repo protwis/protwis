@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.db.models import Min, Count, Max
 from django.conf import settings
@@ -103,8 +103,10 @@ def compare_family_slug(a,b):
         return 4,"Receptor"
 
 def new_tool(request):
-
     simple_selection = request.session.get('selection', False)
+    if simple_selection == False or not simple_selection.targets:
+        return redirect("/construct/design")
+
     proteins = []
     for target in simple_selection.targets:
         if target.type == 'protein':

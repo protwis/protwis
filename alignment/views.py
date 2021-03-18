@@ -1,4 +1,4 @@
-﻿from django.shortcuts import render
+﻿from django.shortcuts import render, redirect
 from django.conf import settings
 from django.http import HttpResponse
 from django.views.generic import TemplateView
@@ -268,6 +268,8 @@ class BlastSearchResults(TemplateView):
 def render_alignment(request):
     # get the user selection from session
     simple_selection = request.session.get('selection', False)
+    if simple_selection == False or not simple_selection.targets:
+        return redirect("/alignment/targetselection")
 
     # create an alignment object
     a = Alignment()

@@ -95,7 +95,7 @@ class Command(BaseBuild):
             self.prepare_all_data(options['filename'])
             import random
             random.shuffle(self.data_all)
-            # self.data_all = random.shuffle(self.data_all) 
+            # self.data_all = random.shuffle(self.data_all)
             # split into 10 runs to average out slow ones
             #n = 5
             #for d in [ self.data_all[i::n] for i in range(n) ]:
@@ -396,7 +396,7 @@ class Command(BaseBuild):
         while count.value<len(rows):
             with lock:
                 r = rows[count.value]
-                count.value +=1 
+                count.value +=1
         # for r in rows:
             # print(r['source_file'],c)
             # PRINT IF ERRORS OCCUR
@@ -694,12 +694,14 @@ class Command(BaseBuild):
                         foldchange = -round((1/foldchange),3)
                 elif r['fold_effect']!=0:
                         try:
-                            foldchange = round(r['fold_effect'],3);
-                            if foldchange<1: foldchange = -round((1/foldchange),3);
+                            if r['fold_effect']<1:
+                                foldchange = -round((1/r['fold_effect']),3);
+                            else:
+                                foldchange = round(r['fold_effect'],3);
                         except:
                             print('FOLD ERROR',r)
                 r['fold_effect'] = foldchange
-                
+
                 raw_experiment = self.insert_raw(r)
                 # raw_experiment.save()
                 bulk = MutationExperiment(

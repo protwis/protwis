@@ -164,7 +164,7 @@ for (var x in selectivityinfo){
     var spacer = 8
 
 
-    if(selectivityinfo[x].indexOf("Gs family") >= 0){
+    if(selectivityinfo[x].indexOf("Gs") >= 0){
     var leafwithname = vis.selectAll('g.X'+x)
         .append("circle")
         .attr("r", 3.25)
@@ -173,7 +173,7 @@ for (var x in selectivityinfo){
 
       }
 
-    if(selectivityinfo[x].indexOf("Gi/Go family") >= 0){
+    if(selectivityinfo[x].indexOf("Gi/Go") >= 0){
     var leafwithname = vis.selectAll('g.X'+x)
         .append("circle")
         .attr("r", 3.25)
@@ -182,7 +182,7 @@ for (var x in selectivityinfo){
 
       }
 
-    if(selectivityinfo[x].indexOf("Gq/G11 family") >= 0){
+    if(selectivityinfo[x].indexOf("Gq/G11") >= 0){
     var leafwithname = vis.selectAll('g.X'+x)
         .append("circle")
         .attr("r", 3.25)
@@ -191,7 +191,7 @@ for (var x in selectivityinfo){
 
       }
 
-    if( selectivityinfo[x].indexOf("G12/G13 family") >= 0){
+    if( selectivityinfo[x].indexOf("G12/G13") >= 0){
     var leafwithname = vis.selectAll('g.X'+x)
         .append("circle")
         .attr("r", 3.25)
@@ -262,7 +262,7 @@ function highlightlabel(tgt){
 
 var highlight_labels = vis.selectAll("text")[0].filter(function(t){
                          var th = (d3.select(t).data()[0].name == tgt);
-                        
+
                         return th;
                       });
 
@@ -279,7 +279,7 @@ if(node.children){
 node.children.forEach(function(d)
 {
 
-      
+
       //highlightlabel(d.name);
       highlightlink(node.name, d.name);
 
@@ -305,7 +305,7 @@ node.children.forEach(function(d)
 
         deselect(d);
 });}
-    
+
 
 }
 
@@ -322,7 +322,7 @@ node.children.forEach(function(d)
 
   d.isSelected = true;
   highlightlabel(d.name)
-  
+
   if (d.name.length>3){
   subtree.push(d.name);
     }
@@ -332,7 +332,7 @@ node.children.forEach(function(d)
 });
 
   }
-    
+
 return subtree;
 }
 
@@ -363,7 +363,7 @@ if (click_count>0){
       if (d.isSelected==true)
       {
         return 'sub1';}
-      
+
 
     });
 
@@ -452,7 +452,7 @@ if (click_count % 2 == 0){
 
       // console.log(subtreeArray);
       makeUL(subtreeArray);
-      
+
 
   deselect(node);
   click_count++;
@@ -469,5 +469,3 @@ textarea.value = descendents.join("\n");
 
 
 }
-
-
