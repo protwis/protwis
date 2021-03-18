@@ -257,7 +257,7 @@ function make_range_number_cols(start_column, repeat_number, tab) {
 }
 
 repfilterfamtab = make_range_number_cols(10, 12, "famtab");
-repfiltersubtab = make_range_number_cols(10, 40, "subtab");
+repfiltersubtab = make_range_number_cols(10, 39, "subtab");
 
 let lastRangeRankFilter = "";
 
@@ -285,8 +285,9 @@ for (let i=11; i <= 22; i++) {
         bSortCellsTop: false, //prevent sort arrows going on bottom row
         aaSorting: [],
         order: [
+            [2, "asc"],
             [4, "asc"],
-            [22, "asc"]
+            [22, "asc"],
         ],
         autoWidth: false,
         bInfo: true,
@@ -489,7 +490,11 @@ for (let i=11; i <= 49; i++) {
         paging: false,
         bSortCellsTop: false, //prevent sort arrows going on bottom row
         aaSorting: [],
-        order: [4,"asc"],
+        order: [
+            [2, "asc"],
+            [4, "asc"],
+            [49, "asc"]
+        ],
         autoWidth: false,
         bInfo: true,
         columnDefs: [
