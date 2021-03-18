@@ -296,7 +296,13 @@ def parse_model_statsfile(statstext, receptor_residues, signprot_residues=None):
 
 	for line in statstext.split('\n')[1:-1]:
 		mr = ModelRotamer()
-		segment, seqnum, gn, backbone_pdb, rotamer_pdb = line.split(',')
+		split_line = line.split(',')
+		if (len(split_line) == 5):
+			segment, seqnum, gn, backbone_pdb, rotamer_pdb = split_line
+		else:
+			del split_line[3]
+			segment, seqnum, gn, backbone_pdb, rotamer_pdb = split_line
+
 		if backbone_pdb not in structure_dict:
 			if backbone_pdb=='None':
 				backbone_struct = None
