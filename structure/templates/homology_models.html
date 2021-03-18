@@ -281,9 +281,9 @@
                 var checked_data = oTable.rows('.alt_selected').data();
                 ClearSelection('targets');
                 for (i = 0; i < checked_data.length; i++) {
-                    
+
                     AddToSelection('targets', 'structure_model',  checked_data[i][12]+"_"+checked_data[i][3]);
-                    
+
                 }
                 window.location.href = '/structure/selection_convert_model';
             });
@@ -353,6 +353,7 @@
             <span class="glyphicon glyphicon-download"></span> Archive <span class="caret"></span>
         </button>
         <ul class="dropdown-menu" style="left:auto;right:0;margin-right:-10px;">
+          <li><a href="https://files.gpcrdb.org/GPCRdb_homology_models_2021-03-17.zip"> 2021 March models </a></li>
           <li><a href="https://files.gpcrdb.org/GPCRdb_homology_models_2021-02-11.zip"> 2021 February models </a></li>
           <li><a href="https://files.gpcrdb.org/GPCRdb_homology_models_2021-01-12.zip"> 2021 January models </a></li>
           <li><a href="https://files.gpcrdb.org/GPCRdb_homology_models_2020-12-07.zip"> 2020 December models </a></li>
