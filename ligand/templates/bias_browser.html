@@ -244,9 +244,8 @@
 			processing: true,
 			deferRender: true,
 			dom: 'B<>flrtip',
-			fixedColumns: {
-				leftColumns: 2
-			},
+			pageLength: 35,
+			"lengthChange": false,
 			"serverSide": true,
 			"ajax": "/ligand/bias/api/?format=datatables",
 			"columns": [{
@@ -257,7 +256,7 @@
 						var my_func = "window.open('experiment/" + data + "/detail')";
 						var return_String = "<a href='#'><span class='glyphicon glyphicon-info-sign' onclick=(" + my_func + ")></span></a>";
 						var return_span = "<span style=\"display: none;\">" + ligand_id + "</span>";
-						return data ;
+						return return_span+return_String;
 					}
 				},
 				{
@@ -630,12 +629,12 @@
                 {
 					"data": "ligand_source_id",
 					"sortable": false,
-					"visible": true,
+					"visible": false,
 				},
 				{
 					"data": "ligand_source_type",
 					"sortable": false,
-					"visible": true,
+					"visible": false,
 				},
 				// Invisible fields, this is required for DataTables to fetch the fields
 				{
@@ -703,13 +702,6 @@
 
 			],
 			"columnDefs": [
-				// {
-				//     "targets":[31,32,33,34,35], "render": function(data, type, row) {
-				//         var return_String = "<a href ='" + row.publication_link + "'target='_blank'>"+data+"</a>";
-				// 		return return_String;
-				// 	},
-				//
-				// },
 				{
 					"targets": [19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45],
 					"createdCell": function(td, cellData, rowData, row, col) {
@@ -752,8 +744,8 @@
 			],
 
 			// pageLength: 35,
-            "lengthMenu": [[10, 25, 50, 2400], [10, 25, 50, 2400]],
-			"lengthChange": true,
+            // "lengthMenu": [[10, 25, 50, 2400], [10, 25, 50, 2400]],
+			// "lengthChange": true,
 			"buttons": [{
 					extend: 'csv',
 					text: 'Export to CSV',

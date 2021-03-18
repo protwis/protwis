@@ -97,6 +97,7 @@ class Command(BaseBuild):
         delete_bias_excel.delete()
         delete_bias_experiment = AnalyzedExperiment.objects.all()
         delete_bias_experiment.delete()
+        self.logger.info("Bias data purgedAk47aspirine1Ak47aspirine1Ak47aspirine1Ak47aspirine1")
 
     def loaddatafromexcel(self, excelpath):
         '''
@@ -135,7 +136,6 @@ class Command(BaseBuild):
             self.logger.info(
                 "The error appeared during reading the excel", num_rows)
 
-# pylint: disable=C0301
     def initialize_return_row(self,excel_row):
         d = dict()
         d['submitting_group'] = None
@@ -170,6 +170,7 @@ class Command(BaseBuild):
         d['protein_efficacy_equation'] = None
         d['auxiliary_protein'] = None
         d['source_file'] = excel_row
+        self.logger.info("empty dict created  error")
         return d
 
     def return_row(self, r,excel_row):
@@ -220,6 +221,7 @@ class Command(BaseBuild):
                     d['pathway_bias_initial'] = float(r[28].replace('\U00002013', '-'))
                 except:
                     d['pathway_bias_initial'] = r[28]
+                    self.logger.info("pathway_bias_initial  error")
 
 
         if r[29] is not None and r[29] != '':
@@ -341,7 +343,6 @@ class Command(BaseBuild):
             temp.append(d)
         return temp
 
-
     def fetch_publication_authors(self,publication, experiment_assay):
         counter = 0
 
@@ -395,9 +396,8 @@ class Command(BaseBuild):
                     potency = potency* 10**(-3)
             return potency,p_type
         else:
+            self.logger.info("potency convertion error")
             return None, None
-
-
 
     def define_g_family(self, protein, assay_type):
         family = None
@@ -456,7 +456,7 @@ class Command(BaseBuild):
 
         else:
             family = 'G-protein'
-
+        self.logger.info("family saved")
         return family
 
     def fetch_endogenous(self, protein):
@@ -469,6 +469,7 @@ class Command(BaseBuild):
 
             return test
         except:
+            self.logger.info("The error appeared in def fetch_endogenous")
             return None
 
     def fetch_vendor(self, ligand,experiment_entry):
@@ -480,9 +481,7 @@ class Command(BaseBuild):
                 ligand_vendor = BiasedExperimentVendors(experiment=experiment_entry,
                                                         vendor=x)
                 ligand_vendor.save()
-            # vendor_count = vendor_count + 1
-
-        # return vendor_count
+        self.logger.info("ligand_vendor saved")
 
     def fetch_protein(self,protein_from_excel, source):
         """
@@ -497,8 +496,8 @@ class Command(BaseBuild):
             protein1 = Protein.objects.filter(
                 web_links__index=protein_from_excel, web_links__web_resource__slug='uniprot')
             test = protein1[0]
-        # if test == None:
-        #     print('---protein error---',protein_from_excel,source )
+        if test == None:
+            self.logger.info("fetch_protein  error")
         return test
 
     def fetch_ligand(self, ligand_id, ligand_type, ligand_name, source_file):
@@ -636,11 +635,9 @@ class Command(BaseBuild):
             ligand.save()
         except IntegrityError:
             return Ligand.objects.get(name=ligand_name, canonical=True)
+            self.logger.info("empty ligand found")
         return ligand
-        # return self.update_ligand(ligand_name, {}, ligand_type, web_resource, gtop_id)
 
-# pylint: disable=C0301
-# pylint: disable=R0201
     def build_ligand_properties(self):
         lp = LigandProperities()
         lt =  LigandType.objects.get(name = 'small molecule')
@@ -654,4 +651,5 @@ class Command(BaseBuild):
         lp.hdon = None
         lp.logp = None
         lp.save()
+        self.logger.info("Could not create ligand, empty is returned")
         return lp

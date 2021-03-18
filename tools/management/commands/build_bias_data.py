@@ -67,8 +67,9 @@ class Command(BaseBuild):
     def purge_bias_data(self):
         delete_bias_experiment = AnalyzedExperiment.objects.all()
         delete_bias_experiment.delete()
+        self.logger.info('Data is purged')
 
-    # pylint: disable=C0321
+
     def get_from_model(self):
         try:
             content = BiasedExperiment.objects.all().prefetch_related(
@@ -77,11 +78,10 @@ class Command(BaseBuild):
                 , 'experiment_data__emax_ligand_reference',
             ).order_by('publication', 'receptor', 'ligand')
         except:
-            print('no data returned')
+            self.logger.info('Data is not returned')
             content = None
         return content
 
-# pylint: disable=R0201
     def process_data(self, content):
         rd = []
         counter = 0
@@ -102,6 +102,7 @@ class Command(BaseBuild):
             fin_obj['children'] = temp_obj
             fin_obj['vendor_counter'] = vendor_counter
             rd.append(fin_obj)
+        self.logger.info('Return dict is returned')
         return rd
 
     def queryset_to_dict(self, results):
@@ -169,6 +170,7 @@ class Command(BaseBuild):
             doubles.append(temp_dict)
             temp['assay'] = doubles
             send.append(temp)
+        self.logger.info('Queryset processed')
         return send
 
     def combine_unique(self, data):
@@ -186,7 +188,7 @@ class Command(BaseBuild):
                 temp_obj.append(i)
             context[name] = j
             context[name]['assay'] = temp_obj
-
+        self.logger.info('Combined experiments by publication and receptor')
         return context
 
     def process_referenced_assays(self, data):
@@ -200,6 +202,7 @@ class Command(BaseBuild):
             j[1]['assay_list'] = assays
             j[1]['reference_assays_list'] = reference
             assay_counter = assay_counter+len(j[1]['assay_list'])+len(j[1]['reference_assays_list'])
+        self.logger.info('references processed')
         return data
 
     def return_refenced_assays(self, assays):
@@ -232,14 +235,17 @@ class Command(BaseBuild):
                                      if k['quantitive_activity'] else 999999, reverse=True)
         if len(sorted_reference) == 0:
             sorted_reference, sorted_main = self.chose_reference_from_assays(sorted_main)
+            self.logger.info('Trying to get reference from assays')
         return sorted_main, sorted_reference
 
     def filter_reference_assay(self, reference_return, reference_ligand):
         reference_return[:] = [d for d in reference_return if d.get('ligand') == reference_ligand]
+        self.logger.info('Trying to get reference from assays')
         return reference_return
 
     def filter_assay_reference(self, assay_return, reference_ligand):
         assay_return[:] = [d for d in assay_return if d.get('ligand') != reference_ligand]
+        self.logger.info('Trying to get filtering references from assays')
         return assay_return
 
     def chose_reference_from_assays(self, assays):
@@ -255,6 +261,7 @@ class Command(BaseBuild):
         assay_return = assays.copy()
         references=self.filter_reference_assay(reference_return,reference_ligand)
         final_assay=self.filter_assay_reference(assay_return,reference_ligand)
+        self.logger.info('return reference assay')
         return references, final_assay
 
 
@@ -263,6 +270,7 @@ class Command(BaseBuild):
         for i in assays:
             if i['emax_reference_ligand'] == i['ligand']:
                 reference_ligand.append(i)
+                self.logger.info('return reference emax')
         return reference_ligand
 
     def separate_ligands(self, context):
@@ -290,10 +298,10 @@ class Command(BaseBuild):
                     content[name]['reference_assays_list'].extend(i[1]['reference_assays_list'])
                     content[name]['ligand_source_id'] = i[1]['ligand_source_id']
                     content[name]['ligand_source_type'] = i[1]['ligand_source_type']
-
+        self.logger.info('returned finalised assay')
         return content
 
-# pylint: disable=C0301
+
     def limit_family_set(self, assay_list):
         families = list()
         proteins = set()
@@ -308,10 +316,11 @@ class Command(BaseBuild):
                         families[:] = [d for d in families if d.get('family') != compare_val['family']]
                         families.append(assay)
                 except:
+                    self.logger.info('skipping families if existing copy')
                     continue
         return families
 
-# pylint: disable=C0301
+
     def limit_family_set_subs(self, assay_list):
         families = list()
         proteins = set()
@@ -326,9 +335,10 @@ class Command(BaseBuild):
                     if assay['quantitive_activity'] < compare_val['quantitive_activity']:
                         families[:] = [d for d in families if d.get('signalling_protein') != compare_val['signalling_protein']]
                         families.append(assay)
-                        # print('\n***swap', assay['signalling_protein'], assay['quantitive_activity'])
+
                 except:
                     families.append(assay)
+                    self.logger.info('limit_family_set_subs error')
         return families
 
     def process_calculation(self, context):
@@ -355,7 +365,7 @@ class Command(BaseBuild):
             # recalculates lbf if it is negative
             i[1]['biasdata'] = self.validate_lbf(i)
             self.calc_potency_and_transduction(i[1]['biasdata'])
-
+            self.logger.info('process_calculation error')
         return context
 
 # pylint: disable=C0301
@@ -407,6 +417,7 @@ class Command(BaseBuild):
                             elif i['qualitative_activity'] == 'High activity':
                                 i['log_bias_factor'] = "Low Bias"
                         except:
+                            self.logger.info('log_bias_factor error')
                             i['log_bias_factor'] = 'None'
 
     def get_reference_assay(self, reference, assay):
@@ -424,6 +435,7 @@ class Command(BaseBuild):
                 return_assay = temp_ref[0]
             return_assay = temp_assay
         except:
+            self.logger.info('get_reference_assay error')
             return return_assay
         return return_assay
 
@@ -436,6 +448,7 @@ class Command(BaseBuild):
             lgb = (a - b) - (c - d)
         except:
             lgb = 0
+            self.logger.info('caclulate_bias_factor_variables error')
         return lgb
 
     def calc_potency_and_transduction(self, biasdata):
@@ -464,6 +477,7 @@ class Command(BaseBuild):
                         most_potent['t_coefficient'] - i['t_coefficient'], 1)
                 else:
                     i['t_factor'] = None
+                    self.logger.info('t_factor error')
 
     def validate_lbf(self, i):
         for x in i[1]['biasdata']:
@@ -475,6 +489,7 @@ class Command(BaseBuild):
                     self.validate_lbf(i)
                 else:
                     return i[1]['biasdata']
+                    self.logger.info('validate_lbf error')
         return i[1]['biasdata']
 
     def save_data_to_model(self, context, source):
@@ -559,6 +574,7 @@ class Command(BaseBuild):
 
             else:
                 pass
+                self.logger.info('saving error')
 
     def fetch_experiment(self, publication, ligand, receptor, source):
         '''
@@ -571,6 +587,7 @@ class Command(BaseBuild):
             experiment = experiment.get()
             return True
         except Exception:
+            self.logger.info('fetch_experiment error')
             experiment = None
             return False
 
@@ -593,17 +610,19 @@ class Command(BaseBuild):
                 temp1 += str(i) + str(', ')
             return temp, temp1
         except:
-            print('receptor not found', receptor)
+            self.logger.info('receptor not found error')
             return None, None
 
     def process_signalling_proteins(self, context):
         for i in context.items():
             i[1]['assay_list'] = self.limit_family_set(i[1]['assay_list'])
+        self.logger.info('process_signalling_proteins')
         return context
 
     def process_signalling_proteins_subs(self, context):
         for i in context.items():
             i[1]['assay_list'] = self.limit_family_set_subs(i[1]['assay_list'])
+        self.logger.info('process_signalling_proteins_subs')
         return context
 
     def build_bias_data(self):
@@ -687,3 +706,4 @@ class Command(BaseBuild):
                 '/' + str(i[1]['ligand']) + '/' + str(i[1]['receptor'])
             if name in temp:
                 i[1]['article_quantity'] = temp[name]
+        self.logger.info('count_publications')        

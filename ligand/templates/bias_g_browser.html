@@ -244,6 +244,8 @@
 			processing: true,
 			deferRender: true,
 			dom: 'B<>flrtip',
+            pageLength: 35,
+			"lengthChange": false,
 			fixedColumns: {
 				leftColumns: 2
 			},
@@ -257,7 +259,7 @@
 						var my_func = "window.open('experiment/" + data + "/detail')";
 						var return_String = "<a href='#'><span class='glyphicon glyphicon-info-sign' onclick=(" + my_func + ")></span></a>";
 						var return_span = "<span style=\"display: none;\">" + ligand_id + "</span>";
-						return data ;
+						return return_span+return_String;
 					}
 				},
 				{
@@ -752,8 +754,8 @@
 			],
 
 			// pageLength: 35,
-            "lengthMenu": [[10, 25, 50, 2400], [10, 25, 50, 2400]],
-			"lengthChange": true,
+            // "lengthMenu": [[10, 25, 50, 2400], [10, 25, 50, 2400]],
+			// "lengthChange": true,
 			"buttons": [{
 					extend: 'csv',
 					text: 'Export to CSV',

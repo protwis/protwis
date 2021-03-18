@@ -308,7 +308,6 @@ class AnalyzedExperimentFilter(DatatablesFilterSet):
 
     def yadcf_range_filter(self, queryset, field_name, value):
         min_value, max_value = value.split('-yadcf_delim-')
-
         try:
             min_value = float(min_value)
         except:
@@ -329,12 +328,10 @@ class AnalyzedExperimentFilter(DatatablesFilterSet):
 
     def yadcf_multiple_choices_query(self, queryset, field_name, value):
         choices = value.replace('\\', '').split('|')
-
         return queryset.filter(**{f'{field_name}__in': choices})
 
     def transducers_multiple_choices_filter(self, queryset, field_name, value):
         choices = value.replace('\\', '').replace('_', ' ').split('|')
-
         return queryset.filter(**{f'{field_name}__in': choices})
 
 
@@ -439,7 +436,7 @@ class AnalyzedExperimentSerializer(serializers.ModelSerializer):
     publication_link = serializers.CharField(source='publication.web_link')
     ligand_source_id= serializers.CharField()
     ligand_source_type= serializers.CharField()
-    
+
     class Meta:
         model = AnalyzedExperiment
         fields = [
