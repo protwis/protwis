@@ -408,7 +408,7 @@ class Command(BaseBuild):
                             if (i['quantitive_measure_type'].lower() == 'ic50' and temp_reference['quantitive_measure_type'].lower() == 'ic50'):
                                 i['log_bias_factor'] = 'Only agonist in main pathway'
                         except:
-                            i['log_bias_factor'] = 'loh'
+                            i['log_bias_factor'] = None
                         try:
                             if i['qualitative_activity'] == 'No activity':
                                 i['log_bias_factor'] = "Full Bias"
@@ -488,8 +488,8 @@ class Command(BaseBuild):
                     self.calc_bias_factor(i[1]['biasdata'], i[1]['reference_assays_list'])
                     self.validate_lbf(i)
                 else:
-                    return i[1]['biasdata']
                     self.logger.info('validate_lbf error')
+                    return i[1]['biasdata']
         return i[1]['biasdata']
 
     def save_data_to_model(self, context, source):
@@ -573,7 +573,6 @@ class Command(BaseBuild):
                     pass
 
             else:
-                pass
                 self.logger.info('saving error')
 
     def fetch_experiment(self, publication, ligand, receptor, source):
@@ -706,4 +705,4 @@ class Command(BaseBuild):
                 '/' + str(i[1]['ligand']) + '/' + str(i[1]['receptor'])
             if name in temp:
                 i[1]['article_quantity'] = temp[name]
-        self.logger.info('count_publications')        
+        self.logger.info('count_publications')

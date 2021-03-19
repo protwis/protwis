@@ -42,9 +42,8 @@ class Command(BaseBuild):
     mylog.addHandler(file_handler)
 
     help = 'Reads bias data and imports it'
-    # source file directory
-    # links_data_dir = os.sep.join([settings.DATA_DIR, 'ligand_data', 'assay_data'])
-    structure_data_dir = os.sep.join([settings.DATA_DIR, 'ligand_data', 'bias_data','excel'])
+    # source file directory    
+    structure_data_dir = os.sep.join([settings.DATA_DIR, 'ligand_data', 'bias_data'])
     publication_cache = {}
     ligand_cache = {}
     data_all = []
@@ -634,8 +633,9 @@ class Command(BaseBuild):
         try:
             ligand.save()
         except IntegrityError:
-            return Ligand.objects.get(name=ligand_name, canonical=True)
             self.logger.info("empty ligand found")
+            return Ligand.objects.get(name=ligand_name, canonical=True)
+
         return ligand
 
     def build_ligand_properties(self):

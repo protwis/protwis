@@ -684,7 +684,8 @@ class BiasAPI(generics.ListAPIView):
     filter_backends = (DatatablesFilterBackend,)
     filterset_class = AnalyzedExperimentFilter
 
-    def get_queryset(self):
+    @staticmethod
+    def get_queryset():
         assay_qs = AnalyzedAssay.objects.filter(
             order_no__lte=5,
             assay_description__isnull=True,

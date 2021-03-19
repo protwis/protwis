@@ -1,12 +1,9 @@
-
 from django.db.models import IntegerField, FloatField
 from django.db.models.functions import Cast
 from django_filters import filters
 from rest_framework_datatables.django_filters.filterset import DatatablesFilterSet
 from rest_framework import serializers
-
 from .models import AnalyzedExperiment
-
 
 class AnalyzedExperimentFilter(DatatablesFilterSet):
 
@@ -250,13 +247,12 @@ class AnalyzedExperimentFilter(DatatablesFilterSet):
             'quality_activity_p2','quality_activity_p3','quality_activity_p4','quality_activity_p5',
             'standard_type_p1','standard_type_p2','standard_type_p3','standard_type_p4','standard_type_p5',
             'ligand_source_id','ligand_source_type'
-
         ]
         read_only_fields = fields
 
-    def yadcf_range_filter_with_integer_cast(self, queryset, field_name, value):
+    @staticmethod
+    def yadcf_range_filter_with_integer_cast(queryset, field_name, value):
         min_value, max_value = value.split('-yadcf_delim-')
-
         try:
             min_value = float(min_value)
         except:
@@ -268,34 +264,30 @@ class AnalyzedExperimentFilter(DatatablesFilterSet):
             max_value = None
 
         queryset = queryset.annotate(**{f'{field_name}_as_integer': Cast(field_name, IntegerField())})
-
         if min_value is not None:
             queryset = queryset.filter(**{f'{field_name}_as_integer__gte': min_value})
-
         if max_value is not None:
             queryset = queryset.filter(**{f'{field_name}_as_integer__lte': max_value})
-
         return queryset
 
-    def yadcf_range_filter_with_float_cast(self, queryset, field_name, value):
+    @staticmethod
+    def yadcf_range_filter_with_float_cast(queryset, field_name, value):
         min_value, max_value = value.split('-yadcf_delim-')
 
         try:
             min_value = float(min_value)
         except:
             min_value = None
-
         try:
             max_value = float(max_value)
         except:
             max_value = None
 
         queryset = queryset.annotate(**{f'{field_name}_as_float': Cast(field_name, FloatField())})
-
         if field_name in ['lbf_p2_p1', 'lbf_p3_p1', 'lbf_p4_p1', 'lbf_p5_p1']:
             # TODO: Come up with numeric values for:
             queryset = queryset.exclude(
-                **{f'{field_name}__in': ['High Bias', 'Full Bias', '']}
+                **{f'{field_name}__in': ['High Bias', 'Full Bias', 'Low Bias','']}
             )
 
         if min_value is not None:
@@ -306,8 +298,10 @@ class AnalyzedExperimentFilter(DatatablesFilterSet):
 
         return queryset
 
-    def yadcf_range_filter(self, queryset, field_name, value):
+    @staticmethod
+    def yadcf_range_filter(queryset, field_name, value):
         min_value, max_value = value.split('-yadcf_delim-')
+
         try:
             min_value = float(min_value)
         except:
@@ -326,12 +320,16 @@ class AnalyzedExperimentFilter(DatatablesFilterSet):
 
         return queryset
 
-    def yadcf_multiple_choices_query(self, queryset, field_name, value):
+    @staticmethod
+    def yadcf_multiple_choices_query(queryset, field_name, value):
         choices = value.replace('\\', '').split('|')
+
         return queryset.filter(**{f'{field_name}__in': choices})
 
-    def transducers_multiple_choices_filter(self, queryset, field_name, value):
+    @staticmethod
+    def transducers_multiple_choices_filter(queryset, field_name, value):
         choices = value.replace('\\', '').replace('_', ' ').split('|')
+
         return queryset.filter(**{f'{field_name}__in': choices})
 
 
