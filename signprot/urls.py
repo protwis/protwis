@@ -1,11 +1,13 @@
 from . import views
 from django.urls import path
 from django.views.decorators.cache import cache_page
+from django.views.generic.base import RedirectView
 from signprot.views import CouplingBrowser, ArrestinCoupling
 from contactnetwork.views import PdbTableData
 
 urlpatterns = [
-    path('', views.BrowseSelection.as_view(), name='index'),
+    path('', RedirectView.as_view(url='gprotein', permanent=False), name='index'),
+    path('gprotein', views.BrowseSelection.as_view(), name='index'),
     path('arrestin', views.ArrestinSelection.as_view(), name='arrestin'),
     path('arrestincouplings', cache_page(60*60*24*7)(ArrestinCoupling.as_view()), name='arrestin_coupling'),
     path('statistics/<dataset>/',  views.GProtein, name='gprotein'),
