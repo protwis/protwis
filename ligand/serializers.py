@@ -257,7 +257,6 @@ class AnalyzedExperimentFilter(DatatablesFilterSet):
             min_value = float(min_value)
         except:
             min_value = None
-
         try:
             max_value = float(max_value)
         except:
