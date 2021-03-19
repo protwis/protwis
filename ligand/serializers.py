@@ -255,7 +255,7 @@ class AnalyzedExperimentFilter(DatatablesFilterSet):
         min_value, max_value = value.split('-yadcf_delim-')
         try:
             min_value = float(min_value)
-        except:
+        except:# noqa
             min_value = None
         try:
             max_value = float(max_value)
