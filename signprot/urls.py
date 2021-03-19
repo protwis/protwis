@@ -1,12 +1,13 @@
 from . import views
 from django.urls import path
 from django.views.decorators.cache import cache_page
-from signprot.views import CouplingBrowser
+from signprot.views import CouplingBrowser, ArrestinCoupling
 from contactnetwork.views import PdbTableData
 
 urlpatterns = [
     path('', views.BrowseSelection.as_view(), name='index'),
     path('arrestin', views.ArrestinSelection.as_view(), name='arrestin'),
+    path('arrestincouplings', cache_page(60*60*24*7)(ArrestinCoupling.as_view()), name='arrestin_coupling'),
     path('statistics/<dataset>/',  views.GProtein, name='gprotein'),
     path('statistics_venn',  views.GProteinVenn, name='gprotein'),
     path('statistics_tree',  views.GProteinTree, name='gprotein'),
