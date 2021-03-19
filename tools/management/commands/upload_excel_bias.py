@@ -40,7 +40,7 @@ class Command(BaseBuild):
     file_handler.setLevel(logging.ERROR)
     file_handler.setFormatter(formatter)
     mylog.addHandler(file_handler)
-    help = 'Reads bias data and imports it'    
+    help = 'Reads bias data and imports it'
     structure_data_dir = os.sep.join([settings.DATA_DIR, 'ligand_data', 'bias_data'])
     publication_cache = {}
     ligand_cache = {}

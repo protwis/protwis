@@ -93,7 +93,10 @@ class Command(BaseBuild):
             vendors_quantity = None
             for i in instance[1].experiment_data_vendors.all():
                 vendor_counter = vendor_counter + 1
-                vendors_quantity = i
+                if not vendor_counter:
+                    vendors_quantity = i
+                    self.logger.info(vendors_quantity)
+
             for entry in instance[1].experiment_data.all():
                 author_list = list()
                 for author in entry.experiment_data_authors.all():
