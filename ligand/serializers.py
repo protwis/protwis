@@ -1,4 +1,3 @@
-# flake8: noqa
 from django.db.models import IntegerField, FloatField
 from django.db.models.functions import Cast
 from django_filters import filters
