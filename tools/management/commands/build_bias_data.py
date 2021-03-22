@@ -5,7 +5,7 @@ import math
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import ProteinGProteinPair
 from ligand.models import Ligand, BiasedExperiment, AnalyzedExperiment,AnalyzedAssay
-from django.core.exceptions import ObjectDoesNotExis
+
 MISSING_PROTEINS = {}
 SKIPPED = 0
 
@@ -77,7 +77,7 @@ class Command(BaseBuild):
                 , 'publication__web_link'
                 , 'experiment_data__emax_ligand_reference',
             ).order_by('publication', 'receptor', 'ligand')
-        except ObjectDoesNotExist:
+        except BiasedExperiment.DoesNotExist:
             self.logger.info('Data is not returned')
             content = None
         return content
@@ -320,9 +320,9 @@ class Command(BaseBuild):
                     if assay['quantitive_activity'] < compare_val['quantitive_activity']:
                         families[:] = [d for d in families if d.get('family') != compare_val['family']]
                         families.append(assay)
-                except:
+                except :
                     self.logger.info('skipping families if existing copy')
-                    continue
+                    continue            
         return families
 
 

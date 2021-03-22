@@ -7,12 +7,14 @@ from collections import defaultdict
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.views.generic import TemplateView, DetailView
-from django.db.models import Count, Subquery, Q, OrderedDict, models, OuterRef
+from django.db import models
+from django.db.models import Count, Subquery, Q, OuterRef
 from django.views.decorators.csrf import csrf_exempt
 
 from rest_framework_datatables.django_filters.backends import DatatablesFilterBackend
 from rest_framework import generics
 
+from collections import OrderedDict
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
