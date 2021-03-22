@@ -18,7 +18,7 @@ from common.views import AbsTargetSelection
 from contactnetwork.models import InteractingResiduePair
 from mutation.models import MutationExperiment
 from protein.models import (Gene, Protein, ProteinAlias, ProteinConformation, ProteinFamily, ProteinGProtein,
-                            ProteinGProteinPair, ProteinSegment)
+                            ProteinGProteinPair, ProteinArrestinPair, ProteinSegment)
 from residue.models import (Residue, ResidueGenericNumberEquivalent, ResiduePositionSet)
 from seqsign.sequence_signature import (SequenceSignature, SignatureMatch)
 from signprot.interactions import (get_entry_names, get_generic_numbers, get_ignore_info, get_protein_segments,
@@ -100,6 +100,82 @@ class ArrestinSelection(AbsTargetSelection):
             del ppf
     except Exception as e:
         pass
+
+
+class ArrestinCoupling(TemplateView):
+    """
+    Class based generic view which serves coupling data between Receptors and Arrestins.
+    Data coming from Michel Bouvier only at the moment.
+
+    :param dataset: ProteinArrestinPair (see build/management/commands/build_arrestins.py)
+    :return: context
+    """
+
+    template_name = "signprot/arrestin_coupling.html"
+
+    @method_decorator(csrf_exempt)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # fields, header = self.fields()
+        protvals, couplvals = self.fields()
+
+        context['fields'] = protvals
+        context['signal'] = couplvals
+
+        return context
+
+    @staticmethod
+    def fields():
+        """
+        This function returns the required fields for the Arrestin subtypes table.
+
+        :return: key.value pairs from dictotemplate dictionary
+        keys = id values in ProteinArrestinPair table.
+        values = source, class, family, uniprotid, iupharid, logmaxec50_deg, pec50_deg, emax_deg
+        """
+
+        arrestins = ProteinArrestinPair.objects.filter(protein__species__common_name='Human',
+                                                       protein__sequence_type__slug='wt',
+                                                       protein__family__slug__startswith='00').prefetch_related(
+            "protein__family",  # REMEMBER. Whatever you call in template prefetch to reduce SQL queries.
+            "protein__family__parent__parent__parent",
+            "arrestin_subtype__source"
+        ).distinct("protein_id")
+
+        signalingdata = {}
+        for pairing in arrestins.values_list():
+            if pairing[1] not in signalingdata:
+                signalingdata[pairing[1]] = {}
+            signalingdata[pairing[1]][pairing[7]] = pairing[5]
+
+        protein_data = {}
+        for prot in arrestins:
+            protein_data[prot.id] = {}
+            protein_data[prot.id]['class'] = prot.protein.family.parent.parent.parent.shorter()
+            protein_data[prot.id]['family'] = prot.protein.family.parent.short()
+            protein_data[prot.id]['uniprot'] = prot.protein.entry_short()
+            protein_data[prot.id]['iuphar'] = prot.protein.family.name.replace('receptor', '').strip()
+            protein_data[prot.id]['accession'] = prot.protein.accession
+            protein_data[prot.id]['entryname'] = prot.protein.entry_name
+            protein_data[prot.id]['source'] = prot.source
+            protein_data[prot.id]['subtype'] = prot.arrestin_subtype
+
+            # MAKES 2396 SQL QUERIES, have to find out how to make it faster.
+            # uniprot_links = prot.web_links.filter(web_resource__slug='uniprot')
+            # if uniprot_links.count() > 0:
+            #     protein_data[prot.id]['uniprot_link'] = uniprot_links[0]
+            # MAKES 970 SQL QUERIES. Even with prefetch_related of web_links__web_resource
+            gtop_links = prot.protein.web_links.filter(web_resource__slug='gtop')
+            if len(gtop_links) > 0:
+                protein_data[prot.id]['gtp_link'] = gtop_links[0]
+
+            protein_data[prot.id]['emax_deg'] = prot.emax_deg
+
+
+#        pprint(protein_data)
+#        pprint(signalingdata)
+        return protein_data, signalingdata
 
 
 class TargetSelection(AbsTargetSelection):

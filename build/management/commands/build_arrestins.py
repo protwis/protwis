@@ -10,7 +10,7 @@ import xlrd
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.db import IntegrityError
+from django.db import IntegrityError, connection
 from protein.models import (Gene, Protein, ProteinAlias, ProteinConformation,
                             ProteinFamily, ProteinArrestinPair, ProteinSegment,
                             ProteinSequenceType, ProteinSource, ProteinState, Species)
@@ -105,6 +105,9 @@ class Command(BaseCommand):
 
     def purge_coupling_data(self):
         """DROP data from the protein_arrestin_pair table."""
+        with connection.cursor() as cursor:
+            sql1 = 'ALTER SEQUENCE protein_arrestin_pair_id_seq RESTART WITH 1;'
+            cursor.execute(sql1)
         try:
             ProteinArrestinPair.objects.filter().delete()
         except Exception as msg:
