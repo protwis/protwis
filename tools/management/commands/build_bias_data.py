@@ -320,9 +320,9 @@ class Command(BaseBuild):
                     if assay['quantitive_activity'] < compare_val['quantitive_activity']:
                         families[:] = [d for d in families if d.get('family') != compare_val['family']]
                         families.append(assay)
-                except :
+                except TypeError:
                     self.logger.info('skipping families if existing copy')
-                    continue            
+                    continue
         return families
 
 
