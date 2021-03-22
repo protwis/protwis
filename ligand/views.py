@@ -17,10 +17,8 @@ from rest_framework import generics
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
-from ligand.models import Ligand, LigandProperities, AnalyzedExperiment, BiasedPathways,
-                            AssayExperiment,
+from ligand.models import Ligand, LigandProperities, AnalyzedExperiment, BiasedPathways, AssayExperiment
 from protein.models import Protein, ProteinFamily
-
 
 
 class LigandBrowser(TemplateView):
@@ -375,7 +373,7 @@ class LigandStatistics(TemplateView):
                 target_count = 0
             prot_count = prot_count_dict[fam.name]
             ligands.append({
-                'name': fam.name.replace('Class',''),
+                'name': fam.name.replace('Class', ''),
                 'num_ligands': lig_count,
                 'avg_num_ligands': lig_count / prot_count,
                 'target_percentage': target_count / prot_count * 100,
@@ -424,11 +422,13 @@ class LigandStatistics(TemplateView):
         whole_class_a = class_a_data.get_nodes_dict('ligands')
         for item in whole_class_a['children']:
             if item['name'] == 'Orphan':
-                orphan_data = OrderedDict([('name', ''), ('value', 3000), ('color', ''), ('children',[item])])
+                orphan_data = OrderedDict(
+                    [('name', ''), ('value', 3000), ('color', ''), ('children', [item])])
                 whole_class_a['children'].remove(item)
                 break
         context['class_a'] = json.dumps(whole_class_a)
-        class_b1_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B1 (Secretin)'))
+        class_b1_data = tree.get_tree_data(
+            ProteinFamily.objects.get(name__startswith='Class B1 (Secretin)'))
         context['class_b1_options'] = deepcopy(tree.d3_options)
         context['class_b1_options']['anchor'] = 'class_b1'
         context['class_b1_options']['branch_trunc'] = 60
@@ -459,19 +459,22 @@ class LigandStatistics(TemplateView):
             ProteinFamily.objects.get(name__startswith='Class T (Taste 2)'))
         context['class_t2_options'] = deepcopy(tree.d3_options)
         context['class_t2_options']['anchor'] = 'class_t2'
-        context['class_t2_options']['label_free'] = [1,]
-        context['class_t2'] = json.dumps(class_t2_data.get_nodes_dict('ligands'))
+        context['class_t2_options']['label_free'] = [1, ]
+        context['class_t2'] = json.dumps(
+            class_t2_data.get_nodes_dict('ligands'))
         # definition of the class a orphan tree
         context['orphan_options'] = deepcopy(tree.d3_options)
         context['orphan_options']['anchor'] = 'orphan'
-        context['orphan_options']['label_free'] = [1,]
+        context['orphan_options']['label_free'] = [1, ]
         context['orphan'] = json.dumps(orphan_data)
 
-        whole_receptors = Protein.objects.prefetch_related("family", "family__parent__parent__parent")
+        whole_receptors = Protein.objects.prefetch_related(
+            "family", "family__parent__parent__parent")
         whole_rec_dict = {}
         for rec in whole_receptors:
             rec_uniprot = rec.entry_short()
-            rec_iuphar = rec.family.name.replace("receptor", '').replace("<i>","").replace("</i>","").strip()
+            rec_iuphar = rec.family.name.replace("receptor", '').replace(
+                "<i>", "").replace("</i>", "").strip()
             whole_rec_dict[rec_uniprot] = [rec_iuphar]
         context["whole_receptors"] = json.dumps(whole_rec_dict)
         context["render"] = "not_bias"
@@ -485,26 +488,30 @@ class LigandBiasStatistics(TemplateView):
 
     template_name = 'ligand_statistics.html'
 
-    def get_context_data (self, **kwargs):
+    def get_context_data(self, **kwargs):
 
         context = super().get_context_data(**kwargs)
         # assays = AnalyzedExperiment.objects.all().prefetch_related('receptor__family__parent__parent__parent', 'receptor__family')
 
         lig_count_dict = {}
-        assays_lig = list(AnalyzedExperiment.objects.all().values('receptor__family__parent__parent__parent__name').annotate(c=Count('ligand_id',distinct=True)))
+        assays_lig = list(AnalyzedExperiment.objects.all().values(
+            'receptor__family__parent__parent__parent__name').annotate(c=Count('ligand_id', distinct=True)))
         for a in assays_lig:
             lig_count_dict[a['receptor__family__parent__parent__parent__name']] = a['c']
         target_count_dict = {}
-        assays_target = list(AnalyzedExperiment.objects.all().values('receptor__family__parent__parent__parent__name').annotate(c=Count('receptor__family',distinct=True)))
+        assays_target = list(AnalyzedExperiment.objects.all().values(
+            'receptor__family__parent__parent__parent__name').annotate(c=Count('receptor__family', distinct=True)))
         for a in assays_target:
             target_count_dict[a['receptor__family__parent__parent__parent__name']] = a['c']
 
         prot_count_dict = {}
-        proteins_count = list(Protein.objects.all().values('family__parent__parent__parent__name').annotate(c=Count('family',distinct=True)))
+        proteins_count = list(Protein.objects.all().values(
+            'family__parent__parent__parent__name').annotate(c=Count('family', distinct=True)))
         for pf in proteins_count:
             prot_count_dict[pf['family__parent__parent__parent__name']] = pf['c']
 
-        classes = ProteinFamily.objects.filter(slug__in=['001', '002', '003', '004', '005', '006', '007']) #ugly but fast
+        classes = ProteinFamily.objects.filter(
+            slug__in=['001', '002', '003', '004', '005', '006', '007'])  # ugly but fast
         ligands = []
 
         for fam in classes:
@@ -516,22 +523,23 @@ class LigandBiasStatistics(TemplateView):
                 target_count = 0
             prot_count = prot_count_dict[fam.name]
             ligands.append({
-                'name': fam.name.replace('Class',''),
+                'name': fam.name.replace('Class', ''),
                 'num_ligands': lig_count,
-                'avg_num_ligands': lig_count/prot_count,
-                'target_percentage': target_count/prot_count*100,
+                'avg_num_ligands': lig_count / prot_count,
+                'target_percentage': target_count / prot_count * 100,
                 'target_count': target_count
-                })
+            })
         lig_count_total = sum([x['num_ligands'] for x in ligands])
-        prot_count_total = Protein.objects.filter(family__slug__startswith='00').all().distinct('family').count()
+        prot_count_total = Protein.objects.filter(
+            family__slug__startswith='00').all().distinct('family').count()
         target_count_total = sum([x['target_count'] for x in ligands])
         lig_total = {
             'num_ligands': lig_count_total,
-            'avg_num_ligands': lig_count_total/prot_count_total,
-            'target_percentage': target_count_total/prot_count_total*100,
+            'avg_num_ligands': lig_count_total / prot_count_total,
+            'target_percentage': target_count_total / prot_count_total * 100,
             'target_count': target_count_total
-            }
-        #Elegant solution but kinda slow (6s querries):
+        }
+        # Elegant solution but kinda slow (6s querries):
         """
         ligands = AnalyzedExperiment.objects.values(
             'receptor__family__parent__parent__parent__name',
@@ -554,7 +562,8 @@ class LigandBiasStatistics(TemplateView):
         context['release_notes'] = ReleaseNotes.objects.all()[0]
 
         tree = PhylogeneticTreeGenerator()
-        class_a_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
+        class_a_data = tree.get_tree_data(
+            ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
         context['class_a_options'] = deepcopy(tree.d3_options)
         context['class_a_options']['anchor'] = 'class_a'
         context['class_a_options']['leaf_offset'] = 50
@@ -563,52 +572,66 @@ class LigandBiasStatistics(TemplateView):
         whole_class_a = class_a_data.get_nodes_dict('ligand_bias')
         for item in whole_class_a['children']:
             if item['name'] == 'Orphan':
-                orphan_data = OrderedDict([('name', ''), ('value', 3000), ('color', ''), ('children',[item])])
+                orphan_data = OrderedDict(
+                    [('name', ''), ('value', 3000), ('color', ''), ('children', [item])])
                 whole_class_a['children'].remove(item)
                 break
         context['class_a'] = json.dumps(whole_class_a)
-        class_b1_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B1 (Secretin)'))
+        class_b1_data = tree.get_tree_data(
+            ProteinFamily.objects.get(name__startswith='Class B1 (Secretin)'))
         context['class_b1_options'] = deepcopy(tree.d3_options)
         context['class_b1_options']['anchor'] = 'class_b1'
         context['class_b1_options']['branch_trunc'] = 60
-        context['class_b1_options']['label_free'] = [1,]
-        context['class_b1'] = json.dumps(class_b1_data.get_nodes_dict('ligand_bias'))
-        class_b2_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B2 (Adhesion)'))
+        context['class_b1_options']['label_free'] = [1, ]
+        context['class_b1'] = json.dumps(
+            class_b1_data.get_nodes_dict('ligand_bias'))
+        class_b2_data = tree.get_tree_data(
+            ProteinFamily.objects.get(name__startswith='Class B2 (Adhesion)'))
         context['class_b2_options'] = deepcopy(tree.d3_options)
         context['class_b2_options']['anchor'] = 'class_b2'
-        context['class_b2_options']['label_free'] = [1,]
-        context['class_b2'] = json.dumps(class_b2_data.get_nodes_dict('ligand_bias'))
-        class_c_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class C (Glutamate)'))
+        context['class_b2_options']['label_free'] = [1, ]
+        context['class_b2'] = json.dumps(
+            class_b2_data.get_nodes_dict('ligand_bias'))
+        class_c_data = tree.get_tree_data(
+            ProteinFamily.objects.get(name__startswith='Class C (Glutamate)'))
         context['class_c_options'] = deepcopy(tree.d3_options)
         context['class_c_options']['anchor'] = 'class_c'
         context['class_c_options']['branch_trunc'] = 50
-        context['class_c_options']['label_free'] = [1,]
-        context['class_c'] = json.dumps(class_c_data.get_nodes_dict('ligand_bias'))
-        class_f_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class F (Frizzled)'))
+        context['class_c_options']['label_free'] = [1, ]
+        context['class_c'] = json.dumps(
+            class_c_data.get_nodes_dict('ligand_bias'))
+        class_f_data = tree.get_tree_data(
+            ProteinFamily.objects.get(name__startswith='Class F (Frizzled)'))
         context['class_f_options'] = deepcopy(tree.d3_options)
         context['class_f_options']['anchor'] = 'class_f'
-        context['class_f_options']['label_free'] = [1,]
-        context['class_f'] = json.dumps(class_f_data.get_nodes_dict('ligand_bias'))
-        class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class T (Taste 2)'))
+        context['class_f_options']['label_free'] = [1, ]
+        context['class_f'] = json.dumps(
+            class_f_data.get_nodes_dict('ligand_bias'))
+        class_t2_data = tree.get_tree_data(
+            ProteinFamily.objects.get(name__startswith='Class T (Taste 2)'))
         context['class_t2_options'] = deepcopy(tree.d3_options)
         context['class_t2_options']['anchor'] = 'class_t2'
-        context['class_t2_options']['label_free'] = [1,]
-        context['class_t2'] = json.dumps(class_t2_data.get_nodes_dict('ligand_bias'))
+        context['class_t2_options']['label_free'] = [1, ]
+        context['class_t2'] = json.dumps(
+            class_t2_data.get_nodes_dict('ligand_bias'))
         # definition of the class a orphan tree
         context['orphan_options'] = deepcopy(tree.d3_options)
         context['orphan_options']['anchor'] = 'orphan'
-        context['orphan_options']['label_free'] = [1,]
+        context['orphan_options']['label_free'] = [1, ]
         context['orphan'] = json.dumps(orphan_data)
 
-        whole_receptors = Protein.objects.prefetch_related("family", "family__parent__parent__parent").filter(sequence_type__slug="wt", family__slug__startswith="00")
+        whole_receptors = Protein.objects.prefetch_related("family", "family__parent__parent__parent").filter(
+            sequence_type__slug="wt", family__slug__startswith="00")
         whole_rec_dict = {}
         for rec in whole_receptors:
             rec_uniprot = rec.entry_short()
-            rec_iuphar = rec.family.name.replace("receptor", '').replace("<i>","").replace("</i>","").strip()
+            rec_iuphar = rec.family.name.replace("receptor", '').replace(
+                "<i>", "").replace("</i>", "").strip()
             whole_rec_dict[rec_uniprot] = [rec_iuphar]
         context["whole_receptors"] = json.dumps(whole_rec_dict)
         context["render"] = "bias"
         return context
+
 
 class ExperimentEntryView(DetailView):
     context_object_name = 'experiment'
@@ -674,6 +697,8 @@ class BiasVendorBrowser(TemplateView):
         #     raise
 
 # pylint: disable=F405
+
+
 class BiasAPI(generics.ListAPIView):
     serializer_class = AnalyzedExperimentSerializer
     filter_backends = (DatatablesFilterBackend,)
@@ -736,17 +761,27 @@ class BiasAPI(generics.ListAPIView):
                 'quantitive_activity_initial')[4:5]),
 
             # quality_activity
-            quality_activity_p1=Subquery(assay_qs.values('qualitative_activity')[:1]),
-            quality_activity_p2=Subquery(assay_qs.values('qualitative_activity')[1:2]),
-            quality_activity_p3=Subquery(assay_qs.values('qualitative_activity')[2:3]),
-            quality_activity_p4=Subquery(assay_qs.values('qualitative_activity')[3:4]),
-            quality_activity_p5=Subquery(assay_qs.values('qualitative_activity')[4:5]),
+            quality_activity_p1=Subquery(
+                assay_qs.values('qualitative_activity')[:1]),
+            quality_activity_p2=Subquery(
+                assay_qs.values('qualitative_activity')[1:2]),
+            quality_activity_p3=Subquery(
+                assay_qs.values('qualitative_activity')[2:3]),
+            quality_activity_p4=Subquery(
+                assay_qs.values('qualitative_activity')[3:4]),
+            quality_activity_p5=Subquery(
+                assay_qs.values('qualitative_activity')[4:5]),
             # quality_activity
-            standard_type_p1=Subquery(assay_qs.values('quantitive_measure_type')[:1]),
-            standard_type_p2=Subquery(assay_qs.values('quantitive_measure_type')[1:2]),
-            standard_type_p3=Subquery(assay_qs.values('quantitive_measure_type')[2:3]),
-            standard_type_p4=Subquery(assay_qs.values('quantitive_measure_type')[3:4]),
-            standard_type_p5=Subquery(assay_qs.values('quantitive_measure_type')[4:5]),
+            standard_type_p1=Subquery(
+                assay_qs.values('quantitive_measure_type')[:1]),
+            standard_type_p2=Subquery(assay_qs.values(
+                'quantitive_measure_type')[1:2]),
+            standard_type_p3=Subquery(assay_qs.values(
+                'quantitive_measure_type')[2:3]),
+            standard_type_p4=Subquery(assay_qs.values(
+                'quantitive_measure_type')[3:4]),
+            standard_type_p5=Subquery(assay_qs.values(
+                'quantitive_measure_type')[4:5]),
 
             # E Max
             emax_p1=Subquery(assay_qs.values('quantitive_efficacy')[:1]),
@@ -794,7 +829,8 @@ class BiasAPI(generics.ListAPIView):
 
         response.data['filterOptions'] = {
             'class': [
-                {'value': receptor_id, 'label': receptor_name.replace('Class', '').strip()}
+                {'value': receptor_id, 'label': receptor_name.replace(
+                    'Class', '').strip()}
                 for receptor_id, receptor_name in queryset.exclude(
                     receptor__isnull=True
                 ).values_list(
@@ -803,7 +839,8 @@ class BiasAPI(generics.ListAPIView):
                 ).order_by('receptor__family__parent__parent__parent_id').distinct()
             ],
             'receptor': [
-                {'value': receptor_id, 'label': receptor_name.replace('Class', '').strip()}
+                {'value': receptor_id, 'label': receptor_name.replace(
+                    'Class', '').strip()}
                 for receptor_id, receptor_name in queryset.exclude(
                     receptor__isnull=True
                 ).values_list(
@@ -811,7 +848,8 @@ class BiasAPI(generics.ListAPIView):
                 ).order_by('receptor__family__parent_id').distinct()
             ],
             'uniprot': [
-                {'value': receptor_id, 'label': receptor_name.split('_')[0].upper()}
+                {'value': receptor_id, 'label': receptor_name.split('_')[
+                    0].upper()}
                 for receptor_id, receptor_name in queryset.exclude(
                     receptor__isnull=True
                 ).values_list(
@@ -862,7 +900,8 @@ class BiasAPI(generics.ListAPIView):
                 ).order_by('ligand_id').distinct()
             ],
             'primary': [
-                {'value': primary.replace(' ', '_'), 'label': primary.replace(' family,', '')}
+                {'value': primary.replace(
+                    ' ', '_'), 'label': primary.replace(' family,', '')}
                 for primary in queryset.exclude(
                     models.Q(primary__isnull=True) | models.Q(primary='')
                 ).values_list(
@@ -870,7 +909,8 @@ class BiasAPI(generics.ListAPIView):
                 ).order_by('primary').distinct()
             ],
             'secondary': [
-                {'value': secondary.replace(' ', '_'), 'label': secondary.replace(' family,', '')}
+                {'value': secondary.replace(
+                    ' ', '_'), 'label': secondary.replace(' family,', '')}
                 for secondary in queryset.exclude(
                     models.Q(secondary__isnull=True) | models.Q(secondary='')
                 ).values_list(
@@ -880,7 +920,8 @@ class BiasAPI(generics.ListAPIView):
             'pathways_p1': [
                 {'value': pathways, 'label': pathways}
                 for pathways in queryset.exclude(
-                    models.Q(pathways_p1__isnull=True) | models.Q(pathways_p1="")
+                    models.Q(pathways_p1__isnull=True) | models.Q(
+                        pathways_p1="")
                 ).values_list(
                     'pathways_p1', flat=True
                 ).order_by('pathways_p1').distinct()
@@ -888,7 +929,8 @@ class BiasAPI(generics.ListAPIView):
             'pathways_p2': [
                 {'value': pathways, 'label': pathways}
                 for pathways in queryset.exclude(
-                    models.Q(pathways_p2__isnull=True) | models.Q(pathways_p2="")
+                    models.Q(pathways_p2__isnull=True) | models.Q(
+                        pathways_p2="")
                 ).values_list(
                     'pathways_p2', flat=True
                 ).order_by('pathways_p2').distinct()
@@ -896,7 +938,8 @@ class BiasAPI(generics.ListAPIView):
             'pathways_p3': [
                 {'value': pathways, 'label': pathways}
                 for pathways in queryset.exclude(
-                    models.Q(pathways_p3__isnull=True) | models.Q(pathways_p3="")
+                    models.Q(pathways_p3__isnull=True) | models.Q(
+                        pathways_p3="")
                 ).values_list(
                     'pathways_p3', flat=True
                 ).order_by('pathways_p3').distinct()
@@ -904,7 +947,8 @@ class BiasAPI(generics.ListAPIView):
             'pathways_p4': [
                 {'value': pathways, 'label': pathways}
                 for pathways in queryset.exclude(
-                    models.Q(pathways_p4__isnull=True) | models.Q(pathways_p4="")
+                    models.Q(pathways_p4__isnull=True) | models.Q(
+                        pathways_p4="")
                 ).values_list(
                     'pathways_p4', flat=True
                 ).order_by('pathways_p4').distinct()
@@ -1056,6 +1100,7 @@ class BiasAPI(generics.ListAPIView):
             ],
         }
         return response
+
 
 class GBiasAPI(generics.ListAPIView):
     serializer_class = AnalyzedExperimentSerializer
@@ -1079,92 +1124,107 @@ class GBiasAPI(generics.ListAPIView):
             'publication', 'publication__web_link', 'publication__web_link__web_resource',
             'publication__journal', 'ligand__ref_ligand_bias_analyzed',
             'analyzed_data__emax_ligand_reference'
-            ).annotate(
-                # pathways
-                pathways_p1=Subquery(assay_qs.values('signalling_protein')[:1]),
-                pathways_p2=Subquery(assay_qs.values('signalling_protein')[1:2]),
-                pathways_p3=Subquery(assay_qs.values('signalling_protein')[2:3]),
-                pathways_p4=Subquery(assay_qs.values('signalling_protein')[3:4]),
-                pathways_p5=Subquery(assay_qs.values('signalling_protein')[4:5]),
+        ).annotate(
+            # pathways
+            pathways_p1=Subquery(
+                assay_qs.values('signalling_protein')[:1]),
+            pathways_p2=Subquery(assay_qs.values(
+                'signalling_protein')[1:2]),
+            pathways_p3=Subquery(assay_qs.values(
+                'signalling_protein')[2:3]),
+            pathways_p4=Subquery(assay_qs.values(
+                'signalling_protein')[3:4]),
+            pathways_p5=Subquery(assay_qs.values(
+                'signalling_protein')[4:5]),
 
-                # t_factor
-                opmodel_p2_p1=Subquery(assay_qs.values('t_factor')[1:2]),
-                opmodel_p3_p1=Subquery(assay_qs.values('t_factor')[2:3]),
-                opmodel_p4_p1=Subquery(assay_qs.values('t_factor')[3:4]),
-                opmodel_p5_p1=Subquery(assay_qs.values('t_factor')[4:5]),
+            # t_factor
+            opmodel_p2_p1=Subquery(assay_qs.values('t_factor')[1:2]),
+            opmodel_p3_p1=Subquery(assay_qs.values('t_factor')[2:3]),
+            opmodel_p4_p1=Subquery(assay_qs.values('t_factor')[3:4]),
+            opmodel_p5_p1=Subquery(assay_qs.values('t_factor')[4:5]),
 
-                # log bias factor
-                lbf_p2_p1=Subquery(assay_qs.values('log_bias_factor')[1:2]),
-                lbf_p3_p1=Subquery(assay_qs.values('log_bias_factor')[2:3]),
-                lbf_p4_p1=Subquery(assay_qs.values('log_bias_factor')[3:4]),
-                lbf_p5_p1=Subquery(assay_qs.values('log_bias_factor')[4:5]),
+            # log bias factor
+            lbf_p2_p1=Subquery(assay_qs.values('log_bias_factor')[1:2]),
+            lbf_p3_p1=Subquery(assay_qs.values('log_bias_factor')[2:3]),
+            lbf_p4_p1=Subquery(assay_qs.values('log_bias_factor')[3:4]),
+            lbf_p5_p1=Subquery(assay_qs.values('log_bias_factor')[4:5]),
 
-                # Potency ratio
-                potency_p2_p1=Subquery(assay_qs.values('potency')[1:2]),
-                potency_p3_p1=Subquery(assay_qs.values('potency')[2:3]),
-                potency_p4_p1=Subquery(assay_qs.values('potency')[3:4]),
-                potency_p5_p1=Subquery(assay_qs.values('potency')[4:5]),
+            # Potency ratio
+            potency_p2_p1=Subquery(assay_qs.values('potency')[1:2]),
+            potency_p3_p1=Subquery(assay_qs.values('potency')[2:3]),
+            potency_p4_p1=Subquery(assay_qs.values('potency')[3:4]),
+            potency_p5_p1=Subquery(assay_qs.values('potency')[4:5]),
 
-                # Potency
-                activity_p1=Subquery(assay_qs.values(
-                    'quantitive_activity_initial')[:1]),
-                activity_p2=Subquery(assay_qs.values(
-                    'quantitive_activity_initial')[1:2]),
-                activity_p3=Subquery(assay_qs.values(
-                    'quantitive_activity_initial')[2:3]),
-                activity_p4=Subquery(assay_qs.values(
-                    'quantitive_activity_initial')[3:4]),
-                activity_p5=Subquery(assay_qs.values(
-                    'quantitive_activity_initial')[4:5]),
+            # Potency
+            activity_p1=Subquery(assay_qs.values(
+                'quantitive_activity_initial')[:1]),
+            activity_p2=Subquery(assay_qs.values(
+                'quantitive_activity_initial')[1:2]),
+            activity_p3=Subquery(assay_qs.values(
+                'quantitive_activity_initial')[2:3]),
+            activity_p4=Subquery(assay_qs.values(
+                'quantitive_activity_initial')[3:4]),
+            activity_p5=Subquery(assay_qs.values(
+                'quantitive_activity_initial')[4:5]),
 
-                # quality_activity
-                quality_activity_p1=Subquery(assay_qs.values('qualitative_activity')[:1]),
-                quality_activity_p2=Subquery(assay_qs.values('qualitative_activity')[1:2]),
-                quality_activity_p3=Subquery(assay_qs.values('qualitative_activity')[2:3]),
-                quality_activity_p4=Subquery(assay_qs.values('qualitative_activity')[3:4]),
-                quality_activity_p5=Subquery(assay_qs.values('qualitative_activity')[4:5]),
-                # quality_activity
-                standard_type_p1=Subquery(assay_qs.values('quantitive_measure_type')[:1]),
-                standard_type_p2=Subquery(assay_qs.values('quantitive_measure_type')[1:2]),
-                standard_type_p3=Subquery(assay_qs.values('quantitive_measure_type')[2:3]),
-                standard_type_p4=Subquery(assay_qs.values('quantitive_measure_type')[3:4]),
-                standard_type_p5=Subquery(assay_qs.values('quantitive_measure_type')[4:5]),
+            # quality_activity
+            quality_activity_p1=Subquery(
+                assay_qs.values('qualitative_activity')[:1]),
+            quality_activity_p2=Subquery(
+                assay_qs.values('qualitative_activity')[1:2]),
+            quality_activity_p3=Subquery(
+                assay_qs.values('qualitative_activity')[2:3]),
+            quality_activity_p4=Subquery(
+                assay_qs.values('qualitative_activity')[3:4]),
+            quality_activity_p5=Subquery(
+                assay_qs.values('qualitative_activity')[4:5]),
+            # quality_activity
+            standard_type_p1=Subquery(
+                assay_qs.values('quantitive_measure_type')[:1]),
+            standard_type_p2=Subquery(assay_qs.values(
+                'quantitive_measure_type')[1:2]),
+            standard_type_p3=Subquery(assay_qs.values(
+                'quantitive_measure_type')[2:3]),
+            standard_type_p4=Subquery(assay_qs.values(
+                'quantitive_measure_type')[3:4]),
+            standard_type_p5=Subquery(assay_qs.values(
+                'quantitive_measure_type')[4:5]),
 
-                # E Max
-                emax_p1=Subquery(assay_qs.values('quantitive_efficacy')[:1]),
-                emax_p2=Subquery(assay_qs.values('quantitive_efficacy')[1:2]),
-                emax_p3=Subquery(assay_qs.values('quantitive_efficacy')[2:3]),
-                emax_p4=Subquery(assay_qs.values('quantitive_efficacy')[3:4]),
-                emax_p5=Subquery(assay_qs.values('quantitive_efficacy')[4:5]),
+            # E Max
+            emax_p1=Subquery(assay_qs.values('quantitive_efficacy')[:1]),
+            emax_p2=Subquery(assay_qs.values('quantitive_efficacy')[1:2]),
+            emax_p3=Subquery(assay_qs.values('quantitive_efficacy')[2:3]),
+            emax_p4=Subquery(assay_qs.values('quantitive_efficacy')[3:4]),
+            emax_p5=Subquery(assay_qs.values('quantitive_efficacy')[4:5]),
 
-                # T factor
-                tfactor_p1=Subquery(assay_qs.values('t_value')[:1]),
-                tfactor_p2=Subquery(assay_qs.values('t_value')[1:2]),
-                tfactor_p3=Subquery(assay_qs.values('t_value')[2:3]),
-                tfactor_p4=Subquery(assay_qs.values('t_value')[3:4]),
-                tfactor_p5=Subquery(assay_qs.values('t_value')[4:5]),
+            # T factor
+            tfactor_p1=Subquery(assay_qs.values('t_value')[:1]),
+            tfactor_p2=Subquery(assay_qs.values('t_value')[1:2]),
+            tfactor_p3=Subquery(assay_qs.values('t_value')[2:3]),
+            tfactor_p4=Subquery(assay_qs.values('t_value')[3:4]),
+            tfactor_p5=Subquery(assay_qs.values('t_value')[4:5]),
 
-                # Assay
-                assay_p1=Subquery(assay_qs.values('assay_type')[:1]),
-                assay_p2=Subquery(assay_qs.values('assay_type')[1:2]),
-                assay_p3=Subquery(assay_qs.values('assay_type')[2:3]),
-                assay_p4=Subquery(assay_qs.values('assay_type')[3:4]),
-                assay_p5=Subquery(assay_qs.values('assay_type')[4:5]),
+            # Assay
+            assay_p1=Subquery(assay_qs.values('assay_type')[:1]),
+            assay_p2=Subquery(assay_qs.values('assay_type')[1:2]),
+            assay_p3=Subquery(assay_qs.values('assay_type')[2:3]),
+            assay_p4=Subquery(assay_qs.values('assay_type')[3:4]),
+            assay_p5=Subquery(assay_qs.values('assay_type')[4:5]),
 
-                # Cell Line
-                cell_p1=Subquery(assay_qs.values('cell_line')[:1]),
-                cell_p2=Subquery(assay_qs.values('cell_line')[1:2]),
-                cell_p3=Subquery(assay_qs.values('cell_line')[2:3]),
-                cell_p4=Subquery(assay_qs.values('cell_line')[3:4]),
-                cell_p5=Subquery(assay_qs.values('cell_line')[4:5]),
+            # Cell Line
+            cell_p1=Subquery(assay_qs.values('cell_line')[:1]),
+            cell_p2=Subquery(assay_qs.values('cell_line')[1:2]),
+            cell_p3=Subquery(assay_qs.values('cell_line')[2:3]),
+            cell_p4=Subquery(assay_qs.values('cell_line')[3:4]),
+            cell_p5=Subquery(assay_qs.values('cell_line')[4:5]),
 
-                # Time
-                time_p1=Subquery(assay_qs.values('assay_time_resolved')[:1]),
-                time_p2=Subquery(assay_qs.values('assay_time_resolved')[1:2]),
-                time_p3=Subquery(assay_qs.values('assay_time_resolved')[2:3]),
-                time_p4=Subquery(assay_qs.values('assay_time_resolved')[3:4]),
-                time_p5=Subquery(assay_qs.values('assay_time_resolved')[4:5]),
-            )
+            # Time
+            time_p1=Subquery(assay_qs.values('assay_time_resolved')[:1]),
+            time_p2=Subquery(assay_qs.values('assay_time_resolved')[1:2]),
+            time_p3=Subquery(assay_qs.values('assay_time_resolved')[2:3]),
+            time_p4=Subquery(assay_qs.values('assay_time_resolved')[3:4]),
+            time_p5=Subquery(assay_qs.values('assay_time_resolved')[4:5]),
+        )
 
         return queryset
 
@@ -1176,7 +1236,8 @@ class GBiasAPI(generics.ListAPIView):
 
         response.data['filterOptions'] = {
             'class': [
-                {'value': receptor_id, 'label': receptor_name.replace('Class', '').strip()}
+                {'value': receptor_id, 'label': receptor_name.replace(
+                    'Class', '').strip()}
                 for receptor_id, receptor_name in queryset.exclude(
                     receptor__isnull=True
                 ).values_list(
@@ -1185,7 +1246,8 @@ class GBiasAPI(generics.ListAPIView):
                 ).order_by('receptor__family__parent__parent__parent_id').distinct()
             ],
             'receptor': [
-                {'value': receptor_id, 'label': receptor_name.replace('Class', '').strip()}
+                {'value': receptor_id, 'label': receptor_name.replace(
+                    'Class', '').strip()}
                 for receptor_id, receptor_name in queryset.exclude(
                     receptor__isnull=True
                 ).values_list(
@@ -1193,7 +1255,8 @@ class GBiasAPI(generics.ListAPIView):
                 ).order_by('receptor__family__parent_id').distinct()
             ],
             'uniprot': [
-                {'value': receptor_id, 'label': receptor_name.split('_')[0].upper()}
+                {'value': receptor_id, 'label': receptor_name.split('_')[
+                    0].upper()}
                 for receptor_id, receptor_name in queryset.exclude(
                     receptor__isnull=True
                 ).values_list(
@@ -1244,7 +1307,8 @@ class GBiasAPI(generics.ListAPIView):
                 ).order_by('ligand_id').distinct()
             ],
             'primary': [
-                {'value': primary.replace(' ', '_'), 'label': primary.replace(' family,', '')}
+                {'value': primary.replace(
+                    ' ', '_'), 'label': primary.replace(' family,', '')}
                 for primary in queryset.exclude(
                     models.Q(primary__isnull=True) | models.Q(primary='')
                 ).values_list(
@@ -1252,7 +1316,8 @@ class GBiasAPI(generics.ListAPIView):
                 ).order_by('primary').distinct()
             ],
             'secondary': [
-                {'value': secondary.replace(' ', '_'), 'label': secondary.replace(' family,', '')}
+                {'value': secondary.replace(
+                    ' ', '_'), 'label': secondary.replace(' family,', '')}
                 for secondary in queryset.exclude(
                     models.Q(secondary__isnull=True) | models.Q(secondary='')
                 ).values_list(
@@ -1262,7 +1327,8 @@ class GBiasAPI(generics.ListAPIView):
             'pathways_p1': [
                 {'value': pathways, 'label': pathways}
                 for pathways in queryset.exclude(
-                    models.Q(pathways_p1__isnull=True) | models.Q(pathways_p1="")
+                    models.Q(pathways_p1__isnull=True) | models.Q(
+                        pathways_p1="")
                 ).values_list(
                     'pathways_p1', flat=True
                 ).order_by('pathways_p1').distinct()
@@ -1270,7 +1336,8 @@ class GBiasAPI(generics.ListAPIView):
             'pathways_p2': [
                 {'value': pathways, 'label': pathways}
                 for pathways in queryset.exclude(
-                    models.Q(pathways_p2__isnull=True) | models.Q(pathways_p2="")
+                    models.Q(pathways_p2__isnull=True) | models.Q(
+                        pathways_p2="")
                 ).values_list(
                     'pathways_p2', flat=True
                 ).order_by('pathways_p2').distinct()
@@ -1278,7 +1345,8 @@ class GBiasAPI(generics.ListAPIView):
             'pathways_p3': [
                 {'value': pathways, 'label': pathways}
                 for pathways in queryset.exclude(
-                    models.Q(pathways_p3__isnull=True) | models.Q(pathways_p3="")
+                    models.Q(pathways_p3__isnull=True) | models.Q(
+                        pathways_p3="")
                 ).values_list(
                     'pathways_p3', flat=True
                 ).order_by('pathways_p3').distinct()
@@ -1286,7 +1354,8 @@ class GBiasAPI(generics.ListAPIView):
             'pathways_p4': [
                 {'value': pathways, 'label': pathways}
                 for pathways in queryset.exclude(
-                    models.Q(pathways_p4__isnull=True) | models.Q(pathways_p4="")
+                    models.Q(pathways_p4__isnull=True) | models.Q(
+                        pathways_p4="")
                 ).values_list(
                     'pathways_p4', flat=True
                 ).order_by('pathways_p4').distinct()
@@ -1438,6 +1507,7 @@ class GBiasAPI(generics.ListAPIView):
             ],
         }
         return response
+
 
 class BiasBrowserChembl(TemplateView):
     template_name = 'bias_browser_chembl.html'

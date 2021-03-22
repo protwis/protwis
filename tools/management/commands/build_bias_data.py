@@ -4,7 +4,7 @@ import math
 
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import ProteinGProteinPair
-from ligand.models import *
+from ligand.models import Ligand, BiasedExperiment, AnalyzedExperiment,AnalyzedAssay
 
 MISSING_PROTEINS = {}
 SKIPPED = 0
