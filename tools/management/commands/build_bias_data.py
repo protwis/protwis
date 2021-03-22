@@ -5,7 +5,7 @@ import math
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import ProteinGProteinPair
 from ligand.models import Ligand, BiasedExperiment, AnalyzedExperiment,AnalyzedAssay
-
+from django.core.exceptions import ObjectDoesNotExis
 MISSING_PROTEINS = {}
 SKIPPED = 0
 
@@ -77,7 +77,7 @@ class Command(BaseBuild):
                 , 'publication__web_link'
                 , 'experiment_data__emax_ligand_reference',
             ).order_by('publication', 'receptor', 'ligand')
-        except:
+        except ObjectDoesNotExist:
             self.logger.info('Data is not returned')
             content = None
         return content
@@ -434,7 +434,7 @@ class Command(BaseBuild):
                     temp_ref.append(i)
             if len(temp_ref)>1:
                 for temp_assay in temp_ref:
-                    if temp_assay['quantitive_efficacy'] is not None and temp['quantitive_activity'] is not None:
+                    if temp_assay['quantitive_efficacy'] is not None and temp_assay['quantitive_activity'] is not None:
                         return_assay = temp_assay
             else:
                 return_assay = temp_ref[0]

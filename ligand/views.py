@@ -7,8 +7,7 @@ from collections import defaultdict
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.views.generic import TemplateView, DetailView
-from django.db.models import *
-from django.db.models import Count, Max, Subquery, Q
+from django.db.models import Count, Subquery, Q, OrderedDict, models, OuterRef
 from django.views.decorators.csrf import csrf_exempt
 
 from rest_framework_datatables.django_filters.backends import DatatablesFilterBackend
@@ -17,7 +16,7 @@ from rest_framework import generics
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
-from ligand.models import Ligand, LigandProperities, AnalyzedExperiment, BiasedPathways, AssayExperiment
+from ligand.models import Ligand, LigandVendorLink, AnalyzedExperiment, AnalyzedAssay, BiasedPathways, AssayExperiment
 from protein.models import Protein, ProteinFamily
 
 
@@ -1107,7 +1106,8 @@ class GBiasAPI(generics.ListAPIView):
     filter_backends = (DatatablesFilterBackend,)
     filterset_class = AnalyzedExperimentFilter
 
-    def get_queryset(self):
+    @staticmethod
+    def get_queryset():
         assay_qs = AnalyzedAssay.objects.filter(
             order_no__lte=5,
             assay_description__isnull=True,

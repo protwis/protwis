@@ -23,7 +23,6 @@ import operator
 import traceback
 import time
 import math
-import json
 import threading
 
 import pytz
