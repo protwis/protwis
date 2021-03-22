@@ -6,9 +6,9 @@ from collections import defaultdict
 
 from django.shortcuts import render
 from django.http import HttpResponse
-from django.views.generic import TemplateView, DetailView, ListView
+from django.views.generic import TemplateView, DetailView
 from django.db.models import *
-from django.db.models import Count, Min, Max, Subquery
+from django.db.models import Count, Max, Subquery, Q
 from django.views.decorators.csrf import csrf_exempt
 
 from rest_framework_datatables.django_filters.backends import DatatablesFilterBackend
@@ -17,7 +17,8 @@ from rest_framework import generics
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
-from ligand.models import *
+from ligand.models import Ligand, LigandProperities, AnalyzedExperiment, BiasedPathways,
+                            AssayExperiment,
 from protein.models import Protein, ProteinFamily
 
 
@@ -65,12 +66,9 @@ def LigandDetails(request, ligand_id):
     for record in record_count:
         per_target_data = ligand_records.filter(protein=record['protein'])
         protein_details = Protein.objects.get(pk=record['protein'])
-
         """
         A dictionary of dictionaries with a list of values.
-        Assay_type
-        |
-        ->  Standard_type [list of values]
+        Assay_type|->  Standard_type [list of values]
         """
         tmp = defaultdict(lambda: defaultdict(list))
         tmp_count = 0
@@ -170,7 +168,6 @@ def TargetDetailsCompact(request, **kwargs):
         for record, vals in records.items():
             per_target_data = vals
             protein_details = record
-
             """
             A dictionary of dictionaries with a list of values.
             Assay_type
@@ -508,7 +505,6 @@ class LigandBiasStatistics(TemplateView):
             prot_count_dict[pf['family__parent__parent__parent__name']] = pf['c']
 
         classes = ProteinFamily.objects.filter(slug__in=['001', '002', '003', '004', '005', '006', '007']) #ugly but fast
-        proteins = Protein.objects.all().prefetch_related('family__parent__parent__parent')
         ligands = []
 
         for fam in classes:
@@ -1519,6 +1515,7 @@ class BiasBrowserChembl(TemplateView):
                     doubles.append(temp_dict)
                     increment_assay += 1
                 else:
+                    self.logger.info('Data is not returned')
                     continue
             rd[increment] = temp
             increment += 1
@@ -1572,8 +1569,7 @@ class BiasPathways(TemplateView):
             fin_obj = {}
             fin_obj['main'] = instance
             temp = dict()
-            doubles = []
-            # TODO: mutation residue
+
             temp['experiment_id'] = instance.id
             temp['publication'] = instance.publication
             temp['ligand'] = instance.ligand
@@ -1601,7 +1597,7 @@ class BiasPathways(TemplateView):
 
             rd[increment] = temp
             increment += 1
-
+        self.logger.info('Data is returned')
         return rd
 
     '''
