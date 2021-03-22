@@ -341,7 +341,7 @@ class Command(BaseBuild):
                         families[:] = [d for d in families if d.get('signalling_protein') != compare_val['signalling_protein']]
                         families.append(assay)
 
-                except:
+                except TypeError:
                     families.append(assay)
                     self.logger.info('limit_family_set_subs error')
         return families
