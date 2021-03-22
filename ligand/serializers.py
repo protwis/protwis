@@ -1,3 +1,4 @@
+# flake8: noqa
 from django.db.models import IntegerField, FloatField
 from django.db.models.functions import Cast
 from django_filters import filters
@@ -255,11 +256,11 @@ class AnalyzedExperimentFilter(DatatablesFilterSet):
         min_value, max_value = value.split('-yadcf_delim-')
         try:
             min_value = float(min_value)
-        except:# noqa
+        except ValueError:
             min_value = None
         try:
             max_value = float(max_value)
-        except:
+        except ValueError:
             max_value = None
 
         queryset = queryset.annotate(**{f'{field_name}_as_integer': Cast(field_name, IntegerField())})
@@ -275,11 +276,11 @@ class AnalyzedExperimentFilter(DatatablesFilterSet):
 
         try:
             min_value = float(min_value)
-        except:
+        except ValueError:
             min_value = None
         try:
             max_value = float(max_value)
-        except:
+        except ValueError:
             max_value = None
 
         queryset = queryset.annotate(**{f'{field_name}_as_float': Cast(field_name, FloatField())})
@@ -303,12 +304,12 @@ class AnalyzedExperimentFilter(DatatablesFilterSet):
 
         try:
             min_value = float(min_value)
-        except:
+        except ValueError:
             min_value = None
 
         try:
             max_value = float(max_value)
-        except:
+        except ValueError:
             max_value = None
 
         if min_value:

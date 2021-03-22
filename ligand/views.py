@@ -1,15 +1,14 @@
 import json
 import itertools
 from copy import deepcopy
-
 from .serializers import AnalyzedExperimentSerializer, AnalyzedExperimentFilter
-from django.db.models import Count, Avg, Min, Max
 from collections import defaultdict
-from django.shortcuts import render
 
+from django.shortcuts import render
 from django.http import HttpResponse
-from django.views.generic import TemplateView, View, DetailView, ListView
+from django.views.generic import TemplateView, DetailView, ListView
 from django.db.models import *
+from django.db.models import Count, Min, Max, Subquery
 from django.views.decorators.csrf import csrf_exempt
 
 from rest_framework_datatables.django_filters.backends import DatatablesFilterBackend
@@ -17,7 +16,7 @@ from rest_framework import generics
 
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
-from common.selection import Selection, SelectionItem
+from common.selection import Selection
 from ligand.models import *
 from protein.models import Protein, ProteinFamily
 
