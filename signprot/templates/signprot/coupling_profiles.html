@@ -230,6 +230,8 @@ function copyToClipboard(txt) {
 
         updateJvenn(gprotein_ID)
 
+        var signprot = "{{ signaling_data|safe }}"
+
         $("#ClassA").click(function() {
             datatable.clear().draw();
             $("#input-targets").val('');
@@ -258,27 +260,49 @@ function copyToClipboard(txt) {
           updateJvenn(gprotein_list);
         });
 
-        $("#CrossClass").click(function() {
-            datatable.clear().draw();
-            $("#input-targets").val('');
-            $("#input-targets").trigger('input');
-            gprotein_list = {{ ClassA_gtp_plus_keys|safe }}
-            gdataA = {{ ClassA_gtp_plus|safe }}
-            gdataB1 = {{ ClassB1_gtp_plus|safe }}
-            gdataC = {{ ClassC_gtp_plus|safe }}
-            gdataF = {{ ClassF_gtp_plus|safe }}
+        if(signprot === "gprot"){
+          $("#CrossClass").click(function() {
+              datatable.clear().draw();
+              $("#input-targets").val('');
+              $("#input-targets").trigger('input');
+              gprotein_list = {{ ClassA_gtp_plus_keys|safe }}
+              gdataA = {{ ClassA_gtp_plus|safe }}
+              gdataB1 = {{ ClassB1_gtp_plus|safe }}
+              gdataC = {{ ClassC_gtp_plus|safe }}
+              gdataF = {{ ClassF_gtp_plus|safe }}
 
-            gdata['G<sub>s</sub>'] = gdataA['G<sub>s</sub>']+gdataB1['G<sub>s</sub>']+gdataC['G<sub>s</sub>']+gdataF['G<sub>s</sub>']
-            gdata['G<sub>i/o</sub>'] = gdataA['G<sub>i/o</sub>']+gdataB1['G<sub>i/o</sub>']+gdataC['G<sub>i/o</sub>']+gdataF['G<sub>i/o</sub>']
-            gdata['G<sub>q/11</sub>'] = gdataA['G<sub>q/11</sub>']+gdataB1['G<sub>q/11</sub>']+gdataC['G<sub>q/11</sub>']+gdataF['G<sub>q/11</sub>']
-            gdata['G<sub>12/13</sub>'] = gdataA['G<sub>12/13</sub>']+gdataB1['G<sub>12/13</sub>']+gdataC['G<sub>12/13</sub>']+gdataF['G<sub>12/13</sub>']
-            $("#ClassA").removeClass("active");
-            $("#ClassB1").removeClass("active");
-            $("#ClassC").removeClass("active");
-            $("#ClassF").removeClass("active");
-            $("#CrossClass").addClass("active");
-          updateJvenn(gprotein_list);
-        });
+              gdata['G<sub>s</sub>'] = gdataA['G<sub>s</sub>']+gdataB1['G<sub>s</sub>']+gdataC['G<sub>s</sub>']+gdataF['G<sub>s</sub>']
+              gdata['G<sub>i/o</sub>'] = gdataA['G<sub>i/o</sub>']+gdataB1['G<sub>i/o</sub>']+gdataC['G<sub>i/o</sub>']+gdataF['G<sub>i/o</sub>']
+              gdata['G<sub>q/11</sub>'] = gdataA['G<sub>q/11</sub>']+gdataB1['G<sub>q/11</sub>']+gdataC['G<sub>q/11</sub>']+gdataF['G<sub>q/11</sub>']
+              gdata['G<sub>12/13</sub>'] = gdataA['G<sub>12/13</sub>']+gdataB1['G<sub>12/13</sub>']+gdataC['G<sub>12/13</sub>']+gdataF['G<sub>12/13</sub>']
+              $("#ClassA").removeClass("active");
+              $("#ClassB1").removeClass("active");
+              $("#ClassC").removeClass("active");
+              $("#ClassF").removeClass("active");
+              $("#CrossClass").addClass("active");
+            updateJvenn(gprotein_list);
+          });
+        } else {
+          $("#CrossClass").click(function() {
+              datatable.clear().draw();
+              $("#input-targets").val('');
+              $("#input-targets").trigger('input');
+              gprotein_list = {{ ClassA_gtp_plus_keys|safe }}
+              gdataA = {{ ClassA_gtp_plus|safe }}
+              gdataB1 = {{ ClassB1_gtp_plus|safe }}
+              gdataC = {{ ClassC_gtp_plus|safe }}
+              gdataF = {{ ClassF_gtp_plus|safe }}
+
+              gdata['&beta;-Arrestin<sub>1</sub>'] = gdataA['&beta;-Arrestin<sub>1</sub>']+gdataB1['&beta;-Arrestin<sub>1</sub>']+gdataC['&beta;-Arrestin<sub>1</sub>']+gdataF['&beta;-Arrestin<sub>1</sub>']
+              gdata['&beta;-Arrestin<sub>2</sub>'] = gdataA['&beta;-Arrestin<sub>2</sub>']+gdataB1['&beta;-Arrestin<sub>2</sub>']+gdataC['&beta;-Arrestin<sub>2</sub>']+gdataF['&beta;-Arrestin<sub>2</sub>']
+              $("#ClassA").removeClass("active");
+              $("#ClassB1").removeClass("active");
+              $("#ClassC").removeClass("active");
+              $("#ClassF").removeClass("active");
+              $("#CrossClass").addClass("active");
+            updateJvenn(gprotein_list);
+          });
+        }
 
         $("#ClassC").click(function() {
             datatable.clear().draw();
@@ -412,6 +436,13 @@ function copyToClipboard(txt) {
       width: 1570px;
     }
   } */
+  .gprot_orange {
+    color: orange;
+  }
+
+  .gprot_purple {
+    color: purple;
+  }
 
   .gprot_blue {
     color: blue;
@@ -514,7 +545,11 @@ function linkLikeClick(element, color) {
   <div class="row">
     <div class="col-md-12">
       <div class="text-center">
+        {% if signalling_data == "gprot" %}
         <p>	Click a Venn or table area to retrieve the receptors with the given G protein family profile. </p>
+        {% else %}
+        <p>	Click a Venn or table area to retrieve the receptors with the given Arrestin family profile. </p>
+        {% endif %}
       </div>
     </div>
         <div class="col-md-6">
@@ -538,6 +573,7 @@ function linkLikeClick(element, color) {
                     </tr>
                 </thead>
                 <tbody>
+                  {% if signalling_data == "gprot" %}
                     <tr>
                         <td>G<sub>s</sub></td>
                         {% for text in table.Gs %}
@@ -562,6 +598,20 @@ function linkLikeClick(element, color) {
                         <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='ToTable(" {{ text.1}} "); linkLikeClick(this, "purple")' align="center">{{ text.0 }}</td>
                         {% endfor %}
                     </tr>
+                    {% else %}
+                    <tr>
+                        <td>Beta-Arrestin-1</td>
+                        {% for text in table.Betaarrestin1 %}
+                        <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='ToTable(" {{ text.1}} "); linkLikeClick(this, "purple")' align="center">{{ text.0 }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td nowrap>Beta-Arrestin-2</td>
+                        {% for text in table.Betaarrestin2 %}
+                        <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='ToTable(" {{ text.1}} "); linkLikeClick(this, "purple")' align="center">{{ text.0 }}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endif %}
                     <tr>
                         <td nowrap>Total (unique)</td>
                         {% for text in table.Total %}
@@ -641,7 +691,12 @@ function linkLikeClick(element, color) {
 <script type="text/javascript" charset="utf-8">
 $(window).on("load",function() {
     maxLeafNodeLenght = 46;
-    conversion = {"Gs":"blue", "Gi/Go":"red", "Gq/G11":"black", "G12/G13":"green"};
+    var env = "{{ signalling_data|safe }}";
+    if(env === "gprot"){
+      conversion = {"Gs":"blue", "Gi/Go":"red", "Gq/G11":"black", "G12/G13":"green"};
+    } else {
+      conversion = {"Beta-arrestin-1":"orange", "Beta-arrestin-2":"purple"};
+    };
     $("#UniProtNames").click(function(){
         $("#UniProtNames").addClass("active");
         $("#IUPHARNames").removeClass("active");
@@ -710,7 +765,11 @@ $(window).on("load",function() {
     <div class="col-md-12">
       <div class="panel-body">
         <div>
+          {% if signalling_data == "gprot" %}
           <p><h4><strong>GPCR selectivity tree.</strong> The four dots depict both primary and secondary G protein coupling.</h4></p>
+          {% else %}
+          <p><h4><strong>GPCR selectivity tree.</strong> The four dots depict both primary and secondary Arrestin coupling.</h4></p>
+          {% endif %}
         </div>
         <br />
         <div>
@@ -723,14 +782,19 @@ $(window).on("load",function() {
       </div>
     </div>
   </div>
-
+{% if signalling_data == "gprot" %}
   <div class="row text-center">
       <span class="gprot_blue">&#11044; G&alpha;<sub>s</sub></span>
       <span class="gprot_red">&#11044; G&alpha;<sub>i/o</sub></span>
       <span class="gprot_black">&#11044; G&alpha;<sub>q/11</sub></span>
       <span class="gprot_green">&#11044; G&alpha;<sub>12/13</sub></span>
   </div>
-
+{% else %}
+  <div class="row text-center">
+      <span class="gprot_orange">&#11044; &beta;-Arrestin<sub>1</sub></span>
+      <span class="gprot_purple">&#11044; &beta;-Arrestin<sub>2</sub></span>
+  </div>
+{% endif %}
   <br />
 
 <div id="tree_class_a" class="text-center">
@@ -975,6 +1039,7 @@ $(window).on("load",function() {
 
 <div class='container' style="font-size: 12px;">
   <h4>References</h4>
+{% if signalling_data == "gprot" %}
   <p>
     We used the G protein transducer information from the <a href='http://www.guidetopharmacology.org'>Guide to Pharmacology</a> database (IUPHAR) and the following datasets: </p>
   <p>
@@ -993,7 +1058,11 @@ $(window).on("load",function() {
     Avet, C., Mancini, A., Breton, B., Gouill, C. L., Hauser, A. S., Normand, C., Kobayashi, H., Gross, F., Hogue, M., Lukasheva, V., Morissette, S., Fauman, E., Fortin, J.-P., Schann, S., Leroy, X., Gloriam, D. E. & Bouvier, M.<br>
     <i>bioRxiv</i> 2020.04.20.052027 (2020). <b>doi:</b> <a href=" https://doi.org/10.1101/2020.04.20.052027" target="_blank">10.1101/2020.04.20.052027</a>
   </p>
-
+{% else %}
+<p>
+  Insert references for the Arrestin Coupling page
+<p>
+{% endif %}
 </div>
 
 {% endblock %}
