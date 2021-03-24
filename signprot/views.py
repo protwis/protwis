@@ -140,17 +140,36 @@ class ArrestinCoupling(TemplateView):
                                                        protein__family__slug__startswith='00').prefetch_related(
             "protein__family",  # REMEMBER. Whatever you call in template prefetch to reduce SQL queries.
             "protein__family__parent__parent__parent",
+            "arrestin_subtype",
             "arrestin_subtype__source"
-        ).distinct("protein_id")
+        )
 
-        signalingdata = {}
-        for pairing in arrestins.values_list():
-            if pairing[1] not in signalingdata:
-                signalingdata[pairing[1]] = {}
-            signalingdata[pairing[1]][pairing[7]] = pairing[5]
+        signaling_data = {}
+        for pairing in arrestins.values_list(
+                "protein__entry_name",
+                "arrestin_subtype__entry_name",
+                "emax_deg",
+                "pec50_deg",
+                "logmaxec50_deg"
+        ):
+            if pairing[0] not in signaling_data:
+                signaling_data[pairing[0]] = {}
+            signaling_data[pairing[0]][pairing[1]] = {}
+
+            if 'emax' not in signaling_data[pairing[0]][pairing[1]]:
+                signaling_data[pairing[0]][pairing[1]]['emax'] = {}
+            signaling_data[pairing[0]][pairing[1]]['emax'] = pairing[2]
+
+            if 'pec50' not in signaling_data[pairing[0]][pairing[1]]:
+                signaling_data[pairing[0]][pairing[1]]['pec50'] = {}
+            signaling_data[pairing[0]][pairing[1]]['pec50'] = pairing[3]
+
+            if 'logmaxec50' not in signaling_data[pairing[0]][pairing[1]]:
+                signaling_data[pairing[0]][pairing[1]]['logmaxec50'] = {}
+            signaling_data[pairing[0]][pairing[1]]['logmaxec50'] = pairing[4]
 
         protein_data = {}
-        for prot in arrestins:
+        for prot in arrestins.distinct("protein_id"):
             protein_data[prot.id] = {}
             protein_data[prot.id]['class'] = prot.protein.family.parent.parent.parent.shorter()
             protein_data[prot.id]['family'] = prot.protein.family.parent.short()
@@ -170,12 +189,14 @@ class ArrestinCoupling(TemplateView):
             if len(gtop_links) > 0:
                 protein_data[prot.id]['gtp_link'] = gtop_links[0]
 
-            protein_data[prot.id]['emax_deg'] = prot.emax_deg
+            arrestin_subtypes = ["arrb1_human", "arrb2_human"]
+            for arrestin in arrestin_subtypes:
+                if prot.protein.entry_name in signaling_data and arrestin in signaling_data[prot.protein.entry_name]:
+                    protein_data[prot.id][arrestin] = signaling_data[prot.protein.entry_name][arrestin]
+                else:
+                    protein_data[prot.id][arrestin] = "-"
 
-
-#        pprint(protein_data)
-#        pprint(signalingdata)
-        return protein_data, signalingdata
+        return protein_data, signaling_data
 
 
 class TargetSelection(AbsTargetSelection):
