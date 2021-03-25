@@ -284,7 +284,7 @@ function structurebrowser() {
                 select_type_options: {
                     width: "100px",
                 },
-                data: ["none", "nonesmall molecule", "peptide", "peptideion", "peptidesmall molecule", "protein", "small molecule", "small moleculesmall molecule"]
+                data: ["none", "peptide", "peptideion", "peptidesmall molecule", "protein", "small molecule", "small moleculesmall molecule", "-"]
             },
             {
                 column_number : 22,
@@ -296,8 +296,8 @@ function structurebrowser() {
                 select_type_options: {
                     width: "100px",
                 },
-                data: ["Agonist", "Antagonist", "Apo (no ligand)", "Inverse agonist", "AgonistPAM", "AntagonistNAM",
-                       "Inverse agonistNAM", "NAMAntagonist", "NAMAgonist", "PAMAgonist", "unknown", "N/A"]
+                data: ["Agonist", "Agonist (partial)", "AgonistNAM", "Antagonist", "AntagonistCofactor", "AntagonistNAM", "Apo (no ligand)", "Inverse agonist", "Inverse agonistNAM",
+                        "AgonistPAM", "NAM", "PAM", "unknown", "-"]
             },
             {
                 column_number : 23,
