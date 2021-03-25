@@ -92,7 +92,7 @@ class ResidueGprotSelection(TargetSelectionGprotein):
             action = 'expand'
             # remove the parent family (for all other families than the root of the tree, the parent should be shown)
             del ppf
-    except Exception:
+    except:
         pass
 
 class ResidueArrestinSelection(TargetSelectionArrestin):
@@ -125,7 +125,7 @@ class ResidueArrestinSelection(TargetSelectionArrestin):
             action = 'expand'
             # remove the parent family (for all other families than the root of the tree, the parent should be shown)
             del ppf
-    except Exception:
+    except:
         pass
 
 class ResidueTablesDisplay(TemplateView):
@@ -134,7 +134,8 @@ class ResidueTablesDisplay(TemplateView):
     """
     template_name = 'residue_table.html'
 
-    def checkOrigin(self, target_item):
+    @staticmethod
+    def checkOrigin(target_item):
         if str(target_item).split('_')[0].startswith('arr'):
             output = 'arrestins'
         elif str(target_item).split('_')[0].startswith('gna'):
