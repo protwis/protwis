@@ -23,7 +23,7 @@ from contactnetwork.models import InteractingResiduePair
 from interaction.models import ResidueFragmentInteraction
 from mutation.models import MutationExperiment
 from mutational_landscape.models import NaturalMutations, CancerMutations, DiseaseMutations, PTMs, NHSPrescribings
-from protein.models import ProteinSegment, Protein, ProteinGProtein, ProteinGProteinPair, ProteinFamily
+from protein.models import ProteinSegment, Protein, ProteinGProteinPair, ProteinFamily
 from residue.models import Residue,ResidueNumberingScheme, ResiduePositionSet, ResidueSet
 
 from collections import OrderedDict
@@ -134,7 +134,7 @@ class ResidueTablesDisplay(TemplateView):
     """
     template_name = 'residue_table.html'
 
-    def checkOrigin(self, input):
+    def checkOrigin(input):
         if str(input).split('_')[0].startswith('arr'):
             output = 'arrestins'
         elif str(input).split('_')[0].startswith('gna'):
