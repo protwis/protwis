@@ -76,7 +76,7 @@ class Command(BaseCommand):
             ['Exp. Arrestin structures', Structure.objects.filter(protein_conformation__protein__family__slug__startswith="200").count()],
             ['GPCR structure models', StructureModel.objects.filter(protein__accession__isnull=False).count()],
             ['GPCR-G protein structure models', StructureComplexModel.objects.filter(receptor_protein__accession__isnull=False).count()],
-            ['Refined GPCR structures', StructureModel.objects.filter(protein__accession__isnull=True, protein__family__slug__startswith="00").count()],
+            ['Refined GPCR structures', StructureModel.objects.filter(protein__accession__isnull=True, protein__family__slug__startswith="00").count() + StructureComplexModel.objects.filter(receptor_protein__accession__isnull=True, receptor_protein__family__slug__startswith="00").count()],
             ['Genetic variants', NaturalMutations.objects.all().count()],
             ['Drugs', Drugs.objects.all().count()],
             ['Ligands', Ligand.objects.filter(canonical=True).count()],

@@ -127,7 +127,7 @@
         <!-- DETERMINANTS & MUTATIONS -->
         <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>DETERMINANTS & MUTATIONS</a></li>
-        <li><a href="/seqsign">Sequence signatures</a></li>
+        <li><a href="/seqsign">Sequence signature tool</a></li>
         <li><a href="/mutations/state_stabilizing">State-stabilising mutation design tool</a></li>
     </ul>
 </li>
@@ -140,21 +140,21 @@
         G Proteins<span class="caret"></span>
     </a>
     <ul class="dropdown-menu" role="menu">
-        <li><a href="/signprot">G protein page</a></li>
+        <li><a href="/signprot/gprotein">G protein page</a></li>
 
         <!-- GPCR-G PROTEIN COUPLING -->
         <li class="divider"></li>
-        <li class="nav-header disabled text-left"><a>GPCR-G Protein coupling</a></li>
-        <li><a href="/signprot/couplings">GPCR-G protein couplings</a></li>
-        <li><a href="/signprot/statistics_venn">GPCR-G protein Venn diagram</a></li>
-        <li><a href="/signprot/statistics_tree">GPCR-G protein coupling statistics</a></li>
-        {#  DEPRECATED FOR NOW #}
-        {#  <li><a href="/signprot/statistics_tree">GPCR-G protein profiles (Tree)</a></li> #}
+        <li class="nav-header disabled text-left"><a>G Protein coupling</a></li>
+        <li><a href="/signprot/couplings">G protein couplings</a></li>
+        <li><a href="/signprot/statistics_venn">G protein selectivity Venn</a></li>
+        <li><a href="/signprot/statistics_tree">G protein selectivity tree</a></li>
 
         <!-- SEQUENCES -->
         <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>SEQUENCES</a></li>
-        <li><a href="/alignment/gproteinselection">G protein alignments</a></li>
+        <li><a href="/alignment/gproteinselection">Sequence alignments</a></li>
+        <li><a href="/residue/residuetable_gprot">Generic residue number tables</a></li> <!-- TO CHANGE URL -->
+
 
         <!-- STRUCTURES -->
         <li class="divider"></li>
@@ -186,11 +186,19 @@
     <ul class="dropdown-menu" role="menu">
         <li><a href="/signprot/arrestin">Arrestin page</a></li>
 
+        <!-- ARRESTIN COUPLING -->
+        <li class="divider"></li>
+        <li class="nav-header disabled text-left"><a>ARRESTIN COUPLING</a></li>
+        <li><a href="">Arrestin couplings</a></li>
+        <li><a href="/signprot/arrestin_venn">Arrestin selectivity Venn</a></li>
+        <li><a href="/signprot/arrestin_tree">Arrestin selectivity Tree</a></li>
 
         <!-- SEQUENCES -->
         <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>SEQUENCES</a></li>
-        <li><a href="/alignment/arrestinselection">Arrestin alignments</a></li>
+        <li><a href="/alignment/arrestinselection">Sequence alignments</a></li>
+        <li><a href="/residue/residuetable_arrestin">Generic residue number tables</a></li> <!-- TO CHANGE URL -->
+
 
         <!-- STRUCTURES -->
         <li class="divider"></li>
@@ -249,7 +257,7 @@
         Drugs <span>&#38;</span> ligands<span class="caret"></span>
     </a>
     <ul class="dropdown-menu" role="menu">
-        <li class="nav-header disabled"><a>DRUGS</a></li>
+        <li class="nav-header disabled"><a>DRUGS & AGENTS IN TRIAL</a></li>
         <li><a href="/drugs/drugbrowser">Drugs, targets <span>&#38;</span> indications</a></li>
         <li><a href="/drugs/drugmapping">Drug target tree</a></li>
         <li><a href="/drugs/drugstatistics">Drug statistics</a></li>
@@ -257,7 +265,7 @@
 
         <li class="nav-header disabled"><a>LIGANDS</a></li>
         <li><a href="/ligand/statistics">Ligand statistics</a></li>
-        <li><a href="/ligand">Ligands</a></li>
+        <li><a href="/ligand">Ligands (ChEMBL)</a></li>
 
         <!-- DEPRECATED FUNCTION
           <li class="nav-header disabled text-left"><a>Structures</a></li>
@@ -273,8 +281,7 @@
           -->
 
         <li class="divider"></li>
-        <li class="nav-header disabled text-left"><a>LIGAND SITES
-        </a></li>
+        <li class="nav-header disabled text-left"><a>LIGAND SITES</a></li>
 
         <li><a href="/interaction">GPCR-ligand interactions
             <button mp4="https://files.gpcrdb.org/video/interactions1.mp4" type="button"
@@ -327,7 +334,7 @@
                 <span class="glyphicon glyphicon-film"></span>
             </button>
         </a></li>
-        <li><a href="/construct/experiments">Experiment browser </a></li>
+        <li><a href="/construct/experiments">Experiment browser</a></li>
         <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>Truncation & fusion analysis</a></li>
         <li><a href="/construct/analysis#truncations">Truncation sites</a></li>
