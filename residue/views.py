@@ -23,7 +23,7 @@ from contactnetwork.models import InteractingResiduePair
 from interaction.models import ResidueFragmentInteraction
 from mutation.models import MutationExperiment
 from mutational_landscape.models import NaturalMutations, CancerMutations, DiseaseMutations, PTMs, NHSPrescribings
-from protein.models import ProteinSegment, Protein, ProteinGProteinPair, ProteinFamily
+from protein.models import ProteinSegment, Protein, ProteinFamily
 from residue.models import Residue,ResidueNumberingScheme, ResiduePositionSet, ResidueSet
 
 from collections import OrderedDict
@@ -92,7 +92,7 @@ class ResidueGprotSelection(TargetSelectionGprotein):
             action = 'expand'
             # remove the parent family (for all other families than the root of the tree, the parent should be shown)
             del ppf
-    except Exception as e:
+    except Exception:
         pass
 
 class ResidueArrestinSelection(TargetSelectionArrestin):
@@ -125,7 +125,7 @@ class ResidueArrestinSelection(TargetSelectionArrestin):
             action = 'expand'
             # remove the parent family (for all other families than the root of the tree, the parent should be shown)
             del ppf
-    except Exception as e:
+    except Exception:
         pass
 
 class ResidueTablesDisplay(TemplateView):
@@ -134,10 +134,10 @@ class ResidueTablesDisplay(TemplateView):
     """
     template_name = 'residue_table.html'
 
-    def checkOrigin(input):
-        if str(input).split('_')[0].startswith('arr'):
+    def checkOrigin(self, target_item):
+        if str(target_item).split('_')[0].startswith('arr'):
             output = 'arrestins'
-        elif str(input).split('_')[0].startswith('gna'):
+        elif str(target_item).split('_')[0].startswith('gna'):
             output = "gprot"
         else:
             output = "GPCR"
@@ -168,7 +168,6 @@ class ResidueTablesDisplay(TemplateView):
             if target.type == 'protein':
                 proteins.append(target.item)
                 if origin_checked == False:
-                    print(target.item)
                     signalling_data = self.checkOrigin(target.item)
                     origin_checked = True
             elif target.type == 'family':
@@ -193,7 +192,6 @@ class ResidueTablesDisplay(TemplateView):
                 for fp in family_proteins:
                     proteins.append(fp)
                     if origin_checked == False:
-                        print(fp)
                         signalling_data = self.checkOrigin(fp)
                         origin_checked = True
 
