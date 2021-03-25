@@ -256,7 +256,7 @@
                             {{ structure.stabilizing_agents.all|only_other_proteins|linebreaksbr }}
                         </td>
                         <td class='expand'>
-                            {% for ligand in structure.ligands.all %}
+                            {% for ligand in structure.ligands.all|dictsort:"ligand_role.name" %}
                                 {{ ligand.ligand.name|safe }}
                             {% for link in ligand.ligand.properities.web_links.all %}
                                 <a href="{{ link}}" target="_blank">{{link.web_resource.slug}}</a>
@@ -296,9 +296,9 @@
                         </td>
                         <td>{{ structure.publication_date|date:"Y-m-d" }}</td>
                         {% if structure.protein %}
-                            <td style='display: none;'>{{ structure.protein.id }}</td>
+                            <td class='hidden'>{{ structure.protein.id }}</td>
                         {% else %}
-                            <td style='display: none;'>{{ structure.extra_proteins.all|only_one_subunit:"Alpha,id" }}</td>
+                            <td class='hidden'>{{ structure.signprot_complex.protein.id }}</td>
                         {% endif %}
                     </tr>
                 {% endfor %}

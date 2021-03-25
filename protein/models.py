@@ -395,16 +395,17 @@ class ProteinGProteinPair(models.Model):
 
 class ProteinArrestinPair(models.Model):
     protein = models.ForeignKey('Protein', on_delete=models.CASCADE)
+    publication = models.ForeignKey('common.Publication', on_delete=models.CASCADE)
     source = models.TextField(null=True)  # Bouvier
     emax_deg = models.FloatField(null=True, blank=True)  # Value from David Gloriam
     pec50_deg = models.FloatField(null=True, blank=True)  # Value from David Gloriam
     logmaxec50_deg = models.FloatField(null=True, blank=True) # Value from David Gloriam
     arrestin_subtype = models.ForeignKey('Protein', on_delete=models.CASCADE, related_name='arrestin', null=True)
-    references = models.ManyToManyField('common.Publication')
 
 
     def __str__(self):
-        return "{} {}".format(self.protein.entry_name, self.arrestin_subtype)
+        # return "{} {}".format(self.protein.entry_name, self.arrestin_subtype)
+        return "{}".format(self.protein.entry_name)
 
     class Meta():
         db_table = 'protein_arrestin_pair'

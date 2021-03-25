@@ -20,7 +20,7 @@ canvas {
 <div class="row text-success">
     <div class="text-center">
         {% if not model.protein.accession %}
-        <h2>{{ model.protein.entry_name }}_refined</h2>
+        <h2>{{ model.protein.entry_name|upper }} refined</h2>
         {% else %}
         <h2>{{ model.protein.family.name|safe }} homology model</h2>
         {% endif %}
@@ -295,18 +295,10 @@ canvas {
 
             var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( color_residues );
 
-            if ("{{state}}"=="refined") {
-                stage.loadFile( "../pdb/{{modelname}}_{{state}}", { ext: "pdb" }  ).then( function( o ){
-                    o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId }
-                    o.centerView();
-                } );
-            }
-            else {
-                stage.loadFile( "view/{{modelname}}_{{model.state.slug}}", { ext: "pdb" }  ).then( function( o ){
-                    o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId }
-                    o.centerView();
-                } );
-            }
+            stage.loadFile( "view/{{modelname}}_{{model.state.slug}}", { ext: "pdb" }  ).then( function( o ){
+                o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId }
+                o.centerView();
+            } );
         } );
 
         $( "#fullscreen" ).click(function() {
@@ -357,21 +349,10 @@ canvas {
                 },
             });
             $('#align_btn').click(function () {
-                // var checked_data = ["{{model.protein.entry_name}}"];//, "{{model.main_template.pdb_code.index}}"];
                 ClearSelection('targets');
-                // for (i = 0; i < checked_data.length; i++) {
-                    // var div = document.createElement("div");
-                    // div.innerHTML = checked_data[i];
-                    // console.log(div.textContent.replace(/\s+/g, ''))
-                    // AddToSelection('targets', 'structure_model', checked_data[i]);
-                    // if (i==0) {
-                    //     AddToSelection('targets', 'structure_model',  div.innerText.replace(/\s+/g, '')+"_"+"{{model.state.name}}");
-                    // } else {
-                    //     AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
-                    // }
-                // }
                 AddToSelection('targets', 'structure_model', "{{model.protein.entry_name}}"+"_"+"{{model.state.name}}");
                 AddToSelection('targets', 'structure', "{{model.main_template}}");
+                
                 window.location.href = '/structure/selection_convert_model';
             });
             $('#superpose_btn').click(function () {
