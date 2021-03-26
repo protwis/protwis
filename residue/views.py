@@ -225,9 +225,6 @@ class ResidueTablesDisplay(TemplateView):
         elif signalling_data == 'arrestins':
             numbering_schemes = ResidueNumberingScheme.objects.filter(slug='can')
 
-        # for item in numbering_schemes:
-        #     print(item)
-
         # # get the helices (TMs only at first)
         # segments = ProteinSegment.objects.filter(category='helix', proteinfamily='GPCR')
 
@@ -302,15 +299,19 @@ class ResidueTablesDisplay(TemplateView):
                 clean_segments.append(s)
 
         if signalling_data == 'GPCR':
-            context['header'] = zip([x.short_name for x in numbering_schemes] + [x.name+" "+species_list[x.species.common_name] for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins])
+            context['header'] = zip([x.short_name for x in numbering_schemes] + [x.name+" "+species_list[x.species.common_name] for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins], range(len(proteins)+1,0,-1))
+            context['col_length'] = len(proteins)+1
         elif signalling_data == 'gprot':
-            context['header'] = zip([x.short_name for x in numbering_schemes] + [x.name+" "+species_list[x.species.common_name] for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins])
+            context['header'] = zip(["Common<br />residue<br />number"] + [x.family.name.replace('NA','&alpha;')+" ["+species_list[x.species.common_name]+"]" for x in proteins],[x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins], range(len(proteins)+1,0,-1))
+            context['col_length'] = len(proteins)+1
         elif signalling_data == 'arrestins':
-            context['header'] = zip([x.short_name for x in numbering_schemes] + [x.name+" "+species_list[x.species.common_name] for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins])
+            context['header'] = zip(["Common<br />residue<br />number"] + [x.name.replace('Beta','&beta;')+" ["+species_list[x.species.common_name]+"]" for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins], range(len(proteins)+1,0,-1) )
+            context['col_length'] = len(proteins)+1
         context['segments'] = clean_segments
         context['data'] = clean_dict
         context['number_of_schemes'] = len(numbering_schemes)
         context['longest_name'] = {'div' : longest_name*2, 'height': longest_name*2+80}
+        context['signalling'] = signalling_data
 
         return context
 
