@@ -9,7 +9,7 @@ from build.management.commands.base_build import Command as BaseBuild
 from common.tools import fetch_from_cache, save_to_cache, fetch_from_web_api
 from residue.models import Residue
 from protein.models import Protein
-from ligand.models import BiasedExperiment, BiasedExperimentVendors, ExperimentAssay, ExperimentAssayAuthors, Ligand, LigandProperities, LigandType, LigandVendorLink
+from ligand.models import BiasedExperiment, BiasedExperimentVendors,AnalyzedExperiment, ExperimentAssay, ExperimentAssayAuthors, Ligand, LigandProperities, LigandType, LigandVendorLink
 from mutation.models import Mutation
 from ligand.functions import get_or_make_ligand
 from common.models import WebLink, WebResource, Publication

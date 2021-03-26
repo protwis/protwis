@@ -18,7 +18,7 @@ from collections import OrderedDict
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
-from ligand.models import Ligand, LigandVendorLink, AnalyzedExperiment, AnalyzedAssay, BiasedPathways, AssayExperiment
+from ligand.models import Ligand, LigandVendorLink, AnalyzedExperiment, AnalyzedAssay, BiasedPathways, AssayExperiment, LigandVendors
 from protein.models import Protein, ProteinFamily
 
 
