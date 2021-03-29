@@ -735,7 +735,7 @@ def render_residue_table_excel(request):
     flattened_data = OrderedDict.fromkeys([x.slug for x in segments], [])
 
     for s in iter(flattened_data):
-        flattened_data[s] = [[data[s][x][y.slug] for y in numbering_schemes]+data[s][x]['seq'] for x in sorted(data[s])]
+        flattened_data[s] = [[data[s][x][y.slug] if y.slug in data[s][x] else "-" for y in numbering_schemes ]+data[s][x]['seq'] for x in sorted(data[s])]
     #Purging the empty segments
     clean_dict = OrderedDict()
     clean_segments = []
