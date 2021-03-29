@@ -33,6 +33,14 @@
       background-color: white;
       padding-bottom: 2em;
     }
+
+    th.unbolded{
+    font-weight: normal;
+    text-align: center;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+    vertical-align: center;
+}
 </style>
 
 <table class="table-header-rotated">
@@ -50,7 +58,7 @@
         <div><span id='{{protein}}'>{{ elem|safe }}</span></div>
         </th>
         {% else %}
-        <th class="sticky" style="text-align: center; padding-left: 0.5em; padding-right: 0.5em;">
+        <th class="sticky; unbolded">
         <div><span id='{{protein}}'>{{ elem|safe }}</span></div>
         </th>
         {% endif %}

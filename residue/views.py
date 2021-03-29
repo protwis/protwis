@@ -302,10 +302,10 @@ class ResidueTablesDisplay(TemplateView):
             context['header'] = zip([x.short_name for x in numbering_schemes] + [x.name+" "+species_list[x.species.common_name] for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins], range(len(proteins)+1,0,-1))
             context['col_length'] = len(proteins)+1
         elif signalling_data == 'gprot':
-            context['header'] = zip(["Common<br />residue<br />number"] + [x.family.name.replace('NA','&alpha;')+"<br />["+species_list[x.species.common_name]+"]" for x in proteins],[x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins], range(len(proteins)+1,0,-1))
+            context['header'] = zip(["Generic<br />residue<br />number"] + ["<b>"+x.family.name.replace('NA','<sub>&alpha;')+"</sub></b><br />"+species_list[x.species.common_name]+"" for x in proteins],[x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins], range(len(proteins)+1,0,-1))
             context['col_length'] = len(proteins)+1
         elif signalling_data == 'arrestins':
-            context['header'] = zip(["Common<br />residue<br />number"] + [x.name.replace('Beta','&beta;')+"<br />["+species_list[x.species.common_name]+"]" for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins], range(len(proteins)+1,0,-1) )
+            context['header'] = zip(["Generic<br />residue<br />number"] + ["<b>"+x.name.replace('Beta','&beta;')+"</b><br />"+species_list[x.species.common_name]+"" for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins], range(len(proteins)+1,0,-1) )
             context['col_length'] = len(proteins)+1
         context['segments'] = clean_segments
         context['data'] = clean_dict
