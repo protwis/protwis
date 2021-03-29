@@ -306,13 +306,13 @@ class ResidueTablesDisplay(TemplateView):
             .replace('Short-wave-sensitive', 'SWS')
             .replace('Medium-wave-sensitive', 'MWS')
             .replace('Long-wave-sensitive', 'LWS')
-            +"</b><br /> "+species_list[x.species.common_name] for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins], range(len(proteins)+1,0,-1))
-            context['col_length'] = len(proteins)+1
+            +"</b><br /> "+species_list[x.species.common_name] for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins])
+            context['col_length'] = len(proteins)+len(numbering_schemes)+1
         elif signalling_data == 'gprot':
-            context['header'] = zip(["Generic<br />residue<br />number"] + ["<b>"+x.family.name.replace('NA','<sub>&alpha;')+"</sub></b><br />"+species_list[x.species.common_name]+"" for x in proteins],[x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins], range(len(proteins)+1,0,-1))
+            context['header'] = zip(["Generic<br />residue<br />number"] + ["<b>"+x.family.name.replace('NA','<sub>&alpha;')+"</sub></b><br />"+species_list[x.species.common_name]+"" for x in proteins],[x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins])
             context['col_length'] = len(proteins)+1
         elif signalling_data == 'arrestins':
-            context['header'] = zip(["Generic<br />residue<br />number"] + ["<b>"+x.name.replace('Beta','&beta;')+"</b><br />"+species_list[x.species.common_name]+"" for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins], range(len(proteins)+1,0,-1) )
+            context['header'] = zip(["Generic<br />residue<br />number"] + ["<b>"+x.name.replace('Beta','&beta;')+"</b><br />"+species_list[x.species.common_name]+"" for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins])
             context['col_length'] = len(proteins)+1
         context['segments'] = clean_segments
         context['data'] = clean_dict
@@ -737,7 +737,7 @@ class ResidueFunctionBrowser(TemplateView):
 def render_residue_table_excel(request):
 
     simple_selection = request.session.get('selection', False)
-
+    origin_checked = False
     # local protein list
     proteins = []
 
@@ -745,6 +745,9 @@ def render_residue_table_excel(request):
     for target in simple_selection.targets:
         if target.type == 'protein':
             proteins.append(target.item)
+            if origin_checked == False:
+                signalling_data = ResidueTablesDisplay.checkOrigin(target.item)
+                origin_checked = True
         elif target.type == 'family':
             # species filter
             species_list = []
@@ -766,6 +769,9 @@ def render_residue_table_excel(request):
 
             for fp in family_proteins:
                 proteins.append(fp)
+                if origin_checked == False:
+                    signalling_data = ResidueTablesDisplay.checkOrigin(fp)
+                    origin_checked = True
 
         longest_name = 0
         species_list = {}
@@ -789,9 +795,20 @@ def render_residue_table_excel(request):
     if simple_selection:
             selection.importer(simple_selection)
     # # extract numbering schemes and proteins
-    numbering_schemes = [x.item for x in selection.numbering_schemes]
+    if signalling_data == 'GPCR':
+        numbering_schemes = [x.item for x in selection.numbering_schemes]
+    elif signalling_data == 'gprot':
+        numbering_schemes = ResidueNumberingScheme.objects.filter(slug='cgn')
+    elif signalling_data == 'arrestins':
+        numbering_schemes = ResidueNumberingScheme.objects.filter(slug='can')
 
-    segments = ProteinSegment.objects.filter(proteinfamily='GPCR')
+    # Get all the segments
+    if signalling_data == 'GPCR':
+        segments = ProteinSegment.objects.filter(proteinfamily='GPCR')
+    elif signalling_data == 'gprot':
+        segments = ProteinSegment.objects.filter(proteinfamily='Alpha')
+    elif signalling_data == 'arrestins':
+        segments = ProteinSegment.objects.filter(proteinfamily='Arrestin')
 
     if ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME) in numbering_schemes:
         default_scheme = ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME)
@@ -818,6 +835,8 @@ def render_residue_table_excel(request):
         for residue in residues:
             alternatives = residue.alternative_generic_numbers.all()
             pos = residue.generic_number
+            if len(alternatives) == 0:
+                data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
             for alternative in alternatives:
                 scheme = alternative.scheme
                 if default_scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
@@ -857,7 +876,6 @@ def render_residue_table_excel(request):
 
 
     # Now excel time
-
 
     outstream = BytesIO()
     wb = xlsxwriter.Workbook(outstream, {'in_memory': True})
