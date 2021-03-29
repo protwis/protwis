@@ -10,7 +10,8 @@ import xlrd
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.db import IntegrityError
+from django.core.management.color import no_style
+from django.db import IntegrityError, connection
 from protein.models import (Gene, Protein, ProteinAlias, ProteinConformation,
                             ProteinFamily, ProteinArrestinPair, ProteinSegment,
                             ProteinSequenceType, ProteinSource, ProteinState, Species)
@@ -107,6 +108,11 @@ class Command(BaseCommand):
         """DROP data from the protein_arrestin_pair table."""
         try:
             ProteinArrestinPair.objects.filter().delete()
+            sequence_sql = connection.ops.sequence_reset_sql(no_style(), [ProteinArrestinPair])
+            with connection.cursor() as cursor:
+                for sql in sequence_sql:
+                    cursor.execute(sql)
+
         except Exception as msg:
             self.logger.warning('Existing protein_arrestin_pair data cannot be deleted' + str(msg))
 

@@ -17,12 +17,13 @@ Alignment = getattr(__import__(
 from seqsign.sequence_signature import SequenceSignature, SignatureMatch
 
 from alignment.functions import get_proteins_from_selection
+from alignment.views import TargetSelectionGprotein, TargetSelectionArrestin
 from construct.views import create_structural_rule_trees, ConstructMutation
 from contactnetwork.models import InteractingResiduePair
 from interaction.models import ResidueFragmentInteraction
 from mutation.models import MutationExperiment
 from mutational_landscape.models import NaturalMutations, CancerMutations, DiseaseMutations, PTMs, NHSPrescribings
-from protein.models import ProteinSegment, Protein, ProteinGProtein, ProteinGProteinPair
+from protein.models import ProteinSegment, Protein, ProteinFamily
 from residue.models import Residue,ResidueNumberingScheme, ResiduePositionSet, ResidueSet
 
 from collections import OrderedDict
@@ -62,6 +63,70 @@ class ResidueTablesSelection(AbsTargetSelection):
             }
         }
 
+class ResidueGprotSelection(TargetSelectionGprotein):
+    # Left panel
+    step = 1
+    number_of_steps = 1
+    docs = 'generic_numbering.html'
+
+    description = 'Select receptors to index by searching or browsing in the middle column. You can select entire' \
+        + ' receptor families and/or individual receptors.\n\nSelected receptors will appear in the right column,' \
+        + ' where you can edit the list.\n\nOnce you' \
+        + ' have selected all your receptors, click the green button.'
+
+    # Buttons
+    buttons = {
+        'continue' : {
+            'label' : 'Show residue numbers',
+            'url' : '/residue/residuetabledisplay',
+            'color' : 'success',
+            }
+        }
+    try:
+        if ProteinFamily.objects.filter(slug="100_001").exists():
+            ppf = ProteinFamily.objects.get(slug="100_001")
+            pfs = ProteinFamily.objects.filter(parent=ppf.id)
+            ps = Protein.objects.filter(family=ppf)
+
+            tree_indent_level = []
+            action = 'expand'
+            # remove the parent family (for all other families than the root of the tree, the parent should be shown)
+            del ppf
+    except:
+        pass
+
+class ResidueArrestinSelection(TargetSelectionArrestin):
+    # Left panel
+    step = 1
+    number_of_steps = 1
+    docs = 'generic_numbering.html'
+
+    description = 'Select receptors to index by searching or browsing in the middle column. You can select entire' \
+        + ' receptor families and/or individual receptors.\n\nSelected receptors will appear in the right column,' \
+        + ' where you can edit the list.\n\nOnce you' \
+        + ' have selected all your receptors, click the green button.'
+
+
+    # Buttons
+    buttons = {
+        'continue' : {
+            'label' : 'Show residue numbers',
+            'url' : '/residue/residuetabledisplay',
+            'color' : 'success',
+            }
+        }
+    try:
+        if ProteinFamily.objects.filter(slug="200_000").exists():
+            ppf = ProteinFamily.objects.get(slug="200_000")
+            pfs = ProteinFamily.objects.filter(parent=ppf.id)
+            ps = Protein.objects.filter(family=ppf)
+
+            tree_indent_level = []
+            action = 'expand'
+            # remove the parent family (for all other families than the root of the tree, the parent should be shown)
+            del ppf
+    except:
+        pass
 
 class ResidueTablesDisplay(TemplateView):
     """
@@ -69,6 +134,15 @@ class ResidueTablesDisplay(TemplateView):
     """
     template_name = 'residue_table.html'
 
+    @staticmethod
+    def checkOrigin(target_item):
+        if str(target_item).split('_')[0].startswith('arr'):
+            output = 'arrestins'
+        elif str(target_item).split('_')[0].startswith('gna'):
+            output = "gprot"
+        else:
+            output = "GPCR"
+        return output
 
     def get(self, request, *args, **kwargs):
         # get the user selection from session
@@ -85,17 +159,18 @@ class ResidueTablesDisplay(TemplateView):
         Get the selection data (proteins and numbering schemes) and prepare it for display.
         """
         context = super().get_context_data(**kwargs)
-
         # get the user selection from session
         simple_selection = self.request.session.get('selection', False)
-
-         # local protein list
+        origin_checked = False
+        # local protein list
         proteins = []
-
         # flatten the selection into individual proteins
         for target in simple_selection.targets:
             if target.type == 'protein':
                 proteins.append(target.item)
+                if origin_checked == False:
+                    signalling_data = self.checkOrigin(target.item)
+                    origin_checked = True
             elif target.type == 'family':
                 # species filter
                 species_list = []
@@ -117,6 +192,9 @@ class ResidueTablesDisplay(TemplateView):
 
                 for fp in family_proteins:
                     proteins.append(fp)
+                    if origin_checked == False:
+                        signalling_data = self.checkOrigin(fp)
+                        origin_checked = True
 
             longest_name = 0
             species_list = {}
@@ -135,19 +213,28 @@ class ResidueTablesDisplay(TemplateView):
                 if len(re.sub('<[^>]*>', '', protein.name)+" "+name)>longest_name:
                     longest_name = len(re.sub('<[^>]*>', '', protein.name)+" "+name)
 
-
         # get the selection from session
         selection = Selection()
         if simple_selection:
              selection.importer(simple_selection)
         # # extract numbering schemes and proteins
-        numbering_schemes = [x.item for x in selection.numbering_schemes]
+        if signalling_data == 'GPCR':
+            numbering_schemes = [x.item for x in selection.numbering_schemes]
+        elif signalling_data == 'gprot':
+            numbering_schemes = ResidueNumberingScheme.objects.filter(slug='cgn')
+        elif signalling_data == 'arrestins':
+            numbering_schemes = ResidueNumberingScheme.objects.filter(slug='can')
 
         # # get the helices (TMs only at first)
         # segments = ProteinSegment.objects.filter(category='helix', proteinfamily='GPCR')
 
         # Get all the segments
-        segments = ProteinSegment.objects.filter(proteinfamily='GPCR')
+        if signalling_data == 'GPCR':
+            segments = ProteinSegment.objects.filter(proteinfamily='GPCR')
+        elif signalling_data == 'gprot':
+            segments = ProteinSegment.objects.filter(proteinfamily='Alpha')
+        elif signalling_data == 'arrestins':
+            segments = ProteinSegment.objects.filter(proteinfamily='Arrestin')
 
         if ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME) in numbering_schemes:
             default_scheme = ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME)
@@ -173,25 +260,29 @@ class ResidueTablesDisplay(TemplateView):
 
             for residue in residues:
                 alternatives = residue.alternative_generic_numbers.all()
+                #probably no alternatives for GProts and Arrestins (?)
                 pos = residue.generic_number
-                for alternative in alternatives:
-                    scheme = alternative.scheme
-                    if default_scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
-                        pos = residue.generic_number
-                        if scheme == pos.scheme:
-                            data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
+                if len(alternatives) == 0:
+                    data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
+                else:
+                    for alternative in alternatives:
+                        scheme = alternative.scheme
+                        if default_scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
+                            pos = residue.generic_number
+                            if scheme == pos.scheme:
+                                data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
+                            else:
+                                if scheme.slug not in data[segment.slug][pos.label].keys():
+                                    data[segment.slug][pos.label][scheme.slug] = alternative.label
+                                if alternative.label not in data[segment.slug][pos.label][scheme.slug]:
+                                    data[segment.slug][pos.label][scheme.slug] += " "+alternative.label
+                                data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
                         else:
                             if scheme.slug not in data[segment.slug][pos.label].keys():
                                 data[segment.slug][pos.label][scheme.slug] = alternative.label
                             if alternative.label not in data[segment.slug][pos.label][scheme.slug]:
                                 data[segment.slug][pos.label][scheme.slug] += " "+alternative.label
                             data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
-                    else:
-                        if scheme.slug not in data[segment.slug][pos.label].keys():
-                            data[segment.slug][pos.label][scheme.slug] = alternative.label
-                        if alternative.label not in data[segment.slug][pos.label][scheme.slug]:
-                            data[segment.slug][pos.label][scheme.slug] += " "+alternative.label
-                        data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
 
         # Preparing the dictionary of list of lists. Dealing with tripple nested dictionary in django templates is a nightmare
         flattened_data = OrderedDict.fromkeys([x.slug for x in segments], [])
@@ -207,12 +298,27 @@ class ResidueTablesDisplay(TemplateView):
                 clean_dict[s] = flattened_data[s]
                 clean_segments.append(s)
 
-
-        context['header'] = zip([x.short_name for x in numbering_schemes] + [x.name+" "+species_list[x.species.common_name] for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins])
+        if signalling_data == 'GPCR':
+            context['header'] = zip([x.short_name for x in numbering_schemes] + ["<b>"+x.name
+            .replace(' receptor','')
+            .replace('-adrenoceptor','')
+            .replace('Olfactory','OLF')
+            .replace('Short-wave-sensitive', 'SWS')
+            .replace('Medium-wave-sensitive', 'MWS')
+            .replace('Long-wave-sensitive', 'LWS')
+            +"</b><br /> "+species_list[x.species.common_name] for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins], range(len(proteins)+1,0,-1))
+            context['col_length'] = len(proteins)+1
+        elif signalling_data == 'gprot':
+            context['header'] = zip(["Generic<br />residue<br />number"] + ["<b>"+x.family.name.replace('NA','<sub>&alpha;')+"</sub></b><br />"+species_list[x.species.common_name]+"" for x in proteins],[x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins], range(len(proteins)+1,0,-1))
+            context['col_length'] = len(proteins)+1
+        elif signalling_data == 'arrestins':
+            context['header'] = zip(["Generic<br />residue<br />number"] + ["<b>"+x.name.replace('Beta','&beta;')+"</b><br />"+species_list[x.species.common_name]+"" for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins], range(len(proteins)+1,0,-1) )
+            context['col_length'] = len(proteins)+1
         context['segments'] = clean_segments
         context['data'] = clean_dict
         context['number_of_schemes'] = len(numbering_schemes)
         context['longest_name'] = {'div' : longest_name*2, 'height': longest_name*2+80}
+        context['signalling'] = signalling_data
 
         return context
 
