@@ -299,13 +299,20 @@ class ResidueTablesDisplay(TemplateView):
                 clean_segments.append(s)
 
         if signalling_data == 'GPCR':
-            context['header'] = zip([x.short_name for x in numbering_schemes] + [x.name+" "+species_list[x.species.common_name] for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins], range(len(proteins)+1,0,-1))
+            context['header'] = zip([x.short_name for x in numbering_schemes] + ["<b>"+x.name
+            .replace(' receptor','')
+            .replace('-adrenoceptor','')
+            .replace('Olfactory','OLF')
+            .replace('Short-wave-sensitive', 'SWS')
+            .replace('Medium-wave-sensitive', 'MWS')
+            .replace('Long-wave-sensitive', 'LWS')
+            +"</b><br /> "+species_list[x.species.common_name] for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins], range(len(proteins)+1,0,-1))
             context['col_length'] = len(proteins)+1
         elif signalling_data == 'gprot':
-            context['header'] = zip(["Common<br />residue<br />number"] + [x.family.name.replace('NA','&alpha;')+"<br />["+species_list[x.species.common_name]+"]" for x in proteins],[x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins], range(len(proteins)+1,0,-1))
+            context['header'] = zip(["Generic<br />residue<br />number"] + ["<b>"+x.family.name.replace('NA','<sub>&alpha;')+"</sub></b><br />"+species_list[x.species.common_name]+"" for x in proteins],[x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins], range(len(proteins)+1,0,-1))
             context['col_length'] = len(proteins)+1
         elif signalling_data == 'arrestins':
-            context['header'] = zip(["Common<br />residue<br />number"] + [x.name.replace('Beta','&beta;')+"<br />["+species_list[x.species.common_name]+"]" for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins], range(len(proteins)+1,0,-1) )
+            context['header'] = zip(["Generic<br />residue<br />number"] + ["<b>"+x.name.replace('Beta','&beta;')+"</b><br />"+species_list[x.species.common_name]+"" for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins], range(len(proteins)+1,0,-1) )
             context['col_length'] = len(proteins)+1
         context['segments'] = clean_segments
         context['data'] = clean_dict
@@ -834,7 +841,7 @@ def render_residue_table_excel(request):
     flattened_data = OrderedDict.fromkeys([x.slug for x in segments], [])
 
     for s in iter(flattened_data):
-        flattened_data[s] = [[data[s][x][y.slug] for y in numbering_schemes]+data[s][x]['seq'] for x in sorted(data[s])]
+        flattened_data[s] = [[data[s][x][y.slug] if y.slug in data[s][x] else "-" for y in numbering_schemes ]+data[s][x]['seq'] for x in sorted(data[s])]
     #Purging the empty segments
     clean_dict = OrderedDict()
     clean_segments = []
