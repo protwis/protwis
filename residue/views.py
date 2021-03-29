@@ -299,7 +299,14 @@ class ResidueTablesDisplay(TemplateView):
                 clean_segments.append(s)
 
         if signalling_data == 'GPCR':
-            context['header'] = zip([x.short_name for x in numbering_schemes] + [x.name+" "+species_list[x.species.common_name] for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins], range(len(proteins)+1,0,-1))
+            context['header'] = zip([x.short_name for x in numbering_schemes] + ["<b>"+x.name
+            .replace(' receptor','')
+            .replace('-adrenoceptor','')
+            .replace('Olfactory','OLF')
+            .replace('Short-wave-sensitive', 'SWS')
+            .replace('Medium-wave-sensitive', 'MWS')
+            .replace('Long-wave-sensitive', 'LWS')
+            +"</b><br /> "+species_list[x.species.common_name] for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins], range(len(proteins)+1,0,-1))
             context['col_length'] = len(proteins)+1
         elif signalling_data == 'gprot':
             context['header'] = zip(["Generic<br />residue<br />number"] + ["<b>"+x.family.name.replace('NA','<sub>&alpha;')+"</sub></b><br />"+species_list[x.species.common_name]+"" for x in proteins],[x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins], range(len(proteins)+1,0,-1))
