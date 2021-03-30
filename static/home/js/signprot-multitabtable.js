@@ -227,10 +227,12 @@ function supportFilter(filterVal, columnVal, rowValues, stateVal){
 function make_range_number_cols(start_column, repeat_number, tab) {
     let from_to1 = {
         filter_type: "custom_func",
+//        html5_data: "",
         custom_func: rankedRangeFiltert1,
     };
     let from_to2 = {
         filter_type: "custom_func",
+//        html5_data: "",
         custom_func: rankedRangeFiltert2,
     };
     let repeated_from_to1 = [];
@@ -274,7 +276,7 @@ for (let i=11; i <= 22; i++) {
 // ===============
 // Families Table
 // ===============
-    console.time("table1load");
+//    console.time("table1load");
     oTable1 = $("#familiestabletab").DataTable({
         deferRender: true,
         scrollY: "50vh",
@@ -312,6 +314,8 @@ for (let i=11; i <= 22; i++) {
                 column_number: 1,
                 filter_type: "multi_select",
                 select_type: "select2",
+                column_data_type: "html",
+                // html_data_type: "text",
                 filter_default_label: "",
                 filter_reset_button_text: false,
                 select_type_options: {
@@ -464,7 +468,7 @@ for (let i=11; i <= 22; i++) {
         $(this).find("td").toggleClass("highlight");
     });
 
-    console.timeEnd("table1load");
+//    console.timeEnd("table1load");
 
 
 
@@ -480,7 +484,7 @@ for (let i=11; i <= 49; i++) {
 // ===============
 // Subtypes Table
 // ===============
-    console.time("table2load");
+//    console.time("table2load");
     oTable2 = $("#subtypestabletab").DataTable({
         deferRender: true,
         scrollY: "50vh",
@@ -517,6 +521,7 @@ for (let i=11; i <= 49; i++) {
                 column_number: 1,
                 filter_type: "multi_select",
                 select_type: "select2",
+                column_data_type: "html",
                 filter_default_label: "",
                 filter_reset_button_text: false,
                 select_type_options: {
@@ -685,7 +690,7 @@ for (let i=11; i <= 49; i++) {
     });
 
 //    yadcf.exResetAllFilters(oTable2);
-    console.timeEnd("table2load");
+//    console.timeEnd("table2load");
 
 
 
@@ -746,7 +751,7 @@ for (let i=11; i <= 49; i++) {
 // =============================================================================
 // START OVERLAY COLUMNS CODE HERE
 // =============================================================================
-    let toggle_enabled = false;
+    let toggle_enabled = true;
     $("#toggle_fixed_btn1").click(function() {
         if (toggle_enabled) {
             toggle_enabled = false;
