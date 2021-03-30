@@ -276,7 +276,7 @@ for (let i=11; i <= 22; i++) {
 // ===============
 // Families Table
 // ===============
-//    console.time("table1load");
+    console.time("table1load");
     oTable1 = $("#familiestabletab").DataTable({
         deferRender: true,
         scrollY: "50vh",
@@ -315,7 +315,6 @@ for (let i=11; i <= 22; i++) {
                 filter_type: "multi_select",
                 select_type: "select2",
                 column_data_type: "html",
-                // html_data_type: "text",
                 filter_default_label: "",
                 filter_reset_button_text: false,
                 select_type_options: {
@@ -468,7 +467,7 @@ for (let i=11; i <= 22; i++) {
         $(this).find("td").toggleClass("highlight");
     });
 
-//    console.timeEnd("table1load");
+    console.timeEnd("table1load");
 
 
 
@@ -484,7 +483,7 @@ for (let i=11; i <= 49; i++) {
 // ===============
 // Subtypes Table
 // ===============
-//    console.time("table2load");
+    console.time("table2load");
     oTable2 = $("#subtypestabletab").DataTable({
         deferRender: true,
         scrollY: "50vh",
@@ -690,7 +689,7 @@ for (let i=11; i <= 49; i++) {
     });
 
 //    yadcf.exResetAllFilters(oTable2);
-//    console.timeEnd("table2load");
+    console.timeEnd("table2load");
 
 
 
