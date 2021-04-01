@@ -195,15 +195,12 @@ class Command(BaseBuild):
         assay_counter = 0
         for j in data.items():
             assays, reference = self.return_refenced_assays(j[1]['assay'])
-            j[1].pop('assay')
             j[1]['assay_list'] = assays
             j[1]['reference_assays_list'] = reference
-            assay_counter = assay_counter+len(j[1]['assay_list'])+len(j[1]['reference_assays_list'])
         return data
 
     def return_refenced_assays(self, assays):
         # pylint: disable=no-member
-        # no error
         main, reference = list(), list()
         for assay in assays:
             if assay['bias_reference'] != '':
@@ -215,7 +212,8 @@ class Command(BaseBuild):
         sorted_reference = reference
         if len(sorted_reference) == 0:
             self.get_reference_from_emax(assays)
-
+        if len(sorted_reference) == 0:
+            print('implementation required')
         return sorted_main, sorted_reference
 
     def get_reference_from_emax(self, assays):
@@ -247,13 +245,12 @@ class Command(BaseBuild):
                     content[name]['assay_list'] = list()
                     content[name]['assay_list'].append(assay)
                     content[name]['reference_assays_list'] = i[1]['reference_assays_list']
-
+                    content[name]['assay'] = i[1]['assay']
         return content
 
 # pylint: disable=C0301
     def limit_family_set(self, assay_list):
         # pylint: disable=no-member
-        # no error
         families = list()
         proteins = set()
         for assay in assay_list:
@@ -280,12 +277,10 @@ class Command(BaseBuild):
                 families.append(assay)
             else:
                 compare_val = next(item for item in families if item["signalling_protein"] == assay['signalling_protein'])
-                # print('\n***dublicate', compare_val['signalling_protein'], compare_val['quantitive_activity'])
                 try:
                     if assay['quantitive_activity'] < compare_val['quantitive_activity']:
                         families[:] = [d for d in families if d.get('signalling_protein') != compare_val['signalling_protein']]
                         families.append(assay)
-                        # print('\n***swap', assay['signalling_protein'], assay['quantitive_activity'])
                 except:
                     families.append(assay)
         return families
@@ -303,22 +298,20 @@ class Command(BaseBuild):
             i[1]['assay_list'] = temp_obj
             test = sorted(i[1]['assay_list'], key=lambda k: k['quantitive_activity']
                           if k['quantitive_activity'] else 999999, reverse=False)
-
             for item in enumerate(test):
                 item[1]['order_no'] = item[0]
-
             i[1]['biasdata'] = test
             i[1].pop('assay_list')
             # calculate log bias
-            self.calc_bias_factor(i[1]['biasdata'], i[1]['reference_assays_list'])
+            self.calc_bias_factor(i[1]['biasdata'], i[1]['reference_assays_list'], i[1]['assay'])
+
             # recalculates lbf if it is negative
             i[1]['biasdata'] = self.validate_lbf(i)
             self.calc_potency_and_transduction(i[1]['biasdata'])
-
         return context
 
 # pylint: disable=C0301
-    def calc_bias_factor(self, biasdata, reference):
+    def calc_bias_factor(self, biasdata, reference, assay):
         most_reference = dict()
         most_potent = dict()
         for i in biasdata:
@@ -348,25 +341,27 @@ class Command(BaseBuild):
                         temp_calculation = self.caclulate_bias_factor_variables(
                             a, b, c, d)
                         i['log_bias_factor'] = round(temp_calculation, 1)
-                except:
-                    if (i['quantitive_measure_type'].lower() == 'ic50' and temp_reference['quantitive_measure_type'].lower() == 'ic50'):
+                    elif (i['quantitive_measure_type'].lower() == 'ic50' and temp_reference['quantitive_measure_type'].lower() == 'ic50'):
                         i['log_bias_factor'] = 'Only agonist in main pathway'
-                    elif i['qualitative_activity'] == 'No activity':
-                        i['log_bias_factor'] = "Full Bias"
-                    elif i['qualitative_activity'] == 'Low activity':
-                        i['log_bias_factor'] = "High Bias"
-
-                    elif i['qualitative_activity'] == 'High activity':
-                        i['log_bias_factor'] = "Low Bias"
-                    else:
+                except:
+                    try:
+                        if i['qualitative_activity'] == 'No activity':
+                            i['log_bias_factor'] = "Full Bias"
+                        elif i['qualitative_activity'] == 'Low activity':
+                            i['log_bias_factor'] = "High Bias"
+                        elif i['qualitative_activity'] == 'High activity':
+                            i['log_bias_factor'] = "Low Bias"
+                    except:
                         i['log_bias_factor'] = None
+
 
     def get_reference_assay(self, reference, assay):
         return_assay = dict()
         try:
             for i in reference:
                 if i['signalling_protein'] == assay['signalling_protein']:
-                    return_assay = i
+                    if i['assay_type'] == assay['assay_type']:
+                        return_assay = i
         except:
             return return_assay
         return return_assay
@@ -392,16 +387,17 @@ class Command(BaseBuild):
         # T_factor -- bias factor
         for i in biasdata:
             if i['order_no'] > 0:
-                if i['quantitive_measure_type'].lower() == 'ec50' or i['quantitive_measure_type'].lower() == 'ic50':
+                try:
+                    if i['quantitive_measure_type'].lower() == 'ec50' or i['quantitive_measure_type'].lower() == 'ic50':
 
-                    if i['quantitive_activity'] is not None and i['quantitive_activity'] != 0 and most_potent['quantitive_activity'] is not None:
-                        i['potency'] = round(
-                            i['quantitive_activity'] / most_potent['quantitive_activity'], 1)
-                    elif i['quantitive_measure_type'].lower() == 'pec50' or i['quantitive_measure_type'].lower() == 'pic50':
-                        i['potency'] = round(
-                            most_potent['quantitive_activity'] - i['quantitive_activity'], 1)
-                    else:
-                        i['potency'] = None
+                        if i['quantitive_activity'] is not None and i['quantitive_activity'] != 0 and most_potent['quantitive_activity'] is not None:
+                            i['potency'] = round(
+                                i['quantitive_activity'] / most_potent['quantitive_activity'], 1)
+                        elif i['quantitive_measure_type'].lower() == 'pec50' or i['quantitive_measure_type'].lower() == 'pic50':
+                            i['potency'] = round(
+                                most_potent['quantitive_activity'] - i['quantitive_activity'], 1)
+                except:
+                    i['potency'] = None
 
                 if i['t_coefficient'] is not None and most_potent['t_coefficient'] is not None:
                     i['t_factor'] = round(
@@ -415,7 +411,7 @@ class Command(BaseBuild):
                 if x['log_bias_factor'] < 0.0:
                     j = next((item for item in i[1]['biasdata'] if item["order_no"] == 0), None)
                     x['order_no'], j['order_no'] = j['order_no'], x['order_no']
-                    self.calc_bias_factor(i[1]['biasdata'], i[1]['reference_assays_list'])
+                    self.calc_bias_factor(i[1]['biasdata'], i[1]['reference_assays_list'], i[1]['assay'])
                     self.validate_lbf(i)
                 else:
                     return i[1]['biasdata']
@@ -549,7 +545,7 @@ class Command(BaseBuild):
         print('Build bias data gproteins')
         context = dict()
         content = self.get_from_model()
-        print('stage # 1 : Getting data finished, data points: ', len(content))
+        print('stage # 1: Getting data finished, data points: ', len(content))
         content_with_children = self.process_data(content)
         print('stage # 2: Processing children in queryset finished', len(content_with_children))
         changed_data = self.queryset_to_dict(content_with_children)

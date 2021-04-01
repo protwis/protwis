@@ -244,6 +244,7 @@
 			processing: true,
 			deferRender: true,
 			dom: 'B<>flrtip',
+            "deferRender": true,
             fixedColumns:   {
             leftColumns: 2
         },
@@ -1425,6 +1426,7 @@
 
 {% block content %}
 {% autoescape off %}
+
 <div style='padding-top: 0px; font-size: 10px; white-space: nowrap; overflow-y:hidden;  width:100%;'>
 	<div class="toolbar_data_css" id="toolbar_data">
 		<table class="display compact text-nowrap toolbar_data_css">
@@ -1552,9 +1554,126 @@
 					<th id="doi_reference_filter_select" >DOI/ <br>Reference</th>
 				</tr>
 			</thead>
-			<tbody id='structures_scrollable_body'>
+				<tbody id='structures_scrollable_body' >
+				{%for e in data_test%}
+				<tr>
+					<td>
+						<span style='display: none'> {{e.ligand.id}}</span>
+						<a href="#">
+							<span class="glyphicon glyphicon-info-sign" onclick="myFunction('experiment/{{e.experiment_id}}/detail', 'Detail View', window, 1500, 1000)"></span>
+						</a>
+					</td>
 
+					<!-- s.protein_conformation.protein.parent.family.parent.parent.parent.shorter() -->
+					<td title='{{e.class}}'>{{e.class}}</td>
+					<td title='{{e.receptor.family.parent}}'>{{e.receptor.family.parent}}</td>
+					<td title='{{e.uniprot}}'>{{e.uniprot}}</td>
+					<td title='{{e.IUPHAR}}'>{{e.IUPHAR}}</td>
+					<td title='{{e.receptor.species.common_name}}'>{{e.receptor.species.common_name}}</td>
+					{% if e.endogenous_ligand == None %}
+					<td></td>
+					{%else%}
+					<td title='{{e.endogenous_ligand}}'>{{e.endogenous_ligand}}</td>
+					{%endif%}
+					<!-- ligand -->
+					<td title='{{e.reference_ligand}}' style="border-left: 1px solid black;">{{e.reference_ligand}}</td>
+					<td title='{{e.ligand}}'>
+						<!-- {%if e.chembl%}
+                            <a href='/ligand/{{e.chembl}}' target='blank'>
+                            {%endif%} -->
+						{{e.ligand}}
+					</td>
+					<td>{{e.vendor_quantity}}</td>
+					<td>{{e.article_quantity}}</td>
+					<td>{{e.labs_quantity}}</td>
+
+					<!-- receptor trunsducers -->
+					<td style="border-left: 1px solid black;">{{e.primary}}</td>
+					<td>{{e.secondary}}</td>
+
+					<!-- pathways -->
+                    <td class="pathway">{{e.pathways_p1}}</td>
+					<td class="pathway">{{e.pathways_p2}}</td>
+                    <td class="pathway">{{e.pathways_p3}}</td>
+                    <td class="pathway">{{e.pathways_p4}}</td>
+                    <td class="pathway">{{e.pathways_p5}}</td>
+					<!-- t factor -->
+    				<td class="shade">{{e.opmodel_p2_p1}}</td>
+                    <td class="shade">{{e.opmodel_p3_p1}}</td>
+                    <td class="shade">{{e.opmodel_p4_p1}}</td>
+                    <td class="shade">{{e.opmodel_p5_p1}}</td>
+					<!-- log bias facrtor -->
+					<td class="shade">{{e.lbf_p2_p1}}</td>
+                    <td class="shade">{{e.lbf_p3_p1}}</td>
+                    <td class="shade">{{e.lbf_p4_p1}}</td>
+                    <td class="shade">{{e.lbf_p5_p1}}</td>
+					<!-- potency ratio -->
+	                <td class="shade">{{e.potency_p2_p1}}</td>
+                    <td class="shade">{{e.potency_p3_p1}}</td>
+                    <td class="shade">{{e.potency_p4_p1}}</td>
+                    <td class="shade">{{e.potency_p5_p1}}</td>  
+					<!-- potency -->
+					{% for ex in e.biasdata|dictsort:"order_no" %}
+					{%if ex.quantitive_activity_initial %}
+					{%if ex.quantitive_measure_type == 'EC50' %}
+					<td class="shade" style="text-align:right">{{ex.quantitive_activity_initial}} </td>
+					{%else%}
+					<td class="shade" style="text-align:right">
+						<font color="#FF0000">{{ex.quantitive_activity_initial}} </font>
+					</td>
+					{%endif%}
+					{%else%}
+					<td class="shade">{{ex.qualitative_activity}}</td>
+					{%endif%}
+					{%endfor%}
+
+					<!-- E max -->
+					{% for ex in e.biasdata|dictsort:"order_no" %}
+					<td class="shade" style="text-align:right">{{ex.quantitive_efficacy}}</td>
+					{%endfor%}
+
+					<!-- T coefficient -->
+					{% for ex in e.biasdata|dictsort:"order_no" %}
+					{% if ex.t_coefficient == None %}
+					<td class="shade"></td>
+					{%else%}
+					<td class="shade" style="text-align:right">{{ex.t_coefficient}}</td>
+					{%endif%}
+					{%endfor%}
+
+					<!-- Assay -->
+					{% for ex in e.biasdata|dictsort:"order_no" %}
+
+					<td title='{{ex.assay_type}}'>{{ex.assay_type }}</td>
+
+					{%endfor%}
+
+					<!-- Cell line -->
+					{% for ex in e.biasdata|dictsort:"order_no" %}
+
+					<td>{{ex.cell_line }}</td>
+
+					{%endfor%}
+
+					<!-- Time resolved -->
+					{% for ex in e.biasdata|dictsort:"order_no" %}
+
+					<td>{{ex.assay_time_resolved }}</td>
+
+					{%endfor%}
+
+					<!-- Reference -->
+					<td class="name" style="border-left: 1px solid black;">
+						{{e.publication.authors}}</td>
+					<td class="name">
+						<a href='{{e.publication.web_link}}' target='blank'>
+							{{e.publication.web_link.index}}</td>
+
+				</tr>
+				{%endfor%}
 			</tbody>
+
+
 		</table>
 	</div>
 </div>
