@@ -1,18 +1,25 @@
 <br>
 {% if onlymutants %}
 
+{% elif signalling == 'gprot' or signalling == 'arrestins' %}
+<button style="width:120px;" onclick="table_applyPresentColors()">Properties</button>
+<button style="width:120px;" onclick="table_resetColors()">Clear</button>
+<br><button class='btn btn-sm btn-primary' style="width:120px;" onclick="window.location.href='residuetableexcel'">Download</button>
+<br /><br /> <br />
 {% else %}
-<button style="width:120px;" onclick="table_applyPresentColors()">Properties</button> 
+<button style="width:120px;" onclick="table_applyPresentColors()">Properties</button>
 <button style="width:120px;" onclick="table_resetColors()">Clear</button>
 <br><button style="width:120px;" onclick="table_ajaxMutants()">Show Mutants</button>
 <button style="width:220px;" onclick="table_ajaxInteractions()">Show Interactions from Structures</button>
 <br><small>Mutant Data: Increased binding/potency: <font style="color: #000; background-color: #87E88F" color="#87E88F">>5-fold</font>, <font style="color: #000; background-color: #66B36C" color="#66B36C">>10-fold</font>; Reduced binding/potency: <font style="color: #FFF; background-color: #FF7373" color="#FF7373">>5-fold</font>, <font style="color: #FDFF7B; background-color: #FA1111" color="#FA1111">>10-fold</font>; <font style="color: #000; background-color: #F7DA00" color="#F7DA00">No/low effect (<5-fold)</font>; and <font style="color: #000; background-color: #D9D7CE" color="#D9D7CE">N/A</font> </small>
 <br><button class='btn btn-sm btn-primary' style="width:120px;" onclick="window.location.href='residuetableexcel'">Download</button>
+<br /><br /> <br />
 {% endif %}
 
 
+
 <style type="text/css">
-    
+
     th.rotate > div {
     transform: /* Magic Numbers */ translate(10px, {{longest_name.div}}px) /* 45 is really 360 - 45 */ rotate(315deg);
     width: 40px;
@@ -21,20 +28,44 @@
         height: {{longest_name.height}}px;
     }
 
-</style>
+    th.sticky {
+      position: -webkit-sticky;
+      position: sticky;
+      top: 0;
+      background-color: white;
+      padding-bottom: 0.5em;
+      font-weight: normal;
+      text-align: center;
+      padding-left: 0.5em;
+      padding-right: 0.5em;
+    }
 
+    th.row-header {
+      border: 1px solid lightgrey;
+      text-align: center;
+      background-color: lightgrey;
+    }
+
+</style>
 
 <table class="table-header-rotated">
     <!-- Header -->
     <thead><tr>
+
     {% for elem, tooltip, protein in header %}
-        <th class="rotate{% if forloop.counter <= number_of_schemes %} scheme{% else %} protein{% endif %}">
+      {% if forloop.counter <= number_of_schemes %}
+        <th class="sticky" style="vertical-align: bottom; text-align: center;">
+        <div><span id='{{protein}}'><b>{{ elem|safe }}</b></span></div>
+        </th>
+      {% else %}
+        <th class="sticky">
         <div><span id='{{protein}}'>{{ elem|safe }}</span></div>
         </th>
+      {% endif %}
     {% endfor %}
     </tr></thead>
     {% for segment in segments %}
-        <tr><th colspan="{{ header|length }}" class="row-header">{{ segment }}</td></tr>
+        <tr><th colspan="{{ col_length }}" class="row-header">{{ segment }}</th></tr>
             {% for key, data_row in data.items %}
                 {% if key == segment %}
                     {% for row in data_row %}
@@ -48,4 +79,3 @@
             {% endfor %}
     {% endfor %}
 </table>
-
