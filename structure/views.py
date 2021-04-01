@@ -2150,7 +2150,7 @@ def ComplexmodDownload(request):
 		for hommod in hommodels:
 			io = StringIO(hommod.pdb_data.pdb)
 			stats_text = StringIO(hommod.stats_text.stats_text)
-			if hommod.receptor_protein.accession:
+			if not hommod.receptor_protein.accession:
 				mod_name = 'Class{}_{}-{}_{}_refined_{}_GPCRDB.pdb'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.parent.entry_name,
 																   hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
 				stat_name = 'Class{}_{}-{}_{}_refined_{}_GPCRDB.templates.csv'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.parent.entry_name,
