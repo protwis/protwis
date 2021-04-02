@@ -1218,7 +1218,7 @@ class BiasTargetSelection(AbsTargetSelectionTable):
     buttons = {
         'continue': {
             'label': 'Next',
-            'onclick': "submitSelection('/ligand/biasedbrowser');",
+            'onclick': "submitSelection('/ligand/biased');",
             'color': 'success',
         },
     }
@@ -1241,7 +1241,7 @@ class BiasGTargetSelection(AbsTargetSelectionTable):
     buttons = {
         'continue': {
             'label': 'Next',
-            'onclick': "submitSelection('/ligand/biasedgbrowser');",
+            'onclick': "submitSelection('/ligand/biasedsubtypes');",
             'color': 'success',
         },
     }
@@ -1291,6 +1291,135 @@ class BiasBrowser(ListView):
             pathways_p3=Subquery(assay_qs.values('family')[2:3]),
             pathways_p4=Subquery(assay_qs.values('family')[3:4]),
             pathways_p5=Subquery(assay_qs.values('family')[4:5]),
+
+            # t_factor
+            opmodel_p2_p1=Subquery(assay_qs.values('t_factor')[1:2]),
+            opmodel_p3_p1=Subquery(assay_qs.values('t_factor')[2:3]),
+            opmodel_p4_p1=Subquery(assay_qs.values('t_factor')[3:4]),
+            opmodel_p5_p1=Subquery(assay_qs.values('t_factor')[4:5]),
+
+            # log bias factor
+            lbf_p2_p1=Subquery(assay_qs.values('log_bias_factor')[1:2]),
+            lbf_p3_p1=Subquery(assay_qs.values('log_bias_factor')[2:3]),
+            lbf_p4_p1=Subquery(assay_qs.values('log_bias_factor')[3:4]),
+            lbf_p5_p1=Subquery(assay_qs.values('log_bias_factor')[4:5]),
+
+            # Potency ratio
+            potency_p2_p1=Subquery(assay_qs.values('potency')[1:2]),
+            potency_p3_p1=Subquery(assay_qs.values('potency')[2:3]),
+            potency_p4_p1=Subquery(assay_qs.values('potency')[3:4]),
+            potency_p5_p1=Subquery(assay_qs.values('potency')[4:5]),
+
+            # Potency
+            activity_p1=Subquery(assay_qs.values(
+                'quantitive_activity_initial')[:1]),
+            activity_p2=Subquery(assay_qs.values(
+                'quantitive_activity_initial')[1:2]),
+            activity_p3=Subquery(assay_qs.values(
+                'quantitive_activity_initial')[2:3]),
+            activity_p4=Subquery(assay_qs.values(
+                'quantitive_activity_initial')[3:4]),
+            activity_p5=Subquery(assay_qs.values(
+                'quantitive_activity_initial')[4:5]),
+            quality_activity_p1=Subquery(
+                assay_qs.values('qualitative_activity')[:1]),
+            quality_activity_p2=Subquery(
+                assay_qs.values('qualitative_activity')[1:2]),
+            quality_activity_p3=Subquery(
+                assay_qs.values('qualitative_activity')[2:3]),
+            quality_activity_p4=Subquery(
+                assay_qs.values('qualitative_activity')[3:4]),
+            quality_activity_p5=Subquery(
+                assay_qs.values('qualitative_activity')[4:5]),
+            # quality_activity
+            standard_type_p1=Subquery(
+                assay_qs.values('quantitive_measure_type')[:1]),
+            standard_type_p2=Subquery(assay_qs.values(
+                'quantitive_measure_type')[1:2]),
+            standard_type_p3=Subquery(assay_qs.values(
+                'quantitive_measure_type')[2:3]),
+            standard_type_p4=Subquery(assay_qs.values(
+                'quantitive_measure_type')[3:4]),
+            standard_type_p5=Subquery(assay_qs.values(
+                'quantitive_measure_type')[4:5]),
+            # E Max
+            emax_p1=Subquery(assay_qs.values('quantitive_efficacy')[:1]),
+            emax_p2=Subquery(assay_qs.values('quantitive_efficacy')[1:2]),
+            emax_p3=Subquery(assay_qs.values('quantitive_efficacy')[2:3]),
+            emax_p4=Subquery(assay_qs.values('quantitive_efficacy')[3:4]),
+            emax_p5=Subquery(assay_qs.values('quantitive_efficacy')[4:5]),
+
+            # T factor
+            tfactor_p1=Subquery(assay_qs.values('t_value')[:1]),
+            tfactor_p2=Subquery(assay_qs.values('t_value')[1:2]),
+            tfactor_p3=Subquery(assay_qs.values('t_value')[2:3]),
+            tfactor_p4=Subquery(assay_qs.values('t_value')[3:4]),
+            tfactor_p5=Subquery(assay_qs.values('t_value')[4:5]),
+
+            # Assay
+            assay_p1=Subquery(assay_qs.values('assay_type')[:1]),
+            assay_p2=Subquery(assay_qs.values('assay_type')[1:2]),
+            assay_p3=Subquery(assay_qs.values('assay_type')[2:3]),
+            assay_p4=Subquery(assay_qs.values('assay_type')[3:4]),
+            assay_p5=Subquery(assay_qs.values('assay_type')[4:5]),
+
+            # Cell Line
+            cell_p1=Subquery(assay_qs.values('cell_line')[:1]),
+            cell_p2=Subquery(assay_qs.values('cell_line')[1:2]),
+            cell_p3=Subquery(assay_qs.values('cell_line')[2:3]),
+            cell_p4=Subquery(assay_qs.values('cell_line')[3:4]),
+            cell_p5=Subquery(assay_qs.values('cell_line')[4:5]),
+
+            # Time
+            time_p1=Subquery(assay_qs.values('assay_time_resolved')[:1]),
+            time_p2=Subquery(assay_qs.values('assay_time_resolved')[1:2]),
+            time_p3=Subquery(assay_qs.values('assay_time_resolved')[2:3]),
+            time_p4=Subquery(assay_qs.values('assay_time_resolved')[3:4]),
+            time_p5=Subquery(assay_qs.values('assay_time_resolved')[4:5]),
+        )
+        return queryset
+
+class BiasGBrowser(ListView):
+    # serializer_class = AnalyzedExperimentSerializer
+    template_name = 'bias_browser.html'
+    context_object_name = 'data_test'
+    # @cache_page(50000)
+    def get_queryset(self):
+        protein_list = list()
+        context = dict()
+        try:
+            simple_selection = self.request.session.get('selection', False)
+            a = Alignment()
+            # load data from selection into the alignment
+            a.load_proteins_from_selection(simple_selection)
+            for items in a.proteins:
+                protein_list.append(items.protein)
+        except:
+            protein_list.append(1)
+        assay_qs = AnalyzedAssay.objects.filter(
+            order_no__lte=5,
+            assay_description__isnull=True,
+            experiment=OuterRef('pk'),
+        ).order_by('order_no')
+
+        queryset = AnalyzedExperiment.objects.filter(
+            source='same_family',
+            receptor__in=protein_list,
+        ).prefetch_related(
+            'analyzed_data', 'ligand', 'ligand__reference_ligand', 'reference_ligand',
+            'endogenous_ligand', 'ligand__properities', 'receptor', 'receptor', 'receptor__family',
+            'receptor__family__parent', 'receptor__family__parent__parent__parent',
+            'receptor__family__parent__parent', 'receptor__family', 'receptor__species',
+            'publication', 'publication__web_link', 'publication__web_link__web_resource',
+            'publication__journal', 'ligand__ref_ligand_bias_analyzed',
+            'analyzed_data__emax_ligand_reference'
+        ).annotate(
+            # pathways
+            pathways_p1=Subquery(assay_qs.values('signalling_protein')[:1]),
+            pathways_p2=Subquery(assay_qs.values('signalling_protein')[1:2]),
+            pathways_p3=Subquery(assay_qs.values('signalling_protein')[2:3]),
+            pathways_p4=Subquery(assay_qs.values('signalling_protein')[3:4]),
+            pathways_p5=Subquery(assay_qs.values('signalling_protein')[4:5]),
 
             # t_factor
             opmodel_p2_p1=Subquery(assay_qs.values('t_factor')[1:2]),

@@ -14,11 +14,14 @@ urlpatterns = [
     # url(r'^(?P<ligand_id>[-\w]+)/$',LigandDetails, name='ligand_detail'),
     url(r'^statistics', cache_page(3600*24*7)(LigandStatistics.as_view()), name='ligand_statistics'),
 
-    url(r'^biasedbrowser/$', BiasBrowser.as_view(), name='bias_browser-list'),
-    url(r'^biasedsubtypesbrowser/$', TemplateView.as_view(template_name='bias_g_browser.html')),
+    url(r'^biased/$', BiasBrowser.as_view(), name='bias_browser-list'),
+    url(r'^biasedsubtypes/$',BiasGBrowser.as_view(), name='bias_browser-list'),
+    url(r'^biasedbrowser/$',BiasTargetSelection.as_view(), name='bias_browser-list1'),
+    url(r'^biasedsubtypesbrowser/$',BiasGTargetSelection.as_view(), name='bias_browser-list1'),
 
-    url(r'^biasedbrowser/experiment/(?P<pk>[-\w]+)/detail$', ExperimentEntryView.as_view()),
-    url(r'^biasedsubtypesbrowser/experiment/(?P<pk>[-\w]+)/detail$', ExperimentEntryView.as_view()),
+
+    url(r'^biased/experiment/(?P<pk>[-\w]+)/detail$', ExperimentEntryView.as_view()),
+    url(r'^biasedsubtypes/experiment/(?P<pk>[-\w]+)/detail$', ExperimentEntryView.as_view()),
 
     url(r'^vendors$', test_link, name='test'),
     url(r'^browservendors$', BiasVendorBrowser.as_view(), name='browservendor'),
