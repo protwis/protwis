@@ -5,7 +5,7 @@ from collections import defaultdict, OrderedDict
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.views.generic import TemplateView, DetailView, ListView
-from django.db.models import Count, Subquery, Q, OuterRef
+from django.db.models import Count, Subquery, OuterRef
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 
