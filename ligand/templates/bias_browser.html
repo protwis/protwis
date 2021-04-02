@@ -455,8 +455,6 @@
                 column_number: 8,
                 filter_type: "multi_select",
                 select_type: 'select2',
-                column_data_type: "html",
-                html_data_type: "text",
                 filter_default_label: "Select",
                 filter_reset_button_text: false,
             },
@@ -1072,12 +1070,8 @@
 					{%endif%}
 					<!-- ligand -->
 					<td title='{{e.reference_ligand}}' style="border-left: 1px solid black;">{{e.reference_ligand}}</td>
-					<td title='{{e.ligand}}'>
-						<!-- {%if e.chembl%}
-                            <a href='/ligand/{{e.chembl}}' target='blank'>
-                            {%endif%} -->
-						{{e.ligand}}
-					</td>
+					<td title='{{e.ligand}}'><a href ='/ligand/{{e.ligand.id}}/info' target='_blank'>{{e.ligand}}</a>
+				                </td>
 					<td>{{e.vendor_quantity}}</td>
 					<td>{{e.article_quantity}}</td>
 					<td>{{e.labs_quantity}}</td>
@@ -1108,22 +1102,65 @@
                     <td class="shade">{{e.potency_p4_p1|default_if_none:""}}</td>
                     <td class="shade">{{e.potency_p5_p1|default_if_none:""}}</td>
 					<!-- potency -->
-                    <!-- {%if e.activity_p1 %}
-    					{%if e.quality_activity_p1 == 'EC50' %}
-    					<td class="shade" style="text-align:right">{{e.activity_p1}} </td>
+                    {%if e.activity_p1 %}
+    					{%if e.standard_type_p1 == 'EC50' %}
+    					<td class="shade" style="text-align:right">{{e.activity_p1|default_if_none:""}} </td>
     					{%else%}
     					<td class="shade" style="text-align:right">
-    						<font color="#FF0000">{{e.activity_p1}} </font>
+    						<font color="#FF0000">{{e.activity_p1|default_if_none:""}} </font>
     					</td>
     					{%endif%}
 					{%else%}
-					<td class="shade">{{e.quality_activity_p1}}</td>
-					{%endif%} -->
-                    <td class="shade">{{e.activity_p1|default_if_none:""}}</td>
-					<td class="shade">{{e.activity_p2|default_if_none:""}}</td>
-                    <td class="shade">{{e.activity_p3|default_if_none:""}}</td>
-                    <td class="shade">{{e.activity_p4|default_if_none:""}}</td>
-                    <td class="shade">{{e.activity_p5|default_if_none:""}}</td>
+					<td class="shade">{{e.quality_activity_p1|default_if_none:""}}</td>
+					{%endif%}
+
+                    {%if e.activity_p2 %}
+    					{%if e.standard_type_p2 == 'EC50' %}
+    					<td class="shade" style="text-align:right">{{e.activity_p2|default_if_none:""}} </td>
+    					{%else%}
+    					<td class="shade" style="text-align:right">
+    						<font color="#FF0000">{{e.activity_p2|default_if_none:""}} </font>
+    					</td>
+    					{%endif%}
+					{%else%}
+					<td class="shade">{{e.quality_activity_p2|default_if_none:""}}</td>
+					{%endif%}
+
+                    {%if e.activity_p3 %}
+    					{%if e.standard_type_p3 == 'EC50' %}
+    					<td class="shade" style="text-align:right">{{e.activity_p3|default_if_none:""}} </td>
+    					{%else%}
+    					<td class="shade" style="text-align:right">
+    						<font color="#FF0000">{{e.activity_p3|default_if_none:""}} </font>
+    					</td>
+    					{%endif%}
+					{%else%}
+					<td class="shade">{{e.quality_activity_p3|default_if_none:""}}</td>
+					{%endif%}
+
+                    {%if e.activity_p4 %}
+    					{%if e.standard_type_p4 == 'EC50' %}
+    					<td class="shade" style="text-align:right">{{e.activity_p4|default_if_none:""}} </td>
+    					{%else%}
+    					<td class="shade" style="text-align:right">
+    						<font color="#FF0000">{{e.activity_p4|default_if_none:""}} </font>
+    					</td>
+    					{%endif%}
+					{%else%}
+					<td class="shade">{{e.quality_activity_p4|default_if_none:""}}</td>
+					{%endif%}
+
+                    {%if e.activity_p5 %}
+    					{%if e.standard_type_p5 == 'EC50' %}
+    					<td class="shade" style="text-align:right">{{e.activity_p5|default_if_none:""}} </td>
+    					{%else%}
+    					<td class="shade" style="text-align:right">
+    						<font color="#FF0000">{{e.activity_p5|default_if_none:""}} </font>
+    					</td>
+    					{%endif%}
+					{%else%}
+					<td class="shade">{{e.quality_activity_p5|default_if_none:""}}</td>
+					{%endif%}
 
 					<!-- E max -->
     				<td class="shade">{{e.emax_p1|default_if_none:""}}</td>

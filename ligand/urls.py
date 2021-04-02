@@ -15,16 +15,12 @@ urlpatterns = [
     url(r'^statistics', cache_page(3600*24*7)(LigandStatistics.as_view()), name='ligand_statistics'),
 
     url(r'^biasedbrowser/$', BiasBrowser.as_view(), name='bias_browser-list'),
-    url(r'^biasedbrowserapi/$', BiasAPI.as_view(), name='bias_browser-list'),
-    # url(r'^biasedbrowser/$', TemplateView.as_view(template_name='bias_browser.html')),
     url(r'^biasedsubtypesbrowser/$', TemplateView.as_view(template_name='bias_g_browser.html')),
-    url(r'^bias/api/$', BiasAPI.as_view(), name='api-rest'),
-    url(r'^biasg/api/$', GBiasAPI.as_view(), name='g-api-rest'),
+
     url(r'^biasedbrowser/experiment/(?P<pk>[-\w]+)/detail$', ExperimentEntryView.as_view()),
     url(r'^biasedsubtypesbrowser/experiment/(?P<pk>[-\w]+)/detail$', ExperimentEntryView.as_view()),
-    url(r'^vendors$', test_link, name='test'),
 
-    # url(r'^browserchembl$', BiasBrowserChembl.as_view(), name='bias_chembl_browser'),
+    url(r'^vendors$', test_link, name='test'),
     url(r'^browservendors$', BiasVendorBrowser.as_view(), name='browservendor'),
     url(r'^biasedpathways$', BiasPathways.as_view(), name='pathways'),
     url(r'^pathwaydata/(?P<pk>[-\w]+)/detail$', PathwayExperimentEntryView.as_view()),
