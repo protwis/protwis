@@ -1043,7 +1043,6 @@ class BiasGBrowser(ListView):
     # @cache_page(50000)
     def get_queryset(self):
         protein_list = list()
-        context = dict()
         try:
             simple_selection = self.request.session.get('selection', False)
             a = Alignment()
