@@ -590,7 +590,28 @@ class BiasAPI(generics.ListAPIView):
                 'quantitive_activity_initial')[3:4]),
             activity_p5=Subquery(assay_qs.values(
                 'quantitive_activity_initial')[4:5]),
-
+            # quality_activity
+            quality_activity_p1=Subquery(
+                assay_qs.values('qualitative_activity')[:1]),
+            quality_activity_p2=Subquery(
+                assay_qs.values('qualitative_activity')[1:2]),
+            quality_activity_p3=Subquery(
+                assay_qs.values('qualitative_activity')[2:3]),
+            quality_activity_p4=Subquery(
+                assay_qs.values('qualitative_activity')[3:4]),
+            quality_activity_p5=Subquery(
+                assay_qs.values('qualitative_activity')[4:5]),
+            # quality_activity
+            standard_type_p1=Subquery(
+                assay_qs.values('quantitive_measure_type')[:1]),
+            standard_type_p2=Subquery(assay_qs.values(
+                'quantitive_measure_type')[1:2]),
+            standard_type_p3=Subquery(assay_qs.values(
+                'quantitive_measure_type')[2:3]),
+            standard_type_p4=Subquery(assay_qs.values(
+                'quantitive_measure_type')[3:4]),
+            standard_type_p5=Subquery(assay_qs.values(
+                'quantitive_measure_type')[4:5]),
             # E Max
             emax_p1=Subquery(assay_qs.values('quantitive_efficacy')[:1]),
             emax_p2=Subquery(assay_qs.values('quantitive_efficacy')[1:2]),
@@ -1316,7 +1337,7 @@ class BiasBrowser(ListView):
             time_p5=Subquery(assay_qs.values('assay_time_resolved')[4:5]),
         )
         for i in queryset:
-            print(i)
+            print(type(i))
         return queryset
 
     # def get_context_data(self, *args, **kwargs):
