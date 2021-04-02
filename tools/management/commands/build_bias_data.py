@@ -393,8 +393,7 @@ class Command(BaseBuild):
 
 
     def get_reference_assay(self, reference, assay):
-        return_assay = dict()
-        
+        return_assay = dict()        
         try:
             for i in reference:
                 if i['signalling_protein'] == assay['signalling_protein']:

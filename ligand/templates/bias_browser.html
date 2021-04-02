@@ -456,6 +456,8 @@
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "Select",
+                column_data_type: "html",
+                html_data_type: "text",
                 filter_reset_button_text: false,
             },
             {
@@ -829,9 +831,9 @@
                 column_number: 62,
                 filter_type: "multi_select",
                 select_type: 'select2',
+                filter_default_label: "Select",
                 column_data_type: "html",
                 html_data_type: "text",
-                filter_default_label: "DOI",
                 filter_reset_button_text: false,
             },
 
@@ -1058,7 +1060,7 @@
 					</td>
 
 					<!-- s.protein_conformation.protein.parent.family.parent.parent.parent.shorter() -->
-					<td title='{{e.receptor.class}}'>{{e.receptor.class|default_if_none:""}}</td>
+					<td title='{{e.receptor.family.parent.parent.parent.name}}'>{{e.receptor.family.parent.parent.parent.name|default_if_none:""}}</td>
 					<td title='{{e.receptor.family.parent}}'>{{e.receptor.family.parent}}</td>
 					<td title='{{e.uniprot}}'>{{e.receptor.entry_short}}</td>
 					<td title='{{e.IUPHAR}}'>{{e.receptor.name.split|first}}</td>

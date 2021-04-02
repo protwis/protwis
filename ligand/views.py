@@ -1,25 +1,21 @@
 import json
 import itertools
 from copy import deepcopy
-from .serializers import AnalyzedExperimentSerializer
 from collections import defaultdict, OrderedDict
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.views.generic import TemplateView, DetailView, ListView
-from django.db import models
 from django.db.models import Count, Subquery, Q, OuterRef
 from django.views.decorators.csrf import csrf_exempt
-
-from rest_framework import views, generics, viewsets
+from django.conf import settings
 
 from common.views import AbsTargetSelectionTable
-from collections import OrderedDict
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
-from common.views import AbsTargetSelectionTable
 from ligand.models import Ligand, LigandVendorLink, AnalyzedExperiment, AnalyzedAssay, BiasedPathways, AssayExperiment, LigandVendors
 from protein.models import Protein, ProteinFamily
+Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 
 class LigandBrowser(TemplateView):
@@ -918,7 +914,7 @@ class BiasBrowser(ListView):
     # @cache_page(50000)
     def get_queryset(self):
         protein_list = list()
-        context = dict()
+
         try:
             simple_selection = self.request.session.get('selection', False)
             a = Alignment()
