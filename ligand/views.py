@@ -1,24 +1,23 @@
 import json
 import itertools
 from copy import deepcopy
-from common.views import AbsTargetSelectionTable
 from .serializers import AnalyzedExperimentSerializer
-from django.db.models import Count, Avg, Min, Max
 from collections import defaultdict, OrderedDict
-from django.shortcuts import render, redirect
-from django.conf import settings
-from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
-from django.views.generic import TemplateView, View, DetailView, ListView
-from django.db.models import *
-from django.db.models.functions import Cast, Coalesce
+from django.shortcuts import render
+from django.http import HttpResponse
+from django.views.generic import TemplateView, DetailView, ListView
+from django.db import models
+from django.db.models import Count, Subquery, Q, OuterRef
 from django.views.decorators.csrf import csrf_exempt
 
 from rest_framework import views, generics, viewsets
 
+from common.views import AbsTargetSelectionTable
 from collections import OrderedDict
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
+from common.views import AbsTargetSelectionTable
 from ligand.models import Ligand, LigandVendorLink, AnalyzedExperiment, AnalyzedAssay, BiasedPathways, AssayExperiment, LigandVendors
 from protein.models import Protein, ProteinFamily
 

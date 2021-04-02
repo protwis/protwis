@@ -200,7 +200,6 @@ class Command(BaseBuild):
         '''
         separate tested assays and reference assays
         '''
-        assay_counter = 0
         for j in data.items():
             assays, reference = self.return_refenced_assays(j[1]['assay'])
             j[1]['assay_list'] = assays
@@ -395,7 +394,7 @@ class Command(BaseBuild):
 
     def get_reference_assay(self, reference, assay):
         return_assay = dict()
-        temp_ref = list()
+        
         try:
             for i in reference:
                 if i['signalling_protein'] == assay['signalling_protein']:

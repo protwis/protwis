@@ -1,7 +1,6 @@
 from django.conf.urls import url
 from django.views.decorators.cache import cache_page
 from ligand import views
-from django.views.generic import TemplateView
 
 urlpatterns = [
     url(r'^$', cache_page(3600*24*7)(views.LigandBrowser.as_view()), name='ligand_browser'),
