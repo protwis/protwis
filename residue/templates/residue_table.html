@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block content %}
-{% include "residue/residue_table_only.html" with header=header segments=segments data=data longest_name=longest_name %}
+{% include "residue/residue_table_only.html" with header=header segments=segments data=data longest_name=longest_name signalling=signalling col_length=col_length%}
 {% endblock %}
 
 {% block addon_js %}
