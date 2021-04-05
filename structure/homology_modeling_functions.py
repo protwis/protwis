@@ -350,20 +350,24 @@ class GPCRDBParsingPDB(object):
 
     @staticmethod
     def create_g_alpha_pdb_array(signprot_complex):
-        parent_residues = Residue.objects.filter(protein_conformation__protein=signprot_complex.protein)
+        parent_residues = Residue.objects.filter(protein_conformation__protein__entry_name=signprot_complex.structure.pdb_code.index.lower()+'_a')
         pdb_array = OrderedDict()
+        parse = GPCRDBParsingPDB()
         for r in parent_residues:
             if r.protein_segment.slug not in pdb_array:
                 pdb_array[r.protein_segment.slug] = OrderedDict()
             try:
-                rotamer = Rotamer.objects.get(structure=signprot_complex.structure, residue__display_generic_number__label=r.display_generic_number.label)
+                rotamers = Rotamer.objects.filter(structure=signprot_complex.structure, residue__display_generic_number__label=r.display_generic_number.label)
+                if len(rotamers)==0:
+                    raise Exception()
+                rotamer = parse.right_rotamer_select(rotamers)
                 p = PDB.PDBParser(QUIET=True).get_structure('structure', StringIO(rotamer.pdbdata.pdb))[0]
                 atoms = []
                 for chain in p:
                     for res in chain:
                         for atom in res:
                             atoms.append(atom)
-            except Rotamer.DoesNotExist:
+            except:
                 atoms = 'x'
             pdb_array[r.protein_segment.slug][r.display_generic_number.label] = atoms
         return pdb_array

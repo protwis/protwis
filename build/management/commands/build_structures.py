@@ -88,6 +88,11 @@ class Command(BaseBuild):
             dest='incremental',
             default=False,
             help='Incremental update to structures for small live update')
+        parser.add_argument('--debug',
+            action='store_true',
+            dest='debug',
+            default=False,
+            help='Print info for debugging')
 
     # source file directory
     structure_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'structures'])
@@ -136,6 +141,8 @@ class Command(BaseBuild):
             self.incremental_mode = True
         else:
             self.incremental_mode = False
+
+        self.debug = options['debug']
 
         try:
             self.logger.info('CREATING STRUCTURES')
@@ -215,9 +222,9 @@ class Command(BaseBuild):
         # Reset removed, since it causes more problems than not
 
         # Overwrite reset to fix annotation
-        if structure.pdb_code.index in ['6H7N','6H7J','6H7L','6H7M','6H7O','6IBL']:
+        if structure.pdb_code.index in ['6H7N','6H7J','6H7L','6H7M','6H7O']:
             removed = list(range(3,40))
-            deletions = deletions+[271]
+            deletions = deletions+list(range(244,272))
         elif structure.pdb_code.index=='6MEO':
             removed = []
         elif structure.pdb_code.index=='5N2R':
@@ -225,21 +232,96 @@ class Command(BaseBuild):
         elif structure.pdb_code.index in ['5WIU','5WIV']:
             removed = removed+[1001]
         elif structure.pdb_code.index=='6QZH':
-            removed = list(range(248,252))+list(range(1001,1473))+list(range(255,260))
+            removed = list(range(1001,1473))+list(range(255,260))
         elif structure.pdb_code.index in ['6KUX', '6KUY']:
             deletions = list(range(1,20))
         elif structure.pdb_code.index=='7BZ2':
             deletions = list(range(240,265))
         elif structure.pdb_code.index=='7C6A':
             removed = list(range(1,35))
-        elif structure.pdb_code.index=="6S0L":
-            removed = removed + list(range(1068,1107))
-        elif structure.pdb_code.index=="7D7M":
+        elif structure.pdb_code.index=='6S0L':
+            removed = [-1,0] + list(range(1001,1107))
+        elif structure.pdb_code.index=='7D7M':
             deletions = list(range(1,4)) + list(range(367,489))
-        elif structure.pdb_code.index in ["7D77", "7D76", "4GRV"]:
+        elif structure.pdb_code.index in ['7D77', '7D76', '4GRV']:
             deletions = []
-        # print(deletions)
-        # print(removed)
+        elif structure.pdb_code.index=='6A94':
+            removed.remove(69)
+            deletions.remove(69)
+        elif structure.pdb_code.index in ['6LI1']:
+            for i in range(261,265):
+                removed.remove(i)
+                deletions.remove(i)
+        elif structure.pdb_code.index=='6LI2':
+            for i in range(263,265):
+                removed.remove(i)
+                deletions.remove(i)
+        elif structure.pdb_code.index=='5JQH':
+            for i in range(1023,1030):
+                removed.remove(i)
+            for i in range(23,30):
+                deletions.remove(i)
+        elif structure.pdb_code.index=='5T1A':
+            for i in range(226,241):
+                deletions.remove(i)
+            removed.append(1002)
+            removed.remove(234)
+            removed.remove(319)
+            removed.remove(320)
+        elif structure.pdb_code.index=='5UEN':
+            for i in range(220,228):
+                removed.remove(i)
+                deletions.remove(i)
+        elif structure.pdb_code.index=='3SN6':
+            removed = list(range(1002,1161))
+        elif structure.pdb_code.index in ['6ZDV','6ZDR','6MH8','6PS7','6S0Q','6WQA','6AQF','6GT3','6JZH','6LPJ','6LPL','6LPK',
+                                          '5JTB','5OLH','5NM2','5OLG','5OM1','5OLO','5OLZ','5OLV','5OM4','5UVI','5VRA']:
+            removed.remove(1)
+            deletions.remove(1)
+        elif structure.pdb_code.index in ['5NLX','5NM4']:
+            removed.remove(10)
+            deletions.remove(1)
+            for i in range(209,214):
+                deletions.remove(i)
+            for i in range(218,223):
+                removed.remove(i)
+        elif structure.pdb_code.index=='6N48':
+            for i in range(1023,1029):
+                removed.remove(i)
+            for i in range(23,29):
+                deletions.remove(i)
+        elif structure.pdb_code.index=='5ZK3':
+            deletions.remove(382)
+        elif structure.pdb_code.index=='6A93':
+            removed.remove(69)
+            deletions.remove(69)
+        elif structure.pdb_code.index=='6IBL':
+            removed = list(range(1003,1110))
+            for i in range(41,44):
+                deletions.remove(i)
+        elif structure.pdb_code.index=='6LUQ':
+            removed.remove(387)
+            deletions.remove(366)
+        elif structure.pdb_code.index=='6W2Y':
+            for i in range(845,862):
+                deletions.remove(i)
+        elif structure.pdb_code.index in ['4Z34','4Z35','4Z36']:
+            removed.remove(327)
+            deletions.remove(327)
+        elif structure.pdb_code.index=='6TKO':
+            removed.remove(358)
+            deletions.remove(358)
+        elif structure.pdb_code.index=='6DO1':
+            removed = []
+        elif structure.pdb_code.index=='5D6L':
+            for i in range(224,231):
+                removed.remove(i)
+                deletions.remove(i)
+
+
+        if self.debug:
+            print('Deletions: ', deletions)
+            print('Removed: ', removed)
         if len(deletions)>len(d['wt_seq'])*0.9:
             #if too many deletions
             removed = []
@@ -355,16 +437,18 @@ class Command(BaseBuild):
         if len(wt_lookup)==0:
             print("No residues for",structure.protein_conformation.protein.parent.entry_name)
             return None
-        # print(parent_seq)
-        # print(seq)
-        # print('parent_seq',len(parent_seq),'pdb_seq',len(seq))
+
+        if self.debug:
+            print('parent_seq-pdb_seq length',len(parent_seq),'pdb_seq',len(seq))
+            print(parent_seq)
+            print(seq)
         #align WT with structure seq -- make gaps penalties big, so to avoid too much overfitting
 
         if structure.pdb_code.index=='6U1N':
             seq = seq[:265]
         elif structure.pdb_code.index in ['1GZM', '3C9L']:
             seq = seq[:-3]
-        if structure.pdb_code.index in ['6NBI','6NBF','6NBH','6U1N','6M1H','6PWC']:
+        if structure.pdb_code.index in ['6NBI','6NBF','6NBH','6U1N','6M1H','6PWC','7JVR']:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -3, -1)
         elif structure.pdb_code.index in ['6KUX', '6KUY', '6KUW']:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -4, -1.5)
@@ -418,9 +502,19 @@ class Command(BaseBuild):
             ref_seq = ref_seq[:304]+'----'+ref_seq[304:]
         elif structure.pdb_code.index in ['6WHC']:
             temp_seq = temp_seq[:202]+'S----------'+temp_seq[213:]
+        elif structure.pdb_code.index=='5T1A':
+            temp_seq = temp_seq[:229]+temp_seq[231:238]+temp_seq[239:242]+temp_seq[245:]
+            ref_seq = ref_seq[:224]+ref_seq[227:233]+ref_seq[236:]
+        elif structure.pdb_code.index=='5UEN':
+            temp_seq = temp_seq[:218]+temp_seq[222:]
+            ref_seq = ref_seq[:210]+ref_seq[214:]
+        elif structure.pdb_code.index=='6DO1':
+            temp_seq = temp_seq[:228]+temp_seq[230:]
+            ref_seq = ref_seq[:225]+ref_seq[227:]
 
         for i, r in enumerate(ref_seq, 1): #loop over alignment to create lookups (track pos)
-            # print(i,r,temp_seq[i-1]) #print alignment for sanity check
+            if self.debug:
+                print(i,r,temp_seq[i-1]) #print alignment for sanity check
             if r == "-":
                 gaps += 1
             if r != "-":
@@ -615,8 +709,8 @@ class Command(BaseBuild):
                                             if seg_ends['e1b']!='-' and seg_ends['e1e']!='-' and seg_ends['2e']!='-':
                                                 if residue.sequence_number<seg_ends['e1b'] and residue.sequence_number<=seg_ends['2e']:
                                                     residue.protein_segment = self.segments['TM2']
-                                                elif residue.sequence_number>seg_ends['e1e']:
-                                                    residue.protein_segment = self.segments['TM3']
+                                                # elif residue.sequence_number>seg_ends['e1e']:
+                                                #     residue.protein_segment = self.segments['TM3']
                                                 elif (residue.sequence_number>=seg_ends['e1b'] and residue.sequence_number<=seg_ends['e1e']) and residue.generic_number is None:
                                                     if debug: print("Missing GN in loop!",residue.sequence_number)
                                                     residue.missing_gn = True

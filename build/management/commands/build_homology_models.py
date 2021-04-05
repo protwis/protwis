@@ -126,8 +126,6 @@ class Command(BaseBuild):
             # if updating all, then delete existing
             print("Delete existing homology model db entries")
             StructureModel.objects.all().delete()
-            StructureModelSeqSim.objects.all().delete()
-            StructureModelStatsRotamer.objects.all().delete()
         if options['purge_zips']:
             print("Delete existing local homology model zips")
             hommod_zip_path = './structure/homology_models_zip/'
@@ -643,10 +641,10 @@ class HomologyModeling(object):
             for line in pdblines:
                 try:
                     if prev_num==None:
-                        pdb_re = re.search('(ATOM[A-Z\s\d]{13}\S{3})([\sABCDRG]+)(\d+)([A-Z\s\d.-]{49,53})',line)
+                        pdb_re = re.search('(ATOM[A-Z\s\d]{13}\S{3})([\sA-Z]+)(\d+)([A-Z\s\d.-]{49,53})',line)
                         prev_num = int(pdb_re.group(3))
                         prev_chain = pdb_re.group(2).strip()
-                    pdb_re = re.search('(ATOM[A-Z\s\d]{13}\S{3})([\sABCDRG]+)(\d+)([A-Z\s\d.-]{49,53})',line)
+                    pdb_re = re.search('(ATOM[A-Z\s\d]{13}\S{3})([\sA-Z]+)(\d+)([A-Z\s\d.-]{49,53})',line)
                     if int(pdb_re.group(3))>prev_num or (int(pdb_re.group(3))<prev_num and prev_chain!=pdb_re.group(2).strip()):
                         i+=1
                         prev_num = int(pdb_re.group(3))
@@ -666,6 +664,7 @@ class HomologyModeling(object):
                         whitespace = (whitespace+3)*' '
                     else:
                         whitespace = (whitespace-3)*' '
+                    whitespace = ' '+pref_chain+whitespace[2:]
                     group1 = pdb_re.group(1)
                     if 'OXT' in group1:
                         if not self.complex:
@@ -700,27 +699,29 @@ class HomologyModeling(object):
                         out_line+='\n'
                     out_list.append(out_line)
                 except Exception as msg:
-                    try:
-                        if line.startswith('TER'):
-                            pdb_re = re.search('(TER\s+\d+\s+\S{3})([\sABCDRG]+)(\d+)',line)
-                            out_list.append(pdb_re.group(1)+len(pdb_re.group(2))*' '+pos_list[i]+"\n")
-                            atom_num+=1
-                        else:
-                            raise Exception()
-                    except:
+                    if line.startswith('TER'):
+                        # pdb_re = re.search('(TER\s+\d+\s+\S{3})([\sA-Z]+)(\d+)',line)
+                        # out_list.append(pdb_re.group(1)+len(pdb_re.group(2))*' '+pos_list[i]+"\n")
+                        out_list.append('TER\n')
+                        atom_num+=1
+                    else:
                         try:
                             pref_chain = str(self.main_structure.preferred_chain)
                             if len(pref_chain)>1:
                                 pref_chain = pref_chain[0]
-                            pdb_re = re.search('(HETATM[0-9\sA-Z{apo}]{{11}})([A-Z0-9\s]{{3}})([\sABCDRG]+)(\d+)([\s0-9.A-Z-]+)'.format(apo="'"),line)
-
+                            pdb_re = re.search('(HETATM[0-9\sA-Z{apo}]{{11}})([A-Z0-9\s]{{3}})([\sA-Z]+)(\d+)([\s0-9.A-Z-]+)'.format(apo="'"),line)
+                            if not pdb_re:
+                                continue
                             alternate_water = False
-                            whitespace3 = len(pdb_re.group(3))*' '
+                            whitespace3 = (len(pdb_re.group(3))-2)*' '
                             if first_hetatm==False:
                                 prev_hetnum = int(pdb_re.group(4))
                                 first_hetatm = True
-                                atom_num = int(pdb_re.group(1)[7:11])
-                                num = int(pos_list[i])+1
+                                atom_num = int(pdb_re.group(1)[7:11])+1
+                                if self.complex:
+                                    num = int(pos_list[sp_first_indeces[0]-1])+1
+                                else:
+                                    num = int(pos_list[i])+1
                                 if 'HOH' in pdb_re.group(2):
                                     water_count+=1
                                     if water_count in self.alternate_water_positions:
@@ -730,14 +731,14 @@ class HomologyModeling(object):
                                         else:
                                             whitespace1 = ''
                                             whitespace2 = 4*' '
-                                        bwater = 'HETATM {}  O  BHOH  {}{}{}'.format(str(atom_num+1), whitespace1, num+1, whitespace2)+self.alternate_water_positions[water_count][31:]
+                                        bwater = 'HETATM {}  O  BHOH {}{}{}{}'.format(str(atom_num+1), pref_chain, whitespace1[:-1], num+1, whitespace2)+self.alternate_water_positions[water_count][31:]
                                         alternate_water = True
                                 if alternate_water==True:
-                                    out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:-1]+'A'+pdb_re.group(2)+whitespace3+str(int(pos_list[i])+1)+pdb_re.group(5))
+                                    out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:-1]+'A'+pdb_re.group(2)+' '+pref_chain+whitespace3+str(num+1)+pdb_re.group(5))
                                     out_list.append(bwater)
                                     atom_num+=2
                                 else:
-                                    out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:]+pdb_re.group(2)+whitespace3+str(int(pos_list[i])+1)+pdb_re.group(5))
+                                    out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:]+pdb_re.group(2)+' '+pref_chain+whitespace3+str(num)+pdb_re.group(5))
                                     atom_num+=1
                             else:
                                 if int(pdb_re.group(4))!=prev_hetnum:
@@ -750,20 +751,20 @@ class HomologyModeling(object):
                                             else:
                                                 whitespace1 = ''
                                                 whitespace2 = 4*' '
-                                            bwater = 'HETATM {}  O  BHOH  {}{}{}'.format(str(atom_num+1), whitespace1, num+1, whitespace2)+self.alternate_water_positions[water_count][31:]
+                                            bwater = 'HETATM {}  O  BHOH {}{}{}{}'.format(str(atom_num+1), pref_chain, whitespace1[:-1], num+1, whitespace2)+self.alternate_water_positions[water_count][31:]
                                             alternate_water = True
                                     if alternate_water==True:
-                                        out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:-1]+'A'+pdb_re.group(2)+whitespace3+str(num+1)+pdb_re.group(5))
+                                        out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:-1]+'A'+pdb_re.group(2)+' '+pref_chain+whitespace3+str(num+1)+pdb_re.group(5))
                                         out_list.append(bwater)
                                         atom_num+=2
                                     else:
-                                        out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:]+pdb_re.group(2)+whitespace3+str(num+1)+pdb_re.group(5))
+                                        out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:]+pdb_re.group(2)+' '+pref_chain+whitespace3+str(num+1)+pdb_re.group(5))
                                         atom_num+=1
                                     prev_hetnum+=1
                                     num+=1
 
                                 else:
-                                    out_list.append(pdb_re.group(1)+pdb_re.group(2)+whitespace3+str(num)+pdb_re.group(5))
+                                    out_list.append(pdb_re.group(1)+pdb_re.group(2)+' '+pref_chain+whitespace3+str(num)+pdb_re.group(5))
                                     atom_num+=1
                         except:
                             out_list.append(line)
@@ -897,9 +898,9 @@ class HomologyModeling(object):
             first_line  = 'REMARK    1 MODEL FOR {} CREATED WITH GPCRDB HOMOLOGY MODELING PIPELINE, VERSION {}\n'.format(self.reference_entry_name, build_date)
             second_line = 'REMARK    2 MAIN TEMPLATE: {}\n'.format(self.main_structure)
             f.seek(0,0)
-            f.write(first_line+second_line+ssbond+content[:-4]+beta_gamma+conect+'END')
+            f.write(first_line+second_line+ssbond+content[:-4]+beta_gamma+'\n'+conect+'END')
 
-        return first_line+second_line+ssbond+content[:-4]+beta_gamma+conect+'END'
+        return first_line+second_line+ssbond+content[:-4]+beta_gamma+'\n'+conect+'END'
 
     def run_alignment(self, query_states, core_alignment=True,
                       segments=['TM1','ICL1','TM2','ECL1','TM3','ICL2','TM4','TM5','TM6','TM7','H8'],
@@ -2050,88 +2051,10 @@ class HomologyModeling(object):
         post_model = p.get_structure('post', post_file)[0]
         hse = HSExposureCB(post_model, radius=11)
         clash_pairs = hse.clash_pairs
+        trimmed_res_nums['clashes'] = OrderedDict()
         for i in clash_pairs:
-            gn1 = str(i[0][0]).replace('.','x')
-            if len(gn1.split('x')[1])==1:
-                gn1 = gn1+'0'
-            if gn1[0]=='-':
-                gn1 = gn1[1:]+'1'
-            gn2 = str(i[1][0]).replace('.','x')
-            if len(gn2.split('x')[1])==1:
-                gn2 = gn2+'0'
-            if gn2[0]=='-':
-                gn2 = gn2[1:]+'1'
-            first_non_TM, second_non_TM = False, False
-            try:
-                try:
-                    segment1 = self.segment_coding[int(gn1.split('x')[0])]
-                    for s in self.alignment.alignment_dict:
-                        if s.startswith(segment1):
-                            segment1 = s
-                            break
-                except:
-                    first_non_TM = True
-                try:
-                    segment2 = self.segment_coding[int(gn2.split('x')[0])]
-                    for s in self.alignment.alignment_dict:
-                        if s.startswith(segment2):
-                            segment2 = s
-                            break
-                except:
-                    second_non_TM = True
-                ref_gap_counter = 0
-                break_loop = False
-                try:
-                    start_dif = int(list(self.alignment.reference_dict['N-term'].keys())[0])-1
-                except:
-                    start_dif = None
-                if first_non_TM==True or self.alignment.alignment_dict[segment1][gn1]=='.':
-                    for seg, resis in self.alignment.reference_dict.items():
-                        for gn, res in resis.items():
-                            if res=='-':
-                                ref_gap_counter+=1
-                            if gn==gn1:
-                                trimmed_res_nums[segment1][str(i[0][0])] = i[0][1]
-                                break_loop = True
-                                break
-                            try:
-                                if i[0][1]+start_dif+ref_gap_counter==int(gn):
-                                    trimmed_res_nums[seg][gn] = i[0][1]
-                                    break_loop = True
-                                    break
-                            except:
-                                pass
-                        if break_loop==True:
-                            break
-                if second_non_TM==True or self.alignment.alignment_dict[segment2][gn2]=='.':
-                    for seg, resis in self.alignment.reference_dict.items():
-                        for gn, res in resis.items():
-                            if res=='-':
-                                ref_gap_counter+=1
-                            if gn==gn2:
-                                trimmed_res_nums[segment2][str(i[1][0])] = i[1][1]
-                                break_loop = True
-                                break
-                            try:
-                                if i[1][1]+start_dif+ref_gap_counter==int(gn):
-                                    trimmed_res_nums[seg][gn] = i[1][1]
-                                    break_loop = True
-                                    break
-                            except:
-                                pass
-                        if break_loop==True:
-                            break
-                else:
-                    for seg, resis in self.alignment.reference_dict.items():
-                        for gn, res in resis.items():
-                            if res=='-':
-                                ref_gap_counter+=1
-                            if gn==gn1:
-                                trimmed_res_nums[segment1][gn1.replace('x','.')] = i[0][1]
-                            elif gn==gn2:
-                                trimmed_res_nums[segment2][gn2.replace('x','.')] = i[1][1]
-            except Exception as msg:
-                print("Warning: Can't fix side chain clash on {}".format(msg))
+            trimmed_res_nums['clashes'][i[0][1]] = i[0][1]
+            trimmed_res_nums['clashes'][i[1][1]] = i[1][1]
 
         self.statistics.add_info('clashing_residues', clash_pairs)
 
@@ -3492,7 +3415,7 @@ class Loops(object):
         self.model_loop = False
         self.partialECL2_1 = False
         self.partialECL2_2 = False
-        self.excluded_loops = {'ICL1':[],'ECL1':[],'ICL2':['5ZKP'],'ECL2':[],'ECL2_1':[],'ECL2_mid':[],'ECL2_2':[],'ICL3':['3VW7'],'ECL3':['4DJH','6KJV','6KK1','6KK7','5VEW']}
+        self.excluded_loops = {'ICL1':[],'ECL1':[],'ICL2':['5ZKP'],'ECL2':[],'ECL2_1':[],'ECL2_mid':[],'ECL2_2':['6K41'],'ICL3':['3VW7'],'ECL3':['4DJH','6KJV','6KK1','6KK7','5VEW']}
         self.evade_chain_break = False
 
     def fetch_loop_residues(self, main_pdb_array, superpose_modded_loop=False):

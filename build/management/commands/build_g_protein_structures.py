@@ -168,9 +168,32 @@ class Command(BaseBuild):
                         print("======")
                         print(remaining_mismatches)
                         pprint.pprint(pdb_num_dict)
+
+                    no_seqnum_shift = ["6OY9", "6OYA", "6LPB", "6WHA", "7D77"]
+
+                    # Check if HN is mutated to GNAI1 for the scFv16 stabilizer
+                    if sc.protein.entry_name!='gnai1_human' and len(remaining_mismatches)>0:
+                        target_HN = resis.filter(protein_segment__slug='HN')
+                        gnai1_HN = Residue.objects.filter(protein_conformation__protein__entry_name='gnai1_human', protein_segment__slug='HN')
+                        pdb_HN_seq = ''
+                        for num, val in pdb_num_dict.items():
+                            if num<=target_HN.reverse()[0].sequence_number:
+                                pdb_HN_seq+=Polypeptide.three_to_one(val[0].get_resname())
+                        if options['debug']:
+                            print('Checking if HN is gnai1_human')
+                            print(pdb_HN_seq)
+                            print(''.join(gnai1_HN.values_list('amino_acid', flat=True)))
+                        gnai1_HN_seq = ''.join(gnai1_HN.values_list('amino_acid', flat=True))
+                        pw2 = pairwise2.align.localxx(gnai1_HN_seq, pdb_HN_seq)
+                        ref_seq, temp_seq = str(pw2[0][0]), str(pw2[0][1])
+                        identity = pw2[0].score/len(ref_seq)*100
+                        if identity>85:
+                            no_seqnum_shift.append(sc.structure.pdb_code.index)
+                            if options['debug']:
+                                print('INFO: HN has {}% with gnai1_human HN, skipping seqnum shift correction'.format(round(identity)))
                     
                     # Mismatches remained possibly to seqnumber shift, making pairwise alignment to try and fix alignment
-                    if len(remaining_mismatches)>0 and sc.structure.pdb_code.index not in ["6OIJ", "6OY9", "6OYA", "6LPB", "6WHA"]:
+                    if len(remaining_mismatches)>0 and sc.structure.pdb_code.index not in no_seqnum_shift:
                         ppb = PPBuilder()
                         seq = ""
                         for pp in ppb.build_peptides(chain, aa_only=False):
@@ -185,7 +208,8 @@ class Command(BaseBuild):
                         pdb_wt_dict = OrderedDict()
                         j, k = 0, 0
                         for i, ref, temp in zip(range(0,len(ref_seq)), ref_seq, temp_seq):
-                            # print(i, ref, temp) # alignment check
+                            if options["debug"]:
+                                print(i, ref, temp) # alignment check
                             if ref!="-" and temp!="-":
                                 wt_pdb_dict[resis[j]] = pdb_num_dict[nums[k]]
                                 pdb_wt_dict[pdb_num_dict[nums[k]][0]] = resis[j]
