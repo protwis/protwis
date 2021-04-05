@@ -32,7 +32,6 @@ function resetHidden1() {
 
 function reset_tab() {
 // Just a button to go back to the main page.
-// TODO: A better per tab (table object) reset.
     window.location.href = "/signprot/arrestincouplings";
 }
 
@@ -135,49 +134,47 @@ $(document).ready(function() {
                 }
             },
 
-// // log(Emax/EC50)
-//             {
-//                 column_number : 6,
-//                 filter_type: "range_number",
-//                 filter_default_label: ["Min", "Max"],
-//                 filter_reset_button_text: false,
-//             },
-//             {
-//                 column_number : 7,
-//                 filter_type: "range_number",
-//                 filter_default_label: ["Min", "Max"],
-//                 filter_reset_button_text: false,
-//             },
-//
-// // pEC50
-//             {
-//                 column_number : 8,
-//                 filter_type: "range_number",
-//                 filter_default_label: ["Min", "Max"],
-//                 filter_reset_button_text: false,
-//             },
-//             {
-//                 column_number : 9,
-//                 filter_type: "range_number",
-//                 filter_default_label: ["Min", "Max"],
-//                 filter_reset_button_text: false,
-//             },
-//
-// // Emax
-//             {
-//                 column_number : 10,
-//                 filter_type: "range_number",
-//                 filter_default_label: ["Min", "Max"],
-//                 filter_reset_button_text: false,
-//             },
-//             {
-//                 column_number : 11,
-//                 filter_type: "range_number",
-//                 filter_default_label: ["Min", "Max"],
-//                 filter_reset_button_text: false,
-//             },
+// log(Emax/EC50)
+            {
+                column_number : 6,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+            {
+                column_number : 7,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
 
+// pEC50
+            {
+                column_number : 8,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+            {
+                column_number : 9,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
 
+// Emax
+            {
+                column_number : 10,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+            {
+                column_number : 11,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
 
         ],
 
