@@ -395,7 +395,7 @@ class ProteinGProteinPair(models.Model):
 
 class ProteinArrestinPair(models.Model):
     protein = models.ForeignKey('Protein', on_delete=models.CASCADE)
-    publication = models.ForeignKey('common.Publication', on_delete=models.CASCADE)
+    publication = models.ForeignKey('common.Publication', on_delete=models.CASCADE, null=True)
     source = models.TextField(null=True)  # Bouvier
     emax_deg = models.FloatField(null=True, blank=True)  # Value from David Gloriam
     pec50_deg = models.FloatField(null=True, blank=True)  # Value from David Gloriam
