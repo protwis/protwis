@@ -119,6 +119,7 @@ class Command(BaseBuild):
             temp_dict = dict()
             temp = dict()
             doubles = []
+            temp['ligand_source_id'] = None
             temp['publication'] = j['main'].publication
             temp['species'] = j['main'].receptor.species.common_name
             # temp['ligand'] = j['main'].ligand
@@ -219,8 +220,8 @@ class Command(BaseBuild):
         sorted_reference = reference
         if len(sorted_reference) == 0:
             self.get_reference_from_emax(assays)
-        if len(sorted_reference) == 0:
-            print('implementation required')
+        # if len(sorted_reference) == 0:
+        #     print('implementation required')
         return sorted_main, sorted_reference
 
     def filter_reference_assay(self, reference_return, reference_ligand):
@@ -278,6 +279,8 @@ class Command(BaseBuild):
                     content[name]['article_quantity'] = i[1]['article_quantity']
                     content[name]['labs_quantity'] = i[1]['labs_quantity']
                     content[name]['assay_list'] = list()
+                    content[name]['ligand_source_type'] = i[1]['ligand_source_type']
+                    content[name]['ligand_source_id'] = i[1]['ligand_source_id']
                     content[name]['assay_list'].append(assay)
                     content[name]['reference_assays_list'] = i[1]['reference_assays_list']
                     content[name]['assay'] = i[1]['assay']
@@ -338,9 +341,10 @@ class Command(BaseBuild):
             for item in enumerate(test):
                 item[1]['order_no'] = item[0]
             i[1]['biasdata'] = test
+            i[1]['reference_lists'] = list()
             i[1].pop('assay_list')
             # calculate log bias
-            self.calc_bias_factor(i[1]['biasdata'], i[1]['reference_assays_list'], i[1]['assay'])
+            i[1]['reference_lists'] = self.calc_bias_factor(i[1]['biasdata'], i[1]['reference_assays_list'], i[1]['assay'])
 
             # recalculates lbf if it is negative
             i[1]['biasdata'] = self.validate_lbf(i)
@@ -349,17 +353,20 @@ class Command(BaseBuild):
 
 # pylint: disable=C0301
     def calc_bias_factor(self, biasdata, reference, assay):
+        reference_lists = list()
         most_reference = dict()
         most_potent = dict()
         for i in biasdata:
             if i['order_no'] == 0:
                 most_potent = i
                 most_reference = self.get_reference_assay(reference, most_potent)
+                reference_lists.append(most_reference)
                 i['log_bias_factor'] = None
 
         for i in biasdata:
             if i['order_no'] != 0:
                 temp_reference = self.get_reference_assay(reference, i)
+                reference_lists.append(temp_reference)
                 try:
                     if (i['quantitive_measure_type'].lower() == 'ec50' and temp_reference['quantitive_measure_type'].lower() == 'ec50' and
                             most_potent['quantitive_measure_type'].lower() == 'ec50' and most_reference['quantitive_measure_type'].lower() == 'ec50'):
@@ -390,7 +397,7 @@ class Command(BaseBuild):
                             i['log_bias_factor'] = "Low Bias"
                     except:
                         i['log_bias_factor'] = None
-
+        return reference_lists
 
     def get_reference_assay(self, reference, assay):
         return_assay = dict()
@@ -506,35 +513,37 @@ class Command(BaseBuild):
                                                          emax_ligand_reference=emax_ligand
                                                          )
                         experiment_assay.save()
-                    for ex in i[1]['reference_assays_list']:
-
-                        emax_ligand = ex['emax_reference_ligand']
-                        experiment_assay = AnalyzedAssay(experiment=experiment_entry,
-                                                         assay_description='reference_assay',
-                                                         family=ex['family'],
-                                                         order_no=ex['order_no'],
-                                                         signalling_protein=ex['signalling_protein'],
-                                                         cell_line=ex['cell_line'],
-                                                         assay_type=ex['assay_type'],
-                                                         assay_measure=ex['assay_measure_method'],
-                                                         assay_time_resolved=ex['assay_time_resolved'],
-                                                         ligand_function=ex['ligand_function'],
-                                                         quantitive_measure_type=ex['quantitive_measure_type'],
-                                                         quantitive_activity=ex['quantitive_activity'],
-                                                         quantitive_activity_initial=ex['quantitive_activity_initial'],
-                                                         quantitive_unit=ex['quantitive_unit'],
-                                                         qualitative_activity=ex['qualitative_activity'],
-                                                         quantitive_efficacy=ex['quantitive_efficacy'],
-                                                         efficacy_measure_type=ex['efficacy_measure_type'],
-                                                         efficacy_unit=ex['efficacy_unit'],
-                                                         potency=ex['potency'],
-                                                         t_coefficient=ex['t_coefficient'],
-                                                         t_value=ex['t_coefficient_initial'],
-                                                         t_factor=ex['t_factor'],
-                                                         log_bias_factor=ex['log_bias_factor'],
-                                                         emax_ligand_reference=emax_ligand
-                                                         )
-                        experiment_assay.save()
+                    for ex in i[1]['reference_lists']:
+                        try:
+                            emax_ligand = ex['emax_reference_ligand']
+                            experiment_assay = AnalyzedAssay(experiment=experiment_entry,
+                                                             assay_description='reference_assay',
+                                                             family=ex['family'],
+                                                             order_no=ex['order_no'],
+                                                             signalling_protein=ex['signalling_protein'],
+                                                             cell_line=ex['cell_line'],
+                                                             assay_type=ex['assay_type'],
+                                                             assay_measure=ex['assay_measure_method'],
+                                                             assay_time_resolved=ex['assay_time_resolved'],
+                                                             ligand_function=ex['ligand_function'],
+                                                             quantitive_measure_type=ex['quantitive_measure_type'],
+                                                             quantitive_activity=ex['quantitive_activity'],
+                                                             quantitive_activity_initial=ex['quantitive_activity_initial'],
+                                                             quantitive_unit=ex['quantitive_unit'],
+                                                             qualitative_activity=ex['qualitative_activity'],
+                                                             quantitive_efficacy=ex['quantitive_efficacy'],
+                                                             efficacy_measure_type=ex['efficacy_measure_type'],
+                                                             efficacy_unit=ex['efficacy_unit'],
+                                                             potency=ex['potency'],
+                                                             t_coefficient=ex['t_coefficient'],
+                                                             t_value=ex['t_coefficient_initial'],
+                                                             t_factor=ex['t_factor'],
+                                                             log_bias_factor=ex['log_bias_factor'],
+                                                             emax_ligand_reference=emax_ligand
+                                                             )
+                            experiment_assay.save()
+                        except:
+                            pass
                 else:
                     pass
 
