@@ -299,6 +299,8 @@ class Command(BaseBuild):
             removed = list(range(1003,1110))
             for i in range(41,44):
                 deletions.remove(i)
+            deletions.remove(243)
+            deletions.append(271)
         elif structure.pdb_code.index=='6LUQ':
             removed.remove(387)
             deletions.remove(366)
@@ -317,7 +319,8 @@ class Command(BaseBuild):
             for i in range(224,231):
                 removed.remove(i)
                 deletions.remove(i)
-
+        elif structure.pdb_code.index=='7DFL':
+            deletions = list(range(222,405))
 
         if self.debug:
             print('Deletions: ', deletions)

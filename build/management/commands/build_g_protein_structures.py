@@ -198,7 +198,10 @@ class Command(BaseBuild):
                         seq = ""
                         for pp in ppb.build_peptides(chain, aa_only=False):
                             seq += str(pp.get_sequence())
-                        pw2 = pairwise2.align.localms(sc.protein.sequence, seq, 2, -1, -.5, -.1)
+                        if sc.structure.pdb_code.index in ['7JVQ']:
+                            pw2 = pairwise2.align.localms(sc.protein.sequence, seq, 3, -4, -3, -1)
+                        else:
+                            pw2 = pairwise2.align.localms(sc.protein.sequence, seq, 2, -1, -.5, -.1)
                         ref_seq, temp_seq = str(pw2[0][0]), str(pw2[0][1])
                         # Custom fix for A->G mutation at pos 18
                         if sc.structure.pdb_code.index=="7JJO":
@@ -240,6 +243,9 @@ class Command(BaseBuild):
                                 # Adjust for shift
                                 else:
                                     pdb_num_dict[r[0].get_id()[1]][1] = pdb_wt_dict[r[0]]
+                            if sc.structure.pdb_code.index=='7JVQ':
+                                pdb_num_dict[198][1] = Residue.objects.get(protein_conformation__protein=sc.structure.protein_conformation.protein.parent, sequence_number=346)
+                                pdb_num_dict[235][1] = Residue.objects.get(protein_conformation__protein=sc.structure.protein_conformation.protein.parent, sequence_number=383)
                     ### Custom alignment fix for 6WHA mini-Gq/Gi2/Gs chimera
                     elif sc.structure.pdb_code.index=="6WHA":
                         ref_seq  = "MTLESIMACCLSEEAKEARRINDEIERQLRRDKRDARRELKLLLLGTGESGKSTFIKQMRIIHGSGYSDEDKRGFTKLVYQNIFTAMQAMIRAMDTLKIPYKYEHNKAHAQLVREVDVEKVSAFENPYVDAIKSLWNDPGIQECYDRRREYQLSDSTKYYLNDLDRVADPAYLPTQQDVLRVRVPTTGIIEYPFDLQSVIFRMVDVGGQRSERRKWIHCFENVTSIMFLVALSEYDQVLVESDNENRMEESKALFRTIITYPWFQNSSVILFLNKKDLLEEKIM--YSHLVDYFPEYDGP----QRDAQAAREFILKMFVDL---NPDSDKIIYSHFTCATDTENIRFVFAAVKDTILQLNLKEYNLV"

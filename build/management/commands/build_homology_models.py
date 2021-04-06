@@ -380,6 +380,9 @@ class CallHomologyModeling():
                             db_res = Residue.objects.get(protein_conformation__protein=Homology_model.reference_protein, sequence_number=int(res.get_id()[1]))
                         else:
                             db_res = Residue.objects.get(protein_conformation__protein=Homology_model.reference_protein.parent, sequence_number=int(res.get_id()[1]))
+                        # Skip amino acid HETRESIS
+                        if res.get_id()[0].startswith('H_'):
+                            continue
                         if PDB.Polypeptide.three_to_one(res.get_resname())!=db_res.amino_acid:
                             residue_shift = True
                             break
@@ -719,9 +722,9 @@ class HomologyModeling(object):
                                 first_hetatm = True
                                 atom_num = int(pdb_re.group(1)[7:11])+1
                                 if self.complex:
-                                    num = int(pos_list[sp_first_indeces[0]-1])+1
+                                    num = int(pos_list[sp_first_indeces[0]-1])+100
                                 else:
-                                    num = int(pos_list[i])+1
+                                    num = int(pos_list[i])+100
                                 if 'HOH' in pdb_re.group(2):
                                     water_count+=1
                                     if water_count in self.alternate_water_positions:
@@ -3065,11 +3068,13 @@ class HelixEndsModeling(HomologyModeling):
                                   'TM7':[[],[]], 'H8':[[],[]]},
                          'removed':{'TM1':[[],[]],'TM2':[[],[]],'TM3':[[],[]],'TM4':[[],[]],'TM5':[[],[]],'TM6':[[],[]],
                                     'TM7':[[],[]], 'H8':[[],[]]}}
-        try:
-            H8_alt = template_source['H8']['8x50'][0]
-            if separate_H8==True:
-                raise Exception()
-        except:
+        for i, j in template_source['H8'].items():
+            if j[0]:
+                H8_alt = j[0]
+                break
+            else:
+                H8_alt = None
+        if separate_H8==True:
             H8_alt = None
         if self.debug:
             if not separate_H8 and not H8_alt:

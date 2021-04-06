@@ -77,8 +77,10 @@ class SignprotModeling():
             else:
                 for i in subfam_template_preference[signprot.family.parent.name]:
                     try:
-                        return subfam_dict[ProteinFamily.objects.get(name=i)][0]
-                    except:
+                        fam = ProteinFamily.objects.get(name=i)
+                        if fam in subfam_dict:
+                            return subfam_dict[fam][0]
+                    except ProteinFamily.DoesNotExist:
                         continue
                 return Structure.objects.get(pdb_code__index='3SN6')
 
@@ -116,12 +118,17 @@ class SignprotModeling():
                 self.template_source[res.protein_segment.slug] = OrderedDict()
             self.template_source[res.protein_segment.slug][res.display_generic_number.label] = [self.main_structure, self.main_structure]
 
+        # Custom fix for engineered alpha 7JVQ
+        if self.main_structure.pdb_code.index=='7JVQ':
+            for seg in ['H1', 'h1ha']:
+                for i in signprot_pdb_array[seg]:
+                    signprot_pdb_array[seg][i] = 'x'
+
         # Superimpose missing regions H1 - hfs2
         alt_complex_struct = None
         alt_signprot_complex = None
         segs_for_alt_complex_struct = []
         alt_templates_H_domain = self.get_alpha_templates(True)
-
         if self.main_structure.id not in alt_templates_H_domain[1]:
             segs_for_alt_complex_struct = ['H1', 'h1ha', 'HA', 'hahb', 'HB', 'hbhc', 'HC', 'hchd', 'HD', 'hdhe', 'HE', 'hehf', 'HF', 'hfs2']
             alt_complex_struct = self.find_h_domain_template(self.target_signprot, alt_templates_H_domain[0])
@@ -179,7 +186,7 @@ class SignprotModeling():
 
             # remove h1ha residues as those are usually distorted
             h1ha = Residue.objects.filter(protein_conformation__protein=alt_signprot_complex.protein, protein_segment__slug='h1ha')
-            h1ha_dict, hahb_dict = OrderedDict(), OrderedDict()
+            h1ha_dict = OrderedDict()
             for h in h1ha:
                 h1ha_dict[h.generic_number.label] = 'x'
             self.template_source = update_template_source(self.template_source, list(self.template_source['h1ha'].keys()), None, 'h1ha')
@@ -680,7 +687,7 @@ class SignprotModeling():
         new_array = OrderedDict()
         for seg, resis in alignment.template_dict.items():
             new_seg = OrderedDict()
-            for gn, atoms in resis.items():
+            for gn in resis:
                 if seg in signprot_array and gn in signprot_array[seg]:
                     new_seg[gn] = signprot_array[seg][gn]
                 else:
