@@ -169,7 +169,7 @@ class Command(BaseBuild):
                         print(remaining_mismatches)
                         pprint.pprint(pdb_num_dict)
 
-                    no_seqnum_shift = ["6OY9", "6OYA", "6LPB", "6WHA", "7D77"]
+                    no_seqnum_shift = ['6OY9', '6OYA', '6LPB', '6WHA', '7D77', '6XOX', '7L1U', '7L1V']
 
                     # Check if HN is mutated to GNAI1 for the scFv16 stabilizer
                     if sc.protein.entry_name!='gnai1_human' and len(remaining_mismatches)>0:
@@ -184,9 +184,19 @@ class Command(BaseBuild):
                             print(pdb_HN_seq)
                             print(''.join(gnai1_HN.values_list('amino_acid', flat=True)))
                         gnai1_HN_seq = ''.join(gnai1_HN.values_list('amino_acid', flat=True))
-                        pw2 = pairwise2.align.localxx(gnai1_HN_seq, pdb_HN_seq)
+                        pw2 = pairwise2.align.localms(gnai1_HN_seq, pdb_HN_seq, 3, -4, -3, -1)
                         ref_seq, temp_seq = str(pw2[0][0]), str(pw2[0][1])
-                        identity = pw2[0].score/len(ref_seq)*100
+                        length, match = 0,0
+                        for r, t in zip(ref_seq, temp_seq):
+                            if options['debug']:
+                                print(r,t)
+                            if t!='-':
+                                if r==t:
+                                    match+=1
+                                length+=1
+                        identity = match/length*100
+                        if options['debug']:
+                            print(identity)
                         if identity>85:
                             no_seqnum_shift.append(sc.structure.pdb_code.index)
                             if options['debug']:
@@ -198,7 +208,7 @@ class Command(BaseBuild):
                         seq = ""
                         for pp in ppb.build_peptides(chain, aa_only=False):
                             seq += str(pp.get_sequence())
-                        if sc.structure.pdb_code.index in ['7JVQ']:
+                        if sc.structure.pdb_code.index in ['7JVQ','7L1U','7L1V']:
                             pw2 = pairwise2.align.localms(sc.protein.sequence, seq, 3, -4, -3, -1)
                         else:
                             pw2 = pairwise2.align.localms(sc.protein.sequence, seq, 2, -1, -.5, -.1)
@@ -244,8 +254,10 @@ class Command(BaseBuild):
                                 else:
                                     pdb_num_dict[r[0].get_id()[1]][1] = pdb_wt_dict[r[0]]
                             if sc.structure.pdb_code.index=='7JVQ':
-                                pdb_num_dict[198][1] = Residue.objects.get(protein_conformation__protein=sc.structure.protein_conformation.protein.parent, sequence_number=346)
-                                pdb_num_dict[235][1] = Residue.objects.get(protein_conformation__protein=sc.structure.protein_conformation.protein.parent, sequence_number=383)
+                                pdb_num_dict[198][1] = Residue.objects.get(protein_conformation__protein=sc.protein, sequence_number=346)
+                                pdb_num_dict[235][1] = Residue.objects.get(protein_conformation__protein=sc.protein, sequence_number=383)
+                            elif sc.structure.pdb_code.index=='6PB0':
+                                pdb_num_dict[205][1] = Residue.objects.get(protein_conformation__protein=sc.protein, sequence_number=205)
                     ### Custom alignment fix for 6WHA mini-Gq/Gi2/Gs chimera
                     elif sc.structure.pdb_code.index=="6WHA":
                         ref_seq  = "MTLESIMACCLSEEAKEARRINDEIERQLRRDKRDARRELKLLLLGTGESGKSTFIKQMRIIHGSGYSDEDKRGFTKLVYQNIFTAMQAMIRAMDTLKIPYKYEHNKAHAQLVREVDVEKVSAFENPYVDAIKSLWNDPGIQECYDRRREYQLSDSTKYYLNDLDRVADPAYLPTQQDVLRVRVPTTGIIEYPFDLQSVIFRMVDVGGQRSERRKWIHCFENVTSIMFLVALSEYDQVLVESDNENRMEESKALFRTIITYPWFQNSSVILFLNKKDLLEEKIM--YSHLVDYFPEYDGP----QRDAQAAREFILKMFVDL---NPDSDKIIYSHFTCATDTENIRFVFAAVKDTILQLNLKEYNLV"

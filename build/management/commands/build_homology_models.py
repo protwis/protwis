@@ -3068,12 +3068,12 @@ class HelixEndsModeling(HomologyModeling):
                                   'TM7':[[],[]], 'H8':[[],[]]},
                          'removed':{'TM1':[[],[]],'TM2':[[],[]],'TM3':[[],[]],'TM4':[[],[]],'TM5':[[],[]],'TM6':[[],[]],
                                     'TM7':[[],[]], 'H8':[[],[]]}}
-        for i, j in template_source['H8'].items():
-            if j[0]:
-                H8_alt = j[0]
-                break
-            else:
-                H8_alt = None
+        H8_alt = None
+        if 'H8' in template_source:
+            for i, j in template_source['H8'].items():
+                if j[0]:
+                    H8_alt = j[0]
+                    break
         if separate_H8==True:
             H8_alt = None
         if self.debug:

@@ -110,6 +110,8 @@ class SignprotModeling():
 
         # Match signprot_pdb_array to seq alignment - gap missing coordinates
         signprot_pdb_array = self.match_pdb_array_to_alingment(signprot_pdb_array, sign_a)
+        # Match seq alignment to signprot_pdb_array - gap missing residues
+        sign_a = self.match_alignment_to_pdb_array(sign_a, signprot_pdb_array)
 
         # Initiate complex part of template source
         source_resis = Residue.objects.filter(protein_conformation__protein=self.target_signprot)
@@ -117,9 +119,9 @@ class SignprotModeling():
             if res.protein_segment.slug not in self.template_source:
                 self.template_source[res.protein_segment.slug] = OrderedDict()
             self.template_source[res.protein_segment.slug][res.display_generic_number.label] = [self.main_structure, self.main_structure]
-
-        # Custom fix for engineered alpha 7JVQ
-        if self.main_structure.pdb_code.index=='7JVQ':
+        
+        # Custom fix for engineered and distorted alphas
+        if self.main_structure.pdb_code.index in ['7JVQ','6WHA','7D77','7D7M','7BW0','6PLB','6NBI','6XOX']: # FIXME - need non-hardcoded approach here
             for seg in ['H1', 'h1ha']:
                 for i in signprot_pdb_array[seg]:
                     signprot_pdb_array[seg][i] = 'x'
@@ -136,7 +138,6 @@ class SignprotModeling():
                 print('Helical domain alternative template: {}'.format(alt_complex_struct))
             alt_signprot_complex = SignprotComplex.objects.get(structure=alt_complex_struct)
             alt_signprot_pdb_array = parse.create_g_alpha_pdb_array(alt_signprot_complex)
-            alt_signprot_pdb_array = self.match_pdb_array_to_alingment(alt_signprot_pdb_array, sign_a)
             before_cgns = ['G.HN.50', 'G.HN.51', 'G.HN.52', 'G.HN.53']
             after_cgns =  ['G.H5.03', 'G.H5.04', 'G.H5.05', 'G.H5.06']
             orig_residues1 = parse.fetch_residues_from_array(signprot_pdb_array['HN'], before_cgns)
@@ -299,7 +300,6 @@ class SignprotModeling():
                 if j[1] not in self.trimmed_residues:
                     self.trimmed_residues.append(j[1])
 
-        pprint.pprint(self.trimmed_residues)
         # New loop alignments for signprot. If length differs between ref and temp, buffer is created in the middle of the loop
         loops = [i.slug for i in ProteinSegment.objects.filter(proteinfamily='Alpha', category='loop')]
         loops_to_model = []
@@ -694,4 +694,28 @@ class SignprotModeling():
                     new_seg[gn] = 'x'
             new_array[seg] = new_seg
         return new_array
+
+    @staticmethod
+    def match_alignment_to_pdb_array(alignment, signprot_pdb_array):
+        ''' Match seq alignment to signprot_pdb_array - gap missing residues '''
+        new_ref, new_temp, new_align = OrderedDict(), OrderedDict(), OrderedDict()
+        for seg, resis in signprot_pdb_array.items():
+            new_seg_ref, new_seg_temp, new_seg_align = OrderedDict(), OrderedDict(), OrderedDict()
+            for gn, atoms in resis.items():
+                if seg in alignment.reference_dict and gn in alignment.reference_dict[seg]:
+                    new_seg_ref[gn] = alignment.reference_dict[seg][gn]
+                    new_seg_temp[gn] = alignment.template_dict[seg][gn]
+                    new_seg_align[gn] = alignment.alignment_dict[seg][gn]
+                else:
+                    new_seg_ref[gn] = '-'
+                    if atoms!='x':
+                        new_seg_temp[gn] = PDB.Polypeptide.three_to_one(atoms[0].get_parent().get_resname())
+                    new_seg_align[gn] = '-'
+            new_ref[seg] = new_seg_ref
+            new_temp[seg] = new_seg_temp
+            new_align[seg] = new_seg_align
+        alignment.reference_dict = new_ref
+        alignment.template_dict = new_temp
+        alignment.alignment_dict = new_align
+        return alignment
 
