@@ -4,51 +4,49 @@
 function structurebrowser() {
 
     var oTable2 = $("#structures_scrollable").DataTable({
-        "scrollY":        "65vh",
-        "scrollX":        true,
-        "scrollCollapse": true,
-        "scroller": true,
-        "paging":         false,
-        "aaSorting": [],
-        "autoWidth": false,
-        "order": [[29,"desc"],[1,"asc"]],
-        "columnDefs": [
-            { "targets": "no-sort", "orderable": false }
-            ],
-        "columns": [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            {"width": "20%"},
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
-        ],
-        "bInfo" : true,
+        scrollY:        "65vh",
+        scrollX:        true,
+        scrollCollapse: true,
+        scroller:       true,
+        paging:         false,
+        aaSorting:      [],
+        autoWidth:      false,
+        order:          [[29, "desc"],[1,"asc"]],
+        columnDefs:      [{ "targets": "no-sort", "orderable": false }],
+        columns:        [
+                          null,
+                          null,
+                          null,
+                          null,
+                          null,
+                          null,
+                          null,
+                          null,
+                          null,
+                          null,
+                          null,
+                          null,
+                          null,
+                          null,
+                          null,
+                          null,
+                          null,
+                          null,
+                          null,
+                          null,
+                          {"width": "20%"},
+                          null,
+                          null,
+                          null,
+                          null,
+                          null,
+                          null,
+                          null,
+                          null,
+                          null,
+                          null
+                      ],
+        bInfo:        true,
     });
 
     var prev_ids = Array();
@@ -284,7 +282,7 @@ function structurebrowser() {
                 select_type_options: {
                     width: "100px",
                 },
-                data: ["none", "nonesmall molecule", "peptide", "peptideion", "peptidesmall molecule", "protein", "small molecule", "small moleculesmall molecule"]
+                data: ["none", "peptide", "peptideion", "peptidesmall molecule", "protein", "small molecule", "small moleculesmall molecule", "-"]
             },
             {
                 column_number : 22,
@@ -296,8 +294,8 @@ function structurebrowser() {
                 select_type_options: {
                     width: "100px",
                 },
-                data: ["Agonist", "Antagonist", "Apo (no ligand)", "Inverse agonist", "AgonistPAM", "AntagonistNAM",
-                       "Inverse agonistNAM", "NAMAntagonist", "NAMAgonist", "PAMAgonist", "unknown", "N/A"]
+                data: ["Agonist", "Agonist (partial)", "AgonistNAM", "Antagonist", "AntagonistCofactor", "AntagonistNAM", "Apo (no ligand)", "Inverse agonist", "Inverse agonistNAM",
+                        "AgonistPAM", "NAM", "PAM", "unknown", "-"]
             },
             {
                 column_number : 23,
@@ -384,9 +382,12 @@ function structurebrowser() {
         }
     );
 
-    yadcf.exResetAllFilters(oTable2);
+    // NOTE: getting the columns correct with DT/YADCF
+    //yadcf.exResetAllFilters(oTable2); // Slowest option
+    //oTable2.draw();                   // Bit faster but still slow
+    oTable2.columns.adjust()            // Quick and clean
 
-    $("#structures_scrollable"+" > tbody > tr").click(function(event) {
+    $("#structures_scrollable > tbody > tr").click(function(event) {
         if (event.target.type !== "checkbox") {
             $(":checkbox", this).trigger("click");
             $(this).eq(0).toggleClass("alt_selected");
