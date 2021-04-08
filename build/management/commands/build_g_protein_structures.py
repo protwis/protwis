@@ -198,7 +198,8 @@ class Command(BaseBuild):
                         if options['debug']:
                             print(identity)
                         if identity>85:
-                            no_seqnum_shift.append(sc.structure.pdb_code.index)
+                            if sc.structure.pdb_code.index!='7DFL':
+                                no_seqnum_shift.append(sc.structure.pdb_code.index)
                             if options['debug']:
                                 print('INFO: HN has {}% with gnai1_human HN, skipping seqnum shift correction'.format(round(identity)))
                     
@@ -213,10 +214,14 @@ class Command(BaseBuild):
                         else:
                             pw2 = pairwise2.align.localms(sc.protein.sequence, seq, 2, -1, -.5, -.1)
                         ref_seq, temp_seq = str(pw2[0][0]), str(pw2[0][1])
+                        
                         # Custom fix for A->G mutation at pos 18
-                        if sc.structure.pdb_code.index=="7JJO":
+                        if sc.structure.pdb_code.index=='7JJO':
                             ref_seq = ref_seq[:18]+ref_seq[19:]
                             temp_seq = temp_seq[:17]+temp_seq[18:]
+                        elif sc.structure.pdb_code.index=='7DFL':
+                            ref_seq  = 'MTLESIMACCLSEEAKEARRINDEIERQLRRDKRDARRELKLLLLGTGESGKSTFIKQMRIIHGSGYSDEDKRGFTKLVYQNIFTAMQAMIRAMDTLKIPYKYEHNKAHAQLVREVDVEKVSAFENPYVDAIKSLWNDPGIQECYDRRREYQLSDSTKYYLNDLDRVADPAYLPTQQDVLRVRVPTTGIIEYPFDLQSVIFRMVDVGGQRSERRKWIHCFENVTSIMFLVALSEYDQVLVESDNENRMEESKALFRTIITYPWFQNSSVILFLNKKDLLEEKIMYSHLVDYFPEYDGPQRDAQAAREFILKMFVDLNPDSDKIIYSHFTCATDTENIRFVFAAVKDTILQLNLKEYNLV'
+                            temp_seq = '--------CTLSAEDKAAVERSKMIDRNLREDGEKARRELKLLLLGTGESGKSTFIKQMRIIHG--------------------------------------------------------------------------------------------------------------------------TGIIEYPFDLQSVIFRMVDVGGQRSERRKWIHCFENVTSIMFLVALSEYDQV----DNENRMEESKALFRTIITYPWFQNSSVILFLNKKDLLEEKIMYSHLVDYFPEYDGPQRDAQAAREFILKMFVDLNPDSDKILYSHFTCATDTENIRFVFAAVKDTILQLNLKEYNLV'
                         wt_pdb_dict = OrderedDict()
                         pdb_wt_dict = OrderedDict()
                         j, k = 0, 0
