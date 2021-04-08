@@ -862,48 +862,14 @@ class HomologyModeling(object):
         io.set_structure(pdb_struct)
         io.save(path+self.modelname+'.pdb')
 
-        # include beta and gamma subunits from main template
-        beta_gamma = ''
-        # if self.complex:
-        #     spc = SignprotComplex.objects.get(structure=self.main_structure)
-        #     p = PDB.PDBParser(QUIET=True).get_structure('structure', StringIO(self.main_structure.pdb_data.pdb))[0]
-        #     beta = p[spc.beta_chain]
-        #     gamma = p[spc.gamma_chain]
-        #     for b_res in beta:
-        #         for b_a in b_res:
-        #             atom_num+=1
-        #             b_a.set_serial_number(atom_num)
-        #     for g_res in gamma:
-        #         for g_a in g_res:
-        #             atom_num+=1
-        #             g_a.set_serial_number(atom_num)
-        #     io = PDB.PDBIO()
-        #     io.set_structure(beta)
-        #     io.save('./structure/homology_models/{}_beta.pdb'.format(self.modelname), preserve_atom_numbering=True)
-        #     with open('./structure/homology_models/{}_beta.pdb'.format(self.modelname),'r') as beta_f:
-        #         beta_string = beta_f.read()
-        #     io.set_structure(gamma)
-        #     io.save('./structure/homology_models/{}_gamma.pdb'.format(self.modelname), preserve_atom_numbering=True)
-        #     with open('./structure/homology_models/{}_gamma.pdb'.format(self.modelname),'r') as gamma_f:
-        #         gamma_string = gamma_f.read()
-        #     os.remove('./structure/homology_models/{}_beta.pdb'.format(self.modelname))
-        #     os.remove('./structure/homology_models/{}_gamma.pdb'.format(self.modelname))
-        #     beta_gamma = beta_string[:-4]+gamma_string[:-5]
-        #     # add to templates.csv file
-        #     with open(path+self.modelname+'.templates.csv','a') as s_file:
-        #         for b_res in beta:
-        #             s_file.write('Beta,{},None,{},{},{}\n'.format(b_res.get_id()[1], spc.beta_protein.entry_name, self.main_structure.pdb_code.index, self.main_structure.pdb_code.index))
-        #         for g_res in gamma:
-        #             s_file.write('Gamma,{},None,{},{},{}\n'.format(g_res.get_id()[1], spc.gamma_protein.entry_name, self.main_structure.pdb_code.index, self.main_structure.pdb_code.index))
-
         with open (path+self.modelname+'.pdb', 'r+') as f:
             content = f.read()
             first_line  = 'REMARK    1 MODEL FOR {} CREATED WITH GPCRDB HOMOLOGY MODELING PIPELINE, VERSION {}\n'.format(self.reference_entry_name, build_date)
             second_line = 'REMARK    2 MAIN TEMPLATE: {}\n'.format(self.main_structure)
             f.seek(0,0)
-            f.write(first_line+second_line+ssbond+content[:-4]+beta_gamma+'\n'+conect+'END')
+            f.write(first_line+second_line+ssbond+content[:-7]+conect+'END')
 
-        return first_line+second_line+ssbond+content[:-4]+beta_gamma+'\n'+conect+'END'
+        return first_line+second_line+ssbond+content[:-7]+conect+'END'
 
     def run_alignment(self, query_states, core_alignment=True,
                       segments=['TM1','ICL1','TM2','ECL1','TM3','ICL2','TM4','TM5','TM6','TM7','H8'],
