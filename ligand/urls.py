@@ -13,8 +13,10 @@ urlpatterns = [
     url(r'^statistics', cache_page(3600*24*7)(views.LigandStatistics.as_view()), name='ligand_statistics'),
     url(r'^bias_statistics', cache_page(3600*24*7)(views.LigandBiasStatistics.as_view()), name='ligand_statistics'),
 
-    url(r'^biased/$', views.BiasBrowser.as_view(), name='bias_browser-list'),
-    url(r'^biasedsubtypes/$',views.BiasGBrowser.as_view(), name='bias_browser-list'),
+    url(r'^biased/$', views.CachedBiasBrowser, name='bias_browser-list'),
+    #url(r'^biased/$', views.BiasBrowser.as_view(), name='bias_browser-list'),
+    url(r'^biasedsubtypes/$',views.CachedBiasGBrowser, name='bias_browser-subtype'),
+    #url(r'^biasedsubtypes/$',views.BiasGBrowser.as_view(), name='bias_browser-list'),
     url(r'^biasedbrowser',views.BiasTargetSelection.as_view(), name='bias_browser-list1'),
     url(r'^biasedsubtypesbrowser',views.BiasGTargetSelection.as_view(), name='bias_browser-list1'),
 
