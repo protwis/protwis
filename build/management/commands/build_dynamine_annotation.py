@@ -110,7 +110,7 @@ class Command(BaseBuild):
             with lock:
                 p = self.proteins[count.value]
                 count.value += 1
-                self.logger.info("Generating dynamine data for '{}'... ({} out of {})"".format(
+                self.logger.info("Generating dynamine data for '{}'... ({} out of {})".format(
                     p, count.value, len(self.proteins)))
             # if 'opsd_bovin'!=str(p):
             #     continue
