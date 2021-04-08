@@ -25,6 +25,7 @@ from Bio.pairwise2 import format_alignment
 from common.models import Publication, WebLink, WebResource
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
+from django.core.management.color import no_style
 from django.db import IntegrityError, connection
 from protein.models import (Gene, Protein, ProteinAlias, ProteinConformation,
                             ProteinFamily, ProteinGProtein,
@@ -440,26 +441,18 @@ class Command(BaseCommand):
             subprocess.call(shlex.split(command))
 
     def purge_coupling_data(self):
-        # Connect to postgres to tell the table ID to be reset to start at 1.
-        # TODO: Also delete the values of the protein_gprotein_pair_references first since
-        # there's a many to many field which doesn't allow the direct
-        # ProteinGProteinPair.objects.filter().delete() call.
-        with connection.cursor() as cursor:
-            sql1 = 'ALTER SEQUENCE protein_gprotein_pair_id_seq RESTART WITH 1;'
-            cursor.execute(sql1)
-            #sql2 = 'delete from protein_gprotein_pair_references;'
-            #cursor.execute(sql2)
+        """DROP data from the protein_gprotein_pair table."""
         try:
-            # ProteinGProteinPair.objects.filter().clear()
-            # ProteinGProteinPair.objects.all().remove()
-            # ProteinGProteinPair.references.through.objects.filter().delete()
-            # ProteinGProteinPair.references.through.objects.all().delete()
             ProteinGProteinPair.objects.filter().delete()
-            ProteinGProtein.all().delete()
+            ProteinGProtein.objects.all().delete()
             ProteinAlias.objects.filter(protein__family__slug__startswith='100').delete()
+            sequence_sql = connection.ops.sequence_reset_sql(no_style(), [ProteinGProteinPair, ProteinGProtein])
+            with connection.cursor() as cursor:
+                for sql in sequence_sql:
+                    cursor.execute(sql)
 
-        except:
-            self.logger.warning('Existing protein_gprotein and protein_gprotein_pair data cannot be deleted')
+        except Exception as msg:
+            self.logger.warning('Existing protein_gprotein and protein_gprotein_pair data cannot be deleted' + str(msg))
 
     def purge_cgn_residues(self):
         try:

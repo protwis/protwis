@@ -5,46 +5,6 @@
 let oTable1 = [];
 let oTable2 = [];
 
-
-var tableToExcel = (function () {
-//function tableToExcel() {
-    var uri = "data:application/vnd.ms-excel;base64,",
-        template = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:x='urn:schemas-microsoft-com:office:excel' xmlns='http://www.w3.org/TR/REC-html40'><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>",
-        base64 = function (s) {
-            return window.btoa(unescape(encodeURIComponent(s)));
-        }, format = function (s, c) {
-            return s.replace(/{(\w+)}/g, function (m, p) {
-                return c[p];
-            });
-        };
-    return function (table, name, filename) {
-        table= $("#"+table).clone();
-        $("#excel_table").html(table);
-        // Clean up table to remove yadcf stuff
-        $("#excel_table thead tr").css("height","");
-        $("#excel_table thead th").css("height","");
-        $("#excel_table thead div").css("height","");
-        $("#excel_table thead .yadcf-filter-wrapper").remove();
-        $("#excel_table thead button").remove();
-        var tr = $("#excel_table thead tr:eq(1)");
-        // reattach th titles
-        tr.find("th").each (function( column, th) {
-            if ($(th).attr("title")) {
-                $(th).html($(th).attr("title"));
-            }
-        });
-
-        var ctx = {
-            worksheet: name || "Worksheet",
-            table: $("#excel_table").html()
-        };
-        $("#excel_table").html("");
-        document.getElementById("dlink").href = uri + base64(format(template, ctx));
-        document.getElementById("dlink").download = filename;
-        document.getElementById("dlink").click();
-    };
-}());
-
 function select_all(e) {
     var checkedStatus = $(e).prop("checked");
 
@@ -227,10 +187,12 @@ function supportFilter(filterVal, columnVal, rowValues, stateVal){
 function make_range_number_cols(start_column, repeat_number, tab) {
     let from_to1 = {
         filter_type: "custom_func",
+//        html5_data: "",
         custom_func: rankedRangeFiltert1,
     };
     let from_to2 = {
         filter_type: "custom_func",
+//        html5_data: "",
         custom_func: rankedRangeFiltert2,
     };
     let repeated_from_to1 = [];
@@ -257,7 +219,7 @@ function make_range_number_cols(start_column, repeat_number, tab) {
 }
 
 repfilterfamtab = make_range_number_cols(10, 12, "famtab");
-repfiltersubtab = make_range_number_cols(10, 40, "subtab");
+repfiltersubtab = make_range_number_cols(10, 39, "subtab");
 
 let lastRangeRankFilter = "";
 
@@ -284,7 +246,11 @@ for (let i=11; i <= 22; i++) {
         paging: false,
         bSortCellsTop: false, //prevent sort arrows going on bottom row
         aaSorting: [],
-        order: [[4, "asc"], [22, "desc"]],
+        order: [
+            [2, "asc"],
+            [4, "asc"],
+            [22, "asc"],
+        ],
         autoWidth: false,
         bInfo: true,
         columnDefs: [
@@ -308,6 +274,7 @@ for (let i=11; i <= 22; i++) {
                 column_number: 1,
                 filter_type: "multi_select",
                 select_type: "select2",
+                column_data_type: "html",
                 filter_default_label: "",
                 filter_reset_button_text: false,
                 select_type_options: {
@@ -486,7 +453,11 @@ for (let i=11; i <= 49; i++) {
         paging: false,
         bSortCellsTop: false, //prevent sort arrows going on bottom row
         aaSorting: [],
-        order: [4,"asc"],
+        order: [
+            [2, "asc"],
+            [4, "asc"],
+            [49, "asc"]
+        ],
         autoWidth: false,
         bInfo: true,
         columnDefs: [
@@ -509,6 +480,7 @@ for (let i=11; i <= 49; i++) {
                 column_number: 1,
                 filter_type: "multi_select",
                 select_type: "select2",
+                column_data_type: "html",
                 filter_default_label: "",
                 filter_reset_button_text: false,
                 select_type_options: {
@@ -738,7 +710,7 @@ for (let i=11; i <= 49; i++) {
 // =============================================================================
 // START OVERLAY COLUMNS CODE HERE
 // =============================================================================
-    let toggle_enabled = false;
+    let toggle_enabled = true;
     $("#toggle_fixed_btn1").click(function() {
         if (toggle_enabled) {
             toggle_enabled = false;
