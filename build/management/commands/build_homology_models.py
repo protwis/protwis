@@ -636,6 +636,7 @@ class HomologyModeling(object):
             first_signprot_res_found = False
             atom_num = 1
             atom_num_offset = []
+            pref_chain = str(self.main_structure.preferred_chain)
 
             if self.debug:
                 if self.complex:
@@ -709,7 +710,6 @@ class HomologyModeling(object):
                         atom_num+=1
                     else:
                         try:
-                            pref_chain = str(self.main_structure.preferred_chain)
                             if len(pref_chain)>1:
                                 pref_chain = pref_chain[0]
                             pdb_re = re.search('(HETATM[0-9\sA-Z{apo}]{{11}})([A-Z0-9\s]{{3}})([\sA-Z]+)(\d+)([\s0-9.A-Z-]+)'.format(apo="'"),line)
@@ -837,7 +837,7 @@ class HomologyModeling(object):
                     break
                 ws1 = ' '*(5-len(str(c1.sequence_number)))
                 ws2 = ' '*(5-len(str(c2.sequence_number)))
-                ssbond+='SSBOND   {} CYS {}{}{}    CYS {}{}{}\n'.format(count, chain, ws1, str(c1.sequence_number), chain, ws2, str(c2.sequence_number))
+                ssbond+='SSBOND    {} CYS {}{}{}    CYS {}{}{}\n'.format(count, chain, ws1, str(c1.sequence_number), chain, ws2, str(c2.sequence_number))
                 # for res in pdb_struct[chain]:
                     # print(res)
                 for atom in pdb_struct[chain][c1.sequence_number]:
