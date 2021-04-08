@@ -775,7 +775,6 @@ class BiasBrowserChembl(TemplateView):
                     doubles.append(temp_dict)
                     increment_assay += 1
                 else:
-                    self.logger.info('Data is not returned')
                     continue
             rd[increment] = temp
             increment += 1
@@ -856,7 +855,6 @@ class BiasPathways(TemplateView):
 
             rd[increment] = temp
             increment += 1
-        self.logger.info('Data is returned')
         return rd
 
     '''
