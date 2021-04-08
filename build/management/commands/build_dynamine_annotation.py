@@ -14,7 +14,7 @@ import time
 
 
 class Command(BaseBuild):
-    help = "Add dynamine annotations.""
+    help = "Add dynamine annotations."
 
     logger = logging.getLogger(__name__)
 
