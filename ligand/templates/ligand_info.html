@@ -195,8 +195,7 @@
     //     });
     // }
 
-    function populate_selection(id){
-        console.log('id looking for', id)
+    function populate_selection(id){        
         AddToSelection('reference', 'protein_entry', id)
         SelectFullSequence('segments')
         window.open('https://gpcrdb.org/mutations/render', '_blank')
@@ -217,6 +216,8 @@
 	}
 
 	$(document).ready(function() {
+
+
         function getCookie(name) {
 			let cookieValue = null;
 			if (document.cookie && document.cookie !== '') {
@@ -392,6 +393,8 @@
 				cumulative_filtering: true
 			}
 		);
+
+
 
 		function reset_filters() {
 			location.reload()
