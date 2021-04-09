@@ -950,7 +950,6 @@ def CachedBiasBrowsers(browser_type, request):
     protein_ids.sort()
     cache_key = "BIASBROWSER_" + browser_type + "_" + hashlib.md5("_".join(protein_ids).encode('utf-8')).hexdigest()
     return_html = cache.get(cache_key)
-    return_html = None
     if return_html == None:
         if browser_type == "biasbrowser":
             return_html = BiasBrowser.as_view()(request).render()
