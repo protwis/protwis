@@ -783,11 +783,10 @@
             $('#structures_scrollable .table-filter-dropdown th').each(function(index) {
                 var tds = $('.dataTable tbody td:nth-child(' + (index + 1) + ')');
 
-                if (tds.length <= tds.filter(':empty').length) {
+                if (tds.length > 0 && tds.length <= tds.filter(':empty').length) {
                     columnIds.push(tds[0].cellIndex)
                     tds.addClass('highlight');
                 }
-
             });
             if (columnIds) {
                 columnIds.forEach((item) => {
