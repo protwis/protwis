@@ -213,9 +213,9 @@ function draw_tree(data, options) {
 *
 * Function designed to change label names of phylo tree
 *
-* @location {string} argOne - svg in which to draw outer circles
-* @value {string} argTwo - either IUPHAR or UniProt for label names
-* @dict {dictionary} argFour - the translation dictionary for label names (from IUPHAR to UniProt and vice versa)
+* @location {string} location - svg in which to draw outer circles
+* @value {string} value - either IUPHAR or UniProt for label names
+* @dict {dictionary} dict - the translation dictionary for label names (from IUPHAR to UniProt and vice versa)
 */
 
 function changeLeavesLabels(location, value, dict){
@@ -271,28 +271,112 @@ function changeLeavesLabels(location, value, dict){
 *
 * Function designed to append data circles on the external part of phylo tree
 *
-* @location {string} argOne - svg in which to draw outer circles
-* @data {Object} argTwo - data provided by the view (json dict usually)
-* @starter {integer} argThree - the max length of the leaves, to start drawing the circles (calculated by changeLeavesLabels)
-* @dict {dictionary} argFour - the translation dictionary for color codes
+* @location {string} location - svg in which to draw outer circles
+* @data {Object} data - data provided by the view (json dict usually)
+* @starter {integer} starter - the max length of the leaves, to start drawing the circles (calculated by changeLeavesLabels)
+* @dict {dictionary} dict - the translation dictionary for color codes
+* @fancy {boolean} fancy - set the option for fancy circles
 */
 
-function DrawCircles(location, data, starter, dict){
+function DrawCircles(location, data, starter, dict, fancy=false){
+
+    function componentToHex(c)
+    {
+        var hex = c.toString(16);
+        return hex.length == 1 ? "0" + hex : hex;
+    }
+    
     var spacer = 8;
     var svg = d3.select('#'+location);
     var node = svg.selectAll(".node");
+    if (fancy === false) {
     node.selectAll("circle").remove();
+      for (var x in data){
+        for (var unit in dict){
+          if (data[x].indexOf(unit)>= 0) {
+            // variable to set the location of the different circle drawing
+            multiply = 1+Object.keys(dict).indexOf(unit);
+            var leafwithname = svg.selectAll('g[id=X'+x+']')
+                .append("circle")
+                .attr("r", 3.25)
+                .style("fill", dict[unit])
+                .attr("transform", "translate(" + (Math.ceil(starter) + multiply*spacer) + ",0)");
+              }
+        }
+      }
+    } else {
+      node.selectAll("ellipse").remove();
+      for (var x in data){
+        keys = Object.keys(data[x]);
+        tot = Object.keys(data[x]).reduce((a, b) => a + b, 0);
+        var sum = 0;
+        for( var el in data[x] ) {
+          if( data[x].hasOwnProperty( el ) ) {
+            sum += parseFloat( data[x][el] );
+          }
+        }
+        for (var unit in dict){
+          if (keys.indexOf(unit)>= 0) {
+            percentage = (data[x][unit]/sum)*200;
+            gray=componentToHex(255-Math.round(percentage/100*255));
+            color="#"+gray+gray+gray;
+            multiply = 1+Object.keys(dict).indexOf(unit);
+            leaf = svg.selectAll('g[id=X'+x+']');
+            var leafwithname = svg.selectAll('g[id=X'+x+']')
+                .append("ellipse")
+                .attr("rx", 3.25)
+                .attr("ry", 3.25)
+                .style("stroke", dict[unit])
+                .style("stroke-width", 1)
+                .style("fill", color)
+                .attr("transform", "translate(" + (Math.ceil(starter) + multiply*spacer) + ",0)");
+            }
+        }
+      }
+    }
+  }
+
+/**
+* FancyCircles
+*
+* Function designed to append fancy data circles on the external part of phylo tree with
+*
+* @location {string} location - svg in which to draw outer circles
+* @data {Object} data - data provided by the view (json dict usually)
+* @starter {integer} starter - the max length of the leaves, to start drawing the circles (calculated by changeLeavesLabels)
+* @dict {dictionary} dict - the translation dictionary for color codes
+*/
+
+function FancyCircles(location, data, starter, dict){
+    var spacer = 8;
+    var svg = d3.select('#'+location);
+    var node = svg.selectAll(".node");
     for (var x in data){
+      keys = Object.keys(data[x]);
+      max = Object.keys(data[x]).reduce(function(a, b){ return data[x][a] > data[x][b] ? a : b });
       for (var unit in dict){
-        if (data[x].indexOf(unit)>= 0) {
+        if (keys.indexOf(unit)>= 0) {
           // variable to set the location of the different circle drawing
           multiply = 1+Object.keys(dict).indexOf(unit);
-          var leafwithname = svg.selectAll('g[id=X'+x+']')
-              .append("circle")
-              .attr("r", 3.25)
-              .style("fill", dict[unit])
-              .attr("transform", "translate(" + (Math.ceil(starter) + multiply*spacer) + ",0)");
-            }
+          if (unit === max) {
+            var leafwithname = svg.selectAll('g[id=X'+x+']')
+                .append("circle")
+                .attr("r", 3.25)
+                .style("stroke", dict[unit])
+                .style("stroke-width", 1)
+                .style("fill", dict[unit])
+                .attr("transform", "translate(" + (Math.ceil(starter) + multiply*spacer) + ",0)");
+          }
+          else {
+            var leafwithname = svg.selectAll('g[id=X'+x+']')
+                .append("circle")
+                .attr("r", 3.25)
+                .style("stroke", dict[unit])
+                .style("stroke-width", 1)
+                .style("fill", "white")
+                .attr("transform", "translate(" + (Math.ceil(starter) + multiply*spacer) + ",0)");
+              }
+          }
       }
     }
   }

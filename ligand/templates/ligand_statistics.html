@@ -201,8 +201,8 @@ Ligand statistics were last updated: <strong>{{ release_notes.date|date:"Y-m-d" 
 <h4>Ligand bias coverage of GPCR Classes</h4><br />
 {% endif %}
 
-Circle colors indicate a number of ligands:
 {% if render != "bias" %}
+Circle colors indicate a number of ligands:
 <table style="width:30%">
     <tr>
         <td ><div id="circle_100"></div></td>
@@ -216,6 +216,34 @@ Circle colors indicate a number of ligands:
     </tr>
 </table>
 {% else %}
+<style type="text/css">
+  .gprot_orange {
+    color: orange;
+  }
+
+  .gprot_blue {
+    color: blue;
+  }
+
+  .gprot_red {
+    color: red;
+  }
+
+  .gprot_black {
+    color: black;
+  }
+
+  .gprot_green {
+    color: forestgreen;
+  }
+
+  .graydiv {
+      height: 20px;
+      width: 350px;
+      background: linear-gradient(to right, white 0%, black 100%)
+  }
+</style>
+Inner circle colors indicate a number of ligands:
 <table style="width:30%">
     <tr>
         <td ><div id="circle_10"></div></td>
@@ -228,6 +256,20 @@ Circle colors indicate a number of ligands:
         <td> 30+</td>
     </tr>
 </table>
+<br \>
+Outer circle border colors indicate the connected effector family:
+<table style="width:30%">
+    <tr>
+      <td><span class="gprot_blue">&#9675; G&alpha;<sub>s</sub></span></td>
+      <td><span class="gprot_red">&#9675; G&alpha;<sub>i/o</sub></span></td>
+      <td><span class="gprot_black">&#9675; G&alpha;<sub>q/11</sub></span></td>
+      <td><span class="gprot_green">&#9675; G&alpha;<sub>12/13</sub></span></td>
+      <td><span class="gprot_orange">&#9675; &beta;-Arrestin</span></td>
+    </tr>
+</table>
+<br \>
+Outer circle colors represents effector relevance across ligands (from low to high):
+<div class="graydiv"></div>
 {% endif %}
 <br />
 <div>
@@ -255,6 +297,7 @@ Circle colors indicate a number of ligands:
     orphan_options = {{ orphan_options | safe }};
     whole_dict = {{ whole_receptors|safe }};
 </script>
+{% if render != "bias" %}
 <script language='javascript'>
   $("#UniProtNames").click(function() {
       $("#UniProtNames").addClass("active");
@@ -280,6 +323,74 @@ Circle colors indicate a number of ligands:
       changeLeavesLabels("orphan","IUPHAR", whole_dict);
   });
 </script>
+{% else %}
+<script type="text/javascript" charset="utf-8">
+  circles = {{ circles_data | safe}}
+</script>
+<script type="text/javascript" charset="utf-8">
+$(window).on("load",function() {
+    maxLeafNodeLenght = 46;
+    conversion = {"Gs":"blue", "Gi/o":"red", "Gq/11":"black", "G12/13":"green", "B-arr":"orange"};
+    $("#UniProtNames").click(function(){
+        $("#UniProtNames").addClass("active");
+        $("#IUPHARNames").removeClass("active");
+        changeLeavesLabels("class_a","UniProt", whole_dict);
+        DrawCircles('class_a',circles,maxLeafNodeLenght,conversion,true);
+        changeLeavesLabels("class_b1","UniProt", whole_dict);
+        DrawCircles('class_b1',circles,maxLeafNodeLenght,conversion,true);
+        changeLeavesLabels("class_b2","UniProt", whole_dict);
+        DrawCircles('class_b2',circles,maxLeafNodeLenght,conversion,true);
+        changeLeavesLabels("class_c","UniProt", whole_dict);
+        DrawCircles('class_c',circles,maxLeafNodeLenght,conversion,true);
+        changeLeavesLabels("class_f","UniProt", whole_dict);
+        DrawCircles('class_f',circles,maxLeafNodeLenght,conversion,true);
+        changeLeavesLabels("class_t2","UniProt", whole_dict);
+        DrawCircles('class_t2',circles,maxLeafNodeLenght,conversion,true);
+        changeLeavesLabels("orphan","UniProt", whole_dict);
+        DrawCircles('orphan',circles,maxLeafNodeLenght,conversion,true);
+      });
+    $("#IUPHARNames").click(function() {
+        $("#UniProtNames").removeClass("active");
+        $("#IUPHARNames").addClass("active");
+        changeLeavesLabels("class_a","IUPHAR", whole_dict);
+        DrawCircles('class_a',circles, maxLeafNodeLenght,conversion,true);
+        changeLeavesLabels("class_b1","IUPHAR", whole_dict);
+        DrawCircles('class_b1',circles, maxLeafNodeLenght,conversion,true);
+        changeLeavesLabels("class_b2","IUPHAR", whole_dict);
+        DrawCircles('class_b2',circles, maxLeafNodeLenght,conversion,true);
+        changeLeavesLabels("class_c","IUPHAR", whole_dict);
+        DrawCircles('class_c',circles, maxLeafNodeLenght,conversion,true);
+        changeLeavesLabels("class_f","IUPHAR", whole_dict);
+        DrawCircles('class_f',circles, maxLeafNodeLenght,conversion,true);
+        changeLeavesLabels("class_t2","IUPHAR", whole_dict);
+        DrawCircles('class_t2',circles, maxLeafNodeLenght,conversion,true);
+        changeLeavesLabels("orphan","IUPHAR", whole_dict);
+        DrawCircles('orphan',circles, maxLeafNodeLenght,conversion,true);
+    });
+    draw_tree(class_a, class_a_options);
+    draw_tree(class_b1, class_b1_options);
+    draw_tree(class_b2, class_b2_options);
+    draw_tree(class_c, class_c_options);
+    draw_tree(class_f, class_f_options);
+    draw_tree(class_t2, class_t2_options);
+    draw_tree(orphan, orphan_options);
+    DrawCircles('class_a',circles, maxLeafNodeLenght,conversion,true);
+    DrawCircles('class_b1',circles, maxLeafNodeLenght,conversion,true);
+    DrawCircles('class_b2',circles, maxLeafNodeLenght,conversion,true);
+    DrawCircles('class_c',circles, maxLeafNodeLenght,conversion,true);
+    DrawCircles('class_f',circles, maxLeafNodeLenght,conversion,true);
+    DrawCircles('class_t2',circles, maxLeafNodeLenght,conversion,true);
+    DrawCircles('orphan',circles, maxLeafNodeLenght,conversion,true);
+    $("#class_a svg g").first().attr('transform', 'translate(555,555) scale(0.9,0.9) ');
+    $("#class_a_svg").attr('height', 1210);
+    $("#class_b1 svg g").first().attr('transform', 'translate(180,220) scale(0.85,0.85)');
+    $("#class_b2 svg g").first().attr('transform', 'translate(182,200) scale(0.85,0.85) ');
+    $("#class_c svg g").first().attr('transform', 'translate(200,200) scale(0.85,0.85) ');
+    $("#orphan svg g").first().attr('transform', 'translate(175,180) scale(0.85,0.85)');
+    $("#orphan_svg").attr('height', 360).attr('width', 360);
+});
+</script>
+{% endif %}
 <div id="class_a" class="text-center">
   <h4>Class A<br />(Rhodopsin)</h4>
 </div>
@@ -540,6 +651,7 @@ Circle colors indicate a number of ligands:
 <script src="{% static 'home/js/nv.d3.min.js' %}"></script>
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
 <script src="{% static 'home/js/phylo_tree.js' %}"></script>
+{% if render != "bias" %}
 <script type="text/javascript" charset="utf-8">
     $(window).on("load", function () {
         draw_tree(class_a, class_a_options);
@@ -556,4 +668,17 @@ Circle colors indicate a number of ligands:
         $("#class_c svg g").first().attr('transform', 'translate(200,200) scale(0.85,0.85) ');
     });
 </script>
+{% endif %}
 {% endblock %}
+
+
+<!-- $("#class_a svg g").first().attr('transform', 'translate(555,555) scale(0.9,0.9) ');
+$("#class_a_svg").attr('height', 1210);
+$("#class_b1 svg g").first().attr('transform', 'translate(190,220) scale(0.80,0.80) ');
+$("#class_b2 svg g").first().attr('transform', 'translate(195,182) scale(0.85,0.85) ');
+$("#class_b2_svg").attr('height', 390);
+$("#class_c svg g").first().attr('transform', 'translate(200,200) scale(0.85,0.85) ');
+$("#class_f svg g").first().attr('transform', 'translate(180,180) scale(0.85,0.85) ');
+$("#class_t2 svg g").first().attr('transform', 'translate(172,172) scale(0.85,0.85) ');
+$("#orphan svg g").first().attr('transform', 'translate(175,180) scale(0.85,0.85)');
+$("#orphan_svg").attr('height', 360).attr('width', 360); -->
