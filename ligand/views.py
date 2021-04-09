@@ -1,13 +1,17 @@
-import json
+import hashlib
 import itertools
+import json
+
 from copy import deepcopy
 from collections import defaultdict, OrderedDict
+
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.views.generic import TemplateView, DetailView, ListView
 from django.db.models import Count, Subquery, OuterRef
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
+from django.core.cache import cache
 
 from common.views import AbsTargetSelectionTable
 from common.models import ReleaseNotes
@@ -771,7 +775,6 @@ class BiasBrowserChembl(TemplateView):
                     doubles.append(temp_dict)
                     increment_assay += 1
                 else:
-                    self.logger.info('Data is not returned')
                     continue
             rd[increment] = temp
             increment += 1
@@ -852,7 +855,6 @@ class BiasPathways(TemplateView):
 
             rd[increment] = temp
             increment += 1
-        self.logger.info('Data is returned')
         return rd
 
     '''
@@ -902,6 +904,61 @@ class BiasGTargetSelection(AbsTargetSelectionTable):
             'color': 'success',
         },
     }
+
+
+def CachedBiasBrowser(request):
+    return CachedBiasBrowsers("biasbrowser", request)
+
+
+def CachedBiasGBrowser(request):
+    return CachedBiasBrowsers("biasgbrowser", request)
+
+
+def CachedBiasBrowsers(browser_type, request):
+    protein_ids = []
+    try:
+        simple_selection = request.session.get('selection', False)
+
+        families = []
+        for target in simple_selection.targets:
+            if target.type == 'protein':
+                protein_ids.append(target.item.entry_name)
+            elif target.type == 'family':
+                families.append(target.item.slug)
+
+        if len(families) > 0:
+            # species filter
+            species_list = []
+            for species in simple_selection.species:
+                species_list.append(species.item)
+
+            # annotation filter
+            protein_source_list = []
+            for protein_source in simple_selection.annotation:
+                protein_source_list.append(protein_source.item)
+
+            family_proteins = Protein.objects.filter(family__slug__in=families, source__in=(protein_source_list))
+            if len(species_list) > 0:
+                family_proteins.filter(species__in=(species_list))
+
+            for prot_name in family_proteins.values_list("entry_name", flat=True):
+                protein_ids.append(prot_name)
+
+    except:
+        protein_ids = ["NOSELECTION"]
+
+    protein_ids.sort()
+    cache_key = "BIASBROWSER_" + browser_type + "_" + hashlib.md5("_".join(protein_ids).encode('utf-8')).hexdigest()
+    return_html = cache.get(cache_key)
+    if return_html == None:
+        if browser_type == "biasbrowser":
+            return_html = BiasBrowser.as_view()(request).render()
+        else:
+            return_html = BiasGBrowser.as_view()(request).render()
+        cache.set(cache_key, return_html, 60*60*24*7)
+
+    return return_html
+
 
 '''
 Bias browser between families

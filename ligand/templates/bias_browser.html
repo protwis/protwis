@@ -3,7 +3,8 @@
 {% csrf_token %}
 
 {% block addon_css %}
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.16/b-1.5.1/b-html5-1.5.1/datatables.min.css" />
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+<!--<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.16/b-1.5.1/b-html5-1.5.1/datatables.min.css" />-->
 <link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
@@ -45,9 +46,13 @@
 	.yadcf-filter-wrapper {
 		position: center;
 		display: flex;
-		white-space: normal;
+		white-space: nowrap;
 		margin-top: 7px;
 		width: 50% !important;
+	}
+
+	.yadcf-filter-wrapper-inner {
+		white-space: normal;
 	}
 
 	.select2-results {
@@ -168,8 +173,6 @@
 		border-radius: 0 4px 4px 0;
 	}
 
-	/* This is just for CodePen. */
-
 	.name {
 		width: 100px;
 		text-overflow: ellipsis;
@@ -208,7 +211,8 @@
 {% endblock %}
 {% block addon_js %}
 
-<script type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.16/b-1.5.1/b-html5-1.5.1/datatables.min.js"></script>
+<script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+<!--<script type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.16/b-1.5.1/b-html5-1.5.1/datatables.min.js"></script>-->
 <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
 <script src="{% static 'home/js/dataTables.buttons.min.js' %}"> </script>
 <script src="{% static 'home/js/select2.js' %}"> </script>
@@ -340,6 +344,7 @@
                 column_number: 4,
                 filter_type: "multi_select",
                 select_type: 'select2',
+								column_data_type: "rendered_html",
                 filter_default_label: "Select",
                 filter_reset_button_text: false,
             },
@@ -752,7 +757,7 @@
             },
 
         ], {
-            cumulative_filtering: true
+            cumulative_filtering: false
         });
         shadeTable(table, [".shade"], 120, 200);
 
@@ -953,8 +958,8 @@
 		<table class="display compact text-nowrap" id='structures_scrollable' style="width: 100%">
 			<thead id="headers">
 				<tr class="header-spans" rowspan="2">
-					<th><a href="#"><span class="glyphicon glyphicon-info-sign"></span></a></th>
-					<th id="receptor" style="text-align:left" colspan="6">
+					<th><span class="glyphicon glyphicon-info-sign" title="Click on this icon in a row for more details."></span></th>
+					<th id="receptor" style="border-left: 1px solid black; text-align:left" colspan="6">
 						Receptor</th>
 					<th style="border-left: 1px solid black; text-align:left" colspan="5" style="">
 						Tested Ligand Pair </th>
@@ -988,7 +993,7 @@
                   max-width: 250px;" colspan="2">Reference</th>
 				</tr>
 				<tr class="table-filter-dropdown">
-					<th><a href="#"><span class="glyphicon glyphicon-info-sign"></span></a></th>
+					<th></th>
 					<th id="class_filter_select">Class</th>
 					<th id="receptor_filter_select">Rec Fam</th>
 					<th id="uniprot_filter_select">UniProt</th>
@@ -1062,13 +1067,13 @@
 					<td>
 						<span style='display: none'> {{e.ligand.id}}</span>
 						<a href="#">
-							<span class="glyphicon glyphicon-info-sign" onclick="myFunction('experiment/{{e.id}}/detail', 'Detail View', window, 1500, 1000)"></span>
+							<span class="glyphicon glyphicon-info-sign"  title="Click for more details" onclick="myFunction('experiment/{{e.id}}/detail', 'Detail View', window, 1500, 1000)"></span>
 						</a>
 					</td>
 
 					<!-- s.protein_conformation.protein.parent.family.parent.parent.parent.shorter() -->
-					<td title='{{e.receptor.family.parent.parent.parent.name}}'>{{e.receptor.family.parent.parent.parent.name|default_if_none:""}}</td>
-					<td title='{{e.receptor.family.parent}}'>{{e.receptor.family.parent}}</td>
+					<td title='{{e.receptor.family.parent.parent.parent.name}}' style="border-left: 1px solid black;">{{e.receptor.family.parent.parent.parent.short|default_if_none:""}}</td>
+					<td title='{{e.receptor.family.parent}}'>{{e.receptor.family.parent.short}}</td>
 					<td title='{{e.uniprot}}'>{{e.receptor.entry_short}}</td>
 					<td title='{{e.IUPHAR}}'>{{e.receptor.name.split|first}}</td>
 					<td title='{{e.receptor.species.common_name}}'>{{e.receptor.species.common_name}}</td>
@@ -1211,7 +1216,7 @@
 						{{e.publication.authors}}</td>
 					<td class="name">
 						<a href='{{e.publication.web_link}}' target='blank'>
-							{{e.publication.web_link.index}}</td>
+							{{e.publication.web_link.index}}</a></td>
 
 				</tr>
 				{%endfor%}
