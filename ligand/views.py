@@ -17,10 +17,10 @@ from common.views import AbsTargetSelectionTable
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
-from ligand.models import Ligand, LigandVendorLink, AnalyzedExperiment, AnalyzedAssay, BiasedPathways, AssayExperiment, LigandVendors
+from ligand.models import Ligand, LigandVendorLink,LigandVendors, AnalyzedExperiment, AnalyzedAssay, BiasedPathways, AssayExperiment
 from protein.models import Protein, ProteinFamily
-Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
-
+from interaction.models import StructureLigandInteraction
+from mutation.models import MutationExperiment
 
 class LigandBrowser(TemplateView):
     """
@@ -702,7 +702,7 @@ class LigandInformationView(TemplateView):
     template_name = 'ligand_info.html'
 
     def get_context_data(self, *args, **kwargs):
-        print(self.kwargs)
+
         context = super(LigandInformationView, self).get_context_data(**kwargs)
         ligand_id = self.kwargs['pk']
         ligand_data = Ligand.objects.get(id=ligand_id)
@@ -713,15 +713,15 @@ class LigandInformationView(TemplateView):
             'publication', 'publication__web_link', 'publication__web_link__web_resource',
             'publication__journal'))
         context = dict()
-        vendors = self.get_vendors_data(ligand_data)
         structures = self.get_structure(ligand_data)
         ligand_data = self.process_ligand(ligand_data)
         assay_data = self.process_assay(assay_data)
         assay_data = self.process_values(assay_data)
+        mutations = self.get_mutations(ligand_data)
         context.update({'structure': structures})
         context.update({'ligand': ligand_data})
         context.update({'assay': assay_data})
-        context.update({'vendor': vendors})
+        context.update({'mutations': mutations})
         return context
 
     def get_structure(self, ligand):
@@ -730,35 +730,23 @@ class LigandInformationView(TemplateView):
             StructureLigandInteraction.objects.filter(ligand=ligand))
         for i in structures:
             structure_dict = dict()
-            structure_dict['pdb_reference'] = i.pdb_reference
-            structure_dict['ligand_role'] = i.ligand_role
-            structure_dict['annotated'] = i.annotated
             structure_dict['structure_pdb'] = i.structure.pdb_code.index
-            structure_dict['structure_ref'] = i.structure.publication.web_link
-            structure_dict['structure_ref_name'] = i.structure.publication
-            structure_dict['structure_res'] = i.structure.resolution
-            structure_dict['structure_dis'] = i.structure.distance
-            structure_dict['structure'] = i.structure
-            structure_dict['preferred_chain'] = i.structure.preferred_chain
-
             return_list.append(structure_dict)
-
         return return_list
 
-    def get_vendors_data(self, ligand):
-        rd = list()
-        links = LigandVendorLink.objects.filter(
-            lp=ligand.properities_id).prefetch_related('lp', 'vendor')
-        for x in links:
-            if x.vendor.name not in ['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem']:
-                temp = dict()
-                vendor = LigandVendors.objects.filter(id=x.vendor_id)
-                vendor = vendor.get()
-                temp['url'] = x.url
-                temp['vendor_id'] = x.vendor_external_id
-                temp['vendor'] = vendor.name
-                rd.append(temp)
-        return rd
+    def get_mutations(self,ligand):
+        return_set = set()
+        return_list = list()
+        mutations = list(
+            MutationExperiment.objects.filter(ligand=ligand['ligand_id']).only('protein'))
+        for i in mutations:
+            if i.protein.id in return_set:
+                pass
+            else:
+                return_list.append({"id":i.protein.entry_name, "name": i.protein.name.split(' ', 1)[0].split('-adrenoceptor', 1)[0].strip()})
+                return_set.add(i.protein.id)
+        return return_list
+
 
     def get_min_max_values(self, value):
         value = list(map(float, value))

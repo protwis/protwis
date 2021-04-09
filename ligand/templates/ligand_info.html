@@ -51,6 +51,26 @@
 						</ul>
 					</td>
 				</tr>
+                {% if structure %}
+                <tr>
+                    <td>Structure pdb</td>
+                    <td>
+            		{% for data in structure %}
+    					<a href="https://gpcrdb.org/interaction/{{data.structure_pdb}}" target="_blank">{{data.structure_pdb}}</a>
+    				{%endfor%}
+                    </td>
+            	</tr>
+                {%endif%}
+                {% if mutations %}
+                <tr>
+                    <td>Ligand site mutations</td>
+                    <td>
+            		{% for data in mutations %}
+    					<a href="#" onclick="populate_selection('{{data.id}}')">{{data.name}}</a>
+    				{%endfor%}
+                    </td>
+            	</tr>
+                {%endif%}
 			</table>
 		</div>
 
@@ -88,28 +108,10 @@
 				</tr>
 			</table>
 			<hr>
-			<h3>Vendors</h3>
-
-			<table id="vendors_Table" class="table table-striped table-bordered">
-				<thead>
-					<tr>
-						<th style="border: 1px solid black;">Link<br></th>
-						<th style="border: 1px solid black;">Product ID<br></th>
-					</tr>
-				</thead>
-				<tbody>
-					{% for data_entry in vendor %}
-					<tr>
-						<td><a href='{{data_entry.url}}' target='blank'>{{data_entry.vendor}}</td>
-						<td>{{data_entry.vendor_id}}</td>
-					</tr>
-					{%endfor%}
-				</tbody>
-			</table>
 		</div>
 	</div>
 	<hr>
-	<h3>Bioactovity</h3>
+	<h3>Bioactivity</h3>
 	<table class="display" id='structures_scrollable_ligand' style="width: 100%">
 		<thead>
 			<tr rowspan="2">
@@ -156,55 +158,6 @@
 			{%endfor%}
 		</tbody>
 	</table>
-
-    <hr>
-    {% if structure %}
-	<h3>Structures affiliated with ligand</h3>
-	<div class="row">
-		{% for data in structure %}
-		<div class="col-xs-6">
-			<div class="table-responsive">
-				<table class="table table-striped" id="vendors_table">
-					<tr>
-						<td>Ligand PDB</td>
-						<td>{{data.pdb_reference}}</td>
-					</tr>
-					<tr>
-						<td>Ligand role</td>
-						<td>{{data.ligand_role}}</td>
-					</tr>
-                    <tr>
-    					<td>Structure pdb</td>
-    					<td><a href="https://gpcrdb.org/interaction/{{data.structure_pdb}}" target="_blank">{{data.structure_pdb}}</a></td>
-					</tr>
-					<tr>
-						<td>Structure annotated</td>
-						<td>{{data.annotated}}</td>
-					</tr>
-					<tr>
-						<td>Publication</td>
-						<td><a href="{{data.structure_ref}}" target="_blank">{{data.structure_ref_name}}</a></td>
-					</tr>
-                    <tr>
-						<td>Structure preferred chain</td>
-						<td>{{data.preferred_chain}}</td>
-					</tr>
-					<tr>
-						<td>Structure resolution</td>
-						<td>{{data.structure_res}}</td>
-					</tr>
-					<tr>
-						<td>Structure distance</td>
-						<td>{{data.structure_dis}}</td>
-					</tr>
-
-				</table>
-			</div>
-		</div>
-		{%endfor%}
-	</div>
-    {%endif%}
-
     <hr>
     <br>
 	{% endautoescape %}
@@ -217,6 +170,7 @@
 <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"></script>
 <script src="{% static 'home/js/dataTables.buttons.min.js' %}"></script>
 <script src="{% static 'home/js/select2.js' %}"> </script>
+<script src="{% static 'home/js/selection.js' %}"> </script>
 
 <script type="text/javascript">
 	function myFunction(url, title, win, w, h) {
@@ -224,6 +178,30 @@
 		const x = win.top.outerWidth / 2 + win.top.screenX - (w / 2);
 		return win.open(url, title, 'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width=' + w + ', height=' + h + ', top=' + y + ', left=' + x);
 	}
+
+    // function AddToSelection(selection_type, selection_subtype, selection_id) {
+    //     $.ajax({
+    //         'url': '/common/addtoselection',
+    //         'data': {
+    //             selection_type: selection_type,
+    //             selection_subtype: selection_subtype,
+    //             selection_id: selection_id
+    //         },
+    //         'type': 'GET',
+    //         'async': false,
+    //         'success': function(data) {
+    //             $("#selection-" + selection_type).html(data);
+    //         },
+    //     });
+    // }
+
+    function populate_selection(id){
+        console.log('id looking for', id)
+        AddToSelection('reference', 'protein_entry', id)
+        SelectFullSequence('segments')
+        window.open('https://gpcrdb.org/mutations/render', '_blank')
+
+    }
 
 	function getCookie(c_name) {
 		if (document.cookie.length > 0) {
@@ -239,14 +217,24 @@
 	}
 
 	$(document).ready(function() {
-        var table_vedor = $('#vendors_Table').DataTable({
-    			dom: 'ftrip',
-    			paging: true,
-    			scrollCollapse: true,
-    			AutoWidth: true,
-    			pageLength: 5,
 
-    		});
+
+        function getCookie(name) {
+			let cookieValue = null;
+			if (document.cookie && document.cookie !== '') {
+				const cookies = document.cookie.split(';');
+				for (let i = 0; i < cookies.length; i++) {
+					const cookie = cookies[i].trim();
+					// Does this cookie string begin with the name we want?
+					if (cookie.substring(0, name.length + 1) === (name + '=')) {
+						cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+						break;
+					}
+				}
+			}
+			return cookieValue;
+		}
+		const csrftoken = getCookie('csrftoken');
 
 		var table = $('#structures_scrollable_ligand').DataTable({
 			dom: 'B<>ftrip',
@@ -274,6 +262,36 @@
 					},
 					action: function(e, dt, node, config) {
 						reset_filters()
+					},
+				},
+                {
+					text: 'Get Vendors',
+					className: 'btn btn-primary',
+					titleAttr: 'Vendors info for top 20 ligands',
+					init: function(api, node, config) {
+						$(node).removeClass('dt-button buttons-excel buttons-html5');
+					},
+					action: function(e, dt, node, config) {
+						var id = {{ligand.ligand_id}}
+						var result
+						$.ajaxSetup({
+							headers: {
+								"X-CSRFToken": csrftoken
+							}
+						});
+						$.ajax({
+							type: 'POST',
+							url: '/ligand/vendors',
+							data: {
+								ids: id,
+								csrfmiddlewaretoken: '{{csrf_token }}',
+								action: 'post',
+							},
+							success: function() {
+
+								myFunction('/ligand/browservendors', 'Detail View', window, 850, 1000)
+							}
+						});
 					},
 				},
 
