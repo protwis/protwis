@@ -233,7 +233,6 @@
         }
         const csrftoken = getCookie('csrftoken');
 
-
 		var table = $('#structures_scrollable').DataTable({
 			stateSave: false,
 			processing: true,
@@ -303,100 +302,15 @@
     				},
 			],
         	"drawCallback": function(settings) {
-        			var columnIds = [];
-        			calculate_header()
-        			$('#structures_scrollable').removeClass("highlight");
-                    $('#structures_scrollable .header-spans th').removeClass("highlight");
-                    $('#structures_scrollable .table-filter-dropdown th').removeClass("highlight");
-                    $('#structures_scrollable .table-filter-dropdown th').each(function(index) {
-        				var tds = $('.dataTable tbody td:nth-child(' + (index + 1) + ')');
-
-        				if (tds.length <= tds.filter(':empty').length) {
-        					columnIds.push(tds[0].cellIndex)
-        					tds.addClass('highlight');
-        				}
-
-        			});
-        			if (columnIds) {					columnIds.forEach((item) => {
-        					var filterRow = $('.dataTable .table-filter-dropdown th:nth-child(' + (item + 1) + ')');
-        					filterRow[0].setAttribute("class", "highlight");
-        				});
-
-        				columnIds.forEach((item) => {
-        					if (item >= 1 && item <= 6) {
-        						var temp_colspan = $('#receptor').attr('colspan')
-        						$("#receptor").attr("colspan", temp_colspan - 1)
-        					}
-        					if (item >= 7 && item <= 11) {
-        						var temp_colspan = $('#ligand').attr('colspan')
-        						$("#ligand").attr("colspan", temp_colspan - 1)
-
-        					}
-        					if (item >= 12 && item <= 13) {
-        						var temp_colspan = $('#transducers').attr('colspan')
-        						$("#transducers").attr("colspan", temp_colspan - 1)
-        						if ($('#transducers').attr('colspan') == 0) {
-        							$("#transducers").addClass('highlight');
-        						}
-        					}
-        					if (item >= 14 && item <= 18) {
-        						var temp_colspan = $('#pathways').attr('colspan')
-        						$("#pathways").attr("colspan", temp_colspan - 1)
-        					}
-        					if (item >= 19 && item <= 22) {
-        						var temp_colspan = $('#opmodel').attr('colspan')
-                                $("#opmodel").attr("colspan", temp_colspan - 1)
-        						if ($('#opmodel').attr('colspan') == 0) {
-        							$("#opmodel").addClass('highlight');
-        						}
-        					}
-        					if (item >= 23 && item <= 26) {
-        						var temp_colspan = $('#lbf').attr('colspan')
-        						$("#lbf").attr("colspan", temp_colspan - 1)
-        						if ($('#lbf').attr('colspan') == 0) {
-        							$("#lbf").addClass('highlight');
-        						}
-        					}
-        					if (item >= 27 && item <= 30) {
-        						var temp_colspan = $('#potency').attr('colspan')
-        						$("#potency").attr("colspan", temp_colspan - 1)
-        					}
-        					if (item >= 31 && item <= 35) {
-        						var temp_colspan = $('#activity').attr('colspan')
-        						$("#activity").attr("colspan", temp_colspan - 1)
-        					}
-        					if (item >= 36 && item <= 40) {
-        						var temp_colspan = $('#emax').attr('colspan')
-        						$("#emax").attr("colspan", temp_colspan - 1)
-        					}
-        					if (item >= 41 && item <= 45) {
-        						var temp_colspan = $('#tfactor').attr('colspan')
-        						$("#tfactor").attr("colspan", temp_colspan - 1)
-        						if ($('#tfactor').attr('colspan') == 0) {
-        							$("#tfactor").addClass('highlight');
-        						}
-        					}
-        					if (item >= 46 && item <= 50) {
-        						var temp_colspan = $('#assay').attr('colspan')
-        						$("#assay").attr("colspan", temp_colspan - 1)
-        					}
-        					if (item >= 51 && item <= 55) {
-        						var temp_colspan = $('#cell').attr('colspan')
-        						$("#cell").attr("colspan", temp_colspan - 1)
-        					}
-        					if (item >= 56 && item <= 60) {
-        						var temp_colspan = $('#time').attr('colspan')
-        						$("#time").attr("colspan", temp_colspan - 1)
-        					}
-        				});
-        			}
+        			// calculate_header()
                     setTimeout(function(){
-                    var ligand_counter = read_unique_ids();
-                    var receptor_counter = read_unique_ids_receptor();
-                    document.getElementById("ligand_counter").innerHTML = ligand_counter;
-                    document.getElementById("receptor_counter").innerHTML = receptor_counter;
-                    shadeTable(table, [".shade"], 120, 200);
-                },2000);
+                        var ligand_counter = read_unique_ids();
+                        var receptor_counter = read_unique_ids_receptor();
+                        document.getElementById("ligand_counter").innerHTML = ligand_counter;
+                        document.getElementById("receptor_counter").innerHTML = receptor_counter;
+                        shadeTable(table, [".shade"], 120, 200);
+                        exResetAllFilters()
+                    },2000);
             },
             });
         yadcf.init(table,
@@ -843,6 +757,7 @@
         shadeTable(table, [".shade"], 120, 200);
 
 		function calculate_header(ids) {
+            var columnIds = [];
 			$("#receptor").attr("colspan", 6);
 			$("#ligand").attr("colspan", 5);
 			$("#transducers").attr("colspan", 2);
@@ -856,6 +771,98 @@
 			$("#assay").attr("colspan", 5);
 			$("#cell").attr("colspan", 5);
 			$("#time").attr("colspan", 5);
+
+            $('#structures_scrollable').removeClass("highlight");
+            $('#structures_scrollable .header-spans th').removeClass("highlight");
+            $('#structures_scrollable .table-filter-dropdown th').removeClass("highlight");
+            $('#structures_scrollable .table-filter-dropdown th').each(function(index) {
+                var tds = $('.dataTable tbody td:nth-child(' + (index + 1) + ')');
+
+                if (tds.length <= tds.filter(':empty').length) {
+                    columnIds.push(tds[0].cellIndex)
+                    tds.addClass('highlight');
+                }
+
+            });
+            if (columnIds) {
+                columnIds.forEach((item) => {
+                    var filterRow = $('.dataTable .table-filter-dropdown th:nth-child(' + (item + 1) + ')');
+                    filterRow[0].setAttribute("class", "highlight");
+                });
+                columnIds.forEach((item) => {
+                    if (item >= 1 && item <= 6) {
+                        var temp_colspan = $('#receptor').attr('colspan')
+                        $("#receptor").attr("colspan", temp_colspan - 1)
+                    }
+                    if (item >= 7 && item <= 11) {
+                        var temp_colspan = $('#ligand').attr('colspan')
+                        $("#ligand").attr("colspan", temp_colspan - 1)
+
+                    }
+                    if (item >= 12 && item <= 13) {
+                        var temp_colspan = $('#transducers').attr('colspan')
+                        $("#transducers").attr("colspan", temp_colspan - 1)
+                        if ($('#transducers').attr('colspan') == 0) {
+                            $("#transducers").addClass('highlight');
+                        }
+                    }
+                    if (item >= 14 && item <= 18) {
+                        var temp_colspan = $('#pathways').attr('colspan')
+                        $("#pathways").attr("colspan", temp_colspan - 1)
+                    }
+                    if (item >= 19 && item <= 22) {
+                        var temp_colspan = $('#opmodel').attr('colspan')
+                        $("#opmodel").attr("colspan", temp_colspan - 1)
+                        if ($('#opmodel').attr('colspan') == 0) {
+                            $("#opmodel").addClass('highlight');
+                        }
+                    }
+                    if (item >= 23 && item <= 26) {
+                        var temp_colspan = $('#lbf').attr('colspan')
+                        $("#lbf").attr("colspan", temp_colspan - 1)
+                        if ($('#lbf').attr('colspan') == 0) {
+                            $("#lbf").addClass('highlight');
+                        }
+                    }
+                    if (item >= 27 && item <= 30) {
+                        var temp_colspan = $('#potency').attr('colspan')
+                        $("#potency").attr("colspan", temp_colspan - 1)
+                            if ($('#potency').attr('colspan') == 0) {
+                                $("#potency").addClass('highlight');
+                            }
+                    }
+                    if (item >= 31 && item <= 35) {
+                        var temp_colspan = $('#activity').attr('colspan')
+                        $("#activity").attr("colspan", temp_colspan - 1)
+                    }
+                    if (item >= 36 && item <= 40) {
+                        var temp_colspan = $('#emax').attr('colspan')
+                        $("#emax").attr("colspan", temp_colspan - 1)
+                    }
+                    if (item >= 41 && item <= 45) {
+                        var temp_colspan = $('#tfactor').attr('colspan')
+                        $("#tfactor").attr("colspan", temp_colspan - 1)
+                        if ($('#tfactor').attr('colspan') == 0) {
+                            $("#tfactor").addClass('highlight');
+                        }
+                    }
+                    if (item >= 46 && item <= 50) {
+                        var temp_colspan = $('#assay').attr('colspan')
+                        $("#assay").attr("colspan", temp_colspan - 1)
+                    }
+                    if (item >= 51 && item <= 55) {
+                        var temp_colspan = $('#cell').attr('colspan')
+                        $("#cell").attr("colspan", temp_colspan - 1)
+                    }
+                    if (item >= 56 && item <= 60) {
+                        var temp_colspan = $('#time').attr('colspan')
+                        $("#time").attr("colspan", temp_colspan - 1)
+                        if ($('#time').attr('colspan') == 0) {
+                            $("#time").addClass('highlight');
+                        }
+                    }
+                });
+            }
 		}
 
 		function reset_filters() {
