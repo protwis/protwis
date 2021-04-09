@@ -430,6 +430,7 @@
                 column_number: 4,
                 filter_type: "multi_select",
                 select_type: 'select2',
+								column_data_type: "rendered_html",
                 filter_default_label: "Select",
                 filter_reset_button_text: false,
             },
@@ -950,8 +951,8 @@
 		<table class="display compact text-nowrap" id='structures_scrollable' style="width: 100%">
 			<thead id="headers">
 				<tr class="header-spans" rowspan="2">
-					<th><a href="#"><span class="glyphicon glyphicon-info-sign"></span></a></th>
-					<th id="receptor" style="text-align:left" colspan="6">
+					<th><span class="glyphicon glyphicon-info-sign" title="Click on this icon in a row for more details."></span></th>
+					<th id="receptor" style="border-left: 1px solid black; text-align:left" colspan="6">
 						Receptor</th>
 					<th style="border-left: 1px solid black; text-align:left" colspan="5" style="">
 						Tested Ligand Pair </th>
@@ -985,7 +986,7 @@
                   max-width: 250px;" colspan="2">Reference</th>
 				</tr>
 				<tr class="table-filter-dropdown">
-					<th><a href="#"><span class="glyphicon glyphicon-info-sign"></span></a></th>
+					<th></th>
 					<th id="class_filter_select">Class</th>
 					<th id="receptor_filter_select">Rec Fam</th>
 					<th id="uniprot_filter_select">UniProt</th>
@@ -1059,12 +1060,12 @@
 					<td>
 						<span style='display: none'> {{e.ligand.id}}</span>
 						<a href="#">
-							<span class="glyphicon glyphicon-info-sign" onclick="myFunction('experiment/{{e.id}}/detail', 'Detail View', window, 1500, 1000)"></span>
+							<span class="glyphicon glyphicon-info-sign"  title="Click for more details" onclick="myFunction('experiment/{{e.id}}/detail', 'Detail View', window, 1500, 1000)"></span>
 						</a>
 					</td>
 
 					<!-- s.protein_conformation.protein.parent.family.parent.parent.parent.shorter() -->
-					<td title='{{e.receptor.family.parent.parent.parent.name}}'>{{e.receptor.family.parent.parent.parent.short|default_if_none:""}}</td>
+					<td title='{{e.receptor.family.parent.parent.parent.name}}' style="border-left: 1px solid black;">{{e.receptor.family.parent.parent.parent.short|default_if_none:""}}</td>
 					<td title='{{e.receptor.family.parent}}'>{{e.receptor.family.parent.short}}</td>
 					<td title='{{e.uniprot}}'>{{e.receptor.entry_short}}</td>
 					<td title='{{e.IUPHAR}}'>{{e.receptor.name.split|first}}</td>
