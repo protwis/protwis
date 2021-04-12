@@ -795,20 +795,13 @@ class LigandInformationView(TemplateView):
             temp_dict = item[1]
 
             if item[1]['potency_values']:
-                min, avg, max = LigandInformationView.get_min_max_values(
+                temp_dict['potency_min'],temp_dict['potency_avg'],temp_dict['potency_max'] = LigandInformationView.get_min_max_values(
                     item[1]['potency_values'])
-                temp_dict['potency_min'] = min
-                temp_dict['potency_avg'] = avg
-                temp_dict['potency_max'] = max
                 return_list.append(temp_dict)
             if item[1]['affinity_values']:
-                min, avg, max = LigandInformationView.get_min_max_values(
+                temp_dict['affinity_min'],temp_dict['affinity_avg'],temp_dict['affinity_max'] = LigandInformationView.get_min_max_values(
                     item[1]['affinity_values'])
-                temp_dict['affinity_min'] = min
-                temp_dict['affinity_avg'] = avg
-                temp_dict['affinity_max'] = max
                 return_list.append(temp_dict)
-
         return return_list
 
     @staticmethod
