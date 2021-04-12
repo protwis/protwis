@@ -795,7 +795,7 @@ class LigandInformationView(TemplateView):
             temp_dict = item[1]
 
             if item[1]['potency_values']:
-                min, avg, max = self.get_min_max_values(
+                min, avg, max = LigandInformationView.get_min_max_values(
                     item[1]['potency_values'])
                 temp_dict['potency_min'] = min
                 temp_dict['potency_avg'] = avg
