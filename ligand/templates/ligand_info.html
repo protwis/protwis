@@ -88,23 +88,19 @@
 			<table class="table table-striped table-bordered">
 				<tr>
 					<td>Hydrogen bond acceptors</td>
-					<td>
-						{{ligand.hacc}}</td>
+					<td>{{ligand.hacc}}</td>
 				</tr>
 				<tr>
 					<td>Hydrogen bond donors</td>
-					<td>
-						{{ligand.hdon}}</td>
+					<td>{{ligand.hdon}}</td>
 				</tr>
 				<tr>
 					<td>Rotatable bonds</td>
-					<td>
-						{{ligand.rotatable}}</td>
+					<td>{{ligand.rotatable}}</td>
 				</tr>
 				<tr>
 					<td>Molecular weight</td>
-					<td>
-						{{ligand.mw|floatformat:1}}</td>
+					<td>{{ligand.mw|floatformat:1}}</td>
 				</tr>
 			</table>
 			<hr>
@@ -179,26 +175,10 @@
 		return win.open(url, title, 'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width=' + w + ', height=' + h + ', top=' + y + ', left=' + x);
 	}
 
-    // function AddToSelection(selection_type, selection_subtype, selection_id) {
-    //     $.ajax({
-    //         'url': '/common/addtoselection',
-    //         'data': {
-    //             selection_type: selection_type,
-    //             selection_subtype: selection_subtype,
-    //             selection_id: selection_id
-    //         },
-    //         'type': 'GET',
-    //         'async': false,
-    //         'success': function(data) {
-    //             $("#selection-" + selection_type).html(data);
-    //         },
-    //     });
-    // }
-
-    function populate_selection(id){        
+    function populate_selection(id){
         AddToSelection('reference', 'protein_entry', id)
         SelectFullSequence('segments')
-        window.open('https://gpcrdb.org/mutations/render', '_blank')
+        window.open('/mutations/render', '_blank')
 
     }
 

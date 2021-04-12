@@ -313,7 +313,7 @@
                         document.getElementById("ligand_counter").innerHTML = ligand_counter;
                         document.getElementById("receptor_counter").innerHTML = receptor_counter;
                         shadeTable(table, [".shade"], 120, 200);
-                        exResetAllFilters()
+                        exResetAllFilters(table)
                     },2000);
             },
             });
@@ -1057,7 +1057,7 @@
                           white-space: nowrap;
                           text-overflow: ellipsis;
                           max-width: 100px;">Authors</th>
-                					<th id="doi_reference_filter_select" >DOI/ <br>Reference</th>
+                					<th id="doi_reference_filter_select">DOI/ <br>Reference</th>
                 				</tr>
 			</thead>
 				<tbody id='structures_scrollable_body'>

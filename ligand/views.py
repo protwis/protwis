@@ -697,7 +697,6 @@ class BiasVendorBrowser(TemplateView):
         # except:
         #     raise
 
-
 class LigandInformationView(TemplateView):
     template_name = 'ligand_info.html'
 
@@ -747,7 +746,6 @@ class LigandInformationView(TemplateView):
                 return_set.add(i.protein.id)
         return return_list
 
-
     def get_min_max_values(self, value):
         value = list(map(float, value))
         maximum = max(value)
@@ -766,7 +764,6 @@ class LigandInformationView(TemplateView):
                 elif i.standard_type == 'IC50':
                     return_dict[name]['affinity_values'].append(
                         i.standard_value)
-
                 # TODO: recalculate min max avg_num_ligands
             else:
                 return_dict[name] = dict()
@@ -784,7 +781,6 @@ class LigandInformationView(TemplateView):
                 elif i.standard_type == 'IC50':
                     return_dict[name]['affinity_values'].append(
                         i.standard_value)
-
         return return_dict
 
     def process_values(self, return_dict):
@@ -799,13 +795,15 @@ class LigandInformationView(TemplateView):
                 temp_dict['potency_min'] = min
                 temp_dict['potency_avg'] = avg
                 temp_dict['potency_max'] = max
+                return_list.append(temp_dict)
             if item[1]['affinity_values']:
                 min, avg, max = self.get_min_max_values(
                     item[1]['affinity_values'])
                 temp_dict['affinity_min'] = min
                 temp_dict['affinity_avg'] = avg
                 temp_dict['affinity_max'] = max
-            return_list.append(temp_dict)
+                return_list.append(temp_dict)
+
         return return_list
 
     def process_ligand(self, ligand_data):
