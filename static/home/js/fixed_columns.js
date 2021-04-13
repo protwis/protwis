@@ -724,7 +724,10 @@ function showPDBtable(element) {
                 // filters_tr_index: 1
             }
         );
+
         console.timeEnd('yadcf');
+        oTable[mode].columns.adjust();
+        
         // console.time('yadcf_reset');
         // yadcf.exResetAllFilters(oTable[mode]);
         // console.timeEnd('yadcf_reset');
