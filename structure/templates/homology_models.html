@@ -255,7 +255,8 @@
                 }
             );
 
-            yadcf.exResetAllFilters(oTable);
+            //yadcf.exResetAllFilters(oTable);
+            oTable.columns.adjust()
 
             $('.alt').change(function () {
                 $(this).parent().parent().toggleClass('alt_selected');
