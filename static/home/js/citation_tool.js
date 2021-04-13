@@ -7,7 +7,7 @@ function citation_tool(url) {
     setTimeout(function(){
     	modal.style.display = "block";
     }, 200)
-    
+
     span.onclick = function() {
         modal.style.display = "none";
         $(".article_option").remove();
@@ -27,7 +27,7 @@ function citation_tool(url) {
     if (window.location.pathname==='/') {
     	highlight_main = true
     }
-    
+
     // AJAX to create citation list
     var dropdown_articles = document.getElementById("dropdown_articles");
     var article_list = document.getElementById("article_list");
@@ -89,7 +89,7 @@ function citation_tool(url) {
 				var submenu = document.getElementById(data[i][11])
 				var submenu_ul = submenu.getElementsByTagName('ul')[0];
 			}
-			
+
 			// Dropdown options
 			var option = document.createElement("li");
 			var option_link = document.createElement("a");
@@ -98,12 +98,12 @@ function citation_tool(url) {
 			option.appendChild(option_link);
 			option.setAttribute("id", site.replace('#', '_').replace('.', '_'));
 			option.setAttribute("role", "button");
-			
+
 			if (site===this_site) {
 				option.setAttribute("selected", "selected");
 				$('#page_select_button').html(data[i][4]);
 			}
-			
+
 			submenu_ul.appendChild(option);
 			dropdown_articles.appendChild(submenu);
 
@@ -166,8 +166,8 @@ function citation_tool(url) {
 			var d3 = document.createElement("div");
 			d1.innerHTML = key;
 			d2.innerHTML = articles[key]['authors'];
-			
-			// Link 
+
+			// Link
 			var a = document.createElement("a");
 			a.innerHTML = articles[key]['journal'].italics() + ", " + articles[key]['year'] + ", " + articles[key]['reference'];
   			a.title = key;
@@ -232,12 +232,12 @@ function parse_url_long(url) {
 			return url_split[3]+"-"+url_split[4];
 		}
 		else {
-			return url_split[3];	
+			return url_split[3];
 		}
 	}
 	else if (url_split.length===4) {
 		return url_split[3];
-	} 
+	}
 	else {
 		return url_split[3]+"-"+url_split[4];
 	}
@@ -263,7 +263,7 @@ function toggle_widget() {
     }
 }
 
-function check_for_video(url) {
+async function check_for_video(url) {
 	var this_site = parse_url_long(url);
 	var cit_request = new XMLHttpRequest();
     cit_request.open('GET', url.split('/')[0] + '/citations');

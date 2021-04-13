@@ -52,7 +52,7 @@
     <!-- Header -->
     <thead><tr>
 
-    {% for elem, tooltip, protein, zindex in header %}
+    {% for elem, tooltip, protein in header %}
       {% if forloop.counter <= number_of_schemes %}
         <th class="sticky" style="vertical-align: bottom; text-align: center;">
         <div><span id='{{protein}}'><b>{{ elem|safe }}</b></span></div>
@@ -65,7 +65,7 @@
     {% endfor %}
     </tr></thead>
     {% for segment in segments %}
-        <tr><th colspan="{{ col_length }}" class="row-header">{{ segment }}</td></tr>
+        <tr><th colspan="{{ col_length }}" class="row-header">{{ segment }}</th></tr>
             {% for key, data_row in data.items %}
                 {% if key == segment %}
                     {% for row in data_row %}

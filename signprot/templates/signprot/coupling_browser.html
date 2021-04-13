@@ -50,7 +50,7 @@
                     </button>
                     <ul class="dropdown-menu">
                         <li><a href="#" onclick="yadcf.exFilterColumn(oTable1, [[22, 1]]);">1</a></li>
-                        <li><a href="#" onclick="yadcf.exFilterColumn(oTable1, [[22, 2]]);">2</a></li>
+                        <li><a href="#" onclick="yadcf.exFilterColumn(oTable1, [[22, 2]]);">2 (default)</a></li>
                         <li><a href="#" onclick="yadcf.exFilterColumn(oTable1, [[22, 3]]);">3</a></li>
                     </ul>
                 </div>
@@ -67,7 +67,7 @@
                 <div class="btn-group" style="padding-left:10px;">
                     <input class="btn btn-primary btn-sm" type="button"
                            onclick="tableToExcel('familiestabletab', 'Families data', 'families_coupling.xls')"
-                           value="Export Excel">
+                           value="Excel">
                     <input class="btn btn-primary btn-sm" type="button" onclick="reset_tab()" value="Reset All">
                 </div>
             </div>
@@ -172,9 +172,9 @@ class="yadcf-filter-range-number yadcf-filter-range ranked_range_rank1">
 {#                            <td><span data-toggle="tooltip" data-html="true" data-placement="bottom" title="{{ c}}"#}
 {#                                      data-search="{{ c }}">{{ c }}</span></td>#}
                             {% if c == "1" or c == 2 or c == 3 %}
-                                <td><b>Mean</b></td>
+                                <td><span style="font-weight:bold">Mean</span></td>
                             {% else %}
-                                <td>{{ c }}</td>
+                                <td><span style="font-weight:normal">{{ c }}</span></td>
                             {% endif %}
                             <td>{{ pvals.protein.class }}</td>
                             <td>{{ pvals.protein.family }}</td>
@@ -241,7 +241,7 @@ class="yadcf-filter-range-number yadcf-filter-range ranked_range_rank1">
                 </button>
                 <ul class="dropdown-menu">
                     <li><a href="#" onclick="yadcf.exFilterColumn(oTable2, [[49, 1]]);">1</a></li>
-                    <li><a href="#" onclick="yadcf.exFilterColumn(oTable2, [[49, 2]]);">2</a></li>
+                    <li><a href="#" onclick="yadcf.exFilterColumn(oTable2, [[49, 2]]);">2 (default)</a></li>
                     <li><a href="#" onclick="yadcf.exFilterColumn(oTable2, [[49, 3]]);">3</a></li>
                 </ul>
             </div>
@@ -259,7 +259,7 @@ class="yadcf-filter-range-number yadcf-filter-range ranked_range_rank1">
                 <div class="btn-group" style="padding-left:10px;">
                     <input class="btn btn-primary btn-sm" type="button"
                            onclick="tableToExcel('subtypestabletab', 'Subtypes data', 'subtypes_coupling.xls')"
-                           value="Export Excel">
+                           value="Excel">
                     <input class="btn btn-primary btn-sm" type="button" onclick="reset_tab()" value="Reset All">
                 </div>
             </div>
@@ -384,9 +384,9 @@ class="yadcf-filter-range-number yadcf-filter-range ranked_range_rank2">
                         <tr data-source="{{ c }}"> {# And then use the data to apply the javascript filters.#}
                             <td class="text-center"><input class="alt" type="checkbox"></td>
                             {% if c == "1" or c == 2 or c == 3 %}
-                                <td><b>Mean</b></td>
+                                <td><span style="font-weight:bold">Mean</span></td>
                             {% else %}
-                                <td>{{ c }}</td>
+                                <td><span style="font-weight:normal">{{ c }}</span></td>
                             {% endif %}
                             <td>{{ pvals.protein.class }}</td>
                             <td>{{ pvals.protein.family }}</td>
@@ -440,9 +440,10 @@ class="yadcf-filter-range-number yadcf-filter-range ranked_range_rank2">
     <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"></script>
     <script src="{% static 'home/js/select2.js' %}"></script>
     <script src="{% static 'home/js/jquery.powertip.js' %}"></script>
+    <script src="{% static 'home/js/gpcrdb.js' %}"></script>
     {#        <script src="{% static 'home/js/datatables.min.js' %}"></script>#}
     {#        <script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>#}
     {#        <script src="https://cdnjs.cloudflare.com/ajax/libs/yadcf/0.9.4/jquery.dataTables.yadcf.min.js"></script>#}
     {#        <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>#}
-    <script src="{% static 'home/js/signprot-multitabtable.js' %}"></script>
+    <script src="{% static 'home/js/signprot-multitabtable.js' %}" async></script>
 {% endblock %}
