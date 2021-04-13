@@ -138,6 +138,7 @@ class MyShadingTable {
 //   valid values are from 0 to 255.
 function shadeTable(table, columnIndexes, darkGrey, lightGrey)
 {   let myShadingTable = null;
+
      myShadingTable = new MyShadingTable(table, columnIndexes, darkGrey, lightGrey);
      myShadingTable.shade(table.rows({page: "current"}));
      table.on("draw.dt", function(e, settings) {

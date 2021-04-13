@@ -88,7 +88,7 @@ class Command(BaseBuild):
         parser.add_argument('--force_main_temp', help='Build model using this xtal as main template', default=False, type=str)
         parser.add_argument('--fast_refinement', help='Chose fastest refinement option in MODELLER', default=False, action='store_true')
         parser.add_argument('--keep_hetatoms', help='Keep hetero atoms from main template, this includes ligands', default=False, action='store_true')
-        parser.add_argument('--skip_existing', help='Skip models with matching zip archives and only run the missing models.', default=False, action='store_true')
+        parser.add_argument('--rerun', help='Skip models with matching zip archives and only run the missing models.', default=False, action='store_true')
 
 
     def handle(self, *args, **options):
@@ -115,7 +115,7 @@ class Command(BaseBuild):
         self.force_main_temp = options['force_main_temp']
         self.fast_refinement = options['fast_refinement']
         self.keep_hetatoms = options['keep_hetatoms']
-        self.skip_existing = options['skip_existing']
+        self.rerun = options['rerun']
 
         GPCR_class_codes = {'A':'001', 'B1':'002', 'B2':'003', 'C':'004', 'D1':'005', 'F':'006', 'T':'007'}
         self.modeller_iterations = options['i']
@@ -228,8 +228,8 @@ class Command(BaseBuild):
                 receptor = self.receptor_list[count.value]
                 count.value +=1
 
-            # SKIP EXISTING: if a model zip file already exists, skip it and move to the next
-            if self.skip_existing:
+            # RERUN: if a model zip file already exists, skip it and move to the next
+            if self.rerun:
                 # Init temporary model object for checks regarding signaling protein complexes etc.
                 temp_model_check = HomologyModeling(receptor[0].entry_name, receptor[1], [receptor[1]], iterations=self.modeller_iterations, complex_model=self.complex, signprot=self.signprot, debug=self.debug,
                                                   force_main_temp=self.force_main_temp, fast_refinement=self.fast_refinement, keep_hetatoms=self.keep_hetatoms)
