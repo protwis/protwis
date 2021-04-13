@@ -382,7 +382,8 @@ function gproteinstructurebrowser() {
         }
     );
 
-    yadcf.exResetAllFilters(oTable2);
+    //yadcf.exResetAllFilters(oTable2);
+    oTable2.columns.adjust()
 
     // $(function(){
     //     $(".wrapper").scroll(function(){

@@ -950,12 +950,12 @@ function drawPlotPanel(plot_type, plot_div) {
 var plotting_options = {
     'TM1-7 segment movement' : {
         'cytosolic': [
-            ['tm7_heatmap_intra','Heatmap'],
+            //['tm7_heatmap_intra','Heatmap'],
             ['tm7_plot_intra', 'Segment plot (2D)'],
             ['tm7_plot_3d_intra', 'Segment plot (3D)']
         ],
         'extracellular': [
-            ['tm7_heatmap_extra','Heatmap'],
+            //['tm7_heatmap_extra','Heatmap'],
             ['tm7_plot_extra', 'Segment plot (2D)'],
             ['tm7_plot_3d_extra','Segment plot (3D)']
         ],
@@ -965,14 +965,14 @@ var plotting_options = {
         //     ['tm7_heatmap_major','Heatmap']
         // ],
         'Middle of membrane': [
-            ['tm7_heatmap_middle','Heatmap'],
+            //['tm7_heatmap_middle','Heatmap'],
             ['tm7_plot_middle', 'Segment plot (2D)'],
             ['tm7_plot_3d_middle','Segment plot (3D)']
         ],
     },
     'Contacts between generic residue positions': [
-        ['flareplot', 'Flare Plot (kept+filtered out contacts)'],
-        ['flareplot_subset', 'Flare Plot (kept contacts)'],
+        ['flareplot', 'Flare Plot (all contacts)'],
+        ['flareplot_subset', 'Flare Plot (shown contacts)'],
         ['heatmap', 'Heatmap'],
         ['force_network', 'Network (2D)'],
         ['force_network_3d', 'Network (3D)'],
