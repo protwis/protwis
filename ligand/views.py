@@ -1,22 +1,26 @@
-import json
+import hashlib
 import itertools
+import json
+
 from copy import deepcopy
 from collections import defaultdict, OrderedDict
+
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.views.generic import TemplateView, DetailView, ListView
 from django.db.models import Count, Subquery, OuterRef
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
+from django.core.cache import cache
 
 from common.views import AbsTargetSelectionTable
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
-from ligand.models import Ligand, LigandVendorLink, AnalyzedExperiment, AnalyzedAssay, BiasedPathways, AssayExperiment, LigandVendors
+from ligand.models import Ligand, LigandVendorLink,LigandVendors, AnalyzedExperiment, AnalyzedAssay, BiasedPathways, AssayExperiment
 from protein.models import Protein, ProteinFamily
-Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
-
+from interaction.models import StructureLigandInteraction
+from mutation.models import MutationExperiment
 
 class LigandBrowser(TemplateView):
     """
@@ -724,7 +728,140 @@ class BiasVendorBrowser(TemplateView):
         # except:
         #     raise
 
-# pylint: disable=F405
+
+class LigandInformationView(TemplateView):
+    template_name = 'ligand_info.html'
+
+    def get_context_data(self, *args, **kwargs):
+
+        context = super(LigandInformationView, self).get_context_data(**kwargs)
+        ligand_id = self.kwargs['pk']
+        ligand_data = Ligand.objects.get(id=ligand_id)
+        assay_data = list(AssayExperiment.objects.filter(ligand=ligand_id).prefetch_related(
+            'ligand', 'ligand__properities', 'protein', 'protein__family',
+            'protein__family__parent', 'protein__family__parent__parent__parent',
+            'protein__family__parent__parent', 'protein__family', 'protein__species',
+            'publication', 'publication__web_link', 'publication__web_link__web_resource',
+            'publication__journal'))
+        context = dict()
+        structures = self.get_structure(ligand_data)
+        ligand_data = self.process_ligand(ligand_data)
+        assay_data = self.process_assay(assay_data)
+        assay_data = self.process_values(assay_data)
+        mutations = self.get_mutations(ligand_data)
+        context.update({'structure': structures})
+        context.update({'ligand': ligand_data})
+        context.update({'assay': assay_data})
+        context.update({'mutations': mutations})
+        return context
+
+    def get_structure(self, ligand):
+        return_list = list()
+        structures = list(
+            StructureLigandInteraction.objects.filter(ligand=ligand))
+        for i in structures:
+            structure_dict = dict()
+            structure_dict['structure_pdb'] = i.structure.pdb_code.index
+            return_list.append(structure_dict)
+        return return_list
+
+    def get_mutations(self,ligand):
+        return_set = set()
+        return_list = list()
+        mutations = list(
+            MutationExperiment.objects.filter(ligand=ligand['ligand_id']).only('protein'))
+        for i in mutations:
+            if i.protein.id in return_set:
+                pass
+            else:
+                return_list.append({"id":i.protein.entry_name, "name": i.protein.name.split(' ', 1)[0].split('-adrenoceptor', 1)[0].strip()})
+                return_set.add(i.protein.id)
+        return return_list
+
+
+    def get_min_max_values(self, value):
+        value = list(map(float, value))
+        maximum = max(value)
+        minimum = min(value)
+        avg = sum(value) / len(value)
+        return minimum, avg, maximum
+
+    def process_assay(self, assays):
+        return_dict = dict()
+        for i in assays:
+            name = str(i.protein)
+            if name in return_dict:
+                if i.standard_type == 'EC50' or i.standard_type == 'potency':
+                    return_dict[name]['potency_values'].append(
+                        i.standard_value)
+                elif i.standard_type == 'IC50':
+                    return_dict[name]['affinity_values'].append(
+                        i.standard_value)
+
+                # TODO: recalculate min max avg_num_ligands
+            else:
+                return_dict[name] = dict()
+                return_dict[name]['potency_values'] = list()
+                return_dict[name]['affinity_values'] = list()
+                return_dict[name]['receptor_gtp'] = i.protein.name.split(
+                    ' ', 1)[0].split('-adrenoceptor', 1)[0].strip()
+                return_dict[name]['receptor_uniprot'] = i.protein.entry_name
+                return_dict[name]['receptor_species'] = i.protein.species.common_name
+                return_dict[name]['receptor_family'] = i.protein.family.parent.name
+                return_dict[name]['receptor_class'] = i.protein.family.parent.parent.parent.name
+                if i.standard_type == 'EC50' or i.standard_type == 'potency':
+                    return_dict[name]['potency_values'].append(
+                        i.standard_value)
+                elif i.standard_type == 'IC50':
+                    return_dict[name]['affinity_values'].append(
+                        i.standard_value)
+
+        return return_dict
+
+    def process_values(self, return_dict):
+        return_list = list()
+        for item in return_dict.items():
+            temp_dict = dict()
+            temp_dict = item[1]
+
+            if item[1]['potency_values']:
+                min, avg, max = self.get_min_max_values(
+                    item[1]['potency_values'])
+                temp_dict['potency_min'] = min
+                temp_dict['potency_avg'] = avg
+                temp_dict['potency_max'] = max
+            if item[1]['affinity_values']:
+                min, avg, max = self.get_min_max_values(
+                    item[1]['affinity_values'])
+                temp_dict['affinity_min'] = min
+                temp_dict['affinity_avg'] = avg
+                temp_dict['affinity_max'] = max
+            return_list.append(temp_dict)
+        return return_list
+
+    def process_ligand(self, ligand_data):
+        ld = dict()
+        ld['ligand_id'] = ligand_data.id
+        ld['ligand_name'] = ligand_data.name
+        ld['ligand_smiles'] = ligand_data.properities.smiles
+        ld['ligand_inchikey'] = ligand_data.properities.inchikey
+        try:
+            ld['type'] = ligand_data.properities.ligand_type.name
+        except:
+            ld['type'] = None
+        ld['rotatable'] = ligand_data.properities.rotatable_bonds
+        ld['sequence'] = ligand_data.properities.sequence
+        ld['hacc'] = ligand_data.properities.hacc
+        ld['hdon'] = ligand_data.properities.hdon
+        ld['logp'] = ligand_data.properities.logp
+        ld['mw'] = ligand_data.properities.mw
+        ld['wl'] = list()
+        ld['picture'] = None
+        for i in ligand_data.properities.web_links.all():
+            ld['wl'].append({'name': i.web_resource.name, "link": str(i)})
+            if i.web_resource.slug == 'chembl_ligand':
+                ld['picture'] = i.index
+        return ld
 
 class BiasBrowserChembl(TemplateView):
     template_name = 'bias_browser_chembl.html'
@@ -802,7 +939,6 @@ class BiasBrowserChembl(TemplateView):
                     doubles.append(temp_dict)
                     increment_assay += 1
                 else:
-                    self.logger.info('Data is not returned')
                     continue
             rd[increment] = temp
             increment += 1
@@ -883,7 +1019,6 @@ class BiasPathways(TemplateView):
 
             rd[increment] = temp
             increment += 1
-        self.logger.info('Data is returned')
         return rd
 
     '''
@@ -933,6 +1068,61 @@ class BiasGTargetSelection(AbsTargetSelectionTable):
             'color': 'success',
         },
     }
+
+
+def CachedBiasBrowser(request):
+    return CachedBiasBrowsers("biasbrowser", request)
+
+
+def CachedBiasGBrowser(request):
+    return CachedBiasBrowsers("biasgbrowser", request)
+
+
+def CachedBiasBrowsers(browser_type, request):
+    protein_ids = []
+    try:
+        simple_selection = request.session.get('selection', False)
+
+        families = []
+        for target in simple_selection.targets:
+            if target.type == 'protein':
+                protein_ids.append(target.item.entry_name)
+            elif target.type == 'family':
+                families.append(target.item.slug)
+
+        if len(families) > 0:
+            # species filter
+            species_list = []
+            for species in simple_selection.species:
+                species_list.append(species.item)
+
+            # annotation filter
+            protein_source_list = []
+            for protein_source in simple_selection.annotation:
+                protein_source_list.append(protein_source.item)
+
+            family_proteins = Protein.objects.filter(family__slug__in=families, source__in=(protein_source_list))
+            if len(species_list) > 0:
+                family_proteins.filter(species__in=(species_list))
+
+            for prot_name in family_proteins.values_list("entry_name", flat=True):
+                protein_ids.append(prot_name)
+
+    except:
+        protein_ids = ["NOSELECTION"]
+
+    protein_ids.sort()
+    cache_key = "BIASBROWSER_" + browser_type + "_" + hashlib.md5("_".join(protein_ids).encode('utf-8')).hexdigest()
+    return_html = cache.get(cache_key)
+    if return_html == None:
+        if browser_type == "biasbrowser":
+            return_html = BiasBrowser.as_view()(request).render()
+        else:
+            return_html = BiasGBrowser.as_view()(request).render()
+        cache.set(cache_key, return_html, 60*60*24*7)
+
+    return return_html
+
 
 '''
 Bias browser between families

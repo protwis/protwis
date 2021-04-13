@@ -37,7 +37,7 @@ structs_with_missing_x50 = ['5EM9', '5AER', '3BEF', '3LU9', '3HKI', '3HKJ', '1NR
                             '4MS1', '4MR9', '4F11', '4F12', '6M8R', '6OCP', '3KS9', '4XAQ', '4XAS', '5CNI', '5CNJ', '5KZN', '5KZQ', '3SM9', '4XAR', '5CNK', '5CNM',
                             '6B7H', '3LMK', '6N4Y', '6N4X', '6N50', '3MQ4', '5C5C', '6E5V', '6BSZ', '6BT5', '6C0B', '5BPB', '5BQC', '5UWG', '5BPQ', '5BQE', '6NE1',
                             '5CL1', '5CM4', '5URZ', '5URY', '6O39', '5URV', '4Z33', '6NE2', '6NE4', '6O3B', '6O3A', '5WBS', '5T44', '5UN6', '5UN5', '6NDZ', '5KZV',
-                            '5KZY', '5KZZ']
+                            '5KZY', '5KZZ', '7JQD']
 
 
 class Command(BaseBuild):

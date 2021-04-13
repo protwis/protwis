@@ -373,16 +373,16 @@ class CouplingBrowser(TemplateView):
             dictotemplate[pair.protein_id]['coupling'][pair.source]['logemaxec50'][subunit] = round(pair.logmaxec50_deg, 1)
             dictotemplate[pair.protein_id]['coupling'][pair.source]['pec50'][subunit] = round(pair.pec50_deg, 1)
             dictotemplate[pair.protein_id]['coupling'][pair.source]['emax'][subunit] = round(pair.emax_deg)
-            dictotemplate[pair.protein_id]['coupling']['1']['logemaxec50'][subunit].append(pair.logmaxec50_deg)
-            dictotemplate[pair.protein_id]['coupling']['1']['pec50'][subunit].append(pair.pec50_deg)
-            dictotemplate[pair.protein_id]['coupling']['1']['emax'][subunit].append(pair.emax_deg)
+            dictotemplate[pair.protein_id]['coupling']['1']['logemaxec50'][subunit].append(round(pair.logmaxec50_deg, 1))
+            dictotemplate[pair.protein_id]['coupling']['1']['pec50'][subunit].append(round(pair.pec50_deg, 1))
+            dictotemplate[pair.protein_id]['coupling']['1']['emax'][subunit].append(round(pair.emax_deg))
             family = coupling_reverse_header_names[subunit]
-            dictotemplate[pair.protein_id]['couplingmax'][pair.source]['logemaxec50'][family].append(pair.logmaxec50_deg)
-            dictotemplate[pair.protein_id]['couplingmax'][pair.source]['pec50'][family].append(pair.pec50_deg)
-            dictotemplate[pair.protein_id]['couplingmax'][pair.source]['emax'][family].append(pair.emax_deg)
-            dictotemplate[pair.protein_id]['couplingmax']['1']['logemaxec50'][family].append(pair.logmaxec50_deg)
-            dictotemplate[pair.protein_id]['couplingmax']['1']['pec50'][family].append(pair.pec50_deg)
-            dictotemplate[pair.protein_id]['couplingmax']['1']['emax'][family].append(pair.emax_deg)
+            dictotemplate[pair.protein_id]['couplingmax'][pair.source]['logemaxec50'][family].append(round(pair.logmaxec50_deg, 1))
+            dictotemplate[pair.protein_id]['couplingmax'][pair.source]['pec50'][family].append(round(pair.pec50_deg, 1))
+            dictotemplate[pair.protein_id]['couplingmax'][pair.source]['emax'][family].append(round(pair.emax_deg))
+            dictotemplate[pair.protein_id]['couplingmax']['1']['logemaxec50'][family].append(round(pair.logmaxec50_deg, 1))
+            dictotemplate[pair.protein_id]['couplingmax']['1']['pec50'][family].append(round(pair.pec50_deg, 1))
+            dictotemplate[pair.protein_id]['couplingmax']['1']['emax'][family].append(round(pair.emax_deg))
 
         for prot in dictotemplate:
             for propval in dictotemplate[prot]['coupling']['1']:
@@ -390,16 +390,26 @@ class CouplingBrowser(TemplateView):
                     valuelist = dictotemplate[prot]['coupling']['1'][propval][sub]
                     if len(valuelist) == 0:
                         dictotemplate[prot]['coupling']['1'][propval][sub] = "--"
-                    # elif len(valuelist) == 1:
-                    #     dictotemplate[prot]['coupling']['1'][propval][sub] = valuelist[0]
-                    elif propval == "logemaxec50":
-                        dictotemplate[prot]['coupling']['1'][propval][sub] = round(mean(valuelist), 1)
-                    elif propval == "pec50":
-                        dictotemplate[prot]['coupling']['1'][propval][sub] = round(mean(valuelist), 1)
-                    elif propval == "emax":
-                        dictotemplate[prot]['coupling']['1'][propval][sub] = round(mean(valuelist))
+
+                    elif len(valuelist) > 0 and propval == "logemaxec50":
+                        if all(i > 0 for i in valuelist):
+                            dictotemplate[prot]['coupling']['1'][propval][sub] = round(mean(valuelist), 1)
+                        else:
+                            dictotemplate[prot]['coupling']['1'][propval][sub] = round(max(valuelist), 1)
+
+                    elif len(valuelist) > 0 and propval == "pec50":
+                        if all(i > 0 for i in valuelist):
+                            dictotemplate[prot]['coupling']['1'][propval][sub] = round(mean(valuelist), 1)
+                        else:
+                            dictotemplate[prot]['coupling']['1'][propval][sub] = round(max(valuelist), 1)
+
+                    elif len(valuelist) > 0 and propval == "emax":
+                        if all(i > 0 for i in valuelist):
+                            dictotemplate[prot]['coupling']['1'][propval][sub] = round(mean(valuelist))
+                        else:
+                            dictotemplate[prot]['coupling']['1'][propval][sub] = round(max(valuelist))
                     else:
-                        dictotemplate[prot]['coupling']['1'][propval][sub] = mean(valuelist)
+                        dictotemplate[prot]['coupling']['1'][propval][sub] = round(mean(valuelist))
 
         #dict_name = 'confidence'
         dict_name = 'coupling'
@@ -451,7 +461,6 @@ class CouplingBrowser(TemplateView):
                         else:
                             dictotemplate[prot]['couplingmax'][source][propval][fam] = max(valuelist)
 
-        #dict_name = 'confidence'
         dict_name = 'couplingmax'
         for prot in dictotemplate:
             if dict_name not in dictotemplate[prot]:
@@ -484,8 +493,8 @@ class CouplingBrowser(TemplateView):
                             dictotemplate[prot][dict_name][i][propval][family] = gtp
 
 
-        #pprint(dictotemplate[348]) # only Bouvier
-        #pprint(dictotemplate[1]) # Inoue and Bouvier
+        # pprint(dictotemplate[348]) # only Bouvier
+        # pprint(dictotemplate[1]) # Inoue and Bouvier
 
         return dictotemplate, coupling_header_names
 

@@ -1120,25 +1120,31 @@ class StructureSeqNumOverwrite():
 
 
 class StructureBuildCheck():
-    local_yaml_dir = os.sep.join([settings.DATA_DIR, "structure_data", "structures"])
-    local_annotation_dir = os.sep.join([settings.DATA_DIR, "structure_data", "annotation"])
+    local_yaml_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'structures'])
+    local_annotation_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation'])
+    local_wt_pdb_lookup_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'wt_pdb_lookup'])
     
     def __init__(self):
-        with open(self.local_annotation_dir+"/xtal_segends.yaml", "r") as f:
+        with open(self.local_annotation_dir+'/xtal_segends.yaml', 'r') as f:
             self.segends_dict = yaml.safe_load(f)
+        self.yamls = os.listdir(self.local_yaml_dir)
+        self.wt_pdb_lookup_files = [i.split('.')[0] for i in os.listdir(self.local_wt_pdb_lookup_dir)]
+        self.missing_seg = []
+        self.start_error = []
+        self.end_error = []
 
     def check_structures(self):
-        yamls = os.listdir(self.local_yaml_dir)
-        for y in yamls:
+        for y in self.yamls:
             pdb = y.split('.')[0]
             try:
                 Structure.objects.get(pdb_code__index=pdb)
             except Structure.DoesNotExist:
-                print("Error: {} Structure object has not been built".format(pdb))
+                print('Error: {} Structure object has not been built'.format(pdb))
 
-    def check_structure_residues(self, structure):
-        key = structure.protein_conformation.protein.parent.entry_name + "_" + structure.pdb_code.index
+    def check_segment_ends(self, structure):
+        key = structure.protein_conformation.protein.parent.entry_name + '_' + structure.pdb_code.index
         if key in self.segends_dict:
+            parent_residues = Residue.objects.filter(protein_conformation__protein=structure.protein_conformation.protein.parent)
             structure_residues = Residue.objects.filter(protein_conformation=structure.protein_conformation)
             annotation = self.segends_dict[key]
             for i in range(1,9):
@@ -1151,17 +1157,50 @@ class StructureBuildCheck():
                         seg = 'H8'
                     else:
                         seg = 'TM'+str(i)
+                    parent_seg_resis = parent_residues.filter(protein_segment__slug=seg)
                     seg_resis = structure_residues.filter(protein_segment__slug=seg)
                     if len(seg_resis)==0:
-                        print("Error: Missing segment {} {} has no residue objects. Should have {} to {}".format(structure, seg, anno_b, anno_e))
+                        self.missing_seg.append([structure, seg, anno_b, anno_e])
                         continue
                     if seg_resis[0].sequence_number!=anno_b:
-                        print("Error: {} {} starts at {} instead of annotated {}".format(structure, seg, seg_resis[0].sequence_number, anno_b))
+                        if parent_seg_resis[0].sequence_number!=seg_resis[0].sequence_number:
+                            if structure.pdb_code.index in self.wt_pdb_lookup_files:
+                                with open(os.sep.join([self.local_wt_pdb_lookup_dir, structure.pdb_code.index+'.json']), 'r') as wt_pdb:
+                                    lookup = json.load(wt_pdb)
+                                    found_s = False
+                                    for i in lookup:
+                                        if i['PDB_POS']==seg_resis[0].sequence_number:
+                                            found_s = True
+                                            if i['WT_POS']!=parent_seg_resis[0].sequence_number:
+                                                self.start_error.append([structure, seg, seg_resis[0].sequence_number, anno_b])
+                                                break
+                                            else:
+                                                break
+                                    if not found_s:
+                                        self.start_error.append([structure, seg, seg_resis[0].sequence_number, anno_b])
+                            else:
+                                self.start_error.append([structure, seg, seg_resis[0].sequence_number, anno_b])
                     if seg_resis.reverse()[0].sequence_number!=anno_e:
-                        print("Error: {} {} ends at {} instead of annotated {}".format(structure, seg, seg_resis.reverse()[0].sequence_number, anno_e))
+                        if parent_seg_resis.reverse()[0].sequence_number!=seg_resis.reverse()[0].sequence_number:
+                            if structure.pdb_code.index in self.wt_pdb_lookup_files:
+                                with open(os.sep.join([self.local_wt_pdb_lookup_dir, structure.pdb_code.index+'.json']), 'r') as wt_pdb:
+                                    lookup = json.load(wt_pdb)
+                                    found_e = False
+                                    for i in lookup:
+                                        if i['PDB_POS']==seg_resis.reverse()[0].sequence_number:
+                                            found_e = True
+                                            if i['WT_POS']!=parent_seg_resis.reverse()[0].sequence_number:
+                                                self.end_error.append([structure, seg, seg_resis.reverse()[0].sequence_number, anno_e])
+                                                break
+                                            else:
+                                                break
+                                    if not found_e:
+                                        self.end_error.append([structure, seg, seg_resis.reverse()[0].sequence_number, anno_e])
+                            else:
+                                self.end_error.append([structure, seg, seg_resis.reverse()[0].sequence_number, anno_e])
         else:
-            print("Warning: {} not annotated".format(key))
-
+            print('Warning: {} not annotated'.format(key))
+            
 
 class ModelRotamer(object):
     def __init__(self):
