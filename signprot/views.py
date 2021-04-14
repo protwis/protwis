@@ -544,11 +544,11 @@ def GProtein(request, dataset="GuideToPharma", render_part="both"):
                   )
 
 def CouplingProfiles(request, render_part="both", signalling_data="empty"):
-    name_of_cache = 'coupling_profiles'
+    name_of_cache = 'coupling_profiles_' + signalling_data
 
     context = cache.get(name_of_cache)
     # NOTE cache disabled for development only!
-    context = None
+    # context = None
     if context == None:
 
         context = OrderedDict()
@@ -604,7 +604,11 @@ def CouplingProfiles(request, render_part="both", signalling_data="empty"):
         # gprot_id = ProteinGProteinPair.objects.all().values_list('g_protein_id', flat=True).order_by('g_protein_id').distinct()
         gproteins = ProteinGProtein.objects.filter(pk__lte = 4) #here GPa1 is fetched
         arrestins = ProteinArrestinPair.objects.all().values_list('arrestin_subtype_id', flat=True).order_by('arrestin_subtype_id').distinct()
-        arrestin_translate = {56098: "Beta-arrestin-1", 56120:"Beta-arrestin-2"}
+        arrestin_prots = list(Protein.objects.filter(family__slug__startswith="200", species__id=1, sequence_type__slug='wt').values_list("pk","name"))
+        arrestin_translate = {}
+        for arr in arrestin_prots:
+            arrestin_translate[arr[0]] = arr[1]
+
         slug_translate = {'001': "ClassA", '002': "ClassB1", '003': "ClassB2", '004': "ClassC", '006': "ClassF", '007': "ClassT"}
         key_translate ={'Gs':"G<sub>s</sub>", 'Gi/Go':"G<sub>i/o</sub>",
                         'Gq/G11':"G<sub>q/11</sub>", 'G12/G13':"G<sub>12/13</sub>",

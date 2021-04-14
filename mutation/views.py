@@ -3184,7 +3184,6 @@ def gprotMutationDesign(request, goal):
             unique_receptors.add(pairing[0])
 
         # Other coupling data
-        # TODO - coupling source should not be hardcoded
         other_couplings = ProteinGProteinPair.objects.exclude(source="GuideToPharma")\
                         .filter(protein__family__slug__startswith=target_class, g_protein_subunit__family__slug__startswith="100_001", logmaxec50_deg__gt=0)\
                         .values_list('protein__entry_name', 'g_protein__name', 'source', 'logmaxec50_deg', 'g_protein_subunit__entry_name')
