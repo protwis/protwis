@@ -58,7 +58,7 @@ function prepare_residue_colors(data) {
         'distance': 'Distance',
         'distance_abs': 'Distance (abs)',
         'core_distance': 'Distance to 7TM axis',
-        'core_distance_abs': 'Distance to 7TM axis (abs)',  
+        'core_distance_abs': 'Distance to 7TM axis (abs)',
         'network' : 'Network group no.',
         'set_presence' : 'Set specific presense',
         'ligand' : 'Ligand interactions freq',
@@ -87,14 +87,14 @@ function prepare_residue_colors(data) {
         colors_gn['set_presence'][gn] = [value,scale,1];
     })
 
-    max_ligand_interactions = Math.max(...Object.values(data['class_ligand_interactions'])) 
+    max_ligand_interactions = Math.max(...Object.values(data['class_ligand_interactions']))
     $.each(data['class_ligand_interactions'], function (gn, value) {
         scale = value / max_ligand_interactions;
         colors_gn['ligand'][gn] = [value,scale,max_ligand_interactions];
     })
 
 
-    max_complex_interactions = Math.max(...Object.values(data['class_complex_interactions'])) 
+    max_complex_interactions = Math.max(...Object.values(data['class_complex_interactions']))
     $.each(data['class_complex_interactions'], function (gn, value) {
         scale = value / max_complex_interactions;
         colors_gn['complex'][gn] = [value,scale,max_complex_interactions];
@@ -122,7 +122,7 @@ function prepare_residue_colors(data) {
         }
     })
 
-    max_mutations = Math.max(...Object.values(data['class_mutations'])) 
+    max_mutations = Math.max(...Object.values(data['class_mutations']))
     $.each(data['class_mutations'], function (gn, value) {
         scale = value / max_mutations;
         colors_gn['mutations'][gn] = [value,scale,max_mutations];
@@ -222,7 +222,7 @@ function color_by_scale(scale, color1, color2, color3) {
     // colors.orange = { red: 255, green: 150, blue: 113 };
     // colors.purple = { red: 128, green: 0, blue: 128 };
     // colors.false = false;
-    
+
     return colorGradient(scale, color_scale_colors[color1], color_scale_colors[color2], color_scale_colors[color3])
 }
 
@@ -237,12 +237,12 @@ function createSnakeplot(data, containerSelector) {
 
     max_x = $(containerSelector).find("svg").attr("width");
     max_y = $(containerSelector).find("svg").attr("height");
-    
+
     var svgContainer = $(containerSelector).find("svg").closest("svg")
         .attr("viewBox", 0 + " " + 0 + " " + (max_x) + " " + (max_y))
         .attr("width", "100%")
         .attr("style", "height: 500px");
-    
+
     $(containerSelector).find(".long").hide();
     maxmin();
     create_legend();
@@ -280,7 +280,7 @@ function createSnakeplot(data, containerSelector) {
         'distance': 'Distance',
         'distance_abs': 'Distance (abs)',
         'core_distance': 'Distance to 7TM axis',
-        'core_distance_abs': 'Distance to 7TM axis (abs)',  
+        'core_distance_abs': 'Distance to 7TM axis (abs)',
         'network' : 'Network group no.',
         'set_presence' : 'Set specific presense',
         'ligand' : 'Ligand interactions freq',
@@ -295,7 +295,7 @@ function createSnakeplot(data, containerSelector) {
         path_id = $(this).attr('id');
         res_ids = $(this).attr('previous_res');
         path_groups[path_id] = { 'distance': [], 'distance_abs': [] };
-        
+
         $.each(index_names, function (i, name) {
             path_groups[path_id][name] = [];
             if (neg_and_positives.includes(name)) {
@@ -329,7 +329,7 @@ function createSnakeplot(data, containerSelector) {
         colors['set_presence'][seq_pos] = [value,scale,1];
     })
 
-    max_ligand_interactions = Math.max(...Object.values(data['class_ligand_interactions'])) 
+    max_ligand_interactions = Math.max(...Object.values(data['class_ligand_interactions']))
     $.each(data['class_ligand_interactions'], function (gn, value) {
         seq_pos = data['snakeplot_lookup'][gn];
         scale = value / max_ligand_interactions;
@@ -337,7 +337,7 @@ function createSnakeplot(data, containerSelector) {
     })
 
 
-    max_complex_interactions = Math.max(...Object.values(data['class_complex_interactions'])) 
+    max_complex_interactions = Math.max(...Object.values(data['class_complex_interactions']))
     $.each(data['class_complex_interactions'], function (gn, value) {
         seq_pos = data['snakeplot_lookup'][gn];
         scale = value / max_complex_interactions;
@@ -367,7 +367,7 @@ function createSnakeplot(data, containerSelector) {
         }
     })
 
-    max_mutations = Math.max(...Object.values(data['class_mutations'])) 
+    max_mutations = Math.max(...Object.values(data['class_mutations']))
     $.each(data['snakeplot_lookup'], function (gn, seq_pos) {
         if (gn in data['class_mutations']) {
             value = data['class_mutations'][gn];
@@ -393,7 +393,7 @@ function createSnakeplot(data, containerSelector) {
         }
         colors['distance'][seq_pos] = [value,scale_abs,data['ngl_max_diff_distance']];
         colors['distance_abs'][seq_pos] = [Math.abs(value), scale, data['ngl_max_diff_distance']];
-        
+
         if (seq_pos in path_groups_lookup) {
             path_groups[path_groups_lookup[seq_pos]]['distance'].push(scale_abs);
             path_groups[path_groups_lookup[seq_pos]]['distance_abs'].push(scale);
@@ -435,7 +435,7 @@ function createSnakeplot(data, containerSelector) {
             if (neg_and_positive) {
                 colors[index_names[i]][seq_pos] = [value,scale_abs,max_values[i]];
                 colors[index_names[i] + '_abs'][seq_pos] = [Math.abs(value), scale, max_values[i]];
-                
+
                 if (seq_pos in path_groups_lookup) {
                     path_groups[path_groups_lookup[seq_pos]][index_names[i]].push(scale_abs);
                     path_groups[path_groups_lookup[seq_pos]][index_names[i] + '_abs'].push(scale);
@@ -582,19 +582,19 @@ function createSnakeplot(data, containerSelector) {
 
         newDiv.setAttribute("class", "controls-panel");
         content = '<span class="pull-right snakeplot_controls_toggle" style="cursor: pointer;"><span class="glyphicon glyphicon-option-horizontal btn-download png"></span></span><span class="options" style="display: block; min-width: 120px;">';
-        
+
         index_names = { 0: 'core_distance', 1: 'a_angle', 2: 'outer_angle', 3: 'tau', 4: 'phi', 5: 'psi', 6: 'sasa', 7: 'rsa', 8: 'theta', 9: 'hse', 10: 'tau_angle' }
-    
+
         content += '<table><tr><td>Hide loops</td><td><input id=hide_loops type=checkbox></td></tr><tr><td>Residue text (kept positions):</td><td><select id="text_included" class="snakeplot_property_select">' +
         text_content_options +
-        '</select>' + 
+        '</select>' +
         '<div class="btn-group btn-toggle" id="included_color">' +
         '    <button class="btn btn-xs btn-primary active" value="black">Black</button>' +
         '    <button class="btn btn-xs btn-default" value="grey">Grey</button>' +
             '</div>' +
         '</td ></tr > <tr><td>Residue text (filtered out positions):</td><td><select id="text_excluded" class="snakeplot_property_select">' +
         text_content_options +
-        '</select>' + 
+        '</select>' +
         '<div class="btn-group btn-toggle" id="excluded_color">' +
         '    <button class="btn btn-xs btn-primary active" value="black">Black</button>' +
         '    <button class="btn btn-xs btn-default" value="grey">Grey</button>' +
@@ -621,7 +621,7 @@ function createSnakeplot(data, containerSelector) {
             // '<option value="none">None</option>' +
             // select_color_options +
             // '</select></td>' +
-            '<td>' + 
+            '<td>' +
             '<div class="btn-group btn-toggle residue_fill" id="fill_filtered">' +
             '    <button class="btn btn-xs btn-primary active" value="true">Kept</button>' +
             '    <button class="btn btn-xs btn-default" value="false">All</button>' +
@@ -647,7 +647,7 @@ function createSnakeplot(data, containerSelector) {
             // '<option value="none">None</option>' +
             // select_color_options +
             // '</select></td>' +
-            '<td>' + 
+            '<td>' +
             '<div class="btn-group btn-toggle residue_border" id="border_filtered">' +
             '    <button class="btn btn-xs btn-primary active" value="true">Kept</button>' +
             '    <button class="btn btn-xs btn-default" value="false">All</button>' +
@@ -680,7 +680,7 @@ function createSnakeplot(data, containerSelector) {
                 // '<option value="none">None</option>' +
                 // select_color_options +
                 // '</select></td>' +
-                '<td>' + 
+                '<td>' +
                 '<div class="btn-group btn-toggle residue_text" id="text_filtered">' +
                 '    <button class="btn btn-xs btn-primary active" value="true">Kept</button>' +
                 '    <button class="btn btn-xs btn-default" value="false">All</button>' +
@@ -691,7 +691,7 @@ function createSnakeplot(data, containerSelector) {
             '<option value="none">None</option>' +
             select_data_options +
             '</select></td>' +
-            '<td>' + 
+            '<td>' +
             '<div class="btn-group btn-toggle residue_rotation" id="rotation_filtered">' +
             '    <button class="btn btn-xs btn-primary active" value="true">Kept</button>' +
             '    <button class="btn btn-xs btn-default" value="false">All</button>' +
@@ -729,7 +729,7 @@ function createSnakeplot(data, containerSelector) {
 
         $(containerSelector).prepend(newDiv);
 
-        
+
         color_palette = [
             ["#000", "#444", "#666", "#999", "#ccc", "#eee", "#f3f3f3", "#fff"],
             ["#f00", "#f90", "#ff0", "#0f0", "#0ff", "#00f", "#90f", "#f0f"],
@@ -782,10 +782,10 @@ function createSnakeplot(data, containerSelector) {
             if (id=='border_filtered') change_stroke();
             if (id == 'text_filtered') change_text();
             if (id == 'rotation_filtered') change_rotation();
-            
+
             if (id == 'excluded_color') $(containerSelector + " #text_excluded")[0].dispatchEvent(new Event("change"));
             if (id == 'included_color') $(containerSelector + " #text_included")[0].dispatchEvent(new Event("change"));
-            
+
             // $(this).find('.active').html($(this).find('.active').attr("value"));
             // $(this).find('.btn-default').html('&nbsp;');
             // toggle_best($(this).attr("mode"), $(this).attr("column"),$(this).find('.active').attr("value"))
@@ -810,7 +810,7 @@ function createSnakeplot(data, containerSelector) {
             maxmin();
         });
 
-        
+
 
         d3.select(containerSelector).select("#text_included").on("change", function () {
             text_format = $(containerSelector + " #text_included").val();
@@ -845,7 +845,7 @@ function createSnakeplot(data, containerSelector) {
 
                         var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
                         y_shift = isSafari ? 2 : 5;
-                        
+
                         text = "<tspan x='"+$(this).attr('x')+"' y='"+(parseInt($(this).attr('y'))-y_shift)+"'>" + AA + "</tspan><tspan dy=9  x='"+$(this).attr('x')+"'>" + gn + "</tspan>";
                     break;
                     case "aa":
@@ -864,7 +864,7 @@ function createSnakeplot(data, containerSelector) {
         });
 
         d3.select(containerSelector).select("#text_excluded").on("change", function () {
-            
+
             color = $(containerSelector + " #excluded_color").find(".active").attr('value');
             text_format = $(containerSelector + " #text_excluded").val();
             console.log('change to', text_format);
@@ -882,7 +882,7 @@ function createSnakeplot(data, containerSelector) {
                 }
 
                 if ((!gn || !filtered_gns.includes(seg+"x"+gn))) {
-                    
+
                 } else {
                     return true;
                 }
@@ -957,7 +957,7 @@ function createSnakeplot(data, containerSelector) {
 
         function change_fill() {
             fill_color = $(containerSelector + " #snakeplot_color").val();
-            
+
             //color_filtered = d3.select(containerSelector).select("#fill_filtered").property("checked");
             color_filtered = ($(containerSelector + " #fill_filtered").find(".active").attr('value') == 'true');
             console.log('change fill color to!', fill_color,'color_filtered',color_filtered);
@@ -1005,8 +1005,8 @@ function createSnakeplot(data, containerSelector) {
 
                 if (color_filtered && (!gn || !filtered_gns.includes(seg+"x"+gn))) {
                     $(this).attr("fill", "#fff");
-                    // $(this).attr("stroke", "#ccc");  
-                    // $(this).attr("stroke-width", 1); 
+                    // $(this).attr("stroke", "#ccc");
+                    // $(this).attr("stroke-width", 1);
                     // $(containerSelector).find('#' + pos_id + 't').attr("fill", "#ddd");
                     return true;
                 }
@@ -1030,13 +1030,13 @@ function createSnakeplot(data, containerSelector) {
                         var closest = 'not_found';
                     }
                     if (closest == 'not_found') {
-                        $(this).attr("fill", "#fff"); 
+                        $(this).attr("fill", "#fff");
                     } else {
                         $(this).attr("fill", color_range(scale)); //color_by_scale(scale,color_id1,color_id2,color_id3));
                     }
                 }
                 // console.log(pos_id,color[1],color_by_scale(color_id,color[1]))
-                // $(this).attr("fill_value", color[2]);  
+                // $(this).attr("fill_value", color[2]);
 
                 if ($(containerSelector + " #snakeplot_color_text").val() == 'none') {
                     $(containerSelector).find('#'+pos_id+'t').removeAttr("fill");
@@ -1050,7 +1050,7 @@ function createSnakeplot(data, containerSelector) {
                 //     $(this).css("opacity", 0.3);
                 //     $(containerSelector).find('#'+pos_id+'t').css("opacity", 0.1);
                 // }
-                             
+
             });
         }
 
@@ -1103,8 +1103,8 @@ function createSnakeplot(data, containerSelector) {
 
                 if (color_filtered && (!gn || !filtered_gns.includes(seg+"x"+gn))) {
                     // $(this).attr("fill", "#fff");
-                    $(this).attr("stroke", "#ccc");  
-                    $(this).attr("stroke-width", 1); 
+                    $(this).attr("stroke", "#ccc");
+                    $(this).attr("stroke-width", 1);
                     // $(containerSelector).find('#' + pos_id + 't').attr("fill", "#ddd");
                     return true;
                 }
@@ -1117,7 +1117,7 @@ function createSnakeplot(data, containerSelector) {
                     } else {
                         $(this).attr("stroke", color_range(scale));
                     }
-                    $(this).attr("stroke-width", stroke_width); 
+                    $(this).attr("stroke-width", stroke_width);
                 } else {
                     if (fill_color.includes("distance")) {
                         closest = find_closest_value(seg, gn, fill_color);
@@ -1128,20 +1128,20 @@ function createSnakeplot(data, containerSelector) {
                     }
                     if (closest == 'not_found') {
                         $(this).attr("stroke", "#ccc");
-                        $(this).attr("stroke-width", 1); 
+                        $(this).attr("stroke-width", 1);
                     } else {
                         $(this).attr("stroke", color_range(scale));
-                        $(this).attr("stroke-width", stroke_width); 
+                        $(this).attr("stroke-width", stroke_width);
                     }
                 }
-                
-                
+
+
                 // $(this).attr("stroke", color[color_id]);
-                // $(this).attr("stroke_value", color[2]);          
-                // $(this).attr("stroke-width", 1); 
+                // $(this).attr("stroke_value", color[2]);
+                // $(this).attr("stroke-width", 1);
                 // // $(this).css("opacity", 0.3);
-                // if (color[2] > 0.1) {    
-                //     $(this).attr("stroke-width", 3); 
+                // if (color[2] > 0.1) {
+                //     $(this).attr("stroke-width", 3);
                 //     $(this).css("opacity", 1);
                 // } else {
                 //     $(this).attr("stroke", "#ccc");
@@ -1232,13 +1232,13 @@ function createSnakeplot(data, containerSelector) {
                         $(containerSelector).find('#' + pos_id + 't').attr("fill", color_range(scale));
                         $(containerSelector).find('#' + pos_id + 't').attr("font-weight", 1000);
                     }
-                    
+
                 }
-                
+
                 // $(containerSelector).find('#' + pos_id + 't').attr("fill", color[color_id]);
                 // $(this).css("opacity", 0.3);
-                // if (color[2] > 0.1) {    
-                    
+                // if (color[2] > 0.1) {
+
                 // } else {
                 //     $(containerSelector).find('#' + pos_id + 't').attr("fill", "#ddd");
                 // }
@@ -1285,11 +1285,11 @@ function createSnakeplot(data, containerSelector) {
                 } else {
                     $(containerSelector).find('#' + pos_id + 't').attr("transform", "");
                 }
-                
+
                 // $(containerSelector).find('#' + pos_id + 't').attr("fill", color[color_id]);
                 // $(this).css("opacity", 0.3);
-                // if (color[2] > 0.1) {    
-                    
+                // if (color[2] > 0.1) {
+
                 // } else {
                 //     $(containerSelector).find('#' + pos_id + 't').attr("fill", "#ddd");
                 // }
@@ -1322,15 +1322,18 @@ function createSnakeplot(data, containerSelector) {
                     .domain([0, 1])
                     .range([color_id1, color_id2]);
             }
+            
             console.log('change backbone color to!', fill_color);
             var path_max = 0;
-            $(containerSelector).find('.helix_path').each(function () {
-                path_id = $(this).attr('id');
-                fill_scale = path_groups[path_id][fill_color];
-                const fill_sum = fill_scale.reduce((a, b) => a + b, 0);
-                const fill_avg = (fill_sum / fill_scale.length) || 0;
-                path_max = fill_avg > path_max ? fill_avg : path_max;
-            });
+            if (fill_color != "none"){
+              $(containerSelector).find('.helix_path').each(function () {
+                  path_id = $(this).attr('id');
+                  fill_scale = path_groups[path_id][fill_color];
+                  const fill_sum = fill_scale.reduce((a, b) => a + b, 0);
+                  const fill_avg = (fill_sum / fill_scale.length) || 0;
+                  path_max = fill_avg > path_max ? fill_avg : path_max;
+              });
+            }
 
             $(containerSelector).find('.helix_path').each(function () {
                 path_id = $(this).attr('id');
@@ -1353,13 +1356,13 @@ function createSnakeplot(data, containerSelector) {
                 if (fill_color != 'none' && fill_scale.length!=0) {
                         $(this).attr("stroke", color_range(fill_avg));
                         $(this).attr("stroke-width", 6);
-                } 
-                
+                }
+
             });
         }
 
         function find_closest_value(seg, gn, fill_color) {
-            color = "not_found";   
+            color = "not_found";
             if (gn && parseInt(gn.substring(0,2)) >= 50) {
                 for (i = parseInt(gn.substring(0,2)); i > 0; i--) {
                     seq_pos = data['snakeplot_lookup'][seg+"x"+i]
@@ -1383,7 +1386,7 @@ function createSnakeplot(data, containerSelector) {
         function change_movement() {
             fill_color = $(containerSelector + " #snakeplot_move_circle").val();
             console.log('change movement to!', fill_color);
-            
+
             // color_filtered = d3.select(containerSelector).select("#color_filtered").property("checked");
 
             $(containerSelector).find('.rcircle').each(function () {
@@ -1406,14 +1409,14 @@ function createSnakeplot(data, containerSelector) {
                     } else {
                         console.log("no movement for ", seg,gn, pos_id);
                         // find closest value
-                        
+
                         color = find_closest_value(seg, gn, fill_color);
                         if (color == 'not_found')
-                            color = ["#fff", 0, 0, "#fff", "#fff"];   
+                            color = ["#fff", 0, 0, "#fff", "#fff"];
                     }
                     //color = pos_id in colors[fill_color] ? colors[fill_color][pos_id] : ["#fff",0,0,"#fff","#fff"];
                 } else {
-                    color = ["#fff", 0, 0, "#fff", "#fff"];   
+                    color = ["#fff", 0, 0, "#fff", "#fff"];
                 }
 
                 max_momement = 25;
@@ -1423,7 +1426,7 @@ function createSnakeplot(data, containerSelector) {
                 $(this).attr("cx", current_x + color[1] * max_momement);
                 $(containerSelector).find('#' + pos_id + 't').attr("x",current_x_text + color[1] * max_momement)
                 $(containerSelector).find('#' + pos_id + 't').find("tspan").attr("x",current_x_text + color[1] * max_momement)
-                             
+
             });
         }
 
@@ -1523,7 +1526,7 @@ function createSnakeplot(data, containerSelector) {
             .attr('width', 20)
             .attr('height', 24)
             .attr("xlink:href", function (d, i) { return "/static/home/images/legends/" + d.icon + ".png" })
-        
+
         legendcolorscales = legend4.append('g').attr('class','colorscale')
         legendcolorscales.append('rect')
             .attr('x', 25)
@@ -1533,7 +1536,7 @@ function createSnakeplot(data, containerSelector) {
             .style("stroke", "black")
             .style("stroke-width", 1)
             .style("fill", "white")
-        
+
         // console.log(legendcolorscales)
 
         // for (element in legendcolorscales[0]) {
@@ -1553,7 +1556,7 @@ function createSnakeplot(data, containerSelector) {
                 // var hex = rgb2hex(rgb.red, rgb.green, rgb.blue);
                 range_colors.push(c);
             });
-            
+
             if (d.value == nice_index_names['network']) {
                 var colors = d3v4.scaleSequential(d3v4.interpolateSpectral)
                     .domain([0, 48]);
@@ -1580,13 +1583,13 @@ function createSnakeplot(data, containerSelector) {
                 .attr("fill", d => colors(d))
                 .attr("id", d => d)
                 .attr("stroke-width", 0);
-                            
+
           });
 
 
         legends_width = legend.node().getBBox().width
         legend.attr("transform", "translate("+((max_x-legends_width)/2)+","+(newheight-70)+")");
-        
+
         // legend4.append('rect')
         //     .attr("x", 0)
         //     .attr("y", 0)
@@ -1595,7 +1598,7 @@ function createSnakeplot(data, containerSelector) {
         //     .style("fill", function (d, i) {
         //         return color(i)
         //     })
-        
+
         // legend4.append('text')
         //     .attr("x", 20)
         //     .attr("y", 10)
@@ -1606,9 +1609,9 @@ function createSnakeplot(data, containerSelector) {
         //     .attr("class", "textselected")
         //     .style("text-anchor", "start")
         //     .style("font-size", 15)
-            
+
         }
-    
+
 }
 
 // Override "normal max min"
@@ -1626,7 +1629,7 @@ function maxmin() {
         classmax = '';
         classmin = '';
         counter = 0;
-    
+
         // console.log("temp",y_max,y_min);
         $(obj).find('svg').find('g').children('.rtext').each(function () {
             counter += 1;
@@ -1704,6 +1707,6 @@ function maxmin() {
             svg.attr('height', "100%");
             svg.attr('width', "100%");
         }
-        
+
     });
 }

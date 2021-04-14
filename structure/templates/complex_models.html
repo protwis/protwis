@@ -278,7 +278,8 @@
                 }
             );
 
-            yadcf.exResetAllFilters(oTable);
+            //yadcf.exResetAllFilters(oTable);
+            oTable.columns.adjust()
 
             // $.datepicker.regional[""].dateFormat = "yy-mm-dd";
             // $.datepicker.setDefaults($.datepicker.regional['']);
@@ -422,7 +423,7 @@
                 ClearSelection('targets');
                 for (i = 0; i < checked_data.length; i++) {
                     AddToSelection('targets', 'structure_complex_signprot',  checked_data[i][16] );
-                    
+
                 }
                 window.location.href = '/structure/selection_convert_signprot_model';
             });

@@ -88,7 +88,7 @@ class Command(BaseBuild):
         parser.add_argument('--force_main_temp', help='Build model using this xtal as main template', default=False, type=str)
         parser.add_argument('--fast_refinement', help='Chose fastest refinement option in MODELLER', default=False, action='store_true')
         parser.add_argument('--keep_hetatoms', help='Keep hetero atoms from main template, this includes ligands', default=False, action='store_true')
-        parser.add_argument('--skip_existing', help='Skip models with matching zip archives and only run the missing models.', default=False, action='store_true')
+        parser.add_argument('--rerun', help='Skip models with matching zip archives and only run the missing models.', default=False, action='store_true')
 
 
     def handle(self, *args, **options):
@@ -115,7 +115,7 @@ class Command(BaseBuild):
         self.force_main_temp = options['force_main_temp']
         self.fast_refinement = options['fast_refinement']
         self.keep_hetatoms = options['keep_hetatoms']
-        self.skip_existing = options['skip_existing']
+        self.rerun = options['rerun']
 
         GPCR_class_codes = {'A':'001', 'B1':'002', 'B2':'003', 'C':'004', 'D1':'005', 'F':'006', 'T':'007'}
         self.modeller_iterations = options['i']
@@ -126,8 +126,6 @@ class Command(BaseBuild):
             # if updating all, then delete existing
             print("Delete existing homology model db entries")
             StructureModel.objects.all().delete()
-            StructureModelSeqSim.objects.all().delete()
-            StructureModelStatsRotamer.objects.all().delete()
         if options['purge_zips']:
             print("Delete existing local homology model zips")
             hommod_zip_path = './structure/homology_models_zip/'
@@ -139,8 +137,10 @@ class Command(BaseBuild):
                     except:
                         shutil.rmtree(hommod_zip_path+f)
 
+        self.custom_selection = False
         if options['r']:
             all_receptors = Protein.objects.filter(entry_name__in=options['r'])
+            self.custom_selection = True
         # Only refined structures
         elif options['x']:
             structs = Structure.objects.filter(annotated=True).order_by('pdb_code__index')
@@ -228,8 +228,8 @@ class Command(BaseBuild):
                 receptor = self.receptor_list[count.value]
                 count.value +=1
 
-            # SKIP EXISTING: if a model zip file already exists, skip it and move to the next
-            if self.skip_existing:
+            # RERUN: if a model zip file already exists, skip it and move to the next
+            if self.rerun:
                 # Init temporary model object for checks regarding signaling protein complexes etc.
                 temp_model_check = HomologyModeling(receptor[0].entry_name, receptor[1], [receptor[1]], iterations=self.modeller_iterations, complex_model=self.complex, signprot=self.signprot, debug=self.debug,
                                                   force_main_temp=self.force_main_temp, fast_refinement=self.fast_refinement, keep_hetatoms=self.keep_hetatoms)
@@ -253,6 +253,8 @@ class Command(BaseBuild):
             logger.info('Model finished for  \'{}\' ({})... (processor:{} count:{}) (Time: {})'.format(receptor[0].entry_name, receptor[1],processor_id,i,datetime.now() - mod_startTime))
 
     def get_states_to_model(self, receptor):
+        if self.force_main_temp and self.custom_selection:
+            return [Structure.objects.get(protein_conformation__protein__entry_name=self.force_main_temp.lower()).state.name]
         rec_class = ProteinFamily.objects.get(name=receptor.get_protein_class())
         if rec_class.name=='Class B2 (Adhesion)':
             rec_class = ProteinFamily.objects.filter(name__in=['Class B1 (Secretin)', 'Class B2 (Adhesion)'])
@@ -382,6 +384,9 @@ class CallHomologyModeling():
                             db_res = Residue.objects.get(protein_conformation__protein=Homology_model.reference_protein, sequence_number=int(res.get_id()[1]))
                         else:
                             db_res = Residue.objects.get(protein_conformation__protein=Homology_model.reference_protein.parent, sequence_number=int(res.get_id()[1]))
+                        # Skip amino acid HETRESIS
+                        if res.get_id()[0].startswith('H_'):
+                            continue
                         if PDB.Polypeptide.three_to_one(res.get_resname())!=db_res.amino_acid:
                             residue_shift = True
                             break
@@ -635,6 +640,7 @@ class HomologyModeling(object):
             first_signprot_res_found = False
             atom_num = 1
             atom_num_offset = []
+            pref_chain = str(self.main_structure.preferred_chain)
 
             if self.debug:
                 if self.complex:
@@ -643,10 +649,10 @@ class HomologyModeling(object):
             for line in pdblines:
                 try:
                     if prev_num==None:
-                        pdb_re = re.search('(ATOM[A-Z\s\d]{13}\S{3})([\sABCDRG]+)(\d+)([A-Z\s\d.-]{49,53})',line)
+                        pdb_re = re.search('(ATOM[A-Z\s\d]{13}\S{3})([\sA-Z]+)(\d+)([A-Z\s\d.-]{49,53})',line)
                         prev_num = int(pdb_re.group(3))
                         prev_chain = pdb_re.group(2).strip()
-                    pdb_re = re.search('(ATOM[A-Z\s\d]{13}\S{3})([\sABCDRG]+)(\d+)([A-Z\s\d.-]{49,53})',line)
+                    pdb_re = re.search('(ATOM[A-Z\s\d]{13}\S{3})([\sA-Z]+)(\d+)([A-Z\s\d.-]{49,53})',line)
                     if int(pdb_re.group(3))>prev_num or (int(pdb_re.group(3))<prev_num and prev_chain!=pdb_re.group(2).strip()):
                         i+=1
                         prev_num = int(pdb_re.group(3))
@@ -666,6 +672,7 @@ class HomologyModeling(object):
                         whitespace = (whitespace+3)*' '
                     else:
                         whitespace = (whitespace-3)*' '
+                    whitespace = ' '+pref_chain+whitespace[2:]
                     group1 = pdb_re.group(1)
                     if 'OXT' in group1:
                         if not self.complex:
@@ -700,27 +707,28 @@ class HomologyModeling(object):
                         out_line+='\n'
                     out_list.append(out_line)
                 except Exception as msg:
-                    try:
-                        if line.startswith('TER'):
-                            pdb_re = re.search('(TER\s+\d+\s+\S{3})([\sABCDRG]+)(\d+)',line)
-                            out_list.append(pdb_re.group(1)+len(pdb_re.group(2))*' '+pos_list[i]+"\n")
-                            atom_num+=1
-                        else:
-                            raise Exception()
-                    except:
+                    if line.startswith('TER'):
+                        # pdb_re = re.search('(TER\s+\d+\s+\S{3})([\sA-Z]+)(\d+)',line)
+                        # out_list.append(pdb_re.group(1)+len(pdb_re.group(2))*' '+pos_list[i]+"\n")
+                        out_list.append('TER\n')
+                        atom_num+=1
+                    else:
                         try:
-                            pref_chain = str(self.main_structure.preferred_chain)
                             if len(pref_chain)>1:
                                 pref_chain = pref_chain[0]
-                            pdb_re = re.search('(HETATM[0-9\sA-Z{apo}]{{11}})([A-Z0-9\s]{{3}})([\sABCDRG]+)(\d+)([\s0-9.A-Z-]+)'.format(apo="'"),line)
-
+                            pdb_re = re.search('(HETATM[0-9\sA-Z{apo}]{{11}})([A-Z0-9\s]{{3}})([\sA-Z]+)(\d+)([\s0-9.A-Z-]+)'.format(apo="'"),line)
+                            if not pdb_re:
+                                continue
                             alternate_water = False
-                            whitespace3 = len(pdb_re.group(3))*' '
+                            whitespace3 = (len(pdb_re.group(3))-2)*' '
                             if first_hetatm==False:
                                 prev_hetnum = int(pdb_re.group(4))
                                 first_hetatm = True
-                                atom_num = int(pdb_re.group(1)[7:11])
-                                num = int(pos_list[i])+1
+                                atom_num = int(pdb_re.group(1)[7:11])+1
+                                if self.complex:
+                                    num = int(pos_list[sp_first_indeces[0]-1])+100
+                                else:
+                                    num = int(pos_list[i])+100
                                 if 'HOH' in pdb_re.group(2):
                                     water_count+=1
                                     if water_count in self.alternate_water_positions:
@@ -730,14 +738,14 @@ class HomologyModeling(object):
                                         else:
                                             whitespace1 = ''
                                             whitespace2 = 4*' '
-                                        bwater = 'HETATM {}  O  BHOH  {}{}{}'.format(str(atom_num+1), whitespace1, num+1, whitespace2)+self.alternate_water_positions[water_count][31:]
+                                        bwater = 'HETATM {}  O  BHOH {}{}{}{}'.format(str(atom_num+1), pref_chain, whitespace1[:-1], num+1, whitespace2)+self.alternate_water_positions[water_count][31:]
                                         alternate_water = True
                                 if alternate_water==True:
-                                    out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:-1]+'A'+pdb_re.group(2)+whitespace3+str(int(pos_list[i])+1)+pdb_re.group(5))
+                                    out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:-1]+'A'+pdb_re.group(2)+' '+pref_chain+whitespace3+str(num+1)+pdb_re.group(5))
                                     out_list.append(bwater)
                                     atom_num+=2
                                 else:
-                                    out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:]+pdb_re.group(2)+whitespace3+str(int(pos_list[i])+1)+pdb_re.group(5))
+                                    out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:]+pdb_re.group(2)+' '+pref_chain+whitespace3+str(num)+pdb_re.group(5))
                                     atom_num+=1
                             else:
                                 if int(pdb_re.group(4))!=prev_hetnum:
@@ -750,20 +758,20 @@ class HomologyModeling(object):
                                             else:
                                                 whitespace1 = ''
                                                 whitespace2 = 4*' '
-                                            bwater = 'HETATM {}  O  BHOH  {}{}{}'.format(str(atom_num+1), whitespace1, num+1, whitespace2)+self.alternate_water_positions[water_count][31:]
+                                            bwater = 'HETATM {}  O  BHOH {}{}{}{}'.format(str(atom_num+1), pref_chain, whitespace1[:-1], num+1, whitespace2)+self.alternate_water_positions[water_count][31:]
                                             alternate_water = True
                                     if alternate_water==True:
-                                        out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:-1]+'A'+pdb_re.group(2)+whitespace3+str(num+1)+pdb_re.group(5))
+                                        out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:-1]+'A'+pdb_re.group(2)+' '+pref_chain+whitespace3+str(num+1)+pdb_re.group(5))
                                         out_list.append(bwater)
                                         atom_num+=2
                                     else:
-                                        out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:]+pdb_re.group(2)+whitespace3+str(num+1)+pdb_re.group(5))
+                                        out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:]+pdb_re.group(2)+' '+pref_chain+whitespace3+str(num+1)+pdb_re.group(5))
                                         atom_num+=1
                                     prev_hetnum+=1
                                     num+=1
 
                                 else:
-                                    out_list.append(pdb_re.group(1)+pdb_re.group(2)+whitespace3+str(num)+pdb_re.group(5))
+                                    out_list.append(pdb_re.group(1)+pdb_re.group(2)+' '+pref_chain+whitespace3+str(num)+pdb_re.group(5))
                                     atom_num+=1
                         except:
                             out_list.append(line)
@@ -833,7 +841,7 @@ class HomologyModeling(object):
                     break
                 ws1 = ' '*(5-len(str(c1.sequence_number)))
                 ws2 = ' '*(5-len(str(c2.sequence_number)))
-                ssbond+='SSBOND   {} CYS {}{}{}    CYS {}{}{}\n'.format(count, chain, ws1, str(c1.sequence_number), chain, ws2, str(c2.sequence_number))
+                ssbond+='SSBOND    {} CYS {}{}{}    CYS {}{}{}\n'.format(count, chain, ws1, str(c1.sequence_number), chain, ws2, str(c2.sequence_number))
                 # for res in pdb_struct[chain]:
                     # print(res)
                 for atom in pdb_struct[chain][c1.sequence_number]:
@@ -858,48 +866,14 @@ class HomologyModeling(object):
         io.set_structure(pdb_struct)
         io.save(path+self.modelname+'.pdb')
 
-        # include beta and gamma subunits from main template
-        beta_gamma = ''
-        # if self.complex:
-        #     spc = SignprotComplex.objects.get(structure=self.main_structure)
-        #     p = PDB.PDBParser(QUIET=True).get_structure('structure', StringIO(self.main_structure.pdb_data.pdb))[0]
-        #     beta = p[spc.beta_chain]
-        #     gamma = p[spc.gamma_chain]
-        #     for b_res in beta:
-        #         for b_a in b_res:
-        #             atom_num+=1
-        #             b_a.set_serial_number(atom_num)
-        #     for g_res in gamma:
-        #         for g_a in g_res:
-        #             atom_num+=1
-        #             g_a.set_serial_number(atom_num)
-        #     io = PDB.PDBIO()
-        #     io.set_structure(beta)
-        #     io.save('./structure/homology_models/{}_beta.pdb'.format(self.modelname), preserve_atom_numbering=True)
-        #     with open('./structure/homology_models/{}_beta.pdb'.format(self.modelname),'r') as beta_f:
-        #         beta_string = beta_f.read()
-        #     io.set_structure(gamma)
-        #     io.save('./structure/homology_models/{}_gamma.pdb'.format(self.modelname), preserve_atom_numbering=True)
-        #     with open('./structure/homology_models/{}_gamma.pdb'.format(self.modelname),'r') as gamma_f:
-        #         gamma_string = gamma_f.read()
-        #     os.remove('./structure/homology_models/{}_beta.pdb'.format(self.modelname))
-        #     os.remove('./structure/homology_models/{}_gamma.pdb'.format(self.modelname))
-        #     beta_gamma = beta_string[:-4]+gamma_string[:-5]
-        #     # add to templates.csv file
-        #     with open(path+self.modelname+'.templates.csv','a') as s_file:
-        #         for b_res in beta:
-        #             s_file.write('Beta,{},None,{},{},{}\n'.format(b_res.get_id()[1], spc.beta_protein.entry_name, self.main_structure.pdb_code.index, self.main_structure.pdb_code.index))
-        #         for g_res in gamma:
-        #             s_file.write('Gamma,{},None,{},{},{}\n'.format(g_res.get_id()[1], spc.gamma_protein.entry_name, self.main_structure.pdb_code.index, self.main_structure.pdb_code.index))
-
         with open (path+self.modelname+'.pdb', 'r+') as f:
             content = f.read()
             first_line  = 'REMARK    1 MODEL FOR {} CREATED WITH GPCRDB HOMOLOGY MODELING PIPELINE, VERSION {}\n'.format(self.reference_entry_name, build_date)
             second_line = 'REMARK    2 MAIN TEMPLATE: {}\n'.format(self.main_structure)
             f.seek(0,0)
-            f.write(first_line+second_line+ssbond+content[:-4]+beta_gamma+conect+'END')
+            f.write(first_line+second_line+ssbond+content[:-7]+conect+'END')
 
-        return first_line+second_line+ssbond+content[:-4]+beta_gamma+conect+'END'
+        return first_line+second_line+ssbond+content[:-7]+conect+'END'
 
     def run_alignment(self, query_states, core_alignment=True,
                       segments=['TM1','ICL1','TM2','ECL1','TM3','ICL2','TM4','TM5','TM6','TM7','H8'],
@@ -2050,88 +2024,10 @@ class HomologyModeling(object):
         post_model = p.get_structure('post', post_file)[0]
         hse = HSExposureCB(post_model, radius=11)
         clash_pairs = hse.clash_pairs
+        trimmed_res_nums['clashes'] = OrderedDict()
         for i in clash_pairs:
-            gn1 = str(i[0][0]).replace('.','x')
-            if len(gn1.split('x')[1])==1:
-                gn1 = gn1+'0'
-            if gn1[0]=='-':
-                gn1 = gn1[1:]+'1'
-            gn2 = str(i[1][0]).replace('.','x')
-            if len(gn2.split('x')[1])==1:
-                gn2 = gn2+'0'
-            if gn2[0]=='-':
-                gn2 = gn2[1:]+'1'
-            first_non_TM, second_non_TM = False, False
-            try:
-                try:
-                    segment1 = self.segment_coding[int(gn1.split('x')[0])]
-                    for s in self.alignment.alignment_dict:
-                        if s.startswith(segment1):
-                            segment1 = s
-                            break
-                except:
-                    first_non_TM = True
-                try:
-                    segment2 = self.segment_coding[int(gn2.split('x')[0])]
-                    for s in self.alignment.alignment_dict:
-                        if s.startswith(segment2):
-                            segment2 = s
-                            break
-                except:
-                    second_non_TM = True
-                ref_gap_counter = 0
-                break_loop = False
-                try:
-                    start_dif = int(list(self.alignment.reference_dict['N-term'].keys())[0])-1
-                except:
-                    start_dif = None
-                if first_non_TM==True or self.alignment.alignment_dict[segment1][gn1]=='.':
-                    for seg, resis in self.alignment.reference_dict.items():
-                        for gn, res in resis.items():
-                            if res=='-':
-                                ref_gap_counter+=1
-                            if gn==gn1:
-                                trimmed_res_nums[segment1][str(i[0][0])] = i[0][1]
-                                break_loop = True
-                                break
-                            try:
-                                if i[0][1]+start_dif+ref_gap_counter==int(gn):
-                                    trimmed_res_nums[seg][gn] = i[0][1]
-                                    break_loop = True
-                                    break
-                            except:
-                                pass
-                        if break_loop==True:
-                            break
-                if second_non_TM==True or self.alignment.alignment_dict[segment2][gn2]=='.':
-                    for seg, resis in self.alignment.reference_dict.items():
-                        for gn, res in resis.items():
-                            if res=='-':
-                                ref_gap_counter+=1
-                            if gn==gn2:
-                                trimmed_res_nums[segment2][str(i[1][0])] = i[1][1]
-                                break_loop = True
-                                break
-                            try:
-                                if i[1][1]+start_dif+ref_gap_counter==int(gn):
-                                    trimmed_res_nums[seg][gn] = i[1][1]
-                                    break_loop = True
-                                    break
-                            except:
-                                pass
-                        if break_loop==True:
-                            break
-                else:
-                    for seg, resis in self.alignment.reference_dict.items():
-                        for gn, res in resis.items():
-                            if res=='-':
-                                ref_gap_counter+=1
-                            if gn==gn1:
-                                trimmed_res_nums[segment1][gn1.replace('x','.')] = i[0][1]
-                            elif gn==gn2:
-                                trimmed_res_nums[segment2][gn2.replace('x','.')] = i[1][1]
-            except Exception as msg:
-                print("Warning: Can't fix side chain clash on {}".format(msg))
+            trimmed_res_nums['clashes'][i[0][1]] = i[0][1]
+            trimmed_res_nums['clashes'][i[1][1]] = i[1][1]
 
         self.statistics.add_info('clashing_residues', clash_pairs)
 
@@ -3142,11 +3038,13 @@ class HelixEndsModeling(HomologyModeling):
                                   'TM7':[[],[]], 'H8':[[],[]]},
                          'removed':{'TM1':[[],[]],'TM2':[[],[]],'TM3':[[],[]],'TM4':[[],[]],'TM5':[[],[]],'TM6':[[],[]],
                                     'TM7':[[],[]], 'H8':[[],[]]}}
-        try:
-            H8_alt = template_source['H8']['8x50'][0]
-            if separate_H8==True:
-                raise Exception()
-        except:
+        H8_alt = None
+        if 'H8' in template_source:
+            for i, j in template_source['H8'].items():
+                if j[0]:
+                    H8_alt = j[0]
+                    break
+        if separate_H8==True:
             H8_alt = None
         if self.debug:
             if not separate_H8 and not H8_alt:
@@ -3492,7 +3390,7 @@ class Loops(object):
         self.model_loop = False
         self.partialECL2_1 = False
         self.partialECL2_2 = False
-        self.excluded_loops = {'ICL1':[],'ECL1':[],'ICL2':['5ZKP'],'ECL2':[],'ECL2_1':[],'ECL2_mid':[],'ECL2_2':[],'ICL3':['3VW7'],'ECL3':['4DJH','6KJV','6KK1','6KK7','5VEW']}
+        self.excluded_loops = {'ICL1':[],'ECL1':[],'ICL2':['5ZKP'],'ECL2':[],'ECL2_1':[],'ECL2_mid':[],'ECL2_2':['6K41'],'ICL3':['3VW7'],'ECL3':['4DJH','6KJV','6KK1','6KK7','5VEW']}
         self.evade_chain_break = False
 
     def fetch_loop_residues(self, main_pdb_array, superpose_modded_loop=False):

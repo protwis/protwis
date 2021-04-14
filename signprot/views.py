@@ -373,16 +373,16 @@ class CouplingBrowser(TemplateView):
             dictotemplate[pair.protein_id]['coupling'][pair.source]['logemaxec50'][subunit] = round(pair.logmaxec50_deg, 1)
             dictotemplate[pair.protein_id]['coupling'][pair.source]['pec50'][subunit] = round(pair.pec50_deg, 1)
             dictotemplate[pair.protein_id]['coupling'][pair.source]['emax'][subunit] = round(pair.emax_deg)
-            dictotemplate[pair.protein_id]['coupling']['1']['logemaxec50'][subunit].append(pair.logmaxec50_deg)
-            dictotemplate[pair.protein_id]['coupling']['1']['pec50'][subunit].append(pair.pec50_deg)
-            dictotemplate[pair.protein_id]['coupling']['1']['emax'][subunit].append(pair.emax_deg)
+            dictotemplate[pair.protein_id]['coupling']['1']['logemaxec50'][subunit].append(round(pair.logmaxec50_deg, 1))
+            dictotemplate[pair.protein_id]['coupling']['1']['pec50'][subunit].append(round(pair.pec50_deg, 1))
+            dictotemplate[pair.protein_id]['coupling']['1']['emax'][subunit].append(round(pair.emax_deg))
             family = coupling_reverse_header_names[subunit]
-            dictotemplate[pair.protein_id]['couplingmax'][pair.source]['logemaxec50'][family].append(pair.logmaxec50_deg)
-            dictotemplate[pair.protein_id]['couplingmax'][pair.source]['pec50'][family].append(pair.pec50_deg)
-            dictotemplate[pair.protein_id]['couplingmax'][pair.source]['emax'][family].append(pair.emax_deg)
-            dictotemplate[pair.protein_id]['couplingmax']['1']['logemaxec50'][family].append(pair.logmaxec50_deg)
-            dictotemplate[pair.protein_id]['couplingmax']['1']['pec50'][family].append(pair.pec50_deg)
-            dictotemplate[pair.protein_id]['couplingmax']['1']['emax'][family].append(pair.emax_deg)
+            dictotemplate[pair.protein_id]['couplingmax'][pair.source]['logemaxec50'][family].append(round(pair.logmaxec50_deg, 1))
+            dictotemplate[pair.protein_id]['couplingmax'][pair.source]['pec50'][family].append(round(pair.pec50_deg, 1))
+            dictotemplate[pair.protein_id]['couplingmax'][pair.source]['emax'][family].append(round(pair.emax_deg))
+            dictotemplate[pair.protein_id]['couplingmax']['1']['logemaxec50'][family].append(round(pair.logmaxec50_deg, 1))
+            dictotemplate[pair.protein_id]['couplingmax']['1']['pec50'][family].append(round(pair.pec50_deg, 1))
+            dictotemplate[pair.protein_id]['couplingmax']['1']['emax'][family].append(round(pair.emax_deg))
 
         for prot in dictotemplate:
             for propval in dictotemplate[prot]['coupling']['1']:
@@ -390,16 +390,26 @@ class CouplingBrowser(TemplateView):
                     valuelist = dictotemplate[prot]['coupling']['1'][propval][sub]
                     if len(valuelist) == 0:
                         dictotemplate[prot]['coupling']['1'][propval][sub] = "--"
-                    # elif len(valuelist) == 1:
-                    #     dictotemplate[prot]['coupling']['1'][propval][sub] = valuelist[0]
-                    elif propval == "logemaxec50":
-                        dictotemplate[prot]['coupling']['1'][propval][sub] = round(mean(valuelist), 1)
-                    elif propval == "pec50":
-                        dictotemplate[prot]['coupling']['1'][propval][sub] = round(mean(valuelist), 1)
-                    elif propval == "emax":
-                        dictotemplate[prot]['coupling']['1'][propval][sub] = round(mean(valuelist))
+
+                    elif len(valuelist) > 0 and propval == "logemaxec50":
+                        if all(i > 0 for i in valuelist):
+                            dictotemplate[prot]['coupling']['1'][propval][sub] = round(mean(valuelist), 1)
+                        else:
+                            dictotemplate[prot]['coupling']['1'][propval][sub] = round(max(valuelist), 1)
+
+                    elif len(valuelist) > 0 and propval == "pec50":
+                        if all(i > 0 for i in valuelist):
+                            dictotemplate[prot]['coupling']['1'][propval][sub] = round(mean(valuelist), 1)
+                        else:
+                            dictotemplate[prot]['coupling']['1'][propval][sub] = round(max(valuelist), 1)
+
+                    elif len(valuelist) > 0 and propval == "emax":
+                        if all(i > 0 for i in valuelist):
+                            dictotemplate[prot]['coupling']['1'][propval][sub] = round(mean(valuelist))
+                        else:
+                            dictotemplate[prot]['coupling']['1'][propval][sub] = round(max(valuelist))
                     else:
-                        dictotemplate[prot]['coupling']['1'][propval][sub] = mean(valuelist)
+                        dictotemplate[prot]['coupling']['1'][propval][sub] = round(mean(valuelist))
 
         #dict_name = 'confidence'
         dict_name = 'coupling'
@@ -451,7 +461,6 @@ class CouplingBrowser(TemplateView):
                         else:
                             dictotemplate[prot]['couplingmax'][source][propval][fam] = max(valuelist)
 
-        #dict_name = 'confidence'
         dict_name = 'couplingmax'
         for prot in dictotemplate:
             if dict_name not in dictotemplate[prot]:
@@ -484,8 +493,8 @@ class CouplingBrowser(TemplateView):
                             dictotemplate[prot][dict_name][i][propval][family] = gtp
 
 
-        #pprint(dictotemplate[348]) # only Bouvier
-        #pprint(dictotemplate[1]) # Inoue and Bouvier
+        # pprint(dictotemplate[348]) # only Bouvier
+        # pprint(dictotemplate[1]) # Inoue and Bouvier
 
         return dictotemplate, coupling_header_names
 
@@ -535,11 +544,11 @@ def GProtein(request, dataset="GuideToPharma", render_part="both"):
                   )
 
 def CouplingProfiles(request, render_part="both", signalling_data="empty"):
-    name_of_cache = 'coupling_profiles'
+    name_of_cache = 'coupling_profiles_' + signalling_data
 
     context = cache.get(name_of_cache)
     # NOTE cache disabled for development only!
-    context = None
+    # context = None
     if context == None:
 
         context = OrderedDict()
@@ -595,7 +604,11 @@ def CouplingProfiles(request, render_part="both", signalling_data="empty"):
         # gprot_id = ProteinGProteinPair.objects.all().values_list('g_protein_id', flat=True).order_by('g_protein_id').distinct()
         gproteins = ProteinGProtein.objects.filter(pk__lte = 4) #here GPa1 is fetched
         arrestins = ProteinArrestinPair.objects.all().values_list('arrestin_subtype_id', flat=True).order_by('arrestin_subtype_id').distinct()
-        arrestin_translate = {56098: "Beta-arrestin-1", 56120:"Beta-arrestin-2"}
+        arrestin_prots = list(Protein.objects.filter(family__slug__startswith="200", species__id=1, sequence_type__slug='wt').values_list("pk","name"))
+        arrestin_translate = {}
+        for arr in arrestin_prots:
+            arrestin_translate[arr[0]] = arr[1]
+
         slug_translate = {'001': "ClassA", '002': "ClassB1", '003': "ClassB2", '004': "ClassC", '006': "ClassF", '007': "ClassT"}
         key_translate ={'Gs':"G<sub>s</sub>", 'Gi/Go':"G<sub>i/o</sub>",
                         'Gq/G11':"G<sub>q/11</sub>", 'G12/G13':"G<sub>12/13</sub>",

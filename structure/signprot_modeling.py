@@ -75,6 +75,13 @@ class SignprotModeling():
             if signprot.family.parent in subfam_dict:
                 return subfam_dict[signprot.family.parent][0]
             else:
+                for i in subfam_template_preference[signprot.family.parent.name]:
+                    try:
+                        fam = ProteinFamily.objects.get(name=i)
+                        if fam in subfam_dict:
+                            return subfam_dict[fam][0]
+                    except ProteinFamily.DoesNotExist:
+                        continue
                 return Structure.objects.get(pdb_code__index='3SN6')
 
     def get_ordered_alpha_templates(self, signprot):
@@ -91,7 +98,7 @@ class SignprotModeling():
     def run(self):
         parse = GPCRDBParsingPDB()
         self.signprot_complex = SignprotComplex.objects.get(structure=self.main_structure)
-        structure_signprot = self.signprot_complex.protein
+        structure_signprot = Protein.objects.get(entry_name=self.signprot_complex.structure.pdb_code.index.lower()+'_a')
         if self.signprot!=False:
             self.target_signprot = Protein.objects.get(entry_name=self.signprot)
         else:
@@ -100,39 +107,35 @@ class SignprotModeling():
         sign_a = GProteinAlignment()
         sign_a.run_alignment(self.target_signprot, structure_signprot)
         signprot_pdb_array = parse.create_g_alpha_pdb_array(self.signprot_complex)
-        
-        # Alignment exception in HN for 6OIJ, shifting alignment by 6 residues
-        if self.main_structure.pdb_code.index=='6OIJ':
-            keys = list(signprot_pdb_array['HN'].keys())
-            new_HN = OrderedDict()
-            for i, k in enumerate(signprot_pdb_array['HN']):
-                if i<8:
-                    new_HN[k] = 'x'
-                else:
-                    new_HN[k] = signprot_pdb_array['HN'][keys[i-6]]
-            signprot_pdb_array['HN'] = new_HN
 
-        new_array = OrderedDict()
+        # Match signprot_pdb_array to seq alignment - gap missing coordinates
+        signprot_pdb_array = self.match_pdb_array_to_alingment(signprot_pdb_array, sign_a)
+        # Match seq alignment to signprot_pdb_array - gap missing residues
+        sign_a = self.match_alignment_to_pdb_array(sign_a, signprot_pdb_array)
 
         # Initiate complex part of template source
         source_resis = Residue.objects.filter(protein_conformation__protein=self.target_signprot)
         for res in source_resis:
             if res.protein_segment.slug not in self.template_source:
                 self.template_source[res.protein_segment.slug] = OrderedDict()
-            if res.protein_segment.category=='loop':
-                self.template_source[res.protein_segment.slug][str(res.sequence_number)] = [None, None]
-            else:
-                self.template_source[res.protein_segment.slug][res.display_generic_number.label] = [self.main_structure, self.main_structure]
+            self.template_source[res.protein_segment.slug][res.display_generic_number.label] = [self.main_structure, self.main_structure]
+        
+        # Custom fix for engineered and distorted alphas
+        if self.main_structure.pdb_code.index in ['7JVQ','6WHA','7D77','7D7M','7BW0','6PLB','6NBI','6XOX']: # FIXME - need non-hardcoded approach here
+            for seg in ['H1', 'h1ha']:
+                for i in signprot_pdb_array[seg]:
+                    signprot_pdb_array[seg][i] = 'x'
 
         # Superimpose missing regions H1 - hfs2
         alt_complex_struct = None
         alt_signprot_complex = None
         segs_for_alt_complex_struct = []
         alt_templates_H_domain = self.get_alpha_templates(True)
-
         if self.main_structure.id not in alt_templates_H_domain[1]:
             segs_for_alt_complex_struct = ['H1', 'h1ha', 'HA', 'hahb', 'HB', 'hbhc', 'HC', 'hchd', 'HD', 'hdhe', 'HE', 'hehf', 'HF', 'hfs2']
-            alt_complex_struct = self.find_h_domain_template(self.target_signprot, alt_templates_H_domain[0]) #Structure.objects.get(pdb_code__index='3SN6')
+            alt_complex_struct = self.find_h_domain_template(self.target_signprot, alt_templates_H_domain[0])
+            if self.debug:
+                print('Helical domain alternative template: {}'.format(alt_complex_struct))
             alt_signprot_complex = SignprotComplex.objects.get(structure=alt_complex_struct)
             alt_signprot_pdb_array = parse.create_g_alpha_pdb_array(alt_signprot_complex)
             before_cgns = ['G.HN.50', 'G.HN.51', 'G.HN.52', 'G.HN.53']
@@ -165,7 +168,7 @@ class SignprotModeling():
                 if key in signprot_pdb_array[seg] and signprot_pdb_array[seg][key]!='x':
                     continue
                 signprot_pdb_array[seg][key] = new_residues[key]
-            
+
             # alt local loop alignment
             alt_sign_a = GProteinAlignment()
             alt_sign_a.run_alignment(self.target_signprot, alt_signprot_complex.protein, segments=segs_for_alt_complex_struct)
@@ -174,17 +177,28 @@ class SignprotModeling():
                 sign_a.template_dict[alt_seg] = alt_sign_a.template_dict[alt_seg]
                 sign_a.alignment_dict[alt_seg] = alt_sign_a.alignment_dict[alt_seg]
 
-            # fix h1ha and hahb and hbhc
-            if self.target_signprot.entry_name!='gnas2_human':
-                h1ha = Residue.objects.filter(protein_conformation__protein=alt_signprot_complex.protein, protein_segment__slug='h1ha')
-                h1ha_dict, hahb_dict = OrderedDict(), OrderedDict()
-                for h in h1ha:
-                    h1ha_dict[h.generic_number.label] = 'x'
-                signprot_pdb_array['h1ha'] = h1ha_dict
-                right_order = sorted(list(signprot_pdb_array['hahb'].keys()), key=lambda x: (x))
+            # fix resnum order
+            for seg, vals in signprot_pdb_array.items():
+                new_seg_dict = OrderedDict()
+                right_order = sorted(list(signprot_pdb_array[seg].keys()), key=lambda x: (x))
                 for r in right_order:
-                    hahb_dict[r] = signprot_pdb_array['hahb'][r]
-                signprot_pdb_array['hahb'] = hahb_dict
+                    new_seg_dict[r] = signprot_pdb_array[seg][r]
+                signprot_pdb_array[seg] = new_seg_dict
+
+            # remove h1ha residues as those are usually distorted
+            h1ha = Residue.objects.filter(protein_conformation__protein=alt_signprot_complex.protein, protein_segment__slug='h1ha')
+            h1ha_dict = OrderedDict()
+            for h in h1ha:
+                h1ha_dict[h.generic_number.label] = 'x'
+            self.template_source = update_template_source(self.template_source, list(self.template_source['h1ha'].keys()), None, 'h1ha')
+            signprot_pdb_array['h1ha'] = h1ha_dict
+
+            # Custom fixes
+            if self.main_structure.pdb_code.index in ['7D76','7D77']:
+                signprot_pdb_array['H1']['G.H1.09'] = 'x'
+                signprot_pdb_array['H1']['G.H1.10'] = 'x'
+                signprot_pdb_array['H1']['G.H1.11'] = 'x'
+                self.template_source = update_template_source(self.template_source, ['G.H1.09','G.H1.10','G.H1.11'], None, 'H1')
                 
             # Let Modeller model buffer regions
             self.trimmed_residues.append('s1h1_6')
@@ -199,12 +213,100 @@ class SignprotModeling():
             self.trimmed_residues.append('G.S2.02')
             self.trimmed_residues.append('s4h3_4')
             self.trimmed_residues.append('s4h3_5')
+            if self.signprot_complex.protein.entry_name=='gnai1_human':
+                self.trimmed_residues.append('G.H1.10')
+                self.trimmed_residues.append('G.H1.11')
+        
+        # Identifying missing sections
+        full_protein_list = []
+        for seg, resis in signprot_pdb_array.items():
+            for gn, atoms in resis.items():
+                full_protein_list.append([seg, gn, atoms])
+        no_coord_start, no_coord_end = None, None
+        missing_sections = []
+        for i, vals in enumerate(full_protein_list):
+            if vals[2]=='x':
+                if not no_coord_start:
+                    no_coord_start = i
+                    no_coord_end = i
+                else:
+                    no_coord_end = i
+            else:
+                if not no_coord_start:
+                    pass
+                else:
+                    missing_sections.append([no_coord_start, no_coord_end])
+                    no_coord_start, no_coord_end = None, None
+
+        # Try to find alternative templates for missing segments
+        alpha_templates = self.get_ordered_alpha_templates(self.target_signprot)
+        swapped_in_sections = []
+        for i in missing_sections:
+            if i[0]-4<0:
+                continue
+            start_gn = full_protein_list[i[0]-4][1]
+            end_gn = full_protein_list[i[1]+4][1]
+            for template in alpha_templates:
+                try:
+                    struct_prot = Protein.objects.get(entry_name=template.pdb_code.index.lower()+'_a')
+                    start_res = Residue.objects.get(protein_conformation__protein=struct_prot, display_generic_number__label=start_gn)
+                    end_res = Residue.objects.get(protein_conformation__protein=struct_prot, display_generic_number__label=end_gn)
+                    resis = Residue.objects.filter(protein_conformation__protein=struct_prot, sequence_number__in=list(range(start_res.sequence_number, end_res.sequence_number+1)))
+                except Residue.DoesNotExist:
+                    continue
+                target_range = len(range(i[0]-4,i[1]+5))
+                if target_range==len(resis):
+                    orig_residues = OrderedDict()
+                    alt_residues = OrderedDict()
+                    missing_orig_coords = False
+                    for j, r in enumerate(resis):
+                        if j<4:
+                            atoms = signprot_pdb_array[r.protein_segment.slug][r.display_generic_number.label]
+                            if atoms=='x':
+                                missing_orig_coords = True
+                                break
+                            orig_residues[r.display_generic_number.label] = signprot_pdb_array[r.protein_segment.slug][r.display_generic_number.label]
+                        elif j>len(resis)-5:
+                            atoms = signprot_pdb_array[r.protein_segment.slug][r.display_generic_number.label]
+                            if atoms=='x':
+                                missing_orig_coords = True
+                                break
+                            orig_residues[r.display_generic_number.label] = signprot_pdb_array[r.protein_segment.slug][r.display_generic_number.label]
+                        alt_residues[r.display_generic_number.label] = parse.parse_rotamer_pdb(Rotamer.objects.get(structure=template, residue=r))
+                    if missing_orig_coords:
+                        continue
+                    superpose = sp.LoopSuperpose(orig_residues, alt_residues)
+                    new_residues = superpose.run()
+                    key_list = list(new_residues.keys())[4:-4]
+                    self.trimmed_residues+=[list(new_residues.keys())[3], list(new_residues.keys())[4], list(new_residues.keys())[-5], list(new_residues.keys())[-4]]
+                    for key in key_list:
+                        seg = key.split('.')[1]
+                        if key in signprot_pdb_array[seg] and signprot_pdb_array[seg][key]!='x':
+                            continue
+                        signprot_pdb_array[seg][key] = new_residues[key]
+                        new_aa = PDB.Polypeptide.three_to_one(new_residues[key][0].get_parent().get_resname())
+                        sign_a.template_dict[seg][key] = new_aa
+                        if sign_a.reference_dict[seg][key]==new_aa:
+                            sign_a.alignment_dict[seg][key] = new_aa
+                        self.template_source = update_template_source(self.template_source, key_list, template, seg)
+                    swapped_in_sections.append(i)
+                    break
+        for i in swapped_in_sections:
+            missing_sections.remove(i)
+
+        # Model buffer regions
+        for i in missing_sections:
+            for j in full_protein_list[i[0]-2:i[1]+3]:
+                if j[1] not in self.trimmed_residues:
+                    self.trimmed_residues.append(j[1])
 
         # New loop alignments for signprot. If length differs between ref and temp, buffer is created in the middle of the loop
         loops = [i.slug for i in ProteinSegment.objects.filter(proteinfamily='Alpha', category='loop')]
         loops_to_model = []
         for r_seg, t_seg, a_seg in zip(sign_a.reference_dict, sign_a.template_dict, sign_a.alignment_dict):
             if r_seg in loops:
+                if self.target_signprot==structure_signprot.parent and r_seg not in segs_for_alt_complex_struct:
+                    continue
                 loop_length = len(sign_a.reference_dict[r_seg])
                 ref_loop = [i for i in list(sign_a.reference_dict[r_seg].values()) if i not in ['x','-']]
                 ref_keys = [i for i in list(sign_a.reference_dict[r_seg].keys()) if i not in ['x','-']]
@@ -241,16 +343,24 @@ class SignprotModeling():
                             self.template_source = compare_and_update_template_source(self.template_source, r_seg, signprot_pdb_array, mid_temp+j, ref_loop_residues[i].display_generic_number.label, 
                                                                                       ref_loop_residues[i].sequence_number, segs_for_alt_complex_struct, alt_complex_struct, self.main_structure)
                             j+=1
+                        if list(sign_a.reference_dict[r_seg].keys())[i] in self.trimmed_residues:
+                            self.trimmed_residues.append(key)
                     for i, j in enumerate(list(sign_a.reference_dict[r_seg].values())):
                         key = r_seg+'_'+str(i+1)
                         try:
                             temp_out[key]
                             ref_out[key] = j
                         except:
-                            ref_out[key.replace('_','?')] = j
+                            key = key.replace('_','?')
+                            ref_out[key] = j
+                        if list(sign_a.reference_dict[r_seg].keys())[i] in self.trimmed_residues:
+                            self.trimmed_residues.append(key)
                         i+=1
                 # temp is longer
                 elif len(ref_loop)<len(temp_loop):
+                    # Gaps in both loops in different places - adjusting loop length
+                    if len(temp_loop)!=loop_length:
+                        loop_length = len(temp_loop)
                     mid_ref = math.ceil(len(ref_loop)/2)
                     j = 0
                     for i in range(0, loop_length):
@@ -274,28 +384,38 @@ class SignprotModeling():
                             self.template_source = compare_and_update_template_source(self.template_source, r_seg, signprot_pdb_array, mid_ref+j, temp_loop_residues[i].display_generic_number.label, 
                                                                                       ref_loop_residues[mid_ref+j].sequence_number, segs_for_alt_complex_struct, alt_complex_struct, self.main_structure)
                             j+=1
-                    for i, j in enumerate(list(sign_a.template_dict[t_seg].values())):
+                        
+                    i = 0
+                    for j in list(sign_a.template_dict[t_seg].values()):
                         key = r_seg+'_'+str(i+1)
-                        try:
-                            ref_out[key]
+                        if j=='-':
+                            continue
+                        if key in ref_out:
                             temp_out[key] = j
-                        except:
+                        else:
                             temp_out[key.replace('_','?')] = j
+                        if list(sign_a.reference_dict[r_seg].keys())[i] in self.trimmed_residues:
+                            self.trimmed_residues.append(key)
                         i+=1
                     loops_to_model.append(r_seg)
+
                 # ref and temp length equal
                 else:
                     cr, ct = 1,1
                     for i, j in zip(list(sign_a.reference_dict[r_seg].values()), list(sign_a.template_dict[t_seg].values())):
-                        ref_out[r_seg+'_'+str(cr)] = i
+                        r_key = r_seg+'_'+str(cr)
+                        ref_out[r_key] = i
                         temp_out[r_seg+'_'+str(ct)] = j
-                        self.template_source = compare_and_update_template_source(self.template_source, r_seg, signprot_pdb_array, ct-1, temp_loop_residues[ct-1].display_generic_number.label, 
-                                                                                  ref_loop_residues[cr-1].sequence_number, segs_for_alt_complex_struct, alt_complex_struct, self.main_structure)
+                        if len(temp_loop_residues)==len(temp_loop):
+                            self.template_source = compare_and_update_template_source(self.template_source, r_seg, signprot_pdb_array, ct-1, temp_loop_residues[ct-1].display_generic_number.label, 
+                                                                                      ref_loop_residues[cr-1].sequence_number, segs_for_alt_complex_struct, alt_complex_struct, self.main_structure)
+                        if list(sign_a.reference_dict[r_seg].keys())[cr-1] in self.trimmed_residues:
+                            self.trimmed_residues.append(r_key)
                         if i!='-':
                             cr+=1
                         if j!='-':
                             ct+=1
-                        
+
                 c = 1
 
                 # update alignment dict
@@ -324,14 +444,6 @@ class SignprotModeling():
                             j+=1
                     else:
                         new_pdb_array[t_c] = 'x'
-                        # j+=1
-
-                # pprint.pprint(new_pdb_array)
-                # for i,j in new_pdb_array.items():
-                #     try:
-                #         print(i, PDB.Polypeptide.three_to_one(j[0].get_parent().get_resname()))
-                #     except:
-                #         print(i, j)
 
                 # update dictionary keys with '?' if no backbone template
                 ref_out_final, temp_out_final, align_out_final, new_pdb_array_final = OrderedDict(), OrderedDict(), OrderedDict(), OrderedDict()
@@ -364,16 +476,14 @@ class SignprotModeling():
                 elif atoms=='x':
                     sign_a.alignment_dict[seg][cgn] = 'x'
 
-
         # Rotamer switching
-        rotamer_templates = self.get_ordered_alpha_templates(self.target_signprot)
         if self.debug:
             print("Signprot rotamer switching")
-            print(rotamer_templates)
+            print(alpha_templates)
         for seg, resis in sign_a.alignment_dict.items():
             for cgn, pos in resis.items():
                 if pos=='.':
-                    for alt_temp in rotamer_templates:
+                    for alt_temp in alpha_templates:
                         ref_AA = sign_a.reference_dict[seg][cgn]
                         new_coords = self.non_conserved_switcher(cgn, ref_AA, signprot_pdb_array[seg][cgn], alt_temp)
                         if not new_coords:
@@ -386,6 +496,7 @@ class SignprotModeling():
                         break
                     # If no alternative rotamer template, cut back to 5 atoms
                     signprot_pdb_array[seg][cgn] = [i for i in signprot_pdb_array[seg][cgn] if str(i.get_id()) in ['N','CA','C','O','CB']]
+                    self.template_source = update_template_source(self.template_source, [cgn], None, seg, just_rot=True)
                     if self.debug:
                         print("No rotamer template, mutating to ALA: ", cgn)
         
@@ -393,9 +504,9 @@ class SignprotModeling():
         self.a.template_dict = deepcopy(self.a.template_dict)
         self.a.alignment_dict = deepcopy(self.a.alignment_dict)
 
+        new_array = OrderedDict()
         for seg, values in sign_a.reference_dict.items():
             new_array[seg] = OrderedDict()
-            # self.template_source[seg] = OrderedDict()
             final_values = deepcopy(values)
             for key, res in values.items():
                 try:
@@ -432,6 +543,7 @@ class SignprotModeling():
         for seg, values in signprot_pdb_array.items():
             self.main_pdb_array[seg] = values
 
+        # Removing HN residues before G.HN.30
         delete_HN_begin = []
         for i in self.a.reference_dict['HN']:
             if i=='G.HN.30':
@@ -484,10 +596,15 @@ class SignprotModeling():
             # H1
             self.trimmed_residues.append('G.H1.07')
             self.trimmed_residues.append('G.H1.08')
+
         if 'hgh4' in loops_to_model:
             self.trimmed_residues.append('G.H4.01')
             self.trimmed_residues.append('G.H4.02')
             self.trimmed_residues.append('G.H4.03')
+        if self.main_structure.pdb_code.index=='6WHA':
+            self.trimmed_residues.append('G.hgh4.06')
+            self.trimmed_residues.append('G.hgh4.07')
+            self.trimmed_residues.append('G.hgh4.08')
 
         # Add mismatching residues to trimmed residues for modeling
         for seg, val in self.a.alignment_dict.items():
@@ -519,6 +636,9 @@ class SignprotModeling():
         self.template_source['Gamma'] = OrderedDict()
         for b_res in beta:
             key = str(b_res.get_id()[1])
+            # remove waters
+            if b_res.get_resname()=='HOH':
+                continue
             self.a.reference_dict['Beta'][key] = PDB.Polypeptide.three_to_one(b_res.get_resname())
             self.a.template_dict['Beta'][key] = PDB.Polypeptide.three_to_one(b_res.get_resname())
             self.a.alignment_dict['Beta'][key] = PDB.Polypeptide.three_to_one(b_res.get_resname())
@@ -527,13 +647,17 @@ class SignprotModeling():
             self.template_source['Beta'][key] = [self.main_structure, self.main_structure]
         for g_res in gamma:
             key = str(g_res.get_id()[1])
+            # remove waters
+            if g_res.get_resname()=='HOH':
+                continue
             self.a.reference_dict['Gamma'][key] = PDB.Polypeptide.three_to_one(g_res.get_resname())
             self.a.template_dict['Gamma'][key] = PDB.Polypeptide.three_to_one(g_res.get_resname())
             self.a.alignment_dict['Gamma'][key] = PDB.Polypeptide.three_to_one(g_res.get_resname())
             atoms = [atom for atom in g_res]
             self.main_pdb_array['Gamma'][key] = atoms
             self.template_source['Gamma'][key] = [self.main_structure, self.main_structure]
-
+        
+        # pprint.pprint(self.trimmed_residues)
         # for i,j,k,l in zip(sign_a.reference_dict, sign_a.template_dict, sign_a.alignment_dict, signprot_pdb_array):
         #     pprint.pprint(self.template_source[i])
         #     for v,b,n,m in zip(sign_a.reference_dict[i], sign_a.template_dict[j], sign_a.alignment_dict[k], signprot_pdb_array[l]):
@@ -542,9 +666,7 @@ class SignprotModeling():
 
     def non_conserved_switcher(self, cgn, AA, ref_atoms, template):
         try:
-            print(cgn, template, AA, ref_atoms[0].get_parent().get_resname())
             rot = Rotamer.objects.get(structure=template, residue__display_generic_number__label=cgn)
-            print(rot.residue.amino_acid)
             if rot.residue.amino_acid!=AA or rot.missing_atoms:
                 return False
             parse = GPCRDBParsingPDB()
@@ -557,8 +679,43 @@ class SignprotModeling():
                 return False
             return new_atoms
         except Exception as msg:
-            if self.debug:
-                print("WARNING: Rotamer swap-in {} at {} failed with {}".format(template, cgn, msg))
             return False
 
+    @staticmethod
+    def match_pdb_array_to_alingment(signprot_array, alignment):
+        ''' Match signprot_pdb_array to seq alignment - gap missing coordinates '''
+        new_array = OrderedDict()
+        for seg, resis in alignment.template_dict.items():
+            new_seg = OrderedDict()
+            for gn in resis:
+                if seg in signprot_array and gn in signprot_array[seg]:
+                    new_seg[gn] = signprot_array[seg][gn]
+                else:
+                    new_seg[gn] = 'x'
+            new_array[seg] = new_seg
+        return new_array
+
+    @staticmethod
+    def match_alignment_to_pdb_array(alignment, signprot_pdb_array):
+        ''' Match seq alignment to signprot_pdb_array - gap missing residues '''
+        new_ref, new_temp, new_align = OrderedDict(), OrderedDict(), OrderedDict()
+        for seg, resis in signprot_pdb_array.items():
+            new_seg_ref, new_seg_temp, new_seg_align = OrderedDict(), OrderedDict(), OrderedDict()
+            for gn, atoms in resis.items():
+                if seg in alignment.reference_dict and gn in alignment.reference_dict[seg]:
+                    new_seg_ref[gn] = alignment.reference_dict[seg][gn]
+                    new_seg_temp[gn] = alignment.template_dict[seg][gn]
+                    new_seg_align[gn] = alignment.alignment_dict[seg][gn]
+                else:
+                    new_seg_ref[gn] = '-'
+                    if atoms!='x':
+                        new_seg_temp[gn] = PDB.Polypeptide.three_to_one(atoms[0].get_parent().get_resname())
+                    new_seg_align[gn] = '-'
+            new_ref[seg] = new_seg_ref
+            new_temp[seg] = new_seg_temp
+            new_align[seg] = new_seg_align
+        alignment.reference_dict = new_ref
+        alignment.template_dict = new_temp
+        alignment.alignment_dict = new_align
+        return alignment
 

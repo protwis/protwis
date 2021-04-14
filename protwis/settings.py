@@ -1,4 +1,4 @@
-﻿"""
+"""
 Django settings for protwis project.
 """
 # Import local settings
