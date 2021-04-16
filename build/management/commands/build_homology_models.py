@@ -137,8 +137,10 @@ class Command(BaseBuild):
                     except:
                         shutil.rmtree(hommod_zip_path+f)
 
+        self.custom_selection = False
         if options['r']:
             all_receptors = Protein.objects.filter(entry_name__in=options['r'])
+            self.custom_selection = True
         # Only refined structures
         elif options['x']:
             structs = Structure.objects.filter(annotated=True).order_by('pdb_code__index')
@@ -251,6 +253,8 @@ class Command(BaseBuild):
             logger.info('Model finished for  \'{}\' ({})... (processor:{} count:{}) (Time: {})'.format(receptor[0].entry_name, receptor[1],processor_id,i,datetime.now() - mod_startTime))
 
     def get_states_to_model(self, receptor):
+        if self.force_main_temp and self.custom_selection:
+            return [Structure.objects.get(protein_conformation__protein__entry_name=self.force_main_temp.lower()).state.name]
         rec_class = ProteinFamily.objects.get(name=receptor.get_protein_class())
         if rec_class.name=='Class B2 (Adhesion)':
             rec_class = ProteinFamily.objects.filter(name__in=['Class B1 (Secretin)', 'Class B2 (Adhesion)'])
