@@ -629,6 +629,37 @@ class LigandBiasStatistics(TemplateView):
             rec_iuphar = rec.family.name.replace("receptor", '').replace(
                 "<i>", "").replace("</i>", "").strip()
             whole_rec_dict[rec_uniprot] = [rec_iuphar]
+
+        assay_qs = AnalyzedAssay.objects.filter(
+            assay_description__isnull=True).values_list(
+            "family", "experiment__receptor__entry_name").order_by(
+            "family", "experiment__receptor__entry_name").distinct(
+            "family", "experiment__receptor__entry_name")
+
+
+        ligand_qs = AnalyzedAssay.objects.filter(
+            order_no=0,
+            assay_description__isnull=True).values_list(
+            "family", "experiment__receptor__entry_name", "experiment__ligand").order_by(
+            "family", "experiment__receptor__entry_name", "experiment__ligand").distinct(
+            "family", "experiment__receptor__entry_name", "experiment__ligand")
+
+        circles = {}
+        for data in assay_qs:
+            if data[1].split('_')[1] == 'human':
+                key = data[1].split('_')[0].upper()
+                if key not in circles.keys():
+                    circles[key] = {}
+                    circles[key][data[0]] = 0
+                else:
+                    circles[key][data[0]] = 0
+
+        for data in ligand_qs:
+            if data[1].split('_')[1] == 'human':
+                key = data[1].split('_')[0].upper()
+                circles[key][data[0]] += 1
+
+        context["circles_data"] = json.dumps(circles)
         context["whole_receptors"] = json.dumps(whole_rec_dict)
         context["render"] = "bias"
         return context
