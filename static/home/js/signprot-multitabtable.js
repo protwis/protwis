@@ -5,20 +5,8 @@
 let oTable1 = [];
 let oTable2 = [];
 
-function select_all(e) {
-    var checkedStatus = $(e).prop("checked");
-
-    $(".select-all  ").each(function () {
-        $(this).prop("checked", checkedStatus);
-    });
-
-    $(".alt").each(function () {
-        $(this).prop("checked", checkedStatus);
-    });
-}
-
 function resetHidden1() {
-    var columns = Array.from(new Array(17), (x,i) => i + 3);
+    let columns = Array.from(new Array(18), (x, i) => i + 3);
     columns.forEach(function(column) {
         column = oTable1.column( column );
         try {
@@ -32,7 +20,7 @@ function resetHidden1() {
 }
 
 function resetHidden2() {
-    var columns = Array.from(new Array(28), (x,i) => i + 3);
+    let columns = Array.from(new Array(29), (x, i) => i + 3);
     columns.forEach(function(column) {
 //        console.log("columns variable " + columns);
         column = oTable2.column( column );
@@ -218,10 +206,14 @@ function make_range_number_cols(start_column, repeat_number, tab) {
     }
 }
 
-repfilterfamtab = make_range_number_cols(10, 12, "famtab");
-repfiltersubtab = make_range_number_cols(10, 39, "subtab");
+repfilterfamtab = make_range_number_cols(11, 12, "famtab");
+repfiltersubtab = make_range_number_cols(11, 39, "subtab");
 
 let lastRangeRankFilter = "";
+
+
+
+
 
 $(document).ready(function() {
 // Activate tooltips and popovers from Bootstrap   * Bootstrap v3.3.7 (http://getbootstrap.com)
@@ -229,13 +221,13 @@ $(document).ready(function() {
     $("[data-toggle='popover']").popover();
 
 // Create the ranks for the families table
-for (let i=11; i <= 22; i++) {
+for (let i=12; i <= 23; i++) {
     createRank("#familiestabletab", i); // GS
 }
 
-// ===============
+// =============================================================================
 // Families Table
-// ===============
+// =============================================================================
     console.time("table1load");
     oTable1 = $("#familiestabletab").DataTable({
         deferRender: true,
@@ -247,15 +239,15 @@ for (let i=11; i <= 22; i++) {
         bSortCellsTop: false, //prevent sort arrows going on bottom row
         aaSorting: [],
         order: [
-            [2, "asc"],
-            [4, "asc"],
-            [22, "asc"],
+            [3, "asc"],
+            [5, "asc"],
+            [23, "asc"],
         ],
         autoWidth: false,
         bInfo: true,
         columnDefs: [
             {
-                targets: [22],
+                targets: [23],
                 visible: false
             }
         ],
@@ -286,6 +278,19 @@ for (let i=11; i <= 22; i++) {
                 column_number: 2,
                 filter_type: "multi_select",
                 select_type: "select2",
+                // column_data_type: "html",
+                filter_default_label: "",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: "80px",
+                }
+            },
+
+
+            {
+                column_number: 3,
+                filter_type: "multi_select",
+                select_type: "select2",
                 filter_default_label: "",
                 filter_reset_button_text: false,
                 select_type_options: {
@@ -293,7 +298,7 @@ for (let i=11; i <= 22; i++) {
                 }
             },
             {
-                column_number: 3,
+                column_number: 4,
                 filter_type: "multi_select",
                 select_type: "select2",
                 filter_default_label: "",
@@ -303,7 +308,7 @@ for (let i=11; i <= 22; i++) {
                 }
             },
             {
-                column_number: 4,
+                column_number: 5,
                 filter_type: "multi_select",
                 select_type: "select2",
                 column_data_type: "html",
@@ -316,7 +321,7 @@ for (let i=11; i <= 22; i++) {
                 }
             },
             {
-                column_number: 5,
+                column_number: 6,
                 filter_type: "multi_select",
                 select_type: "select2",
                 column_data_type: "html",
@@ -330,16 +335,6 @@ for (let i=11; i <= 22; i++) {
             },
 
 // Guide to Pharmacology
-            {
-                column_number: 6,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "40px"
-                },
-            },
             {
                 column_number: 7,
                 filter_type: "multi_select",
@@ -370,10 +365,20 @@ for (let i=11; i <= 22; i++) {
                     width: "40px"
                 },
             },
+            {
+                column_number: 10,
+                filter_type: "multi_select",
+                select_type: "select2",
+                filter_default_label: "",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: "40px"
+                },
+            },
 
 // Hidden GPCRdb support type column calls customized function
             {
-                column_number: 22,
+                column_number: 23,
                 filter_type: "custom_func",
                 custom_func: supportFilter,
                 filter_container_id: "hide_filter1",
@@ -413,7 +418,7 @@ for (let i=11; i <= 22; i++) {
 
 // This prefilters the value 2 in the hidden column 22 which corresponds to being in at least two of the supporting GPCRdb
 // datasets
-    yadcf.exFilterColumn(oTable1, [[22, 2]]);
+    yadcf.exFilterColumn(oTable1, [[23, 2]]);
 //    yadcf.exResetAllFilters(oTable1);
 
 //  Select clicked-on boxes for families table
@@ -435,14 +440,15 @@ for (let i=11; i <= 22; i++) {
 
 
 
+// =============================================================================
+// Subtypes Table
+// =============================================================================
 
 // Create the ranks for the subtypes table
-for (let i=11; i <= 49; i++) {
+for (let i=12; i <= 50; i++) {
     createRank("#subtypestabletab", i); // GS
 }
-// ===============
-// Subtypes Table
-// ===============
+
     console.time("table2load");
     oTable2 = $("#subtypestabletab").DataTable({
         deferRender: true,
@@ -454,15 +460,15 @@ for (let i=11; i <= 49; i++) {
         bSortCellsTop: false, //prevent sort arrows going on bottom row
         aaSorting: [],
         order: [
-            [2, "asc"],
-            [4, "asc"],
-            [49, "asc"]
+            [3, "asc"],
+            [5, "asc"],
+            [50, "asc"]
         ],
         autoWidth: false,
         bInfo: true,
         columnDefs: [
             {
-                targets: [49],
+                targets: [50],
                 visible: false
             }
         ],
@@ -492,6 +498,20 @@ for (let i=11; i <= 49; i++) {
                 column_number: 2,
                 filter_type: "multi_select",
                 select_type: "select2",
+                // column_data_type: "html",
+                filter_default_label: "",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: "80px",
+                }
+            },
+
+
+
+            {
+                column_number: 3,
+                filter_type: "multi_select",
+                select_type: "select2",
                 filter_default_label: "",
                 filter_reset_button_text: false,
                 select_type_options: {
@@ -499,7 +519,7 @@ for (let i=11; i <= 49; i++) {
                 }
             },
             {
-                column_number: 3,
+                column_number: 4,
                 filter_type: "multi_select",
                 select_type: "select2",
                 filter_default_label: "",
@@ -509,7 +529,7 @@ for (let i=11; i <= 49; i++) {
                 }
             },
             {
-                column_number: 4,
+                column_number: 5,
                 filter_type: "multi_select",
                 select_type: "select2",
                 column_data_type: "html",
@@ -522,7 +542,7 @@ for (let i=11; i <= 49; i++) {
                 }
             },
             {
-                column_number: 5,
+                column_number: 6,
                 filter_type: "multi_select",
                 select_type: "select2",
                 column_data_type: "html",
@@ -536,16 +556,6 @@ for (let i=11; i <= 49; i++) {
             },
 
 // Guide to Pharmacology
-            {
-                column_number: 6,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "40px"
-                },
-            },
             {
                 column_number: 7,
                 filter_type: "multi_select",
@@ -576,10 +586,20 @@ for (let i=11; i <= 49; i++) {
                     width: "40px"
                 },
             },
+            {
+                column_number: 10,
+                filter_type: "multi_select",
+                select_type: "select2",
+                filter_default_label: "",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: "40px"
+                },
+            },
 
 // Hidden GPCRdb support type column calls customized function
             {
-                column_number: 49,
+                column_number: 50,
                 filter_type: "custom_func",
                 custom_func: supportFilter,
                 filter_container_id: "hide_filter2",
@@ -620,7 +640,7 @@ for (let i=11; i <= 49; i++) {
 
 
 
-    yadcf.exFilterColumn(oTable2, [[49, 2]]);
+    yadcf.exFilterColumn(oTable2, [[50, 2]]);
 
 //  Select clicked-on boxes for subtypes table
     $("#subtypestabletab"+" > tbody > tr").click(function(event) {
@@ -663,7 +683,6 @@ for (let i=11; i <= 49; i++) {
 
 // By default display the first tab. If this is not ON, one has to click on the tab for display.
     $("#couplingtabs a:first").tab("show");
-//    $('#couplingtabs a[href="#table_1"]').tab('show');
 
 // Hide column button for table1
     $(".hide_columns1").click(function(evt) {
@@ -768,7 +787,7 @@ for (let i=11; i <= 49; i++) {
         $("#familiestabletab tbody tr").each(function() {
             var $tds = $(this).children(),
                 $row = $("<tr></tr>");
-            $row.append($tds.eq(0).clone()).append($tds.eq(1).clone()).append($tds.eq(2).clone()).append($tds.eq(3).clone()).append($tds.eq(4).clone()).appendTo($target);
+            $row.append($tds.eq(0).clone()).append($tds.eq(1).clone()).append($tds.eq(2).clone()).append($tds.eq(3).clone()).append($tds.eq(4).clone()).append($tds.eq(5).clone()).appendTo($target);
             $row.height($(this).height());
             //$row.font_size("10");
             //$row.height("31px");
@@ -816,7 +835,7 @@ for (let i=11; i <= 49; i++) {
         $("#subtypestabletab tbody tr").each(function() {
             var $tds = $(this).children(),
                 $row = $("<tr></tr>");
-            $row.append($tds.eq(0).clone()).append($tds.eq(1).clone()).append($tds.eq(2).clone()).append($tds.eq(3).clone()).append($tds.eq(4).clone()).appendTo($target);
+            $row.append($tds.eq(0).clone()).append($tds.eq(1).clone()).append($tds.eq(2).clone()).append($tds.eq(3).clone()).append($tds.eq(4).clone()).append($tds.eq(5).clone()).appendTo($target);
             $row.height($(this).height());
             //$row.font_size("10");
             //$row.height("31px");
@@ -837,47 +856,7 @@ for (let i=11; i <= 49; i++) {
 // END OVERLAY COLUMNS CODE HERE
 // =============================================================================
 
-// Gaspar's functions to copy to clipboard selected checkboxes as a newline separated list.
-// copied from structure_browser.js and browser_functions.js. Notice that they depend on
-// the jquery plugin PowerTip.js
 
-    function copyToClipboard(array, delimiter, data_name, powertip_object=false) {
-        var link = array;
-//        console.log(link);
-        var out = "";
-        link.each(function() {
-            var ele = $(this).attr("href").split("/");
-            out+=ele[ele.length-1]+delimiter;
-        });
-        if (out.length===0) {
-            window.alert("No entries selected for copying");
-            return 0;
-        }
-        var textArea = document.createElement("textarea");
-        textArea.value = out;
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        try {
-            var successful = document.execCommand("copy");
-            var msg = successful ? "Successful" : "Unsuccessful";
-            if (powertip_object!==false) {
-                $.powerTip.hide();
-                powertip_object.data("powertipjq", $([
-                    "<p>"+array.length+" ID's copied to clipboard!</p>"
-                ].join("\n")));
-                powertip_object.powerTip("show");
-                setTimeout(function() {
-                    powertip_object.data("powertipjq", $([
-                        "<p>Export "+data_name+"</p>"
-                    ].join("\n")));
-                },1000);
-            }
-        } catch (err) {
-            window.alert("Oops, unable to copy");
-        }
-        document.body.removeChild(textArea);
-    }
 
     $(".uniprot-export1").data("powertipjq", $([
         "<p>Export UniProt IDs</p>"
@@ -892,6 +871,7 @@ for (let i=11; i <= 49; i++) {
         smartPlacement: true
     });
 
+// copyToClipboard at gpcrdb.js
     $("#uniprot_copy1").click(function () {
         copyToClipboard($(".alt_selected > .uniprot1 > a"), "\n", "UniProt IDs", $(".uniprot-export1"));
     });
