@@ -11,11 +11,7 @@ urlpatterns = [
     url(r'^targets_purchasable', views.TargetPurchasabilityDetails, name='ligand_target_detail_purchasable'),
     url(r'^(?P<ligand_id>[-\w]+)/details$', views.LigandDetails, name='ligand_detail'),
     url(r'^statistics', cache_page(3600*24*7)(views.LigandStatistics.as_view()), name='ligand_statistics'),
-<<<<<<< HEAD
-    url(r'^bias_statistics', views.LigandBiasStatistics.as_view(), name='ligand_statistics'),
-=======
     url(r'^bias_statistics', cache_page(3600*24*7)(views.LigandBiasStatistics.as_view()), name='ligand_statistics'),
->>>>>>> 82b0e8a2ab940488d883fc07220c78e0823b5283
     url(r'^(?P<pk>[-\w]+)/info$', views.LigandInformationView.as_view()),
 
     url(r'^biased/$', views.CachedBiasBrowser, name='bias_browser-list'),
