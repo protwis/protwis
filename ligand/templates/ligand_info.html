@@ -162,20 +162,13 @@
 {% endblock %}
 
 {% block addon_js %}
-<<<<<<< HEAD
-<script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
-=======
 <script src="{% static 'home/js/datatables.min.js' %}"> </script>
->>>>>>> 82b0e8a2ab940488d883fc07220c78e0823b5283
 <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"></script>
 <script src="{% static 'home/js/dataTables.buttons.min.js' %}"></script>
 <script src="{% static 'home/js/select2.js' %}"> </script>
 <script src="{% static 'home/js/selection.js' %}"> </script>
 
-<<<<<<< HEAD
-=======
 
->>>>>>> 82b0e8a2ab940488d883fc07220c78e0823b5283
 <script type="text/javascript">
 	function myFunction(url, title, win, w, h) {
 		const y = win.top.outerHeight / 2 + win.top.screenY - (h / 2);
@@ -183,33 +176,10 @@
 		return win.open(url, title, 'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width=' + w + ', height=' + h + ', top=' + y + ', left=' + x);
 	}
 
-<<<<<<< HEAD
-    // function AddToSelection(selection_type, selection_subtype, selection_id) {
-    //     $.ajax({
-    //         'url': '/common/addtoselection',
-    //         'data': {
-    //             selection_type: selection_type,
-    //             selection_subtype: selection_subtype,
-    //             selection_id: selection_id
-    //         },
-    //         'type': 'GET',
-    //         'async': false,
-    //         'success': function(data) {
-    //             $("#selection-" + selection_type).html(data);
-    //         },
-    //     });
-    // }
-
-    function populate_selection(id){        
-        AddToSelection('reference', 'protein_entry', id)
-        SelectFullSequence('segments')
-        window.open('https://gpcrdb.org/mutations/render', '_blank')
-=======
     function populate_selection(id){
         AddToSelection('reference', 'protein_entry', id)
         SelectFullSequence('segments')
         window.open('/mutations/render', '_blank')
->>>>>>> 82b0e8a2ab940488d883fc07220c78e0823b5283
 
     }
 
@@ -252,19 +222,6 @@
 			scrollCollapse: true,
 			AutoWidth: true,
 			pageLength: 15,
-<<<<<<< HEAD
-			buttons: [{
-					text: 'Excel',
-					className: 'btn btn-primary',
-					titleAttr: 'Download excel',
-					init: function(api, node, config) {
-						$(node).removeClass('dt-button buttons-excel buttons-html5');
-					},
-					action: function(e, dt, node, config) {
-						tableToExcel('structures_scrollable_ligand', 'Biased Ligand Data', 'GPCRdb_biased_ligands.xls')
-					},
-				},
-=======
 			buttons: [
                 {
                     extend: 'csv',
@@ -281,7 +238,6 @@
                         }
                     }
                 },
->>>>>>> 82b0e8a2ab940488d883fc07220c78e0823b5283
 				{
 					text: 'Reset All Filters',
 					className: 'btn btn-primary',
@@ -323,10 +279,6 @@
 						});
 					},
 				},
-<<<<<<< HEAD
-
-=======
->>>>>>> 82b0e8a2ab940488d883fc07220c78e0823b5283
 			],
 		});
 		yadcf.init(table,
@@ -347,7 +299,6 @@
 					filter_reset_button_text: false,
 					select_type_options: {
 						width: '75px',
-<<<<<<< HEAD
 					}
 				},
 				{
@@ -362,28 +313,6 @@
 				},
 				{
 					column_number: 3,
-=======
-					}
-				},
-				{
-					column_number: 2,
->>>>>>> 82b0e8a2ab940488d883fc07220c78e0823b5283
-					filter_type: "multi_select",
-					select_type: 'select2',
-					filter_default_label: "Select",
-					filter_reset_button_text: false,
-					select_type_options: {
-<<<<<<< HEAD
-						width: '125px',
-					}
-				},
-				{
-=======
-						width: '75px',
-					}
-				},
-				{
-					column_number: 3,
 					filter_type: "multi_select",
 					select_type: 'select2',
 					filter_default_label: "Select",
@@ -393,7 +322,6 @@
 					}
 				},
 				{
->>>>>>> 82b0e8a2ab940488d883fc07220c78e0823b5283
 					column_number: 4,
 					filter_type: "multi_select",
 					select_type: 'select2',
@@ -458,47 +386,7 @@
 		}
 		table.columns.adjust();
 
-<<<<<<< HEAD
-		var tableToExcel = (function() {
-			var uri = 'data:application/vnd.ms-excel;base64,',
-				template =
-				'<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>',
-				base64 = function(s) {
-					return window.btoa(unescape(encodeURIComponent(s)))
-				},
-				format = function(s, c) {
-					return s.replace(/{(\w+)}/g, function(m, p) {
-						return c[p];
-					})
-				}
-			return function(table, name, filename) {
-				var table = $("#" + table).clone();
-				$("#excel_table").html(table);
-				// Clean up table to remove yadcf stuff
-				$("#excel_table thead tr").css('height', '');
-				$("#excel_table thead th").css('height', '');
-				$("#excel_table thead div").css('height', '');
-				$("#excel_table thead .yadcf-filter-wrapper").remove();
-				$("#excel_table thead button").remove();
-				var tr = $("#excel_table thead tr:eq(1)");
-				// reattach th titles
-				tr.find('th').each(function(column, th) {
-					if ($(th).attr('title')) $(th).html($(th).attr('title'));
-				});
 
-				var ctx = {
-					worksheet: name || 'Worksheet',
-					table: $("#excel_table").html()
-				}
-				$("#excel_table").html("");
-				document.getElementById("dlink").href = uri + base64(format(template, ctx));
-				document.getElementById("dlink").download = filename;
-				document.getElementById("dlink").click();
-			}
-		})()
-=======
-
->>>>>>> 82b0e8a2ab940488d883fc07220c78e0823b5283
 	});
 </script>
 <script type="text/javascript">
