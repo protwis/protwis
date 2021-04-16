@@ -211,8 +211,7 @@
 {% endblock %}
 {% block addon_js %}
 
-<script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
-<!--<script type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.16/b-1.5.1/b-html5-1.5.1/datatables.min.js"></script>-->
+<script src="{% static 'home/js/datatables.min.js' %}"> </script>
 <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
 <script src="{% static 'home/js/dataTables.buttons.min.js' %}"> </script>
 <script src="{% static 'home/js/select2.js' %}"> </script>
@@ -248,7 +247,8 @@
         },
 			pageLength: 35,
 			"lengthChange": false,
-			"buttons": [{
+			"buttons": [
+                {
 					extend: 'csv',
 					text: 'Export to CSV',
 					className: 'btn btn-primary',
@@ -313,7 +313,6 @@
                         document.getElementById("ligand_counter").innerHTML = ligand_counter;
                         document.getElementById("receptor_counter").innerHTML = receptor_counter;
                         shadeTable(table, [".shade"], 120, 200);
-                        exResetAllFilters()
                     },2000);
             },
             });
@@ -875,6 +874,7 @@
 			location.reload()
 			//yadcf.exResetAllFilters(oTable);
 		}
+
 	});
 </script>
 
@@ -1057,7 +1057,7 @@
                           white-space: nowrap;
                           text-overflow: ellipsis;
                           max-width: 100px;">Authors</th>
-                					<th id="doi_reference_filter_select" >DOI/ <br>Reference</th>
+                					<th id="doi_reference_filter_select">DOI/ <br>Reference</th>
                 				</tr>
 			</thead>
 				<tbody id='structures_scrollable_body'>
