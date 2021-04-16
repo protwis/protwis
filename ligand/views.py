@@ -13,7 +13,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from django.core.cache import cache
 
-from common.views import AbsTargetSelectionTable
+from common.views import AbsTargetSelectionTable, Alignment
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
