@@ -285,11 +285,11 @@ function DrawCircles(location, data, starter, dict, fancy=false){
         var hex = c.toString(16);
         return hex.length == 1 ? "0" + hex : hex;
     }
-    
-    var spacer = 8;
+
     var svg = d3.select('#'+location);
     var node = svg.selectAll(".node");
     if (fancy === false) {
+    var spacer = 8;
     node.selectAll("circle").remove();
       for (var x in data){
         for (var unit in dict){
@@ -305,6 +305,7 @@ function DrawCircles(location, data, starter, dict, fancy=false){
         }
       }
     } else {
+      var spacer = 10;
       node.selectAll("ellipse").remove();
       for (var x in data){
         keys = Object.keys(data[x]);
@@ -324,10 +325,10 @@ function DrawCircles(location, data, starter, dict, fancy=false){
             leaf = svg.selectAll('g[id=X'+x+']');
             var leafwithname = svg.selectAll('g[id=X'+x+']')
                 .append("ellipse")
-                .attr("rx", 3.25)
-                .attr("ry", 3.25)
+                .attr("rx", 4.25)
+                .attr("ry", 4.25)
                 .style("stroke", dict[unit])
-                .style("stroke-width", 1)
+                .style("stroke-width", 1.7)
                 .style("fill", color)
                 .attr("transform", "translate(" + (Math.ceil(starter) + multiply*spacer) + ",0)");
             }

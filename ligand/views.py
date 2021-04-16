@@ -10,10 +10,10 @@ from django.http import HttpResponse
 from django.views.generic import TemplateView, DetailView, ListView
 from django.db.models import Count, Subquery, OuterRef
 from django.views.decorators.csrf import csrf_exempt
-from django.conf import settings
+
 from django.core.cache import cache
 
-from common.views import AbsTargetSelectionTable
+from common.views import AbsTargetSelectionTable, Alignment
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
@@ -728,7 +728,6 @@ class BiasVendorBrowser(TemplateView):
         # except:
         #     raise
 
-
 class LigandInformationView(TemplateView):
     template_name = 'ligand_info.html'
 
@@ -744,18 +743,19 @@ class LigandInformationView(TemplateView):
             'publication', 'publication__web_link', 'publication__web_link__web_resource',
             'publication__journal'))
         context = dict()
-        structures = self.get_structure(ligand_data)
-        ligand_data = self.process_ligand(ligand_data)
-        assay_data = self.process_assay(assay_data)
-        assay_data = self.process_values(assay_data)
-        mutations = self.get_mutations(ligand_data)
+        structures = LigandInformationView.get_structure(ligand_data)
+        ligand_data = LigandInformationView.process_ligand(ligand_data)
+        assay_data = LigandInformationView.process_assay(assay_data)
+        assay_data = LigandInformationView.process_values(assay_data)
+        mutations = LigandInformationView.get_mutations(ligand_data)
         context.update({'structure': structures})
         context.update({'ligand': ligand_data})
         context.update({'assay': assay_data})
         context.update({'mutations': mutations})
         return context
 
-    def get_structure(self, ligand):
+    @staticmethod
+    def get_structure(ligand):
         return_list = list()
         structures = list(
             StructureLigandInteraction.objects.filter(ligand=ligand))
@@ -765,7 +765,8 @@ class LigandInformationView(TemplateView):
             return_list.append(structure_dict)
         return return_list
 
-    def get_mutations(self,ligand):
+    @staticmethod
+    def get_mutations(ligand):
         return_set = set()
         return_list = list()
         mutations = list(
@@ -778,15 +779,16 @@ class LigandInformationView(TemplateView):
                 return_set.add(i.protein.id)
         return return_list
 
-
-    def get_min_max_values(self, value):
+    @staticmethod
+    def get_min_max_values(value):
         value = list(map(float, value))
         maximum = max(value)
         minimum = min(value)
         avg = sum(value) / len(value)
         return minimum, avg, maximum
 
-    def process_assay(self, assays):
+    @staticmethod
+    def process_assay(assays):
         return_dict = dict()
         for i in assays:
             name = str(i.protein)
@@ -797,7 +799,6 @@ class LigandInformationView(TemplateView):
                 elif i.standard_type == 'IC50':
                     return_dict[name]['affinity_values'].append(
                         i.standard_value)
-
                 # TODO: recalculate min max avg_num_ligands
             else:
                 return_dict[name] = dict()
@@ -815,31 +816,27 @@ class LigandInformationView(TemplateView):
                 elif i.standard_type == 'IC50':
                     return_dict[name]['affinity_values'].append(
                         i.standard_value)
-
         return return_dict
 
-    def process_values(self, return_dict):
+    @staticmethod
+    def process_values(return_dict):
         return_list = list()
         for item in return_dict.items():
             temp_dict = dict()
             temp_dict = item[1]
 
             if item[1]['potency_values']:
-                min, avg, max = self.get_min_max_values(
+                temp_dict['potency_min'],temp_dict['potency_avg'],temp_dict['potency_max'] = LigandInformationView.get_min_max_values(
                     item[1]['potency_values'])
-                temp_dict['potency_min'] = min
-                temp_dict['potency_avg'] = avg
-                temp_dict['potency_max'] = max
+                return_list.append(temp_dict)
             if item[1]['affinity_values']:
-                min, avg, max = self.get_min_max_values(
+                temp_dict['affinity_min'],temp_dict['affinity_avg'],temp_dict['affinity_max'] = LigandInformationView.get_min_max_values(
                     item[1]['affinity_values'])
-                temp_dict['affinity_min'] = min
-                temp_dict['affinity_avg'] = avg
-                temp_dict['affinity_max'] = max
-            return_list.append(temp_dict)
+                return_list.append(temp_dict)
         return return_list
 
-    def process_ligand(self, ligand_data):
+    @staticmethod
+    def process_ligand(ligand_data):
         ld = dict()
         ld['ligand_id'] = ligand_data.id
         ld['ligand_name'] = ligand_data.name

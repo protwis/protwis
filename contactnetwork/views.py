@@ -2786,118 +2786,126 @@ def ClusteringData(request):
     if len(pdbs) == 0:
         quit()
 
-    pdbs = [pdb.upper() for pdb in pdbs]
+    # Exclude structures with incomplete GN annotation
+    excluded_pdbs = [ "5LWE", "5ZKP" ]
+    pdbs = [pdb.upper() for pdb in pdbs if pdb.upper() not in excluded_pdbs ]
 
-    # output dictionary
-    data = {}
+    cache_key = ",".join(sorted(pdbs))
+    cache_key = "structure_clustering_" + hashlib.md5(cache_key.encode('utf-8')).hexdigest()
 
-    # load all
-    cluster_method = 0
-    if 'cluster-method' in request.GET:
-        cluster_method = request.GET.get('cluster-method')
+    data = cache.get(cache_key)
+    if data == None:
+        # output dictionary
+        data = {}
 
-    # DEBUG set clustering method hardcoded:
-    # cluster_method = '7'
-    if cluster_method == '1':
-        [distance_matrix, pdbs] = coreMatrix(pdbs)
-    elif cluster_method == '2':
-        [distance_matrix, pdbs] = stableResMatrix(pdbs) # replace with distance to most stable residue
-    elif cluster_method == '3':
-        dis = Distances()
-        dis.load_pdbs(pdbs)
-        distance_matrix = dis.get_distance_matrix(normalize = False)
+        # load all
+        cluster_method = 0
+        if 'cluster-method' in request.GET:
+            cluster_method = request.GET.get('cluster-method')
 
-        # pdbs have been reordered -> map back to be consistent with the distance matrix
-        pdbs = dis.pdbs
-    elif cluster_method == '4': # distance to membrane mid
-        [distance_matrix, pdbs] = coreMatrix(pdbs, middle = True, core = False)
-    elif cluster_method == '5': # distance to membrane mid and 7TM axis
-        [distance_matrix, pdbs] = coreMatrix(pdbs, middle = True)
-    elif cluster_method == '6': # distance to origin
-        [distance_matrix, pdbs] = originMatrix(pdbs)
-    elif cluster_method == '7': # distance to origin
-        dis = Distances()
-        dis.filtered_gns = True
-        print("Print setting lower only")
-        dis.load_pdbs(pdbs)
-        distance_matrix = dis.get_distance_matrix(normalize = False)
+        # DEBUG set clustering method hardcoded:
+        # cluster_method = '7'
+        if cluster_method == '1':
+            [distance_matrix, pdbs] = coreMatrix(pdbs)
+        elif cluster_method == '2':
+            [distance_matrix, pdbs] = stableResMatrix(pdbs) # replace with distance to most stable residue
+        elif cluster_method == '3':
+            dis = Distances()
+            dis.load_pdbs(pdbs)
+            distance_matrix = dis.get_distance_matrix(normalize = False)
 
-        # pdbs have been reordered -> map back to be consistent with the distance matrix
-        pdbs = dis.pdbs
-    else:
-        dis = Distances()
-        dis.load_pdbs(pdbs)
-        distance_matrix = dis.get_distance_matrix()
+            # pdbs have been reordered -> map back to be consistent with the distance matrix
+            pdbs = dis.pdbs
+        elif cluster_method == '4': # distance to membrane mid
+            [distance_matrix, pdbs] = coreMatrix(pdbs, middle = True, core = False)
+        elif cluster_method == '5': # distance to membrane mid and 7TM axis
+            [distance_matrix, pdbs] = coreMatrix(pdbs, middle = True)
+        elif cluster_method == '6': # distance to origin
+            [distance_matrix, pdbs] = originMatrix(pdbs)
+        elif cluster_method == '7': # distance to origin
+            dis = Distances()
+            dis.filtered_gns = True
+            print("Print setting lower only")
+            dis.load_pdbs(pdbs)
+            distance_matrix = dis.get_distance_matrix(normalize = False)
 
-        # pdbs have been reordered -> map back to be consistent with the distance matrix
-        pdbs = dis.pdbs
+            # pdbs have been reordered -> map back to be consistent with the distance matrix
+            pdbs = dis.pdbs
+        else:
+            dis = Distances()
+            dis.load_pdbs(pdbs)
+            distance_matrix = dis.get_distance_matrix()
 
-    # Collect structure annotations
-    pdb_annotations = {}
+            # pdbs have been reordered -> map back to be consistent with the distance matrix
+            pdbs = dis.pdbs
 
-    # Grab all annotations and all the ligand role when present in aggregates
-    # NOTE: we can probably remove the parent step and go directly via family in the query
-    annotations = Structure.objects.filter(pdb_code__index__in=pdbs) \
-                    .values_list('pdb_code__index','state__slug','protein_conformation__protein__parent__entry_name','protein_conformation__protein__parent__name','protein_conformation__protein__parent__family__parent__name', \
-                    'protein_conformation__protein__parent__family__parent__parent__name', 'protein_conformation__protein__parent__family__parent__parent__parent__name', 'structure_type__name', 'protein_conformation__protein__family__slug', 'tm6_angle', 'gprot_bound_likeness')\
-                    .annotate(arr=ArrayAgg('structureligandinteraction__ligand_role__slug', filter=Q(structureligandinteraction__annotated=True))) \
+        # Collect structure annotations
+        pdb_annotations = {}
 
-    protein_slugs = set()
-    for an in annotations:
-        pdb_annotations[an[0]] = list(an[1:])
+        # Grab all annotations and all the ligand role when present in aggregates
+        # NOTE: we can probably remove the parent step and go directly via family in the query
+        annotations = Structure.objects.filter(pdb_code__index__in=pdbs) \
+                        .values_list('pdb_code__index','state__slug','protein_conformation__protein__parent__entry_name','protein_conformation__protein__parent__name','protein_conformation__protein__parent__family__parent__name', \
+                        'protein_conformation__protein__parent__family__parent__parent__name', 'protein_conformation__protein__parent__family__parent__parent__parent__name', 'structure_type__name', 'protein_conformation__protein__family__slug', 'tm6_angle', 'gprot_bound_likeness')\
+                        .annotate(arr=ArrayAgg('structureligandinteraction__ligand_role__slug', filter=Q(structureligandinteraction__annotated=True))) \
 
-        # add slug to lists
-        slug = pdb_annotations[an[0]][7]
-        protein_slugs.add(slug)
+        protein_slugs = set()
+        for an in annotations:
+            pdb_annotations[an[0]] = list(an[1:])
 
-        # UGLY needs CLEANUP in data - replace agonist-partial with partial-agonist ()
-        pdb_annotations[an[0]][10] = ["partial-agonist" if x=="agonist-partial" else x for x in pdb_annotations[an[0]][10]]
+            # add slug to lists
+            slug = pdb_annotations[an[0]][7]
+            protein_slugs.add(slug)
 
-        # Cleanup the aggregates as None values are introduced
-        pdb_annotations[an[0]][7] = list(filter(None.__ne__, pdb_annotations[an[0]][10]))
+            # UGLY needs CLEANUP in data - replace agonist-partial with partial-agonist ()
+            pdb_annotations[an[0]][10] = ["partial-agonist" if x=="agonist-partial" else x for x in pdb_annotations[an[0]][10]]
 
-        # SUPERUGLY - replace
-        holder = pdb_annotations[an[0]][8]
-        holder2 = pdb_annotations[an[0]][9]
-        pdb_annotations[an[0]][8] = slug
-        pdb_annotations[an[0]][9] = holder
-        pdb_annotations[an[0]][10] = holder2
+            # Cleanup the aggregates as None values are introduced
+            pdb_annotations[an[0]][7] = list(filter(None.__ne__, pdb_annotations[an[0]][10]))
 
-    data['annotations'] = pdb_annotations
+            # SUPERUGLY - replace
+            holder = pdb_annotations[an[0]][8]
+            holder2 = pdb_annotations[an[0]][9]
+            pdb_annotations[an[0]][8] = slug
+            pdb_annotations[an[0]][9] = holder
+            pdb_annotations[an[0]][10] = holder2
 
-    # Grab G-protein coupling profile for all receptors covered by the selection
-    # TODO: make general cache(s) for these kinds of data
-    selectivitydata = {}
-    coupling = ProteinGProteinPair.objects.filter(protein__family__slug__in=protein_slugs, source="GuideToPharma").values_list('protein__family__slug', 'transduction').annotate(arr=ArrayAgg('g_protein__name'))
+        data['annotations'] = pdb_annotations
 
-    for pairing in coupling:
-        if pairing[0] not in selectivitydata:
-            selectivitydata[pairing[0]] = {}
-        selectivitydata[pairing[0]][pairing[1]] = pairing[2]
+        # Grab G-protein coupling profile for all receptors covered by the selection
+        # TODO: make general cache(s) for these kinds of data
+        selectivitydata = {}
+        coupling = ProteinGProteinPair.objects.filter(protein__family__slug__in=protein_slugs, source="GuideToPharma").values_list('protein__family__slug', 'transduction').annotate(arr=ArrayAgg('g_protein__name'))
 
-    data['Gprot_coupling'] = selectivitydata
+        for pairing in coupling:
+            if pairing[0] not in selectivitydata:
+                selectivitydata[pairing[0]] = {}
+            selectivitydata[pairing[0]][pairing[1]] = pairing[2]
 
-    # hierarchical clustering
-    hclust = sch.linkage(ssd.squareform(distance_matrix), method='average')
-    tree = sch.to_tree(hclust, False)
+        data['Gprot_coupling'] = selectivitydata
 
-    #inconsistency = sch.inconsistent(hclust)
-    #inconsistency = sch.maxinconsts(hclust, inconsistency)
-    silhouette_coefficient = {}
-    getSilhouetteIndex(tree, distance_matrix, silhouette_coefficient)
-    data['tree'] = getNewick(tree, "", tree.dist, pdbs, silhouette_coefficient)
+        # hierarchical clustering
+        hclust = sch.linkage(ssd.squareform(distance_matrix), method='average')
+        tree = sch.to_tree(hclust, False)
 
-    # Order distance_matrix by hclust
-    N = len(distance_matrix)
-    res_order = seriation(hclust, N, N + N-2)
-    seriated_dist = np.zeros((N,N))
-    a,b = np.triu_indices(N,k=1)
-    seriated_dist[a,b] = distance_matrix[ [res_order[i] for i in a], [res_order[j] for j in b]]
-    seriated_dist[b,a] = seriated_dist[a,b]
+        #inconsistency = sch.inconsistent(hclust)
+        #inconsistency = sch.maxinconsts(hclust, inconsistency)
+        silhouette_coefficient = {}
+        getSilhouetteIndex(tree, distance_matrix, silhouette_coefficient)
+        data['tree'] = getNewick(tree, "", tree.dist, pdbs, silhouette_coefficient)
 
-    data['distance_matrix'] = seriated_dist.tolist()
-    data['dm_labels'] = [pdbs[i] for i in res_order]
+        # Order distance_matrix by hclust
+        N = len(distance_matrix)
+        res_order = seriation(hclust, N, N + N-2)
+        seriated_dist = np.zeros((N,N))
+        a,b = np.triu_indices(N,k=1)
+        seriated_dist[a,b] = distance_matrix[ [res_order[i] for i in a], [res_order[j] for j in b]]
+        seriated_dist[b,a] = seriated_dist[a,b]
 
+        data['distance_matrix'] = seriated_dist.tolist()
+        data['dm_labels'] = [pdbs[i] for i in res_order]
+
+    cache.set(cache_key, data, 60*60*24*7)
     return JsonResponse(data)
 
 # For reordering matrix based on h-tree

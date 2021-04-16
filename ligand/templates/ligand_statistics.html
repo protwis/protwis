@@ -256,20 +256,6 @@ Inner circle colors indicate a number of ligands:
         <td> 30+</td>
     </tr>
 </table>
-<br \>
-Outer circle border colors indicate the connected effector family:
-<table style="width:30%">
-    <tr>
-      <td><span class="gprot_blue">&#9675; G&alpha;<sub>s</sub></span></td>
-      <td><span class="gprot_red">&#9675; G&alpha;<sub>i/o</sub></span></td>
-      <td><span class="gprot_black">&#9675; G&alpha;<sub>q/11</sub></span></td>
-      <td><span class="gprot_green">&#9675; G&alpha;<sub>12/13</sub></span></td>
-      <td><span class="gprot_orange">&#9675; &beta;-Arrestin</span></td>
-    </tr>
-</table>
-<br \>
-Outer circle colors represents effector relevance across ligands (from low to high):
-<div class="graydiv"></div>
 {% endif %}
 <br />
 <div>
@@ -381,9 +367,9 @@ $(window).on("load",function() {
     DrawCircles('class_f',circles, maxLeafNodeLenght,conversion,true);
     DrawCircles('class_t2',circles, maxLeafNodeLenght,conversion,true);
     DrawCircles('orphan',circles, maxLeafNodeLenght,conversion,true);
-    $("#class_a svg g").first().attr('transform', 'translate(555,555) scale(0.9,0.9) ');
+    $("#class_a svg g").first().attr('transform', 'translate(555,585) scale(0.9,0.9) ');
     $("#class_a_svg").attr('height', 1210);
-    $("#class_b1 svg g").first().attr('transform', 'translate(180,220) scale(0.85,0.85)');
+    $("#class_b1 svg g").first().attr('transform', 'translate(180,220) scale(0.83,0.83)');
     $("#class_b2 svg g").first().attr('transform', 'translate(182,200) scale(0.85,0.85) ');
     $("#class_c svg g").first().attr('transform', 'translate(200,200) scale(0.85,0.85) ');
     $("#orphan svg g").first().attr('transform', 'translate(175,180) scale(0.85,0.85)');
@@ -393,6 +379,23 @@ $(window).on("load",function() {
 {% endif %}
 <div id="class_a" class="text-center">
   <h4>Class A<br />(Rhodopsin)</h4>
+{% if render == "bias" %}
+  <br />
+  <div>
+    <div style="float: right; position: relative" class="text-center">
+      <b>Primary effector frequency (from low to high)</b>
+      <div class="graydiv"></div>
+    </div>
+    <div style="float: left; position: relative" class="text-center">
+      <b>Transducers</b> <br />
+            <span class="gprot_blue">&#9675; G&alpha;<sub>s</sub></span>
+            <span class="gprot_red">&#9675; G&alpha;<sub>i/o</sub></span>
+            <span class="gprot_black">&#9675; G&alpha;<sub>q/11</sub></span>
+            <span class="gprot_green">&#9675; G&alpha;<sub>12/13</sub></span>
+            <span class="gprot_orange">&#9675; &beta;-Arrestin</span>
+    </div>
+  </div>
+{% endif %}
 </div>
 <p>
   <div class="text-center">
@@ -670,15 +673,3 @@ $(window).on("load",function() {
 </script>
 {% endif %}
 {% endblock %}
-
-
-<!-- $("#class_a svg g").first().attr('transform', 'translate(555,555) scale(0.9,0.9) ');
-$("#class_a_svg").attr('height', 1210);
-$("#class_b1 svg g").first().attr('transform', 'translate(190,220) scale(0.80,0.80) ');
-$("#class_b2 svg g").first().attr('transform', 'translate(195,182) scale(0.85,0.85) ');
-$("#class_b2_svg").attr('height', 390);
-$("#class_c svg g").first().attr('transform', 'translate(200,200) scale(0.85,0.85) ');
-$("#class_f svg g").first().attr('transform', 'translate(180,180) scale(0.85,0.85) ');
-$("#class_t2 svg g").first().attr('transform', 'translate(172,172) scale(0.85,0.85) ');
-$("#orphan svg g").first().attr('transform', 'translate(175,180) scale(0.85,0.85)');
-$("#orphan_svg").attr('height', 360).attr('width', 360); -->

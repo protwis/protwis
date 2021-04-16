@@ -4,7 +4,7 @@ from django.conf import settings
 from django.db import connection
 
 from build.management.commands.parse_excel_annotations import Command as ParseExcel
-from common.models import Publication, WebLink, WebResource, Citation
+from common.models import Publication, PublicationJournal, WebLink, WebResource, Citation
 
 import datetime
 import logging
@@ -43,14 +43,17 @@ class Command(ParseExcel):
 		with open(self.references_yaml, 'r') as refs_yaml:
 			refs = yaml.load(refs_yaml, Loader=yaml.FullLoader)
 		wr = WebResource.objects.get(slug='doi')
+		pubjournal = None
 		# Create main publication first for empty publication cells for non-published tools
 		for url, vals in refs.items():
 			if vals['Default']==1:
-				main_pub = self.create_publication(vals['DOI'], wr)
+				main_pub = self.create_publication(vals['DOI'], wr, pubjournal)
 				break
 		for url, vals in refs.items():
 			doi = vals['DOI']
-			pub = self.create_publication(doi, wr)
+			if vals['Journal']=='Preprint at Research Square':
+				pubjournal = PublicationJournal.objects.get_or_create(slug='-'.join(vals['Journal'].split(' ')).lower(), name=vals['Journal'])[0]
+			pub = self.create_publication(doi, wr, pubjournal)
 			page = vals['Page']
 			if not pub:
 				pub = main_pub
@@ -85,7 +88,7 @@ class Command(ParseExcel):
 		else:
 			return url.upper()
 
-	def create_publication(self, doi, wr):
+	def create_publication(self, doi, wr, pubjournal):
 		'''Create WebLink and Publication objects'''
 		if doi!='':
 			try:
@@ -95,6 +98,8 @@ class Command(ParseExcel):
 				wl, created = WebLink.objects.get_or_create(index=doi, web_resource=wr)
 				pub.web_link = wl
 				pub.update_from_doi(doi=doi)
+				if not pub.journal and pubjournal:
+					pub.journal = pubjournal
 				pub.save()
 				self.logger.info('Created Publication:'+str(pub))
 			return pub
