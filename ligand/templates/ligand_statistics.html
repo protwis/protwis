@@ -146,11 +146,12 @@
 
 {% if render != "bias" %}
 <h4>Number of unique ligands per receptor class</h4>
+<table style="width:80% !important" class="table table-stripped">
 {% else %}
 <p><h4>Biased ligand counts</h4>
 <h6>Ligands with a bias factor equal or greater to 2</h6></p>
+<table style="width:60% !important" class="table table-stripped">
 {% endif %}
-<table style="width:80% !important" class="table table-stripped">
     <thead>
         <tr>
             <td><b>Class<br />(Family)</b></td>
