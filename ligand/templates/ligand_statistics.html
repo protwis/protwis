@@ -240,8 +240,28 @@ Circle colors indicate a number of ligands:
 
   .graydiv {
       height: 20px;
-      width: 350px;
+      width: 70px;
       background: linear-gradient(to right, white 0%, black 100%)
+  }
+  .bluediv {
+      height: 20px;
+      width: 70px;
+      background: linear-gradient(to right, white 0%, blue 100%)
+  }
+  .greendiv {
+      height: 20px;
+      width: 70px;
+      background: linear-gradient(to right, white 0%, green 100%)
+  }
+  .reddiv {
+      height: 20px;
+      width: 70px;
+      background: linear-gradient(to right, white 0%, red 100%)
+  }
+  .orangediv {
+      height: 20px;
+      width: 70px;
+      background: linear-gradient(to right, white 0%, orange 100%)
   }
 </style>
 Inner circle colors indicate a number of ligands:
@@ -385,7 +405,13 @@ $(window).on("load",function() {
   <div>
     <div style="float: right; position: relative" class="text-center">
       <b>Primary effector frequency (from low to high)</b>
-      <div class="graydiv"></div>
+      <div style="display: table-row">
+        <div class="bluediv" style="display: table-cell"></div>
+        <div class="reddiv" style="display: table-cell"></div>
+        <div class="graydiv" style="display: table-cell"></div>
+        <div class="greendiv" style="display: table-cell" ></div>
+        <div class="orangediv" style="display: table-cell"></div>
+      </div>
     </div>
     <div style="float: left; position: relative" class="text-center">
       <b>Transducers</b> <br />
