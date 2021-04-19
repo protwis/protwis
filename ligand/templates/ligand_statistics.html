@@ -147,7 +147,8 @@
 {% if render != "bias" %}
 <h4>Number of unique ligands per receptor class</h4>
 {% else %}
-<h4>Number of unique ligands bias per receptor class</h4>
+<p><h4>Biased ligand counts</h4>
+<h6>Ligands with a bias factor equal or greater to 2</h6></p>
 {% endif %}
 <table style="width:80% !important" class="table table-stripped">
     <thead>
@@ -191,8 +192,8 @@
 
 </table>
 
-Specific sets of ligands can be downloaded from the <a href="/ligand">ligand browser</a><br />
-Ligand statistics were last updated: <strong>{{ release_notes.date|date:"Y-m-d" }}</strong><br />
+Specific sets of ligands can be downloaded from the <a href="/ligand">ligand browser</a>.<br />
+Ligand statistics were last updated <strong>{{ release_notes.date|date:"Y-m-d" }}</strong>.<br />
 <br />
 <br />
 {% if render != "bias" %}
@@ -316,7 +317,7 @@ Inner circle colors indicate a number of ligands:
 <script type="text/javascript" charset="utf-8">
 $(window).on("load",function() {
     maxLeafNodeLenght = 46;
-    conversion = {"Gs":"blue", "Gi/o":"red", "Gq/11":"black", "G12/13":"green", "B-arr":"orange"};
+    conversion = {"Gs":"#0000FF", "Gi/o":"#FF0000", "Gq/11":"#000000", "G12/13":"#008000", "B-arr":"#FFA500"};
     $("#UniProtNames").click(function(){
         $("#UniProtNames").addClass("active");
         $("#IUPHARNames").removeClass("active");

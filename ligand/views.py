@@ -512,7 +512,7 @@ class LigandBiasStatistics(TemplateView):
             prot_count_dict[pf['family__parent__parent__parent__name']] = pf['c']
 
         classes = ProteinFamily.objects.filter(
-            slug__in=['001', '002', '003', '004', '005', '006', '007'])  # ugly but fast
+            slug__in=['001', '002', '003', '004', '006', '007'])  # ugly but fast
         ligands = []
 
         for fam in classes:
@@ -628,7 +628,7 @@ class LigandBiasStatistics(TemplateView):
             rec_uniprot = rec.entry_short()
             rec_iuphar = rec.family.name.replace("receptor", '').replace(
                 "<i>", "").replace("</i>", "").strip()
-            whole_rec_dict[rec_uniprot] = [rec_iuphar]
+            whole_rec_dict[rec_uniprot] = [rec_iuphar.capitalize()]
 
         assay_qs = AnalyzedAssay.objects.filter(
             assay_description__isnull=True).values_list(
