@@ -628,7 +628,10 @@ class LigandBiasStatistics(TemplateView):
             rec_uniprot = rec.entry_short()
             rec_iuphar = rec.family.name.replace("receptor", '').replace(
                 "<i>", "").replace("</i>", "").strip()
-            whole_rec_dict[rec_uniprot] = [rec_iuphar.capitalize()]
+            if rec_iuphar[0].isupper():
+                whole_rec_dict[rec_uniprot] = [rec_iuphar]
+            else:
+                whole_rec_dict[rec_uniprot] = [rec_iuphar.capitalize()]
 
         assay_qs = AnalyzedAssay.objects.filter(
             assay_description__isnull=True).values_list(
