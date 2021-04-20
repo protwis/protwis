@@ -68,9 +68,9 @@ def index(request):
                 first_model = count
 
             if entry[0] in rename_dictionary:
-                context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry stats_indent\">" + rename_dictionary[entry[0]] + "</span>", "value": "<span>" + str(entry[1]) + "</span>"})
+                context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry stats_indent\">" + rename_dictionary[entry[0]] + "</span>", "value": "<span>" + "{:,}".format(entry[1]) + "</span>"})
             else:
-                context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + entry[0] + "</span>", "value": "<span>" + str(entry[1]) + "</span>"})
+                context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + entry[0] + "</span>", "value": "<span>" + "{:,}".format(entry[1]) + "</span>"})
             count += 1
 
         # Adjusted formatting for release notes
