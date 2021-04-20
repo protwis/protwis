@@ -269,3 +269,20 @@ text.segment {
 .panel-primary {
   border-color: rgba(0, 0, 0, 0.2);
 }
+
+ul.stats_list {
+  padding-left: 1.5em;
+}
+
+ul.stats_list li{
+  list-style-type: none;
+}
+
+span.stats_entry {
+  width: 15em;
+  display: inline-block;
+}
+
+span.stats_indent {
+  padding-left: 1.5em;
+}
