@@ -628,7 +628,7 @@ class LigandBiasStatistics(TemplateView):
             rec_uniprot = rec.entry_short()
             rec_iuphar = rec.family.name.replace("receptor", '').replace(
                 "<i>", "").replace("</i>", "").strip()
-            if rec_iuphar[0].isupper():
+            if (rec_iuphar[0].isupper()) or (rec_iuphar[0].isdigit()):
                 whole_rec_dict[rec_uniprot] = [rec_iuphar]
             else:
                 whole_rec_dict[rec_uniprot] = [rec_iuphar.capitalize()]
