@@ -493,12 +493,13 @@ class LigandBiasStatistics(TemplateView):
 
         context = super().get_context_data(**kwargs)
         # assays = AnalyzedExperiment.objects.all().prefetch_related('receptor__family__parent__parent__parent', 'receptor__family')
-
         lig_count_dict = {}
-        assays_lig = list(AnalyzedExperiment.objects.all().values(
-            'receptor__family__parent__parent__parent__name').annotate(c=Count('ligand_id', distinct=True)))
+        assays_lig = list(AnalyzedAssay.objects
+            .filter(log_bias_factor__gte=2)
+            .values('experiment__receptor__family__parent__parent__parent__name')
+            .annotate(c=Count('experiment__ligand_id', distinct=True)))
         for a in assays_lig:
-            lig_count_dict[a['receptor__family__parent__parent__parent__name']] = a['c']
+            lig_count_dict[a['experiment__receptor__family__parent__parent__parent__name']] = a['c']
         target_count_dict = {}
         assays_target = list(AnalyzedExperiment.objects.all().values(
             'receptor__family__parent__parent__parent__name').annotate(c=Count('receptor__family', distinct=True)))
