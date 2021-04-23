@@ -506,10 +506,11 @@ class StructureStatistics(TemplateView):
 	So not ready that EA wanted to publish it.
 	"""
 	template_name = 'structure_statistics.html'
+	origin = 'structure'
 
 	def get_context_data (self, **kwargs):
 		context = super().get_context_data(**kwargs)
-
+		print(self.origin)
 		families = ProteinFamily.objects.all()
 		lookup = {}
 		for f in families:
@@ -519,6 +520,10 @@ class StructureStatistics(TemplateView):
 		all_complexes = all_structs.exclude(ligands=None)
 
 		all_gprots = all_structs.filter(id__in=SignprotComplex.objects.filter(protein__family__slug__startswith='100').values_list("structure__id", flat=True))
+		###### these are query sets for G-Prot Structure Statistics
+		all_gprots_complexes = all_structs.exclude(ligands=None).filter(id__in=SignprotComplex.objects.filter(protein__family__slug__startswith='100').values_list("structure__id", flat=True))
+		unique_gprots_complexes = all_gprots_complexes.distinct('ligands', 'protein_conformation__protein__family__name')
+		######
 		all_active = all_structs.filter(protein_conformation__state__slug = 'active')
 
 		years = self.get_years_range(list(set([x.publication_date.year for x in all_structs])))
