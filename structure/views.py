@@ -510,7 +510,6 @@ class StructureStatistics(TemplateView):
 
 	def get_context_data (self, **kwargs):
 		context = super().get_context_data(**kwargs)
-		print(self.origin)
 		families = ProteinFamily.objects.all()
 		lookup = {}
 		for f in families:
@@ -544,6 +543,8 @@ class StructureStatistics(TemplateView):
 		context['all_structures_by_class'] = self.count_by_class(all_structs, lookup)
 		context['all_complexes'] = len(all_complexes)
 		context['all_complexes_by_class'] = self.count_by_class(all_complexes, lookup)
+		context['all_gprots_complexes'] = len(all_gprots_complexes)
+		context['all_gprots_complexes_by_class'] = self.count_by_class(all_gprots_complexes, lookup)
 		context['all_gprots'] = len(all_gprots)
 		context['all_gprots_by_class'] = self.count_by_class(all_gprots, lookup)
 		context['all_active'] = len(all_active)
@@ -553,6 +554,8 @@ class StructureStatistics(TemplateView):
 		context['unique_structures_by_class'] = self.count_by_class(unique_structs, lookup)
 		context['unique_complexes'] = len(unique_complexes)
 		context['unique_complexes_by_class'] = self.count_by_class([x.structure for x in unique_complexes], lookup)
+		context['unique_gprots_complexes'] = len(unique_gprots_complexes)
+		context['unique_gprots_complexes_by_class'] = self.count_by_class(unique_gprots_complexes, lookup) 
 		context['unique_gprots'] = len(unique_gprots)
 		context['unique_gprots_by_class'] = self.count_by_class(unique_gprots, lookup)
 		context['unique_active'] = len(unique_active)
@@ -630,8 +633,13 @@ class StructureStatistics(TemplateView):
 		for rec in whole_receptors:
 			rec_uniprot = rec.entry_short()
 			rec_iuphar = rec.family.name.replace("receptor", '').replace("<i>","").replace("</i>","").strip()
-			whole_rec_dict[rec_uniprot] = [rec_iuphar]
+			if (rec_iuphar[0].isupper()) or (rec_iuphar[0].isdigit()):
+				whole_rec_dict[rec_uniprot] = [rec_iuphar]
+			else:
+				whole_rec_dict[rec_uniprot] = [rec_iuphar.capitalize()]
+
 		context["whole_receptors"] = json.dumps(whole_rec_dict)
+		context["page"] = self.origin
 		return context
 
 	def get_families_dict(self, queryset, lookup):
