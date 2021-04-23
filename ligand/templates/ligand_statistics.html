@@ -146,10 +146,12 @@
 
 {% if render != "bias" %}
 <h4>Number of unique ligands per receptor class</h4>
-{% else %}
-<h4>Number of unique ligands bias per receptor class</h4>
-{% endif %}
 <table style="width:80% !important" class="table table-stripped">
+{% else %}
+<p><h4>Biased ligand counts</h4>
+<h6>Ligands with a bias factor equal or greater to 2</h6></p>
+<table style="width:60% !important" class="table table-stripped">
+{% endif %}
     <thead>
         <tr>
             <td><b>Class<br />(Family)</b></td>
@@ -191,8 +193,8 @@
 
 </table>
 
-Specific sets of ligands can be downloaded from the <a href="/ligand">ligand browser</a><br />
-Ligand statistics were last updated: <strong>{{ release_notes.date|date:"Y-m-d" }}</strong><br />
+Specific sets of ligands can be downloaded from the <a href="/ligand">ligand browser</a>.<br />
+Ligand statistics were last updated <strong>{{ release_notes.date|date:"Y-m-d" }}</strong>.<br />
 <br />
 <br />
 {% if render != "bias" %}
@@ -242,6 +244,26 @@ Circle colors indicate a number of ligands:
       width: 350px;
       background: linear-gradient(to right, white 0%, black 100%)
   }
+  /* .bluediv {
+      height: 20px;
+      width: 70px;
+      background: linear-gradient(to right, white 0%, blue 100%)
+  }
+  .greendiv {
+      height: 20px;
+      width: 70px;
+      background: linear-gradient(to right, white 0%, green 100%)
+  }
+  .reddiv {
+      height: 20px;
+      width: 70px;
+      background: linear-gradient(to right, white 0%, red 100%)
+  }
+  .orangediv {
+      height: 20px;
+      width: 70px;
+      background: linear-gradient(to right, white 0%, orange 100%)
+  } */
 </style>
 Inner circle colors indicate a number of ligands:
 <table style="width:30%">
@@ -316,7 +338,7 @@ Inner circle colors indicate a number of ligands:
 <script type="text/javascript" charset="utf-8">
 $(window).on("load",function() {
     maxLeafNodeLenght = 46;
-    conversion = {"Gs":"blue", "Gi/o":"red", "Gq/11":"black", "G12/13":"green", "B-arr":"orange"};
+    conversion = {"Gs":"#0000FF", "Gi/o":"#FF0000", "Gq/11":"#000000", "G12/13":"#008000", "B-arr":"#FFA500"};
     $("#UniProtNames").click(function(){
         $("#UniProtNames").addClass("active");
         $("#IUPHARNames").removeClass("active");
@@ -383,8 +405,15 @@ $(window).on("load",function() {
   <br />
   <div>
     <div style="float: right; position: relative" class="text-center">
-      <b>Primary effector frequency (from low to high)</b>
+      <b>Primary transducer frequency (from low to high)</b>
       <div class="graydiv"></div>
+      <!-- <div style="display: table-row">
+        <div class="bluediv" style="display: table-cell"></div>
+        <div class="reddiv" style="display: table-cell"></div>
+        <div class="graydiv" style="display: table-cell"></div>
+        <div class="greendiv" style="display: table-cell" ></div>
+        <div class="orangediv" style="display: table-cell"></div>
+      </div> -->
     </div>
     <div style="float: left; position: relative" class="text-center">
       <b>Transducers</b> <br />
