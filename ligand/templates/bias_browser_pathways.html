@@ -80,7 +80,7 @@
                         },
                         success: function() {
 
-                            myFunction('/ligand/browservendors', 'Detail View', window, 850, 1000)
+                            openPopup('/ligand/browservendors', 'Detail View', window, 850, 1000)
                         }
                     });
                 },
@@ -411,7 +411,7 @@
 </script>
 
 <script type="text/javascript">
-    function myFunction(url, title, win, w, h) {
+    function openPopup(url, title, win, w, h) {
         const y = win.top.outerHeight / 2 + win.top.screenY - (h / 2);
         const x = win.top.outerWidth / 2 + win.top.screenX - (w / 2);
         return win.open(url, title, 'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width=' + w + ', height=' + h + ', top=' + y + ', left=' + x);
@@ -555,7 +555,7 @@
                         <td>
                             <span style='display: none'> {{e.1.ligand.id}}</span>
                             <a href="#">
-                                <span class="glyphicon glyphicon-info-sign" onclick="myFunction('pathwaydata/{{e.1.experiment_id}}/detail', 'Detail View', window, 1500, 1000)"></span> Details
+                                <span class="glyphicon glyphicon-info-sign" onclick="openPopup('pathwaydata/{{e.1.experiment_id}}/detail', 'Detail View', window, 1500, 1000)"></span> Details
                             </a>
                         </td>
                         <td>{{e.1.receptor.family.parent.parent.parent.name}}</td>
@@ -566,12 +566,9 @@
 
                         <!-- ligand -->
                         <td title='{{e.1.ligand}}'>
-                            {%if e.1.chembl%}
-                            <a href='/ligand/{{e.1.chembl}}' target='blank'>
-                                {%else%}
-                                <a href='/ligand/{{e.1.ligand}}' target='blank'>
-                                    {%endif%}
-                                    {{e.1.ligand}}
+                            <a href ='/ligand/{{e.1.ligand.id}}/info' target='_blank'>
+                              {{e.1.ligand}}
+                            </a>
                         </td>
                         <!-- signalling_protein -->
                         <td style="border-left: 1px solid black;">{{e.1.signalling_protein}}</td>

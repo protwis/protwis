@@ -1,15 +1,15 @@
 from django.shortcuts import render
 from django.conf import settings
 from django.views.generic import TemplateView, View
-from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
-from django.db.models import Count, Q, Prefetch
+from django.http import HttpResponse, HttpResponseRedirect
+from django.db.models import Count, Q, Prefetch, TextField
+from django.db.models.functions import Concat
 from django import forms
-from django.core.cache import cache
-from django.views.decorators.cache import cache_page
+
 from django.shortcuts import redirect
 
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
-from protein.models import Gene, ProteinSegment, IdentifiedSites, ProteinGProteinPair
+from protein.models import ProteinSegment
 from structure.models import Structure, StructureModel, StructureComplexModel, StructureExtraProteins, StructureModelRMSD
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, ModelRotamer
 from structure.assign_generic_numbers_gpcr import GenericNumbering, GenericNumberingFromDB
@@ -33,22 +33,17 @@ import inspect
 import os
 import time
 import zipfile
-import math
 import json
-import ast
+
 from copy import deepcopy
 from io import StringIO, BytesIO
 from collections import OrderedDict
 from Bio.PDB import PDBIO, PDBParser
-from operator import itemgetter
-import xlsxwriter
 
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
-from smtplib import SMTP
 import smtplib
-import sys
 
 class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'D1','006':'F','007':'T','008':'O'}
 
@@ -234,11 +229,32 @@ def HomologyModelDetails(request, modelname, state):
 														  'sc_none': round(sc_none/len(rotamers)*100, 1), 'main_template_seqsim': main_template_seqsim, 'template_list': template_list, 'model_main_template': model_main_template,
 														  'state': state, 'version': version})
 
+def RefinedModelDetails(request, pdbname):
+	if len(pdbname) == 4:
+		try:
+			structure = Structure.objects.get(pdb_code__index=pdbname.upper())
+			if structure.refined:
+				complex_mod_details = SignprotComplex.objects.filter(structure=structure)
+				if len(complex_mod_details) > 0:
+					complex_mod = complex_mod_details.first()
+					return ComplexModelDetails(request, pdbname.lower(), complex_mod.protein.entry_name)
+				else:
+					return HomologyModelDetails(request, pdbname.lower(), structure.state.slug)
+
+			else:
+				error = f"This structure ({pdbname}) does not have a refined model"
+		except Structure.DoesNotExist:
+			error = f"The structure {pdbname} does not exist in the GPCRdb"
+	else:
+		error = f"An incorrect PDB entry ({pdbname}) was specified"
+
+	return HttpResponse(error)
+
 def ComplexModelDetails(request, modelname, signprot):
 	"""
 	Show complex homology models details
 	"""
-	color_palette = ["orange","cyan","yellow","lime","fuchsia","green","teal","olive","thistle","grey","chocolate","blue","red","pink","mahogany",]
+	color_palette = ["orange","cyan","yellow","lime","fuchsia","limegreen","teal","olive","thistle","grey","chocolate","blue","red","pink","palegoldenrod","steelblue","tan","lightcoral","skyblue","papayawhip"]
 	model = StructureComplexModel.objects.get(receptor_protein__entry_name=modelname, sign_protein__entry_name=signprot)
 	main_template = model.main_template
 	if model.receptor_protein.accession:
@@ -270,7 +286,7 @@ def ComplexModelDetails(request, modelname, signprot):
 	gp = GProteinAlignment()
 	gp.run_alignment(model.sign_protein, signprot_template, calculate_similarity=True)
 
-	for b,n in bb_temps2.items():
+	for n in bb_temps2.values():
 		for s in n:
 			if s.protein_conformation.protein.parent not in bb_temps:
 				bb_temps[s.protein_conformation.protein.parent] = [s]
@@ -506,31 +522,53 @@ class StructureStatistics(TemplateView):
 	So not ready that EA wanted to publish it.
 	"""
 	template_name = 'structure_statistics.html'
+	origin = 'structure'
 
 	def get_context_data (self, **kwargs):
 		context = super().get_context_data(**kwargs)
-
 		families = ProteinFamily.objects.all()
 		lookup = {}
 		for f in families:
 			lookup[f.slug] = f.name
 
 		all_structs = Structure.objects.all().prefetch_related('protein_conformation__protein__family')
+		noncomplex_gprots = SignprotStructure.objects.filter(protein__family__slug__startswith='100')
 		all_complexes = all_structs.exclude(ligands=None)
-
 		all_gprots = all_structs.filter(id__in=SignprotComplex.objects.filter(protein__family__slug__startswith='100').values_list("structure__id", flat=True))
+		###### these are query sets for G-Prot Structure Statistics
+		all_g_A_complexes = all_gprots.filter(protein_conformation__protein__family__slug__startswith='001')
+		all_g_B1_complexes = all_gprots.filter(protein_conformation__protein__family__slug__startswith='002')
+		all_g_B2_complexes = all_gprots.filter(protein_conformation__protein__family__slug__startswith='003')
+		all_g_C_complexes = all_gprots.filter(protein_conformation__protein__family__slug__startswith='004')
+		all_g_D1_complexes = all_gprots.filter(protein_conformation__protein__family__slug__startswith='005')
+		all_g_F_complexes = all_gprots.filter(protein_conformation__protein__family__slug__startswith='006')
+		all_g_T2_complexes = all_gprots.filter(protein_conformation__protein__family__slug__startswith='007')
+		######
 		all_active = all_structs.filter(protein_conformation__state__slug = 'active')
 
 		years = self.get_years_range(list(set([x.publication_date.year for x in all_structs])))
 
 		unique_structs = Structure.objects.order_by('protein_conformation__protein__family__name', 'state',
 			'publication_date', 'resolution').distinct('protein_conformation__protein__family__name').prefetch_related('protein_conformation__protein__family')
-		# unique_complexes = all_complexes.distinct('ligands', 'protein_conformation__protein__family__name')
 		unique_complexes = StructureLigandInteraction.objects.filter(annotated=True).distinct('ligand', 'structure__protein_conformation__protein__family')
-
 		unique_gprots = unique_structs.filter(id__in=SignprotComplex.objects.filter(protein__family__slug__startswith='100').values_list("structure__id", flat=True))
+		# unique_g_A_complexes = unique_gprots.filter(protein_conformation__protein__family__slug__startswith='001')
+		unique_g_A_complexes = all_g_A_complexes.annotate(distinct_name=Concat('signprot_complex__protein__family__parent__name', 'protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
+		unique_g_B1_complexes = all_g_B1_complexes.annotate(distinct_name=Concat('signprot_complex__protein__family__parent__name', 'protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
+		unique_g_B2_complexes = all_g_B2_complexes.annotate(distinct_name=Concat('signprot_complex__protein__family__parent__name', 'protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
+		unique_g_C_complexes = all_g_C_complexes.annotate(distinct_name=Concat('signprot_complex__protein__family__parent__name', 'protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
+		unique_g_D1_complexes = all_g_D1_complexes.annotate(distinct_name=Concat('signprot_complex__protein__family__parent__name', 'protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
+		unique_g_F_complexes = all_g_F_complexes.annotate(distinct_name=Concat('signprot_complex__protein__family__parent__name', 'protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
+		unique_g_T2_complexes = all_g_T2_complexes.annotate(distinct_name=Concat('signprot_complex__protein__family__parent__name', 'protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
 		unique_active = unique_structs.filter(protein_conformation__state__slug = 'active')
-
+		tree_dots_data = {}
+		tree_dots_data = self.grab_matches(unique_g_A_complexes, tree_dots_data)
+		tree_dots_data = self.grab_matches(unique_g_B1_complexes, tree_dots_data)
+		tree_dots_data = self.grab_matches(unique_g_B2_complexes, tree_dots_data)
+		tree_dots_data = self.grab_matches(unique_g_C_complexes, tree_dots_data)
+		tree_dots_data = self.grab_matches(unique_g_D1_complexes, tree_dots_data)
+		tree_dots_data = self.grab_matches(unique_g_F_complexes, tree_dots_data)
+		tree_dots_data = self.grab_matches(unique_g_T2_complexes, tree_dots_data)
 		#Stats
 		struct_count = Structure.objects.all().annotate(Count('id'))
 		struct_lig_count = Structure.objects.exclude(ligands=None)
@@ -541,14 +579,40 @@ class StructureStatistics(TemplateView):
 		context['all_complexes_by_class'] = self.count_by_class(all_complexes, lookup)
 		context['all_gprots'] = len(all_gprots)
 		context['all_gprots_by_class'] = self.count_by_class(all_gprots, lookup)
+		context['all_gprots_by_gclass'] = self.count_by_gclass(all_gprots, lookup)
+		context['noncomplex_gprots_by_gclass'] = self.count_by_gclass(noncomplex_gprots, lookup, True)
+		context['noncomplex_gprots'] = len(noncomplex_gprots)
+
+		context['gA_complexes'] = zip(list(self.count_by_gclass(all_g_A_complexes, lookup).items()), list(self.count_by_gclass(unique_g_A_complexes, lookup).items()))
+		context['all_g_A_complexes'] = len(all_g_A_complexes)
+		context['unique_g_A_complexes'] = len(unique_g_A_complexes)
+		context['gB1_complexes'] = zip(list(self.count_by_gclass(all_g_B1_complexes, lookup).items()), list(self.count_by_gclass(unique_g_B1_complexes, lookup).items()))
+		context['all_g_B1_complexes'] = len(all_g_B1_complexes)
+		context['unique_g_B1_complexes'] = len(unique_g_B1_complexes)
+		context['gB2_complexes'] = zip(list(self.count_by_gclass(all_g_B2_complexes, lookup).items()), list(self.count_by_gclass(unique_g_B2_complexes, lookup).items()))
+		context['all_g_B2_complexes'] = len(all_g_B2_complexes)
+		context['unique_g_B2_complexes'] = len(unique_g_B2_complexes)
+		context['gC_complexes'] = zip(list(self.count_by_gclass(all_g_C_complexes, lookup).items()), list(self.count_by_gclass(unique_g_C_complexes, lookup).items()))
+		context['all_g_C_complexes'] = len(all_g_C_complexes)
+		context['unique_g_C_complexes'] = len(unique_g_C_complexes)
+		context['gD1_complexes'] = zip(list(self.count_by_gclass(all_g_D1_complexes, lookup).items()), list(self.count_by_gclass(unique_g_D1_complexes, lookup).items()))
+		context['all_g_D1_complexes'] = len(all_g_D1_complexes)
+		context['unique_g_D1_complexes'] = len(unique_g_D1_complexes)
+		context['gF_complexes'] = zip(list(self.count_by_gclass(all_g_F_complexes, lookup).items()), list(self.count_by_gclass(unique_g_F_complexes, lookup).items()))
+		context['all_g_F_complexes'] = len(all_g_F_complexes)
+		context['unique_g_F_complexes'] = len(unique_g_F_complexes)
+		context['gT2_complexes'] = zip(list(self.count_by_gclass(all_g_T2_complexes, lookup).items()), list(self.count_by_gclass(unique_g_T2_complexes, lookup).items()))
+		context['all_g_T2_complexes'] = len(all_g_T2_complexes)
+		context['unique_g_T2_complexes'] = len(unique_g_T2_complexes)
+
 		context['all_active'] = len(all_active)
 		context['all_active_by_class'] = self.count_by_class(all_active, lookup)
-
 		context['unique_structures'] = len(unique_structs)
 		context['unique_structures_by_class'] = self.count_by_class(unique_structs, lookup)
 		context['unique_complexes'] = len(unique_complexes)
 		context['unique_complexes_by_class'] = self.count_by_class([x.structure for x in unique_complexes], lookup)
 		context['unique_gprots'] = len(unique_gprots)
+		context['unique_gprots_by_gclass'] = self.count_by_gclass(unique_gprots, lookup)
 		context['unique_gprots_by_class'] = self.count_by_class(unique_gprots, lookup)
 		context['unique_active'] = len(unique_active)
 		context['unique_active_by_class'] = self.count_by_class(unique_active, lookup)
@@ -563,6 +627,8 @@ class StructureStatistics(TemplateView):
 		context['chartdata_class'] = self.get_per_class_cumulative_data_series(years, unique_structs, lookup)
 		context['chartdata_class_y'] = self.get_per_class_data_series(years, unique_structs, lookup)
 		context['chartdata_class_all'] = self.get_per_class_cumulative_data_series(years, all_structs, lookup)
+
+		context['tree_dots_data'] = tree_dots_data
 		#context['coverage'] = self.get_diagram_coverage()
 		#{
 		#    'depth': 3,
@@ -572,6 +638,10 @@ class StructureStatistics(TemplateView):
 			context['unique_structures_by_class'][key.replace('Class','')] = context['unique_structures_by_class'].pop(key)
 		for key in list(context['all_structures_by_class'].keys()):
 			context['all_structures_by_class'][key.replace('Class','')] = context['all_structures_by_class'].pop(key)
+		context['total_gprots_by_gclass'] = []
+		for key in context['all_gprots_by_gclass']:
+			context['total_gprots_by_gclass'].append(context['all_gprots_by_gclass'][key] + context['noncomplex_gprots_by_gclass'][key])
+		context['total_gprots'] = sum(context['total_gprots_by_gclass'])
 
 		tree = PhylogeneticTreeGenerator()
 		class_a_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
@@ -625,8 +695,13 @@ class StructureStatistics(TemplateView):
 		for rec in whole_receptors:
 			rec_uniprot = rec.entry_short()
 			rec_iuphar = rec.family.name.replace("receptor", '').replace("<i>","").replace("</i>","").strip()
-			whole_rec_dict[rec_uniprot] = [rec_iuphar]
+			if (rec_iuphar[0].isupper()) or (rec_iuphar[0].isdigit()):
+				whole_rec_dict[rec_uniprot] = [rec_iuphar]
+			else:
+				whole_rec_dict[rec_uniprot] = [rec_iuphar.capitalize()]
+
 		context["whole_receptors"] = json.dumps(whole_rec_dict)
+		context["page"] = self.origin
 		return context
 
 	def get_families_dict(self, queryset, lookup):
@@ -639,6 +714,20 @@ class StructureStatistics(TemplateView):
 			if fname not in families:
 				families.append(fname)
 		return families
+
+	def grab_matches(self, queryset, output):
+
+		#Grab data from queryset
+		for s in queryset:
+			gprot = s.signprot_complex.protein.family.parent.name
+			receptor = s.protein_conformation.protein.parent.entry_short()
+			if receptor in output.keys():
+				output[receptor].append(gprot)
+			else:
+				output[receptor] = []
+				output[receptor].append(gprot)
+
+		return output
 
 	def count_by_class(self, queryset, lookup):
 
@@ -653,6 +742,29 @@ class StructureStatistics(TemplateView):
 		tmp = OrderedDict()
 		for x in sorted(classes):
 			tmp[x] = records.count(x)
+
+		return tmp
+
+	def count_by_gclass(self, queryset, lookup, nc=False):
+
+		#Ugly walkaround
+		classes = [lookup[x] for x in ['100_001_001', '100_001_002', '100_001_003', '100_001_004', '100_001_005']]
+		translate = {'Gs':'G<sub>s</sub>', 'Gi/o':'G<sub>i/o</sub>', 'Gq/11':'G<sub>q/11</sub>', 'G12/13':'G<sub>12/13</sub>', 'GPa1 family':'GPa1'}
+		records = []
+		if nc == False:
+			for s in queryset:
+				fid = s.signprot_complex.protein.family.parent.slug
+				cname = lookup[fid]
+				records.append(translate[cname])
+		else:
+			for s in queryset:
+				fid = s.protein.family.parent.slug
+				cname = lookup[fid]
+				records.append(translate[cname])
+
+		tmp = OrderedDict()
+		for x in classes:
+			tmp[translate[x]] = records.count(translate[x])
 
 		return tmp
 
@@ -882,21 +994,21 @@ class StructureStatistics(TemplateView):
 		tree = OrderedDict({'name':'GPCRs','children':[]})
 		i = 0
 		n = 0
-		for c,c_v in coverage.items():
+		for c_v in coverage.values():
 			c_v['name'] = c_v['name'].split("(")[0]
 			if c_v['name'].strip() == 'Other GPCRs':
 				continue
 			children = []
-			for lt,lt_v in c_v['children'].items():
+			for lt_v in c_v['children'].values():
 				if lt_v['name'].strip() == 'Orphan' and c_v['name'].strip()=="Class A":
 					continue
 				children_rf = []
-				for rf,rf_v in lt_v['children'].items():
+				for rf_v in lt_v['children'].values():
 					rf_v['name'] = rf_v['name'].split("<")[0]
 					if rf_v['name'].strip() == 'Class T (Taste 2)':
 						continue
 					children_r = []
-					for r,r_v in rf_v['children'].items():
+					for r_v in rf_v['children'].values():
 						r_v['color'] = CSS_COLOR_NAMES[i]
 						r_v['sort'] = n
 						children_r.append(r_v)
@@ -917,8 +1029,8 @@ class StructureStatistics(TemplateView):
 
 		return json.dumps(tree)
 
-
-	def get_diagram_crystals(self):
+	@staticmethod
+	def get_diagram_crystals():
 		"""
 		Prepare data for coverage diagram.
 		"""
@@ -2167,11 +2279,13 @@ def ComplexmodDownload(request):
 	response['Content-Length'] = zip_io.tell()
 	return response
 
-def SingleModelDownload(request, modelname, state, fullness, csv=False):
+def SingleModelDownload(request, modelname, fullness, state=None, csv=False):
 	"Download single homology model"
 	zip_io = BytesIO()
-
-	hommod = StructureModel.objects.get(protein__entry_name=modelname, state__slug=state)
+	if state:
+		hommod = StructureModel.objects.get(protein__entry_name=modelname.lower(), state__slug=state)
+	else:
+		hommod = StructureModel.objects.get(protein__entry_name=modelname.lower())
 	if not hommod.protein.accession:
 		version = hommod.pdb_data.pdb.split('\n')[0][-10:]
 		mod_name = 'Class{}_{}_{}_refined_{}_{}_GPCRdb.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.parent.entry_name,
@@ -2240,11 +2354,18 @@ def SingleComplexModelDownload(request, modelname, signprot, csv=False):
 	"Download single homology model"
 
 	zip_io = BytesIO()
-	hommod = StructureComplexModel.objects.get(receptor_protein__entry_name=modelname, sign_protein__entry_name=signprot)
-	mod_name = 'Class{}_{}-{}_{}_{}_GPCRdb.pdb'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name,
-														hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
-	stat_name = 'Class{}_{}-{}_{}_{}_GPCRdb.templates.csv'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name,
-														hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
+	if signprot=='complex':
+		hommod = StructureComplexModel.objects.get(receptor_protein__entry_name=modelname.lower())
+		mod_name = 'Class{}_{}-{}_{}_refined_{}_GPCRdb.pdb'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.parent.entry_name,
+															hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
+		stat_name = 'Class{}_{}-{}_{}_refined_{}_GPCRdb.templates.csv'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.parent.entry_name,
+															hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
+	else:
+		hommod = StructureComplexModel.objects.get(receptor_protein__entry_name=modelname, sign_protein__entry_name=signprot)
+		mod_name = 'Class{}_{}-{}_{}_{}_GPCRdb.pdb'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name,
+															hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
+		stat_name = 'Class{}_{}-{}_{}_{}_GPCRdb.templates.csv'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name,
+															hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
 	io = StringIO(hommod.pdb_data.pdb)
 	stats_text = StringIO(hommod.stats_text.stats_text)
 	with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as backup_zip:
@@ -2320,9 +2441,7 @@ def webformdata(request) :
 	solubilization = OrderedDict()
 	crystallization = OrderedDict()
 	modifications = []
-	aamod, aamod_start, aamod_end=[], [], []
 
-	i=1
 	error = 0
 	error_msg = []
 	for key,value in sorted(data.items()):
@@ -2346,10 +2465,10 @@ def webformdata(request) :
 
 			if key.startswith('aa_no'):
 				pos_id = key.replace('aa_no','')
-				if pos_id=='':
-					mut_id='1'
-				else:
-					mut_id=pos_id.replace('_','')
+				# if pos_id=='':
+				# 	mut_id='1'
+				# else:
+				# 	mut_id=pos_id.replace('_','')
 
 				if 'mut_remark'+pos_id in data:
 					remark = data['mut_remark'+pos_id]

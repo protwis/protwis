@@ -91,8 +91,13 @@ canvas {
         <div class="btn-group">
             <a href="/" class="dropdown-toggle btn btn-primary btn-mini" data-toggle="dropdown" role="button" aria-expanded="false">Download <span class='caret'></span></a>
             <ul class="dropdown-menu" role="menu" style="min-width:50%;">
-                <li><a id="download_btn" href="./{{model.protein.entry_name}}_{{model.state.slug}}_full/download_pdb">Full</a></li>
-                <li><a id="download_btn" href="./{{model.protein.entry_name}}_{{model.state.slug}}_noloops/download_pdb">Without loops</a></li>
+                {% if not model.protein.accession %}
+                    <li><a id="download_btn" href="./{{model.protein.entry_name|upper}}_full/download_pdb">Full</a></li>
+                    <li><a id="download_btn" href="./{{model.protein.entry_name|upper}}_noloops/download_pdb">Without loops</a></li>
+                {% else %}
+                    <li><a id="download_btn" href="./{{model.protein.entry_name}}_{{model.state.slug}}_full/download_pdb">Full</a></li>
+                    <li><a id="download_btn" href="./{{model.protein.entry_name}}_{{model.state.slug}}_noloops/download_pdb">Without loops</a></li>
+                {% endif %}
             </ul>
         </div>
         <div>
@@ -295,7 +300,7 @@ canvas {
 
             var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( color_residues );
 
-            stage.loadFile( "view/{{modelname}}_{{model.state.slug}}", { ext: "pdb" }  ).then( function( o ){
+            stage.loadFile( "/structure/homology_models/view/{{modelname}}_{{model.state.slug}}", { ext: "pdb" }  ).then( function( o ){
                 o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId }
                 o.centerView();
             } );
@@ -352,7 +357,7 @@ canvas {
                 ClearSelection('targets');
                 AddToSelection('targets', 'structure_model', "{{model.protein.entry_name}}"+"_"+"{{model.state.name}}");
                 AddToSelection('targets', 'structure', "{{model.main_template}}");
-                
+
                 window.location.href = '/structure/selection_convert_model';
             });
             $('#superpose_btn').click(function () {

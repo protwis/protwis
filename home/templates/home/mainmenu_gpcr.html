@@ -110,25 +110,23 @@
         <li><a href="/structure">Structures</a></li>
         <li><a href="/structure/homology_models">Structure models</a></li>
         <li><a href="/structure/model_statistics">Structure model statistics</a></li>
-        <li><a href="/structure/superposition_workflow_index/true">Structure superposition</a></li>
-
-        {#  NOTE: we need the spacing here to keep all elements including icons in a single line #}
-        <li><a href="/structure/generic_numbering_index">Generic residue numbering (PDB)&nbsp;&nbsp;&nbsp;&nbsp;</a></li>
         {#  DEPRECATED FOR NOW #}
         {#  <li><a href="/structure/template_selection">Template selection</a></li> #}
-
 
         <!-- STRUCTURE COMPARISON -->
         <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>STRUCTURE COMPARISON</a></li>
         <li><a href="/structure_comparison/comparative_analysis">Structure comparison tool</a></li>
         <li><a href="/structure_comparison/structure_clustering">Structure similarity trees</a></li>
+        <li><a href="/structure/superposition_workflow_index/true">Structure superposition</a></li>
+        {#  NOTE: we need the spacing here to keep all elements including icons in a single line #}
+        <li><a href="/structure/generic_numbering_index">Generic residue numbering (PDB)&nbsp;&nbsp;&nbsp;&nbsp;</a></li>
 
         <!-- DETERMINANTS & MUTATIONS -->
         <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>DETERMINANTS & MUTATIONS</a></li>
         <li><a href="/seqsign">Sequence signature tool</a></li>
-        <li><a href="/mutations/state_stabilizing">State-stabilising mutation design tool</a></li>
+        <li><a href="/mutations/state_stabilizing">State-stabilising mutation design</a></li>
     </ul>
 </li>
 
@@ -158,6 +156,7 @@
         <!-- STRUCTURES -->
         <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>STRUCTURES</a></li>
+        <li><a href="/structure/gprot_statistics">Structure statistics</a></li>
         <li><a href="/structure/g_protein_structure_browser">Structures</a></li>
         <li><a href="/structure/complex_models">Structure models</a></li>
 
@@ -221,10 +220,11 @@
         Biased signalling<span class="caret"></span>
     </a>
     <ul class="dropdown-menu" role="menu">
-        <li class="nav-header disabled"><a>Ligand bias</a></li>
-        <li><a href="/ligand/bias_statistics">Ligand bias statistics</a></li>
-        <li><a href="/ligand/biasedbrowser">Ligand bias for G protein family or arrestin</a></li>
-        <li><a href="/ligand/biasedsubtypesbrowser">Ligand bias for G protein subtype</a></li>
+        <li class="nav-header disabled"><a>BIASED LIGANDS</a></li>
+        <li><a href="/ligand/bias_statistics">Biased ligand statistics</a></li>
+        <li><a href="/ligand/biasedbrowser">Biased ligands (effector family)</a></li>
+        <li><a href="/ligand/biasedpredictedbrowser">Pathway-preferring ligands</a></li>
+        <li><a href="/ligand/biasedsubtypesbrowser">Biased ligands (subtype)</a></li>
         <!-- <li><a href="/ligand/browserchembl">Predicted ligand bias (potency ratios)</a></li> -->
         <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>Pathways</a></li>

@@ -1,7 +1,6 @@
-from django.shortcuts import render
-from rest_framework import views, generics, viewsets
+from rest_framework import views, generics
 from rest_framework.response import Response
-from rest_framework.parsers import MultiPartParser, FormParser, FileUploadParser
+from rest_framework.parsers import FileUploadParser
 from rest_framework.renderers import JSONRenderer
 from django.template.loader import render_to_string
 from django.db.models import Q
@@ -9,21 +8,19 @@ from django.conf import settings
 
 from interaction.models import ResidueFragmentInteraction
 from mutation.models import MutationRaw
-from protein.models import Protein, ProteinConformation, ProteinFamily, Species, ProteinSegment
-from residue.models import Residue, ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent
+from protein.models import Protein, ProteinFamily, Species, ProteinSegment
+from residue.models import Residue, ResidueGenericNumberEquivalent
 from structure.models import Structure
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.sequence_parser import SequenceParser
 from api.serializers import (ProteinSerializer, ProteinFamilySerializer, SpeciesSerializer, ResidueSerializer,
-                             ResidueExtendedSerializer, StructureSerializer,
-                             StructureLigandInteractionSerializer,
+                             ResidueExtendedSerializer, StructureLigandInteractionSerializer,
                              MutationSerializer)
 from api.renderers import PDBRenderer
 from common.alignment import Alignment
-from common.definitions import *
+from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS
 from drugs.models import Drugs
 
-import json, os
 from io import StringIO
 from Bio.PDB import PDBIO, parse_pdb_header
 from collections import OrderedDict
@@ -31,17 +28,13 @@ from collections import OrderedDict
 # FIXME add
 # getMutations
 # numberPDBfile
-import coreapi
-from urllib.parse import urlparse
-from urllib.parse import urljoin
-from rest_framework import renderers, response, schemas
-from rest_framework.decorators import api_view, renderer_classes
-from rest_framework import response, schemas
+from rest_framework.decorators import renderer_classes
 from rest_framework_swagger.views import get_swagger_view
 
 schema_view = get_swagger_view(title='GPCRdb API')
 
 class ProteinDetail(generics.RetrieveAPIView):
+
     """
     Get a single protein instance by entry name
     \n/protein/{entry_name}/
@@ -54,6 +47,7 @@ class ProteinDetail(generics.RetrieveAPIView):
 
 
 class ProteinByAccessionDetail(ProteinDetail):
+
     """
     Get a single protein instance by accession
     \n/protein/accession/{accession}/
@@ -64,6 +58,7 @@ class ProteinByAccessionDetail(ProteinDetail):
 
 
 class ProteinFamilyList(generics.ListAPIView):
+
     """
     Get a list of protein families
     \n/proteinfamily/
@@ -74,6 +69,7 @@ class ProteinFamilyList(generics.ListAPIView):
 
 
 class ProteinFamilyDetail(generics.RetrieveAPIView):
+
     """
     Get a single protein family instance
     \n/proteinfamily/{slug}/
@@ -86,6 +82,7 @@ class ProteinFamilyDetail(generics.RetrieveAPIView):
 
 
 class ProteinFamilyChildrenList(generics.ListAPIView):
+
     """
     Get a list of child families of a protein family
     \n/proteinfamily/children/{slug}/
@@ -101,6 +98,7 @@ class ProteinFamilyChildrenList(generics.ListAPIView):
 
 
 class ProteinFamilyDescendantList(generics.ListAPIView):
+
     """
     Get a list of descendant families of a protein family
     \n/proteinfamily/descendants/{slug}/
@@ -116,6 +114,7 @@ class ProteinFamilyDescendantList(generics.ListAPIView):
 
 
 class ProteinsInFamilyList(generics.ListAPIView):
+
     """
     Get a list of proteins in a protein family
     \n/proteinfamily/proteins/{slug}/
@@ -133,6 +132,7 @@ class ProteinsInFamilyList(generics.ListAPIView):
 
 
 class ProteinsInFamilySpeciesList(generics.ListAPIView):
+
     """
     Get a list of proteins in a protein family
     \n/proteinfamily/proteins/{slug}/{species}
@@ -152,6 +152,7 @@ class ProteinsInFamilySpeciesList(generics.ListAPIView):
 
 
 class ResiduesList(generics.ListAPIView):
+
     """
     Get a list of residues of a protein
     \n/residues/{entry_name}/
@@ -168,6 +169,7 @@ class ResiduesList(generics.ListAPIView):
 
 
 class ResiduesExtendedList(ResiduesList):
+
     """
     Get a list of residues of a protein, including alternative generic numbers
     \n/residues/extended/{entry_name}/
@@ -178,6 +180,7 @@ class ResiduesExtendedList(ResiduesList):
 
 
 class SpeciesList(generics.ListAPIView):
+
     """
     Get a list of species
     \n/species/
@@ -188,6 +191,7 @@ class SpeciesList(generics.ListAPIView):
 
 
 class SpeciesDetail(generics.RetrieveAPIView):
+
     """
     Get a single species instance
     \n/species/{latin_name}/
@@ -200,6 +204,7 @@ class SpeciesDetail(generics.RetrieveAPIView):
 
 
 class NumberPDBStructureView(views.APIView):
+
     """
     WRITEME
     """
@@ -208,6 +213,7 @@ class NumberPDBStructureView(views.APIView):
 
 
 class StructureList(views.APIView):
+
     """
     Get a list of structures
     \n/structure/
@@ -285,6 +291,7 @@ class StructureList(views.APIView):
 
 
 class RepresentativeStructureList(StructureList):
+
     """
     Get a list of representative structures (one for each protein and activation state)
     \n/structure/representative/
@@ -292,6 +299,7 @@ class RepresentativeStructureList(StructureList):
 
 
 class StructureListProtein(StructureList):
+
     """
     Get a list of structures of a protein
     \n/structure/protein/{entry_name}
@@ -299,6 +307,7 @@ class StructureListProtein(StructureList):
 
 
 class RepresentativeStructureListProtein(StructureList):
+
     """
     Get a list of representative structures of a protein (one for each activation state)
     \n/structure/protein/{entry_name}/representative/
@@ -306,6 +315,7 @@ class RepresentativeStructureListProtein(StructureList):
 
 
 class StructureDetail(StructureList):
+
     """
     Get a single structure instance
     \n/structure/{pdb_code}/
@@ -316,20 +326,25 @@ class StructureDetail(StructureList):
 
 
 class FamilyAlignment(views.APIView):
+
     """
-    Get a full sequence alignment of a protein family including a consensus sequence
+    Get a full sequence alignment of a protein family including a consensus sequence.
+    Note that this method only includes Swiss-Prot sequences in the alignment.
     \n/alignment/family/{slug}/
     \n{slug} is a protein family identifier, e.g. 001_001_001
     """
 
-    def get(self, request, slug=None, segments=None, latin_name=None, statistics=False):
+    def get(self, request, slug=None, segments=None, latin_name=None, statistics=False, include_trembl=False):
         if slug is not None:
             # Check for specific species
             if latin_name is not None:
-                ps = Protein.objects.filter(sequence_type__slug='wt', source__id=1, family__slug__startswith=slug,
+                ps = Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith=slug,
                     species__latin_name=latin_name)
             else:
-                ps = Protein.objects.filter(sequence_type__slug='wt', source__id=1, family__slug__startswith=slug)
+                if not include_trembl:
+                    ps = Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith=slug, source__id=1)
+                else:
+                    ps = Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith=slug)
 
             # take the numbering scheme from the first protein
             #s_slug = Protein.objects.get(entry_name=ps[0]).residue_numbering_scheme_id
@@ -429,7 +444,18 @@ class FamilyAlignment(views.APIView):
 
             return Response(ali_dict)
 
+class FamilyAlignmentAll(FamilyAlignment):
+
+    """
+    Get a full sequence alignment of a protein family including both Swiss-Prot
+    and TrEMBL sequences. Note that this method allows for the alignment of up
+    to a few hundred sequences, larger alignments will result in an error.
+    \n/alignment/family_all/{slug}
+    \n{slug} is a protein family identifier, e.g. 001_001_001_001
+    """
+
 class FamilyAlignmentPartial(FamilyAlignment):
+
     """
     Get a partial sequence alignment of a protein family
     \n/alignment/family/{slug}/{segments}/
@@ -439,6 +465,7 @@ class FamilyAlignmentPartial(FamilyAlignment):
     """
 
 class FamilyAlignmentSpecies(FamilyAlignment):
+
     """
     Get a full sequence alignment of a protein family
     \n/alignment/family/{slug}//{species}
@@ -447,6 +474,7 @@ class FamilyAlignmentSpecies(FamilyAlignment):
     """
 
 class FamilyAlignmentPartialSpecies(FamilyAlignment):
+
     """
     Get a partial sequence alignment of a protein family
     \n/alignment/family/{slug}/{segments}/{species}
@@ -458,6 +486,7 @@ class FamilyAlignmentPartialSpecies(FamilyAlignment):
 
 
 class ProteinSimilaritySearchAlignment(views.APIView):
+
     """
     Get a segment sequence alignment of two or more proteins ranked by similarity
     \n/alignment/similarity/{proteins}/{segments}/
@@ -553,6 +582,7 @@ class ProteinSimilaritySearchAlignment(views.APIView):
             return Response(ali_dict_ordered)
 
 class ProteinAlignment(views.APIView):
+
     """
     Get a full sequence alignment of two or more proteins
     \n/alignment/protein/{proteins}/
@@ -657,6 +687,7 @@ class ProteinAlignment(views.APIView):
             return Response(ali_dict)
 
 class ProteinAlignmentStatistics(ProteinAlignment):
+
     """
     Add a /statics at the end of an alignment in order to
     receive an additional residue property statistics output e.g.:
@@ -667,6 +698,7 @@ class ProteinAlignmentStatistics(ProteinAlignment):
     """
 
 class ProteinAlignmentPartial(ProteinAlignment):
+
     """
     Get a partial sequence alignment of two or more proteins
     \n/alignment/protein/{proteins}/{segments}/
@@ -677,6 +709,7 @@ class ProteinAlignmentPartial(ProteinAlignment):
 
 
 class StructureTemplate(views.APIView):
+
     """
     Get the most similar structure template for a protein using a 7TM alignment
     \n/structure/template/{entry_name}/
@@ -720,6 +753,7 @@ class StructureTemplate(views.APIView):
 
 
 class StructureTemplatePartial(StructureTemplate):
+
     """
     Get the most similar structure template for a protein using a partial alignment
     \n/structure/template/{entry_name}/{segments}/
@@ -729,11 +763,12 @@ class StructureTemplatePartial(StructureTemplate):
 
 
 class StructureAssignGenericNumbers(views.APIView):
+
     """
     Assign generic residue numbers (Ballesteros-Weinstein and GPCRdb schemes) to an uploaded pdb file.
     \n/structure/assign_generic_numbers\n
     e.g.
-    curl -X POST -F "pdb_file=@myfile.pdb" http://gpcrdb.org/services/structure/assign_generic_numbers
+    curl -X POST -F "pdb_file=@myfile.pdb" https://gpcrdb.org/services/structure/assign_generic_numbers
     """
     parser_classes = (FileUploadParser,)
     renderer_classes = (PDBRenderer, )
@@ -753,11 +788,12 @@ class StructureAssignGenericNumbers(views.APIView):
 
 
 class StructureSequenceParser(views.APIView):
+
     """
     Analyze the uploaded pdb structure listing auxiliary proteins, mutations, deletions and insertions.
     \n/structure/structure/parse_pdb\n
     e.g.
-    curl -X POST -F "pdb_file=@myfile.pdb" http://gpcrdb.org/services/structure/parse_pdb
+    curl -X POST -F "pdb_file=@myfile.pdb" https://gpcrdb.org/services/structure/parse_pdb
     """
     parser_classes = (FileUploadParser,)
     renderer_classes = (JSONRenderer, )
@@ -778,6 +814,7 @@ class StructureSequenceParser(views.APIView):
 
 
 class StructureLigandInteractions(generics.ListAPIView):
+
     """
     Get a list of interactions between structure and ligand
     \n/structure/{pdb_code}/interaction/
@@ -800,6 +837,7 @@ class StructureLigandInteractions(generics.ListAPIView):
 
 
 class MutantList(generics.ListAPIView):
+
     """
     Get a list of mutants of single protein instance by entry name
     \n/mutant/{entry_name}/
@@ -812,6 +850,7 @@ class MutantList(generics.ListAPIView):
         return queryset.filter(protein=self.kwargs.get('entry_name'))
 
 class DrugList(views.APIView):
+
     """
     Get a list of drugs for a single protein instance by entry name
     \n/drugs/{proteins}/
@@ -841,6 +880,7 @@ class DrugList(views.APIView):
 
 
 class HelixBoxView(views.APIView):
+
     """
     Get SVG source code for a protein's helix box plot
     \n/plot/helixbox/{entry_name}/
@@ -855,6 +895,7 @@ class HelixBoxView(views.APIView):
 
 
 class SnakePlotView(views.APIView):
+
     """
     Get SVG source code for a protein's snake plot
     \n/plot/snake/{entry_name}/

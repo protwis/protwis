@@ -230,7 +230,7 @@ function copyToClipboard(txt) {
 
         updateJvenn(gprotein_ID)
 
-        var signprot = "{{ signaling_data|safe }}"
+        var signprot = "{{ signalling_data|safe }}"
 
         $("#ClassA").click(function() {
             datatable.clear().draw();
@@ -1053,16 +1053,12 @@ $(window).on("load",function() {
     Inoue, A., Raimondi, F., Kadji, F. M. N., Singh, G., Kishi, T., Uwamizu, A., Ono, Y., Shinjo, Y., Ishida, S., Arang, N., Kawakami, K., Gutkind, J. S., Aoki, J. & Russell, R. B.<br>
     <i>Cell</i> <b>177</b>, 1933-1947.e25 (2019). [PMID:<a href="https://pubmed.ncbi.nlm.nih.gov/31160049/" target="_blank">31160049</a>]
   </p>
+  {% endif %}
   <p>
     <b>Selectivity Landscape of 100 Therapeutically Relevant GPCR Profiled by an Effector Translocation-Based BRET Platform.</b><br>
     Avet, C., Mancini, A., Breton, B., Gouill, C. L., Hauser, A. S., Normand, C., Kobayashi, H., Gross, F., Hogue, M., Lukasheva, V., Morissette, S., Fauman, E., Fortin, J.-P., Schann, S., Leroy, X., Gloriam, D. E. & Bouvier, M.<br>
     <i>bioRxiv</i> 2020.04.20.052027 (2020). <b>doi:</b> <a href=" https://doi.org/10.1101/2020.04.20.052027" target="_blank">10.1101/2020.04.20.052027</a>
   </p>
-{% else %}
-<p>
-  Insert references for the Arrestin Coupling page
-<p>
-{% endif %}
 </div>
 
 {% endblock %}

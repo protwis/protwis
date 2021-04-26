@@ -12,6 +12,7 @@ except:
 from django.conf import settings
 from common.selection import SimpleSelection
 from common.alignment import Alignment
+from common.tools import urlopen_with_retry
 from protein.models import Protein, ProteinSegment, ProteinConformation, ProteinState
 from residue.functions import dgn, ggn
 from residue.models import Residue, ResidueGenericNumberEquivalent
@@ -111,7 +112,7 @@ class BlastSearchOnline(object):
 
         #used urllib, urllib2 throws an error here for some reason
         try:
-            response = urllib.urlopen(url)
+            response = urlopen(url) #nosec
             page = response.readlines()
             return page[1].strip().lower()
 
@@ -563,7 +564,7 @@ class HSExposureCB(AbstractPropertyMap):
     vector based on three consecutive CA atoms. This is done by two separate
     subclasses.
     """
-    def __init__(self, model, radius, offset=0, hse_up_key='HSE_U', hse_down_key='HSE_D', angle_key=None, check_chain_breaks=False, 
+    def __init__(self, model, radius, offset=0, hse_up_key='HSE_U', hse_down_key='HSE_D', angle_key=None, check_chain_breaks=False,
                  check_knots=False, receptor=None, signprot=None,  restrict_to_chain=[], check_hetatoms=False):
         """
         @param model: model
@@ -617,7 +618,7 @@ class HSExposureCB(AbstractPropertyMap):
                     het_resis.append(res)
         self.clash_pairs = []
         self.chain_breaks = []
-        
+
         if check_knots:
             possible_knots = PossibleKnots(receptor, signprot)
             knot_resis = possible_knots.get_resnums()
@@ -1081,7 +1082,7 @@ class PdbStateIdentifier():
 
             except:
                 print('Error: {} no matching rotamers ({}, {})'.format(self.structure.pdb_code.index, residue1, residue2))
-                return False   
+                return False
 
     def calculate_CA_distance(self, residue1, residue2):
         diff_vector = residue1['CA'].get_coord()-residue2['CA'].get_coord()
@@ -1103,10 +1104,10 @@ class StructureSeqNumOverwrite():
             self.lookup = OrderedDict()
             self.wt_pdb_table = OrderedDict()
             self.pdb_wt_table = OrderedDict()
-            
+
     def seq_num_overwrite(self, overwrite_target):
         ''' Overwrites Residue object sequence numbers in GPCRDB
-            @param overwrite_target: 'pdb' if converting pdb to wt, 'wt' if the other way around 
+            @param overwrite_target: 'pdb' if converting pdb to wt, 'wt' if the other way around
         '''
         resis = Residue.objects.filter(protein_conformation=self.structure.protein_conformation)
         if overwrite_target=='pdb':
@@ -1123,7 +1124,7 @@ class StructureBuildCheck():
     local_yaml_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'structures'])
     local_annotation_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation'])
     local_wt_pdb_lookup_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'wt_pdb_lookup'])
-    
+
     def __init__(self):
         with open(self.local_annotation_dir+'/xtal_segends.yaml', 'r') as f:
             self.segends_dict = yaml.safe_load(f)
@@ -1200,7 +1201,7 @@ class StructureBuildCheck():
                                 self.end_error.append([structure, seg, seg_resis.reverse()[0].sequence_number, anno_e])
         else:
             print('Warning: {} not annotated'.format(key))
-            
+
 
 class ModelRotamer(object):
     def __init__(self):
@@ -1255,19 +1256,23 @@ def right_rotamer_select(rotamer, chain=None):
 def get_pdb_ids(uniprot_id):
     pdb_list = []
     data = { "query": { "type": "terminal", "service": "text", "parameters":{ "attribute":"rcsb_polymer_entity_container_identifiers.reference_sequence_identifiers.database_accession", "operator":"in", "value":[ uniprot_id ] } }, "request_options": { "pager": {"start": 0,"rows": 99999 }}, "return_type": "entry" }
-    url = 'http://search.rcsb.org/rcsbsearch/v1/query'
+    url = 'https://search.rcsb.org/rcsbsearch/v1/query'
     req = Request(url)
     req.add_header('Content-Type', 'application/json; charset=utf-8')
     jsondata = json.dumps(data)
     jsondataasbytes = jsondata.encode('utf-8')
     req.add_header('Content-Length', len(jsondataasbytes))
-    response = urlopen(req, jsondataasbytes)
+    response = urlopen_with_retry(req, jsondataasbytes)
+    if response == False:
+        logger.warning(f"ERROR: no valid response from RCSB for accession code {uniprot_id}")
+        return []
+
     rr = response.read()
     if len(rr)==0:
         return []
     out = json.loads(rr)
     for i in out['result_set']:
         pdb_list.append(i['identifier'])
+
     response.close()
     return pdb_list
-

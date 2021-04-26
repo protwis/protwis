@@ -97,7 +97,8 @@ class Command(BuildHumanProteins):
                     continue
 
                 # append entry_name to lookup list
-                construct_entry_names.append(sd['protein'])
+                if sd['protein'] not in construct_entry_names:
+                    construct_entry_names.append(sd['protein'])
 
             # parse files
             filenames = os.listdir(self.local_uniprot_dir)
@@ -128,7 +129,11 @@ class Command(BuildHumanProteins):
 
                 up = self.parse_uniprot_file(accession)
                 # Skip TREMBL on first loop, and SWISSPROT on second
-                if reviewed != up['source']:
+                if 'source' in up:
+                    if reviewed != up['source']:
+                        continue
+                else:
+                    ### For now just skip entries that don't have a source
                     continue
 
                 # skip human proteins
@@ -173,7 +178,7 @@ class Command(BuildHumanProteins):
                         # NOTE: when extending this - make a dictionary
                         # NOTE: consider utilizing e.g. OrthoDB
                         if up['entry_name'] == "b1b1u5_9arac":
-                           split_entry_name = ["opsd", ""]
+                            split_entry_name = ["opsd", ""]
 
                         # add _ to the split entry name to avoid e.g. gp1 matching gp139
                         entry_name_query = split_entry_name[0] + '_'

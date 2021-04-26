@@ -13,7 +13,7 @@
     <link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="{% static 'home/css/jquery.powertip.css' %}" />
 {% endblock %}
-    
+
 {% block addon_js %}
     <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
     <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
@@ -203,7 +203,7 @@
                         <tr model_id='{{structure.pk}}'>
                     {% endif %}
                         <td class="text-center"><input class="alt" type="checkbox" id="{{ structure.pk }}"></td>
-                        
+
                         <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha,family"|safe }}</td>
                         {% if structure.protein %}
                             <td><a target='_blank' href="/signprot/{{ structure.protein.entry_name }}">{{ structure.extra_proteins.all|only_one_subunit:"Alpha,name"|safe }}</a></td>
@@ -211,7 +211,7 @@
                             <td><a target='_blank' href="/signprot/{{ structure.extra_proteins.all|only_one_subunit:'Alpha,entry_name' }}">{{ structure.extra_proteins.all|only_one_subunit:"Alpha,name"|safe }}</a></td>
                         {% endif %}
                         <td class='expand'>{{ structure.extra_proteins.all|only_one_subunit:"Alpha,species"|safe }}</td>
-                        
+
                         <td class='expand'>
                             {{ structure.extra_proteins.all|only_one_subunit:"Alpha,note"|safe }}
                         </td>
@@ -230,9 +230,9 @@
                         {% endif %}
                         <td>
                             {% if structure.refined %}
-                            <a href="homology_models/{{ structure.pdb_code.index }}_{{structure.state.slug}}">{{structure.pdb_code.index}}_refined</a>
+                              <a target='_blank' href="refined/{{ structure.pdb_code.index|upper }}">{{structure.pdb_code.index}}_refined</a>
                             {% else %}
-                            -
+                              -
                             {% endif %}
                         </td>
                         <td class="text-center">{{ structure.resolution|floatformat:"1" }}</td>

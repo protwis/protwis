@@ -170,16 +170,17 @@
 
 
 <script type="text/javascript">
-	function myFunction(url, title, win, w, h) {
+	function openPopup(url, title, win, w, h) {
 		const y = win.top.outerHeight / 2 + win.top.screenY - (h / 2);
 		const x = win.top.outerWidth / 2 + win.top.screenX - (w / 2);
 		return win.open(url, title, 'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width=' + w + ', height=' + h + ', top=' + y + ', left=' + x);
 	}
 
     function populate_selection(id){
-        AddToSelection('reference', 'protein_entry', id)
-        SelectFullSequence('segments')
-        window.open('/mutations/render', '_blank')
+			  ClearSelection("targets");
+        AddToSelection("targets", "family", id);
+        SelectFullSequence("segments");
+        window.open("/mutations/render", "_blank");
 
     }
 
@@ -274,7 +275,7 @@
 							},
 							success: function() {
 
-								myFunction('/ligand/browservendors', 'Detail View', window, 850, 1000)
+								openPopup('/ligand/browservendors', 'Detail View', window, 850, 1000)
 							}
 						});
 					},
@@ -504,6 +505,14 @@
 		background-color: white;
 		border: solid 1px;
 		transform: scale(2.5);
+	}
+
+	div.align-items-start table {
+		table-layout: fixed;
+	}
+
+	div.align-items-start img {
+		max-width: 100%;
 	}
 </style>
 {% endblock %}
