@@ -978,7 +978,9 @@ function nodeStyler(element, node){
             class_tooltip.transition()
               .style("opacity", .9);
               if (score === undefined){
-                class_tooltip.html("<b>Root node</b>");
+                class_tooltip.html("<b>Root node</b>")
+                  .style("left", (d3.event.pageX) + "px")
+                  .style("top", (d3.event.pageY - 28) + "px");
               } else {
                 class_tooltip.html("<b>Silhouette score:</b> " + score)
                   .style("left", (d3.event.pageX) + "px")

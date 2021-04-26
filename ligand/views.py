@@ -493,12 +493,13 @@ class LigandBiasStatistics(TemplateView):
 
         context = super().get_context_data(**kwargs)
         # assays = AnalyzedExperiment.objects.all().prefetch_related('receptor__family__parent__parent__parent', 'receptor__family')
-
         lig_count_dict = {}
-        assays_lig = list(AnalyzedExperiment.objects.all().values(
-            'receptor__family__parent__parent__parent__name').annotate(c=Count('ligand_id', distinct=True)))
+        assays_lig = list(AnalyzedAssay.objects
+            .filter(log_bias_factor__gte=2)
+            .values('experiment__receptor__family__parent__parent__parent__name')
+            .annotate(c=Count('experiment__ligand_id', distinct=True)))
         for a in assays_lig:
-            lig_count_dict[a['receptor__family__parent__parent__parent__name']] = a['c']
+            lig_count_dict[a['experiment__receptor__family__parent__parent__parent__name']] = a['c']
         target_count_dict = {}
         assays_target = list(AnalyzedExperiment.objects.all().values(
             'receptor__family__parent__parent__parent__name').annotate(c=Count('receptor__family', distinct=True)))
@@ -512,7 +513,7 @@ class LigandBiasStatistics(TemplateView):
             prot_count_dict[pf['family__parent__parent__parent__name']] = pf['c']
 
         classes = ProteinFamily.objects.filter(
-            slug__in=['001', '002', '003', '004', '005', '006', '007'])  # ugly but fast
+            slug__in=['001', '002', '003', '004', '006', '007'])  # ugly but fast
         ligands = []
 
         for fam in classes:
@@ -628,7 +629,41 @@ class LigandBiasStatistics(TemplateView):
             rec_uniprot = rec.entry_short()
             rec_iuphar = rec.family.name.replace("receptor", '').replace(
                 "<i>", "").replace("</i>", "").strip()
-            whole_rec_dict[rec_uniprot] = [rec_iuphar]
+            if (rec_iuphar[0].isupper()) or (rec_iuphar[0].isdigit()):
+                whole_rec_dict[rec_uniprot] = [rec_iuphar]
+            else:
+                whole_rec_dict[rec_uniprot] = [rec_iuphar.capitalize()]
+
+        assay_qs = AnalyzedAssay.objects.filter(
+            assay_description__isnull=True).values_list(
+            "family", "experiment__receptor__entry_name").order_by(
+            "family", "experiment__receptor__entry_name").distinct(
+            "family", "experiment__receptor__entry_name")
+
+
+        ligand_qs = AnalyzedAssay.objects.filter(
+            order_no=0,
+            assay_description__isnull=True).values_list(
+            "family", "experiment__receptor__entry_name", "experiment__ligand").order_by(
+            "family", "experiment__receptor__entry_name", "experiment__ligand").distinct(
+            "family", "experiment__receptor__entry_name", "experiment__ligand")
+
+        circles = {}
+        for data in assay_qs:
+            if data[1].split('_')[1] == 'human':
+                key = data[1].split('_')[0].upper()
+                if key not in circles.keys():
+                    circles[key] = {}
+                    circles[key][data[0]] = 0
+                else:
+                    circles[key][data[0]] = 0
+
+        for data in ligand_qs:
+            if data[1].split('_')[1] == 'human':
+                key = data[1].split('_')[0].upper()
+                circles[key][data[0]] += 1
+
+        context["circles_data"] = json.dumps(circles)
         context["whole_receptors"] = json.dumps(whole_rec_dict)
         context["render"] = "bias"
         return context
