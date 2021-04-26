@@ -22,6 +22,7 @@ class Command(BaseBuild):
     publication_cache = {}
     ligand_cache = {}
     data_all = []
+    endogenous_assays = list()
 
     def add_arguments(self, parser):
         parser.add_argument('-p', '--proc',
@@ -119,7 +120,6 @@ class Command(BaseBuild):
             temp_dict = dict()
             temp = dict()
             doubles = []
-            temp['ligand_source_id'] = None
             temp['publication'] = j['main'].publication
             temp['species'] = j['main'].receptor.species.common_name
             # temp['ligand'] = j['main'].ligand
@@ -137,10 +137,12 @@ class Command(BaseBuild):
             temp['reference_ligand'] = None
             if not j['children']:
                 continue
+            temp_dict['assay_id'] = j['children'][0].id
             temp_dict['potency'] = ''
             temp_dict['t_factor'] = ''
             temp_dict['log_bias_factor'] = ''
             temp_dict['order_no'] = 0
+            temp_dict['order_bias_value'] = 0
             temp_dict['reference_ligand'] = None
             temp_dict['signalling_protein'] = j['children'][0].signalling_protein.lower()
             temp_dict['cell_line'] = j['children'][0].cell_line
@@ -179,6 +181,13 @@ class Command(BaseBuild):
         self.logger.info('Queryset processed')
         return send
 
+    def get_endogenous_assays(self,data):
+        for experiment in data:
+            for assay in experiment['assay']:
+                if assay['bias_reference'] == 'Endogenous' or assay['bias_reference'] == 'Ref. and endo.':
+                    self.endogenous_assays.append(assay)
+        return self.endogenous_assays
+
     def combine_unique(self, data):
         '''
         combining tested assays and reference assays
@@ -201,63 +210,29 @@ class Command(BaseBuild):
         '''
         separate tested assays and reference assays
         '''
+        assay_counter = 0
         for j in data.items():
             assays, reference = self.return_refenced_assays(j[1]['assay'])
+            j[1].pop('assay')
             j[1]['assay_list'] = assays
             j[1]['reference_assays_list'] = reference
+            assay_counter = assay_counter+len(j[1]['assay_list'])+len(j[1]['reference_assays_list'])
+        self.logger.info('references processed')
         return data
 
     def return_refenced_assays(self, assays):
         # pylint: disable=no-member
+        # no error
         main, reference = list(), list()
         for assay in assays:
-            if assay['bias_reference'] != '':
+            if assay['bias_reference'] == 'Endogenous' or assay['bias_reference'] == 'Ref. and endo.':
                 reference.append(assay)
-            else:
+            elif assay['bias_reference'] == '':
                 main.append(assay)
         sorted_main = sorted(main, key=lambda k: k['quantitive_activity']
                              if k['quantitive_activity'] else 999999, reverse=True)
         sorted_reference = reference
-        if len(sorted_reference) == 0:
-            self.get_reference_from_emax(assays)
-        # if len(sorted_reference) == 0:
-        #     print('implementation required')
         return sorted_main, sorted_reference
-
-    def filter_reference_assay(self, reference_return, reference_ligand):
-        reference_return[:] = [d for d in reference_return if d.get('ligand') == reference_ligand]
-        self.logger.info('Trying to get reference from assays')
-        return reference_return
-
-    def filter_assay_reference(self, assay_return, reference_ligand):
-        assay_return[:] = [d for d in assay_return if d.get('ligand') != reference_ligand]
-        self.logger.info('Trying to get filtering references from assays')
-        return assay_return
-
-    def chose_reference_from_assays(self, assays):
-        references = list()
-        final_assay = list()
-        reference_ligand = Ligand()
-        for i in reversed(assays):
-            if (i['quantitive_activity'] and i['quantitive_activity'] is not None and
-                i['quantitive_efficacy'] and i['quantitive_efficacy'] is not None and
-                i['ligand'] is not None):
-                reference_ligand=i['ligand']
-        reference_return = assays.copy()
-        assay_return = assays.copy()
-        references=self.filter_reference_assay(reference_return,reference_ligand)
-        final_assay=self.filter_assay_reference(assay_return,reference_ligand)
-        self.logger.info('return reference assay')
-        return references, final_assay
-
-
-    def get_reference_from_emax(self, assays):
-        reference_ligand = list()
-        for i in assays:
-            if i['emax_reference_ligand'] == i['ligand']:
-                reference_ligand.append(i)
-                self.logger.info('return reference emax')
-        return reference_ligand
 
     def separate_ligands(self, context):
         content = dict()
@@ -279,16 +254,15 @@ class Command(BaseBuild):
                     content[name]['article_quantity'] = i[1]['article_quantity']
                     content[name]['labs_quantity'] = i[1]['labs_quantity']
                     content[name]['assay_list'] = list()
-                    content[name]['ligand_source_type'] = i[1]['ligand_source_type']
-                    content[name]['ligand_source_id'] = i[1]['ligand_source_id']
                     content[name]['assay_list'].append(assay)
-                    content[name]['reference_assays_list'] = i[1]['reference_assays_list']
-                    content[name]['assay'] = i[1]['assay']
+                    content[name]['reference_assays_list'] = list()
+                    content[name]['reference_assays_list'].extend(i[1]['reference_assays_list'])
+                    content[name]['ligand_source_id'] = i[1]['ligand_source_id']
+                    content[name]['ligand_source_type'] = i[1]['ligand_source_type']
+        self.logger.info('returned finalised assay')
         return content
 
-
     def limit_family_set(self, assay_list):
-        # pylint: disable=no-member
         families = list()
         proteins = set()
         for assay in assay_list:
@@ -306,7 +280,6 @@ class Command(BaseBuild):
                     continue
         return families
 
-
     def limit_family_set_subs(self, assay_list):
         families = list()
         proteins = set()
@@ -316,14 +289,31 @@ class Command(BaseBuild):
                 families.append(assay)
             else:
                 compare_val = next(item for item in families if item["signalling_protein"] == assay['signalling_protein'])
+                # print('\n***dublicate', compare_val['signalling_protein'], compare_val['quantitive_activity'])
                 try:
                     if assay['quantitive_activity'] < compare_val['quantitive_activity']:
                         families[:] = [d for d in families if d.get('signalling_protein') != compare_val['signalling_protein']]
                         families.append(assay)
-                except:
+
+                except TypeError:
                     families.append(assay)
                     self.logger.info('limit_family_set_subs error')
         return families
+
+    def sort_assay_list(self, i):
+        sorted_assays = dict()
+        sorted_assays = sorted(i[1]['assay_list'], key=lambda k: k['quantitive_activity']
+                      if k['quantitive_activity'] else 999999, reverse=False)
+        return sorted_assays
+
+    def calculate_bias_factor_value(self, sorted_assays, references):
+        ## TODO: pick
+        for assay in sorted_assays:
+            for reference in references:
+                if assay['signalling_protein'] == reference['signalling_protein']:
+                    if assay['assay_type'] == reference['assay_type']:
+                        if assay['cell_line'] == reference['cell_line']:
+                            import pdb; pdb.set_trace()
 
     def process_calculation(self, context):
         for i in context.items():
@@ -336,76 +326,90 @@ class Command(BaseBuild):
                 else:
                     pass
             i[1]['assay_list'] = temp_obj
-            test = sorted(i[1]['assay_list'], key=lambda k: k['quantitive_activity']
-                          if k['quantitive_activity'] else 999999, reverse=False)
+
+            sorted_assays = self.sort_assay_list(i)
+            
+            self.calculate_bias_factor_value(sorted_assays, i[1]['reference_assays_list'])
+            #endogenoues ligand - calculcate bias factor value for ranking
             for item in enumerate(test):
                 item[1]['order_no'] = item[0]
-            i[1]['biasdata'] = test
-            i[1]['reference_lists'] = list()
+
+            i[1]['biasdata'] = sorted_assays
             i[1].pop('assay_list')
             # calculate log bias
-            i[1]['reference_lists'] = self.calc_bias_factor(i[1]['biasdata'], i[1]['reference_assays_list'], i[1]['assay'])
-
+            self.calc_bias_factor(i[1]['biasdata'], i[1]['reference_assays_list'])
             # recalculates lbf if it is negative
             i[1]['biasdata'] = self.validate_lbf(i)
             self.calc_potency_and_transduction(i[1]['biasdata'])
+            self.logger.info('process_calculation error')
         return context
 
 # pylint: disable=C0301
-    def calc_bias_factor(self, biasdata, reference, assay):
-        reference_lists = list()
-        most_reference = dict()
-        most_potent = dict()
-        for i in biasdata:
-            if i['order_no'] == 0:
-                most_potent = i
-                most_reference = self.get_reference_assay(reference, most_potent)
-                reference_lists.append(most_reference)
-                i['log_bias_factor'] = None
+    def calc_bias_factor(self, biasdata, reference):
+            most_reference = dict()
+            most_potent = dict()
+            for i in biasdata:
+                if i['order_no'] == 0:
+                    most_potent = i
+                    most_reference = self.get_reference_assay(reference, most_potent)
+                    i['log_bias_factor'] = None
 
-        for i in biasdata:
-            if i['order_no'] != 0:
-                temp_reference = self.get_reference_assay(reference, i)
-                reference_lists.append(temp_reference)
-                try:
-                    if (i['quantitive_measure_type'].lower() == 'ec50' and temp_reference['quantitive_measure_type'].lower() == 'ec50' and
-                            most_potent['quantitive_measure_type'].lower() == 'ec50' and most_reference['quantitive_measure_type'].lower() == 'ec50'):
-                        a = 0
-                        b = 0
-                        c = 0
-                        d = 0
-                        a = math.log10(
-                            most_potent['quantitive_efficacy'] / most_potent['quantitive_activity'])
-                        b = math.log10(
-                            most_reference['quantitive_efficacy'] / most_reference['quantitive_activity'])
-                        c = math.log10(
-                            i['quantitive_efficacy'] / i['quantitive_activity'])
-                        d = math.log10(
-                            temp_reference['quantitive_efficacy'] / temp_reference['quantitive_activity'])
-                        temp_calculation = self.caclulate_bias_factor_variables(
-                            a, b, c, d)
-                        i['log_bias_factor'] = round(temp_calculation, 1)
-                    elif (i['quantitive_measure_type'].lower() == 'ic50' and temp_reference['quantitive_measure_type'].lower() == 'ic50'):
-                        i['log_bias_factor'] = 'Only agonist in main pathway'
-                except:
+            for i in biasdata:
+                if i['order_no'] != 0:
+                    temp_reference = self.get_reference_assay(reference, i)
                     try:
-                        if i['qualitative_activity'] == 'No activity':
-                            i['log_bias_factor'] = "Full Bias"
-                        elif i['qualitative_activity'] == 'Low activity':
-                            i['log_bias_factor'] = "High Bias"
-                        elif i['qualitative_activity'] == 'High activity':
-                            i['log_bias_factor'] = "Low Bias"
+                        if (i['quantitive_measure_type'].lower() == 'ec50'
+                        and temp_reference['quantitive_measure_type'].lower() == 'ec50'
+                        and most_potent['quantitive_measure_type'].lower() == 'ec50'
+                        and most_reference['quantitive_measure_type'].lower() == 'ec50'):
+
+                            a = 0
+                            b = 0
+                            c = 0
+                            d = 0
+                            a = math.log10(
+                                most_potent['quantitive_efficacy'] / most_potent['quantitive_activity'])
+                            b = math.log10(
+                                most_reference['quantitive_efficacy'] / most_reference['quantitive_activity'])
+                            c = math.log10(
+                                i['quantitive_efficacy'] / i['quantitive_activity'])
+                            d = math.log10(
+                                temp_reference['quantitive_efficacy'] / temp_reference['quantitive_activity'])
+                            temp_calculation = self.caclulate_bias_factor_variables(
+                                a, b, c, d)
+                            i['log_bias_factor'] = round(temp_calculation, 1)
+
                     except:
-                        i['log_bias_factor'] = None
-        return reference_lists
+                        try:
+                            if (i['quantitive_measure_type'].lower() == 'ic50' and temp_reference['quantitive_measure_type'].lower() == 'ic50'):
+                                i['log_bias_factor'] = 'Only agonist in main pathway'
+                        except:
+                            i['log_bias_factor'] = None
+                        try:
+                            if i['qualitative_activity'] == 'No activity':
+                                i['log_bias_factor'] = "Full Bias"
+                            elif i['qualitative_activity'] == 'Low activity':
+                                i['log_bias_factor'] = "High Bias"
+                            elif i['qualitative_activity'] == 'High activity':
+                                i['log_bias_factor'] = "Low Bias"
+                        except:
+                            self.logger.info('log_bias_factor error')
+                            i['log_bias_factor'] = 'None'
 
     def get_reference_assay(self, reference, assay):
         return_assay = dict()
+        temp_ref = list()
         try:
             for i in reference:
                 if i['signalling_protein'] == assay['signalling_protein']:
-                    if i['assay_type'] == assay['assay_type']:
-                        return_assay = i
+                    temp_ref.append(i)
+            if len(temp_ref)>1:
+                for temp_assay in temp_ref:
+                    if temp_assay['quantitive_efficacy'] is not None and temp_assay['quantitive_activity'] is not None:
+                        return_assay = temp_assay
+            else:
+                return_assay = temp_ref[0]
+            return_assay = temp_assay
         except:
             self.logger.info('get_reference_assay error')
             return return_assay
@@ -433,17 +437,16 @@ class Command(BaseBuild):
         # T_factor -- bias factor
         for i in biasdata:
             if i['order_no'] > 0:
-                try:
+                if i['quantitive_measure_type'] and i['quantitive_measure_type'] is not None:
                     if i['quantitive_measure_type'].lower() == 'ec50' or i['quantitive_measure_type'].lower() == 'ic50':
-
                         if i['quantitive_activity'] is not None and i['quantitive_activity'] != 0 and most_potent['quantitive_activity'] is not None:
                             i['potency'] = round(
                                 i['quantitive_activity'] / most_potent['quantitive_activity'], 1)
                         elif i['quantitive_measure_type'].lower() == 'pec50' or i['quantitive_measure_type'].lower() == 'pic50':
                             i['potency'] = round(
                                 most_potent['quantitive_activity'] - i['quantitive_activity'], 1)
-                except:
-                    i['potency'] = None
+                        else:
+                            i['potency'] = None
 
                 if i['t_coefficient'] is not None and most_potent['t_coefficient'] is not None:
                     i['t_factor'] = round(
@@ -458,7 +461,7 @@ class Command(BaseBuild):
                 if x['log_bias_factor'] < 0.0:
                     j = next((item for item in i[1]['biasdata'] if item["order_no"] == 0), None)
                     x['order_no'], j['order_no'] = j['order_no'], x['order_no']
-                    self.calc_bias_factor(i[1]['biasdata'], i[1]['reference_assays_list'], i[1]['assay'])
+                    self.calc_bias_factor(i[1]['biasdata'], i[1]['reference_assays_list'])
                     self.validate_lbf(i)
                 else:
                     self.logger.info('validate_lbf error')
@@ -513,37 +516,35 @@ class Command(BaseBuild):
                                                          emax_ligand_reference=emax_ligand
                                                          )
                         experiment_assay.save()
-                    for ex in i[1]['reference_lists']:
-                        try:
-                            emax_ligand = ex['emax_reference_ligand']
-                            experiment_assay = AnalyzedAssay(experiment=experiment_entry,
-                                                             assay_description='reference_assay',
-                                                             family=ex['family'],
-                                                             order_no=ex['order_no'],
-                                                             signalling_protein=ex['signalling_protein'],
-                                                             cell_line=ex['cell_line'],
-                                                             assay_type=ex['assay_type'],
-                                                             assay_measure=ex['assay_measure_method'],
-                                                             assay_time_resolved=ex['assay_time_resolved'],
-                                                             ligand_function=ex['ligand_function'],
-                                                             quantitive_measure_type=ex['quantitive_measure_type'],
-                                                             quantitive_activity=ex['quantitive_activity'],
-                                                             quantitive_activity_initial=ex['quantitive_activity_initial'],
-                                                             quantitive_unit=ex['quantitive_unit'],
-                                                             qualitative_activity=ex['qualitative_activity'],
-                                                             quantitive_efficacy=ex['quantitive_efficacy'],
-                                                             efficacy_measure_type=ex['efficacy_measure_type'],
-                                                             efficacy_unit=ex['efficacy_unit'],
-                                                             potency=ex['potency'],
-                                                             t_coefficient=ex['t_coefficient'],
-                                                             t_value=ex['t_coefficient_initial'],
-                                                             t_factor=ex['t_factor'],
-                                                             log_bias_factor=ex['log_bias_factor'],
-                                                             emax_ligand_reference=emax_ligand
-                                                             )
-                            experiment_assay.save()
-                        except:
-                            pass
+                    for ex in i[1]['reference_assays_list']:
+
+                        emax_ligand = ex['emax_reference_ligand']
+                        experiment_assay = AnalyzedAssay(experiment=experiment_entry,
+                                                         assay_description='reference_assay',
+                                                         family=ex['family'],
+                                                         order_no=ex['order_no'],
+                                                         signalling_protein=ex['signalling_protein'],
+                                                         cell_line=ex['cell_line'],
+                                                         assay_type=ex['assay_type'],
+                                                         assay_measure=ex['assay_measure_method'],
+                                                         assay_time_resolved=ex['assay_time_resolved'],
+                                                         ligand_function=ex['ligand_function'],
+                                                         quantitive_measure_type=ex['quantitive_measure_type'],
+                                                         quantitive_activity=ex['quantitive_activity'],
+                                                         quantitive_activity_initial=ex['quantitive_activity_initial'],
+                                                         quantitive_unit=ex['quantitive_unit'],
+                                                         qualitative_activity=ex['qualitative_activity'],
+                                                         quantitive_efficacy=ex['quantitive_efficacy'],
+                                                         efficacy_measure_type=ex['efficacy_measure_type'],
+                                                         efficacy_unit=ex['efficacy_unit'],
+                                                         potency=ex['potency'],
+                                                         t_coefficient=ex['t_coefficient'],
+                                                         t_value=ex['t_coefficient_initial'],
+                                                         t_factor=ex['t_factor'],
+                                                         log_bias_factor=ex['log_bias_factor'],
+                                                         emax_ligand_reference=emax_ligand
+                                                         )
+                        experiment_assay.save()
                 else:
                     pass
 
@@ -603,11 +604,12 @@ class Command(BaseBuild):
         print('Build bias data gproteins')
         context = dict()
         content = self.get_from_model()
-        print('stage # 1: Getting data finished, data points: ', len(content))
+        print('stage # 1 : Getting data finished, data points: ', len(content))
         content_with_children = self.process_data(content)
         print('stage # 2: Processing children in queryset finished', len(content_with_children))
         changed_data = self.queryset_to_dict(content_with_children)
         print('stage # 3: Converting queryset into dict finished', len(changed_data))
+        endogenoues_assays = self.get_endogenous_assays(changed_data)
         send = self.combine_unique(changed_data)
         referenced_assay = self.process_referenced_assays(send)
         print('stage # 4: Separating reference assays is finished', len(referenced_assay))
