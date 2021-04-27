@@ -2,7 +2,8 @@ from django.shortcuts import render
 from django.conf import settings
 from django.views.generic import TemplateView, View
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
-from django.db.models import Count, Q, Prefetch
+from django.db.models import Count, Q, Prefetch, TextField
+from django.db.models.functions import Concat
 from django import forms
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page
@@ -534,16 +535,16 @@ class StructureStatistics(TemplateView):
 
 		unique_structs = Structure.objects.order_by('protein_conformation__protein__family__name', 'state',
 			'publication_date', 'resolution').distinct('protein_conformation__protein__family__name').prefetch_related('protein_conformation__protein__family')
-		# unique_complexes = all_complexes.distinct('ligands', 'protein_conformation__protein__family__name')
 		unique_complexes = StructureLigandInteraction.objects.filter(annotated=True).distinct('ligand', 'structure__protein_conformation__protein__family')
 		unique_gprots = unique_structs.filter(id__in=SignprotComplex.objects.filter(protein__family__slug__startswith='100').values_list("structure__id", flat=True))
-		unique_g_A_complexes = unique_gprots.filter(protein_conformation__protein__family__slug__startswith='001')
-		unique_g_B1_complexes = unique_gprots.filter(protein_conformation__protein__family__slug__startswith='002')
-		unique_g_B2_complexes = unique_gprots.filter(protein_conformation__protein__family__slug__startswith='003')
-		unique_g_C_complexes = unique_gprots.filter(protein_conformation__protein__family__slug__startswith='004')
-		unique_g_D1_complexes = unique_gprots.filter(protein_conformation__protein__family__slug__startswith='005')
-		unique_g_F_complexes = unique_gprots.filter(protein_conformation__protein__family__slug__startswith='006')
-		unique_g_T2_complexes = unique_gprots.filter(protein_conformation__protein__family__slug__startswith='007')
+		# unique_g_A_complexes = unique_gprots.filter(protein_conformation__protein__family__slug__startswith='001')
+		unique_g_A_complexes = all_g_A_complexes.annotate(distinct_name=Concat('signprot_complex__protein__family__parent__name', 'protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
+		unique_g_B1_complexes = all_g_B1_complexes.annotate(distinct_name=Concat('signprot_complex__protein__family__parent__name', 'protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
+		unique_g_B2_complexes = all_g_B2_complexes.annotate(distinct_name=Concat('signprot_complex__protein__family__parent__name', 'protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
+		unique_g_C_complexes = all_g_C_complexes.annotate(distinct_name=Concat('signprot_complex__protein__family__parent__name', 'protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
+		unique_g_D1_complexes = all_g_D1_complexes.annotate(distinct_name=Concat('signprot_complex__protein__family__parent__name', 'protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
+		unique_g_F_complexes = all_g_F_complexes.annotate(distinct_name=Concat('signprot_complex__protein__family__parent__name', 'protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
+		unique_g_T2_complexes = all_g_T2_complexes.annotate(distinct_name=Concat('signprot_complex__protein__family__parent__name', 'protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
 		unique_active = unique_structs.filter(protein_conformation__state__slug = 'active')
 
 		#Stats
