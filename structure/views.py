@@ -537,7 +537,6 @@ class StructureStatistics(TemplateView):
 		# unique_complexes = all_complexes.distinct('ligands', 'protein_conformation__protein__family__name')
 		unique_complexes = StructureLigandInteraction.objects.filter(annotated=True).distinct('ligand', 'structure__protein_conformation__protein__family')
 		unique_gprots = unique_structs.filter(id__in=SignprotComplex.objects.filter(protein__family__slug__startswith='100').values_list("structure__id", flat=True))
-		unique_gprots_complexes = unique_gprots.distinct('structureligandinteraction__ligand', 'protein_conformation__protein__family')
 		unique_g_A_complexes = unique_gprots.filter(protein_conformation__protein__family__slug__startswith='001')
 		unique_g_B1_complexes = unique_gprots.filter(protein_conformation__protein__family__slug__startswith='002')
 		unique_g_B2_complexes = unique_gprots.filter(protein_conformation__protein__family__slug__startswith='003')
