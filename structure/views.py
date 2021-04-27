@@ -516,12 +516,17 @@ class StructureStatistics(TemplateView):
 			lookup[f.slug] = f.name
 
 		all_structs = Structure.objects.all().prefetch_related('protein_conformation__protein__family')
+		noncomplex_gprots = SignprotStructure.objects.filter(protein__family__slug__startswith='100')
 		all_complexes = all_structs.exclude(ligands=None)
-
 		all_gprots = all_structs.filter(id__in=SignprotComplex.objects.filter(protein__family__slug__startswith='100').values_list("structure__id", flat=True))
 		###### these are query sets for G-Prot Structure Statistics
-		all_gprots_complexes = all_structs.exclude(ligands=None).filter(id__in=SignprotComplex.objects.filter(protein__family__slug__startswith='100').values_list("structure__id", flat=True))
-		unique_gprots_complexes = all_gprots_complexes.distinct('ligands', 'protein_conformation__protein__family__name')
+		all_g_A_complexes = all_gprots.filter(protein_conformation__protein__family__slug__startswith='001')
+		all_g_B1_complexes = all_gprots.filter(protein_conformation__protein__family__slug__startswith='002')
+		all_g_B2_complexes = all_gprots.filter(protein_conformation__protein__family__slug__startswith='003')
+		all_g_C_complexes = all_gprots.filter(protein_conformation__protein__family__slug__startswith='004')
+		all_g_D1_complexes = all_gprots.filter(protein_conformation__protein__family__slug__startswith='005')
+		all_g_F_complexes = all_gprots.filter(protein_conformation__protein__family__slug__startswith='006')
+		all_g_T2_complexes = all_gprots.filter(protein_conformation__protein__family__slug__startswith='007')
 		######
 		all_active = all_structs.filter(protein_conformation__state__slug = 'active')
 
@@ -531,8 +536,15 @@ class StructureStatistics(TemplateView):
 			'publication_date', 'resolution').distinct('protein_conformation__protein__family__name').prefetch_related('protein_conformation__protein__family')
 		# unique_complexes = all_complexes.distinct('ligands', 'protein_conformation__protein__family__name')
 		unique_complexes = StructureLigandInteraction.objects.filter(annotated=True).distinct('ligand', 'structure__protein_conformation__protein__family')
-
 		unique_gprots = unique_structs.filter(id__in=SignprotComplex.objects.filter(protein__family__slug__startswith='100').values_list("structure__id", flat=True))
+		unique_gprots_complexes = unique_gprots.distinct('structureligandinteraction__ligand', 'protein_conformation__protein__family')
+		unique_g_A_complexes = unique_gprots.filter(protein_conformation__protein__family__slug__startswith='001')
+		unique_g_B1_complexes = unique_gprots.filter(protein_conformation__protein__family__slug__startswith='002')
+		unique_g_B2_complexes = unique_gprots.filter(protein_conformation__protein__family__slug__startswith='003')
+		unique_g_C_complexes = unique_gprots.filter(protein_conformation__protein__family__slug__startswith='004')
+		unique_g_D1_complexes = unique_gprots.filter(protein_conformation__protein__family__slug__startswith='005')
+		unique_g_F_complexes = unique_gprots.filter(protein_conformation__protein__family__slug__startswith='006')
+		unique_g_T2_complexes = unique_gprots.filter(protein_conformation__protein__family__slug__startswith='007')
 		unique_active = unique_structs.filter(protein_conformation__state__slug = 'active')
 
 		#Stats
@@ -543,20 +555,42 @@ class StructureStatistics(TemplateView):
 		context['all_structures_by_class'] = self.count_by_class(all_structs, lookup)
 		context['all_complexes'] = len(all_complexes)
 		context['all_complexes_by_class'] = self.count_by_class(all_complexes, lookup)
-		context['all_gprots_complexes'] = len(all_gprots_complexes)
-		context['all_gprots_complexes_by_class'] = self.count_by_class(all_gprots_complexes, lookup)
 		context['all_gprots'] = len(all_gprots)
 		context['all_gprots_by_class'] = self.count_by_class(all_gprots, lookup)
+		context['all_gprots_by_gclass'] = self.count_by_gclass(all_gprots, lookup)
+		context['noncomplex_gprots_by_gclass'] = self.count_by_gclass(noncomplex_gprots, lookup, True)
+		context['noncomplex_gprots'] = len(noncomplex_gprots)
+
+		context['gA_complexes'] = zip(list(self.count_by_gclass(all_g_A_complexes, lookup).items()), list(self.count_by_gclass(unique_g_A_complexes, lookup).items()))
+		context['all_g_A_complexes'] = len(all_g_A_complexes)
+		context['unique_g_A_complexes'] = len(unique_g_A_complexes)
+		context['gB1_complexes'] = zip(list(self.count_by_gclass(all_g_B1_complexes, lookup).items()), list(self.count_by_gclass(unique_g_B1_complexes, lookup).items()))
+		context['all_g_B1_complexes'] = len(all_g_B1_complexes)
+		context['unique_g_B1_complexes'] = len(unique_g_B1_complexes)
+		context['gB2_complexes'] = zip(list(self.count_by_gclass(all_g_B2_complexes, lookup).items()), list(self.count_by_gclass(unique_g_B2_complexes, lookup).items()))
+		context['all_g_B2_complexes'] = len(all_g_B2_complexes)
+		context['unique_g_B2_complexes'] = len(unique_g_B2_complexes)
+		context['gC_complexes'] = zip(list(self.count_by_gclass(all_g_C_complexes, lookup).items()), list(self.count_by_gclass(unique_g_C_complexes, lookup).items()))
+		context['all_g_C_complexes'] = len(all_g_C_complexes)
+		context['unique_g_C_complexes'] = len(unique_g_C_complexes)
+		context['gD1_complexes'] = zip(list(self.count_by_gclass(all_g_D1_complexes, lookup).items()), list(self.count_by_gclass(unique_g_D1_complexes, lookup).items()))
+		context['all_g_D1_complexes'] = len(all_g_D1_complexes)
+		context['unique_g_D1_complexes'] = len(unique_g_D1_complexes)
+		context['gF_complexes'] = zip(list(self.count_by_gclass(all_g_F_complexes, lookup).items()), list(self.count_by_gclass(unique_g_F_complexes, lookup).items()))
+		context['all_g_F_complexes'] = len(all_g_F_complexes)
+		context['unique_g_F_complexes'] = len(unique_g_F_complexes)
+		context['gT2_complexes'] = zip(list(self.count_by_gclass(all_g_T2_complexes, lookup).items()), list(self.count_by_gclass(unique_g_T2_complexes, lookup).items()))
+		context['all_g_T2_complexes'] = len(all_g_T2_complexes)
+		context['unique_g_T2_complexes'] = len(unique_g_T2_complexes)
+
 		context['all_active'] = len(all_active)
 		context['all_active_by_class'] = self.count_by_class(all_active, lookup)
-
 		context['unique_structures'] = len(unique_structs)
 		context['unique_structures_by_class'] = self.count_by_class(unique_structs, lookup)
 		context['unique_complexes'] = len(unique_complexes)
 		context['unique_complexes_by_class'] = self.count_by_class([x.structure for x in unique_complexes], lookup)
-		context['unique_gprots_complexes'] = len(unique_gprots_complexes)
-		context['unique_gprots_complexes_by_class'] = self.count_by_class(unique_gprots_complexes, lookup) 
 		context['unique_gprots'] = len(unique_gprots)
+		context['unique_gprots_by_gclass'] = self.count_by_gclass(unique_gprots, lookup)
 		context['unique_gprots_by_class'] = self.count_by_class(unique_gprots, lookup)
 		context['unique_active'] = len(unique_active)
 		context['unique_active_by_class'] = self.count_by_class(unique_active, lookup)
@@ -580,6 +614,10 @@ class StructureStatistics(TemplateView):
 			context['unique_structures_by_class'][key.replace('Class','')] = context['unique_structures_by_class'].pop(key)
 		for key in list(context['all_structures_by_class'].keys()):
 			context['all_structures_by_class'][key.replace('Class','')] = context['all_structures_by_class'].pop(key)
+		context['total_gprots_by_gclass'] = []
+		for key in context['all_gprots_by_gclass']:
+			context['total_gprots_by_gclass'].append(context['all_gprots_by_gclass'][key] + context['noncomplex_gprots_by_gclass'][key])
+		context['total_gprots'] = sum(context['total_gprots_by_gclass'])
 
 		tree = PhylogeneticTreeGenerator()
 		class_a_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
@@ -666,6 +704,29 @@ class StructureStatistics(TemplateView):
 		tmp = OrderedDict()
 		for x in sorted(classes):
 			tmp[x] = records.count(x)
+
+		return tmp
+
+	def count_by_gclass(self, queryset, lookup, nc=False):
+
+		#Ugly walkaround
+		classes = [lookup[x] for x in ['100_001_001', '100_001_002', '100_001_003', '100_001_004', '100_001_005']]
+		translate = {'Gs':'G<sub>s</sub>', 'Gi/o':'G<sub>i/o</sub>', 'Gq/11':'G<sub>q/11</sub>', 'G12/13':'G<sub>12/13</sub>', 'GPa1 family':'GPa1'}
+		records = []
+		if nc == False:
+			for s in queryset:
+				fid = s.signprot_complex.protein.family.parent.slug
+				cname = lookup[fid]
+				records.append(translate[cname])
+		else:
+			for s in queryset:
+				fid = s.protein.family.parent.slug
+				cname = lookup[fid]
+				records.append(translate[cname])
+
+		tmp = OrderedDict()
+		for x in classes:
+			tmp[translate[x]] = records.count(translate[x])
 
 		return tmp
 

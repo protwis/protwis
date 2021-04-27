@@ -61,6 +61,7 @@
 
 
 {% block content %}
+{% if page != 'gprot' %}
 <h4>Number of structures, including multiple of same receptor (complex)</h4>
 <table style="width:75% !important" class="table table-stripped">
     <thead>
@@ -112,7 +113,6 @@
 </table>
 <br />
 <br />
-{% if page != 'gprot' %}
 <h4>Number of unique receptor complexes</h4>
 <table style="width:75% !important" class="table table-stripped">
     <thead>
@@ -160,11 +160,113 @@
         </tr>
     </tbody>
     <tr> </tr>
-
 </table>
-{% endif %}
 *Active state is defined as agonist-bound and opened intracellular TM bundle.
 **Receptor-orthologues are only counted once.
+{% else %}
+<h4>Number of G protein structures</h4>
+<table style="width:75% !important" class="table table-stripped">
+    <thead>
+        <tr>
+            <td><b>G Protein Class</td>
+            {% for class in all_gprots_by_gclass.items %}
+            <td align="center"><b>{{ class.0|safe}}</b></td>
+            {% endfor %}
+            <td align="center"><b>Total</b></td>
+        </tr>
+    </thead>
+    <tbody>
+      <tr>
+          <td>Non complexed G protein</td>
+          {% for class in noncomplex_gprots_by_gclass.items %}
+          <td align="center" style="vertical-align:middle !important">{% if class.1 == 0 %}-{% else %}{{ class.1 }}{% endif %}</td>
+          {% endfor %}
+          <td align="center" style="vertical-align:middle !important">{{ noncomplex_gprots }}</td>
+      </tr>
+      <tr>
+          <td>Receptor - G protein complexes</td>
+          {% for class in all_gprots_by_gclass.items %}
+          <td align="center" style="vertical-align:middle !important">{% if class.1 == 0 %}-{% else %}{{ class.1 }}{% endif %}</td>
+          {% endfor %}
+          <td align="center" style="vertical-align:middle !important">{{ all_gprots }}</td>
+      </tr>
+      <tr>
+          <td>Total structures</td>
+          {% for item in total_gprots_by_gclass %}
+          <td align="center" style="vertical-align:middle !important">{{ item }}</td>
+          {% endfor %}
+          <td align="center" style="vertical-align:middle !important">{{ total_gprots }}</td>
+      </tr>
+    </tbody>
+    <tr> </tr>
+</table>
+<br />
+<br />
+<h4>Number of GPCR-G protein complexes (unique)</h4>
+<table style="width:75% !important" class="table table-stripped">
+    <thead>
+        <tr>
+            <td><b>Receptor Class</td>
+            {% for class in all_gprots_by_gclass.items %}
+            <td align="center"><b>{{ class.0|safe }}</b></td>
+            {% endfor %}
+            <td align="center"><b>Total</b></td>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Class A</td>
+            {% for total, unique in gA_complexes %}
+            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_g_A_complexes }} ({{ unique_g_A_complexes }})</td>
+        </tr>
+        <tr>
+            <td>Class B1</td>
+            {% for total, unique in gB1_complexes %}
+            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_g_B1_complexes }} ({{ unique_g_B1_complexes }})</td>
+        </tr>
+        <tr>
+            <td>Class B2</td>
+            {% for total, unique in gB2_complexes %}
+            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_g_B2_complexes }} ({{ unique_g_B2_complexes }})</td>
+        </tr>
+        <tr>
+            <td>Class C</td>
+            {% for total, unique in gC_complexes %}
+            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_g_C_complexes }} ({{ unique_g_C_complexes }})</td>
+        </tr>
+        <tr>
+            <td>Class D1</td>
+            {% for total, unique in gD1_complexes %}
+            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_g_D1_complexes }} ({{ unique_g_D1_complexes }})</td>
+        </tr>
+        <tr>
+            <td>Class F</td>
+            {% for total, unique in gF_complexes %}
+            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_g_F_complexes }} ({{ unique_g_F_complexes }})</td>
+        </tr>
+        <tr>
+            <td>Class T2</td>
+            {% for total, unique in gT2_complexes %}
+            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_g_T2_complexes }} ({{ unique_g_T2_complexes }})</td>
+        </tr>
+    </tbody>
+    <tr> </tr>
+</table>
+{% endif %}
 <br />
 <br />
 Specific sets of structures can be downloaded from the <a href="/structure">Structures</a> page.<br />
