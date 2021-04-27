@@ -143,7 +143,7 @@ class Command(BaseBuild):
             temp_dict['log_bias_factor'] = ''
             temp_dict['order_no'] = 0
             temp_dict['order_bias_value'] = 0
-            temp_dict['reference_ligand'] = None
+            temp_dict['reference_ligand'] = list()
             temp_dict['signalling_protein'] = j['children'][0].signalling_protein.lower()
             temp_dict['cell_line'] = j['children'][0].cell_line
             temp_dict['family'] = j['children'][0].family
@@ -301,10 +301,24 @@ class Command(BaseBuild):
         return families
 
     def sort_assay_list(self, i):
-        sorted_assays = dict()
-        sorted_assays = sorted(i[1]['assay_list'], key=lambda k: k['quantitive_activity']
-                      if k['quantitive_activity'] else 999999, reverse=False)
-        return sorted_assays
+        return_assay = dict()
+        return_assay = sorted(i, key=lambda k: k['order_bias_value']
+                      if k['order_bias_value'] else 999999, reverse=False)
+        return return_assay
+
+    def calc_order_bias_value(self, assay, reference):
+        result = None
+        try:
+            if len(reference)>1:
+                print(reference)
+            assay_ec50=assay['quantitive_activity']
+            assay_emax=assay['quantitive_efficacy']
+            reference_ec50=reference[0]['quantitive_activity']
+            reference_emax=reference[0]['quantitive_efficacy']
+            result = math.log10((assay_b/assay_a)) - math.log10((reference_b/reference_a))
+        except:
+            result = None
+        return result
 
     def calculate_bias_factor_value(self, sorted_assays, references):
         ## TODO: pick
@@ -313,7 +327,9 @@ class Command(BaseBuild):
                 if assay['signalling_protein'] == reference['signalling_protein']:
                     if assay['assay_type'] == reference['assay_type']:
                         if assay['cell_line'] == reference['cell_line']:
-                            import pdb; pdb.set_trace()
+                            assay['reference_ligand'].append(reference)
+                            assay['order_bias_value'] = self.calc_order_bias_value(assay, assay['reference_ligand'])
+        return  sorted_assays
 
     def process_calculation(self, context):
         for i in context.items():
@@ -327,11 +343,12 @@ class Command(BaseBuild):
                     pass
             i[1]['assay_list'] = temp_obj
 
-            sorted_assays = self.sort_assay_list(i)
-            
-            self.calculate_bias_factor_value(sorted_assays, i[1]['reference_assays_list'])
+            normalized_assays = self.calculate_bias_factor_value(i[1]['assay_list'], i[1]['reference_assays_list'])
+
+            sorted_assays = self.sort_assay_list(normalized_assays)
+
             #endogenoues ligand - calculcate bias factor value for ranking
-            for item in enumerate(test):
+            for item in enumerate(sorted_assays):
                 item[1]['order_no'] = item[0]
 
             i[1]['biasdata'] = sorted_assays
