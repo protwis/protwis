@@ -337,6 +337,7 @@ class LigandStatistics(TemplateView):
     """
 
     template_name = 'ligand_statistics.html'
+    page = 'ligands' #either ligand_bias
 
     def get_context_data(self, **kwargs):
 
@@ -344,10 +345,18 @@ class LigandStatistics(TemplateView):
         # assays = AssayExperiment.objects.all().prefetch_related('protein__family__parent__parent__parent', 'protein__family')
 
         lig_count_dict = {}
-        assays_lig = list(AssayExperiment.objects.all().values(
-            'protein__family__parent__parent__parent__name').annotate(c=Count('ligand', distinct=True)))
-        for a in assays_lig:
-            lig_count_dict[a['protein__family__parent__parent__parent__name']] = a['c']
+        if self.page == 'ligands':
+            assays_lig = list(AssayExperiment.objects.all().values(
+                'protein__family__parent__parent__parent__name').annotate(c=Count('ligand', distinct=True)))
+            for a in assays_lig:
+                lig_count_dict[a['protein__family__parent__parent__parent__name']] = a['c']
+        else:
+            assays_lig = list(AnalyzedAssay.objects
+                .filter(log_bias_factor__gte=2)
+                .values('experiment__receptor__family__parent__parent__parent__name')
+                .annotate(c=Count('experiment__ligand_id', distinct=True)))
+            for a in assays_lig:
+                lig_count_dict[a['experiment__receptor__family__parent__parent__parent__name']] = a['c']
         target_count_dict = {}
         assays_target = list(AssayExperiment.objects.all().values(
             'protein__family__parent__parent__parent__name').annotate(c=Count('protein__family', distinct=True)))
@@ -360,8 +369,12 @@ class LigandStatistics(TemplateView):
         for pf in proteins_count:
             prot_count_dict[pf['family__parent__parent__parent__name']] = pf['c']
 
-        classes = ProteinFamily.objects.filter(
-            slug__in=['001', '002', '003', '004', '005', '006', '007'])  # ugly but fast
+        if self.page == 'ligands':
+            classes = ProteinFamily.objects.filter(
+                slug__in=['001', '002', '003', '004', '005', '006', '007'])  # ugly but fast
+        else:
+            classes = ProteinFamily.objects.filter(
+                slug__in=['001', '002', '003', '004', '006', '007'])  # ugly but fast
 
         ligands = []
 
@@ -420,7 +433,7 @@ class LigandStatistics(TemplateView):
         context['class_a_options']['leaf_offset'] = 50
         context['class_a_options']['label_free'] = []
         # section to remove Orphan from Class A tree and apply to a different tree
-        whole_class_a = class_a_data.get_nodes_dict('ligands')
+        whole_class_a = class_a_data.get_nodes_dict(self.page)
         for item in whole_class_a['children']:
             if item['name'] == 'Orphan':
                 orphan_data = OrderedDict(
@@ -435,34 +448,34 @@ class LigandStatistics(TemplateView):
         context['class_b1_options']['branch_trunc'] = 60
         context['class_b1_options']['label_free'] = [1, ]
         context['class_b1'] = json.dumps(
-            class_b1_data.get_nodes_dict('ligands'))
+            class_b1_data.get_nodes_dict(self.page))
         class_b2_data = tree.get_tree_data(
             ProteinFamily.objects.get(name__startswith='Class B2 (Adhesion)'))
         context['class_b2_options'] = deepcopy(tree.d3_options)
         context['class_b2_options']['anchor'] = 'class_b2'
         context['class_b2_options']['label_free'] = [1, ]
         context['class_b2'] = json.dumps(
-            class_b2_data.get_nodes_dict('ligands'))
+            class_b2_data.get_nodes_dict(self.page))
         class_c_data = tree.get_tree_data(
             ProteinFamily.objects.get(name__startswith='Class C (Glutamate)'))
         context['class_c_options'] = deepcopy(tree.d3_options)
         context['class_c_options']['anchor'] = 'class_c'
         context['class_c_options']['branch_trunc'] = 50
         context['class_c_options']['label_free'] = [1, ]
-        context['class_c'] = json.dumps(class_c_data.get_nodes_dict('ligands'))
+        context['class_c'] = json.dumps(class_c_data.get_nodes_dict(self.page))
         class_f_data = tree.get_tree_data(
             ProteinFamily.objects.get(name__startswith='Class F (Frizzled)'))
         context['class_f_options'] = deepcopy(tree.d3_options)
         context['class_f_options']['anchor'] = 'class_f'
         context['class_f_options']['label_free'] = [1, ]
-        context['class_f'] = json.dumps(class_f_data.get_nodes_dict('ligands'))
+        context['class_f'] = json.dumps(class_f_data.get_nodes_dict(self.page))
         class_t2_data = tree.get_tree_data(
             ProteinFamily.objects.get(name__startswith='Class T (Taste 2)'))
         context['class_t2_options'] = deepcopy(tree.d3_options)
         context['class_t2_options']['anchor'] = 'class_t2'
         context['class_t2_options']['label_free'] = [1, ]
         context['class_t2'] = json.dumps(
-            class_t2_data.get_nodes_dict('ligands'))
+            class_t2_data.get_nodes_dict(self.page))
         # definition of the class a orphan tree
         context['orphan_options'] = deepcopy(tree.d3_options)
         context['orphan_options']['anchor'] = 'orphan'
@@ -476,198 +489,46 @@ class LigandStatistics(TemplateView):
             rec_uniprot = rec.entry_short()
             rec_iuphar = rec.family.name.replace("receptor", '').replace(
                 "<i>", "").replace("</i>", "").strip()
-            whole_rec_dict[rec_uniprot] = [rec_iuphar]
-        context["whole_receptors"] = json.dumps(whole_rec_dict)
-        context["render"] = "not_bias"
-        return context
-
-
-class LigandBiasStatistics(TemplateView):
-    """
-    Per class statistics of known ligands.
-    """
-
-    template_name = 'ligand_statistics.html'
-
-    def get_context_data(self, **kwargs):
-
-        context = super().get_context_data(**kwargs)
-        # assays = AnalyzedExperiment.objects.all().prefetch_related('receptor__family__parent__parent__parent', 'receptor__family')
-        lig_count_dict = {}
-        assays_lig = list(AnalyzedAssay.objects
-            .filter(log_bias_factor__gte=2)
-            .values('experiment__receptor__family__parent__parent__parent__name')
-            .annotate(c=Count('experiment__ligand_id', distinct=True)))
-        for a in assays_lig:
-            lig_count_dict[a['experiment__receptor__family__parent__parent__parent__name']] = a['c']
-        target_count_dict = {}
-        assays_target = list(AnalyzedExperiment.objects.all().values(
-            'receptor__family__parent__parent__parent__name').annotate(c=Count('receptor__family', distinct=True)))
-        for a in assays_target:
-            target_count_dict[a['receptor__family__parent__parent__parent__name']] = a['c']
-
-        prot_count_dict = {}
-        proteins_count = list(Protein.objects.all().values(
-            'family__parent__parent__parent__name').annotate(c=Count('family', distinct=True)))
-        for pf in proteins_count:
-            prot_count_dict[pf['family__parent__parent__parent__name']] = pf['c']
-
-        classes = ProteinFamily.objects.filter(
-            slug__in=['001', '002', '003', '004', '006', '007'])  # ugly but fast
-        ligands = []
-
-        for fam in classes:
-            if fam.name in lig_count_dict:
-                lig_count = lig_count_dict[fam.name]
-                target_count = target_count_dict[fam.name]
-            else:
-                lig_count = 0
-                target_count = 0
-            prot_count = prot_count_dict[fam.name]
-            ligands.append({
-                'name': fam.name.replace('Class', ''),
-                'num_ligands': lig_count,
-                'avg_num_ligands': lig_count / prot_count,
-                'target_percentage': target_count / prot_count * 100,
-                'target_count': target_count
-            })
-        lig_count_total = sum([x['num_ligands'] for x in ligands])
-        prot_count_total = Protein.objects.filter(
-            family__slug__startswith='00').all().distinct('family').count()
-        target_count_total = sum([x['target_count'] for x in ligands])
-        lig_total = {
-            'num_ligands': lig_count_total,
-            'avg_num_ligands': lig_count_total / prot_count_total,
-            'target_percentage': target_count_total / prot_count_total * 100,
-            'target_count': target_count_total
-        }
-        # Elegant solution but kinda slow (6s querries):
-        """
-        ligands = AnalyzedExperiment.objects.values(
-            'receptor__family__parent__parent__parent__name',
-            'receptor__family__parent__parent__parent',
-            ).annotate(num_ligands=Count('ligand', distinct=True))
-        for prot_class in ligands:
-            class_subset = AnalyzedExperiment.objects.filter(
-                id=prot_class['receptor__family__parent__parent__parent']).values(
-                    'receptor').annotate(
-                        avg_num_ligands=Avg('ligand', distinct=True),
-                        p_count=Count('receptor')
-                        )
-            prot_class['avg_num_ligands']=class_subset[0]['avg_num_ligands']
-            prot_class['p_count']=class_subset[0]['p_count']
-
-        """
-        context['ligands_total'] = lig_total
-        context['ligands_by_class'] = ligands
-
-        context['release_notes'] = ReleaseNotes.objects.all()[0]
-
-        tree = PhylogeneticTreeGenerator()
-        class_a_data = tree.get_tree_data(
-            ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
-        context['class_a_options'] = deepcopy(tree.d3_options)
-        context['class_a_options']['anchor'] = 'class_a'
-        context['class_a_options']['leaf_offset'] = 50
-        context['class_a_options']['label_free'] = []
-        # section to remove Orphan from Class A tree and apply to a different tree
-        whole_class_a = class_a_data.get_nodes_dict('ligand_bias')
-        for item in whole_class_a['children']:
-            if item['name'] == 'Orphan':
-                orphan_data = OrderedDict(
-                    [('name', ''), ('value', 3000), ('color', ''), ('children', [item])])
-                whole_class_a['children'].remove(item)
-                break
-        context['class_a'] = json.dumps(whole_class_a)
-        class_b1_data = tree.get_tree_data(
-            ProteinFamily.objects.get(name__startswith='Class B1 (Secretin)'))
-        context['class_b1_options'] = deepcopy(tree.d3_options)
-        context['class_b1_options']['anchor'] = 'class_b1'
-        context['class_b1_options']['branch_trunc'] = 60
-        context['class_b1_options']['label_free'] = [1, ]
-        context['class_b1'] = json.dumps(
-            class_b1_data.get_nodes_dict('ligand_bias'))
-        class_b2_data = tree.get_tree_data(
-            ProteinFamily.objects.get(name__startswith='Class B2 (Adhesion)'))
-        context['class_b2_options'] = deepcopy(tree.d3_options)
-        context['class_b2_options']['anchor'] = 'class_b2'
-        context['class_b2_options']['label_free'] = [1, ]
-        context['class_b2'] = json.dumps(
-            class_b2_data.get_nodes_dict('ligand_bias'))
-        class_c_data = tree.get_tree_data(
-            ProteinFamily.objects.get(name__startswith='Class C (Glutamate)'))
-        context['class_c_options'] = deepcopy(tree.d3_options)
-        context['class_c_options']['anchor'] = 'class_c'
-        context['class_c_options']['branch_trunc'] = 50
-        context['class_c_options']['label_free'] = [1, ]
-        context['class_c'] = json.dumps(
-            class_c_data.get_nodes_dict('ligand_bias'))
-        class_f_data = tree.get_tree_data(
-            ProteinFamily.objects.get(name__startswith='Class F (Frizzled)'))
-        context['class_f_options'] = deepcopy(tree.d3_options)
-        context['class_f_options']['anchor'] = 'class_f'
-        context['class_f_options']['label_free'] = [1, ]
-        context['class_f'] = json.dumps(
-            class_f_data.get_nodes_dict('ligand_bias'))
-        class_t2_data = tree.get_tree_data(
-            ProteinFamily.objects.get(name__startswith='Class T (Taste 2)'))
-        context['class_t2_options'] = deepcopy(tree.d3_options)
-        context['class_t2_options']['anchor'] = 'class_t2'
-        context['class_t2_options']['label_free'] = [1, ]
-        context['class_t2'] = json.dumps(
-            class_t2_data.get_nodes_dict('ligand_bias'))
-        # definition of the class a orphan tree
-        context['orphan_options'] = deepcopy(tree.d3_options)
-        context['orphan_options']['anchor'] = 'orphan'
-        context['orphan_options']['label_free'] = [1, ]
-        context['orphan'] = json.dumps(orphan_data)
-
-        whole_receptors = Protein.objects.prefetch_related("family", "family__parent__parent__parent").filter(
-            sequence_type__slug="wt", family__slug__startswith="00")
-        whole_rec_dict = {}
-        for rec in whole_receptors:
-            rec_uniprot = rec.entry_short()
-            rec_iuphar = rec.family.name.replace("receptor", '').replace(
-                "<i>", "").replace("</i>", "").strip()
             if (rec_iuphar[0].isupper()) or (rec_iuphar[0].isdigit()):
                 whole_rec_dict[rec_uniprot] = [rec_iuphar]
             else:
                 whole_rec_dict[rec_uniprot] = [rec_iuphar.capitalize()]
 
-        assay_qs = AnalyzedAssay.objects.filter(
-            assay_description__isnull=True).values_list(
-            "family", "experiment__receptor__entry_name").order_by(
-            "family", "experiment__receptor__entry_name").distinct(
-            "family", "experiment__receptor__entry_name")
-
-
-        ligand_qs = AnalyzedAssay.objects.filter(
-            order_no=0,
-            assay_description__isnull=True).values_list(
-            "family", "experiment__receptor__entry_name", "experiment__ligand").order_by(
-            "family", "experiment__receptor__entry_name", "experiment__ligand").distinct(
-            "family", "experiment__receptor__entry_name", "experiment__ligand")
-
-        circles = {}
-        for data in assay_qs:
-            if data[1].split('_')[1] == 'human':
-                key = data[1].split('_')[0].upper()
-                if key not in circles.keys():
-                    circles[key] = {}
-                    circles[key][data[0]] = 0
-                else:
-                    circles[key][data[0]] = 0
-
-        for data in ligand_qs:
-            if data[1].split('_')[1] == 'human':
-                key = data[1].split('_')[0].upper()
-                circles[key][data[0]] += 1
-
-        context["circles_data"] = json.dumps(circles)
         context["whole_receptors"] = json.dumps(whole_rec_dict)
-        context["render"] = "bias"
-        return context
+        if self.page == 'ligands':
+            context["render"] = "not_bias"
+        else:
+            assay_qs = AnalyzedAssay.objects.filter(
+                assay_description__isnull=True).values_list(
+                "family", "experiment__receptor__entry_name").order_by(
+                "family", "experiment__receptor__entry_name").distinct(
+                "family", "experiment__receptor__entry_name")
 
+            ligand_qs = AnalyzedAssay.objects.filter(
+                order_no=0,
+                assay_description__isnull=True).values_list(
+                "family", "experiment__receptor__entry_name", "experiment__ligand").order_by(
+                "family", "experiment__receptor__entry_name", "experiment__ligand").distinct(
+                "family", "experiment__receptor__entry_name", "experiment__ligand")
+
+            circles = {}
+            for data in assay_qs:
+                if data[1].split('_')[1] == 'human':
+                    key = data[1].split('_')[0].upper()
+                    if key not in circles.keys():
+                        circles[key] = {}
+                        circles[key][data[0]] = 0
+                    else:
+                        circles[key][data[0]] = 0
+
+            for data in ligand_qs:
+                if data[1].split('_')[1] == 'human':
+                    key = data[1].split('_')[0].upper()
+                    circles[key][data[0]] += 1
+
+            context["circles_data"] = json.dumps(circles)
+            context["render"] = "bias"
+        return context
 
 class ExperimentEntryView(DetailView):
     context_object_name = 'experiment'

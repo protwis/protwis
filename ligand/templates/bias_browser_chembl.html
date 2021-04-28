@@ -64,7 +64,7 @@
                             },
                             success: function() {
 
-                                myFunction('/ligand/browservendors', 'Detail View', window, 850, 1000)
+                                openPopup('/ligand/browservendors', 'Detail View', window, 850, 1000)
                             }
                         });
                     },
@@ -467,7 +467,7 @@
         document.body.style['-moz-transform'] = 'scale(1)';
     }
 
-    function myFunction(url, title, win, w, h) {
+    function openPopup(url, title, win, w, h) {
 
         const y = win.top.outerHeight / 2 + win.top.screenY - (h / 2);
         const x = win.top.outerWidth / 2 + win.top.screenX - (w / 2);
@@ -585,9 +585,9 @@
                         <td>
                             <span style='display: none'> {{e.1.ligand.id}}</span>
                             <a href="#">
-                                <!-- <span class="glyphicon glyphicon-info-sign" onclick="myFunction('vendor/{{e.1.ligand.id}}/detail', 'Detail View', window, 1500, 1000)">Details</span> -->
+                                <!-- <span class="glyphicon glyphicon-info-sign" onclick="openPopup('vendor/{{e.1.ligand.id}}/detail', 'Detail View', window, 1500, 1000)">Details</span> -->
 
-                                <span class="glyphicon glyphicon-info-sign" onclick="myFunction('/ligand/experiment/{{e.1.experiment_id}}/detail', 'Detail View', window, 1500, 1000)"></span> Details
+                                <span class="glyphicon glyphicon-info-sign" onclick="openPopup('/ligand/experiment/{{e.1.experiment_id}}/detail', 'Detail View', window, 1500, 1000)"></span> Details
 
                             </a>
                         </td>
