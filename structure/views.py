@@ -546,7 +546,14 @@ class StructureStatistics(TemplateView):
 		unique_g_F_complexes = all_g_F_complexes.annotate(distinct_name=Concat('signprot_complex__protein__family__parent__name', 'protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
 		unique_g_T2_complexes = all_g_T2_complexes.annotate(distinct_name=Concat('signprot_complex__protein__family__parent__name', 'protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
 		unique_active = unique_structs.filter(protein_conformation__state__slug = 'active')
-
+		tree_dots_data = {}
+		tree_dots_data = self.grab_matches(unique_g_A_complexes, tree_dots_data)
+		tree_dots_data = self.grab_matches(unique_g_B1_complexes, tree_dots_data)
+		tree_dots_data = self.grab_matches(unique_g_B2_complexes, tree_dots_data)
+		tree_dots_data = self.grab_matches(unique_g_C_complexes, tree_dots_data)
+		tree_dots_data = self.grab_matches(unique_g_D1_complexes, tree_dots_data)
+		tree_dots_data = self.grab_matches(unique_g_F_complexes, tree_dots_data)
+		tree_dots_data = self.grab_matches(unique_g_T2_complexes, tree_dots_data)
 		#Stats
 		struct_count = Structure.objects.all().annotate(Count('id'))
 		struct_lig_count = Structure.objects.exclude(ligands=None)
@@ -605,6 +612,8 @@ class StructureStatistics(TemplateView):
 		context['chartdata_class'] = self.get_per_class_cumulative_data_series(years, unique_structs, lookup)
 		context['chartdata_class_y'] = self.get_per_class_data_series(years, unique_structs, lookup)
 		context['chartdata_class_all'] = self.get_per_class_cumulative_data_series(years, all_structs, lookup)
+
+		context['tree_dots_data'] = tree_dots_data
 		#context['coverage'] = self.get_diagram_coverage()
 		#{
 		#    'depth': 3,
@@ -690,6 +699,20 @@ class StructureStatistics(TemplateView):
 			if fname not in families:
 				families.append(fname)
 		return families
+
+	def grab_matches(self, queryset, dict):
+
+		#Grab data from queryset
+		for s in queryset:
+			gprot = s.signprot_complex.protein.family.parent.name
+			receptor = s.protein_conformation.protein.parent.entry_short()
+			if receptor in dict.keys():
+				dict[receptor].append(gprot)
+			else:
+				dict[receptor] = []
+				dict[receptor].append(gprot)
+
+		return dict
 
 	def count_by_class(self, queryset, lookup):
 
