@@ -700,19 +700,19 @@ class StructureStatistics(TemplateView):
 				families.append(fname)
 		return families
 
-	def grab_matches(self, queryset, dict):
+	def grab_matches(self, queryset, output):
 
 		#Grab data from queryset
 		for s in queryset:
 			gprot = s.signprot_complex.protein.family.parent.name
 			receptor = s.protein_conformation.protein.parent.entry_short()
 			if receptor in dict.keys():
-				dict[receptor].append(gprot)
+				output[receptor].append(gprot)
 			else:
-				dict[receptor] = []
-				dict[receptor].append(gprot)
+				output[receptor] = []
+				output[receptor].append(gprot)
 
-		return dict
+		return output
 
 	def count_by_class(self, queryset, lookup):
 
