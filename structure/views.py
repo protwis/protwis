@@ -706,7 +706,7 @@ class StructureStatistics(TemplateView):
 		for s in queryset:
 			gprot = s.signprot_complex.protein.family.parent.name
 			receptor = s.protein_conformation.protein.parent.entry_short()
-			if receptor in dict.keys():
+			if receptor in output.keys():
 				output[receptor].append(gprot)
 			else:
 				output[receptor] = []
