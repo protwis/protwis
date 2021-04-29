@@ -409,6 +409,41 @@ def TargetPurchasabilityDetails(request, **kwargs):
 
     return render(request, 'target_purchasability_details.html', context)
 
+class BiasedRankOrder(TemplateView):
+    #set a global variable for different pages
+    #page = 'biased1'
+
+    template_name = 'biased_rank_orders.html'
+
+    def get_context_data(self, **kwargs):
+
+        context = super().get_context_data(**kwargs)
+# ToDo:
+# make Queryset fetching the data (Ask Alibek for which data)
+# make data for the graph (fetch javascript requirements)
+
+        lig_count_dict = {}
+        assays_lig = list(AssayExperiment.objects.all().values(
+            'protein__family__parent__parent__parent__name').annotate(c=Count('ligand', distinct=True)))
+        for a in assays_lig:
+            lig_count_dict[a['protein__family__parent__parent__parent__name']] = a['c']
+
+        target_count_dict = {}
+        assays_target = list(AssayExperiment.objects.all().values(
+            'protein__family__parent__parent__parent__name').annotate(c=Count('protein__family', distinct=True)))
+        for a in assays_target:
+            target_count_dict[a['protein__family__parent__parent__parent__name']] = a['c']
+
+        prot_count_dict = {}
+        proteins_count = list(Protein.objects.all().values(
+            'family__parent__parent__parent__name').annotate(c=Count('family', distinct=True)))
+        for pf in proteins_count:
+            prot_count_dict[pf['family__parent__parent__parent__name']] = pf['c']
+
+        prot_count_total = Protein.objects.filter(
+            family__slug__startswith='00').all().distinct('family').count()
+
+        return context
 
 class LigandStatistics(TemplateView):
     """

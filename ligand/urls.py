@@ -15,6 +15,7 @@ urlpatterns = [
     url(r'^(?P<ligand_id>[-\w]+)/details$', views.LigandDetails, name='ligand_detail'),
     url(r'^statistics', cache_page(3600*24*7)(views.LigandStatistics.as_view()), name='ligand_statistics'),
     url(r'^bias_statistics', cache_page(3600*24*7)(views.LigandStatistics.as_view(page='ligand_bias')), name='ligand_statistics'),
+    url(r'^rankorder', views.BiasedRankOrder.as_view(), name='biased_rank_order'),
     url(r'^(?P<pk>[-\w]+)/info$', views.LigandInformationView.as_view()),
 
     url(r'^biased/$', views.CachedBiasBrowser, name='bias_browser-list'),
