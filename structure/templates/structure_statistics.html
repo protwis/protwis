@@ -202,7 +202,7 @@
 </table>
 <br />
 <br />
-<h4>Number of GPCR-G protein complexes (unique)</h4>
+<h4>Number of GPCR-G protein structures (distinct complexes)</h4>
 <table style="width:75% !important" class="table table-stripped">
     <thead>
         <tr>
@@ -271,6 +271,7 @@
 <br />
 Specific sets of structures can be downloaded from the <a href="/structure">Structures</a> page.<br />
 The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }}</strong>.<br />
+{% if page != 'gprot' %}
 <br />
 <br />
 <br />
@@ -522,7 +523,6 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
     </ul>
 </div></p>
 <br />-->
-{% if page != 'gprot' %}
 <h4>Structural coverage of GPCR Classes</h4>
 <br />
 <div>
@@ -593,9 +593,6 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
     color: pink;
   }
 </style>
-<br />
-<br />
-<strong> Heatmap/table will be placed here! Asking for feedbacks!</strong>
 <br />
 <br />
 <p><h4><strong>Structural coverage of GPCR-G protein complexes.</strong> The five dots depict G protein complex structure presence.</h4></p>
