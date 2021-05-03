@@ -733,7 +733,7 @@ class StructureAssignGenericNumbers(views.APIView):
     Assign generic residue numbers (Ballesteros-Weinstein and GPCRdb schemes) to an uploaded pdb file.
     \n/structure/assign_generic_numbers\n
     e.g.
-    curl -X POST -F "pdb_file=@myfile.pdb" http://gpcrdb.org/services/structure/assign_generic_numbers
+    curl -X POST -F "pdb_file=@myfile.pdb" https://gpcrdb.org/services/structure/assign_generic_numbers
     """
     parser_classes = (FileUploadParser,)
     renderer_classes = (PDBRenderer, )
@@ -757,7 +757,7 @@ class StructureSequenceParser(views.APIView):
     Analyze the uploaded pdb structure listing auxiliary proteins, mutations, deletions and insertions.
     \n/structure/structure/parse_pdb\n
     e.g.
-    curl -X POST -F "pdb_file=@myfile.pdb" http://gpcrdb.org/services/structure/parse_pdb
+    curl -X POST -F "pdb_file=@myfile.pdb" https://gpcrdb.org/services/structure/parse_pdb
     """
     parser_classes = (FileUploadParser,)
     renderer_classes = (JSONRenderer, )
