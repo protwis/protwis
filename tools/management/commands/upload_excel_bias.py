@@ -262,6 +262,13 @@ class Command(BaseBuild):
             except:
                 d['protein_efficacy_quantity'] = d['protein_efficacy_quantity']
 
+            if d['protein_activity_quality'].lower() == 'low activity':
+                if d['protein_efficacy_quantity'] == None or d['protein_efficacy_quantity']==0.0:
+                    d['protein_activity_quantity'] = 4.9
+                    d['protein_mtype'] = 'pEC50'
+                    d['protein_efficacy_quantity'] = 20
+                    d['protein_efficacy_equation'] = 'abs'
+
             d['protein_activity_quantity'], d['protein_mtype'] = self.fetch_measurements(d['protein_activity_quantity'],
 																	     d['protein_mtype'],
 																	     d['protein_activity_quantity_unit'])
@@ -290,7 +297,6 @@ class Command(BaseBuild):
                 continue
             end_ligand  = self.fetch_endogenous(protein)
             auxiliary_protein = self.fetch_protein(d['auxiliary_protein'], d['source_file'])
-
             if l == None:
                 print('*************error row',d,l)
             ## TODO:  check if it was already uploaded

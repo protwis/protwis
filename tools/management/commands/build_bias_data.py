@@ -394,6 +394,11 @@ class Command(BaseBuild):
                                 temp_reference['quantitive_efficacy'] / temp_reference['quantitive_activity'])
                             temp_calculation = self.caclulate_bias_factor_variables(
                                 a, b, c, d)
+                            i['lbf_a'] = a
+                            i['lbf_b'] = b
+                            i['lbf_c'] = c
+                            i['lbf_d'] = d
+
                             i['log_bias_factor'] = round(temp_calculation, 1)
 
                     except:
@@ -531,12 +536,16 @@ class Command(BaseBuild):
                                                          t_factor=ex['t_factor'],
                                                          log_bias_factor=ex['log_bias_factor'],
                                                          emax_ligand_reference=emax_ligand
+                                                         log_bias_factor_a=ex['lbf_a'],
+                                                         log_bias_factor_b=ex['lbf_b'],
+                                                         log_bias_factor_c=ex['lbf_c'],
+                                                         log_bias_factor_d=ex['lbf_d'],
                                                          )
                         experiment_assay.save()
                     for ex in i[1]['reference_assays_list']:
                         emax_ligand = ex['emax_reference_ligand']
                         experiment_assay = AnalyzedAssay(experiment=experiment_entry,
-                                                         assay_description='reference_assay',
+                                                         assay_description='endogenous_assay',
                                                          family=ex['family'],
                                                          order_no=ex['order_no'],
                                                          signalling_protein=ex['signalling_protein'],
@@ -639,7 +648,7 @@ class Command(BaseBuild):
         context.update({'data': calculated_assay})
         print('stage # 8: combining data into common dict is finished')
         # save dataset to model
-        self.save_data_to_model(context, 'different_family')
+        self.save_data_to_model(context, 'effector family')
         print('stage # 9: saving data to model is finished')
 
     def build_bias_data_subtypes(self):

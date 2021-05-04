@@ -290,15 +290,13 @@ class Command(BaseBuild):
 
     def process_signalling_proteins(self, context):
         for i in context.items():
-            print('before',len(i[1]['assay_list']))
+
             i[1]['assay_list'] = self.calculate_bias_factor_value(i[1]['assay_list'], i[1]['reference_assays_list'])
-            print('1',len(i[1]['assay_list']))
+
             i[1]['assay_list'] = self.sort_assay_list(i[1]['assay_list'])
-            print('2',len(i[1]['assay_list']))
-            if len(i[1]['assay_list'])>100:
-                import pdb; pdb.set_trace()
+
             i[1]['assay_list'] = self.limit_family_set(i[1]['assay_list'])
-            print('3',len(i[1]['assay_list']))
+
             for item in enumerate(i[1]['assay_list']):
                 item[1]['order_no'] = item[0]
         self.logger.info('process_signalling_proteins')
@@ -314,6 +312,8 @@ class Command(BaseBuild):
             else:
                 compare_val = next(item for item in families if item["family"] == assay['family'])
                 try:
+                    # if assay['order_bias_value'] > compare_val['order_bias_value'] and assay['qualitative_activity']:
+                    #     import pdb; pdb.set_trace()
                     if assay['order_bias_value'] > compare_val['order_bias_value']:
                         families[:] = [d for d in families if d.get('family') != compare_val['family']]
                         families.append(assay)
@@ -334,26 +334,24 @@ class Command(BaseBuild):
         for assay in sorted_assays:
             for reference in references:
                 if assay['signalling_protein'] == reference['signalling_protein']:
-                    # if assay['assay_type'] == reference['assay_type']:
-                    #     if assay['cell_line'] == reference['cell_line']:
-                    assay['reference_ligand'].append(reference)
-                    assay['order_bias_value'] = self.calc_order_bias_value(assay, assay['reference_ligand'])
+                    if assay['assay_type'] == reference['assay_type']:
+                        if assay['cell_line'] == reference['cell_line']:
+                            assay['reference_ligand'].append(reference)
+                            assay['order_bias_value'] = self.calc_order_bias_value(assay, assay['reference_ligand'])
         return  sorted_assays
 
     def calc_order_bias_value(self, assay, reference):
         result = None
         try:
             # TODO: select primary endogneous
-            # if len(reference)>1:
+            # if len(reference)>1 and assay['qualitative_activity'] == 'No activity':
             #     import pdb; pdb.set_trace()
-            if assay['qualitative_activity'] == 'No activity':
-                result = 1000
-            else:
-                assay_a=assay['quantitive_activity']
-                assay_b=assay['quantitive_efficacy']
-                reference_a=reference[0]['quantitive_activity']
-                reference_b=reference[0]['quantitive_efficacy']
-                result = math.log10((assay_b/assay_a)) - math.log10((reference_b/reference_a))
+        
+            assay_a=assay['quantitive_activity']
+            assay_b=assay['quantitive_efficacy']
+            reference_a=reference[0]['quantitive_activity']
+            reference_b=reference[0]['quantitive_efficacy']
+            result = math.log10((assay_b/assay_a)) - math.log10((reference_b/reference_a))
         except:
             try:
                 assay_a=assay['quantitive_activity']
@@ -433,7 +431,7 @@ class Command(BaseBuild):
     def process_low_potency(self,i):
         try:
             if i['quantitive_activity_initial'] < 5 and i['quantitive_efficacy'] > 0:
-                i['quantitive_activity_initial'] == 4.9
+                i['quantitive_activity'] == 12500*(10**(-9))
         except:
             pass
 
@@ -460,6 +458,11 @@ class Command(BaseBuild):
                 temp_calculation = self.caclulate_bias_factor_variables(
                     a, b, c, d)
                 return_message = round(temp_calculation, 1)
+                i['lbf_a'] = a
+                i['lbf_b'] = b
+                i['lbf_c'] = c
+                i['lbf_d'] = d
+
         except:
             return_message = None
         return return_message

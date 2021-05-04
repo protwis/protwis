@@ -454,39 +454,44 @@
                 filter_default_label: "P 5",
                 filter_reset_button_text: false,
             },
-            // pathway operational model
             {
                 column_number: 19,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Assay type",
                 filter_reset_button_text: false,
             },
             {
                 column_number: 20,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Assay type",
                 filter_reset_button_text: false,
+
             },
             {
                 column_number: 21,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 22,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Assay type",
                 filter_reset_button_text: false,
             },
 
-            //Log bias factor <br>(ddLog(Emax/EC50)
             {
-                column_number: 23,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
+                column_number: 22,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Assay type",
                 filter_reset_button_text: false,
             },
+            {
+                column_number: 23,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Assay type",
+                filter_reset_button_text: false,
+            },
+            // pathway operational model
             {
                 column_number: 24,
                 filter_type: "range_number",
@@ -505,13 +510,14 @@
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
-            //"Potency ratio ddlog(EC50)"
             {
                 column_number: 27,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
+
+            //Log bias factor <br>(ddLog(Emax/EC50)
             {
                 column_number: 28,
                 filter_type: "range_number",
@@ -530,14 +536,13 @@
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
-            //potency or ic50
-            // TODO: change to p value
             {
                 column_number: 31,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
+            //"Potency ratio ddlog(EC50)"
             {
                 column_number: 32,
                 filter_type: "range_number",
@@ -562,15 +567,14 @@
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
-
-            // Emax
+            //potency or ic50
+            // TODO: change to p value
             {
                 column_number: 36,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
-
             {
                 column_number: 37,
                 filter_type: "range_number",
@@ -595,13 +599,15 @@
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
-            //Transduction eff
+
+            // Emax
             {
                 column_number: 41,
                 filter_type: "range_number",
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
+
             {
                 column_number: 42,
                 filter_type: "range_number",
@@ -626,39 +632,70 @@
                 filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
-            //assay_type
+            //Transduction eff
             {
                 column_number: 46,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Assay type",
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
             {
                 column_number: 47,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Assay type",
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
-
             },
             {
                 column_number: 48,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Assay type",
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
-
             {
                 column_number: 49,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Assay type",
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
                 filter_reset_button_text: false,
             },
             {
                 column_number: 50,
+                filter_type: "range_number",
+                filter_default_label: ["Min", "Max"],
+                filter_reset_button_text: false,
+            },
+            //assay_type
+            {
+                column_number: 51,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Assay type",
+                filter_reset_button_text: false,
+            },
+            {
+                column_number: 52,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Assay type",
+                filter_reset_button_text: false,
+
+            },
+            {
+                column_number: 53,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Assay type",
+                filter_reset_button_text: false,
+            },
+
+            {
+                column_number: 54,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: "Assay type",
+                filter_reset_button_text: false,
+            },
+            {
+                column_number: 55,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "Assay type",
@@ -666,35 +703,35 @@
             },
             //cell_line
             {
-                column_number: 51,
+                column_number: 56,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "Cell Line",
                 filter_reset_button_text: false,
             },
             {
-                column_number: 52,
+                column_number: 57,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "Cell Line",
                 filter_reset_button_text: false,
             },
             {
-                column_number: 53,
+                column_number: 58,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "Cell Line",
                 filter_reset_button_text: false,
             },
             {
-                column_number: 54,
+                column_number: 59,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "Cell Line",
                 filter_reset_button_text: false,
             },
             {
-                column_number: 55,
+                column_number: 60,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "Cell Line",
@@ -702,35 +739,35 @@
             },
             //Time resolved
             {
-                column_number: 56,
+                column_number: 61,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "",
                 filter_reset_button_text: false,
             },
             {
-                column_number: 57,
+                column_number: 62,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "",
                 filter_reset_button_text: false,
             },
             {
-                column_number: 58,
+                column_number: 63,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "",
                 filter_reset_button_text: false,
             },
             {
-                column_number: 59,
+                column_number: 64,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "",
                 filter_reset_button_text: false,
             },
             {
-                column_number: 60,
+                column_number: 65,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "",
@@ -738,7 +775,7 @@
             },
             //Article
             {
-                column_number: 61,
+                column_number: 66,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "Authors",
@@ -746,7 +783,7 @@
 
             },
             {
-                column_number: 62,
+                column_number: 67,
                 filter_type: "multi_select",
                 select_type: 'select2',
                 filter_default_label: "Select",
@@ -760,12 +797,14 @@
         });
         shadeTable(table, [".shade"], 120, 200);
 
+
 		function calculate_header(ids) {
             var columnIds = [];
 			$("#receptor").attr("colspan", 6);
 			$("#ligand").attr("colspan", 5);
 			$("#transducers").attr("colspan", 2);
-			$("#pathways").attr("colspan", 5);
+			$("#pathways_effector").attr("colspan", 5);
+            $("#pathways_measure").attr("colspan", 5);
 			$("#opmodel").attr("colspan", 4);
 			$("#lbf").attr("colspan", 4);
 			$("#potency").attr("colspan", 4);
@@ -810,48 +849,48 @@
                         }
                     }
                     if (item >= 14 && item <= 18) {
-                        var temp_colspan = $('#pathways').attr('colspan')
-                        $("#pathways").attr("colspan", temp_colspan - 1)
+                        var temp_colspan = $('#pathways_effector').attr('colspan')
+                        $("#pathways_effector").attr("colspan", temp_colspan - 1)
                     }
-                    if (item >= 19 && item <= 22) {
+                    if (item >= 19 && item <= 23) {
+                        var temp_colspan = $('#pathways_measure').attr('colspan')
+                        $("#pathways_measure").attr("colspan", temp_colspan - 1)
+                    }
+                    if (item >= 24 && item <= 27) {
                         var temp_colspan = $('#opmodel').attr('colspan')
                         $("#opmodel").attr("colspan", temp_colspan - 1)
                         if ($('#opmodel').attr('colspan') == 0) {
                             $("#opmodel").addClass('highlight');
                         }
                     }
-                    if (item >= 23 && item <= 26) {
+                    if (item >= 28 && item <= 31) {
                         var temp_colspan = $('#lbf').attr('colspan')
                         $("#lbf").attr("colspan", temp_colspan - 1)
                         if ($('#lbf').attr('colspan') == 0) {
                             $("#lbf").addClass('highlight');
                         }
                     }
-                    if (item >= 27 && item <= 30) {
+                    if (item >= 32 && item <= 35) {
                         var temp_colspan = $('#potency').attr('colspan')
                         $("#potency").attr("colspan", temp_colspan - 1)
                             if ($('#potency').attr('colspan') == 0) {
                                 $("#potency").addClass('highlight');
                             }
                     }
-                    if (item >= 31 && item <= 35) {
+                    if (item >= 36 && item <= 40) {
                         var temp_colspan = $('#activity').attr('colspan')
                         $("#activity").attr("colspan", temp_colspan - 1)
                     }
-                    if (item >= 36 && item <= 40) {
+                    if (item >= 41 && item <= 45) {
                         var temp_colspan = $('#emax').attr('colspan')
                         $("#emax").attr("colspan", temp_colspan - 1)
                     }
-                    if (item >= 41 && item <= 45) {
+                    if (item >= 46 && item <= 50) {
                         var temp_colspan = $('#tfactor').attr('colspan')
                         $("#tfactor").attr("colspan", temp_colspan - 1)
                         if ($('#tfactor').attr('colspan') == 0) {
                             $("#tfactor").addClass('highlight');
                         }
-                    }
-                    if (item >= 46 && item <= 50) {
-                        var temp_colspan = $('#assay').attr('colspan')
-                        $("#assay").attr("colspan", temp_colspan - 1)
                     }
                     if (item >= 51 && item <= 55) {
                         var temp_colspan = $('#cell').attr('colspan')
@@ -964,8 +1003,10 @@
 						Tested Ligand Pair </th>
 					<th id="transducers" style="border-left: 1px solid black; text-align:left" colspan="2" style="">
 						Receptor transducers</th>
-					<th id="pathways" style="border-left: 1px solid black; text-align:left" colspan="5">
-						Pathway Bias Rank Order </th>
+                    <th id="pathways_effector" style="border-left: 1px solid black; text-align:left" colspan="5">
+						Bias rank order:<br>Primary effector</th>
+					<th id="pathways_measure" style="border-left: 1px solid black; text-align:left" colspan="5">
+						Bias rank order:<br>Measured effector</th>
 					<th id="opmodel" class="shade" style="border-left: 1px solid black; text-align:left" colspan="4">
 						Operational model <br> &#916;&#916;(Tau/Ka)</th>
 					<th id="lbf" class="shade" style="border-left: 1px solid black; text-align:left" colspan="4">
@@ -980,8 +1021,8 @@
 						Emax (% of ref ligand)</th>
 					<th id="tfactor" class="shade" style="border-left: 1px solid black; text-align:left" colspan="5">
 						Transduction coefficient</th>
-					<th id="assay" style="border-left: 1px solid black; text-align:left" colspan="5">
-						Assay</th>
+                    <th id="cell" style="border-left: 1px solid black; text-align:left" colspan="5">
+						Biological process</th>
 					<th id="cell" style="border-left: 1px solid black; text-align:left" colspan="5">
 						Cell line</th>
 					<th id="time" style="border-left: 1px solid black; text-align:left" colspan="5">
@@ -1006,11 +1047,16 @@
 					<th id="labs_quantity_filter_select">#Labs<br></th>
 					<th id="primary_filter_select">Primary</th>
 					<th id="secondary_filter_select">Secondary</th>
-					<th class="pathways" id="pathways_p1_filter_select">P 1</th>
-					<th class="pathways" id="pathways_p2_filter_select">P 2</th>
-					<th class="pathways" id="pathways_p3_filter_select">P 3</th>
-					<th class="pathways" id="pathways_p4_filter_select">P 4</th>
-					<th class="pathways" id="pathways_p5_filter_select">P 5</th>
+					<th class="pathways" id="pathways_effector_p1_filter_select">P 1</th>
+					<th class="pathways" id="pathways_effector_p2_filter_select">P 2</th>
+					<th class="pathways" id="pathways_effector_p3_filter_select">P 3</th>
+					<th class="pathways" id="pathways_effector_p4_filter_select">P 4</th>
+					<th class="pathways" id="pathways_effector_p5_filter_select">P 5</th>
+					<th class="pathways" id="pathways_measure_p1_filter_select">P 1</th>
+					<th class="pathways" id="pathways_measure_p2_filter_select">P 2</th>
+					<th class="pathways" id="pathways_measure_p3_filter_select">P 3</th>
+					<th class="pathways" id="pathways_measure_p4_filter_select">P 4</th>
+					<th class="pathways" id="pathways_measure_p5_filter_select">P 5</th>
 					<th class="shade" id="opmodel_p2_p1_filter_select">P 2 / P 1</th>
 					<th class="shade" id="opmodel_p3_p1_filter_select">P 3 / P 1</th>
 					<th class="shade" id="opmodel_p4_p1_filter_select">P 4 / P 1</th>
@@ -1038,11 +1084,11 @@
 					<th class="shade" id="tfactor_p3_filter_select">P 3</th>
 					<th class="shade" id="tfactor_p4_filter_select">P 4</th>
 					<th class="shade" id="tfactor_p5_filter_select">P 5</th>
-					<th id="assay_p1_filter_select">P 1</th>
-					<th id="assay_p2_filter_select">P 2</th>
-					<th id="assay_p3_filter_select">P 3</th>
-					<th id="assay_p4_filter_select">P 4</th>
-					<th id="assay_p5_filter_select">P 5</th>
+                    <th id="bioprocess_p1_filter_select">P 1</th>
+					<th id="bioprocess_p2_filter_select">P 2</th>
+					<th id="bioprocess_p3_filter_select">P 3</th>
+					<th id="bioprocess_p4_filter_select">P 4</th>
+					<th id="bioprocess_p5_filter_select">P 5</th>
 					<th id="cell_p1_filter_select">P 1</th>
 					<th id="cell_p2_filter_select">P 2</th>
 					<th id="cell_p3_filter_select">P 3</th>
@@ -1099,6 +1145,12 @@
                     <td class="pathway">{{e.pathways_p3|default_if_none:""}}</td>
                     <td class="pathway">{{e.pathways_p4|default_if_none:""}}</td>
                     <td class="pathway">{{e.pathways_p5|default_if_none:""}}</td>
+                	<!-- Assay -->
+                    <td title='{{e.assay_p1}}'>{{e.assay_p1|default_if_none:"" }}</td>
+                    <td title='{{e.assay_p2}}'>{{e.assay_p2|default_if_none:"" }}</td>
+                    <td title='{{e.assay_p3}}'>{{e.assay_p3|default_if_none:"" }}</td>
+                    <td title='{{e.assay_p4}}'>{{e.assay_p4|default_if_none:"" }}</td>
+                    <td title='{{e.assay_p5}}'>{{e.assay_p5|default_if_none:"" }}</td>
 					<!-- t factor -->
     				<td class="shade">{{e.opmodel_p2_p1|default_if_none:""}}</td>
                     <td class="shade">{{e.opmodel_p3_p1|default_if_none:""}}</td>
@@ -1114,6 +1166,7 @@
                     <td class="shade">{{e.potency_p3_p1|default_if_none:""}}</td>
                     <td class="shade">{{e.potency_p4_p1|default_if_none:""}}</td>
                     <td class="shade">{{e.potency_p5_p1|default_if_none:""}}</td>
+
 					<!-- potency -->
                     {%if e.activity_p1 %}
     					{%if e.standard_type_p1 == 'EC50' %}
@@ -1188,14 +1241,12 @@
                     <td class="shade">{{e.tfactor_p3|default_if_none:""}}</td>
                     <td class="shade">{{e.tfactor_p4|default_if_none:""}}</td>
                     <td class="shade">{{e.tfactor_p5|default_if_none:""}}</td>
-
-					<!-- Assay -->
-                    <td title='{{e.assay_p1}}'>{{e.assay_p1|default_if_none:"" }}</td>
-                    <td title='{{e.assay_p2}}'>{{e.assay_p2|default_if_none:"" }}</td>
-                    <td title='{{e.assay_p3}}'>{{e.assay_p3|default_if_none:"" }}</td>
-                    <td title='{{e.assay_p4}}'>{{e.assay_p4|default_if_none:"" }}</td>
-                    <td title='{{e.assay_p5}}'>{{e.assay_p5|default_if_none:"" }}</td>
-
+                	<!-- Bioprocess -->
+                    <td title='{{e.bioprocess_p1}}'>{{e.assay_p1|default_if_none:"" }}</td>
+                    <td title='{{e.bioprocess_p2}}'>{{e.assay_p2|default_if_none:"" }}</td>
+                    <td title='{{e.bioprocess_p3}}'>{{e.assay_p3|default_if_none:"" }}</td>
+                    <td title='{{e.bioprocess_p4}}'>{{e.assay_p4|default_if_none:"" }}</td>
+                    <td title='{{e.bioprocess_p5}}'>{{e.assay_p5|default_if_none:"" }}</td>
 					<!-- Cell line -->
 					<td title='{{e.cell_p1}}'>{{e.cell_p1|default_if_none:"" }}</td>
                     <td title='{{e.cell_p2}}'>{{e.cell_p2|default_if_none:"" }}</td>
