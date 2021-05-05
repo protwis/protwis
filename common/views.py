@@ -104,7 +104,7 @@ def getTargetTable():
                 <th colspan=4>G protein coupling</th> \
               </tr> \
               <tr> \
-                <th><br><br><input class ='form-check-input' type='checkbox' onclick='return check_all_targets();'></th> \
+                <th><br><br><input autocomplete='off' class='form-check-input' type='checkbox' onclick='return check_all_targets();'></th> \
                 <th>Class<br>&nbsp;</th> \
                 <th>Ligand type<br>&nbsp;</th> \
                 <th style=\"width; 100px;\">Family<br>&nbsp;</th> \
@@ -186,7 +186,7 @@ def getTargetTable():
                     t[gprotein] = "-"
 
             data_table += "<tr> \
-            <td data-sort=\"0\"><input class=\"form-check-input\" type=\"checkbox\" name=\"targets\" id=\"{}\" data-entry=\"{}\" data-human=\"{}\"></td> \
+            <td data-sort=\"0\"><input autocomplete='off' class=\"form-check-input\" type=\"checkbox\" name=\"targets\" id=\"{}\" data-entry=\"{}\" data-human=\"{}\"></td> \
             <td>{}</td> \
             <td>{}</td> \
             <td>{}</td> \

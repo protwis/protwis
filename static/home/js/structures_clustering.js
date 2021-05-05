@@ -977,9 +977,15 @@ function nodeStyler(element, node){
         element.selectAll("circle").on("mouseover", function(d) { // add tooltip
             class_tooltip.transition()
               .style("opacity", .9);
-            class_tooltip.html("<b>Silhouette score:</b> " + score)
-              .style("left", (d3.event.pageX) + "px")
-              .style("top", (d3.event.pageY - 28) + "px");
+              if (score === undefined){
+                class_tooltip.html("<b>Root node</b>")
+                  .style("left", (d3.event.pageX) + "px")
+                  .style("top", (d3.event.pageY - 28) + "px");
+              } else {
+                class_tooltip.html("<b>Silhouette score:</b> " + score)
+                  .style("left", (d3.event.pageX) + "px")
+                  .style("top", (d3.event.pageY - 28) + "px");
+                }
           })
         .on("mouseout", function() {
             class_tooltip.transition().duration(100)
