@@ -143,24 +143,22 @@ class Command(BaseBuild):
         for j in results:
             temp_dict = dict()
             temp = dict()
-            temp['assay'] = list()
+            temp['reference'] = list()
+            temp['assay'] = dict()
+            temp['ref_ligand_experiment'] = dict()
+            doubles = []
             temp['publication'] = j['main'].publication
             temp['species'] = j['main'].receptor.species.common_name
-            temp['receptor'] = j['main'].receptor
+            # temp['ligand'] = j['main'].ligand
             temp['endogenous_ligand'] = j['main'].endogenous_ligand
-
-            temp['ligand'] = j['main'].ligand
-
-            temp['reference'] = list()
-            # temp['ref_ligand_experiment'] = dict()
+            temp['receptor'] = j['main'].receptor
             temp['vendor_counter'] = j['vendor_counter']
             temp['authors'] = j['authors']
             temp['article_quantity'] = 0
             temp['labs_quantity'] = 0
-
             temp['ligand_source_id'] = j['main'].ligand_source_id
             temp['ligand_source_type'] = j['main'].ligand_source_type
-
+            temp['reference_ligand'] = None
             if not j['children']:
                 continue
             temp_dict['assay_id'] = j['children'][0].id
@@ -173,9 +171,12 @@ class Command(BaseBuild):
             temp_dict['signalling_protein'] = j['children'][0].signalling_protein.lower()
             temp_dict['cell_line'] = j['children'][0].cell_line
             temp_dict['family'] = j['children'][0].family
+            
+            temp_dict['measured_biological_process'] = j['children'][0].measured_biological_process
             temp_dict['assay_type'] = j['children'][0].assay_type
-            temp_dict['assay_measure_method'] = j['children'][0].assay_measure
+            temp_dict['assay_measure_method'] = j['children'][0].measured_effector
             temp_dict['assay_time_resolved'] = j['children'][0].assay_time_resolved
+            temp_dict['signal_detection_tecnique'] = j['children'][0].signal_detection_tecnique
 
             if j['children'][0].quantitive_activity:
                 temp_dict['quantitive_activity'] = j['children'][0].quantitive_activity
@@ -183,7 +184,6 @@ class Command(BaseBuild):
             else:
                 temp_dict['quantitive_activity'] = None
                 temp_dict['quantitive_activity_initial'] = None
-
             temp_dict['qualitative_activity'] = j['children'][0].qualitative_activity
             temp_dict['quantitive_unit'] = j['children'][0].quantitive_unit
             temp_dict['quantitive_efficacy'] = j['children'][0].quantitive_efficacy
@@ -202,7 +202,9 @@ class Command(BaseBuild):
                     temp_dict['quantitive_activity_initial'])
                 temp_dict['quantitive_activity_initial'] = "{:.2F}".format(
                     Decimal(temp_dict['quantitive_activity_initial']))
-            temp['assay'].append(temp_dict)
+            temp['ref_ligand_experiment'] = j['children'][0].emax_ligand_reference
+            doubles.append(temp_dict)
+            temp['assay'] = doubles
             send.append(temp)
         self.logger.info('Queryset processed')
         return send
@@ -346,7 +348,7 @@ class Command(BaseBuild):
             # TODO: select primary endogneous
             # if len(reference)>1 and assay['qualitative_activity'] == 'No activity':
             #     import pdb; pdb.set_trace()
-        
+
             assay_a=assay['quantitive_activity']
             assay_b=assay['quantitive_efficacy']
             reference_a=reference[0]['quantitive_activity']

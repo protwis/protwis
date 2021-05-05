@@ -119,17 +119,17 @@ class Command(BaseBuild):
         for j in results:
             temp_dict = dict()
             temp = dict()
+            temp['reference'] = list()
+            temp['assay'] = dict()
+            temp['ref_ligand_experiment'] = dict()
             doubles = []
             temp['publication'] = j['main'].publication
             temp['species'] = j['main'].receptor.species.common_name
             # temp['ligand'] = j['main'].ligand
             temp['endogenous_ligand'] = j['main'].endogenous_ligand
             temp['receptor'] = j['main'].receptor
-            temp['assay'] = dict()
             temp['vendor_counter'] = j['vendor_counter']
-            temp['reference'] = list()
             temp['authors'] = j['authors']
-            temp['ref_ligand_experiment'] = dict()
             temp['article_quantity'] = 0
             temp['labs_quantity'] = 0
             temp['ligand_source_id'] = j['main'].ligand_source_id
@@ -147,9 +147,13 @@ class Command(BaseBuild):
             temp_dict['signalling_protein'] = j['children'][0].signalling_protein.lower()
             temp_dict['cell_line'] = j['children'][0].cell_line
             temp_dict['family'] = j['children'][0].family
+            temp_dict['measured_effector'] = j['children'][0].measured_effector
+            temp_dict['measured_biological_process'] = j['children'][0].measured_biological_process
             temp_dict['assay_type'] = j['children'][0].assay_type
             temp_dict['assay_measure_method'] = j['children'][0].assay_measure
             temp_dict['assay_time_resolved'] = j['children'][0].assay_time_resolved
+            temp_dict['signal_detection_tecnique'] = j['children'][0].signal_detection_tecnique
+
             if j['children'][0].quantitive_activity:
                 temp_dict['quantitive_activity'] = j['children'][0].quantitive_activity
                 temp_dict['quantitive_activity_initial'] = j['children'][0].quantitive_activity
