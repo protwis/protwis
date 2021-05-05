@@ -195,7 +195,7 @@ class Command(BaseBuild):
         d['receptor'] = r[11].lower().strip()
         d['receptor_uniprot_id'] = r[12]
         d['cell_line'] = r[13]
-        d['signalling_protein'] = r[14]
+        d['signalling_protein'] = r[14].replace('α','a').replace('β','B').replace('g','G').lower().strip()
         d['measured_effector'] = r[15]
         d['effector_family'] = r[16]
         d['assay_type'] = r[17]
@@ -254,7 +254,7 @@ class Command(BaseBuild):
             #     continue
             # if i > 838:
             #     break
-            if i % 1 == 0:
+            if i % 100 == 0:
                 print(i)
             d = self.return_row(r=r,excel_row=i)
             try:
@@ -415,20 +415,18 @@ class Command(BaseBuild):
             family = 'B-arr'
 
         elif (protein == 'gi/o-family' or
+                protein == 'gai/o-gbγ' or
                 protein == 'gai1' or
                 protein == 'gai2' or
                 protein == 'gai3' or
-                protein == 'gao' or
-                protein == 'gaoA' or
                 protein == 'gai' or
-                protein == 'gai1' or
-                protein == 'gai2' or
-                protein == 'gai3' or
                 protein == 'gai1/2' or
+                protein=='gbγ' or
                 protein == 'gao' or
-                protein == 'gaoA' or
-                protein == 'gaoB' or
+                protein == 'gaoa' or
+                protein == 'gaob' or
                 protein == 'gao1' or
+                protein == 'gaolf' or
                 protein == 'gat1' or
                 protein == 'gat2' or
                 protein == 'gat3' or
@@ -437,17 +435,26 @@ class Command(BaseBuild):
             family = 'Gi/o'
 
         elif (protein == 'gq-family' or
-                protein == 'ga12' or
-                protein==' gaq' or
+                protein=='ga12' or
+                protein=='gaq' or
+                protein=='gpa1/ga12' or
+                protein=='gpa1/gaq' or
+                protein=='gaqδ6i4myr' or
+                protein=='gaqi5' or
                 protein=='gaq/11' or
                 protein=='gaq/14' or
+                protein=='gaq/15' or
+                protein=='gaq/15' or
                 protein=='gaq/15' or
                 protein=='gaq/16'):
             family = 'Gq/11'
 
         elif (protein == 'g12/13-family' or
+                protein == 'ga11' or
                 protein == 'ga12' or
-                protein == 'ga13'):
+                protein == 'ga13' or
+                protein == 'ga14' or
+                protein == 'ga15'):
             family = 'G12/13'
 
         elif (protein == 'gs-family' or
@@ -455,13 +462,12 @@ class Command(BaseBuild):
               protein == 'gaolf'):
             family = 'Gs'
         elif (protein == 'pERK1/2 activation' or
-                protein =="perk1-2"):
+                protein =="erk"):
             family = 'pERK1-2'
 
         elif (protein == '' or protein is None):
             if assay_type == 'Ca2+ accumulation':
                 family = 'CA2'
-
         else:
             family = 'G-protein'
         self.logger.info("family saved")
