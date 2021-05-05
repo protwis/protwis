@@ -324,6 +324,7 @@ class Command(BaseBuild):
                                                    family = family,
                                                    cell_line=d['cell_line'],
                                                    assay_type=d['assay_type'],
+                                                   effector_family = d['effector_family'],
                                                    measured_effector=d['measured_effector'],
                                                    measured_biological_process=d['measured_biological_process'],
                                                    signal_detection_tecnique=d['signal_detection_tecnique'],

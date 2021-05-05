@@ -171,7 +171,9 @@ class Command(BaseBuild):
             temp_dict['signalling_protein'] = j['children'][0].signalling_protein.lower()
             temp_dict['cell_line'] = j['children'][0].cell_line
             temp_dict['family'] = j['children'][0].family
-            
+            if temp_dict['family'] == '29':
+                print('effecor foiund')
+                import pdb; pdb.set_trace()
             temp_dict['measured_biological_process'] = j['children'][0].measured_biological_process
             temp_dict['assay_type'] = j['children'][0].assay_type
             temp_dict['assay_measure_method'] = j['children'][0].measured_effector
@@ -271,6 +273,7 @@ class Command(BaseBuild):
                 print(name)
                 if name in content:
                     content[name]['assay_list'].append(assay)
+                    content[name]['reference_assays_list'].extend(i[1]['reference_assays_list'])
                 else:
                     content[name] = dict()
                     content[name]['assay_list'] = list()
