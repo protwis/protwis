@@ -156,12 +156,14 @@ class Command(BaseBuild):
             temp['authors'] = j['authors']
             temp['article_quantity'] = 0
             temp['labs_quantity'] = 0
-            temp['ligand_source_id'] = j['main'].ligand_source_id
-            temp['ligand_source_type'] = j['main'].ligand_source_type
+
+
             temp['reference_ligand'] = None
             if not j['children']:
                 continue
             temp_dict['assay_id'] = j['children'][0].id
+            temp_dict['ligand_source_id'] = j['main'].ligand_source_id
+            temp_dict['ligand_source_type'] = j['main'].ligand_source_type
             temp_dict['potency'] = ''
             temp_dict['t_factor'] = ''
             temp_dict['log_bias_factor'] = ''
@@ -175,9 +177,6 @@ class Command(BaseBuild):
             temp_dict['signalling_protein'] = j['children'][0].signalling_protein.lower()
             temp_dict['cell_line'] = j['children'][0].cell_line
             temp_dict['family'] = j['children'][0].family
-            if temp_dict['family'] == '29':
-                print('effecor foiund')
-                import pdb; pdb.set_trace()
             temp_dict['measured_biological_process'] = j['children'][0].measured_biological_process
             temp_dict['assay_type'] = j['children'][0].assay_type
             temp_dict['assay_measure_method'] = j['children'][0].measured_effector
@@ -292,8 +291,9 @@ class Command(BaseBuild):
                     content[name]['labs_quantity'] = i[1]['labs_quantity']
                     content[name]['assay_list'].append(assay)
                     content[name]['reference_assays_list'].extend(i[1]['reference_assays_list'])
-                    content[name]['ligand_source_id'] = i[1]['ligand_source_id']
-                    content[name]['ligand_source_type'] = i[1]['ligand_source_type']
+                    content[name]['ligand_source_id'] = assay['ligand_source_id']
+                    content[name]['ligand_source_type'] = assay['ligand_source_type']
+                
         self.logger.info('returned finalised assay')
         return content
 
@@ -626,7 +626,7 @@ class Command(BaseBuild):
                                                          log_bias_factor_a=ex['lbf_a'],
                                                          log_bias_factor_b=ex['lbf_b'],
                                                          log_bias_factor_c=ex['lbf_c'],
-                                                         log_bias_factor_d=ex['lbf_d'],                                                        
+                                                         log_bias_factor_d=ex['lbf_d'],
                                                          effector_family = ex['family'],
                                                          measured_effector = ex['assay_measure_method'],
                                                          measured_biological_process = ex['measured_biological_process'] ,

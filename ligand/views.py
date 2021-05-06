@@ -8,7 +8,8 @@ from collections import defaultdict, OrderedDict
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.views.generic import TemplateView, DetailView, ListView
-from django.db.models import Count, Subquery, OuterRef
+from django.db import models
+from django.db.models import Count, Subquery, OuterRef, F
 from django.views.decorators.csrf import csrf_exempt
 
 from django.core.cache import cache
@@ -1152,6 +1153,12 @@ class BiasBrowser(ListView):
             experiment=OuterRef('pk'),
         ).order_by('order_no')
 
+        ref_assay_qs = AnalyzedAssay.objects.filter(
+            order_no__lte=5,
+            assay_description='endogenous_assay',
+            experiment=OuterRef('pk'),
+        ).order_by('order_no')
+
         queryset = AnalyzedExperiment.objects.filter(
             source='different_family',
             receptor__in=protein_list,
@@ -1164,6 +1171,54 @@ class BiasBrowser(ListView):
             'publication__journal', 'ligand__ref_ligand_bias_analyzed',
             'analyzed_data__emax_ligand_reference'
         ).annotate(
+        #reference assays
+            reference_quantitive_activity_initial_p1=Subquery(ref_assay_qs.values('quantitive_activity_initial')[:1]),
+            reference_quantitive_activity_initial_p2=Subquery(ref_assay_qs.values('quantitive_activity_initial')[1:2]),
+            reference_quantitive_activity_initial_p3=Subquery(ref_assay_qs.values('quantitive_activity_initial')[2:3]),
+            reference_quantitive_activity_initial_p4=Subquery(ref_assay_qs.values('quantitive_activity_initial')[3:4]),
+            reference_quantitive_activity_initial_p5=Subquery(ref_assay_qs.values('quantitive_activity_initial')[4:5]),
+
+            reference_qualitative_activity_p1=Subquery(ref_assay_qs.values('qualitative_activity')[:1]),
+            reference_qualitative_activity_p2=Subquery(ref_assay_qs.values('qualitative_activity')[1:2]),
+            reference_qualitative_activity_p3=Subquery(ref_assay_qs.values('qualitative_activity')[2:3]),
+            reference_qualitative_activity_p4=Subquery(ref_assay_qs.values('qualitative_activity')[3:4]),
+            reference_qualitative_activity_p5=Subquery(ref_assay_qs.values('qualitative_activity')[4:5]),
+
+            reference_quantitive_efficacy_p1=Subquery(ref_assay_qs.values('quantitive_efficacy')[:1]),
+            reference_quantitive_efficacy_p2=Subquery(ref_assay_qs.values('quantitive_efficacy')[1:2]),
+            reference_quantitive_efficacy_p3=Subquery(ref_assay_qs.values('quantitive_efficacy')[2:3]),
+            reference_quantitive_efficacy_p4=Subquery(ref_assay_qs.values('quantitive_efficacy')[3:4]),
+            reference_quantitive_efficacy_p5=Subquery(ref_assay_qs.values('quantitive_efficacy')[4:5]),
+
+            reference_assay_type_p1=Subquery(ref_assay_qs.values('assay_type')[:1]),
+            reference_assay_type_p2=Subquery(ref_assay_qs.values('assay_type')[1:2]),
+            reference_assay_type_p3=Subquery(ref_assay_qs.values('assay_type')[2:3]),
+            reference_assay_type_p4=Subquery(ref_assay_qs.values('assay_type')[3:4]),
+            reference_assay_type_p5=Subquery(ref_assay_qs.values('assay_type')[4:5]),
+
+            reference_a_p1=Subquery(assay_qs.values('log_bias_factor_a')[:1]),
+            reference_a_p2=Subquery(assay_qs.values('log_bias_factor_a')[1:2]),
+            reference_a_p3=Subquery(assay_qs.values('log_bias_factor_a')[2:3]),
+            reference_a_p4=Subquery(assay_qs.values('log_bias_factor_a')[3:4]),
+            reference_a_p5=Subquery(assay_qs.values('log_bias_factor_a')[4:5]),
+
+            reference_b_p1=Subquery(assay_qs.values('log_bias_factor_b')[:1]),
+            reference_b_p2=Subquery(assay_qs.values('log_bias_factor_b')[1:2]),
+            reference_b_p3=Subquery(assay_qs.values('log_bias_factor_b')[2:3]),
+            reference_b_p4=Subquery(assay_qs.values('log_bias_factor_b')[3:4]),
+            reference_b_p5=Subquery(assay_qs.values('log_bias_factor_b')[4:5]),
+
+            reference_c_p1=Subquery(assay_qs.values('log_bias_factor_c')[:1]),
+            reference_c_p2=Subquery(assay_qs.values('log_bias_factor_c')[1:2]),
+            reference_c_p3=Subquery(assay_qs.values('log_bias_factor_c')[2:3]),
+            reference_c_p4=Subquery(assay_qs.values('log_bias_factor_c')[3:4]),
+            reference_c_p5=Subquery(assay_qs.values('log_bias_factor_c')[4:5]),
+
+            reference_d_p1=Subquery(assay_qs.values('log_bias_factor_d')[:1]),
+            reference_d_p2=Subquery(assay_qs.values('log_bias_factor_d')[1:2]),
+            reference_d_p3=Subquery(assay_qs.values('log_bias_factor_d')[2:3]),
+            reference_d_p4=Subquery(assay_qs.values('log_bias_factor_d')[3:4]),
+            reference_d_p5=Subquery(assay_qs.values('log_bias_factor_d')[4:5]),
             # pathways
             pathways_p1=Subquery(assay_qs.values('family')[:1]),
             pathways_p2=Subquery(assay_qs.values('family')[1:2]),
@@ -1261,8 +1316,12 @@ class BiasBrowser(ListView):
             measured_biological_process_p3=Subquery(assay_qs.values('measured_biological_process')[2:3]),
             measured_biological_process_p4=Subquery(assay_qs.values('measured_biological_process')[3:4]),
             measured_biological_process_p5=Subquery(assay_qs.values('measured_biological_process')[4:5]),
+
+            #web_links
+            web_links = F('ligand__properities__web_links__web_resource__name'),
+            web_links1 = F('ligand__properities__web_links'),
         )
-        
+
         return queryset
 
 class BiasGBrowser(ListView):
