@@ -619,6 +619,10 @@ class Command(BaseBuild):
                                                          t_value=ex['t_coefficient_initial'],
                                                          t_factor=ex['t_factor'],
                                                          log_bias_factor=ex['log_bias_factor'],
+                                                         effector_family = ex['family'],
+                                                         measured_effector = ex['assay_measure_method'],
+                                                         measured_biological_process = ex['measured_biological_process'] ,
+                                                         signal_detection_tecnique = ex['signal_detection_tecnique'],
                                                          emax_ligand_reference=emax_ligand
                                                          )
                         experiment_assay.save()
@@ -648,6 +652,10 @@ class Command(BaseBuild):
                                                          t_value=ex['t_coefficient_initial'],
                                                          t_factor=ex['t_factor'],
                                                          log_bias_factor=ex['log_bias_factor'],
+                                                         effector_family = ex['family'],
+                                                         measured_effector = ex['assay_measure_method'],
+                                                         measured_biological_process = ex['measured_biological_process'],
+                                                         signal_detection_tecnique = ex['signal_detection_tecnique'],
                                                          emax_ligand_reference=emax_ligand
                                                          )
                         experiment_assay.save()
