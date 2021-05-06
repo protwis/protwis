@@ -317,19 +317,23 @@ class StructureDetail(StructureList):
 
 class FamilyAlignment(views.APIView):
     """
-    Get a full sequence alignment of a protein family including a consensus sequence
+    Get a full sequence alignment of a protein family including a consensus sequence.
+    Note that this method only includes Swiss-Prot sequences in the alignment.
     \n/alignment/family/{slug}/
     \n{slug} is a protein family identifier, e.g. 001_001_001
     """
 
-    def get(self, request, slug=None, segments=None, latin_name=None, statistics=False):
+    def get(self, request, slug=None, segments=None, latin_name=None, statistics=False, include_trembl=False):
         if slug is not None:
             # Check for specific species
             if latin_name is not None:
-                ps = Protein.objects.filter(sequence_type__slug='wt', source__id=1, family__slug__startswith=slug,
+                ps = Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith=slug,
                     species__latin_name=latin_name)
             else:
-                ps = Protein.objects.filter(sequence_type__slug='wt', source__id=1, family__slug__startswith=slug)
+                if not include_trembl:
+                    ps = Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith=slug, source__id=1)
+                else:
+                    ps = Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith=slug)
 
             # take the numbering scheme from the first protein
             #s_slug = Protein.objects.get(entry_name=ps[0]).residue_numbering_scheme_id
@@ -428,6 +432,15 @@ class FamilyAlignment(views.APIView):
                 ali_dict["statistics"] = feat
 
             return Response(ali_dict)
+
+class FamilyAlignmentAll(FamilyAlignment):
+    """
+    Get a full sequence alignment of a protein family including both Swiss-Prot
+    and TrEMBL sequences. Note that this method allows for the alignment of up
+    to a few hundred sequences, larger alignments will result in an error.
+    \n/alignment/family_all/{slug}
+    \n{slug} is a protein family identifier, e.g. 001_001_001_001
+    """
 
 class FamilyAlignmentPartial(FamilyAlignment):
     """
