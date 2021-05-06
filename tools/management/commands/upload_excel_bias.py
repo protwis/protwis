@@ -104,29 +104,31 @@ class Command(BaseBuild):
         try:
             workbook = xlrd.open_workbook(excelpath)
             worksheets = workbook.sheet_names()
+
             temp = []
-
             for worksheet_name in worksheets:
-                worksheet = workbook.sheet_by_name(worksheet_name)
-                num_rows = worksheet.nrows - 1
-                num_cells = worksheet.ncols - 1
-                curr_row = 0  # skip first, otherwise -1
-                while curr_row < num_rows:
-                    curr_row += 1
-                    row = worksheet.row(curr_row)
-                    curr_cell = -1
-                    temprow = []
-                    while curr_cell < num_cells:
-                        curr_cell += 1
-                        cell_value = worksheet.cell_value(curr_row, curr_cell)
-                        cell_type = worksheet.cell_type(curr_row, curr_cell)
+                if worksheet_name == 'Data':
 
-                        # fix wrong spaced cells
-                        if cell_value == " ":
-                            cell_value = ""
-                        temprow.append(cell_value)
-                    temp.append(temprow)
-                    # if curr_row>10: break
+                    worksheet = workbook.sheet_by_name(worksheet_name)
+                    num_rows = worksheet.nrows - 1
+                    num_cells = worksheet.ncols - 1
+                    curr_row = 0  # skip first, otherwise -1
+                    while curr_row < num_rows:
+                        curr_row += 1
+                        row = worksheet.row(curr_row)
+                        curr_cell = -1
+                        temprow = []
+                        while curr_cell < num_cells:
+                            curr_cell += 1
+                            cell_value = worksheet.cell_value(curr_row, curr_cell)
+                            cell_type = worksheet.cell_type(curr_row, curr_cell)
+                            # fix wrong spaced cells
+                            if cell_value == " ":
+                                cell_value = ""
+                            temprow.append(cell_value)
+                        temp.append(temprow)
+
+
             return temp
         except:
             self.logger.info(
@@ -146,24 +148,25 @@ class Command(BaseBuild):
         d['receptor'] = None
         d['receptor_uniprot_id'] = None
         d['cell_line'] = None
-        d['protein'] = None
-        d['protein_assay'] = None
-        d['protein_assay_method'] = None
-        d['protein_time_resolved'] = None
-        d['protein_ligand_function'] = None
-        d['protein_mtype'] = None
-        d['protein_relation'] = None
-        d['protein_activity_quantity'] = None
-        d['protein_activity_quantity_unit'] = None
-        d['protein_activity_quality'] = None
-        d['protein_efficacy_measure'] = None
-        d['protein_efficacy_relation'] = None
-        d['protein_efficacy_quantity'] = 0.0
-        d['protein_efficacy_quantity_unit'] = None
-        d['pathway_bias_initial'] = None
-        d['pathway_bias'] = None
-        d['protein_activity_equation'] = None
-        d['protein_efficacy_equation'] = None
+        d['signalling_protein'] = None
+        d['measured_effector'] = None
+        d['effector_family'] = None
+        d['assay_type'] = None
+        d['measured_biological_process'] = None
+        d['signal_detection_tecnique'] = None
+        d['time_resolved'] = None
+        d['ligand_modality'] = None
+        d['potency_measure_type'] = None
+        d['potency_equation'] = None
+        d['potency_quantity'] = None
+        d['protein_unit'] = None
+        d['potency_quality'] = 0.0
+        d['emax_type'] = None
+        d['emax_equation'] = None
+        d['emax_quantity'] = None
+        d['emax_unit'] = None
+        d['transduction_coef'] = None
+        d['relative_transduction_coef'] = None
         d['auxiliary_protein'] = None
         d['source_file'] = excel_row
         self.logger.info("empty dict created  error")
@@ -189,58 +192,61 @@ class Command(BaseBuild):
             d['emax_ligand_id'] = int(r[10])
         except:
             d['emax_ligand_id'] = r[10]
-
         d['receptor'] = r[11].lower().strip()
         d['receptor_uniprot_id'] = r[12]
         d['cell_line'] = r[13]
-        d['protein'] = r[14].strip().replace('α','a').replace('β','B').replace('g','G').lower()
-        d['protein_assay'] = r[15].strip()
-        d['protein_assay_method'] = r[16]
-        d['protein_time_resolved'] = r[17]
-        d['protein_ligand_function'] = r[18]
-        d['protein_mtype'] = r[19]
-        d['protein_relation'] = r[20]
-        d['protein_activity_quantity_unit'] = r[22]
-        d['protein_activity_quality'] = r[23]
-        d['protein_efficacy_measure'] = r[24]
-        d['protein_efficacy_relation'] = r[25]
-        d['protein_efficacy_quantity_unit'] = r[27]
-        if r[21] is not None and r[21] != '':
-            d['protein_activity_quantity'] = r[21]
-        if r[26] is not None and r[26] != '':
-            d['protein_efficacy_quantity'] = r[26]
-        if r[28] is not None and r[28] != '':
+        d['signalling_protein'] = r[14].replace('α','a').replace('β','B').replace('g','G').lower().strip()
+        d['measured_effector'] = r[15]
+        d['effector_family'] = r[16]
+        d['assay_type'] = r[17]
+        d['measured_biological_process'] = r[18]
+        d['signal_detection_tecnique'] = r[19]
+        d['time_resolved'] = r[20]
+        d['ligand_modality'] = r[21]
+        if r[24] is not None and r[24] != '':
+            d['potency_quantity'] = r[24]
+        if r[29] is not None and r[29] != '':
+            d['emax_quantity'] = r[29]
+        d['potency_measure_type'] = r[22]
+        d['potency_equation'] = r[23]
+
+        d['potency_unit'] = r[25]
+        d['potency_quality'] = r[26]
+        d['emax_type'] = r[27]
+        d['emax_equation'] = r[28]
+
+        d['emax_unit'] = r[30]
+        if r[31] is not None and r[31] != '':
             try:
-                d['pathway_bias_initial'] = float(r[28])
+                d['pathway_bias_initial'] = float(r[31])
             except:
                 try:
-                    d['pathway_bias_initial'] = float(r[28].replace('\U00002013', '-'))
+                    d['pathway_bias_initial'] = float(r[31].replace('\U00002013', '-'))
                 except:
-                    d['pathway_bias_initial'] = r[28]
+                    d['pathway_bias_initial'] = r[31]
                     self.logger.info("pathway_bias_initial  error")
 
 
-        if r[29] is not None and r[29] != '':
+        if r[32] is not None and r[32] != '':
             try:
-                d['pathway_bias'] = float(r[29])
+                d['pathway_bias'] = float(r[32])
             except:
                 try:
-                    d['pathway_bias'] = float(r[29].replace('\U00002013', '-'))
+                    d['pathway_bias'] = float(r[32].replace('\U00002013', '-'))
                 except:
                     d['pathway_bias'] = None
-        d['auxiliary_protein'] = r[30]
+
+        d['auxiliary_protein'] = r[33]
         d['source_file'] = excel_row
         return d
 
     def analyse_rows(self, rows, source_file):
         """
         Reads excel rows one by one
-
         """
         skipped = list()
         # Analyse the rows from excel and assign the right headers
         temp = []
-
         for i, r in enumerate(rows, 1):
             d = dict()
             # code to skip rows in excel for faster testing
@@ -250,27 +256,31 @@ class Command(BaseBuild):
             #     break
             if i % 100 == 0:
                 print(i)
-
             d = self.return_row(r=r,excel_row=i)
             try:
-                d['protein_activity_quantity'] = re.sub('[^\d\.,]', '', d['protein_activity_quantity'])
-                d['protein_activity_quantity'] = round(float(d['protein_activity_quantity']),2)
+                d['potency_quantity'] = re.sub('[^\d\.,]', '', d['potency_quantity'])
+                d['potency_quantity'] = round(float(d['potency_quantity']),2)
             except:
-                d['protein_activity_quantity'] = d['protein_activity_quantity']
+                d['potency_quantity'] = d['potency_quantity']
             try:
-                d['protein_efficacy_quantity'] = round(d['protein_efficacy_quantity'],0)
+                d['emax_quantity'] = round(d['emax_quantity'],0)
             except:
-                d['protein_efficacy_quantity'] = d['protein_efficacy_quantity']
 
-            d['protein_activity_quantity'], d['protein_mtype'] = self.fetch_measurements(d['protein_activity_quantity'],
-																	     d['protein_mtype'],
-																	     d['protein_activity_quantity_unit'])
+                d['emax_quantity'] = d['emax_quantity']
 
-            if (d['protein'] == '' or
-                  d['protein'] == None):
-                if d['protein_assay'] == 'pERK1/2 activation' or d['protein_assay'] =="pERK1-2":
-                    d['protein'] = 'pERK1-2'
-            family = self.define_g_family(d['protein'].lower(), d['protein_assay'])
+            if d['potency_quality'].lower() == 'low activity':
+                if d['emax_quantity'] == None or d['emax_quantity']==0.0:
+                    d['potency_quantity'] = 4.9
+                    d['potency_measure_type'] = 'pEC50'
+                    d['emax_quantity'] = 20
+                    d['protein_efficacy_equation'] = 'abs'
+
+            d['potency_quantity'], d['potency_measure_type'] = self.fetch_measurements(d['potency_quantity'],
+																	     d['potency_measure_type'],
+																	     d['potency_unit'])
+
+
+            family = self.define_g_family(d['signalling_protein'].lower(), d['assay_type'])
             pub = self.fetch_publication(d['reference'])
 
             l = self.fetch_ligand(
@@ -290,7 +300,6 @@ class Command(BaseBuild):
                 continue
             end_ligand  = self.fetch_endogenous(protein)
             auxiliary_protein = self.fetch_protein(d['auxiliary_protein'], d['source_file'])
-
             if l == None:
                 print('*************error row',d,l)
             ## TODO:  check if it was already uploaded
@@ -311,26 +320,29 @@ class Command(BaseBuild):
             #     continue
 
             experiment_assay = ExperimentAssay(biased_experiment=experiment_entry,
-                                                   signalling_protein=d['protein'],
+                                                   signalling_protein=d['signalling_protein'],
                                                    family = family,
                                                    cell_line=d['cell_line'],
-                                                   assay_type=d['protein_assay'],
-                                                   assay_measure=d['protein_assay_method'],
-                                                   assay_time_resolved=d['protein_time_resolved'],
-                                                   ligand_function=d['protein_ligand_function'],
-                                                   quantitive_measure_type=d['protein_mtype'],
-                                                   quantitive_activity=d['protein_activity_quantity'],
-                                                   quantitive_activity_sign=d['protein_activity_equation'],
-                                                   quantitive_unit=d['protein_activity_quantity_unit'],
-                                                   qualitative_activity=d['protein_activity_quality'],
-                                                   quantitive_efficacy=d['protein_efficacy_quantity'],
-                                                   efficacy_measure_type=d['protein_efficacy_measure'],
-                                                   efficacy_sign=d['protein_efficacy_equation'],
-                                                   efficacy_unit=d['protein_efficacy_quantity_unit'],
+                                                   assay_type=d['assay_type'],
+                                                   effector_family = d['effector_family'],
+                                                   measured_effector=d['measured_effector'],
+                                                   measured_biological_process=d['measured_biological_process'],
+                                                   signal_detection_tecnique=d['signal_detection_tecnique'],
+                                                   assay_time_resolved=d['time_resolved'],
+                                                   ligand_function=d['ligand_modality'],
+                                                   quantitive_measure_type=d['potency_measure_type'],
+                                                   quantitive_activity=d['potency_quantity'],
+                                                   quantitive_activity_sign=d['potency_equation'],
+                                                   quantitive_unit=d['potency_unit'],
+                                                   qualitative_activity=d['potency_quality'],
+                                                   quantitive_efficacy=d['emax_quantity'],
+                                                   efficacy_measure_type=d['emax_type'],
+                                                   efficacy_sign=d['emax_equation'],
+                                                   efficacy_unit=d['emax_unit'],
                                                    bias_reference=d['ligand_reference'],
-                                                   bias_value=d['pathway_bias'],
-                                                   bias_value_initial=d['pathway_bias_initial'],
-                                                   emax_ligand_reference=reference_ligand
+                                                   bias_value=d['transduction_coef'],
+                                                   bias_value_initial=d['relative_transduction_coef'],
+                                                   emax_ligand_reference=reference_ligand,
                                                    )
             experiment_assay.save()
                 #fetch authors
@@ -403,20 +415,18 @@ class Command(BaseBuild):
             family = 'B-arr'
 
         elif (protein == 'gi/o-family' or
+                protein == 'gai/o-gbγ' or
                 protein == 'gai1' or
                 protein == 'gai2' or
                 protein == 'gai3' or
-                protein == 'gao' or
-                protein == 'gaoA' or
                 protein == 'gai' or
-                protein == 'gai1' or
-                protein == 'gai2' or
-                protein == 'gai3' or
                 protein == 'gai1/2' or
+                protein=='gbγ' or
                 protein == 'gao' or
-                protein == 'gaoA' or
-                protein == 'gaoB' or
+                protein == 'gaoa' or
+                protein == 'gaob' or
                 protein == 'gao1' or
+                protein == 'gaolf' or
                 protein == 'gat1' or
                 protein == 'gat2' or
                 protein == 'gat3' or
@@ -425,17 +435,26 @@ class Command(BaseBuild):
             family = 'Gi/o'
 
         elif (protein == 'gq-family' or
-                protein == 'ga12' or
-                protein==' gaq' or
+                protein=='ga12' or
+                protein=='gaq' or
+                protein=='gpa1/ga12' or
+                protein=='gpa1/gaq' or
+                protein=='gaqδ6i4myr' or
+                protein=='gaqi5' or
                 protein=='gaq/11' or
                 protein=='gaq/14' or
+                protein=='gaq/15' or
+                protein=='gaq/15' or
                 protein=='gaq/15' or
                 protein=='gaq/16'):
             family = 'Gq/11'
 
         elif (protein == 'g12/13-family' or
+                protein == 'ga11' or
                 protein == 'ga12' or
-                protein == 'ga13'):
+                protein == 'ga13' or
+                protein == 'ga14' or
+                protein == 'ga15'):
             family = 'G12/13'
 
         elif (protein == 'gs-family' or
@@ -443,13 +462,12 @@ class Command(BaseBuild):
               protein == 'gaolf'):
             family = 'Gs'
         elif (protein == 'pERK1/2 activation' or
-                protein =="perk1-2"):
+                protein =="erk"):
             family = 'pERK1-2'
 
         elif (protein == '' or protein is None):
             if assay_type == 'Ca2+ accumulation':
                 family = 'CA2'
-
         else:
             family = 'G-protein'
         self.logger.info("family saved")
