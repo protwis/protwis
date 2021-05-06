@@ -630,7 +630,7 @@ class Command(BaseBuild):
 
                         emax_ligand = ex['emax_reference_ligand']
                         experiment_assay = AnalyzedAssay(experiment=experiment_entry,
-                                                         assay_description='reference_assay',
+                                                         assay_description='endogenous_assay',
                                                          family=ex['family'],
                                                          order_no=ex['order_no'],
                                                          signalling_protein=ex['signalling_protein'],
