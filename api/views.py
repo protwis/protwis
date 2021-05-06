@@ -1,7 +1,6 @@
-from django.shortcuts import render
-from rest_framework import views, generics, viewsets
+from rest_framework import views, generics
 from rest_framework.response import Response
-from rest_framework.parsers import MultiPartParser, FormParser, FileUploadParser
+from rest_framework.parsers import FormParser, FileUploadParser
 from rest_framework.renderers import JSONRenderer
 from django.template.loader import render_to_string
 from django.db.models import Q
@@ -9,21 +8,20 @@ from django.conf import settings
 
 from interaction.models import ResidueFragmentInteraction
 from mutation.models import MutationRaw
-from protein.models import Protein, ProteinConformation, ProteinFamily, Species, ProteinSegment
-from residue.models import Residue, ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent
+from protein.models import Protein, ProteinFamily, Species, ProteinSegment
+from residue.models import Residue, ResidueNumberingScheme, ResidueGenericNumberEquivalent
 from structure.models import Structure
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.sequence_parser import SequenceParser
 from api.serializers import (ProteinSerializer, ProteinFamilySerializer, SpeciesSerializer, ResidueSerializer,
-                             ResidueExtendedSerializer, StructureSerializer,
-                             StructureLigandInteractionSerializer,
+                             ResidueExtendedSerializer, StructureLigandInteractionSerializer,
                              MutationSerializer)
 from api.renderers import PDBRenderer
 from common.alignment import Alignment
 from common.definitions import *
 from drugs.models import Drugs
 
-import json, os
+import os
 from io import StringIO
 from Bio.PDB import PDBIO, parse_pdb_header
 from collections import OrderedDict
@@ -31,12 +29,7 @@ from collections import OrderedDict
 # FIXME add
 # getMutations
 # numberPDBfile
-import coreapi
-from urllib.parse import urlparse
-from urllib.parse import urljoin
-from rest_framework import renderers, response, schemas
 from rest_framework.decorators import api_view, renderer_classes
-from rest_framework import response, schemas
 from rest_framework_swagger.views import get_swagger_view
 
 schema_view = get_swagger_view(title='GPCRdb API')
@@ -54,6 +47,7 @@ class ProteinDetail(generics.RetrieveAPIView):
 
 
 class ProteinByAccessionDetail(ProteinDetail):
+
     """
     Get a single protein instance by accession
     \n/protein/accession/{accession}/
