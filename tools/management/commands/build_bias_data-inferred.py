@@ -165,6 +165,10 @@ class Command(BaseBuild):
             temp_dict['potency'] = ''
             temp_dict['t_factor'] = ''
             temp_dict['log_bias_factor'] = ''
+            temp_dict['lbf_a'] = None
+            temp_dict['lbf_b'] = None
+            temp_dict['lbf_c'] = None
+            temp_dict['lbf_d'] = None
             temp_dict['order_no'] = 0
             temp_dict['order_bias_value'] = 0
             temp_dict['reference_ligand'] = list()
@@ -619,6 +623,10 @@ class Command(BaseBuild):
                                                          t_value=ex['t_coefficient_initial'],
                                                          t_factor=ex['t_factor'],
                                                          log_bias_factor=ex['log_bias_factor'],
+                                                         log_bias_factor_a=ex['lbf_a'],
+                                                         log_bias_factor_b=ex['lbf_b'],
+                                                         log_bias_factor_c=ex['lbf_c'],
+                                                         log_bias_factor_d=ex['lbf_d'],                                                        
                                                          effector_family = ex['family'],
                                                          measured_effector = ex['assay_measure_method'],
                                                          measured_biological_process = ex['measured_biological_process'] ,

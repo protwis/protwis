@@ -1262,7 +1262,7 @@ class BiasBrowser(ListView):
             measured_biological_process_p4=Subquery(assay_qs.values('measured_biological_process')[3:4]),
             measured_biological_process_p5=Subquery(assay_qs.values('measured_biological_process')[4:5]),
         )
-        import pdb; pdb.set_trace()
+        
         return queryset
 
 class BiasGBrowser(ListView):
