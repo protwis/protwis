@@ -1,6 +1,6 @@
 from rest_framework import views, generics
 from rest_framework.response import Response
-from rest_framework.parsers import FormParser, FileUploadParser
+from rest_framework.parsers import FileUploadParser
 from rest_framework.renderers import JSONRenderer
 from django.template.loader import render_to_string
 from django.db.models import Q
@@ -21,7 +21,6 @@ from common.alignment import Alignment
 from common.definitions import *
 from drugs.models import Drugs
 
-import os
 from io import StringIO
 from Bio.PDB import PDBIO, parse_pdb_header
 from collections import OrderedDict
