@@ -126,7 +126,7 @@ class Command(BuildHumanProteins):
                 extension = split_filename[1]
                 if extension != 'txt':
                     continue
-                # print(accession)
+
                 up = self.parse_uniprot_file(accession)
                 # Skip TREMBL on first loop, and SWISSPROT on second
                 if 'source' in up:
