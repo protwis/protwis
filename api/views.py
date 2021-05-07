@@ -9,7 +9,7 @@ from django.conf import settings
 from interaction.models import ResidueFragmentInteraction
 from mutation.models import MutationRaw
 from protein.models import Protein, ProteinFamily, Species, ProteinSegment
-from residue.models import Residue, ResidueNumberingScheme, ResidueGenericNumberEquivalent
+from residue.models import Residue, ResidueGenericNumberEquivalent
 from structure.models import Structure
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.sequence_parser import SequenceParser
@@ -18,7 +18,7 @@ from api.serializers import (ProteinSerializer, ProteinFamilySerializer, Species
                              MutationSerializer)
 from api.renderers import PDBRenderer
 from common.alignment import Alignment
-from common.definitions import *
+from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS
 from drugs.models import Drugs
 
 from io import StringIO
