@@ -97,14 +97,15 @@ class Command(BuildHumanProteins):
                     continue
 
                 # append entry_name to lookup list
-                construct_entry_names.append(sd['protein'])
+                if sd['protein'] not in construct_entry_names:
+                    construct_entry_names.append(sd['protein'])
 
             # parse files
             filenames = os.listdir(self.local_uniprot_dir)
 
             ###GP - class D addition - just temporary - FIXME
             construct_entry_names = construct_entry_names+['a0a0w0dd93_cangb', 'q8wzm9_sorma', 'b1gvb8_pench', 'mam2_schpo', 'q4wyu8_aspfu', 'q8nir1_neucs', 'ste2_lackl', 'q6fly8_canga', 'g2ye05_botf4', 's6exb4_zygb2', 'c5dx97_zygrc']
-
+            
             # Keep track of first or second iteration
             reviewed = ['SWISSPROT','TREMBL'][iteration-1]
             skipped_due_to_swissprot = 0
@@ -125,10 +126,14 @@ class Command(BuildHumanProteins):
                 extension = split_filename[1]
                 if extension != 'txt':
                     continue
-
+                # print(accession)
                 up = self.parse_uniprot_file(accession)
                 # Skip TREMBL on first loop, and SWISSPROT on second
-                if reviewed != up['source']:
+                if 'source' in up:
+                    if reviewed != up['source']:
+                        continue
+                else:
+                    ### For now just skip entries that don't have a source
                     continue
 
                 # skip human proteins
@@ -173,7 +178,7 @@ class Command(BuildHumanProteins):
                         # NOTE: when extending this - make a dictionary
                         # NOTE: consider utilizing e.g. OrthoDB
                         if up['entry_name'] == "b1b1u5_9arac":
-                           split_entry_name = ["opsd", ""]
+                            split_entry_name = ["opsd", ""]
 
                         # add _ to the split entry name to avoid e.g. gp1 matching gp139
                         entry_name_query = split_entry_name[0] + '_'
