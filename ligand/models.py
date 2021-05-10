@@ -432,8 +432,9 @@ class ExperimentAssay(models.Model):
     family = models.CharField(max_length=60, null=True)
     cell_line = models.CharField(max_length=60, null=True)
     assay_type = models.CharField(max_length=60, null=True)
-    effector_family = models.CharField(max_length=60, null=True)
-    measured_effector = models.CharField(max_length=60, null=True)
+    molecule_1 = models.CharField(max_length=60, null=True)
+    molecule_2 = models.CharField(max_length=60, null=True)
+
     measured_biological_process = models.CharField(max_length=60, null=True)
     signal_detection_tecnique = models.TextField(null=True)
     assay_time_resolved = models.CharField(max_length=60, null=True)
@@ -540,7 +541,7 @@ class AnalyzedAssay(models.Model):
 class BiasedPathways(models.Model):
     submission_author = models.CharField(max_length=50)
     ligand = models.ForeignKey(Ligand, on_delete=models.CASCADE)
-    ligand_pubchem = models.CharField(max_length=40, null=True)
+    # lignad_pubchem = models.CharField(max_length=40, null=True)
     publication = models.ForeignKey(Publication, on_delete=models.CASCADE)
     receptor = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
     chembl = models.CharField(max_length=40, null=True)

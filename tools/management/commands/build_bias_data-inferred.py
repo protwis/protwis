@@ -293,7 +293,7 @@ class Command(BaseBuild):
                     content[name]['reference_assays_list'].extend(i[1]['reference_assays_list'])
                     content[name]['ligand_source_id'] = assay['ligand_source_id']
                     content[name]['ligand_source_type'] = assay['ligand_source_type']
-                
+
         self.logger.info('returned finalised assay')
         return content
 
@@ -471,7 +471,6 @@ class Command(BaseBuild):
                 i['lbf_b'] = b
                 i['lbf_c'] = c
                 i['lbf_d'] = d
-
         except:
             return_message = None
         return return_message
@@ -580,10 +579,9 @@ class Command(BaseBuild):
 
     def save_data_to_model(self, context, source):
         for i in context['data'].items():
-            if self.fetch_experiment(i[1]['publication'], i[1]['ligand'], i[1]['receptor'], source) == False:
-                primary, secondary = self.fetch_receptor_trunsducers(
-                    i[1]['receptor'])
-                if len(i[1]['biasdata']) > 1:
+            if len(i[1]['biasdata']) > 1:
+                if self.fetch_experiment(i[1]['publication'], i[1]['ligand'], i[1]['receptor'], source) == False:
+                    primary, secondary = self.fetch_receptor_trunsducers(i[1]['receptor'])                
                     experiment_entry = AnalyzedExperiment(publication=i[1]['publication'],
                                                           ligand=i[1]['ligand'],
                                                           receptor=i[1]['receptor'],
@@ -669,7 +667,6 @@ class Command(BaseBuild):
                         experiment_assay.save()
                 else:
                     pass
-
             else:
                 self.logger.info('saving error')
 
