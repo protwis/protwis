@@ -199,7 +199,9 @@ function importTargets(){
   var parsed = 0;
   for (var i = 0; i < split_entries.length; i++) {
     split_entries[parseInt(i, 10)] = split_entries[parseInt(i, 10)].trim().toLowerCase();
-    // minimum protein name =
+    split_entries[parseInt(i, 10)] = split_entries[parseInt(i, 10)].split("_")[0];
+
+    // Check minimum protein name length 
     if (split_entries[parseInt(i, 10)].length >= 2){
       // Find checkbox with correct entry
       var items = $("table#uniprot_selection").find(`input[data-entry='${split_entries[parseInt(i, 10)]}']`);
