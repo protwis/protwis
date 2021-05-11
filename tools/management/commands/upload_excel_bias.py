@@ -23,7 +23,8 @@ import operator
 import traceback
 import time
 import math
-
+import json
+import requests
 
 import pytz
 import re
@@ -147,12 +148,16 @@ class Command(BaseBuild):
         d['emax_ligand_id'] = None
         d['receptor'] = None
         d['receptor_uniprot_id'] = None
+
         d['cell_line'] = None
         d['signalling_protein'] = None
-        d['measured_effector'] = None
         d['effector_family'] = None
+
+        d['molecule_1'] = None
+        d['molecule_2'] = None
+
         d['assay_type'] = None
-        d['measured_biological_process'] = None
+        d['spatial_level'] = None
         d['signal_detection_tecnique'] = None
         d['time_resolved'] = None
         d['ligand_modality'] = None
@@ -176,6 +181,7 @@ class Command(BaseBuild):
         d = self.initialize_return_row(excel_row)
         d['submitting_group'] = r[0]
         d['reference'] = r[1]
+
         try:
             d['ligand_name'] = str(int(r[4]))
         except:
@@ -186,57 +192,61 @@ class Command(BaseBuild):
         except:
             d['ligand_id'] = r[6]
         d['ligand_reference'] = r[7]
+
         d['emax_ligand_name'] = r[8]
         d['emax_ligand_type'] = r[9]
         try:
             d['emax_ligand_id'] = int(r[10])
         except:
             d['emax_ligand_id'] = r[10]
+
         d['receptor'] = r[11].lower().strip()
         d['receptor_uniprot_id'] = r[12]
+
         d['cell_line'] = r[13]
         d['signalling_protein'] = r[14].replace('α','a').replace('β','B').replace('g','G').lower().strip()
-        d['measured_effector'] = r[15]
-        d['effector_family'] = r[16]
-        d['assay_type'] = r[17]
-        d['measured_biological_process'] = r[18]
-        d['signal_detection_tecnique'] = r[19]
-        d['time_resolved'] = r[20]
-        d['ligand_modality'] = r[21]
-        if r[24] is not None and r[24] != '':
-            d['potency_quantity'] = r[24]
-        if r[29] is not None and r[29] != '':
-            d['emax_quantity'] = r[29]
-        d['potency_measure_type'] = r[22]
-        d['potency_equation'] = r[23]
+        d['effector_family'] = r[15]
+        d['molecule_1'] = r[16]
+        d['molecule_2'] = r[17]
 
-        d['potency_unit'] = r[25]
-        d['potency_quality'] = r[26]
-        d['emax_type'] = r[27]
-        d['emax_equation'] = r[28]
+        d['assay_type'] = r[18]
+        d['spatial_level'] = r[19]
+        d['signal_detection_tecnique'] = r[20]
+        d['time_resolved'] = r[21]
 
-        d['emax_unit'] = r[30]
-        if r[31] is not None and r[31] != '':
-            try:
-                d['pathway_bias_initial'] = float(r[31])
-            except:
-                try:
-                    d['pathway_bias_initial'] = float(r[31].replace('\U00002013', '-'))
-                except:
-                    d['pathway_bias_initial'] = r[31]
-                    self.logger.info("pathway_bias_initial  error")
+        d['ligand_modality'] = r[22]
+        d['potency_measure_type'] = r[23]
+        d['potency_equation'] = r[24]
 
+        if r[25] is not None and r[25] != '':
+            d['potency_quantity'] = r[25]
+        d['potency_unit'] = r[26]
+        d['potency_quality'] = r[27]
+
+        d['emax_type'] = r[28]
+        d['emax_equation'] = r[29]
+        if r[30] is not None and r[30] != '':
+            d['emax_quantity'] = r[30]
+        d['emax_unit'] = r[31]
 
         if r[32] is not None and r[32] != '':
             try:
-                d['pathway_bias'] = float(r[32])
+                d['transduction_coef'] = float(r[32])
             except:
                 try:
-                    d['pathway_bias'] = float(r[32].replace('\U00002013', '-'))
+                    d['transduction_coef'] = float(r[32].replace('\U00002013', '-'))
                 except:
-                    d['pathway_bias'] = None
+                    d['transduction_coef'] = None
 
-        d['auxiliary_protein'] = r[33]
+        if r[33] is not None and r[33] != '':
+            try:
+                d['relative_transduction_coef'] = float(r[33])
+            except:
+                try:
+                    d['relative_transduction_coef'] = float(r[33].replace('\U00002013', '-'))
+                except:
+                    d['relative_transduction_coef'] = None
+        d['auxiliary_protein'] = r[34]
         d['source_file'] = excel_row
         return d
 
@@ -248,13 +258,15 @@ class Command(BaseBuild):
         # Analyse the rows from excel and assign the right headers
         temp = []
         for i, r in enumerate(rows, 1):
+            print(i,r)
+            break
             d = dict()
             # code to skip rows in excel for faster testing
             # if i < 7609:
             #     continue
-            # if i > 838:
-            #     break
-            if i % 100 == 0:
+            if i > 200:
+                break
+            if i % 50 == 0:
                 print(i)
             d = self.return_row(r=r,excel_row=i)
             try:
@@ -265,7 +277,6 @@ class Command(BaseBuild):
             try:
                 d['emax_quantity'] = round(d['emax_quantity'],0)
             except:
-
                 d['emax_quantity'] = d['emax_quantity']
 
             if d['potency_quality'].lower() == 'low activity':
@@ -279,15 +290,12 @@ class Command(BaseBuild):
 																	     d['potency_measure_type'],
 																	     d['potency_unit'])
 
-
-            family = self.define_g_family(d['signalling_protein'].lower(), d['assay_type'])
+            protein = self.fetch_protein(d['receptor'], d['source_file'])
+            # family = self.define_g_family(d['signalling_protein'].lower(), d['assay_type'], protein )
             pub = self.fetch_publication(d['reference'])
 
             l = self.fetch_ligand(
                 d['ligand_id'], d['ligand_type'], d['ligand_name'], d['source_file'])
-
-            #fetch endogenous ligand
-            protein = self.fetch_protein(d['receptor'], d['source_file'])
 
             # fetch reference_ligand
             reference_ligand = self.fetch_ligand(
@@ -321,12 +329,12 @@ class Command(BaseBuild):
 
             experiment_assay = ExperimentAssay(biased_experiment=experiment_entry,
                                                    signalling_protein=d['signalling_protein'],
-                                                   family = family,
+                                                   family = d['effector_family'],
                                                    cell_line=d['cell_line'],
                                                    assay_type=d['assay_type'],
-                                                   effector_family = d['effector_family'],
-                                                   measured_effector=d['measured_effector'],
-                                                   measured_biological_process=d['measured_biological_process'],
+                                                   molecule_1=d['molecule_1'],
+                                                   molecule_2=d['molecule_2'],
+                                                   measured_biological_process=d['spatial_level'],
                                                    signal_detection_tecnique=d['signal_detection_tecnique'],
                                                    assay_time_resolved=d['time_resolved'],
                                                    ligand_function=d['ligand_modality'],
@@ -347,19 +355,15 @@ class Command(BaseBuild):
             experiment_assay.save()
                 #fetch authors
             self.fetch_publication_authors(pub,experiment_assay)
-
             temp.append(d)
         return temp
 
     def fetch_publication_authors(self,publication, experiment_assay):
         counter = 0
-
         author_list = list()
         if publication.authors != None:
-
             for authors in publication.authors.split(','):
                 author_list.append(authors.strip())
-
             author_list.reverse()
             for i in author_list:
                 if counter < 3:
@@ -407,7 +411,7 @@ class Command(BaseBuild):
             self.logger.info("potency convertion error")
             return None, None
 
-    def define_g_family(self, protein, assay_type):
+    def define_g_family(self, protein, assay_type, receptor):
         family = None
         if (protein == 'b-arrestin' or
             protein == 'b-arrestin-1 (non-visual arrestin-2)' or
@@ -421,7 +425,7 @@ class Command(BaseBuild):
                 protein == 'gai3' or
                 protein == 'gai' or
                 protein == 'gai1/2' or
-                protein=='gbγ' or
+                protein == 'gbγ' or
                 protein == 'gao' or
                 protein == 'gaoa' or
                 protein == 'gaob' or
@@ -469,9 +473,31 @@ class Command(BaseBuild):
             if assay_type == 'Ca2+ accumulation':
                 family = 'CA2'
         else:
-            family = 'G-protein'
+            family = self.fetch_receptor_trunsducers(receptor)
+            if family is not None:
+                import pdb; pdb.set_trace()
+            else:
+                family = 'G-protein'
         self.logger.info("family saved")
         return family
+
+    def fetch_receptor_trunsducers(self, receptor):
+        primary = set()
+        temp = list()
+        temp1 = str()
+        secondary = set()
+        try:
+            gprotein = ProteinGProteinPair.objects.filter(protein=receptor)
+            for x in gprotein:
+                if x.transduction and x.transduction == 'primary':
+                    primary.add(x.g_protein.name)
+
+            for i in primary:
+                temp.append(str(i))
+            return temp
+        except:
+            self.logger.info('receptor not found error')
+            return None
 
     def fetch_endogenous(self, protein):
         try:
@@ -525,8 +551,12 @@ class Command(BaseBuild):
             if ligand_id in self.ligand_cache:
                 l = self.ligand_cache[ligand_id]
             else:
-                l = get_or_make_ligand(ligand_id, ligand_type, ligand_name)
-                self.ligand_cache[ligand_id] = l
+                # TODO: if pubchem id then create ligand from pubchem
+                if ligand_type and ligand_type.lower() == 'pubchem cid':
+                    l = self.get_ligand_or_create(ligand_id)
+                if l == None:
+                    l = get_or_make_ligand(ligand_id, ligand_type, ligand_name)
+                    self.ligand_cache[ligand_id] = l
             if l == None:
                 l = self.create_empty_ligand(ligand_name)
         except:
@@ -668,3 +698,94 @@ class Command(BaseBuild):
         lp.save()
         self.logger.info("Could not create ligand, empty is returned")
         return lp
+
+    def get_ligand_name(self,cid):
+        ligand_name = None
+        ligand_name_response = requests.get("https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/"+str(cid)+"/synonyms/json")
+        if ligand_name_response.status_code == 200:
+            try:
+                ligand_name = ligand_name_response.json()
+                ligand_name = ligand_name['InformationList']['Information'][0]['Synonym'][0]
+            except:
+                print('\n*** ligand name error', ligand_name_response.json())
+        return ligand_name
+
+    def get_ligand_properties(self, cid):
+        properties = dict()
+        compound_response = requests.get("https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/"+str(cid)+"/property/CanonicalSMILES,InChIKey,MolecularWeight,HBondDonorCount,HBondAcceptorCount,XLogP,RotatableBondCount/json")
+        if compound_response.status_code == 200:
+            # TODO: try except
+            compound_data = compound_response.json()
+            pubchem = compound_data
+            if pubchem['PropertyTable']['Properties'][0]:
+                try:
+                    if 'HBondAcceptorCount' in pubchem['PropertyTable']['Properties'][0] :
+                        properties['hacc'] =  pubchem['PropertyTable']['Properties'][0]['HBondAcceptorCount']
+                    if 'HBondDonorCount' in pubchem['PropertyTable']['Properties'][0] :
+                        properties['hdon'] =  pubchem['PropertyTable']['Properties'][0]['HBondDonorCount']
+                    if 'XLogP' in pubchem['PropertyTable']['Properties'][0] :
+                        properties['logp'] =  pubchem['PropertyTable']['Properties'][0]['XLogP']
+                    if 'RotatableBondCount' in pubchem['PropertyTable']['Properties'][0] :
+                        properties['rotatable_bonds'] =  pubchem['PropertyTable']['Properties'][0]['RotatableBondCount']
+                    if 'MolecularWeight' in pubchem['PropertyTable']['Properties'][0] :
+                        properties['mw'] = pubchem['PropertyTable']['Properties'][0]['MolecularWeight']
+                    properties['smiles'] =  pubchem['PropertyTable']['Properties'][0]['CanonicalSMILES']
+                    properties['inchikey'] =  pubchem['PropertyTable']['Properties'][0]['InChIKey']
+                except:
+                    print('\n***ligand props error',pubchem)
+        return properties
+
+    def get_ligand_or_create(self,cid):
+        ligand_name = str()
+        ligand_name = self.get_ligand_name(cid)
+        properties = self.get_ligand_properties(cid)
+        lp = self.create_ligand_properties(cid,properties)
+        ligand = self.create_ligand(lp, ligand_name)
+        return ligand
+
+    def create_ligand_properties(self, cid, structure):
+        web_resource = WebResource.objects.get(slug='pubchem')
+        try:
+            wl, created = WebLink.objects.get_or_create(index=cid, web_resource=web_resource)
+        except IntegrityError:
+            wl = Weblink.objects.get(index=cid, web_resource=web_resource)
+        lp = LigandProperities()
+        try:
+            lt = LigandType.objects.filter(name = ligand_type)[0]
+            lp.ligand_type = lt
+        except :
+            lt =  LigandType.objects.filter(name = 'small molecule')[0]
+            lp.ligand_type = lt
+        try:
+            lp.smiles = structure['smiles']
+            lp.inchikey = structure['inchikey']
+            lp.mw = structure['mw']
+            lp.rotatable_bonds = structure['rotatable_bonds']
+            lp.hacc = structure['hacc']
+            lp.hdon = structure['hdon']
+            lp.logp = structure['logp']
+        except:
+            lp.logp = 0.0
+        try:
+            lp.save()
+            lp.web_links.add(wl)
+        except IntegrityError:
+            lp = LigandProperities.objects.get(inchikey=structure['inchikey'])
+        return lp
+
+    def create_ligand(self, lp, ligand_name):
+        try:
+            existing_ligand = Ligand.objects.get(name=ligand_name, canonical=True)
+            return existing_ligand
+        except Ligand.DoesNotExist:
+            try:
+                ligand = Ligand()
+                ligand.properities = lp
+                ligand.name = ligand_name
+                ligand.canonical = True
+                ligand.ambigious_alias = False
+                ligand.pdbe = None
+                ligand.save()
+            except:
+                ligand = None
+            return ligand

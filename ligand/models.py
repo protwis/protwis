@@ -381,35 +381,36 @@ class BiasedExperiment(models.Model):
 
 class ExperimentAssay(models.Model):
     biased_experiment = models.ForeignKey(
-                        BiasedExperiment, related_name='experiment_data',
-                        on_delete = models.CASCADE, null = True
-                        )
-    signalling_protein = models.CharField(max_length=60) #TODO link to actual protein
-    family = models.CharField(max_length=60, null = True)
-    cell_line  = models.CharField(max_length=60, null = True)
-    assay_type = models.CharField(max_length=60, null = True)
-    effector_family = models.CharField(max_length=60, null = True)
-    measured_effector = models.CharField(max_length=60, null = True)
-    measured_biological_process = models.CharField(max_length=60, null = True)
-    signal_detection_tecnique = models.TextField(null=True)
-    assay_time_resolved = models.CharField(max_length=60, null = True)
-    ligand_function = models.CharField(max_length=60, null = True)
-    quantitive_measure_type = models.CharField(max_length=60, null = True)
-    quantitive_activity = models.FloatField(max_length=60, null = True)
-    quantitive_activity_sign = models.CharField(max_length=3, null = True)
-    quantitive_unit = models.CharField(max_length=60, null = True)
-    qualitative_activity = models.CharField(max_length=60, null = True)
-    quantitive_efficacy = models.FloatField(max_length=60, null = True)
-    efficacy_measure_type = models.CharField(max_length=60, null = True)
-    efficacy_sign = models.CharField(max_length=3, null = True)
-    efficacy_unit = models.CharField(max_length=60, null = True)
-    bias_reference = models.CharField(max_length=60, null = True)
-    bias_value = models.FloatField(max_length=60, null = True)
-    bias_value_initial = models.FloatField(max_length=60, null = True)
-    emax_ligand_reference = models.ForeignKey(Ligand, related_name = 'ExperimentAssay.bias_ligand_reference+',
-                                        on_delete = models.CASCADE,
-                                        null = True, blank = True)
+        BiasedExperiment, related_name='experiment_data',
+        on_delete=models.CASCADE, null=True
+    )
+    signalling_protein = models.CharField(
+        max_length=60)  # TODO link to actual protein
+    family = models.CharField(max_length=60, null=True)
+    cell_line = models.CharField(max_length=60, null=True)
+    assay_type = models.CharField(max_length=60, null=True)
+    molecule_1 = models.CharField(max_length=60, null=True)
+    molecule_2 = models.CharField(max_length=60, null=True)
 
+    measured_biological_process = models.CharField(max_length=60, null=True)
+    signal_detection_tecnique = models.TextField(null=True)
+    assay_time_resolved = models.CharField(max_length=60, null=True)
+    ligand_function = models.CharField(max_length=60, null=True)
+    quantitive_measure_type = models.CharField(max_length=60, null=True)
+    quantitive_activity = models.FloatField(max_length=60, null=True)
+    quantitive_activity_sign = models.CharField(max_length=3, null=True)
+    quantitive_unit = models.CharField(max_length=60, null=True)
+    qualitative_activity = models.CharField(max_length=60, null=True)
+    quantitive_efficacy = models.FloatField(max_length=60, null=True)
+    efficacy_measure_type = models.CharField(max_length=60, null=True)
+    efficacy_sign = models.CharField(max_length=3, null=True)
+    efficacy_unit = models.CharField(max_length=60, null=True)
+    bias_reference = models.CharField(max_length=60, null=True)
+    bias_value = models.FloatField(max_length=60, null=True)
+    bias_value_initial = models.FloatField(max_length=60, null=True)
+    emax_ligand_reference = models.ForeignKey(Ligand, related_name='ExperimentAssay.bias_ligand_reference+',
+                                              on_delete=models.CASCADE,
+                                              null=True, blank=True)
 
 class ExperimentAssayAuthors(models.Model):
     experiment = models.ForeignKey(ExperimentAssay, related_name='experiment_data_authors',
