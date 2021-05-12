@@ -25,7 +25,9 @@ import time
 import math
 import json
 import requests
+
 from multiprocessing.pool import ThreadPool as Pool
+
 import pytz
 import re
 
@@ -205,6 +207,7 @@ class Command(BaseBuild):
 
         d['cell_line'] = r[13]
         d['signalling_protein'] = r[14].replace('α','a').replace('β','B').replace('g','G').lower().strip()
+
         d['effector_family'] = r[15]
         d['molecule_1'] = r[16]
         d['molecule_2'] = r[17]
@@ -248,6 +251,7 @@ class Command(BaseBuild):
                     d['relative_transduction_coef'] = None
         d['auxiliary_protein'] = r[34]
         d['source_file'] = None
+
         return d
 
     def main_process(self, r):
@@ -351,6 +355,7 @@ class Command(BaseBuild):
             if i%100==0:
                 print(i)
             d = self.main_process(r)
+
             temp.append(d)
         print('1 process/thread total time: ', time.time() - start, '\n\n')
         return temp
@@ -548,8 +553,10 @@ class Command(BaseBuild):
                 l = self.ligand_cache[ligand_id]
             else:
                 # TODO: if pubchem id then create ligand from pubchem
+
                 # if ligand_type and ligand_type.lower() == 'pubchem cid':
                 #     l = self.get_ligand_or_create(ligand_id)
+
                 if l == None:
                     l = get_or_make_ligand(ligand_id, ligand_type, ligand_name)
                     self.ligand_cache[ligand_id] = l
