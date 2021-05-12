@@ -348,15 +348,15 @@ class Command(BaseBuild):
         temp = []
         start = time.time()
         print('1 process/thread start')
-        # pool = Pool(4)
-        # pool.map(self.main_process, rows)
+        pool = Pool(2)
+        pool.map(self.main_process, rows)
 
-        for i, r in enumerate(rows, 1):
-            if i%100==0:
-                print(i)
-            d = self.main_process(r)
-
-            temp.append(d)
+        # for i, r in enumerate(rows, 1):
+        #     if i%100==0:
+        #         print(i)
+        #     d = self.main_process(r)
+        #
+        #     temp.append(d)
         print('1 process/thread total time: ', time.time() - start, '\n\n')
         return temp
 
@@ -554,8 +554,8 @@ class Command(BaseBuild):
             else:
                 # TODO: if pubchem id then create ligand from pubchem
 
-                # if ligand_type and ligand_type.lower() == 'pubchem cid':
-                #     l = self.get_ligand_or_create(ligand_id)
+                if ligand_type and ligand_type.lower() == 'pubchem cid':
+                    l = self.get_ligand_or_create(ligand_id)
 
                 if l == None:
                     l = get_or_make_ligand(ligand_id, ligand_type, ligand_name)
