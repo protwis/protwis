@@ -581,7 +581,6 @@ class Command(BaseBuild):
         for i in context['data'].items():
             if len(i[1]['biasdata']) > 1:
                 if self.fetch_experiment(i[1]['publication'], i[1]['ligand'], i[1]['receptor'], source) == False:
-                    primary, secondary = self.fetch_receptor_trunsducers(i[1]['receptor'])                
                     experiment_entry = AnalyzedExperiment(publication=i[1]['publication'],
                                                           ligand=i[1]['ligand'],
                                                           receptor=i[1]['receptor'],
