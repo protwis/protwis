@@ -504,6 +504,7 @@ class AnalyzedAssay(models.Model):
     measured_biological_process = models.CharField(max_length=60, null=True)
     signal_detection_tecnique = models.TextField(null=True)
 
+
     assay_measure = models.CharField(max_length=60, null=True)
     assay_time_resolved = models.CharField(max_length=60, null=True)
     ligand_function = models.CharField(max_length=60, null=True)
@@ -532,7 +533,6 @@ class AnalyzedAssay(models.Model):
                                               null=True, blank=True)
 # Biased Part - end
 
-# Biased Pathways - start
 class BiasedPathways(models.Model):
     submission_author = models.CharField(max_length=50)
     ligand = models.ForeignKey(Ligand, on_delete=models.CASCADE)
