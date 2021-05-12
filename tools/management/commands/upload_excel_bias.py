@@ -25,7 +25,7 @@ import time
 import math
 import json
 import requests
-
+from multiprocessing.pool import ThreadPool as Pool
 import pytz
 import re
 
@@ -135,7 +135,7 @@ class Command(BaseBuild):
             self.logger.info(
                 "The error appeared during reading the excel", num_rows)
 
-    def initialize_return_row(self,excel_row):
+    def initialize_return_row(self):
         d = dict()
         d['submitting_group'] = None
         d['reference'] = None
@@ -173,12 +173,12 @@ class Command(BaseBuild):
         d['transduction_coef'] = None
         d['relative_transduction_coef'] = None
         d['auxiliary_protein'] = None
-        d['source_file'] = excel_row
+        d['source_file'] = None
         self.logger.info("empty dict created  error")
         return d
 
-    def return_row(self, r,excel_row):
-        d = self.initialize_return_row(excel_row)
+    def return_row(self, r):
+        d = self.initialize_return_row()
         d['submitting_group'] = r[0]
         d['reference'] = r[1]
 
@@ -247,8 +247,93 @@ class Command(BaseBuild):
                 except:
                     d['relative_transduction_coef'] = None
         d['auxiliary_protein'] = r[34]
-        d['source_file'] = excel_row
+        d['source_file'] = None
         return d
+
+    def main_process(self, r):
+
+        d = dict()
+        # code to skip rows in excel for faster testing
+        d = self.return_row(r=r)
+        try:
+            d['potency_quantity'] = re.sub('[^\d\.,]', '', d['potency_quantity'])
+            d['potency_quantity'] = round(float(d['potency_quantity']),2)
+        except:
+            d['potency_quantity'] = d['potency_quantity']
+        try:
+            d['emax_quantity'] = round(d['emax_quantity'],0)
+        except:
+            d['emax_quantity'] = d['emax_quantity']
+
+        if d['potency_quality'].lower() == 'low activity':
+            if d['emax_quantity'] == None or d['emax_quantity']==0.0:
+                d['potency_quantity'] = 4.9
+                d['potency_measure_type'] = 'pEC50'
+                d['emax_quantity'] = 20
+                d['protein_efficacy_equation'] = 'abs'
+        d['potency_quantity'], d['potency_measure_type'] = self.fetch_measurements(d['potency_quantity'],
+                                                                     d['potency_measure_type'],
+                                                                     d['potency_unit'])
+        protein = self.fetch_protein(d['receptor'], d['source_file'])
+        # family = self.define_g_family(d['signalling_protein'].lower(), d['assay_type'], protein )
+        pub = self.fetch_publication(d['reference'])
+        l = self.fetch_ligand(
+            d['ligand_id'], d['ligand_type'], d['ligand_name'], d['source_file'])
+
+        # fetch reference_ligand
+        reference_ligand = self.fetch_ligand(
+            d['emax_ligand_id'], d['emax_ligand_type'], d['emax_ligand_name'], d['source_file'])
+
+        # fetch protein
+        protein = self.fetch_protein(d['receptor'], d['source_file'])
+        if protein == None:
+            return None
+        end_ligand  = self.fetch_endogenous(protein)
+        auxiliary_protein = self.fetch_protein(d['auxiliary_protein'], d['source_file'])
+        if l == None:
+            print('*************error row',d,l)
+        ## TODO:  check if it was already uploaded
+        experiment_entry = BiasedExperiment(submission_author=d['submitting_group'],
+                                            publication=pub,
+                                            ligand=l,
+                                            receptor=protein,
+                                            auxiliary_protein = auxiliary_protein,
+                                            endogenous_ligand = end_ligand,
+                                            ligand_source_id = d['ligand_id'],
+                                            ligand_source_type = d['ligand_type'],
+                                            )
+        # try:
+        experiment_entry.save()
+        self.fetch_vendor(l,experiment_entry)
+        experiment_assay = ExperimentAssay(biased_experiment=experiment_entry,
+                                               signalling_protein=d['signalling_protein'],
+                                               family = d['effector_family'],
+                                               cell_line=d['cell_line'],
+                                               assay_type=d['assay_type'],
+                                               molecule_1=d['molecule_1'],
+                                               molecule_2=d['molecule_2'],
+                                               measured_biological_process=d['spatial_level'],
+                                               signal_detection_tecnique=d['signal_detection_tecnique'],
+                                               assay_time_resolved=d['time_resolved'],
+                                               ligand_function=d['ligand_modality'],
+                                               quantitive_measure_type=d['potency_measure_type'],
+                                               quantitive_activity=d['potency_quantity'],
+                                               quantitive_activity_sign=d['potency_equation'],
+                                               quantitive_unit=d['potency_unit'],
+                                               qualitative_activity=d['potency_quality'],
+                                               quantitive_efficacy=d['emax_quantity'],
+                                               efficacy_measure_type=d['emax_type'],
+                                               efficacy_sign=d['emax_equation'],
+                                               efficacy_unit=d['emax_unit'],
+                                               bias_reference=d['ligand_reference'],
+                                               bias_value=d['transduction_coef'],
+                                               bias_value_initial=d['relative_transduction_coef'],
+                                               emax_ligand_reference=reference_ligand,
+                                               )
+        experiment_assay.save()
+            #fetch authors
+        self.fetch_publication_authors(pub,experiment_assay)
+        # return d
 
     def analyse_rows(self, rows, source_file):
         """
@@ -257,105 +342,17 @@ class Command(BaseBuild):
         skipped = list()
         # Analyse the rows from excel and assign the right headers
         temp = []
+        start = time.time()
+        print('1 process/thread start')
+        # pool = Pool(4)
+        # pool.map(self.main_process, rows)
+
         for i, r in enumerate(rows, 1):
-            print(i,r)
-            break
-            d = dict()
-            # code to skip rows in excel for faster testing
-            # if i < 7609:
-            #     continue
-            if i > 200:
-                break
-            if i % 50 == 0:
+            if i%100==0:
                 print(i)
-            d = self.return_row(r=r,excel_row=i)
-            try:
-                d['potency_quantity'] = re.sub('[^\d\.,]', '', d['potency_quantity'])
-                d['potency_quantity'] = round(float(d['potency_quantity']),2)
-            except:
-                d['potency_quantity'] = d['potency_quantity']
-            try:
-                d['emax_quantity'] = round(d['emax_quantity'],0)
-            except:
-                d['emax_quantity'] = d['emax_quantity']
-
-            if d['potency_quality'].lower() == 'low activity':
-                if d['emax_quantity'] == None or d['emax_quantity']==0.0:
-                    d['potency_quantity'] = 4.9
-                    d['potency_measure_type'] = 'pEC50'
-                    d['emax_quantity'] = 20
-                    d['protein_efficacy_equation'] = 'abs'
-
-            d['potency_quantity'], d['potency_measure_type'] = self.fetch_measurements(d['potency_quantity'],
-																	     d['potency_measure_type'],
-																	     d['potency_unit'])
-
-            protein = self.fetch_protein(d['receptor'], d['source_file'])
-            # family = self.define_g_family(d['signalling_protein'].lower(), d['assay_type'], protein )
-            pub = self.fetch_publication(d['reference'])
-
-            l = self.fetch_ligand(
-                d['ligand_id'], d['ligand_type'], d['ligand_name'], d['source_file'])
-
-            # fetch reference_ligand
-            reference_ligand = self.fetch_ligand(
-                d['emax_ligand_id'], d['emax_ligand_type'], d['emax_ligand_name'], d['source_file'])
-
-            # fetch protein
-            protein = self.fetch_protein(d['receptor'], d['source_file'])
-            if protein == None:
-                skipped.append(d)
-                continue
-            end_ligand  = self.fetch_endogenous(protein)
-            auxiliary_protein = self.fetch_protein(d['auxiliary_protein'], d['source_file'])
-            if l == None:
-                print('*************error row',d,l)
-            ## TODO:  check if it was already uploaded
-            experiment_entry = BiasedExperiment(submission_author=d['submitting_group'],
-                                                publication=pub,
-                                                ligand=l,
-                                                receptor=protein,
-                                                auxiliary_protein = auxiliary_protein,
-                                                endogenous_ligand = end_ligand,
-                                                ligand_source_id = d['ligand_id'],
-                                                ligand_source_type = d['ligand_type'],
-                                                )
-            # try:
-            experiment_entry.save()
-            self.fetch_vendor(l,experiment_entry)
-            # except:
-            #     print('skipping line', d)
-            #     continue
-
-            experiment_assay = ExperimentAssay(biased_experiment=experiment_entry,
-                                                   signalling_protein=d['signalling_protein'],
-                                                   family = d['effector_family'],
-                                                   cell_line=d['cell_line'],
-                                                   assay_type=d['assay_type'],
-                                                   molecule_1=d['molecule_1'],
-                                                   molecule_2=d['molecule_2'],
-                                                   measured_biological_process=d['spatial_level'],
-                                                   signal_detection_tecnique=d['signal_detection_tecnique'],
-                                                   assay_time_resolved=d['time_resolved'],
-                                                   ligand_function=d['ligand_modality'],
-                                                   quantitive_measure_type=d['potency_measure_type'],
-                                                   quantitive_activity=d['potency_quantity'],
-                                                   quantitive_activity_sign=d['potency_equation'],
-                                                   quantitive_unit=d['potency_unit'],
-                                                   qualitative_activity=d['potency_quality'],
-                                                   quantitive_efficacy=d['emax_quantity'],
-                                                   efficacy_measure_type=d['emax_type'],
-                                                   efficacy_sign=d['emax_equation'],
-                                                   efficacy_unit=d['emax_unit'],
-                                                   bias_reference=d['ligand_reference'],
-                                                   bias_value=d['transduction_coef'],
-                                                   bias_value_initial=d['relative_transduction_coef'],
-                                                   emax_ligand_reference=reference_ligand,
-                                                   )
-            experiment_assay.save()
-                #fetch authors
-            self.fetch_publication_authors(pub,experiment_assay)
+            d = self.main_process(r)
             temp.append(d)
+        print('1 process/thread total time: ', time.time() - start, '\n\n')
         return temp
 
     def fetch_publication_authors(self,publication, experiment_assay):
@@ -371,7 +368,6 @@ class Command(BaseBuild):
                     author=i)
                     assay_author.save()
                     counter=counter+1
-            # assay_author = ExperimentAssayAuthors(experiment = experiment_assay,
 
     def fetch_measurements(self, potency, p_type, unit):
         if potency is not None:
@@ -552,8 +548,8 @@ class Command(BaseBuild):
                 l = self.ligand_cache[ligand_id]
             else:
                 # TODO: if pubchem id then create ligand from pubchem
-                if ligand_type and ligand_type.lower() == 'pubchem cid':
-                    l = self.get_ligand_or_create(ligand_id)
+                # if ligand_type and ligand_type.lower() == 'pubchem cid':
+                #     l = self.get_ligand_or_create(ligand_id)
                 if l == None:
                     l = get_or_make_ligand(ligand_id, ligand_type, ligand_name)
                     self.ligand_cache[ligand_id] = l
