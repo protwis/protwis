@@ -168,7 +168,7 @@ def urlopen_with_retry(url, data = None, retries = 5, sleeptime = 5):
 
         response = None
         try:
-            response = urlopen(url, data)
+            response = urlopen(url, data) #nosec
         except urllib.error.URLError as e:
             logger.warning(f'URLopen error (retry {retry} out of {retries}) {e}')
 
