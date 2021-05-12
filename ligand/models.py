@@ -473,7 +473,7 @@ class AnalyzedAssay(models.Model):
     t_value = models.CharField(max_length=60, null = True)
     log_bias_factor = models.CharField(max_length=60, null = True)
     t_factor =  models.CharField(max_length=60, null = True)
-    assay_description = models.CharField(max_length=900, null = True)
+    assay_description = models.CharField(max_length=901, null = True)
     emax_ligand_reference = models.ForeignKey(Ligand, related_name = 'ExperimentAssay.bias_ligand_reference+',
                                         on_delete = models.CASCADE,
                                         null = True, blank = True)
