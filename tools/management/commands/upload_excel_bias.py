@@ -150,7 +150,7 @@ class Command(BaseBuild):
         d['receptor_uniprot_id'] = None
 
         d['cell_line'] = None
-        d['signalling_protein'] = None
+        d['signalling_protein'] = '-'
         d['effector_family'] = None
 
         d['molecule_1'] = None
@@ -205,6 +205,7 @@ class Command(BaseBuild):
 
         d['cell_line'] = r[13]
         d['signalling_protein'] = r[14].replace('α','a').replace('β','B').replace('g','G').lower().strip()
+
         d['effector_family'] = r[15]
         d['molecule_1'] = r[16]
         d['molecule_2'] = r[17]
@@ -289,6 +290,8 @@ class Command(BaseBuild):
         if protein == None:
             return None
         end_ligand  = self.fetch_endogenous(protein)
+        if len(d['signalling_protein']) < 1:            
+            d['signalling_protein'] = '-'
         auxiliary_protein = self.fetch_protein(d['auxiliary_protein'], d['source_file'])
         if l == None:
             print('*************error row',d,l)
