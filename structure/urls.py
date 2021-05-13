@@ -17,6 +17,7 @@ urlpatterns = [
     url(r'^template_browser', TemplateBrowser.as_view(), name='structure_browser'),
     url(r'^template_selection', TemplateTargetSelection.as_view(), name='structure_browser'),
     url(r'^template_segment_selection', TemplateSegmentSelection.as_view(), name='structure_browser'),
+    url(r'^gprot_statistics$', cache_page(60*60*24)(StructureStatistics.as_view(origin='gprot')), name='structure_statistics'),
     url(r'^statistics$', cache_page(60*60*24)(StructureStatistics.as_view()), name='structure_statistics'),
     url(r'^homology_models$', cache_page(60*60*24)(ServeHomologyModels.as_view()), name='homology_models'),
     url(r'^complex_models$', cache_page(60*60*24)(ServeComplexModels.as_view()), name='complex_models'),

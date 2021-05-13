@@ -951,13 +951,13 @@ class Alignment:
                 for segment, segment_num in self.aa_count.items():
                     self.amino_acid_stats[i].append([])
                     k = 0
-                    if segment == 'Custom' and segment_num == 'x':
-                        sorted_res = sorted(segment_num, key=lambda x: (x.split("x")[0], x.split("x")[1]))
-                    elif segment == 'Custom' and segment_num == '.':
-                        sorted_res = sorted(segment_num, key=lambda x: (x.split(".")[0], x.split(".")[1]))
-                    else:
-                        sorted_res = sorted(segment_num)
-                    for gn in sorted_res:
+                    # if segment == 'Custom' and segment_num == 'x':
+                    #     sorted_res = sorted(segment_num, key=lambda x: (x.split("x")[0], x.split("x")[1]))
+                    # elif segment == 'Custom' and segment_num == '.':
+                    #     sorted_res = sorted(segment_num, key=lambda x: (x.split(".")[0], x.split(".")[1]))
+                    # else:
+                    #sorted_res = segment_num
+                    for gn in self.generic_numbers[self.numbering_schemes[0][0]][segment]:
                         aas = segment_num[gn]
                         self.amino_acid_stats[i][j].append([])
                         for aa, freq in aas.items():
@@ -983,13 +983,15 @@ class Alignment:
             j = 0
             for segment, segment_num in feature_count.items():
                 k = 0
-                if segment == 'Custom' and segment_num == 'x':
-                    sorted_res = sorted(segment_num, key=lambda x: (x.split("x")[0], x.split("x")[1]))
-                elif segment == 'Custom' and segment_num == '.':
-                    sorted_res = sorted(segment_num, key=lambda x: (x.split(".")[0], x.split(".")[1]))
-                else:
-                    sorted_res = sorted(segment_num)
-                for gn in sorted_res:
+
+                # first_gn = list(segment_num.items())[0]
+                # if segment == 'Custom' and 'x' in first_gn:
+                #     sorted_res = sorted(segment_num, key=lambda x: (x.split("x")[0], x.split("x")[1]))
+                # elif segment == 'Custom' and '.' in first_gn:
+                #     sorted_res = sorted(segment_num, key=lambda x: (x.split(".")[0], x.split(".")[1]))
+                # else:
+
+                for gn in self.generic_numbers[self.numbering_schemes[0][0]][segment]:
                     fs = segment_num[gn]
 
                     for f, freq in fs.items():
@@ -1012,10 +1014,13 @@ class Alignment:
             feats = OrderedDict()
             self.feat_consensus = OrderedDict([(x, []) for x in self.segments])
             for sid, segment in enumerate(self.segments):
+
+                # Feature_stats is accessed via feature, segment, residue
                 feats[segment] = np.array(
                     [[x[0] for x in feat[sid]] for feat in self.feature_stats],
                     dtype='int'
                 )
+
                 feat_cons_tmp = feats[segment].argmax(axis=0)
                 feat_cons_tmp = self._assign_preferred_features(feat_cons_tmp, segment, feats)
                 for col, pos in enumerate(list(feat_cons_tmp)):
