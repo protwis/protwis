@@ -1236,11 +1236,11 @@ class BiasBrowser(ListView):
             tfactor_p5=Subquery(assay_qs.values('t_value')[4:5]),
 
             # Assay
-            assay_p1=Subquery(assay_qs.values('assay_type')[:1]),
-            assay_p2=Subquery(assay_qs.values('assay_type')[1:2]),
-            assay_p3=Subquery(assay_qs.values('assay_type')[2:3]),
-            assay_p4=Subquery(assay_qs.values('assay_type')[3:4]),
-            assay_p5=Subquery(assay_qs.values('assay_type')[4:5]),
+            assay_p1=Subquery(assay_qs.values('signalling_protein')[:1]),
+            assay_p2=Subquery(assay_qs.values('signalling_protein')[1:2]),
+            assay_p3=Subquery(assay_qs.values('signalling_protein')[2:3]),
+            assay_p4=Subquery(assay_qs.values('signalling_protein')[3:4]),
+            assay_p5=Subquery(assay_qs.values('signalling_protein')[4:5]),
 
             # Cell Line
             cell_p1=Subquery(assay_qs.values('cell_line')[:1]),
@@ -1262,7 +1262,7 @@ class BiasBrowser(ListView):
             measured_biological_process_p4=Subquery(assay_qs.values('measured_biological_process')[3:4]),
             measured_biological_process_p5=Subquery(assay_qs.values('measured_biological_process')[4:5]),
         )
-        import pdb; pdb.set_trace()
+
         return queryset
 
 class BiasGBrowser(ListView):
