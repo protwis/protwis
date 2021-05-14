@@ -1035,6 +1035,7 @@
                           white-space: nowrap;
                           text-overflow: ellipsis;
                   max-width: 250px;" colspan="2">Reference</th>
+                  <th style="border-left: 1px solid black; text-align:left" colspan="43">reference</th>
 				</tr>
 				<tr class="table-filter-dropdown">
 					<th></th>
@@ -1118,7 +1119,58 @@
                           text-overflow: ellipsis;
                           max-width: 100px;">Authors</th>
                 					<th id="doi_reference_filter_select">DOI/ <br>Reference</th>
-                				</tr>
+                                        <th>references</th>
+                    <th id="time_p1_filter_select">potency P 1</th>
+					<th id="time_p2_filter_select">potency P 2</th>
+					<th id="time_p3_filter_select">potency P 3</th>
+					<th id="time_p4_filter_select">potency P 4</th>
+					<th id="time_p5_filter_select">potency P 5</th>
+
+                    <th id="time_p1_filter_select">quality P 1</th>
+					<th id="time_p2_filter_select">quality P 2</th>
+					<th id="time_p3_filter_select">quality P 3</th>
+					<th id="time_p4_filter_select">quality P 4</th>
+					<th id="time_p5_filter_select">quality P 5</th>
+
+                    <th id="time_p1_filter_select">emax P 1</th>
+					<th id="time_p2_filter_select">emax P 2</th>
+					<th id="time_p3_filter_select">emax P 3</th>
+					<th id="time_p4_filter_select">emax P 4</th>
+					<th id="time_p5_filter_select">emax P 5</th>
+
+                    <th id="time_p1_filter_select">assay P 1</th>
+					<th id="time_p2_filter_select">assay P 2</th>
+					<th id="time_p3_filter_select">assay P 3</th>
+					<th id="time_p4_filter_select">assay P 4</th>
+					<th id="time_p5_filter_select">assay P 5</th>
+
+                    <th id="time_p1_filter_select">A P 1</th>
+					<th id="time_p2_filter_select">A P 2</th>
+					<th id="time_p3_filter_select">A P 3</th>
+					<th id="time_p4_filter_select">A P 4</th>
+					<th id="time_p5_filter_select">A P 5</th>
+
+                    <th id="time_p1_filter_select">B P 1</th>
+					<th id="time_p2_filter_select">B P 2</th>
+					<th id="time_p3_filter_select">B P 3</th>
+					<th id="time_p4_filter_select">B P 4</th>
+					<th id="time_p5_filter_select">B P 5</th>
+
+                    <th id="time_p1_filter_select">C P 1</th>
+					<th id="time_p2_filter_select">C P 2</th>
+					<th id="time_p3_filter_select">C P 3</th>
+					<th id="time_p4_filter_select">C P 4</th>
+					<th id="time_p5_filter_select">C P 5</th>
+
+                    <th id="time_p1_filter_select">D P 1</th>
+					<th id="time_p2_filter_select">D P 2</th>
+					<th id="time_p3_filter_select">D P 3</th>
+					<th id="time_p4_filter_select">D P 4</th>
+					<th id="time_p5_filter_select">D P 5</th>
+
+                    <th id="time_p4_filter_select">lig id</th>
+					<th id="time_p5_filter_select">lig source</th>
+                </tr>
 			</thead>
 				<tbody id='structures_scrollable_body'>
 				{%for e in data_test%}
@@ -1294,6 +1346,53 @@
 						<a href='{{e.publication.web_link}}' target='blank'>
 							{{e.publication.web_link.index}}</a></td>
 
+                    <td>Reference</td>
+                    <td>{{e.reference_quantitive_activity_initial_p1|default_if_none:""}}</td>
+                    <td>{{e.reference_quantitive_activity_initial_p2|default_if_none:""}}</td>
+                    <td>{{e.reference_quantitive_activity_initial_p3|default_if_none:""}}</td>
+                    <td>{{e.reference_quantitive_activity_initial_p4|default_if_none:""}}</td>
+                    <td>{{e.reference_quantitive_activity_initial_p5|default_if_none:""}}</td>
+                    <td>{{e.reference_qualitative_activity_p1|default_if_none:""}}</td>
+                    <td>{{e.reference_qualitative_activity_p2|default_if_none:""}}</td>
+                    <td>{{e.reference_qualitative_activity_p3|default_if_none:""}}</td>
+                    <td>{{e.reference_qualitative_activity_p4|default_if_none:""}}</td>
+                    <td>{{e.reference_qualitative_activity_p5|default_if_none:""}}</td>
+                    <td>{{e.reference_quantitive_efficacy_p1|default_if_none:""}}</td>
+                    <td>{{e.reference_quantitive_efficacy_p2|default_if_none:""}}</td>
+                    <td>{{e.reference_quantitive_efficacy_p3|default_if_none:""}}</td>
+                    <td>{{e.reference_quantitive_efficacy_p4|default_if_none:""}}</td>
+                    <td>{{e.reference_quantitive_efficacy_p5|default_if_none:""}}</td>
+                    <td>{{e.reference_assay_type_p1|default_if_none:""}}</td>
+                    <td>{{e.reference_assay_type_p2|default_if_none:""}}</td>
+                    <td>{{e.reference_assay_type_p3|default_if_none:""}}</td>
+                    <td>{{e.reference_assay_type_p4|default_if_none:""}}</td>
+                    <td>{{e.reference_assay_type_p5|default_if_none:""}}</td>
+                    <td>{{e.reference_a_p1|default_if_none:""}}</td>
+                    <td>{{e.reference_a_p2|default_if_none:""}}</td>
+                    <td>{{e.reference_a_p3|default_if_none:""}}</td>
+                    <td>{{e.reference_a_p4|default_if_none:""}}</td>
+                    <td>{{e.reference_a_p5|default_if_none:""}}</td>
+
+                    <td>{{e.reference_b_p1|default_if_none:""}}</td>
+                    <td>{{e.reference_b_p2|default_if_none:""}}</td>
+                    <td>{{e.reference_b_p3|default_if_none:""}}</td>
+                    <td>{{e.reference_b_p4|default_if_none:""}}</td>
+                    <td>{{e.reference_b_p5|default_if_none:""}}</td>
+
+                    <td>{{e.reference_c_p1|default_if_none:""}}</td>
+                    <td>{{e.reference_c_p2|default_if_none:""}}</td>
+                    <td>{{e.reference_c_p3|default_if_none:""}}</td>
+                    <td>{{e.reference_c_p4|default_if_none:""}}</td>
+                    <td>{{e.reference_c_p5|default_if_none:""}}</td>
+
+                    <td>{{e.reference_d_p1|default_if_none:""}}</td>
+                    <td>{{e.reference_d_p2|default_if_none:""}}</td>
+                    <td>{{e.reference_d_p3|default_if_none:""}}</td>
+                    <td>{{e.web_links1|default_if_none:""}}</td>
+                    <td>{{e.web_links|default_if_none:""}}</td>
+
+                    <td>{{e.ligand_source_id|default_if_none:""}}</td>
+                    <td>{{e.ligand_source_type|default_if_none:""}}</td>
 				</tr>
 				{%endfor%}
 			</tbody>
