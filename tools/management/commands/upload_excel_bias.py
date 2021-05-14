@@ -25,7 +25,6 @@ import time
 import math
 import json
 import requests
-
 from multiprocessing.pool import ThreadPool as Pool
 
 import pytz
@@ -152,7 +151,7 @@ class Command(BaseBuild):
         d['receptor_uniprot_id'] = None
 
         d['cell_line'] = None
-        d['signalling_protein'] = None
+        d['signalling_protein'] = '-'
         d['effector_family'] = None
 
         d['molecule_1'] = None
@@ -251,7 +250,6 @@ class Command(BaseBuild):
                     d['relative_transduction_coef'] = None
         d['auxiliary_protein'] = r[34]
         d['source_file'] = None
-
         return d
 
     def main_process(self, r):
@@ -293,6 +291,10 @@ class Command(BaseBuild):
         if protein == None:
             return None
         end_ligand  = self.fetch_endogenous(protein)
+
+        if len(d['signalling_protein']) < 1:            
+            d['signalling_protein'] = '-'
+
         auxiliary_protein = self.fetch_protein(d['auxiliary_protein'], d['source_file'])
         if l == None:
             print('*************error row',d,l)
@@ -348,15 +350,16 @@ class Command(BaseBuild):
         temp = []
         start = time.time()
         print('1 process/thread start')
-        pool = Pool(2)
-        pool.map(self.main_process, rows)
 
-        # for i, r in enumerate(rows, 1):
-        #     if i%100==0:
-        #         print(i)
-        #     d = self.main_process(r)
-        #
-        #     temp.append(d)
+        # pool = Pool(4)
+        # pool.map(self.main_process, rows)
+
+        for i, r in enumerate(rows, 1):
+            if i%100==0:
+                print(i)
+            d = self.main_process(r)
+            temp.append(d)
+
         print('1 process/thread total time: ', time.time() - start, '\n\n')
         return temp
 
@@ -554,8 +557,8 @@ class Command(BaseBuild):
             else:
                 # TODO: if pubchem id then create ligand from pubchem
 
-                if ligand_type and ligand_type.lower() == 'pubchem cid':
-                    l = self.get_ligand_or_create(ligand_id)
+                # if ligand_type and ligand_type.lower() == 'pubchem cid':
+                #     l = self.get_ligand_or_create(ligand_id)
 
                 if l == None:
                     l = get_or_make_ligand(ligand_id, ligand_type, ligand_name)

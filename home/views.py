@@ -56,20 +56,26 @@ def index(request):
                     .values_list("statistics_type__name", "value"))
 
         # Create dictionary and process part of the results
-        stats = {}
         context['release_statistics'] = []
+        rename_dictionary = {"Exp. GPCR structures" : "GPCRs", "Exp. Gprotein structures" : "G proteins", "GPCR structure models": "GPCRs", "GPCR-G protein structure models": "GPCR-G protein complexes", "Refined GPCR structures": "Refined GPCR structures"}
+        first_struct = -1
+        first_model = -1
+        count = 0
         for entry in rel_stats:
-            stats[entry[0]] = entry[1]
-            if "Exp." not in entry[0] and "models" not in entry[0]:
-                context['release_statistics'].append({"statistics_type": entry[0], "value": entry[1]})
+            if first_struct < 0 and "Exp." in entry[0]:
+                first_struct = count
+            elif first_model < 0 and "model" in entry[0]:
+                first_model = count
 
+            if entry[0] in rename_dictionary:
+                context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry stats_indent\">" + rename_dictionary[entry[0]] + "</span>", "value": "<span>" + "{:,}".format(entry[1]) + "</span>"})
+            else:
+                context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + entry[0] + "</span>", "value": "<span>" + "{:,}".format(entry[1]) + "</span>"})
+            count += 1
 
         # Adjusted formatting for release notes
-
-        # To be extended wtih G proteins and Arrestins
-        context['release_statistics'].insert(2, {"statistics_type": "Structures", "value": "GPCRs: {}, G proteins: {}".format(stats["Exp. GPCR structures"], stats["Exp. Gprotein structures"]) })
-        #context['release_statistics'].insert(2, {"statistics_type": "Structures", "value": "GPCRs: {}, G proteins: {}, Arrestins: {}".format(stats["Exp. GPCR structures"], stats["Exp. Gprotein structures"], stats["Exp. Arrestin structures"]) })
-        context['release_statistics'].insert(3, {"statistics_type": "Structure models", "value": "GPCRs: {}, GPCR-G protein complexes: {}".format(stats["GPCR structure models"], stats["GPCR-G protein structure models"]) })
+        context['release_statistics'].insert(first_model, {"statistics_type": "<i>Structure models</i>", "value" : ""})
+        context['release_statistics'].insert(first_struct, {"statistics_type": "<i>Experimental structures</i>", "value" : ""})
 
 
     except IndexError:

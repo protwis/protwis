@@ -248,20 +248,22 @@ function prepopulatePDBs() {
         oTable[mode].draw();
     } else if (mode2 == 'Single set of structures') {
         var pdbsInputSelector = '#single-crystal-group-tab .crystal-pdb';
-        var pdbs = JSON.parse($(pdbsInputSelector).val());
-        $('.pdb_selected', oTable[mode].cells().nodes()).each(function () {
-            pdb = $(this).attr('id')
-            check = $.inArray(pdb, pdbs);
-            if (check !== -1) {
-                $(this).prop("checked", true);
-                pdbs.splice(check, 1);
-            }
-        });
+        if ( $( pdbsInputSelector ).length ) {
+          var pdbs = JSON.parse($(pdbsInputSelector).val());
+          $('.pdb_selected', oTable[mode].cells().nodes()).each(function () {
+              pdb = $(this).attr('id')
+              check = $.inArray(pdb, pdbs);
+              if (check !== -1) {
+                  $(this).prop("checked", true);
+                  pdbs.splice(check, 1);
+              }
+          });
 
-        oTable[mode].order([
-            [0, 'desc']
-        ]);
-        oTable[mode].draw();
+          oTable[mode].order([
+              [0, 'desc']
+          ]);
+          oTable[mode].draw();
+        }
     }
 }
 
@@ -727,7 +729,7 @@ function showPDBtable(element) {
 
         console.timeEnd('yadcf');
         oTable[mode].columns.adjust();
-        
+
         // console.time('yadcf_reset');
         // yadcf.exResetAllFilters(oTable[mode]);
         // console.timeEnd('yadcf_reset');

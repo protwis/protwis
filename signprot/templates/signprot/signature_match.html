@@ -160,11 +160,8 @@
                         <!-- Scores for positive set -->
                         {% for p, ps in scores.scores_pos.items %}
                         <tr>
-                            <!-- <td class="ali-td ali-td-first-col">
-                                {{ ps.0|floatformat:"-2" }}
-                            </td> -->
                             <td class="ali-td ali-td-first-col">
-                                {{ ps.1|floatformat:"-2" }}
+                                {{ ps.1|floatformat:"0" }}
                             </td>
                         </tr>
                         {% endfor %}
@@ -175,11 +172,8 @@
                         <!-- protein lines -->
                         {% for p, ps in scores.protein_report.items %}
                         <tr>
-                            <!-- <td class="ali-td ali-td-first-col">
-                                {{ ps.0|floatformat:"-2" }}
-                            </td> -->
                             <td class="ali-td ali-td-first-col">
-                                {{ ps.1|floatformat:"-2" }}
+                                {{ ps.1|floatformat:"0" }}
                             </td>
                         </tr>
                         {% endfor %}
@@ -235,7 +229,7 @@
                                     {% for r in s %}
                                         <td class="ali-td ali-residue res-cons-{{ r.3 }}">
                                             <div data-toggle="tooltip" data-placement="top" data-html="true"
-                                            title="{{ r.1 }}: {{ r.2 }}">
+                                            title="{{ r.1 }}: {{ r.2 }}<br> Length: {{ r.4 }}">
                                                 {{ r.0 }}
                                             </div>
                                         </td>

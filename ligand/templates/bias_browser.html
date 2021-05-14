@@ -299,7 +299,7 @@
     							},
     							success: function() {
 
-    								myFunction('/ligand/browservendors', 'Detail View', window, 850, 1000)
+    								openPopup('/ligand/browservendors', 'Detail View', window, 850, 1000)
     							}
     						});
     					},
@@ -918,7 +918,7 @@
 </script>
 
 <script type="text/javascript">
-    function myFunction(url, title, win, w, h) {
+    function openPopup(url, title, win, w, h) {
         const y = win.top.outerHeight / 2 + win.top.screenY - (h / 2);
         const x = win.top.outerWidth / 2 + win.top.screenX - (w / 2);
         return win.open(url, title, 'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width=' + w + ', height=' + h + ', top=' + y + ', left=' + x);
@@ -1022,7 +1022,11 @@
 					<th id="tfactor" class="shade" style="border-left: 1px solid black; text-align:left" colspan="5">
 						Transduction coefficient</th>
                     <th id="cell" style="border-left: 1px solid black; text-align:left" colspan="5">
-						Biological process</th>
+						Measured molecule 1</th>
+                    <th id="cell" style="border-left: 1px solid black; text-align:left" colspan="5">
+						Measured molecule 2</th>
+                    <th id="cell" style="border-left: 1px solid black; text-align:left" colspan="5">
+						Biological process</th>                
 					<th id="cell" style="border-left: 1px solid black; text-align:left" colspan="5">
 						Cell line</th>
 					<th id="time" style="border-left: 1px solid black; text-align:left" colspan="5">
@@ -1085,6 +1089,16 @@
 					<th class="shade" id="tfactor_p3_filter_select">P 3</th>
 					<th class="shade" id="tfactor_p4_filter_select">P 4</th>
 					<th class="shade" id="tfactor_p5_filter_select">P 5</th>
+                    <th id="measured_molecule_p1_filter_select">P 1</th>
+					<th id="measured_molecule_p2_filter_select">P 2</th>
+					<th id="measured_molecule_p3_filter_select">P 3</th>
+					<th id="measured_molecule_p4_filter_select">P 4</th>
+					<th id="measured_molecule_p5_filter_select">P 5</th>
+                    <th id="measured_molecule2_p1_filter_select">P 1</th>
+					<th id="measured_molecule2_p2_filter_select">P 2</th>
+					<th id="measured_molecule2_p3_filter_select">P 3</th>
+					<th id="measured_molecule2_p4_filter_select">P 4</th>
+					<th id="measured_molecule2_p5_filter_select">P 5</th>
                     <th id="bioprocess_p1_filter_select">P 1</th>
 					<th id="bioprocess_p2_filter_select">P 2</th>
 					<th id="bioprocess_p3_filter_select">P 3</th>
@@ -1164,7 +1178,7 @@
 					<td>
 						<span style='display: none'> {{e.ligand.id}}</span>
 						<a href="#">
-							<span class="glyphicon glyphicon-info-sign"  title="Click for more details" onclick="myFunction('experiment/{{e.id}}/detail', 'Detail View', window, 1500, 1000)"></span>
+							<span class="glyphicon glyphicon-info-sign"  title="Click for more details" onclick="openPopup('experiment/{{e.id}}/detail', 'Detail View', window, 1500, 1000)"></span>
 						</a>
 					</td>
 
@@ -1198,11 +1212,11 @@
                     <td class="pathway">{{e.pathways_p4|default_if_none:""}}</td>
                     <td class="pathway">{{e.pathways_p5|default_if_none:""}}</td>
                 	<!-- Assay -->
-                    <td title='{{e.assay_p1}}'>{{e.assay_p1|default_if_none:"" }}</td>
-                    <td title='{{e.assay_p2}}'>{{e.assay_p2|default_if_none:"" }}</td>
-                    <td title='{{e.assay_p3}}'>{{e.assay_p3|default_if_none:"" }}</td>
-                    <td title='{{e.assay_p4}}'>{{e.assay_p4|default_if_none:"" }}</td>
-                    <td title='{{e.assay_p5}}'>{{e.assay_p5|default_if_none:"" }}</td>
+                    <td title='{{e.assay_p1}}'>{{e.assay_p1|default_if_none:"-" }}</td>
+                    <td title='{{e.assay_p2}}'>{{e.assay_p2|default_if_none:"-" }}</td>
+                    <td title='{{e.assay_p3}}'>{{e.assay_p3|default_if_none:"-" }}</td>
+                    <td title='{{e.assay_p4}}'>{{e.assay_p4|default_if_none:"-" }}</td>
+                    <td title='{{e.assay_p5}}'>{{e.assay_p5|default_if_none:"-" }}</td>
 					<!-- t factor -->
     				<td class="shade">{{e.opmodel_p2_p1|default_if_none:""}}</td>
                     <td class="shade">{{e.opmodel_p3_p1|default_if_none:""}}</td>
@@ -1293,6 +1307,18 @@
                     <td class="shade">{{e.tfactor_p3|default_if_none:""}}</td>
                     <td class="shade">{{e.tfactor_p4|default_if_none:""}}</td>
                     <td class="shade">{{e.tfactor_p5|default_if_none:""}}</td>
+                    <!-- Molecule 1 -->
+					<td class="shade">{{e.molecule1_p1|default_if_none:""}}</td>
+                    <td class="shade">{{e.molecule1_p2|default_if_none:""}}</td>
+                    <td class="shade">{{e.molecule1_p3|default_if_none:""}}</td>
+                    <td class="shade">{{e.molecule1_p4|default_if_none:""}}</td>
+                    <td class="shade">{{e.molecule1_p5|default_if_none:""}}</td>
+                    <!-- Molecule 2 -->
+					<td class="shade">{{e.molecule2_p1|default_if_none:""}}</td>
+                    <td class="shade">{{e.molecule2_p2|default_if_none:""}}</td>
+                    <td class="shade">{{e.molecule2_p3|default_if_none:""}}</td>
+                    <td class="shade">{{e.molecule2_p4|default_if_none:""}}</td>
+                    <td class="shade">{{e.molecule2_p5|default_if_none:""}}</td>
                 	<!-- Bioprocess -->
                     <td title='{{e.measured_biological_process_p1}}'>{{e.measured_biological_process_p1|default_if_none:"" }}</td>
                     <td title='{{e.measured_biological_process_p2}}'>{{e.measured_biological_process_p2|default_if_none:"" }}</td>

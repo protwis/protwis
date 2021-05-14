@@ -1360,6 +1360,7 @@ def InteractionMatrix(request):
                   context
                   )
 
+@method_decorator(csrf_exempt)
 def IMSequenceSignature(request):
     """Accept set of proteins + generic numbers and calculate the signature for those"""
     t1 = time.time()
@@ -1376,6 +1377,8 @@ def IMSequenceSignature(request):
     # Calculate Sequence Signature
     signature = SequenceSignature()
 
+    # WHY IS THIS IGNORE USED -> it ignores counting of proteins for residue positions instead of ignoring residue positions
+    ignore_in_alignment = {}
     signature.setup_alignments_signprot(segments, pos_set, ignore_in_alignment=ignore_in_alignment)
     signature.calculate_signature_onesided()
     # preprocess data for return
@@ -1420,6 +1423,7 @@ def IMSequenceSignature(request):
 
     return JsonResponse(res, safe=False)
 
+@method_decorator(csrf_exempt)
 def IMSignatureMatch(request):
     '''Take the signature stored in the session and query the db'''
     signature_data = request.session.get('signature')
@@ -1464,6 +1468,7 @@ def IMSignatureMatch(request):
     signature_match = prepare_signature_match(signature_match)
     return JsonResponse(signature_match, safe=False)
 
+@method_decorator(csrf_exempt)
 def render_IMSigMat(request):
     # signature_match = request.session.get('signature_match')
     signature_data = request.session.get('signature')

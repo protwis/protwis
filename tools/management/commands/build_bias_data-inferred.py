@@ -172,14 +172,14 @@ class Command(BaseBuild):
             temp_dict['lbf_c'] = None
             temp_dict['lbf_d'] = None
             temp_dict['order_no'] = 0
-            temp_dict['order_bias_value'] = 0
+            temp_dict['order_bias_value'] = None
             temp_dict['reference_ligand'] = list()
             temp_dict['signalling_protein'] = j['children'][0].signalling_protein.lower()
             temp_dict['cell_line'] = j['children'][0].cell_line
             temp_dict['family'] = j['children'][0].family
             temp_dict['measured_biological_process'] = j['children'][0].measured_biological_process
             temp_dict['assay_type'] = j['children'][0].assay_type
-            temp_dict['assay_measure_method'] = j['children'][0].measured_effector
+
             temp_dict['assay_time_resolved'] = j['children'][0].assay_time_resolved
             temp_dict['signal_detection_tecnique'] = j['children'][0].signal_detection_tecnique
 
@@ -189,6 +189,9 @@ class Command(BaseBuild):
             else:
                 temp_dict['quantitive_activity'] = None
                 temp_dict['quantitive_activity_initial'] = None
+
+            temp_dict['molecule_1'] = j['children'][0].molecule_1
+            temp_dict['molecule_2'] = j['children'][0].molecule_2
             temp_dict['qualitative_activity'] = j['children'][0].qualitative_activity
             temp_dict['quantitive_unit'] = j['children'][0].quantitive_unit
             temp_dict['quantitive_efficacy'] = j['children'][0].quantitive_efficacy
@@ -316,9 +319,11 @@ class Command(BaseBuild):
         proteins = set()
         for assay in assay_list:
             if assay['family'] not in proteins:
+
                 proteins.add(assay['family'])
                 families.append(assay)
             else:
+
                 compare_val = next(item for item in families if item["family"] == assay['family'])
                 try:
                     # if assay['order_bias_value'] > compare_val['order_bias_value'] and assay['qualitative_activity']:
@@ -342,11 +347,16 @@ class Command(BaseBuild):
         ## TODO: pick
         for assay in sorted_assays:
             for reference in references:
-                if assay['signalling_protein'] == reference['signalling_protein']:
+                if assay['family'] == reference['family']:
                     if assay['assay_type'] == reference['assay_type']:
                         if assay['cell_line'] == reference['cell_line']:
                             assay['reference_ligand'].append(reference)
-                            assay['order_bias_value'] = self.calc_order_bias_value(assay, assay['reference_ligand'])
+                            if assay['order_bias_value']:
+                                temp_value = self.calc_order_bias_value(assay, assay['reference_ligand'])
+                                if assay['order_bias_value'] < temp_value:
+                                    assay['order_bias_value'] = temp_value
+                            else:
+                                assay['order_bias_value'] = self.calc_order_bias_value(assay, assay['reference_ligand'])
         return  sorted_assays
 
     def calc_order_bias_value(self, assay, reference):
@@ -362,14 +372,6 @@ class Command(BaseBuild):
             reference_b=reference[0]['quantitive_efficacy']
             result = math.log10((assay_b/assay_a)) - math.log10((reference_b/reference_a))
         except:
-            try:
-                assay_a=assay['quantitive_activity']
-                assay_b=assay['quantitive_efficacy']
-                reference_a=reference[0]['quantitive_activity']
-                reference_b=reference[0]['quantitive_efficacy']
-                result = math.log10((assay_b/assay_a)) - math.log10((reference_b/reference_a))
-            except:
-                result = None
             result = None
         return result
 
@@ -581,6 +583,7 @@ class Command(BaseBuild):
         for i in context['data'].items():
             if len(i[1]['biasdata']) > 1:
                 if self.fetch_experiment(i[1]['publication'], i[1]['ligand'], i[1]['receptor'], source) == False:
+                    primary, secondary = self.fetch_receptor_trunsducers(i[1]['receptor'])
                     experiment_entry = AnalyzedExperiment(publication=i[1]['publication'],
                                                           ligand=i[1]['ligand'],
                                                           receptor=i[1]['receptor'],
@@ -604,7 +607,9 @@ class Command(BaseBuild):
                                                          signalling_protein=ex['signalling_protein'],
                                                          cell_line=ex['cell_line'],
                                                          assay_type=ex['assay_type'],
-                                                         assay_measure=ex['assay_measure_method'],
+
+                                                         molecule_1=ex['molecule_1'],
+                                                         molecule_2=ex['molecule_2'],
                                                          assay_time_resolved=ex['assay_time_resolved'],
                                                          ligand_function=ex['ligand_function'],
                                                          quantitive_measure_type=ex['quantitive_measure_type'],
@@ -625,7 +630,6 @@ class Command(BaseBuild):
                                                          log_bias_factor_c=ex['lbf_c'],
                                                          log_bias_factor_d=ex['lbf_d'],
                                                          effector_family = ex['family'],
-                                                         measured_effector = ex['assay_measure_method'],
                                                          measured_biological_process = ex['measured_biological_process'] ,
                                                          signal_detection_tecnique = ex['signal_detection_tecnique'],
                                                          emax_ligand_reference=emax_ligand
@@ -635,13 +639,14 @@ class Command(BaseBuild):
 
                         emax_ligand = ex['emax_reference_ligand']
                         experiment_assay = AnalyzedAssay(experiment=experiment_entry,
-                                                         assay_description='endogenous_assay',
                                                          family=ex['family'],
                                                          order_no=ex['order_no'],
                                                          signalling_protein=ex['signalling_protein'],
                                                          cell_line=ex['cell_line'],
                                                          assay_type=ex['assay_type'],
-                                                         assay_measure=ex['assay_measure_method'],
+                                                         assay_description='endogenous',
+                                                         molecule_1=ex['molecule_1'],
+                                                         molecule_2=ex['molecule_2'],
                                                          assay_time_resolved=ex['assay_time_resolved'],
                                                          ligand_function=ex['ligand_function'],
                                                          quantitive_measure_type=ex['quantitive_measure_type'],
@@ -657,9 +662,12 @@ class Command(BaseBuild):
                                                          t_value=ex['t_coefficient_initial'],
                                                          t_factor=ex['t_factor'],
                                                          log_bias_factor=ex['log_bias_factor'],
+                                                         log_bias_factor_a=ex['lbf_a'],
+                                                         log_bias_factor_b=ex['lbf_b'],
+                                                         log_bias_factor_c=ex['lbf_c'],
+                                                         log_bias_factor_d=ex['lbf_d'],
                                                          effector_family = ex['family'],
-                                                         measured_effector = ex['assay_measure_method'],
-                                                         measured_biological_process = ex['measured_biological_process'],
+                                                         measured_biological_process = ex['measured_biological_process'] ,
                                                          signal_detection_tecnique = ex['signal_detection_tecnique'],
                                                          emax_ligand_reference=emax_ligand
                                                          )
