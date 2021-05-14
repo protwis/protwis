@@ -1096,6 +1096,18 @@ class BiasBrowser(ListView):
             tfactor_p4=Subquery(assay_qs.values('t_value')[3:4]),
             tfactor_p5=Subquery(assay_qs.values('t_value')[4:5]),
 
+            #molecule
+            molecule1_p1=Subquery(assay_qs.values('molecule_1')[:1]),
+            molecule1_p2=Subquery(assay_qs.values('molecule_1')[1:2]),
+            molecule1_p3=Subquery(assay_qs.values('molecule_1')[2:3]),
+            molecule1_p4=Subquery(assay_qs.values('molecule_1')[3:4]),
+            molecule1_p5=Subquery(assay_qs.values('molecule_1')[4:5]),
+            #molecule
+            molecule2_p1=Subquery(assay_qs.values('molecule_2')[:1]),
+            molecule2_p2=Subquery(assay_qs.values('molecule_2')[1:2]),
+            molecule2_p3=Subquery(assay_qs.values('molecule_2')[2:3]),
+            molecule2_p4=Subquery(assay_qs.values('molecule_2')[3:4]),
+            molecule2_p5=Subquery(assay_qs.values('molecule_2')[4:5]),
             # Assay
             assay_p1=Subquery(assay_qs.values('signalling_protein')[:1]),
             assay_p2=Subquery(assay_qs.values('signalling_protein')[1:2]),

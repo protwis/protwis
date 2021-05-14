@@ -1022,7 +1022,11 @@
 					<th id="tfactor" class="shade" style="border-left: 1px solid black; text-align:left" colspan="5">
 						Transduction coefficient</th>
                     <th id="cell" style="border-left: 1px solid black; text-align:left" colspan="5">
-						Biological process</th>
+						Measured molecule 1</th>
+                    <th id="cell" style="border-left: 1px solid black; text-align:left" colspan="5">
+						Measured molecule 2</th>
+                    <th id="cell" style="border-left: 1px solid black; text-align:left" colspan="5">
+						Biological process</th>                
 					<th id="cell" style="border-left: 1px solid black; text-align:left" colspan="5">
 						Cell line</th>
 					<th id="time" style="border-left: 1px solid black; text-align:left" colspan="5">
@@ -1084,6 +1088,16 @@
 					<th class="shade" id="tfactor_p3_filter_select">P 3</th>
 					<th class="shade" id="tfactor_p4_filter_select">P 4</th>
 					<th class="shade" id="tfactor_p5_filter_select">P 5</th>
+                    <th id="measured_molecule_p1_filter_select">P 1</th>
+					<th id="measured_molecule_p2_filter_select">P 2</th>
+					<th id="measured_molecule_p3_filter_select">P 3</th>
+					<th id="measured_molecule_p4_filter_select">P 4</th>
+					<th id="measured_molecule_p5_filter_select">P 5</th>
+                    <th id="measured_molecule2_p1_filter_select">P 1</th>
+					<th id="measured_molecule2_p2_filter_select">P 2</th>
+					<th id="measured_molecule2_p3_filter_select">P 3</th>
+					<th id="measured_molecule2_p4_filter_select">P 4</th>
+					<th id="measured_molecule2_p5_filter_select">P 5</th>
                     <th id="bioprocess_p1_filter_select">P 1</th>
 					<th id="bioprocess_p2_filter_select">P 2</th>
 					<th id="bioprocess_p3_filter_select">P 3</th>
@@ -1241,6 +1255,18 @@
                     <td class="shade">{{e.tfactor_p3|default_if_none:""}}</td>
                     <td class="shade">{{e.tfactor_p4|default_if_none:""}}</td>
                     <td class="shade">{{e.tfactor_p5|default_if_none:""}}</td>
+                    <!-- Molecule 1 -->
+					<td class="shade">{{e.molecule1_p1|default_if_none:""}}</td>
+                    <td class="shade">{{e.molecule1_p2|default_if_none:""}}</td>
+                    <td class="shade">{{e.molecule1_p3|default_if_none:""}}</td>
+                    <td class="shade">{{e.molecule1_p4|default_if_none:""}}</td>
+                    <td class="shade">{{e.molecule1_p5|default_if_none:""}}</td>
+                    <!-- Molecule 2 -->
+					<td class="shade">{{e.molecule2_p1|default_if_none:""}}</td>
+                    <td class="shade">{{e.molecule2_p2|default_if_none:""}}</td>
+                    <td class="shade">{{e.molecule2_p3|default_if_none:""}}</td>
+                    <td class="shade">{{e.molecule2_p4|default_if_none:""}}</td>
+                    <td class="shade">{{e.molecule2_p5|default_if_none:""}}</td>
                 	<!-- Bioprocess -->
                     <td title='{{e.measured_biological_process_p1}}'>{{e.measured_biological_process_p1|default_if_none:"" }}</td>
                     <td title='{{e.measured_biological_process_p2}}'>{{e.measured_biological_process_p2|default_if_none:"" }}</td>
