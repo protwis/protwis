@@ -12,6 +12,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.core.management.color import no_style
 from django.db import IntegrityError, connection
+from common.tools import urlopen_with_retry
 from protein.models import (Gene, Protein, ProteinAlias, ProteinConformation,
                             ProteinFamily, ProteinArrestinPair, ProteinSegment,
                             ProteinSequenceType, ProteinSource, ProteinState, Species)
@@ -355,7 +356,7 @@ class Command(BaseCommand):
                     #         print('There is no GN field in the uniprot!', accession)
                     #         self.logger.error('There is no GN field in the uniprot! {}'.format(accession))
                     #         continue
-                    if not 'source' in up:
+                    if up == False or not 'source' in up:
                         print('No source found, probably deprecated!', accession)
                         self.logger.error('No source found, probably deprecated! {}'.format(accession))
                         continue
@@ -542,7 +543,11 @@ class Command(BaseCommand):
                 uf = open(local_file_path, 'r')
                 self.logger.info('Reading local file ' + local_file_path)
             else:
-                uf = urlopen(remote_file_path)
+                uf = urlopen_with_retry(remote_file_path)
+                if uf == False:
+                    self.logger.warning(f'ERROR: UNIPROT file could not be obtained for {accession}')
+                    return False
+
                 remote = True
                 self.logger.info('Reading remote file ' + remote_file_path)
                 local_file = open(local_file_path, 'w')

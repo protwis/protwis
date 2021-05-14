@@ -198,7 +198,7 @@ class Command(BaseBuild):
                         if options['debug']:
                             print(identity)
                         if identity>85:
-                            if sc.structure.pdb_code.index!='7DFL':
+                            if sc.structure.pdb_code.index not in ['7DFL']:
                                 no_seqnum_shift.append(sc.structure.pdb_code.index)
                             if options['debug']:
                                 print('INFO: HN has {}% with gnai1_human HN, skipping seqnum shift correction'.format(round(identity)))
@@ -214,14 +214,20 @@ class Command(BaseBuild):
                         else:
                             pw2 = pairwise2.align.localms(sc.protein.sequence, seq, 2, -1, -.5, -.1)
                         ref_seq, temp_seq = str(pw2[0][0]), str(pw2[0][1])
-                        
+
                         # Custom fix for A->G mutation at pos 18
                         if sc.structure.pdb_code.index=='7JJO':
                             ref_seq = ref_seq[:18]+ref_seq[19:]
                             temp_seq = temp_seq[:17]+temp_seq[18:]
+                        # Custom alignment fixes
                         elif sc.structure.pdb_code.index=='7DFL':
                             ref_seq  = 'MTLESIMACCLSEEAKEARRINDEIERQLRRDKRDARRELKLLLLGTGESGKSTFIKQMRIIHGSGYSDEDKRGFTKLVYQNIFTAMQAMIRAMDTLKIPYKYEHNKAHAQLVREVDVEKVSAFENPYVDAIKSLWNDPGIQECYDRRREYQLSDSTKYYLNDLDRVADPAYLPTQQDVLRVRVPTTGIIEYPFDLQSVIFRMVDVGGQRSERRKWIHCFENVTSIMFLVALSEYDQVLVESDNENRMEESKALFRTIITYPWFQNSSVILFLNKKDLLEEKIMYSHLVDYFPEYDGPQRDAQAAREFILKMFVDLNPDSDKIIYSHFTCATDTENIRFVFAAVKDTILQLNLKEYNLV'
                             temp_seq = '--------CTLSAEDKAAVERSKMIDRNLREDGEKARRELKLLLLGTGESGKSTFIKQMRIIHG--------------------------------------------------------------------------------------------------------------------------TGIIEYPFDLQSVIFRMVDVGGQRSERRKWIHCFENVTSIMFLVALSEYDQV----DNENRMEESKALFRTIITYPWFQNSSVILFLNKKDLLEEKIMYSHLVDYFPEYDGPQRDAQAAREFILKMFVDLNPDSDKILYSHFTCATDTENIRFVFAAVKDTILQLNLKEYNLV'
+                        elif sc.structure.pdb_code.index=='7JOZ':
+                            temp_seq = temp_seq[:67]+('-'*14)+'FNGDS'+temp_seq[86:]
+                        elif sc.structure.pdb_code.index=='7AUE':
+                            ref_seq = ref_seq[:31].replace('-','')+ref_seq[31:]
+                            temp_seq = (9*'-')+temp_seq[2:5]+temp_seq[5:54].replace('-','')+temp_seq[54:]
                         wt_pdb_dict = OrderedDict()
                         pdb_wt_dict = OrderedDict()
                         j, k = 0, 0
@@ -242,7 +248,7 @@ class Command(BaseBuild):
                                 pdb_wt_dict[i] = resis[j]
                                 j+=1
                         # Custom fix for 7JJO isoform difference
-                        if sc.structure.pdb_code.index=="7JJO":
+                        if sc.structure.pdb_code.index in ['7JJO', '7JOZ', '7AUE']:
                             pdb_num_dict = OrderedDict()
                             for wt_res, st_res in wt_pdb_dict.items():
                                 if type(st_res)==type([]):

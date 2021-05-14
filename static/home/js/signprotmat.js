@@ -185,7 +185,7 @@ var signprotmat = {
             }))
             data = _.orderBy(data, ['rec_tm', 'rec_gn'])
             var seq = data.map(x => x.rec_aa).join('')
-            
+
             return entry_name.concat('>\n', seq)
 
         },
@@ -443,7 +443,7 @@ var signprotmat = {
                     .attr("perserveAspectRatio", "xMinYMid")
                     .call(resize);
 
-                // to register multiple listeners for same event type, 
+                // to register multiple listeners for same event type,
                 // you need to add namespace, i.e., 'click.foo'
                 // necessary if you call invoke this function for multiple svgs
                 // api docs: https://github.com/mbostock/d3/wiki/Selections#on
@@ -1028,7 +1028,7 @@ var signprotmat = {
                 .attr("y", 75)
                 .attr("width", xScale.range()[1] - xScale.step())
                 .attr("height", pdbScale.range()[0] - pdbScale.step());
-            
+
             var data_gap = signprotmat.data.get_data_gap_non_int(
                 pdbScale,
                 xScale,
@@ -1388,7 +1388,7 @@ var signprotmat = {
                 .attr('y', 75 + row_height)
                 .attr("dy", row_height / 4)
                 .text('Interaction Conservation')
-            
+
             label_area
                 .append('text')
                 .attr('class', 'con_seq_label')
@@ -1837,7 +1837,7 @@ var signprotmat = {
                     })
                     .text(function (d) { return d.aa_cons; });
             }, function (update) {
-                
+
                 return update
                     .attr("x", function (d) { return xScale(d.gn); })
                     .attr("y", 75 + row_height)
@@ -1938,13 +1938,13 @@ var signprotmat = {
                     data = _.omit(data, key);
                 }
             }
-            
+
             var col_lengths = [];
             for (var _b = 0, _c = Object.keys(data); _b < _c.length; _b++) {
                 var elem = _c[_b];
                 col_lengths.push(data[elem].length);
             }
-            
+
             var row_height = 30;
             var area_height = _.max(col_lengths) * row_height;
             var seqsigTip = d3
@@ -1967,8 +1967,8 @@ var signprotmat = {
                     d.freq +
                     "<br>");
             });
-            
-            
+
+
             var data = data_in.feat_ungrouped;
             var fScale = signprotmat.d3.fScale(data);
 
@@ -2013,7 +2013,7 @@ var signprotmat = {
                 .text(function(d) {
                     return d.feature;
                 });
-            
+
             //feature length row labels
             row
                 .append("text")
@@ -2126,7 +2126,7 @@ var signprotmat = {
               .append("text")
               .attr("class", "res_label")
               .attr("x", function(d) {return xScale(d.gn)})
-              .attr("y", function(d) { 
+              .attr("y", function(d) {
                     const length_text = d.length != "" ? " (" + d.length + ")" : "";
                     const comb = d.feature + length_text;
                     return fScale(comb) - fScale.step() / 2
@@ -2150,7 +2150,7 @@ var signprotmat = {
                 .append("g")
                 .attr("id", "con_seq_mat")
                 .attr("transform", "translate(" + -xScale.step() / 2 + "," + -70 + ")");
-            
+
             // adding the gn labels
             d3.select("svg.svg-content.seqsig")
                 .select("g")
@@ -2187,7 +2187,7 @@ var signprotmat = {
             var viewbox = viewbox_svg.attr('viewBox');
             var viewbox_1 = viewbox.slice(0, 9);
             // var new_vb = viewbox_1 + (area_height + Math.round(area_height / 4) + 150);
-            var new_vb = viewbox_1 + (200);
+            var new_vb = viewbox_1 + (210);
             viewbox_svg.attr('viewBox', new_vb);
         },
 
@@ -2202,7 +2202,7 @@ var signprotmat = {
             var viewbox_svg = d3.select('.svg-content.seqsig');
             var viewbox = viewbox_svg.attr('viewBox');
             var viewbox_1 = viewbox.slice(0, 9);
-            var new_vb = viewbox_1 + (!bool_visible ? 1500 : 200);
+            var new_vb = viewbox_1 + (!bool_visible ? 1510 : 210);
             viewbox_svg.attr('viewBox', new_vb);
 
             // redraw the container to fix viewbox display height
@@ -2221,7 +2221,7 @@ var signprotmat = {
             var viewbox_svg = d3.select('.svg-content.seqsig');
             var viewbox = viewbox_svg.attr('viewBox');
             var viewbox_1 = viewbox.slice(0, 9);
-            var new_vb = viewbox_1 + (!bool_visible ? 1500 : 200);
+            var new_vb = viewbox_1 + (!bool_visible ? 1510 : 210);
             viewbox_svg.attr('viewBox', new_vb);
 
             // redraw the container to fix viewbox display height
