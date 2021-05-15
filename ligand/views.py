@@ -1016,7 +1016,7 @@ class BiasBrowser(ListView):
 
         ref_assay_qs = AnalyzedAssay.objects.filter(
             order_no__lte=5,
-            assay_description='endogenous_assay',
+            assay_description='endogenous',
             experiment=OuterRef('pk'),
         ).order_by('order_no')
 

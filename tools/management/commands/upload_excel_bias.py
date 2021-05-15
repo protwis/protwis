@@ -292,7 +292,7 @@ class Command(BaseBuild):
             return None
         end_ligand  = self.fetch_endogenous(protein)
 
-        if len(d['signalling_protein']) < 1:            
+        if len(d['signalling_protein']) < 1:
             d['signalling_protein'] = '-'
 
         auxiliary_protein = self.fetch_protein(d['auxiliary_protein'], d['source_file'])
@@ -412,7 +412,7 @@ class Command(BaseBuild):
                     potency = potency* 10**(-3)
             return potency,p_type
         else:
-            self.logger.info("potency convertion error")
+            self.logger.info("potency convertion e rror")
             return None, None
 
     def define_g_family(self, protein, assay_type, receptor):
@@ -557,8 +557,8 @@ class Command(BaseBuild):
             else:
                 # TODO: if pubchem id then create ligand from pubchem
 
-                # if ligand_type and ligand_type.lower() == 'pubchem cid':
-                #     l = self.get_ligand_or_create(ligand_id)
+                if ligand_type and ligand_type.lower() == 'pubchem cid':
+                    l = self.get_ligand_or_create(ligand_id)
 
                 if l == None:
                     l = get_or_make_ligand(ligand_id, ligand_type, ligand_name)
