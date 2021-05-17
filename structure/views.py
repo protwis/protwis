@@ -1,15 +1,14 @@
 from django.shortcuts import render
 from django.conf import settings
 from django.views.generic import TemplateView, View
-from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.db.models import Count, Q, Prefetch
 from django import forms
-from django.core.cache import cache
-from django.views.decorators.cache import cache_page
+
 from django.shortcuts import redirect
 
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
-from protein.models import Gene, ProteinSegment, IdentifiedSites, ProteinGProteinPair
+from protein.models import ProteinSegment
 from structure.models import Structure, StructureModel, StructureComplexModel, StructureExtraProteins, StructureModelRMSD
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, ModelRotamer
 from structure.assign_generic_numbers_gpcr import GenericNumbering, GenericNumberingFromDB
@@ -33,22 +32,17 @@ import inspect
 import os
 import time
 import zipfile
-import math
 import json
-import ast
+
 from copy import deepcopy
 from io import StringIO, BytesIO
 from collections import OrderedDict
 from Bio.PDB import PDBIO, PDBParser
-from operator import itemgetter
-import xlsxwriter
 
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
-from smtplib import SMTP
 import smtplib
-import sys
 
 class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'D1','006':'F','007':'T','008':'O'}
 
@@ -239,16 +233,16 @@ def RefinedModelDetails(request, pdbname):
 		try:
 			structure = Structure.objects.get(pdb_code__index=pdbname.upper())
 			if structure.refined:
-				complex_details = SignprotComplex.objects.filter(structure=structure)
-				if len(complex_details) > 0:
-					complex = complex_details.first()
-					return ComplexModelDetails(request, pdbname.lower(), complex.protein.entry_name)
+				complex_mod_details = SignprotComplex.objects.filter(structure=structure)
+				if len(complex_mod_details) > 0:
+					complex_mod = complex_mod_details.first()
+					return ComplexModelDetails(request, pdbname.lower(), complex_mod.protein.entry_name)
 				else:
 					return HomologyModelDetails(request, pdbname.lower(), structure.state.slug)
 
 			else:
 				error = f"This structure ({pdbname}) does not have a refined model"
-		except:
+		except Structure.DoesNotExist:
 			error = f"The structure {pdbname} does not exist in the GPCRdb"
 	else:
 		error = f"An incorrect PDB entry ({pdbname}) was specified"
@@ -291,7 +285,7 @@ def ComplexModelDetails(request, modelname, signprot):
 	gp = GProteinAlignment()
 	gp.run_alignment(model.sign_protein, signprot_template, calculate_similarity=True)
 
-	for b,n in bb_temps2.items():
+	for n in bb_temps2.values():
 		for s in n:
 			if s.protein_conformation.protein.parent not in bb_temps:
 				bb_temps[s.protein_conformation.protein.parent] = [s]
@@ -903,21 +897,21 @@ class StructureStatistics(TemplateView):
 		tree = OrderedDict({'name':'GPCRs','children':[]})
 		i = 0
 		n = 0
-		for c,c_v in coverage.items():
+		for c_v in coverage.values():
 			c_v['name'] = c_v['name'].split("(")[0]
 			if c_v['name'].strip() == 'Other GPCRs':
 				continue
 			children = []
-			for lt,lt_v in c_v['children'].items():
+			for lt_v in c_v['children'].values():
 				if lt_v['name'].strip() == 'Orphan' and c_v['name'].strip()=="Class A":
 					continue
 				children_rf = []
-				for rf,rf_v in lt_v['children'].items():
+				for rf_v in lt_v['children'].values():
 					rf_v['name'] = rf_v['name'].split("<")[0]
 					if rf_v['name'].strip() == 'Class T (Taste 2)':
 						continue
 					children_r = []
-					for r,r_v in rf_v['children'].items():
+					for r_v in rf_v['children'].values():
 						r_v['color'] = CSS_COLOR_NAMES[i]
 						r_v['sort'] = n
 						children_r.append(r_v)
@@ -938,8 +932,8 @@ class StructureStatistics(TemplateView):
 
 		return json.dumps(tree)
 
-
-	def get_diagram_crystals(self):
+	@staticmethod
+	def get_diagram_crystals():
 		"""
 		Prepare data for coverage diagram.
 		"""
@@ -2341,9 +2335,7 @@ def webformdata(request) :
 	solubilization = OrderedDict()
 	crystallization = OrderedDict()
 	modifications = []
-	aamod, aamod_start, aamod_end=[], [], []
 
-	i=1
 	error = 0
 	error_msg = []
 	for key,value in sorted(data.items()):
@@ -2367,10 +2359,10 @@ def webformdata(request) :
 
 			if key.startswith('aa_no'):
 				pos_id = key.replace('aa_no','')
-				if pos_id=='':
-					mut_id='1'
-				else:
-					mut_id=pos_id.replace('_','')
+				# if pos_id=='':
+				# 	mut_id='1'
+				# else:
+				# 	mut_id=pos_id.replace('_','')
 
 				if 'mut_remark'+pos_id in data:
 					remark = data['mut_remark'+pos_id]
