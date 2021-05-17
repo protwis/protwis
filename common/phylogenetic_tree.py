@@ -230,7 +230,7 @@ class PhylogeneticTreeGenerator(object):
             ).prefetch_related(
                 'family',
                 'family__parent'
-                ).order_by('family__slug')
+                ).order_by('family__slug', 'species_id') #should fix CXCR4
 
         self.proteins_index = {}
         for p in self.proteins:
