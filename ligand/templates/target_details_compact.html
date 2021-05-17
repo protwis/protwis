@@ -284,7 +284,7 @@
                     {% for record in ligand_data %}
                     <tr>
                         <td><input class="alt" type="checkbox"></td>
-                        <td><a class="struct" rel="http://www.ebi.ac.uk/chembl/api/data/image/{{record.ligand_id}}" href="/ligand/{{record.ligand_id}}">{{record.ligand_id}}</a></td>
+                        <td><a class="struct" rel="http://www.ebi.ac.uk/chembl/api/data/image/{{record.ligand_id}}" href="/ligand/{{record.lig_id}}/info" target="_blank">{{record.ligand_id}}</a></td>
                         <td>{{record.protein_name}}</td>
                         <td>{{record.species}}</td>
                         <td>{{record.purchasability}}</td>
