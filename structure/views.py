@@ -234,6 +234,27 @@ def HomologyModelDetails(request, modelname, state):
 														  'sc_none': round(sc_none/len(rotamers)*100, 1), 'main_template_seqsim': main_template_seqsim, 'template_list': template_list, 'model_main_template': model_main_template,
 														  'state': state, 'version': version})
 
+def RefinedModelDetails(request, pdbname):
+	if len(pdbname) == 4:
+		try:
+			structure = Structure.objects.get(pdb_code__index=pdbname.upper())
+			if structure.refined:
+				complex_details = SignprotComplex.objects.filter(structure=structure)
+				if len(complex_details) > 0:
+					complex = complex_details.first()
+					return ComplexModelDetails(request, pdbname.lower(), complex.protein.entry_name)
+				else:
+					return HomologyModelDetails(request, pdbname.lower(), structure.state.slug)
+
+			else:
+				error = f"This structure ({pdbname}) does not have a refined model"
+		except:
+			error = f"The structure {pdbname} does not exist in the GPCRdb"
+	else:
+		error = f"An incorrect PDB entry ({pdbname}) was specified"
+
+	return HttpResponse(error)
+
 def ComplexModelDetails(request, modelname, signprot):
 	"""
 	Show complex homology models details
