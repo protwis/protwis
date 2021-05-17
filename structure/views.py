@@ -238,7 +238,7 @@ def ComplexModelDetails(request, modelname, signprot):
 	"""
 	Show complex homology models details
 	"""
-	color_palette = ["orange","cyan","yellow","lime","fuchsia","green","teal","olive","thistle","grey","chocolate","blue","red","pink","springgreen","steelblue","tan","tomato","skyblue","papayawhip"]
+	color_palette = ["orange","cyan","yellow","lime","fuchsia","limegreen","teal","olive","thistle","grey","chocolate","blue","red","pink","palegoldenrod","steelblue","tan","lightcoral","skyblue","papayawhip"]
 	model = StructureComplexModel.objects.get(receptor_protein__entry_name=modelname, sign_protein__entry_name=signprot)
 	main_template = model.main_template
 	if model.receptor_protein.accession:
