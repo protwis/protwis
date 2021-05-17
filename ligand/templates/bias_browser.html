@@ -1035,7 +1035,7 @@
                           white-space: nowrap;
                           text-overflow: ellipsis;
                   max-width: 250px;" colspan="2">Reference</th>
-                  <th style="border-left: 1px solid black; text-align:left" colspan="43">reference</th>
+                  <th style="border-left: 1px solid black; text-align:left" colspan="45">reference</th>
 				</tr>
 				<tr class="table-filter-dropdown">
 					<th></th>
@@ -1170,13 +1170,15 @@
 
                     <th id="time_p4_filter_select">lig id</th>
 					<th id="time_p5_filter_select">lig source</th>
+                    <th id="time_p5_filter_select">lig id displayed</th>
+                    <th id="time_p5_filter_select">lig external</th>
                 </tr>
 			</thead>
 				<tbody id='structures_scrollable_body'>
 				{%for e in data_test%}
 				<tr>
 					<td>
-						<span style='display: none'> {{e.ligand.id}}</span>
+						<span style='display: none'> {{e.id}}</span>
 						<a href="#">
 							<span class="glyphicon glyphicon-info-sign"  title="Click for more details" onclick="openPopup('experiment/{{e.id}}/detail', 'Detail View', window, 1500, 1000)"></span>
 						</a>
@@ -1352,11 +1354,11 @@
                     <td>{{e.reference_quantitive_activity_initial_p3|default_if_none:""}}</td>
                     <td>{{e.reference_quantitive_activity_initial_p4|default_if_none:""}}</td>
                     <td>{{e.reference_quantitive_activity_initial_p5|default_if_none:""}}</td>
-                    <td>{{e.reference_qualitative_activity_p1|default_if_none:""}}</td>
-                    <td>{{e.reference_qualitative_activity_p2|default_if_none:""}}</td>
-                    <td>{{e.reference_qualitative_activity_p3|default_if_none:""}}</td>
-                    <td>{{e.reference_qualitative_activity_p4|default_if_none:""}}</td>
-                    <td>{{e.reference_qualitative_activity_p5|default_if_none:""}}</td>
+                    <td>{{e.reference_ligand_p1|default_if_none:""}}</td>
+                    <td>{{e.reference_ligand_p2|default_if_none:""}}</td>
+                    <td>{{e.reference_ligand_p3|default_if_none:""}}</td>
+                    <td>{{e.reference_ligand_p4|default_if_none:""}}</td>
+                    <td>{{e.reference_ligand_p5|default_if_none:""}}</td>
                     <td>{{e.reference_quantitive_efficacy_p1|default_if_none:""}}</td>
                     <td>{{e.reference_quantitive_efficacy_p2|default_if_none:""}}</td>
                     <td>{{e.reference_quantitive_efficacy_p3|default_if_none:""}}</td>
@@ -1388,11 +1390,15 @@
                     <td>{{e.reference_d_p1|default_if_none:""}}</td>
                     <td>{{e.reference_d_p2|default_if_none:""}}</td>
                     <td>{{e.reference_d_p3|default_if_none:""}}</td>
-                    <td>{{e.web_links1|default_if_none:""}}</td>
-                    <td>{{e.web_links|default_if_none:""}}</td>
+                    <td>{{e.reference_d_p4|default_if_none:""}}</td>
+                    <td>{{e.reference_d_p5|default_if_none:""}}</td>
+                    <!-- <td>{{e.web_links1|default_if_none:""}}</td>
+                    <td>{{e.web_links|default_if_none:""}}</td> -->
 
                     <td>{{e.ligand_source_id|default_if_none:""}}</td>
                     <td>{{e.ligand_source_type|default_if_none:""}}</td>
+                    <td>{{e.ligand.id}}</td>
+                    <td>{{e.external_ligand_ids}}</td>
 				</tr>
 				{%endfor%}
 			</tbody>

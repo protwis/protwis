@@ -273,32 +273,53 @@ class Command(BaseBuild):
     def separate_ligands(self, context):
         content = dict()
         for i in context.items():
-            for assay in i[1]['assay_list']:
-                name = str(i[1]['publication'].id) + \
-                    '/'+ str(assay['ligand'].id) + '/' + str(i[1]['receptor'].id)
-                print(name)
-                if name in content:
-                    content[name]['assay_list'].append(assay)
-                    content[name]['reference_assays_list'].extend(i[1]['reference_assays_list'])
-                else:
-                    content[name] = dict()
-                    content[name]['assay_list'] = list()
-                    content[name]['reference_assays_list'] = list()
-                    content[name]['publication'] = i[1]['publication']
-                    content[name]['ligand'] = assay['ligand']
-                    content[name]['endogenous_ligand'] = i[1]['endogenous_ligand']
-                    content[name]['receptor'] = i[1]['receptor']
-                    content[name]['vendor_counter'] = i[1]['vendor_counter']
-                    content[name]['authors'] = i[1]['authors']
-                    content[name]['article_quantity'] = i[1]['article_quantity']
-                    content[name]['labs_quantity'] = i[1]['labs_quantity']
-                    content[name]['assay_list'].append(assay)
-                    content[name]['reference_assays_list'].extend(i[1]['reference_assays_list'])
-                    content[name]['ligand_source_id'] = assay['ligand_source_id']
-                    content[name]['ligand_source_type'] = assay['ligand_source_type']
+            if(len(i[1]['reference_assays_list']))>0:
+                for assay in i[1]['assay_list']:
+                    name = str(i[1]['publication'].id) + \
+                        '/'+ str(assay['ligand'].id) + '/' + str(i[1]['receptor'].id)
+
+                    if name in content:
+                        content[name]['assay_list'].append(assay)
+                        content[name]['reference_assays_list'].extend(i[1]['reference_assays_list'])
+                        try:
+                            content[name]['reference_ligand']=i[1]['reference_assays_list'][0]['ligand']
+                        except:
+                            content[name]['reference_ligand'] = None
+                    else:
+                        content[name] = dict()
+                        content[name]['assay_list'] = list()
+                        content[name]['reference_assays_list'] = list()
+                        content[name]['publication'] = i[1]['publication']
+                        content[name]['ligand'] = assay['ligand']
+                        content[name]['ligand_links'] = self.get_external_ligand_ids(content[name]['ligand'])
+                        # TODO: add external LigandStatistics
+                        content[name]['endogenous_ligand'] = i[1]['endogenous_ligand']
+                        content[name]['receptor'] = i[1]['receptor']
+                        content[name]['vendor_counter'] = i[1]['vendor_counter']
+                        content[name]['authors'] = i[1]['authors']
+                        content[name]['article_quantity'] = i[1]['article_quantity']
+                        content[name]['labs_quantity'] = i[1]['labs_quantity']
+                        content[name]['assay_list'].append(assay)
+                        content[name]['reference_assays_list'].extend(i[1]['reference_assays_list'])
+                        try:
+                            content[name]['reference_ligand']=i[1]['reference_assays_list'][0]['ligand']
+                        except:
+                            content[name]['reference_ligand'] = None
+                        content[name]['ligand_source_id'] = assay['ligand_source_id']
+                        content[name]['ligand_source_type'] = assay['ligand_source_type']
 
         self.logger.info('returned finalised assay')
         return content
+
+    def get_external_ligand_ids(self, ligand):
+        ligand_list = list()
+        try:
+            for i in ligand.properities.web_links.all():
+                ligand_list.append({'name': i.web_resource.name, "link": i.index})
+
+        except Exception as e:
+            pass
+        return ligand_list
 
     def process_signalling_proteins(self, context):
         for i in context.items():
@@ -314,20 +335,51 @@ class Command(BaseBuild):
         self.logger.info('process_signalling_proteins')
         return context
 
+
     def limit_family_set(self, assay_list):
         families = list()
         proteins = set()
         for assay in assay_list:
             if assay['family'] not in proteins:
+                if assay['family'] == 'Gq/11 or Gi/o' and assay['order_bias_value'] is not None:                    
+                    compare_val_gio = None
+                    compare_val_gq = None
+                    if 'Gi/o' in proteins:
+                        compare_val_gio = next(item for item in families if item["family"] == 'Gi/o')
+                    if 'Gq' in proteins:
+                        compare_val_gq = next(item for item in families if item["family"] == 'Gq/11')
 
-                proteins.add(assay['family'])
-                families.append(assay)
+                    if compare_val_gq is None and compare_val_gio is not None:
+                        if assay['order_bias_value'] > compare_val_gio['order_bias_value']:
+                            families[:] = [d for d in families if d.get('family') != compare_val_gio['family']]
+                            assay['family'] = 'Gi/o'
+                    elif compare_val_gio is None and compare_val_gq is not None:
+                        if assay['order_bias_value'] > compare_val_gq['order_bias_value']:
+                            families[:] = [d for d in families if d.get('family') != compare_val_gio['family']]
+                            assay['family'] = 'Gq/11'
+                    elif compare_val_gio is not None and compare_val_gq is not None:
+                        if assay['order_bias_value'] > compare_val_gio['order_bias_value'] > compare_val_gq['order_bias_value']:
+                            families[:] = [d for d in families if d.get('family') != compare_val_gq['family']]
+                            assay['family'] = 'Gq/11'
+                        elif assay['order_bias_value'] > compare_val_gq['order_bias_value']  > compare_val_gio['order_bias_value']:
+                            families[:] = [d for d in families if d.get('family') != compare_val_gio['family']]
+                            assay['family'] = 'Gi/o'
+                        elif  compare_val_gq['order_bias_value']  > assay['order_bias_value'] > compare_val_gio['order_bias_value']:
+                            families[:] = [d for d in families if d.get('family') != compare_val_gio['family']]
+                            assay['family'] = 'Gi/o'
+                        elif compare_val_gio['order_bias_value'] > assay['order_bias_value'] > compare_val_gq['order_bias_value']:
+                            families[:] = [d for d in families if d.get('family') != compare_val_gq['family']]
+                            assay['family'] = 'Gq/11'
+                    else:
+                        continue
+                    proteins.add(assay['family'])
+                    families.append(assay)
+                else:
+                    proteins.add(assay['family'])
+                    families.append(assay)
             else:
-
                 compare_val = next(item for item in families if item["family"] == assay['family'])
                 try:
-                    # if assay['order_bias_value'] > compare_val['order_bias_value'] and assay['qualitative_activity']:
-                    #     import pdb; pdb.set_trace()
                     if assay['order_bias_value'] > compare_val['order_bias_value']:
                         families[:] = [d for d in families if d.get('family') != compare_val['family']]
                         families.append(assay)
@@ -351,6 +403,7 @@ class Command(BaseBuild):
                     if assay['assay_type'] == reference['assay_type']:
                         if assay['cell_line'] == reference['cell_line']:
                             assay['reference_ligand'].append(reference)
+                            assay['reference_assay_id'] = reference['assay_id']
                             if assay['order_bias_value']:
                                 temp_value = self.calc_order_bias_value(assay, assay['reference_ligand'])
                                 if assay['order_bias_value'] < temp_value:
@@ -586,11 +639,12 @@ class Command(BaseBuild):
                 primary, secondary = self.fetch_receptor_trunsducers(i[1]['receptor'])
                 experiment_entry = AnalyzedExperiment(publication=i[1]['publication'],
                                                       ligand=i[1]['ligand'],
+                                                      external_ligand_ids = i[1]['ligand_links'],
                                                       receptor=i[1]['receptor'],
                                                       source=source,
                                                       endogenous_ligand=i[1]['endogenous_ligand'],
                                                       vendor_quantity=i[1]['vendor_counter'],
-                                                      reference_ligand=None,
+                                                      reference_ligand=i[1]['reference_ligand'],
                                                       primary=primary,
                                                       secondary=secondary,
                                                       article_quantity=i[1]['article_quantity'],
@@ -600,45 +654,49 @@ class Command(BaseBuild):
                                                       )
                 experiment_entry.save()
                 for ex in i[1]['biasdata']:
-                    emax_ligand = ex['emax_reference_ligand']
-                    experiment_assay = AnalyzedAssay(experiment=experiment_entry,
-                                                     family=ex['family'],
-                                                     order_no=ex['order_no'],
-                                                     signalling_protein=ex['signalling_protein'],
-                                                     cell_line=ex['cell_line'],
-                                                     assay_type=ex['assay_type'],
+                    try:
+                        emax_ligand = ex['emax_reference_ligand']
+                        experiment_assay = AnalyzedAssay(experiment=experiment_entry,
+                                                         family=ex['family'],
+                                                         order_no=ex['order_no'],
+                                                         signalling_protein=ex['signalling_protein'],
+                                                         cell_line=ex['cell_line'],
+                                                         assay_type=ex['assay_type'],
+                                                         reference_ligand_id = ex['reference_assay_id'],
+                                                         molecule_1=ex['molecule_1'],
+                                                         molecule_2=ex['molecule_2'],
+                                                         assay_time_resolved=ex['assay_time_resolved'],
+                                                         ligand_function=ex['ligand_function'],
+                                                         quantitive_measure_type=ex['quantitive_measure_type'],
+                                                         quantitive_activity=ex['quantitive_activity'],
+                                                         quantitive_activity_initial=ex['quantitive_activity_initial'],
+                                                         quantitive_unit=ex['quantitive_unit'],
+                                                         qualitative_activity=ex['qualitative_activity'],
+                                                         quantitive_efficacy=ex['quantitive_efficacy'],
+                                                         efficacy_measure_type=ex['efficacy_measure_type'],
+                                                         efficacy_unit=ex['efficacy_unit'],
+                                                         potency=ex['potency'],
+                                                         t_coefficient=ex['t_coefficient'],
+                                                         t_value=ex['t_coefficient_initial'],
+                                                         t_factor=ex['t_factor'],
+                                                         log_bias_factor=ex['log_bias_factor'],
+                                                         log_bias_factor_a=ex['lbf_a'],
+                                                         log_bias_factor_b=ex['lbf_b'],
+                                                         log_bias_factor_c=ex['lbf_c'],
+                                                         log_bias_factor_d=ex['lbf_d'],
+                                                         effector_family = ex['family'],
+                                                         measured_biological_process = ex['measured_biological_process'] ,
+                                                         signal_detection_tecnique = ex['signal_detection_tecnique'],
+                                                         emax_ligand_reference=emax_ligand
+                                                         )
+                        experiment_assay.save()
+                    except Exception as e:
+                        pass
 
-                                                     molecule_1=ex['molecule_1'],
-                                                     molecule_2=ex['molecule_2'],
-                                                     assay_time_resolved=ex['assay_time_resolved'],
-                                                     ligand_function=ex['ligand_function'],
-                                                     quantitive_measure_type=ex['quantitive_measure_type'],
-                                                     quantitive_activity=ex['quantitive_activity'],
-                                                     quantitive_activity_initial=ex['quantitive_activity_initial'],
-                                                     quantitive_unit=ex['quantitive_unit'],
-                                                     qualitative_activity=ex['qualitative_activity'],
-                                                     quantitive_efficacy=ex['quantitive_efficacy'],
-                                                     efficacy_measure_type=ex['efficacy_measure_type'],
-                                                     efficacy_unit=ex['efficacy_unit'],
-                                                     potency=ex['potency'],
-                                                     t_coefficient=ex['t_coefficient'],
-                                                     t_value=ex['t_coefficient_initial'],
-                                                     t_factor=ex['t_factor'],
-                                                     log_bias_factor=ex['log_bias_factor'],
-                                                     log_bias_factor_a=ex['lbf_a'],
-                                                     log_bias_factor_b=ex['lbf_b'],
-                                                     log_bias_factor_c=ex['lbf_c'],
-                                                     log_bias_factor_d=ex['lbf_d'],
-                                                     effector_family = ex['family'],
-                                                     measured_biological_process = ex['measured_biological_process'] ,
-                                                     signal_detection_tecnique = ex['signal_detection_tecnique'],
-                                                     emax_ligand_reference=emax_ligand
-                                                     )
-                    experiment_assay.save()
                 for ex in i[1]['reference_assays_list']:
-
                     emax_ligand = ex['emax_reference_ligand']
                     experiment_assay = AnalyzedAssay(experiment=experiment_entry,
+                                                     reference_ligand_id = ex['assay_id'],
                                                      family=ex['family'],
                                                      order_no=ex['order_no'],
                                                      signalling_protein=ex['signalling_protein'],
@@ -672,7 +730,7 @@ class Command(BaseBuild):
                                                      emax_ligand_reference=emax_ligand
                                                      )
                     experiment_assay.save()
-                
+
             else:
                 self.logger.info('saving error')
 

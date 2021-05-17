@@ -490,7 +490,7 @@ class AnalyzedExperiment(models.Model):
     secondary = models.CharField(max_length=100, null=True)
     ligand_source_id = models.TextField(null=True)
     ligand_source_type = models.TextField(null=True)
-
+    external_ligand_ids = models.TextField(null=True, blank=True)   
 
 class AnalyzedAssay(models.Model):
     experiment = models.ForeignKey(
@@ -534,9 +534,11 @@ class AnalyzedAssay(models.Model):
     log_bias_factor_d = models.CharField(max_length=60, null=True)
     t_factor = models.CharField(max_length=60, null=True)
     assay_description = models.CharField(max_length=900, null=True)
+    reference_ligand_id = models.CharField(max_length=60, null=True)
     emax_ligand_reference = models.ForeignKey(Ligand, related_name='ExperimentAssay.bias_ligand_reference+',
                                               on_delete=models.CASCADE,
                                               null=True, blank=True)
+
 
 class BiasedPathways(models.Model):
     submission_author = models.CharField(max_length=50)

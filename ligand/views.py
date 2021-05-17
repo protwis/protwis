@@ -825,10 +825,8 @@ class BiasBrowserChembl(TemplateView):
     '''
 
 class BiasPathways(TemplateView):
-
     template_name = 'bias_browser_pathways.html'
     # @cache_page(50000)
-
     def get_context_data(self, *args, **kwargs):
         content = BiasedPathways.objects.all().prefetch_related(
             'biased_pathway', 'ligand', 'receptor', 'receptor', 'receptor__family',
@@ -1022,7 +1020,7 @@ class BiasBrowser(ListView):
 
         queryset = AnalyzedExperiment.objects.filter(
             source='different_family',
-            receptor__in=protein_list,
+            # receptor__in=protein_list,
         ).prefetch_related(
             'analyzed_data', 'ligand', 'ligand__reference_ligand', 'reference_ligand',
             'endogenous_ligand', 'ligand__properities', 'receptor', 'receptor', 'receptor__family',
@@ -1091,6 +1089,13 @@ class BiasBrowser(ListView):
             emax_p3=Subquery(assay_qs.values('quantitive_efficacy')[2:3]),
             emax_p4=Subquery(assay_qs.values('quantitive_efficacy')[3:4]),
             emax_p5=Subquery(assay_qs.values('quantitive_efficacy')[4:5]),
+
+            # reference assay
+            reference_ligand_p1=Subquery(assay_qs.values('reference_ligand_id')[:1]),
+            reference_ligand_p2=Subquery(assay_qs.values('reference_ligand_id')[1:2]),
+            reference_ligand_p3=Subquery(assay_qs.values('reference_ligand_id')[2:3]),
+            reference_ligand_p4=Subquery(assay_qs.values('reference_ligand_id')[3:4]),
+            reference_ligand_p5=Subquery(assay_qs.values('reference_ligand_id')[4:5]),
 
             # T factor
             tfactor_p1=Subquery(assay_qs.values('t_value')[:1]),
