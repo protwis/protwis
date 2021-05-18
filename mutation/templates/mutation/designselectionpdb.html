@@ -34,11 +34,19 @@
 
         function submitupload() {
             $("#errormsg").remove();
-            var pdbid = $('#form').find('input#id_pdbname').val() ;
+            var pdbid = $('#form').find('input#id_pdbname').val();
             var filename = $('input[type=file]').val().split('\\').pop();
               if (pdbid) {
-                $("#selection-targets").html("<p><span class='selection-heading-text'>Selected targets</span></p>PDB code: "+pdbid);
-                document.getElementById("form").submit();
+                var pdb_ids = JSON.parse("{{pdb_ids|escapejs}}");
+                if (pdbid.toUpperCase() in pdb_ids) {
+                    $("#selection-targets").html("<p><span class='selection-heading-text'>Selected targets</span></p>PDB code: "+pdbid);
+                    document.getElementById("form").submit();
+                }
+                else {
+                    showAlert("PDB code not found in GPCRdb", "danger");
+                    toggleButtonClass('selection-button');
+                    return false;
+                }
               } else if (filename) {
                 $("#selection-targets").html("<p><span class='selection-heading-text'>Selected targets</span></p>File: "+filename);
                 document.getElementById("form").submit();
