@@ -15,7 +15,7 @@ import gzip
 from io import BytesIO
 from string import Template
 from Bio import Entrez, Medline
-import xml.etree.ElementTree as etree 
+import xml.etree.ElementTree as etree
 
 
 
@@ -49,7 +49,7 @@ def fetch_from_web_api(url, index, cache_dir=False, xml=False, raw=False):
     # slugify the index for the cache filename (some indices have symbols not allowed in file names (e.g. /))
     index_slug= slugify(index)
     cache_file_path = '{}/{}'.format('/'.join(cache_dir), index_slug)
-    
+
     # try fetching from cache
     if cache_dir:
         d = cache.get(cache_file_path)
@@ -57,7 +57,7 @@ def fetch_from_web_api(url, index, cache_dir=False, xml=False, raw=False):
         if not d is None:
             logger.info('Fetched {} from cache'.format(cache_file_path))
             return d
-    
+
     # if nothing is found in the cache, use the web API
     full_url = Template(url).substitute(index=quote(str(index), safe=''))
     logger.info('Fetching {}'.format(full_url))
@@ -66,7 +66,7 @@ def fetch_from_web_api(url, index, cache_dir=False, xml=False, raw=False):
     while tries < max_tries:
         if tries > 0:
             logger.warning('Failed fetching {}, retrying'.format(full_url))
-        
+
         try:
             req = urlopen(full_url)
             if full_url[-2:]=='gz' and xml:
@@ -103,7 +103,7 @@ def fetch_from_web_api(url, index, cache_dir=False, xml=False, raw=False):
                 time.sleep(2)
         except urllib.error.URLError as e:
             # Catches 101 network is unreachable -- I think it's auto limiting feature
-            tries +=1 
+            tries +=1
             time.sleep(2)
         else:
             # save to cache
@@ -112,7 +112,7 @@ def fetch_from_web_api(url, index, cache_dir=False, xml=False, raw=False):
                 cache.set(cache_file_path, d, 60*60*24*7) #7 days
                 logger.info('Saved entry for {} in cache'.format(cache_file_path))
             return d
-    
+
     # give up if the lookup fails 5 times
     logger.error('Failed fetching {} {} times, giving up'.format(full_url, max_tries))
     return False
@@ -130,7 +130,7 @@ def fetch_from_entrez(index, cache_dir=''):
         if d:
             logger.info('Fetched {} from cache'.format(cache_file_path))
             return d
-    
+
     # if nothing is found in the cache, use the web API
     logger.info('Fetching {} from Entrez'.format(index))
     tries = 0
@@ -138,13 +138,13 @@ def fetch_from_entrez(index, cache_dir=''):
     while tries < max_tries:
         if tries > 0:
             logger.warning('Failed fetching pubmed via Entrez {}, retrying'.format(str(index)))
-            
+
         try:
             Entrez.email = 'info@gpcrdb.org'
             handle = Entrez.efetch(
-                db="pubmed", 
-                id=str(index), 
-                rettype="medline", 
+                db="pubmed",
+                id=str(index),
+                rettype="medline",
                 retmode="text"
             )
         except:
@@ -157,3 +157,22 @@ def fetch_from_entrez(index, cache_dir=''):
             save_to_cache(cache_dir, index_slug, d)
             logger.info('Saved entry for {} in cache'.format(cache_file_path))
             return d
+
+def urlopen_with_retry(url, data = None, retries = 5, sleeptime = 5):
+    logger = logging.getLogger('build')
+
+    # Try to request data from URL  for few seconds and retry X times
+    for retry in range(retries):
+        if retry > 0:
+            time.sleep(sleeptime)
+
+        response = None
+        try:
+            response = urlopen(url, data) #nosec
+        except urllib.error.URLError as e:
+            logger.warning(f'URLopen error (retry {retry} out of {retries}) {e}')
+
+        if response != None and 200 <= response.code < 300:
+            return response
+        elif retry == retries:
+            return False

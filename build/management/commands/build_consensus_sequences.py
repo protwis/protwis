@@ -36,7 +36,7 @@ class Command(BuildHumanProteins):
         parser.add_argument('--input-slug', type=str, action='store', dest='input-slug', default=False, help='Run only on a family slug from ProteinFamily table')
         parser.add_argument('--purge', action='store_true', dest='purge', default=False, help='Purge all consensus data')
 
-    def handle(self, *args, **options):        
+    def handle(self, *args, **options):
         try:
             self.signprot = options['signprot']
             self.input_slug = options['input-slug']
@@ -108,11 +108,17 @@ class Command(BuildHumanProteins):
 
         if self.input_slug:
             families = ProteinFamily.objects.filter(slug__startswith=self.input_slug)
-        
+
+
         while count.value<len(families):
             with lock:
-                family = families[count.value]
-                count.value +=1 
+                # Check if the count changed before having obtained the lock
+                if count.value < len(families):
+                    family = families[count.value]
+                    count.value +=1
+                else:
+                    continue
+
         # for family in families:
             # get proteins in this family
             proteins = Protein.objects.filter(family__slug__startswith=family.slug, sequence_type__slug='wt',
@@ -183,7 +189,7 @@ class Command(BuildHumanProteins):
                     pa_label = pa.generic_number.label
                     pa_type = pa.anomaly_type.slug
                     pa_segment_slug = pa.generic_number.protein_segment.slug
-                    
+
                     # bulges are directly added to the consensus list
                     if pa_type == 'bulge':
                         if pa_segment_slug not in consensus_pas:
@@ -199,7 +205,7 @@ class Command(BuildHumanProteins):
                             constriction_freq[pa_label] += 1
                         else:
                             constriction_freq[pa_label] = 1
-            
+
             # go through constrictions to see which ones should be included in the consensus
             for pa in all_constrictions:
                 pa_label = pa.generic_number.label
@@ -235,4 +241,3 @@ class Command(BuildHumanProteins):
                         create_or_update_residues_in_segment(pc, segment, segment_starts[segment_slug],
                             segment_aligned_starts[segment_slug], segment_ends[segment_slug],
                             segment_aligned_ends[segment_slug], self.schemes, ref_positions, protein_anomalies, True)
-
