@@ -1,6 +1,7 @@
 import hashlib
 import itertools
 import json
+import math
 
 from copy import deepcopy
 from collections import defaultdict, OrderedDict
@@ -412,37 +413,132 @@ def TargetPurchasabilityDetails(request, **kwargs):
 class BiasedRankOrder(TemplateView):
     #set a global variable for different pages
     #page = 'biased1'
-
     template_name = 'biased_rank_orders.html'
 
     def get_context_data(self, **kwargs):
 
         context = super().get_context_data(**kwargs)
-# ToDo:
-# make Queryset fetching the data (Ask Alibek for which data)
-# make data for the graph (fetch javascript requirements)
 
-        lig_count_dict = {}
-        assays_lig = list(AssayExperiment.objects.all().values(
-            'protein__family__parent__parent__parent__name').annotate(c=Count('ligand', distinct=True)))
-        for a in assays_lig:
-            lig_count_dict[a['protein__family__parent__parent__parent__name']] = a['c']
+        publications = list(AnalyzedAssay.objects.filter(
+                        experiment__receptor=85,            # 85 is OPRM receptor
+                        assay_description__isnull=True,     # in this mockup page starting point
+                        quantitive_activity__isnull=False,
+                        quantitive_efficacy__isnull=False,
+                        experiment__source='different_family').exclude(
+                        quantitive_efficacy=0.0,
+                        ).values_list(
+                        "family", #pathway                                  0
+                        "quantitive_activity", #emax                        1
+                        "quantitive_efficacy", #EC50                        2
+                        "experiment__ligand__name", #name                   3
+                        "experiment__publication__web_link__index", # DOI   4
+                        "experiment__publication__year", #year              5
+                        "experiment__publication__journal__name", #journal  6
+                        "experiment__publication__authors"  #authors        7
+                        ).distinct()) #check
 
-        target_count_dict = {}
-        assays_target = list(AssayExperiment.objects.all().values(
-            'protein__family__parent__parent__parent__name').annotate(c=Count('protein__family', distinct=True)))
-        for a in assays_target:
-            target_count_dict[a['protein__family__parent__parent__parent__name']] = a['c']
+        list_of_ligands = []
+        list_of_publications = []
+        full_data = {}
+        full_ligands = {}
+        SpiderOptions = {}
 
-        prot_count_dict = {}
-        proteins_count = list(Protein.objects.all().values(
-            'family__parent__parent__parent__name').annotate(c=Count('family', distinct=True)))
-        for pf in proteins_count:
-            prot_count_dict[pf['family__parent__parent__parent__name']] = pf['c']
+        for result in publications:
+            #fixing ligand name (hash hash baby)
+            lig_name = result[3]
+            if result[3][0].isdigit():
+                lig_name = "ligand-"+result[3]
+                hashed_lig_name = 'L' + hashlib.md5((lig_name + result[4]).encode('utf-8')).hexdigest()
+            else:
+                hashed_lig_name = 'L' + hashlib.md5((lig_name).encode('utf-8')).hexdigest()
 
-        prot_count_total = Protein.objects.filter(
-            family__slug__startswith='00').all().distinct('family').count()
+            if result[7] == None:
+                authors = "Authors not listed, " + str(result[6]) + ', (' + str(result[5]) + ')'
+            else:
+                authors = result[7].split(',')[0] + ', et al., ' + str(result[6]) + ', (' + str(result[5]) + ')'
 
+            list_of_ligands.append(tuple((hashed_lig_name, lig_name)))
+            list_of_publications.append(authors)
+            #start parsing the data to create the big dictionary
+            if result[4] not in full_data.keys():
+                full_ligands[result[4]] = []
+                full_data[result[4]] = {"Authors": authors,
+                                        "Journal": result[6],
+                                        "Year": result[5],
+                                        "Data": [{"name": hashed_lig_name,
+                                                 "PathwaysData":
+                                                    [{"Pathway": result[0],
+                                                      "value": round(math.log10(float(result[2])/float(result[1])),3)}]}]}
+                full_ligands[result[4]].append(tuple((hashed_lig_name, lig_name)))
+
+                SpiderOptions[authors] = {}
+                SpiderOptions[authors][hashed_lig_name] = {"Data":[[{'axis':result[0],
+                                                                     'value':round(math.log10(float(result[2])/float(result[1])),3)}]],
+                                                             "Options": {'levels': 15,
+                                                                         'maxValue': 20,
+                                                                         'roundStrokes': False,
+                                                                         'title': lig_name}}
+            if hashed_lig_name not in [d['name'] for d in full_data[result[4]]["Data"]]:
+                full_data[result[4]]["Data"].append(
+                                            {"name": hashed_lig_name,
+                                             "PathwaysData":
+                                                [{"Pathway": result[0],
+                                                  "value": round(math.log10(float(result[2])/float(result[1])),3)}]})
+                full_ligands[result[4]].append(tuple((hashed_lig_name, lig_name)))
+                SpiderOptions[authors][hashed_lig_name] = {"Data":[[{'axis':result[0],
+                                                                     'value':round(math.log10(float(result[2])/float(result[1])),3)}]],
+                                                             "Options": {'levels': 15,
+                                                                         'maxValue': 20,
+                                                                         'roundStrokes': False,
+                                                                         'title': lig_name}}
+            else:
+                ID = [d['name'] for d in full_data[result[4]]["Data"]].index(hashed_lig_name)
+                if result[0] not in [d["Pathway"] for d in full_data[result[4]]["Data"][ID]["PathwaysData"]]:
+                    full_data[result[4]]["Data"][ID]["PathwaysData"].append(
+                                            {"Pathway": result[0],
+                                             "value": round(math.log10(float(result[2])/float(result[1])),3)})
+                    SpiderOptions[authors][hashed_lig_name]["Data"][0].append({'axis':result[0],
+                                                                               'value':round(math.log10(float(result[2])/float(result[1])),3)})
+        #The big dictionary is created, now it needs to be ordered
+        #the publication with more pathway (or tied) should be first
+        #reordering on the fly on a new dict?
+        pathway_nr = {}
+        #this set a temp dict with the "ranking" based on
+        #available total nr of pathways and the keys of the og dict
+        #From this, reorder the original one
+        for key in full_data.keys():
+            for item in full_data[key]["Data"]:
+                if len(item['PathwaysData']) not in pathway_nr.keys():
+                    pathway_nr[len(item['PathwaysData'])] = [key]
+                else:
+                    pathway_nr[len(item['PathwaysData'])].append(key)
+        #get the number of pathways available
+        keys = sorted(list(pathway_nr.keys()))[::-1]
+        #starting from the highest value
+        sorted_full_data = {}
+        for value in keys:
+            for pub in pathway_nr[value]:
+                sorted_full_data[pub] = full_data[pub]
+        #now the sorted dict is done, we can clear cache the og one
+        del full_data
+        all_publications = list(sorted_full_data.keys())
+
+        exp_with_endogenous = AnalyzedAssay.objects.filter(
+                        assay_description__isnull=True,
+                        experiment__source='different_family').values_list(
+                        "family",
+                        "order_no",
+                        "experiment__source",
+                        "experiment__endogenous_ligand__name",
+                        "experiment__ligand__name",
+                        "experiment__publication")
+
+        context['spider'] = json.dumps(SpiderOptions)
+        context['all_ligands'] = list(set(list_of_ligands))
+        context['all_publications'] = list(set(list_of_publications))
+        context['query'] = 'OPRM1' #this will be the input query from selection page
+        context['full_data'] = json.dumps(sorted_full_data)
+        context['full_ligands'] = json.dumps(full_ligands)
         return context
 
 class LigandStatistics(TemplateView):

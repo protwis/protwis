@@ -1,29 +1,186 @@
-{% extends "home/base.html" %}
+{% extends 'home/base.html' %}
 {% load static %}
 {% block addon_css %}
-<link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
-<link rel="stylesheet" href="{% static 'home/css/nvd3-update.css' %}" type="text/css" />
-<link href="{% static 'home/css/bootstrap-responsive.css' %}" rel="stylesheet" media="screen">
-<link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
+<link rel='stylesheet' href='{% static 'home/css/nv.d3.min.css' %}' type='text/css' />
+<link rel='stylesheet' href='{% static 'home/css/nvd3-update.css' %}' type='text/css' />
+<link rel='stylesheet' href='{% static 'home/css/bootstrap-responsive.css' %}' media='screen'>
+<link href="{% static 'home/css/alignment.css' %}" rel="stylesheet">
+
 {% endblock %}
 
 
 {% block content %}
 
+<style>
+    body{
+      font: 10px sans-serif;
+    }
+    li{
+      font: 15px sans-serif;
+    }
+    .dropdown {
+    display: inline-block;
+    margin-right: 6px;
+    margin-bottom: 10px;
+    }
+    .axis path,
+    .axis line {
+        fill: none;
+        stroke: #000;
+        shape-rendering: crispEdges;
+    }
 
-Hello!
-This is a Placeholder page for the upcoming developments!
-Enjoy!
+    .x.axis path {
+        display: none;
+    }
 
+    .line {
+        fill: none;
+        stroke: steelblue;
+        stroke-width: 1.5px;
+    }
+    svg{
+        border:1px solid black;
+    }
+    .grid {
+        fill: none;
+        shape-rendering: crispEdges;
+        stroke: lightgrey;
+        opacity: 0.7;
+        stroke-width: 1px;
+    }
+    .segmentText{
+        cursor:pointer;
+    }
+    div.tooltip {
+        position: absolute;
+        text-align: center;
+        width: 120px;
+        height: 15px;
+        padding: 5px;
+        font: 12px sans-serif;
+        background: #ddd;
+        border: solid 1px #aaa;
+        border-radius: 8px;
+        pointer-events: none;
+    }
+</style>
 
+<style>
+  .title {
+    font: 15px Arial;
+    font-weight: bold;
+    padding-bottom: 3px;
+  }
+</style>
+<br />
 
+<br />
+<br />
 
+<div class="container">
+
+  <h3>Results for receptor: <b>{{query|safe}}</b> </h3>
+  <!-- Nav tabs -->
+  <ul class="nav nav-tabs">
+    <li class="nav-item">
+      <a class="nav-link active" data-toggle="tab" href="#lines">Line charts</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" data-toggle="tab" href="#spiders">Radar plots</a>
+    </li>
+  </ul>
+
+  <!-- Tab panes -->
+  <div class="tab-content">
+    <div class="tab-pane container active" id="lines">
+      <br />
+      <div style="font: 15px sans-serif">
+        <p>Charts are sorted from the publications showing the larger number of investigated pathways. <br>
+          Ligand trends can be highlighted by clicking on the ligand name (across publications). <br>
+          Data are shown in Log<sub>10</sub>(E<sub>max</sub>/EC<sub>50</sub>).</p>
+      </div>
+      <div id='divChartTrends'></div>
+    </div>
+    <div class="tab-pane container fade" id="spiders">
+      <br />
+      <div class="row">
+        <div class="dropdown">
+          <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Select publication
+          <span class="caret"></span></button>
+          <ul class="dropdown-menu">
+            {% for title in all_publications %}
+              <li class="dropdown-item" onclick='DrawSpiders("{{title}}")'>{{title}}</li>
+            {% endfor %}
+          </ul>
+        </div>
+
+        <div class="dropdown">
+          <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Select ligand
+          <span class="caret"></span></button>
+          <ul class="dropdown-menu">
+            {% for ligand in all_ligands %}
+              <li class="dropdown-item" onclick='DrawLigandSpiders("{{ligand.0}}")'>{{ligand.1}}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+
+      <div id='radarcontainer'></div>
+      </div>
+    </div>
+  </div>
 
 
 {% endblock %}
 
 {% block addon_js %}
-<script src="{% static 'home/js/bootstrap-toggle.min.js' %}"></script>
-<script src="{% static 'home/js/d3.min.js' %}"></script>
-<script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+<script src='{% static 'home/js/d3.v3.min.js' %}'></script>
+<script src='{% static 'home/js/radarchart.js' %}'></script>
+<script src='{% static 'home/js/multi_line_chart.js' %}'></script>
+<script>
+var spiders = {{ spider | safe }};
+function DrawSpiders(pub){
+  var parentDiv = document.getElementById("radarcontainer");
+  parentDiv.querySelectorAll('*').forEach(n => n.remove());
+  for(var web in spiders[pub]){
+    RadarChart('radarcontainer', spiders[pub][web]["Data"], spiders[pub][web]["Options"], "radar"+web);
+  }
+}
+</script>
+<script>
+var spiders = {{ spider | safe }};
+function DrawLigandSpiders(ligand){
+  console.log(ligand);
+  var parentDiv = document.getElementById("radarcontainer");
+  parentDiv.querySelectorAll('*').forEach(n => n.remove());
+  for(var pub in spiders){
+    for(var web in spiders[pub]){
+      if(web === ligand){
+        spiders[pub][web]["Options"]["title"] = pub;
+        RadarChart('radarcontainer', spiders[pub][web]["Data"], spiders[pub][web]["Options"], "radar"+web);
+      }
+    }
+  }
+}
+</script>
+
+<script>
+  var data = {{ full_data | safe}};
+  var keys = {{ full_ligands | safe}};
+  var count = 0;
+  for(var propt in data){
+
+    var result = data[propt]["Authors"].link("https://doi.org/" + propt);
+    var yTitle = 'DOI: ' + propt;
+    var divID = 'PUB'+count;
+    // Calling function
+    DrawMultiLineChart(data[propt]['Data'], 'divChartTrends', yTitle, keys[propt], divID, result);
+    count = count + 1
+
+  };
+// Calling function
+  // DrawMultiLineChart(Data, 'divChartTrends', 'Publication xxx Data', keys, 'PUB1', 'Il titolo del grafico');
+</script>
+
 {% endblock %}
