@@ -434,7 +434,8 @@ class BiasedRankOrder(TemplateView):
                         "experiment__publication__web_link__index", # DOI   4
                         "experiment__publication__year", #year              5
                         "experiment__publication__journal__name", #journal  6
-                        "experiment__publication__authors"  #authors        7
+                        "experiment__publication__authors",  #authors       7
+                        "experiment__ligand"    #ligand_id for hash         8
                         ).distinct()) #check
 
         list_of_ligands = []
@@ -447,11 +448,9 @@ class BiasedRankOrder(TemplateView):
             #fixing ligand name (hash hash baby)
             lig_name = result[3]
             if result[3][0].isdigit():
-                lig_name = "ligand-"+result[3]
-                hashed_lig_name = 'L' + hashlib.md5((lig_name + result[4]).encode('utf-8')).hexdigest()
-            else:
-                hashed_lig_name = 'L' + hashlib.md5((lig_name).encode('utf-8')).hexdigest()
+                lig_name = "Ligand-"+result[3]
 
+            hashed_lig_name = 'L' + hashlib.md5((str(result[8])).encode('utf-8')).hexdigest()
             if result[7] == None:
                 authors = "Authors not listed, " + str(result[6]) + ', (' + str(result[5]) + ')'
             else:

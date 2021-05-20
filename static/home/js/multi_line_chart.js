@@ -30,7 +30,8 @@ function DrawMultiLineChart(Data, BaseDiv, RevenueName, Keys, ID, header) {
     var y = d3.scale.linear()
         .range([height, 0])
 
-    var color = d3.scale.category10();
+    var color = d3.scale.category20();
+    var legendColor = d3.scale.category20();
 
     var xAxis = d3.svg.axis()
         .scale(x)
@@ -144,40 +145,69 @@ function DrawMultiLineChart(Data, BaseDiv, RevenueName, Keys, ID, header) {
             .style('opacity', 1e-6);
     }
 
-   // Add one dot in the legend for each name.
-   svg.selectAll("mydots")
-     .append('g')
-     .data(Keys)
-     .enter()
-     .append("circle")
-       .attr("cx", width-50)
-       .attr("cy", function(d,i){ return i*13})
-       .attr("r", 5)
-       .style('stroke', 'black')
-       .style("fill", function(d){ return color(d)});
+    if(Keys.length < 24){
 
-   // Add one dot in the legend for each name.
-   svg.selectAll("mylabels")
-     .data(Keys)
-     .enter()
-     .append("text")
-       .attr("x", width-30)
-       .attr("y", function(d,i){ return i*13})
-       .style("fill", function(a){ return color(a)})
-       .text(function(d){ return d[1]})
-       .attr("id", function(d) { return d[0]})
-       .attr("text-anchor", "left")
-       .style("alignment-baseline", "middle")
-       .on('click', function (d) {
-           var tempId = d3.select(this).attr('id');
-           d3.selectAll('g.segment circle')
-              .style('opacity', 0.2);
-           d3.selectAll('g.segment path')
-              .style('opacity', 0.2);
-           // Hide or show the elements
-           d3.selectAll('g.segment.' + tempId + ' path')
-             .style('opacity', 1)
-           d3.selectAll('g.segment.' + tempId + ' circle')
-             .style('opacity', 1)
-       });
+      function position(d,i) {
+        var c = 1;   // number of columns
+        var h = Keys.length;  // height of each entry
+        var w = 90; // width of each entry (so you can position the next column)
+        var x = width + i % c * w - 130;
+        var y = i*13;
+        return "translate(" + x + "," + y + ")";
+      }
+
+ }else if(Keys.length > 40){
+
+   function position(d,i) {
+     var c = 3;   // number of columns
+     var h = Keys.length;  // height of each entry
+     var w = 90; // width of each entry (so you can position the next column)
+     var x = width + i % c * w - 150;
+     var y = Math.floor(i / c)*13;
+     return "translate(" + x + "," + y + ")";
+   }
+ }else{
+
+    function position(d,i) {
+      var c = 2;   // number of columns
+      var h = Keys.length;  // height of each entry
+      var w = 90; // width of each entry (so you can position the next column)
+      var x = width + i % c * w - 150;
+      var y = Math.floor(i / c)*13;
+      return "translate(" + x + "," + y + ")";
+    }
+}
+
+var legend = svg.selectAll("mylabels")
+      .data(Keys)
+      .enter()
+      .append("g")
+      .attr("transform", position);
+
+legend.append("text")
+  .attr("x", 18)
+  .attr("y", 12)
+  .style("fill", function(a){ return legendColor(a)})
+  .text(function(d) { return d[1]; })
+  .attr("id", function(d) { return d[0]})
+  .attr("text-anchor", "left")
+  .style("alignment-baseline", "middle")
+  .on('click', function (d) {
+      var tempId = d3.select(this).attr('id');
+      d3.selectAll('g.segment circle')
+         .style('opacity', 0.2);
+      d3.selectAll('g.segment path')
+         .style('opacity', 0.2);
+      d3.selectAll('g.segment.' + tempId + ' path')
+        .style('opacity', 1)
+      d3.selectAll('g.segment.' + tempId + ' circle')
+        .style('opacity', 1)
+  });
+
+legend.append("circle")
+  .attr("cx",10)
+  .attr("cy",10)
+  .attr("r", 5)
+  .style('stroke', 'black')
+  .attr("fill",function(a) { return legendColor(a); })
 }

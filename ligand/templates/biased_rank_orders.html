@@ -64,6 +64,14 @@
         border-radius: 8px;
         pointer-events: none;
     }
+    .RadarTitle{
+        font-family:    Arial;
+        font-size:      20px;
+        font-weight:    bold;
+        width:          100%;
+        padding-bottom: 3px;
+        text-align:     center;
+    }
 </style>
 
 <style>
@@ -105,25 +113,27 @@
     <div class="tab-pane container fade" id="spiders">
       <br />
       <div class="row">
-        <div class="dropdown">
-          <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Select publication
-          <span class="caret"></span></button>
-          <ul class="dropdown-menu">
-            {% for title in all_publications %}
-              <li class="dropdown-item" onclick='DrawSpiders("{{title}}")'>{{title}}</li>
-            {% endfor %}
-          </ul>
+
+        <div class="form-group">
+          <input type="text" class="form-control" id="RadarPublicationsList" list="select-pub" placeholder="Select Publication" width="60%"/>
+          <button type="Submit" class="btn btn-primary" onclick="ShowPlot('pub')">Show Plot</button>
+
+          <input type="text" class="form-control" id="RadarLigandList" list="select-ligand" placeholder="Select Ligand" width="60%"/>
+          <button type="Submit" class="btn btn-primary" onclick="ShowPlot('ligand')">Show Plot</button>
         </div>
 
-        <div class="dropdown">
-          <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Select ligand
-          <span class="caret"></span></button>
-          <ul class="dropdown-menu">
-            {% for ligand in all_ligands %}
-              <li class="dropdown-item" onclick='DrawLigandSpiders("{{ligand.0}}")'>{{ligand.1}}</li>
-            {% endfor %}
-          </ul>
-        </div>
+        <datalist id="select-pub">
+          {% for title in all_publications %}
+            <option value="{{title}}">{{title}}</li>
+          {% endfor %}
+        </datalist>
+
+        <datalist id="select-ligand">
+          {% for ligand in all_ligands %}
+            <option data-value="{{ligand.0}}" value="{{ligand.1}}"></li>
+          {% endfor %}
+        </datalist>
+
       </div>
 
       <div id='radarcontainer'></div>
@@ -138,31 +148,37 @@
 <script src='{% static 'home/js/d3.v3.min.js' %}'></script>
 <script src='{% static 'home/js/radarchart.js' %}'></script>
 <script src='{% static 'home/js/multi_line_chart.js' %}'></script>
+
 <script>
-var spiders = {{ spider | safe }};
-function DrawSpiders(pub){
-  var parentDiv = document.getElementById("radarcontainer");
-  parentDiv.querySelectorAll('*').forEach(n => n.remove());
-  for(var web in spiders[pub]){
-    RadarChart('radarcontainer', spiders[pub][web]["Data"], spiders[pub][web]["Options"], "radar"+web);
-  }
-}
-</script>
-<script>
-var spiders = {{ spider | safe }};
-function DrawLigandSpiders(ligand){
-  console.log(ligand);
-  var parentDiv = document.getElementById("radarcontainer");
-  parentDiv.querySelectorAll('*').forEach(n => n.remove());
-  for(var pub in spiders){
-    for(var web in spiders[pub]){
-      if(web === ligand){
-        spiders[pub][web]["Options"]["title"] = pub;
+  var spiders = {{ spider | safe }};
+  function ShowPlot(type){
+    var parentDiv = document.getElementById("radarcontainer");
+    parentDiv.querySelectorAll('*').forEach(n => n.remove());
+    var title = document.createElement("div");
+    title.setAttribute("class", "RadarTitle");
+    parentDiv.appendChild(title);
+    if(type==='ligand'){
+      var lig = document.getElementById('RadarLigandList').value;
+      var pub_hash = document.querySelector("#select-ligand option[value='"+lig+"']").dataset.value;
+      var header = document.createTextNode(lig);
+      title.appendChild(header);
+      for(var pub in spiders){
+        for(var web in spiders[pub]){
+          if(web === pub_hash){
+            spiders[pub][web]["Options"]["title"] = pub;
+            RadarChart('radarcontainer', spiders[pub][web]["Data"], spiders[pub][web]["Options"], "radar"+web);
+          }
+        }
+      }
+    }else{
+      var pub = document.getElementById('RadarPublicationsList').value;
+      var header = document.createTextNode(pub);
+      title.appendChild(header);
+      for(var web in spiders[pub]){
         RadarChart('radarcontainer', spiders[pub][web]["Data"], spiders[pub][web]["Options"], "radar"+web);
       }
     }
   }
-}
 </script>
 
 <script>
