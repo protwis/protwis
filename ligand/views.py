@@ -912,7 +912,7 @@ class BiasGTargetSelection(AbsTargetSelectionTable):
     number_of_steps = 1
     filter_tableselect = False
     docs = 'sequences.html#structure-based-alignments'
-    title = "SELECT RECEPTORS for Ligand bias for GPCR Subtypes and B-arrestin"
+    title = "SELECT RECEPTORS for Biased ligands"
 
 
     description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \

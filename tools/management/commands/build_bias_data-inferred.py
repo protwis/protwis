@@ -1,13 +1,12 @@
 from decimal import Decimal
 import logging
 import math
-
+import pandas as pd
+import os
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import ProteinGProteinPair
 from ligand.models import Ligand, BiasedExperiment, AnalyzedExperiment,AnalyzedAssay
-
-MISSING_PROTEINS = {}
-SKIPPED = 0
+from django.conf import settings
 
 class Command(BaseBuild):
     mylog = logging.getLogger(__name__)
@@ -17,10 +16,10 @@ class Command(BaseBuild):
     file_handler.setLevel(logging.ERROR)
     file_handler.setFormatter(formatter)
     mylog.addHandler(file_handler)
-
+    structure_data_dir = os.sep.join([settings.DATA_DIR, 'ligand_data', 'gproteins'])
     help = 'Reads bias data and imports it'
     publication_cache = {}
-    ligand_cache = {}
+    gprot_cache = {}
     data_all = []
     endogenous_assays = list()
 
@@ -66,7 +65,20 @@ class Command(BaseBuild):
         delete_bias_experiment.delete()
         self.logger.info('Data is purged')
 
+    def process_gproteins_excel(self):
+        source_file_path = None
+        filenames = os.listdir(self.structure_data_dir)
+        for source_file in filenames:
+            source_file_path = os.sep.join(
+                [self.structure_data_dir, source_file]).replace('//', '/')
+            print(source_file, source_file_path)
+        df = pd.read_excel(source_file_path)
+        self.gprot_cache =  df.set_index('UniProt').T.to_dict('dict')
+
+
     def build_bias_data(self):
+        print('prestage, process excell')
+        self.process_gproteins_excel()
         print('Build bias data gproteins')
         context = dict()
         content = self.get_from_model()
@@ -135,6 +147,12 @@ class Command(BaseBuild):
         self.logger.info('Return dict is returned')
         return rd
 
+    def process_g_protein(self,protein, receptor):
+        receptor_name = receptor.entry_name.split('_')[0].upper()
+        if receptor_name in self.gprot_cache:
+            protein = self.gprot_cache[receptor_name]["1'Gfam"]
+        return protein
+
     def queryset_to_dict(self, results):
         '''
         Merge bias experminet data with assay data
@@ -156,8 +174,6 @@ class Command(BaseBuild):
             temp['authors'] = j['authors']
             temp['article_quantity'] = 0
             temp['labs_quantity'] = 0
-
-
             temp['reference_ligand'] = None
             if not j['children']:
                 continue
@@ -177,6 +193,10 @@ class Command(BaseBuild):
             temp_dict['signalling_protein'] = j['children'][0].signalling_protein.lower()
             temp_dict['cell_line'] = j['children'][0].cell_line
             temp_dict['family'] = j['children'][0].family
+            if temp_dict['family'] == 'G protein' or temp_dict['family'] == 'Gq/11 or Gi/o':
+                temp_dict['family'] = self.process_g_protein(temp_dict['family'], temp['receptor'])
+            if temp_dict['family'] == 'G protein' or temp_dict['family'] == 'Gq/11 or Gi/o':
+                continue
             temp_dict['measured_biological_process'] = j['children'][0].measured_biological_process
             temp_dict['assay_type'] = j['children'][0].assay_type
 
@@ -335,57 +355,76 @@ class Command(BaseBuild):
         self.logger.info('process_signalling_proteins')
         return context
 
+    def get_rid_of_gprot(self,assay, families, proteins):
+        if assay['family'] == 'Gq/11 or Gi/o':
+            compare_val_gio = None
+            compare_val_gq = None
+            if 'Gi/o' in proteins:
+                compare_val_gio = next(item for item in families if item["family"] == 'Gi/o')
+            if 'Gq' in proteins:
+                compare_val_gq = next(item for item in families if item["family"] == 'Gq/11')
+            if compare_val_gq is None and compare_val_gio is not None:
+                try:
+                    if assay['order_bias_value'] > compare_val_gio['order_bias_value']:
+                        families[:] = [d for d in families if d.get('family') != compare_val_gio['family']]
+                        assay['family'] = 'Gi/o'
+                    else:
+                        assay['family'] = 'skip'
+                except:
+                    assay['family'] = 'skip'
+            elif compare_val_gio is None and compare_val_gq is not None:
+                try:
+                    if assay['order_bias_value'] > compare_val_gq['order_bias_value']:
+                        families[:] = [d for d in families if d.get('family') != compare_val_gio['family']]
+                        assay['family'] = 'Gq/11'
+                    else:
+                        assay['family'] = 'skip'
+                except:
+                    assay['family'] = 'skip'
+            elif compare_val_gio is not None and compare_val_gq is not None:
+                try:
+                    if assay['order_bias_value'] > compare_val_gio['order_bias_value'] > compare_val_gq['order_bias_value']:
+                        families[:] = [d for d in families if d.get('family') != compare_val_gq['family']]
+                        assay['family'] = 'Gq/11'
+                    elif assay['order_bias_value'] > compare_val_gq['order_bias_value']  > compare_val_gio['order_bias_value']:
+                        families[:] = [d for d in families if d.get('family') != compare_val_gio['family']]
+                        assay['family'] = 'Gi/o'
+                    elif compare_val_gq['order_bias_value']  > assay['order_bias_value'] > compare_val_gio['order_bias_value']:
+                        families[:] = [d for d in families if d.get('family') != compare_val_gio['family']]
+                        assay['family'] = 'Gi/o'
+                    elif compare_val_gio['order_bias_value'] > assay['order_bias_value'] > compare_val_gq['order_bias_value']:
+                        families[:] = [d for d in families if d.get('family') != compare_val_gq['family']]
+                        assay['family'] = 'Gq/11'
+                except Exception as e:
+                    assay['family'] = 'skip'
+            else:
+                assay = None
+            if assay and assay['family'] == 'skip':
+                assay = None
+        return assay
 
     def limit_family_set(self, assay_list):
         families = list()
         proteins = set()
         for assay in assay_list:
             if assay['family'] not in proteins:
-                if assay['family'] == 'Gq/11 or Gi/o' and assay['order_bias_value'] is not None:                    
-                    compare_val_gio = None
-                    compare_val_gq = None
-                    if 'Gi/o' in proteins:
-                        compare_val_gio = next(item for item in families if item["family"] == 'Gi/o')
-                    if 'Gq' in proteins:
-                        compare_val_gq = next(item for item in families if item["family"] == 'Gq/11')
-
-                    if compare_val_gq is None and compare_val_gio is not None:
-                        if assay['order_bias_value'] > compare_val_gio['order_bias_value']:
-                            families[:] = [d for d in families if d.get('family') != compare_val_gio['family']]
-                            assay['family'] = 'Gi/o'
-                    elif compare_val_gio is None and compare_val_gq is not None:
-                        if assay['order_bias_value'] > compare_val_gq['order_bias_value']:
-                            families[:] = [d for d in families if d.get('family') != compare_val_gio['family']]
-                            assay['family'] = 'Gq/11'
-                    elif compare_val_gio is not None and compare_val_gq is not None:
-                        if assay['order_bias_value'] > compare_val_gio['order_bias_value'] > compare_val_gq['order_bias_value']:
-                            families[:] = [d for d in families if d.get('family') != compare_val_gq['family']]
-                            assay['family'] = 'Gq/11'
-                        elif assay['order_bias_value'] > compare_val_gq['order_bias_value']  > compare_val_gio['order_bias_value']:
-                            families[:] = [d for d in families if d.get('family') != compare_val_gio['family']]
-                            assay['family'] = 'Gi/o'
-                        elif  compare_val_gq['order_bias_value']  > assay['order_bias_value'] > compare_val_gio['order_bias_value']:
-                            families[:] = [d for d in families if d.get('family') != compare_val_gio['family']]
-                            assay['family'] = 'Gi/o'
-                        elif compare_val_gio['order_bias_value'] > assay['order_bias_value'] > compare_val_gq['order_bias_value']:
-                            families[:] = [d for d in families if d.get('family') != compare_val_gq['family']]
-                            assay['family'] = 'Gq/11'
-                    else:
-                        continue
-                    proteins.add(assay['family'])
-                    families.append(assay)
-                else:
+                # if assay['family'] == 'Gq/11 or Gi/o':
+                #     assay = self.get_rid_of_gprot(assay, families, proteins)
+                if assay:
                     proteins.add(assay['family'])
                     families.append(assay)
             else:
-                compare_val = next(item for item in families if item["family"] == assay['family'])
-                try:
-                    if assay['order_bias_value'] > compare_val['order_bias_value']:
-                        families[:] = [d for d in families if d.get('family') != compare_val['family']]
-                        families.append(assay)
-                except TypeError:
-                    pass
-                    self.logger.info('skipping families if existing copy')
+                # if assay['family'] == 'Gq/11 or Gi/o':
+                #     assay = self.get_rid_of_gprot(assay, families, proteins)
+                if assay:
+                    compare_val = next(item for item in families if item["family"] == assay['family'])
+                    try:
+                        if assay['order_bias_value'] > compare_val['order_bias_value']:
+                            families[:] = [d for d in families if d.get('family') != compare_val['family']]
+                            families.append(assay)
+                    except TypeError:
+                        pass
+                        self.logger.info('skipping families if existing copy')
 
         return families
 
