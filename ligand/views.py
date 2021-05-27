@@ -8,8 +8,8 @@ from collections import defaultdict, OrderedDict
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.views.generic import TemplateView, DetailView, ListView
-from django.db import models
-from django.db.models import Count, Subquery, OuterRef, F
+
+from django.db.models import Count, Subquery, OuterRef
 from django.views.decorators.csrf import csrf_exempt
 
 from django.core.cache import cache

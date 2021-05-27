@@ -8,7 +8,7 @@ from decimal import Decimal
 from build.management.commands.base_build import Command as BaseBuild
 from common.tools import fetch_from_cache, save_to_cache, fetch_from_web_api
 from residue.models import Residue
-from protein.models import Protein
+from protein.models import Protein,ProteinGProteinPair
 from ligand.models import BiasedExperiment, BiasedExperimentVendors,AnalyzedExperiment, ExperimentAssay, ExperimentAssayAuthors, Ligand, LigandProperities, LigandType, LigandVendorLink
 from mutation.models import Mutation
 from ligand.functions import get_or_make_ligand
@@ -23,10 +23,7 @@ import operator
 import traceback
 import time
 import math
-import json
 import requests
-from multiprocessing.pool import ThreadPool as Pool
-
 import pytz
 import re
 
@@ -345,7 +342,7 @@ class Command(BaseBuild):
         """
         Reads excel rows one by one
         """
-        skipped = list()
+
         # Analyse the rows from excel and assign the right headers
         temp = []
         start = time.time()
@@ -488,8 +485,8 @@ class Command(BaseBuild):
     def fetch_receptor_trunsducers(self, receptor):
         primary = set()
         temp = list()
-        temp1 = str()
-        secondary = set()
+
+
         try:
             gprotein = ProteinGProteinPair.objects.filter(protein=receptor)
             for x in gprotein:
@@ -713,7 +710,8 @@ class Command(BaseBuild):
                 ligand_name = ligand_name_response.json()
                 ligand_name = ligand_name['InformationList']['Information'][0]['Synonym'][0]
             except:
-                print('\n*** ligand name error', ligand_name_response.json())
+                self.mylog.exception(
+                    "Experiment AnalyzedExperiment error | module: AnalyzedExperiment.")
         return ligand_name
 
     def get_ligand_properties(self, cid):
@@ -738,7 +736,8 @@ class Command(BaseBuild):
                     properties['smiles'] =  pubchem['PropertyTable']['Properties'][0]['CanonicalSMILES']
                     properties['inchikey'] =  pubchem['PropertyTable']['Properties'][0]['InChIKey']
                 except:
-                    print('\n***ligand props error',pubchem)
+                    self.mylog.exception(
+                        "Experiment AnalyzedExperiment error | module: AnalyzedExperiment.")
         return properties
 
     def get_ligand_or_create(self,cid):
@@ -777,6 +776,8 @@ class Command(BaseBuild):
             lp.web_links.add(wl)
         except IntegrityError:
             lp = LigandProperities.objects.get(inchikey=structure['inchikey'])
+            self.mylog.exception(
+                "Experiment AnalyzedExperiment error | module: AnalyzedExperiment.")
         return lp
 
     def create_ligand(self, lp, ligand_name):
@@ -794,4 +795,6 @@ class Command(BaseBuild):
                 ligand.save()
             except:
                 ligand = None
+                self.mylog.exception(
+                    "Experiment AnalyzedExperiment error | module: AnalyzedExperiment.")
             return ligand

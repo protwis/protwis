@@ -539,7 +539,7 @@ class Command(BaseBuild):
                                                          t_value=ex['t_coefficient_initial'],
                                                          t_factor=ex['t_factor'],
                                                          log_bias_factor=ex['log_bias_factor'],
-                                                         emax_ligand_reference=emax_ligand
+                                                         emax_ligand_reference=emax_ligand,
                                                          log_bias_factor_a=ex['lbf_a'],
                                                          log_bias_factor_b=ex['lbf_b'],
                                                          log_bias_factor_c=ex['lbf_c'],

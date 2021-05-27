@@ -5,7 +5,7 @@ import pandas as pd
 import os
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import ProteinGProteinPair
-from ligand.models import Ligand, BiasedExperiment, AnalyzedExperiment,AnalyzedAssay
+from ligand.models import BiasedExperiment, AnalyzedExperiment,AnalyzedAssay
 from django.conf import settings
 
 class Command(BaseBuild):
@@ -87,8 +87,6 @@ class Command(BaseBuild):
         print('stage # 2: Processing children in queryset finished', len(content_with_children))
         changed_data = self.queryset_to_dict(content_with_children)
         print('stage # 3: Converting queryset into dict finished', len(changed_data))
-        endogenoues_assays = self.get_endogenous_assays(changed_data)
-        print('stage # 4: Colelcting endogenous ligands finished')
         send = self.combine_unique(changed_data)
         print('stage # 5: Selecting endogenous ligands finished')
         referenced_assay = self.process_referenced_assays(send)
@@ -288,6 +286,7 @@ class Command(BaseBuild):
                              if k['quantitive_activity'] else 999999, reverse=True)
         sorted_reference = sorted(reference, key=lambda k: k['quantitive_activity']
                              if k['quantitive_activity'] else 999999, reverse=True)
+        self.logger.info('Combined experiments by publication and receptor')
         return sorted_main, sorted_reference
 
     def separate_ligands(self, context):
@@ -339,6 +338,7 @@ class Command(BaseBuild):
 
         except Exception as e:
             pass
+            self.logger.info('get_external_ligand_ids',e)
         return ligand_list
 
     def process_signalling_proteins(self, context):
@@ -401,6 +401,7 @@ class Command(BaseBuild):
                 assay = None
             if assay and assay['family'] == 'skip':
                 assay = None
+                self.logger.info('get_rid_of_gprot')
         return assay
 
     def limit_family_set(self, assay_list):
@@ -423,7 +424,6 @@ class Command(BaseBuild):
                             families[:] = [d for d in families if d.get('family') != compare_val['family']]
                             families.append(assay)
                     except TypeError:
-                        pass
                         self.logger.info('skipping families if existing copy')
 
         return families
@@ -432,6 +432,7 @@ class Command(BaseBuild):
         return_assay = dict()
         return_assay = sorted(i, key=lambda k: k['order_bias_value']
                       if k['order_bias_value'] else float(-1000), reverse=True)
+        self.logger.info('sort_assay_list')
         return return_assay
 
     def calculate_bias_factor_value(self, sorted_assays, references):
@@ -465,6 +466,7 @@ class Command(BaseBuild):
             result = math.log10((assay_b/assay_a)) - math.log10((reference_b/reference_a))
         except:
             result = None
+            self.logger.info('calc_order_bias_value')
         return result
 
     def process_calculation(self, context):
@@ -520,6 +522,7 @@ class Command(BaseBuild):
                 return_message = "Full Bias"
         except:
             return_message = None
+            self.logger.info('lbf_process_qualitative_data')
         return return_message
 
     def lbf_process_efficacy(self, i):
@@ -529,6 +532,7 @@ class Command(BaseBuild):
                 return_message = "Full Bias"
         except:
             return_message = None
+            self.logger.info('lbf_process_efficacy')
         return return_message
 
     def process_low_potency(self,i):
@@ -577,6 +581,7 @@ class Command(BaseBuild):
                 return_message = 'Only agonist in main pathway'
         except:
             return_message = None
+            self.logger.info('lbf_process_ic50')
         return return_message
 
     def caclulate_bias_factor_variables(self, a, b, c, d):
