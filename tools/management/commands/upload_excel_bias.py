@@ -756,7 +756,7 @@ class Command(BaseBuild):
             wl = Weblink.objects.get(index=cid, web_resource=web_resource)
         lp = LigandProperities()
         try:
-            lt = LigandType.objects.filter(name = ligand_type)[0]
+            lt = LigandType.objects.filter(name = 'ligand_type')[0]
             lp.ligand_type = lt
         except :
             lt =  LigandType.objects.filter(name = 'small molecule')[0]

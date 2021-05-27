@@ -337,7 +337,7 @@ class Command(BaseBuild):
 
     def process_calculation(self, context):
         for i in context.items():
-            test = dict()
+            
             temp_obj = list()
 
             for j in i[1]['assay_list']:
@@ -638,7 +638,7 @@ class Command(BaseBuild):
         print('stage # 2: Processing children in queryset finished', len(content_with_children))
         changed_data = self.queryset_to_dict(content_with_children)
         print('stage # 3: Converting queryset into dict finished', len(changed_data))
-        endogenoues_assays = self.get_endogenous_assays(changed_data)
+        # endogenoues_assays = self.get_endogenous_assays(changed_data)
         send = self.combine_unique(changed_data)
         referenced_assay = self.process_referenced_assays(send)
         print('stage # 4: Separating reference assays is finished', len(referenced_assay))

@@ -490,8 +490,8 @@ class AnalyzedExperiment(models.Model):
     secondary = models.CharField(max_length=100, null=True)
     ligand_source_id = models.TextField(null=True)
     ligand_source_type = models.TextField(null=True)
-    external_ligand_ids = models.TextField(null=True, blank=True)   
-
+    external_ligand_ids = models.TextField(null=True, blank=True)
+    
 class AnalyzedAssay(models.Model):
     experiment = models.ForeignKey(
 
