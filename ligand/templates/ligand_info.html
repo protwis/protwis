@@ -177,9 +177,10 @@
 	}
 
     function populate_selection(id){
-        AddToSelection('reference', 'protein_entry', id)
-        SelectFullSequence('segments')
-        window.open('/mutations/render', '_blank')
+			  ClearSelection("targets");
+        AddToSelection("targets", "family", id);
+        SelectFullSequence("segments");
+        window.open("/mutations/render", "_blank");
 
     }
 
@@ -504,6 +505,14 @@
 		background-color: white;
 		border: solid 1px;
 		transform: scale(2.5);
+	}
+
+	div.align-items-start table {
+		table-layout: fixed;
+	}
+
+	div.align-items-start img {
+		max-width: 100%;
 	}
 </style>
 {% endblock %}

@@ -112,7 +112,7 @@ class BlastSearchOnline(object):
 
         #used urllib, urllib2 throws an error here for some reason
         try:
-            response = urlopen(url)
+            response = urlopen(url) #nosec
             page = response.readlines()
             return page[1].strip().lower()
 

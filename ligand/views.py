@@ -187,6 +187,7 @@ def TargetDetailsCompact(request, **kwargs):
 
             if len(values) > 0:
                 ligand_data.append({
+                    'lig_id': lig.id,
                     'ligand_id': chembl_id,
                     'protein_name': protein_details.entry_name,
                     'species': protein_details.species.common_name,
@@ -636,13 +637,14 @@ class LigandInformationView(TemplateView):
         return_set = set()
         return_list = list()
         mutations = list(
-            MutationExperiment.objects.filter(ligand=ligand['ligand_id']).only('protein'))
+            MutationExperiment.objects.filter(ligand=ligand['ligand_id']).only('protein').order_by("protein__name"))
         for i in mutations:
-            if i.protein.id in return_set:
+            if i.protein.family_id in return_set:
                 pass
             else:
-                return_list.append({"id":i.protein.entry_name, "name": i.protein.name.split(' ', 1)[0].split('-adrenoceptor', 1)[0].strip()})
-                return_set.add(i.protein.id)
+                return_list.append({"id":i.protein.family_id, "name": i.protein.name.split(' ', 1)[0].split('-adrenoceptor', 1)[0].strip()})
+                return_set.add(i.protein.family_id)
+
         return return_list
 
     @staticmethod

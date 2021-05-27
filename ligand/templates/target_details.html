@@ -144,7 +144,7 @@
                         { type: "text" },//Smiles
                     ]
                 });
-            }, 
+            },
         });
         $('.alt').change(function () {
             $(this).parent().parent().toggleClass('alt_selected');
@@ -307,7 +307,7 @@
                 {% for p in proteins %}
                 <tr>
                     <td><input class="alt" type="checkbox"></td>
-                    <td><a class="struct" rel="http://www.ebi.ac.uk/chembl/api/data/image/{{p.ligand__properities__web_links__index}}" href="/ligand/{{p.ligand__properities__web_links__index}}">{{p.ligand__properities__web_links__index}}</a></td>
+                    <td><a class="struct" rel="http://www.ebi.ac.uk/chembl/api/data/image/{{p.ligand__properities__web_links__index}}" href="/ligand/{{p.ligand__id}}/info" target="_blank">{{p.ligand__properities__web_links__index}}</a></td>
                     <td>{{p.protein__entry_name}}</td>
                     <td>{{p.protein__species__common_name}}</td>
                     <td>{{p.purchasability}}</td>
