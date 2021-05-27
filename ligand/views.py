@@ -1022,7 +1022,7 @@ class BiasBrowser(ListView):
 
         queryset = AnalyzedExperiment.objects.filter(
             source='different_family',
-            # receptor__in=protein_list,
+            receptor__in=protein_list,
         ).prefetch_related(
             'analyzed_data', 'ligand', 'ligand__reference_ligand', 'reference_ligand',
             'endogenous_ligand', 'ligand__properities', 'receptor', 'receptor', 'receptor__family',
