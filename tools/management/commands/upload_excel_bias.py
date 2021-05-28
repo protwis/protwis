@@ -751,9 +751,9 @@ class Command(BaseBuild):
     def create_ligand_properties(self, cid, structure):
         web_resource = WebResource.objects.get(slug='pubchem')
         try:
-            wl, created = WebLink.objects.get_or_create(index=cid, web_resource=web_resource)
+            wl = WebLink.objects.get_or_create(index=cid, web_resource=web_resource)
         except IntegrityError:
-            wl = Weblink.objects.get(index=cid, web_resource=web_resource)
+            wl = WebLink.objects.get(index=cid, web_resource=web_resource)
         lp = LigandProperities()
         try:
             lt = LigandType.objects.filter(name = 'ligand_type')[0]

@@ -491,7 +491,7 @@ class Command(BaseBuild):
                             most_potent['quantitive_efficacy'] / most_potent['quantitive_activity']) - math.log10(
                             most_reference['quantitive_efficacy'] / most_reference['quantitive_activity']),2)
                     except:
-                        continue
+                        i['log_bias_factor'] = None
                     i['log_bias_factor'] = None
                     self.process_low_potency(i)
 
@@ -585,6 +585,7 @@ class Command(BaseBuild):
                     temp_reference['quantitive_efficacy'] / temp_reference['quantitive_activity'])
             result = c-d
         except:
+            self.logger.info('lbf_process_ic50')
             result = None
         return result
 
