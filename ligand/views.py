@@ -1092,6 +1092,11 @@ class BiasBrowser(ListView):
             emax_p4=Subquery(assay_qs.values('quantitive_efficacy')[3:4]),
             emax_p5=Subquery(assay_qs.values('quantitive_efficacy')[4:5]),
 
+            lbf_part_p1=Subquery(assay_qs.values('log_bias_factor_a')[:1]),
+            lbf_part_p2=Subquery(assay_qs.values('log_bias_factor_a')[1:2]),
+            lbf_part_p3=Subquery(assay_qs.values('log_bias_factor_a')[2:3]),
+            lbf_part_p4=Subquery(assay_qs.values('log_bias_factor_a')[3:4]),
+            lbf_part_p5=Subquery(assay_qs.values('log_bias_factor_a')[4:5]),
             # reference assay
             reference_ligand_p1=Subquery(assay_qs.values('reference_ligand_id')[:1]),
             reference_ligand_p2=Subquery(assay_qs.values('reference_ligand_id')[1:2]),

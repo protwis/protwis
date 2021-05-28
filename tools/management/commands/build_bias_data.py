@@ -4,7 +4,7 @@ import math
 
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import ProteinGProteinPair
-from ligand.models import Ligand, BiasedExperiment, AnalyzedExperiment,AnalyzedAssay
+from ligand.models import BiasedExperiment, AnalyzedExperiment,AnalyzedAssay
 
 MISSING_PROTEINS = {}
 SKIPPED = 0
@@ -337,9 +337,7 @@ class Command(BaseBuild):
 
     def process_calculation(self, context):
         for i in context.items():
-            
             temp_obj = list()
-
             for j in i[1]['assay_list']:
                 if j not in temp_obj:
                     temp_obj.append(j)

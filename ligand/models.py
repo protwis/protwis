@@ -491,7 +491,7 @@ class AnalyzedExperiment(models.Model):
     ligand_source_id = models.TextField(null=True)
     ligand_source_type = models.TextField(null=True)
     external_ligand_ids = models.TextField(null=True, blank=True)
-    
+
 class AnalyzedAssay(models.Model):
     experiment = models.ForeignKey(
 
@@ -532,6 +532,7 @@ class AnalyzedAssay(models.Model):
     log_bias_factor_b = models.CharField(max_length=60, null=True)
     log_bias_factor_c = models.CharField(max_length=60, null=True)
     log_bias_factor_d = models.CharField(max_length=60, null=True)
+    log_bias_factor_e = models.CharField(max_length=60, null=True)
     t_factor = models.CharField(max_length=60, null=True)
     assay_description = models.CharField(max_length=900, null=True)
     reference_ligand_id = models.CharField(max_length=60, null=True)

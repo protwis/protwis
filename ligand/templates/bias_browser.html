@@ -15,6 +15,13 @@
 		display: none;
 		/* background-color: red; */
 	}
+
+	.inuse,
+	.ui-slider-range .inuse,
+	.yadcf-filter-range-number-slider .inuse {
+		border-color: yellow;
+		border-width: initial;
+	}
 </style>
 
 <style type="text/css">
@@ -219,36 +226,35 @@
 
 <script>
 	$(document).ready(function() {
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    // Does this cookie string begin with the name we want?
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
-            }
-            return cookieValue;
-        }
-        const csrftoken = getCookie('csrftoken');
+		function getCookie(name) {
+			let cookieValue = null;
+			if (document.cookie && document.cookie !== '') {
+				const cookies = document.cookie.split(';');
+				for (let i = 0; i < cookies.length; i++) {
+					const cookie = cookies[i].trim();
+					// Does this cookie string begin with the name we want?
+					if (cookie.substring(0, name.length + 1) === (name + '=')) {
+						cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+						break;
+					}
+				}
+			}
+			return cookieValue;
+		}
+		const csrftoken = getCookie('csrftoken');
 
 		var table = $('#structures_scrollable').DataTable({
 			stateSave: false,
 			processing: true,
 			deferRender: true,
 			dom: 'B<>flrtip',
-            "deferRender": true,
-            fixedColumns:   {
-            leftColumns: 2
-        },
+			"deferRender": true,
+			fixedColumns: {
+				leftColumns: 2
+			},
 			pageLength: 35,
 			"lengthChange": false,
-			"buttons": [
-                {
+			"buttons": [{
 					extend: 'csv',
 					text: 'Export to CSV',
 					className: 'btn btn-primary',
@@ -274,609 +280,645 @@
 						reset_filters()
 					},
 				},
-                	{
-    					text: 'Get Vendors',
-    					className: 'btn btn-primary',
-    					titleAttr: 'Vendors info for top 20 ligands',
-    					init: function(api, node, config) {
-    						$(node).removeClass('dt-button buttons-excel buttons-html5');
-    					},
-    					action: function(e, dt, node, config) {
-    						var id = read_ids()
-    						var result
-    						$.ajaxSetup({
-    							headers: {
-    								"X-CSRFToken": csrftoken
-    							}
-    						});
-    						$.ajax({
-    							type: 'POST',
-    							url: '/ligand/vendors',
-    							data: {
-    								ids: id,
-    								csrfmiddlewaretoken: '{{csrf_token }}',
-    								action: 'post',
-    							},
-    							success: function() {
+				{
+					text: 'Get Vendors',
+					className: 'btn btn-primary',
+					titleAttr: 'Vendors info for top 20 ligands',
+					init: function(api, node, config) {
+						$(node).removeClass('dt-button buttons-excel buttons-html5');
+					},
+					action: function(e, dt, node, config) {
+						var id = read_ids()
+						var result
+						$.ajaxSetup({
+							headers: {
+								"X-CSRFToken": csrftoken
+							}
+						});
+						$.ajax({
+							type: 'POST',
+							url: '/ligand/vendors',
+							data: {
+								ids: id,
+								csrfmiddlewaretoken: '{{csrf_token }}',
+								action: 'post',
+							},
+							success: function() {
 
-    								openPopup('/ligand/browservendors', 'Detail View', window, 850, 1000)
-    							}
-    						});
-    					},
-    				},
+								openPopup('/ligand/browservendors', 'Detail View', window, 850, 1000)
+							}
+						});
+					},
+				},
 			],
-        	"drawCallback": function(settings) {
-        			// calculate_header()
-                    setTimeout(function(){
-                        var ligand_counter = read_unique_ids();
-                        var receptor_counter = read_unique_ids_receptor();
-                        document.getElementById("ligand_counter").innerHTML = ligand_counter;
-                        document.getElementById("receptor_counter").innerHTML = receptor_counter;
-                        shadeTable(table, [".shade"], 120, 200);
-                    },2000);
-            },
-            });
-        yadcf.init(table,
-        [{
-                column_number: 1,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Class",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 2,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 3,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                //column_data_type: "html",
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 4,
-                filter_type: "multi_select",
-                select_type: 'select2',
-								column_data_type: "rendered_html",
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 5,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 6,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            // Ligand
-            {
-                column_number: 7,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 8,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                column_data_type: "html",
-                html_data_type: "text",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 9,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_plugin_options: {
-                    width: '30px'
-                },
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 10,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_plugin_options: {
-                    width: '30px'
-                },
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 11,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            //  Receotor Transduction
-            {
-                column_number: 12,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 13,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            // pathway_bias
-            {
-                column_number: 14,
-                select_type: 'select2',
-                filter_type: "multi_select",
-                text_data_delimiter: " ",
-                filter_default_label: "P 1",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 15,
-                select_type: 'select2',
-                filter_type: "multi_select",
-                filter_default_label: "P 2",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 16,
-                select_type: 'select2',
-                filter_type: "multi_select",
-                filter_default_label: "P 3",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 17,
-                select_type: 'select2',
-                filter_type: "multi_select",
-                filter_default_label: "P 4",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 18,
-                select_type: 'select2',
-                filter_type: "multi_select",
-                filter_default_label: "P 5",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 19,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Assay type",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 20,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Assay type",
-                filter_reset_button_text: false,
+			"drawCallback": function(settings) {
+				// calculate_header()
+				setTimeout(function() {
+					var ligand_counter = read_unique_ids();
+					var receptor_counter = read_unique_ids_receptor();
+					document.getElementById("ligand_counter").innerHTML = ligand_counter;
+					document.getElementById("receptor_counter").innerHTML = receptor_counter;
+					shadeTable(table, [".shade"], 120, 200);
+				}, 2000);
+			},
+		});
+		yadcf.init(table,
+			[{
+					column_number: 1,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Class",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 2,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 3,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					//column_data_type: "html",
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 4,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					column_data_type: "rendered_html",
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 5,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 6,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				// Ligand
+				{
+					column_number: 7,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 8,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					column_data_type: "html",
+					html_data_type: "text",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 9,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_plugin_options: {
+						width: '30px'
+					},
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 10,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_plugin_options: {
+						width: '30px'
+					},
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 11,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				//  Receotor Transduction
+				{
+					column_number: 12,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 13,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				// pathway_bias
+				{
+					column_number: 14,
+					select_type: 'select2',
+					filter_type: "multi_select",
+					text_data_delimiter: " ",
+					filter_default_label: "P 1",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 15,
+					select_type: 'select2',
+					filter_type: "multi_select",
+					filter_default_label: "P 2",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 16,
+					select_type: 'select2',
+					filter_type: "multi_select",
+					filter_default_label: "P 3",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 17,
+					select_type: 'select2',
+					filter_type: "multi_select",
+					filter_default_label: "P 4",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 18,
+					select_type: 'select2',
+					filter_type: "multi_select",
+					filter_default_label: "P 5",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 19,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Assay type",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 20,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Assay type",
+					filter_reset_button_text: false,
 
-            },
-            {
-                column_number: 21,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Assay type",
-                filter_reset_button_text: false,
-            },
+				},
+				{
+					column_number: 21,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Assay type",
+					filter_reset_button_text: false,
+				},
 
-            {
-                column_number: 22,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Assay type",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 23,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Assay type",
-                filter_reset_button_text: false,
-            },
-            // pathway operational model
-            {
-                column_number: 24,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 25,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 26,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 27,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
+				{
+					column_number: 22,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Assay type",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 23,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Assay type",
+					filter_reset_button_text: false,
+				},
+				// pathway operational model
+				{
+					column_number: 24,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 25,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 26,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 27,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
 
-            //Log bias factor <br>(ddLog(Emax/EC50)
-            {
-                column_number: 28,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 29,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 30,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 31,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            //"Potency ratio ddlog(EC50)"
-            {
-                column_number: 32,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 33,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 34,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 35,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            //potency or ic50
-            // TODO: change to p value
-            {
-                column_number: 36,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 37,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 38,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 39,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 40,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
+				//Log bias factor <br>(ddLog(Emax/EC50)
+				{
+					column_number: 28,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 29,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 30,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 31,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+                //"lbf part"
+				{
+					column_number: 32,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 33,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 34,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 35,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+            	{
+					column_number: 36,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				//"Potency ratio ddlog(EC50)"
+				{
+					column_number: 37,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 38,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 39,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 40,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				//potency or ic50
+				// TODO: change to p value
+				{
+					column_number: 41,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 42,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 43,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 44,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 45,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
 
-            // Emax
-            {
-                column_number: 41,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
+				// Emax
+				{
+					column_number: 46,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
 
-            {
-                column_number: 42,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 43,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 44,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 45,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            //Transduction eff
-            {
-                column_number: 46,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 47,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 48,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 49,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 50,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            //assay_type
-            {
-                column_number: 51,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 52,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
+				{
+					column_number: 47,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 48,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 49,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 50,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				//Transduction eff
+				{
+					column_number: 51,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 52,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 53,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 54,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 55,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				//assay_type
+				{
+					column_number: 56,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 57,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
 
-            },
-            {
-                column_number: 53,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
+				},
+				{
+					column_number: 58,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
 
-            {
-                column_number: 54,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 55,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            //cell_line
-            {
-                column_number: 56,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 57,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 58,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 59,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 60,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            //Time resolved
-            {
-                column_number: 61,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 62,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 63,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 64,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 65,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            //Time resolved
-            {
-                column_number: 66,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 67,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 68,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 69,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 70,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            //Time resolved
-            {
-                column_number: 71,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 72,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 73,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 74,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 75,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-            },
-            //Article
-            {
-                column_number: 76,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Authors",
-                filter_reset_button_text: false,
+				{
+					column_number: 59,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 60,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				//cell_line
+				{
+					column_number: 61,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 62,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 63,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 64,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 65,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				//Time resolved
+				{
+					column_number: 66,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 67,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 68,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 69,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 70,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				//Time resolved
+				{
+					column_number: 71,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 72,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 73,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 74,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 75,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				//Time resolved
+				{
+					column_number: 76,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 77,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 78,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 79,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 80,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				//Article
+				{
+					column_number: 81,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Authors",
+					filter_reset_button_text: false,
 
-            },
-            {
-                column_number: 77,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "DOI",
-                column_data_type: "html",
-                html_data_type: "text",
-                filter_reset_button_text: false,
-            },
+				},
+				{
+					column_number: 82,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "DOI",
+					column_data_type: "html",
+					html_data_type: "text",
+					filter_reset_button_text: false,
+				},
 
-        ], {
-            cumulative_filtering: false
-        });
-        shadeTable(table, [".shade"], 120, 200);
+			], {
+				cumulative_filtering: false
+			});
+		shadeTable(table, [".shade"], 120, 200);
 
+		yadcf.exFilterColumn(table, [
+			[28, {
+				from: 1
+			}],
+		]);
 
 		function calculate_header(ids) {
-            var columnIds = [];
+			var columnIds = [];
 			$("#receptor").attr("colspan", 6);
 			$("#ligand").attr("colspan", 5);
 			$("#transducers").attr("colspan", 2);
 			$("#pathways_effector").attr("colspan", 5);
-            $("#pathways_measure").attr("colspan", 5);
+			$("#pathways_measure").attr("colspan", 5);
 			$("#opmodel").attr("colspan", 4);
 			$("#lbf").attr("colspan", 4);
 			$("#potency").attr("colspan", 4);
@@ -887,96 +929,96 @@
 			$("#cell").attr("colspan", 5);
 			$("#time").attr("colspan", 5);
 
-            $('#structures_scrollable').removeClass("highlight");
-            $('#structures_scrollable .header-spans th').removeClass("highlight");
-            $('#structures_scrollable .table-filter-dropdown th').removeClass("highlight");
-            $('#structures_scrollable .table-filter-dropdown th').each(function(index) {
-                var tds = $('.dataTable tbody td:nth-child(' + (index + 1) + ')');
+			$('#structures_scrollable').removeClass("highlight");
+			$('#structures_scrollable .header-spans th').removeClass("highlight");
+			$('#structures_scrollable .table-filter-dropdown th').removeClass("highlight");
+			$('#structures_scrollable .table-filter-dropdown th').each(function(index) {
+				var tds = $('.dataTable tbody td:nth-child(' + (index + 1) + ')');
 
-                if (tds.length > 0 && tds.length <= tds.filter(':empty').length) {
-                    columnIds.push(tds[0].cellIndex)
-                    tds.addClass('highlight');
-                }
-            });
-            if (columnIds) {
-                columnIds.forEach((item) => {
-                    var filterRow = $('.dataTable .table-filter-dropdown th:nth-child(' + (item + 1) + ')');
-                    filterRow[0].setAttribute("class", "highlight");
-                });
-                columnIds.forEach((item) => {
-                    if (item >= 1 && item <= 6) {
-                        var temp_colspan = $('#receptor').attr('colspan')
-                        $("#receptor").attr("colspan", temp_colspan - 1)
-                    }
-                    if (item >= 7 && item <= 11) {
-                        var temp_colspan = $('#ligand').attr('colspan')
-                        $("#ligand").attr("colspan", temp_colspan - 1)
+				if (tds.length > 0 && tds.length <= tds.filter(':empty').length) {
+					columnIds.push(tds[0].cellIndex)
+					tds.addClass('highlight');
+				}
+			});
+			if (columnIds) {
+				columnIds.forEach((item) => {
+					var filterRow = $('.dataTable .table-filter-dropdown th:nth-child(' + (item + 1) + ')');
+					filterRow[0].setAttribute("class", "highlight");
+				});
+				columnIds.forEach((item) => {
+					if (item >= 1 && item <= 6) {
+						var temp_colspan = $('#receptor').attr('colspan')
+						$("#receptor").attr("colspan", temp_colspan - 1)
+					}
+					if (item >= 7 && item <= 11) {
+						var temp_colspan = $('#ligand').attr('colspan')
+						$("#ligand").attr("colspan", temp_colspan - 1)
 
-                    }
-                    if (item >= 12 && item <= 13) {
-                        var temp_colspan = $('#transducers').attr('colspan')
-                        $("#transducers").attr("colspan", temp_colspan - 1)
-                        if ($('#transducers').attr('colspan') == 0) {
-                            $("#transducers").addClass('highlight');
-                        }
-                    }
-                    if (item >= 14 && item <= 18) {
-                        var temp_colspan = $('#pathways_effector').attr('colspan')
-                        $("#pathways_effector").attr("colspan", temp_colspan - 1)
-                    }
-                    if (item >= 19 && item <= 23) {
-                        var temp_colspan = $('#pathways_measure').attr('colspan')
-                        $("#pathways_measure").attr("colspan", temp_colspan - 1)
-                    }
-                    if (item >= 24 && item <= 27) {
-                        var temp_colspan = $('#opmodel').attr('colspan')
-                        $("#opmodel").attr("colspan", temp_colspan - 1)
-                        if ($('#opmodel').attr('colspan') == 0) {
-                            $("#opmodel").addClass('highlight');
-                        }
-                    }
-                    if (item >= 28 && item <= 31) {
-                        var temp_colspan = $('#lbf').attr('colspan')
-                        $("#lbf").attr("colspan", temp_colspan - 1)
-                        if ($('#lbf').attr('colspan') == 0) {
-                            $("#lbf").addClass('highlight');
-                        }
-                    }
-                    if (item >= 32 && item <= 35) {
-                        var temp_colspan = $('#potency').attr('colspan')
-                        $("#potency").attr("colspan", temp_colspan - 1)
-                            if ($('#potency').attr('colspan') == 0) {
-                                $("#potency").addClass('highlight');
-                            }
-                    }
-                    if (item >= 36 && item <= 40) {
-                        var temp_colspan = $('#activity').attr('colspan')
-                        $("#activity").attr("colspan", temp_colspan - 1)
-                    }
-                    if (item >= 41 && item <= 45) {
-                        var temp_colspan = $('#emax').attr('colspan')
-                        $("#emax").attr("colspan", temp_colspan - 1)
-                    }
-                    if (item >= 46 && item <= 50) {
-                        var temp_colspan = $('#tfactor').attr('colspan')
-                        $("#tfactor").attr("colspan", temp_colspan - 1)
-                        if ($('#tfactor').attr('colspan') == 0) {
-                            $("#tfactor").addClass('highlight');
-                        }
-                    }
-                    if (item >= 51 && item <= 55) {
-                        var temp_colspan = $('#cell').attr('colspan')
-                        $("#cell").attr("colspan", temp_colspan - 1)
-                    }
-                    if (item >= 56 && item <= 60) {
-                        var temp_colspan = $('#time').attr('colspan')
-                        $("#time").attr("colspan", temp_colspan - 1)
-                        if ($('#time').attr('colspan') == 0) {
-                            $("#time").addClass('highlight');
-                        }
-                    }
-                });
-            }
+					}
+					if (item >= 12 && item <= 13) {
+						var temp_colspan = $('#transducers').attr('colspan')
+						$("#transducers").attr("colspan", temp_colspan - 1)
+						if ($('#transducers').attr('colspan') == 0) {
+							$("#transducers").addClass('highlight');
+						}
+					}
+					if (item >= 14 && item <= 18) {
+						var temp_colspan = $('#pathways_effector').attr('colspan')
+						$("#pathways_effector").attr("colspan", temp_colspan - 1)
+					}
+					if (item >= 19 && item <= 23) {
+						var temp_colspan = $('#pathways_measure').attr('colspan')
+						$("#pathways_measure").attr("colspan", temp_colspan - 1)
+					}
+					if (item >= 24 && item <= 27) {
+						var temp_colspan = $('#opmodel').attr('colspan')
+						$("#opmodel").attr("colspan", temp_colspan - 1)
+						if ($('#opmodel').attr('colspan') == 0) {
+							$("#opmodel").addClass('highlight');
+						}
+					}
+					if (item >= 28 && item <= 31) {
+						var temp_colspan = $('#lbf').attr('colspan')
+						$("#lbf").attr("colspan", temp_colspan - 1)
+						if ($('#lbf').attr('colspan') == 0) {
+							$("#lbf").addClass('highlight');
+						}
+					}
+					if (item >= 32 && item <= 35) {
+						var temp_colspan = $('#potency').attr('colspan')
+						$("#potency").attr("colspan", temp_colspan - 1)
+						if ($('#potency').attr('colspan') == 0) {
+							$("#potency").addClass('highlight');
+						}
+					}
+					if (item >= 36 && item <= 40) {
+						var temp_colspan = $('#activity').attr('colspan')
+						$("#activity").attr("colspan", temp_colspan - 1)
+					}
+					if (item >= 41 && item <= 45) {
+						var temp_colspan = $('#emax').attr('colspan')
+						$("#emax").attr("colspan", temp_colspan - 1)
+					}
+					if (item >= 46 && item <= 50) {
+						var temp_colspan = $('#tfactor').attr('colspan')
+						$("#tfactor").attr("colspan", temp_colspan - 1)
+						if ($('#tfactor').attr('colspan') == 0) {
+							$("#tfactor").addClass('highlight');
+						}
+					}
+					if (item >= 51 && item <= 55) {
+						var temp_colspan = $('#cell').attr('colspan')
+						$("#cell").attr("colspan", temp_colspan - 1)
+					}
+					if (item >= 56 && item <= 60) {
+						var temp_colspan = $('#time').attr('colspan')
+						$("#time").attr("colspan", temp_colspan - 1)
+						if ($('#time').attr('colspan') == 0) {
+							$("#time").addClass('highlight');
+						}
+					}
+				});
+			}
 		}
 
 		function reset_filters() {
@@ -990,11 +1032,12 @@
 </script>
 
 <script type="text/javascript">
-    function openPopup(url, title, win, w, h) {
-        const y = win.top.outerHeight / 2 + win.top.screenY - (h / 2);
-        const x = win.top.outerWidth / 2 + win.top.screenX - (w / 2);
-        return win.open(url, title, 'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width=' + w + ', height=' + h + ', top=' + y + ', left=' + x);
-    }
+	function openPopup(url, title, win, w, h) {
+		const y = win.top.outerHeight / 2 + win.top.screenY - (h / 2);
+		const x = win.top.outerWidth / 2 + win.top.screenX - (w / 2);
+		return win.open(url, title, 'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width=' + w + ', height=' + h + ', top=' + y + ', left=' + x);
+	}
+
 	function read_unique_ids() {
 		var ids = [];
 		var table = document.getElementById("structures_scrollable")
@@ -1065,311 +1108,326 @@
 		</table>
 	</div>
 
-		<table class="display compact text-nowrap" id='structures_scrollable' style="width: 100%">
-			<thead id="headers">
-				<tr class="header-spans" rowspan="2">
-					<th><span class="glyphicon glyphicon-info-sign" title="Click on this icon in a row for more details."></span></th>
-					<th id="receptor" style="border-left: 1px solid black; text-align:left" colspan="5">
-						Receptor</th>
-					<th style="border-left: 1px solid black; text-align:left" colspan="5" style="">
-						Tested Ligand Pair </th>
-					<th id="transducers" style="border-left: 1px solid black; text-align:left" colspan="2" style="">
-						Receptor transducers</th>
-                    <th id="pathways_effector" style="border-left: 1px solid black; text-align:left" colspan="5">
-						Bias rank order:<br>Primary effector</th>
-					<th id="pathways_measure" style="border-left: 1px solid black; text-align:left" colspan="5">
-						Bias rank order:<br>Measured effector</th>
-					<th id="opmodel" class="shade" style="border-left: 1px solid black; text-align:left" colspan="4">
-						Operational model <br> &#916;&#916;(Tau/Ka)</th>
-					<th id="lbf" class="shade" style="border-left: 1px solid black; text-align:left" colspan="4">
-						Intrinsic relative<br>activity<br>(&#916;&#916;Log(Emax/EC50))</th>
-					<th id="potency" class="shade" style="border-left: 1px solid black; text-align:left" colspan="4">
-						Potency ratio</th>
-					<th class="shade" id="activity" style="border-left: 1px solid black; text-align:left" colspan="5">
-						Potency (pEC50 or<br>
-						<font color="#FF0000">IC50)</font>
-					</th>
-					<th id="emax" class="shade" style="border-left: 1px solid black; text-align:left" colspan="5">
-						Emax (% of ref ligand)</th>
-					<th id="tfactor" class="shade" style="border-left: 1px solid black; text-align:left" colspan="5">
-						Transduction coefficient</th>
-                    <th id="cell" style="border-left: 1px solid black; text-align:left" colspan="5">
-						Measured molecule 1</th>
-                    <th id="cell" style="border-left: 1px solid black; text-align:left" colspan="5">
-						Measured molecule 2</th>
-                    <th id="cell" style="border-left: 1px solid black; text-align:left" colspan="5">
-						Biological process</th>
-					<th id="cell" style="border-left: 1px solid black; text-align:left" colspan="5">
-						Cell line</th>
-					<th id="time" style="border-left: 1px solid black; text-align:left" colspan="5">
-						Time resolved</th>
-					<th style="border-left: 1px solid black; text-align:left; overflow: hidden;
+	<table class="display compact text-nowrap" id='structures_scrollable' style="width: 100%">
+		<thead id="headers">
+			<tr class="header-spans" rowspan="2">
+				<th><span class="glyphicon glyphicon-info-sign" title="Click on this icon in a row for more details."></span></th>
+				<th id="receptor" style="border-left: 1px solid black; text-align:left" colspan="5">
+					Receptor</th>
+				<th style="border-left: 1px solid black; text-align:left" colspan="5" style="">
+					Tested ligand pair </th>
+				<th id="transducers" style="border-left: 1px solid black; text-align:left" colspan="2" style="">
+					Receptor transducers</th>
+				<th id="pathways_effector" style="border-left: 1px solid black; text-align:left" colspan="5">
+					Bias rank order:<br>Primary effector</th>
+				<th id="pathways_measure" style="border-left: 1px solid black; text-align:left" colspan="5">
+					Bias rank order:<br>Measured effector</th>
+				<th id="opmodel" class="shade" style="border-left: 1px solid black; text-align:left" colspan="4">
+					Operational model <br> &#916;&#916;(Tau/Ka)</th>
+				<th id="lbf" class="shade" style="border-left: 1px solid black; text-align:left" colspan="4">
+					Intrinsic relative<br>activity<br>(&#916;&#916;Log(Emax/EC50))</th>
+                <th id="lbf_part" class="shade" style="border-left: 1px solid black; text-align:left" colspan="5">
+					&#916;Log(Emax/EC50)</th>
+				<th id="potency" class="shade" style="border-left: 1px solid black; text-align:left" colspan="4">
+					Potency ratio</th>
+				<th class="shade" id="activity" style="border-left: 1px solid black; text-align:left" colspan="5">
+					Potency (pEC50 or<br>
+					<font color="#FF0000">IC50)</font>
+				</th>
+				<th id="emax" class="shade" style="border-left: 1px solid black; text-align:left" colspan="5">
+					Emax (% of ref ligand)</th>
+				<th id="tfactor" class="shade" style="border-left: 1px solid black; text-align:left" colspan="5">
+					Transduction coefficient</th>
+				<th id="cell" style="border-left: 1px solid black; text-align:left" colspan="5">
+					Measured molecule 1</th>
+				<th id="cell" style="border-left: 1px solid black; text-align:left" colspan="5">
+					Measured molecule 2</th>
+				<th id="cell" style="border-left: 1px solid black; text-align:left" colspan="5">
+					Biological process</th>
+				<th id="cell" style="border-left: 1px solid black; text-align:left" colspan="5">
+					Cell line</th>
+				<th id="time" style="border-left: 1px solid black; text-align:left" colspan="5">
+					Time resolved</th>
+				<th style="border-left: 1px solid black; text-align:left; overflow: hidden;
                           white-space: nowrap;
                           text-overflow: ellipsis;
                   max-width: 250px;" colspan="2">Reference</th>
-				</tr>
-				<tr class="table-filter-dropdown">
-					<th></th>
-					<th id="class_filter_select">Class</th>
-					<th id="receptor_filter_select">Rec Fam</th>
-					<th id="uniprot_filter_select">UniProt</th>
-					<th id="iuphar_filter_select">IUPHAR</th>
-					<th id="species_filter_select">Species</th>
-					<th style="display:none" id="endogenous_ligand_filter_select">Endogenous<br>Ligand</th>
-					<th id="reference_ligand_filter_select">Reference</th>
-					<th id="ligand_filter_select">Biased</th>
-					<th id="vendor_quantity_filter_select">#Ven<br>dors</th>
-					<th id="article_quantity_filter_select">#Arti<br>cles</th>
-					<th id="labs_quantity_filter_select">#Labs<br></th>
-					<th id="primary_filter_select">Primary</th>
-					<th id="secondary_filter_select">Secondary</th>
-					<th class="pathways" id="pathways_effector_p1_filter_select">P 1</th>
-					<th class="pathways" id="pathways_effector_p2_filter_select">P 2</th>
-					<th class="pathways" id="pathways_effector_p3_filter_select">P 3</th>
-					<th class="pathways" id="pathways_effector_p4_filter_select">P 4</th>
-					<th class="pathways" id="pathways_effector_p5_filter_select">P 5</th>
-					<th class="pathways" id="pathways_measure_p1_filter_select">P 1</th>
-					<th class="pathways" id="pathways_measure_p2_filter_select">P 2</th>
-					<th class="pathways" id="pathways_measure_p3_filter_select">P 3</th>
-					<th class="pathways" id="pathways_measure_p4_filter_select">P 4</th>
-					<th class="pathways" id="pathways_measure_p5_filter_select">P 5</th>
-					<th class="shade" id="opmodel_p2_p1_filter_select">P 2 / P 1</th>
-					<th class="shade" id="opmodel_p3_p1_filter_select">P 3 / P 1</th>
-					<th class="shade" id="opmodel_p4_p1_filter_select">P 4 / P 1</th>
-					<th class="shade" id="opmodel_p5_p1_filter_select">P 5 / P 1</th>
-					<th class="shade" id="lbf_p2_p1_filter_select">P 2 / P 1</th>
-					<th class="shade" id="lbf_p3_p1_filter_select">P 3 / P 1</th>
-					<th class="shade" id="lbf_p4_p1_filter_select">P 4 / P 1</th>
-					<th class="shade" id="lbf_p5_p1_filter_select">P 5 / P 1</th>
-					<th class="shade" id="potency_p2_p1_filter_select">P 2 / P 1</th>
-					<th class="shade" id="potency_p3_p1_filter_select">P 3 / P 1</th>
-					<th class="shade" id="potency_p4_p1_filter_select">P 4 / P 1</th>
-					<th class="shade" id="potency_p5_p1_filter_select">P 5 / P 1</th>
-					<th class="shade" id="activity_p1_filter_select">P 1</th>
-					<th class="shade" id="activity_p2_filter_select">P 2</th>
-					<th class="shade" id="activity_p3_filter_select">P 3</th>
-					<th class="shade" id="activity_p4_filter_select">P 4</th>
-					<th class="shade" id="activity_p5_filter_select">P 5</th>
-					<th class="shade" id="emax_p1_filter_select">P 1</th>
-					<th class="shade" id="emax_p2_filter_select">P 2</th>
-					<th class="shade" id="emax_p3_filter_select">P 3</th>
-					<th class="shade" id="emax_p4_filter_select">P 4</th>
-					<th class="shade" id="emax_p5_filter_select">P 5</th>
-					<th class="shade" id="tfactor_p1_filter_select">P 1</th>
-					<th class="shade" id="tfactor_p2_filter_select">P 2</th>
-					<th class="shade" id="tfactor_p3_filter_select">P 3</th>
-					<th class="shade" id="tfactor_p4_filter_select">P 4</th>
-					<th class="shade" id="tfactor_p5_filter_select">P 5</th>
-                    <th id="measured_molecule_p1_filter_select">P 1</th>
-					<th id="measured_molecule_p2_filter_select">P 2</th>
-					<th id="measured_molecule_p3_filter_select">P 3</th>
-					<th id="measured_molecule_p4_filter_select">P 4</th>
-					<th id="measured_molecule_p5_filter_select">P 5</th>
-                    <th id="measured_molecule2_p1_filter_select">P 1</th>
-					<th id="measured_molecule2_p2_filter_select">P 2</th>
-					<th id="measured_molecule2_p3_filter_select">P 3</th>
-					<th id="measured_molecule2_p4_filter_select">P 4</th>
-					<th id="measured_molecule2_p5_filter_select">P 5</th>
-                    <th id="bioprocess_p1_filter_select">P 1</th>
-					<th id="bioprocess_p2_filter_select">P 2</th>
-					<th id="bioprocess_p3_filter_select">P 3</th>
-					<th id="bioprocess_p4_filter_select">P 4</th>
-					<th id="bioprocess_p5_filter_select">P 5</th>
-					<th id="cell_p1_filter_select">P 1</th>
-					<th id="cell_p2_filter_select">P 2</th>
-					<th id="cell_p3_filter_select">P 3</th>
-					<th id="cell_p4_filter_select">P 4</th>
-					<th id="cell_p5_filter_select">P 5</th>
-					<th id="time_p1_filter_select">P 1</th>
-					<th id="time_p2_filter_select">P 2</th>
-					<th id="time_p3_filter_select">P 3</th>
-					<th id="time_p4_filter_select">P 4</th>
-					<th id="time_p5_filter_select">P 5</th>
-					<th id="authors_filter_select"  style="overflow: hidden;
+			</tr>
+			<tr class="table-filter-dropdown">
+				<th></th>
+				<th id="class_filter_select">Class</th>
+				<th id="receptor_filter_select">Rec Fam</th>
+				<th id="uniprot_filter_select">UniProt</th>
+				<th id="iuphar_filter_select">IUPHAR</th>
+				<th id="species_filter_select">Species</th>
+				<th style="display:none" id="endogenous_ligand_filter_select">Endogenous<br>Ligand</th>
+				<th id="reference_ligand_filter_select">Reference</th>
+				<th id="ligand_filter_select">Ligand tested for bias</th>
+				<th id="vendor_quantity_filter_select">#Ven<br>dors</th>
+				<th id="article_quantity_filter_select">#Arti<br>cles</th>
+				<th id="labs_quantity_filter_select">#Labs<br></th>
+				<th id="primary_filter_select">Primary</th>
+				<th id="secondary_filter_select">Secondary</th>
+				<th class="pathways" id="pathways_effector_p1_filter_select">P 1</th>
+				<th class="pathways" id="pathways_effector_p2_filter_select">P 2</th>
+				<th class="pathways" id="pathways_effector_p3_filter_select">P 3</th>
+				<th class="pathways" id="pathways_effector_p4_filter_select">P 4</th>
+				<th class="pathways" id="pathways_effector_p5_filter_select">P 5</th>
+				<th class="pathways" id="pathways_measure_p1_filter_select">P 1</th>
+				<th class="pathways" id="pathways_measure_p2_filter_select">P 2</th>
+				<th class="pathways" id="pathways_measure_p3_filter_select">P 3</th>
+				<th class="pathways" id="pathways_measure_p4_filter_select">P 4</th>
+				<th class="pathways" id="pathways_measure_p5_filter_select">P 5</th>
+				<th class="shade" id="opmodel_p2_p1_filter_select">P 2 / P 1</th>
+				<th class="shade" id="opmodel_p3_p1_filter_select">P 3 / P 1</th>
+				<th class="shade" id="opmodel_p4_p1_filter_select">P 4 / P 1</th>
+				<th class="shade" id="opmodel_p5_p1_filter_select">P 5 / P 1</th>
+				<th class="shade" id="lbf_p2_p1_filter_select">P 2 / P 1</th>
+				<th class="shade" id="lbf_p3_p1_filter_select">P 3 / P 1</th>
+				<th class="shade" id="lbf_p4_p1_filter_select">P 4 / P 1</th>
+				<th class="shade" id="lbf_p5_p1_filter_select">P 5 / P 1</th>
+
+                <th class="shade" id="lbf_p2_p1_filter_select">P 1</th>
+                <th class="shade" id="lbf_p2_p1_filter_select">P 2</th>
+				<th class="shade" id="lbf_p3_p1_filter_select">P 3</th>
+				<th class="shade" id="lbf_p4_p1_filter_select">P 4</th>
+				<th class="shade" id="lbf_p5_p1_filter_select">P 5</th>
+
+				<th class="shade" id="potency_p2_p1_filter_select">P 2 / P 1</th>
+				<th class="shade" id="potency_p3_p1_filter_select">P 3 / P 1</th>
+				<th class="shade" id="potency_p4_p1_filter_select">P 4 / P 1</th>
+				<th class="shade" id="potency_p5_p1_filter_select">P 5 / P 1</th>
+				<th class="shade" id="activity_p1_filter_select">P 1</th>
+				<th class="shade" id="activity_p2_filter_select">P 2</th>
+				<th class="shade" id="activity_p3_filter_select">P 3</th>
+				<th class="shade" id="activity_p4_filter_select">P 4</th>
+				<th class="shade" id="activity_p5_filter_select">P 5</th>
+				<th class="shade" id="emax_p1_filter_select">P 1</th>
+				<th class="shade" id="emax_p2_filter_select">P 2</th>
+				<th class="shade" id="emax_p3_filter_select">P 3</th>
+				<th class="shade" id="emax_p4_filter_select">P 4</th>
+				<th class="shade" id="emax_p5_filter_select">P 5</th>
+				<th class="shade" id="tfactor_p1_filter_select">P 1</th>
+				<th class="shade" id="tfactor_p2_filter_select">P 2</th>
+				<th class="shade" id="tfactor_p3_filter_select">P 3</th>
+				<th class="shade" id="tfactor_p4_filter_select">P 4</th>
+				<th class="shade" id="tfactor_p5_filter_select">P 5</th>
+				<th id="measured_molecule_p1_filter_select">P 1</th>
+				<th id="measured_molecule_p2_filter_select">P 2</th>
+				<th id="measured_molecule_p3_filter_select">P 3</th>
+				<th id="measured_molecule_p4_filter_select">P 4</th>
+				<th id="measured_molecule_p5_filter_select">P 5</th>
+				<th id="measured_molecule2_p1_filter_select">P 1</th>
+				<th id="measured_molecule2_p2_filter_select">P 2</th>
+				<th id="measured_molecule2_p3_filter_select">P 3</th>
+				<th id="measured_molecule2_p4_filter_select">P 4</th>
+				<th id="measured_molecule2_p5_filter_select">P 5</th>
+				<th id="bioprocess_p1_filter_select">P 1</th>
+				<th id="bioprocess_p2_filter_select">P 2</th>
+				<th id="bioprocess_p3_filter_select">P 3</th>
+				<th id="bioprocess_p4_filter_select">P 4</th>
+				<th id="bioprocess_p5_filter_select">P 5</th>
+				<th id="cell_p1_filter_select">P 1</th>
+				<th id="cell_p2_filter_select">P 2</th>
+				<th id="cell_p3_filter_select">P 3</th>
+				<th id="cell_p4_filter_select">P 4</th>
+				<th id="cell_p5_filter_select">P 5</th>
+				<th id="time_p1_filter_select">P 1</th>
+				<th id="time_p2_filter_select">P 2</th>
+				<th id="time_p3_filter_select">P 3</th>
+				<th id="time_p4_filter_select">P 4</th>
+				<th id="time_p5_filter_select">P 5</th>
+				<th id="authors_filter_select" style="overflow: hidden;
                           white-space: nowrap;
                           text-overflow: ellipsis;
                           max-width: 100px;">Authors</th>
-                	<th id="doi_reference_filter_select">DOI/ <br>Reference</th>
+				<th id="doi_reference_filter_select">DOI/ <br>Reference</th>
 
-                </tr>
-			</thead>
-				<tbody id='structures_scrollable_body'>
-				{%for e in data_test%}
-				<tr>
-					<td>
-						<span style='display: none'> {{e.id}}</span>
-						<a href="#">
-							<span class="glyphicon glyphicon-info-sign"  title="Click for more details" onclick="openPopup('experiment/{{e.id}}/detail', 'Detail View', window, 1500, 1000)"></span>
-						</a>
-					</td>
+			</tr>
+		</thead>
+		<tbody id='structures_scrollable_body'>
+			{%for e in data_test%}
+			<tr>
+				<td>
+					<span style='display: none'> {{e.id}}</span>
+					<a href="#">
+						<span class="glyphicon glyphicon-info-sign" title="Click for more details" onclick="openPopup('experiment/{{e.id}}/detail', 'Detail View', window, 1500, 1000)"></span>
+					</a>
+				</td>
 
-					<!-- s.protein_conformation.protein.parent.family.parent.parent.parent.shorter() -->
-					<td title='{{e.receptor.family.parent.parent.parent.name}}' style="border-left: 1px solid black;">{{e.receptor.family.parent.parent.parent.short|default_if_none:""}}</td>
-					<td title='{{e.receptor.family.parent}}'>{{e.receptor.family.parent.short}}</td>
-					<td title='{{e.uniprot}}'>{{e.receptor.entry_short}}</td>
-					<td title='{{e.IUPHAR}}'>{{e.receptor.name.split|first}}</td>
-					<td title='{{e.receptor.species.common_name}}'>{{e.receptor.species.common_name}}</td>
-					<td style="display:none"  title='{{e.endogenous_ligand}}'>{{e.endogenous_ligand}}</td>
+				<!-- s.protein_conformation.protein.parent.family.parent.parent.parent.shorter() -->
+				<td title='{{e.receptor.family.parent.parent.parent.name}}' style="border-left: 1px solid black;">{{e.receptor.family.parent.parent.parent.short|default_if_none:""}}</td>
+				<td title='{{e.receptor.family.parent}}'>{{e.receptor.family.parent.short}}</td>
+				<td title='{{e.uniprot}}'>{{e.receptor.entry_short}}</td>
+				<td title='{{e.IUPHAR}}'>{{e.receptor.name.split|first}}</td>
+				<td title='{{e.receptor.species.common_name}}'>{{e.receptor.species.common_name}}</td>
+				<td style="display:none" title='{{e.endogenous_ligand}}'>{{e.endogenous_ligand}}</td>
 
-					<!-- ligand -->
-					<td title='{{e.reference_ligand}}' style="border-left: 1px solid black;">{{e.reference_ligand}}</td>
-					<td title='{{e.ligand}}'><a href ='/ligand/{{e.ligand.id}}/info' target='_blank'>{{e.ligand}}</a>
-				                </td>
-					<td>{{e.vendor_quantity}}</td>
-					<td>{{e.article_quantity}}</td>
-					<td>{{e.labs_quantity}}</td>
+				<!-- ligand -->
+				<td title='{{e.reference_ligand}}' style="border-left: 1px solid black;">{{e.reference_ligand}}</td>
+				<td title='{{e.ligand}}'><a href='/ligand/{{e.ligand.id}}/info' target='_blank'>{{e.ligand}}</a>
+				</td>
+				<td>{{e.vendor_quantity}}</td>
+				<td>{{e.article_quantity}}</td>
+				<td>{{e.labs_quantity}}</td>
 
-					<!-- receptor trunsducers -->
-					<td style="border-left: 1px solid black;">{{e.primary}}</td>
-					<td>{{e.secondary}}</td>
+				<!-- receptor trunsducers -->
+				<td style="border-left: 1px solid black;">{{e.primary}}</td>
+				<td>{{e.secondary}}</td>
 
-					<!-- pathways -->
-                    <td class="pathway">{{e.pathways_p1|default_if_none:""}}</td>
-					<td class="pathway">{{e.pathways_p2|default_if_none:""}}</td>
-                    <td class="pathway">{{e.pathways_p3|default_if_none:""}}</td>
-                    <td class="pathway">{{e.pathways_p4|default_if_none:""}}</td>
-                    <td class="pathway">{{e.pathways_p5|default_if_none:""}}</td>
-                	<!-- Assay -->
-                    <td title='{{e.assay_p1}}'>{{e.assay_p1|default_if_none:"-" }}</td>
-                    <td title='{{e.assay_p2}}'>{{e.assay_p2|default_if_none:"-" }}</td>
-                    <td title='{{e.assay_p3}}'>{{e.assay_p3|default_if_none:"-" }}</td>
-                    <td title='{{e.assay_p4}}'>{{e.assay_p4|default_if_none:"-" }}</td>
-                    <td title='{{e.assay_p5}}'>{{e.assay_p5|default_if_none:"-" }}</td>
-					<!-- t factor -->
-    				<td class="shade">{{e.opmodel_p2_p1|default_if_none:""}}</td>
-                    <td class="shade">{{e.opmodel_p3_p1|default_if_none:""}}</td>
-                    <td class="shade">{{e.opmodel_p4_p1|default_if_none:""}}</td>
-                    <td class="shade">{{e.opmodel_p5_p1|default_if_none:""}}</td>
-					<!-- log bias facrtor -->
-					<td class="shade">{{e.lbf_p2_p1|default_if_none:""}}</td>
-                    <td class="shade">{{e.lbf_p3_p1|default_if_none:""}}</td>
-                    <td class="shade">{{e.lbf_p4_p1|default_if_none:""}}</td>
-                    <td class="shade">{{e.lbf_p5_p1|default_if_none:""}}</td>
-					<!-- potency ratio -->
-	                <td class="shade">{{e.potency_p2_p1|default_if_none:""}}</td>
-                    <td class="shade">{{e.potency_p3_p1|default_if_none:""}}</td>
-                    <td class="shade">{{e.potency_p4_p1|default_if_none:""}}</td>
-                    <td class="shade">{{e.potency_p5_p1|default_if_none:""}}</td>
+				<!-- pathways -->
+				<td class="pathway">{{e.pathways_p1|default_if_none:""}}</td>
+				<td class="pathway">{{e.pathways_p2|default_if_none:""}}</td>
+				<td class="pathway">{{e.pathways_p3|default_if_none:""}}</td>
+				<td class="pathway">{{e.pathways_p4|default_if_none:""}}</td>
+				<td class="pathway">{{e.pathways_p5|default_if_none:""}}</td>
+				<!-- Assay -->
+				<td title='{{e.assay_p1}}'>{{e.assay_p1|default_if_none:"-" }}</td>
+				<td title='{{e.assay_p2}}'>{{e.assay_p2|default_if_none:"-" }}</td>
+				<td title='{{e.assay_p3}}'>{{e.assay_p3|default_if_none:"-" }}</td>
+				<td title='{{e.assay_p4}}'>{{e.assay_p4|default_if_none:"-" }}</td>
+				<td title='{{e.assay_p5}}'>{{e.assay_p5|default_if_none:"-" }}</td>
+				<!-- t factor -->
+				<td class="shade">{{e.opmodel_p2_p1|default_if_none:""}}</td>
+				<td class="shade">{{e.opmodel_p3_p1|default_if_none:""}}</td>
+				<td class="shade">{{e.opmodel_p4_p1|default_if_none:""}}</td>
+				<td class="shade">{{e.opmodel_p5_p1|default_if_none:""}}</td>
+				<!-- log bias facrtor -->
+				<td class="shade">{{e.lbf_p2_p1|default_if_none:""}}</td>
+				<td class="shade">{{e.lbf_p3_p1|default_if_none:""}}</td>
+				<td class="shade">{{e.lbf_p4_p1|default_if_none:""}}</td>
+				<td class="shade">{{e.lbf_p5_p1|default_if_none:""}}</td>
+                <!-- lbf_part -->
+				<td title='{{e.lbf_part_p1}}'>{{e.lbf_part_p1|default_if_none:"" }}</td>
+				<td title='{{e.lbf_part_p2}}'>{{e.lbf_part_p2|default_if_none:"" }}</td>
+				<td title='{{e.lbf_part_p3}}'>{{e.lbf_part_p3|default_if_none:"" }}</td>
+				<td title='{{e.lbf_part_p4}}'>{{e.lbf_part_p4|default_if_none:"" }}</td>
+				<td title='{{e.lbf_part_p5}}'>{{e.lbf_part_p5|default_if_none:"" }}</td>
+				<!-- potency ratio -->
+				<td class="shade">{{e.potency_p2_p1|default_if_none:""}}</td>
+				<td class="shade">{{e.potency_p3_p1|default_if_none:""}}</td>
+				<td class="shade">{{e.potency_p4_p1|default_if_none:""}}</td>
+				<td class="shade">{{e.potency_p5_p1|default_if_none:""}}</td>
 
-					<!-- potency -->
-                    {%if e.activity_p1 %}
-    					{%if e.standard_type_p1 == 'EC50' %}
-    					<td class="shade" style="text-align:right">{{e.activity_p1|default_if_none:""}} </td>
-    					{%else%}
-    					<td class="shade" style="text-align:right">
-    						<font color="#FF0000">{{e.activity_p1|default_if_none:""}} </font>
-    					</td>
-    					{%endif%}
-					{%else%}
-					<td class="shade">{{e.quality_activity_p1|default_if_none:""}}</td>
-					{%endif%}
+				<!-- potency -->
+				{%if e.activity_p1 %}
+				{%if e.standard_type_p1 == 'EC50' %}
+				<td class="shade" style="text-align:right">{{e.activity_p1|default_if_none:""}} </td>
+				{%else%}
+				<td class="shade" style="text-align:right">
+					<font color="#FF0000">{{e.activity_p1|default_if_none:""}} </font>
+				</td>
+				{%endif%}
+				{%else%}
+				<td class="shade">{{e.quality_activity_p1|default_if_none:""}}</td>
+				{%endif%}
 
-                    {%if e.activity_p2 %}
-    					{%if e.standard_type_p2 == 'EC50' %}
-    					<td class="shade" style="text-align:right">{{e.activity_p2|default_if_none:""}} </td>
-    					{%else%}
-    					<td class="shade" style="text-align:right">
-    						<font color="#FF0000">{{e.activity_p2|default_if_none:""}} </font>
-    					</td>
-    					{%endif%}
-					{%else%}
-					<td class="shade">{{e.quality_activity_p2|default_if_none:""}}</td>
-					{%endif%}
+				{%if e.activity_p2 %}
+				{%if e.standard_type_p2 == 'EC50' %}
+				<td class="shade" style="text-align:right">{{e.activity_p2|default_if_none:""}} </td>
+				{%else%}
+				<td class="shade" style="text-align:right">
+					<font color="#FF0000">{{e.activity_p2|default_if_none:""}} </font>
+				</td>
+				{%endif%}
+				{%else%}
+				<td class="shade">{{e.quality_activity_p2|default_if_none:""}}</td>
+				{%endif%}
 
-                    {%if e.activity_p3 %}
-    					{%if e.standard_type_p3 == 'EC50' %}
-    					<td class="shade" style="text-align:right">{{e.activity_p3|default_if_none:""}} </td>
-    					{%else%}
-    					<td class="shade" style="text-align:right">
-    						<font color="#FF0000">{{e.activity_p3|default_if_none:""}} </font>
-    					</td>
-    					{%endif%}
-					{%else%}
-					<td class="shade">{{e.quality_activity_p3|default_if_none:""}}</td>
-					{%endif%}
+				{%if e.activity_p3 %}
+				{%if e.standard_type_p3 == 'EC50' %}
+				<td class="shade" style="text-align:right">{{e.activity_p3|default_if_none:""}} </td>
+				{%else%}
+				<td class="shade" style="text-align:right">
+					<font color="#FF0000">{{e.activity_p3|default_if_none:""}} </font>
+				</td>
+				{%endif%}
+				{%else%}
+				<td class="shade">{{e.quality_activity_p3|default_if_none:""}}</td>
+				{%endif%}
 
-                    {%if e.activity_p4 %}
-    					{%if e.standard_type_p4 == 'EC50' %}
-    					<td class="shade" style="text-align:right">{{e.activity_p4|default_if_none:""}} </td>
-    					{%else%}
-    					<td class="shade" style="text-align:right">
-    						<font color="#FF0000">{{e.activity_p4|default_if_none:""}} </font>
-    					</td>
-    					{%endif%}
-					{%else%}
-					<td class="shade">{{e.quality_activity_p4|default_if_none:""}}</td>
-					{%endif%}
+				{%if e.activity_p4 %}
+				{%if e.standard_type_p4 == 'EC50' %}
+				<td class="shade" style="text-align:right">{{e.activity_p4|default_if_none:""}} </td>
+				{%else%}
+				<td class="shade" style="text-align:right">
+					<font color="#FF0000">{{e.activity_p4|default_if_none:""}} </font>
+				</td>
+				{%endif%}
+				{%else%}
+				<td class="shade">{{e.quality_activity_p4|default_if_none:""}}</td>
+				{%endif%}
 
-                    {%if e.activity_p5 %}
-    					{%if e.standard_type_p5 == 'EC50' %}
-    					<td class="shade" style="text-align:right">{{e.activity_p5|default_if_none:""}} </td>
-    					{%else%}
-    					<td class="shade" style="text-align:right">
-    						<font color="#FF0000">{{e.activity_p5|default_if_none:""}} </font>
-    					</td>
-    					{%endif%}
-					{%else%}
-					<td class="shade">{{e.quality_activity_p5|default_if_none:""}}</td>
-					{%endif%}
+				{%if e.activity_p5 %}
+				{%if e.standard_type_p5 == 'EC50' %}
+				<td class="shade" style="text-align:right">{{e.activity_p5|default_if_none:""}} </td>
+				{%else%}
+				<td class="shade" style="text-align:right">
+					<font color="#FF0000">{{e.activity_p5|default_if_none:""}} </font>
+				</td>
+				{%endif%}
+				{%else%}
+				<td class="shade">{{e.quality_activity_p5|default_if_none:""}}</td>
+				{%endif%}
 
-					<!-- E max -->
-    				<td class="shade">{{e.emax_p1|default_if_none:""}}</td>
-                    <td class="shade">{{e.emax_p2|default_if_none:""}}</td>
-                    <td class="shade">{{e.emax_p3|default_if_none:""}}</td>
-                    <td class="shade">{{e.emax_p4|default_if_none:""}}</td>
-                    <td class="shade">{{e.emax_p5|default_if_none:""}}</td>
+				<!-- E max -->
+				<td class="shade">{{e.emax_p1|default_if_none:""}}</td>
+				<td class="shade">{{e.emax_p2|default_if_none:""}}</td>
+				<td class="shade">{{e.emax_p3|default_if_none:""}}</td>
+				<td class="shade">{{e.emax_p4|default_if_none:""}}</td>
+				<td class="shade">{{e.emax_p5|default_if_none:""}}</td>
 
-					<!-- T coefficient -->
-					<td class="shade">{{e.tfactor_p1|default_if_none:""}}</td>
-                    <td class="shade">{{e.tfactor_p2|default_if_none:""}}</td>
-                    <td class="shade">{{e.tfactor_p3|default_if_none:""}}</td>
-                    <td class="shade">{{e.tfactor_p4|default_if_none:""}}</td>
-                    <td class="shade">{{e.tfactor_p5|default_if_none:""}}</td>
-                    <!-- Molecule 1 -->
-					<td class="shade">{{e.molecule1_p1|default_if_none:""}}</td>
-                    <td class="shade">{{e.molecule1_p2|default_if_none:""}}</td>
-                    <td class="shade">{{e.molecule1_p3|default_if_none:""}}</td>
-                    <td class="shade">{{e.molecule1_p4|default_if_none:""}}</td>
-                    <td class="shade">{{e.molecule1_p5|default_if_none:""}}</td>
-                    <!-- Molecule 2 -->
-					<td class="shade">{{e.molecule2_p1|default_if_none:""}}</td>
-                    <td class="shade">{{e.molecule2_p2|default_if_none:""}}</td>
-                    <td class="shade">{{e.molecule2_p3|default_if_none:""}}</td>
-                    <td class="shade">{{e.molecule2_p4|default_if_none:""}}</td>
-                    <td class="shade">{{e.molecule2_p5|default_if_none:""}}</td>
-                	<!-- Bioprocess -->
-                    <td title='{{e.measured_biological_process_p1}}'>{{e.measured_biological_process_p1|default_if_none:"" }}</td>
-                    <td title='{{e.measured_biological_process_p2}}'>{{e.measured_biological_process_p2|default_if_none:"" }}</td>
-                    <td title='{{e.measured_biological_process_p3}}'>{{e.measured_biological_process_p3|default_if_none:"" }}</td>
-                    <td title='{{e.measured_biological_process_p4}}'>{{e.measured_biological_process_p4|default_if_none:"" }}</td>
-                    <td title='{{e.measured_biological_process_p5}}'>{{e.measured_biological_process_p5|default_if_none:"" }}</td>
-					<!-- Cell line -->
-					<td title='{{e.cell_p1}}'>{{e.cell_p1|default_if_none:"" }}</td>
-                    <td title='{{e.cell_p2}}'>{{e.cell_p2|default_if_none:"" }}</td>
-                    <td title='{{e.cell_p3}}'>{{e.cell_p3|default_if_none:"" }}</td>
-                    <td title='{{e.cell_p4}}'>{{e.cell_p4|default_if_none:"" }}</td>
-                    <td title='{{e.cell_p5}}'>{{e.cell_p5|default_if_none:"" }}</td>
+				<!-- T coefficient -->
+				<td class="shade">{{e.tfactor_p1|default_if_none:""}}</td>
+				<td class="shade">{{e.tfactor_p2|default_if_none:""}}</td>
+				<td class="shade">{{e.tfactor_p3|default_if_none:""}}</td>
+				<td class="shade">{{e.tfactor_p4|default_if_none:""}}</td>
+				<td class="shade">{{e.tfactor_p5|default_if_none:""}}</td>
+				<!-- Molecule 1 -->
+				<td class="shade">{{e.molecule1_p1|default_if_none:""}}</td>
+				<td class="shade">{{e.molecule1_p2|default_if_none:""}}</td>
+				<td class="shade">{{e.molecule1_p3|default_if_none:""}}</td>
+				<td class="shade">{{e.molecule1_p4|default_if_none:""}}</td>
+				<td class="shade">{{e.molecule1_p5|default_if_none:""}}</td>
+				<!-- Molecule 2 -->
+				<td class="shade">{{e.molecule2_p1|default_if_none:""}}</td>
+				<td class="shade">{{e.molecule2_p2|default_if_none:""}}</td>
+				<td class="shade">{{e.molecule2_p3|default_if_none:""}}</td>
+				<td class="shade">{{e.molecule2_p4|default_if_none:""}}</td>
+				<td class="shade">{{e.molecule2_p5|default_if_none:""}}</td>
+				<!-- Bioprocess -->
+				<td title='{{e.measured_biological_process_p1}}'>{{e.measured_biological_process_p1|default_if_none:"" }}</td>
+				<td title='{{e.measured_biological_process_p2}}'>{{e.measured_biological_process_p2|default_if_none:"" }}</td>
+				<td title='{{e.measured_biological_process_p3}}'>{{e.measured_biological_process_p3|default_if_none:"" }}</td>
+				<td title='{{e.measured_biological_process_p4}}'>{{e.measured_biological_process_p4|default_if_none:"" }}</td>
+				<td title='{{e.measured_biological_process_p5}}'>{{e.measured_biological_process_p5|default_if_none:"" }}</td>
+				<!-- Cell line -->
+				<td title='{{e.cell_p1}}'>{{e.cell_p1|default_if_none:"" }}</td>
+				<td title='{{e.cell_p2}}'>{{e.cell_p2|default_if_none:"" }}</td>
+				<td title='{{e.cell_p3}}'>{{e.cell_p3|default_if_none:"" }}</td>
+				<td title='{{e.cell_p4}}'>{{e.cell_p4|default_if_none:"" }}</td>
+				<td title='{{e.cell_p5}}'>{{e.cell_p5|default_if_none:"" }}</td>
 
-					<!-- Time resolved -->
-					<td title='{{e.time_p1}}'>{{e.time_p1|default_if_none:"" }}</td>
-                    <td title='{{e.time_p2}}'>{{e.time_p2|default_if_none:"" }}</td>
-                    <td title='{{e.time_p3}}'>{{e.time_p3|default_if_none:"" }}</td>
-                    <td title='{{e.time_p4}}'>{{e.time_p4|default_if_none:"" }}</td>
-                    <td title='{{e.time_p5}}'>{{e.time_p5|default_if_none:"" }}</td>
+				<!-- Time resolved -->
+				<td title='{{e.time_p1}}'>{{e.time_p1|default_if_none:"" }}</td>
+				<td title='{{e.time_p2}}'>{{e.time_p2|default_if_none:"" }}</td>
+				<td title='{{e.time_p3}}'>{{e.time_p3|default_if_none:"" }}</td>
+				<td title='{{e.time_p4}}'>{{e.time_p4|default_if_none:"" }}</td>
+				<td title='{{e.time_p5}}'>{{e.time_p5|default_if_none:"" }}</td>
 
-					<!-- Reference -->
-					<td class="name" style="border-left: 1px solid black;">
-						{{e.publication.authors}}</td>
-					<td class="name">
-						<a href='{{e.publication.web_link}}' target='blank'>
-							{{e.publication.web_link.index}}</a></td>
-				</tr>
-				{%endfor%}
-			</tbody>
+				<!-- Reference -->
+				<td class="name" style="border-left: 1px solid black;">
+					{{e.publication.authors}}</td>
+				<td class="name">
+					<a href='{{e.publication.web_link}}' target='blank'>
+						{{e.publication.web_link.index}}</a></td>
+			</tr>
+			{%endfor%}
+		</tbody>
 
 
-		</table>
-	</div>
+	</table>
+</div>
 
 <br>
 {% endautoescape %}

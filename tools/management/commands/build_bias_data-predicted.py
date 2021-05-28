@@ -88,6 +88,8 @@ class Command(BaseBuild):
         changed_data = self.queryset_to_dict(content_with_children)
         print('stage # 3: Converting queryset into dict finished', len(changed_data))
         send = self.combine_unique(changed_data)
+        print('stage # 4: Converting queryset into dict finished', len(changed_data))
+        self.get_endogenous_assays(send)
         print('stage # 5: Selecting endogenous ligands finished')
         referenced_assay = self.process_referenced_assays(send)
         print('stage # 6: Separating reference assays is finished', len(referenced_assay))
@@ -240,8 +242,7 @@ class Command(BaseBuild):
         for experiment in data:
             for assay in experiment['assay']:
                 if assay['bias_reference'] == 'Endogenous' or assay['bias_reference'] == 'Ref. and endo.':
-                    self.endogenous_assays.append(assay)
-        return self.endogenous_assays
+                    self.endogenous_assays.append(assay)        
 
     def combine_unique(self, data):
         '''
@@ -487,9 +488,6 @@ class Command(BaseBuild):
                     most_potent = i
                     try:
                         most_reference = i['reference_ligand'][0]
-                        i['lbf_a'] = round(math.log10(
-                            most_potent['quantitive_efficacy'] / most_potent['quantitive_activity']) - math.log10(
-                            most_reference['quantitive_efficacy'] / most_reference['quantitive_activity']),2)
                     except:
                         continue
                     i['log_bias_factor'] = None
@@ -505,7 +503,6 @@ class Command(BaseBuild):
                             i['log_bias_factor'] = self.lbf_process_efficacy(i)
                         if i['log_bias_factor'] == None:
                             i['log_bias_factor'] = self.lbf_calculate_bias(i,most_potent,most_reference)
-                            i['lbf_a'] = round(self.lbf_calculate_bias_parts(i),2)
                         if i['log_bias_factor'] == None:
                             i['log_bias_factor'] = self.lbf_process_ic50(i)
                     except:
@@ -520,7 +517,7 @@ class Command(BaseBuild):
                 return_message = "High Bias"
             elif i['qualitative_activity'] == 'High activity':
                 return_message = "Low Bias"
-            elif i['qualitative_activity'] == 'Inverse agonism/antagonism':
+            elif i['qualitative_activity'].lower() == 'inverse agonism':
                 return_message = "Full Bias"
         except:
             return_message = None
@@ -567,26 +564,13 @@ class Command(BaseBuild):
                 temp_calculation = self.caclulate_bias_factor_variables(
                     a, b, c, d)
                 return_message = round(temp_calculation, 1)
+                i['lbf_a'] = a
+                i['lbf_b'] = b
+                i['lbf_c'] = c
+                i['lbf_d'] = d
         except:
             return_message = None
         return return_message
-
-    def lbf_calculate_bias_parts(self,i):
-        result = None
-        try:
-            c = 0
-            d = 0
-            temp_reference = i['reference_ligand'][0]
-            if (i['quantitive_measure_type'].lower() == 'ec50'
-            and temp_reference['quantitive_measure_type'].lower() == 'ec50'):
-                c = math.log10(
-                    i['quantitive_efficacy'] / i['quantitive_activity'])
-                d = math.log10(
-                    temp_reference['quantitive_efficacy'] / temp_reference['quantitive_activity'])
-            result = c-d
-        except:
-            result = None
-        return result
 
     def lbf_process_ic50(self, i):
         return_message = None
@@ -740,6 +724,9 @@ class Command(BaseBuild):
                                                          t_factor=ex['t_factor'],
                                                          log_bias_factor=ex['log_bias_factor'],
                                                          log_bias_factor_a=ex['lbf_a'],
+                                                         log_bias_factor_b=ex['lbf_b'],
+                                                         log_bias_factor_c=ex['lbf_c'],
+                                                         log_bias_factor_d=ex['lbf_d'],
                                                          effector_family = ex['family'],
                                                          measured_biological_process = ex['measured_biological_process'] ,
                                                          signal_detection_tecnique = ex['signal_detection_tecnique'],
