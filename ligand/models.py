@@ -158,7 +158,7 @@ class Ligand(models.Model):
                 wl, created = WebLink.objects.get_or_create(
                     index=web_resource_index, web_resource=web_resource)
             except IntegrityError:
-                wl = Weblink.objects.get(
+                wl = WebLink.objects.get(
                     index=web_resource_index, web_resource=web_resource)
             lp.web_links.add(wl)
 

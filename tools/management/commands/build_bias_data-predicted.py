@@ -242,7 +242,7 @@ class Command(BaseBuild):
         for experiment in data:
             for assay in experiment['assay']:
                 if assay['bias_reference'] == 'Endogenous' or assay['bias_reference'] == 'Ref. and endo.':
-                    self.endogenous_assays.append(assay)        
+                    self.endogenous_assays.append(assay)
 
     def combine_unique(self, data):
         '''
@@ -489,7 +489,7 @@ class Command(BaseBuild):
                     try:
                         most_reference = i['reference_ligand'][0]
                     except:
-                        continue
+                        most_reference = None
                     i['log_bias_factor'] = None
                     self.process_low_potency(i)
 
