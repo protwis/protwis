@@ -57,9 +57,8 @@
         text-align: center;
         width: 120px;
         height: 15px;
-        padding: 5px;
         font: 12px sans-serif;
-        background: #ddd;
+        background: white;
         border: solid 1px #aaa;
         border-radius: 8px;
         pointer-events: none;
@@ -90,6 +89,7 @@
 
   <h3>Results for receptor: <b>{{query|safe}}</b> </h3>
   <!-- Nav tabs -->
+{% if page == 'pathwayprofiles' %}
   <ul class="nav nav-tabs">
     <li class="nav-item">
       <a class="nav-link active" data-toggle="tab" href="#lines">Line charts</a>
@@ -97,6 +97,9 @@
     <li class="nav-item">
       <a class="nav-link" data-toggle="tab" href="#spiders">Radar plots</a>
     </li>
+    <!-- <li class="nav-item">
+      <a class="nav-link active" data-toggle="tab" href="#boxplot">Test chart</a>
+    </li> -->
   </ul>
 
   <!-- Tab panes -->
@@ -104,12 +107,11 @@
     <div class="tab-pane container active" id="lines">
       <br />
       <div style="font: 15px sans-serif">
-        <p>Charts are sorted from the publications showing the larger number of investigated pathways. <br>
-          Ligand trends can be highlighted by clicking on the ligand name (across publications). <br>
-          Data are shown in Log<sub>10</sub>(E<sub>max</sub>/EC<sub>50</sub>).</p>
+        <p>Charts are <b>sorted</b> from the publications showing the larger number of <b>investigated pathways</b> (primary), and for <b>number of datapoints</b> (secondary). <br>
       </div>
       <div id='divChartTrends'></div>
     </div>
+
     <div class="tab-pane container fade" id="spiders">
       <br />
       <div class="row">
@@ -139,6 +141,63 @@
       <div id='radarcontainer'></div>
       </div>
     </div>
+  {% else %}
+  <ul class="nav nav-tabs">
+    <li class="nav-item">
+      <a class="nav-link active" data-toggle="tab" href="#boxplot">Scatter plot</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" data-toggle="tab" href="#spiders">Radar plots</a>
+    </li>
+  </ul>
+
+  <!-- Tab panes -->
+  <div class="tab-content">
+    <div class="tab-pane container active" id="boxplot">
+      <br />
+
+      <div style="font: 15px sans-serif">
+        <p><b>Y-axis</b>: Intrinsic relative activity <br />
+           <b>X-axis</b>: Publications <br />
+           <b>Data points</b>: Ligands <br />
+           <br />
+           Each publication-ligand pair is only shown in <b>one</b> diagram. <br />
+           This is the diagram for the given pathway towards the specific ligand is biased.<br /></p>
+
+      </div>
+      <div id='boxplotChart'></div>
+    </div>
+
+    <div class="tab-pane container fade" id="spiders">
+      <br />
+      <div class="row">
+
+        <div class="form-group">
+          <input type="text" class="form-control" id="RadarPublicationsList" list="select-pub" placeholder="Select Publication" width="60%"/>
+          <button type="Submit" class="btn btn-primary" onclick="ShowPlot('pub')">Show Plot</button>
+
+          <input type="text" class="form-control" id="RadarLigandList" list="select-ligand" placeholder="Select Ligand" width="60%"/>
+          <button type="Submit" class="btn btn-primary" onclick="ShowPlot('ligand')">Show Plot</button>
+        </div>
+
+        <datalist id="select-pub">
+          {% for title in all_publications %}
+            <option value="{{title}}">{{title}}</li>
+          {% endfor %}
+        </datalist>
+
+        <datalist id="select-ligand">
+          {% for ligand in all_ligands %}
+            <option data-value="{{ligand.0}}" value="{{ligand.1}}"></li>
+          {% endfor %}
+        </datalist>
+
+      </div>
+
+      <div id='radarcontainer'></div>
+      </div>
+    </div>
+  {% endif %}
   </div>
 
 
@@ -148,6 +207,7 @@
 <script src='{% static 'home/js/d3.v3.min.js' %}'></script>
 <script src='{% static 'home/js/radarchart.js' %}'></script>
 <script src='{% static 'home/js/multi_line_chart.js' %}'></script>
+<script src='{% static 'home/js/dotPlot_jitter.js' %}'></script>
 
 <script>
   var spiders = {{ spider | safe }};
@@ -158,6 +218,7 @@
     title.setAttribute("class", "RadarTitle");
     parentDiv.appendChild(title);
     if(type==='ligand'){
+      $('#RadarPublicationsList').val('');
       var lig = document.getElementById('RadarLigandList').value;
       var pub_hash = document.querySelector("#select-ligand option[value='"+lig+"']").dataset.value;
       var header = document.createTextNode(lig);
@@ -171,6 +232,7 @@
         }
       }
     }else{
+      $('#RadarLigandList').val('');
       var pub = document.getElementById('RadarPublicationsList').value;
       var header = document.createTextNode(pub);
       title.appendChild(header);
@@ -188,15 +250,30 @@
   for(var propt in data){
 
     var result = data[propt]["Authors"].link("https://doi.org/" + propt);
-    var yTitle = 'DOI: ' + propt;
     var divID = 'PUB'+count;
     // Calling function
-    DrawMultiLineChart(data[propt]['Data'], 'divChartTrends', yTitle, keys[propt], divID, result);
-    count = count + 1
+    DrawMultiLineChart(data[propt]['Data'], 'divChartTrends', keys[propt], divID, result);
+    count = count + 1;
 
   };
-// Calling function
-  // DrawMultiLineChart(Data, 'divChartTrends', 'Publication xxx Data', keys, 'PUB1', 'Il titolo del grafico');
+
+  // d3.selectAll("circle.ARTIFICIAL").remove();
+
+</script>
+
+<script>
+
+var realData = {{ scatter | safe }};
+var colors = {{ colors | safe }};
+var legend = {{ scatter_legend | safe }};
+var count = 1;
+  for(var path in realData){
+    var name = 'Pathway' + parseInt(count);
+    // console.log(colors[path]);
+    DotScatter(realData[path], 'boxplotChart', name, colors, legend[path], path);
+    count = count + 1;
+  };
+
 </script>
 
 {% endblock %}

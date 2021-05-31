@@ -1,5 +1,5 @@
 
-function DrawMultiLineChart(Data, BaseDiv, RevenueName, Keys, ID, header) {
+function DrawMultiLineChart(Data, BaseDiv, Keys, ID, header) {
 
     var parentDiv = document.getElementById(BaseDiv)
     var title = document.createElement("div");
@@ -10,8 +10,19 @@ function DrawMultiLineChart(Data, BaseDiv, RevenueName, Keys, ID, header) {
       parentDiv.appendChild(nestedDiv);
 
     var margin = { top: 20, right: 80, bottom: 30, left: 50 },
-     width = 1000 - margin.left - margin.right,
+     width = 1120 - margin.left - margin.right,
      height = 350 - margin.top - margin.bottom;
+
+     function ResetOpacity(){
+       d3.selectAll('circle')
+         .style('opacity', 1);
+       d3.selectAll('rect')
+         .style('opacity', 1);
+       d3.selectAll('g.segment path')
+         .style('opacity', 1);
+     };
+
+    document.getElementById(ID).onclick = ResetOpacity;
 
     d3.select('#title_'+ID)
           .append("foreignObject")
@@ -44,12 +55,17 @@ function DrawMultiLineChart(Data, BaseDiv, RevenueName, Keys, ID, header) {
 
     // xData gives an array of distinct 'Pathways' for which trends chart is going to be made.
     var xData = Data[0].PathwaysData.map(function (d) { return d.Pathway; });
-    //console.log(xData);
+
+    var real_points = Data[0].PathwaysData.filter(function(d) {
+      return d.value[1] == "REAL"; });
+
+    var artificial_points = Data[0].PathwaysData.filter(function(d) {
+      return d.value[1] == "ARTIFICIAL"; });
 
     var line = d3.svg.line()
         //.interpolate('basis')
         .x(function (d) { return x(d.Pathway) + x.rangeBand() / 2; })
-        .y(function (d) { return y(d.value); });
+        .y(function (d) { return y(d.value[0]); });
 
     // document.BaseDiv.appendChild(div);
 
@@ -64,8 +80,8 @@ function DrawMultiLineChart(Data, BaseDiv, RevenueName, Keys, ID, header) {
 
     x.domain(xData);
 
-    var valueMax = d3.max(Data, function (r) { return d3.max(r.PathwaysData, function (d) { return d.value; }) });
-    var valueMin = d3.min(Data, function (r) { return d3.min(r.PathwaysData, function (d) { return d.value; }) });
+    var valueMax = d3.max(Data, function (r) { return d3.max(r.PathwaysData, function (d) { return d.value[0]; }) });
+    var valueMin = d3.min(Data, function (r) { return d3.min(r.PathwaysData, function (d) { return d.value[0]; }) });
     y.domain([valueMin, valueMax]);
 
     //Drawing X Axis
@@ -96,7 +112,7 @@ function DrawMultiLineChart(Data, BaseDiv, RevenueName, Keys, ID, header) {
             .attr('y', 6)
             .attr('dy', '.71em')
             .style('text-anchor', 'end')
-            .text(RevenueName);
+            .text('ΔLog(Emax/EC50)');
 
     // Drawing Lines for each segments
     var segment = svg.selectAll('.segment')
@@ -113,17 +129,42 @@ function DrawMultiLineChart(Data, BaseDiv, RevenueName, Keys, ID, header) {
 
     // Creating Dots on line
     segment.selectAll('dot')
-            .data(function (d) { return d.PathwaysData; })
-            .enter().append('circle')
+            .data(function (d) { return d.PathwaysData; } )
+            .enter()
+            .append('circle')
+            .filter(function(d) { return d.value[1] == 'REAL'})
+            .attr('class',function(d) { return d.value[1] })
             .attr('r', 5)
             .attr('cx', function (d) { return x(d.Pathway) + x.rangeBand() / 2; })
-            .attr('cy', function (d) { return y(d.value); })
+            .attr('cy', function (d) { return y(d.value[0]); })
             .style('stroke', 'black')
             .style('fill', function (d) { return color(this.parentNode.__data__.name); })
             .on('mouseover', mouseover)
             .on('mousemove', function (d) {
                 divToolTip
-                .text(this.parentNode.__data__.name +' : '+ d.value)
+                .text(d.value[0].toFixed(2))
+                .style('left', (d3.event.pageX + 15) + 'px')
+                .style('top', (d3.event.pageY - 10) + 'px');
+            })
+            .on('mouseout', mouseout);
+
+    // Creating Squares on line
+    segment.selectAll('dot')
+            .data(function (d) { return d.PathwaysData; } )
+            .enter()
+            .append('rect')
+            .filter(function(d) { return d.value[1] == 'ARTIFICIAL'})
+            .attr('class',function(d) { return d.value[1] })
+            .attr('x', function (d) { return x(d.Pathway) + x.rangeBand()/2 -5; })
+            .attr('y', function (d) { return y(d.value[0]) -5; })
+            .attr('width', 10)
+            .attr('height', 10)
+            .style('stroke', 'black')
+            .style('fill', 'black')
+            .on('mouseover', mouseover)
+            .on('mousemove', function (d) {
+                divToolTip
+                .text(d.value[0].toFixed(2))
                 .style('left', (d3.event.pageX + 15) + 'px')
                 .style('top', (d3.event.pageY - 10) + 'px');
             })
@@ -145,7 +186,7 @@ function DrawMultiLineChart(Data, BaseDiv, RevenueName, Keys, ID, header) {
             .style('opacity', 1e-6);
     }
 
-    if(Keys.length < 24){
+    if(Keys.length < 20){
 
       function position(d,i) {
         var c = 1;   // number of columns
@@ -178,6 +219,38 @@ function DrawMultiLineChart(Data, BaseDiv, RevenueName, Keys, ID, header) {
     }
 }
 
+    svg.append('g')
+       .attr('class', 'ytitle')
+       .attr("transform", position)
+          .append("text")
+            .attr("x", 6)
+            .attr("y", -5)
+            .text("Click on ligand name to highlight trends")
+            .attr("text-anchor", "left")
+            .attr("font-weight", "bold")
+            .style("alignment-baseline", "middle");
+
+    svg.append('g')
+       .attr('class', 'ytitle')
+       .attr("transform", position)
+          .append("text")
+            .attr("x", 18)
+            .attr("y", 15)
+            .text("Artificial data point")
+            .attr("text-anchor", "left")
+            .style("alignment-baseline", "middle");
+
+    svg.append('g')
+       .attr('class', 'ytitle')
+       .attr("transform", position)
+          .append("rect")
+            .attr("x", 6)
+            .attr("y", 10)
+            .attr('width', 9)
+            .attr('height', 9)
+            .style('stroke', 'black')
+            .style('fill', 'black');
+
 var legend = svg.selectAll("mylabels")
       .data(Keys)
       .enter()
@@ -186,7 +259,7 @@ var legend = svg.selectAll("mylabels")
 
 legend.append("text")
   .attr("x", 18)
-  .attr("y", 12)
+  .attr("y", 30)
   .style("fill", function(a){ return legendColor(a)})
   .text(function(d) { return d[1]; })
   .attr("id", function(d) { return d[0]})
@@ -196,17 +269,20 @@ legend.append("text")
       var tempId = d3.select(this).attr('id');
       d3.selectAll('g.segment circle')
          .style('opacity', 0.2);
+      d3.selectAll('g.segment rect')
+         .style('opacity', 0.2);
       d3.selectAll('g.segment path')
          .style('opacity', 0.2);
       d3.selectAll('g.segment.' + tempId + ' path')
-        .style('opacity', 1)
+        .style('opacity', 1);
       d3.selectAll('g.segment.' + tempId + ' circle')
-        .style('opacity', 1)
+        .style('opacity', 1);
+      d3.event.stopPropagation();
   });
 
 legend.append("circle")
   .attr("cx",10)
-  .attr("cy",10)
+  .attr("cy",28)
   .attr("r", 5)
   .style('stroke', 'black')
   .attr("fill",function(a) { return legendColor(a); })

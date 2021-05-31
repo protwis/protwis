@@ -83,8 +83,8 @@ function RadarChart(id, data, options, name) {
 		.append("circle")
 		.attr("class", "gridCircle")
 		.attr("r", function(d, i){return radius/cfg.levels*d;})
-		.style("fill", "#CDCDCD")
-		.style("stroke", "#CDCDCD")
+		.style("fill", "white")
+		.style("stroke", "lightgray")
 		.style("fill-opacity", cfg.opacityCircles)
 		.style("filter" , "url(#glow)");
 
@@ -97,7 +97,7 @@ function RadarChart(id, data, options, name) {
 	   .attr("y", function(d){return -d*radius/cfg.levels;})
 	   .attr("dy", "0.4em")
 	   .style("font-size", "10px")
-	   .attr("fill", "#737373")
+	   .attr("fill", "black")
 	   .text(function(d,i) { return (d); }); //ToDo: need to adjust this function
 
   //Creating the title label
