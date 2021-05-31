@@ -416,8 +416,8 @@ class BiasedRankOrder(TemplateView):
     page = 'rankorder'
     template_name = 'biased_rank_orders.html'
 
-    def create_rgb_color(self, string, int): # pseudo-randomization function
-        h = hash( string + str(int) ) # hash string and int together
+    def create_rgb_color(self, name, power): # pseudo-randomization function
+        h = hash( name + str(power) ) # hash string and int together
         if h < 0: # ensure positive number
             h = h * -1
         random.seed(h) # set the seed to use for randomization
@@ -429,7 +429,6 @@ class BiasedRankOrder(TemplateView):
         context = super().get_context_data(**kwargs)
 
         exclude_list = ["Full agonism","Agonism","Partial agonism","Medium activity"]
-        artificial_points = ["High activity","Low activity","No activity","Inverse agonism/antagonism","High activity (Potency and Emax)"]
         publications = list(AnalyzedAssay.objects.filter(
                         experiment__receptor=85,            # 85 is OPRM receptor
                         assay_description__isnull=True,     # in this mockup page starting point
