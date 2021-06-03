@@ -251,8 +251,9 @@
 
     var result = data[propt]["Authors"].link("https://doi.org/" + propt);
     var divID = 'PUB'+count;
+    var reference = data[propt]["Endogenous"]
     // Calling function
-    DrawMultiLineChart(data[propt]['Data'], 'divChartTrends', keys[propt], divID, result);
+    DrawMultiLineChart(data[propt]['Data'], 'divChartTrends', keys[propt], divID, result, reference);
     count = count + 1;
 
   };

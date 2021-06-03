@@ -1,10 +1,12 @@
 
-function DrawMultiLineChart(Data, BaseDiv, Keys, ID, header) {
+function DrawMultiLineChart(Data, BaseDiv, Keys, ID, header, reference) {
 
     var parentDiv = document.getElementById(BaseDiv)
+
     var title = document.createElement("div");
         title.setAttribute("id", "title_"+ID);
         parentDiv.appendChild(title);
+
     var nestedDiv = document.createElement("div");
       nestedDiv.setAttribute("id", ID);
       parentDiv.appendChild(nestedDiv);
@@ -109,10 +111,11 @@ function DrawMultiLineChart(Data, BaseDiv, Keys, ID, header) {
         .call(yAxis)
         .append('text')
             .attr('transform', 'rotate(-90)')
-            .attr('y', 6)
-            .attr('dy', '.71em')
+            .attr('y', -35)
+            .attr('x', -50)
+            .attr('dy', '.10em')
             .style('text-anchor', 'end')
-            .text('ΔLog(Emax/EC50)');
+            .text('ΔLog(Emax/EC50) relative to ' + reference);
 
     // Drawing Lines for each segments
     var segment = svg.selectAll('.segment')
@@ -186,46 +189,51 @@ function DrawMultiLineChart(Data, BaseDiv, Keys, ID, header) {
             .style('opacity', 1e-6);
     }
 
-    if(Keys.length < 20){
-
-      function position(d,i) {
-        var c = 1;   // number of columns
-        var h = Keys.length;  // height of each entry
-        var w = 90; // width of each entry (so you can position the next column)
-        var x = width + i % c * w - 130;
-        var y = i*13;
-        return "translate(" + x + "," + y + ")";
-      }
-
- }else if(Keys.length > 40){
-
-   function position(d,i) {
-     var c = 3;   // number of columns
-     var h = Keys.length;  // height of each entry
-     var w = 90; // width of each entry (so you can position the next column)
-     var x = width + i % c * w - 150;
-     var y = Math.floor(i / c)*13;
-     return "translate(" + x + "," + y + ")";
-   }
- }else{
-
+  if(Keys.length < 20){
     function position(d,i) {
-      var c = 2;   // number of columns
+      var c = 1;   // number of columns
       var h = Keys.length;  // height of each entry
       var w = 90; // width of each entry (so you can position the next column)
-      var x = width + i % c * w - 150;
-      var y = Math.floor(i / c)*13;
+      var x = width + i % c * w - 130;
+      var y = i*13;
       return "translate(" + x + "," + y + ")";
     }
-}
+   }else if(Keys.length > 40){
+     function position(d,i) {
+       var c = 3;   // number of columns
+       var h = Keys.length;  // height of each entry
+       var w = 110; // width of each entry (so you can position the next column)
+       var x = width + i % c * w - 150;
+       var y = Math.floor(i / c)*13;
+       return "translate(" + x + "," + y + ")";
+     }
+   }else{
+      function position(d,i) {
+        var c = 2;   // number of columns
+        var h = Keys.length;  // height of each entry
+        var w = 110; // width of each entry (so you can position the next column)
+        var x = width + i % c * w - 150;
+        var y = Math.floor(i / c)*13;
+        return "translate(" + x + "," + y + ")";
+      }
+  }
+
+// setting the legend positions depending on paths numbering
+  var path_nr = xData.length;
+
+  if(path_nr >= 3){
+    var xSeed = 6;
+  }else{
+    var xSeed = -76;
+  }
 
     svg.append('g')
        .attr('class', 'ytitle')
        .attr("transform", position)
           .append("text")
-            .attr("x", 6)
-            .attr("y", -5)
-            .text("Click on ligand name to highlight trends")
+            .attr("x", xSeed)
+            .attr("y", -10)
+            .text("Ligands tested for bias by")
             .attr("text-anchor", "left")
             .attr("font-weight", "bold")
             .style("alignment-baseline", "middle");
@@ -234,8 +242,31 @@ function DrawMultiLineChart(Data, BaseDiv, Keys, ID, header) {
        .attr('class', 'ytitle')
        .attr("transform", position)
           .append("text")
-            .attr("x", 18)
-            .attr("y", 15)
+            .attr("x", xSeed)
+            .attr("y", 4)
+            .text("decreasing ΔLog(Emax/EC50)")
+            .attr("text-anchor", "left")
+            .attr("font-weight", "bold")
+            .style("alignment-baseline", "middle");
+
+    svg.append('g')
+       .attr('class', 'ytitle')
+       .attr("transform", position)
+          .append("text")
+            .attr("x", xSeed)
+            .attr("y", 21)
+            .text("Endogenous ligand: " + reference + ' (0.0)')
+            .attr("text-anchor", "left")
+            .attr("font-weight", "bold")
+            .style("alignment-baseline", "middle");
+
+
+    svg.append('g')
+       .attr('class', 'ytitle')
+       .attr("transform", position)
+          .append("text")
+            .attr("x", xSeed+12)
+            .attr("y", 38)
             .text("Artificial data point")
             .attr("text-anchor", "left")
             .style("alignment-baseline", "middle");
@@ -244,8 +275,8 @@ function DrawMultiLineChart(Data, BaseDiv, Keys, ID, header) {
        .attr('class', 'ytitle')
        .attr("transform", position)
           .append("rect")
-            .attr("x", 6)
-            .attr("y", 10)
+            .attr("x", xSeed)
+            .attr("y", 33)
             .attr('width', 9)
             .attr('height', 9)
             .style('stroke', 'black')
@@ -257,14 +288,41 @@ var legend = svg.selectAll("mylabels")
       .append("g")
       .attr("transform", position);
 
-legend.append("text")
-  .attr("x", 18)
-  .attr("y", 30)
-  .style("fill", function(a){ return legendColor(a)})
-  .text(function(d) { return d[1]; })
-  .attr("id", function(d) { return d[0]})
-  .attr("text-anchor", "left")
-  .style("alignment-baseline", "middle")
+      legend.append("text")
+        .attr("x", xSeed+12)
+        .attr("y", 53)
+        .style("fill", function(a){ return legendColor(a)})
+        .text(function(d) {
+                if (d[1].length > 16) {
+                    return d[1].substring(0,16)+'...'
+                }else {
+                    return d[1]
+                }
+        })
+        .attr("id", function(d) { return d[0]})
+        .attr("text-anchor", "left")
+        .style("alignment-baseline", "middle")
+        .on('click', function (d) {
+            var tempId = d3.select(this).attr('id');
+            d3.selectAll('g.segment circle')
+               .style('opacity', 0.2);
+            d3.selectAll('g.segment rect')
+               .style('opacity', 0.2);
+            d3.selectAll('g.segment path')
+               .style('opacity', 0.2);
+            d3.selectAll('g.segment.' + tempId + ' path')
+              .style('opacity', 1);
+            d3.selectAll('g.segment.' + tempId + ' circle')
+              .style('opacity', 1);
+            d3.event.stopPropagation();
+        });
+
+legend.append("circle")
+  .attr("cx",xSeed+4)
+  .attr("cy",53)
+  .attr("r", 5)
+  .style('stroke', 'black')
+  .attr("fill",function(a) { return legendColor(a); })
   .on('click', function (d) {
       var tempId = d3.select(this).attr('id');
       d3.selectAll('g.segment circle')
@@ -279,11 +337,4 @@ legend.append("text")
         .style('opacity', 1);
       d3.event.stopPropagation();
   });
-
-legend.append("circle")
-  .attr("cx",10)
-  .attr("cy",28)
-  .attr("r", 5)
-  .style('stroke', 'black')
-  .attr("fill",function(a) { return legendColor(a); })
 }

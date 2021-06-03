@@ -1,9 +1,47 @@
-function DotScatter(data, BaseDiv, ID, colors, legend, header){
+function DotScatter(data, BaseDiv, ID, colors, legendData, header){
 
-  var margin = {
-      top: 20, right: 100, bottom: 100, left: 60
-    },
-    width = 1000 - margin.left - margin.right,
+  if(legendData.length < 24){
+    var margin = {top: 20, right: 200, bottom: 100, left: 60};
+    width = 1000 - margin.left - margin.right;
+    xSeed = margin.right;
+    var jitterWidth = 20;
+    function position(d,i) {
+      var c = 1;   // number of columns
+      var h = colors.length;  // height of each entry
+      var w = 90; // width of each entry (so you can position the next column)
+      var x = width + i % c * w - 130;
+      var y = i*13;
+      return "translate(" + x + "," + y + ")";
+    }
+
+  }else if(legendData.length > 40){
+    var margin = {top: 20, right: 365, bottom: 100, left: 60};
+    width = 1000 - margin.left - margin.right;
+    xSeed = 260;
+    var jitterWidth = 5;
+     function position(d,i) {
+       var c = 4;   // number of columns
+       var h = colors.length;  // height of each entry
+       var w = 80; // width of each entry (so you can position the next column)
+       var x = width + i % c * w - 150;
+       var y = Math.floor(i / c)*13;
+       return "translate(" + x + "," + y + ")";
+     }
+   }else{
+     var margin = {top: 20, right: 200, bottom: 100, left: 60};
+     width = 1000 - margin.left - margin.right;
+     xSeed = margin.right;
+     var jitterWidth = 15;
+      function position(d,i) {
+        var c = 2;   // number of columns
+        var h = colors.length;  // height of each entry
+        var w = 90; // width of each entry (so you can position the next column)
+        var x = width + i % c * w - 150;
+        var y = Math.floor(i / c)*13;
+        return "translate(" + x + "," + y + ")";
+      }
+  }
+
     height = 500 - margin.top - margin.bottom;
 
     var parentDiv = document.getElementById(BaseDiv)
@@ -13,6 +51,13 @@ function DotScatter(data, BaseDiv, ID, colors, legend, header){
     var nestedDiv = document.createElement("div");
       nestedDiv.setAttribute("id", ID);
       parentDiv.appendChild(nestedDiv);
+    var downloadDiv = document.createElement("div");
+      downloadDiv.setAttribute("id", "Download_"+ID);
+      parentDiv.appendChild(downloadDiv);
+
+    var button = document.createElement("BUTTON");
+        button.innerHTML = "Download";
+        downloadDiv.appendChild(button);
 
     function ResetOpacity(){
       d3.selectAll("circle")
@@ -27,7 +72,7 @@ function DotScatter(data, BaseDiv, ID, colors, legend, header){
             .attr("height", height)
             .attr("class", "title")
           .append("xhtml:body")
-            .style("font", "15px "Arial"")
+            .style("font", "15px 'Arial'")
             .style("padding-bottom", "3px")
             .style("padding-top", "15px")
             .html(header);
@@ -81,8 +126,6 @@ function DotScatter(data, BaseDiv, ID, colors, legend, header){
     .scale(y)
     .orient("left");
 
-  var jitterWidth = 10;
-
   main.append("g")
       .attr("class", "y axis")
       .call(yAxis)
@@ -111,7 +154,7 @@ function DotScatter(data, BaseDiv, ID, colors, legend, header){
   function mouseout() {
       divToolTipTest.transition()
           .duration(500)
-          .style("opacity", 1e-6);
+          .style("opacity", 0);
   }
 
   var g = main.append("svg:g");
@@ -121,9 +164,8 @@ function DotScatter(data, BaseDiv, ID, colors, legend, header){
     .enter().append("svg:circle")
     .attr("cx", function(d) {return x(d[0]) - jitterWidth/2 + Math.random()*jitterWidth ;})
     .attr("cy", function(d) {return y(d[1]);})
-    .attr("r", 8)
-    .attr("id", function(d) {return "LC" + d[3].replace(/\[|\]|\(|\)|\s/g,"");})
-    .style("stroke", "black")
+    .attr("r", 4)
+    .attr("id", function(d) {return "LC" + d[3].replace(/\[|\]|\(|\)|\s|\,/g,"");})
     .style("fill", function(d) {return d[2];})
     .on("mouseover", mouseover)
     .on("mousemove", function (d) {
@@ -142,37 +184,68 @@ function DotScatter(data, BaseDiv, ID, colors, legend, header){
         d3.event.stopPropagation();
     });
 
-    if(legend.length < 24){
+    chart.append('g')
+       .attr('class', 'ytitle')
+       .attr("transform", position)
+          .append("text")
+            .attr("x", xSeed - 5)
+            .attr("y", margin.top)
+            .text("Ligands with ΔΔLog(Emax/EC50) > 1.00")
+            .attr("text-anchor", "left")
+            .attr("font-weight", "bold")
+            .style("alignment-baseline", "middle");
 
-      function position(d,i) {
-        var c = 1;   // number of columns
-        var h = colors.length;  // height of each entry
-        var w = 90; // width of each entry (so you can position the next column)
-        var x = width + i % c * w - 130;
-        var y = i*13;
-        return "translate(" + x + "," + y + ")";
-      }
+    chart.append('g')
+       .attr('class', 'ytitle')
+       .attr("transform", position)
+          .append("text")
+            .attr("x", xSeed - 5)
+            .attr("y", margin.top + 10)
+            .text("sorted by decreasing value")
+            .attr("text-anchor", "left")
+            .attr("font-weight", "bold")
+            .style("alignment-baseline", "middle");
 
-    }else if(legend.length > 40){
+  var legend = chart.selectAll("mylabels")
+        .data(legendData)
+        .enter()
+        .append("g")
+        .attr("transform", position);
 
-       function position(d,i) {
-         var c = 4;   // number of columns
-         var h = colors.length;  // height of each entry
-         var w = 90; // width of each entry (so you can position the next column)
-         var x = width + i % c * w - 150;
-         var y = Math.floor(i / c)*13;
-         return "translate(" + x + "," + y + ")";
-       }
-     }else{
+    legend.append("text")
+      .attr("x", xSeed + 8)
+      .attr("y", margin.top + 30)
+      .style("fill", function(d){ return colors[d]})
+      .text(function(d) {
+              if (d.length > 9) {
+                  return d.substring(0,9)+'...'
+              }else {
+                  return d
+              }
+      })
+      .attr("text-anchor", "left")
+      .style("alignment-baseline", "middle")
+      .on("click", function (d) {
+          d3.selectAll("circle")
+             .style("opacity", 0.2);
+          d3.selectAll("circle#LC" + d.replace(/\[|\]|\(|\)|\s|\,/g,""))
+            .style("opacity", 1);
+          d3.event.stopPropagation();
+      });
 
-        function position(d,i) {
-          var c = 2;   // number of columns
-          var h = colors.length;  // height of each entry
-          var w = 90; // width of each entry (so you can position the next column)
-          var x = width + i % c * w - 150;
-          var y = Math.floor(i / c)*13;
-          return "translate(" + x + "," + y + ")";
-        }
-    }
+  legend.append("circle")
+    .attr("cx", xSeed)
+    .attr("cy", margin.top + 28)
+    .attr("r", 5)
+    .attr("id", function(d) {return "LC" + d.replace(/\[|\]|\(|\)|\s|\,/g,"");})
+    .style('stroke', 'black')
+    .attr("fill",function(d) { return colors[d] })
+    .on("click", function (d) {
+        d3.selectAll("circle")
+           .style("opacity", 0.2);
+        d3.selectAll("circle#LC" + d.replace(/\[|\]|\(|\)|\s|\,/g,""))
+          .style("opacity", 1);
+        d3.event.stopPropagation();
+    });
 
 }

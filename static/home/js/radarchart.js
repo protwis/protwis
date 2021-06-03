@@ -3,7 +3,7 @@ function RadarChart(id, data, options, name) {
 	 w: 200,				//Width of the circle
 	 h: 200,				//Height of the circle
 	 margin: {top: 50, right: 50, bottom: 50, left: 50}, //The margins of the SVG
-	 levels: 3,				//How many levels or inner circles should there be drawn
+	 levels: 5,				//How many levels or inner circles should there be drawn
 	 maxValue: 0, 			//What is the value that the biggest circle will represent
 	 labelFactor: 1.25, 	//How much farther than the radius of the outer circle should the labels be placed
 	 wrapWidth: 60, 		//The number of pixels after which a label needs to be given a new line
@@ -31,6 +31,7 @@ function RadarChart(id, data, options, name) {
     parentDiv.appendChild(nestedDiv);
 	//If the supplied maxValue is smaller than the actual one, replace by the max in the data
 	var maxValue = Math.max(cfg.maxValue, d3.max(data, function(i){return d3.max(i.map(function(o){return o.value;}))}));
+  // var minValue = Math.min(cfg.minValue, d3.min(data, function(i){return d3.min(i.map(function(o){return o.value;}))}));
 
 	var allAxis = (data[0].map(function(i, j){return i.axis})),	//Names of each axis
 		total = allAxis.length,					//The number of different axes
@@ -90,7 +91,7 @@ function RadarChart(id, data, options, name) {
 
 	//Text indicating at what % each level is
 	axisGrid.selectAll(".axisLabel")
-	   .data(d3.range(1,(cfg.levels+1)).reverse())
+	   .data(d3.range(-3,(cfg.levels+1)).reverse())
 	   .enter().append("text")
 	   .attr("class", "axisLabel")
 	   .attr("x", 4)

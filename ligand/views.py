@@ -486,6 +486,7 @@ class BiasedRankOrder(TemplateView):
                 full_data[result[4]] = {"Authors": authors,
                                         "Journal": result[6],
                                         "Year": result[5],
+                                        "Endogenous": result[9],
                                         "Ligand": [lig_name],
                                         "Qualitative": [result[10]],
                                         "Data": [{"name": hashed_lig_name,
@@ -495,8 +496,8 @@ class BiasedRankOrder(TemplateView):
                 SpiderOptions[authors] = {}
                 SpiderOptions[authors][hashed_lig_name] = {"Data":[[{'axis':result[0],
                                                                      'value':value}]],
-                                                             "Options": {'levels': 15,
-                                                                         'maxValue': 20,
+                                                             "Options": {'levels': 5,
+                                                                         'maxValue': 5,
                                                                          'roundStrokes': False,
                                                                          'title': lig_name}}
             if hashed_lig_name not in [d['name'] for d in full_data[result[4]]["Data"]]:
@@ -510,8 +511,8 @@ class BiasedRankOrder(TemplateView):
 
                 SpiderOptions[authors][hashed_lig_name] = {"Data":[[{'axis':result[0],
                                                                      'value':value}]],
-                                                             "Options": {'levels': 15,
-                                                                         'maxValue': 20,
+                                                             "Options": {'levels': 5,
+                                                                         'maxValue': 5,
                                                                          'roundStrokes': False,
                                                                          'title': lig_name}}
             else:
@@ -563,8 +564,6 @@ class BiasedRankOrder(TemplateView):
         keys = sorted(list(pathway_nr.keys()))[::-1]
         #starting from the highest value
         sorted_full_data = {}
-        test_data = {}
-        aaa = {}
         for value in keys:
             pairs = sorted(list(set(pathway_nr[value])), key=lambda x: x[1], reverse=True)
             for item in pairs:
@@ -613,27 +612,28 @@ class BiasedRankOrder(TemplateView):
 
         Colors = {}
         for data in exp_with_endogenous:
+            lig_name = data[4]
             try:
                 pub_name = data[8].split(',')[0] + ', et al.'
             except AttributeError:
                 pub_name = str(data[8]) + ', et al.'
+            if data[4][0].isdigit():
+                lig_name = "Ligand-"+data[4]
             if data[0] not in jitterPlot.keys():
                 jitterLegend[data[0]] = []
                 jitterPlot[data[0]] = []
             if pub_name not in jitterDict.keys():
                 jitterDict[pub_name] =  {}
-            if data[4] not in jitterDict[pub_name].keys():
-                jitterDict[pub_name][data[4]] = {}
+            if lig_name not in jitterDict[pub_name].keys():
+                jitterDict[pub_name][lig_name] = {}
             if data[1] == 1:
-                jitterDict[pub_name][data[4]]['1'] = round(math.log10(float(data[3])/float(data[2])) - reference ,3)
-
+                jitterDict[pub_name][lig_name]['1'] = round(math.log10(float(data[3])/float(data[2])) - reference ,3)
             if data[1] == 0:
-                # Colors[data[0]] = {}
-                jitterLegend[data[0]].append(data[4])
-                jitterDict[pub_name][data[4]]["Pathway"] = data[0]
-                jitterDict[pub_name][data[4]]['0'] = round(math.log10(float(data[3])/float(data[2])) - reference, 3)
+                # jitterLegend[data[0]].append(data[4])
+                jitterDict[pub_name][lig_name]["Pathway"] = data[0]
+                jitterDict[pub_name][lig_name]['0'] = round(math.log10(float(data[3])/float(data[2])) - reference, 3)
 
-            jitterLegend[data[0]] = list(set(jitterLegend[data[0]]))
+            # jitterLegend[data[0]] = list(set(jitterLegend[data[0]]))
 
         for pub in jitterDict.keys():
             for ligand in jitterDict[pub]:
@@ -642,12 +642,19 @@ class BiasedRankOrder(TemplateView):
                         color = '#%02x%02x%02x' % (self.create_rgb_color(ligand,0), self.create_rgb_color(ligand,1), self.create_rgb_color(ligand,2))
                         Colors[ligand] = color
                     jitterPlot[jitterDict[pub][ligand]["Pathway"]].append([pub, round(jitterDict[pub][ligand]['0']-jitterDict[pub][ligand]['1'],3), Colors[ligand], ligand])
+                    if round(jitterDict[pub][ligand]['0']-jitterDict[pub][ligand]['1'],3) >= 1.00:
+                        jitterLegend[jitterDict[pub][ligand]["Pathway"]].append(tuple((ligand, round(jitterDict[pub][ligand]['0']-jitterDict[pub][ligand]['1'],3))))
+
                     # if jitterDict[pub][ligand]['1'] > jitterDict[pub][ligand]['0']:
                     #     print(jitterDict[pub][ligand]["Pathway"] + ' ' + ligand + ' 0 ' + str(jitterDict[pub][ligand]['0']))
                     #     print(jitterDict[pub][ligand]["Pathway"] + ' ' + ligand + ' 1 ' + str(jitterDict[pub][ligand]['1']))
                 except KeyError:
                     continue
+                jitterLegend[jitterDict[pub][ligand]["Pathway"]] = sorted(list(set(jitterLegend[jitterDict[pub][ligand]["Pathway"]])), key=lambda x: x[1], reverse=True)
 
+        for key in jitterLegend.keys():
+            # [f(x) if condition else g(x) for x in sequence]
+            jitterLegend[key] = list(dict.fromkeys([name[0] for name in jitterLegend[key]]))
 
         context['page'] = self.page
         context['scatter_legend'] = json.dumps(jitterLegend)
