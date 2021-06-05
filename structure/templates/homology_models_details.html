@@ -295,7 +295,7 @@ canvas {
 
             var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( color_residues );
 
-            stage.loadFile( "view/{{modelname}}_{{model.state.slug}}", { ext: "pdb" }  ).then( function( o ){
+            stage.loadFile( "/structure/homology_models/view/{{modelname}}_{{model.state.slug}}", { ext: "pdb" }  ).then( function( o ){
                 o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId }
                 o.centerView();
             } );
@@ -352,7 +352,7 @@ canvas {
                 ClearSelection('targets');
                 AddToSelection('targets', 'structure_model', "{{model.protein.entry_name}}"+"_"+"{{model.state.name}}");
                 AddToSelection('targets', 'structure', "{{model.main_template}}");
-                
+
                 window.location.href = '/structure/selection_convert_model';
             });
             $('#superpose_btn').click(function () {
