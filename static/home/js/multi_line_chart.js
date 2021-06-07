@@ -15,7 +15,7 @@ function DrawMultiLineChart(Data, BaseDiv, Keys, ID, header, reference) {
      width = 1120 - margin.left - margin.right,
      height = 350 - margin.top - margin.bottom;
 
-     function ResetOpacity(){
+    function ResetOpacity(){
        d3.selectAll('circle')
          .style('opacity', 1);
        d3.selectAll('rect')

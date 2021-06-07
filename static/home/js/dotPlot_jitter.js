@@ -53,16 +53,58 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header){
       parentDiv.appendChild(nestedDiv);
     var downloadDiv = document.createElement("div");
       downloadDiv.setAttribute("id", "Download_"+ID);
+      downloadDiv.setAttribute("class", "btn-group");
       parentDiv.appendChild(downloadDiv);
 
     var button = document.createElement("BUTTON");
+        button.setAttribute("class", "btn btn-primary dropdown-toggle");
+        button.setAttribute("aria-haspopup", "true");
+        button.setAttribute("aria-expanded", "false");
+        button.setAttribute("data-toggle", "dropdown");
         button.innerHTML = "Download";
         downloadDiv.appendChild(button);
 
+    var optionList = document.createElement("ul");
+        optionList.setAttribute("class", "dropdown-menu");
+
+    var li_png = document.createElement("li");
+    var text_png = document.createElement("a");
+        text_png.textContent = "PNG";
+        text_png.setAttribute("href", "javascript:saveSvgAsPng(document.getElementById('"+ID+"').getElementsByTagName('svg')[0], '"+ header + "_" + ID +".png');");
+        li_png.appendChild(text_png);
+        optionList.appendChild(li_png);
+
+    var li_jpg = document.createElement("li");
+    var text_jpg = document.createElement("a");
+        text_jpg.textContent = "JPG";
+        text_jpg.setAttribute("href", "javascript:saveSvgAsJpg(document.getElementById('"+ID+"').getElementsByTagName('svg')[0], '"+ header + "_" + ID +".jpg');");
+        li_jpg.appendChild(text_jpg);
+        optionList.appendChild(li_jpg);
+
+    var li_tiff = document.createElement("li");
+    var text_tiff = document.createElement("a");
+        text_tiff.textContent = "TIFF";
+        text_tiff.setAttribute("href", "javascript:saveSvgAsTiff(document.getElementById('"+ID+"').getElementsByTagName('svg')[0], '"+ header + "_" + ID +".tiff');");
+        li_tiff.appendChild(text_tiff);
+        optionList.appendChild(li_tiff);
+
+    var li_svg = document.createElement("li");
+    var text_svg = document.createElement("a");
+        text_svg.textContent = "SVG";
+        text_svg.setAttribute("href", "javascript:saveSvg(document.getElementById('"+ID+"'), '"+ header + "_" + ID +".svg');");
+        li_svg.appendChild(text_svg);
+        optionList.appendChild(li_svg);
+
+        downloadDiv.appendChild(optionList);
+
     function ResetOpacity(){
-      d3.selectAll("circle")
-        .style("opacity", 1)
-    };
+       d3.selectAll('circle')
+         .style('opacity', 1);
+       d3.selectAll('rect')
+         .style('opacity', 1);
+       d3.selectAll('g.segment path')
+         .style('opacity', 1);
+     };
 
     document.getElementById(ID).onclick = ResetOpacity;
 
@@ -213,7 +255,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header){
         .attr("transform", position);
 
     legend.append("text")
-      .attr("x", xSeed + 8)
+      .attr("x", xSeed + 18)
       .attr("y", margin.top + 30)
       .style("fill", function(d){ return colors[d]})
       .text(function(d) {
@@ -234,7 +276,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header){
       });
 
   legend.append("circle")
-    .attr("cx", xSeed)
+    .attr("cx", xSeed + 10)
     .attr("cy", margin.top + 28)
     .attr("r", 5)
     .attr("id", function(d) {return "LC" + d.replace(/\[|\]|\(|\)|\s|\,/g,"");})

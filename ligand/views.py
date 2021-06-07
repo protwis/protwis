@@ -428,27 +428,28 @@ class BiasedRankOrder(TemplateView):
 
         context = super().get_context_data(**kwargs)
 
-        exclude_list = ["Full agonism","Agonism","Partial agonism","Medium activity"]
+        upgrade_value = ["High activity", "High activity (Potency and Emax)", "Full agonism"]
+        downgrade_value = ["Low activity", "No activity", "Inverse agonism/antagonism"]
+        exclude_list = ["Agonism","Partial agonism","Medium activity"] #full agonism should be removed
         publications = list(AnalyzedAssay.objects.filter(
+                        family__isnull=False,
                         experiment__receptor=85,            # 85 is OPRM receptor
                         assay_description__isnull=True,     # in this mockup page starting point
-                        # quantitive_activity__isnull=False,
-                        # quantitive_efficacy__isnull=False,
                         experiment__source='different_family').exclude(
                         qualitative_activity__in=exclude_list,
-                        # quantitive_efficacy=0.0,
                         ).values_list(
                         "family", #pathway                                  0
-                        "quantitive_activity", #EC50                        1
-                        "quantitive_efficacy", #Emax                        2
-                        "experiment__ligand__name", #name                   3
-                        "experiment__publication__web_link__index", # DOI   4
-                        "experiment__publication__year", #year              5
-                        "experiment__publication__journal__name", #journal  6
-                        "experiment__publication__authors",  #authors       7
-                        "experiment__ligand",    #ligand_id for hash        8
-                        "experiment__endogenous_ligand__name", #endogenous  9
-                        "qualitative_activity"  #activity values           10
+                        "experiment__ligand__name", #name                   3 -> 1
+                        "experiment__publication__web_link__index", # DOI   4 -> 2
+                        "experiment__publication__year", #year              5 -> 3
+                        "experiment__publication__journal__name", #journal  6 -> 4
+                        "experiment__publication__authors",  #authors       7 -> 5
+                        "experiment__ligand",    #ligand_id for hash        8 -> 6
+                        "experiment__endogenous_ligand__name", #endogenous  9 -> 7
+                        "qualitative_activity",  #activity values          10 -> 8
+                        "log_bias_factor_a", #ΔLog(Emax/EC50)              11 -> 9
+                        "log_bias_factor",  #ΔΔLog(Emax/EC50)              12 -> 10
+                        "order_no"  #ranking                               13 -> 11
                         ).distinct()) #check
 
         list_of_ligands = []
@@ -456,39 +457,60 @@ class BiasedRankOrder(TemplateView):
         full_data = {}
         full_ligands = {}
         SpiderOptions = {}
-        #reference value now is hardcoded because
-        #data is not available in this version
-        #of the DataBase. Waiting for Alibek update
-        reference = round(math.log10(float(88)/float(5.26E-08)),3)
+        jitterDict = {}
+        jitterPlot = {}
+        jitterLegend = {}
+        Colors = {}
+        pathway_nr = {}
 
         for result in publications:
             #fixing ligand name (hash hash baby)
-            lig_name = result[3]
-            if result[3][0].isdigit():
-                lig_name = "Ligand-"+result[3]
+            lig_name = result[1]
+            if result[1][0].isdigit():
+                lig_name = "Ligand-"+result[1]
 
-            hashed_lig_name = 'L' + hashlib.md5((str(result[8])).encode('utf-8')).hexdigest()
-            if result[7] == None:
-                authors = "Authors not listed, " + '(' + str(result[5]) + ')'
+            hashed_lig_name = 'L' + hashlib.md5((str(result[6])).encode('utf-8')).hexdigest()
+            if result[5] == None:
+                authors = "Authors not listed, " + '(' + str(result[3]) + ')'
+                jitterAuthors = "Authors not listed, " + '(' + str(result[3]) + ')'
             else:
-                authors = result[7].split(',')[0] + ', et al., ' + str(result[6]) + ', (' + str(result[5]) + ')'
+                authors = result[5].split(',')[0] + ', et al., ' + str(result[4]) + ', (' + str(result[3]) + ')'
+                jitterAuthors = result[5].split(',')[0] + ', et al.'
+
 
             list_of_ligands.append(tuple((hashed_lig_name, lig_name)))
             list_of_publications.append(authors)
             #start parsing the data to create the big dictionary
-            if (result[2] == 0) or (result[1] == None):
+            if result[9] == None:
                 value = 0
             else:
-                value = round(math.log10(float(result[2])/float(result[1])) - reference, 3)
+                value = float(result[9])
 
-            if result[4] not in full_data.keys():
-                full_ligands[result[4]] = []
-                full_data[result[4]] = {"Authors": authors,
-                                        "Journal": result[6],
-                                        "Year": result[5],
-                                        "Endogenous": result[9],
+            if result[0] not in jitterPlot.keys():
+                jitterLegend[result[0]] = []
+                jitterPlot[result[0]] = []
+
+            if jitterAuthors not in jitterDict.keys():
+                jitterDict[jitterAuthors] =  {}
+
+            if lig_name not in jitterDict[jitterAuthors].keys():
+                jitterDict[jitterAuthors][lig_name] = {}
+
+            if result[11] == 1:
+                jitterDict[jitterAuthors][lig_name]['1'] = value
+
+            if result[11] == 0:
+                jitterDict[jitterAuthors][lig_name]["Pathway"] = result[0]
+                jitterDict[jitterAuthors][lig_name]['0'] = value
+
+            if result[2] not in full_data.keys():
+                full_ligands[result[2]] = []
+                full_data[result[2]] = {"Authors": authors,
+                                        "Journal": result[4],
+                                        "Year": result[3],
+                                        "Endogenous": result[7],
                                         "Ligand": [lig_name],
-                                        "Qualitative": [result[10]],
+                                        "Qualitative": [result[8]],
                                         "Data": [{"name": hashed_lig_name,
                                                  "PathwaysData":
                                                     [{"Pathway": result[0],
@@ -500,10 +522,10 @@ class BiasedRankOrder(TemplateView):
                                                                          'maxValue': 5,
                                                                          'roundStrokes': False,
                                                                          'title': lig_name}}
-            if hashed_lig_name not in [d['name'] for d in full_data[result[4]]["Data"]]:
-                full_data[result[4]]["Ligand"].append(lig_name)
-                full_data[result[4]]["Qualitative"].append(result[10])
-                full_data[result[4]]["Data"].append(
+            if hashed_lig_name not in [d['name'] for d in full_data[result[2]]["Data"]]:
+                full_data[result[2]]["Ligand"].append(lig_name)
+                full_data[result[2]]["Qualitative"].append(result[8])
+                full_data[result[2]]["Data"].append(
                                             {"name": hashed_lig_name,
                                              "PathwaysData":
                                                 [{"Pathway": result[0],
@@ -516,9 +538,9 @@ class BiasedRankOrder(TemplateView):
                                                                          'roundStrokes': False,
                                                                          'title': lig_name}}
             else:
-                ID = [d['name'] for d in full_data[result[4]]["Data"]].index(hashed_lig_name)
-                if result[0] not in [d["Pathway"] for d in full_data[result[4]]["Data"][ID]["PathwaysData"]]:
-                    full_data[result[4]]["Data"][ID]["PathwaysData"].append(
+                ID = [d['name'] for d in full_data[result[2]]["Data"]].index(hashed_lig_name)
+                if result[0] not in [d["Pathway"] for d in full_data[result[2]]["Data"][ID]["PathwaysData"]]:
+                    full_data[result[2]]["Data"][ID]["PathwaysData"].append(
                                             {"Pathway": result[0],
                                              "value": [value, "REAL"]})
                     SpiderOptions[authors][hashed_lig_name]["Data"][0].append({'axis':result[0],
@@ -535,13 +557,13 @@ class BiasedRankOrder(TemplateView):
                 to_fix = [subdict['value'][0] for subdict in name['PathwaysData']]
                 indices = [i for i, x in enumerate(to_fix) if x == 0]
                 quality = full_data[item]["Qualitative"][full_data[item]["Data"].index(name)]
-                if quality.startswith('H'):
+                if quality in upgrade_value:
                     try:
                         for i in indices:
                             name["PathwaysData"][i]["value"] = [MAX,"ARTIFICIAL"]
                     except ValueError:
                         continue
-                if (quality != '') and not (quality.startswith('H')):
+                if quality in downgrade_value:
                     try:
                         for i in indices:
                             name["PathwaysData"][i]["value"] = [MIN,"ARTIFICIAL"]
@@ -551,7 +573,6 @@ class BiasedRankOrder(TemplateView):
         #The big dictionary is created, now it needs to be ordered
         #the publication with more pathway (or tied) should be first
         #reordering on the fly on a new dict?
-        pathway_nr = {}
         #this set a temp dict with the "ranking" based on
         #available total nr of pathways and the keys of the og dict
         #From this, reorder the original one
@@ -584,57 +605,6 @@ class BiasedRankOrder(TemplateView):
         #now the sorted dict is done, we can clear cache the og one
         del full_data
 
-        exp_with_endogenous = list(AnalyzedAssay.objects.filter(
-                        experiment__receptor=85,            # 85 is OPRM receptor
-                        assay_description__isnull=True,     # in this mockup page starting point
-                        quantitive_activity__isnull=False,
-                        quantitive_efficacy__isnull=False,
-                        family__isnull=False,
-                        experiment__source='different_family').exclude(
-                        quantitive_efficacy=0.0,
-                        ).values_list(
-                        "family",   #pathway                                0
-                        "order_no", #ranking                                1
-                        "quantitive_activity", #EC50                        2
-                        "quantitive_efficacy", #Emax                        3
-                        "experiment__ligand__name", #name                   4
-                        "experiment__publication__web_link__index", # DOI   5
-                        "experiment__publication__year", #year              6
-                        "experiment__publication__journal__name", #journal  7
-                        "experiment__publication__authors",  #authors       8
-                        "experiment__ligand",    #ligand_id for hash        9
-                        "experiment__endogenous_ligand__name" #endogenous  10
-                        ).distinct())
-
-        jitterDict = {}
-        jitterPlot = {}
-        jitterLegend = {}
-
-        Colors = {}
-        for data in exp_with_endogenous:
-            lig_name = data[4]
-            try:
-                pub_name = data[8].split(',')[0] + ', et al.'
-            except AttributeError:
-                pub_name = str(data[8]) + ', et al.'
-            if data[4][0].isdigit():
-                lig_name = "Ligand-"+data[4]
-            if data[0] not in jitterPlot.keys():
-                jitterLegend[data[0]] = []
-                jitterPlot[data[0]] = []
-            if pub_name not in jitterDict.keys():
-                jitterDict[pub_name] =  {}
-            if lig_name not in jitterDict[pub_name].keys():
-                jitterDict[pub_name][lig_name] = {}
-            if data[1] == 1:
-                jitterDict[pub_name][lig_name]['1'] = round(math.log10(float(data[3])/float(data[2])) - reference ,3)
-            if data[1] == 0:
-                # jitterLegend[data[0]].append(data[4])
-                jitterDict[pub_name][lig_name]["Pathway"] = data[0]
-                jitterDict[pub_name][lig_name]['0'] = round(math.log10(float(data[3])/float(data[2])) - reference, 3)
-
-            # jitterLegend[data[0]] = list(set(jitterLegend[data[0]]))
-
         for pub in jitterDict.keys():
             for ligand in jitterDict[pub]:
                 try:
@@ -644,17 +614,15 @@ class BiasedRankOrder(TemplateView):
                     jitterPlot[jitterDict[pub][ligand]["Pathway"]].append([pub, round(jitterDict[pub][ligand]['0']-jitterDict[pub][ligand]['1'],3), Colors[ligand], ligand])
                     if round(jitterDict[pub][ligand]['0']-jitterDict[pub][ligand]['1'],3) >= 1.00:
                         jitterLegend[jitterDict[pub][ligand]["Pathway"]].append(tuple((ligand, round(jitterDict[pub][ligand]['0']-jitterDict[pub][ligand]['1'],3))))
-
-                    # if jitterDict[pub][ligand]['1'] > jitterDict[pub][ligand]['0']:
-                    #     print(jitterDict[pub][ligand]["Pathway"] + ' ' + ligand + ' 0 ' + str(jitterDict[pub][ligand]['0']))
-                    #     print(jitterDict[pub][ligand]["Pathway"] + ' ' + ligand + ' 1 ' + str(jitterDict[pub][ligand]['1']))
                 except KeyError:
                     continue
                 jitterLegend[jitterDict[pub][ligand]["Pathway"]] = sorted(list(set(jitterLegend[jitterDict[pub][ligand]["Pathway"]])), key=lambda x: x[1], reverse=True)
 
+        jitterPlot = {k: v for k, v in jitterPlot.items() if len(v) is not 0}
+
         for key in jitterLegend.keys():
-            # [f(x) if condition else g(x) for x in sequence]
             jitterLegend[key] = list(dict.fromkeys([name[0] for name in jitterLegend[key]]))
+
 
         context['page'] = self.page
         context['scatter_legend'] = json.dumps(jitterLegend)
