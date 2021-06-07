@@ -618,7 +618,7 @@ class BiasedRankOrder(TemplateView):
                     continue
                 jitterLegend[jitterDict[pub][ligand]["Pathway"]] = sorted(list(set(jitterLegend[jitterDict[pub][ligand]["Pathway"]])), key=lambda x: x[1], reverse=True)
 
-        jitterPlot = {k: v for k, v in jitterPlot.items() if len(v) is not 0}
+        jitterPlot = {k: v for k, v in jitterPlot.items() if len(v) > 0}
 
         for key in jitterLegend.keys():
             jitterLegend[key] = list(dict.fromkeys([name[0] for name in jitterLegend[key]]))

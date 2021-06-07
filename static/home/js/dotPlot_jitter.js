@@ -98,12 +98,12 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header){
         downloadDiv.appendChild(optionList);
 
     function ResetOpacity(){
-       d3.selectAll('circle')
-         .style('opacity', 1);
-       d3.selectAll('rect')
-         .style('opacity', 1);
-       d3.selectAll('g.segment path')
-         .style('opacity', 1);
+       d3.selectAll("circle")
+         .style("opacity", 1);
+       d3.selectAll("rect")
+         .style("opacity", 1);
+       d3.selectAll("g.segment path")
+         .style("opacity", 1);
      };
 
     document.getElementById(ID).onclick = ResetOpacity;
