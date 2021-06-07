@@ -331,6 +331,8 @@ class Command(BaseBuild):
         elif structure.pdb_code.index=='7D68':
             for i in range(395,456):
                 deletions.remove(i)
+        elif structure.pdb_code.index=='7EB2':
+            deletions, removed = [], []
 
         if self.debug:
             print('Deletions: ', deletions)
@@ -524,6 +526,8 @@ class Command(BaseBuild):
         elif structure.pdb_code.index=='6DO1':
             temp_seq = temp_seq[:228]+temp_seq[230:]
             ref_seq = ref_seq[:225]+ref_seq[227:]
+        elif structure.pdb_code.index=='7KH0':
+            temp_seq = temp_seq[:240]+'S'+temp_seq[240:262]+temp_seq[263:]
 
         for i, r in enumerate(ref_seq, 1): #loop over alignment to create lookups (track pos)
             if self.debug:
