@@ -423,7 +423,7 @@ class Command(BaseBuild):
                         content[name]['article_quantity'] = i[1]['article_quantity']
                         content[name]['labs_quantity'] = i[1]['labs_quantity']
                         content[name]['assay_list'].append(assay)
-                        # TODO: get endogenous as reference                    
+                        # TODO: get endogenous as reference
 
                         content[name]['reference_ligand'] = None
                         content[name]['ligand_source_id'] = assay['ligand_source_id']

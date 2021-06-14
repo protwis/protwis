@@ -1010,19 +1010,19 @@ class BiasBrowser(ListView):
             protein_list.append(1)
         assay_qs = AnalyzedAssay.objects.filter(
             order_no__lte=5,
-            assay_description='sub_tested_assays',
+            assay_description='tested_assays',
             # assay_description__isnull=True,
             experiment=OuterRef('pk'),
         ).order_by('order_no')
 
         ref_assay_qs = AnalyzedAssay.objects.filter(
             order_no__lte=5,
-            assay_description='sub_endogenous',
+            assay_description='endogenous',
             experiment=OuterRef('pk'),
         ).order_by('order_no')
 
         queryset = AnalyzedExperiment.objects.filter(
-            source='sub_different_family',
+            source='different_family',
             # receptor__in=protein_list,
         ).prefetch_related(
             'analyzed_data', 'ligand', 'ligand__reference_ligand', 'reference_ligand',
@@ -1180,24 +1180,6 @@ class BiasBrowser(ListView):
             reference_a_p3=Subquery(assay_qs.values('log_bias_factor_a')[2:3]),
             reference_a_p4=Subquery(assay_qs.values('log_bias_factor_a')[3:4]),
             reference_a_p5=Subquery(assay_qs.values('log_bias_factor_a')[4:5]),
-
-            reference_b_p1=Subquery(assay_qs.values('log_bias_factor_b')[:1]),
-            reference_b_p2=Subquery(assay_qs.values('log_bias_factor_b')[1:2]),
-            reference_b_p3=Subquery(assay_qs.values('log_bias_factor_b')[2:3]),
-            reference_b_p4=Subquery(assay_qs.values('log_bias_factor_b')[3:4]),
-            reference_b_p5=Subquery(assay_qs.values('log_bias_factor_b')[4:5]),
-
-            reference_c_p1=Subquery(assay_qs.values('log_bias_factor_c')[:1]),
-            reference_c_p2=Subquery(assay_qs.values('log_bias_factor_c')[1:2]),
-            reference_c_p3=Subquery(assay_qs.values('log_bias_factor_c')[2:3]),
-            reference_c_p4=Subquery(assay_qs.values('log_bias_factor_c')[3:4]),
-            reference_c_p5=Subquery(assay_qs.values('log_bias_factor_c')[4:5]),
-
-            reference_d_p1=Subquery(assay_qs.values('log_bias_factor_d')[:1]),
-            reference_d_p2=Subquery(assay_qs.values('log_bias_factor_d')[1:2]),
-            reference_d_p3=Subquery(assay_qs.values('log_bias_factor_d')[2:3]),
-            reference_d_p4=Subquery(assay_qs.values('log_bias_factor_d')[3:4]),
-            reference_d_p5=Subquery(assay_qs.values('log_bias_factor_d')[4:5]),
         )
         return queryset
 

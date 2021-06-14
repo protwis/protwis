@@ -296,7 +296,7 @@ class Command(BaseBuild):
             if(len(i[1]['reference_assays_list']))>0:
                 for assay in i[1]['assay_list']:
                     name = str(i[1]['publication'].id) + \
-                        '/'+ str(assay['ligand'].id) + '/' + str(i[1]['receptor'].id)  + i[1]['auxiliary_protein']
+                        '/'+ str(assay['ligand'].id) + '/' + str(i[1]['receptor'].id)
 
                     if name in content:
                         content[name]['assay_list'].append(assay)
@@ -713,9 +713,10 @@ class Command(BaseBuild):
                 experiment_entry.save()
                 for ex in i[1]['biasdata']:
                     try:
+
                         emax_ligand = ex['emax_reference_ligand']
                         experiment_assay = AnalyzedAssay(experiment=experiment_entry,
-                                                        assay_description='backup_assays',
+                                                        assay_description='tested_assays',
                                                          family=ex['family'],
                                                          order_no=ex['order_no'],
                                                          signalling_protein=ex['signalling_protein'],
@@ -750,6 +751,7 @@ class Command(BaseBuild):
                                                          )
                         experiment_assay.save()
                     except:
+
                         self.logger.info('get_rid_of_gprot')
 
                 for ex in i[1]['reference_assays_list']:
