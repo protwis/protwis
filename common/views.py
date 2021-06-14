@@ -229,11 +229,7 @@ def getTargetTable():
 
     return data_table
 
-####################################################################################
-########## CREATING A NEW FUNCTION FOR RETRIEVING REFERENCE TABLE ##################
-####################################################################################
-
-def getReferenceTable():
+def getReferenceTable(filtering):
     # data_table = cache.get("reference_table")
     data_table = None
 
@@ -241,8 +237,8 @@ def getReferenceTable():
         #get all the proteins that are in ligandanalyzedassay
         biased_proteins = list(AnalyzedAssay.objects.filter(
                         family__isnull=False,
-                        assay_description__isnull=True,
-                        experiment__source="different_family").values_list(
+                        # assay_description__isnull=True,
+                        experiment__source=filtering).values_list(
                         "experiment__receptor__entry_name").distinct())
 
         biased_entry_names = [b[0] for b in biased_proteins]
@@ -349,15 +345,6 @@ def getReferenceTable():
 
     return data_table
 
-####################################################################################
-####################################################################################
-####################################################################################
-
-
-####################################################################################
-############ CREATING A NEW CLASS FOR THE REFERENCE SELECTION ######################
-####################################################################################
-
 class AbsReferenceSelectionTable(TemplateView):
 
     """An abstract class for the table reference selection page used in many apps.
@@ -406,7 +393,6 @@ class AbsReferenceSelectionTable(TemplateView):
 
     # proteins and families
     #try - except block prevents manage.py from crashing - circular dependencies between protein - common
-    #IS THIS BLOCK RELEVANT?
     try:
         if ProteinFamily.objects.filter(slug=default_slug).exists():
             ppf = ProteinFamily.objects.get(slug=default_slug)
@@ -419,7 +405,7 @@ class AbsReferenceSelectionTable(TemplateView):
             del ppf
 
             # Load the target table data
-            table_data = getReferenceTable()
+            table_data = getReferenceTable('different_family')
     except Exception as e:
         pass
 
@@ -470,10 +456,6 @@ class AbsReferenceSelectionTable(TemplateView):
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
         return context
-
-####################################################################################
-####################################################################################
-####################################################################################
 
 class AbsTargetSelectionTable(TemplateView):
     """An abstract class for the tablew target selection page used in many apps.

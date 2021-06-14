@@ -32,12 +32,12 @@ function RadarChart(id, data, options, name) {
     parentDiv.appendChild(nestedDiv);
 	//If the supplied maxValue is smaller than the actual one, replace by the max in the data
 	var maxValue = Math.max(cfg.maxValue, d3.max(data, function(i){return d3.max(i.map(function(o){return o.value;}))}));
-  var minValue = Math.round(Math.min(cfg.minValue, d3.min(data, function(i){return d3.min(i.map(function(o){return o.value;}))})));
+  var minValue = Math.floor(Math.min(cfg.minValue, d3.min(data, function(i){return d3.min(i.map(function(o){return o.value;}))})));
 
 	cfg.levels = Math.abs(maxValue) + Math.abs(minValue);
 
 	var check = Math.abs(minValue);
-	console.log(cfg.title);
+
 	var allAxis = (data[0].map(function(i, j){return i.axis})),	//Names of each axis
 		total = allAxis.length,					//The number of different axes
 		radius = Math.min(cfg.w/2, cfg.h/2), 	//Radius of the outermost circle
@@ -47,7 +47,7 @@ function RadarChart(id, data, options, name) {
 	//Scale for the radius
 	var rScale = d3.scale.linear()
 		.range([0, radius])
-		.domain([0, maxValue]);
+		.domain([minValue, maxValue]);
 
 	/////////////////////////////////////////////////////////
 	//////////// Create the container SVG and g /////////////
@@ -142,8 +142,8 @@ function RadarChart(id, data, options, name) {
 		.attr("x2", function(d, i){ return rScale(maxValue*1.1) * Math.cos(angleSlice*i - Math.PI/2); })
 		.attr("y2", function(d, i){ return rScale(maxValue*1.1) * Math.sin(angleSlice*i - Math.PI/2); })
 		.attr("class", "line")
-		.style("stroke", "white")
-		.style("stroke-width", "2px");
+		.style("stroke", "lightgrey")
+		.style("stroke-width", "1px");
 
 	//Append the labels at each axis
 	axis.append("text")
@@ -230,7 +230,6 @@ function RadarChart(id, data, options, name) {
 		.enter().append("g")
 		.attr("class", "radarCircleWrapper");
 
-		console.log(data);
 	//Append a set of invisible circles on top for the mouseover pop-up
 	blobCircleWrapper.selectAll(".radarInvisibleCircle")
 		.data(function(d,i) { return d; })

@@ -54,15 +54,16 @@
     }
     div.tooltip {
         position: absolute;
-        text-align: center;
-        width: 120px;
-        height: 15px;
-        font: 12px sans-serif;
+        text-align: left;
+        width: 240px; /*120*/
+        height: 50px; /*15*/
+        font: 10px sans-serif;
         background: white;
         border: solid 1px #aaa;
         border-radius: 8px;
         pointer-events: none;
     }
+
     .RadarTitle{
         font-family:    Arial;
         font-size:      20px;
@@ -138,7 +139,30 @@
 
       </div>
 
-      <div id='radarcontainer'></div>
+      <div id='radarcontainer' style='display: none;'></div>
+      <div id='mergedcontainer'></div>
+
+      <div class="btn-group">
+          <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                  aria-haspopup="true" aria-expanded="false">
+              <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu">
+              <li>
+                  <a href="javascript:saveSvgAsPng(document.getElementById('merged'), 'radar_plots.png');">PNG</a>
+              </li>
+              <li>
+                  <a href="javascript:saveSvgAsJpg(document.getElementById('merged'), 'radar_plots.jpg');">JPG</a>
+              </li>
+              <li>
+                  <a href="javascript:saveSvgAsTiff(document.getElementById('merged'), 'radar_plots.tiff');">TIFF</a>
+              </li>
+              <li>
+                  <a href="javascript:saveSvg(document.getElementById('merged'), 'radar_plots.svg');">SVG</a>
+              </li>
+          </ul>
+      </div>
+
       </div>
     </div>
   {% else %}
@@ -194,7 +218,31 @@
 
       </div>
 
-      <div id='radarcontainer'></div>
+      <div id='radarcontainer' style='display: none;'></div>
+      <div id='mergedcontainer'></div>
+
+      <div class="btn-group">
+          <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                  aria-haspopup="true" aria-expanded="false">
+              <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu">
+              <li>
+                  <a href="javascript:saveSvgAsPng(document.getElementById('merged'), 'radar_plots.png');">PNG</a>
+              </li>
+              <li>
+                  <a href="javascript:saveSvgAsJpg(document.getElementById('merged'), 'radar_plots.jpg');">JPG</a>
+              </li>
+              <li>
+                  <a href="javascript:saveSvgAsTiff(document.getElementById('merged'), 'radar_plots.tiff');">TIFF</a>
+              </li>
+              <li>
+                  <a href="javascript:saveSvg(document.getElementById('merged'), 'radar_plots.svg');">SVG</a>
+              </li>
+          </ul>
+      </div>
+
+      </div>
       </div>
     </div>
   {% endif %}
@@ -212,11 +260,15 @@
 <script>
   var spiders = {{ spider | safe }};
   function ShowPlot(type){
+    var svgNS = "http://www.w3.org/2000/svg";
     var parentDiv = document.getElementById("radarcontainer");
+    var mergedDiv = document.getElementById("mergedcontainer");
     parentDiv.querySelectorAll('*').forEach(n => n.remove());
+    mergedDiv.querySelectorAll('*').forEach(n => n.remove());
     var title = document.createElement("div");
     title.setAttribute("class", "RadarTitle");
     parentDiv.appendChild(title);
+    var ids = new Array();
     if(type==='ligand'){
       $('#RadarPublicationsList').val('');
       var lig = document.getElementById('RadarLigandList').value;
@@ -224,10 +276,11 @@
       var header = document.createTextNode(lig);
       title.appendChild(header);
       for(var pub in spiders){
+        name = pub.replace(/\[|\]|\(|\)|\s|\,|\'|\./g,"")
         for(var web in spiders[pub]){
           if(web === pub_hash){
             spiders[pub][web]["Options"]["title"] = pub;
-            RadarChart('radarcontainer', spiders[pub][web]["Data"], spiders[pub][web]["Options"], "radar"+web);
+            RadarChart('radarcontainer', spiders[pub][web]["Data"], spiders[pub][web]["Options"], "radar"+name);
           }
         }
       }
@@ -239,6 +292,51 @@
       for(var web in spiders[pub]){
         RadarChart('radarcontainer', spiders[pub][web]["Data"], spiders[pub][web]["Options"], "radar"+web);
       }
+    }
+
+    // create a merged-div where we are going to merge the svgs
+    var merged = document.createElement('div');
+    merged.setAttribute('id', 'merged-div');
+    mergedDiv.appendChild(merged);
+
+    $('#radarcontainer > div').map(function() {
+      ids.push(this.id);
+    });
+
+    var mergedHeight = 300 * Math.round(ids.length/4);
+    if(ids.length > 3){
+      var mergedWidth = 900;
+    } else {
+      var mergedWidth = 300 * (ids.length - 1);
+    };
+
+    // createElementNS for svg
+    var mergedSvg = document.createElementNS(svgNS, 'svg');
+    mergedSvg.setAttribute('id', 'merged');
+    // keep the viewBox of the chart
+    mergedSvg.setAttribute('width', mergedWidth);
+    mergedSvg.setAttribute('height', mergedHeight);
+    merged.appendChild(mergedSvg);
+
+    var xMultiply = -1;
+    var yMultiply = 1;
+    for (let i = 1; i < ids.length; i++){
+      if (xMultiply < 2){
+        xMultiply = xMultiply + 1;
+      } else {
+        xMultiply = 0;
+        yMultiply = yMultiply + 1;
+      };
+      var plot = document.getElementById(ids[i]);
+      var plotSvg = plot.getElementsByTagName('svg')[0];
+      var plotContent = Array.from(plotSvg.childNodes)[0];
+      var xTranslate = (150 * (xMultiply + 1)) + (130 * xMultiply);
+      var yTranslate = (150 * yMultiply) + (150 * (yMultiply - 1));
+
+      plotContent.setAttribute('transform', 'translate('+ xTranslate + ',' + yTranslate + ')');
+
+      mergedSvg.appendChild(plotContent);
+      console.log(document.getElementById('merged').getElementsByTagName('svg')[0]);
     }
   }
 </script>
@@ -283,7 +381,6 @@ if(label == 'emax'){
 var count = 1;
   for(var path in realData){
     var name = 'Pathway' + parseInt(count);
-    // console.log(colors[path]);
     DotScatter(realData[path], 'boxplotChart', name, colors, legend[path], path, ylabel, qualitative);
     count = count + 1;
   };

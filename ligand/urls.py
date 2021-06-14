@@ -15,7 +15,8 @@ urlpatterns = [
     url(r'^targets_purchasable', views.TargetPurchasabilityDetails, name='ligand_target_detail_purchasable'),
     url(r'^(?P<ligand_id>[-\w]+)/details$', views.LigandDetails, name='ligand_detail'),
     url(r'^statistics', cache_page(3600*24*7)(views.LigandStatistics.as_view()), name='ligand_statistics'),
-    url(r'^bias_statistics', cache_page(3600*24*7)(views.LigandStatistics.as_view(page='ligand_bias')), name='ligand_statistics'),
+    # url(r'^bias_statistics', cache_page(3600*24)(views.LigandStatistics.as_view(page='ligand_bias')), name='ligand_statistics'),
+    url(r'^bias_statistics', views.LigandStatistics.as_view(page='ligand_bias'), name='ligand_statistics'),
 
     path('emax_rank_order_selection', views.RankOrderSelection.as_view(), name='emax_ro_selection'),
     path('emax_rankorder', views.BiasedRankOrder.as_view(), name='biased_rank_order'),
@@ -26,8 +27,11 @@ urlpatterns = [
     path('tau_path_profiles_selection', views.TauPathProfileSelection.as_view(), name='tau_pp_selection'),
     path('tau_path_profiles', views.BiasedRankOrder.as_view(page='pathwayprofiles', label='tau'), name='biased_rank_order'),
 
-    url(r'^path_preference_emax_rankorder', views.BiasedRankOrder.as_view(source='sub_different_families'), name='biased_rank_order'),
-    url(r'^path_preference_emax_path_profiles', views.BiasedRankOrder.as_view(page='pathwayprofiles', source='sub_different_families'), name='biased_rank_order'),
+    url(r'^path_preference_statistics', views.LigandStatistics.as_view(page='pathway_pref'), name='ligand_statistics'),
+    path('path_preference_emax_rankorder_selection', views.EmaxPathPrefRankOrderSelection.as_view(), name='ema_pathpref_ro_selection'),
+    path('path_preference_emax_rankorder', views.BiasedRankOrder.as_view(source='predicted_family', assay='predicted_tested_assays'), name='biased_rank_order'),
+    path('path_preference_emax_path_profiles_selection', views.EmaxPathPrefPathProfilesSelection.as_view(), name='ema_pathpref_pathprof_selection'),
+    path('path_preference_emax_path_profiles', views.BiasedRankOrder.as_view(page='pathwayprofiles', source='predicted_family', assay='predicted_tested_assays'), name='biased_rank_order'),
 
     url(r'^(?P<pk>[-\w]+)/info$', views.LigandInformationView.as_view()),
 

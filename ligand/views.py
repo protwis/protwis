@@ -216,6 +216,7 @@ def TargetDetailsCompact(request, **kwargs):
     if not ps:
         return redirect("ligand_browser")
 
+
     ps = ps.prefetch_related(
         'protein', 'ligand__properities__web_links__web_resource', 'ligand__properities__vendors__vendor')
     d = {}
@@ -477,6 +478,7 @@ class EmaxPathProfileSelection(AbsReferenceSelectionTable):
         },
     }
 
+
 class TauPathProfileSelection(AbsReferenceSelectionTable):
     step = 1
     number_of_steps = 1
@@ -499,12 +501,93 @@ class TauPathProfileSelection(AbsReferenceSelectionTable):
         },
     }
 
+class EmaxPathPrefRankOrderSelection(AbsReferenceSelectionTable):
+    step = 1
+    number_of_steps = 1
+    filters = False
+    filter_tableselect = False
+    family_tree = False
+    title = "SELECT RECEPTOR for Ligand Pathway Preference rank orders (ΔLog(Emax/EC50))"
+    description = 'Select receptor in the table (below).' \
+        + ' \n\nOnce you have selected a receptor, click the green button.'
+    selection_boxes = OrderedDict([
+        ('reference', True),
+        ('targets', False),
+        ('segments', False),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Next',
+            'onclick': "submitSelection('/ligand/path_preference_emax_rankorder');",
+            'color': 'success',
+        },
+    }
+
+    # proteins and families
+    #try - except block prevents manage.py from crashing - circular dependencies between protein - common
+    try:
+        if ProteinFamily.objects.filter(slug=default_slug).exists():
+            ppf = ProteinFamily.objects.get(slug=default_slug)
+            pfs = ProteinFamily.objects.filter(parent=ppf.id).filter(slug__startswith=default_subslug)
+            ps = Protein.objects.filter(family=ppf)
+            psets = ProteinSet.objects.all().prefetch_related('proteins')
+            tree_indent_level = []
+            action = 'expand'
+            # remove the parent family (for all other families than the root of the tree, the parent should be shown)
+            del ppf
+
+            # Load the target table data
+            table_data = getReferenceTable('predicted_family')
+    except Exception as e:
+        pass
+
+class EmaxPathPrefPathProfilesSelection(AbsReferenceSelectionTable):
+    step = 1
+    number_of_steps = 1
+    filters = False
+    filter_tableselect = False
+    family_tree = False
+    title = "SELECT RECEPTOR for Ligand Pathway Profiles (log(Emax/EC50))"
+    description = 'Select receptor in the table (below).' \
+        + ' \n\nOnce you have selected a receptor, click the green button.'
+    selection_boxes = OrderedDict([
+        ('reference', True),
+        ('targets', False),
+        ('segments', False),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Next',
+            'onclick': "submitSelection('/ligand/path_preference_emax_path_profiles');",
+            'color': 'success',
+        },
+    }
+
+    # proteins and families
+    #try - except block prevents manage.py from crashing - circular dependencies between protein - common
+    try:
+        if ProteinFamily.objects.filter(slug=default_slug).exists():
+            ppf = ProteinFamily.objects.get(slug=default_slug)
+            pfs = ProteinFamily.objects.filter(parent=ppf.id).filter(slug__startswith=default_subslug)
+            ps = Protein.objects.filter(family=ppf)
+            psets = ProteinSet.objects.all().prefetch_related('proteins')
+            tree_indent_level = []
+            action = 'expand'
+            # remove the parent family (for all other families than the root of the tree, the parent should be shown)
+            del ppf
+
+            # Load the target table data
+            table_data = getReferenceTable('predicted_family')
+    except Exception as e:
+        pass
+
 class BiasedRankOrder(TemplateView):
     #set a global variable for different pages
     page = "rankorder"
     label = "emax"
     template_name = "biased_rank_orders.html"
     source = "different_family"
+    assay = "tested_assays"
 
     def create_rgb_color(self, name, power): # pseudo-randomization function
         h = hash( name + str(power) ) # hash string and int together
@@ -531,7 +614,7 @@ class BiasedRankOrder(TemplateView):
         publications = list(AnalyzedAssay.objects.filter(
                         family__isnull=False,
                         experiment__receptor=receptor,
-                        assay_description__isnull=True,
+                        assay_description=self.assay,
                         experiment__source=self.source).exclude(
                         qualitative_activity__in=exclude_list,
                         ).values_list(
@@ -610,12 +693,12 @@ class BiasedRankOrder(TemplateView):
                 DD = [0, double_delta]
 
             if result[11] == 1:
-                jitterDict[jitterAuthors][lig_name]['1'] = value
+                jitterDict[jitterAuthors][lig_name]['2nd_Pathway'] = result[0]
                 jitterDict[jitterAuthors][lig_name]['deltadelta'] = DD
 
             if result[11] == 0:
                 jitterDict[jitterAuthors][lig_name]["Pathway"] = result[0]
-                jitterDict[jitterAuthors][lig_name]['0'] = value
+                # jitterDict[jitterAuthors][lig_name]['0'] = value
 
             if result[2] not in full_data.keys():
                 full_ligands[result[2]] = []
@@ -721,11 +804,12 @@ class BiasedRankOrder(TemplateView):
                     if ligand not in Colors.keys():
                         color = '#%02x%02x%02x' % (self.create_rgb_color(ligand,0), self.create_rgb_color(ligand,1), self.create_rgb_color(ligand,2))
                         Colors[ligand] = color
-                    jitterPlot[jitterDict[pub][ligand]["Pathway"]].append([pub, jitterDict[pub][ligand]['deltadelta'][0], Colors[ligand], ligand, jitterDict[pub][ligand]['deltadelta'][1]])
-                    if jitterDict[pub][ligand]['deltadelta'][0] >= 1.00:
-                        jitterLegend[jitterDict[pub][ligand]["Pathway"]].append(tuple((ligand, jitterDict[pub][ligand]['deltadelta'][0])))
-                    if jitterDict[pub][ligand]['deltadelta'][0] <= -1.00:
-                        jitterLegend[jitterDict[pub][ligand]["Pathway"]].append(tuple((ligand, jitterDict[pub][ligand]['deltadelta'][0])))
+                    jitterPlot[jitterDict[pub][ligand]["Pathway"]].append([pub, jitterDict[pub][ligand]['deltadelta'][0], Colors[ligand], ligand, jitterDict[pub][ligand]['deltadelta'][1], jitterDict[pub][ligand]['2nd_Pathway']])
+                    jitterLegend[jitterDict[pub][ligand]["Pathway"]].append(tuple((ligand, jitterDict[pub][ligand]['deltadelta'][0])))
+                    # if jitterDict[pub][ligand]['deltadelta'][0] >= 1.00:
+                    #     jitterLegend[jitterDict[pub][ligand]["Pathway"]].append(tuple((ligand, jitterDict[pub][ligand]['deltadelta'][0])))
+                    # if jitterDict[pub][ligand]['deltadelta'][0] <= -1.00:
+                    #     jitterLegend[jitterDict[pub][ligand]["Pathway"]].append(tuple((ligand, jitterDict[pub][ligand]['deltadelta'][0])))
                 except KeyError:
                     continue
                 jitterLegend[jitterDict[pub][ligand]["Pathway"]] = sorted(list(set(jitterLegend[jitterDict[pub][ligand]["Pathway"]])), key=lambda x: x[1], reverse=True)
@@ -744,7 +828,7 @@ class BiasedRankOrder(TemplateView):
         jitterPlot = {k: v for k, v in jitterPlot.items() if len(v) > 0}
 
         for key in jitterLegend.keys():
-            jitterLegend[key] = list(dict.fromkeys([name[0] for name in jitterLegend[key]]))
+            jitterLegend[key] = list(dict.fromkeys([name[0] for name in jitterLegend[key]]))[:20]
 
         context['label'] = self.label
         context['page'] = self.page
@@ -765,7 +849,7 @@ class LigandStatistics(TemplateView):
     """
 
     template_name = 'ligand_statistics.html'
-    page = 'ligands' #either ligand_bias
+    page = 'ligands' #either ligand_bias or pathway_pref (NEW PAGE)
 
     def get_context_data(self, **kwargs):
 
@@ -778,13 +862,23 @@ class LigandStatistics(TemplateView):
                 'protein__family__parent__parent__parent__name').annotate(c=Count('ligand', distinct=True)))
             for a in assays_lig:
                 lig_count_dict[a['protein__family__parent__parent__parent__name']] = a['c']
-        else:
+        elif self.page == 'ligand_bias':
             assays_lig = list(AnalyzedAssay.objects
-                .filter(log_bias_factor__gte=2)
+                .filter(log_bias_factor__gte=2,
+                        experiment__source='different_family')
                 .values('experiment__receptor__family__parent__parent__parent__name')
                 .annotate(c=Count('experiment__ligand_id', distinct=True)))
             for a in assays_lig:
                 lig_count_dict[a['experiment__receptor__family__parent__parent__parent__name']] = a['c']
+        elif self.page == 'pathway_pref':
+            assays_lig = list(AnalyzedAssay.objects
+                .filter(log_bias_factor__gte=2,
+                        experiment__source='predicted_family')
+                .values('experiment__receptor__family__parent__parent__parent__name')
+                .annotate(c=Count('experiment__ligand_id', distinct=True)))
+            for a in assays_lig:
+                lig_count_dict[a['experiment__receptor__family__parent__parent__parent__name']] = a['c']
+
         target_count_dict = {}
         assays_target = list(AssayExperiment.objects.all().values(
             'protein__family__parent__parent__parent__name').annotate(c=Count('protein__family', distinct=True)))
@@ -869,6 +963,7 @@ class LigandStatistics(TemplateView):
                 whole_class_a['children'].remove(item)
                 break
         context['class_a'] = json.dumps(whole_class_a)
+        print(context['class_a'])
         class_b1_data = tree.get_tree_data(
             ProteinFamily.objects.get(name__startswith='Class B1 (Secretin)'))
         context['class_b1_options'] = deepcopy(tree.d3_options)
@@ -925,16 +1020,16 @@ class LigandStatistics(TemplateView):
         context["whole_receptors"] = json.dumps(whole_rec_dict)
         if self.page == 'ligands':
             context["render"] = "not_bias"
-        else:
+        elif self.page == 'ligand_bias':
             assay_qs = AnalyzedAssay.objects.filter(
-                assay_description__isnull=True).values_list(
+                assay_description='tested_assays').values_list(
                 "family", "experiment__receptor__entry_name").order_by(
                 "family", "experiment__receptor__entry_name").distinct(
                 "family", "experiment__receptor__entry_name")
 
             ligand_qs = AnalyzedAssay.objects.filter(
                 order_no=0,
-                assay_description__isnull=True).values_list(
+                assay_description='tested_assays').values_list(
                 "family", "experiment__receptor__entry_name", "experiment__ligand").order_by(
                 "family", "experiment__receptor__entry_name", "experiment__ligand").distinct(
                 "family", "experiment__receptor__entry_name", "experiment__ligand")
@@ -956,6 +1051,37 @@ class LigandStatistics(TemplateView):
 
             context["circles_data"] = json.dumps(circles)
             context["render"] = "bias"
+        elif self.page == 'pathway_pref':
+            assay_qs = AnalyzedAssay.objects.filter(
+                assay_description='predicted_tested_assays').values_list(
+                "family", "experiment__receptor__entry_name").order_by(
+                "family", "experiment__receptor__entry_name").distinct(
+                "family", "experiment__receptor__entry_name")
+
+            ligand_qs = AnalyzedAssay.objects.filter(
+                order_no=0,
+                assay_description='predicted_tested_assays').values_list(
+                "family", "experiment__receptor__entry_name", "experiment__ligand").order_by(
+                "family", "experiment__receptor__entry_name", "experiment__ligand").distinct(
+                "family", "experiment__receptor__entry_name", "experiment__ligand")
+
+            circles = {}
+            for data in assay_qs:
+                if data[1].split('_')[1] == 'human':
+                    key = data[1].split('_')[0].upper()
+                    if key not in circles.keys():
+                        circles[key] = {}
+                        circles[key][data[0]] = 0
+                    else:
+                        circles[key][data[0]] = 0
+
+            for data in ligand_qs:
+                if data[1].split('_')[1] == 'human':
+                    key = data[1].split('_')[0].upper()
+                    circles[key][data[0]] += 1
+
+            context["circles_data"] = json.dumps(circles)
+            context["render"] = "pathway"
         return context
 
 class ExperimentEntryView(DetailView):

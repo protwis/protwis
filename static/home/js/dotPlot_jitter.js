@@ -11,6 +11,24 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
       return Math.round(value * inv) / inv;
   }
 
+  function highlight(object) {
+    d3.selectAll("circle")
+       .style("opacity", 0.2);
+    d3.selectAll("path")
+       .style("opacity", 0.2);
+    d3.selectAll("rect")
+       .style("opacity", 0.2);
+    d3.selectAll("circle#" + object)
+      .style("opacity", 1);
+    d3.selectAll("path#" + object)
+      .style("opacity", 1);
+    d3.selectAll("rect#" + object)
+      .style("opacity", 1);
+    d3.selectAll(".Legend")
+      .style("opacity", 1);
+    d3.event.stopPropagation();
+  }
+
   if(legendData.length < 24){
     var margin = {top: 20, right: 200, bottom: 100, left: 60};
     width = 1000 - margin.left - margin.right;
@@ -112,6 +130,8 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
          .style("opacity", 1.0);
        d3.selectAll("rect")
          .style("opacity", 1.0);
+       d3.selectAll("path")
+         .style("opacity", 1.0);
      };
 
     document.getElementById(ID).onclick = ResetOpacity;
@@ -212,7 +232,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
           .attr("y", -40)
           .attr('x', -150)
           .attr("dy", ".71em")
-          .style("font", "10px sans-serif")
+          .style("font", "12px sans-serif")
           .style("text-anchor", "end")
           .text(ylabel);
 
@@ -238,32 +258,42 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
   g.selectAll("scatter-dots")
           .data(data)
           .enter()
-          .append("rect")
+          // .append("rect")
+          .append("path")
           .filter(function(d) { return d[4] == 'Full Bias'})
           .attr("class","FullBias")
-          .attr("x", function(d) {return x(d[0]) - jitterWidth/2 + Math.random()*jitterWidth ;})
-          .attr("y", function(d) {return y(d[1]);})
-          .attr("width", 7)
-          .attr("height", 7)
-          .style("stroke", "black")
-          .style("fill", "red")
-          .style("opacity", 1.0)
+          .attr("d", d3.svg.symbol()
+            .size( function(d) { return 6*6 })
+            .type( function(d) { return "diamond" }))
+            .style("fill", function(d) {return d[2];})
+            .style("opacity", 1.0)
+            // .style("stroke", "black")
+            .attr("transform", function (d, i) {
+                var xTrans = x(d[0]) - jitterWidth/2 + Math.random()*jitterWidth;
+                return "translate(" + xTrans + ",0)"
+            })
+          .attr("id", function(d) {return "LC" + d[3].replace(/\[|\]|\(|\)|\s|\,|\'/g,"");})
+          // .attr("x", function(d) {return x(d[0]) - jitterWidth/2 + Math.random()*jitterWidth ;})
+          // .attr("y", function(d) {return y(d[1]);})
+          // .attr("width", 7)
+          // .attr("height", 7)
+          // .style("stroke", "black")
+          // // .style("fill", "red")
+          // .style("fill", function(d) {return d[2];})
+          // .style("opacity", 1.0)
           .on("mouseover", mouseover)
           .on("mousemove", function (d) {
               divToolTipTest
-              .text(d[3])
-              .style("left", (d3.event.pageX) + "px")
-              .style("top", (d3.event.pageY) + "px");
+                .style("left", (d3.event.pageX) + "px")
+                .style("top", (d3.event.pageY) + "px")
+                .html("<b>Compound Name:</b> " + d[3]
+                    + "<br\><b>Compared Pathway:</b> " + d[5]
+                    + "<br\><b>Plotted Value:</b> Full Bias");
           })
           .on("mouseout", mouseout)
           .on("click", function (d) {
-              d3.selectAll("circle")
-                 .style("opacity", 0.2);
-              d3.selectAll("rect")
-                 .style("opacity", 0.2);
-              d3.selectAll("rect.FullBias")
-                .style("opacity", 1);
-              d3.event.stopPropagation();
+              var tempId = d3.select(this).attr("id");
+              highlight(tempId);
           });
 
     // Creating Full Bias Squares
@@ -273,29 +303,28 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
             .append("rect")
             .filter(function(d) { return d[4] == "High Bias"})
             .attr("class", "HighBias")
+            .attr("id", function(d) {return "LC" + d[3].replace(/\[|\]|\(|\)|\s|\,/g,"");})
             .attr("x", function(d) {return x(d[0]) - jitterWidth/2 + Math.random()*jitterWidth ;})
             .attr("y", function(d) {return y(d[1]);})
             .attr("width", 7)
             .attr("height", 7)
-            .style("stroke", "black")
-            .style("fill", "orange")
+            // .style("stroke", "black")
+            // .style("fill", "orange")
+            .style("fill", function(d) {return d[2];})
             .style("opacity", 1.0)
             .on("mouseover", mouseover)
             .on("mousemove", function (d) {
                 divToolTipTest
-                .text(d[3])
-                .style("left", (d3.event.pageX) + "px")
-                .style("top", (d3.event.pageY) + "px");
+                  .style("left", (d3.event.pageX) + "px")
+                  .style("top", (d3.event.pageY) + "px")
+                  .html("<b>Compound Name:</b> " + d[3]
+                      + "<br\><b>Compared Pathway:</b> " + d[5]
+                      + "<br\><b>Plotted Value:</b> High Bias");
             })
             .on("mouseout", mouseout)
             .on("click", function (d) {
-                d3.selectAll("circle")
-                   .style("opacity", 0.2);
-                d3.selectAll("rect")
-                   .style("opacity", 0.2);
-                d3.selectAll("rect.HighBias")
-                  .style("opacity", 1);
-                d3.event.stopPropagation();
+                var tempId = d3.select(this).attr("id");
+                highlight(tempId);
             });
 
   g.selectAll("scatter-dots")
@@ -311,48 +340,57 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
     .on("mouseover", mouseover)
     .on("mousemove", function (d) {
         divToolTipTest
-        .text(d[3])
-        .style("left", (d3.event.pageX) + "px")
-        .style("top", (d3.event.pageY) + "px");
+          .style("left", (d3.event.pageX) + "px")
+          .style("top", (d3.event.pageY) + "px")
+          .html("<b>Compound Name:</b> " + d[3]
+              + "<br\><b>Compared Pathway:</b> " + d[5]
+              + "<br\><b>Plotted Value:</b> " + d[1]);
     })
     .on("mouseout", mouseout)
     .on("click", function (d) {
         var tempId = d3.select(this).attr("id");
-        d3.selectAll("circle")
-           .style("opacity", 0.2);
-        d3.selectAll("rect")
-           .style("opacity", 0.2);
-        d3.selectAll("circle#" + tempId)
-          .style("opacity", 1);
-        d3.event.stopPropagation();
+        highlight(tempId);
     });
+    // .on("click", function (d) {
+    //     console.log('clicked!');
+    //     divToolTipTest
+    //     .text(d[3])
+    //     .style("left", (d3.event.pageX) + "px")
+    //     .style("top", (d3.event.pageY) + "px");
+    // });
 
-  if(ylabel === 'ΔΔLog(Tau/KA)'){
     chart.append('g')
        .attr('class', 'ytitle')
        .attr("transform", position)
           .append("text")
             .attr("x", xSeed - 5)
             .attr("y", margin.top)
-            .text("Ligands with " + ylabel + " > 1 or < -1") //ΔΔLog(Emax/EC50)
+            .text("Top 20 Ligands") //ΔΔLog(Emax/EC50)
             .attr("text-anchor", "left")
             .attr("font-weight", "bold")
             .style("font", "10px sans-serif")
             .style("alignment-baseline", "middle");
 
-  } else {
-    chart.append('g')
-       .attr('class', 'ytitle')
-       .attr("transform", position)
-          .append("text")
-            .attr("x", xSeed - 5)
-            .attr("y", margin.top)
-            .text("Ligands with " + ylabel + " > 1.00") //ΔΔLog(Emax/EC50)
-            .attr("text-anchor", "left")
-            .attr("font-weight", "bold")
-            .style("font", "10px sans-serif")
-            .style("alignment-baseline", "middle");
-  }
+// set the gradient for the quantitative circle
+// in the legend fixed
+  var gradient = chart.append("svg:defs")
+      .append("svg:linearGradient")
+      .attr("id", "gradient")
+      .attr("x1", "0%")
+      .attr("y1", "0%")
+      .attr("x2", "100%")
+      .attr("y2", "100%")
+      .attr("spreadMethod", "pad");
+
+  gradient.append("svg:stop")
+     .attr("offset", "0%")
+     .attr("stop-color", "#66ffff")
+     .attr("stop-opacity", 1);
+
+  gradient.append("svg:stop")
+      .attr("offset", "100%")
+      .attr("stop-color", "#ff00ff")
+      .attr("stop-opacity", 1);
 
   if(qualitative === true){
     chart.append('g')
@@ -369,23 +407,29 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
 
     chart.append('g')
        .attr("transform", position)
-          .append("rect")
-            .attr("x", xSeed + 6)
-            .attr("y", margin.top + 25)
-            .attr('width', 8)
-            .attr('height', 8)
-            .style("stroke", "black")
-            .style("fill", "red")
-            .attr("class", "FullBias")
-            .style("stroke", "black")
+          // .append("rect")
+          .append("path")
+            .attr("d", d3.svg.symbol()
+              .size( function(d) { return 6*6 })
+              .type( function(d) { return "diamond" }))
+              .style("stroke", "black")
+              .style("fill", "#FAFAFA") //'url(#gradient)'
+              .attr("class", "Legend")
+              .attr("transform", "translate(" + (xSeed + 10) +"," + (margin.top + 28) +")")
+              // .style("stroke", "black")
+              // .attr("x", xSeed + 6)
+              // .attr("y", margin.top + 25)
+            // .attr("x", xSeed + 6)
+            // .attr("y", margin.top + 25)
+            // .attr('width', 8)
+            // .attr('height', 8)
+            // .style("stroke", "black")
+            // .style("fill", "red")
+            // .attr("class", "FullBias")
+            // .style("stroke", "black")
             .on("click", function (d) {
-                d3.selectAll("circle")
-                   .style("opacity", 0.2);
-                d3.selectAll("rect")
-                   .style("opacity", 0.2);
-                d3.selectAll("rect.FullBias")
-                  .style("opacity", 1);
-                d3.event.stopPropagation();
+                var tempId = d3.select(this).attr("id");
+                highlight(tempId);
             });
 
     chart.append('g')
@@ -400,13 +444,8 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
             .style("font", "10px sans-serif")
             .style("alignment-baseline", "middle")
             .on("click", function (d) {
-                d3.selectAll("circle")
-                   .style("opacity", 0.2);
-                d3.selectAll("rect")
-                   .style("opacity", 0.2);
-                d3.selectAll("rect.FullBias")
-                  .style("opacity", 1);
-                d3.event.stopPropagation();
+                var tempId = d3.select(this).attr("id");
+                highlight(tempId);
             });
 
     chart.append('g')
@@ -416,18 +455,12 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
             .attr("y", margin.top + 38)
             .attr('width', 8)
             .attr('height', 8)
-            .style("stroke", "black")
-            .style("fill", "orange")
-            .attr("class", "HighBias")
+            .style("fill", "#FAFAFA") //'url(#gradient)'
+            .attr("class", "Legend")
             .style("stroke", "black")
             .on("click", function (d) {
-                d3.selectAll("circle")
-                   .style("opacity", 0.2);
-                d3.selectAll("rect")
-                   .style("opacity", 0.2);
-                d3.selectAll("rect.HighBias")
-                  .style("opacity", 1);
-                d3.event.stopPropagation();
+                var tempId = d3.select(this).attr("id");
+                highlight(tempId);
             });
 
     chart.append('g')
@@ -442,14 +475,53 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
             .style("font", "10px sans-serif")
             .style("alignment-baseline", "middle")
             .on("click", function (d) {
-                d3.selectAll("circle")
-                   .style("opacity", 0.2);
-                d3.selectAll("rect")
-                   .style("opacity", 0.2);
-                d3.selectAll("rect.HighBias")
-                  .style("opacity", 1);
-                d3.event.stopPropagation();
+                var tempId = d3.select(this).attr("id");
+                highlight(tempId);
             });
+
+    chart.append('g')
+       .attr("transform", position)
+          .append("circle")
+            .attr("cx", xSeed + 10)
+            .attr("cy", margin.top + 57)
+            .attr("r", 4)
+            .style('stroke', 'black')
+            .attr("class", "Legend")
+            .attr("fill", "#FAFAFA"); //'url(#gradient)'
+
+    chart.append('g')
+       .attr('class', 'ytitle')
+       .attr("transform", position)
+          .append("text")
+            .attr("x", xSeed + 20)
+            .attr("y", margin.top + 57)
+            .text("Quantitative point")
+            .attr("text-anchor", "left")
+            .attr("font-weight", "bold")
+            .style("font", "10px sans-serif")
+            .style("alignment-baseline", "middle");
+  } else {
+
+    chart.append('g')
+       .attr("transform", position)
+          .append("circle")
+            .attr("cx", xSeed + 10)
+            .attr("cy", margin.top + 25)
+            .attr("r", 4)
+            .style("stroke", "black")
+            .attr("fill","#FAFAFA"); //'url(#gradient)'
+
+    chart.append('g')
+       .attr('class', 'ytitle')
+       .attr("transform", position)
+          .append("text")
+            .attr("x", xSeed + 20)
+            .attr("y", margin.top + 24)
+            .text("Quantitative point")
+            .attr("text-anchor", "left")
+            .attr("font-weight", "bold")
+            .style("font", "10px sans-serif")
+            .style("alignment-baseline", "middle");
   }
 
   var legend = chart.selectAll("mylabels")
@@ -459,12 +531,12 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
         .attr("transform", position);
 
     legend.append("text")
-      .attr("x", xSeed + 18)
-      .attr("y", margin.top + 57)
+      .attr("x", xSeed + 20)
+      .attr("y", margin.top + 75)
       .style("fill", function(d){ return colors[d]})
       .text(function(d) {
-              if (d.length > 11) {
-                  return d.substring(0,11)+'...'
+              if (d.length > 25) {
+                  return d.substring(0,25)+'...'
               }else {
                   return d
               }
@@ -477,26 +549,35 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
              .style("opacity", 0.2);
           d3.selectAll("rect")
              .style("opacity", 0.2);
-          d3.selectAll("circle#LC" + d.replace(/\[|\]|\(|\)|\s|\,/g,""))
+          d3.selectAll("path")
+            .style("opacity", 0.2);
+          d3.selectAll("circle#LC" + d.replace(/\[|\]|\(|\)|\s|\,|\'/g,""))
+            .style("opacity", 1);
+          d3.selectAll("rect#LC" + d.replace(/\[|\]|\(|\)|\s|\,|\'/g,""))
+            .style("opacity", 1);
+          d3.selectAll("path#LC" + d.replace(/\[|\]|\(|\)|\s|\,|\'/g,""))
+            .style("opacity", 1);
+          d3.selectAll(".Legend")
             .style("opacity", 1);
           d3.event.stopPropagation();
       });
 
-  legend.append("circle")
-    .attr("cx", xSeed + 10)
-    .attr("cy", margin.top + 55)
-    .attr("r", 5)
-    .attr("id", function(d) {return "LC" + d.replace(/\[|\]|\(|\)|\s|\,/g,"");})
-    .style('stroke', 'black')
-    .attr("fill",function(d) { return colors[d] })
-    .on("click", function (d) {
-        d3.selectAll("circle")
-           .style("opacity", 0.2);
-        d3.selectAll("rect")
-           .style("opacity", 0.2);
-        d3.selectAll("circle#LC" + d.replace(/\[|\]|\(|\)|\s|\,/g,""))
-          .style("opacity", 1);
-        d3.event.stopPropagation();
-    });
+// This is the dot for the ligands which is commented right now
+  // legend.append("circle")
+  //   .attr("cx", xSeed + 10)
+  //   .attr("cy", margin.top + 55)
+  //   .attr("r", 5)
+  //   .attr("id", function(d) {return "LC" + d.replace(/\[|\]|\(|\)|\s|\,/g,"");})
+  //   .style('stroke', 'black')
+  //   .attr("fill",function(d) { return colors[d] })
+  //   .on("click", function (d) {
+  //       d3.selectAll("circle")
+  //          .style("opacity", 0.2);
+  //       d3.selectAll("rect")
+  //          .style("opacity", 0.2);
+  //       d3.selectAll("circle#LC" + d.replace(/\[|\]|\(|\)|\s|\,/g,""))
+  //         .style("opacity", 1);
+  //       d3.event.stopPropagation();
+  //   });
 
 }
