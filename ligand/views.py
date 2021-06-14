@@ -893,7 +893,7 @@ class BiasTargetSelection(AbsTargetSelectionTable):
     number_of_steps = 1
     filter_tableselect = False
     docs = 'sequences.html#structure-based-alignments'
-    title = "SELECT RECEPTORS for  Ligand bias for GPCRs and B-arrestin"
+    title = "SELECT RECEPTORS with ligands  biased for a G protein or arrestin family"
     description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
         + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
     selection_boxes = OrderedDict([
@@ -914,7 +914,7 @@ class BiasGTargetSelection(AbsTargetSelectionTable):
     number_of_steps = 1
     filter_tableselect = False
     docs = 'sequences.html#structure-based-alignments'
-    title = "SELECT RECEPTORS for Biased ligands"
+    title = "SELECT RECEPTORS with ligands  biased for a G protein subtypes"
 
 
     description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
@@ -1010,19 +1010,20 @@ class BiasBrowser(ListView):
             protein_list.append(1)
         assay_qs = AnalyzedAssay.objects.filter(
             order_no__lte=5,
-            assay_description__isnull=True,
+            assay_description='sub_tested_assays',
+            # assay_description__isnull=True,
             experiment=OuterRef('pk'),
         ).order_by('order_no')
 
         ref_assay_qs = AnalyzedAssay.objects.filter(
             order_no__lte=5,
-            assay_description='endogenous',
+            assay_description='sub_endogenous',
             experiment=OuterRef('pk'),
         ).order_by('order_no')
 
         queryset = AnalyzedExperiment.objects.filter(
-            source='different_family',
-            receptor__in=protein_list,
+            source='sub_different_family',
+            # receptor__in=protein_list,
         ).prefetch_related(
             'analyzed_data', 'ligand', 'ligand__reference_ligand', 'reference_ligand',
             'endogenous_ligand', 'ligand__properities', 'receptor', 'receptor', 'receptor__family',

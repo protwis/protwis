@@ -416,8 +416,7 @@ class BiasedExperiment(models.Model):
     receptor = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
     endogenous_ligand = models.ForeignKey(
         Ligand, related_name='endogenous_ligand_bias', on_delete=models.CASCADE,  null=True)
-    auxiliary_protein = models.ForeignKey(
-        'protein.Protein', on_delete=models.CASCADE, related_name='auxiliary_protein', null=True)
+    auxiliary_protein = models.TextField(null=True)
     ligand_source_id = models.TextField(null=True)
     ligand_source_type = models.TextField(null=True)
 
