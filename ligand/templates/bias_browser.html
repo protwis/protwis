@@ -409,7 +409,7 @@
 					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
-				//  Receotor Transduction
+				//  Receptor Transducer
 				{
 					column_number: 12,
 					filter_type: "multi_select",
@@ -581,7 +581,6 @@
 					filter_reset_button_text: false,
 				},
 				//potency or ic50
-				// TODO: change to p value
 				{
 					column_number: 37,
 					filter_type: "range_number",
@@ -896,11 +895,12 @@
 			$("#opmodel").attr("colspan", 4);
 			$("#lbf").attr("colspan", 4);
             $("#lbf_part").attr("colspan", 5);
-			$("#potency").attr("colspan", 4);
 			$("#activity").attr("colspan", 5);
 			$("#emax").attr("colspan", 5);
 			$("#tfactor").attr("colspan", 5);
-			$("#assay").attr("colspan", 5);
+			$("#mm1").attr("colspan", 5);
+            $("#mm2").attr("colspan", 5);
+            $("#bio").attr("colspan", 5);
 			$("#cell").attr("colspan", 5);
 			$("#time").attr("colspan", 5);
 			colspan_default = {
@@ -1207,9 +1207,9 @@
 				<td title='{{e.reference_ligand}}' style="border-left: 1px solid black;">{{e.reference_ligand}}</td>
 				<td title='{{e.ligand}}'><a href='/ligand/{{e.ligand.id}}/info' target='_blank'>{{e.ligand}}</a>
 				</td>
-				<td>{{e.vendor_quantity}}</td>
-				<td>{{e.article_quantity}}</td>
-				<td>{{e.labs_quantity}}</td>
+				<td style="text-align:right">{{e.vendor_quantity}}</td>
+				<td style="text-align:right">{{e.article_quantity}}</td>
+				<td style="text-align:right">{{e.labs_quantity}}</td>
 
 				<!-- receptor trunsducers -->
 				<td style="border-left: 1px solid black;">{{e.primary}}</td>
@@ -1228,21 +1228,21 @@
 				<td title='{{e.assay_p4}}'>{{e.assay_p4|default_if_none:"-" }}</td>
 				<td title='{{e.assay_p5}}'>{{e.assay_p5|default_if_none:"-" }}</td>
 				<!-- t factor -->
-				<td class="shade">{{e.opmodel_p2_p1|default_if_none:""}}</td>
-				<td class="shade">{{e.opmodel_p3_p1|default_if_none:""}}</td>
-				<td class="shade">{{e.opmodel_p4_p1|default_if_none:""}}</td>
-				<td class="shade">{{e.opmodel_p5_p1|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade">{{e.opmodel_p2_p1|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade">{{e.opmodel_p3_p1|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade">{{e.opmodel_p4_p1|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade">{{e.opmodel_p5_p1|default_if_none:""}}</td>
 				<!-- log bias facrtor -->
-				<td class="shade">{{e.lbf_p2_p1|default_if_none:""}}</td>
-				<td class="shade">{{e.lbf_p3_p1|default_if_none:""}}</td>
-				<td class="shade">{{e.lbf_p4_p1|default_if_none:""}}</td>
-				<td class="shade">{{e.lbf_p5_p1|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade">{{e.lbf_p2_p1|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade">{{e.lbf_p3_p1|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade">{{e.lbf_p4_p1|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade">{{e.lbf_p5_p1|default_if_none:""}}</td>
 				<!-- lbf_part -->
-				<td title='{{e.lbf_part_p1}}'>{{e.lbf_part_p1|default_if_none:"" }}</td>
-				<td title='{{e.lbf_part_p2}}'>{{e.lbf_part_p2|default_if_none:"" }}</td>
-				<td title='{{e.lbf_part_p3}}'>{{e.lbf_part_p3|default_if_none:"" }}</td>
-				<td title='{{e.lbf_part_p4}}'>{{e.lbf_part_p4|default_if_none:"" }}</td>
-				<td title='{{e.lbf_part_p5}}'>{{e.lbf_part_p5|default_if_none:"" }}</td>
+				<td style="text-align:right" title='{{e.lbf_part_p1}}'>{{e.lbf_part_p1|default_if_none:"" }}</td>
+				<td style="text-align:right" title='{{e.lbf_part_p2}}'>{{e.lbf_part_p2|default_if_none:"" }}</td>
+				<td style="text-align:right" title='{{e.lbf_part_p3}}'>{{e.lbf_part_p3|default_if_none:"" }}</td>
+				<td style="text-align:right" title='{{e.lbf_part_p4}}'>{{e.lbf_part_p4|default_if_none:"" }}</td>
+				<td style="text-align:right" title='{{e.lbf_part_p5}}'>{{e.lbf_part_p5|default_if_none:"" }}</td>
 
 				<!-- potency -->
 				{%if e.activity_p1 %}
@@ -1306,30 +1306,30 @@
 				{%endif%}
 
 				<!-- E max -->
-				<td class="shade">{{e.emax_p1|default_if_none:""}}</td>
-				<td class="shade">{{e.emax_p2|default_if_none:""}}</td>
-				<td class="shade">{{e.emax_p3|default_if_none:""}}</td>
-				<td class="shade">{{e.emax_p4|default_if_none:""}}</td>
-				<td class="shade">{{e.emax_p5|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade">{{e.emax_p1|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade">{{e.emax_p2|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade">{{e.emax_p3|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade">{{e.emax_p4|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade">{{e.emax_p5|default_if_none:""}}</td>
 
 				<!-- T coefficient -->
-				<td class="shade">{{e.tfactor_p1|default_if_none:""}}</td>
-				<td class="shade">{{e.tfactor_p2|default_if_none:""}}</td>
-				<td class="shade">{{e.tfactor_p3|default_if_none:""}}</td>
-				<td class="shade">{{e.tfactor_p4|default_if_none:""}}</td>
-				<td class="shade">{{e.tfactor_p5|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade">{{e.tfactor_p1|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade">{{e.tfactor_p2|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade">{{e.tfactor_p3|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade">{{e.tfactor_p4|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade">{{e.tfactor_p5|default_if_none:""}}</td>
 				<!-- Molecule 1 -->
-				<td class="shade">{{e.molecule1_p1|default_if_none:"-"}}</td>
-				<td class="shade">{{e.molecule1_p2|default_if_none:"-"}}</td>
-				<td class="shade">{{e.molecule1_p3|default_if_none:"-"}}</td>
-				<td class="shade">{{e.molecule1_p4|default_if_none:"-"}}</td>
-				<td class="shade">{{e.molecule1_p5|default_if_none:"-"}}</td>
+				<td class="shade">{{e.molecule1_p1|default_if_none:""}}</td>
+				<td class="shade">{{e.molecule1_p2|default_if_none:""}}</td>
+				<td class="shade">{{e.molecule1_p3|default_if_none:""}}</td>
+				<td class="shade">{{e.molecule1_p4|default_if_none:""}}</td>
+				<td class="shade">{{e.molecule1_p5|default_if_none:""}}</td>
 				<!-- Molecule 2 -->
-				<td class="shade">{{e.molecule2_p1|default_if_none:"-"}}</td>
-				<td class="shade">{{e.molecule2_p2|default_if_none:"-"}}</td>
-				<td class="shade">{{e.molecule2_p3|default_if_none:"-"}}</td>
-				<td class="shade">{{e.molecule2_p4|default_if_none:"-"}}</td>
-				<td class="shade">{{e.molecule2_p5|default_if_none:"-"}}</td>
+				<td class="shade">{{e.molecule2_p1|default_if_none:""}}</td>
+				<td class="shade">{{e.molecule2_p2|default_if_none:""}}</td>
+				<td class="shade">{{e.molecule2_p3|default_if_none:""}}</td>
+				<td class="shade">{{e.molecule2_p4|default_if_none:""}}</td>
+				<td class="shade">{{e.molecule2_p5|default_if_none:""}}</td>
 				<!-- Bioprocess -->
 				<td title='{{e.measured_biological_process_p1}}'>{{e.measured_biological_process_p1|default_if_none:"" }}</td>
 				<td title='{{e.measured_biological_process_p2}}'>{{e.measured_biological_process_p2|default_if_none:"" }}</td>

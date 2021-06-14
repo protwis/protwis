@@ -256,11 +256,11 @@ class Command(BaseBuild):
         d = self.return_row(r=r)
         try:
             d['potency_quantity'] = re.sub('[^\d\.,]', '', d['potency_quantity'])
-            d['potency_quantity'] = round(float(d['potency_quantity']),2)
+            d['potency_quantity'] = round(float(d['potency_quantity']),1)
         except:
             d['potency_quantity'] = d['potency_quantity']
         try:
-            d['emax_quantity'] = round(d['emax_quantity'],0)
+            d['emax_quantity'] = int(d['emax_quantity'],0)
         except:
             d['emax_quantity'] = d['emax_quantity']
 
