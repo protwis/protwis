@@ -271,7 +271,7 @@ text.segment {
 }
 
 ul.stats_list {
-  padding-left: 1.5em;
+  padding-left: 0.5em;
 }
 
 ul.stats_list li {
@@ -279,8 +279,24 @@ ul.stats_list li {
 }
 
 span.stats_entry {
-  width: 15em;
+  padding-left: 0.25em;
   display: inline-block;
+}
+
+span.stats_entry {
+  padding-left: 0.25em;
+  display: inline-block;
+}
+
+span.stats_title {
+  padding-top: 0.25em;
+  padding-bottom: 0.25em;
+}
+
+span.stats_value {
+  width: 5em;
+  display: inline-block;
+  text-align: right;
 }
 
 span.stats_indent {
