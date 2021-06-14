@@ -283,11 +283,6 @@ span.stats_entry {
   display: inline-block;
 }
 
-span.stats_entry {
-  padding-left: 0.25em;
-  display: inline-block;
-}
-
 span.stats_title {
   padding-top: 0.25em;
   padding-bottom: 0.25em;
