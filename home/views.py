@@ -68,14 +68,14 @@ def index(request):
                 first_model = count
 
             if entry[0] in rename_dictionary:
-                context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry stats_indent\">" + rename_dictionary[entry[0]] + "</span>", "value": "<span>" + "{:,}".format(entry[1]) + "</span>"})
+                context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + rename_dictionary[entry[0]] + "</span>", "value": "<span class=\"stats_value\">" + "{:,}".format(entry[1]) + "</span>"})
             else:
-                context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + entry[0] + "</span>", "value": "<span>" + "{:,}".format(entry[1]) + "</span>"})
+                context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + entry[0] + "</span>", "value": "<span  class=\"stats_value\">" + "{:,}".format(entry[1]) + "</span>"})
             count += 1
 
         # Adjusted formatting for release notes
-        context['release_statistics'].insert(first_model, {"statistics_type": "<i>Structure models</i>", "value" : ""})
-        context['release_statistics'].insert(first_struct, {"statistics_type": "<i>Experimental structures</i>", "value" : ""})
+        context['release_statistics'].insert(first_model, {"statistics_type": "<span class=\"stats_entry stats_title\"><i>Structure models</i></span>", "value" : "<span  class=\"stats_value\"></span>"})
+        context['release_statistics'].insert(first_struct, {"statistics_type": "<span class=\"stats_entry stats_title\"><i>Experimental structures</i></span>", "value" : "<span  class=\"stats_value\"></span>"})
 
 
     except IndexError:
