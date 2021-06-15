@@ -356,6 +356,8 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
         chain_over_ride = 'D'
     elif pdbname=='5UZ7':
         chain_over_ride = 'E'
+    elif pdbname in ['7BU6','7BU7','7BTS','7BVQ']:
+        chain_over_ride = 'A'
     # elif pdbname=='5VBL': # fixed by pdb_range
     #     chain_over_ride = 'B'
     # print(pdb_range)
