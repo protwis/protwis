@@ -417,7 +417,7 @@ class Command(BaseBuild):
                     compare_val = next(item for item in families if item["molecule_1"] == assay['molecule_1'])
                     try:
                         if assay['order_bias_value'] > compare_val['order_bias_value']:
-                            families[:] = [d for d in families if d.get('molecule_1') != compare_val['molecule_1']]
+                            families[:] = [d for d in families if d.get('signalling_protein') != compare_val['signalling_protein']]
                             families.append(assay)
                     except TypeError:
                         self.logger.info('skipping families if existing copy')
@@ -795,7 +795,7 @@ class Command(BaseBuild):
                                                      signalling_protein=ex['signalling_protein'],
                                                      cell_line=ex['cell_line'],
                                                      assay_type=ex['assay_type'],
-                                                     assay_description='backup_assays',
+                                                     assay_description='sub_backup_assays',
                                                      molecule_1=ex['molecule_1'],
                                                      molecule_2=ex['molecule_2'],
                                                      assay_time_resolved=ex['assay_time_resolved'],

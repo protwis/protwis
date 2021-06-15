@@ -53,7 +53,7 @@ class Command(BaseBuild):
             self.ligand_dump = json.loads(f.read().decode("ascii"))
         print(len(self.ligand_dump),"ligands to load")
         self.prepare_input(options['proc'], self.ligand_dump)
-        import pdb; pdb.set_trace()
+
 
     def create_vendors(self,filenames):
         for filename in filenames:
@@ -72,7 +72,7 @@ class Command(BaseBuild):
                 print(len(d),"vendors",create_count,"vendors created")
 
     def main_func(self, positions, iteration,count,lock):
-        import pdb; pdb.set_trace()
+
         # print(positions,iteration,count,lock)
         ligands = self.ligand_dump
 
