@@ -312,15 +312,14 @@
 				},
 			],
 			"drawCallback": function(settings) {
-				calculate_header()
-
 				setTimeout(function() {
 					var ligand_counter = read_unique_ids();
 					var receptor_counter = read_unique_ids_receptor();
 					document.getElementById("ligand_counter").innerHTML = ligand_counter;
 					document.getElementById("receptor_counter").innerHTML = receptor_counter;
-
+                    // calculate_header()
 				}, 2000);
+
 			},
 		});
 		yadcf.init(table,
@@ -874,30 +873,13 @@
 					filter_reset_button_text: false,
 				},
 
-			], {
-				cumulative_filtering: false
-			});
+			], );
 		shadeTable(table, [".shade"], 120, 200);
 
-		function calculate_header(ids) {
+		function calculate_header() {
 			var columnIds = [];
 			var EmptyColumnIds = [];
-			$("#receptor").attr("colspan", 6);
-			$("#ligand").attr("colspan", 5);
-			$("#transducers").attr("colspan", 2);
-			$("#pathways_effector").attr("colspan", 5);
-			$("#pathways_measure").attr("colspan", 5);
-			$("#opmodel").attr("colspan", 4);
-			$("#lbf").attr("colspan", 4);
-			$("#lbf_part").attr("colspan", 5);
-			$("#activity").attr("colspan", 5);
-			$("#emax").attr("colspan", 5);
-			$("#tfactor").attr("colspan", 5);
-			$("#mm1").attr("colspan", 5);
-			$("#mm2").attr("colspan", 5);
-			$("#bio").attr("colspan", 5);
-			$("#cell").attr("colspan", 5);
-			$("#time").attr("colspan", 5);
+
 			colspan_default = {
 				receptor: [0, 1, 2, 3, 4, 5, 6],
 				ligand: [7, 8, 9, 10, 11],
@@ -934,18 +916,6 @@
 					}
 				}
 			});
-			// if (EmptyColumnIds) {
-			// 	EmptyColumnIds.forEach((item) => {
-			// 		var filterRow = $('.dataTable td:nth-child(' + (item + 1) + ')');
-			// 		console.log(item);
-			//         if (item > 0 && filterRow[0].innerText.length < 1){
-			//
-			//             $(filterRow[0]).html("-");
-			//         }
-			// 	})
-			// };
-
-
 			if (columnIds) {
 				columnIds.forEach((item) => {
 					var filterRow = $('.dataTable .table-filter-dropdown th:nth-child(' + (item + 1) + ')');
@@ -979,6 +949,26 @@
 				from: 1
 			}],
 		]);
+
+        // $('#structures_scrollable').on( 'page.dt', function () {
+        //         $("#receptor").attr("colspan", 6);
+    	// 		$("#ligand").attr("colspan", 5);
+    	// 		$("#transducers").attr("colspan", 2);
+    	// 		$("#pathways_effector").attr("colspan", 5);
+    	// 		$("#pathways_measure").attr("colspan", 5);
+    	// 		$("#opmodel").attr("colspan", 4);
+    	// 		$("#lbf").attr("colspan", 4);
+    	// 		$("#lbf_part").attr("colspan", 5);
+    	// 		$("#activity").attr("colspan", 5);
+    	// 		$("#emax").attr("colspan", 5);
+    	// 		$("#tfactor").attr("colspan", 5);
+    	// 		$("#mm1").attr("colspan", 5);
+    	// 		$("#mm2").attr("colspan", 5);
+    	// 		$("#bio").attr("colspan", 5);
+    	// 		$("#cell").attr("colspan", 5);
+    	// 		$("#time").attr("colspan", 5);
+        //
+        // } );
 
 	});
 </script>
@@ -1229,21 +1219,21 @@
 				<td style="text-align:right">{{e.labs_quantity}}</td>
 
 				<!-- receptor trunsducers -->
-				<td style="border-left: 1px solid black;">{{e.primary}}</td>
-				<td>{{e.secondary}}</td>
+				<td style="border-left: 1px solid black; text-align:right">{{e.primary}}</td>
+				<td style="text-align:right">{{e.secondary}}</td>
 
 				<!-- pathways -->
-				<td class="pathway">{{e.pathways_p1|default_if_none:""}}</td>
-				<td class="pathway">{{e.pathways_p2|default_if_none:""}}</td>
-				<td class="pathway">{{e.pathways_p3|default_if_none:""}}</td>
-				<td class="pathway">{{e.pathways_p4|default_if_none:""}}</td>
-				<td class="pathway">{{e.pathways_p5|default_if_none:""}}</td>
+				<td style="text-align:right" class="pathway">{{e.pathways_p1|default_if_none:"-"}}</td>
+				<td style="text-align:right" class="pathway">{{e.pathways_p2|default_if_none:"-"}}</td>
+				<td style="text-align:right" class="pathway">{{e.pathways_p3|default_if_none:"-"}}</td>
+				<td style="text-align:right" class="pathway">{{e.pathways_p4|default_if_none:"-"}}</td>
+				<td style="text-align:right" class="pathway">{{e.pathways_p5|default_if_none:"-"}}</td>
 				<!-- Assay -->
-				<td title='{{e.assay_p1}}'>{{e.assay_p1|default_if_none:"-" }}</td>
-				<td title='{{e.assay_p2}}'>{{e.assay_p2|default_if_none:"-" }}</td>
-				<td title='{{e.assay_p3}}'>{{e.assay_p3|default_if_none:"-" }}</td>
-				<td title='{{e.assay_p4}}'>{{e.assay_p4|default_if_none:"-" }}</td>
-				<td title='{{e.assay_p5}}'>{{e.assay_p5|default_if_none:"-" }}</td>
+				<td style="text-align:right" title='{{e.assay_p1}}'>{{e.assay_p1|default_if_none:"-" }}</td>
+				<td style="text-align:right" title='{{e.assay_p2}}'>{{e.assay_p2|default_if_none:"-" }}</td>
+				<td style="text-align:right" title='{{e.assay_p3}}'>{{e.assay_p3|default_if_none:"-" }}</td>
+				<td style="text-align:right" title='{{e.assay_p4}}'>{{e.assay_p4|default_if_none:"-" }}</td>
+				<td style="text-align:right" title='{{e.assay_p5}}'>{{e.assay_p5|default_if_none:"-" }}</td>
 				<!-- t factor -->
 				<td style="text-align:right" class="shade" id="opmodel_p2_p1">{{e.opmodel_p2_p1|default_if_none:""}}</td>
 				<td style="text-align:right" class="shade" id="opmodel_p3_p1">{{e.opmodel_p3_p1|default_if_none:""}}</td>
@@ -1323,11 +1313,11 @@
 				{%endif%}
 
 				<!-- E max -->
-				<td style="text-align:right" class="shade">{{e.emax_p1|default_if_none:""}}</td>
-				<td style="text-align:right" class="shade">{{e.emax_p2|default_if_none:""}}</td>
-				<td style="text-align:right" class="shade">{{e.emax_p3|default_if_none:""}}</td>
-				<td style="text-align:right" class="shade">{{e.emax_p4|default_if_none:""}}</td>
-				<td style="text-align:right" class="shade">{{e.emax_p5|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade">{{e.emax_p1|default_if_none:""|floatformat:0}}</td>
+				<td style="text-align:right" class="shade">{{e.emax_p2|default_if_none:""|floatformat:0}}</td>
+				<td style="text-align:right" class="shade">{{e.emax_p3|default_if_none:""|floatformat:0}}</td>
+				<td style="text-align:right" class="shade">{{e.emax_p4|default_if_none:""|floatformat:0}}</td>
+				<td style="text-align:right" class="shade">{{e.emax_p5|default_if_none:""|floatformat:0}}</td>
 
 				<!-- T coefficient -->
 				<td style="text-align:right" class="shade">{{e.tfactor_p1|default_if_none:""}}</td>

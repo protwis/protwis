@@ -5,8 +5,9 @@ import pandas as pd
 import os
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import ProteinGProteinPair
-from ligand.models import BiasedExperiment, AnalyzedExperiment,AnalyzedAssay
+from ligand.models import BiasedExperiment, AnalyzedExperiment, AnalyzedAssay
 from django.conf import settings
+
 
 class Command(BaseBuild):
     mylog = logging.getLogger(__name__)
@@ -16,7 +17,8 @@ class Command(BaseBuild):
     file_handler.setLevel(logging.ERROR)
     file_handler.setFormatter(formatter)
     mylog.addHandler(file_handler)
-    structure_data_dir = os.sep.join([settings.DATA_DIR, 'ligand_data', 'gproteins'])
+    structure_data_dir = os.sep.join(
+        [settings.DATA_DIR, 'ligand_data', 'gproteins'])
     help = 'Reads bias data and imports it'
     publication_cache = {}
     gprot_cache = {}
@@ -73,8 +75,7 @@ class Command(BaseBuild):
                 [self.structure_data_dir, source_file]).replace('//', '/')
             print(source_file, source_file_path)
         df = pd.read_excel(source_file_path)
-        self.gprot_cache =  df.set_index('UniProt').T.to_dict('dict')
-
+        self.gprot_cache = df.set_index('UniProt').T.to_dict('dict')
 
     def build_bias_data(self):
         print('prestage, process excell')
@@ -84,13 +85,15 @@ class Command(BaseBuild):
         content = self.get_from_model()
         print('stage # 1 : Getting data finished, data points: ', len(content))
         content_with_children = self.process_data(content)
-        print('stage # 2: Processing children in queryset finished', len(content_with_children))
+        print('stage # 2: Processing children in queryset finished',
+              len(content_with_children))
         changed_data = self.queryset_to_dict(content_with_children)
         print('stage # 3: Converting queryset into dict finished', len(changed_data))
         send = self.combine_unique(changed_data)
         print('stage # 5: Selecting endogenous ligands finished')
         referenced_assay = self.process_referenced_assays(send)
-        print('stage # 6: Separating reference assays is finished', len(referenced_assay))
+        print('stage # 6: Separating reference assays is finished',
+              len(referenced_assay))
         ligand_data = self.separate_ligands(referenced_assay)
         print('stage # 7: Separate ligands finished')
         limit_family = self.process_signalling_proteins(ligand_data)
@@ -108,9 +111,7 @@ class Command(BaseBuild):
     def get_from_model(self):
         try:
             content = BiasedExperiment.objects.all().prefetch_related(
-                'experiment_data', 'ligand', 'receptor', 'publication'
-                , 'publication__web_link'
-                , 'experiment_data__emax_ligand_reference',
+                'experiment_data', 'ligand', 'receptor', 'publication', 'publication__web_link', 'experiment_data__emax_ligand_reference',
             ).order_by('publication', 'receptor', 'ligand')
         except BiasedExperiment.DoesNotExist:
             self.logger.info('Data is not returned')
@@ -145,7 +146,7 @@ class Command(BaseBuild):
         self.logger.info('Return dict is returned')
         return rd
 
-    def process_g_protein(self,protein, receptor):
+    def process_g_protein(self, protein, receptor):
         receptor_name = receptor.entry_name.split('_')[0].upper()
         if receptor_name in self.gprot_cache:
             protein = self.gprot_cache[receptor_name]["1'Gfam"]
@@ -193,7 +194,8 @@ class Command(BaseBuild):
             temp_dict['cell_line'] = j['children'][0].cell_line
             temp_dict['family'] = j['children'][0].family
             if temp_dict['family'] == 'G protein' or temp_dict['family'] == 'Gq/11 or Gi/o':
-                temp_dict['family'] = self.process_g_protein(temp_dict['family'], temp['receptor'])
+                temp_dict['family'] = self.process_g_protein(
+                    temp_dict['family'], temp['receptor'])
             if temp_dict['family'] == 'G protein' or temp_dict['family'] == 'Gq/11 or Gi/o':
                 continue
             temp_dict['measured_biological_process'] = j['children'][0].measured_biological_process
@@ -236,7 +238,7 @@ class Command(BaseBuild):
         self.logger.info('Queryset processed')
         return send
 
-    def get_endogenous_assays(self,data):
+    def get_endogenous_assays(self, data):
         # TODO: temporarily not used in main browser
         for experiment in data:
             for assay in experiment['assay']:
@@ -251,7 +253,7 @@ class Command(BaseBuild):
         context = dict()
         for j in data:
             name = str(j['publication'].id) + \
-                '/'  + '/' + str(j['receptor'].id)
+                '/' + '/' + str(j['receptor'].id)
             temp_obj = list()
             if name in context:
                 temp_obj = context[name]['assay']
@@ -286,23 +288,25 @@ class Command(BaseBuild):
         sorted_main = sorted(main, key=lambda k: k['quantitive_activity']
                              if k['quantitive_activity'] else 999999, reverse=True)
         sorted_reference = sorted(reference, key=lambda k: k['quantitive_activity']
-                             if k['quantitive_activity'] else 999999, reverse=True)
+                                  if k['quantitive_activity'] else 999999, reverse=True)
         self.logger.info('Combined experiments by publication and receptor')
         return sorted_main, sorted_reference
 
     def separate_ligands(self, context):
         content = dict()
         for i in context.items():
-            if(len(i[1]['reference_assays_list']))>0:
+            if(len(i[1]['reference_assays_list'])) > 0:
                 for assay in i[1]['assay_list']:
                     name = str(i[1]['publication'].id) + \
-                        '/'+ str(assay['ligand'].id) + '/' + str(i[1]['receptor'].id)
+                        '/' + str(assay['ligand'].id) + '/' + \
+                        str(i[1]['receptor'].id)
 
                     if name in content:
                         content[name]['assay_list'].append(assay)
-                        content[name]['reference_assays_list'].extend(i[1]['reference_assays_list'])
+                        content[name]['reference_assays_list'].extend(
+                            i[1]['reference_assays_list'])
                         try:
-                            content[name]['reference_ligand']=i[1]['reference_assays_list'][0]['ligand']
+                            content[name]['reference_ligand'] = i[1]['reference_assays_list'][0]['ligand']
                         except:
                             content[name]['reference_ligand'] = None
                     else:
@@ -311,7 +315,8 @@ class Command(BaseBuild):
                         content[name]['reference_assays_list'] = list()
                         content[name]['publication'] = i[1]['publication']
                         content[name]['ligand'] = assay['ligand']
-                        content[name]['ligand_links'] = self.get_external_ligand_ids(content[name]['ligand'])
+                        content[name]['ligand_links'] = self.get_external_ligand_ids(
+                            content[name]['ligand'])
                         content[name]['auxiliary_protein'] = i[1]['auxiliary_protein']
                         # TODO: add external LigandStatistics
                         content[name]['endogenous_ligand'] = i[1]['endogenous_ligand']
@@ -321,9 +326,10 @@ class Command(BaseBuild):
                         content[name]['article_quantity'] = i[1]['article_quantity']
                         content[name]['labs_quantity'] = i[1]['labs_quantity']
                         content[name]['assay_list'].append(assay)
-                        content[name]['reference_assays_list'].extend(i[1]['reference_assays_list'])
+                        content[name]['reference_assays_list'].extend(
+                            i[1]['reference_assays_list'])
                         try:
-                            content[name]['reference_ligand']=i[1]['reference_assays_list'][0]['ligand']
+                            content[name]['reference_ligand'] = i[1]['reference_assays_list'][0]['ligand']
                         except:
                             content[name]['reference_ligand'] = None
                         content[name]['ligand_source_id'] = assay['ligand_source_id']
@@ -336,7 +342,8 @@ class Command(BaseBuild):
         ligand_list = list()
         try:
             for i in ligand.properities.web_links.all():
-                ligand_list.append({'name': i.web_resource.name, "link": i.index})
+                ligand_list.append(
+                    {'name': i.web_resource.name, "link": i.index})
         except:
             self.logger.info('get_external_ligand_ids')
         return ligand_list
@@ -344,7 +351,8 @@ class Command(BaseBuild):
     def process_signalling_proteins(self, context):
         for i in context.items():
 
-            i[1]['assay_list'] = self.calculate_bias_factor_value(i[1]['assay_list'], i[1]['reference_assays_list'])
+            i[1]['assay_list'] = self.calculate_bias_factor_value(
+                i[1]['assay_list'], i[1]['reference_assays_list'])
 
             i[1]['assay_list'] = self.sort_assay_list(i[1]['assay_list'])
             i[1]['backup_assays'] = i[1]['assay_list']
@@ -355,18 +363,21 @@ class Command(BaseBuild):
         self.logger.info('process_signalling_proteins')
         return context
 
-    def get_rid_of_gprot(self,assay, families, proteins):
+    def get_rid_of_gprot(self, assay, families, proteins):
         if assay['family'] == 'Gq/11 or Gi/o':
             compare_val_gio = None
             compare_val_gq = None
             if 'Gi/o' in proteins:
-                compare_val_gio = next(item for item in families if item["family"] == 'Gi/o')
+                compare_val_gio = next(
+                    item for item in families if item["family"] == 'Gi/o')
             if 'Gq' in proteins:
-                compare_val_gq = next(item for item in families if item["family"] == 'Gq/11')
+                compare_val_gq = next(
+                    item for item in families if item["family"] == 'Gq/11')
             if compare_val_gq is None and compare_val_gio is not None:
                 try:
                     if assay['order_bias_value'] > compare_val_gio['order_bias_value']:
-                        families[:] = [d for d in families if d.get('family') != compare_val_gio['family']]
+                        families[:] = [d for d in families if d.get(
+                            'family') != compare_val_gio['family']]
                         assay['family'] = 'Gi/o'
                     else:
                         assay['family'] = 'skip'
@@ -375,7 +386,8 @@ class Command(BaseBuild):
             elif compare_val_gio is None and compare_val_gq is not None:
                 try:
                     if assay['order_bias_value'] > compare_val_gq['order_bias_value']:
-                        families[:] = [d for d in families if d.get('family') != compare_val_gio['family']]
+                        families[:] = [d for d in families if d.get(
+                            'family') != compare_val_gio['family']]
                         assay['family'] = 'Gq/11'
                     else:
                         assay['family'] = 'skip'
@@ -384,16 +396,20 @@ class Command(BaseBuild):
             elif compare_val_gio is not None and compare_val_gq is not None:
                 try:
                     if assay['order_bias_value'] > compare_val_gio['order_bias_value'] > compare_val_gq['order_bias_value']:
-                        families[:] = [d for d in families if d.get('family') != compare_val_gq['family']]
+                        families[:] = [d for d in families if d.get(
+                            'family') != compare_val_gq['family']]
                         assay['family'] = 'Gq/11'
-                    elif assay['order_bias_value'] > compare_val_gq['order_bias_value']  > compare_val_gio['order_bias_value']:
-                        families[:] = [d for d in families if d.get('family') != compare_val_gio['family']]
+                    elif assay['order_bias_value'] > compare_val_gq['order_bias_value'] > compare_val_gio['order_bias_value']:
+                        families[:] = [d for d in families if d.get(
+                            'family') != compare_val_gio['family']]
                         assay['family'] = 'Gi/o'
-                    elif compare_val_gq['order_bias_value']  > assay['order_bias_value'] > compare_val_gio['order_bias_value']:
-                        families[:] = [d for d in families if d.get('family') != compare_val_gio['family']]
+                    elif compare_val_gq['order_bias_value'] > assay['order_bias_value'] > compare_val_gio['order_bias_value']:
+                        families[:] = [d for d in families if d.get(
+                            'family') != compare_val_gio['family']]
                         assay['family'] = 'Gi/o'
                     elif compare_val_gio['order_bias_value'] > assay['order_bias_value'] > compare_val_gq['order_bias_value']:
-                        families[:] = [d for d in families if d.get('family') != compare_val_gq['family']]
+                        families[:] = [d for d in families if d.get(
+                            'family') != compare_val_gq['family']]
                         assay['family'] = 'Gq/11'
                 except:
                     assay['family'] = 'skip'
@@ -418,10 +434,12 @@ class Command(BaseBuild):
                 # if assay['family'] == 'Gq/11 or Gi/o':
                 #     assay = self.get_rid_of_gprot(assay, families, proteins)
                 if assay:
-                    compare_val = next(item for item in families if item["family"] == assay['family'])
+                    compare_val = next(
+                        item for item in families if item["family"] == assay['family'])
                     try:
                         if assay['order_bias_value'] > compare_val['order_bias_value']:
-                            families[:] = [d for d in families if d.get('family') != compare_val['family']]
+                            families[:] = [d for d in families if d.get(
+                                'family') != compare_val['family']]
                             families.append(assay)
                     except TypeError:
                         self.logger.info('skipping families if existing copy')
@@ -431,7 +449,7 @@ class Command(BaseBuild):
     def sort_assay_list(self, i):
         return_assay = dict()
         return_assay = sorted(i, key=lambda k: k['order_bias_value']
-                      if k['order_bias_value'] else float(-1000), reverse=True)
+                              if k['order_bias_value'] else float(-1000), reverse=True)
         self.logger.info('sort_assay_list')
         return return_assay
 
@@ -445,12 +463,14 @@ class Command(BaseBuild):
                             assay['reference_ligand'].append(reference)
                             assay['reference_assay_id'] = reference['assay_id']
                             if assay['order_bias_value']:
-                                temp_value = self.calc_order_bias_value(assay, assay['reference_ligand'])
+                                temp_value = self.calc_order_bias_value(
+                                    assay, assay['reference_ligand'])
                                 if assay['order_bias_value'] < temp_value:
                                     assay['order_bias_value'] = temp_value
                             else:
-                                assay['order_bias_value'] = self.calc_order_bias_value(assay, assay['reference_ligand'])
-        return  sorted_assays
+                                assay['order_bias_value'] = self.calc_order_bias_value(
+                                    assay, assay['reference_ligand'])
+        return sorted_assays
 
     def calc_order_bias_value(self, assay, reference):
         result = None
@@ -459,11 +479,12 @@ class Command(BaseBuild):
             # if len(reference)>1 and assay['qualitative_activity'] == 'No activity':
             #     import pdb; pdb.set_trace()
 
-            assay_a=assay['quantitive_activity']
-            assay_b=assay['quantitive_efficacy']
-            reference_a=reference[0]['quantitive_activity']
-            reference_b=reference[0]['quantitive_efficacy']
-            result = math.log10((assay_b/assay_a)) - math.log10((reference_b/reference_a))
+            assay_a = assay['quantitive_activity']
+            assay_b = assay['quantitive_efficacy']
+            reference_a = reference[0]['quantitive_activity']
+            reference_b = reference[0]['quantitive_efficacy']
+            result = math.log10((assay_b / assay_a)) - \
+                math.log10((reference_b / reference_a))
         except:
             result = None
             self.logger.info('calc_order_bias_value')
@@ -474,7 +495,8 @@ class Command(BaseBuild):
             i[1]['biasdata'] = i[1]['assay_list']
             i[1].pop('assay_list')
             # calculate log bias
-            self.calc_bias_factor(i[1]['biasdata'], i[1]['reference_assays_list'])
+            self.calc_bias_factor(i[1]['biasdata'], i[1]
+                                  ['reference_assays_list'])
             # recalculates lbf if it is negative
             # i[1]['biasdata'] = self.validate_lbf(i)
             self.calc_potency_and_transduction(i[1]['biasdata'])
@@ -482,36 +504,37 @@ class Command(BaseBuild):
         return context
 
     def calc_bias_factor(self, biasdata, reference):
-            most_reference = dict()
-            most_potent = dict()
-            for i in biasdata:
-                if i['order_no'] == 0:
-                    most_potent = i
-                    try:
-                        most_reference = i['reference_ligand'][0]
-                        i['lbf_a'] = round(math.log10(
-                            most_potent['quantitive_efficacy'] / most_potent['quantitive_activity']) - math.log10(
-                            most_reference['quantitive_efficacy'] / most_reference['quantitive_activity']),2)
-                    except:
-                        i['log_bias_factor'] = None
+        most_reference = dict()
+        most_potent = dict()
+        for i in biasdata:
+            if i['order_no'] == 0:
+                most_potent = i
+                try:
+                    most_reference = i['reference_ligand'][0]
+                    i['lbf_a'] = round(math.log10(
+                        most_potent['quantitive_efficacy'] / most_potent['quantitive_activity']) - math.log10(
+                        most_reference['quantitive_efficacy'] / most_reference['quantitive_activity']), 2)
+                except:
                     i['log_bias_factor'] = None
-                    self.process_low_potency(i)
+                i['log_bias_factor'] = None
+                self.process_low_potency(i)
 
-            for i in biasdata:
-                if i['order_no'] != 0:
-                    try:
-                        self.process_low_potency(i)
-                        # import pdb; pdb.set_trace()
-                        i['log_bias_factor'] = self.lbf_process_qualitative_data(i)
-                        if i['log_bias_factor'] == None:
-                            i['log_bias_factor'] = self.lbf_process_efficacy(i)
-                        if i['log_bias_factor'] == None:
-                            i['log_bias_factor'] = self.lbf_calculate_bias(i,most_potent,most_reference)
-                            i['lbf_a'] = round(self.lbf_calculate_bias_parts(i),2)
-                        if i['log_bias_factor'] == None:
-                            i['log_bias_factor'] = self.lbf_process_ic50(i)
-                    except:
-                        i['log_bias_factor'] = None
+        for i in biasdata:
+            if i['order_no'] != 0:
+                try:
+                    self.process_low_potency(i)
+                    # import pdb; pdb.set_trace()
+                    i['log_bias_factor'] = self.lbf_process_qualitative_data(i)
+                    if i['log_bias_factor'] == None:
+                        i['log_bias_factor'] = self.lbf_process_efficacy(i)
+                    if i['log_bias_factor'] == None:
+                        i['log_bias_factor'] = self.lbf_calculate_bias(
+                            i, most_potent, most_reference)
+                        i['lbf_a'] = round(self.lbf_calculate_bias_parts(i), 2)
+                    if i['log_bias_factor'] == None:
+                        i['log_bias_factor'] = self.lbf_process_ic50(i)
+                except:
+                    i['log_bias_factor'] = None
 
     def lbf_process_qualitative_data(self, i):
         return_message = None
@@ -539,21 +562,21 @@ class Command(BaseBuild):
             self.logger.info('lbf_process_efficacy')
         return return_message
 
-    def process_low_potency(self,i):
+    def process_low_potency(self, i):
         try:
             if i['quantitive_activity_initial'] < 5 and i['quantitive_efficacy'] > 0:
-                i['quantitive_activity'] == 12500*(10**(-9))
+                i['quantitive_activity'] == 12500 * (10**(-9))
         except:
             self.logger.info('get_rid_of_gprot')
 
-    def lbf_calculate_bias(self,i,most_potent,most_reference):
+    def lbf_calculate_bias(self, i, most_potent, most_reference):
         return_message = None
         try:
             temp_reference = i['reference_ligand'][0]
             if (i['quantitive_measure_type'].lower() == 'ec50'
-            and temp_reference['quantitive_measure_type'].lower() == 'ec50'
-            and most_potent['quantitive_measure_type'].lower() == 'ec50'
-            and most_reference['quantitive_measure_type'].lower() == 'ec50'):
+                and temp_reference['quantitive_measure_type'].lower() == 'ec50'
+                and most_potent['quantitive_measure_type'].lower() == 'ec50'
+                    and most_reference['quantitive_measure_type'].lower() == 'ec50'):
                 a = 0
                 b = 0
                 c = 0
@@ -573,19 +596,19 @@ class Command(BaseBuild):
             return_message = None
         return return_message
 
-    def lbf_calculate_bias_parts(self,i):
+    def lbf_calculate_bias_parts(self, i):
         result = None
         try:
             c = 0
             d = 0
             temp_reference = i['reference_ligand'][0]
             if (i['quantitive_measure_type'].lower() == 'ec50'
-            and temp_reference['quantitive_measure_type'].lower() == 'ec50'):
+                    and temp_reference['quantitive_measure_type'].lower() == 'ec50'):
                 c = math.log10(
                     i['quantitive_efficacy'] / i['quantitive_activity'])
                 d = math.log10(
                     temp_reference['quantitive_efficacy'] / temp_reference['quantitive_activity'])
-            result = c-d
+            result = c - d
         except:
             self.logger.info('lbf_process_ic50')
             result = None
@@ -595,7 +618,7 @@ class Command(BaseBuild):
         return_message = None
         try:
             if (i['quantitive_measure_type'].lower() == 'ic50' and
-                i['reference_ligand'][0]['quantitive_measure_type'].lower() == 'ic50'):
+                    i['reference_ligand'][0]['quantitive_measure_type'].lower() == 'ic50'):
                 return_message = 'Only agonist in main pathway'
         except:
             return_message = None
@@ -681,10 +704,10 @@ class Command(BaseBuild):
                 elif x.transduction and x.transduction == 'secondary':
                     secondary.add(x.g_protein.name)
             for i in primary:
-                temp += str(i) + str(', ')
+                temp += str(i.replace(' family', '')) + str(', ')
 
             for i in secondary:
-                temp1 += str(i) + str(', ')
+                temp1 += str(i.replace('family', '')) + str(', ')
             return temp, temp1
         except:
             self.logger.info('receptor not found error')
@@ -694,10 +717,11 @@ class Command(BaseBuild):
         for i in context['data'].items():
             if len(i[1]['biasdata']) > 1:
 
-                primary, secondary = self.fetch_receptor_trunsducers(i[1]['receptor'])
+                primary, secondary = self.fetch_receptor_trunsducers(
+                    i[1]['receptor'])
                 experiment_entry = AnalyzedExperiment(publication=i[1]['publication'],
                                                       ligand=i[1]['ligand'],
-                                                      external_ligand_ids = i[1]['ligand_links'],
+                                                      external_ligand_ids=i[1]['ligand_links'],
                                                       receptor=i[1]['receptor'],
                                                       source=source,
                                                       endogenous_ligand=i[1]['endogenous_ligand'],
@@ -707,22 +731,46 @@ class Command(BaseBuild):
                                                       secondary=secondary,
                                                       article_quantity=i[1]['article_quantity'],
                                                       labs_quantity=i[1]['labs'],
-                                                      ligand_source_id = i[1]['ligand_source_id'],
-                                                      ligand_source_type = i[1]['ligand_source_type']
+                                                      ligand_source_id=i[1]['ligand_source_id'],
+                                                      ligand_source_type=i[1]['ligand_source_type']
                                                       )
                 experiment_entry.save()
                 for ex in i[1]['biasdata']:
                     try:
-
+                        try:
+                            ex['log_bias_factor'] = round(
+                                ex['log_bias_factor'], 1)
+                        except:
+                            ex['log_bias_factor'] = ex['log_bias_factor']
+                        try:
+                            ex['lbf_a'] = round(ex['lbf_a'], 1)
+                        except:
+                            ex['lbf_a'] = ex['lbf_a']
+                        try:
+                            ex['t_coefficient'] = round(ex['t_coefficient'], 1)
+                            ex['t_factor'] = round(ex['t_factor'], 1)
+                        except:
+                            ex['t_coefficient'] = ex['t_coefficient']
+                            ex['t_factor'] = ex['t_factor']
+                        try:
+                            ex['quantitive_activity'] = round(
+                                ex['quantitive_activity'], 1)
+                        except:
+                            ex['quantitive_activity'] = ex['quantitive_activity']
+                        try:
+                            ex['quantitive_efficacy'] = int(
+                                ex['quantitive_efficacy'])
+                        except:
+                            ex['quantitive_efficacy'] = ex['quantitive_efficacy']
                         emax_ligand = ex['emax_reference_ligand']
                         experiment_assay = AnalyzedAssay(experiment=experiment_entry,
-                                                        assay_description='tested_assays',
+                                                         assay_description='tested_assays',
                                                          family=ex['family'],
                                                          order_no=ex['order_no'],
                                                          signalling_protein=ex['signalling_protein'],
                                                          cell_line=ex['cell_line'],
                                                          assay_type=ex['assay_type'],
-                                                         reference_ligand_id = ex['reference_assay_id'],
+                                                         reference_ligand_id=ex['reference_assay_id'],
                                                          molecule_1=ex['molecule_1'],
                                                          molecule_2=ex['molecule_2'],
                                                          assay_time_resolved=ex['assay_time_resolved'],
@@ -744,9 +792,9 @@ class Command(BaseBuild):
                                                          log_bias_factor_b=ex['lbf_b'],
                                                          log_bias_factor_c=ex['lbf_c'],
                                                          log_bias_factor_d=ex['lbf_d'],
-                                                         effector_family = ex['family'],
-                                                         measured_biological_process = ex['measured_biological_process'] ,
-                                                         signal_detection_tecnique = ex['signal_detection_tecnique'],
+                                                         effector_family=ex['family'],
+                                                         measured_biological_process=ex['measured_biological_process'],
+                                                         signal_detection_tecnique=ex['signal_detection_tecnique'],
                                                          emax_ligand_reference=emax_ligand
                                                          )
                         experiment_assay.save()
@@ -757,7 +805,7 @@ class Command(BaseBuild):
                 for ex in i[1]['reference_assays_list']:
                     emax_ligand = ex['emax_reference_ligand']
                     experiment_assay = AnalyzedAssay(experiment=experiment_entry,
-                                                     reference_ligand_id = ex['assay_id'],
+                                                     reference_ligand_id=ex['assay_id'],
                                                      family=ex['family'],
                                                      order_no=ex['order_no'],
                                                      signalling_protein=ex['signalling_protein'],
@@ -785,9 +833,9 @@ class Command(BaseBuild):
                                                      log_bias_factor_b=ex['lbf_b'],
                                                      log_bias_factor_c=ex['lbf_c'],
                                                      log_bias_factor_d=ex['lbf_d'],
-                                                     effector_family = ex['family'],
-                                                     measured_biological_process = ex['measured_biological_process'] ,
-                                                     signal_detection_tecnique = ex['signal_detection_tecnique'],
+                                                     effector_family=ex['family'],
+                                                     measured_biological_process=ex['measured_biological_process'],
+                                                     signal_detection_tecnique=ex['signal_detection_tecnique'],
                                                      emax_ligand_reference=emax_ligand
                                                      )
                     experiment_assay.save()
@@ -795,7 +843,7 @@ class Command(BaseBuild):
                 for ex in i[1]['backup_assays']:
                     emax_ligand = ex['emax_reference_ligand']
                     experiment_assay = AnalyzedAssay(experiment=experiment_entry,
-                                                     reference_ligand_id = ex['assay_id'],
+                                                     reference_ligand_id=ex['assay_id'],
                                                      family=ex['family'],
                                                      order_no=ex['order_no'],
                                                      signalling_protein=ex['signalling_protein'],
@@ -823,9 +871,9 @@ class Command(BaseBuild):
                                                      log_bias_factor_b=ex['lbf_b'],
                                                      log_bias_factor_c=ex['lbf_c'],
                                                      log_bias_factor_d=ex['lbf_d'],
-                                                     effector_family = ex['family'],
-                                                     measured_biological_process = ex['measured_biological_process'] ,
-                                                     signal_detection_tecnique = ex['signal_detection_tecnique'],
+                                                     effector_family=ex['family'],
+                                                     measured_biological_process=ex['measured_biological_process'],
+                                                     signal_detection_tecnique=ex['signal_detection_tecnique'],
                                                      emax_ligand_reference=emax_ligand
                                                      )
                     experiment_assay.save()
