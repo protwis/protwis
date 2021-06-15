@@ -1092,7 +1092,7 @@
                           white-space: nowrap;
                           text-overflow: ellipsis;
                   max-width: 250px;" colspan="2">Reference</th>
-
+                <th style="border-left: 1px solid black; text-align:left" colspan="15">reference</th>  
 			</tr>
 			<tr class="table-filter-dropdown">
 				<th></th>
@@ -1189,7 +1189,24 @@
                           text-overflow: ellipsis;
                           max-width: 100px;">Authors</th>
 				<th id="doi_reference_filter_select">DOI/ <br>Reference</th>
+                  <th>references</th>
+                    <th id="time_p1_filter_select">reference P 1</th>
+					<th id="time_p2_filter_select">reference P 2</th>
+					<th id="time_p3_filter_select">reference P 3</th>
+					<th id="time_p4_filter_select">reference P 4</th>
+					<th id="time_p5_filter_select">reference P 5</th>
 
+                    <th id="time_p1_filter_select">assay P 1</th>
+					<th id="time_p2_filter_select">assay P 2</th>
+					<th id="time_p3_filter_select">assay P 3</th>
+					<th id="time_p4_filter_select">assay P 4</th>
+					<th id="time_p5_filter_select">assay P 5</th>
+
+
+                    <th id="time_p4_filter_select">lig id</th>
+					<th id="time_p5_filter_select">lig source</th>
+                    <th id="time_p5_filter_select">lig id displayed</th>
+                    <th id="time_p5_filter_select">lig external</th>
 			</tr>
 		</thead>
 		<tbody id='structures_scrollable_body'>
@@ -1363,6 +1380,29 @@
 				<td class="name">
 					<a href='{{e.publication.web_link}}' target='blank'>
 						{{e.publication.web_link.index}}</a></td>
+
+                        <!-- reference aprt -->
+                    <td>Reference</td>
+
+                    <td>{{e.reference_ligand_p1|default_if_none:""}}</td>
+                    <td>{{e.reference_ligand_p2|default_if_none:""}}</td>
+                    <td>{{e.reference_ligand_p3|default_if_none:""}}</td>
+                    <td>{{e.reference_ligand_p4|default_if_none:""}}</td>
+                    <td>{{e.reference_ligand_p5|default_if_none:""}}</td>
+
+                    <td>{{e.reference_assay_type_p1|default_if_none:""}}</td>
+                    <td>{{e.reference_assay_type_p2|default_if_none:""}}</td>
+                    <td>{{e.reference_assay_type_p3|default_if_none:""}}</td>
+                    <td>{{e.reference_assay_type_p4|default_if_none:""}}</td>
+                    <td>{{e.reference_assay_type_p5|default_if_none:""}}</td>
+
+                    <!-- <td>{{e.web_links1|default_if_none:""}}</td>
+                    <td>{{e.web_links|default_if_none:""}}</td> -->
+
+                    <td>{{e.ligand_source_id|default_if_none:""}}</td>
+                    <td>{{e.ligand_source_type|default_if_none:""}}</td>
+                    <td>{{e.ligand.id}}</td>
+                    <td>{{e.external_ligand_ids}}</td>
 			</tr>
 			{%endfor%}
 		</tbody>
