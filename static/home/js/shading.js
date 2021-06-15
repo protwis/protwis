@@ -140,10 +140,10 @@ function shadeTable(table, columnIndexes, darkGrey, lightGrey)
 {   let myShadingTable = null;
 
      myShadingTable = new MyShadingTable(table, columnIndexes, darkGrey, lightGrey);
-     myShadingTable.shade(table.rows({page: "current"}));
+     myShadingTable.shade(table.rows({page: "all"}));
      table.on("draw.dt", function(e, settings) {
         let api = new $.fn.dataTable.Api(settings);
-        myShadingTable.shade(api.rows({page: "current"}));
+        myShadingTable.shade(api.rows({page: "all"}));
     });
 
 

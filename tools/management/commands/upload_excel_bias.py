@@ -256,20 +256,34 @@ class Command(BaseBuild):
         d = self.return_row(r=r)
         try:
             d['potency_quantity'] = re.sub('[^\d\.,]', '', d['potency_quantity'])
-            d['potency_quantity'] = round(float(d['potency_quantity']),2)
+            d['potency_quantity'] = round(float(d['potency_quantity']),1)
         except:
             d['potency_quantity'] = d['potency_quantity']
         try:
-            d['emax_quantity'] = round(d['emax_quantity'],0)
+            d['emax_quantity'] = int(d['emax_quantity'],0)
         except:
             d['emax_quantity'] = d['emax_quantity']
 
-        if d['potency_quality'].lower() == 'low activity':
-            if d['emax_quantity'] == None or d['emax_quantity']==0.0:
+        try:
+            if d['potency_quantity'] < 5 and d['potency_measure_type'] == 'pEC50' and d['emax_quantity']>0.0:
                 d['potency_quantity'] = 4.9
-                d['potency_measure_type'] = 'pEC50'
-                d['emax_quantity'] = 20
-                d['protein_efficacy_equation'] = 'abs'
+        except:
+            d['potency_quantity'] = d['potency_quantity']
+
+        try:
+            if d['potency_quality'].lower() == 'low activity':
+                if d['emax_quantity'] == None or d['emax_quantity']==0.0:
+                    d['potency_quantity'] = 4.9
+                    d['potency_measure_type'] = 'pEC50'
+                    d['emax_quantity'] = 20
+                    d['potency_quality'] = None
+                else:
+                    d['potency_quantity'] = 4.9
+                    d['potency_measure_type'] = 'pEC50'
+                    d['potency_quality'] = None
+        except:
+            d['potency_quality'] = d['potency_quality']
+
         d['potency_quantity'], d['potency_measure_type'] = self.fetch_measurements(d['potency_quantity'],
                                                                      d['potency_measure_type'],
                                                                      d['potency_unit'])
@@ -292,15 +306,21 @@ class Command(BaseBuild):
         if len(d['signalling_protein']) < 1:
             d['signalling_protein'] = '-'
 
-        auxiliary_protein = self.fetch_protein(d['auxiliary_protein'], d['source_file'])
         if l == None:
             print('*************error row',d,l)
         ## TODO:  check if it was already uploaded
+        if not pub:
+            print('pub error:', d['source_file'])
+        if not l:
+            print('l error:', d['source_file'])
+        if not protein:
+            print('protein error:', d['source_file'])
+
         experiment_entry = BiasedExperiment(submission_author=d['submitting_group'],
                                             publication=pub,
                                             ligand=l,
                                             receptor=protein,
-                                            auxiliary_protein = auxiliary_protein,
+                                            auxiliary_protein = d['auxiliary_protein'],
                                             endogenous_ligand = end_ligand,
                                             ligand_source_id = d['ligand_id'],
                                             ligand_source_type = d['ligand_type'],
@@ -412,81 +432,10 @@ class Command(BaseBuild):
             self.logger.info("potency convertion e rror")
             return None, None
 
-    def define_g_family(self, protein, assay_type, receptor):
-        family = None
-        if (protein == 'b-arrestin' or
-            protein == 'b-arrestin-1 (non-visual arrestin-2)' or
-            protein == 'b-arrestin-2 (non-visual arrestin-3)'):
-            family = 'B-arr'
-
-        elif (protein == 'gi/o-family' or
-                protein == 'gai/o-gbγ' or
-                protein == 'gai1' or
-                protein == 'gai2' or
-                protein == 'gai3' or
-                protein == 'gai' or
-                protein == 'gai1/2' or
-                protein == 'gbγ' or
-                protein == 'gao' or
-                protein == 'gaoa' or
-                protein == 'gaob' or
-                protein == 'gao1' or
-                protein == 'gaolf' or
-                protein == 'gat1' or
-                protein == 'gat2' or
-                protein == 'gat3' or
-                protein == 'gaz' or
-                protein == 'gaob'):
-            family = 'Gi/o'
-
-        elif (protein == 'gq-family' or
-                protein=='ga12' or
-                protein=='gaq' or
-                protein=='gpa1/ga12' or
-                protein=='gpa1/gaq' or
-                protein=='gaqδ6i4myr' or
-                protein=='gaqi5' or
-                protein=='gaq/11' or
-                protein=='gaq/14' or
-                protein=='gaq/15' or
-                protein=='gaq/15' or
-                protein=='gaq/15' or
-                protein=='gaq/16'):
-            family = 'Gq/11'
-
-        elif (protein == 'g12/13-family' or
-                protein == 'ga11' or
-                protein == 'ga12' or
-                protein == 'ga13' or
-                protein == 'ga14' or
-                protein == 'ga15'):
-            family = 'G12/13'
-
-        elif (protein == 'gs-family' or
-              protein == 'gas' or
-              protein == 'gaolf'):
-            family = 'Gs'
-        elif (protein == 'pERK1/2 activation' or
-                protein =="erk"):
-            family = 'pERK1-2'
-
-        elif (protein == '' or protein is None):
-            if assay_type == 'Ca2+ accumulation':
-                family = 'CA2'
-        else:
-            family = self.fetch_receptor_trunsducers(receptor)
-            if family is not None:
-                import pdb; pdb.set_trace()
-            else:
-                family = 'G-protein'
-        self.logger.info("family saved")
-        return family
 
     def fetch_receptor_trunsducers(self, receptor):
         primary = set()
         temp = list()
-
-
         try:
             gprotein = ProteinGProteinPair.objects.filter(protein=receptor)
             for x in gprotein:
@@ -554,8 +503,8 @@ class Command(BaseBuild):
             else:
                 # TODO: if pubchem id then create ligand from pubchem
 
-                if ligand_type and ligand_type.lower() == 'pubchem cid':
-                    l = self.get_ligand_or_create(ligand_id)
+                # if ligand_type and ligand_type.lower() == 'pubchem cid':
+                #     l = self.get_ligand_or_create(ligand_id)
 
                 if l == None:
                     l = get_or_make_ligand(ligand_id, ligand_type, ligand_name)

@@ -1060,7 +1060,7 @@
 					Tested ligand pair </th>
 				<th id="transducers" style="border-left: 1px solid black; text-align:left" colspan="2" style="">
 					Receptor transducers</th>
-				<th id="pathways_effector" style="border-left: 1px solid black; text-align:left" colspan="5">
+				<th id="pathways_effector" style="border-left: 1px solid black; text-align:left; display:None" colspan="0">
 					Bias rank order:<br>(by &#916;Log(Emax/EC50)</th>
 				<th id="pathways_measure" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Bias rank order:<br>Measured effector</th>
@@ -1109,11 +1109,11 @@
 				<th id="labs_quantity_filter_select">#Labs<br></th>
 				<th id="primary_filter_select">Primary</th>
 				<th id="secondary_filter_select">Secondary</th>
-				<th class="pathways" id="pathways_effector_p1_filter_select">P 1</th>
-				<th class="pathways" id="pathways_effector_p2_filter_select">P 2</th>
-				<th class="pathways" id="pathways_effector_p3_filter_select">P 3</th>
-				<th class="pathways" id="pathways_effector_p4_filter_select">P 4</th>
-				<th class="pathways" id="pathways_effector_p5_filter_select">P 5</th>
+				<th style="display:None" class="pathways" id="pathways_effector_p1_filter_select">P 1</th>
+				<th style="display:None" class="pathways" id="pathways_effector_p2_filter_select">P 2</th>
+				<th style="display:None" class="pathways" id="pathways_effector_p3_filter_select">P 3</th>
+				<th style="display:None" class="pathways" id="pathways_effector_p4_filter_select">P 4</th>
+				<th style="display:None" class="pathways" id="pathways_effector_p5_filter_select">P 5</th>
 				<th class="pathways" id="pathways_measure_p1_filter_select">P 1</th>
 				<th class="pathways" id="pathways_measure_p2_filter_select">P 2</th>
 				<th class="pathways" id="pathways_measure_p3_filter_select">P 3</th>
@@ -1223,11 +1223,11 @@
 				<td style="text-align:left">{{e.secondary}}</td>
 
 				<!-- pathways -->
-				<td style="text-align:left" class="pathway">{{e.pathways_p1|default_if_none:""}}</td>
-				<td style="text-align:left" class="pathway">{{e.pathways_p2|default_if_none:""}}</td>
-				<td style="text-align:left" class="pathway">{{e.pathways_p3|default_if_none:""}}</td>
-				<td style="text-align:left" class="pathway">{{e.pathways_p4|default_if_none:""}}</td>
-				<td style="text-align:left" class="pathway">{{e.pathways_p5|default_if_none:""}}</td>
+				<td style="display:None" style="text-align:left" class="pathway">{{e.pathways_p1|default_if_none:""}}</td>
+				<td style="display:None" style="text-align:left" class="pathway">{{e.pathways_p2|default_if_none:""}}</td>
+				<td style="display:None" style="text-align:left" class="pathway">{{e.pathways_p3|default_if_none:""}}</td>
+				<td style="display:None" style="text-align:left" class="pathway">{{e.pathways_p4|default_if_none:""}}</td>
+				<td style="display:None" style="text-align:left" class="pathway">{{e.pathways_p5|default_if_none:""}}</td>
 				<!-- Assay -->
 				<td style="text-align:left" title='{{e.assay_p1}}'>{{e.assay_p1|default_if_none:"-" }}</td>
 				<td style="text-align:left" title='{{e.assay_p2}}'>{{e.assay_p2|default_if_none:"-" }}</td>
