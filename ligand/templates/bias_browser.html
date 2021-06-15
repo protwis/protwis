@@ -1054,7 +1054,7 @@
 		<thead id="headers">
 			<tr class="header-spans" rowspan="2">
 				<th><span class="glyphicon glyphicon-info-sign" title="Click on this icon in a row for more details."></span></th>
-				<th id="receptor" style="border-left: 1px solid black; text-align:left" colspan="6">
+				<th id="receptor" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Receptor</th>
 				<th style="border-left: 1px solid black; text-align:left" colspan="5" style="">
 					Tested ligand pair </th>
@@ -1101,7 +1101,7 @@
 				<th id="uniprot_filter_select">UniProt</th>
 				<th id="iuphar_filter_select">IUPHAR</th>
 				<th id="species_filter_select">Species</th>
-				<th id="endogenous_ligand_filter_select">Endogenous<br>Ligand</th>
+				<th style="display:None" id="endogenous_ligand_filter_select">Endogenous<br>Ligand</th>
 				<th id="reference_ligand_filter_select">Reference</th>
 				<th id="ligand_filter_select">Ligand tested for bias</th>
 				<th id="vendor_quantity_filter_select">#Ven<br>dors</th>
@@ -1208,7 +1208,7 @@
 				<td title='{{e.uniprot}}'>{{e.receptor.entry_short}}</td>
 				<td title='{{e.IUPHAR}}'>{{e.receptor.name.split|first}}</td>
 				<td title='{{e.receptor.species.common_name}}'>{{e.receptor.species.common_name}}</td>
-				<td></td>
+				<td style="display:None"></td>
 
 				<!-- ligand -->
 				<td title='{{e.reference_ligand}}' style="border-left: 1px solid black;">{{e.reference_ligand}}</td>
