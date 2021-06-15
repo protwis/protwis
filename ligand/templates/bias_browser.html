@@ -312,14 +312,14 @@
 				},
 			],
 			"drawCallback": function(settings) {
-                calculate_header()
-				setTimeout(function() {
+				calculate_header()
 
+				setTimeout(function() {
 					var ligand_counter = read_unique_ids();
 					var receptor_counter = read_unique_ids_receptor();
 					document.getElementById("ligand_counter").innerHTML = ligand_counter;
 					document.getElementById("receptor_counter").innerHTML = receptor_counter;
-					shadeTable(table, [".shade"], 120, 200);
+
 				}, 2000);
 			},
 		});
@@ -611,7 +611,7 @@
 					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
-                // Emax
+				// Emax
 				{
 					column_number: 42,
 					filter_type: "range_number",
@@ -642,7 +642,7 @@
 					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
-                //t_factor
+				//t_factor
 				{
 					column_number: 47,
 					filter_type: "range_number",
@@ -673,7 +673,7 @@
 					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
-                //mm1
+				//mm1
 				{
 					column_number: 52,
 					filter_type: "multi_select",
@@ -709,7 +709,7 @@
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
-                //mm2
+				//mm2
 				{
 					column_number: 57,
 					filter_type: "multi_select",
@@ -747,7 +747,7 @@
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
-                //bio
+				//bio
 				{
 					column_number: 62,
 					filter_type: "multi_select",
@@ -783,7 +783,7 @@
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
-                //cell
+				//cell
 				{
 					column_number: 67,
 					filter_type: "multi_select",
@@ -819,7 +819,7 @@
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
-                //Time resolved
+				//Time resolved
 				{
 					column_number: 72,
 					filter_type: "multi_select",
@@ -848,7 +848,7 @@
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
-                {
+				{
 					column_number: 76,
 					filter_type: "multi_select",
 					select_type: 'select2',
@@ -879,14 +879,9 @@
 			});
 		shadeTable(table, [".shade"], 120, 200);
 
-		yadcf.exFilterColumn(table, [
-			[28, {
-				from: 1
-			}],
-		]);
-
 		function calculate_header(ids) {
 			var columnIds = [];
+			var EmptyColumnIds = [];
 			$("#receptor").attr("colspan", 6);
 			$("#ligand").attr("colspan", 5);
 			$("#transducers").attr("colspan", 2);
@@ -894,13 +889,13 @@
 			$("#pathways_measure").attr("colspan", 5);
 			$("#opmodel").attr("colspan", 4);
 			$("#lbf").attr("colspan", 4);
-            $("#lbf_part").attr("colspan", 5);
+			$("#lbf_part").attr("colspan", 5);
 			$("#activity").attr("colspan", 5);
 			$("#emax").attr("colspan", 5);
 			$("#tfactor").attr("colspan", 5);
 			$("#mm1").attr("colspan", 5);
-            $("#mm2").attr("colspan", 5);
-            $("#bio").attr("colspan", 5);
+			$("#mm2").attr("colspan", 5);
+			$("#bio").attr("colspan", 5);
 			$("#cell").attr("colspan", 5);
 			$("#time").attr("colspan", 5);
 			colspan_default = {
@@ -931,8 +926,26 @@
 
 					columnIds.push(tds[0].cellIndex)
 					tds.addClass('highlight');
+				} else {
+					for (i = 0; i < tds.length; i++) {
+						if (tds[i].cellIndex > 0 && tds[i].innerText.length < 1) {
+							$(tds[i]).html("-");
+						}
+					}
 				}
 			});
+			// if (EmptyColumnIds) {
+			// 	EmptyColumnIds.forEach((item) => {
+			// 		var filterRow = $('.dataTable td:nth-child(' + (item + 1) + ')');
+			// 		console.log(item);
+			//         if (item > 0 && filterRow[0].innerText.length < 1){
+			//
+			//             $(filterRow[0]).html("-");
+			//         }
+			// 	})
+			// };
+
+
 			if (columnIds) {
 				columnIds.forEach((item) => {
 					var filterRow = $('.dataTable .table-filter-dropdown th:nth-child(' + (item + 1) + ')');
@@ -950,8 +963,6 @@
 							}
 						}
 					}
-
-
 				});
 			}
 		}
@@ -962,6 +973,12 @@
 			location.reload()
 			//yadcf.exResetAllFilters(oTable);
 		}
+
+		yadcf.exFilterColumn(table, [
+			[28, {
+				from: 1
+			}],
+		]);
 
 	});
 </script>
@@ -1113,12 +1130,12 @@
 				<th class="pathways" id="pathways_measure_p4_filter_select">P 4</th>
 				<th class="pathways" id="pathways_measure_p5_filter_select">P 5</th>
 
-                <th class="shade" id="opmodel_p2_p1_filter_select">P 2 / P 1</th>
+				<th class="shade" id="opmodel_p2_p1_filter_select">P 2 / P 1</th>
 				<th class="shade" id="opmodel_p3_p1_filter_select">P 3 / P 1</th>
 				<th class="shade" id="opmodel_p4_p1_filter_select">P 4 / P 1</th>
 				<th class="shade" id="opmodel_p5_p1_filter_select">P 5 / P 1</th>
 
-                <th class="shade" id="lbf_p2_p1_filter_select">P 2 / P 1</th>
+				<th class="shade" id="lbf_p2_p1_filter_select">P 2 / P 1</th>
 				<th class="shade" id="lbf_p3_p1_filter_select">P 3 / P 1</th>
 				<th class="shade" id="lbf_p4_p1_filter_select">P 4 / P 1</th>
 				<th class="shade" id="lbf_p5_p1_filter_select">P 5 / P 1</th>
@@ -1135,49 +1152,49 @@
 				<th class="shade" id="activity_p4_filter_select">P 4</th>
 				<th class="shade" id="activity_p5_filter_select">P 5</th>
 
-                <th class="shade" id="emax_p1_filter_select">P 1</th>
+				<th class="shade" id="emax_p1_filter_select">P 1</th>
 				<th class="shade" id="emax_p2_filter_select">P 2</th>
 				<th class="shade" id="emax_p3_filter_select">P 3</th>
 				<th class="shade" id="emax_p4_filter_select">P 4</th>
 				<th class="shade" id="emax_p5_filter_select">P 5</th>
 
-                <th class="shade" id="tfactor_p1_filter_select">P 1</th>
+				<th class="shade" id="tfactor_p1_filter_select">P 1</th>
 				<th class="shade" id="tfactor_p2_filter_select">P 2</th>
 				<th class="shade" id="tfactor_p3_filter_select">P 3</th>
 				<th class="shade" id="tfactor_p4_filter_select">P 4</th>
 				<th class="shade" id="tfactor_p5_filter_select">P 5</th>
 
-                <th id="measured_molecule_p1_filter_select">P 1</th>
+				<th id="measured_molecule_p1_filter_select">P 1</th>
 				<th id="measured_molecule_p2_filter_select">P 2</th>
 				<th id="measured_molecule_p3_filter_select">P 3</th>
 				<th id="measured_molecule_p4_filter_select">P 4</th>
 				<th id="measured_molecule_p5_filter_select">P 5</th>
 
-                <th id="measured_molecule2_p1_filter_select">P 1</th>
+				<th id="measured_molecule2_p1_filter_select">P 1</th>
 				<th id="measured_molecule2_p2_filter_select">P 2</th>
 				<th id="measured_molecule2_p3_filter_select">P 3</th>
 				<th id="measured_molecule2_p4_filter_select">P 4</th>
 				<th id="measured_molecule2_p5_filter_select">P 5</th>
 
-                <th id="bioprocess_p1_filter_select">P 1</th>
+				<th id="bioprocess_p1_filter_select">P 1</th>
 				<th id="bioprocess_p2_filter_select">P 2</th>
 				<th id="bioprocess_p3_filter_select">P 3</th>
 				<th id="bioprocess_p4_filter_select">P 4</th>
 				<th id="bioprocess_p5_filter_select">P 5</th>
 
-                <th id="cell_p1_filter_select">P 1</th>
+				<th id="cell_p1_filter_select">P 1</th>
 				<th id="cell_p2_filter_select">P 2</th>
 				<th id="cell_p3_filter_select">P 3</th>
 				<th id="cell_p4_filter_select">P 4</th>
 				<th id="cell_p5_filter_select">P 5</th>
 
-                <th id="time_p1_filter_select">P 1</th>
+				<th id="time_p1_filter_select">P 1</th>
 				<th id="time_p2_filter_select">P 2</th>
 				<th id="time_p3_filter_select">P 3</th>
 				<th id="time_p4_filter_select">P 4</th>
 				<th id="time_p5_filter_select">P 5</th>
 
-                <th id="authors_filter_select" style="overflow: hidden;
+				<th id="authors_filter_select" style="overflow: hidden;
                           white-space: nowrap;
                           text-overflow: ellipsis;
                           max-width: 100px;">Authors</th>
@@ -1228,15 +1245,15 @@
 				<td title='{{e.assay_p4}}'>{{e.assay_p4|default_if_none:"-" }}</td>
 				<td title='{{e.assay_p5}}'>{{e.assay_p5|default_if_none:"-" }}</td>
 				<!-- t factor -->
-				<td style="text-align:right" class="shade">{{e.opmodel_p2_p1|default_if_none:""}}</td>
-				<td style="text-align:right" class="shade">{{e.opmodel_p3_p1|default_if_none:""}}</td>
-				<td style="text-align:right" class="shade">{{e.opmodel_p4_p1|default_if_none:""}}</td>
-				<td style="text-align:right" class="shade">{{e.opmodel_p5_p1|default_if_none:""}}</td>
-				<!-- log bias facrtor -->
-				<td style="text-align:right" class="shade">{{e.lbf_p2_p1|default_if_none:""}}</td>
-				<td style="text-align:right" class="shade">{{e.lbf_p3_p1|default_if_none:""}}</td>
-				<td style="text-align:right" class="shade">{{e.lbf_p4_p1|default_if_none:""}}</td>
-				<td style="text-align:right" class="shade">{{e.lbf_p5_p1|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade" id="opmodel_p2_p1">{{e.opmodel_p2_p1|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade" id="opmodel_p3_p1">{{e.opmodel_p3_p1|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade" id="opmodel_p4_p1">{{e.opmodel_p4_p1|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade" id="opmodel_p5_p1">{{e.opmodel_p5_p1|default_if_none:""}}</td>
+				<!-- log bias facrtor <> id=""---->
+				<td style="text-align:right" class="shade" id="lbf_p2_p1">{{e.lbf_p2_p1|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade" id="lbf_p3_p1">{{e.lbf_p3_p1|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade" id="lbf_p4_p1">{{e.lbf_p4_p1|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade" id="lbf_p5_p1">{{e.lbf_p5_p1|default_if_none:""}}</td>
 				<!-- lbf_part -->
 				<td style="text-align:right" title='{{e.lbf_part_p1}}'>{{e.lbf_part_p1|default_if_none:"" }}</td>
 				<td style="text-align:right" title='{{e.lbf_part_p2}}'>{{e.lbf_part_p2|default_if_none:"" }}</td>
