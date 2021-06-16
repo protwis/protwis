@@ -14,8 +14,8 @@ urlpatterns = [
     url(r'^bias_statistics', cache_page(3600*24*7)(views.LigandStatistics.as_view(page='ligand_bias')), name='ligand_statistics'),
     url(r'^(?P<pk>[-\w]+)/info$', views.LigandInformationView.as_view()),
 
-    url(r'^biased/$', views.CachedBiasBrowser, name='bias_browser-list'),
-    # url(r'^biased/$', views.BiasBrowser.as_view(), name='bias_browser-list'),
+    # url(r'^biased/$', views.CachedBiasBrowser, name='bias_browser-list'),
+    url(r'^biased/$', views.BiasBrowser.as_view(), name='bias_browser-list'),
     url(r'^biasedsubtypes/$',views.CachedBiasGBrowser, name='bias_browser-subtype'),
     #url(r'^biasedsubtypes/$',views.BiasGBrowser.as_view(), name='bias_browser-list'),
     url(r'^biasedbrowser',views.BiasTargetSelection.as_view(), name='bias_browser-list1'),

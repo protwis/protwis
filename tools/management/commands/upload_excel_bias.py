@@ -207,9 +207,9 @@ class Command(BaseBuild):
         d['effector_family'] = r[15]
         d['molecule_1'] = r[16]
         d['molecule_2'] = r[17]
+        d['spatial_level'] = r[18]
+        d['assay_type'] = r[19]
 
-        d['assay_type'] = r[18]
-        d['spatial_level'] = r[19]
         d['signal_detection_tecnique'] = r[20]
         d['time_resolved'] = r[21]
 

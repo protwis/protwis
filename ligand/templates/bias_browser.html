@@ -1092,7 +1092,7 @@
                           white-space: nowrap;
                           text-overflow: ellipsis;
                   max-width: 250px;" colspan="2">Reference</th>
-                <th style="border-left: 1px solid black; text-align:left" colspan="15">reference</th>  
+                <th style="border-left: 1px solid black; text-align:left" colspan="15">reference</th>
 			</tr>
 			<tr class="table-filter-dropdown">
 				<th></th>
@@ -1120,15 +1120,15 @@
 				<th class="pathways" id="pathways_measure_p4_filter_select">P 4</th>
 				<th class="pathways" id="pathways_measure_p5_filter_select">P 5</th>
 
-				<th class="shade" id="opmodel_p2_p1_filter_select">P 2 / P 1</th>
-				<th class="shade" id="opmodel_p3_p1_filter_select">P 3 / P 1</th>
-				<th class="shade" id="opmodel_p4_p1_filter_select">P 4 / P 1</th>
-				<th class="shade" id="opmodel_p5_p1_filter_select">P 5 / P 1</th>
+				<th class="shade" id="opmodel_p2_p1_filter_select">P1 - P2</th>
+				<th class="shade" id="opmodel_p3_p1_filter_select">P1 - P3</th>
+				<th class="shade" id="opmodel_p4_p1_filter_select">P1 - P4</th>
+				<th class="shade" id="opmodel_p5_p1_filter_select">P1 - P5</th>
 
-				<th class="shade" id="lbf_p2_p1_filter_select">P 2 / P 1</th>
-				<th class="shade" id="lbf_p3_p1_filter_select">P 3 / P 1</th>
-				<th class="shade" id="lbf_p4_p1_filter_select">P 4 / P 1</th>
-				<th class="shade" id="lbf_p5_p1_filter_select">P 5 / P 1</th>
+				<th class="shade" id="lbf_p2_p1_filter_select">P1 - P2</th>
+				<th class="shade" id="lbf_p3_p1_filter_select">P1 - P3</th>
+				<th class="shade" id="lbf_p4_p1_filter_select">P1 - P4</th>
+				<th class="shade" id="lbf_p5_p1_filter_select">P1 - P5</th>
 
 				<th class="shade" id="lbf_p2_p1_filter_select">P 1</th>
 				<th class="shade" id="lbf_p2_p1_filter_select">P 2</th>
@@ -1213,7 +1213,7 @@
 			{%for e in data_test%}
 			<tr>
 				<td>
-					<span style='display: none'> {{e.ligand.id}}</span>
+					<span style='display: none'> {{e.id}}</span>
 					<a href="#">
 						<span class="glyphicon glyphicon-info-sign" title="Click for more details" onclick="openPopup('experiment/{{e.id}}/detail', 'Detail View', window, 1500, 1000)"></span>
 					</a>
