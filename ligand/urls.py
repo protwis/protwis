@@ -16,9 +16,15 @@ urlpatterns = [
 
     # url(r'^biased/$', views.CachedBiasBrowser, name='bias_browser-list'),
     url(r'^biased/$', views.BiasBrowser.as_view(), name='bias_browser-list'),
+
     # url(r'^biasedsubtypes/$',views.CachedBiasGBrowser, name='bias_browser-subtype'),
     url(r'^biasedsubtypes/$',views.BiasGBrowser.as_view(), name='bias_browser-list'),
+
+    # url(r'^biasedsubtypes/$',views.CachedBiasGBrowser, name='bias_browser-subtype'),
+    url(r'^biasedpredicted/$',views.BiasPredictionBrowser.as_view(), name='bias_browser-list'),
+
     url(r'^biasedbrowser',views.BiasTargetSelection.as_view(), name='bias_browser-list1'),
+    url(r'^biasedpredictedbrowser',views.BiasPredictionTargetSelection.as_view(), name='bias_browser-list1'),
     url(r'^biasedsubtypesbrowser',views.BiasGTargetSelection.as_view(), name='bias_browser-list1'),
 
     url(r'^biased/experiment/(?P<pk>[-\w]+)/detail$', views.ExperimentEntryView.as_view()),
