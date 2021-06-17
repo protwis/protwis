@@ -176,6 +176,8 @@ class Command(BaseBuild):
             temp['reference_ligand'] = None
             if not j['children']:
                 continue
+            if j['children'][0].signalling_protein == '-':
+                continue
             temp_dict['assay_id'] = j['children'][0].id
             temp_dict['ligand_source_id'] = j['main'].ligand_source_id
             temp_dict['ligand_source_type'] = j['main'].ligand_source_type
@@ -230,8 +232,11 @@ class Command(BaseBuild):
                 temp_dict['quantitive_activity_initial'] = "{:.2F}".format(
                     Decimal(temp_dict['quantitive_activity_initial']))
             temp['ref_ligand_experiment'] = j['children'][0].emax_ligand_reference
-            doubles.append(temp_dict)
-            temp['assay'] = doubles
+            if temp_dict['signalling_protein'] != '-':
+                doubles.append(temp_dict)
+                temp['assay'] = doubles
+            else:
+                continue
             send.append(temp)
         self.logger.info('Queryset processed')
         return send

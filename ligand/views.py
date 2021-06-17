@@ -1219,7 +1219,7 @@ class BiasGBrowser(ListView):
             molecule2_p3=Subquery(assay_qs.values('molecule_2')[2:3]),
             molecule2_p4=Subquery(assay_qs.values('molecule_2')[3:4]),
             molecule2_p5=Subquery(assay_qs.values('molecule_2')[4:5]),
-            # Assay
+            # signalling protein
             assay_p1=Subquery(assay_qs.values('signalling_protein')[:1]),
             assay_p2=Subquery(assay_qs.values('signalling_protein')[1:2]),
             assay_p3=Subquery(assay_qs.values('signalling_protein')[2:3]),
