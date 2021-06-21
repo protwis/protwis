@@ -317,7 +317,7 @@
 					var receptor_counter = read_unique_ids_receptor();
 					document.getElementById("ligand_counter").innerHTML = ligand_counter;
 					document.getElementById("receptor_counter").innerHTML = receptor_counter;
-                    // calculate_header()
+					// calculate_header()
 				}, 2000);
 
 			},
@@ -554,7 +554,7 @@
 					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
-                ////potency or ic50
+				////potency or ic50
 				{
 					column_number: 33,
 					filter_type: "range_number",
@@ -585,7 +585,7 @@
 					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
-                // Emax
+				// Emax
 				{
 					column_number: 38,
 					filter_type: "range_number",
@@ -618,7 +618,7 @@
 					filter_reset_button_text: false,
 				},
 				//mm1
-                {
+				{
 					column_number: 43,
 					filter_type: "multi_select",
 					select_type: 'select2',
@@ -660,7 +660,7 @@
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
-                {
+				{
 					column_number: 49,
 					filter_type: "multi_select",
 					select_type: 'select2',
@@ -884,9 +884,6 @@
 		}
 
 		function reset_filters() {
-			// $('#loadingSpinner').show();
-			// $('#structures_scrollable_body').hide();
-			// location.reload()
 			yadcf.exResetAllFilters(table);
 		}
 
@@ -896,25 +893,25 @@
 		// 	}],
 		// ]);
 
-        // $('#structures_scrollable').on( 'page.dt', function () {
-        //         $("#receptor").attr("colspan", 6);
-    	// 		$("#ligand").attr("colspan", 5);
-    	// 		$("#transducers").attr("colspan", 2);
-    	// 		$("#pathways_effector").attr("colspan", 5);
-    	// 		$("#pathways_measure").attr("colspan", 5);
-    	// 		$("#opmodel").attr("colspan", 4);
-    	// 		$("#lbf").attr("colspan", 4);
-    	// 		$("#lbf_part").attr("colspan", 5);
-    	// 		$("#activity").attr("colspan", 5);
-    	// 		$("#emax").attr("colspan", 5);
-    	// 		$("#tfactor").attr("colspan", 5);
-    	// 		$("#mm1").attr("colspan", 5);
-    	// 		$("#mm2").attr("colspan", 5);
-    	// 		$("#bio").attr("colspan", 5);
-    	// 		$("#cell").attr("colspan", 5);
-    	// 		$("#time").attr("colspan", 5);
-        //
-        // } );
+		// $('#structures_scrollable').on( 'page.dt', function () {
+		//         $("#receptor").attr("colspan", 6);
+		// 		$("#ligand").attr("colspan", 5);
+		// 		$("#transducers").attr("colspan", 2);
+		// 		$("#pathways_effector").attr("colspan", 5);
+		// 		$("#pathways_measure").attr("colspan", 5);
+		// 		$("#opmodel").attr("colspan", 4);
+		// 		$("#lbf").attr("colspan", 4);
+		// 		$("#lbf_part").attr("colspan", 5);
+		// 		$("#activity").attr("colspan", 5);
+		// 		$("#emax").attr("colspan", 5);
+		// 		$("#tfactor").attr("colspan", 5);
+		// 		$("#mm1").attr("colspan", 5);
+		// 		$("#mm2").attr("colspan", 5);
+		// 		$("#bio").attr("colspan", 5);
+		// 		$("#cell").attr("colspan", 5);
+		// 		$("#time").attr("colspan", 5);
+		//
+		// } );
 
 	});
 </script>
@@ -1062,19 +1059,16 @@
 				<th class="pathways" id="pathways_measure_p4_filter_select">P 4</th>
 				<th class="pathways" id="pathways_measure_p5_filter_select">P 5</th>
 
-
-
-            <th class="shade" id="lbf_p2_p1_filter_select">P1 - P2</th>
-            <th class="shade" id="lbf_p3_p1_filter_select">P1 - P3</th>
-            <th class="shade" id="lbf_p4_p1_filter_select">P1 - P4</th>
-            <th class="shade" id="lbf_p5_p1_filter_select">P1 - P5</th>
+				<th class="shade" id="lbf_p2_p1_filter_select">P1 - P2</th>
+				<th class="shade" id="lbf_p3_p1_filter_select">P1 - P3</th>
+				<th class="shade" id="lbf_p4_p1_filter_select">P1 - P4</th>
+				<th class="shade" id="lbf_p5_p1_filter_select">P1 - P5</th>
 
 				<th class="shade" id="lbf_p2_p1_filter_select">P 1</th>
 				<th class="shade" id="lbf_p2_p1_filter_select">P 2</th>
 				<th class="shade" id="lbf_p3_p1_filter_select">P 3</th>
 				<th class="shade" id="lbf_p4_p1_filter_select">P 4</th>
 				<th class="shade" id="lbf_p5_p1_filter_select">P 5</th>
-
 
 				<th class="shade" id="emax_p1_filter_select">P 1</th>
 				<th class="shade" id="emax_p2_filter_select">P 2</th>
@@ -1112,7 +1106,7 @@
 				<th id="time_p4_filter_select">P 4</th>
 				<th id="time_p5_filter_select">P 5</th>
 
-    			<th id="time_p1_filter_select">P 1</th>
+				<th id="time_p1_filter_select">P 1</th>
 				<th id="time_p2_filter_select">P 2</th>
 				<th id="time_p3_filter_select">P 3</th>
 				<th id="time_p4_filter_select">P 4</th>
@@ -1157,11 +1151,11 @@
 				<td style="text-align:left">{{e.secondary}}</td>
 
 				<!-- pathways -->
-				<td  style="text-align:left" class="pathway">{{e.pathways_p1|default_if_none:""}}</td>
-				<td  style="text-align:left" class="pathway">{{e.pathways_p2|default_if_none:""}}</td>
-				<td  style="text-align:left" class="pathway">{{e.pathways_p3|default_if_none:""}}</td>
-				<td  style="text-align:left" class="pathway">{{e.pathways_p4|default_if_none:""}}</td>
-				<td  style="text-align:left" class="pathway">{{e.pathways_p5|default_if_none:""}}</td>
+				<td style="text-align:left" class="pathway">{{e.pathways_p1|default_if_none:""}}</td>
+				<td style="text-align:left" class="pathway">{{e.pathways_p2|default_if_none:""}}</td>
+				<td style="text-align:left" class="pathway">{{e.pathways_p3|default_if_none:""}}</td>
+				<td style="text-align:left" class="pathway">{{e.pathways_p4|default_if_none:""}}</td>
+				<td style="text-align:left" class="pathway">{{e.pathways_p5|default_if_none:""}}</td>
 				<!-- Assay -->
 				<td style="text-align:left" title='{{e.assay_p1}}'>{{e.assay_p1|default_if_none:"-" }}</td>
 				<td style="text-align:left" title='{{e.assay_p2}}'>{{e.assay_p2|default_if_none:"-" }}</td>
@@ -1174,11 +1168,11 @@
 				<td style="text-align:right" class="shade" id="lbf_p4_p1">{{e.lbf_p4_p1|default_if_none:""}}</td>
 				<td style="text-align:right" class="shade" id="lbf_p5_p1">{{e.lbf_p5_p1|default_if_none:""}}</td>
 				<!-- lbf_part -->
-				<td style="text-align:right" title='{{e.lbf_part_p1}}'>{{e.lbf_part_p1|default_if_none:"" }}</td>
-				<td style="text-align:right" title='{{e.lbf_part_p2}}'>{{e.lbf_part_p2|default_if_none:"" }}</td>
-				<td style="text-align:right" title='{{e.lbf_part_p3}}'>{{e.lbf_part_p3|default_if_none:"" }}</td>
-				<td style="text-align:right" title='{{e.lbf_part_p4}}'>{{e.lbf_part_p4|default_if_none:"" }}</td>
-				<td style="text-align:right" title='{{e.lbf_part_p5}}'>{{e.lbf_part_p5|default_if_none:"" }}</td>
+				<td style="text-align:right" title='{{e.lbf_part_p1}}'>{{e.lbf_part_p1|default_if_none:""|floatformat:1 }}</td>
+				<td style="text-align:right" title='{{e.lbf_part_p2}}'>{{e.lbf_part_p2|default_if_none:""|floatformat:1 }}</td>
+				<td style="text-align:right" title='{{e.lbf_part_p3}}'>{{e.lbf_part_p3|default_if_none:""|floatformat:1 }}</td>
+				<td style="text-align:right" title='{{e.lbf_part_p4}}'>{{e.lbf_part_p4|default_if_none:""|floatformat:1 }}</td>
+				<td style="text-align:right" title='{{e.lbf_part_p5}}'>{{e.lbf_part_p5|default_if_none:""|floatformat:1 }}</td>
 
 				<!-- potency -->
 				{%if e.activity_p1 %}

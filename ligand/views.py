@@ -34,6 +34,7 @@ class LigandBrowser(TemplateView):
         context = super(LigandBrowser, self).get_context_data(**kwargs)
 
         ligands = AssayExperiment.objects.values(
+            'protein',
             'protein__entry_name',
             'protein__species__common_name',
             'protein__family__name',
@@ -41,11 +42,63 @@ class LigandBrowser(TemplateView):
             'protein__family__parent__parent__name',
             'protein__family__parent__parent__parent__name',
             'protein__species__common_name'
-        ).annotate(num_ligands=Count('ligand', distinct=True))
-
+        ).annotate(num_ligands=Count('ligand', distinct=True)
+        ).prefetch_related('protein', 'LigandReceptorStatistics')
+        self.merge_selectivity_data(ligands)
+        for entry in ligands:
+            entry['primary'], entry['secondary'] = self.fetch_receptor_trunsducers(
+                entry['protein'])
         context['ligands'] = ligands
 
         return context
+
+    def merge_selectivity_data(self, ligands):
+        content = list()
+        for ligand in ligands:
+            protein = ligand['protein__entry_name']
+            B_selective = self.get_count_selectivity(
+                "F", protein)
+            for i in B_selective:
+                if i['type'] == 'B':
+                    ligand['b_selective'] = i['total_entries']
+                else:
+                    ligand['f_selective'] = i['total_entries']
+            content.append(ligand)
+        return content
+
+    def get_count_selectivity(self, letter, protein):
+        result = LigandReceptorStatistics.objects.values('protein__entry_name', 'type'
+        ).filter(protein__entry_name=protein
+        ).annotate(total_entries=models.Count(
+            models.Case(
+                default=0,
+                output_field=models.IntegerField()
+            )
+        ))
+        return result
+
+    def fetch_receptor_trunsducers(self, receptor):
+        primary = set()
+        temp = str()
+        temp1 = str()
+        secondary = set()
+
+        try:
+            gprotein = ProteinGProteinPair.objects.filter(protein__id = receptor)
+
+            for x in gprotein:
+                if x.transduction and x.transduction == 'primary':
+                    primary.add(x.g_protein.name)
+                elif x.transduction and x.transduction == 'secondary':
+                    secondary.add(x.g_protein.name)
+            for i in primary:
+                temp += str(i) + str(', ')
+            for i in secondary:
+                temp1 += str(i) + str(', ')
+            return temp, temp1
+        except:
+            return None, None
+
 
 
 def LigandDetails(request, ligand_id):
