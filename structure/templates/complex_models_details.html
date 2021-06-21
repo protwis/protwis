@@ -91,7 +91,11 @@ canvas {
     </div>
     <div class="col-md-9">
         <div class="btn-group">
-            <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.receptor_protein.entry_name}}-{{model.sign_protein.entry_name}}/download_pdb">Download</a>
+            {% if model.receptor_protein.accession %}
+                <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.receptor_protein.entry_name}}-{{model.sign_protein.entry_name}}/download_pdb">Download</a>
+            {% else %}
+                <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.receptor_protein.entry_name|upper}}-complex/download_pdb">Download</a>
+            {% endif %}
         </div>
         <div>
             <p>PDB file contains GPCRdb generic numbers in the B-factor field of CA atoms</p>
