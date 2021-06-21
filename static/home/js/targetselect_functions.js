@@ -91,6 +91,9 @@ function clearTargetSelection(){
     removeTarget(this);
   });
 
+  // Clean all (handling automated population by browser when using back button)
+  selected_targets = new Set();
+
   // update information message
   updateTargetCount();
   return false;
@@ -201,7 +204,7 @@ function importTargets(){
     split_entries[parseInt(i, 10)] = split_entries[parseInt(i, 10)].trim().toLowerCase();
     split_entries[parseInt(i, 10)] = split_entries[parseInt(i, 10)].split("_")[0];
 
-    // Check minimum protein name length 
+    // Check minimum protein name length
     if (split_entries[parseInt(i, 10)].length >= 2){
       // Find checkbox with correct entry
       var items = $("table#uniprot_selection").find(`input[data-entry='${split_entries[parseInt(i, 10)]}']`);
