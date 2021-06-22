@@ -327,8 +327,8 @@ Ligand source activities (1 row/activity)-->
 				<td>{{ligand.protein__family__parent__parent__name}}</td>
 				<td>{{ligand.num_ligands}}</td>
 				<!-- TODO: skip this as i am making changes to it -->
-				<td>{{ligand.f_selective}}</td>
-				<td>{{ligand.b_selective}}</td>
+				<td>{{ligand.assay_f_count|default_if_none:""|floatformat:0}}</td>
+				<td>{{ligand.assay_b_count|default_if_none:""|floatformat:0}}</td>
 				<td class='name'>{{ligand.primary}}</td>
 				<td class='name'>{{ligand.secondary}}</td>
 			</tr>

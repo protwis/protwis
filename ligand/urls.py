@@ -3,7 +3,9 @@ from django.views.decorators.cache import cache_page
 from ligand import views
 
 urlpatterns = [
-    url(r'^$', cache_page(3600*24*7)(views.LigandBrowser.as_view()), name='ligand_browser'),
+    # url(r'^$', cache_page(3600*24*7)(views.LigandBrowser.as_view()), name='ligand_browser'),
+    url(r'^$', views.LigandBrowser.as_view(), name='ligand_browser'),
+
     url(r'^target/all/(?P<slug>[-\w]+)/$', views.TargetDetails, name='ligand_target_detail'),
     url(r'^target/compact/(?P<slug>[-\w]+)/$', views.TargetDetailsCompact, name='ligand_target_detail_compact'),
     url(r'^targets$', views.TargetDetails, name='ligand_target_detail'),

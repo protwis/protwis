@@ -341,13 +341,10 @@ class LigandRole(models.Model):
 
 
 class LigandReceptorStatistics(models.Model):
-    ligand = models.ForeignKey('Ligand', on_delete=models.CASCADE)
     protein = models.ForeignKey(
         'protein.Protein', on_delete=models.CASCADE, related_name='target_protein')
     type = models.CharField(max_length=3, null=True)
     value = models.DecimalField(max_digits=9, decimal_places=3, null=True)
-    reference_protein = models.ForeignKey(
-        'protein.Protein', on_delete=models.CASCADE, related_name="reference_protein")
 
 
 class ChemblAssay(models.Model):
