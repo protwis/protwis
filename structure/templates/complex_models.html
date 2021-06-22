@@ -581,7 +581,11 @@
             {% for model in structure_complex_model %}
                 <tr model_id='{{model.pk}}'>
                     <td class="text-center"><input class="alt" type="checkbox" id="{{ model.pk }}"></td>
-                    <td><a target="_blank" href="complex_models/{{ model.receptor_protein.entry_name }}-{{ model.sign_protein.entry_name }}">{{ model.receptor_protein.family.name|safe }} - {{ model.sign_protein.entry_name }}</a></td>
+                    {% if model.receptor_protein.accession %}
+                        <td><a target="_blank" href="complex_models/{{ model.receptor_protein.entry_name }}-{{ model.sign_protein.entry_name }}">{{ model.receptor_protein.family.name|safe }} - {{ model.sign_protein.entry_name }}</a></td>
+                    {% else %}
+                        <td><a target="_blank" href="refined/{{ model.receptor_protein.entry_name|upper }}">{{ model.receptor_protein.family.name|safe }} - {{ model.sign_protein.entry_name }}</a></td>
+                    {% endif %}
                     <td>{{ model.version|date:"Y-m-d" }}</td>
                     <td>
                         {% if not model.receptor_protein.accession %}
