@@ -1,10 +1,21 @@
-function DotScatter(data, BaseDiv, ID, colors, legendData, header){
+function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, qualitative){
+
+  // check if there are qualitative values in the dataset
+  // for specify the y labels later
+  var hb = null;
+  var fb = null;
+
+  function step_rounder(value, step) {
+      step || (step = 1.0);
+      var inv = 1.0 / step;
+      return Math.round(value * inv) / inv;
+  }
 
   if(legendData.length < 24){
     var margin = {top: 20, right: 200, bottom: 100, left: 60};
     width = 1000 - margin.left - margin.right;
     xSeed = margin.right;
-    var jitterWidth = 20;
+    var jitterWidth = 30;
     function position(d,i) {
       var c = 1;   // number of columns
       var h = colors.length;  // height of each entry
@@ -13,7 +24,6 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header){
       var y = i*13;
       return "translate(" + x + "," + y + ")";
     }
-
   }else if(legendData.length > 40){
     var margin = {top: 20, right: 365, bottom: 100, left: 60};
     width = 1000 - margin.left - margin.right;
@@ -99,11 +109,9 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header){
 
     function ResetOpacity(){
        d3.selectAll("circle")
-         .style("opacity", 1);
+         .style("opacity", 1.0);
        d3.selectAll("rect")
-         .style("opacity", 1);
-       d3.selectAll("g.segment path")
-         .style("opacity", 1);
+         .style("opacity", 1.0);
      };
 
     document.getElementById(ID).onclick = ResetOpacity;
@@ -119,21 +127,23 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header){
             .style("padding-top", "15px")
             .html(header);
 
+
   var x = d3.scale.ordinal()
     .domain(data.map(function(d) {
       return d[0];
     }))
     .rangePoints([0, width], 0.5);
 
-  var y = d3.scale.linear()
-    .domain([
-      d3.min(data, function(d) {
-      return d[1];
-    }),
-      d3.max(data, function(d) {
-      return d[1];
-    })])
-    .range([height, 0]);
+
+    var y = d3.scale.linear()
+      .domain([
+        d3.min(data, function(d) {
+        return d[1];
+      }),
+        d3.max(data, function(d) {
+        return d[1];
+      })])
+      .range([height, 0]);
 
   var chart = d3.select("#" + ID)
     .append("svg:svg")
@@ -155,6 +165,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header){
   main.append("g")
     .attr("transform", "translate(0," + height + ")")
     .attr("class", "main axis date")
+    .style("font", "10px sans-serif")
     .call(xAxis)
     .selectAll("text")
       .attr("y", 0)
@@ -168,20 +179,42 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header){
     .scale(y)
     .orient("left");
 
+  var step = yAxis.scale().ticks()[1];
+
+  for(i = 0; i < data.length; i++) {
+    if(data[i][4] == 'High Bias'){
+      tmp = data[i][1];
+      hb = step_rounder(tmp, step);
+    } else if(data[i][4] == 'Full Bias'){
+      tmp = data[i][1];
+      fb = step_rounder(tmp, step);
+    }
+  }
+
+  yAxis.tickFormat(function(d) {
+          if(d === fb){
+            return "Full Bias";
+          } else if(d === hb){
+            return "High Bias";
+          } else if(d === hb+step){
+            return "";
+          } else {
+            return d;
+          }
+        });
+
   main.append("g")
       .attr("class", "y axis")
+      .style("font", "10px sans-serif")
       .call(yAxis)
       .append("text")
           .attr("transform", "rotate(-90)")
           .attr("y", -40)
+          .attr('x', -150)
           .attr("dy", ".71em")
+          .style("font", "10px sans-serif")
           .style("text-anchor", "end")
-          .text("ΔΔLog(Emax/EC50)");
-
-  main.append("g")
-    .attr("transform", "translate(0,0)")
-    .attr("class", "main axis date")
-    .call(yAxis);
+          .text(ylabel);
 
   var divToolTipTest = d3.select("body")
               .append("div")
@@ -201,14 +234,80 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header){
 
   var g = main.append("svg:g");
 
+  // Creating Full Bias Squares
+  g.selectAll("scatter-dots")
+          .data(data)
+          .enter()
+          .append("rect")
+          .filter(function(d) { return d[4] == 'Full Bias'})
+          .attr("class","FullBias")
+          .attr("x", function(d) {return x(d[0]) - jitterWidth/2 + Math.random()*jitterWidth ;})
+          .attr("y", function(d) {return y(d[1]);})
+          .attr("width", 7)
+          .attr("height", 7)
+          .style("stroke", "black")
+          .style("fill", "red")
+          .style("opacity", 1.0)
+          .on("mouseover", mouseover)
+          .on("mousemove", function (d) {
+              divToolTipTest
+              .text(d[3])
+              .style("left", (d3.event.pageX) + "px")
+              .style("top", (d3.event.pageY) + "px");
+          })
+          .on("mouseout", mouseout)
+          .on("click", function (d) {
+              d3.selectAll("circle")
+                 .style("opacity", 0.2);
+              d3.selectAll("rect")
+                 .style("opacity", 0.2);
+              d3.selectAll("rect.FullBias")
+                .style("opacity", 1);
+              d3.event.stopPropagation();
+          });
+
+    // Creating Full Bias Squares
+    g.selectAll("scatter-dots")
+            .data(data)
+            .enter()
+            .append("rect")
+            .filter(function(d) { return d[4] == "High Bias"})
+            .attr("class", "HighBias")
+            .attr("x", function(d) {return x(d[0]) - jitterWidth/2 + Math.random()*jitterWidth ;})
+            .attr("y", function(d) {return y(d[1]);})
+            .attr("width", 7)
+            .attr("height", 7)
+            .style("stroke", "black")
+            .style("fill", "orange")
+            .style("opacity", 1.0)
+            .on("mouseover", mouseover)
+            .on("mousemove", function (d) {
+                divToolTipTest
+                .text(d[3])
+                .style("left", (d3.event.pageX) + "px")
+                .style("top", (d3.event.pageY) + "px");
+            })
+            .on("mouseout", mouseout)
+            .on("click", function (d) {
+                d3.selectAll("circle")
+                   .style("opacity", 0.2);
+                d3.selectAll("rect")
+                   .style("opacity", 0.2);
+                d3.selectAll("rect.HighBias")
+                  .style("opacity", 1);
+                d3.event.stopPropagation();
+            });
+
   g.selectAll("scatter-dots")
     .data(data)
     .enter().append("svg:circle")
+    .filter(function(d) { return d[4] == 'REAL'})
     .attr("cx", function(d) {return x(d[0]) - jitterWidth/2 + Math.random()*jitterWidth ;})
     .attr("cy", function(d) {return y(d[1]);})
     .attr("r", 4)
     .attr("id", function(d) {return "LC" + d[3].replace(/\[|\]|\(|\)|\s|\,/g,"");})
     .style("fill", function(d) {return d[2];})
+    .style("opacity", 1.0)
     .on("mouseover", mouseover)
     .on("mousemove", function (d) {
         divToolTipTest
@@ -221,6 +320,8 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header){
         var tempId = d3.select(this).attr("id");
         d3.selectAll("circle")
            .style("opacity", 0.2);
+        d3.selectAll("rect")
+           .style("opacity", 0.2);
         d3.selectAll("circle#" + tempId)
           .style("opacity", 1);
         d3.event.stopPropagation();
@@ -232,11 +333,13 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header){
           .append("text")
             .attr("x", xSeed - 5)
             .attr("y", margin.top)
-            .text("Ligands with ΔΔLog(Emax/EC50) > 1.00")
+            .text("Ligands with " + ylabel + " > 1.00") //ΔΔLog(Emax/EC50)
             .attr("text-anchor", "left")
             .attr("font-weight", "bold")
+            .style("font", "10px sans-serif")
             .style("alignment-baseline", "middle");
 
+  if(qualitative == true){
     chart.append('g')
        .attr('class', 'ytitle')
        .attr("transform", position)
@@ -246,7 +349,93 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header){
             .text("sorted by decreasing value")
             .attr("text-anchor", "left")
             .attr("font-weight", "bold")
+            .style("font", "10px sans-serif")
             .style("alignment-baseline", "middle");
+
+    chart.append('g')
+       .attr("transform", position)
+          .append("rect")
+            .attr("x", xSeed + 6)
+            .attr("y", margin.top + 25)
+            .attr('width', 8)
+            .attr('height', 8)
+            .style("stroke", "black")
+            .style("fill", "red")
+            .attr("class", "FullBias")
+            .style("stroke", "black")
+            .on("click", function (d) {
+                d3.selectAll("circle")
+                   .style("opacity", 0.2);
+                d3.selectAll("rect")
+                   .style("opacity", 0.2);
+                d3.selectAll("rect.FullBias")
+                  .style("opacity", 1);
+                d3.event.stopPropagation();
+            });
+
+    chart.append('g')
+       .attr('class', 'ytitle')
+       .attr("transform", position)
+          .append("text")
+            .attr("x", xSeed + 20)
+            .attr("y", margin.top + 30)
+            .text("Full Bias qualitative point")
+            .attr("text-anchor", "left")
+            .attr("font-weight", "bold")
+            .style("font", "10px sans-serif")
+            .style("alignment-baseline", "middle")
+            .on("click", function (d) {
+                d3.selectAll("circle")
+                   .style("opacity", 0.2);
+                d3.selectAll("rect")
+                   .style("opacity", 0.2);
+                d3.selectAll("rect.FullBias")
+                  .style("opacity", 1);
+                d3.event.stopPropagation();
+            });
+
+    chart.append('g')
+       .attr("transform", position)
+          .append("rect")
+            .attr("x", xSeed + 6)
+            .attr("y", margin.top + 38)
+            .attr('width', 8)
+            .attr('height', 8)
+            .style("stroke", "black")
+            .style("fill", "orange")
+            .attr("class", "HighBias")
+            .style("stroke", "black")
+            .on("click", function (d) {
+                d3.selectAll("circle")
+                   .style("opacity", 0.2);
+                d3.selectAll("rect")
+                   .style("opacity", 0.2);
+                d3.selectAll("rect.HighBias")
+                  .style("opacity", 1);
+                d3.event.stopPropagation();
+            });
+
+    chart.append('g')
+       .attr('class', 'ytitle')
+       .attr("transform", position)
+          .append("text")
+            .attr("x", xSeed + 20)
+            .attr("y", margin.top + 43)
+            .text("High Bias qualitative point")
+            .attr("text-anchor", "left")
+            .attr("font-weight", "bold")
+            .style("font", "10px sans-serif")
+            .style("alignment-baseline", "middle")
+            .on("click", function (d) {
+                d3.selectAll("circle")
+                   .style("opacity", 0.2);
+                d3.selectAll("rect")
+                   .style("opacity", 0.2);
+                d3.selectAll("rect.HighBias")
+                  .style("opacity", 1);
+                d3.event.stopPropagation();
+            });
+  }
 
   var legend = chart.selectAll("mylabels")
         .data(legendData)
@@ -256,19 +445,22 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header){
 
     legend.append("text")
       .attr("x", xSeed + 18)
-      .attr("y", margin.top + 30)
+      .attr("y", margin.top + 57)
       .style("fill", function(d){ return colors[d]})
       .text(function(d) {
-              if (d.length > 9) {
-                  return d.substring(0,9)+'...'
+              if (d.length > 11) {
+                  return d.substring(0,11)+'...'
               }else {
                   return d
               }
       })
       .attr("text-anchor", "left")
+      .style("font", "10px sans-serif")
       .style("alignment-baseline", "middle")
       .on("click", function (d) {
           d3.selectAll("circle")
+             .style("opacity", 0.2);
+          d3.selectAll("rect")
              .style("opacity", 0.2);
           d3.selectAll("circle#LC" + d.replace(/\[|\]|\(|\)|\s|\,/g,""))
             .style("opacity", 1);
@@ -277,13 +469,15 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header){
 
   legend.append("circle")
     .attr("cx", xSeed + 10)
-    .attr("cy", margin.top + 28)
+    .attr("cy", margin.top + 55)
     .attr("r", 5)
     .attr("id", function(d) {return "LC" + d.replace(/\[|\]|\(|\)|\s|\,/g,"");})
     .style('stroke', 'black')
     .attr("fill",function(d) { return colors[d] })
     .on("click", function (d) {
         d3.selectAll("circle")
+           .style("opacity", 0.2);
+        d3.selectAll("rect")
            .style("opacity", 0.2);
         d3.selectAll("circle#LC" + d.replace(/\[|\]|\(|\)|\s|\,/g,""))
           .style("opacity", 1);

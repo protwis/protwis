@@ -3,8 +3,9 @@ function RadarChart(id, data, options, name) {
 	 w: 200,				//Width of the circle
 	 h: 200,				//Height of the circle
 	 margin: {top: 50, right: 50, bottom: 50, left: 50}, //The margins of the SVG
-	 levels: 5,				//How many levels or inner circles should there be drawn
+	 levels: 4,				//How many levels or inner circles should there be drawn
 	 maxValue: 0, 			//What is the value that the biggest circle will represent
+	 minValue: 0,				//What is the value that the first circle will represent
 	 labelFactor: 1.25, 	//How much farther than the radius of the outer circle should the labels be placed
 	 wrapWidth: 60, 		//The number of pixels after which a label needs to be given a new line
 	 opacityArea: 0.35, 	//The opacity of the area of the blob
@@ -31,8 +32,12 @@ function RadarChart(id, data, options, name) {
     parentDiv.appendChild(nestedDiv);
 	//If the supplied maxValue is smaller than the actual one, replace by the max in the data
 	var maxValue = Math.max(cfg.maxValue, d3.max(data, function(i){return d3.max(i.map(function(o){return o.value;}))}));
-  // var minValue = Math.min(cfg.minValue, d3.min(data, function(i){return d3.min(i.map(function(o){return o.value;}))}));
+  var minValue = Math.round(Math.min(cfg.minValue, d3.min(data, function(i){return d3.min(i.map(function(o){return o.value;}))})));
 
+	cfg.levels = Math.abs(maxValue) + Math.abs(minValue);
+
+	var check = Math.abs(minValue);
+	console.log(cfg.title);
 	var allAxis = (data[0].map(function(i, j){return i.axis})),	//Names of each axis
 		total = allAxis.length,					//The number of different axes
 		radius = Math.min(cfg.w/2, cfg.h/2), 	//Radius of the outermost circle
@@ -79,23 +84,29 @@ function RadarChart(id, data, options, name) {
 
 	//Draw the background circles
 	axisGrid.selectAll(".levels")
-	   .data(d3.range(1,(cfg.levels+1)).reverse())
+	   .data(d3.range(1,(cfg.levels)).reverse())
 	   .enter()
 		.append("circle")
 		.attr("class", "gridCircle")
 		.attr("r", function(d, i){return radius/cfg.levels*d;})
 		.style("fill", "white")
-		.style("stroke", "lightgray")
+		.style("stroke", function(d) {
+			if (d == check) {
+					return "gray"
+			}else {
+					return "lightgray"
+			}
+		})
 		.style("fill-opacity", cfg.opacityCircles)
 		.style("filter" , "url(#glow)");
 
 	//Text indicating at what % each level is
 	axisGrid.selectAll(".axisLabel")
-	   .data(d3.range(-3,(cfg.levels+1)).reverse())
+	   .data(d3.range(minValue,maxValue))
 	   .enter().append("text")
 	   .attr("class", "axisLabel")
 	   .attr("x", 4)
-	   .attr("y", function(d){return -d*radius/cfg.levels;})
+	   .attr("y", function(d,i){return -i*radius/cfg.levels;})
 	   .attr("dy", "0.4em")
 	   .style("font-size", "10px")
 	   .attr("fill", "black")
@@ -112,7 +123,7 @@ function RadarChart(id, data, options, name) {
      .style("font-size", "14px")
      .style("font-weight", "bold")
      .attr("fill", "black")
-     .text(cfg.title);
+     .text(cfg.title.split(".,")[0]);
 
 	/////////////////////////////////////////////////////////
 	//////////////////// Draw the axes //////////////////////
@@ -219,6 +230,7 @@ function RadarChart(id, data, options, name) {
 		.enter().append("g")
 		.attr("class", "radarCircleWrapper");
 
+		console.log(data);
 	//Append a set of invisible circles on top for the mouseover pop-up
 	blobCircleWrapper.selectAll(".radarInvisibleCircle")
 		.data(function(d,i) { return d; })

@@ -153,7 +153,7 @@
         <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>SEQUENCES</a></li>
         <li><a href="/alignment/gproteinselection">Sequence alignments</a></li>
-        <li><a href="/residue/residuetable_gprot">Generic residue number tables</a></li> <!-- TO CHANGE URL -->
+        <li><a href="/residue/residuetable_gprot">Generic residue number tables</a></li>
 
         <!-- STRUCTURES -->
         <li class="divider"></li>
@@ -222,13 +222,22 @@
         Biased signalling<span class="caret"></span>
     </a>
     <ul class="dropdown-menu" role="menu">
-        <li class="nav-header disabled"><a>Ligand bias</a></li>
+        <li class="nav-header disabled"><a>Biased ligands (effector family)</a></li>
         <li><a href="/ligand/bias_statistics">Ligand bias statistics</a></li>
         <li><a href="/ligand/biasedbrowser">Ligand bias for G protein family or arrestin</a></li>
         <li><a href="/ligand/biasedsubtypesbrowser">Ligand bias for G protein subtype</a></li>
-        <li><a href="/ligand/rankorder">Biased ligand rank orders</a></li>
-        <li><a href="/ligand/path_profiles">Ligand pathway profiles</a></li>
+        <li><a href="/ligand/emax_rank_order_selection">Ligand bias rank orders (∆∆log(Emax/EC50))</a></li>
+        <li><a href="/ligand/tau_rank_order_selection">Ligand bias rank orders (∆∆log(Tau/KA))</a></li>
+        <li><a href="/ligand/emax_path_profiles_selection">Ligand pathway profiles (∆log(Emax/EC50))</a></li>
+        <li><a href="/ligand/tau_path_profiles_selection">Ligand pathway profiles (∆log(Tau/KA))</a></li>
         <!-- <li><a href="/ligand/browserchembl">Predicted ligand bias (potency ratios)</a></li> -->
+        <li class="divider"></li>
+        <li class="nav-header disabled"><a>Pathway-preferring ligands (effector family)</a></li>
+        <li><a href="">Pathway-preferring ligand statistics</a></li> <!-- to be implemented -->
+        <li><a href="">Pathway-preferring ligands (pathway ∆Log/(Emax/EC50))
+        <li><a href="/ligand/path_preference_emax_rankorder">Ligand pathway preference rank orders (∆log(Emax/EC50))</a></li>
+        <li><a href="/ligand/path_preference_emax_path_profiles">Ligand pathway profiles (log(Emax/EC50))</a></li>
+
         <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>Pathways</a></li>
         <li><a href="/ligand/biasedpathways">Pathway effects</a></li>

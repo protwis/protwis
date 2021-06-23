@@ -16,7 +16,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from django.core.cache import cache
 
-from common.views import AbsTargetSelectionTable, Alignment
+from common.views import AbsTargetSelectionTable, Alignment, AbsTargetSelection, AbsReferenceSelectionTable
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
@@ -411,10 +411,100 @@ def TargetPurchasabilityDetails(request, **kwargs):
 
     return render(request, 'target_purchasability_details.html', context)
 
+class RankOrderSelection(AbsReferenceSelectionTable):
+    step = 1
+    number_of_steps = 1
+    filters = False
+    filter_tableselect = False
+    family_tree = False
+    title = "SELECT RECEPTOR for Ligand Bias Rank Order (Emax/EC50)"
+    description = 'Select receptor in the table (below).' \
+        + ' \n\nOnce you have selected a receptor, click the green button.'
+    selection_boxes = OrderedDict([
+        ('reference', True),
+        ('targets', False),
+        ('segments', False),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Next',
+            'onclick': "submitSelection('/ligand/emax_rankorder');",
+            'color': 'success',
+        },
+    }
+
+class TauRankOrderSelection(AbsReferenceSelectionTable):
+    step = 1
+    number_of_steps = 1
+    filters = False
+    filter_tableselect = False
+    family_tree = False
+    title = "SELECT RECEPTOR for Ligand Bias Rank Order (Tau/KA)"
+    description = 'Select receptor in the table (below).' \
+        + ' \n\nOnce you have selected a receptor, click the green button.'
+    selection_boxes = OrderedDict([
+        ('reference', True),
+        ('targets', False),
+        ('segments', False),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Next',
+            'onclick': "submitSelection('/ligand/tau_rankorder');",
+            'color': 'success',
+        },
+    }
+
+class EmaxPathProfileSelection(AbsReferenceSelectionTable):
+    step = 1
+    number_of_steps = 1
+    filters = False
+    filter_tableselect = False
+    family_tree = False
+    title = "SELECT RECEPTOR for Ligand Pathway Profiles (Emax/EC50)"
+    description = 'Select receptor in the table (below).' \
+        + ' \n\nOnce you have selected a receptor, click the green button.'
+    selection_boxes = OrderedDict([
+        ('reference', True),
+        ('targets', False),
+        ('segments', False),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Next',
+            'onclick': "submitSelection('/ligand/emax_path_profiles');",
+            'color': 'success',
+        },
+    }
+
+class TauPathProfileSelection(AbsReferenceSelectionTable):
+    step = 1
+    number_of_steps = 1
+    filters = False
+    filter_tableselect = False
+    family_tree = False
+    title = "SELECT RECEPTOR for Ligand Pathway Profiles (Tau/KA)"
+    description = 'Select receptor in the table (below).' \
+        + ' \n\nOnce you have selected a receptor, click the green button.'
+    selection_boxes = OrderedDict([
+        ('reference', True),
+        ('targets', False),
+        ('segments', False),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Next',
+            'onclick': "submitSelection('/ligand/tau_path_profiles');",
+            'color': 'success',
+        },
+    }
+
 class BiasedRankOrder(TemplateView):
     #set a global variable for different pages
-    page = 'rankorder'
-    template_name = 'biased_rank_orders.html'
+    page = "rankorder"
+    label = "emax"
+    template_name = "biased_rank_orders.html"
+    source = "different_family"
 
     def create_rgb_color(self, name, power): # pseudo-randomization function
         h = hash( name + str(power) ) # hash string and int together
@@ -427,15 +517,22 @@ class BiasedRankOrder(TemplateView):
     def get_context_data(self, **kwargs):
 
         context = super().get_context_data(**kwargs)
+        simple_selection = self.request.session.get('selection', False)
+        #I know it's a for cycle, but it should be just one element
+        #since it's coming from a reference
+        for item in simple_selection.reference:
+            receptor = item.item
+
+        rec_name = Protein.objects.get(id=receptor)
 
         upgrade_value = ["High activity", "High activity (Potency and Emax)", "Full agonism"]
         downgrade_value = ["Low activity", "No activity", "Inverse agonism/antagonism"]
         exclude_list = ["Agonism","Partial agonism","Medium activity"] #full agonism should be removed
         publications = list(AnalyzedAssay.objects.filter(
                         family__isnull=False,
-                        experiment__receptor=85,            # 85 is OPRM receptor
-                        assay_description__isnull=True,     # in this mockup page starting point
-                        experiment__source='different_family').exclude(
+                        experiment__receptor=receptor,
+                        assay_description__isnull=True,
+                        experiment__source=self.source).exclude(
                         qualitative_activity__in=exclude_list,
                         ).values_list(
                         "family", #pathway                                  0
@@ -449,7 +546,9 @@ class BiasedRankOrder(TemplateView):
                         "qualitative_activity",  #activity values          10 -> 8
                         "log_bias_factor_a", #ΔLog(Emax/EC50)              11 -> 9
                         "log_bias_factor",  #ΔΔLog(Emax/EC50)              12 -> 10
-                        "order_no"  #ranking                               13 -> 11
+                        "order_no",     #ranking                           13 -> 11
+                        "t_coefficient",    #ΔLog(TAU/Ka)                  14 -> 12
+                        "t_factor"          #ΔΔLog(TAU/Ka)                 15 -> 13
                         ).distinct()) #check
 
         list_of_ligands = []
@@ -464,6 +563,15 @@ class BiasedRankOrder(TemplateView):
         pathway_nr = {}
 
         for result in publications:
+            #checking the value to plot
+            #based on the landing page
+            if self.label == 'emax':
+                single_delta = result[9]
+                double_delta = result[10]
+            else:
+                single_delta = result[12]
+                double_delta = result[13]
+
             #fixing ligand name (hash hash baby)
             lig_name = result[1]
             if result[1][0].isdigit():
@@ -481,10 +589,10 @@ class BiasedRankOrder(TemplateView):
             list_of_ligands.append(tuple((hashed_lig_name, lig_name)))
             list_of_publications.append(authors)
             #start parsing the data to create the big dictionary
-            if result[9] == None:
+            if single_delta == None:               #∆Emax / ∆Tau flex
                 value = 0
             else:
-                value = float(result[9])
+                value = float(single_delta)
 
             if result[0] not in jitterPlot.keys():
                 jitterLegend[result[0]] = []
@@ -496,8 +604,14 @@ class BiasedRankOrder(TemplateView):
             if lig_name not in jitterDict[jitterAuthors].keys():
                 jitterDict[jitterAuthors][lig_name] = {}
 
+            try:
+                DD = [float(double_delta), "REAL"]
+            except (ValueError, TypeError) as e:
+                DD = [0, double_delta]
+
             if result[11] == 1:
                 jitterDict[jitterAuthors][lig_name]['1'] = value
+                jitterDict[jitterAuthors][lig_name]['deltadelta'] = DD
 
             if result[11] == 0:
                 jitterDict[jitterAuthors][lig_name]["Pathway"] = result[0]
@@ -518,8 +632,8 @@ class BiasedRankOrder(TemplateView):
                 SpiderOptions[authors] = {}
                 SpiderOptions[authors][hashed_lig_name] = {"Data":[[{'axis':result[0],
                                                                      'value':value}]],
-                                                             "Options": {'levels': 5,
-                                                                         'maxValue': 5,
+                                                             "Options": {'levels': 4,
+                                                                         'maxValue': 4,
                                                                          'roundStrokes': False,
                                                                          'title': lig_name}}
             if hashed_lig_name not in [d['name'] for d in full_data[result[2]]["Data"]]:
@@ -533,8 +647,8 @@ class BiasedRankOrder(TemplateView):
 
                 SpiderOptions[authors][hashed_lig_name] = {"Data":[[{'axis':result[0],
                                                                      'value':value}]],
-                                                             "Options": {'levels': 5,
-                                                                         'maxValue': 5,
+                                                             "Options": {'levels': 4,
+                                                                         'maxValue': 4,
                                                                          'roundStrokes': False,
                                                                          'title': lig_name}}
             else:
@@ -572,9 +686,7 @@ class BiasedRankOrder(TemplateView):
 
         #The big dictionary is created, now it needs to be ordered
         #the publication with more pathway (or tied) should be first
-        #reordering on the fly on a new dict?
-        #this set a temp dict with the "ranking" based on
-        #available total nr of pathways and the keys of the og dict
+
         #From this, reorder the original one
         for key in full_data.keys():
             for item in full_data[key]["Data"]:
@@ -600,8 +712,6 @@ class BiasedRankOrder(TemplateView):
                     if tuple((couple[2], full_data[item[0]]["Ligand"][couple[0]])) not in full_ligands[item[0]]:
                         full_ligands[item[0]].append(tuple((couple[2], full_data[item[0]]["Ligand"][couple[0]])))
 
-        #Code works fine, just need to fill the empty slots.
-
         #now the sorted dict is done, we can clear cache the og one
         del full_data
 
@@ -611,19 +721,30 @@ class BiasedRankOrder(TemplateView):
                     if ligand not in Colors.keys():
                         color = '#%02x%02x%02x' % (self.create_rgb_color(ligand,0), self.create_rgb_color(ligand,1), self.create_rgb_color(ligand,2))
                         Colors[ligand] = color
-                    jitterPlot[jitterDict[pub][ligand]["Pathway"]].append([pub, round(jitterDict[pub][ligand]['0']-jitterDict[pub][ligand]['1'],3), Colors[ligand], ligand])
-                    if round(jitterDict[pub][ligand]['0']-jitterDict[pub][ligand]['1'],3) >= 1.00:
-                        jitterLegend[jitterDict[pub][ligand]["Pathway"]].append(tuple((ligand, round(jitterDict[pub][ligand]['0']-jitterDict[pub][ligand]['1'],3))))
+                    jitterPlot[jitterDict[pub][ligand]["Pathway"]].append([pub, jitterDict[pub][ligand]['deltadelta'][0], Colors[ligand], ligand, jitterDict[pub][ligand]['deltadelta'][1]])
+                    if jitterDict[pub][ligand]['deltadelta'][0] >= 1.00:
+                        jitterLegend[jitterDict[pub][ligand]["Pathway"]].append(tuple((ligand, jitterDict[pub][ligand]['deltadelta'][0])))
                 except KeyError:
                     continue
                 jitterLegend[jitterDict[pub][ligand]["Pathway"]] = sorted(list(set(jitterLegend[jitterDict[pub][ligand]["Pathway"]])), key=lambda x: x[1], reverse=True)
+
+        #addressing qualitative points in the ∆∆ data (full bias/high bias/none)
+        for pathway in jitterPlot.keys():
+            highest = 0
+            for datapoint in jitterPlot[pathway]:
+                if datapoint[1] > highest:
+                    highest = datapoint[1]
+            change = {'None' : 0, "High Bias": highest + 1, "Full Bias": highest + 2}
+            for datapoint in jitterPlot[pathway]:
+                if datapoint[4] in change:
+                    datapoint[1] = change[datapoint[4]]
 
         jitterPlot = {k: v for k, v in jitterPlot.items() if len(v) > 0}
 
         for key in jitterLegend.keys():
             jitterLegend[key] = list(dict.fromkeys([name[0] for name in jitterLegend[key]]))
 
-
+        context['label'] = self.label
         context['page'] = self.page
         context['scatter_legend'] = json.dumps(jitterLegend)
         context['colors'] = json.dumps(Colors)
@@ -631,7 +752,7 @@ class BiasedRankOrder(TemplateView):
         context['spider'] = json.dumps(SpiderOptions)
         context['all_ligands'] = list(set(list_of_ligands))
         context['all_publications'] = list(set(list_of_publications))
-        context['query'] = 'OPRM1' #this will be the input query from selection page
+        context['query'] = rec_name
         context['full_data'] = json.dumps(sorted_full_data)
         context['full_ligands'] = json.dumps(full_ligands)
         return context

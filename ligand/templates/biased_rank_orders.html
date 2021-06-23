@@ -12,9 +12,9 @@
 {% block content %}
 
 <style>
-    body{
+    /* body{
       font: 10px sans-serif;
-    }
+    } */
     li{
       font: 15px sans-serif;
     }
@@ -146,9 +146,9 @@
     <li class="nav-item">
       <a class="nav-link active" data-toggle="tab" href="#boxplot">Scatter plot</a>
     </li>
-    <li class="nav-item">
+    <!-- <li class="nav-item">
       <a class="nav-link" data-toggle="tab" href="#spiders">Radar plots</a>
-    </li>
+    </li> maybe Kasper or Alex wants to add another plot (scatter) -->
   </ul>
 
   <!-- Tab panes -->
@@ -244,21 +244,26 @@
 </script>
 
 <script>
-  var data = {{ full_data | safe}};
-  var keys = {{ full_ligands | safe}};
+  var data = {{ full_data | safe }};
+  var keys = {{ full_ligands | safe }};
+  var label =  "{{ label }}";
+  if(label == 'emax'){
+    ylabel = "ΔLog(Emax/EC50)"
+  } else {
+    ylabel = "ΔLog(Tau/KA)"
+  };
   var count = 0;
   for(var propt in data){
 
-    var result = data[propt]["Authors"].link("https://doi.org/" + propt);
+    var link_name = data[propt]["Authors"];
+    var link_destination = "https://doi.org/" + propt;
     var divID = 'PUB'+count;
     var reference = data[propt]["Endogenous"]
     // Calling function
-    DrawMultiLineChart(data[propt]['Data'], 'divChartTrends', keys[propt], divID, result, reference);
+    DrawMultiLineChart(data[propt]['Data'], 'divChartTrends', keys[propt], divID, link_name, reference, link_destination, ylabel);
     count = count + 1;
 
   };
-
-  // d3.selectAll("circle.ARTIFICIAL").remove();
 
 </script>
 
@@ -267,11 +272,19 @@
 var realData = {{ scatter | safe }};
 var colors = {{ colors | safe }};
 var legend = {{ scatter_legend | safe }};
+var label =  "{{ label }}";
+if(label == 'emax'){
+  ylabel = "ΔΔLog(Emax/EC50)"
+  qualitative = true
+} else {
+  ylabel = "ΔΔLog(Tau/KA)"
+  qualitative = false
+};
 var count = 1;
   for(var path in realData){
     var name = 'Pathway' + parseInt(count);
     // console.log(colors[path]);
-    DotScatter(realData[path], 'boxplotChart', name, colors, legend[path], path);
+    DotScatter(realData[path], 'boxplotChart', name, colors, legend[path], path, ylabel, qualitative);
     count = count + 1;
   };
 
