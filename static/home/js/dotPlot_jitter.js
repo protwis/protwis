@@ -339,7 +339,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
             .style("font", "10px sans-serif")
             .style("alignment-baseline", "middle");
 
-  if(qualitative == true){
+  if(qualitative === true){
     chart.append('g')
        .attr('class', 'ytitle')
        .attr("transform", position)

@@ -16,7 +16,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from django.core.cache import cache
 
-from common.views import AbsTargetSelectionTable, Alignment, AbsTargetSelection, AbsReferenceSelectionTable
+from common.views import AbsTargetSelectionTable, Alignment, AbsReferenceSelectionTable
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
@@ -606,7 +606,7 @@ class BiasedRankOrder(TemplateView):
 
             try:
                 DD = [float(double_delta), "REAL"]
-            except (ValueError, TypeError) as e:
+            except (ValueError, TypeError):
                 DD = [0, double_delta]
 
             if result[11] == 1:

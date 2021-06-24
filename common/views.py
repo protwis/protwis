@@ -359,8 +359,8 @@ def getReferenceTable():
 ####################################################################################
 
 class AbsReferenceSelectionTable(TemplateView):
-    """An abstract class for the table reference selection page used in many apps.
 
+    """An abstract class for the table reference selection page used in many apps.
     To use it in another app, create a class-based view that extends this class
     """
 

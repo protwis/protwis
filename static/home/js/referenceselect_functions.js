@@ -3,35 +3,35 @@
 /*global showAlert */
 
 var referenceTable;
-var selected_targets = new Set();
+var selectedTargets = new Set();
 
 /**
  * This function mains the shown and hidden selected targets
  * and updates an information message after each update/filter.
  */
-var previous_target_count = 0;
+var previousTargetCount = 0;
 function updateTargetCount(){
   // Counting the selected targets matching the current filters
   var numTargets = $("table#uniprot_selection tbody input:checked").length;
 
-  var message = selected_targets.size.toString();
+  var message = selectedTargets.size.toString();
   if (numTargets === 1){
     message += " receptor selected";
   } else {
     message += " receptors selected";
   }
 
-  var filtered = selected_targets.size - numTargets;
+  var filtered = selectedTargets.size - numTargets;
   if (filtered > 0) {
     message += " ("+filtered+" currently filtered)";
   }
 
   $("#selection_table_info").html(message);
-  if (previous_target_count !== selected_targets.size) {
+  if (previousTargetCount !== selectedTargets.size) {
     if (!$("#selection_table_info").is(":animated")) {
       $("#selection_table_info").effect("highlight", {color:"#FFAAAA"}, 1000 );
     }
-    previous_target_count = selected_targets.size;
+    previousTargetCount = selectedTargets.size;
   }
 }
 
@@ -43,7 +43,7 @@ function addTarget(checkbox){
     var slug = $(checkbox).attr("entry-value");
     $(checkbox).prop("checked", true);
     $(checkbox).closest("tr").addClass("selected");
-    selected_targets.add(slug);
+    selectedTargets.add(slug);
 
 }
 
@@ -56,7 +56,7 @@ function removeTarget(checkbox){
   $(checkbox).prop("checked", false);
   $(checkbox).closest("tr").removeClass("selected");
 
-  selected_targets.delete(slug);
+  selectedTargets.delete(slug);
 }
 
 /**
@@ -100,10 +100,10 @@ function clearTargetSelection(){
  * @returns {boolean} true if row contains selected target otherwise false
  */
 function selectedTargetFilter(filterVal, columnVal, rowValues, stateVal){
-  var checkbox_id = columnVal.match(/id="(.*?)"/g);
-  if (checkbox_id.length > 0){
-      checkbox_id = checkbox_id[0].replace(/id="/g, "").replace('"', "");
-      return $("#"+checkbox_id).prop("checked");
+  var checkboxID = columnVal.match(/id="(.*?)"/g);
+  if (checkboxID.length > 0){
+      checkboxID = checkboxID[0].replace(/id="/g, "").replace('"', "");
+      return $("#"+checkboxID).prop("checked");
   } else {
     return false;
   }
@@ -118,7 +118,7 @@ function selectedTargetFilter(filterVal, columnVal, rowValues, stateVal){
  * @param {object} stateVal Current DOM state of the row (not sufficient in this case)
  * @returns {boolean} true if row contains selected target otherwise false
  */
-function check_all_targets(){
+function checkAllTargets(){
   var changedTargetBoxes = 0;
   $("table#uniprot_selection tbody tr").each(function() {
     if (!$(this).hasClass("selected")){
@@ -165,47 +165,49 @@ function importTargets(){
   clearFilters();
 
   // process the input table
-  var input_entries = $("#copyboxTargets").val();
-  var split_entries = input_entries.split(/[ ,:;]+/);
-  if (split_entries.length > 1){
-    message = "Only <b>one receptor can be imported</b>. Please provide a single uniprot name to be imported.";
-    msg_type = "warning";
-    showAlert(message, msg_type);
-  };
+  var messageMultiple = "";
+  var msgTypeMultiple = "info";
+  var inputEntries = $("#copyboxTargets").val();
+  var splitEntries = inputEntries.split(/[ ,:;]+/);
+  if (splitEntries.length > 1){
+    messageMultiple = "Only <b>one receptor can be imported</b>. Please provide a single uniprot name to be imported.";
+    msgType = "warning";
+    showAlert(messageMultiple, msgTypeMultiple);
+  }
 
   // Keep track of matches and misses
-  var not_found = [];
+  var notFound = [];
   var parsed = 0;
-  for (var i = 0; i < split_entries.length; i++) {
-    split_entries[parseInt(i, 10)] = split_entries[parseInt(i, 10)].trim().toLowerCase();
-    split_entries[parseInt(i, 10)] = split_entries[parseInt(i, 10)].split("_")[0];
+  for (var i = 0; i < splitEntries.length; i++) {
+    splitEntries[parseInt(i, 10)] = splitEntries[parseInt(i, 10)].trim().toLowerCase();
+    splitEntries[parseInt(i, 10)] = splitEntries[parseInt(i, 10)].split("_")[0];
 
     // Check minimum protein name length
-    if (split_entries[parseInt(i, 10)].length >= 2){
+    if (splitEntries[parseInt(i, 10)].length >= 2){
       // Find checkbox with correct entry
-      var items = $("table#uniprot_selection").find(`input[data-entry='${split_entries[parseInt(i, 10)]}']`);
+      var items = $("table#uniprot_selection").find(`input[data-entry='${splitEntries[parseInt(i, 10)]}']`);
       if (items.length > 0){
         parsed++;
         addTarget(items[0]);
       } else {
-        not_found.push(split_entries[parseInt(i, 10)]);
+        notFound.push(splitEntries[parseInt(i, 10)]);
       }
     }
   }
 
   // Add summary on message
   var message = "";
-  var msg_type = "info";
+  var msgType = "info";
   if (parsed > 0){
     message = "<b>Successfully</b> imported "+parsed+" targets.<br>";
-    if (not_found.length > 0){
-      message += "<br>The following name(s) could <i>not</i> be matched:<br>&#8226;&nbsp;&nbsp;" + not_found.join("<br>&#8226;&nbsp;&nbsp;");
+    if (notFound.length > 0){
+      message += "<br>The following name(s) could <i>not</i> be matched:<br>&#8226;&nbsp;&nbsp;" + notFound.join("<br>&#8226;&nbsp;&nbsp;");
     }
   } else {
     message = "The target selection import was <b>not successful</b>. Please make sure you are using the uniprot target names.";
-    msg_type = "warning";
+    msgType = "warning";
   }
-  showAlert(message, msg_type);
+  showAlert(message, msgType);
   updateTargetCount();
 }
 
@@ -240,7 +242,7 @@ function exportTargets(){
  * @param {string} url The url to go to after synchronizing the target selection
  */
 function submitSelection(url, minimum = 1) {
-  if (selected_targets.size >= minimum) {
+  if (selectedTargets.size >= minimum) {
     // set CSRF csrf_token
     $.ajaxSetup({
         headers:
@@ -248,7 +250,7 @@ function submitSelection(url, minimum = 1) {
     });
 
     // Submit proteins to target selection
-    var group = Array.from(selected_targets);
+    var group = Array.from(selectedTargets);
     $.post("/common/referenceformread", { "input-targets": group.join("\r") },  function (data) {
       // On success go to url page
       window.location.href = url;
