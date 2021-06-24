@@ -52,8 +52,12 @@ class LigandBrowser(TemplateView):
             'protein__species__common_name'
         ).annotate(num_ligands=Count('ligand', distinct=True),
             assay_f_count = Subquery(assay_f.values('value')),
-            assay_b_count = Subquery(assay_b.values('value'))
-        ).prefetch_related('protein', 'LigandReceptorStatistics')[:150]
+            assay_b_count = Subquery(assay_b.values('value')),
+            primary = Subquery(assay_f.values('primary')),
+            primary1 = Subquery(assay_b.values('primary')),
+            secondary = Subquery(assay_f.values('secondary')),
+            secondary1 = Subquery(assay_b.values('secondary'))
+        ).prefetch_related('protein', 'LigandReceptorStatistics')
         # import pdb; pdb.set_trace()
         context['ligands'] = ligands
 
@@ -65,18 +69,20 @@ class LigandBrowser(TemplateView):
         temp1 = str()
         secondary = set()
         try:
-            gprotein = ProteinGProteinPair.objects.filter(protein__id = receptor)
+            gprotein = ProteinGProteinPair.objects.filter(protein=receptor)
             for x in gprotein:
                 if x.transduction and x.transduction == 'primary':
                     primary.add(x.g_protein.name)
                 elif x.transduction and x.transduction == 'secondary':
                     secondary.add(x.g_protein.name)
             for i in primary:
-                temp += str(i) + str(', ')
+                temp += str(i.replace(' family', '')) + str(', ')
+
             for i in secondary:
-                temp1 += str(i) + str(', ')
+                temp1 += str(i.replace('family', '')) + str(', ')
             return temp, temp1
         except:
+            self.logger.info('receptor not found error')
             return None, None
 
 def LigandDetails(request, ligand_id):

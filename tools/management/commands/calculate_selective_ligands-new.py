@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
 from build.management.commands.base_build import Command as BaseBuild
 from residue.models import Residue
-from protein.models import Protein
+from protein.models import Protein, ProteinGProteinPair
 from ligand.models import *
 from common.models import WebLink, WebResource, Publication
 from django.db.models import Q, Count
@@ -198,20 +198,51 @@ class Command(BaseBuild):
     def sort_assay(self, assays):
         return sorted(assays, key=lambda i: i['pchembl_value'], reverse=True)
 
+    def fetch_receptor_trunsducers(self, receptor):
+        primary = set()
+        temp = str()
+        temp1 = str()
+        secondary = set()
+        try:
+            gprotein = ProteinGProteinPair.objects.filter(protein=receptor)
+            for x in gprotein:
+                if x.transduction and x.transduction == 'primary':
+                    primary.add(x.g_protein.name)
+                elif x.transduction and x.transduction == 'secondary':
+                    secondary.add(x.g_protein.name)
+            for i in primary:
+                temp += str(i.replace(' family', '')) + str(', ')
+
+            for i in secondary:
+                temp1 += str(i.replace('family', '')) + str(', ')
+            return temp, temp1
+        except:
+            self.logger.info('receptor not found error')
+            return None, None
+
+
     def save_data(self):
         #saving assay ---', final_assay
         for protein, counter in self.f_receptor_count.items():
+            primary, secondary = self.fetch_receptor_trunsducers(
+                protein)
             save_assay = LigandReceptorStatistics(
                 protein=protein,
                 type='f',
-                value=counter)
+                value=counter,
+                primary=primary,
+                secondary=secondary)
             save_assay.save()
 
         for protein, counter in self.b_receptor_count.items():
+            primary, secondary = self.fetch_receptor_trunsducers(
+                protein)
             save_assay = LigandReceptorStatistics(
                 protein=protein,
                 type='b',
-                value=counter)
+                value=counter,
+                primary=primary,
+                secondary=secondary)
             save_assay.save()
 
         print(self.f_receptor_count)

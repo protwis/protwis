@@ -345,7 +345,8 @@ class LigandReceptorStatistics(models.Model):
         'protein.Protein', on_delete=models.CASCADE, related_name='target_protein')
     type = models.CharField(max_length=3, null=True)
     value = models.DecimalField(max_digits=9, decimal_places=3, null=True)
-
+    primary = models.CharField(max_length=100, null=True)
+    secondary = models.CharField(max_length=100, null=True)
 
 class ChemblAssay(models.Model):
      #slug = models.SlugField(max_length=50, unique=True)

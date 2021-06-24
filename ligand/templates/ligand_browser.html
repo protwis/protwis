@@ -4,116 +4,14 @@
 {% block addon_css %}
 <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/ligand_browser.css' %}" type="text/css" />
-<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
-<link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
-<link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
-<link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
-<link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet">
-<link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
-<link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
-<link rel="stylesheet" type="text/css" href="{% static 'home/css/jquery.powertip.css' %}" />
-<style type="text/css">
-	.select2-result-label {
-		font-size: x-small;
-		font-size: 10px;
-	}
-
-	#filters {
-		font-size: 10px;
-		padding: 7px 15px;
-	}
-
-	@media (min-width: 1800px) {
-		#content {
-			width: 1770px;
-		}
-	}
-
-	table.dataTable {
-		font-size: initial;
-	}
-
-	table.dataTable.compact thead th.over_header {
-		border-right: 1px solid;
-		border-left: 0px solid;
-		text-align: left;
-		padding: 4px 4px 4px 4px;
-	}
-
-	table.dataTable.compact thead tr.over_header th {
-		border-bottom: 1px solid #ccc;
-	}
-
-	table.dataTable.compact thead th.leftborder {
-		border-left: 1px solid;
-	}
-
-	table.dataTable.compact thead th.rightborder {
-		border-right: 1px solid;
-	}
-
-	table.dataTable.compact thead th.checkbox_tr {
-		text-align: left;
-		padding: 4px 4px 4px 4px;
-	}
-
-	table.dataTable.compact thead th {
-		padding: 4px 16px 4px 2px;
-	}
-
-	.yadcf-filter-wrapper {
-		margin-top: 0px;
-		display: block;
-	}
-
-	input.yadcf-filter {
-		width: 100px;
-		font-family: sans-serif;
-		font-size: 100%;
-		font-weight: bold;
-	}
-
-	.yadcf-filter-range-date,
-	.yadcf-filter-range-number {
-		width: 30px;
-		font-family: sans-serif;
-		font-size: 100%;
-		font-weight: bold;
-	}
-
-	.highlight {
-		background-color: rgb(204, 229, 255);
-	}
-
-	.name {
-		max-width: 100px;
-		text-overflow: ellipsis;
-		cursor: pointer;
-		word-break: break-all;
-		overflow: hidden;
-		white-space: nowrap;
-	}
-
-	.name:hover {
-		overflow: visible;
-		white-space: normal;
-
-	}
-
-
-	/* (150% zoom - Note: if the zoom is too large, it will go outside of the viewport) */
-	}
-</style>
 {% endblock %}
 
 {% block addon_js %}
-
-<script src="{% static 'home/js/selection.js' %}"> </script>
 <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
-<script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
-<script src="{% static 'home/js/dataTables.buttons.min.js' %}"> </script>
-<script src="{% static 'home/js/select2.js' %}"> </script>
-<script src="https://cdn.datatables.net/buttons/1.5.1/js/buttons.print.min.js"></script>
+<script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
+<script src="{% static 'home/js/selection.js' %}"> </script>
+
 <script type="text/javascript" charset="utf-8">
 	$(document).ready(function() {
 		ClearSelection('targets');
@@ -124,103 +22,60 @@
 			'paging': false,
 			'orderCellsTop': true,
 			'autoWidth': true,
-			'dom': '<>ftrip',
-
-		});
-		yadcf.init(table,
-			[{
-					column_number: 1,
-					filter_type: "multi_select",
-					select_type: 'select2',
-					filter_default_label: "Select",
-					filter_reset_button_text: false,
-					select_type_options: {
-						width: '75px',
-					}
+			'dom': 'iTlfrt',
+			'aoColumnDefs': [{
+					'bSortable': false,
+					'aTargets': [0]
 				},
 				{
-					column_number: 2,
-					filter_type: "multi_select",
-					select_type: 'select2',
-					filter_default_label: "Select",
-					filter_reset_button_text: false,
-					select_type_options: {
-						width: '75px',
-					}
+					'sType': 'string',
+					'aTargets': [1]
 				},
-				{
-					column_number: 3,
-					filter_type: "multi_select",
-					select_type: 'select2',
-					filter_default_label: "Select",
-					filter_reset_button_text: false,
-					select_type_options: {
-						width: '75px',
-					}
-				},
-				{
-					column_number: 4,
-					filter_type: "multi_select",
-					select_type: 'select2',
-					filter_default_label: "Select",
-					filter_reset_button_text: false,
-					select_type_options: {
-						width: '75px',
-					}
-				},
-				{
-					column_number: 5,
-					filter_type: "multi_select",
-					select_type: 'select2',
-					filter_default_label: "Select",
-					filter_reset_button_text: false,
-					select_type_options: {
-						width: '75px',
-					}
-				},
-				{
-					column_number: 6,
-					filter_type: "range_number",
-					filter_default_label: ["From", "To"],
-					filter_reset_button_text: false,
-				},
-				{
-					column_number: 7,
-					filter_type: "range_number",
-					filter_default_label: ["From", "To"],
-					filter_reset_button_text: false,
-				},
-				{
-					column_number: 8,
-					filter_type: "range_number",
-					filter_default_label: ["From", "To"],
-					filter_reset_button_text: false,
-				}, {
-					column_number: 9,
-					filter_type: "multi_select",
-					select_type: 'select2',
-					filter_default_label: "Select",
-					filter_reset_button_text: false,
-					select_type_options: {
-						width: '75px',
-					}
-				},{
-					column_number: 10,
-					filter_type: "multi_select",
-					select_type: 'select2',
-					filter_default_label: "Select",
-					filter_reset_button_text: false,
-					select_type_options: {
-						width: '75px',
-					}
-				},
-
-
-			], {
-				cumulative_filtering: true
+			],
+			'tableTools': {
+				"sRowSelect": "double",
+				"aButtons": []
+			},
+			initComplete: function() {
+				$('#ligands').dataTable().columnFilter({
+					sPlaceHolder: "head:after",
+					sRangeFormat: "{from}:{to}",
+					aoColumns: [
+						null,
+						{
+							type: "select"
+						}, // receptor
+						{
+							type: "select"
+						}, // Species
+						{
+							type: "select"
+						}, //protein family
+						{
+							type: "select"
+						}, // ligand type
+						{
+							type: "select"
+						}, // class
+						{
+							type: "number-range"
+						}, // resolution
+						{
+							type: "number-range"
+						}, // resolution
+						{
+							type: "number-range"
+						}, // resolution
+						{
+							type: "select"
+						}, // resolution
+						{
+							type: "select"
+						}, // resolution
+					]
+				});
 			}
-		);
-
+		});
 		$('.alt').change(function() {
 			$(this).parent().parent().toggleClass('alt_selected');
 		});
@@ -229,43 +84,71 @@
 			$('.alt').parent().parent().toggleClass('alt_selected');
 		});
 
+
 		$('#compact_btn').click(function() {
 			if (getCheckedCheckboxesFor() == true) {
-				var result = document.querySelector('input[name="prot_id"]:checked').value;
-				window.location.href = '/ligand/target/compact/' + result;
+				ClearSelection('targets');
+				var checked_data = table.rows('.alt_selected').data();
+
+				for (i = 0; i < checked_data.length; i++) {
+					var div = document.createElement("div");
+					div.innerHTML = checked_data[i][1];
+					if (typeof div.innerText !== "undefined") {
+						AddToSelection('targets', 'protein_entry', div.innerText.replace(/\s+/g, ''));
+						console.info(div.innerText.replace(/\s+/g, ''));
+					} else {
+						AddToSelection('targets', 'protein_entry', div.textContent.replace(/\s+/g, ''));
+						console.info(div.textContent.replace(/\s+/g, ''));
+					}
+				}
+				window.location.href = '/ligand/targets_compact';
 			} else {
 				showAlert("Please select at least one receptor before continuing.", "danger");
 			}
 
 		});
+
+
 
 		$('#all_ligs_btn').click(function() {
 			if (getCheckedCheckboxesFor() == true) {
-				var result = document.querySelector('input[name="prot_id"]:checked').value;
-				window.location.href = '/ligand/target/' + result;
+				ClearSelection('targets');
+				var checked_data = table.rows('.alt_selected').data();
+				for (i = 0; i < checked_data.length; i++) {
+					var div = document.createElement("div");
+					div.innerHTML = checked_data[i][1];
+					if (typeof div.innerText !== "undefined") {
+						AddToSelection('targets', 'protein_entry', div.innerText.replace(/\s+/g, ''));
+						console.info(div.innerText.replace(/\s+/g, ''));
+					} else {
+						AddToSelection('targets', 'protein_entry', div.textContent.replace(/\s+/g, ''));
+						console.info(div.textContent.replace(/\s+/g, ''));
+					}
+				}
+				window.location.href = '/ligand/targets';
 			} else {
 				showAlert("Please select at least one receptor before continuing.", "danger");
 			}
 		});
+
+
 	});
 </script>
-
 <script type="text/javascript">
 	function getCheckedCheckboxesFor() {
-		var checkboxes = document.querySelectorAll('input[type="radio"]:checked'),
+		var checkboxes = document.querySelectorAll('table input[type="checkbox"]:checked'),
 			values = [];
 		Array.prototype.forEach.call(checkboxes, function(el) {
 			values.push(el.value);
 		});
 		if (values.length > 0) {
-			console.log('checked correct', values);
 			return true
 		} else {
-			console.log('anti lenght', values);
 			return false
 		}
 	}
-</script>{% endblock %}
+</script>
+{% endblock %}
 
 {% block content %}
 <div class="btn-group">
@@ -287,50 +170,61 @@ Ligand source activities (1 row/activity)-->
 <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
 	<table width="100%" class="display" id="ligands">
 		<thead>
-			<tr rowspan="2">
-				<th></th>
-				<th style="border-left: 1px solid black; text-align:center" colspan="4">
-					Receptor</th>
-				<th style="border-left: 1px solid black; text-align:center" colspan="2">
-					Ligands</th>
-				<th style="border-left: 1px solid black; text-align:center" colspan="2">
-					Selectivity (quantity)</th>
-				<th style="border-left: 1px solid black;border-right: 1px solid black; text-align:center" colspan="2">
-					Transducers</th>
+			<tr>
+				<th><input class="select-all" type="checkbox"> Select all</th>
+				<th class="general-th">Receptor</th>
+				<th class="general-th">Species</th>
+				<th class="general-th">Receptor family</th>
+				<th class="general-th">Ligand type</th>
+				<th class="general-th">Class</th>
+				<th class="activity-th">Ligand count</th>
+				<th class="activity-th">F selectivity</th>
+				<th class="activity-th">B selectivity</th>
+				<th class="activity-th">Primary</th>
+				<th class="activity-th">Secondary</th>
 			</tr>
 			<tr>
-				<th>Select</th>
-				<th style="border-left: 1px solid black;">Class</th>
-				<th>Receptor</th>
-				<th>Species</th>
-				<th>Family</th>
-
-				<th style="border-left: 1px solid black;">Ligand type</th>
-				<th>Ligand count</th>
-
-				<th style="border-left: 1px solid black;">Functional</th>
-				<th>Binding</th>
-				<th style="border-left: 1px solid black;">Primary</th>
-				<th style="border-right: 1px solid black;">Secondary</th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
 			</tr>
-
 		</thead>
 		<tbody>
 			{% for ligand in ligands %}
 			<tr>
-				<td><input class="alt" type="radio" name='prot_id' value='{{ligand.protein}}'></td>
-				<td>{{ligand.protein__family__parent__parent__parent__name}}</td>
+				<td><input class="alt" type="checkbox"></td>
 				<td>{{ligand.protein__entry_name}}</td>
 				<td>{{ligand.protein__species__common_name}}</td>
 				<td>{{ligand.protein__family__parent__name}}</td>
-
 				<td>{{ligand.protein__family__parent__parent__name}}</td>
+				<td>{{ligand.protein__family__parent__parent__parent__name}}</td>
 				<td>{{ligand.num_ligands}}</td>
-				<!-- TODO: skip this as i am making changes to it -->
+
 				<td>{{ligand.assay_f_count|default_if_none:""|floatformat:0}}</td>
 				<td>{{ligand.assay_b_count|default_if_none:""|floatformat:0}}</td>
-				<td class='name'>{{ligand.primary}}</td>
-				<td class='name'>{{ligand.secondary}}</td>
+
+                {%if ligand.primary %}
+			    <td class='name'>{{ligand.primary|default_if_none:""}}</td>
+				{%else%}
+				<td class='name'>{{ligand.primary1|default_if_none:""}}</td>
+                {%endif%}
+
+                {%if ligand.secondary %}
+			    <td class='name'>{{ligand.secondary|default_if_none:""}}</td>
+				{%else%}
+				<td class='name'>{{ligand.secondary1|default_if_none:""}}</td>
+                {%endif%}
+
+
+
 			</tr>
 			{% endfor %}
 		</tbody>

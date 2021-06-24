@@ -613,12 +613,14 @@ class Command(BaseBuild):
             for i in biasdata:
                 if i['order_no'] > 0:
                     try:
-                        a = math.log10(
-                            most_potent['quantitive_efficacy'] / most_potent['quantitive_activity'])
-                        b = math.log10(
-                            i['quantitive_efficacy'] / i['quantitive_activity'])
-                        i['lbf_a'] = b
-                        i['log_bias_factor'] = round(a-b, 1)
+                        i['log_bias_factor'] = self.lbf_process_ic50(i)
+                        if i['log_bias_factor'] == None:
+                            a = math.log10(
+                                most_potent['quantitive_efficacy'] / most_potent['quantitive_activity'])
+                            b = math.log10(
+                                i['quantitive_efficacy'] / i['quantitive_activity'])
+                            i['lbf_a'] = b
+                            i['log_bias_factor'] = round(a-b, 1)
                     except:
                         i['log_bias_factor'] = None
                     i['t_factor'] = None
@@ -691,8 +693,7 @@ class Command(BaseBuild):
     def lbf_process_ic50(self, i):
         return_message=None
         try:
-            if (i['quantitive_measure_type'].lower() == 'ic50' and
-                i['reference_ligand'][0]['quantitive_measure_type'].lower() == 'ic50'):
+            if (i['quantitive_measure_type'].lower() == 'ic50'):
                 return_message = 'Only agonist in main pathway'
         except:
             return_message = None
