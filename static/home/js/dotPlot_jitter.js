@@ -327,6 +327,20 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
         d3.event.stopPropagation();
     });
 
+  if(ylabel === 'ΔΔLog(Tau/KA)'){
+    chart.append('g')
+       .attr('class', 'ytitle')
+       .attr("transform", position)
+          .append("text")
+            .attr("x", xSeed - 5)
+            .attr("y", margin.top)
+            .text("Ligands with " + ylabel + " > 1 or < -1") //ΔΔLog(Emax/EC50)
+            .attr("text-anchor", "left")
+            .attr("font-weight", "bold")
+            .style("font", "10px sans-serif")
+            .style("alignment-baseline", "middle");
+
+  } else {
     chart.append('g')
        .attr('class', 'ytitle')
        .attr("transform", position)
@@ -338,6 +352,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
             .attr("font-weight", "bold")
             .style("font", "10px sans-serif")
             .style("alignment-baseline", "middle");
+  }
 
   if(qualitative === true){
     chart.append('g')

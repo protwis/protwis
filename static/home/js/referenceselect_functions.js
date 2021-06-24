@@ -171,7 +171,7 @@ function importTargets(){
   var splitEntries = inputEntries.split(/[ ,:;]+/);
   if (splitEntries.length > 1){
     messageMultiple = "Only <b>one receptor can be imported</b>. Please provide a single uniprot name to be imported.";
-    msgType = "warning";
+    msgTypeMultiple = "warning";
     showAlert(messageMultiple, msgTypeMultiple);
   }
 
