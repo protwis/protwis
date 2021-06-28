@@ -2279,11 +2279,13 @@ def ComplexmodDownload(request):
 	response['Content-Length'] = zip_io.tell()
 	return response
 
-def SingleModelDownload(request, modelname, state, fullness, csv=False):
+def SingleModelDownload(request, modelname, fullness, state=None, csv=False):
 	"Download single homology model"
 	zip_io = BytesIO()
-
-	hommod = StructureModel.objects.get(protein__entry_name=modelname, state__slug=state)
+	if state:
+		hommod = StructureModel.objects.get(protein__entry_name=modelname.lower(), state__slug=state)
+	else:
+		hommod = StructureModel.objects.get(protein__entry_name=modelname.lower())
 	if not hommod.protein.accession:
 		version = hommod.pdb_data.pdb.split('\n')[0][-10:]
 		mod_name = 'Class{}_{}_{}_refined_{}_{}_GPCRdb.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.parent.entry_name,
@@ -2352,11 +2354,18 @@ def SingleComplexModelDownload(request, modelname, signprot, csv=False):
 	"Download single homology model"
 
 	zip_io = BytesIO()
-	hommod = StructureComplexModel.objects.get(receptor_protein__entry_name=modelname, sign_protein__entry_name=signprot)
-	mod_name = 'Class{}_{}-{}_{}_{}_GPCRdb.pdb'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name,
-														hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
-	stat_name = 'Class{}_{}-{}_{}_{}_GPCRdb.templates.csv'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name,
-														hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
+	if signprot=='complex':
+		hommod = StructureComplexModel.objects.get(receptor_protein__entry_name=modelname.lower())
+		mod_name = 'Class{}_{}-{}_{}_refined_{}_GPCRdb.pdb'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.parent.entry_name,
+															hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
+		stat_name = 'Class{}_{}-{}_{}_refined_{}_GPCRdb.templates.csv'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.parent.entry_name,
+															hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
+	else:
+		hommod = StructureComplexModel.objects.get(receptor_protein__entry_name=modelname, sign_protein__entry_name=signprot)
+		mod_name = 'Class{}_{}-{}_{}_{}_GPCRdb.pdb'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name,
+															hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
+		stat_name = 'Class{}_{}-{}_{}_{}_GPCRdb.templates.csv'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name,
+															hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
 	io = StringIO(hommod.pdb_data.pdb)
 	stats_text = StringIO(hommod.stats_text.stats_text)
 	with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as backup_zip:
