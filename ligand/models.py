@@ -341,14 +341,12 @@ class LigandRole(models.Model):
 
 
 class LigandReceptorStatistics(models.Model):
-    ligand = models.ForeignKey('Ligand', on_delete=models.CASCADE)
     protein = models.ForeignKey(
         'protein.Protein', on_delete=models.CASCADE, related_name='target_protein')
     type = models.CharField(max_length=3, null=True)
     value = models.DecimalField(max_digits=9, decimal_places=3, null=True)
-    reference_protein = models.ForeignKey(
-        'protein.Protein', on_delete=models.CASCADE, related_name="reference_protein")
-
+    primary = models.CharField(max_length=100, null=True)
+    secondary = models.CharField(max_length=100, null=True)
 
 class ChemblAssay(models.Model):
      #slug = models.SlugField(max_length=50, unique=True)
@@ -566,3 +564,54 @@ class BiasedPathwaysAssay(models.Model):
 
 
 # Pathways Part - end
+
+
+#New ligand models
+class Ligand_v2(models.Model):
+    pubchem_id = models.TextField(null = True)
+    default_name = models.TextField(null = True)
+    smiles = models.TextField(null = True)
+    inchikey = models.TextField(null = True)
+    pdb  = models.TextField(null = True)
+    LIGAND_TYPE_CHOICES = [
+        ('1','small molecule'),
+     	('2','protein'),
+     	('3','peptide'),
+     	('4','N/A'),
+     	('5', None),
+     	('6','ion'),
+     	('7','constitutive'),
+    ]
+    ligand_type = models.CharField(
+        max_length=15,
+        choices=LIGAND_TYPE_CHOICES,
+        default="small-molecule",
+    )
+    def __str__(self):
+        return self.name
+
+class Ligand_v2_Physchem(models.Model):
+    ligand = models.ForeignKey(Ligand_v2, on_delete = models.CASCADE)
+    mw = models.DecimalField(max_digits=15, decimal_places=3, null=True)
+    rotatable_bonds =  models.SmallIntegerField(null=True)
+    hacc =  models.SmallIntegerField( null=True)
+    hdon =  models.SmallIntegerField( null=True)
+    logp = models.DecimalField(max_digits=10, decimal_places=3, null=True)
+
+    def get_name(self):
+        return self.ligand.name
+
+class Synonyms(models.Model):
+    ligand = models.ForeignKey(Ligand_v2, on_delete = models.CASCADE)
+    name = models.TextField(null = True)
+    resource = models.ForeignKey(WebResource, on_delete=models.SET_NULL, null = True)
+    link =  models.TextField(null = True)
+    SPECIALTY_CHOICES = [
+        ('1','ligand'),
+        ('2','vendor'),
+    ]
+    specialty = models.CharField(
+        max_length=6,
+        choices=SPECIALTY_CHOICES,
+        default='1',
+    )

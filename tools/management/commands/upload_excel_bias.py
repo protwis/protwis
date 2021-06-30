@@ -207,9 +207,9 @@ class Command(BaseBuild):
         d['effector_family'] = r[15]
         d['molecule_1'] = r[16]
         d['molecule_2'] = r[17]
+        d['spatial_level'] = r[18]
+        d['assay_type'] = r[19]
 
-        d['assay_type'] = r[18]
-        d['spatial_level'] = r[19]
         d['signal_detection_tecnique'] = r[20]
         d['time_resolved'] = r[21]
 
@@ -435,19 +435,24 @@ class Command(BaseBuild):
 
     def fetch_receptor_trunsducers(self, receptor):
         primary = set()
+        secondary = set()
         temp = list()
+        temp1 = list()
         try:
             gprotein = ProteinGProteinPair.objects.filter(protein=receptor)
             for x in gprotein:
                 if x.transduction and x.transduction == 'primary':
                     primary.add(x.g_protein.name)
-
+                elif x.transduction and x.transduction == 'secondary':
+                    secondary.add(x.g_protein.name)
             for i in primary:
                 temp.append(str(i))
-            return temp
+            for i in secondary:
+                temp1.append(str(i))
+            return temp, temp1
         except:
             self.logger.info('receptor not found error')
-            return None
+            return None, None
 
     def fetch_endogenous(self, protein):
         try:
