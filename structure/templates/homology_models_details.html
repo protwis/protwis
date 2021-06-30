@@ -91,8 +91,13 @@ canvas {
         <div class="btn-group">
             <a href="/" class="dropdown-toggle btn btn-primary btn-mini" data-toggle="dropdown" role="button" aria-expanded="false">Download <span class='caret'></span></a>
             <ul class="dropdown-menu" role="menu" style="min-width:50%;">
-                <li><a id="download_btn" href="./{{model.protein.entry_name}}_{{model.state.slug}}_full/download_pdb">Full</a></li>
-                <li><a id="download_btn" href="./{{model.protein.entry_name}}_{{model.state.slug}}_noloops/download_pdb">Without loops</a></li>
+                {% if not model.protein.accession %}
+                    <li><a id="download_btn" href="./{{model.protein.entry_name|upper}}_full/download_pdb">Full</a></li>
+                    <li><a id="download_btn" href="./{{model.protein.entry_name|upper}}_noloops/download_pdb">Without loops</a></li>
+                {% else %}
+                    <li><a id="download_btn" href="./{{model.protein.entry_name}}_{{model.state.slug}}_full/download_pdb">Full</a></li>
+                    <li><a id="download_btn" href="./{{model.protein.entry_name}}_{{model.state.slug}}_noloops/download_pdb">Without loops</a></li>
+                {% endif %}
             </ul>
         </div>
         <div>

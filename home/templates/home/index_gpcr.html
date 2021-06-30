@@ -154,7 +154,7 @@
                     <ul class="stats_list">
                         {% for stat in release_statistics %}
                             <li>
-                                {{ stat.statistics_type | safe }} {{ stat.value| safe }}
+                                {{ stat.value| safe }} {{ stat.statistics_type | safe }} 
                             </li>
                         {% endfor %}
                     </ul>
