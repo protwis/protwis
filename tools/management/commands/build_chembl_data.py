@@ -111,20 +111,26 @@ class Command(BaseBuild):
         608,609,610,611,612,613,614,615,616,617,618,619,620,621,830,1020,1021,1022,1038,
         1082,1083,1088,1089,1251,1253,1256,1259,1265,1266,1267,1268,1269,1270,1271,1272,
         1273,1274,1275,1277,1278]
+        g-test = [147]
         target_list = set()
-        for item in g_family_ids:
-            gproteins = new_client.target_component.filter(protein_classifications__protein_classification_id=item).only('targets')
-            for protein in gproteins:
-                for target in protein['targets']:
-                    if target['target_chembl_id'] not in target_list:
-                        target_list.add(target['target_chembl_id'])
-                    else:
-                        pass
+        for item in g-test:
+            time.sleep(0.2)
+            try:
+                gproteins = new_client.target_component.filter(protein_classifications__protein_classification_id=item).only('targets')
+                print(len(gproteins))
+                for protein in gproteins:
+                    for target in protein['targets']:
+                        if target['target_chembl_id'] not in target_list:
+                            target_list.add(target['target_chembl_id'])
+                        else:
+                            pass
+            except:
+                pass
         print('GPCRS ready')
         return target_list
 
 
-    def get_chembl_assay(self,targets, prev_id, current_id):
+    def get_chembl_assay(self,targets):
         # gets assays from ChEMBL (by batch sie of 20). Filters using Tsonko rules, GPCRs.
         # as arguments takes GPCR ids(targets), batch start size (prev_id) and end size(current_id)
         new_test = new_client.activity.filter(pchembl_value__isnull=False).filter(data_validity_comment__isnull=True
@@ -135,7 +141,7 @@ class Command(BaseBuild):
                                         'standard_value','standard_units','standard_relation','activity_comment',
                                         'assay_description','assay_type',
                                         'document_chembl_id','pchembl_value',
-                                        'activity_id','canonical_smiles','assay_chembl_id'])[prev_id:current_id]
+                                        'activity_id','canonical_smiles','assay_chembl_id'])
         return new_test
 
     def get_dois(self, dci, q):
@@ -173,7 +179,7 @@ class Command(BaseBuild):
         main_dict = dict()
         increment = 0
         for i in chembl_assays:
-            temp_increment = temp_increment+1
+            temp_increment = temp_increment + 1
             if self.valdiate_data(i) == False:
                 continue
             temp_dict = dict()
@@ -183,6 +189,7 @@ class Command(BaseBuild):
                 continue
 
             temp_dict['smiles'] = i['canonical_smiles']
+            import pdb; pdb.set_trace()
             temp_dict['ligand'] = self.fetch_ligand(i['molecule_chembl_id'],i['canonical_smiles'])
             if temp_dict['ligand'] == None:
                 continue
@@ -193,15 +200,8 @@ class Command(BaseBuild):
                            i["pchembl_value"]) == True):
 
                 continue
-                # q = queue.Queue()
-                # x=threading.Thread(target=self.get_cell_line, args=(i['assay_chembl_id'], q)).start()
             cell_line = None
-                #
-                # pub_q = queue.Queue
-                # y=threading.Thread(target=self.get_dois, args=(i['document_chembl_id'], q)).start()
-                # pub = q.get()
-                # if pub is not None:
-                #     temp_dict['doi'] = self.fetch_publication(pub)
+
             temp_dict['activity_id'] = i['activity_id']
             temp_dict['standard_type'] = i['standard_type']
             temp_dict['standard_value'] = i['standard_value']
@@ -234,16 +234,14 @@ class Command(BaseBuild):
         print('---process_chembl---')
         #range should be set to number of total objects/20 (API batch size)
         #555200 is the last id saved before session was aborted
-        for i in range(30578):
-            current_id =  591900 + ((i+1) * 20)
-            prev_id =  591900 + (i *20)
-            chembl_assays = self.get_chembl_assay(target_list_list, prev_id, current_id)
-            chembl_assays=list(chembl_assays)
-            self.process_chembl(chembl_assays,current_id)
-            # control the flow
-            if(current_id%100==0):
-                end = time.time()
-                print('---temp_increment time---',current_id,  end - start)
+        # pool = Pool(4)
+        # pool.map(self.main_process, rows)
+        chembl_assays = self.get_chembl_assay(target_list_list)
+        self.process_chembl(chembl_assays,current_id)
+        # control the flow
+        if(current_id%100==0):
+            end = time.time()
+            print('---temp_increment time---',current_id,  end - start)
 
 
     def check_dublicates(self, ligand, protein, assay_description, chembl,standard_value,standard_units, pchembl_value ):
@@ -286,33 +284,42 @@ class Command(BaseBuild):
             # print('--saved---')
 
     def fetch_measurements(self, potency, p_type, unit):
-        # it was used for bias prediction build. Temporarily unused
-        if p_type.lower()  == 'pec50':
-            potency = 10**(potency*(-1))
-            p_type = 'EC50'
-        elif p_type.lower() == 'logec50':
-            potency = 10**(potency)
-            p_type = 'EC50'
-        elif p_type.lower() == 'pic50':
-            potency = 10**(potency*(-1))
-            p_type = 'IC50'
-        elif p_type.lower() == 'logic50':
-            potency = 10**(potency)
-            p_type = 'IC50'
-        elif p_type.lower()  == 'ec50':
-            if unit.lower() == 'nm':
-                potency = potency* 10**(-9)
-            elif unit.lower() == 'µm':
-                potency = potency* 10**(-9)
-            elif unit.lower() == 'pm':
-                potency = potency* 10**(-12)
-            elif unit.lower() == 'mm':
-                potency = potency* 10**(-6)
-            else:
-                pass
-        if potency:
-            potency = "{:.2E}".format(Decimal(potency))
-        return potency,p_type
+        if potency is not None:
+            if p_type.lower()  == 'pec50':
+                potency = 10**(potency*(-1))
+                p_type = 'EC50'
+            elif p_type.lower() == 'logec50':
+                potency = 10**(potency)
+                p_type = 'EC50'
+            elif p_type.lower() == 'pic50':
+                potency = 10**(potency*(-1))
+                p_type = 'IC50'
+            elif p_type.lower() == 'logic50':
+                potency = 10**(potency)
+                p_type = 'IC50'
+        if potency is not None:
+            if p_type.lower()  == 'ec50':
+                if unit.lower() == 'nm':
+                    potency = potency* 10**(-9)
+                elif unit.lower() == 'µm':
+                    potency = potency* 10**(-6)
+                elif unit.lower() == 'pm':
+                    potency = potency* 10**(-12)
+                elif unit.lower() == 'mm':
+                    potency = potency* 10**(-3)
+            if p_type.lower()  == 'ic50':
+                if unit.lower() == 'nm':
+                    potency = potency* 10**(-9)
+                elif unit.lower() == 'µm':
+                    potency = potency* 10**(-6)
+                elif unit.lower() == 'pm':
+                    potency = potency* 10**(-12)
+                elif unit.lower() == 'mm':
+                    potency = potency* 10**(-3)
+            return potency,p_type
+        else:
+            self.logger.info("potency convertion e rror")
+            return None, None
 
     def fetch_protein(self,target):
         """
