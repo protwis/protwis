@@ -1,33 +1,33 @@
-from django.core.management.base import BaseCommand, CommandError
-from django.conf import settings
-from django.db import connection
+
+
+
 from django.db import IntegrityError
-from django.utils.text import slugify
+
 from django.http import HttpResponse, JsonResponse
 
 from build.management.commands.base_build import Command as BaseBuild
-from common.tools import fetch_from_cache, save_to_cache, fetch_from_web_api
-from residue.models import Residue
-from protein.models import Protein, ProteinGProteinPair
-from ligand.models import *
-from mutation.models import Mutation
+
+
+from protein.models import Protein
+from ligand.models import BiasedExperiment,AnalyzedExperiment,
+
 from ligand.functions import get_or_make_ligand
 from common.models import WebLink, WebResource, Publication
-from multiprocessing.pool import ThreadPool
+
 from chembl_webresource_client.new_client import new_client
 import queue
 import logging
-import os
-from datetime import datetime
-import xlrd
-import operator
-import traceback
+
+
+
+
+
 import time
-import math
-import json
-import threading
-import concurrent.futures
-import pytz
+
+
+
+
+
 
 MISSING_PROTEINS = {}
 SKIPPED = 0
@@ -48,10 +48,10 @@ class Command(BaseBuild):
     data_all = []
     my_queue = queue.Queue()
 
-    def storeInQueue(f):
-      def wrapper(*args):
-        my_queue.put(f(*args))
-      return wrapper
+
+
+
+
 
     def add_arguments(self, parser):
         parser.add_argument('-p', '--proc',
@@ -71,6 +71,7 @@ class Command(BaseBuild):
                             help='Purge existing bias records')
         parser.add_argument('--test_run', action='store_true', help='Skip this during a test run',
                             default=False)
+        self.logger.error('handle error')
 
     def handle(self, *args, **options):
         if options['test_run']:
@@ -80,7 +81,7 @@ class Command(BaseBuild):
         if options['purge']:
             try:
                 print('Started purging bias data')
-                self.purge_bias_data()
+                Command.purge_bias_data()
                 print('Ended purging bias data')
             except Exception as msg:
                 print(msg)
@@ -95,24 +96,25 @@ class Command(BaseBuild):
             print('--error--', msg, '\n')
             self.logger.info("The error appeared in def handle")
 
-
-    def purge_bias_data(self):
+    @staticmethod
+    def purge_bias_data():
+        import pdb; pdb.set_trace()
         delete_bias_excel = BiasedExperiment.objects.all()
         delete_bias_excel.delete()
         delete_bias_experiment = AnalyzedExperiment.objects.all()
         delete_bias_experiment.delete()
 
-
+    @staticmethod
     def get_gpcrs(self):
         print('---get_gpcrs from ChEMBL---')
-        g_family_ids = [ 1,147,165,166,202,281,407,435,446,460,468,479,480,483,484,486,487,491,499,500,501,502,503,504,506,507,508,509,
-        510,515,516,517,518,528,533,534,535,540,541,542,544,547,548,549,550,551,554,555,
-        556,558,559,561,562,563,565,566,567,568,569,570,571,573,574,603,604,605,606,607,
-        608,609,610,611,612,613,614,615,616,617,618,619,620,621,830,1020,1021,1022,1038,
-        1082,1083,1088,1089,1251,1253,1256,1259,1265,1266,1267,1268,1269,1270,1271,1272,
-        1273,1274,1275,1277,1278]
-        g_test = list()
-        g_test.append(147)
+        # g_family_ids = [ 1,147,165,166,202,281,407,435,446,460,468,479,480,483,484,486,487,491,499,500,501,502,503,504,506,507,508,509,
+        # 510,515,516,517,518,528,533,534,535,540,541,542,544,547,548,549,550,551,554,555,
+        # 556,558,559,561,562,563,565,566,567,568,569,570,571,573,574,603,604,605,606,607,
+        # 608,609,610,611,612,613,614,615,616,617,618,619,620,621,830,1020,1021,1022,1038,
+        # 1082,1083,1088,1089,1251,1253,1256,1259,1265,1266,1267,1268,1269,1270,1271,1272,
+        # 1273,1274,1275,1277,1278]
+        # g_test = list()
+        # g_test.append(147)
         target_list = set()
         for item in g_test:
             time.sleep(0.2)
@@ -130,8 +132,8 @@ class Command(BaseBuild):
         print('GPCRS ready')
         return target_list
 
-
-    def get_chembl_assay(self,targets):
+    @staticmethod
+    def get_chembl_assay(targets):
         # gets assays from ChEMBL (by batch sie of 20). Filters using Tsonko rules, GPCRs.
         # as arguments takes GPCR ids(targets), batch start size (prev_id) and end size(current_id)
         new_test = new_client.activity.filter(pchembl_value__isnull=False).filter(data_validity_comment__isnull=True
@@ -145,7 +147,8 @@ class Command(BaseBuild):
                                         'activity_id','canonical_smiles','assay_chembl_id'])
         return new_test
 
-    def get_dois(self, dci, q):
+    @staticmethod
+    def get_dois(dci, q):
         # gets references for assays from ChEMBL (DOI)
         pubs = new_client.document.filter(document_chembl_id = dci).only('doi')
         if len(pubs) > 0:
@@ -154,7 +157,8 @@ class Command(BaseBuild):
         else:
             q.put(None)
 
-    def get_cell_line(self, assay_id, q):
+    @staticmethod
+    def get_cell_line(assay_id, q):
         # gets cell line info for assays from ChEMBL
         new_test = new_client.assay.filter(assay_chembl_id = assay_id).only('assay_cell_type')
         if len(new_test) > 0:
@@ -163,7 +167,8 @@ class Command(BaseBuild):
         else:
             q.put('no data')
 
-    def valdiate_data(self, i):
+    @staticmethod
+    def valdiate_data(i):
         #validates ChEMBL assays in accordance with addtional Tsonko rules
         result = False
         if(i['standard_units'] == 'nM' or i['standard_units'] == 'um' or i['standard_units'] == 'M'
@@ -177,14 +182,13 @@ class Command(BaseBuild):
     def process_chembl(self,chembl_assays, temp_increment):
         #Loop through API results (20 objects per batch)
         chembl_data = dict()
-        main_dict = dict()
         increment = 0
         for i in chembl_assays:
             temp_increment = temp_increment + 1
-            if self.valdiate_data(i) == False:
+            if Command.valdiate_data(i) == False:
                 continue
             temp_dict = dict()
-            temp_dict['protein'] = self.fetch_protein( i['target_chembl_id'])
+            temp_dict['protein'] = Command.fetch_protein( i['target_chembl_id'])
             temp_dict['doi']=None
             if temp_dict['protein'] == None:
                 continue
@@ -217,18 +221,12 @@ class Command(BaseBuild):
             temp_dict['assay_id'] = i['assay_chembl_id']
             chembl_data[increment] = temp_dict
             increment=increment+1
-            self.upload_to_db(chembl_data)
+            Command.upload_to_db(chembl_data)
 
     def analyse_rows(self):
-        """
-        Fetch data to models
-        Saves to DB
-        """
         print('---Starting---')
-        current_id = 0
-        prev_id = 0
         start = time.time()
-        target_list = self.get_gpcrs()
+        target_list = Command.get_gpcrs()
         target_list_list = list(target_list)
         start = time.time()
         chembl_assays = None
@@ -237,7 +235,7 @@ class Command(BaseBuild):
         #555200 is the last id saved before session was aborted
         # pool = Pool(4)
         # pool.map(self.main_process, rows)
-        chembl_assays = self.get_chembl_assay(target_list_list)
+        chembl_assays = Command.get_chembl_assay(target_list_list)
         self.process_chembl(chembl_assays,current_id)
         # control the flow
         if(current_id%100==0):
@@ -256,13 +254,14 @@ class Command(BaseBuild):
                 return True
             else:
                 return False
-        except Exception as msg:
+        except Exception:
             experiment = None
             self.mylog.exception(
                 "Experiment AnalyzedExperiment error | module: AnalyzedExperiment.")
             return False
 
-    def upload_to_db(self, chembl):
+    @staticmethod
+    def upload_to_db(chembl):
         # saves data
         for i in chembl.items():
             chembl_data = AssayExperiment(ligand = i[1]["ligand"],
@@ -284,7 +283,8 @@ class Command(BaseBuild):
             chembl_data.save()
             # print('--saved---')
 
-    def fetch_measurements(self, potency, p_type, unit):
+    @staticmethod
+    def fetch_measurements(potency, p_type, unit):
         if potency is not None:
             if p_type.lower()  == 'pec50':
                 potency = 10**(potency*(-1))
@@ -322,7 +322,8 @@ class Command(BaseBuild):
             self.logger.info("potency convertion e rror")
             return None, None
 
-    def fetch_protein(self,target):
+    @staticmethod
+    def fetch_protein(target):
         """
         fetch receptor with Protein model
         requires: protein id, source
@@ -357,7 +358,8 @@ class Command(BaseBuild):
             # print('ligand_id---',l,'\n end')
         return l
 
-    def fetch_publication(self, publication_doi):
+    @staticmethod
+    def fetch_publication(publication_doi):
         """
         fetch publication with Publication model
         requires: publication doi or pmid

@@ -43,6 +43,7 @@ class Command(BaseBuild):
                             help='Purge existing bias records')
         parser.add_argument('--test_run', action='store_true', help='Skip this during a test run',
                             default=False)
+        self.logger.info('COMPLETED CREATING BIAS DATA')
 
     def handle(self, *args, **options):
         if options['test_run']:
@@ -155,9 +156,6 @@ class Command(BaseBuild):
         return protein
 
     def queryset_to_dict(self, results):
-        '''
-        Merge bias experminet data with assay data
-        '''
         send = list()
         for j in results:
             temp_dict = dict()
@@ -343,7 +341,7 @@ class Command(BaseBuild):
                 self.logger.info('returned finalised assay')
         return new_d
 
-    def count_endogenous_ligands(self, reference_list):    
+    def count_endogenous_ligands(self, reference_list):
         ligands = set()
         content = dict()
         for assay in reference_list:

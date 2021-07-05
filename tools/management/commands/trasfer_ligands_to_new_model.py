@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
-from protein.models import ProteinGProteinPair
-from ligand.models import Ligand_v2, Ligand, LigandProperities, LigandType, Ligand_v2_Physchem, Synonyms
+from ligand.models import Ligand_v2, Ligand, LigandType, Ligand_v2_Physchem, Synonyms
 import logging
+
 
 class Command(BaseCommand):
     mylog = logging.getLogger(__name__)
@@ -63,8 +63,6 @@ class Command(BaseCommand):
         delete_bias_experiment = Ligand_v2.objects.all()
         delete_bias_experiment.delete()
 
-
-
     def calculate_selectivity(self):
         # get unique ligands
         assays = Command.get_ligands()
@@ -72,7 +70,7 @@ class Command(BaseCommand):
         # iterate throgu assayexperiments using ligand ids
         ligands_with_data = Command.get_data(assays)
         print('#Step 2 - Done')
-        #process ligand assay queryset
+        # process ligand assay queryset
         processed_ligand_assays = self.process_assays(ligands_with_data)
         print('#Step 3 - Done')
         Command.prepare_to_save(processed_ligand_assays)
@@ -80,7 +78,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def get_ligands():
-        #Getting ligands from the model
+        # Getting ligands from the model
         try:
             content = Ligand.objects.all().order_by(
                 'id')
@@ -90,8 +88,8 @@ class Command(BaseCommand):
 
     @staticmethod
     def get_data(ligands):
-        ligand_list=list()
-        #Getting data from the model for a ligand\n##limiting only by EC50 | IC50 (values)'
+        ligand_list = list()
+        # Getting data from the model for a ligand\n##limiting only by EC50 | IC50 (values)'
         for ligand in ligands:
             ligand_data = dict()
             # try:
@@ -126,7 +124,7 @@ class Command(BaseCommand):
             if name is None and ligand['sequence']:
                 name = str(ligand['sequence'])
             if name is None:
-                self.ligand_cache+=1
+                self.ligand_cache += 1
             if name is not None:
                 if name in context:
                     context[name].append(ligand)
@@ -146,41 +144,41 @@ class Command(BaseCommand):
                 except:
                     type = 5
                 ligand_v2 = Ligand_v2(
-                    pubchem_id = ligand_data['name'],
-                    default_name = ligand_data['name'],
-                    smiles = ligand_data['smiles'],
-                    inchikey = ligand_data['inchikey'],
-                    pdb = ligand_data['pdbe'],
-                    old_ligand_id = ligand_data['old_ligand_id'],
-                    sequence = ligand_data['sequence'],
-                    ligand_type = type
-                    )
+                    pubchem_id=ligand_data['name'],
+                    default_name=ligand_data['name'],
+                    smiles=ligand_data['smiles'],
+                    inchikey=ligand_data['inchikey'],
+                    pdb=ligand_data['pdbe'],
+                    old_ligand_id=ligand_data['old_ligand_id'],
+                    sequence=ligand_data['sequence'],
+                    ligand_type=type
+                )
                 ligand_v2.save()
                 ligand_v2_physchem = Ligand_v2_Physchem(
-                    ligand = ligand_v2,
-                    mw = ligand_data['mw'],
-                    rotatable_bonds = ligand_data['rotatable_bonds'],
-                    hacc = ligand_data['hacc'],
-                    hdon = ligand_data['hdon'],
-                    logp = ligand_data['logp'],
+                    ligand=ligand_v2,
+                    mw=ligand_data['mw'],
+                    rotatable_bonds=ligand_data['rotatable_bonds'],
+                    hacc=ligand_data['hacc'],
+                    hdon=ligand_data['hdon'],
+                    logp=ligand_data['logp'],
                 )
                 ligand_v2_physchem.save()
                 for link in ligand_data['web_links']:
                     synonyms = Synonyms(
-                        ligand = ligand_v2,
-                        name = ligand_data['name'],
-                        resource = link.web_resource.name,
-                        link = link,
-                        specialty = 'ligand',
+                        ligand=ligand_v2,
+                        name=ligand_data['name'],
+                        resource=link.web_resource.name,
+                        link=link,
+                        specialty='ligand',
                     )
                     synonyms.save()
                 for link in ligand_data['vendors']:
 
                     synonyms = Synonyms(
-                        ligand = ligand_v2,
-                        name = link.sid,
-                        resource = link.vendor.name,
-                        link = link.url,
-                        specialty = 'vendor',
+                        ligand=ligand_v2,
+                        name=link.sid,
+                        resource=link.vendor.name,
+                        link=link.url,
+                        specialty='vendor',
                     )
                     synonyms.save()

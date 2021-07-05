@@ -9,6 +9,7 @@ import time
 MISSING_PROTEINS = {}
 SKIPPED = 0
 
+
 class Command(BaseBuild):
     mylog = logging.getLogger(__name__)
     mylog.setLevel(logging.INFO)
@@ -46,6 +47,7 @@ class Command(BaseBuild):
 
         parser.add_argument('--test_run', action='store_true', help='Skip this during a test run',
                             default=False)
+        self.logger.info("The error appeared in def handle")
 
     def handle(self, *args, **options):
         if options['test_run']:
@@ -74,7 +76,6 @@ class Command(BaseBuild):
         delete_bias_experiment.delete()
         self.logger.info('Data is purged')
 
-
     def calculate_selectivity(self):
         # TODO: Discuss with David/Albert : how to chose selectivity/ compare among what?
         start = time.time()
@@ -83,7 +84,7 @@ class Command(BaseBuild):
         print(type(assays), len(assays))
         # iterate throgu assayexperiments using ligand ids
         ligands_with_data = self.get_data(assays)
-        #process ligand assay queryset
+        # process ligand assay queryset
         self.process_assays(ligands_with_data)
         self.save_data()
 
@@ -91,7 +92,7 @@ class Command(BaseBuild):
         print('---temp_increment time---', end - start)
 
     def get_ligands(self):
-        #Getting ligands from the model
+        # Getting ligands from the model
         try:
             content = AssayExperiment.objects.all().order_by(
                 'ligand').distinct('ligand').only('ligand')
@@ -101,8 +102,8 @@ class Command(BaseBuild):
         return content
 
     def get_data(self, assays):
-        ligand_list=list()
-        #Getting data from the model for a ligand\n##limiting only by EC50 | IC50 (values)'
+        ligand_list = list()
+        # Getting data from the model for a ligand\n##limiting only by EC50 | IC50 (values)'
         for assay in assays:
             ligand_data = dict()
             try:
@@ -129,18 +130,19 @@ class Command(BaseBuild):
             self.analyze_f_b(assay)
 
     def analyze_f_b(self, assay):
-        assay_f=None
-        assay_b=None
-        if len(assay['assay_f'])>1:
-            assay_f=assay['assay_f']
-        if len(assay['assay_b'])>1:
-            assay_b=assay['assay_b']
+        assay_f = None
+        assay_b = None
+        if len(assay['assay_f']) > 1:
+            assay_f = assay['assay_f']
+        if len(assay['assay_b']) > 1:
+            assay_b = assay['assay_b']
         if assay_b is not None:
             try:
-                if float(assay_b[0]['pchembl_value'])-1 > float(assay_b[1]['pchembl_value']):
+                if float(assay_b[0]['pchembl_value']) - 1 > float(assay_b[1]['pchembl_value']):
                     if assay_b[0]['protein'] is not assay_b[1]['protein']:
                         if assay_b[0]['protein'] in self.b_receptor_count:
-                            self.b_receptor_count[assay_b[0]['protein']] = self.b_receptor_count[assay_b[0]['protein']]+1
+                            self.b_receptor_count[assay_b[0]['protein']
+                                                  ] = self.b_receptor_count[assay_b[0]['protein']] + 1
                         else:
                             self.b_receptor_count[assay_b[0]['protein']] = 1
                         # import pdb; pdb.set_trace()
@@ -148,10 +150,11 @@ class Command(BaseBuild):
                 pass
         if assay_f is not None:
             try:
-                if float(assay_f[0]['pchembl_value'])-1 > float(assay_f[1]['pchembl_value']):
+                if float(assay_f[0]['pchembl_value']) - 1 > float(assay_f[1]['pchembl_value']):
                     if assay_f[0]['protein'] is not assay_f[1]['protein']:
                         if assay_f[0]['protein'] in self.f_receptor_count:
-                            self.f_receptor_count[assay_f[0]['protein']] = self.f_receptor_count[assay_f[0]['protein']]+1
+                            self.f_receptor_count[assay_f[0]['protein']
+                                                  ] = self.f_receptor_count[assay_f[0]['protein']] + 1
                         else:
                             self.f_receptor_count[assay_f[0]['protein']] = 1
                         # import pdb; pdb.set_trace()
@@ -163,7 +166,7 @@ class Command(BaseBuild):
         ligand = assays['ligand']
         assay_b = assays['assays'].filter(standard_type='IC50')
         assay_f = assays['assays'].filter(Q(standard_type='Potency') |
-                             Q(standard_type='EC50'))
+                                          Q(standard_type='EC50'))
 
         assay_b = self.sort_assay(self.process_querysets(assay_b))
         assay_f = self.sort_assay(self.process_querysets(assay_f))
@@ -176,7 +179,7 @@ class Command(BaseBuild):
         self.logger.info('Queryset is not processed')
         return sorted(assays, key=lambda i: i['pchembl_value'], reverse=True)
 
-    def process_querysets(self,querysets):
+    def process_querysets(self, querysets):
         processed_data = list()
         for i in querysets:
             try:
@@ -217,9 +220,8 @@ class Command(BaseBuild):
             self.logger.info('receptor not found error')
             return None, None
 
-
     def save_data(self):
-        #saving assay ---', final_assay
+        # saving assay ---', final_assay
         for protein, counter in self.f_receptor_count.items():
             primary, secondary = self.fetch_receptor_trunsducers(
                 protein)
