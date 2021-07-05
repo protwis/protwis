@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from ligand.models import Ligand_v2, Ligand, LigandType, Ligand_v2_Physchem, Synonyms
+from ligand.models import Ligand_v2, Ligand, Ligand_v2_Physchem, Synonyms
 import logging
 
 

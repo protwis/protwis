@@ -9,7 +9,7 @@ from build.management.commands.base_build import Command as BaseBuild
 
 
 from protein.models import Protein
-from ligand.models import BiasedExperiment,AnalyzedExperiment,
+from ligand.models import BiasedExperiment,AnalyzedExperiment
 
 from ligand.functions import get_or_make_ligand
 from common.models import WebLink, WebResource, Publication

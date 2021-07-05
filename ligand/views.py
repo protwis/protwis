@@ -833,7 +833,7 @@ class BiasTargetSelection(AbsTargetSelectionTable):
     number_of_steps = 1
     filter_tableselect = False
     docs = 'sequences.html#structure-based-alignments'
-    title = "SELECT RECEPTORS with ligands  biased for a G protein or arrestin family"
+    title = "SELECT RECEPTORS with ligands biased for a G protein or arrestin family (relative to an endogenous reference ligand)"
     description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
         + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
     selection_boxes = OrderedDict([
@@ -854,10 +854,10 @@ class BiasGTargetSelection(AbsTargetSelectionTable):
     number_of_steps = 1
     filter_tableselect = False
     docs = 'sequences.html#structure-based-alignments'
-    title = "SELECT RECEPTORS with ligands  biased for a G protein subtypes"
+    title = "SELECT RECEPTORS to retrieve ligands with a preferred G protein or arrestin pathway (ΔLog(Emax/EC50  values across pathways for one ligand (no reference ligand)))"
 
 
-    description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
+    description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire'
         + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
     selection_boxes = OrderedDict([
         ('reference', False),
@@ -877,7 +877,7 @@ class BiasPredictionTargetSelection(AbsTargetSelectionTable):
     number_of_steps = 1
     filter_tableselect = False
     docs = 'sequences.html#structure-based-alignments'
-    title = "SELECT RECEPTORS with ligands  biased for a G protein predictions"
+    title = "SELECT RECEPTORS with ligands biased for a G protein or arrestin subtype"
 
 
     description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \

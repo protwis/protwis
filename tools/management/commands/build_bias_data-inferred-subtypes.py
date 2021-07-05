@@ -43,7 +43,8 @@ class Command(BaseBuild):
                             help='Purge existing bias records')
         parser.add_argument('--test_run', action='store_true', help='Skip this during a test run',
                             default=False)
-
+        self.logger.info('Data is purged')
+                            
     def handle(self, *args, **options):
         if options['test_run']:
             print('Skipping in test run')
@@ -517,12 +518,12 @@ class Command(BaseBuild):
                 except:
                     i['log_bias_factor'] = None
                 i['log_bias_factor'] = None
-                self.process_low_potency(i)
+                i['quantitive_activity'] = self.process_low_potency(i)
 
         for i in biasdata:
             if i['order_no'] != 0:
                 try:
-                    self.process_low_potency(i)
+                    i['quantitive_activity'] = self.process_low_potency(i)
                     # import pdb; pdb.set_trace()
                     i['log_bias_factor'] = self.lbf_process_qualitative_data(i)
                     if i['log_bias_factor'] == None:
@@ -566,6 +567,9 @@ class Command(BaseBuild):
         try:
             if i['quantitive_activity_initial'] < 5 and i['quantitive_efficacy'] > 0:
                 i['quantitive_activity'] == 12500 * (10**(-9))
+            else:
+                pass
+            return i['quantitive_activity']
         except:
             self.logger.info('get_rid_of_gprot')
 
