@@ -2092,6 +2092,7 @@ class designStateSelector(AbsReferenceSelection):
     number_of_steps = 1
     target_input = False
     filter_gprotein = True
+    selection_only_receptors = True
 
     title = "SELECT A TARGET"
     # description = 'First, select a reference target by searching or browsing.\nSubsequently click the desired state to stabilize.'
