@@ -754,6 +754,7 @@ class Command(BaseBuild):
                         self.logger.info('get_rid_of_gprot')
 
                 for ex in i[1]['reference_assays_list']:
+                    import pdb; pdb.set_trace()
                     emax_ligand = ex['emax_reference_ligand']
                     experiment_assay = AnalyzedAssay(experiment=experiment_entry,
                                                      reference_ligand_id = ex['assay_id'],

@@ -795,11 +795,10 @@ class Command(BaseBuild):
                                                          effector_family=ex['family'],
                                                          measured_biological_process=ex['measured_biological_process'],
                                                          signal_detection_tecnique=ex['signal_detection_tecnique'],
-                                                         emax_ligand_reference=emax_ligand
+                                                         emax_ligand_reference=ex['ligand']
                                                          )
                         experiment_assay.save()
                     except:
-
                         self.logger.info('get_rid_of_gprot')
 
                 for ex in i[1]['reference_assays_list']:
@@ -836,7 +835,7 @@ class Command(BaseBuild):
                                                      effector_family=ex['family'],
                                                      measured_biological_process=ex['measured_biological_process'],
                                                      signal_detection_tecnique=ex['signal_detection_tecnique'],
-                                                     emax_ligand_reference=emax_ligand
+                                                     emax_ligand_reference=ex['ligand']
                                                      )
                     experiment_assay.save()
 
@@ -874,7 +873,7 @@ class Command(BaseBuild):
                                                      effector_family=ex['family'],
                                                      measured_biological_process=ex['measured_biological_process'],
                                                      signal_detection_tecnique=ex['signal_detection_tecnique'],
-                                                     emax_ligand_reference=emax_ligand
+                                                     emax_ligand_reference=ex['ligand']
                                                      )
                     experiment_assay.save()
 

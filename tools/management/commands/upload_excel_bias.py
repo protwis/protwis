@@ -9,7 +9,7 @@ from build.management.commands.base_build import Command as BaseBuild
 from common.tools import fetch_from_cache, save_to_cache, fetch_from_web_api
 from residue.models import Residue
 from protein.models import Protein,ProteinGProteinPair
-from ligand.models import BiasedExperiment, BiasedExperimentVendors,AnalyzedExperiment, ExperimentAssay, ExperimentAssayAuthors, Ligand, LigandProperities, LigandType, LigandVendorLink
+from ligand.models import BiasedExperiment,Ligand_v2, BiasedExperimentVendors,AnalyzedExperiment, ExperimentAssay, ExperimentAssayAuthors, Ligand, LigandProperities, LigandType, LigandVendorLink
 from mutation.models import Mutation
 from ligand.functions import get_or_make_ligand
 from common.models import WebLink, WebResource, Publication
@@ -126,8 +126,6 @@ class Command(BaseBuild):
                                 cell_value = ""
                             temprow.append(cell_value)
                         temp.append(temprow)
-
-
             return temp
         except:
             self.logger.info(
@@ -508,8 +506,8 @@ class Command(BaseBuild):
             else:
                 # TODO: if pubchem id then create ligand from pubchem
 
-                # if ligand_type and ligand_type.lower() == 'pubchem cid':
-                #     l = self.get_ligand_or_create(ligand_id)
+                if ligand_type and ligand_type.lower() == 'pubchem cid':
+                    l = self.get_ligand_or_create(ligand_id)
 
                 if l == None:
                     l = get_or_make_ligand(ligand_id, ligand_type, ligand_name)
@@ -658,11 +656,12 @@ class Command(BaseBuild):
 
     def get_ligand_name(self,cid):
         ligand_name = None
+
         ligand_name_response = requests.get("https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/"+str(cid)+"/synonyms/json")
         if ligand_name_response.status_code == 200:
             try:
                 ligand_name = ligand_name_response.json()
-                ligand_name = ligand_name['InformationList']['Information'][0]['Synonym'][0]
+                ligand_name = ligand_name['InformationList']['Information'][0]['Synonym']
             except:
                 self.mylog.exception(
                     "Experiment AnalyzedExperiment error | module: AnalyzedExperiment.")
@@ -675,6 +674,7 @@ class Command(BaseBuild):
             # TODO: try except
             compound_data = compound_response.json()
             pubchem = compound_data
+
             if pubchem['PropertyTable']['Properties'][0]:
                 try:
                     if 'HBondAcceptorCount' in pubchem['PropertyTable']['Properties'][0] :
@@ -696,43 +696,33 @@ class Command(BaseBuild):
 
     def get_ligand_or_create(self,cid):
         ligand_name = str()
-        ligand_name = self.get_ligand_name(cid)
         properties = self.get_ligand_properties(cid)
-        lp = self.create_ligand_properties(cid,properties)
+
+        ligand_name = self.get_ligand_name(cid)
+
+        if properties['smiles']:
+            name = str(properties['smiles'])
+        if name is None and properties['inchikey']:
+            name = str(properties['inchikey'])
+        if name is None and properties['sequence']:
+            name = str(properties['sequence'])
+        if name is not None:
+
+            ligand_v2 = Ligand_v2(
+                pubchem_id = cid,
+                default_name = ligand_name[0],
+                smiles = properties['smiles'],
+                inchikey = properties['inchikey'],
+                pdb = properties['pdbe'],
+                old_ligand_id = None,
+                sequence = properties['sequence'],
+                ligand_type = type
+                )
+            import pdb; pdb.set_trace()        
+            ligand_v2.save()
+
         ligand = self.create_ligand(lp, ligand_name)
         return ligand
-
-    def create_ligand_properties(self, cid, structure):
-        web_resource = WebResource.objects.get(slug='pubchem')
-        try:
-            wl = WebLink.objects.get_or_create(index=cid, web_resource=web_resource)
-        except IntegrityError:
-            wl = WebLink.objects.get(index=cid, web_resource=web_resource)
-        lp = LigandProperities()
-        try:
-            lt = LigandType.objects.filter(name = 'ligand_type')[0]
-            lp.ligand_type = lt
-        except :
-            lt =  LigandType.objects.filter(name = 'small molecule')[0]
-            lp.ligand_type = lt
-        try:
-            lp.smiles = structure['smiles']
-            lp.inchikey = structure['inchikey']
-            lp.mw = structure['mw']
-            lp.rotatable_bonds = structure['rotatable_bonds']
-            lp.hacc = structure['hacc']
-            lp.hdon = structure['hdon']
-            lp.logp = structure['logp']
-        except:
-            lp.logp = 0.0
-        try:
-            lp.save()
-            lp.web_links.add(wl)
-        except IntegrityError:
-            lp = LigandProperities.objects.get(inchikey=structure['inchikey'])
-            self.mylog.exception(
-                "Experiment AnalyzedExperiment error | module: AnalyzedExperiment.")
-        return lp
 
     def create_ligand(self, lp, ligand_name):
         try:

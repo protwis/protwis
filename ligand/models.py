@@ -420,7 +420,6 @@ class BiasedExperiment(models.Model):
 
 class ExperimentAssay(models.Model):
     biased_experiment = models.ForeignKey(
-
                         BiasedExperiment, related_name='experiment_data',
                         on_delete = models.CASCADE, null = True
                         )
@@ -572,7 +571,9 @@ class Ligand_v2(models.Model):
     default_name = models.TextField(null = True)
     smiles = models.TextField(null = True)
     inchikey = models.TextField(null = True)
+    sequence = models.TextField(null = True)
     pdb  = models.TextField(null = True)
+    old_ligand_id = models.IntegerField( null=True)
     LIGAND_TYPE_CHOICES = [
         ('1','small molecule'),
      	('2','protein'),
@@ -604,7 +605,7 @@ class Ligand_v2_Physchem(models.Model):
 class Synonyms(models.Model):
     ligand = models.ForeignKey(Ligand_v2, on_delete = models.CASCADE)
     name = models.TextField(null = True)
-    resource = models.ForeignKey(WebResource, on_delete=models.SET_NULL, null = True)
+    resource = models.TextField(null = True)
     link =  models.TextField(null = True)
     SPECIALTY_CHOICES = [
         ('1','ligand'),
