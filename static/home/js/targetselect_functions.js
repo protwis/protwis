@@ -264,7 +264,7 @@ function exportTargets(){
  * @param {string} url The url to go to after synchronizing the target selection
  */
 function submitSelection(url, minimum = 1, maximum = 0) {
-  if (selected_targets.size >= minimum && (maximum == 0 || selected_targets.size <= maximum)) {
+  if (selected_targets.size >= minimum && (maximum === 0 || selected_targets.size <= maximum)) {
     // set CSRF csrf_token
     $.ajaxSetup({
         headers:
@@ -283,10 +283,11 @@ function submitSelection(url, minimum = 1, maximum = 0) {
       });
   } else {
     if (maximum > 0 && selected_targets.size > maximum){
-      if (maximum > 1)
+      if (maximum > 1) {
         showAlert("Please select a maximum of " + maximum + " targets.", "warning");
-      else
+      } else {
         showAlert("Please select only one target.", "warning");
+      }
     } else if (minimum === 1) {
       showAlert("Please select at least one target.", "warning");
     } else {
