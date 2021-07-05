@@ -620,7 +620,7 @@ class designPDB(AbsTargetSelection):
         context['form'] = PDBform()
         return context
 
-class design(AbsTargetSelection):
+class design(AbsReferenceSelection):
 
     # Left panel
     step = 1
@@ -644,8 +644,8 @@ class design(AbsTargetSelection):
     selection_only_receptors = True
 
     selection_boxes = OrderedDict([
-        ('reference', False),
-        ('targets', True),
+        ('reference', True),
+        ('targets', False),
         ('segments', False),
     ])
 
@@ -1047,19 +1047,26 @@ def showcalculation(request):
     else:
         simple_selection = request.session.get('selection', False)
         proteins = []
-        for target in simple_selection.targets:
-            if target.type == 'protein':
-                proteins.append(target.item)
+        if simple_selection and len(simple_selection.reference) > 0 and simple_selection.reference[0].type == 'protein':
+            # Target receptor
+            target_protein = simple_selection.reference[0].item
+            proteins.append(target_protein)
 
         context = {}
         context['proteins'] = proteins
-
-    print(context['proteins'])
 
     protein_ids = []
     family_ids = []
     parent_ids = []
     class_ids = []
+
+    if len(context['proteins'])>1:
+        return HttpResponse("Only pick one protein")
+    elif len(context['proteins']) <= 0:
+        if request.method == 'POST':
+            return redirect("designpdb")
+        else:
+            return redirect("design")
 
     for p in context['proteins']:
         protein_ids.append(p.family) #first level is receptor across speciest, parent is then "family"
@@ -1072,10 +1079,6 @@ def showcalculation(request):
 
 
     family_level_ids = protein_ids[0].slug.split("_")
-
-    if len(context['proteins'])>1:
-        return HttpResponse("Only pick one protein")
-
 
     residues = Residue.objects.filter(protein_conformation__protein=context['proteins'][0]).prefetch_related('protein_segment','display_generic_number','generic_number')
 
