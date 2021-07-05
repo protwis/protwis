@@ -44,7 +44,7 @@ class Command(BaseBuild):
         parser.add_argument('--test_run', action='store_true', help='Skip this during a test run',
                             default=False)
         self.logger.info('Data is purged')
-                            
+        
     def handle(self, *args, **options):
         if options['test_run']:
             print('Skipping in test run')

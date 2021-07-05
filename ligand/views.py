@@ -858,7 +858,7 @@ class BiasGTargetSelection(AbsTargetSelectionTable):
 
 
     description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire'
-        + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
+    + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
     selection_boxes = OrderedDict([
         ('reference', False),
         ('targets', True),
