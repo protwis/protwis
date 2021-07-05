@@ -2088,22 +2088,31 @@ class designStateSelector(AbsReferenceSelection):
     step = 1
     number_of_steps = 1
     target_input = False
-    title = "SELECT A TARGET AND STATE"
-    description = 'First, select a reference target by searching or browsing.\nSubsequently click the desired state to stabilize.'
+    filter_gprotein = True
+
+    title = "SELECT A TARGET"
+    # description = 'First, select a reference target by searching or browsing.\nSubsequently click the desired state to stabilize.'
+    description = 'Select the receptor for which to propose state-affecting mutations.'
     #docs = 'sequences.html#similarity-search-gpcrdb'
     buttons = {
         "continue": {
-            "label": "Active state",
-            "url": "/mutations/state_stabilizing_active",
+            "label": "Next",
+            "url": "/mutations/state_stabilizing_both",
             "color": "success",
             "sameSize": True
-        },
-        "continue2": {
-            "label": "Inactive state",
-            "url": "/mutations/state_stabilizing_inactive",
-            "color": "danger",
-            "sameSize": True
-        },
+        }
+        # "continue": {
+        #     "label": "Active state",
+        #     "url": "/mutations/state_stabilizing_active",
+        #     "color": "success",
+        #     "sameSize": True
+        # },
+        # "continue2": {
+        #     "label": "Inactive state",
+        #     "url": "/mutations/state_stabilizing_inactive",
+        #     "color": "danger",
+        #     "sameSize": True
+        # },
     }
 
 def collectAndCacheClassData(target_class):
@@ -2307,7 +2316,7 @@ def collectAndCacheClassData(target_class):
         cache.set(cache_name, class_prot_ints, 60*60*24*7) # cache a week
 
 
-def contactMutationDesign(request, goal):
+def contactMutationDesign(request, goal = "both"):
     cutoff = 1 # Only select GNs with a minimum contact freq diff of this %
     max_rows = 30 # Maximally show this many rows
     occupancy = 0.75
@@ -2337,7 +2346,7 @@ def contactMutationDesign(request, goal):
         # 4. Sequence identify with human protein > 90
         # 5. % of full sequence >= 86
         # 6. ACTIVE - Ga-subunit % sequence >= 43
-        if goal == "active" or goal == "inactive":
+        if goal == "active" or goal == "inactive" or goal == "both":
             cache_name = "state_mutation_actives_"+target_class
             actives = cache.get(cache_name)
             if actives == None:
@@ -2488,7 +2497,7 @@ def contactMutationDesign(request, goal):
                 cache.set(cache_name, inactives, 24*7*60*60)
 
             # Set context variables
-            if goal == "active":
+            if goal == "active" or goal == "both":
                 set1 = actives
                 set2 = inactives
 
@@ -2500,32 +2509,29 @@ def contactMutationDesign(request, goal):
 
                 context["desired"] = "inactive-state"
                 context["undesired"] = "active-state"
+
+            context["goal"] = goal
         elif goal == "xxxx": # FUTURE extend with other options here
             skip = True
 
         if len(set1) > 0 and len(set2) > 0:
-            # Collect data about this GPCR class
+            # Collect and cache data about this GPCR class
             collectAndCacheClassData(target_class)
 
             # Class conservation
-            cache_name = "Class_AA_conservation_"+target_class
-            class_gn_cons = cache.get(cache_name)
+            class_gn_cons = cache.get("Class_AA_conservation_"+target_class)
 
             # Class mutation data
-            cache_name = "Class_mutation_counts_"+target_class
-            class_mutations = cache.get(cache_name)
+            class_mutations = cache.get("Class_mutation_counts_"+target_class)
 
             # Class Thermostabilizing mutations
-            cache_name = "Class_thermo_muts"+target_class
-            class_thermo_muts = cache.get(cache_name)
+            class_thermo_muts = cache.get("Class_thermo_muts"+target_class)
 
             # Class Expression increasing mutations from constructs
-            cache_name = "Class_struct_expr_incr_muts"+target_class
-            class_struct_expr_incr_muts = cache.get(cache_name)
+            class_struct_expr_incr_muts = cache.get("Class_struct_expr_incr_muts"+target_class)
 
             # Class Expression increasing mutations from ligand mutagenesis data
-            cache_name = "Class_ligmut_expr_incr_muts"+target_class
-            class_ligmut_expr_incr_muts = cache.get(cache_name)
+            class_ligmut_expr_incr_muts = cache.get("Class_ligmut_expr_incr_muts"+target_class)
 
             # Find residues that are >= 75% present in both sets and only TM residues
             # Do not count frequencies or others residues that are not present in both sets
@@ -2592,7 +2598,10 @@ def contactMutationDesign(request, goal):
             top_diff_order = np.argsort([abs(freq_results[gn][2]) for gn in freq_keys])[::-1][:max_rows]
 
             # Also make sure at least a frequency different < 0 is observed (higher occurrence in set 2)
-            top_gns = [ freq_keys[i] for i in list(top_diff_order) if freq_results[freq_keys[i]][2] < -1*cutoff]
+            if goal == "both":
+                top_gns = [ freq_keys[i] for i in list(top_diff_order) if abs(freq_results[freq_keys[i]][2]) > cutoff]
+            else:
+                top_gns = [ freq_keys[i] for i in list(top_diff_order) if freq_results[freq_keys[i]][2] < -1*cutoff]
 
             # Show all GNs
             if debug_show_all_gns:
@@ -2674,14 +2683,19 @@ def contactMutationDesign(request, goal):
                 if gn not in class_gn_cons:
                     class_gn_cons[gn] = ["-", "-", "-"]
 
+                if goal == "active" or (goal == "both" and freq_results[gn][2] < 0):
+                    reason = ["Inactive set", "Removal sidechain"]
+                else:
+                    reason = ["Active set", "Removal sidechain"]
+
                 context['freq_results1'][gn] = ["<span class=\"text-danger\">{}</span>".format(target_resnum), "<span class=\"text-danger\">{}</span>".format(class_specific_gn), "<span class=\"text-danger\">{}</span>".format(target_aa),
-                        ala_mutant, freq_results[gn][2], freq_results[gn][0], freq_results[gn][1], class_gn_cons[gn][0], class_gn_cons[gn][2],
+                        ala_mutant, freq_results[gn][2] if goal != "both" else abs(freq_results[gn][2]), freq_results[gn][0], freq_results[gn][1], class_gn_cons[gn][0], class_gn_cons[gn][2],
                         support,
                         class_mutations[gn]["fold_mutations"] if gn in class_mutations else 0, class_mutations[gn]["fold_receptors"] if gn in class_mutations and class_mutations[gn]["fold_receptors"] > 0 else "",
                         class_mutations[gn]["unique_mutations"] if gn in class_mutations else 0, class_mutations[gn]["unique_receptors"] if gn in class_mutations and class_mutations[gn]["unique_receptors"] >0 else "",
                         thermo_text[0], thermo_text[1], thermo_text[2], thermo_text[3],
                         expr_struct_text[0], expr_struct_text[1], expr_struct_text[3], expr_struct_text[4],
-                        expr_ligmut_text[0], expr_ligmut_text[1], expr_ligmut_text[3], expr_ligmut_text[4]]
+                        expr_ligmut_text[0], expr_ligmut_text[1], expr_ligmut_text[3], expr_ligmut_text[4], reason[0], reason[1]]
 
             context["freq_results1_length"] = len(context['freq_results1'])
             if len(context['freq_results1']) == 0:
@@ -2693,22 +2707,29 @@ def contactMutationDesign(request, goal):
 
             # All GNs with a higher freq. in set 1
             #top_set1_gns = [ freq_keys[i] for i in list(top_diff_order[::-1]) if freq_results[freq_keys[i]][2] > cutoff]
-            top_set1_gns = [ freq_keys[i] for i in list(top_diff_order) if freq_results[freq_keys[i]][2] > cutoff]
+            if goal == "both":
+                top_set1_gns = [ freq_keys[i] for i in list(top_diff_order) if abs(freq_results[freq_keys[i]][2]) > cutoff]
+            else:
+                top_set1_gns = [ freq_keys[i] for i in list(top_diff_order) if freq_results[freq_keys[i]][2] > cutoff]
 
             # DEBUG: in case of debugging collect all GNs
             if debug_show_all_gns:
                 top_set1_gns = gns_both
 
             conservation_set1 = collectAAConservation(set1, top_set1_gns)
+            conservation_set2 = collectAAConservation(set2, top_set1_gns)
 
             receptor_slugs = list(Structure.objects.filter(pdb_code__index__in=set1).values_list("protein_conformation__protein__family__slug", flat=True).distinct())
             num_receptor_slugs = len(receptor_slugs)
+
+            receptor_slugs2 = list(Structure.objects.filter(pdb_code__index__in=set2).values_list("protein_conformation__protein__family__slug", flat=True).distinct())
+            num_receptor_slugs2 = len(receptor_slugs2)
 
             #1. calculate conserved AA for these GNs in set 1 and identify which are different from WT
             table2_gns = []
             most_conserved_set1 = {}
             for gn in top_set1_gns:
-                # Find highest
+                # Find highest conserved AA in set 1
                 conservation = 0
                 most_conserved = "X"
                 for aa in conservation_set1[gn]:
@@ -2716,10 +2737,21 @@ def contactMutationDesign(request, goal):
                         conservation = conservation_set1[gn][aa]
                         most_conserved = aa
 
+                # Find highest conserved AA in set 2
+                conservation2 = 0
+                most_conserved2 = "X"
+                for aa in conservation_set2[gn]:
+                    if conservation_set2[gn][aa] > conservation2:
+                        conservation2 = conservation_set2[gn][aa]
+                        most_conserved2 = aa
+
                 # Different from WT - then add to table
                 if debug_show_all_gns or (gn in target_residues and target_residues[gn][0] != most_conserved):
                     table2_gns.append(gn)
-                    most_conserved_set1[gn] = [most_conserved, int(round(conservation/num_receptor_slugs*100))]
+                    if goal == "both" and freq_results[gn][2] < 0:
+                        most_conserved_set1[gn] = [most_conserved2, int(round(conservation2/num_receptor_slugs2*100))]
+                    else:
+                        most_conserved_set1[gn] = [most_conserved, int(round(conservation/num_receptor_slugs*100))]
 
             context['freq_results2'] = {}
             for gn in table2_gns:
@@ -2798,20 +2830,34 @@ def contactMutationDesign(request, goal):
                 if gn not in class_gn_cons:
                     class_gn_cons[gn] = ["-", "-", "-"]
 
-                context['freq_results2'][gn] = ["<span class=\"text-danger\">{}</span>".format(target_resnum), "<span class=\"text-danger\">{}</span>".format(class_specific_gn), "<span class=\"text-danger\">{}</span>".format(target_aa), "<span class=\"text-red-highlight font-weight-bold\"><strong>{}</strong></span>".format(most_conserved_set1[gn][0]),
-                        most_conserved_set1[gn][1], freq_results[gn][2], freq_results[gn][0], freq_results[gn][1], class_gn_cons[gn][0], class_gn_cons[gn][2],
+                result_table = 'freq_results2'
+                if goal == "both":
+                    result_table = 'freq_results1'
+
+                reason = ["Inactive set", "Add state-conserved AA ({}%)".format(most_conserved_set1[gn][1])]
+                if goal == "active" or (goal == "both" and freq_results[gn][2] > 0):
+                    reason[0] = "Active set"
+
+                context[result_table][gn] = ["<span class=\"text-danger\">{}</span>".format(target_resnum), "<span class=\"text-danger\">{}</span>".format(class_specific_gn), "<span class=\"text-danger\">{}</span>".format(target_aa), "<span class=\"text-red-highlight font-weight-bold\"><strong>{}</strong></span>".format(most_conserved_set1[gn][0]),
+                        most_conserved_set1[gn][1], freq_results[gn][2] if goal != "both" else abs(freq_results[gn][2]), freq_results[gn][0], freq_results[gn][1], class_gn_cons[gn][0], class_gn_cons[gn][2],
                         support,
                         class_mutations[gn]["fold_mutations"] if gn in class_mutations else 0, class_mutations[gn]["fold_receptors"] if gn in class_mutations and class_mutations[gn]["fold_receptors"] > 0 else "",
                         class_mutations[gn]["unique_mutations"] if gn in class_mutations else 0, class_mutations[gn]["unique_receptors"] if gn in class_mutations and class_mutations[gn]["unique_receptors"] >0 else "",
                         thermo_text[0], thermo_text[1], thermo_text[2], thermo_text[3],
                         expr_struct_text[0], expr_struct_text[1], expr_struct_text[3], expr_struct_text[4],
-                        expr_ligmut_text[0], expr_ligmut_text[1], expr_ligmut_text[3], expr_ligmut_text[4]]
+                        expr_ligmut_text[0], expr_ligmut_text[1], expr_ligmut_text[3], expr_ligmut_text[4], reason[0], reason[1]]
+
+                # Removal conservation level in class
+                if goal == "both":
+                    context[result_table][gn].pop(4)
 
             context["freq_results2_length"] = len(context['freq_results2'])
             if len(context['freq_results2']) == 0:
                 context['freq_results2'] = "placeholder"
             #    context.pop('freq_results2', None)
 
+            if goal == "both":
+                del(context['freq_results2'])
 
             return render(request, 'mutation/contact_mutation_design.html', context)
         else:
