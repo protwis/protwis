@@ -32,6 +32,7 @@ function renderTree(data) {
     dataClasses[10] = dataClasses[8]
     dataClasses[11] = ['0%', '50%', '100%'] // percentage
     dataClasses[12] = ['0%', '50%', '100%'] // percentage
+    dataClasses[13] = ['Gi/o', 'Gq/11', 'Gs', 'G12/13', 'Gt', 'Gpa1', 'Arrestin', 'ERK']
 
     // Receptor family coloring
     if (dataClasses[3].length > 20 && dataClasses[3].length < 32)
@@ -66,6 +67,13 @@ function renderTree(data) {
     colorClasses[11] = ["#F00","#F80","#0B0"]
     colorClasses[12] = colorClasses[11]
 
+    colorClasses[13] = []
+    class_colors = d3.scale.category10().domain(dataClasses[13])
+    var i = 13
+    for (var j = 0; j < dataClasses[i].length; j++) {
+      colorClasses[i].push(class_colors(dataClasses[i][j]))
+    }
+
     // G-protein coupling
     couplingAnnotations = data["Gprot_coupling"];
 
@@ -90,11 +98,13 @@ function renderTree(data) {
       var slug = treeAnnotations[name][8]
       var opening = treeAnnotations[name][9]
       var gprot_likeness = treeAnnotations[name][10]
+      var complexed_protein = treeAnnotations[name][11]
       treeAnnotations[name][8] = []
       treeAnnotations[name][9] = []
       treeAnnotations[name][10] = []
       treeAnnotations[name][11] = opening
       treeAnnotations[name][12] = gprot_likeness
+      treeAnnotations[name][13] = complexed_protein
       var gproteins = dataClasses[8]
       for (g = 0; g < gproteins.length; g++) {
         if (slug in couplingAnnotations){
@@ -626,6 +636,8 @@ function menuItem(dataName){
       case "Degree active (%)":
       case "G-protein bound likeness (%)":
         return 12
+      case "Complexed effector protein":
+        return 13
       case "Ligand function":
         return 7
       default:
@@ -731,6 +743,9 @@ function nodeStyler(element, node){
                 treeAnnotations[node.name][displayDataInner] = [treeAnnotations[node.name][displayDataInner]]
 
               for (var i = 0; i < treeAnnotations[node.name][displayDataInner].length; i++) {
+                if (treeAnnotations[node.name][displayDataInner][i] === ""){
+                  continue;
+                }
                 var currentType = typeClasses[displayDataInner]
                 var currentData = treeAnnotations[node.name][displayDataInner][i]
                 var classIndex = dataClasses[displayDataInner].indexOf(currentData)
@@ -859,7 +874,7 @@ function nodeStyler(element, node){
 
             // Add outer markers
             element.selectAll("rect").remove() // remove old data
-            if (displayData >= 11) { // Receptor cytosolic opening using growing bars
+            if (displayData >= 11 && displayData <= 12) { // Receptor cytosolic opening using growing bars
               if (!Array.isArray(treeAnnotations[node.name][displayData]))
                 treeAnnotations[node.name][displayData] = [treeAnnotations[node.name][displayData]]
 
@@ -912,6 +927,10 @@ function nodeStyler(element, node){
                 treeAnnotations[node.name][displayData] = [treeAnnotations[node.name][displayData]]
 
               for (var i = 0; i < treeAnnotations[node.name][displayData].length; i++) {
+                if (treeAnnotations[node.name][displayData][i] === ""){
+                  continue;
+                }
+
                 var currentType = typeClasses[displayData]
                 var currentData = treeAnnotations[node.name][displayData][i]
                 var classIndex = dataClasses[displayData].indexOf(currentData)
