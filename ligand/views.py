@@ -636,7 +636,6 @@ class LigandInformationView(TemplateView):
     template_name = 'ligand_info.html'
 
     def get_context_data(self, *args, **kwargs):
-
         context = super(LigandInformationView, self).get_context_data(**kwargs)
         ligand_id = self.kwargs['pk']
         ligand_data = Ligand.objects.get(id=ligand_id)
@@ -789,12 +788,11 @@ class BiasPathways(TemplateView):
         '''
         rd = dict()
         increment = 0
-
+        self.logger.info('receptor not found error')
         for instance in content:
             fin_obj = {}
             fin_obj['main'] = instance
             temp = dict()
-
             temp['experiment_id'] = instance.id
             temp['publication'] = instance.publication
             temp['ligand'] = instance.ligand
@@ -857,7 +855,7 @@ class BiasGTargetSelection(AbsTargetSelectionTable):
     title = "SELECT RECEPTORS to retrieve ligands with a preferred G protein or arrestin pathway (ΔLog(Emax/EC50  values across pathways for one ligand (no reference ligand)))"
 
 
-    description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire'
+    description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
         + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
     selection_boxes = OrderedDict([
         ('reference', False),
@@ -895,15 +893,14 @@ class BiasPredictionTargetSelection(AbsTargetSelectionTable):
         },
     }
 
-
-
 def CachedBiasBrowser(request):
     return CachedBiasBrowsers("biasbrowser", request)
-
 
 def CachedBiasGBrowser(request):
     return CachedBiasBrowsers("biasgbrowser", request)
 
+def CachedBiasPredictBrowser(request):
+    return CachedBiasBrowsers("biasprecictedbrowser", request)
 
 def CachedBiasBrowsers(browser_type, request):
     protein_ids = []
@@ -944,10 +941,11 @@ def CachedBiasBrowsers(browser_type, request):
     if return_html == None:
         if browser_type == "biasbrowser":
             return_html = BiasBrowser.as_view()(request).render()
-        else:
+        elif browser_type == "biasgbrowser":
             return_html = BiasGBrowser.as_view()(request).render()
+        else:
+            return_html = BiasPredictionBrowser.as_view()(request).render()
         cache.set(cache_key, return_html, 60*60*24*7)
-
     return return_html
 
 

@@ -59,19 +59,19 @@
 						}, // class
 						{
 							type: "number-range"
-						}, // resolution
-						{
-							type: "number-range"
-						}, // resolution
-						{
-							type: "number-range"
-						}, // resolution
-						{
-							type: "select"
-						}, // resolution
-						{
-							type: "select"
-						}, // resolution
+						}//,
+						// {
+						// 	type: "number-range"
+						// }, // resolution
+						// {
+						// 	type: "number-range"
+						// }, // resolution
+						// {
+						// 	type: "select"
+						// }, // resolution
+						// {
+						// 	type: "select"
+						// }, // resolution
 					]
 				});
 			}
@@ -98,7 +98,7 @@
 						console.info(div.innerText.replace(/\s+/g, ''));
 					} else {
 						AddToSelection('targets', 'protein_entry', div.textContent.replace(/\s+/g, ''));
-						console.info(div.textContent.replace(/\s+/g, ''));
+
 					}
 				}
 				window.location.href = '/ligand/targets_compact';
@@ -178,23 +178,24 @@ Ligand source activities (1 row/activity)-->
 				<th class="general-th">Ligand type</th>
 				<th class="general-th">Class</th>
 				<th class="activity-th">Ligand count</th>
-				<th class="activity-th">F selectivity</th>
+				<!-- <th class="activity-th">F selectivity</th>
 				<th class="activity-th">B selectivity</th>
 				<th class="activity-th">Primary</th>
-				<th class="activity-th">Secondary</th>
+				<th class="activity-th">Secondary</th> -->
 			</tr>
 			<tr>
 				<th></th>
 				<th></th>
 				<th></th>
 				<th></th>
+                <th></th>
+				<th></th>
+				<th></th>
+				<!-- <th></th>
 				<th></th>
 				<th></th>
 				<th></th>
-				<th></th>
-				<th></th>
-				<th></th>
-				<th></th>
+				<th></th> -->
 			</tr>
 		</thead>
 		<tbody>
@@ -208,7 +209,7 @@ Ligand source activities (1 row/activity)-->
 				<td>{{ligand.protein__family__parent__parent__parent__name}}</td>
 				<td>{{ligand.num_ligands}}</td>
 
-				<td>{{ligand.assay_f_count|default_if_none:""|floatformat:0}}</td>
+				<!-- <td>{{ligand.assay_f_count|default_if_none:""|floatformat:0}}</td>
 				<td>{{ligand.assay_b_count|default_if_none:""|floatformat:0}}</td>
 
                 {%if ligand.primary %}
@@ -221,10 +222,7 @@ Ligand source activities (1 row/activity)-->
 			    <td class='name'>{{ligand.secondary|default_if_none:""}}</td>
 				{%else%}
 				<td class='name'>{{ligand.secondary1|default_if_none:""}}</td>
-                {%endif%}
-
-
-
+                {%endif%} -->
 			</tr>
 			{% endfor %}
 		</tbody>

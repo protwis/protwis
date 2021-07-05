@@ -44,7 +44,7 @@ class Command(BaseBuild):
         parser.add_argument('--test_run', action='store_true', help='Skip this during a test run',
                             default=False)
         self.logger.info('Data is purged')
-                            
+
     def handle(self, *args, **options):
         if options['test_run']:
             print('Skipping in test run')
@@ -208,7 +208,11 @@ class Command(BaseBuild):
             temp_dict['signal_detection_tecnique'] = j['children'][0].signal_detection_tecnique
 
             if j['children'][0].quantitive_activity:
-                temp_dict['quantitive_activity'] = j['children'][0].quantitive_activity
+                try:
+                    temp_dict['quantitive_activity'] = float(j['children'][0].quantitive_activity)
+                except:
+                    temp_dict['quantitive_activity'] = j['children'][0].quantitive_activity
+
                 temp_dict['quantitive_activity_initial'] = j['children'][0].quantitive_activity
             else:
                 temp_dict['quantitive_activity'] = None
@@ -305,7 +309,7 @@ class Command(BaseBuild):
                 for assay in i[1]['assay_list']:
                     name = str(i[1]['publication'].id) + \
                         '/' + str(assay['ligand'].id) + '/' + str(i[1]['receptor'].id) + \
-                        '/' + str(assay['family']) + i[1]['auxiliary_protein']
+                        '/' + str(assay['family'])
                     if name in content:
                         content[name]['assay_list'].append(assay)
                         content[name]['reference_assays_list'].extend(
@@ -355,10 +359,8 @@ class Command(BaseBuild):
 
     def process_signalling_proteins(self, context):
         for i in context.items():
-
             i[1]['assay_list'] = self.calculate_bias_factor_value(
                 i[1]['assay_list'], i[1]['reference_assays_list'])
-
             i[1]['assay_list'] = self.sort_assay_list(i[1]['assay_list'])
             i[1]['backup_assays'] = i[1]['assay_list']
             i[1]['assay_list'] = self.limit_family_set(i[1]['assay_list'])
@@ -458,7 +460,7 @@ class Command(BaseBuild):
         ## TODO: pick
         for assay in sorted_assays:
             for reference in references:
-                if assay['molecule_1'] == reference['molecule_1']:
+                if assay['signalling_protein'] == reference['signalling_protein']:
                     if assay['assay_type'] == reference['assay_type']:
                         if assay['cell_line'] == reference['cell_line']:
                             assay['reference_ligand'].append(reference)
@@ -498,8 +500,6 @@ class Command(BaseBuild):
             # calculate log bias
             self.calc_bias_factor(i[1]['biasdata'], i[1]
                                   ['reference_assays_list'])
-            # recalculates lbf if it is negative
-            # i[1]['biasdata'] = self.validate_lbf(i)
             self.calc_potency_and_transduction(i[1]['biasdata'])
             self.logger.info('process_calculation error')
         return context
@@ -527,14 +527,19 @@ class Command(BaseBuild):
                     # import pdb; pdb.set_trace()
                     i['log_bias_factor'] = self.lbf_process_qualitative_data(i)
                     if i['log_bias_factor'] == None:
+                        i['log_bias_factor'] = self.lbf_process_ic50(i)
+                    if i['log_bias_factor'] == None:
                         i['log_bias_factor'] = self.lbf_process_efficacy(i)
                     if i['log_bias_factor'] == None:
                         i['log_bias_factor'] = self.lbf_calculate_bias(
                             i, most_potent, most_reference)
                         i['lbf_a'] = round(self.lbf_calculate_bias_parts(i), 2)
                     if i['log_bias_factor'] == None:
-                        i['log_bias_factor'] = self.lbf_process_ic50(i)
+                        print('lbf None *****************')
+                        # import pdb; pdb.set_trace()
                 except:
+                    print('lbf error *****************')
+                    # import pdb; pdb.set_trace()
                     i['log_bias_factor'] = None
 
     def lbf_process_qualitative_data(self, i):
@@ -567,11 +572,11 @@ class Command(BaseBuild):
         try:
             if i['quantitive_activity_initial'] < 5 and i['quantitive_efficacy'] > 0:
                 i['quantitive_activity'] == 12500 * (10**(-9))
-            else:
-                pass
             return i['quantitive_activity']
         except:
             self.logger.info('get_rid_of_gprot')
+            return i['quantitive_activity']
+
 
     def lbf_calculate_bias(self, i, most_potent, most_reference):
         return_message = None
@@ -781,9 +786,6 @@ class Command(BaseBuild):
                         self.logger.info('get_rid_of_gprot')
 
                 for ex in i[1]['reference_assays_list']:
-                    import pdb
-                    pdb.set_trace()
-                    emax_ligand = ex['emax_reference_ligand']
                     experiment_assay = AnalyzedAssay(experiment=experiment_entry,
                                                      reference_ligand_id=ex['assay_id'],
                                                      family=ex['family'],
