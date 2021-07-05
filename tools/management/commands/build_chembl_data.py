@@ -1,9 +1,7 @@
-from django.db import IntegrityError
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import Protein
 from ligand.models import BiasedExperiment, AnalyzedExperiment, AssayExperiment, Ligand
 from ligand.functions import get_or_make_ligand
-from common.models import WebLink, WebResource, Publication
 from chembl_webresource_client.new_client import new_client
 import queue
 import logging
@@ -205,8 +203,7 @@ class Command(BaseBuild):
             Command.upload_to_db(chembl_data)
 
     def analyse_rows(self):
-        print('---Starting---')
-        start = time.time()
+        print('---Starting---')        
         target_list = Command.get_gpcrs()
         target_list_list = list(target_list)
         start = time.time()
