@@ -1,16 +1,7 @@
-from django.core.management.base import BaseCommand, CommandError
-from django.conf import settings
-
-from protein.models import Protein, ProteinGProteinPair
-from ligand.models import *
-from common.models import WebLink, Publication
-import pandas as pd
-
+from django.core.management.base import BaseCommand
+from protein.models import ProteinGProteinPair
+from ligand.models import Ligand_v2, Ligand, LigandProperities, LigandType, Ligand_v2_Physchem, Synonyms
 import logging
-import os
-from decimal import Decimal
-import gzip, json
-import datetime
 
 class Command(BaseCommand):
     mylog = logging.getLogger(__name__)
@@ -21,7 +12,7 @@ class Command(BaseCommand):
     file_handler.setFormatter(formatter)
     mylog.addHandler(file_handler)
 
-    help = 'Calcualtes ligand/receptor selectivity'
+    help = 'Transfer ligand data from old model to new one'
     # source file directory
     # structure_data_dir = os.sep.join([settings.EXCEL_DATA, 'ligand_data', 'bias'])
 
@@ -56,7 +47,7 @@ class Command(BaseCommand):
         if options['purge']:
             try:
                 print('Started purging bias data')
-                self.purge_bias_data()
+                Command.purge_bias_data()
                 print('Ended purging bias data')
             except Exception as msg:
                 print(msg)
@@ -67,7 +58,8 @@ class Command(BaseCommand):
         except Exception as msg:
             print('--error--', msg, '\n')
 
-    def purge_bias_data(self):
+    @staticmethod
+    def purge_bias_data():
         delete_bias_experiment = Ligand_v2.objects.all()
         delete_bias_experiment.delete()
 
@@ -75,18 +67,19 @@ class Command(BaseCommand):
 
     def calculate_selectivity(self):
         # get unique ligands
-        assays = self.get_ligands()
+        assays = Command.get_ligands()
         print('#Step 1 - Done')
         # iterate throgu assayexperiments using ligand ids
-        ligands_with_data = self.get_data(assays)
+        ligands_with_data = Command.get_data(assays)
         print('#Step 2 - Done')
         #process ligand assay queryset
         processed_ligand_assays = self.process_assays(ligands_with_data)
         print('#Step 3 - Done')
-        self.prepare_to_save(processed_ligand_assays)
+        Command.prepare_to_save(processed_ligand_assays)
         print('#Step 4 - Done')
 
-    def get_ligands(self):
+    @staticmethod
+    def get_ligands():
         #Getting ligands from the model
         try:
             content = Ligand.objects.all().order_by(
@@ -95,7 +88,8 @@ class Command(BaseCommand):
             content = None
         return content
 
-    def get_data(self, ligands):
+    @staticmethod
+    def get_data(ligands):
         ligand_list=list()
         #Getting data from the model for a ligand\n##limiting only by EC50 | IC50 (values)'
         for ligand in ligands:
@@ -143,7 +137,8 @@ class Command(BaseCommand):
         print('*****len self.ligand_cache******', self.ligand_cache)
         return context
 
-    def prepare_to_save(self, ligands):
+    @staticmethod
+    def prepare_to_save(ligands):
         for i in ligands.items():
             for ligand_data in i[1]:
                 try:
@@ -189,6 +184,3 @@ class Command(BaseCommand):
                         specialty = 'vendor',
                     )
                     synonyms.save()
-
-    def sort_assay(self, assays):
-        return sorted(assays, key=lambda i: i['pchembl_value'], reverse=True)

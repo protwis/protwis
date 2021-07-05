@@ -1,7 +1,6 @@
-from django.core.management.base import CommandError
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import Protein, ProteinGProteinPair
-from ligand.models import LigandReceptorStatistics, Ligand, AssayExperiment
+from ligand.models import LigandReceptorStatistics, AssayExperiment
 from django.db.models import Q
 import logging
 

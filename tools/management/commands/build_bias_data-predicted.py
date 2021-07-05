@@ -343,8 +343,7 @@ class Command(BaseBuild):
                 self.logger.info('returned finalised assay')
         return new_d
 
-    def count_endogenous_ligands(self, reference_list):
-        return_list = list()
+    def count_endogenous_ligands(self, reference_list):    
         ligands = set()
         content = dict()
         for assay in reference_list:
