@@ -512,12 +512,12 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
     legend.append("text")
       .attr("x", xSeed + 20)
       .attr("y", margin.top + 75)
-      .style("fill", function(d){ return colors[d]})
+      .style("fill", function(d){ return colors[d]};)
       .text(function(d) {
               if (d.length > 25) {
-                  return d.substring(0,25)+'...'
+                  return d.substring(0,25)+"...";
               }else {
-                  return d
+                  return d;
               }
       })
       .attr("text-anchor", "left")
