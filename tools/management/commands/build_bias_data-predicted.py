@@ -290,7 +290,7 @@ class Command(BaseBuild):
         sorted_main = sorted(main, key=lambda k: k['quantitive_activity']
                              if k['quantitive_activity'] else 999999, reverse=True)
         sorted_reference = sorted(reference, key=lambda k: k['quantitive_activity']
-                             if k['quantitive_activity'] else 999999, reverse=True)
+                                  if k['quantitive_activity'] else 999999, reverse=True)
         self.logger.info('Combined experiments by publication and receptor')
         return sorted_main, sorted_reference
 
@@ -330,6 +330,7 @@ class Command(BaseBuild):
         for endo_assay in temp_receptor:
             if assay_for_processing['family'] == endo_assay['family']:
                 endogenous_assay_list.append(endo_assay)
+                self.logger.info('returned finalised assay')
         return endogenous_assay_list
     # except:
     #     return endogenous_assay_list
@@ -339,6 +340,7 @@ class Command(BaseBuild):
         for x in reference_list:
             if x not in new_d:
                 new_d.append(x)
+                self.logger.info('returned finalised assay')
         return new_d
 
     def count_endogenous_ligands(self, reference_list):
@@ -367,7 +369,6 @@ class Command(BaseBuild):
                     content[name]['measured_biological_process'] = assay['measured_biological_process']
                     content[name]['cell_line'] = assay['cell_line']
         else:
-
             for assay in reference_list:
                 name = assay['ligand']
                 content[name] = dict()
@@ -377,6 +378,7 @@ class Command(BaseBuild):
                 content[name]['molecule_1'] = assay['molecule_1']
                 content[name]['measured_biological_process'] = assay['measured_biological_process']
                 content[name]['cell_line'] = assay['cell_line']
+                self.logger.info('returned finalised assay')
         return content
 
     def score_limit_endogenous(self, content):
@@ -390,6 +392,7 @@ class Command(BaseBuild):
             ligand[1]['score'] = ligand[1]['score'] + \
                 (0.001 * len(ligand[1]['data']))
             ligand[1]['ligand_name'] = ligand[0]
+            self.logger.info('returned finalised assay')
         return content
 
     def select_best_assay(self, content):
@@ -400,6 +403,7 @@ class Command(BaseBuild):
             else:
                 if i[1]['score'] > return_best_list['score']:
                     return_best_list = i[1]
+                    self.logger.info('returned finalised assay')
         return return_best_list
 
     def separate_ligands(self, context):
@@ -409,7 +413,7 @@ class Command(BaseBuild):
                 for assay in i[1]['assay_list']:
                     name = str(i[1]['publication'].id) + \
                         '/' + str(assay['ligand'].id) + '/' + \
-                                  str(i[1]['receptor'].id)
+                        str(i[1]['receptor'].id)
                     if name in content:
                         content[name]['assay_list'].append(assay)
 
@@ -549,7 +553,7 @@ class Command(BaseBuild):
     def sort_assay_list(self, i):
         return_assay = dict()
         return_assay = sorted(i, key=lambda k: k['order_bias_value']
-                      if k['order_bias_value'] else float(-1000), reverse=True)
+                              if k['order_bias_value'] else float(-1000), reverse=True)
         self.logger.info('sort_assay_list')
         return return_assay
 
@@ -558,20 +562,6 @@ class Command(BaseBuild):
         for assay in sorted_assays:
             assay['order_bias_value'] = self.calc_order_bias_value(assay)
         return sorted_assays
-
-    def merge_reference_assays(self, reference):
-
-        if len(reference) > 1:
-            sum_for_calc = sum(assay['quantitive_activity']
-                               for assay in reference if assay['quantitive_activity'] is not None)
-            avg = sum_for_calc / len(reference)
-            return_ref_dict = reference[0]
-            return_ref_dict['quantitive_activity'] = avg
-            return_ref_dict['note'] = 'merged'
-            return_ref_dict['quantitive_efficacy'] = 100
-            reference = list()
-            reference.append(return_ref_dict)
-        return reference
 
     def calc_order_bias_value(self, assay):
         result = None
@@ -597,58 +587,58 @@ class Command(BaseBuild):
         return context
 
     def calc_bias_factor(self, biasdata):
-            most_reference = dict()
-            most_potent = dict()
-            for i in biasdata:
-                if i['order_no'] == 0:
-                    most_potent = i
-                    try:
-                        i['lbf_a'] = round(math.log10(
-                            most_potent['quantitive_efficacy'] / most_potent['quantitive_activity']), 1)
-                    except:
-                        i['log_bias_factor']=None
-                    i['log_bias_factor']=None
-                    self.process_low_potency(i)
 
-            for i in biasdata:
-                if i['order_no'] > 0:
-                    try:
-                        i['log_bias_factor'] = self.lbf_process_ic50(i)
-                        if i['log_bias_factor'] == None:
-                            a = math.log10(
-                                most_potent['quantitive_efficacy'] / most_potent['quantitive_activity'])
-                            b = math.log10(
-                                i['quantitive_efficacy'] / i['quantitive_activity'])
-                            i['lbf_a'] = b
-                            i['log_bias_factor'] = round(a-b, 1)
-                    except:
-                        i['log_bias_factor'] = None
-                    i['t_factor'] = None
-                    self.logger.info('t_factor error')
+        most_potent = dict()
+        for i in biasdata:
+            if i['order_no'] == 0:
+                most_potent = i
+                try:
+                    i['lbf_a'] = round(math.log10(
+                        most_potent['quantitive_efficacy'] / most_potent['quantitive_activity']), 1)
+                except:
+                    i['log_bias_factor'] = None
+                i['log_bias_factor'] = None
+                self.process_low_potency(i)
+
+        for i in biasdata:
+            if i['order_no'] > 0:
+                try:
+                    i['log_bias_factor'] = self.lbf_process_ic50(i)
+                    if i['log_bias_factor'] == None:
+                        a = math.log10(
+                            most_potent['quantitive_efficacy'] / most_potent['quantitive_activity'])
+                        b = math.log10(
+                            i['quantitive_efficacy'] / i['quantitive_activity'])
+                        i['lbf_a'] = b
+                        i['log_bias_factor'] = round(a - b, 1)
+                except:
+                    i['log_bias_factor'] = None
+                i['t_factor'] = None
+                self.logger.info('t_factor error')
 
     def lbf_process_qualitative_data(self, i):
-        return_message=None
+        return_message = None
         try:
             if i['qualitative_activity'] == 'No activity':
-                return_message="Full Bias"
+                return_message = "Full Bias"
             elif i['qualitative_activity'] == 'Low activity':
-                return_message="High Bias"
+                return_message = "High Bias"
             elif i['qualitative_activity'] == 'High activity':
-                return_message="Low Bias"
+                return_message = "Low Bias"
             elif i['qualitative_activity'] == 'Inverse agonism/antagonism':
-                return_message="Full Bias"
+                return_message = "Full Bias"
         except:
-            return_message=None
+            return_message = None
             self.logger.info('lbf_process_qualitative_data')
         return return_message
 
     def lbf_process_efficacy(self, i):
-        return_message=None
+        return_message = None
         try:
             if i['quantitive_efficacy'] == 0:
-                return_message="Full Bias"
+                return_message = "Full Bias"
         except:
-            return_message=None
+            return_message = None
             self.logger.info('lbf_process_efficacy')
         return return_message
 
@@ -660,38 +650,39 @@ class Command(BaseBuild):
             self.logger.info('get_rid_of_gprot')
 
     def lbf_calculate_bias(self, i, most_potent):
-        return_message=None
+        return_message = None
         try:
             # TODO: possibly need mean for that one
             if (i['quantitive_measure_type'].lower() == 'ec50'
-            and most_potent['quantitive_measure_type'].lower() == 'ec50'):
-                a=0
-                b=0
-                a=math.log10(
+                    and most_potent['quantitive_measure_type'].lower() == 'ec50'):
+                a = 0
+                b = 0
+                a = math.log10(
                     most_potent['quantitive_efficacy'] / most_potent['quantitive_activity'])
-                b=math.log10(
+                b = math.log10(
                     i['quantitive_efficacy'] / i['quantitive_activity'])
 
-                return_message=round(a-b, 1)
+                return_message = round(a - b, 1)
         except:
-            return_message=None
+            return_message = None
+            self.logger.info('lbf_calculate_bias')
         return return_message
 
     def lbf_calculate_bias_parts(self, i):
-        result=None
+        result = None
         try:
-            c=0
+            c = 0
             if (i['quantitive_measure_type'].lower() == 'ec50'):
-                c=math.log10(
+                c = math.log10(
                     i['quantitive_efficacy'] / i['quantitive_activity'])
-            result=c
+            result = c
         except:
             self.logger.info('lbf_process_ic50')
-            result=None
+            result = None
         return result
 
     def lbf_process_ic50(self, i):
-        return_message=None
+        return_message = None
         try:
             if (i['quantitive_measure_type'].lower() == 'ic50'):
                 return_message = 'Only agonist in main pathway'
@@ -787,10 +778,11 @@ class Command(BaseBuild):
         for i in context['data'].items():
             if len(i[1]['biasdata']) > 1:
 
-                primary, secondary = self.fetch_receptor_trunsducers(i[1]['receptor'])
+                primary, secondary = self.fetch_receptor_trunsducers(
+                    i[1]['receptor'])
                 experiment_entry = AnalyzedExperiment(publication=i[1]['publication'],
                                                       ligand=i[1]['ligand'],
-                                                      external_ligand_ids = i[1]['ligand_links'],
+                                                      external_ligand_ids=i[1]['ligand_links'],
                                                       receptor=i[1]['receptor'],
                                                       source=source,
                                                       endogenous_ligand=i[1]['endogenous_ligand'],
@@ -800,8 +792,8 @@ class Command(BaseBuild):
                                                       secondary=secondary,
                                                       article_quantity=i[1]['article_quantity'],
                                                       labs_quantity=i[1]['labs'],
-                                                      ligand_source_id = i[1]['ligand_source_id'],
-                                                      ligand_source_type = i[1]['ligand_source_type']
+                                                      ligand_source_id=i[1]['ligand_source_id'],
+                                                      ligand_source_type=i[1]['ligand_source_type']
                                                       )
                 experiment_entry.save()
                 for ex in i[1]['biasdata']:
@@ -814,7 +806,7 @@ class Command(BaseBuild):
                                                      signalling_protein=ex['signalling_protein'],
                                                      cell_line=ex['cell_line'],
                                                      assay_type=ex['assay_type'],
-                                                     reference_ligand_id = None,
+                                                     reference_ligand_id=None,
                                                      molecule_1=ex['molecule_1'],
                                                      molecule_2=ex['molecule_2'],
                                                      assay_time_resolved=ex['assay_time_resolved'],
@@ -836,9 +828,9 @@ class Command(BaseBuild):
                                                      log_bias_factor_b=ex['lbf_b'],
                                                      log_bias_factor_c=ex['lbf_c'],
                                                      log_bias_factor_d=ex['lbf_d'],
-                                                     effector_family = ex['family'],
-                                                     measured_biological_process = ex['measured_biological_process'] ,
-                                                     signal_detection_tecnique = ex['signal_detection_tecnique'],
+                                                     effector_family=ex['family'],
+                                                     measured_biological_process=ex['measured_biological_process'],
+                                                     signal_detection_tecnique=ex['signal_detection_tecnique'],
                                                      emax_ligand_reference=emax_ligand
                                                      )
                     experiment_assay.save()

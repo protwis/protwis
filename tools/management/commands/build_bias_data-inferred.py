@@ -795,14 +795,14 @@ class Command(BaseBuild):
                                                          effector_family=ex['family'],
                                                          measured_biological_process=ex['measured_biological_process'],
                                                          signal_detection_tecnique=ex['signal_detection_tecnique'],
-                                                         emax_ligand_reference=ex['ligand']
+                                                         emax_ligand_reference=emax_ligand
                                                          )
                         experiment_assay.save()
                     except:
                         self.logger.info('get_rid_of_gprot')
 
                 for ex in i[1]['reference_assays_list']:
-                    emax_ligand = ex['emax_reference_ligand']
+
                     experiment_assay = AnalyzedAssay(experiment=experiment_entry,
                                                      reference_ligand_id=ex['assay_id'],
                                                      family=ex['family'],
@@ -838,9 +838,7 @@ class Command(BaseBuild):
                                                      emax_ligand_reference=ex['ligand']
                                                      )
                     experiment_assay.save()
-
                 for ex in i[1]['backup_assays']:
-                    emax_ligand = ex['emax_reference_ligand']
                     experiment_assay = AnalyzedAssay(experiment=experiment_entry,
                                                      reference_ligand_id=ex['assay_id'],
                                                      family=ex['family'],
@@ -876,7 +874,6 @@ class Command(BaseBuild):
                                                      emax_ligand_reference=ex['ligand']
                                                      )
                     experiment_assay.save()
-
             else:
                 self.logger.info('saving error')
 

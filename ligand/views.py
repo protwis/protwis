@@ -19,7 +19,7 @@ from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
 from ligand.models import Ligand, LigandVendorLink,LigandVendors, AnalyzedExperiment, AnalyzedAssay, BiasedPathways, AssayExperiment, LigandReceptorStatistics
-from protein.models import Protein, ProteinFamily
+from protein.models import Protein, ProteinFamily, ProteinGProteinPair
 from interaction.models import StructureLigandInteraction
 from mutation.models import MutationExperiment
 

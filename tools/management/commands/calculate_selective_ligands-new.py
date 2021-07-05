@@ -1,12 +1,10 @@
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import CommandError
 from build.management.commands.base_build import Command as BaseBuild
-from residue.models import Residue
 from protein.models import Protein, ProteinGProteinPair
-from ligand.models import *
-from common.models import WebLink, WebResource, Publication
-from django.db.models import Q, Count
+from ligand.models import LigandReceptorStatistics, Ligand, AssayExperiment
+from django.db.models import Q
 import logging
-from datetime import datetime
+
 import time
 
 MISSING_PROTEINS = {}
@@ -87,7 +85,7 @@ class Command(BaseBuild):
         # iterate throgu assayexperiments using ligand ids
         ligands_with_data = self.get_data(assays)
         #process ligand assay queryset
-        processed_ligand_assays = self.process_assays(ligands_with_data)
+        self.process_assays(ligands_with_data)
         self.save_data()
 
         end = time.time()
@@ -100,6 +98,7 @@ class Command(BaseBuild):
                 'ligand').distinct('ligand').only('ligand')
         except AssayExperiment.DoesNotExist:
             content = None
+            self.logger.info('Queryset is not processed')
         return content
 
     def get_data(self, assays):
@@ -121,6 +120,7 @@ class Command(BaseBuild):
                 ligand_data['assays'] = content
             except AssayExperiment.DoesNotExist:
                 ligand_data = None
+                self.logger.info('Queryset is not processed')
             ligand_list.append(ligand_data)
         return ligand_list
 
@@ -174,6 +174,7 @@ class Command(BaseBuild):
         return processed_data
 
     def sort_assay(self, assays):
+        self.logger.info('Queryset is not processed')
         return sorted(assays, key=lambda i: i['pchembl_value'], reverse=True)
 
     def process_querysets(self,querysets):
@@ -190,13 +191,10 @@ class Command(BaseBuild):
                 assay_data['reference_protein'] = Protein()
                 processed_data.append(assay_data)
             except:
-                print('process data fail', i)
+                self.logger.info('Queryset is not processed')
                 continue
 
         return processed_data
-
-    def sort_assay(self, assays):
-        return sorted(assays, key=lambda i: i['pchembl_value'], reverse=True)
 
     def fetch_receptor_trunsducers(self, receptor):
         primary = set()
@@ -244,6 +242,6 @@ class Command(BaseBuild):
                 primary=primary,
                 secondary=secondary)
             save_assay.save()
-
+        self.logger.info('Queryset is saved and processed')
         print(self.f_receptor_count)
         print(self.b_receptor_count)
