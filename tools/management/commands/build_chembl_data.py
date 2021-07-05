@@ -203,7 +203,7 @@ class Command(BaseBuild):
             Command.upload_to_db(chembl_data)
 
     def analyse_rows(self):
-        print('---Starting---')        
+        print('---Starting---')
         target_list = Command.get_gpcrs()
         target_list_list = list(target_list)
         start = time.time()

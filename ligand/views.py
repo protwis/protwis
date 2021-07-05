@@ -893,15 +893,14 @@ class BiasPredictionTargetSelection(AbsTargetSelectionTable):
         },
     }
 
-
-
 def CachedBiasBrowser(request):
     return CachedBiasBrowsers("biasbrowser", request)
-
 
 def CachedBiasGBrowser(request):
     return CachedBiasBrowsers("biasgbrowser", request)
 
+def CachedBiasPredictBrowser(request):
+    return CachedBiasBrowsers("biasprecictedbrowser", request)
 
 def CachedBiasBrowsers(browser_type, request):
     protein_ids = []
@@ -942,10 +941,11 @@ def CachedBiasBrowsers(browser_type, request):
     if return_html == None:
         if browser_type == "biasbrowser":
             return_html = BiasBrowser.as_view()(request).render()
-        else:
+        elif browser_type == "biasgbrowser":
             return_html = BiasGBrowser.as_view()(request).render()
+        else:
+            return_html = BiasPredictionBrowser.as_view()(request).render()
         cache.set(cache_key, return_html, 60*60*24*7)
-
     return return_html
 
 
