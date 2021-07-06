@@ -210,7 +210,7 @@ class Command(BaseBuild):
             if j['children'][0].quantitive_activity:
                 try:
                     temp_dict['quantitive_activity'] = float(j['children'][0].quantitive_activity)
-                except:                    
+                except:
                     temp_dict['quantitive_activity'] = j['children'][0].quantitive_activity
 
                 temp_dict['quantitive_activity_initial'] = j['children'][0].quantitive_activity

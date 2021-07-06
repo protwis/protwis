@@ -205,7 +205,7 @@ class Command(BaseBuild):
     def analyse_rows(self):
         print('---Starting---')
         target_list = Command.get_gpcrs()
-        target_list_list = list(target_list)        
+        target_list_list = list(target_list)
         chembl_assays = None
         print('---process_chembl---')
         # range should be set to number of total objects/20 (API batch size)
