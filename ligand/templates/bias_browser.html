@@ -11,11 +11,11 @@
 
 <!-- configure radio buttons style -->
 <style>
-
-    .highlight_green{
+	.highlight_green {
 		/* display: none; */
 		background-color: green;
 	}
+
 	.highlight {
 		/* display: none; */
 		background-color: red;
@@ -252,11 +252,11 @@
 				<th id="receptor" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Receptor</th>
 				<th style="border-left: 1px solid black; text-align:left" colspan="5" style="">
-					Tested ligand pair </th>
+					Ligands</th>
 				<th id="transducers" style="border-left: 1px solid black; text-align:left" colspan="2" style="">
 					Receptor transducers</th>
 				<th id="pathways_effector" style="border-left: 1px solid black; text-align:left" colspan="5">
-					Bias rank order:<br>(by &#916;Log(Emax/EC50)</th>
+					Pathway rank order<br>(by &#916;Log(Emax/EC50)</th>
 				<th id="pathways_measure" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Bias rank order:<br>Measured effector</th>
 				<th id="opmodel" class="shade" style="border-left: 1px solid black; text-align:left" colspan="4">
@@ -264,7 +264,7 @@
 				<th id="lbf" class="shade" style="border-left: 1px solid black; text-align:left" colspan="4">
 					Intrinsic relative<br>activity<br>(&#916;&#916;Log(Emax/EC50))</th>
 				<th id="lbf_part" class="shade" style="border-left: 1px solid black; text-align:left" colspan="5">
-					&#916;Log(Emax/EC50)</th>
+					Ligand &#916;Log(Emax/EC50)</th>
 				<th class="shade" id="activity" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Potency (pEC50 or<br>
 					<font color="#FF0000">IC50)</font>
@@ -287,7 +287,7 @@
                           white-space: nowrap;
                           text-overflow: ellipsis;
                   max-width: 250px;" colspan="2">Reference</th>
-                <!-- <th style="border-left: 1px solid black; text-align:left" colspan="15">reference</th> -->
+				<!-- <th style="border-left: 1px solid black; text-align:left" colspan="15">reference</th> -->
 			</tr>
 			<tr class="table-filter-dropdown">
 				<th></th>
@@ -297,8 +297,8 @@
 				<th id="iuphar_filter_select">IUPHAR</th>
 				<th id="species_filter_select">Species</th>
 				<th style="display:None" id="endogenous_ligand_filter_select">Endogenous<br>Ligand</th>
-				<th id="reference_ligand_filter_select">Reference</th>
-				<th id="ligand_filter_select">Ligand tested for bias</th>
+				<th id="reference_ligand_filter_select">Reference<br>Ligand</th>
+				<th id="ligand_filter_select">Tested<br>ligand</th>
 				<th id="vendor_quantity_filter_select">#Ven<br>dors</th>
 				<th id="article_quantity_filter_select">#Arti<br>cles</th>
 				<th id="labs_quantity_filter_select">#Labs<br></th>
@@ -384,7 +384,7 @@
                           text-overflow: ellipsis;
                           max-width: 100px;">Authors</th>
 				<th id="doi_reference_filter_select">DOI/ <br>Reference</th>
-                  <!-- <th>references</th>
+				<!-- <th>references</th>
                     <th id="time_p1_filter_select">reference P 1</th>
 					<th id="time_p2_filter_select">reference P 2</th>
 					<th id="time_p3_filter_select">reference P 3</th>
@@ -408,7 +408,7 @@
 			{%for e in data_test%}
 			<tr>
 				<td>
-					<span style='display: none'> {{e.id}}</span>
+					<span style='display: none'> {{e.ligand.id}}</span>
 					<a href="#">
 						<span class="glyphicon glyphicon-info-sign" title="Click for more details" onclick="openPopup('experiment/{{e.id}}/detail', 'Detail View', window, 1500, 1000)"></span>
 					</a>
@@ -466,10 +466,10 @@
 				<!-- potency -->
 				{%if e.activity_p1 %}
 				{%if e.standard_type_p1 == 'EC50' %}
-				<td class="shade" style="text-align:right">{{e.activity_p1|default_if_none:""}} </td>
+				<td class="shade" style="text-align:right">{{e.activity_p1|default_if_none:""|floatformat:1}} </td>
 				{%else%}
 				<td class="shade" style="text-align:right">
-					<font color="#FF0000">{{e.activity_p1|default_if_none:""}} </font>
+					<font color="#FF0000">{{e.activity_p1|default_if_none:""|floatformat:1}} </font>
 				</td>
 				{%endif%}
 				{%else%}
@@ -478,10 +478,10 @@
 
 				{%if e.activity_p2 %}
 				{%if e.standard_type_p2 == 'EC50' %}
-				<td class="shade" style="text-align:right">{{e.activity_p2|default_if_none:""}} </td>
+				<td class="shade" style="text-align:right">{{e.activity_p2|default_if_none:""|floatformat:1}} </td>
 				{%else%}
 				<td class="shade" style="text-align:right">
-					<font color="#FF0000">{{e.activity_p2|default_if_none:""}} </font>
+					<font color="#FF0000">{{e.activity_p2|default_if_none:""|floatformat:1}} </font>
 				</td>
 				{%endif%}
 				{%else%}
@@ -490,10 +490,10 @@
 
 				{%if e.activity_p3 %}
 				{%if e.standard_type_p3 == 'EC50' %}
-				<td class="shade" style="text-align:right">{{e.activity_p3|default_if_none:""}} </td>
+				<td class="shade" style="text-align:right">{{e.activity_p3|default_if_none:""|floatformat:1}} </td>
 				{%else%}
 				<td class="shade" style="text-align:right">
-					<font color="#FF0000">{{e.activity_p3|default_if_none:""}} </font>
+					<font color="#FF0000">{{e.activity_p3|default_if_none:""|floatformat:1}} </font>
 				</td>
 				{%endif%}
 				{%else%}
@@ -502,10 +502,10 @@
 
 				{%if e.activity_p4 %}
 				{%if e.standard_type_p4 == 'EC50' %}
-				<td class="shade" style="text-align:right">{{e.activity_p4|default_if_none:""}} </td>
+				<td class="shade" style="text-align:right">{{e.activity_p4|default_if_none:""|floatformat:1}} </td>
 				{%else%}
 				<td class="shade" style="text-align:right">
-					<font color="#FF0000">{{e.activity_p4|default_if_none:""}} </font>
+					<font color="#FF0000">{{e.activity_p4|default_if_none:""|floatformat:1}} </font>
 				</td>
 				{%endif%}
 				{%else%}
@@ -514,10 +514,10 @@
 
 				{%if e.activity_p5 %}
 				{%if e.standard_type_p5 == 'EC50' %}
-				<td class="shade" style="text-align:right">{{e.activity_p5|default_if_none:""}} </td>
+				<td class="shade" style="text-align:right">{{e.activity_p5|default_if_none:""|floatformat:1}} </td>
 				{%else%}
 				<td class="shade" style="text-align:right">
-					<font color="#FF0000">{{e.activity_p5|default_if_none:""}} </font>
+					<font color="#FF0000">{{e.activity_p5|default_if_none:""|floatformat:1}} </font>
 				</td>
 				{%endif%}
 				{%else%}
@@ -576,8 +576,8 @@
 					<a href='{{e.publication.web_link}}' target='blank'>
 						{{e.publication.web_link.index}}</a></td>
 
-                        <!-- reference aprt -->
-                    <!-- <td>Reference</td>
+				<!-- reference aprt -->
+				<!-- <td>Reference</td>
 
                     <td>{{e.reference_ligand_p1|default_if_none:""}}</td>
                     <td>{{e.reference_ligand_p2|default_if_none:""}}</td>
@@ -642,11 +642,11 @@
 			deferRender: true,
 			dom: 'B<>flrtip',
 			"deferRender": true,
-			fixedColumns: {
-				leftColumns: 2
-			},
 			pageLength: 35,
 			"lengthChange": false,
+			order: [
+				[28, "desc"]
+			],
 			"buttons": [{
 					extend: 'csv',
 					text: 'Export to CSV',
@@ -710,7 +710,7 @@
 					var receptor_counter = read_unique_ids_receptor();
 					document.getElementById("ligand_counter").innerHTML = ligand_counter;
 					document.getElementById("receptor_counter").innerHTML = receptor_counter;
-                    // calculate_header()
+					// calculate_header()
 				}, 3000);
 			},
 		});
@@ -1267,28 +1267,28 @@
 
 			], );
 		shadeTable(table, [".shade"], 120, 200);
-        // calculate_header()
+		// calculate_header()
 
 
 		function calculate_header() {
 			var columnIds = [];
 			var EmptyColumnIds = [];
-              $("#receptor").attr("colspan", 5);
-    			$("#ligand").attr("colspan", 5);
-    			$("#transducers").attr("colspan", 2);
-    			$("#pathways_effector").attr("colspan", 5);
-    			$("#pathways_measure").attr("colspan", 5);
-    			$("#opmodel").attr("colspan", 4);
-    			$("#lbf").attr("colspan", 4);
-    			$("#lbf_part").attr("colspan", 5);
-    			$("#activity").attr("colspan", 5);
-    			$("#emax").attr("colspan", 5);
-    			$("#tfactor").attr("colspan", 5);
-    			$("#mm1").attr("colspan", 5);
-    			$("#mm2").attr("colspan", 5);
-    			$("#bio").attr("colspan", 5);
-    			$("#cell").attr("colspan", 5);
-    			$("#time").attr("colspan", 5);
+			$("#receptor").attr("colspan", 5);
+			$("#ligand").attr("colspan", 5);
+			$("#transducers").attr("colspan", 2);
+			$("#pathways_effector").attr("colspan", 5);
+			$("#pathways_measure").attr("colspan", 5);
+			$("#opmodel").attr("colspan", 4);
+			$("#lbf").attr("colspan", 4);
+			$("#lbf_part").attr("colspan", 5);
+			$("#activity").attr("colspan", 5);
+			$("#emax").attr("colspan", 5);
+			$("#tfactor").attr("colspan", 5);
+			$("#mm1").attr("colspan", 5);
+			$("#mm2").attr("colspan", 5);
+			$("#bio").attr("colspan", 5);
+			$("#cell").attr("colspan", 5);
+			$("#time").attr("colspan", 5);
 			colspan_default = {
 				receptor: [0, 1, 2, 3, 4, 5, 6],
 				ligand: [7, 8, 9, 10, 11],
@@ -1332,7 +1332,7 @@
 
 					for (key in colspan_default) {
 						if (colspan_default[key].includes(item)) {
-                            $("#" + key).addClass('highlight');
+							$("#" + key).addClass('highlight');
 							// var temp_colspan = $("#" + key).attr('colspan')
 							// $("#" + key).attr("colspan", temp_colspan - 1)
 							// if ($("#" + key).attr('colspan') == 0) {
@@ -1354,25 +1354,25 @@
 			}],
 		]);
 
-        // $('#structures_scrollable').on( 'page.dt', function () {
-        //         $("#receptor").attr("colspan", 6);
-    	// 		$("#ligand").attr("colspan", 5);
-    	// 		$("#transducers").attr("colspan", 2);
-    	// 		$("#pathways_effector").attr("colspan", 5);
-    	// 		$("#pathways_measure").attr("colspan", 5);
-    	// 		$("#opmodel").attr("colspan", 4);
-    	// 		$("#lbf").attr("colspan", 4);
-    	// 		$("#lbf_part").attr("colspan", 5);
-    	// 		$("#activity").attr("colspan", 5);
-    	// 		$("#emax").attr("colspan", 5);
-    	// 		$("#tfactor").attr("colspan", 5);
-    	// 		$("#mm1").attr("colspan", 5);
-    	// 		$("#mm2").attr("colspan", 5);
-    	// 		$("#bio").attr("colspan", 5);
-    	// 		$("#cell").attr("colspan", 5);
-    	// 		$("#time").attr("colspan", 5);
-        //
-        // } );
+		// $('#structures_scrollable').on( 'page.dt', function () {
+		//         $("#receptor").attr("colspan", 6);
+		// 		$("#ligand").attr("colspan", 5);
+		// 		$("#transducers").attr("colspan", 2);
+		// 		$("#pathways_effector").attr("colspan", 5);
+		// 		$("#pathways_measure").attr("colspan", 5);
+		// 		$("#opmodel").attr("colspan", 4);
+		// 		$("#lbf").attr("colspan", 4);
+		// 		$("#lbf_part").attr("colspan", 5);
+		// 		$("#activity").attr("colspan", 5);
+		// 		$("#emax").attr("colspan", 5);
+		// 		$("#tfactor").attr("colspan", 5);
+		// 		$("#mm1").attr("colspan", 5);
+		// 		$("#mm2").attr("colspan", 5);
+		// 		$("#bio").attr("colspan", 5);
+		// 		$("#cell").attr("colspan", 5);
+		// 		$("#time").attr("colspan", 5);
+		//
+		// } );
 
 	});
 </script>

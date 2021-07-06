@@ -249,9 +249,9 @@
 			deferRender: true,
 			dom: 'B<>flrtip',
 			"deferRender": true,
-			fixedColumns: {
-				leftColumns: 2
-			},
+			order: [
+				[28, "desc"]
+			],
 			pageLength: 35,
 			"lengthChange": false,
 			"buttons": [{
@@ -317,7 +317,7 @@
 					var receptor_counter = read_unique_ids_receptor();
 					document.getElementById("ligand_counter").innerHTML = ligand_counter;
 					document.getElementById("receptor_counter").innerHTML = receptor_counter;
-                    // calculate_header()
+					// calculate_header()
 				}, 2000);
 
 			},
@@ -875,6 +875,11 @@
 
 			], );
 		shadeTable(table, [".shade"], 120, 200);
+		yadcf.exFilterColumn(table, [
+			[28, {
+				from: 1
+			}],
+		]);
 
 		function calculate_header() {
 			var columnIds = [];
@@ -950,25 +955,25 @@
 		// 	}],
 		// ]);
 
-        // $('#structures_scrollable').on( 'page.dt', function () {
-        //         $("#receptor").attr("colspan", 6);
-    	// 		$("#ligand").attr("colspan", 5);
-    	// 		$("#transducers").attr("colspan", 2);
-    	// 		$("#pathways_effector").attr("colspan", 5);
-    	// 		$("#pathways_measure").attr("colspan", 5);
-    	// 		$("#opmodel").attr("colspan", 4);
-    	// 		$("#lbf").attr("colspan", 4);
-    	// 		$("#lbf_part").attr("colspan", 5);
-    	// 		$("#activity").attr("colspan", 5);
-    	// 		$("#emax").attr("colspan", 5);
-    	// 		$("#tfactor").attr("colspan", 5);
-    	// 		$("#mm1").attr("colspan", 5);
-    	// 		$("#mm2").attr("colspan", 5);
-    	// 		$("#bio").attr("colspan", 5);
-    	// 		$("#cell").attr("colspan", 5);
-    	// 		$("#time").attr("colspan", 5);
-        //
-        // } );
+		// $('#structures_scrollable').on( 'page.dt', function () {
+		//         $("#receptor").attr("colspan", 6);
+		// 		$("#ligand").attr("colspan", 5);
+		// 		$("#transducers").attr("colspan", 2);
+		// 		$("#pathways_effector").attr("colspan", 5);
+		// 		$("#pathways_measure").attr("colspan", 5);
+		// 		$("#opmodel").attr("colspan", 4);
+		// 		$("#lbf").attr("colspan", 4);
+		// 		$("#lbf_part").attr("colspan", 5);
+		// 		$("#activity").attr("colspan", 5);
+		// 		$("#emax").attr("colspan", 5);
+		// 		$("#tfactor").attr("colspan", 5);
+		// 		$("#mm1").attr("colspan", 5);
+		// 		$("#mm2").attr("colspan", 5);
+		// 		$("#bio").attr("colspan", 5);
+		// 		$("#cell").attr("colspan", 5);
+		// 		$("#time").attr("colspan", 5);
+		//
+		// } );
 
 	});
 </script>
@@ -1051,17 +1056,17 @@
 	</div>
 
 	<table class="display compact text-nowrap" id='structures_scrollable' style="width: 100%">
-		<thead id="headers">
+		< <thead id="headers">
 			<tr class="header-spans" rowspan="2">
 				<th><span class="glyphicon glyphicon-info-sign" title="Click on this icon in a row for more details."></span></th>
 				<th id="receptor" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Receptor</th>
 				<th style="border-left: 1px solid black; text-align:left" colspan="5" style="">
-					Tested ligand pair </th>
+					Ligands</th>
 				<th id="transducers" style="border-left: 1px solid black; text-align:left" colspan="2" style="">
 					Receptor transducers</th>
-				<th id="pathways_effector" style="border-left: 1px solid black; text-align:left; display:None" colspan="0">
-					Bias rank order:<br>(by &#916;Log(Emax/EC50)</th>
+				<th id="pathways_effector" style="border-left: 1px solid black; text-align:left" colspan="5">
+					Pathway rank order<br>(by &#916;Log(Emax/EC50)</th>
 				<th id="pathways_measure" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Bias rank order:<br>Measured effector</th>
 				<th id="opmodel" class="shade" style="border-left: 1px solid black; text-align:left" colspan="4">
@@ -1069,7 +1074,7 @@
 				<th id="lbf" class="shade" style="border-left: 1px solid black; text-align:left" colspan="4">
 					Intrinsic relative<br>activity<br>(&#916;&#916;Log(Emax/EC50))</th>
 				<th id="lbf_part" class="shade" style="border-left: 1px solid black; text-align:left" colspan="5">
-					&#916;Log(Emax/EC50)</th>
+					Ligand &#916;Log(Emax/EC50)</th>
 				<th class="shade" id="activity" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Potency (pEC50 or<br>
 					<font color="#FF0000">IC50)</font>
@@ -1089,10 +1094,10 @@
 				<th id="time" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Time resolved</th>
 				<th style="border-left: 1px solid black; text-align:left; overflow: hidden;
-                          white-space: nowrap;
-                          text-overflow: ellipsis;
-                  max-width: 250px;" colspan="2">Reference</th>
-
+                              white-space: nowrap;
+                              text-overflow: ellipsis;
+                      max-width: 250px;" colspan="2">Reference</th>
+				<!-- <th style="border-left: 1px solid black; text-align:left" colspan="15">reference</th> -->
 			</tr>
 			<tr class="table-filter-dropdown">
 				<th></th>
@@ -1102,33 +1107,33 @@
 				<th id="iuphar_filter_select">IUPHAR</th>
 				<th id="species_filter_select">Species</th>
 				<th style="display:None" id="endogenous_ligand_filter_select">Endogenous<br>Ligand</th>
-				<th id="reference_ligand_filter_select">Reference</th>
-				<th id="ligand_filter_select">Ligand tested for bias</th>
+				<th id="reference_ligand_filter_select">Reference<br>Ligand</th>
+				<th id="ligand_filter_select">Tested<br>ligand</th>
 				<th id="vendor_quantity_filter_select">#Ven<br>dors</th>
 				<th id="article_quantity_filter_select">#Arti<br>cles</th>
 				<th id="labs_quantity_filter_select">#Labs<br></th>
 				<th id="primary_filter_select">Primary</th>
 				<th id="secondary_filter_select">Secondary</th>
-				<th style="display:None" class="pathways" id="pathways_effector_p1_filter_select">P 1</th>
-				<th style="display:None" class="pathways" id="pathways_effector_p2_filter_select">P 2</th>
-				<th style="display:None" class="pathways" id="pathways_effector_p3_filter_select">P 3</th>
-				<th style="display:None" class="pathways" id="pathways_effector_p4_filter_select">P 4</th>
-				<th style="display:None" class="pathways" id="pathways_effector_p5_filter_select">P 5</th>
+				<th class="pathways" id="pathways_effector_p1_filter_select">P 1</th>
+				<th class="pathways" id="pathways_effector_p2_filter_select">P 2</th>
+				<th class="pathways" id="pathways_effector_p3_filter_select">P 3</th>
+				<th class="pathways" id="pathways_effector_p4_filter_select">P 4</th>
+				<th class="pathways" id="pathways_effector_p5_filter_select">P 5</th>
 				<th class="pathways" id="pathways_measure_p1_filter_select">P 1</th>
 				<th class="pathways" id="pathways_measure_p2_filter_select">P 2</th>
 				<th class="pathways" id="pathways_measure_p3_filter_select">P 3</th>
 				<th class="pathways" id="pathways_measure_p4_filter_select">P 4</th>
 				<th class="pathways" id="pathways_measure_p5_filter_select">P 5</th>
 
-			<th class="shade" id="opmodel_p2_p1_filter_select">P1 - P2</th>
-            <th class="shade" id="opmodel_p3_p1_filter_select">P1 - P3</th>
-            <th class="shade" id="opmodel_p4_p1_filter_select">P1 - P4</th>
-            <th class="shade" id="opmodel_p5_p1_filter_select">P1 - P5</th>
+				<th class="shade" id="opmodel_p2_p1_filter_select">P1 - P2</th>
+				<th class="shade" id="opmodel_p3_p1_filter_select">P1 - P3</th>
+				<th class="shade" id="opmodel_p4_p1_filter_select">P1 - P4</th>
+				<th class="shade" id="opmodel_p5_p1_filter_select">P1 - P5</th>
 
-            <th class="shade" id="lbf_p2_p1_filter_select">P1 - P2</th>
-            <th class="shade" id="lbf_p3_p1_filter_select">P1 - P3</th>
-            <th class="shade" id="lbf_p4_p1_filter_select">P1 - P4</th>
-            <th class="shade" id="lbf_p5_p1_filter_select">P1 - P5</th>
+				<th class="shade" id="lbf_p2_p1_filter_select">P1 - P2</th>
+				<th class="shade" id="lbf_p3_p1_filter_select">P1 - P3</th>
+				<th class="shade" id="lbf_p4_p1_filter_select">P1 - P4</th>
+				<th class="shade" id="lbf_p5_p1_filter_select">P1 - P5</th>
 
 				<th class="shade" id="lbf_p2_p1_filter_select">P 1</th>
 				<th class="shade" id="lbf_p2_p1_filter_select">P 2</th>
@@ -1185,187 +1190,204 @@
 				<th id="time_p5_filter_select">P 5</th>
 
 				<th id="authors_filter_select" style="overflow: hidden;
-                          white-space: nowrap;
-                          text-overflow: ellipsis;
-                          max-width: 100px;">Authors</th>
+                              white-space: nowrap;
+                              text-overflow: ellipsis;
+                              max-width: 100px;">Authors</th>
 				<th id="doi_reference_filter_select">DOI/ <br>Reference</th>
+				<!-- <th>references</th>
+                        <th id="time_p1_filter_select">reference P 1</th>
+    					<th id="time_p2_filter_select">reference P 2</th>
+    					<th id="time_p3_filter_select">reference P 3</th>
+    					<th id="time_p4_filter_select">reference P 4</th>
+    					<th id="time_p5_filter_select">reference P 5</th>
 
+                        <th id="time_p1_filter_select">assay P 1</th>
+    					<th id="time_p2_filter_select">assay P 2</th>
+    					<th id="time_p3_filter_select">assay P 3</th>
+    					<th id="time_p4_filter_select">assay P 4</th>
+    					<th id="time_p5_filter_select">assay P 5</th>
+
+
+                        <th id="time_p4_filter_select">lig id</th>
+    					<th id="time_p5_filter_select">lig source</th>
+                        <th id="time_p5_filter_select">lig id displayed</th>
+                        <th id="time_p5_filter_select">lig external</th> -->
 			</tr>
-		</thead>
-		<tbody id='structures_scrollable_body'>
-			{%for e in data_test%}
-			<tr>
-				<td>
-					<span style='display: none'> {{e.ligand.id}}</span>
-					<a href="#">
-						<span class="glyphicon glyphicon-info-sign" title="Click for more details" onclick="openPopup('experiment/{{e.id}}/detail', 'Detail View', window, 1500, 1000)"></span>
-					</a>
-				</td>
+			</thead>
+			<tbody id='structures_scrollable_body'>
+				{%for e in data_test%}
+				<tr>
+					<td>
+						<span style='display: none'> {{e.ligand.id}}</span>
+						<a href="#">
+							<span class="glyphicon glyphicon-info-sign" title="Click for more details" onclick="openPopup('experiment/{{e.id}}/detail', 'Detail View', window, 1500, 1000)"></span>
+						</a>
+					</td>
 
-				<!-- s.protein_conformation.protein.parent.family.parent.parent.parent.shorter() -->
-				<td title='{{e.receptor.family.parent.parent.parent.name}}' style="border-left: 1px solid black;">{{e.receptor.family.parent.parent.parent.short|default_if_none:""}}</td>
-				<td title='{{e.receptor.family.parent}}'>{{e.receptor.family.parent.short}}</td>
-				<td title='{{e.uniprot}}'>{{e.receptor.entry_short}}</td>
-				<td title='{{e.IUPHAR}}'>{{e.receptor.name.split|first}}</td>
-				<td title='{{e.receptor.species.common_name}}'>{{e.receptor.species.common_name}}</td>
-				<td style="display:None"></td>
+					<!-- s.protein_conformation.protein.parent.family.parent.parent.parent.shorter() -->
+					<td title='{{e.receptor.family.parent.parent.parent.name}}' style="border-left: 1px solid black;">{{e.receptor.family.parent.parent.parent.short|default_if_none:""}}</td>
+					<td title='{{e.receptor.family.parent}}'>{{e.receptor.family.parent.short}}</td>
+					<td title='{{e.uniprot}}'>{{e.receptor.entry_short}}</td>
+					<td title='{{e.IUPHAR}}'>{{e.receptor.name.split|first}}</td>
+					<td title='{{e.receptor.species.common_name}}'>{{e.receptor.species.common_name}}</td>
+					<td style="display:None"></td>
 
-				<!-- ligand -->
-				<td title='{{e.reference_ligand}}' style="border-left: 1px solid black;">{{e.reference_ligand}}</td>
-				<td title='{{e.ligand}}'><a href='/ligand/{{e.ligand.id}}/info' target='_blank'>{{e.ligand}}</a>
-				</td>
-				<td style="text-align:right">{{e.vendor_quantity}}</td>
-				<td style="text-align:right">{{e.article_quantity}}</td>
-				<td style="text-align:right">{{e.labs_quantity}}</td>
+					<!-- ligand -->
+					<td title='{{e.reference_ligand}}' style="border-left: 1px solid black;">{{e.reference_ligand}}</td>
+					<td title='{{e.ligand}}'><a href='/ligand/{{e.ligand.id}}/info' target='_blank'>{{e.ligand}}</a>
+					</td>
+					<td style="text-align:right">{{e.vendor_quantity}}</td>
+					<td style="text-align:right">{{e.article_quantity}}</td>
+					<td style="text-align:right">{{e.labs_quantity}}</td>
 
-				<!-- receptor trunsducers -->
-				<td style="text-align:left; border-left: 1px solid black;">{{e.primary}}</td>
-				<td style="text-align:left">{{e.secondary}}</td>
+					<!-- receptor trunsducers -->
+					<td style="text-align:left; border-left: 1px solid black;">{{e.primary}}</td>
+					<td style="text-align:left">{{e.secondary}}</td>
 
-				<!-- pathways -->
-				<td style="display:None" style="text-align:left" class="pathway">{{e.pathways_p1|default_if_none:""}}</td>
-				<td style="display:None" style="text-align:left" class="pathway">{{e.pathways_p2|default_if_none:""}}</td>
-				<td style="display:None" style="text-align:left" class="pathway">{{e.pathways_p3|default_if_none:""}}</td>
-				<td style="display:None" style="text-align:left" class="pathway">{{e.pathways_p4|default_if_none:""}}</td>
-				<td style="display:None" style="text-align:left" class="pathway">{{e.pathways_p5|default_if_none:""}}</td>
-				<!-- Assay -->
-				<td style="text-align:left" title='{{e.assay_p1}}'>{{e.assay_p1|default_if_none:"-" }}</td>
-				<td style="text-align:left" title='{{e.assay_p2}}'>{{e.assay_p2|default_if_none:"-" }}</td>
-				<td style="text-align:left" title='{{e.assay_p3}}'>{{e.assay_p3|default_if_none:"-" }}</td>
-				<td style="text-align:left" title='{{e.assay_p4}}'>{{e.assay_p4|default_if_none:"-" }}</td>
-				<td style="text-align:left" title='{{e.assay_p5}}'>{{e.assay_p5|default_if_none:"-" }}</td>
-				<!-- t factor -->
-				<td style="text-align:right" class="shade" id="opmodel_p2_p1">{{e.opmodel_p2_p1|default_if_none:""}}</td>
-				<td style="text-align:right" class="shade" id="opmodel_p3_p1">{{e.opmodel_p3_p1|default_if_none:""}}</td>
-				<td style="text-align:right" class="shade" id="opmodel_p4_p1">{{e.opmodel_p4_p1|default_if_none:""}}</td>
-				<td style="text-align:right" class="shade" id="opmodel_p5_p1">{{e.opmodel_p5_p1|default_if_none:""}}</td>
-				<!-- log bias facrtor <> id=""---->
-				<td style="text-align:right" class="shade" id="lbf_p2_p1">{{e.lbf_p2_p1|default_if_none:""}}</td>
-				<td style="text-align:right" class="shade" id="lbf_p3_p1">{{e.lbf_p3_p1|default_if_none:""}}</td>
-				<td style="text-align:right" class="shade" id="lbf_p4_p1">{{e.lbf_p4_p1|default_if_none:""}}</td>
-				<td style="text-align:right" class="shade" id="lbf_p5_p1">{{e.lbf_p5_p1|default_if_none:""}}</td>
-				<!-- lbf_part -->
-				<td style="text-align:right" title='{{e.lbf_part_p1}}'>{{e.lbf_part_p1|default_if_none:"" }}</td>
-				<td style="text-align:right" title='{{e.lbf_part_p2}}'>{{e.lbf_part_p2|default_if_none:"" }}</td>
-				<td style="text-align:right" title='{{e.lbf_part_p3}}'>{{e.lbf_part_p3|default_if_none:"" }}</td>
-				<td style="text-align:right" title='{{e.lbf_part_p4}}'>{{e.lbf_part_p4|default_if_none:"" }}</td>
-				<td style="text-align:right" title='{{e.lbf_part_p5}}'>{{e.lbf_part_p5|default_if_none:"" }}</td>
+					<!-- pathways -->
+					<td style="display:None" style="text-align:left" class="pathway">{{e.pathways_p1|default_if_none:""}}</td>
+					<td style="display:None" style="text-align:left" class="pathway">{{e.pathways_p2|default_if_none:""}}</td>
+					<td style="display:None" style="text-align:left" class="pathway">{{e.pathways_p3|default_if_none:""}}</td>
+					<td style="display:None" style="text-align:left" class="pathway">{{e.pathways_p4|default_if_none:""}}</td>
+					<td style="display:None" style="text-align:left" class="pathway">{{e.pathways_p5|default_if_none:""}}</td>
+					<!-- Assay -->
+					<td style="text-align:left" title='{{e.assay_p1}}'>{{e.assay_p1|default_if_none:"-" }}</td>
+					<td style="text-align:left" title='{{e.assay_p2}}'>{{e.assay_p2|default_if_none:"-" }}</td>
+					<td style="text-align:left" title='{{e.assay_p3}}'>{{e.assay_p3|default_if_none:"-" }}</td>
+					<td style="text-align:left" title='{{e.assay_p4}}'>{{e.assay_p4|default_if_none:"-" }}</td>
+					<td style="text-align:left" title='{{e.assay_p5}}'>{{e.assay_p5|default_if_none:"-" }}</td>
+					<!-- t factor -->
+					<td style="text-align:right" class="shade" id="opmodel_p2_p1">{{e.opmodel_p2_p1|default_if_none:""}}</td>
+					<td style="text-align:right" class="shade" id="opmodel_p3_p1">{{e.opmodel_p3_p1|default_if_none:""}}</td>
+					<td style="text-align:right" class="shade" id="opmodel_p4_p1">{{e.opmodel_p4_p1|default_if_none:""}}</td>
+					<td style="text-align:right" class="shade" id="opmodel_p5_p1">{{e.opmodel_p5_p1|default_if_none:""}}</td>
+					<!-- log bias facrtor <> id=""---->
+					<td style="text-align:right" class="shade" id="lbf_p2_p1">{{e.lbf_p2_p1|default_if_none:""}}</td>
+					<td style="text-align:right" class="shade" id="lbf_p3_p1">{{e.lbf_p3_p1|default_if_none:""}}</td>
+					<td style="text-align:right" class="shade" id="lbf_p4_p1">{{e.lbf_p4_p1|default_if_none:""}}</td>
+					<td style="text-align:right" class="shade" id="lbf_p5_p1">{{e.lbf_p5_p1|default_if_none:""}}</td>
+					<!-- lbf_part -->
+					<td style="text-align:right" title='{{e.lbf_part_p1}}'>{{e.lbf_part_p1|default_if_none:"" }}</td>
+					<td style="text-align:right" title='{{e.lbf_part_p2}}'>{{e.lbf_part_p2|default_if_none:"" }}</td>
+					<td style="text-align:right" title='{{e.lbf_part_p3}}'>{{e.lbf_part_p3|default_if_none:"" }}</td>
+					<td style="text-align:right" title='{{e.lbf_part_p4}}'>{{e.lbf_part_p4|default_if_none:"" }}</td>
+					<td style="text-align:right" title='{{e.lbf_part_p5}}'>{{e.lbf_part_p5|default_if_none:"" }}</td>
 
-				<!-- potency -->
-				{%if e.activity_p1 %}
-				{%if e.standard_type_p1 == 'EC50' %}
-				<td class="shade" style="text-align:right">{{e.activity_p1|default_if_none:""}} </td>
-				{%else%}
-				<td class="shade" style="text-align:right">
-					<font color="#FF0000">{{e.activity_p1|default_if_none:""}} </font>
-				</td>
-				{%endif%}
-				{%else%}
-				<td class="shade">{{e.quality_activity_p1|default_if_none:""}}</td>
-				{%endif%}
+					<!-- potency -->
+					{%if e.activity_p1 %}
+					{%if e.standard_type_p1 == 'EC50' %}
+					<td class="shade" style="text-align:right">{{e.activity_p1|default_if_none:""|floatformat:1}} </td>
+					{%else%}
+					<td class="shade" style="text-align:right">
+						<font color="#FF0000">{{e.activity_p1|default_if_none:""|floatformat:1}} </font>
+					</td>
+					{%endif%}
+					{%else%}
+					<td class="shade">{{e.quality_activity_p1|default_if_none:""}}</td>
+					{%endif%}
 
-				{%if e.activity_p2 %}
-				{%if e.standard_type_p2 == 'EC50' %}
-				<td class="shade" style="text-align:right">{{e.activity_p2|default_if_none:""}} </td>
-				{%else%}
-				<td class="shade" style="text-align:right">
-					<font color="#FF0000">{{e.activity_p2|default_if_none:""}} </font>
-				</td>
-				{%endif%}
-				{%else%}
-				<td class="shade">{{e.quality_activity_p2|default_if_none:""}}</td>
-				{%endif%}
+					{%if e.activity_p2 %}
+					{%if e.standard_type_p2 == 'EC50' %}
+					<td class="shade" style="text-align:right">{{e.activity_p2|default_if_none:""|floatformat:1}} </td>
+					{%else%}
+					<td class="shade" style="text-align:right">
+						<font color="#FF0000">{{e.activity_p2|default_if_none:""|floatformat:1}} </font>
+					</td>
+					{%endif%}
+					{%else%}
+					<td class="shade">{{e.quality_activity_p2|default_if_none:""}}</td>
+					{%endif%}
 
-				{%if e.activity_p3 %}
-				{%if e.standard_type_p3 == 'EC50' %}
-				<td class="shade" style="text-align:right">{{e.activity_p3|default_if_none:""}} </td>
-				{%else%}
-				<td class="shade" style="text-align:right">
-					<font color="#FF0000">{{e.activity_p3|default_if_none:""}} </font>
-				</td>
-				{%endif%}
-				{%else%}
-				<td class="shade">{{e.quality_activity_p3|default_if_none:""}}</td>
-				{%endif%}
+					{%if e.activity_p3 %}
+					{%if e.standard_type_p3 == 'EC50' %}
+					<td class="shade" style="text-align:right">{{e.activity_p3|default_if_none:""|floatformat:1}} </td>
+					{%else%}
+					<td class="shade" style="text-align:right">
+						<font color="#FF0000">{{e.activity_p3|default_if_none:""|floatformat:1}} </font>
+					</td>
+					{%endif%}
+					{%else%}
+					<td class="shade">{{e.quality_activity_p3|default_if_none:""}}</td>
+					{%endif%}
 
-				{%if e.activity_p4 %}
-				{%if e.standard_type_p4 == 'EC50' %}
-				<td class="shade" style="text-align:right">{{e.activity_p4|default_if_none:""}} </td>
-				{%else%}
-				<td class="shade" style="text-align:right">
-					<font color="#FF0000">{{e.activity_p4|default_if_none:""}} </font>
-				</td>
-				{%endif%}
-				{%else%}
-				<td class="shade">{{e.quality_activity_p4|default_if_none:""}}</td>
-				{%endif%}
+					{%if e.activity_p4 %}
+					{%if e.standard_type_p4 == 'EC50' %}
+					<td class="shade" style="text-align:right">{{e.activity_p4|default_if_none:""|floatformat:1}} </td>
+					{%else%}
+					<td class="shade" style="text-align:right">
+						<font color="#FF0000">{{e.activity_p4|default_if_none:""|floatformat:1}} </font>
+					</td>
+					{%endif%}
+					{%else%}
+					<td class="shade">{{e.quality_activity_p4|default_if_none:""}}</td>
+					{%endif%}
 
-				{%if e.activity_p5 %}
-				{%if e.standard_type_p5 == 'EC50' %}
-				<td class="shade" style="text-align:right">{{e.activity_p5|default_if_none:""}} </td>
-				{%else%}
-				<td class="shade" style="text-align:right">
-					<font color="#FF0000">{{e.activity_p5|default_if_none:""}} </font>
-				</td>
-				{%endif%}
-				{%else%}
-				<td class="shade">{{e.quality_activity_p5|default_if_none:""}}</td>
-				{%endif%}
+					{%if e.activity_p5 %}
+					{%if e.standard_type_p5 == 'EC50' %}
+					<td class="shade" style="text-align:right">{{e.activity_p5|default_if_none:""|floatformat:1}} </td>
+					{%else%}
+					<td class="shade" style="text-align:right">
+						<font color="#FF0000">{{e.activity_p5|default_if_none:""|floatformat:1}} </font>
+					</td>
+					{%endif%}
+					{%else%}
+					<td class="shade">{{e.quality_activity_p5|default_if_none:""}}</td>
+					{%endif%}
 
-				<!-- E max -->
-				<td style="text-align:right" class="shade">{{e.emax_p1|default_if_none:""|floatformat:0}}</td>
-				<td style="text-align:right" class="shade">{{e.emax_p2|default_if_none:""|floatformat:0}}</td>
-				<td style="text-align:right" class="shade">{{e.emax_p3|default_if_none:""|floatformat:0}}</td>
-				<td style="text-align:right" class="shade">{{e.emax_p4|default_if_none:""|floatformat:0}}</td>
-				<td style="text-align:right" class="shade">{{e.emax_p5|default_if_none:""|floatformat:0}}</td>
+					<!-- E max -->
+					<td style="text-align:right" class="shade">{{e.emax_p1|default_if_none:""|floatformat:0}}</td>
+					<td style="text-align:right" class="shade">{{e.emax_p2|default_if_none:""|floatformat:0}}</td>
+					<td style="text-align:right" class="shade">{{e.emax_p3|default_if_none:""|floatformat:0}}</td>
+					<td style="text-align:right" class="shade">{{e.emax_p4|default_if_none:""|floatformat:0}}</td>
+					<td style="text-align:right" class="shade">{{e.emax_p5|default_if_none:""|floatformat:0}}</td>
 
-				<!-- T coefficient -->
-				<td style="text-align:right" class="shade">{{e.tfactor_p1|default_if_none:""}}</td>
-				<td style="text-align:right" class="shade">{{e.tfactor_p2|default_if_none:""}}</td>
-				<td style="text-align:right" class="shade">{{e.tfactor_p3|default_if_none:""}}</td>
-				<td style="text-align:right" class="shade">{{e.tfactor_p4|default_if_none:""}}</td>
-				<td style="text-align:right" class="shade">{{e.tfactor_p5|default_if_none:""}}</td>
-				<!-- Molecule 1 -->
-				<td class="shade">{{e.molecule1_p1|default_if_none:""}}</td>
-				<td class="shade">{{e.molecule1_p2|default_if_none:""}}</td>
-				<td class="shade">{{e.molecule1_p3|default_if_none:""}}</td>
-				<td class="shade">{{e.molecule1_p4|default_if_none:""}}</td>
-				<td class="shade">{{e.molecule1_p5|default_if_none:""}}</td>
-				<!-- Molecule 2 -->
-				<td class="shade">{{e.molecule2_p1|default_if_none:""}}</td>
-				<td class="shade">{{e.molecule2_p2|default_if_none:""}}</td>
-				<td class="shade">{{e.molecule2_p3|default_if_none:""}}</td>
-				<td class="shade">{{e.molecule2_p4|default_if_none:""}}</td>
-				<td class="shade">{{e.molecule2_p5|default_if_none:""}}</td>
-				<!-- Bioprocess -->
-				<td title='{{e.measured_biological_process_p1}}'>{{e.measured_biological_process_p1|default_if_none:"" }}</td>
-				<td title='{{e.measured_biological_process_p2}}'>{{e.measured_biological_process_p2|default_if_none:"" }}</td>
-				<td title='{{e.measured_biological_process_p3}}'>{{e.measured_biological_process_p3|default_if_none:"" }}</td>
-				<td title='{{e.measured_biological_process_p4}}'>{{e.measured_biological_process_p4|default_if_none:"" }}</td>
-				<td title='{{e.measured_biological_process_p5}}'>{{e.measured_biological_process_p5|default_if_none:"" }}</td>
-				<!-- Cell line -->
-				<td title='{{e.cell_p1}}'>{{e.cell_p1|default_if_none:"" }}</td>
-				<td title='{{e.cell_p2}}'>{{e.cell_p2|default_if_none:"" }}</td>
-				<td title='{{e.cell_p3}}'>{{e.cell_p3|default_if_none:"" }}</td>
-				<td title='{{e.cell_p4}}'>{{e.cell_p4|default_if_none:"" }}</td>
-				<td title='{{e.cell_p5}}'>{{e.cell_p5|default_if_none:"" }}</td>
+					<!-- T coefficient -->
+					<td style="text-align:right" class="shade">{{e.tfactor_p1|default_if_none:""}}</td>
+					<td style="text-align:right" class="shade">{{e.tfactor_p2|default_if_none:""}}</td>
+					<td style="text-align:right" class="shade">{{e.tfactor_p3|default_if_none:""}}</td>
+					<td style="text-align:right" class="shade">{{e.tfactor_p4|default_if_none:""}}</td>
+					<td style="text-align:right" class="shade">{{e.tfactor_p5|default_if_none:""}}</td>
+					<!-- Molecule 1 -->
+					<td class="shade">{{e.molecule1_p1|default_if_none:""}}</td>
+					<td class="shade">{{e.molecule1_p2|default_if_none:""}}</td>
+					<td class="shade">{{e.molecule1_p3|default_if_none:""}}</td>
+					<td class="shade">{{e.molecule1_p4|default_if_none:""}}</td>
+					<td class="shade">{{e.molecule1_p5|default_if_none:""}}</td>
+					<!-- Molecule 2 -->
+					<td class="shade">{{e.molecule2_p1|default_if_none:""}}</td>
+					<td class="shade">{{e.molecule2_p2|default_if_none:""}}</td>
+					<td class="shade">{{e.molecule2_p3|default_if_none:""}}</td>
+					<td class="shade">{{e.molecule2_p4|default_if_none:""}}</td>
+					<td class="shade">{{e.molecule2_p5|default_if_none:""}}</td>
+					<!-- Bioprocess -->
+					<td title='{{e.measured_biological_process_p1}}'>{{e.measured_biological_process_p1|default_if_none:"" }}</td>
+					<td title='{{e.measured_biological_process_p2}}'>{{e.measured_biological_process_p2|default_if_none:"" }}</td>
+					<td title='{{e.measured_biological_process_p3}}'>{{e.measured_biological_process_p3|default_if_none:"" }}</td>
+					<td title='{{e.measured_biological_process_p4}}'>{{e.measured_biological_process_p4|default_if_none:"" }}</td>
+					<td title='{{e.measured_biological_process_p5}}'>{{e.measured_biological_process_p5|default_if_none:"" }}</td>
+					<!-- Cell line -->
+					<td title='{{e.cell_p1}}'>{{e.cell_p1|default_if_none:"" }}</td>
+					<td title='{{e.cell_p2}}'>{{e.cell_p2|default_if_none:"" }}</td>
+					<td title='{{e.cell_p3}}'>{{e.cell_p3|default_if_none:"" }}</td>
+					<td title='{{e.cell_p4}}'>{{e.cell_p4|default_if_none:"" }}</td>
+					<td title='{{e.cell_p5}}'>{{e.cell_p5|default_if_none:"" }}</td>
 
-				<!-- Time resolved -->
-				<td title='{{e.time_p1}}'>{{e.time_p1|default_if_none:"" }}</td>
-				<td title='{{e.time_p2}}'>{{e.time_p2|default_if_none:"" }}</td>
-				<td title='{{e.time_p3}}'>{{e.time_p3|default_if_none:"" }}</td>
-				<td title='{{e.time_p4}}'>{{e.time_p4|default_if_none:"" }}</td>
-				<td title='{{e.time_p5}}'>{{e.time_p5|default_if_none:"" }}</td>
+					<!-- Time resolved -->
+					<td title='{{e.time_p1}}'>{{e.time_p1|default_if_none:"" }}</td>
+					<td title='{{e.time_p2}}'>{{e.time_p2|default_if_none:"" }}</td>
+					<td title='{{e.time_p3}}'>{{e.time_p3|default_if_none:"" }}</td>
+					<td title='{{e.time_p4}}'>{{e.time_p4|default_if_none:"" }}</td>
+					<td title='{{e.time_p5}}'>{{e.time_p5|default_if_none:"" }}</td>
 
-				<!-- Reference -->
-				<td class="name" style="border-left: 1px solid black;">
-					{{e.publication.authors}}</td>
-				<td class="name">
-					<a href='{{e.publication.web_link}}' target='blank'>
-						{{e.publication.web_link.index}}</a></td>
-			</tr>
-			{%endfor%}
-		</tbody>
+					<!-- Reference -->
+					<td class="name" style="border-left: 1px solid black;">
+						{{e.publication.authors}}</td>
+					<td class="name">
+						<a href='{{e.publication.web_link}}' target='blank'>
+							{{e.publication.web_link.index}}</a></td>
+				</tr>
+				{%endfor%}
+			</tbody>
 
 
 	</table>

@@ -762,10 +762,10 @@ class Command(BaseBuild):
                 elif x.transduction and x.transduction == 'secondary':
                     secondary.add(x.g_protein.name)
             for i in primary:
-                temp += str(i) + str(', ')
+                temp += str(i.replace(' family', '')) + str(', ')
 
             for i in secondary:
-                temp1 += str(i) + str(', ')
+                temp1 += str(i.replace('family', '')) + str(', ')
             return temp, temp1
         except:
             self.logger.info('receptor not found error')
