@@ -5,7 +5,7 @@ import json
 from copy import deepcopy
 from collections import defaultdict, OrderedDict
 
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.views.generic import TemplateView, DetailView, ListView
 from django.db.models import Count, Subquery, OuterRef
@@ -131,6 +131,8 @@ def TargetDetailsCompact(request, **kwargs):
         }
     else:
         simple_selection = request.session.get('selection', False)
+        if simple_selection == False or not simple_selection.targets :
+            return redirect("ligand_browser")
         selection = Selection()
         if simple_selection:
             selection.importer(simple_selection)
@@ -240,6 +242,8 @@ def TargetDetails(request, **kwargs):
         }
     else:
         simple_selection = request.session.get('selection', False)
+        if simple_selection == False or not simple_selection.targets :
+            return redirect("ligand_browser")
         selection = Selection()
         if simple_selection:
             selection.importer(simple_selection)
