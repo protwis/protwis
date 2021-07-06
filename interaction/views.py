@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
 from django import forms
@@ -1028,10 +1028,13 @@ def download(request):
                        '/interaction/' + pdbname + '_' + ligand + '.pdb', 'r').read()
         response = HttpResponse(pdbdata, content_type='text/plain')
     else:
-
-        pair = StructureLigandInteraction.objects.filter(structure__pdb_code__index=pdbname).filter(
-            Q(ligand__properities__inchikey=ligand) | Q(ligand__name=ligand)).exclude(pdb_file__isnull=True).get()
-        response = HttpResponse(pair.pdb_file.pdb, content_type='text/plain')
+        # here's the needed fix
+        try:
+            pair = StructureLigandInteraction.objects.filter(structure__pdb_code__index=pdbname).filter(
+                Q(ligand__properities__inchikey=ligand) | Q(ligand__name=ligand)).exclude(pdb_file__isnull=True).get()
+            response = HttpResponse(pair.pdb_file.pdb, content_type='text/plain')
+        except:
+            return redirect("/interaction/")
     return response
 
 def excel(request, slug, **response_kwargs):
