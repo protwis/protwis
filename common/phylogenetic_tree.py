@@ -26,6 +26,7 @@ class PhylogeneticTreeNode(object):
             'mutations': 0,
             'ligands': 0,
             'ligand_bias': 0,
+            'pathway_pref': 0,
             }
 
     def get_value(self, param):
@@ -198,8 +199,10 @@ class PhylogeneticTreeGenerator(object):
                         'crystals': [],
                         'mutations': [],
                         'ligands': {},
-                        'ligand_bias': {}
+                        'ligand_bias': {},
+                        'pathway_pref': {}
                         }
+
         self.get_aux_data()
 
         self.d3_options = {
@@ -329,6 +332,9 @@ class PhylogeneticTreeGenerator(object):
                         for key in self.aux_data['ligand_bias']:
                             if protein.id in self.aux_data['ligand_bias'][key]:
                                 tmp_node.increment_value('ligand_bias', key)
+                        for key in self.aux_data['pathway_pref']:
+                            if protein.id in self.aux_data['pathway_pref'][key]:
+                                tmp_node.increment_value('pathway_pref', key)
                         coverage.add_data(protein.family.slug, tmp_node)
                 return coverage
             children = OrderedDict()

@@ -855,7 +855,6 @@ class LigandStatistics(TemplateView):
 
         context = super().get_context_data(**kwargs)
         # assays = AssayExperiment.objects.all().prefetch_related('protein__family__parent__parent__parent', 'protein__family')
-
         lig_count_dict = {}
         if self.page == 'ligands':
             assays_lig = list(AssayExperiment.objects.all().values(
@@ -963,7 +962,6 @@ class LigandStatistics(TemplateView):
                 whole_class_a['children'].remove(item)
                 break
         context['class_a'] = json.dumps(whole_class_a)
-        print(context['class_a'])
         class_b1_data = tree.get_tree_data(
             ProteinFamily.objects.get(name__startswith='Class B1 (Secretin)'))
         context['class_b1_options'] = deepcopy(tree.d3_options)
