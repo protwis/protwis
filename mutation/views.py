@@ -112,7 +112,8 @@ def render_mutations(request, protein = None, family = None, download = None, re
 
     # get the user selection from session
     simple_selection = request.session.get('selection', False)
-
+    if simple_selection == False or not simple_selection.targets :
+        return redirect("/mutations/")
      # local protein list
     proteins = []
     alignment_proteins = []
