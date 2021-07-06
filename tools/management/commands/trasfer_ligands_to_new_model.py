@@ -140,9 +140,9 @@ class Command(BaseCommand):
         for i in ligands.items():
             for ligand_data in i[1]:
                 try:
-                    type = ligand_data['type'].name
+                    ltype = ligand_data['type'].name
                 except:
-                    type = 5
+                    ltype = 5
                 ligand_v2 = Ligand_v2(
                     pubchem_id=ligand_data['name'],
                     default_name=ligand_data['name'],
@@ -151,7 +151,7 @@ class Command(BaseCommand):
                     pdb=ligand_data['pdbe'],
                     old_ligand_id=ligand_data['old_ligand_id'],
                     sequence=ligand_data['sequence'],
-                    ligand_type=type
+                    ligand_type=ltype
                 )
                 ligand_v2.save()
                 ligand_v2_physchem = Ligand_v2_Physchem(

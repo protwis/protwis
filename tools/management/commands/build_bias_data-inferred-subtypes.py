@@ -210,8 +210,7 @@ class Command(BaseBuild):
             if j['children'][0].quantitive_activity:
                 try:
                     temp_dict['quantitive_activity'] = float(j['children'][0].quantitive_activity)
-                except:
-                    import pdb; pdb.set_trace()
+                except:                    
                     temp_dict['quantitive_activity'] = j['children'][0].quantitive_activity
 
                 temp_dict['quantitive_activity_initial'] = j['children'][0].quantitive_activity
@@ -575,8 +574,9 @@ class Command(BaseBuild):
                 i['quantitive_activity'] == 12500 * (10**(-9))
             return i['quantitive_activity']
         except:
-            return i['quantitive_activity']
             self.logger.info('get_rid_of_gprot')
+            return i['quantitive_activity']
+
 
     def lbf_calculate_bias(self, i, most_potent, most_reference):
         return_message = None

@@ -205,8 +205,7 @@ class Command(BaseBuild):
     def analyse_rows(self):
         print('---Starting---')
         target_list = Command.get_gpcrs()
-        target_list_list = list(target_list)
-        start = time.time()
+        target_list_list = list(target_list)        
         chembl_assays = None
         print('---process_chembl---')
         # range should be set to number of total objects/20 (API batch size)
@@ -293,7 +292,6 @@ class Command(BaseBuild):
                     potency = potency * 10**(-3)
             return potency, p_type
         else:
-            self.logger.info("potency convertion e rror")
             return None, None
 
     @staticmethod
