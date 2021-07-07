@@ -1,10 +1,9 @@
 from django import template
 from django.conf import settings
 
-
 register = template.Library()
 
-def mainmenu():
+def mainmenu(domain):
     return {
         'site_title': settings.SITE_TITLE,
         'menu_template': 'home/mainmenu_' + settings.SITE_NAME + '.html',
