@@ -32,7 +32,7 @@ urlpatterns = [
 
     url(r'^biased/experiment/(?P<pk>[-\w]+)/detail$', views.ExperimentEntryView.as_view()),
     url(r'^biasedsubtypes/experiment/(?P<pk>[-\w]+)/detail$', views.ExperimentEntryView.as_view()),
-    url(r'^biasedpredict/experiment/(?P<pk>[-\w]+)/detail$', views.ExperimentEntryView.as_view()),
+    url(r'^biasedpredicted/experiment/(?P<pk>[-\w]+)/detail$', views.ExperimentEntryView.as_view()),
 
     url(r'^vendors$', views.test_link, name='test'),
     url(r'^browservendors$', views.BiasVendorBrowser.as_view(), name='browservendor'),
