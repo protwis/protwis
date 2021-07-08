@@ -26,7 +26,8 @@ function renderTree(data) {
           dataClasses[i].add(treeAnnotations[key][i])
         dataClasses[i] = Array.from(dataClasses[i]).sort();
     }
-    dataClasses[7] = ["agonist", "partial-agonist", "pam", "antagonist", "inverse-agonist", "nam"]
+    //dataClasses[7] = ["agonist", "partial-agonist", "pam", "allosteric-agonist", "antagonist", "inverse-agonist", "nam", "allosteric-antagonist", "cofactor", "apo-no-ligand"]
+    dataClasses[7] = ["agonist", "partial-agonist", "pam", "allosteric-agonist", "antagonist", "inverse-agonist", "nam", "allosteric-antagonist", "cofactor"]
     dataClasses[8] = ['Gi/Go family', 'Gq/G11 family', 'Gs family', 'G12/G13 family']
     dataClasses[9] = dataClasses[8]
     dataClasses[10] = dataClasses[8]
@@ -61,7 +62,7 @@ function renderTree(data) {
           }
         }
     }
-    colorClasses[7] = ["#0F0", "#0F0", "#0F0", "#F00", "#F00", "#F00"]
+    colorClasses[7] = ["#0F0", "#0F0", "#0F0", "#0F0", "#F00", "#F00", "#F00", "#F00", "#F80", "#888"]
     colorClasses[9] = colorClasses[8]
     colorClasses[10] = colorClasses[8]
     colorClasses[11] = ["#F00","#F80","#0B0"]
@@ -472,13 +473,11 @@ function toggleNames(event){
 }
 
 var displayData = 0
+//var outerLegendItems = new Set()
 function toggleDataOuter(event){
   var dataName = event.target.innerText
 
   displayData = menuItem(dataName)
-
-  // Refresh legend
-  refreshOuterLegend()
 
   // update active label on menu items
   event.target.parentNode.parentElement.querySelectorAll( ".active" ).forEach( e =>
@@ -488,9 +487,12 @@ function toggleDataOuter(event){
   // Refresh layout with updated selections
   d3.layout.phylotree.trigger_refresh(phylotree);
 
-  // Refresh twice to ensure correct leaf coloring
+  // Refresh twice to ensure correct branch coloring
   if (doBranchColoring)
     d3.layout.phylotree.trigger_refresh(phylotree);
+
+  // Refresh legend
+  refreshOuterLegend()
 
   resizeTree()
 }
@@ -565,7 +567,7 @@ function refreshLegend(div_class, selectData){
       .attr("height", 10)
       .style("stroke", "#000")
       .style("stroke-width", function (d) {
-          return opacityArray[dataClasses[selectData].indexOf(d)]+"px"
+          return opacityArray[dataClasses[selectData].indexOf(d)] + "px"
       })
       .style("fill-opacity", function (d) {
           return opacityArray[dataClasses[selectData].indexOf(d)]
@@ -587,12 +589,11 @@ function refreshLegend(div_class, selectData){
 }
 
 var displayDataInner = 3
+//var innerLegendItems = new Set()
 function toggleDataInner(event){
   var dataName = event.target.innerText
   displayDataInner = menuItem(dataName)
 
-  // Refresh legend
-  refreshInnerLegend()
 
   // update active label on menu items
   event.target.parentNode.parentElement.querySelectorAll( ".active" ).forEach( e =>
@@ -602,9 +603,12 @@ function toggleDataInner(event){
   // Refresh layout with updated selections
   d3.layout.phylotree.trigger_refresh(phylotree);
 
-  // Refresh twice to ensure correct leaf coloring
+  // Refresh twice to ensure correct branch coloring
   if (doBranchColoring)
     d3.layout.phylotree.trigger_refresh(phylotree);
+
+  // Refresh legend
+  refreshInnerLegend()
 
   resizeTree()
 }
@@ -743,7 +747,7 @@ function nodeStyler(element, node){
                 treeAnnotations[node.name][displayDataInner] = [treeAnnotations[node.name][displayDataInner]]
 
               for (var i = 0; i < treeAnnotations[node.name][displayDataInner].length; i++) {
-                if (treeAnnotations[node.name][displayDataInner][i] === ""){
+                if (treeAnnotations[node.name][displayDataInner][i] === "" || treeAnnotations[node.name][displayDataInner][i] === "apo-no-ligand"){
                   continue;
                 }
                 var currentType = typeClasses[displayDataInner]
@@ -927,7 +931,7 @@ function nodeStyler(element, node){
                 treeAnnotations[node.name][displayData] = [treeAnnotations[node.name][displayData]]
 
               for (var i = 0; i < treeAnnotations[node.name][displayData].length; i++) {
-                if (treeAnnotations[node.name][displayData][i] === ""){
+                if (treeAnnotations[node.name][displayData][i] === "" || treeAnnotations[node.name][displayDataInner][i] === "apo-no-ligand"){
                   continue;
                 }
 
