@@ -8,7 +8,7 @@ var hidePDBs = false;
 var labelReorder = false;
 var treeAnnotations = [];
 var couplingAnnotations = [];
-var typeClasses = ["Receptor activation state", "", "", "Receptor family", "Ligand type", "GPCR class", "Structure determination method", "Ligand function", "G-protein coupling", "Primary G proteins", "Secondary G proteins", "TM6 opening", "Degree active"]
+var typeClasses = ["Receptor activation state", "", "", "Receptor family", "Ligand type", "GPCR class", "Structure determination method", "Ligand function", "G-protein coupling", "Primary G proteins", "Secondary G proteins", "TM6 opening", "Degree active", "Complexed effector protein"]
 var dataClasses, colorClasses;
 function renderTree(data) {
     dataClasses = [["active", "inactive", "intermediate", "other"],0,0];
