@@ -336,7 +336,6 @@
       plotContent.setAttribute('transform', 'translate('+ xTranslate + ',' + yTranslate + ')');
 
       mergedSvg.appendChild(plotContent);
-      console.log(document.getElementById('merged').getElementsByTagName('svg')[0]);
     }
   }
 </script>
@@ -360,8 +359,19 @@
     // Calling function
     DrawMultiLineChart(data[propt]['Data'], 'divChartTrends', keys[propt], divID, link_name, reference, link_destination, ylabel);
     count = count + 1;
+    gNodes = d3.select('#'+divID).selectAll('.x.axis').selectAll('.tick');
+    gNodes.each(function(d) {
+      old = d3.select(this)[0][0].innerHTML;
+      old = old.replace("G12/13", 'G</tspan><tspan baseline-shift = "sub">12/13</tspan><tspan>');
+      old = old.replace("Gi/o", 'G</tspan><tspan baseline-shift = "sub">i/o</tspan><tspan>');
+      old = old.replace("Gq/11", 'G</tspan><tspan baseline-shift = "sub">q/11</tspan><tspan>');
+      old = old.replace("Gs", 'G</tspan><tspan baseline-shift = "sub">s</tspan><tspan>');
+      node = d3.select(this)[0][0];
+      node.innerHTML = old;
+    });
 
   };
+  // var x_labels = d3.selectAll('.x.axis').selectAll('.tick text');
 
 </script>
 
@@ -370,6 +380,12 @@
 var realData = {{ scatter | safe }};
 var colors = {{ colors | safe }};
 var legend = {{ scatter_legend | safe }};
+var conversion = {'G12/13': 'G<sub>12/13</sub>',
+                  'Gi/o': 'G<sub>i/o</sub>',
+                  'Gq/11': 'G<sub>q/11</sub>',
+                  'Gs': 'G<sub>s</sub>',
+                  'Arrestin': 'Arrestin',
+                  'ERK': 'ERK'};
 var label =  "{{ label }}";
 if(label == 'emax'){
   ylabel = "ΔΔLog(Emax/EC50)"
@@ -381,7 +397,7 @@ if(label == 'emax'){
 var count = 1;
   for(var path in realData){
     var name = 'Pathway' + parseInt(count);
-    DotScatter(realData[path], 'boxplotChart', name, colors, legend[path], path, ylabel, qualitative);
+    DotScatter(realData[path], 'boxplotChart', name, colors, legend[path], conversion[path], ylabel, qualitative);
     count = count + 1;
   };
 

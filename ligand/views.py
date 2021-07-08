@@ -608,6 +608,10 @@ class BiasedRankOrder(TemplateView):
 
         rec_name = Protein.objects.get(id=receptor)
 
+        tooltip_dict =  {'G12/13': 'G<sub>12/13</sub>',
+                         'Gi/o': 'G<sub>i/o</sub>',
+                         'Gq/11': 'G<sub>q/11</sub>',
+                         'Gs': 'G<sub>s</sub>'}
         upgrade_value = ["High activity", "High activity (Potency and Emax)", "Full agonism"]
         downgrade_value = ["Low activity", "No activity", "Inverse agonism/antagonism"]
         exclude_list = ["Agonism","Partial agonism","Medium activity"] #full agonism should be removed
@@ -693,7 +697,10 @@ class BiasedRankOrder(TemplateView):
                 DD = [0, double_delta]
 
             if result[11] == 1:
-                jitterDict[jitterAuthors][lig_name]['2nd_Pathway'] = result[0]
+                try:
+                    jitterDict[jitterAuthors][lig_name]['2nd_Pathway'] = tooltip_dict[result[0]]
+                except KeyError:
+                    jitterDict[jitterAuthors][lig_name]['2nd_Pathway'] = result[0]
                 jitterDict[jitterAuthors][lig_name]['deltadelta'] = DD
 
             if result[11] == 0:
