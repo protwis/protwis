@@ -143,6 +143,9 @@ def TargetDetailsCompact(request, **kwargs):
             context = {
                 'target': ', '.join([x.item.entry_name for x in selection.targets])
             }
+    # if queryset is empty redirect to ligand browser
+    if not ps:
+        return redirect("ligand_browser")
 
     ps = ps.prefetch_related(
         'protein', 'ligand__properities__web_links__web_resource', 'ligand__properities__vendors__vendor')
@@ -254,6 +257,10 @@ def TargetDetails(request, **kwargs):
             context = {
                 'target': ', '.join([x.item.entry_name for x in selection.targets])
             }
+    # if queryset is empty redirect to ligand browser
+    if not ps:
+        return redirect("ligand_browser")
+    
     ps = ps.values('standard_type',
                    'standard_relation',
                    'standard_value',
