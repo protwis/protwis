@@ -260,7 +260,7 @@ def TargetDetails(request, **kwargs):
     # if queryset is empty redirect to ligand browser
     if not ps:
         return redirect("ligand_browser")
-    
+
     ps = ps.values('standard_type',
                    'standard_relation',
                    'standard_value',
