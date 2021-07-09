@@ -12,7 +12,7 @@ function DrawMultiLineChart(Data, BaseDiv, Keys, ID, linkTitle, reference, linkP
 
     var linkText = document.createTextNode(linkTitle);
         a.appendChild(linkText);
-        a.title = linkTitle;
+        a.innerHTML = linkTitle;
         a.href = linkPath;
         title.appendChild(a);
         parentDiv.appendChild(title);

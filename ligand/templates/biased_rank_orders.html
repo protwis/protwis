@@ -96,11 +96,11 @@
       <a class="nav-link active" data-toggle="tab" href="#lines">Line charts</a>
     </li>
     <li class="nav-item">
-      <a class="nav-link" data-toggle="tab" href="#spiders">Radar plots</a>
+      <a class="nav-link" data-toggle="tab" href="#spiders_pub">Radar plots (publications)</a>
     </li>
-    <!-- <li class="nav-item">
-      <a class="nav-link active" data-toggle="tab" href="#boxplot">Test chart</a>
-    </li> -->
+    <li class="nav-item">
+      <a class="nav-link active" data-toggle="tab" href="#spiders_lig">Radar plots (ligands)</a>
+    </li>
   </ul>
 
   <!-- Tab panes -->
@@ -113,16 +113,20 @@
       <div id='divChartTrends'></div>
     </div>
 
-    <div class="tab-pane container fade" id="spiders">
+<!-- spiders for publications -->
+    <div class="tab-pane container fade" id="spiders_pub">
       <br />
       <div class="row">
 
         <div class="form-group">
           <input type="text" class="form-control" id="RadarPublicationsList" list="select-pub" placeholder="Select Publication" width="60%"/>
-          <button type="Submit" class="btn btn-primary" onclick="ShowPlot('pub')">Show Plot</button>
 
-          <input type="text" class="form-control" id="RadarLigandList" list="select-ligand" placeholder="Select Ligand" width="60%"/>
-          <button type="Submit" class="btn btn-primary" onclick="ShowPlot('ligand')">Show Plot</button>
+          <div class="btn-group" role="group">
+              <button id="red_pub" class="btn btn-primary active">Red</button>
+              <button id="grey_pub" class="btn btn-primary">Grey</button>
+          </div>
+
+          <button type="Submit" class="btn btn-primary" onclick="ShowPlot('pub')">Update Plot</button>
         </div>
 
         <datalist id="select-pub">
@@ -131,16 +135,10 @@
           {% endfor %}
         </datalist>
 
-        <datalist id="select-ligand">
-          {% for ligand in all_ligands %}
-            <option data-value="{{ligand.0}}" value="{{ligand.1}}"></li>
-          {% endfor %}
-        </datalist>
-
       </div>
 
-      <div id='radarcontainer' style='display: none;'></div>
-      <div id='mergedcontainer'></div>
+      <div id='radarcontainer_pub' style='display: none;'></div>
+      <div id='mergedcontainer_pub'></div>
 
       <div class="btn-group">
           <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
@@ -149,21 +147,70 @@
           </button>
           <ul class="dropdown-menu">
               <li>
-                  <a href="javascript:saveSvgAsPng(document.getElementById('merged'), 'radar_plots.png');">PNG</a>
+                  <a href="javascript:saveSvgAsPng(document.getElementById('merged_pub'), 'radar_plots.png');">PNG</a>
               </li>
               <li>
-                  <a href="javascript:saveSvgAsJpg(document.getElementById('merged'), 'radar_plots.jpg');">JPG</a>
+                  <a href="javascript:saveSvgAsJpg(document.getElementById('merged_pub'), 'radar_plots.jpg');">JPG</a>
               </li>
               <li>
-                  <a href="javascript:saveSvgAsTiff(document.getElementById('merged'), 'radar_plots.tiff');">TIFF</a>
+                  <a href="javascript:saveSvgAsTiff(document.getElementById('merged_pub'), 'radar_plots.tiff');">TIFF</a>
               </li>
               <li>
-                  <a href="javascript:saveSvg(document.getElementById('merged'), 'radar_plots.svg');">SVG</a>
+                  <a href="javascript:saveSvg(document.getElementById('merged_pub'), 'radar_plots.svg');">SVG</a>
               </li>
           </ul>
       </div>
 
       </div>
+      <!-- spiders for ligands -->
+      <div class="tab-pane container fade" id="spiders_lig">
+        <br />
+        <div class="row">
+
+          <div class="form-group">
+            <input type="text" class="form-control" id="RadarLigandList" list="select-ligand" placeholder="Select Ligand" width="60%"/>
+
+            <div class="btn-group" role="group">
+                <button id="red_lig" class="btn btn-primary active">Red</button>
+                <button id="grey_lig" class="btn btn-primary">Grey</button>
+            </div>
+
+            <button type="Submit" class="btn btn-primary" onclick="ShowPlot('ligand')">Update Plot</button>
+          </div>
+
+          <datalist id="select-ligand">
+            {% for ligand in all_ligands %}
+              <option data-value="{{ligand.0}}" value="{{ligand.1}}"></li>
+            {% endfor %}
+          </datalist>
+
+        </div>
+
+        <div id='radarcontainer_ligand' style='display: none;'></div>
+        <div id='mergedcontainer_ligand'></div>
+
+        <div class="btn-group">
+            <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                    aria-haspopup="true" aria-expanded="false">
+                <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                    <a href="javascript:saveSvgAsPng(document.getElementById('merged_ligand'), 'radar_plots.png');">PNG</a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvgAsJpg(document.getElementById('merged_ligand'), 'radar_plots.jpg');">JPG</a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvgAsTiff(document.getElementById('merged_ligand'), 'radar_plots.tiff');">TIFF</a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvg(document.getElementById('merged_ligand'), 'radar_plots.svg');">SVG</a>
+                </li>
+            </ul>
+        </div>
+
+        </div>
     </div>
   {% else %}
   <ul class="nav nav-tabs">
@@ -191,17 +238,18 @@
       </div>
       <div id='boxplotChart'></div>
     </div>
-
-    <div class="tab-pane container fade" id="spiders">
+<!-- spiders for publications -->
+    <div class="tab-pane container fade" id="spiders_pub">
       <br />
       <div class="row">
 
         <div class="form-group">
           <input type="text" class="form-control" id="RadarPublicationsList" list="select-pub" placeholder="Select Publication" width="60%"/>
-          <button type="Submit" class="btn btn-primary" onclick="ShowPlot('pub')">Show Plot</button>
-
-          <input type="text" class="form-control" id="RadarLigandList" list="select-ligand" placeholder="Select Ligand" width="60%"/>
-          <button type="Submit" class="btn btn-primary" onclick="ShowPlot('ligand')">Show Plot</button>
+          <div class="btn-group" role="group">
+              <button id="red_pub" class="btn btn-primary active">Red</button>
+              <button id="grey_pub" class="btn btn-primary">Grey</button>
+          </div>
+          <button type="Submit" class="btn btn-primary" onclick="ShowPlot('pub')">Update Plot</button>
         </div>
 
         <datalist id="select-pub">
@@ -210,16 +258,10 @@
           {% endfor %}
         </datalist>
 
-        <datalist id="select-ligand">
-          {% for ligand in all_ligands %}
-            <option data-value="{{ligand.0}}" value="{{ligand.1}}"></li>
-          {% endfor %}
-        </datalist>
-
       </div>
 
-      <div id='radarcontainer' style='display: none;'></div>
-      <div id='mergedcontainer'></div>
+      <div id='radarcontainer_pub' style='display: none;'></div>
+      <div id='mergedcontainer_pub'></div>
 
       <div class="btn-group">
           <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
@@ -228,21 +270,68 @@
           </button>
           <ul class="dropdown-menu">
               <li>
-                  <a href="javascript:saveSvgAsPng(document.getElementById('merged'), 'radar_plots.png');">PNG</a>
+                  <a href="javascript:saveSvgAsPng(document.getElementById('merged_pub'), 'radar_plots.png');">PNG</a>
               </li>
               <li>
-                  <a href="javascript:saveSvgAsJpg(document.getElementById('merged'), 'radar_plots.jpg');">JPG</a>
+                  <a href="javascript:saveSvgAsJpg(document.getElementById('merged_pub'), 'radar_plots.jpg');">JPG</a>
               </li>
               <li>
-                  <a href="javascript:saveSvgAsTiff(document.getElementById('merged'), 'radar_plots.tiff');">TIFF</a>
+                  <a href="javascript:saveSvgAsTiff(document.getElementById('merged_pub'), 'radar_plots.tiff');">TIFF</a>
               </li>
               <li>
-                  <a href="javascript:saveSvg(document.getElementById('merged'), 'radar_plots.svg');">SVG</a>
+                  <a href="javascript:saveSvg(document.getElementById('merged_pub'), 'radar_plots.svg');">SVG</a>
               </li>
           </ul>
       </div>
 
       </div>
+<!-- Spiders for ligands -->
+<div class="tab-pane container fade" id="spiders_lig">
+  <br />
+  <div class="row">
+
+    <div class="form-group">
+      <input type="text" class="form-control" id="RadarLigandList" list="select-ligand" placeholder="Select Ligand" width="60%"/>
+      <div class="btn-group" role="group">
+          <button id="red_lig" class="btn btn-primary active">Red</button>
+          <button id="grey_lig" class="btn btn-primary">Grey</button>
+      </div>
+      <button type="Submit" class="btn btn-primary" onclick="ShowPlot('ligand')">Update Plot</button>
+    </div>
+
+    <datalist id="select-ligand">
+      {% for ligand in all_ligands %}
+        <option data-value="{{ligand.0}}" value="{{ligand.1}}"></li>
+      {% endfor %}
+    </datalist>
+
+  </div>
+
+  <div id='radarcontainer_ligand' style='display: none;'></div>
+  <div id='mergedcontainer_ligand'></div>
+
+  <div class="btn-group">
+      <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+              aria-haspopup="true" aria-expanded="false">
+          <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+      </button>
+      <ul class="dropdown-menu">
+          <li>
+              <a href="javascript:saveSvgAsPng(document.getElementById('merged_ligand'), 'radar_plots.png');">PNG</a>
+          </li>
+          <li>
+              <a href="javascript:saveSvgAsJpg(document.getElementById('merged_ligand'), 'radar_plots.jpg');">JPG</a>
+          </li>
+          <li>
+              <a href="javascript:saveSvgAsTiff(document.getElementById('merged_ligand'), 'radar_plots.tiff');">TIFF</a>
+          </li>
+          <li>
+              <a href="javascript:saveSvg(document.getElementById('merged_ligand'), 'radar_plots.svg');">SVG</a>
+          </li>
+      </ul>
+  </div>
+
+  </div>
       </div>
     </div>
   {% endif %}
@@ -259,10 +348,31 @@
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
 <script>
   var spiders = {{ spider | safe }};
+  var color = "red";
+  $("#red_pub").click(function() {
+      $("#red_pub").addClass("active");
+      $("#grey_pub").removeClass("active");
+      color = "red";
+  });
+  $("#grey_pub").click(function() {
+      $("#grey_pub").addClass("active");
+      $("#red_pub").removeClass("active");
+      color = "grey";
+  });
+  $("#red_lig").click(function() {
+      $("#red_lig").addClass("active");
+      $("#grey_lig").removeClass("active");
+      color = "red";
+  });
+  $("#grey_lig").click(function() {
+      $("#grey_lig").addClass("active");
+      $("#red_lig").removeClass("active");
+      color = "grey";
+  });
   function ShowPlot(type){
     var svgNS = "http://www.w3.org/2000/svg";
-    var parentDiv = document.getElementById("radarcontainer");
-    var mergedDiv = document.getElementById("mergedcontainer");
+    var parentDiv = document.getElementById("radarcontainer_"+type);
+    var mergedDiv = document.getElementById("mergedcontainer_"+type);
     parentDiv.querySelectorAll('*').forEach(n => n.remove());
     mergedDiv.querySelectorAll('*').forEach(n => n.remove());
     var title = document.createElement("div");
@@ -270,7 +380,7 @@
     parentDiv.appendChild(title);
     var ids = new Array();
     if(type==='ligand'){
-      $('#RadarPublicationsList').val('');
+      // $('#RadarPublicationsList').val('');
       var lig = document.getElementById('RadarLigandList').value;
       var pub_hash = document.querySelector("#select-ligand option[value='"+lig+"']").dataset.value;
       var header = document.createTextNode(lig);
@@ -280,26 +390,28 @@
         for(var web in spiders[pub]){
           if(web === pub_hash){
             spiders[pub][web]["Options"]["title"] = pub;
-            RadarChart('radarcontainer', spiders[pub][web]["Data"], spiders[pub][web]["Options"], "radar"+name);
+            spiders[pub][web]["Options"]["filling"] = color;
+            RadarChart('radarcontainer_'+type, spiders[pub][web]["Data"], spiders[pub][web]["Options"], "radar"+name);
           }
         }
       }
     }else{
-      $('#RadarLigandList').val('');
+      // $('#RadarLigandList').val('');
       var pub = document.getElementById('RadarPublicationsList').value;
       var header = document.createTextNode(pub);
       title.appendChild(header);
       for(var web in spiders[pub]){
-        RadarChart('radarcontainer', spiders[pub][web]["Data"], spiders[pub][web]["Options"], "radar"+web);
+        spiders[pub][web]["Options"]["filling"] = color;
+        RadarChart('radarcontainer_'+type, spiders[pub][web]["Data"], spiders[pub][web]["Options"], "radar"+web);
       }
     }
 
     // create a merged-div where we are going to merge the svgs
     var merged = document.createElement('div');
-    merged.setAttribute('id', 'merged-div');
+    merged.setAttribute('id', 'merged-div_'+type);
     mergedDiv.appendChild(merged);
 
-    $('#radarcontainer > div').map(function() {
+    $('#radarcontainer_'+type+' > div').map(function() {
       ids.push(this.id);
     });
 
@@ -312,7 +424,7 @@
 
     // createElementNS for svg
     var mergedSvg = document.createElementNS(svgNS, 'svg');
-    mergedSvg.setAttribute('id', 'merged');
+    mergedSvg.setAttribute('id', 'merged_'+type);
     // keep the viewBox of the chart
     mergedSvg.setAttribute('width', mergedWidth);
     mergedSvg.setAttribute('height', mergedHeight);
@@ -353,6 +465,8 @@
   for(var propt in data){
 
     var link_name = data[propt]["Authors"];
+    link_name = link_name.replace("et al.,", "et al.,<i>");
+    link_name = link_name.replace(", (", "</i>, (");
     var link_destination = "https://doi.org/" + propt;
     var divID = 'PUB'+count;
     var reference = data[propt]["Endogenous"]

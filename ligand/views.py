@@ -827,7 +827,7 @@ class BiasedRankOrder(TemplateView):
             for datapoint in jitterPlot[pathway]:
                 if datapoint[1] > highest:
                     highest = datapoint[1]
-            change = {'None' : 0, "High Bias": highest + 1, "Full Bias": highest + 2}
+            change = {'None' : 0, "High Bias": highest + 1, "Full Bias": highest + 1.5}
             for datapoint in jitterPlot[pathway]:
                 if datapoint[4] in change:
                     datapoint[1] = change[datapoint[4]]
@@ -878,7 +878,7 @@ class LigandStatistics(TemplateView):
                 lig_count_dict[a['experiment__receptor__family__parent__parent__parent__name']] = a['c']
         elif self.page == 'pathway_pref':
             assays_lig = list(AnalyzedAssay.objects
-                .filter(log_bias_factor__gte=2,
+                .filter(log_bias_factor__gte=1,
                         experiment__source='predicted_family')
                 .values('experiment__receptor__family__parent__parent__parent__name')
                 .annotate(c=Count('experiment__ligand_id', distinct=True)))

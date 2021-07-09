@@ -49,7 +49,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
           .duration(500)
           .style("opacity", 0);
   }
-
+  //change this because no longer relevant
   if(legendData.length < 24){
     var margin = {top: 20, right: 200, bottom: 100, left: 60};
     width = 1000 - margin.left - margin.right;
