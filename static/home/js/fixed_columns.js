@@ -25,9 +25,9 @@ function update_text_in_modal() {
         var ModalpdbsCountSelector = '#single-crystal-group-pdbs-modal-text';
 
         if (total_selected == selected_visible) {
-            $(ModalpdbsCountSelector).html(total_selected + ' structure(s) selected');
+            $(ModalpdbsCountSelector).html(total_selected + ' structure(s) selected (ticked leftmost)');
         } else {
-            $(ModalpdbsCountSelector).html(total_selected + ' structure(s) selected (' + (total_selected - selected_visible) + ' currently filtered)');
+            $(ModalpdbsCountSelector).html(total_selected + ' structure(s) selected (ticket leftmost — ' + (total_selected - selected_visible) + ' currently filtered)');
         }
 
         var pdbsInputSelector = '#single-crystal-group-tab .crystal-pdb';
@@ -349,9 +349,9 @@ function showPDBtable(element) {
 
         if (mode!="Single structure"){
           $(element + ' .modal-header').append('<span><button type="button" onclick="check_all(this,1);" class="btn btn-xs btn-primary reset-selection">Select all displayed</button></span>');
-          $(element + ' .modal-header').append(' | PDB code: <span><input type=text class="pastePDBs" placeholder="Paste PDBs with comma- or space-separated"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Import</button></span>');
+          $(element + ' .modal-header').append(' | <span><input type=text class="pastePDBs" placeholder="Paste PDBs with comma- or space-separated"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Import</button></span>');
         } else {
-          $(element + ' .modal-header').append('PDB code: <span><input type=text class="pastePDBs" placeholder="Paste PDB"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Import</button></span>');
+          $(element + ' .modal-header').append(' <span><input type=text class="pastePDBs" placeholder="Paste PDB"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Import</button></span>');
         }
 
         $(element + ' .modal-header .pastePDBs').keypress(function(event) {

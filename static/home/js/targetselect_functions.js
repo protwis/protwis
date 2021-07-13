@@ -91,6 +91,9 @@ function clearTargetSelection(){
     removeTarget(this);
   });
 
+  // Clean all (handling automated population by browser when using back button)
+  selected_targets = new Set();
+
   // update information message
   updateTargetCount();
   return false;
@@ -201,7 +204,7 @@ function importTargets(){
     split_entries[parseInt(i, 10)] = split_entries[parseInt(i, 10)].trim().toLowerCase();
     split_entries[parseInt(i, 10)] = split_entries[parseInt(i, 10)].split("_")[0];
 
-    // Check minimum protein name length 
+    // Check minimum protein name length
     if (split_entries[parseInt(i, 10)].length >= 2){
       // Find checkbox with correct entry
       var items = $("table#uniprot_selection").find(`input[data-entry='${split_entries[parseInt(i, 10)]}']`);
@@ -260,8 +263,8 @@ function exportTargets(){
  * after target selection.
  * @param {string} url The url to go to after synchronizing the target selection
  */
-function submitSelection(url, minimum = 1) {
-  if (selected_targets.size >= minimum) {
+function submitSelection(url, minimum = 1, maximum = 0) {
+  if (selected_targets.size >= minimum && (maximum === 0 || selected_targets.size <= maximum)) {
     // set CSRF csrf_token
     $.ajaxSetup({
         headers:
@@ -279,7 +282,13 @@ function submitSelection(url, minimum = 1) {
         showAlert("Something went wrong, please try again or contact us.", "danger");
       });
   } else {
-    if (minimum === 1) {
+    if (maximum > 0 && selected_targets.size > maximum){
+      if (maximum > 1) {
+        showAlert("Please select a maximum of " + maximum + " targets.", "warning");
+      } else {
+        showAlert("Please select only one target.", "warning");
+      }
+    } else if (minimum === 1) {
       showAlert("Please select at least one target.", "warning");
     } else {
       showAlert("Please select at least "+minimum+" targets.", "warning");

@@ -1,5 +1,10 @@
 from django.conf import settings
 
+def current_domain(request):
+    return {
+       'current_domain': request.get_host()
+     }
+
 def google_analytics(request):
     """
     Use the variables returned in this function to
