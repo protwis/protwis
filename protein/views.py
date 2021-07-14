@@ -207,8 +207,11 @@ def SelectionAutocomplete(request):
                                             source__name='SWISSPROT').exclude(family__slug__startswith=exclusion_slug).exclude(sequence_type__slug='consensus')[:10]
 
                 # If count still 0 try searching outside of Swissprot
-                if ps.count() == 0:
+                if ps.count() == 0 and type_of_selection == 'navbar':
                     ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q)) \
+                        .exclude(family__slug__startswith=exclusion_slug).exclude(sequence_type__slug='consensus')[:10]
+                elif ps.count() == 0:
+                    ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q), source__name='TREMBL') \
                         .exclude(family__slug__startswith=exclusion_slug).exclude(sequence_type__slug='consensus')[:10]
 
 

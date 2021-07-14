@@ -2790,8 +2790,12 @@ def ClusteringData(request):
     excluded_pdbs = [ "5LWE", "5ZKP" ]
     pdbs = [pdb.upper() for pdb in pdbs if pdb.upper() not in excluded_pdbs ]
 
+    cluster_method = 0
+    if 'cluster-method' in request.GET:
+        cluster_method = request.GET.get('cluster-method')
+
     cache_key = ",".join(sorted(pdbs))
-    cache_key = "structure_clustering_" + hashlib.md5(cache_key.encode('utf-8')).hexdigest()
+    cache_key = "structure_clustering_" + cluster_method + "_" + hashlib.md5(cache_key.encode('utf-8')).hexdigest()
 
     data = cache.get(cache_key)
     if data == None:
@@ -2799,10 +2803,6 @@ def ClusteringData(request):
         data = {}
 
         # load all
-        cluster_method = 0
-        if 'cluster-method' in request.GET:
-            cluster_method = request.GET.get('cluster-method')
-
         # DEBUG set clustering method hardcoded:
         # cluster_method = '7'
         if cluster_method == '1':
@@ -2849,6 +2849,19 @@ def ClusteringData(request):
                         'protein_conformation__protein__parent__family__parent__parent__name', 'protein_conformation__protein__parent__family__parent__parent__parent__name', 'structure_type__name', 'protein_conformation__protein__family__slug', 'tm6_angle', 'gprot_bound_likeness')\
                         .annotate(arr=ArrayAgg('structureligandinteraction__ligand_role__slug', filter=Q(structureligandinteraction__annotated=True))) \
 
+        # Adding signaling protein data on top
+        signaling_proteins = {}
+        common_signaling = {'Gi1': "Gi/o", 'Gi2': "Gi/o", 'Go': "Gi/o", 'Gq': "Gq/11", 'G11': "Gq/11", 'Gs': "Gs", 'G12': "G12/13", 'G13': "G12/13", 'Gt1': "Gt", 'Gt3': "Gt",
+                            'GPa1': "Gpa1", 'Beta-arrestin-1': "Arrestin", 'S-arrestin':  "Arrestin", 'Erk': "ERK"}
+        signal_ps = StructureExtraProteins.objects.filter(structure__pdb_code__index__in=pdbs, category__in=["G alpha", "Arrestin", "GRK"]).values('structure__pdb_code__index','display_name', 'wt_protein__family__name').order_by().annotate(coverage = Max('wt_coverage'))
+        for ps in signal_ps:
+            if not ps["structure__pdb_code__index"] in signaling_proteins:
+                if ps["display_name"] in common_signaling:
+                    signaling_proteins[ps["structure__pdb_code__index"]] = common_signaling[ps['display_name']]
+                else:
+                    signaling_proteins[ps["structure__pdb_code__index"]] = ps['display_name']
+
+
         protein_slugs = set()
         for an in annotations:
             pdb_annotations[an[0]] = list(an[1:])
@@ -2869,6 +2882,11 @@ def ClusteringData(request):
             pdb_annotations[an[0]][8] = slug
             pdb_annotations[an[0]][9] = holder
             pdb_annotations[an[0]][10] = holder2
+
+            if an[0] in signaling_proteins:
+                pdb_annotations[an[0]].append(signaling_proteins[an[0]])
+            else:
+                pdb_annotations[an[0]].append("")
 
         data['annotations'] = pdb_annotations
 

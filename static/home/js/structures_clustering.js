@@ -8,7 +8,7 @@ var hidePDBs = false;
 var labelReorder = false;
 var treeAnnotations = [];
 var couplingAnnotations = [];
-var typeClasses = ["Receptor activation state", "", "", "Receptor family", "Ligand type", "GPCR class", "Structure determination method", "Ligand function", "G-protein coupling", "Primary G proteins", "Secondary G proteins", "TM6 opening", "Degree active"]
+var typeClasses = ["Receptor activation state", "", "", "Receptor family", "Ligand type", "GPCR class", "Structure determination method", "Ligand function", "G-protein coupling", "Primary G proteins", "Secondary G proteins", "TM6 opening", "Degree active", "Complexed effector protein"]
 var dataClasses, colorClasses;
 function renderTree(data) {
     dataClasses = [["active", "inactive", "intermediate", "other"],0,0];
@@ -26,12 +26,14 @@ function renderTree(data) {
           dataClasses[i].add(treeAnnotations[key][i])
         dataClasses[i] = Array.from(dataClasses[i]).sort();
     }
-    dataClasses[7] = ["agonist", "partial-agonist", "pam", "antagonist", "inverse-agonist", "nam"]
+    //dataClasses[7] = ["agonist", "partial-agonist", "pam", "allosteric-agonist", "antagonist", "inverse-agonist", "nam", "allosteric-antagonist", "cofactor", "apo-no-ligand"]
+    dataClasses[7] = ["agonist", "partial-agonist", "pam", "allosteric-agonist", "antagonist", "inverse-agonist", "nam", "allosteric-antagonist", "cofactor"]
     dataClasses[8] = ['Gi/Go family', 'Gq/G11 family', 'Gs family', 'G12/G13 family']
     dataClasses[9] = dataClasses[8]
     dataClasses[10] = dataClasses[8]
     dataClasses[11] = ['0%', '50%', '100%'] // percentage
     dataClasses[12] = ['0%', '50%', '100%'] // percentage
+    dataClasses[13] = ['Gi/o', 'Gq/11', 'Gs', 'G12/13', 'Gt', 'Gpa1', 'Arrestin', 'ERK']
 
     // Receptor family coloring
     if (dataClasses[3].length > 20 && dataClasses[3].length < 32)
@@ -60,11 +62,18 @@ function renderTree(data) {
           }
         }
     }
-    colorClasses[7] = ["#0F0", "#0F0", "#0F0", "#F00", "#F00", "#F00"]
+    colorClasses[7] = ["#0F0", "#0F0", "#0F0", "#0F0", "#F00", "#F00", "#F00", "#F00", "#F80", "#888"]
     colorClasses[9] = colorClasses[8]
     colorClasses[10] = colorClasses[8]
     colorClasses[11] = ["#F00","#F80","#0B0"]
     colorClasses[12] = colorClasses[11]
+
+    colorClasses[13] = []
+    class_colors = d3.scale.category10().domain(dataClasses[13])
+    var i = 13
+    for (var j = 0; j < dataClasses[i].length; j++) {
+      colorClasses[i].push(class_colors(dataClasses[i][j]))
+    }
 
     // G-protein coupling
     couplingAnnotations = data["Gprot_coupling"];
@@ -90,11 +99,13 @@ function renderTree(data) {
       var slug = treeAnnotations[name][8]
       var opening = treeAnnotations[name][9]
       var gprot_likeness = treeAnnotations[name][10]
+      var complexed_protein = treeAnnotations[name][11]
       treeAnnotations[name][8] = []
       treeAnnotations[name][9] = []
       treeAnnotations[name][10] = []
       treeAnnotations[name][11] = opening
       treeAnnotations[name][12] = gprot_likeness
+      treeAnnotations[name][13] = complexed_protein
       var gproteins = dataClasses[8]
       for (g = 0; g < gproteins.length; g++) {
         if (slug in couplingAnnotations){
@@ -462,13 +473,11 @@ function toggleNames(event){
 }
 
 var displayData = 0
+//var outerLegendItems = new Set()
 function toggleDataOuter(event){
   var dataName = event.target.innerText
 
   displayData = menuItem(dataName)
-
-  // Refresh legend
-  refreshOuterLegend()
 
   // update active label on menu items
   event.target.parentNode.parentElement.querySelectorAll( ".active" ).forEach( e =>
@@ -478,9 +487,12 @@ function toggleDataOuter(event){
   // Refresh layout with updated selections
   d3.layout.phylotree.trigger_refresh(phylotree);
 
-  // Refresh twice to ensure correct leaf coloring
+  // Refresh twice to ensure correct branch coloring
   if (doBranchColoring)
     d3.layout.phylotree.trigger_refresh(phylotree);
+
+  // Refresh legend
+  refreshOuterLegend()
 
   resizeTree()
 }
@@ -555,7 +567,7 @@ function refreshLegend(div_class, selectData){
       .attr("height", 10)
       .style("stroke", "#000")
       .style("stroke-width", function (d) {
-          return opacityArray[dataClasses[selectData].indexOf(d)]+"px"
+          return opacityArray[dataClasses[selectData].indexOf(d)] + "px"
       })
       .style("fill-opacity", function (d) {
           return opacityArray[dataClasses[selectData].indexOf(d)]
@@ -577,12 +589,11 @@ function refreshLegend(div_class, selectData){
 }
 
 var displayDataInner = 3
+//var innerLegendItems = new Set()
 function toggleDataInner(event){
   var dataName = event.target.innerText
   displayDataInner = menuItem(dataName)
 
-  // Refresh legend
-  refreshInnerLegend()
 
   // update active label on menu items
   event.target.parentNode.parentElement.querySelectorAll( ".active" ).forEach( e =>
@@ -592,9 +603,12 @@ function toggleDataInner(event){
   // Refresh layout with updated selections
   d3.layout.phylotree.trigger_refresh(phylotree);
 
-  // Refresh twice to ensure correct leaf coloring
+  // Refresh twice to ensure correct branch coloring
   if (doBranchColoring)
     d3.layout.phylotree.trigger_refresh(phylotree);
+
+  // Refresh legend
+  refreshInnerLegend()
 
   resizeTree()
 }
@@ -626,6 +640,8 @@ function menuItem(dataName){
       case "Degree active (%)":
       case "G-protein bound likeness (%)":
         return 12
+      case "Complexed effector protein":
+        return 13
       case "Ligand function":
         return 7
       default:
@@ -731,6 +747,9 @@ function nodeStyler(element, node){
                 treeAnnotations[node.name][displayDataInner] = [treeAnnotations[node.name][displayDataInner]]
 
               for (var i = 0; i < treeAnnotations[node.name][displayDataInner].length; i++) {
+                if (treeAnnotations[node.name][displayDataInner][i] === "" || treeAnnotations[node.name][displayDataInner][i] === "apo-no-ligand"){
+                  continue;
+                }
                 var currentType = typeClasses[displayDataInner]
                 var currentData = treeAnnotations[node.name][displayDataInner][i]
                 var classIndex = dataClasses[displayDataInner].indexOf(currentData)
@@ -859,7 +878,7 @@ function nodeStyler(element, node){
 
             // Add outer markers
             element.selectAll("rect").remove() // remove old data
-            if (displayData >= 11) { // Receptor cytosolic opening using growing bars
+            if (displayData >= 11 && displayData <= 12) { // Receptor cytosolic opening using growing bars
               if (!Array.isArray(treeAnnotations[node.name][displayData]))
                 treeAnnotations[node.name][displayData] = [treeAnnotations[node.name][displayData]]
 
@@ -912,6 +931,10 @@ function nodeStyler(element, node){
                 treeAnnotations[node.name][displayData] = [treeAnnotations[node.name][displayData]]
 
               for (var i = 0; i < treeAnnotations[node.name][displayData].length; i++) {
+                if (treeAnnotations[node.name][displayData][i] === "" || treeAnnotations[node.name][displayDataInner][i] === "apo-no-ligand"){
+                  continue;
+                }
+
                 var currentType = typeClasses[displayData]
                 var currentData = treeAnnotations[node.name][displayData][i]
                 var classIndex = dataClasses[displayData].indexOf(currentData)

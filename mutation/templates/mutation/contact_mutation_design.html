@@ -83,7 +83,7 @@
 {% block content %}
 
 <ul class="nav nav-tabs nav-browsers">
-  {% if freq_results1 %}
+  {% if freq_results1 and freq_results2 %}
     <li class="active"><a href="#mutation-table-1-tab" data-toggle="tab" id="mutation-table-1-tab-link">1. Removing {{ undesired }} stabilizing AAs</a></li>
   {% endif %}
 
@@ -104,7 +104,9 @@
       <div class="tab-pane active" id="mutation-table-1-tab">
           <div class="panel panel-default">
               <div class="panel-heading">
-                  <h3 class="panel-title pull-left">Mutations to destabilize the <i>{{ undesired }}</i></h3>
+                  {% if freq_results1 and freq_results2 %}
+                    <h3 class="panel-title pull-left">Mutations to destabilize the <i>{{ undesired }}</i></h3>
+                  {% endif %}
                   <span class="pull-right">
                       <!-- <span class="glyphicon glyphicon-download btn-download"></span> -->
                       <span class="glyphicon glyphicon-fullscreen btn-fullscreen"></span>
@@ -119,7 +121,11 @@
                         <th rowspan=3 colspan=1 class="text-center">Target<br>residue<br>number</th>
                         <th rowspan=3 colspan=1 class="text-center">Generic<br>residue<br>number</th>
                         <th rowspan=3 colspan=1 class="text-center">Target<br>WT AA</th>
-                        <th rowspan=3 colspan=1 class="text-center rightborder"><span class="text-red-highlight">Ala Mutant</span><br>(removes<br>sidechain)</th>
+                        {% if goal != "both" %}
+                          <th rowspan=3 colspan=1 class="text-center rightborder"><span class="text-red-highlight">Ala Mutant</span><br>(removes<br>sidechain)</th>
+                        {% else %}
+                          <th rowspan=3 colspan=1 class="text-center rightborder"><span class="text-red-highlight">Mutant AA</th>
+                        {% endif %}
                         <th rowspan=1 colspan=3 class="text-center rightborder">Sum of residue contact frequencies</th>
                         <th rowspan=1 colspan=2 class="text-center rightborder">Class conservation</th>
                         <th rowspan=3 colspan=1 class="text-center rightborder">#Supporting data types</th>
@@ -127,6 +133,7 @@
                         <th rowspan=1 colspan=4 class="text-center rightborder">Thermostabilizing mutations</th>
                         <th rowspan=1 colspan=4 class="text-center rightborder">Expression-increasing mutations<br>(structure constructs)</th>
                         <th rowspan=1 colspan=4 class="text-center">Expression-increasing mutations<br>(ligand site mutations)</th>
+                        <th rowspan=1 colspan=2 class="text-center">Supporting information</th>
                       </tr>
                       <tr>
                         <th rowspan=2 colspan=1 class="text-center">Diff</th>
@@ -145,6 +152,8 @@
                         <th rowspan=1 colspan=2 class="text-center rightborder-light">Same pos.</th>
                         <th rowspan=2 colspan=1 class="text-center">Same<br>WT AA</th>
                         <th rowspan=2 colspan=1 class="text-center">Same<br>mutant AA</th>
+                        <th rowspan=2 colspan=1 class="text-center">Dominant state</th>
+                        <th rowspan=2 colspan=1 class="text-center">Mutation effect</th>
                       </tr>
                       <tr>
                         <th>#Mut.</th>
@@ -181,6 +190,8 @@
                         <th></th>
                         <th></th>
                         <th class="rightborder"></th>
+                        <th></th>
+                        <th></th>
                         <th></th>
                         <th></th>
                         <th></th>
@@ -237,6 +248,7 @@
                         <th rowspan=1 colspan=4 class="text-center rightborder">Thermostabilizing mutations</th>
                         <th rowspan=1 colspan=4 class="text-center rightborder">Expression-increasing mutations<br>(structure constructs)</th>
                         <th rowspan=1 colspan=4 class="text-center">Expression-increasing mutations<br>(ligand activity studies)</th>
+                        <th rowspan=1 colspan=2 class="text-center">Supporting information</th>
                       </tr>
                       <tr>
                         <th rowspan=2 class="text-center">AA</th>
@@ -257,6 +269,8 @@
                         <th rowspan=1 colspan=2 class="text-center rightborder-light">Same pos.</th>
                         <th rowspan=2 colspan=1 class="text-center">Same<br>WT AA</th>
                         <th rowspan=2 colspan=1 class="text-center">Same<br>mutant AA</th>
+                        <th rowspan=2 colspan=1 class="text-center">Dominant state</th>
+                        <th rowspan=2 colspan=1 class="text-center">Mutation effect</th>
                       </tr>
                       <tr>
                         <th>#Mut.</th>
@@ -294,6 +308,8 @@
                         <th></th>
                         <th></th>
                         <th class="rightborder"></th>
+                        <th></th>
+                        <th></th>
                         <th></th>
                         <th></th>
                         <th></th>
@@ -368,7 +384,9 @@
       // NOTE: Adjust color index when changing table - currently 8
       $("#suglist1 tbody tr td").filter(":nth-child(5)").each( function() {
           $(this).addClass("color-column");
-          $(this).addClass("color-reverse");
+          {% if goal != "both" %}
+            $(this).addClass("color-reverse");
+          {% endif %}
           //$(this).addClass("color-gradient_white_indianred");
       });
 
@@ -403,9 +421,11 @@
       gray_scale_table($("#suglist1"));
 
       var table_options1 = Object.assign({}, table_options);
-      table_options1["order"] = [4, "asc"];
+      table_options1["order"] = [4, "desc"];
       table_options1["columnDefs"] = [
-          { className: "text-center", "targets": [...Array(26).keys()] }
+          { className: "text-center", "targets": [...Array(26).keys()] },
+          { targets: [26, 27],
+            visible: false }
         ]
 
       table1 = $("#suglist1").DataTable(table_options1);
@@ -501,7 +521,9 @@
       var table_options2 = Object.assign({}, table_options);
       table_options2["order"] = [5, "desc"];
       table_options2["columnDefs"] = [
-          { className: "text-center", "targets": [...Array(27).keys()] }
+          { className: "text-center", "targets": [...Array(27).keys()] },
+          { targets: [27, 28],
+            visible: false }
         ]
       table2 = $("#suglist2").DataTable(table_options2);
 
