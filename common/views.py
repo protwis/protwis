@@ -229,7 +229,7 @@ def getTargetTable():
 
     return data_table
 
-def getReferenceTable(filtering):
+def getReferenceTable(filtering, log_filter=2):
     # data_table = cache.get("reference_table")
     data_table = None
 
@@ -237,7 +237,6 @@ def getReferenceTable(filtering):
         #get all the proteins that are in ligandanalyzedassay
         biased_proteins = list(AnalyzedAssay.objects.filter(
                         family__isnull=False,
-                        # assay_description__isnull=True,
                         experiment__source=filtering).values_list(
                         "experiment__receptor__entry_name").distinct())
 
@@ -255,13 +254,22 @@ def getReferenceTable(filtering):
         #original code
         slug_list = [ p.family.slug for p in proteins ]
         # original code
-        ligand_set = list(AssayExperiment.objects.values("protein__family__slug")
-                                                 .annotate(num_ligands=Count("ligand", distinct=True)))
-        # original code
-        ligand_count = {}
-        for entry in ligand_set:
-            ligand_count[entry["protein__family__slug"]] = entry["num_ligands"]
+        # ligand_set = list(AssayExperiment.objects.values("protein__family__slug")
+        #                                          .annotate(num_ligands=Count("ligand", distinct=True)))
+        # NEW CODE
+        ligand_set = list(AnalyzedAssay.objects
+            .filter(log_bias_factor__gte=log_filter,
+                    experiment__source=filtering)
+            .values('experiment__receptor__family__slug')
+            .annotate(num_ligands=Count('experiment__ligand_id', distinct=True)))
 
+        ligand_count = {}
+        # original code
+        # for entry in ligand_set:
+        #     ligand_count[entry["protein__family__slug"]] = entry["num_ligands"]
+        # NEW CODE
+        for entry in ligand_set:
+            ligand_count[entry["experiment__receptor__family__slug"]] = entry["num_ligands"]
         # NEW CODE (needed only first 5 columns)
         data_table = "<table id='uniprot_selection' class='uniprot_selection stripe compact'> \
             <thead>\
@@ -393,21 +401,21 @@ class AbsReferenceSelectionTable(TemplateView):
 
     # proteins and families
     #try - except block prevents manage.py from crashing - circular dependencies between protein - common
-    try:
-        if ProteinFamily.objects.filter(slug=default_slug).exists():
-            ppf = ProteinFamily.objects.get(slug=default_slug)
-            pfs = ProteinFamily.objects.filter(parent=ppf.id).filter(slug__startswith=default_subslug)
-            ps = Protein.objects.filter(family=ppf)
-            psets = ProteinSet.objects.all().prefetch_related('proteins')
-            tree_indent_level = []
-            action = 'expand'
-            # remove the parent family (for all other families than the root of the tree, the parent should be shown)
-            del ppf
+    # try:
+    #     if ProteinFamily.objects.filter(slug=default_slug).exists():
+    #         ppf = ProteinFamily.objects.get(slug=default_slug)
+    #         pfs = ProteinFamily.objects.filter(parent=ppf.id).filter(slug__startswith=default_subslug)
+    #         ps = Protein.objects.filter(family=ppf)
+    #         psets = ProteinSet.objects.all().prefetch_related('proteins')
+    #         tree_indent_level = []
+    #         action = 'expand'
+    #         # remove the parent family (for all other families than the root of the tree, the parent should be shown)
+    #         del ppf
 
             # Load the target table data
-            table_data = getReferenceTable('different_family')
-    except Exception as e:
-        pass
+    table_data = getReferenceTable('different_family')
+    # except Exception as e:
+    #     pass
 
     # species
     sps = Species.objects.all()
@@ -423,7 +431,6 @@ class AbsReferenceSelectionTable(TemplateView):
         """
 
         context = super().get_context_data(**kwargs)
-
         # get selection from session and add to context
         # get simple selection from session
         simple_selection = self.request.session.get('selection', False)

@@ -119,9 +119,9 @@ function DrawMultiLineChart(Data, BaseDiv, Keys, ID, linkTitle, reference, linkP
     var svg = d3.select("#" + ID)
         .append("svg")
         .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
+        .attr("height", height + margin.top + margin.bottom + 30)
         .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+        .attr("transform", "translate(" + margin.left + "," + (margin.top + 30) + ")");
 
     color.domain(Data.map(function (d) { return d.name; }));
 
@@ -130,6 +130,20 @@ function DrawMultiLineChart(Data, BaseDiv, Keys, ID, linkTitle, reference, linkP
     var valueMax = d3.max(Data, function (r) { return d3.max(r.PathwaysData, function (d) { return d.value[0]; }) });
     var valueMin = d3.min(Data, function (r) { return d3.min(r.PathwaysData, function (d) { return d.value[0]; }) });
     y.domain([valueMin, valueMax]);
+
+    //Drawing title label
+    svg.append("g")
+            .attr("transform", "translate(0, -" + margin.left +")")
+            .append("foreignObject")
+              .attr("width", width)
+              .attr("height", height)
+              .attr("class", "title")
+            .append("xhtml:body")
+              .style("color", "#357db5")
+              .style("font", "15px 'Arial'")
+              .style("padding-bottom", "3px")
+              .style("padding-top", "15px")
+              .html(linkTitle);
 
     //Drawing X Axis
     svg.append("g")
@@ -193,7 +207,8 @@ function DrawMultiLineChart(Data, BaseDiv, Keys, ID, linkTitle, reference, linkP
             .on("mouseover", mouseover)
             .on("mousemove", function (d) {
                 divToolTip
-                .text(d.value[0].toFixed(2))
+                // .text(d.value[0].toFixed(2))
+                .html(d.tooltip)
                 .style("left", (d3.event.pageX + 15) + "px")
                 .style("top", (d3.event.pageY - 10) + "px");
             })
@@ -215,7 +230,8 @@ function DrawMultiLineChart(Data, BaseDiv, Keys, ID, linkTitle, reference, linkP
             .on("mouseover", mouseover)
             .on("mousemove", function (d) {
                 divToolTip
-                .text(d.value[0].toFixed(2))
+                // .text(d.value[0].toFixed(2))
+                .html(d.tooltip)
                 .style("left", (d3.event.pageX + 15) + "px")
                 .style("top", (d3.event.pageY - 10) + "px");
             })

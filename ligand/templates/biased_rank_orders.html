@@ -52,17 +52,6 @@
     .segmentText{
         cursor:pointer;
     }
-    div.tooltip {
-        position: absolute;
-        text-align: left;
-        width: 240px; /*120*/
-        height: 50px; /*15*/
-        font: 10px sans-serif;
-        background: white;
-        border: solid 1px #aaa;
-        border-radius: 8px;
-        pointer-events: none;
-    }
 
     .RadarTitle{
         font-family:    Arial;
@@ -81,8 +70,9 @@
     padding-bottom: 3px;
   }
 </style>
-<br />
 
+
+<br />
 <br />
 <br />
 
@@ -91,6 +81,19 @@
   <h3>Results for receptor: <b>{{query|safe}}</b> </h3>
   <!-- Nav tabs -->
 {% if page == 'pathwayprofiles' %}
+<style>
+  div.tooltip {
+      position: absolute;
+      text-align: left;
+      width: 240px; /*120*/
+      height: 60px; /*15*/
+      font: 10px sans-serif;
+      background: white;
+      border: solid 1px #aaa;
+      border-radius: 8px;
+      pointer-events: none;
+  }
+</style>
   <ul class="nav nav-tabs">
     <li class="nav-item">
       <a class="nav-link active" data-toggle="tab" href="#lines">Line charts</a>
@@ -213,14 +216,20 @@
         </div>
     </div>
   {% else %}
-  <ul class="nav nav-tabs">
-    <li class="nav-item">
-      <a class="nav-link active" data-toggle="tab" href="#boxplot">Scatter plot</a>
-    </li>
-    <!-- <li class="nav-item">
-      <a class="nav-link" data-toggle="tab" href="#spiders">Radar plots</a>
-    </li> maybe Kasper or Alex wants to add another plot (scatter) -->
-  </ul>
+
+  <style>
+    div.tooltip {
+        position: absolute;
+        text-align: left;
+        width: 240px; /*120*/
+        height: 120px; /*15*/
+        font: 10px sans-serif;
+        background: white;
+        border: solid 1px #aaa;
+        border-radius: 8px;
+        pointer-events: none;
+    }
+  </style>
 
   <!-- Tab panes -->
   <div class="tab-content">
@@ -234,6 +243,16 @@
            <br />
            Each publication-ligand pair is only shown in <b>one</b> diagram. <br />
            This is the diagram for the given pathway towards the specific ligand is biased.<br /></p>
+
+       <div class="btn-group" role="group">
+           <button id="full_length" class="btn btn-primary active">Full label</button>
+           <button id="short_length" class="btn btn-primary">Short label</button>
+       </div>
+
+       <div class="btn-group" role="group">
+           <button id="horizontal" class="btn btn-primary active">Horizontal label</button>
+           <button id="diagonal" class="btn btn-primary">Diagonal label</button>
+       </div>
 
       </div>
       <div id='boxplotChart'></div>
@@ -449,6 +468,16 @@
 
       mergedSvg.appendChild(plotContent);
     }
+    gNodes = d3.selectAll('.axisWrapper').selectAll('.axis');
+    gNodes.each(function(d) {
+      old = d3.select(this).select('text')[0][0].innerHTML;
+      old = old.replace("G12/13", 'G</tspan><tspan baseline-shift = "sub">12/13</tspan><tspan>');
+      old = old.replace("Gi/o", 'G</tspan><tspan baseline-shift = "sub">i/o</tspan><tspan>');
+      old = old.replace("Gq/11", 'G</tspan><tspan baseline-shift = "sub">q/11</tspan><tspan>');
+      old = old.replace("Gs", 'G</tspan><tspan baseline-shift = "sub">s</tspan><tspan>');
+      node = d3.select(this).select('text')[0][0];
+      node.innerHTML = old;
+    });
   }
 </script>
 
@@ -456,8 +485,13 @@
   var data = {{ full_data | safe }};
   var keys = {{ full_ligands | safe }};
   var label =  "{{ label }}";
+  var source = "{{ source }}";
   if(label == 'emax'){
-    ylabel = "ΔLog(Emax/EC50)"
+    if(source != 'predicted_family'){
+      ylabel = "ΔLog(Emax/EC50)";
+    }else{
+      ylabel = "Log(Emax/EC50)";
+    }
   } else {
     ylabel = "ΔLog(Tau/KA)"
   };
@@ -470,6 +504,7 @@
     var link_destination = "https://doi.org/" + propt;
     var divID = 'PUB'+count;
     var reference = data[propt]["Endogenous"]
+    // var test = "{{ tooltip_line | safe}}";
     // Calling function
     DrawMultiLineChart(data[propt]['Data'], 'divChartTrends', keys[propt], divID, link_name, reference, link_destination, ylabel);
     count = count + 1;
@@ -490,10 +525,10 @@
 </script>
 
 <script>
-
 var realData = {{ scatter | safe }};
 var colors = {{ colors | safe }};
 var legend = {{ scatter_legend | safe }};
+var source = "{{ source }}";
 var conversion = {'G12/13': 'G<sub>12/13</sub>',
                   'Gi/o': 'G<sub>i/o</sub>',
                   'Gq/11': 'G<sub>q/11</sub>',
@@ -502,19 +537,115 @@ var conversion = {'G12/13': 'G<sub>12/13</sub>',
                   'ERK': 'ERK'};
 var label =  "{{ label }}";
 if(label == 'emax'){
-  ylabel = "ΔΔLog(Emax/EC50)"
   qualitative = true
+  if(source != 'predicted_family'){
+    ylabel = "ΔΔLog(Emax/EC50)";
+  }else{
+    ylabel = "ΔLog(Emax/EC50)";
+  }
+
 } else {
   ylabel = "ΔΔLog(Tau/KA)"
   qualitative = false
 };
 var count = 1;
-  for(var path in realData){
-    var name = 'Pathway' + parseInt(count);
-    DotScatter(realData[path], 'boxplotChart', name, colors, legend[path], conversion[path], ylabel, qualitative);
-    count = count + 1;
-  };
+for(var path in realData){
+  var name = 'Pathway' + parseInt(count);
+  DotScatter(realData[path], 'boxplotChart', name, colors, legend[path], conversion[path], ylabel, qualitative);
+  count = count + 1;
+  gNodes = d3.select('#'+name).selectAll('.main.axis.date').selectAll('.tick');
+  headerNode = d3.select('#'+name).selectAll('.header').selectAll('text')[0][0];
+  headerHTML = headerNode.innerHTML;
+  headerHTML = headerHTML.replaceAll("&lt;sub&gt;", '<tspan x="12" dy="0.8em">');
+  headerHTML = headerHTML.replaceAll("&lt;/sub&gt;", '</tspan>');
+  headerNode.innerHTML = headerHTML;
+  gNodes.each(function(d) {
+    old = d3.select(this)[0][0].innerHTML;
+    old = old.replaceAll("openTS", '<tspan x="0" dy="1.2em">');
+    old = old.replaceAll("closeTS", '</tspan>');
+    node = d3.select(this)[0][0];
+    node.innerHTML = old;
+  });
+};
+</script>
+<script>
+  function getKeyByValue(object, value) {
+    return Object.keys(object).find(key => object[key] === value);
+  }
 
+  function oddOrEven(x) {
+    return ( x & 1 ) ? "odd" : "even";
+  }
+
+  var labels = {{ column_dict | safe }};
+
+  $("#full_length").click(function() {
+      if($("#short_length").hasClass("active")){
+        $("#full_length").addClass("active");
+        $("#short_length").removeClass("active");
+        gNodes = d3.selectAll('.main.axis.date').selectAll('.tick').selectAll('text');
+        gNodes.each(function(d) {
+        old = d3.select(this)[0][0].innerHTML;
+        change = getKeyByValue(labels, old);
+        change = change.replaceAll("openTS", '<tspan x="0" dy="1.2em">');
+        change = change.replaceAll("closeTS", '</tspan>');
+        old = old.replace(old, change);
+        node = d3.select(this)[0][0];
+        node.innerHTML = old;
+        });
+      }
+  });
+
+  $("#short_length").click(function() {
+    if($("#full_length").hasClass("active")){
+      $("#short_length").addClass("active");
+      $("#full_length").removeClass("active");
+      labelNodes = d3.selectAll('.column_label');
+      labelNodes.each(function(d) {
+        old = d3.select(this)[0][0].innerHTML;
+        text = d3.select(this).select('text');
+        text.attr("x", "-25");
+        old = old.replaceAll('<tspan x="0" dy="1.2em">', "openTS");
+        old = old.replaceAll('<tspan x="-25" dy="1.2em">', "openTS");
+        old = old.replaceAll('</tspan>', "closeTS");
+        old = labels[old];
+        node = d3.select(this)[0][0];
+        node.innerHTML = old;
+      });
+    }
+  });
+
+  $("#horizontal").click(function() {
+    $("#horizontal").addClass("active");
+    $("#diagonal").removeClass("active");
+    var count = 1;
+    gNodes = d3.selectAll('.main.axis.date').selectAll('.tick');
+    gNodes.each(function(d) {
+      value = oddOrEven(count);
+      tspan = d3.select(this).selectAll('tspan');
+      text = d3.select(this).select('text');
+      text.attr("transform", null);
+      tspan.attr("x", "-25");
+      if(value === "even"){
+        text.attr("y", "45");
+      }
+      // old.attr()
+      count = count + 1;
+    });
+  });
+  $("#diagonal").click(function() {
+    $("#diagonal").addClass("active");
+    $("#horizontal").removeClass("active");
+    gNodes = d3.selectAll('.main.axis.date').selectAll('.tick');
+    gNodes.each(function(d) {
+      tspan = d3.select(this).selectAll('tspan');
+      text = d3.select(this).select('text');
+      text.attr("transform", "rotate(45)");
+      text.attr("y", "5");
+      tspan.attr("x", "0");
+    });
+  });
+  document.getElementById("horizontal").click();
 </script>
 
 {% endblock %}

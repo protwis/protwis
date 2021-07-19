@@ -16,7 +16,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from django.core.cache import cache
 
-from common.views import AbsTargetSelectionTable, Alignment, AbsReferenceSelectionTable
+from common.views import AbsTargetSelectionTable, Alignment, AbsReferenceSelectionTable, getReferenceTable
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
@@ -434,6 +434,8 @@ class RankOrderSelection(AbsReferenceSelectionTable):
         },
     }
 
+    table_data = getReferenceTable("different_family", 2)
+
 class TauRankOrderSelection(AbsReferenceSelectionTable):
     step = 1
     number_of_steps = 1
@@ -455,6 +457,8 @@ class TauRankOrderSelection(AbsReferenceSelectionTable):
             'color': 'success',
         },
     }
+
+    table_data = getReferenceTable("different_family", 2)
 
 class EmaxPathProfileSelection(AbsReferenceSelectionTable):
     step = 1
@@ -478,6 +482,7 @@ class EmaxPathProfileSelection(AbsReferenceSelectionTable):
         },
     }
 
+    table_data = getReferenceTable("different_family", 2)
 
 class TauPathProfileSelection(AbsReferenceSelectionTable):
     step = 1
@@ -501,6 +506,8 @@ class TauPathProfileSelection(AbsReferenceSelectionTable):
         },
     }
 
+    table_data = getReferenceTable("different_family", 2)
+
 class EmaxPathPrefRankOrderSelection(AbsReferenceSelectionTable):
     step = 1
     number_of_steps = 1
@@ -523,23 +530,8 @@ class EmaxPathPrefRankOrderSelection(AbsReferenceSelectionTable):
         },
     }
 
-    # proteins and families
-    #try - except block prevents manage.py from crashing - circular dependencies between protein - common
-    try:
-        if ProteinFamily.objects.filter(slug=default_slug).exists():
-            ppf = ProteinFamily.objects.get(slug=default_slug)
-            pfs = ProteinFamily.objects.filter(parent=ppf.id).filter(slug__startswith=default_subslug)
-            ps = Protein.objects.filter(family=ppf)
-            psets = ProteinSet.objects.all().prefetch_related('proteins')
-            tree_indent_level = []
-            action = 'expand'
-            # remove the parent family (for all other families than the root of the tree, the parent should be shown)
-            del ppf
+    table_data = getReferenceTable('predicted_family', 1)
 
-            # Load the target table data
-            table_data = getReferenceTable('predicted_family')
-    except Exception as e:
-        pass
 
 class EmaxPathPrefPathProfilesSelection(AbsReferenceSelectionTable):
     step = 1
@@ -563,23 +555,8 @@ class EmaxPathPrefPathProfilesSelection(AbsReferenceSelectionTable):
         },
     }
 
-    # proteins and families
-    #try - except block prevents manage.py from crashing - circular dependencies between protein - common
-    try:
-        if ProteinFamily.objects.filter(slug=default_slug).exists():
-            ppf = ProteinFamily.objects.get(slug=default_slug)
-            pfs = ProteinFamily.objects.filter(parent=ppf.id).filter(slug__startswith=default_subslug)
-            ps = Protein.objects.filter(family=ppf)
-            psets = ProteinSet.objects.all().prefetch_related('proteins')
-            tree_indent_level = []
-            action = 'expand'
-            # remove the parent family (for all other families than the root of the tree, the parent should be shown)
-            del ppf
+    table_data = getReferenceTable('predicted_family', 1)
 
-            # Load the target table data
-            table_data = getReferenceTable('predicted_family')
-    except Exception as e:
-        pass
 
 class BiasedRankOrder(TemplateView):
     #set a global variable for different pages
@@ -594,7 +571,7 @@ class BiasedRankOrder(TemplateView):
         if h < 0: # ensure positive number
             h = h * -1
         random.seed(h) # set the seed to use for randomization
-        output = random.randint(0,255)
+        output = random.randint(0,225) # 225 instead of 255 to avoid all very pale colors
         return output
 
     def get_context_data(self, **kwargs):
@@ -622,20 +599,22 @@ class BiasedRankOrder(TemplateView):
                         experiment__source=self.source).exclude(
                         qualitative_activity__in=exclude_list,
                         ).values_list(
-                        "family", #pathway                                  0
-                        "experiment__ligand__name", #name                   3 -> 1
-                        "experiment__publication__web_link__index", # DOI   4 -> 2
-                        "experiment__publication__year", #year              5 -> 3
-                        "experiment__publication__journal__name", #journal  6 -> 4
-                        "experiment__publication__authors",  #authors       7 -> 5
-                        "experiment__ligand",    #ligand_id for hash        8 -> 6
-                        "experiment__endogenous_ligand__name", #endogenous  9 -> 7
-                        "qualitative_activity",  #activity values          10 -> 8
-                        "log_bias_factor_a", #ΔLog(Emax/EC50)              11 -> 9
-                        "log_bias_factor",  #ΔΔLog(Emax/EC50)              12 -> 10
-                        "order_no",     #ranking                           13 -> 11
-                        "t_coefficient",    #ΔLog(TAU/Ka)                  14 -> 12
-                        "t_factor"          #ΔΔLog(TAU/Ka)                 15 -> 13
+                        "family", #pathway                                   0
+                        "experiment__ligand__name", #name                    1
+                        "experiment__publication__web_link__index", # DOI    2
+                        "experiment__publication__year", #year               3
+                        "experiment__publication__journal__name", #journal   4
+                        "experiment__publication__authors",  #authors        5
+                        "experiment__ligand",    #ligand_id for hash         6
+                        "experiment__endogenous_ligand__name", #endogenous   7
+                        "qualitative_activity",  #activity values            8
+                        "log_bias_factor_a", #ΔLog(Emax/EC50)                9
+                        "log_bias_factor",  #ΔΔLog(Emax/EC50)               10
+                        "order_no",         #ranking                        11
+                        "t_coefficient",    #ΔLog(TAU/Ka)                   12
+                        "t_factor",         #ΔΔLog(TAU/Ka)                  13
+                        "quantitive_activity",   #EC 50                     14
+                        "quantitive_efficacy",   #Emax                      15
                         ).distinct()) #check
 
         list_of_ligands = []
@@ -648,6 +627,7 @@ class BiasedRankOrder(TemplateView):
         jitterLegend = {}
         Colors = {}
         pathway_nr = {}
+        labels_dict = {}
 
         for result in publications:
             #checking the value to plot
@@ -655,23 +635,39 @@ class BiasedRankOrder(TemplateView):
             if self.label == 'emax':
                 single_delta = result[9]
                 double_delta = result[10]
+                emax_tau = result[15]
+                EC50_ka = result[14]
+                components = ['Emax', 'EC50']
             else:
                 single_delta = result[12]
                 double_delta = result[13]
-
+                emax_tau = "Not available"
+                EC50_ka = "Not available"
+                components = ['Tau', 'KA']
             #fixing ligand name (hash hash baby)
             lig_name = result[1]
             if result[1][0].isdigit():
                 lig_name = "Ligand-"+result[1]
 
             hashed_lig_name = 'L' + hashlib.md5((str(result[6])).encode('utf-8')).hexdigest()
+            # replace second white space with closing and opening tspan for svg
+            journal_name = result[4]
+            if result[4]:
+                if ' ' in result[4]:
+                    journal_name = ' closeTS openTS '.join(' '.join(s) for s in zip(*[iter(result[4].split(' '))]*2))
+            else:
+                journal_name = "Not listed"
+
             if result[5] == None:
-                authors = "Authors not listed, " + '(' + str(result[3]) + ')'
-                jitterAuthors = "Authors not listed, " + '(' + str(result[3]) + ')'
+                authors = "Authors not listed, (" + str(result[3]) + ')'
+                shortAuthors = "Authors not listed, (" + str(result[3]) + ')'
+                jitterAuthors = 'openTS ' + shortAuthors + ' closeTS openTS ' + journal_name + ' closeTS openTS (' + str(result[3]) + ') closeTS'
+                labels_dict[jitterAuthors] = shortAuthors
             else:
                 authors = result[5].split(',')[0] + ', et al., ' + str(result[4]) + ', (' + str(result[3]) + ')'
-                jitterAuthors = result[5].split(',')[0] + ', et al.'
-
+                shortAuthors = result[5].split(',')[0] + ', et al.'
+                jitterAuthors = 'openTS ' + shortAuthors + ' closeTS openTS ' + journal_name + ' closeTS openTS (' + str(result[3]) + ') closeTS'
+                labels_dict[jitterAuthors] = shortAuthors
 
             list_of_ligands.append(tuple((hashed_lig_name, lig_name)))
             list_of_publications.append(authors)
@@ -699,14 +695,30 @@ class BiasedRankOrder(TemplateView):
             if result[11] == 1:
                 try:
                     jitterDict[jitterAuthors][lig_name]['2nd_Pathway'] = tooltip_dict[result[0]]
+                    jitterDict[jitterAuthors][lig_name]['2nd_Pathway_delta'] = value
+                    jitterDict[jitterAuthors][lig_name]['2nd_Pathway_emax_tau'] = emax_tau
+                    jitterDict[jitterAuthors][lig_name]['2nd_Pathway_EC50_KA'] = EC50_ka
                 except KeyError:
                     jitterDict[jitterAuthors][lig_name]['2nd_Pathway'] = result[0]
+                    jitterDict[jitterAuthors][lig_name]['2nd_Pathway_delta'] = value
+                    jitterDict[jitterAuthors][lig_name]['2nd_Pathway_emax_tau'] = emax_tau
+                    jitterDict[jitterAuthors][lig_name]['2nd_Pathway_EC50_KA'] = EC50_ka
                 jitterDict[jitterAuthors][lig_name]['deltadelta'] = DD
 
             if result[11] == 0:
                 jitterDict[jitterAuthors][lig_name]["Pathway"] = result[0]
+                jitterDict[jitterAuthors][lig_name]["delta"] = value
+                jitterDict[jitterAuthors][lig_name]["Emax_Tau"] = emax_tau
+                jitterDict[jitterAuthors][lig_name]["EC50_KA"] = EC50_ka
                 # jitterDict[jitterAuthors][lig_name]['0'] = value
 
+            tooltip_info = "<b>Compound Name:</b> " + str(lig_name) + \
+            "<br><b>Plotted Value:</b> " + str(value) + \
+            "<br><b>Pathway:</b> " + str(result[0]) + \
+            "<br><b>Ligand " + components[0] + " value:</b> " + str(emax_tau) + \
+            "<br><b>Ligand " + components[1] + " value:</b> " + str(EC50_ka)
+
+            # initialization of the dictionary for new publication
             if result[2] not in full_data.keys():
                 full_ligands[result[2]] = []
                 full_data[result[2]] = {"Authors": authors,
@@ -718,7 +730,8 @@ class BiasedRankOrder(TemplateView):
                                         "Data": [{"name": hashed_lig_name,
                                                  "PathwaysData":
                                                     [{"Pathway": result[0],
-                                                      "value": [value, "REAL"]}]}]}
+                                                      "value": [value, "REAL"],
+                                                      "tooltip": tooltip_info}]}]}
                 SpiderOptions[authors] = {}
                 SpiderOptions[authors][hashed_lig_name] = {"Data":[[{'axis':result[0],
                                                                      'value':value}]],
@@ -726,6 +739,7 @@ class BiasedRankOrder(TemplateView):
                                                                          'maxValue': 4,
                                                                          'roundStrokes': False,
                                                                          'title': lig_name}}
+            #new ligand pushed into existing publication
             if hashed_lig_name not in [d['name'] for d in full_data[result[2]]["Data"]]:
                 full_data[result[2]]["Ligand"].append(lig_name)
                 full_data[result[2]]["Qualitative"].append(result[8])
@@ -733,7 +747,8 @@ class BiasedRankOrder(TemplateView):
                                             {"name": hashed_lig_name,
                                              "PathwaysData":
                                                 [{"Pathway": result[0],
-                                                  "value": [value,"REAL"] }]})
+                                                  "value": [value,"REAL"],
+                                                  "tooltip": tooltip_info}]})
 
                 SpiderOptions[authors][hashed_lig_name] = {"Data":[[{'axis':result[0],
                                                                      'value':value}]],
@@ -746,7 +761,8 @@ class BiasedRankOrder(TemplateView):
                 if result[0] not in [d["Pathway"] for d in full_data[result[2]]["Data"][ID]["PathwaysData"]]:
                     full_data[result[2]]["Data"][ID]["PathwaysData"].append(
                                             {"Pathway": result[0],
-                                             "value": [value, "REAL"]})
+                                             "value": [value, "REAL"],
+                                             "tooltip": tooltip_info})
                     SpiderOptions[authors][hashed_lig_name]["Data"][0].append({'axis':result[0],
                                                                                'value':value})
 
@@ -765,12 +781,22 @@ class BiasedRankOrder(TemplateView):
                     try:
                         for i in indices:
                             name["PathwaysData"][i]["value"] = [MAX,"ARTIFICIAL"]
+                            name["PathwaysData"][i]["tooltip"] = "<b>Compound Name:</b> " + str(lig_name) + \
+                                                                 "<br><b>Plotted Value:</b> " + str(value) + \
+                                                                 "<br><b>Pathway:</b> " + str(result[0]) + \
+                                                                 "<br><b>Ligand " + components[0] + " value:</b> " + str(emax_tau) + \
+                                                                 "<br><b>Ligand " + components[1] + " value:</b> High"
                     except ValueError:
                         continue
                 if quality in downgrade_value:
                     try:
                         for i in indices:
                             name["PathwaysData"][i]["value"] = [MIN,"ARTIFICIAL"]
+                            name["PathwaysData"][i]["tooltip"] = "<b>Compound Name:</b> " + str(lig_name) + \
+                                                                 "<br><b>Plotted Value:</b> " + str(value) + \
+                                                                 "<br><b>Pathway:</b> " + str(result[0]) + \
+                                                                 "<br><b>Ligand " + components[0] + " value:</b> " + str(emax_tau) + \
+                                                                 "<br><b>Ligand " + components[1] + " value:</b> Low"
                     except ValueError:
                         continue
 
@@ -811,7 +837,10 @@ class BiasedRankOrder(TemplateView):
                     if ligand not in Colors.keys():
                         color = '#%02x%02x%02x' % (self.create_rgb_color(ligand,0), self.create_rgb_color(ligand,1), self.create_rgb_color(ligand,2))
                         Colors[ligand] = color
-                    jitterPlot[jitterDict[pub][ligand]["Pathway"]].append([pub, jitterDict[pub][ligand]['deltadelta'][0], Colors[ligand], ligand, jitterDict[pub][ligand]['deltadelta'][1], jitterDict[pub][ligand]['2nd_Pathway']])
+                    jitterPlot[jitterDict[pub][ligand]["Pathway"]].append([pub, jitterDict[pub][ligand]['deltadelta'][0], Colors[ligand], ligand, jitterDict[pub][ligand]['deltadelta'][1],
+                    jitterDict[pub][ligand]['2nd_Pathway'], jitterDict[pub][ligand]['2nd_Pathway_delta'], jitterDict[pub][ligand]['delta'],#])
+                    jitterDict[pub][ligand]['2nd_Pathway_emax_tau'], jitterDict[pub][ligand]['Emax_Tau'],
+                    jitterDict[pub][ligand]['2nd_Pathway_EC50_KA'], jitterDict[pub][ligand]['EC50_KA']])
                     jitterLegend[jitterDict[pub][ligand]["Pathway"]].append(tuple((ligand, jitterDict[pub][ligand]['deltadelta'][0])))
                     # if jitterDict[pub][ligand]['deltadelta'][0] >= 1.00:
                     #     jitterLegend[jitterDict[pub][ligand]["Pathway"]].append(tuple((ligand, jitterDict[pub][ligand]['deltadelta'][0])))
@@ -837,6 +866,8 @@ class BiasedRankOrder(TemplateView):
         for key in jitterLegend.keys():
             jitterLegend[key] = list(dict.fromkeys([name[0] for name in jitterLegend[key]]))[:20]
 
+        context['column_dict'] = json.dumps(labels_dict)
+        context['source'] = self.source
         context['label'] = self.label
         context['page'] = self.page
         context['scatter_legend'] = json.dumps(jitterLegend)
