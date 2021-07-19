@@ -9,7 +9,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
   var second = ylabel.replace(/\Δ|\(|\)|[Log]/g,"").split('/')[1];
   for (var i = 0; i < data.length; i++){
     pubs.indexOf(data[i][0]) === -1 ? pubs.push(data[i][0]) : console.log();
-  };
+  }
 
   function step_rounder(value, step) {
       step || (step = 1.0);

@@ -4,6 +4,7 @@ import json
 import math
 import random
 
+from random import SystemRandom
 from copy import deepcopy
 from collections import defaultdict, OrderedDict
 
@@ -566,12 +567,13 @@ class BiasedRankOrder(TemplateView):
     source = "different_family"
     assay = "tested_assays"
 
-    def create_rgb_color(self, name, power): # pseudo-randomization function
-        h = hash( name + str(power) ) # hash string and int together
-        if h < 0: # ensure positive number
-            h = h * -1
-        random.seed(h) # set the seed to use for randomization
-        output = random.randint(0,225) # 225 instead of 255 to avoid all very pale colors
+    def create_rgb_color(self): #, name, power): # pseudo-randomization function
+        # h = hash( name + str(power) ) # hash string and int together
+        # if h < 0: # ensure positive number
+        #     h = h * -1
+        # random.seed(h) # set the seed to use for randomization
+        cryptogen = SystemRandom()          # added cryptography random number creation
+        output = cryptogen.randrange(0,225) # 225 instead of 255 to avoid all very pale colors
         return output
 
     def get_context_data(self, **kwargs):
@@ -835,7 +837,8 @@ class BiasedRankOrder(TemplateView):
             for ligand in jitterDict[pub]:
                 try:
                     if ligand not in Colors.keys():
-                        color = '#%02x%02x%02x' % (self.create_rgb_color(ligand,0), self.create_rgb_color(ligand,1), self.create_rgb_color(ligand,2))
+                        color = '#%02x%02x%02x' % (self.create_rgb_color(), self.create_rgb_color(), self.create_rgb_color())
+                        # color = '#%02x%02x%02x' % (self.create_rgb_color(ligand,0), self.create_rgb_color(ligand,1), self.create_rgb_color(ligand,2)) old version with pseudo random
                         Colors[ligand] = color
                     jitterPlot[jitterDict[pub][ligand]["Pathway"]].append([pub, jitterDict[pub][ligand]['deltadelta'][0], Colors[ligand], ligand, jitterDict[pub][ligand]['deltadelta'][1],
                     jitterDict[pub][ligand]['2nd_Pathway'], jitterDict[pub][ligand]['2nd_Pathway_delta'], jitterDict[pub][ligand]['delta'],#])
