@@ -40,7 +40,7 @@
         stroke-width: 1.5px;
     }
     svg{
-        border:1px solid black;
+        border:1px solid white;
     }
     .grid {
         fill: none;
@@ -60,6 +60,27 @@
         width:          100%;
         padding-bottom: 3px;
         text-align:     center;
+    }
+        /* Solid border */
+    hr.solid {
+      border-top: 2px solid #bbb;
+      margin: 5px 0 5px 0;
+    }
+
+    table {
+      font-family: arial, sans-serif;
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    td, th {
+      border: 1px solid #dddddd;
+      text-align: left;
+      padding: 8px;
+    }
+
+    tr:nth-child(even) {
+      background-color: #dddddd;
     }
 </style>
 
@@ -85,8 +106,8 @@
   div.tooltip {
       position: absolute;
       text-align: left;
-      width: 240px; /*120*/
-      height: 60px; /*15*/
+      width: 280px; /*120*/
+      height: 200px; /*15*/
       font: 10px sans-serif;
       background: white;
       border: solid 1px #aaa;
@@ -221,8 +242,8 @@
     div.tooltip {
         position: absolute;
         text-align: left;
-        width: 240px; /*120*/
-        height: 120px; /*15*/
+        width: 280px; /*120*/
+        height: 200px; /*15*/
         font: 10px sans-serif;
         background: white;
         border: solid 1px #aaa;

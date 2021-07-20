@@ -15,7 +15,6 @@ function DrawMultiLineChart(Data, BaseDiv, Keys, ID, linkTitle, reference, linkP
         a.innerHTML = linkTitle;
         a.href = linkPath;
         title.appendChild(a);
-        parentDiv.appendChild(title);
 
     var nestedDiv = document.createElement("div");
       nestedDiv.setAttribute("id", ID);
@@ -143,7 +142,11 @@ function DrawMultiLineChart(Data, BaseDiv, Keys, ID, linkTitle, reference, linkP
               .style("font", "15px 'Arial'")
               .style("padding-bottom", "3px")
               .style("padding-top", "15px")
-              .html(linkTitle);
+              .html(linkTitle)
+              .on("click", function(){
+                  window.open(a, '_blank').focus();
+              });
+
 
     //Drawing X Axis
     svg.append("g")
@@ -357,34 +360,34 @@ var legend = svg.selectAll("mylabels")
       .attr("transform", position);
 
       legend.append("text")
-        .attr("x", xSeed+12)
-        .attr("y", 53)
-        .style("fill", function(a){ return legendColor(a)})
-        .text(function(d) {
-                if (d[1].length > 16) {
-                    return d[1].substring(0,16)+"..."
-                }else {
-                    return d[1]
-                }
-        })
-        .attr("id", function(d) { return d[0]})
-        .style("font", "10px sans-serif")
-        .attr("text-anchor", "left")
-        .style("alignment-baseline", "middle")
-        .on("click", function (d) {
-            var tempId = d3.select(this).attr("id");
-            d3.selectAll("g.segment circle")
-               .style("opacity", 0.2);
-            d3.selectAll("g.segment rect")
-               .style("opacity", 0.2);
-            d3.selectAll("g.segment path")
-               .style("opacity", 0.2);
-            d3.selectAll("g.segment." + tempId + " path")
-              .style("opacity", 1);
-            d3.selectAll("g.segment." + tempId + " circle")
-              .style("opacity", 1);
-            d3.event.stopPropagation();
-        });
+            .attr("x", xSeed+12)
+            .attr("y", 53)
+            .style("fill", function(a){ return legendColor(a)})
+            .text(function(d) {
+                    if (d[1].length > 16) {
+                        return d[1].substring(0,16)+"..."
+                    }else {
+                        return d[1]
+                    }
+            })
+            .attr("id", function(d) { return d[0]})
+            .style("font", "10px sans-serif")
+            .attr("text-anchor", "left")
+            .style("alignment-baseline", "middle")
+            .on("click", function (d) {
+                var tempId = d3.select(this).attr("id");
+                d3.selectAll("g.segment circle")
+                   .style("opacity", 0.2);
+                d3.selectAll("g.segment rect")
+                   .style("opacity", 0.2);
+                d3.selectAll("g.segment path")
+                   .style("opacity", 0.2);
+                d3.selectAll("g.segment." + tempId + " path")
+                  .style("opacity", 1);
+                d3.selectAll("g.segment." + tempId + " circle")
+                  .style("opacity", 1);
+                d3.event.stopPropagation();
+            });
 
 legend.append("circle")
   .attr("cx",xSeed+4)

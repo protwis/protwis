@@ -71,12 +71,12 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
     height = 500 - margin.top - margin.bottom;
 
     var parentDiv = document.getElementById(BaseDiv)
-    var title = document.createElement("div");
-        title.setAttribute("id", "title_"+ID);
-        parentDiv.appendChild(title);
+
     var nestedDiv = document.createElement("div");
       nestedDiv.setAttribute("id", ID);
+      nestedDiv.setAttribute("style", "margin-top: 50px;");
       parentDiv.appendChild(nestedDiv);
+
     var downloadDiv = document.createElement("div");
       downloadDiv.setAttribute("id", "Download_"+ID);
       downloadDiv.setAttribute("class", "btn-group");
@@ -124,18 +124,6 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
         downloadDiv.appendChild(optionList);
 
     document.getElementById(ID).onclick = ResetOpacity;
-
-    d3.select("#title_"+ID)
-          .append("foreignObject")
-            .attr("width", width)
-            .attr("height", height)
-            .attr("class", "title")
-          .append("xhtml:body")
-            .style("font", "15px 'Arial'")
-            .style("padding-bottom", "3px")
-            .style("padding-top", "15px")
-            .html(header);
-
 
   var x = d3.scale.ordinal()
     .domain(data.map(function(d) {
@@ -300,15 +288,53 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
                   .style("left", (d3.event.pageX) + "px")
                   .style("top", (d3.event.pageY) + "px")
                   .html("<b>Compound Name:</b> " + d[3]
-                      + "<br\><b>Plotted Value:</b> Full bias"
-                      + "<br\><b>" + ylabel.replace('ΔΔ','Δ') + " ("+ header + "):</b> " + d[7]
-                      + "<br\><b>" + first + " value ("+ header + "):</b> " + d[9]
-                      + "<br\><b>" + second + " value ("+ header + "):</b> " + d[11]
-                      + "<br\><b>Compared Pathway:</b> " + d[5]
-                      + "<br\><b>" + ylabel.replace('ΔΔ','Δ') + " ("+ d[5] + "):</b> " + d[6]
-                      + "<br\><b>" + first + " value ("+ d[5] + "):</b> " + d[8]
-                      + "<br\><b>" + second + " value ("+ d[5] + "):</b> " + d[10]
-                    );
+                      + "<br\><b>Plotted Value:</b> Full bias<br\>"
+                      + "<hr class='solid'>"
+                      + "<table>"
+                      + "      <tr>"
+                      + "        <th>" + d[3] + "</th>"
+                      + "        <th>" + ylabel.replace('ΔΔ','Δ') + "</th>"
+                      + "        <th>" + first + "</th>"
+                      + "        <th>" + second + "</th>"
+                      + "      </tr>"
+                      + "      <tr>"
+                      + "        <td>" + header + "</td>"
+                      + "        <td>" + d[7] + "</td>"
+                      + "        <td>" + d[9] + "</td>"
+                      + "        <td>" + d[11] + "</td>"
+                      + "      </tr>"
+                      + "      <tr>"
+                      + "        <td>" + d[5] + "</td>"
+                      + "        <td>" + d[6] + "</td>"
+                      + "        <td>" + d[8] + "</td>"
+                      + "        <td>" + d[10] + "</td>"
+                      + "      </tr>"
+                      + "</table>"
+                      + "<hr class='solid'>"
+                      + "<table>"
+                      + "      <tr>"
+                      + "        <th>" + d[15] + "</th>"
+                      + "        <th>" + first + "</th>"
+                      + "        <th>" + second + "</th>"
+                      + "      </tr>"
+                      + "      <tr>"
+                      + "        <td>" + d[14] + "</td>"
+                      + "        <td>" + d[12] + "</td>"
+                      + "        <td>" + d[13] + "</td>"
+                      + "      </tr>"
+                      + "      </tr>"
+                      + "</table>"
+                  );
+                  // .html("<b>Compound Name:</b> " + d[3]
+                  //     + "<br\><b>Plotted Value:</b> Full bias"
+                  //     + "<br\><b>" + ylabel.replace('ΔΔ','Δ') + " ("+ header + "):</b> " + d[7]
+                  //     + "<br\><b>" + first + " value ("+ header + "):</b> " + d[9]
+                  //     + "<br\><b>" + second + " value ("+ header + "):</b> " + d[11]
+                  //     + "<br\><b>Compared Pathway:</b> " + d[5]
+                  //     + "<br\><b>" + ylabel.replace('ΔΔ','Δ') + " ("+ d[5] + "):</b> " + d[6]
+                  //     + "<br\><b>" + first + " value ("+ d[5] + "):</b> " + d[8]
+                  //     + "<br\><b>" + second + " value ("+ d[5] + "):</b> " + d[10]
+                  //   );
             })
             .on("mouseout", mouseout)
             .on("click", function (d) {
@@ -338,14 +364,42 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
                   .style("left", (d3.event.pageX) + "px")
                   .style("top", (d3.event.pageY) + "px")
                   .html("<b>Compound Name:</b> " + d[3]
-                      + "<br\><b>Plotted Value:</b> High bias"
-                      + "<br\><b>" + ylabel.replace('ΔΔ','Δ') + " ("+ header + "):</b> " + d[7]
-                      + "<br\><b>" + first + " value ("+ header + "):</b> " + d[9]
-                      + "<br\><b>" + second + " value ("+ header + "):</b> " + d[11]
-                      + "<br\><b>Compared Pathway:</b> " + d[5]
-                      + "<br\><b>" + ylabel.replace('ΔΔ','Δ') + " ("+ d[5] + "):</b> " + d[6]
-                      + "<br\><b>" + first + " value ("+ d[5] + "):</b> " + d[8]
-                      + "<br\><b>" + second + " value ("+ d[5] + "):</b> " + d[10]
+                  + "<br\><b>Plotted Value:</b> High bias<br\>"
+                  + "<hr class='solid'>"
+                  + "<table>"
+                  + "      <tr>"
+                  + "        <th>" + d[3] + "</th>"
+                  + "        <th>" + ylabel.replace('ΔΔ','Δ') + "</th>"
+                  + "        <th>" + first + "</th>"
+                  + "        <th>" + second + "</th>"
+                  + "      </tr>"
+                  + "      <tr>"
+                  + "        <td>" + header + "</td>"
+                  + "        <td>" + d[7] + "</td>"
+                  + "        <td>" + d[9] + "</td>"
+                  + "        <td>" + d[11] + "</td>"
+                  + "      </tr>"
+                  + "      <tr>"
+                  + "        <td>" + d[5] + "</td>"
+                  + "        <td>" + d[6] + "</td>"
+                  + "        <td>" + d[8] + "</td>"
+                  + "        <td>" + d[10] + "</td>"
+                  + "      </tr>"
+                  + "</table>"
+                  + "<hr class='solid'>"
+                  + "<table>"
+                  + "      <tr>"
+                  + "        <th>" + d[15] + "</th>"
+                  + "        <th>" + first + "</th>"
+                  + "        <th>" + second + "</th>"
+                  + "      </tr>"
+                  + "      <tr>"
+                  + "        <td>" + d[14] + "</td>"
+                  + "        <td>" + d[12] + "</td>"
+                  + "        <td>" + d[13] + "</td>"
+                  + "      </tr>"
+                  + "      </tr>"
+                  + "</table>"
                     );
             })
             .on("mouseout", mouseout)
@@ -370,14 +424,42 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
           .style("left", (d3.event.pageX) + "px")
           .style("top", (d3.event.pageY) + "px")
           .html("<b>Compound Name:</b> " + d[3]
-              + "<br\><b>Plotted Value:</b> " + d[1]
-              + "<br\><b>" + ylabel.replace('ΔΔ','Δ') + " ("+ header + "):</b> " + d[7]
-              + "<br\><b>" + first + " value ("+ header + "):</b> " + d[9]
-              + "<br\><b>" + second + " value ("+ header + "):</b> " + d[11]
-              + "<br\><b>Compared Pathway:</b> " + d[5]
-              + "<br\><b>" + ylabel.replace('ΔΔ','Δ') + " ("+ d[5] + "):</b> " + d[6]
-              + "<br\><b>" + first + " value ("+ d[5] + "):</b> " + d[8]
-              + "<br\><b>" + second + " value ("+ d[5] + "):</b> " + d[10]
+          + "<br\><b>Plotted Value:</b> " + d[1]
+          + "<hr class='solid'>"
+          + "<table>"
+          + "      <tr>"
+          + "        <th>" + d[3] + "</th>"
+          + "        <th>" + ylabel.replace('ΔΔ','Δ') + "</th>"
+          + "        <th>" + first + "</th>"
+          + "        <th>" + second + "</th>"
+          + "      </tr>"
+          + "      <tr>"
+          + "        <td>" + header + "</td>"
+          + "        <td>" + d[7] + "</td>"
+          + "        <td>" + d[9] + "</td>"
+          + "        <td>" + d[11] + "</td>"
+          + "      </tr>"
+          + "      <tr>"
+          + "        <td>" + d[5] + "</td>"
+          + "        <td>" + d[6] + "</td>"
+          + "        <td>" + d[8] + "</td>"
+          + "        <td>" + d[10] + "</td>"
+          + "      </tr>"
+          + "</table>"
+          + "<hr class='solid'>"
+          + "<table>"
+          + "      <tr>"
+          + "        <th>" + d[15] + "</th>"
+          + "        <th>" + first + "</th>"
+          + "        <th>" + second + "</th>"
+          + "      </tr>"
+          + "      <tr>"
+          + "        <td>" + d[14] + "</td>"
+          + "        <td>" + d[12] + "</td>"
+          + "        <td>" + d[13] + "</td>"
+          + "      </tr>"
+          + "      </tr>"
+          + "</table>"
             );
     })
     .on("mouseout", mouseout)

@@ -229,7 +229,7 @@ def getTargetTable():
 
     return data_table
 
-def getReferenceTable(filtering, log_filter=2):
+def getReferenceTable(filtering):
     # data_table = cache.get("reference_table")
     data_table = None
 
@@ -258,7 +258,7 @@ def getReferenceTable(filtering, log_filter=2):
         #                                          .annotate(num_ligands=Count("ligand", distinct=True)))
         # NEW CODE
         ligand_set = list(AnalyzedAssay.objects
-            .filter(log_bias_factor__gte=log_filter,
+            .filter(log_bias_factor__gte=1,
                     experiment__source=filtering)
             .values('experiment__receptor__family__slug')
             .annotate(num_ligands=Count('experiment__ligand_id', distinct=True)))

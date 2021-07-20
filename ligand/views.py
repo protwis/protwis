@@ -435,7 +435,7 @@ class RankOrderSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable("different_family", 2)
+    table_data = getReferenceTable("different_family")
 
 class TauRankOrderSelection(AbsReferenceSelectionTable):
     step = 1
@@ -459,7 +459,7 @@ class TauRankOrderSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable("different_family", 2)
+    table_data = getReferenceTable("different_family")
 
 class EmaxPathProfileSelection(AbsReferenceSelectionTable):
     step = 1
@@ -483,7 +483,7 @@ class EmaxPathProfileSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable("different_family", 2)
+    table_data = getReferenceTable("different_family")
 
 class TauPathProfileSelection(AbsReferenceSelectionTable):
     step = 1
@@ -507,7 +507,7 @@ class TauPathProfileSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable("different_family", 2)
+    table_data = getReferenceTable("different_family")
 
 class EmaxPathPrefRankOrderSelection(AbsReferenceSelectionTable):
     step = 1
@@ -531,7 +531,7 @@ class EmaxPathPrefRankOrderSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable('predicted_family', 1)
+    table_data = getReferenceTable('predicted_family')
 
 
 class EmaxPathPrefPathProfilesSelection(AbsReferenceSelectionTable):
@@ -556,7 +556,7 @@ class EmaxPathPrefPathProfilesSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable('predicted_family', 1)
+    table_data = getReferenceTable('predicted_family')
 
 
 class BiasedRankOrder(TemplateView):
@@ -617,6 +617,7 @@ class BiasedRankOrder(TemplateView):
                         "t_factor",         #ΔΔLog(TAU/Ka)                  13
                         "quantitive_activity",   #EC 50                     14
                         "quantitive_efficacy",   #Emax                      15
+                        "reference_ligand_id", #reference ligand id         16
                         ).distinct()) #check
 
         list_of_ligands = []
@@ -632,6 +633,13 @@ class BiasedRankOrder(TemplateView):
         labels_dict = {}
 
         for result in publications:
+            reference_data = list(ExperimentAssay.objects.filter(
+                                id=result[16],
+                                ).values_list(
+                                "quantitive_activity",   #EC 50                     0
+                                "quantitive_efficacy",   #Emax                      1
+                                "family",                #pathways                  2
+                                ).distinct()) #check
             #checking the value to plot
             #based on the landing page
             if self.label == 'emax':
@@ -659,7 +667,6 @@ class BiasedRankOrder(TemplateView):
                     journal_name = ' closeTS openTS '.join(' '.join(s) for s in zip(*[iter(result[4].split(' '))]*2))
             else:
                 journal_name = "Not listed"
-
             if result[5] == None:
                 authors = "Authors not listed, (" + str(result[3]) + ')'
                 shortAuthors = "Authors not listed, (" + str(result[3]) + ')'
@@ -843,7 +850,7 @@ class BiasedRankOrder(TemplateView):
                     jitterPlot[jitterDict[pub][ligand]["Pathway"]].append([pub, jitterDict[pub][ligand]['deltadelta'][0], Colors[ligand], ligand, jitterDict[pub][ligand]['deltadelta'][1],
                     jitterDict[pub][ligand]['2nd_Pathway'], jitterDict[pub][ligand]['2nd_Pathway_delta'], jitterDict[pub][ligand]['delta'],#])
                     jitterDict[pub][ligand]['2nd_Pathway_emax_tau'], jitterDict[pub][ligand]['Emax_Tau'],
-                    jitterDict[pub][ligand]['2nd_Pathway_EC50_KA'], jitterDict[pub][ligand]['EC50_KA']])
+                    jitterDict[pub][ligand]['2nd_Pathway_EC50_KA'], jitterDict[pub][ligand]['EC50_KA'], reference_data[0][0], reference_data[0][1], reference_data[0][2], result[7]])
                     jitterLegend[jitterDict[pub][ligand]["Pathway"]].append(tuple((ligand, jitterDict[pub][ligand]['deltadelta'][0])))
                     # if jitterDict[pub][ligand]['deltadelta'][0] >= 1.00:
                     #     jitterLegend[jitterDict[pub][ligand]["Pathway"]].append(tuple((ligand, jitterDict[pub][ligand]['deltadelta'][0])))
