@@ -616,3 +616,18 @@ class Synonyms(models.Model):
         choices=SPECIALTY_CHOICES,
         default='1',
     )
+
+# endogenous assays from GuideToPharmacology
+class GTP_endogenous_ligand(models.Model):
+    ligand = models.ForeignKey(Ligand, on_delete=models.CASCADE)
+    ligand_type = models.TextField(null = True)
+    endogenous_princip = models.TextField(null = True)# lignad_pubchem = models.CharField(max_length=40, null=True)
+    publication = models.ForeignKey(Publication, on_delete=models.CASCADE)
+    receptor = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
+    pec50_avg = models.FloatField(max_length=60, null=True)
+    pec50_min = models.FloatField(max_length=60, null=True)
+    pec50_max = models.FloatField(max_length=60, null=True)
+    pKi_avg = models.FloatField(max_length=60, null=True)
+    pKi_min = models.FloatField(max_length=60, null=True)
+    pKi_max = models.FloatField(max_length=60, null=True)
+    gpt_link = models.TextField(null = True)

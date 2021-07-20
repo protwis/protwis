@@ -86,12 +86,12 @@ class Command(BaseBuild):
         target_list = self.get_gpcrs()
         print("\n#2 Get Endogeneous ligands")
         self.get_endogenous(target_list)
-        print("\n#2 Get Ligands")
-        self.get_ligands()
-        print("\n#3 Get Ligand assays")
-        assays = self.get_ligand_assays(target_list)
-        print("\n#4 Process Ligand assays", len(assays), ' assays')
-        self.process_ligand_assays(assays)
+        # print("\n#2 Get Ligands")
+        # self.get_ligands()
+        # print("\n#3 Get Ligand assays")
+        # assays = self.get_ligand_assays(target_list)
+        # print("\n#4 Process Ligand assays", len(assays), ' assays')
+        # self.process_ligand_assays(assays)
         # print("\n#5 Get Endogeneous ligands")
         # self.get_endogenous(target_list)
         print('\n\n---Finished---')
@@ -113,28 +113,55 @@ class Command(BaseBuild):
                         ligand = self.fetch_ligand(
                             data[0]['ligandId'], data[0]['type'], ligand_name)
                         if ligand and protein:
-                            import pdb; pdb.set_trace()
-                            protein.endogenous_ligands.add(ligand)
-                            Ligand.objects.update_or_create(
-                                id=ligand.id,
-                                defaults={'endogenous': True},
-                            )
+                            self.get_ligand_interactions(ligand=ligand, ligand_id_gtp=data[0]['ligandId'], ligand_type=data[0]['type'],receptor=protein)
                         else:
                             pass
                     except:
                         pass
 
-    def upload_to_db(self, i):
-        # saves data
-        chembl_data = AssayExperiment(source=i["source"],
-                                      ligand=i["ligand"],
-                                      publication=i["doi"],
-                                      protein=i["protein"],
-                                      published_type=i["standard_type"],
-                                      published_value=i["standard_value"],
-                                      assay_description=i["assay_description"],
-                                      )
-        chembl_data.save()
+    def get_ligand_interactions(self, ligand, ligand_id_gtp, ligand_type, receptor):
+        response = requests.get(
+            "https://www.guidetopharmacology.org/services/ligands/" + str(ligand_id_gtp) + "/interactions")
+        if response.status_code == 200:
+            data = response.json()
+            for interaction in data:
+                emin=emax=eavg=kmin=kmax=kavg = None
+                if interaction['endogenous'] == True:
+                    if interaction['affinityParameter'] == 'pEC50':
+                        try:
+                            kmin, kmax = float(interaction['affinity'].split(" - "))
+                            kavg = (kmin + kmax) / 2
+                        except:
+                            kavg = float(interaction['affinity'])
+
+                    if interaction['affinityParameter'] == 'pKi':
+                        try:
+                            emin, emax = float(interaction['affinity'].split(" - "))
+                            eavg = (emin + emax) / 2
+                        except:
+                            eavg = float(interaction['affinity'])
+
+                    if eavg or kavg:
+
+                        publication = self.fetch_publication(interaction['refs'][0]['pmid'])
+                        gtp_data = GTP_endogenous_ligand(
+                                ligand = ligand,
+                                ligand_type = ligand_type,
+                                endogenous_princip = 'None',
+                                publication = publication,
+                                receptor = receptor,
+                                pec50_avg = eavg,
+                                pec50_min = emin,
+                                pec50_max = emax,
+                                pKi_avg = kavg,
+                                pKi_min = kmin,
+                                pKi_max = kmax,
+                                gpt_link = ligand_id_gtp,
+                        )
+                        gtp_data.save()
+
+                    else:
+                        pass
 
 # pylint: disable=R0201
     def fetch_protein(self, target):
@@ -177,30 +204,12 @@ class Command(BaseBuild):
             l = None
         return l
 
-    def fetch_publication(self, refs):
+    def fetch_publication(self, publication_doi):
         """
         fetch publication with Publication model
         requires: publication doi or pmid
 
         """
-        publication_doi = None
-        reference_response = requests.get(
-            "https://www.guidetopharmacology.org/services/refs/" + str(refs[0]))
-
-        if reference_response.status_code == 200:
-            ligand_data = reference_response.json()
-            get_pubmed = ligand_data['pmid']
-            get_doi = ligand_data['doi']
-            if get_pubmed != None:
-                pub_type = 'pubmed'
-                publication_doi = get_pubmed
-            elif get_doi != None:
-                pub_type = 'doi'
-                publication_doi = get_doi
-            else:
-                return None
-        else:
-            return None
         try:
             float(publication_doi)
             publication_doi = str(int(publication_doi))
