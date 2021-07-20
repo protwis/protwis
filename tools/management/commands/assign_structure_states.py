@@ -166,11 +166,11 @@ class Command(BaseCommand):
                         # Classification
                         score = scoring_results[pdb]
                         structure_state = "inactive"
-                        if score < 30 and slug[0] == "001": # above this score always inactive structure
+                        if score < 40 and slug[0] == "001": # above this score always inactive structure
                             structure_state = "active"
-                            if slug[0] == "001" and score > -40:
+                            if slug[0] == "001" and score > -30:
                                 structure_state = "intermediate"
-                        elif score < 0 and slug[0] == "004": # above this score always inactive structure
+                        elif score < -7 and slug[0] == "004": # above this score always inactive structure
                             structure_state = "active"
                         elif score < 0 and slug[0] == "006": # above this score always inactive structure
                             structure_state = "active"

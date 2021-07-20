@@ -285,6 +285,8 @@ class GPCRDBParsingPDB(object):
                         use_resid = True
                     elif structure.pdb_code.index=='6QZH' and residue.get_id()[1]==1434:
                         use_resid = True
+                    elif structure.pdb_code.index=='7M3E':
+                        use_resid = True
                     #################################################
                     elif gn in gn_list:
                         gn_array.append(gn)
