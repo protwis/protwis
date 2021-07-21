@@ -1,9 +1,9 @@
 {% load static %}
 
 <!-- ARRESTINS -->
-<li class="dropdown" id="arrestindb_menu">
+<li class="dropdown {% if current_site == 'arrestin' %}highlight_menu {{current_site}}{% endif %}" id="arrestindb_menu">
     <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-        <img style="margin-right: 5px;" src="{% static 'home/logo/arrestin/main.png' %}" class="main-logo">ArrestinDb<span class="caret"></span>
+        ArrestinDb<span class="caret"></span>
     </a>
     <ul class="dropdown-menu" role="menu">
         <li><a href="/signprot/arrestin">Arrestin page</a></li>

@@ -1,47 +1,103 @@
-<style type="text/css">
-    .highlight_reference{
-        background-color: #DCDCDC;
-    }
-    .alert {
-      padding: 5px;
-      border-color: black;
-      display: inline-block;
-    }
-    .page-selection {
-        box-shadow: .5px .5px .5px .5px;
-        background-color: #f0f0f5;
-        border-radius: 3px;
-        border-width: 1px;
-        border-style: solid;
-        border-color: black;
-        padding: 5px;
-    }
-    .select-link,
-    .select-link:link,
-    .select-link:visited,
-    .select-link:hover {
-        color: black;
-        text-decoration: none;
-    }
-    .widget_open {
-        display: inline;
-    }
-    .widget-link {
-        padding-right: 5px;
-    }
-    .widget-link:hover {
-        text-decoration: none;
-    }
-    .icon-button {
-        appearance: none;
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        outline: none;
-        border: 0;
-        background: transparent;
-        padding: 2px 0px 2px 0px;
-    }
-    .highlight-menu{
-        background-color: #5C5452;
-    }
-</style>
+.highlight_reference {
+  background-color: #DCDCDC;
+}
+
+.alert {
+  padding: 5px;
+  border-color: black;
+  display: inline-block;
+}
+
+.page-selection {
+  box-shadow: .5px .5px .5px .5px;
+  background-color: #f0f0f5;
+  border-radius: 3px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: black;
+  padding: 5px;
+}
+
+.select-link,
+.select-link:link,
+.select-link:visited,
+.select-link:hover {
+  color: black;
+  text-decoration: none;
+}
+
+.widget_open {
+  display: inline;
+}
+
+.widget-link {
+  padding-right: 5px;
+}
+
+.widget-link:hover {
+  text-decoration: none;
+}
+
+.icon-button {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  outline: none;
+  border: 0;
+  background: transparent;
+  padding: 2px 0px 2px 0px;
+}
+
+nav.navbar, nav.navbar a#cite {
+  background-color: #5C5452;
+  color: #CCC;
+}
+
+nav.navbar li.dropdown.highlight_menu {
+  background-color: #222;
+}
+
+nav.navbar li.dropdown a.dropdown-toggle {
+  color: #CCC;
+}
+
+nav.navbar li.dropdown a.dropdown-toggle:hover {
+  color: #FFF;
+}
+
+li#gpcrdb_menu, li#gproteindb_menu, li#arrestindb_menu {
+  background-repeat: no-repeat;
+  background-position: 10px center;
+  background-size: 30px;
+  padding-left: 30px;
+}
+
+li#gpcrdb_menu {
+  background-image: url('/static/home/logo/gpcr/main.png');
+}
+
+li#gproteindb_menu {
+  background-image: url('/static/home/logo/gprotein/main.png');
+}
+
+li#arrestindb_menu {
+  background-image: url('/static/home/logo/arrestin/main.png');
+  background-size: 35px;
+  padding-left: 35px;
+}
+
+li.highlight_menu a {
+  padding-top: 12px;
+}
+
+li.highlight_menu.gpcr {
+  border-top: 4px solid #BE00BE;
+}
+
+li.highlight_menu.gprotein {
+  border-top: 4px solid #F46615;
+}
+
+li.highlight_menu.arrestin {
+  border-top: 4px solid #55AE35;
+}

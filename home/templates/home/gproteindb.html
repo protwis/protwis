@@ -1,9 +1,9 @@
 {% load static %}
 
 <!-- G PROTEINS -->
-<li class="dropdown" id="gproteindb_menu">
+<li class="dropdown {% if current_site == 'gprotein' %}highlight_menu {{current_site}}{% endif %}" id="gproteindb_menu">
     <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-        <img style="margin-right: 5px;" src="{% static 'home/logo/gprotein/main.png' %}" class="main-logo">GproteinDb<span class="caret"></span>
+        GproteinDb<span class="caret"></span>
     </a>
     <ul class="dropdown-menu" role="menu">
         <li><a href="/signprot/gprotein">G protein page</a></li>
