@@ -14,7 +14,9 @@
     </div>
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav navbar-left">
-      {% include menu_template %}
+      {% with 'home/mainmenu_'|add:current_site|add:'.html' as menu_template %}
+        {% include menu_template %}
+      {% endwith %}
       </ul>
       <form class="navbar-form navbar-right" role="search">
         <div class="input-group">

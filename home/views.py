@@ -82,7 +82,7 @@ def index(request):
         context['release_notes'] = ''
         context['release_statistics'] = []
 
-    return render(request, 'home/index_{}.html'.format(settings.SITE_NAME), context)
+    return render(request, 'home/index.html', context)
 
 # @cache_page(60 * 60 * 24)
 def citations_json(request):
