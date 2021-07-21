@@ -57,12 +57,29 @@ nav.navbar li.dropdown.highlight_menu {
   background-color: #222;
 }
 
+nav.navbar li.dropdown.open a.dropdown-toggle, nav.navbar li.dropdown.open a.dropdown-toggle:hover, nav.navbar li.dropdown.open a.dropdown-toggle:focus {
+  background-color: transparent;
+}
+
+nav.navbar li.dropdown.open {
+  background-color: #222;
+}
+
 nav.navbar li.dropdown a.dropdown-toggle {
   color: #CCC;
 }
 
 nav.navbar li.dropdown a.dropdown-toggle:hover {
   color: #FFF;
+  padding-top: 11px;
+}
+
+nav.navbar li.dropdown:hover a.dropdown-toggle {
+  padding-top: 11px;
+}
+
+nav.navbar .navbar-nav>.open>a, nav.navbar .navbar-inverse .navbar-nav>.open>a:focus, nav.navbar .navbar-inverse .navbar-nav>.open>a:hover {
+  background-color: transparent;
 }
 
 li#gpcrdb_menu, li#gproteindb_menu, li#arrestindb_menu {
@@ -87,7 +104,7 @@ li#arrestindb_menu {
 }
 
 li.highlight_menu a {
-  padding-top: 12px;
+  padding-top: 11px;
 }
 
 li.highlight_menu.gpcr {
@@ -99,5 +116,21 @@ li.highlight_menu.gprotein {
 }
 
 li.highlight_menu.arrestin {
+  border-top: 4px solid #55AE35;
+}
+
+nav.navbar li.dropdown:hover:not(.gpcr):not(.gprotein):not(.arrestin) {
+  border-top: 4px solid #222;
+}
+
+li.gpcr:hover {
+  border-top: 4px solid #BE00BE;
+}
+
+li.gprotein:hover {
+  border-top: 4px solid #F46615;
+}
+
+li.arrestin:hover {
   border-top: 4px solid #55AE35;
 }

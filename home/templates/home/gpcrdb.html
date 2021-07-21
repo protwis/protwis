@@ -1,7 +1,7 @@
 {% load static %}
 
 <!-- RECEPTORS -->
-<li class="dropdown {% if current_site == 'gpcr' %}highlight_menu {{current_site}}{% endif %}" id="gpcrdb_menu">
+<li class="dropdown gpcr {% if current_site == 'gpcr' %}highlight_menu{% endif %}" id="gpcrdb_menu">
 
         <a tabindex="0" href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" data-submenu aria-expanded="false">
             GPCRdb<span class="caret"></span>
@@ -108,7 +108,7 @@
 
 
 <!-- DRUGS AND LIGANDS -->
-<li class="dropdown {% if current_site == 'gpcr' %}highlight_menu {{current_site}}{% endif %}" id="drugs_menu">
+<li class="dropdown gpcr {% if current_site == 'gpcr' %}highlight_menu {{current_site}}{% endif %}" id="drugs_menu">
     <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" data-submenu aria-expanded="false">
         Drugs <span>&#38;</span> ligands<span class="caret"></span>
     </a>
@@ -177,7 +177,7 @@
 
 
 <!-- STRUCTURE CONSTRUCTS -->
-<li class="dropdown {% if current_site == 'gpcr' %}highlight_menu {{current_site}}{% endif %}" id="constructs_menu">
+<li class="dropdown gpcr {% if current_site == 'gpcr' %}highlight_menu {{current_site}}{% endif %}" id="constructs_menu">
     <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
         Structure constructs<span class="caret"></span>
     </a>
@@ -206,7 +206,7 @@
 
 
 <!--  BIASED SIGNALING -->
-<li class="dropdown {% if current_site == 'gpcr' %}highlight_menu {{current_site}}{% endif %}" id="biased_menu">
+<li class="dropdown gpcr {% if current_site == 'gpcr' %}highlight_menu {{current_site}}{% endif %}" id="biased_menu">
     <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" data-submenu aria-expanded="false">
         Biased signalling<span class="caret"></span>
     </a>
