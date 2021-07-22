@@ -68,7 +68,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
     return "translate(" + x + "," + y + ")";
   }
 
-    height = 500 - margin.top - margin.bottom;
+    height = 600 - margin.top - margin.bottom;
 
     var parentDiv = document.getElementById(BaseDiv)
 
@@ -157,9 +157,9 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
     .attr("class", "chart")
 
   var main = chart.append("g")
-    .attr("transform", "translate(" + (margin.left + 120) + "," + margin.top + ")")
+    .attr("transform", "translate(" + (margin.left + 120) + "," + (margin.top/2) + ")")
     .attr("width", width)
-    .attr("height", height)
+    .attr("height", height  + margin.top + margin.bottom)
     .attr("class", "main");
 
   // draw the x axis
@@ -287,54 +287,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
                 divToolTipTest
                   .style("left", (d3.event.pageX) + "px")
                   .style("top", (d3.event.pageY) + "px")
-                  .html("<b>Compound Name:</b> " + d[3]
-                      + "<br\><b>Plotted Value:</b> Full bias<br\>"
-                      + "<hr class='solid'>"
-                      + "<table>"
-                      + "      <tr>"
-                      + "        <th>" + d[3] + "</th>"
-                      + "        <th>" + ylabel.replace('ΔΔ','Δ') + "</th>"
-                      + "        <th>" + first + "</th>"
-                      + "        <th>" + second + "</th>"
-                      + "      </tr>"
-                      + "      <tr>"
-                      + "        <td>" + header + "</td>"
-                      + "        <td>" + d[7] + "</td>"
-                      + "        <td>" + d[9] + "</td>"
-                      + "        <td>" + d[11] + "</td>"
-                      + "      </tr>"
-                      + "      <tr>"
-                      + "        <td>" + d[5] + "</td>"
-                      + "        <td>" + d[6] + "</td>"
-                      + "        <td>" + d[8] + "</td>"
-                      + "        <td>" + d[10] + "</td>"
-                      + "      </tr>"
-                      + "</table>"
-                      + "<hr class='solid'>"
-                      + "<table>"
-                      + "      <tr>"
-                      + "        <th>" + d[15] + "</th>"
-                      + "        <th>" + first + "</th>"
-                      + "        <th>" + second + "</th>"
-                      + "      </tr>"
-                      + "      <tr>"
-                      + "        <td>" + d[14] + "</td>"
-                      + "        <td>" + d[12] + "</td>"
-                      + "        <td>" + d[13] + "</td>"
-                      + "      </tr>"
-                      + "      </tr>"
-                      + "</table>"
-                  );
-                  // .html("<b>Compound Name:</b> " + d[3]
-                  //     + "<br\><b>Plotted Value:</b> Full bias"
-                  //     + "<br\><b>" + ylabel.replace('ΔΔ','Δ') + " ("+ header + "):</b> " + d[7]
-                  //     + "<br\><b>" + first + " value ("+ header + "):</b> " + d[9]
-                  //     + "<br\><b>" + second + " value ("+ header + "):</b> " + d[11]
-                  //     + "<br\><b>Compared Pathway:</b> " + d[5]
-                  //     + "<br\><b>" + ylabel.replace('ΔΔ','Δ') + " ("+ d[5] + "):</b> " + d[6]
-                  //     + "<br\><b>" + first + " value ("+ d[5] + "):</b> " + d[8]
-                  //     + "<br\><b>" + second + " value ("+ d[5] + "):</b> " + d[10]
-                  //   );
+                  .html(d[5]);
             })
             .on("mouseout", mouseout)
             .on("click", function (d) {
@@ -354,8 +307,6 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
             .attr("y", function(d) {return y(d[1]);})
             .attr("width", 7)
             .attr("height", 7)
-            // .style("stroke", "black")
-            // .style("fill", "orange")
             .style("fill", function(d) {return d[2];})
             .style("opacity", 1.0)
             .on("mouseover", mouseover)
@@ -363,44 +314,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
                 divToolTipTest
                   .style("left", (d3.event.pageX) + "px")
                   .style("top", (d3.event.pageY) + "px")
-                  .html("<b>Compound Name:</b> " + d[3]
-                  + "<br\><b>Plotted Value:</b> High bias<br\>"
-                  + "<hr class='solid'>"
-                  + "<table>"
-                  + "      <tr>"
-                  + "        <th>" + d[3] + "</th>"
-                  + "        <th>" + ylabel.replace('ΔΔ','Δ') + "</th>"
-                  + "        <th>" + first + "</th>"
-                  + "        <th>" + second + "</th>"
-                  + "      </tr>"
-                  + "      <tr>"
-                  + "        <td>" + header + "</td>"
-                  + "        <td>" + d[7] + "</td>"
-                  + "        <td>" + d[9] + "</td>"
-                  + "        <td>" + d[11] + "</td>"
-                  + "      </tr>"
-                  + "      <tr>"
-                  + "        <td>" + d[5] + "</td>"
-                  + "        <td>" + d[6] + "</td>"
-                  + "        <td>" + d[8] + "</td>"
-                  + "        <td>" + d[10] + "</td>"
-                  + "      </tr>"
-                  + "</table>"
-                  + "<hr class='solid'>"
-                  + "<table>"
-                  + "      <tr>"
-                  + "        <th>" + d[15] + "</th>"
-                  + "        <th>" + first + "</th>"
-                  + "        <th>" + second + "</th>"
-                  + "      </tr>"
-                  + "      <tr>"
-                  + "        <td>" + d[14] + "</td>"
-                  + "        <td>" + d[12] + "</td>"
-                  + "        <td>" + d[13] + "</td>"
-                  + "      </tr>"
-                  + "      </tr>"
-                  + "</table>"
-                    );
+                  .html(d[5]);
             })
             .on("mouseout", mouseout)
             .on("click", function (d) {
@@ -423,44 +337,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
         divToolTipTest
           .style("left", (d3.event.pageX) + "px")
           .style("top", (d3.event.pageY) + "px")
-          .html("<b>Compound Name:</b> " + d[3]
-          + "<br\><b>Plotted Value:</b> " + d[1]
-          + "<hr class='solid'>"
-          + "<table>"
-          + "      <tr>"
-          + "        <th>" + d[3] + "</th>"
-          + "        <th>" + ylabel.replace('ΔΔ','Δ') + "</th>"
-          + "        <th>" + first + "</th>"
-          + "        <th>" + second + "</th>"
-          + "      </tr>"
-          + "      <tr>"
-          + "        <td>" + header + "</td>"
-          + "        <td>" + d[7] + "</td>"
-          + "        <td>" + d[9] + "</td>"
-          + "        <td>" + d[11] + "</td>"
-          + "      </tr>"
-          + "      <tr>"
-          + "        <td>" + d[5] + "</td>"
-          + "        <td>" + d[6] + "</td>"
-          + "        <td>" + d[8] + "</td>"
-          + "        <td>" + d[10] + "</td>"
-          + "      </tr>"
-          + "</table>"
-          + "<hr class='solid'>"
-          + "<table>"
-          + "      <tr>"
-          + "        <th>" + d[15] + "</th>"
-          + "        <th>" + first + "</th>"
-          + "        <th>" + second + "</th>"
-          + "      </tr>"
-          + "      <tr>"
-          + "        <td>" + d[14] + "</td>"
-          + "        <td>" + d[12] + "</td>"
-          + "        <td>" + d[13] + "</td>"
-          + "      </tr>"
-          + "      </tr>"
-          + "</table>"
-            );
+          .html(d[5]);
     })
     .on("mouseout", mouseout)
     .on("click", function (d) {

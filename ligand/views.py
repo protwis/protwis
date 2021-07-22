@@ -3,6 +3,7 @@ import itertools
 import json
 import math
 import random
+import re
 
 from random import SystemRandom
 from copy import deepcopy
@@ -567,6 +568,71 @@ class BiasedRankOrder(TemplateView):
     source = "different_family"
     assay = "tested_assays"
 
+    def jitter_tooltip(self, page, assay, ligand, value, headers, prefix='', small_data=None, large_data=None):
+        #small and large data has to structured
+        #small --> pathway/value/value
+        #large --> pathway1/delta/value/value pathway2/delta/value/value
+        small = ''
+        large = ''
+        head = "<b>Compound Name:</b> " + str(ligand) + \
+               "<br><b>Plotted Value:</b> " + str(value) + \
+               "<hr class='solid'>"
+        if small_data:
+            #small table to show reference ligand or single datapoint
+            small =  "<table>" + \
+                     "      <tr>" + \
+                     "        <th>" + str(ligand) + "</th>" + \
+                     "        <th>" + headers[0] + "</th>" + \
+                     "        <th>" + headers[1] + "</th>" + \
+                     "      </tr>" + \
+                     "      <tr>" + \
+                     "        <td>" + str(small_data[0]) + "</td>" + \
+                     "        <td>" + str(small_data[1]) + "</td>" + \
+                     "        <td>" + str(small_data[2]) + "</td>" + \
+                     "      </tr>" + \
+                     "</table>"
+        if large_data:
+            #large table showing also Δ data
+            large =  "<table>" + \
+                     "      <tr>" + \
+                     "        <th>" + str(ligand) + "</th>" + \
+                     "        <th>" + prefix + "Log(" + headers[0] + "/" + headers[1] + ") </th>" + \
+                     "        <th>" + headers[0] + "</th>" + \
+                     "        <th>" + headers[1] + "</th>" + \
+                     "      </tr>" + \
+                     "      <tr>" + \
+                     "        <td>" + str(large_data[0]) + "</td>" + \
+                     "        <td>" + str(large_data[1]) + "</td>" + \
+                     "        <td>" + str(large_data[2]) + "</td>" + \
+                     "        <td>" + str(large_data[3]) + "</td>" + \
+                     "      </tr>" + \
+                     "      <tr>" + \
+                     "        <td>" + str(large_data[4]) + "</td>" + \
+                     "        <td>" + str(large_data[5]) + "</td>" + \
+                     "        <td>" + str(large_data[6]) + "</td>" + \
+                     "        <td>" + str(large_data[7]) + "</td>" + \
+                     "      </tr>" + \
+                     "</table>" + \
+                     "<hr class='solid'>"
+
+        if assay == "predicted_tested_assays":
+            #no reference values
+            if page == "rankorder":
+                tip = head + large
+                #dot plots without reference values
+            else:
+                tip = head + small
+                #line charts without reference values
+        else:
+            #reference values required
+            if page == "rankorder":
+                tip = head + large + small
+                #dot plots with reference values
+            else:
+                tip = head + small
+        return tip #+ small for reference ligand?
+        #line charts with reference values
+
     def create_rgb_color(self): #, name, power): # pseudo-randomization function
         # h = hash( name + str(power) ) # hash string and int together
         # if h < 0: # ensure positive number
@@ -591,6 +657,12 @@ class BiasedRankOrder(TemplateView):
                          'Gi/o': 'G<sub>i/o</sub>',
                          'Gq/11': 'G<sub>q/11</sub>',
                          'Gs': 'G<sub>s</sub>'}
+
+        if self.assay != "predicted_tested_assays":
+            prefix = 'Δ'
+        else:
+            prefix = ''
+
         upgrade_value = ["High activity", "High activity (Potency and Emax)", "Full agonism"]
         downgrade_value = ["Low activity", "No activity", "Inverse agonism/antagonism"]
         exclude_list = ["Agonism","Partial agonism","Medium activity"] #full agonism should be removed
@@ -601,23 +673,26 @@ class BiasedRankOrder(TemplateView):
                         experiment__source=self.source).exclude(
                         qualitative_activity__in=exclude_list,
                         ).values_list(
-                        "family", #pathway                                   0
-                        "experiment__ligand__name", #name                    1
-                        "experiment__publication__web_link__index", # DOI    2
-                        "experiment__publication__year", #year               3
-                        "experiment__publication__journal__name", #journal   4
-                        "experiment__publication__authors",  #authors        5
-                        "experiment__ligand",    #ligand_id for hash         6
-                        "experiment__endogenous_ligand__name", #endogenous   7
-                        "qualitative_activity",  #activity values            8
-                        "log_bias_factor_a", #ΔLog(Emax/EC50)                9
-                        "log_bias_factor",  #ΔΔLog(Emax/EC50)               10
-                        "order_no",         #ranking                        11
-                        "t_coefficient",    #ΔLog(TAU/Ka)                   12
-                        "t_factor",         #ΔΔLog(TAU/Ka)                  13
-                        "quantitive_activity",   #EC 50                     14
-                        "quantitive_efficacy",   #Emax                      15
-                        "reference_ligand_id", #reference ligand id         16
+                        "family", #pathway                                              0
+                        "experiment__ligand__name", #name                               1
+                        "experiment__publication__web_link__index", # DOI               2
+                        "experiment__publication__year", #year                          3
+                        "experiment__publication__journal__name", #journal              4
+                        "experiment__publication__authors",  #authors                   5
+                        "experiment__ligand",    #ligand_id for hash                    6
+                        "experiment__endogenous_ligand__name", #endogenous              7
+                        "qualitative_activity",  #activity values                       8
+                        "log_bias_factor_a", #ΔLog(Emax/EC50)                           9
+                        "log_bias_factor",  #ΔΔLog(Emax/EC50)                           10
+                        "order_no",         #ranking                                    11
+                        "t_coefficient",    #ΔLog(TAU/Ka)                               12
+                        "t_factor",         #ΔΔLog(TAU/Ka)                              13
+                        "quantitive_activity",   #EC 50                                 14
+                        "quantitive_efficacy",   #Emax                                  15
+                        "reference_assay_initial_id__quantitive_activity", #            16 EC 50 compared drug
+                        "reference_assay_initial_id__quantitive_efficacy", #            17 Emax compared drug
+                        "reference_assay_initial_id__family", # Pathway compared drug   18
+                        "reference_assay_initial_id__biased_experiment__ligand__name", #19 Name compared drug
                         ).distinct()) #check
 
         list_of_ligands = []
@@ -633,13 +708,11 @@ class BiasedRankOrder(TemplateView):
         labels_dict = {}
 
         for result in publications:
-            reference_data = list(ExperimentAssay.objects.filter(
-                                id=result[16],
-                                ).values_list(
-                                "quantitive_activity",   #EC 50                     0
-                                "quantitive_efficacy",   #Emax                      1
-                                "family",                #pathways                  2
-                                ).distinct()) #check
+            try:
+                reference_path = tooltip_dict[result[18]]
+            except KeyError:
+                reference_path = result[18]
+
             #checking the value to plot
             #based on the landing page
             if self.label == 'emax':
@@ -648,12 +721,17 @@ class BiasedRankOrder(TemplateView):
                 emax_tau = result[15]
                 EC50_ka = result[14]
                 components = ['Emax', 'EC50']
+                reference_emax_tau = result[17]
+                reference_EC50_ka = result[16]
             else:
                 single_delta = result[12]
                 double_delta = result[13]
-                emax_tau = "Not available"
-                EC50_ka = "Not available"
+                emax_tau = "NA" #need to be updated IF datacolumn for TAU will be added
+                EC50_ka = "NA"  #need to be updated IF datacolumn for KA will be added
                 components = ['Tau', 'KA']
+                reference_emax_tau = "NA" #need to be updated IF datacolumn for TAU will be added
+                reference_EC50_ka = "NA"  #need to be updated IF datacolumn for KA will be added
+
             #fixing ligand name (hash hash baby)
             lig_name = result[1]
             if result[1][0].isdigit():
@@ -664,7 +742,7 @@ class BiasedRankOrder(TemplateView):
             journal_name = result[4]
             if result[4]:
                 if ' ' in result[4]:
-                    journal_name = ' closeTS openTS '.join(' '.join(s) for s in zip(*[iter(result[4].split(' '))]*2))
+                    journal_name  = re.sub(r'(\s\S*?)\s', r'\1 closeTS openTS ', result[4])
             else:
                 journal_name = "Not listed"
             if result[5] == None:
@@ -719,13 +797,8 @@ class BiasedRankOrder(TemplateView):
                 jitterDict[jitterAuthors][lig_name]["delta"] = value
                 jitterDict[jitterAuthors][lig_name]["Emax_Tau"] = emax_tau
                 jitterDict[jitterAuthors][lig_name]["EC50_KA"] = EC50_ka
-                # jitterDict[jitterAuthors][lig_name]['0'] = value
 
-            tooltip_info = "<b>Compound Name:</b> " + str(lig_name) + \
-            "<br><b>Plotted Value:</b> " + str(value) + \
-            "<br><b>Pathway:</b> " + str(result[0]) + \
-            "<br><b>Ligand " + components[0] + " value:</b> " + str(emax_tau) + \
-            "<br><b>Ligand " + components[1] + " value:</b> " + str(EC50_ka)
+            tooltip_info = self.jitter_tooltip(self.page, self.assay, lig_name, value, components, small_data=[result[0], emax_tau, EC50_ka])
 
             # initialization of the dictionary for new publication
             if result[2] not in full_data.keys():
@@ -790,22 +863,14 @@ class BiasedRankOrder(TemplateView):
                     try:
                         for i in indices:
                             name["PathwaysData"][i]["value"] = [MAX,"ARTIFICIAL"]
-                            name["PathwaysData"][i]["tooltip"] = "<b>Compound Name:</b> " + str(lig_name) + \
-                                                                 "<br><b>Plotted Value:</b> " + str(value) + \
-                                                                 "<br><b>Pathway:</b> " + str(result[0]) + \
-                                                                 "<br><b>Ligand " + components[0] + " value:</b> " + str(emax_tau) + \
-                                                                 "<br><b>Ligand " + components[1] + " value:</b> High"
+                            name["PathwaysData"][i]["tooltip"] = self.jitter_tooltip(self.page, self.assay, lig_name, value, components, small_data=[result[0], emax_tau, 'High'])
                     except ValueError:
                         continue
                 if quality in downgrade_value:
                     try:
                         for i in indices:
                             name["PathwaysData"][i]["value"] = [MIN,"ARTIFICIAL"]
-                            name["PathwaysData"][i]["tooltip"] = "<b>Compound Name:</b> " + str(lig_name) + \
-                                                                 "<br><b>Plotted Value:</b> " + str(value) + \
-                                                                 "<br><b>Pathway:</b> " + str(result[0]) + \
-                                                                 "<br><b>Ligand " + components[0] + " value:</b> " + str(emax_tau) + \
-                                                                 "<br><b>Ligand " + components[1] + " value:</b> Low"
+                            name["PathwaysData"][i]["tooltip"] = self.jitter_tooltip(self.page, self.assay, lig_name, value, components, small_data=[result[0], emax_tau, 'Low'])
                     except ValueError:
                         continue
 
@@ -845,17 +910,17 @@ class BiasedRankOrder(TemplateView):
                 try:
                     if ligand not in Colors.keys():
                         color = '#%02x%02x%02x' % (self.create_rgb_color(), self.create_rgb_color(), self.create_rgb_color())
-                        # color = '#%02x%02x%02x' % (self.create_rgb_color(ligand,0), self.create_rgb_color(ligand,1), self.create_rgb_color(ligand,2)) old version with pseudo random
                         Colors[ligand] = color
-                    jitterPlot[jitterDict[pub][ligand]["Pathway"]].append([pub, jitterDict[pub][ligand]['deltadelta'][0], Colors[ligand], ligand, jitterDict[pub][ligand]['deltadelta'][1],
-                    jitterDict[pub][ligand]['2nd_Pathway'], jitterDict[pub][ligand]['2nd_Pathway_delta'], jitterDict[pub][ligand]['delta'],#])
-                    jitterDict[pub][ligand]['2nd_Pathway_emax_tau'], jitterDict[pub][ligand]['Emax_Tau'],
-                    jitterDict[pub][ligand]['2nd_Pathway_EC50_KA'], jitterDict[pub][ligand]['EC50_KA'], reference_data[0][0], reference_data[0][1], reference_data[0][2], result[7]])
+                    little = [reference_path, reference_EC50_ka, reference_emax_tau]
+                    big = [jitterDict[pub][ligand]["Pathway"], jitterDict[pub][ligand]['delta'], jitterDict[pub][ligand]['Emax_Tau'], jitterDict[pub][ligand]['EC50_KA'],
+                           jitterDict[pub][ligand]['2nd_Pathway'], jitterDict[pub][ligand]['2nd_Pathway_delta'], jitterDict[pub][ligand]['2nd_Pathway_emax_tau'], jitterDict[pub][ligand]['2nd_Pathway_EC50_KA']]
+
+                    if (jitterDict[pub][ligand]['deltadelta'][1] == 'High Bias') or (jitterDict[pub][ligand]['deltadelta'][1] == 'Full Bias'):
+                        tooltip = self.jitter_tooltip(self.page, self.assay, ligand, jitterDict[pub][ligand]['deltadelta'][1], components, prefix, small_data=little, large_data=big)
+                    else:
+                        tooltip = self.jitter_tooltip(self.page, self.assay, ligand, jitterDict[pub][ligand]['deltadelta'][0], components, prefix, small_data=little, large_data=big)
+                    jitterPlot[jitterDict[pub][ligand]["Pathway"]].append([pub, jitterDict[pub][ligand]['deltadelta'][0], Colors[ligand], ligand, jitterDict[pub][ligand]['deltadelta'][1], tooltip])
                     jitterLegend[jitterDict[pub][ligand]["Pathway"]].append(tuple((ligand, jitterDict[pub][ligand]['deltadelta'][0])))
-                    # if jitterDict[pub][ligand]['deltadelta'][0] >= 1.00:
-                    #     jitterLegend[jitterDict[pub][ligand]["Pathway"]].append(tuple((ligand, jitterDict[pub][ligand]['deltadelta'][0])))
-                    # if jitterDict[pub][ligand]['deltadelta'][0] <= -1.00:
-                    #     jitterLegend[jitterDict[pub][ligand]["Pathway"]].append(tuple((ligand, jitterDict[pub][ligand]['deltadelta'][0])))
                 except KeyError:
                     continue
                 jitterLegend[jitterDict[pub][ligand]["Pathway"]] = sorted(list(set(jitterLegend[jitterDict[pub][ligand]["Pathway"]])), key=lambda x: x[1], reverse=True)
