@@ -568,7 +568,8 @@ class BiasedRankOrder(TemplateView):
     source = "different_family"
     assay = "tested_assays"
 
-    def jitter_tooltip(self, page, assay, ligand, value, headers, prefix='', small_data=None, large_data=None):
+    @staticmethod
+    def jitter_tooltip(page, assay, ligand, value, headers, prefix='', small_data=None, large_data=None):
         #small and large data has to structured
         #small --> pathway/value/value
         #large --> pathway1/delta/value/value pathway2/delta/value/value
@@ -581,7 +582,7 @@ class BiasedRankOrder(TemplateView):
             #small table to show reference ligand or single datapoint
             small =  "<table>" + \
                      "      <tr>" + \
-                     "        <th>" + str(ligand) + "</th>" + \
+                     "        <th>" + str(small_data[3]) + "</th>" + \
                      "        <th>" + headers[0] + "</th>" + \
                      "        <th>" + headers[1] + "</th>" + \
                      "      </tr>" + \
@@ -633,7 +634,8 @@ class BiasedRankOrder(TemplateView):
         return tip #+ small for reference ligand?
         #line charts with reference values
 
-    def create_rgb_color(self): #, name, power): # pseudo-randomization function
+    @staticmethod
+    def create_rgb_color(): #, name, power): # pseudo-randomization function
         # h = hash( name + str(power) ) # hash string and int together
         # if h < 0: # ensure positive number
         #     h = h * -1
@@ -798,7 +800,7 @@ class BiasedRankOrder(TemplateView):
                 jitterDict[jitterAuthors][lig_name]["Emax_Tau"] = emax_tau
                 jitterDict[jitterAuthors][lig_name]["EC50_KA"] = EC50_ka
 
-            tooltip_info = self.jitter_tooltip(self.page, self.assay, lig_name, value, components, small_data=[result[0], emax_tau, EC50_ka])
+            tooltip_info = BiasedRankOrder.jitter_tooltip(self.page, self.assay, lig_name, value, components, small_data=[result[0], emax_tau, EC50_ka, lig_name])
 
             # initialization of the dictionary for new publication
             if result[2] not in full_data.keys():
@@ -863,14 +865,14 @@ class BiasedRankOrder(TemplateView):
                     try:
                         for i in indices:
                             name["PathwaysData"][i]["value"] = [MAX,"ARTIFICIAL"]
-                            name["PathwaysData"][i]["tooltip"] = self.jitter_tooltip(self.page, self.assay, lig_name, value, components, small_data=[result[0], emax_tau, 'High'])
+                            name["PathwaysData"][i]["tooltip"] = BiasedRankOrder.jitter_tooltip(self.page, self.assay, lig_name, value, components, small_data=[result[0], emax_tau, 'High', lig_name])
                     except ValueError:
                         continue
                 if quality in downgrade_value:
                     try:
                         for i in indices:
                             name["PathwaysData"][i]["value"] = [MIN,"ARTIFICIAL"]
-                            name["PathwaysData"][i]["tooltip"] = self.jitter_tooltip(self.page, self.assay, lig_name, value, components, small_data=[result[0], emax_tau, 'Low'])
+                            name["PathwaysData"][i]["tooltip"] = BiasedRankOrder.jitter_tooltip(self.page, self.assay, lig_name, value, components, small_data=[result[0], emax_tau, 'Low', lig_name])
                     except ValueError:
                         continue
 
@@ -909,16 +911,16 @@ class BiasedRankOrder(TemplateView):
             for ligand in jitterDict[pub]:
                 try:
                     if ligand not in Colors.keys():
-                        color = '#%02x%02x%02x' % (self.create_rgb_color(), self.create_rgb_color(), self.create_rgb_color())
+                        color = '#%02x%02x%02x' % (BiasedRankOrder.create_rgb_color(), BiasedRankOrder.create_rgb_color(), BiasedRankOrder.create_rgb_color())
                         Colors[ligand] = color
-                    little = [reference_path, reference_EC50_ka, reference_emax_tau]
+                    little = [reference_path, reference_EC50_ka, reference_emax_tau, result[19]]
                     big = [jitterDict[pub][ligand]["Pathway"], jitterDict[pub][ligand]['delta'], jitterDict[pub][ligand]['Emax_Tau'], jitterDict[pub][ligand]['EC50_KA'],
                            jitterDict[pub][ligand]['2nd_Pathway'], jitterDict[pub][ligand]['2nd_Pathway_delta'], jitterDict[pub][ligand]['2nd_Pathway_emax_tau'], jitterDict[pub][ligand]['2nd_Pathway_EC50_KA']]
 
                     if (jitterDict[pub][ligand]['deltadelta'][1] == 'High Bias') or (jitterDict[pub][ligand]['deltadelta'][1] == 'Full Bias'):
-                        tooltip = self.jitter_tooltip(self.page, self.assay, ligand, jitterDict[pub][ligand]['deltadelta'][1], components, prefix, small_data=little, large_data=big)
+                        tooltip = BiasedRankOrder.jitter_tooltip(self.page, self.assay, ligand, jitterDict[pub][ligand]['deltadelta'][1], components, prefix, small_data=little, large_data=big)
                     else:
-                        tooltip = self.jitter_tooltip(self.page, self.assay, ligand, jitterDict[pub][ligand]['deltadelta'][0], components, prefix, small_data=little, large_data=big)
+                        tooltip = BiasedRankOrder.jitter_tooltip(self.page, self.assay, ligand, jitterDict[pub][ligand]['deltadelta'][0], components, prefix, small_data=little, large_data=big)
                     jitterPlot[jitterDict[pub][ligand]["Pathway"]].append([pub, jitterDict[pub][ligand]['deltadelta'][0], Colors[ligand], ligand, jitterDict[pub][ligand]['deltadelta'][1], tooltip])
                     jitterLegend[jitterDict[pub][ligand]["Pathway"]].append(tuple((ligand, jitterDict[pub][ligand]['deltadelta'][0])))
                 except KeyError:
