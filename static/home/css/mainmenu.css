@@ -103,7 +103,7 @@ li#arrestindb_menu {
   padding-left: 35px;
 }
 
-li.highlight_menu a {
+li.highlight_menu a.dropdown-toggle {
   padding-top: 11px;
 }
 
