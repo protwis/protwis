@@ -48,9 +48,8 @@
   padding: 2px 0px 2px 0px;
 }
 
-nav.navbar, nav.navbar a#cite {
+nav.navbar div.container {
   background-color: #5C5452;
-  color: #CCC;
 }
 
 nav.navbar li.dropdown:not(.highlight_menu) {
@@ -70,7 +69,7 @@ nav.navbar li.dropdown.open {
   background-color: #222;
 }
 
-nav.navbar li.dropdown a.dropdown-toggle {
+nav.navbar li.dropdown a.dropdown-toggle, nav.navbar a#cite {
   color: #CCC;
 }
 
