@@ -1,0 +1,40 @@
+<!-- References widget -->
+<div style='display: none; position: absolute; left: 0px; top: 50px; height: 30px; width: auto; z-index: 10;' role='button' class='page-selection' id='ref_widget_div'>
+    <div id='ref_widget' style='display:inline; float: left; height: 30px;'>
+        <div style='overflow: hidden; white-space: nowrap; height: 30px; text-align:center;'>
+            <a class='widget-link' id="icon_citation"><span class="glyphicon glyphicon-book icon-button" style='padding: 0px 5px 3px 3px;'></span>Cite this page</a>
+            <a class='widget-link' id="icon_video" target='_blank' style='display: none;'><span class="glyphicon glyphicon-film icon-button" style='padding: 0px 5px 3px 3px;'></span>Video</a>
+        </div>
+    </div>
+    <div id="ref_widget_openclose" style='display:inline; float: left; height: 30px;'>
+        <span id="widget_infosign" class="glyphicon glyphicon-info-sign" style="display: none;"></span>
+        <span id="widget_chevron" class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
+    </div>
+</div>
+
+<div id="citation-tool" class="modal-higher">
+  <!-- Modal content -->
+    <div class="modal-content modal-scroll">
+        <div class="modal-header">
+            <button id="close-citation" style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close">&times;</button>
+            <h3 class="modal-title">Cite us</h3>
+        </div>
+        <div class='modal-body'>
+            <div>
+                <h4>Main reference</h4>
+                <li id='main_reference'></li>
+            </div>
+
+            <div style='padding: 0px 0px 5px 0px; display:inline; '>
+                <li class='dropdown page-selection' style="margin-top: 5px; display:inline;">
+                    <a href="/" id="page_select_button" class="dropdown-toggle select-link" data-toggle="dropdown" role="button" aria-expanded="false">-- select page --</a>
+                    <ul class="dropdown-menu" id='dropdown_articles' role="menu"></ul>
+                </li>
+            </div>
+            <div style='padding: 0px 0px 0px 10px; display:inline-block;'>
+                <p class='alert'><i>Please cite the main reference and the reference for the GPCRdb page that you are using.</i></p>
+            </div>
+            <li id='article_list'></li>
+        </div>
+    </div>
+</div>
