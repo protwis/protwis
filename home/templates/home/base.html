@@ -69,6 +69,18 @@
 <script type="text/javascript">
     $(document).ready(function () {
         $('[data-submenu]').submenupicker();
+
+        // Enable hover open/close on parent menu items in navbar
+        $('.navbar .dropdown').hover(function() {
+          $(this).find('.dropdown-menu').first().stop(true, true).delay(250).slideDown();
+        }, function() {
+          $(this).find('.dropdown-menu').first().stop(true, true).delay(100).slideUp();
+        });
+
+        // Enable click on parent menu items in navbar
+        $('.navbar .dropdown > a').click(function(){
+          location.href = this.href;
+        });
     });
 </script>
 
