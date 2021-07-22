@@ -69,12 +69,9 @@ class Command(BaseBuild):
 # pylint: disable=R0201
     def purge_bias_data(self):
         print("# Purging data")
+        delete_bias_experiment = GTP_endogenous_ligand.objects.all()
+        delete_bias_experiment.delete()
 
-        # delete_bias_experiment = Ligand.objects.all()
-        # delete_bias_experiment.delete()
-        # delete_ligand_props = LigandProperities.objects.all()
-        # delete_ligand_props.delete()
-        print("# Data purged")
 
     def analyse_rows(self):
         """
@@ -104,65 +101,99 @@ class Command(BaseBuild):
             if response.status_code == 200:
                 data = response.json()
                 for i in data:
+                    # try:
+                    # import pdb; pdb.set_trace()
+                    ligand_name = str()
                     try:
-                        ligand_name = str()
-                        try:
-                            ligand_name = self.ligand_cache[i['targetId']]
-                        except:
-                            ligand_name = ""
-                        ligand = self.fetch_ligand(
-                            data[0]['ligandId'], data[0]['type'], ligand_name)
-                        if ligand and protein:
-                            self.get_ligand_interactions(ligand=ligand, ligand_id_gtp=data[0]['ligandId'], ligand_type=data[0]['type'],receptor=protein)
-                        else:
-                            pass
+                        ligand_name = self.ligand_cache[i['targetId']]
                     except:
+                        ligand_name = ""
+
+                    ligand = self.fetch_ligand(
+                        i['ligandId'], i['type'], ligand_name)
+                    if ligand and protein:
+                        # if target == 1:
+
+                        self.get_ligand_interactions(ligand=ligand, ligand_id_gtp=data[0]['ligandId'], ligand_type=data[0]['type'],receptor=protein)
+                    else:
                         pass
+                    # except:
+                    #     pass
 
     def get_ligand_interactions(self, ligand, ligand_id_gtp, ligand_type, receptor):
         response = requests.get(
             "https://www.guidetopharmacology.org/services/ligands/" + str(ligand_id_gtp) + "/interactions")
         if response.status_code == 200:
+            # import pdb; pdb.set_trace()
             data = response.json()
             for interaction in data:
                 emin=emax=eavg=kmin=kmax=kavg = None
                 if interaction['endogenous'] == True:
-                    if interaction['affinityParameter'] == 'pEC50':
+                    # import pdb; pdb.set_trace()
+                    if interaction['affinityParameter'] == 'pKi':
                         try:
-                            kmin, kmax = float(interaction['affinity'].split(" - "))
+                            temp = interaction['affinity'].strip().split("-")
+                            kmin = float(temp[0])
+                            kmax = float(temp[1])
                             kavg = (kmin + kmax) / 2
                         except:
                             kavg = float(interaction['affinity'])
 
-                    if interaction['affinityParameter'] == 'pKi':
+                    if interaction['affinityParameter'] == 'pEC50':
                         try:
-                            emin, emax = float(interaction['affinity'].split(" - "))
+                            temp = interaction['affinity'].strip().split("-")
+                            emin = float(temp[0])
+                            emax = float(temp[1])
                             eavg = (emin + emax) / 2
                         except:
                             eavg = float(interaction['affinity'])
+                    if kavg or eavg:
+                        try:
+                            publication = self.fetch_publication(interaction['refs'][0]['pmid'])
+                        except:
+                            publication= None
+                        try:
+                            ligand_type = ligand.properities.ligand_type.name
+                        except:
+                            ligand_type = None
 
-                    if eavg or kavg:
-
-                        publication = self.fetch_publication(interaction['refs'][0]['pmid'])
-                        gtp_data = GTP_endogenous_ligand(
-                                ligand = ligand,
-                                ligand_type = ligand_type,
-                                endogenous_princip = 'None',
-                                publication = publication,
-                                receptor = receptor,
-                                pec50_avg = eavg,
-                                pec50_min = emin,
-                                pec50_max = emax,
-                                pKi_avg = kavg,
-                                pKi_min = kmin,
-                                pKi_max = kmax,
-                                gpt_link = ligand_id_gtp,
-                        )
-                        gtp_data.save()
+                        link = "https://www.guidetopharmacology.org/GRAC/LigandDisplayForward?ligandId="+str(ligand_id_gtp)
+                        if self.fetch_experiment(publication=publication, ligand=ligand, receptor=receptor, pavg=kavg, eavg=eavg)==False:
+                            gtp_data = GTP_endogenous_ligand(
+                                    ligand = ligand,
+                                    ligand_type = ligand_type,
+                                    endogenous_princip = 'None',
+                                    publication = publication,
+                                    receptor = receptor,
+                                    pec50_avg = eavg,
+                                    pec50_min = emin,
+                                    pec50_max = emax,
+                                    pKi_avg = kavg,
+                                    pKi_min = kmin,
+                                    pKi_max = kmax,
+                                    gpt_link = link,
+                            )
+                            gtp_data.save()
 
                     else:
                         pass
 
+
+    def fetch_experiment(self, publication, ligand, receptor, pavg, eavg):
+        '''
+        fetch receptor with Protein model
+        requires: protein id, source
+        '''
+        try:
+            experiment = GTP_endogenous_ligand.objects.filter(
+                publication=publication, ligand=ligand, receptor=receptor, pKi_avg=pavg,	pec50_avg=eavg)
+            experiment = experiment.get()
+            print('dublicate')
+            return True
+        except Exception:
+            self.logger.info('fetch_experiment error')
+            experiment = None
+            return False
 # pylint: disable=R0201
     def fetch_protein(self, target):
         """
