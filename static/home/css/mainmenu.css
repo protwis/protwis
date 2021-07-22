@@ -128,17 +128,17 @@ nav.navbar li.dropdown:hover:not(.gpcr):not(.gprotein):not(.arrestin), nav.navba
   border-top: 4px solid #222;
 }
 
-li#gpcrdb_menu:hover {
+li#gpcrdb_menu:hover, li.dropdown.gpcr:hover {
   border-top: 4px solid #BE00BE;
   background-position: 10px 8px;
 }
 
-li#gproteindb_menu:hover {
+li#gproteindb_menu:hover, li.dropdown.gprotein:hover {
   border-top: 4px solid #F46615;
   background-position: 10px 8px;
 }
 
-li#arrestindb_menu:hover {
+li#arrestindb_menu:hover, li.dropdown.arrestin:hover {
   border-top: 4px solid #55AE35;
   background-position: 10px 8px;
 }
