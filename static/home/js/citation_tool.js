@@ -1,6 +1,6 @@
 function citation_tool(url) {
 	// Modal part
-	$('#modal_table tbody').empty();
+	$('#citation_modal_table tbody').empty();
     var modal = document.getElementById('citation-tool');
     var span = document.getElementById("close-citation");
     modal.classList.add("modal");
@@ -53,7 +53,7 @@ function citation_tool(url) {
 			}
 			else {
 				if (link==="/protein/ste2_yeast") {
-					data[i].push("Receptors");
+					data[i].push("GPCRdb");
 				}
 				else {
 					data[i].push($('a[href="'+link+'"]').first().parent().parent().parent().first().find(">:first-child").text().trim());

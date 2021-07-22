@@ -74,7 +74,7 @@ nav.navbar li.dropdown a.dropdown-toggle {
   color: #CCC;
 }
 
-nav.navbar li.dropdown a.dropdown-toggle:hover {
+nav.navbar li.dropdown a.dropdown-toggle:hover, nav.navbar a#cite:hover {
   color: #FFF;
   padding-top: 11px;
 }
