@@ -48,7 +48,7 @@
   padding: 2px 0px 2px 0px;
 }
 
-nav.navbar div.container {
+nav.navbar {
   background-color: #5C5452;
 }
 
@@ -140,4 +140,8 @@ li#gproteindb_menu:hover, li.dropdown.gprotein:hover {
 li#arrestindb_menu:hover, li.dropdown.arrestin:hover {
   border-top: 4px solid #55AE35;
   background-position: 10px 8px;
+}
+
+li#main_reference::marker, li#article_list::marker {
+  content: none;
 }
