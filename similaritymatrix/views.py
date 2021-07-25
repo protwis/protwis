@@ -5,6 +5,8 @@ from common.views import AbsSegmentSelection
 #from common.views import AbsTargetSelection
 from common.views import AbsTargetSelectionTable
 # from common.alignment_SITE_NAME import Alignment
+from protwis.context_processors import site_title
+
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 from collections import OrderedDict
@@ -112,5 +114,5 @@ def render_csv_matrix(request):
     a.calculate_similarity_matrix()
 
     response = render(request, 'similaritymatrix/matrix_csv.html', {'p': a.proteins, 'm': a.similarity_matrix})
-    response['Content-Disposition'] = "attachment; filename=" + settings.SITE_TITLE + "_similaritymatrix.csv"
+    response['Content-Disposition'] = "attachment; filename=" + site_title(request)["site_title"] + "_similaritymatrix.csv"
     return response

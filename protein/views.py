@@ -194,7 +194,7 @@ def SelectionAutocomplete(request):
                                         source__in=(protein_source_list)).exclude(family__slug__startswith=exclusion_slug).exclude(sequence_type__slug='consensus')[:10]
         else:
             ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q),
-                                        species__common_name='Human', source__name='SWISSPROT').exclude(family__slug__startswith=exclusion_slug).exclude(sequence_type__slug='consensus')[:10]
+                                        species__common_name='Human', source__name='SWISSPROT').exclude(entry_name__endswith='_a').exclude(sequence_type__slug='consensus')[:10]
 
         # Try matching protein name after stripping html tags
         if ps.count() == 0:
@@ -209,7 +209,7 @@ def SelectionAutocomplete(request):
                 # If count still 0 try searching outside of Swissprot
                 if ps.count() == 0 and type_of_selection == 'navbar':
                     ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q)) \
-                        .exclude(family__slug__startswith=exclusion_slug).exclude(sequence_type__slug='consensus')[:10]
+                        .exclude(entry_name__endswith='_a').exclude(sequence_type__slug='consensus')[:10]
                 elif ps.count() == 0:
                     ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q), source__name='TREMBL') \
                         .exclude(family__slug__startswith=exclusion_slug).exclude(sequence_type__slug='consensus')[:10]
