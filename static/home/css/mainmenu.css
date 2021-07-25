@@ -61,8 +61,9 @@ nav.navbar li.dropdown.highlight_menu {
   background-position: 10px 8px;
 }
 
-nav.navbar li.dropdown.open a.dropdown-toggle, nav.navbar li.dropdown.open a.dropdown-toggle:hover, nav.navbar li.dropdown.open a.dropdown-toggle:focus
-{
+nav.navbar li.dropdown.open a.dropdown-toggle,
+nav.navbar li.dropdown.open a.dropdown-toggle:hover,
+nav.navbar li.dropdown.open a.dropdown-toggle:focus {
   background-color: transparent;
 }
 
@@ -70,14 +71,15 @@ nav.navbar li.dropdown.open {
   background-color: #222;
 }
 
-nav.navbar li.dropdown a.dropdown-toggle, nav.navbar a#cite
-{
+nav.navbar li.dropdown a.dropdown-toggle,
+nav.navbar a#cite {
   color: #ccc;
 }
 
-nav.navbar li.dropdown a.dropdown-toggle:hover, nav.navbar a#cite:hover
-{
+nav.navbar li.dropdown a.dropdown-toggle:hover,
+nav.navbar a#cite:hover {
   color: #fff;
+
   /* padding-top: 11px; */
 }
 
@@ -85,19 +87,22 @@ nav.navbar li.dropdown a.dropdown-toggle:hover, nav.navbar a#cite:hover
   padding-top: 11px;
 } */
 
-nav.navbar .navbar-nav > .open > a, nav.navbar .navbar-inverse .navbar-nav > .open > a:focus, nav.navbar .navbar-inverse .navbar-nav > .open > a:hover
-{
+nav.navbar .navbar-nav > .open > a,
+nav.navbar .navbar-inverse .navbar-nav > .open > a:focus,
+nav.navbar .navbar-inverse .navbar-nav > .open > a:hover {
   background-color: transparent;
 }
 
-li#gpcrdb_menu, li#gproteindb_menu, li#arrestindb_menu
-{
+li#gpcrdb_menu,
+li#gproteindb_menu,
+li#arrestindb_menu {
   background-repeat: no-repeat;
   background-size: 30px;
   padding-left: 30px;
 }
 
-/* li.highlight_menu a.dropdown-toggle, li#cite_menu:hover a {
+/* li.highlight_menu a.dropdown-toggle,
+  li#cite_menu:hover a {
   padding-top: 11px;
   background-position: 10px 8px;
 } */
@@ -114,13 +119,15 @@ li.highlight_menu.arrestin {
   border-top: 4px solid #55ae35;
 }
 
-nav.navbar li.dropdown:not(.gpcr):not(.gprotein):not(.arrestin), nav.navbar li#cite_menu
-{
+nav.navbar li.dropdown:not(.gpcr):not(.gprotein):not(.arrestin),
+nav.navbar li#cite_menu {
   border-top: 4px solid #5c5452;
 }
 
-li#gpcrdb_menu, li#drugs_menu, li#constructs_menu, li#biased_menu
-{
+li#gpcrdb_menu,
+li#drugs_menu,
+li#constructs_menu,
+li#biased_menu {
   border-top: 4px solid #be00be;
   background-position: 10px 8px;
 }
@@ -143,7 +150,7 @@ li#arrestindb_menu {
   padding-left: 35px;
 }
 
-li#main_reference::marker, li#article_list::marker
-{
+li#main_reference::marker,
+li#article_list::marker {
   content: none;
 }
