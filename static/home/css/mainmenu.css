@@ -75,12 +75,12 @@ nav.navbar li.dropdown a.dropdown-toggle, nav.navbar a#cite {
 
 nav.navbar li.dropdown a.dropdown-toggle:hover, nav.navbar a#cite:hover {
   color: #FFF;
-  padding-top: 11px;
+  /*padding-top: 11px;*/
 }
 
-nav.navbar li.dropdown:hover a.dropdown-toggle {
+/*nav.navbar li.dropdown:hover a.dropdown-toggle {
   padding-top: 11px;
-}
+}*/
 
 nav.navbar .navbar-nav>.open>a, nav.navbar .navbar-inverse .navbar-nav>.open>a:focus, nav.navbar .navbar-inverse .navbar-nav>.open>a:hover {
   background-color: transparent;
@@ -106,10 +106,10 @@ li#arrestindb_menu {
   padding-left: 35px;
 }
 
-li.highlight_menu a.dropdown-toggle, li#cite_menu:hover a {
+/*li.highlight_menu a.dropdown-toggle, li#cite_menu:hover a {
   padding-top: 11px;
   background-position: 10px 8px;
-}
+}*/
 
 li.highlight_menu.gpcr {
   border-top: 4px solid #BE00BE;
@@ -123,21 +123,21 @@ li.highlight_menu.arrestin {
   border-top: 4px solid #55AE35;
 }
 
-nav.navbar li.dropdown:hover:not(.gpcr):not(.gprotein):not(.arrestin), nav.navbar li#cite_menu:hover {
-  border-top: 4px solid #222;
+nav.navbar li.dropdown:not(.gpcr):not(.gprotein):not(.arrestin), nav.navbar li#cite_menu {
+  border-top: 4px solid #5C5452;
 }
 
-li#gpcrdb_menu:hover, li.dropdown.gpcr:hover {
+li#gpcrdb_menu, li#drugs_menu, li#constructs_menu, li#biased_menu {
   border-top: 4px solid #BE00BE;
   background-position: 10px 8px;
 }
 
-li#gproteindb_menu:hover, li.dropdown.gprotein:hover {
+li#gproteindb_menu {
   border-top: 4px solid #F46615;
   background-position: 10px 8px;
 }
 
-li#arrestindb_menu:hover, li.dropdown.arrestin:hover {
+li#arrestindb_menu {
   border-top: 4px solid #55AE35;
   background-position: 10px 8px;
 }

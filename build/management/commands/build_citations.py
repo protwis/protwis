@@ -46,25 +46,30 @@ class Command(ParseExcel):
 		pubjournal = None
 		# Create main publication first for empty publication cells for non-published tools
 		for url, vals in refs.items():
-			if vals['Default']==1:
-				main_pub = self.create_publication(vals['DOI'], wr, pubjournal)
-				break
+			pubjournal = PublicationJournal.objects.get_or_create(slug='-'.join(vals['Journal'].split(' ')).lower(), name=vals['Journal'])[0]
+			if vals['Default']=='GPCRdb':
+				main_gpcrdb_pub = self.create_publication(vals['DOI'], wr, pubjournal)
+			if vals['Default']=='GproteinDb':
+				main_gproteindb_pub = self.create_publication(vals['DOI'], wr, pubjournal)
 		for url, vals in refs.items():
 			doi = vals['DOI']
-			if vals['Journal']=='Preprint at Research Square':
-				pubjournal = PublicationJournal.objects.get_or_create(slug='-'.join(vals['Journal'].split(' ')).lower(), name=vals['Journal'])[0]
+			if vals['Journal'] in ['Preprint at Research Square', 'Submitted']:
+				pubjournal = PublicationJournal.objects.get(name=vals['Journal'])
 			pub = self.create_publication(doi, wr, pubjournal)
 			page = vals['Page']
 			if not pub:
-				pub = main_pub
+				if vals['Menu']=='Gproteindb':
+					pub = main_gproteindb_pub
+				else:
+					pub = main_gpcrdb_pub
 			if vals['Video']!='':
 				vid = vals['Video']
 			else:
 				vid = None
-			if vals['Default']==1:
-				main = True
+			if vals['Default']!=0:
+				main = vals['Default']
 			else:
-				main = False
+				main = None
 			cit, created = Citation.objects.get_or_create(publication=pub, url=url, video=vid, main=main, docs=None, page_name=page)
 			cit.save()
 			self.logger.info('Created citation: {}'.format(cit))
@@ -102,6 +107,9 @@ class Command(ParseExcel):
 					pub.journal = pubjournal
 				pub.save()
 				self.logger.info('Created Publication:'+str(pub))
+			return pub
+		elif pubjournal and pubjournal.slug=='submitted':
+			pub = Publication.objects.get_or_create(title='The G protein database, GproteinDb', authors='Pándy-Szekeres G, Esguerra M, Hauser AS, Caroli J, Munk C, Pilger S, Keserű GM, Kooistra AJ, Gloriam DE', year='2021', reference='X:X', journal=pubjournal, web_link=None)[0]
 			return pub
 		else:
 			return None

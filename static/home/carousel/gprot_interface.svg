@@ -17,7 +17,7 @@
    version="1.1"
    inkscape:version="0.91 r13725"
    sodipodi:docname="gprot_interface.svg"
-   inkscape:export-filename="/Users/ntv489/pvagrant/shared/sites/protwis/static/home/carousel/gprot_models.png"
+   inkscape:export-filename="/Users/ntv489/pvagrant/shared/sites/protwis/static/home/carousel/gprot_interface.png"
    inkscape:export-xdpi="135"
    inkscape:export-ydpi="135">
   <defs
@@ -60,6 +60,17 @@
          d="m -752.05866,-163.86147 -188.89852,0 0,-77.78175 683.87328,0 0,500.02551 -489.92399,0 0,-422.24376 z"
          id="path5142"
          inkscape:connector-curvature="0" />
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath5506">
+      <rect
+         style="opacity:1;fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:0.875;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+         id="rect5508"
+         width="961.97449"
+         height="154.09705"
+         x="-1731.9066"
+         y="-203.25742" />
     </clipPath>
   </defs>
   <sodipodi:namedview
@@ -2625,7 +2636,8 @@ k1zxSeG4quwAAAAASUVORK5CYII=
 "
        preserveAspectRatio="none"
        height="196.72067"
-       width="942.08099" />
+       width="942.08099"
+       clip-path="url(#clipPath5506)" />
     <g
        id="g5408"
        transform="matrix(0.78163762,0,0,0.78163762,-194.6844,-82.496265)">

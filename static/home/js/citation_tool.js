@@ -38,7 +38,12 @@ function citation_tool(url) {
     cit_request.onload = function() {
 		var data = JSON.parse(cit_request.responseText)
 		for (i = 0; i < data.length; i++) {
-			var link = '/'+data[i][0].split('//')[1].split('/').slice(1).join('/');
+			if (env=="localhost:8000") {
+				var link = '/'+data[i][0].split('//')[1].split('/').slice(1).join('/');
+			}
+			else {
+				var link = data[i][0];
+			}
 			if (link[link.length-1]==='/') {
 				link = link.substring(0, link.length-1);
 			}
@@ -70,7 +75,6 @@ function citation_tool(url) {
 			}
 			var site = parse_url_long(data[i][0]);
 			tags.push(site);
-
 			// Dropdown menus
 			if (document.getElementById(data[i][11])===null) {
 				var submenu = document.createElement("li");
@@ -118,13 +122,13 @@ function citation_tool(url) {
 				articles[data[i][5]]['journal'] = data[i][9];
 				articles[data[i][5]]['doi'] = data[i][10];
 				articles[data[i][5]]['menu'] = data[i][11];
-				if (data[i][3]) {
+				if (data[i][3]=="GPCRdb") {
 					main_ref_id = site;
 				}
 			}
 			else {
 				articles[data[i][5]]['tools'][site] = option.innerHTML;
-				if (data[i][3]) {
+				if (data[i][3]=="GPCRdb") {
 					main_ref_id = site;
 				}
 			}

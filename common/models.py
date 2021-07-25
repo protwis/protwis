@@ -16,7 +16,7 @@ class Citation(models.Model):
     url = models.TextField()
     video = models.TextField(null=True)
     docs = models.TextField(null=True)
-    main = models.BooleanField()
+    main = models.TextField(null=True)
     page_name = models.TextField()
 
     def __str__(self):
@@ -54,7 +54,7 @@ class WebLink(models.Model):
 
 
 class Publication(models.Model):
-    web_link = models.OneToOneField('common.WebLink', on_delete=models.CASCADE)
+    web_link = models.OneToOneField('common.WebLink', null=True, on_delete=models.CASCADE)
     journal = models.ForeignKey('PublicationJournal', null=True, on_delete=models.CASCADE)
     title = models.TextField(null=True)
     authors = models.TextField(null=True)
