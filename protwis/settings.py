@@ -80,6 +80,9 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
+# Default site configuration (gpcr - GPCRdb, gprotein - GproteinDb, arrestin - ArrestinDb)
+DEFAULT_SITE = "gpcr"
+
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 STATIC_ROOT = '/protwis/static/protwis'
