@@ -5,18 +5,20 @@ def current_site(request):
     domain = request.get_host().lower()
 
     if not domain in domain_switches:
-        domain = "gpcrdb.org"
-
-    return {
-       'current_site': domain_switches[domain]
-     }
+        return {
+           'current_site': settings.DEFAULT_SITE
+         }
+    else:
+        return {
+           'current_site': domain_switches[domain]
+         }
 
 def site_title(request):
     domain = current_site(request)["current_site"]
     domain_titles = {"gpcr": "GPCRdb", "gprotein": "GproteinDb", "arrestin": "ArrestinDb"}
 
     if not domain in domain_titles:
-        domain = "gpcr"
+        domain = settings.DEFAULT_SITE
 
     return {
        'site_title': domain_titles[domain]
