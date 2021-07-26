@@ -528,7 +528,7 @@
 
 div#hiveTooltip {
   background-color: white;
-.border-radius ( 5px )
+  border-radius: 5px;
 }
 
 .loading_overlay {
