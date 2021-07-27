@@ -18,7 +18,7 @@ from common.views import AbsTargetSelectionTable, Alignment
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
-from ligand.models import Ligand, LigandVendorLink,LigandVendors, AnalyzedExperiment, AnalyzedAssay, BiasedPathways, AssayExperiment, LigandReceptorStatistics
+from ligand.models import Ligand, GTP_endogenous_ligand, LigandVendorLink,LigandVendors, AnalyzedExperiment, AnalyzedAssay, BiasedPathways, AssayExperiment, LigandReceptorStatistics
 from protein.models import Protein, ProteinFamily, ProteinGProteinPair
 from interaction.models import StructureLigandInteraction
 from mutation.models import MutationExperiment
@@ -1534,4 +1534,50 @@ class BiasPredictionBrowser(ListView):
             reference_a_p4=Subquery(assay_qs.values('log_bias_factor_a')[3:4]),
             reference_a_p5=Subquery(assay_qs.values('log_bias_factor_a')[4:5]),
         )
+        return queryset
+
+
+class EndogenousTargetSelection(AbsTargetSelectionTable):
+    step = 1
+    number_of_steps = 1
+    filter_tableselect = False
+    docs = 'sequences.html#structure-based-alignments'
+    title = "SELECT RECEPTORS to retrieve Endogenous ligands"
+    description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
+        + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
+    selection_boxes = OrderedDict([
+        ('reference', False),
+        ('targets', True),
+        ('segments', False),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Next',
+            'onclick': "submitSelection('/ligand/endogenousbrowser/');",
+            'color': 'success',
+        },
+    }
+
+class EndogenousLigandsBrowser(ListView):
+    # serializer_class = AnalyzedExperimentSerializer
+    template_name = 'endogenous_ligands.html'
+    context_object_name = 'data_test'
+
+    def get_queryset(self):
+        protein_list = list()
+        try:
+
+            simple_selection = self.request.session.get('selection', False)
+            a = Alignment()
+            # load data from selection into the alignment
+            a.load_proteins_from_selection(simple_selection)
+            for items in a.proteins:
+                protein_list.append(items.protein)
+        except:
+            protein_list.append(1)
+        # import pdb; pdb.set_trace()
+        queryset = GTP_endogenous_ligand.objects.filter(
+            receptor__in=protein_list,
+        )
+        import pdb; pdb.set_trace()
         return queryset

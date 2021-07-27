@@ -72,7 +72,6 @@ class Command(BaseBuild):
         delete_bias_experiment = GTP_endogenous_ligand.objects.all()
         delete_bias_experiment.delete()
 
-
     def analyse_rows(self):
         """
         Fetch data to models
@@ -83,14 +82,18 @@ class Command(BaseBuild):
         target_list = self.get_gpcrs()
         print("\n#2 Get Endogeneous ligands")
         self.get_endogenous(target_list)
-        # print("\n#2 Get Ligands")
-        # self.get_ligands()
-        # print("\n#3 Get Ligand assays")
-        # assays = self.get_ligand_assays(target_list)
-        # print("\n#4 Process Ligand assays", len(assays), ' assays')
-        # self.process_ligand_assays(assays)
-        # print("\n#5 Get Endogeneous ligands")
-        # self.get_endogenous(target_list)
+        print("\n#3 Get endogenous data from GPCRDb")
+        endogenous_ligands_from_db = self.endogenous_ligands_from_db()
+        print("\n#4 Convert_query_to_dict" )
+        endogenous_list = self.convert_query_to_dict(endogenous_ligands_from_db)
+        print("\n#5 Combine same assays")
+        combined_assays = self.process_assays(endogenous_list)
+        print("\n#6 Prepare to calculate averages and save")
+        prepared_data = self.prepare_calculate_averages_and_save(combined_assays)
+        print("\n#7 Calculate averages")
+        averaged_list = self.calculate_averages(prepared_data)
+        print("\n#8 Save")
+        self.save_data(averaged_list)
         print('\n\n---Finished---')
 
     def get_endogenous(self, targets):
@@ -148,22 +151,18 @@ class Command(BaseBuild):
                         except:
                             eavg = float(interaction['affinity'])
                     if kavg or eavg:
-                        try:
-                            publication = self.fetch_publication(interaction['refs'][0]['pmid'])
-                        except:
-                            publication= None
+
                         try:
                             ligand_type = ligand.properities.ligand_type.name
                         except:
                             ligand_type = None
 
                         link = "https://www.guidetopharmacology.org/GRAC/LigandDisplayForward?ligandId="+str(ligand_id_gtp)
-                        if self.fetch_experiment(publication=publication, ligand=ligand, receptor=receptor, pavg=kavg, eavg=eavg)==False:
+                        if self.fetch_experiment(ligand=ligand, receptor=receptor, pavg=kavg, eavg=eavg)==False:
                             gtp_data = GTP_endogenous_ligand(
                                     ligand = ligand,
                                     ligand_type = ligand_type,
                                     endogenous_princip = 'None',
-                                    publication = publication,
                                     receptor = receptor,
                                     pec50_avg = eavg,
                                     pec50_min = emin,
@@ -174,19 +173,23 @@ class Command(BaseBuild):
                                     gpt_link = link,
                             )
                             gtp_data.save()
-
+                        try:
+                            for reference in interaction['refs']:
+                                publication = self.fetch_publication(reference['pmid'])
+                                gtp_data.web_links.add(publication.web_link)
+                        except:
+                            publication= None
                     else:
                         pass
 
-
-    def fetch_experiment(self, publication, ligand, receptor, pavg, eavg):
+    def fetch_experiment(self, ligand, receptor, pavg, eavg):
         '''
         fetch receptor with Protein model
         requires: protein id, source
         '''
         try:
             experiment = GTP_endogenous_ligand.objects.filter(
-                publication=publication, ligand=ligand, receptor=receptor, pKi_avg=pavg,	pec50_avg=eavg)
+                 ligand=ligand, receptor=receptor, pKi_avg=pavg,	pec50_avg=eavg)
             experiment = experiment.get()
             print('dublicate')
             return True
@@ -194,7 +197,7 @@ class Command(BaseBuild):
             self.logger.info('fetch_experiment error')
             experiment = None
             return False
-# pylint: disable=R0201
+
     def fetch_protein(self, target):
         """
         fetch receptor with Protein model
@@ -208,7 +211,6 @@ class Command(BaseBuild):
         except:
             return None
 
-# pylint: disable=R0201
     def fetch_ligand(self, ligand_id, ligand_type, name):
         """
         fetch ligands with Ligand model
@@ -289,13 +291,8 @@ class Command(BaseBuild):
 
         return pub
 
-    def save_ligand_copy(self, ligand):
-        """
-        fetch ligands with Ligand model
-        requires: ligand id, ligand id type, ligand name
-        requires: source_file name
-        """
-        self.ligand_cache.update({ligand['entry']: ligand['name']})
+    def get_publication(self, web_link):
+        return Publication.objects.filter(web_link = web_link)[0]
 
     def get_ligands(self):
         response = requests.get(
@@ -311,7 +308,6 @@ class Command(BaseBuild):
             except:
                 pass
 
-# pylint: disable=R0201
     def get_gpcrs(self):
         target_list = list()
         url = "https://www.guidetopharmacology.org/services/targets/families"
@@ -338,7 +334,6 @@ class Command(BaseBuild):
                 pass
         return target_list
 
-# pylint: disable=R0201
     def get_ligand_assays(self, targets):
         assay_list = list()
         response = requests.get(
@@ -351,64 +346,117 @@ class Command(BaseBuild):
                 pass
         return assay_list
 
-    def create_source(self, ligand_id):
-        source = AssayExperimentSource()
-        web_resource = WebResource.objects.get(slug='gtoplig')
-        try:
-            wl, created = WebLink.objects.get_or_create(index=ligand_id,
-                                                        web_resource=web_resource)
-        except IntegrityError:
-            wl = Weblink.objects.get(
-                index=ligand_id, web_resource=web_resource)
+    def endogenous_ligands_from_db(self):
+        return GTP_endogenous_ligand.objects.all()
 
-        source.database = 'GuideToPharmacology'
-        source.database_id = ligand_id
-        try:
-            source.save()
-            source.web_links.add(wl)
-        except IntegrityError:
-            return AssayExperimentSource.objects.get(web_links=wl,
-                                                    database='GuideToPharmacology',
-                                                    database_id=ligand_id)
-        return source
+    def convert_query_to_dict(self, endogenous_queryset):
+        endogenous_list = list()
+        for assay in endogenous_queryset:
+            single_dict = dict()
+            single_dict['ligand'] = assay.ligand
+            single_dict['ligand_type'] = assay.ligand_type
+            single_dict['endogenous_princip'] = assay.endogenous_princip
+            single_dict['receptor'] = assay.receptor
+            single_dict['pec50_avg'] = assay.pec50_avg
+            single_dict['pec50_min'] = assay.pec50_min
+            single_dict['pec50_max'] = assay.pec50_max
+            single_dict['pKi_avg'] = assay.pKi_avg
+            single_dict['pKi_min'] = assay.pKi_min
+            single_dict['pKi_max'] = assay.pKi_max
+            single_dict['gpt_link'] = assay.gpt_link
+            single_dict['references'] = list()
+            for publication in assay.web_links.all():
+                single_dict['references'].append(self.get_publication(publication))
+            endogenous_list.append(single_dict)
+        return endogenous_list
 
-    def process_ligand_assays(self, assays):
-        start = time.time()
-        data = assays
-        print('type assay', type(data))
+    def process_assays(self, endogenous_list):
+        context = dict()
+        for assay in endogenous_list:
+            name = str(assay['ligand'].id) + \
+                '/' + str(assay['receptor'].id)
+            if name in context:
+                # import pdb; pdb.set_trace()
+                context[name]['pec50_avg'].append(assay['pec50_avg'])
+                context[name]['pec50_min'].append(assay['pec50_min'])
+                context[name]['pec50_max'].append(assay['pec50_max'])
+                context[name]['pKi_avg'].append(assay['pKi_avg'])
+                context[name]['pKi_min'].append(assay['pKi_min'])
+                context[name]['pKi_max'].append(assay['pKi_max'])
+                context[name]['references'].extend(assay['references'])
+            else:
+                context[name] = dict()
+                context[name]['ligand'] = assay['ligand']
+                context[name]['ligand_type'] = assay['ligand_type']
+                context[name]['endogenous_princip'] = assay['endogenous_princip']
+                context[name]['receptor'] = assay['receptor']
 
-        pool = ThreadPool(4)
-        pool.map(self.process_save, data)
-        pool.close()
-        pool.join()
-        print('5 process/thread total time: ', time.time() - start, '\n\n')
+                context[name]['pec50_avg'] = list()
+                context[name]['pec50_min'] = list()
+                context[name]['pec50_max'] = list()
+                context[name]['pec50_avg'].append(assay['pec50_avg'])
+                context[name]['pec50_min'].append(assay['pec50_min'])
+                context[name]['pec50_max'].append(assay['pec50_max'])
 
-    def do_something(self, data):
-        print(data)
+                context[name]['pKi_avg'] = list()
+                context[name]['pKi_min'] = list()
+                context[name]['pKi_max'] = list()
+                context[name]['pKi_avg'].append(assay['pKi_avg'])
+                context[name]['pKi_min'].append(assay['pKi_min'])
+                context[name]['pKi_max'].append(assay['pKi_max'])
 
-    def process_save(self, i):
-        temp_dict = dict()
-        temp_dict['protein'] = self.fetch_protein(i['targetId'])
-        ligand_name = str()
-        try:
-            ligand_name = self.ligand_cache[i['targetId']]
-        except:
-            ligand_name = i['ligandId']
-        temp_dict['ligand'] = self.fetch_ligand(
-            i['ligandId'], i['type'], ligand_name)
-        if i['refIds']:
+                context[name]['gpt_link'] = assay['gpt_link']
+                context[name]['references'] = list()
+                context[name]['references'].extend(assay['references'])
+        return context
+
+    def prepare_calculate_averages_and_save(self, context):
+        prepared_data = list()
+        for i in context.items():
+            prepared_data.append(i[1])
+        return prepared_data
+
+    def calculate_averages(self, prepared_data):
+        for assay in prepared_data:
             try:
-                temp_dict['doi'] = self.fetch_publication(i['refIds'])
+                assay['pKi_avg'] = sum(assay['pKi_avg'])/len(assay['pKi_avg'])
             except:
-                temp_dict['doi'] = None
-        else:
-            temp_dict['doi'] = None
-        if temp_dict['protein'] is not None:
-            if temp_dict['ligand'] is not None:
-                temp_dict['source'] = self.create_source(i['ligandId'])
-                temp_dict['standard_type'] = i['affinityParameter']
-                temp_dict['standard_value'] = i['affinity']
-                temp_dict['assay_description'] = i['ligandContext']
-                if temp_dict['assay_description'] == None:
-                    temp_dict['assay_description'] = "No data available"
-                self.upload_to_db(temp_dict)
+                assay['pKi_avg'] = None
+            try:
+                assay['pKi_min'] = sum(assay['pKi_min'])/len(assay['pKi_min'])
+            except:
+                assay['pKi_min'] = None
+            try:
+                assay['pKi_max'] = sum(assay['pKi_max'])/len(assay['pKi_max'])
+            except:
+                assay['pKi_max'] = None
+            try:
+                assay['pec50_avg'] = sum(assay['pec50_avg'])/len(assay['pec50_avg'])
+            except:
+                assay['pec50_avg'] = None
+            try:
+                assay['pec50_min'] = sum(assay['pec50_min'])/len(assay['pec50_min'])
+            except:
+                assay['pec50_min'] = None
+            try:
+                assay['pec50_max'] = sum(assay['pec50_max'])/len(assay['pec50_max'])
+            except:
+                assay['pec50_max'] = None
+        return prepared_data
+
+    def save_data(self, save_data):
+        for assay in save_data:
+            gtp_data = GTP_endogenous_ligand(
+                    ligand = assay['ligand'],
+                    ligand_type = assay['ligand_type'],
+                    endogenous_princip = assay['endogenous_princip'],
+                    receptor = assay['receptor'],
+                    pec50_avg = assay['pec50_avg'],
+                    pec50_min = assay['pec50_min'],
+                    pec50_max = assay['pec50_max'],
+                    pKi_avg = assay['pKi_avg'],
+                    pKi_min = assay['pKi_min'],
+                    pKi_max = assay['pKi_max'],
+                    gpt_link = "GPCRDb",
+            )
+            gtp_data.save()
