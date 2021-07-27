@@ -109,7 +109,7 @@
 	<h3 class="sub-header" style="text-transform: capitalize;">Biased pathways</h3>
 	<div class="row">
 		{%for data in experiment.analyzed_data.all|dictsort:"order_no" %}
-		{%if data.assay_description == None %}
+		{%if data.assay_description == "predicted_tested_assays" or data.assay_description == "tested_assays" or data.assay_description == "sub_tested_assays"%}
 		<div class="col-xs-6">
 			<h3 class="sub-header" style="text-transform: capitalize;">Pathway {{data.order_no}}: {{data.family}} </h3>
 

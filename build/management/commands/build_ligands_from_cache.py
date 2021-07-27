@@ -49,7 +49,6 @@ class Command(BaseBuild):
 
         self.create_vendors(filenames)
 
-
         with gzip.open(os.sep.join([settings.DATA_DIR, 'ligand_data','raw_ligands','ligands.json.gz']), "rb") as f:
             self.ligand_dump = json.loads(f.read().decode("ascii"))
         print(len(self.ligand_dump),"ligands to load")
@@ -70,16 +69,17 @@ class Command(BaseBuild):
                         lv.name = v['name']
                         lv.url = v['url']
                         lv.save()
-                print(len(d),"vendors",create_count,"vendors created")  
+                print(len(d),"vendors",create_count,"vendors created")
 
     def main_func(self, positions, iteration,count,lock):
 
         # print(positions,iteration,count,lock)
         ligands = self.ligand_dump
+
         while count.value<len(ligands):
             with lock:
                 l = ligands[count.value]
-                count.value +=1 
+                count.value +=1
                 if count.value % 10000 == 0:
                     print('{} Status {} out of {}'.format(
                     datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S'), count.value, len(ligands)))
@@ -90,6 +90,7 @@ class Command(BaseBuild):
 
             lp = LigandProperities.objects.filter(inchikey=l['inchikey']).first()
             ligand = None
+
             if lp:
                 # Check if inchikey is there
                 ligand = Ligand.objects.filter(name=l['name'], properities=lp).prefetch_related('properities__ligand_type','properities__web_links','properities__vendors').first()
