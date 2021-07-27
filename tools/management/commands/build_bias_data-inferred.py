@@ -775,7 +775,6 @@ class Command(BaseBuild):
                                                              cell_line=ex['cell_line'],
                                                              assay_type=ex['assay_type'],
                                                              reference_assay_initial = endogenous_assay_used,
-                                                             reference_ligand_id=ex['reference_assay_id'],
                                                              molecule_1=ex['molecule_1'],
                                                              molecule_2=ex['molecule_2'],
                                                              assay_time_resolved=ex['assay_time_resolved'],
@@ -811,7 +810,7 @@ class Command(BaseBuild):
                 for ex in i[1]['reference_assays_list']:
 
                     experiment_assay = AnalyzedAssay(experiment=experiment_entry,
-                                                     reference_ligand_id=ex['assay_id'],
+                                                     reference_assay_initial = endogenous_assay_used,
                                                      family=ex['family'],
                                                      order_no=ex['order_no'],
                                                      signalling_protein=ex['signalling_protein'],
@@ -847,7 +846,7 @@ class Command(BaseBuild):
                     experiment_assay.save()
                 for ex in i[1]['backup_assays']:
                     experiment_assay = AnalyzedAssay(experiment=experiment_entry,
-                                                     reference_ligand_id=ex['assay_id'],
+                                                     reference_assay_initial = endogenous_assay_used,
                                                      family=ex['family'],
                                                      order_no=ex['order_no'],
                                                      signalling_protein=ex['signalling_protein'],
