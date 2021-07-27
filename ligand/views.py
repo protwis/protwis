@@ -1591,7 +1591,7 @@ class EndogenousLigandsBrowser(ListView):
 
             context[name] = list()
             temp_dict = dict()
-            
+
             temp_dict['endogenous_princip'] = assay.endogenous_princip
             temp_dict['ligand_type'] = assay.ligand_type
             temp_dict['ligand'] = assay.ligand
@@ -1605,9 +1605,10 @@ class EndogenousLigandsBrowser(ListView):
             temp_dict['gpt_link'] = assay.gpt_link
             temp_dict['ligand'] = assay.ligand
             temp_dict['publications'] = list()
-            import pdb; pdb.set_trace()
-            for link in assay.web_links.all():
-                pass
+            if temp_dict['gpt_link'] is not "GPCRDb":
+                import pdb; pdb.set_trace()
+                for link in assay.web_links.all():
+                    pass
             context[name].append
             single_assay = dict()
             # signle_ass
