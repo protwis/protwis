@@ -1,0 +1,224 @@
+{% load static %}
+
+<!-- RECEPTORS -->
+<li class="dropdown gpcr {% if current_site == 'gpcr' %}highlight_menu{% endif %}" id="gpcrdb_menu">
+
+        <a tabindex="0" href="{{ hosts.gpcr }}/" class="dropdown-toggle" data-toggle="dropdown" role="button" data-submenu aria-expanded="false">
+            GPCRdb<span class="caret"></span>
+        </a>
+        <ul class="dropdown-menu" role="menu">
+            <li><a href="{{ hosts.gpcr }}/protein">Receptor page
+                <button mp4="https://files.gpcrdb.org/video/receptors1.mp4"
+                        class="videoLink pull-right btn btn-xs btn-default">
+                    <span class="glyphicon glyphicon-film"></span>
+                </button>
+            </a></li>
+
+            <!-- SEQUENCES -->
+            <li class="divider"></li>
+            <li class="nav-header disabled text-left"><a>SEQUENCES</a></li>
+            <li>
+              <a href="{{ hosts.gpcr }}/alignment/targetselection">Sequence alignments
+                <button mp4="https://files.gpcrdb.org/video/sequences1.mp4" type="button"
+                        class="videoLink pull-right btn btn-xs btn-default">
+                    <span class="glyphicon glyphicon-film"></span>
+                </button>
+              </a>
+            </li>
+            <li><a href="{{ hosts.gpcr }}/residue/residuetable">Generic residue number tables</a></li>
+            <li class="dropdown-submenu">
+                <a tabindex="0" href="#">Genetic variants</a>
+                <ul class="dropdown-menu">
+                  <li><a href="{{ hosts.gpcr }}/mutational_landscape/statistics">Variation statistics</a></li>
+                  <li><a href="{{ hosts.gpcr }}/mutational_landscape">Receptor variants</a></li>
+                  <li><a href="{{ hosts.gpcr }}/mutational_landscape/economicburden">Estimated economic burden</a></li>
+                </ul>
+            </li>
+            <li><a href="{{ hosts.gpcr }}/protein/isoforms">Isoforms</a></li>
+
+            <!-- SEQUENCE COMPARISON -->
+            <li class="divider"></li>
+            <li class="nav-header disabled text-left"><a>SEQUENCE COMPARISON</a></li>
+            <li class="dropdown-submenu">
+                <a tabindex="0" href="#">Receptor similarity</a>
+                <ul class="dropdown-menu">
+                    <li><a href="{{ hosts.gpcr }}/similaritysearch/referenceselection">BLAST (GPCRdb alignment)
+                        <button mp4="https://files.gpcrdb.org/video/sequences2.mp4" type="button"
+                                class="videoLink pull-right btn btn-xs btn-default">
+                            <span class="glyphicon glyphicon-film"></span>
+                        </button>
+                    </a></li>
+
+                    <li><a href="{{ hosts.gpcr }}/alignment/blastsearch">BLAST (non-GPCRdb query)</a></li>
+                    <li><a href="{{ hosts.gpcr }}/phylogenetic_trees/targetselection">Phylogenetic trees</a></li>
+                    <li><a href="{{ hosts.gpcr }}/similaritymatrix/targetselection">Similarity matrix (all-to-all)</a></li>
+                </ul>
+            </li>
+            <li><a href="{{ hosts.gpcr }}/sitesearch/targetselection">Site search (by seq. motif)</a></li>
+
+            <!-- STRUCTURES -->
+            <li class="divider"></li>
+            <li class="nav-header disabled text-left"><a>STRUCTURES</a></li>
+            <li><a href="{{ hosts.gpcr }}/structure/statistics">Structure statistics
+                <button mp4="https://files.gpcrdb.org/video/structures1.mp4" type="button"
+                        class="videoLink pull-right btn btn-xs btn-default">
+                    <span class="glyphicon glyphicon-film"></span>
+                </button>
+            </a></li>
+            <li><a href="{{ hosts.gpcr }}/structure">Structures</a></li>
+            <li><a href="{{ hosts.gpcr }}/structure/homology_models">Structure models</a></li>
+            <li><a href="{{ hosts.gpcr }}/structure/model_statistics">Structure model statistics</a></li>
+            {#  DEPRECATED FOR NOW #}
+            {#  <li><a href="{{ hosts.gpcr }}/structure/template_selection">Template selection</a></li> #}
+
+            <!-- STRUCTURE COMPARISON -->
+            <li class="divider"></li>
+            <li class="nav-header disabled text-left"><a>STRUCTURE COMPARISON</a></li>
+            <li><a href="{{ hosts.gpcr }}/structure_comparison/comparative_analysis">Structure comparison tool</a></li>
+            <li><a href="{{ hosts.gpcr }}/structure_comparison/structure_clustering">Structure similarity trees</a></li>
+            <li><a href="{{ hosts.gpcr }}/structure/superposition_workflow_index/true">Structure superposition</a></li>
+            {#  NOTE: we need the spacing here to keep all elements including icons in a single line #}
+            <li><a href="{{ hosts.gpcr }}/structure/generic_numbering_index">Generic residue numbering (PDB)&nbsp;&nbsp;&nbsp;&nbsp;</a></li>
+
+            <!-- DETERMINANTS & MUTATIONS -->
+            <li class="divider"></li>
+            <li class="nav-header disabled text-left"><a>DETERMINANTS & MUTATIONS</a></li>
+            <li><a href="{{ hosts.gpcr }}/seqsign">Sequence signature tool</a></li>
+            <li><a href="{{ hosts.gpcr }}/mutations/state_stabilizing">State-affecting mutation design</a></li>
+        </ul>
+</li>
+
+
+
+<!-- DRUGS -->
+{% comment %}
+<li class="dropdown">
+    <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+        Drugs<span class="caret"></span>
+    </a>
+    <ul class="dropdown-menu" role="menu">
+        <li class="nav-header disabled"><a>DATA</a></li>
+        <li><a href="{{ hosts.gpcr }}/drugs/drugstatistics">Drug statistics</a></li>
+        <li><a href="{{ hosts.gpcr }}/drugs/drugmapping">Drug target mapping</a></li>
+        <li><a href="{{ hosts.gpcr }}/drugs/drugbrowser">Drug browser</a></li>
+    </ul>
+</li>
+{% endcomment %}
+
+
+
+<!-- DRUGS AND LIGANDS -->
+<li class="dropdown gpcr {% if current_site == 'gpcr' %}highlight_menu {{current_site}}{% endif %}" id="drugs_menu">
+    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-submenu aria-expanded="false">
+        Drugs <span>&#38;</span> ligands<span class="caret"></span>
+    </a>
+    <ul class="dropdown-menu" role="menu">
+        <li class="nav-header disabled"><a>DRUGS & AGENTS IN TRIAL</a></li>
+        <li><a href="{{ hosts.gpcr }}/drugs/drugbrowser">Drugs, targets <span>&#38;</span> indications</a></li>
+        <li><a href="{{ hosts.gpcr }}/drugs/drugmapping">Drug target tree</a></li>
+        <li><a href="{{ hosts.gpcr }}/drugs/drugstatistics">Drug statistics</a></li>
+        <li class="divider"></li>
+
+        <li class="nav-header disabled"><a>LIGANDS</a></li>
+        <li><a href="{{ hosts.gpcr }}/ligand/statistics">Ligand statistics</a></li>
+        <li><a href="{{ hosts.gpcr }}/ligand">Ligands (ChEMBL)</a></li>
+
+        <!-- DEPRECATED FUNCTION
+          <li class="nav-header disabled text-left"><a>Structures</a></li>
+          <li>
+            <a href="/structure/fragment_superposition_index">
+              Pharmacophore generation
+                  <button url='https://dx.doi.org/10.1016/j.ymeth.2014.09.009'
+                    class="refLink pull-right btn btn-xs btn-default"
+                    data-toggle="tooltip" data-placement="right" title="Methods">
+                    <span class="glyphicon glyphicon-book"></span>
+                  </button>
+            </a></li>
+          -->
+
+        <li class="divider"></li>
+        <li class="nav-header disabled text-left"><a>LIGAND SITES</a></li>
+
+        <li><a href="{{ hosts.gpcr }}/interaction">GPCR-ligand interactions
+            <button mp4="https://files.gpcrdb.org/video/interactions1.mp4" type="button"
+                    class="videoLink pull-right btn btn-xs btn-default">
+                <span class="glyphicon glyphicon-film"></span>
+            </button>
+        </a></li>
+        <li><a href="{{ hosts.gpcr }}/sitesearch/targetselection">Site search (by seq. motif)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</a></li>
+        <li><a href="{{ hosts.gpcr }}/sitesearch/targetselectionpdb">Site search (by ligand complex)
+            <button mp4="https://files.gpcrdb.org/video/interactions2.mp4" type="button"
+                    class="videoLink pull-right btn btn-xs btn-default">
+                <span class="glyphicon glyphicon-film"></span>
+            </button>
+        </a></li>
+
+        <!-- MUTATIONS -->
+        <li class="divider"></li>
+        <li class="nav-header disabled text-left"><a>LIGAND SITE MUTATIONS</a></li>
+        <li><a href="{{ hosts.gpcr }}/mutations/statistics">Mutation statistics</a></li>
+        <li><a href="{{ hosts.gpcr }}/mutations">Mutations
+            <button mp4="https://files.gpcrdb.org/video/mutations1.mp4" type="button"
+                    class="videoLink pull-right btn btn-xs btn-default">
+                <span class="glyphicon glyphicon-film"></span>
+            </button>
+        </a></li>
+        <li class="dropdown-submenu">
+            <a tabindex="0" href="#">Mutation design tool</a>
+            <ul class="dropdown-menu">
+                <li><a href="{{ hosts.gpcr }}/mutations/design">By receptor name</a></li>
+                <li><a href="{{ hosts.gpcr }}/mutations/designpdb">By PDB id</a></li>
+            </ul>
+        </li>
+        <li><a href="{{ documentation_url }}mutations.html#mutation-data-submission">Mutation data submission</a></li>
+    </ul>
+</li>
+
+
+
+<!-- STRUCTURE CONSTRUCTS -->
+<li class="dropdown gpcr {% if current_site == 'gpcr' %}highlight_menu {{current_site}}{% endif %}" id="constructs_menu">
+    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+        Structure constructs<span class="caret"></span>
+    </a>
+    <ul class="dropdown-menu" role="menu">
+        <li class="nav-header disabled text-left"><a>Construct & experiment design</a></li>
+        <li><a href="{{ hosts.gpcr }}/construct">Construct alignments</a></li>
+        <li><a href="{{ hosts.gpcr }}/construct/design">Construct design tool
+            <button mp4="https://files.gpcrdb.org/video/constructtool3.mp4" type="button"
+                    class="videoLink pull-right btn btn-xs btn-default">
+                <span class="glyphicon glyphicon-film"></span>
+            </button>
+        </a></li>
+        <li><a href="{{ hosts.gpcr }}/construct/experiments">Experiment browser</a></li>
+        <li class="divider"></li>
+        <li class="nav-header disabled text-left"><a>Truncation & fusion analysis</a></li>
+        <li><a href="{{ hosts.gpcr }}/construct/analysis#truncations">Truncation sites</a></li>
+        <li><a href="{{ hosts.gpcr }}/construct/analysis#fusions">Fusion sites</a></li>
+        <li><a href="{{ hosts.gpcr }}/construct/analysis#loopdeletions">Loop deletions</a></li>
+        <li class="divider"></li>
+        <li class="nav-header disabled text-left"><a>Mutation analysis</a></li>
+        <li><a href="{{ hosts.gpcr }}/construct/mutations">Stabilising mutations</a></li>
+        <li><a href="{{ hosts.gpcr }}/construct/stabilisation">StabMutAnalyser</a></li>
+        <li><a href="{{ hosts.gpcr }}/construct/analysis#mutations">Mutation substitution matrix</a></li>
+    </ul>
+</li>
+
+
+<!--  BIASED SIGNALING -->
+<li class="dropdown gpcr {% if current_site == 'gpcr' %}highlight_menu {{current_site}}{% endif %}" id="biased_menu">
+    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-submenu aria-expanded="false">
+        Biased signalling<span class="caret"></span>
+    </a>
+    <ul class="dropdown-menu" role="menu">
+        <li class="nav-header disabled"><a>BIASED LIGANDS</a></li>
+        <li><a href="/ligand/bias_statistics">Biased ligand statistics</a></li>
+        <li><a href="/ligand/biasedbrowser">Biased ligands (effector family)</a></li>
+        <li><a href="/ligand/biasedpredictedbrowser">Pathway-preferring ligands</a></li>
+        <li><a href="/ligand/biasedsubtypesbrowser">Biased ligands (subtype)</a></li>
+        <!-- <li><a href="/ligand/browserchembl">Predicted ligand bias (potency ratios)</a></li> -->
+        <li class="divider"></li>
+        <li class="nav-header disabled text-left"><a>Pathways</a></li>
+        <li><a href="/ligand/biasedpathways">Pathway effects</a></li>
+    </ul>
+</li>

@@ -757,7 +757,11 @@ class HSExposureCB(AbstractPropertyMap):
                                         het_resis_clash.append(het_res)
                                     het_resis_close.append(het_res)
         ### GP checking HETRESIS to remove if not interacting with AAs
-        self.hetresis_to_remove = [i for i in het_resis if i not in het_resis_close or i in het_resis_clash]
+        self.hetresis_to_remove = []
+        for i in het_resis:
+            if i not in het_resis and i not in het_resis_close or i in het_resis_clash:
+                self.hetresis_to_remove.append(i)
+        # self.hetresis_to_remove = [i for i in het_resis if i not in het_resis_close or i in het_resis_clash]
         if check_chain_breaks:
             for r in residues_in_pdb:
                 if r not in residues_with_proper_CA:

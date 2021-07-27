@@ -1,0 +1,42 @@
+<!-- About -->
+<li class="dropdown" id="about_menu">
+    <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+        About<span class="caret"></span>
+    </a>
+    <ul class="dropdown-menu" role="menu">
+        <li class="nav-header disabled"><a>INFORMATION</a></li>
+        <li><a onclick="citation_tool(window.location.href);" href="#">Cite us</a></li>
+        <li><a href="/static/home/poster/overview.pdf">Graphical overview</a></li>
+        <li><a href="https://files.gpcrdb.org/video/GPCRdb-David_Gloriam.mp4">Video</a></li>
+        <li><a href="{{ documentation_url }}">Documentation</a></li>
+        <li class="dropdown-submenu">
+            <a tabindex="0" href="#">Tutorial</a>
+            <ul class="dropdown-menu">
+                <li class="nav-header disabled text-left"><a>General introduction</a></li>
+                <li><a href="http://docs.gpcrdb.org/index.html#tutorial">Tutorial</a></li>
+                <li class="nav-header disabled text-left"><a>Workshop materials</a></li>
+                <li><a href="https://files.gpcrdb.org/tutorial/GPCRdb_Workshop_Material.pdf">Workshop manual (PDF)</a></li>
+                <li><a href="https://files.gpcrdb.org/tutorial/GPCRdb_Workshop_Material.docx">Workshop manual (Word)</a></li>
+                <li><a href="https://files.gpcrdb.org/tutorial">Workshop videos</a></li>
+            </ul>
+        </li>
+        <li class="divider"></li>
+        <li class="nav-header disabled"><a>ABOUT US</a></li>
+        <li><a href="{{ documentation_url }}about.html">About</a></li>
+        <li><a href="{{ documentation_url }}contact.html">Contact</a></li>
+        <li><a href="{{ documentation_url }}acknowledgements.html">Acknowledgements</a></li>
+        <li><a href="{{ documentation_url }}legal_notice.html">Legal notice</a></li>
+        <li class="divider"></li>
+        <li class="nav-header disabled"><a>UPDATES</a></li>
+        {# <li><a href="/news">News</a></li> #}
+        <li><a href="{{ documentation_url }}meetings.html">Meetings</a></li>
+        <li><a href="/pages/releasenotes">Release notes</a></li>
+        <li class="divider"></li>
+        <li class="nav-header disabled"><a>FOR DEVELOPERS</a></li>
+        <li><a href="{{ documentation_url }}linking.html">Linking to GPCRdb</a></li>
+        <li><a href="{{ documentation_url }}web_services.html">Web services</a></li>
+        <li class="divider"></li>
+        <li class="nav-header disabled"><a>OTHER RESOURCES</a></li>
+        <li><a href="{{ documentation_url }}external_sites.html">External GPCR sites</a></li>
+    </ul>
+</li>

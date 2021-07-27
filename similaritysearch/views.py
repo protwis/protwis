@@ -5,6 +5,8 @@ from common.views import AbsReferenceSelection
 from common.views import AbsSegmentSelection
 #from common.views import AbsTargetSelection
 from common.views import AbsTargetSelectionTable
+from protwis.context_processors import site_title
+
 # from common.alignment_SITE_NAME import Alignment
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
@@ -135,7 +137,7 @@ def render_fasta_alignment(request):
 
     response = render(request, 'alignment/alignment_fasta.html', {'a': a, 'num_of_sequences': num_of_sequences,
         'num_residue_columns': num_residue_columns}, content_type='text/fasta')
-    response['Content-Disposition'] = "attachment; filename=" + settings.SITE_TITLE + "_alignment.fasta"
+    response['Content-Disposition'] = "attachment; filename=" + site_title(request)["site_title"] + "_alignment.fasta"
     return response
 
 def render_csv_alignment(request):
@@ -165,5 +167,5 @@ def render_csv_alignment(request):
 
     response = render(request, 'alignment/alignment_csv.html', {'a': a, 'num_of_sequences': num_of_sequences,
         'num_residue_columns': num_residue_columns}, content_type='text/fasta')
-    response['Content-Disposition'] = "attachment; filename=" + settings.SITE_TITLE + "_alignment.csv"
+    response['Content-Disposition'] = "attachment; filename=" + site_title(request)["site_title"] + "_alignment.csv"
     return response

@@ -5,6 +5,7 @@ from django.views.generic import TemplateView
 from django.db.models import Case, When
 from django.core.cache import cache
 from django.core.cache import caches
+
 try:
     cache_alignment = caches['alignments']
 except:
@@ -17,6 +18,7 @@ from common.views import AbsTargetSelection, AbsTargetSelectionTable
 from common.views import AbsSegmentSelection
 from common.views import AbsMiscSelection
 from structure.functions import BlastSearch
+from protwis.context_processors import site_title
 
 # from common.alignment_SITE_NAME import Alignment
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
@@ -385,7 +387,7 @@ def render_fasta_alignment(request):
     a.build_alignment()
 
     response = render(request, 'alignment/alignment_fasta.html', context={'a': a}, content_type='text/fasta')
-    response['Content-Disposition'] = "attachment; filename=" + settings.SITE_TITLE + "_alignment.fasta"
+    response['Content-Disposition'] = "attachment; filename=" + site_title(request)["site_title"] + "_alignment.fasta"
     return response
 
 def render_fasta_family_alignment(request, slug):
@@ -405,7 +407,7 @@ def render_fasta_family_alignment(request, slug):
     a.build_alignment()
 
     response = render(request, 'alignment/alignment_fasta.html', context={'a': a}, content_type='text/fasta')
-    response['Content-Disposition'] = "attachment; filename=" + settings.SITE_TITLE + "_alignment.fasta"
+    response['Content-Disposition'] = "attachment; filename=" + site_title(request)["site_title"] + "_alignment.fasta"
     return response
 
 def render_csv_alignment(request):
@@ -427,7 +429,7 @@ def render_csv_alignment(request):
     a.calculate_statistics()
 
     response = render(request, 'alignment/alignment_csv.html', context={'a': a}, content_type='text/csv')
-    response['Content-Disposition'] = "attachment; filename=" + settings.SITE_TITLE + "_alignment.csv"
+    response['Content-Disposition'] = "attachment; filename=" + site_title(request)["site_title"] + "_alignment.csv"
     return response
 
 # Excel download based on seq. signature tool
@@ -474,6 +476,6 @@ def render_alignment_excel(request):
         outstream.read(),
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-    response['Content-Disposition'] = "attachment; filename=gpcrdb_alignment.xlsx"
+    response['Content-Disposition'] = "attachment; filename=" + site_title(request)["site_title"] + "_alignment.xlsx"
 
     return response
