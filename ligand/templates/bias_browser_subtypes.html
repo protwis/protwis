@@ -875,11 +875,11 @@
 
 			], );
 		shadeTable(table, [".shade"], 120, 200);
-		yadcf.exFilterColumn(table, [
-			[28, {
-				from: 1
-			}],
-		]);
+		// yadcf.exFilterColumn(table, [
+		// 	[28, {
+		// 		from: 1
+		// 	}],
+		// ]);
 		function calculate_header() {
 			var columnIds = [];
 			var EmptyColumnIds = [];
@@ -1193,24 +1193,6 @@
                               text-overflow: ellipsis;
                               max-width: 100px;">Authors</th>
 				<th id="doi_reference_filter_select">DOI/ <br>Reference</th>
-				<!-- <th>references</th>
-                        <th id="time_p1_filter_select">reference P 1</th>
-    					<th id="time_p2_filter_select">reference P 2</th>
-    					<th id="time_p3_filter_select">reference P 3</th>
-    					<th id="time_p4_filter_select">reference P 4</th>
-    					<th id="time_p5_filter_select">reference P 5</th>
-
-                        <th id="time_p1_filter_select">assay P 1</th>
-    					<th id="time_p2_filter_select">assay P 2</th>
-    					<th id="time_p3_filter_select">assay P 3</th>
-    					<th id="time_p4_filter_select">assay P 4</th>
-    					<th id="time_p5_filter_select">assay P 5</th>
-
-
-                        <th id="time_p4_filter_select">lig id</th>
-    					<th id="time_p5_filter_select">lig source</th>
-                        <th id="time_p5_filter_select">lig id displayed</th>
-                        <th id="time_p5_filter_select">lig external</th> -->
 			</tr>
 			</thead>
 			<tbody id='structures_scrollable_body'>
@@ -1244,11 +1226,11 @@
 					<td style="text-align:left">{{e.secondary}}</td>
 
 					<!-- pathways -->
-					<td style="display:None" style="text-align:left" class="pathway">{{e.pathways_p1|default_if_none:""}}</td>
-					<td style="display:None" style="text-align:left" class="pathway">{{e.pathways_p2|default_if_none:""}}</td>
-					<td style="display:None" style="text-align:left" class="pathway">{{e.pathways_p3|default_if_none:""}}</td>
-					<td style="display:None" style="text-align:left" class="pathway">{{e.pathways_p4|default_if_none:""}}</td>
-					<td style="display:None" style="text-align:left" class="pathway">{{e.pathways_p5|default_if_none:""}}</td>
+					<td style="text-align:left" class="pathway">{{e.pathways_p1|default_if_none:""}}</td>
+					<td style="text-align:left" class="pathway">{{e.pathways_p2|default_if_none:""}}</td>
+					<td style="text-align:left" class="pathway">{{e.pathways_p3|default_if_none:""}}</td>
+					<td style="text-align:left" class="pathway">{{e.pathways_p4|default_if_none:""}}</td>
+					<td style="text-align:left" class="pathway">{{e.pathways_p5|default_if_none:""}}</td>
 					<!-- Assay -->
 					<td style="text-align:left" title='{{e.assay_p1}}'>{{e.assay_p1|default_if_none:"-" }}</td>
 					<td style="text-align:left" title='{{e.assay_p2}}'>{{e.assay_p2|default_if_none:"-" }}</td>
