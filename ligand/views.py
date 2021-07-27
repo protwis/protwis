@@ -1568,5 +1568,37 @@ class EndogenousLigandsBrowser(ListView):
         queryset = GTP_endogenous_ligand.objects.filter(
             receptor__in=protein_list,
         )
-        import pdb; pdb.set_trace()
+        self.process_data(queryset)
         return queryset
+
+    def process_data(self, queryset):
+        context = dict()
+        for assay in queryset:
+            name = str(assay.ligand.id) + \
+                '/' + str(assay.receptor.id)
+            # if name in context:
+
+            context[name] = list()
+            temp_dict = dict()
+            
+            temp_dict['endogenous_princip'] = assay.endogenous_princip
+            temp_dict['ligand_type'] = assay.ligand_type
+            temp_dict['ligand'] = assay.ligand
+            temp_dict['receptor'] = assay.receptor
+            temp_dict['pec50_avg'] = assay.pec50_avg
+            temp_dict['pec50_min'] = assay.pec50_min
+            temp_dict['pec50_max'] = assay.pec50_max
+            temp_dict['pKi_avg'] = assay.pKi_avg
+            temp_dict['pKi_min'] = assay.pKi_min
+            temp_dict['pKi_max'] = assay.pKi_max
+            temp_dict['gpt_link'] = assay.gpt_link
+            temp_dict['ligand'] = assay.ligand
+            temp_dict['publications'] = list()
+            import pdb; pdb.set_trace()
+            for link in assay.web_links.all():
+                pass
+            context[name].append
+            single_assay = dict()
+            # signle_ass
+
+        return data
