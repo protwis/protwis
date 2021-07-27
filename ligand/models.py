@@ -490,11 +490,9 @@ class AnalyzedExperiment(models.Model):
 
 class AnalyzedAssay(models.Model):
     experiment = models.ForeignKey(
-
                         AnalyzedExperiment, related_name='analyzed_data',
                         on_delete = models.CASCADE
                         )
-
     family = models.CharField(max_length=60, null=True)
     order_no = models.IntegerField(null=True)
     signalling_protein = models.CharField(
