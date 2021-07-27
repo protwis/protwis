@@ -534,12 +534,7 @@ class Command(BaseBuild):
                         i['log_bias_factor'] = self.lbf_calculate_bias(
                             i, most_potent, most_reference)
                         i['lbf_a'] = round(self.lbf_calculate_bias_parts(i), 2)
-                    if i['log_bias_factor'] == None:
-                        print('lbf None *****************')
-                        # import pdb; pdb.set_trace()
-                except:
-                    print('lbf error *****************')
-                    # import pdb; pdb.set_trace()
+                except:                
                     i['log_bias_factor'] = None
 
     def lbf_process_qualitative_data(self, i):

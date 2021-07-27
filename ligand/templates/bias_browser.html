@@ -574,28 +574,6 @@
 				<td class="name">
 					<a href='{{e.publication.web_link}}' target='blank'>
 						{{e.publication.web_link.index}}</a></td>
-
-				<!-- reference aprt -->
-				<!-- <td>Reference</td>
-
-                    <td>{{e.reference_ligand_p1|default_if_none:""}}</td>
-                    <td>{{e.reference_ligand_p2|default_if_none:""}}</td>
-                    <td>{{e.reference_ligand_p3|default_if_none:""}}</td>
-                    <td>{{e.reference_ligand_p4|default_if_none:""}}</td>
-                    <td>{{e.reference_ligand_p5|default_if_none:""}}</td>
-
-                    <td>{{e.reference_assay_type_p1|default_if_none:""}}</td>
-                    <td>{{e.reference_assay_type_p2|default_if_none:""}}</td>
-                    <td>{{e.reference_assay_type_p3|default_if_none:""}}</td>
-                    <td>{{e.reference_assay_type_p4|default_if_none:""}}</td>
-                    <td>{{e.reference_assay_type_p5|default_if_none:""}}</td>
-
-
-
-                    <td>{{e.ligand_source_id|default_if_none:""}}</td>
-                    <td>{{e.ligand_source_type|default_if_none:""}}</td>
-                    <td>{{e.ligand.id}}</td>
-                    <td>{{e.external_ligand_ids}}</td> -->
 			</tr>
 			{%endfor%}
 		</tbody>
@@ -1208,8 +1186,7 @@
 					select_type: 'select2',
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
-				},
-				//Time resolved
+				},			
 				{
 					column_number: 72,
 					filter_type: "multi_select",
