@@ -418,7 +418,7 @@ class BiasedExperiment(models.Model):
     ligand_source_id = models.TextField(null=True)
     ligand_source_type = models.TextField(null=True)
 
-class ExperimentAssay(models.Model):
+class BiasedExperimentAssay(models.Model):
     biased_experiment = models.ForeignKey(
                         BiasedExperiment, related_name='experiment_data',
                         on_delete = models.CASCADE, null = True
@@ -456,7 +456,7 @@ class ExperimentAssay(models.Model):
 
 
 class ExperimentAssayAuthors(models.Model):
-    experiment = models.ForeignKey(ExperimentAssay, related_name='experiment_data_authors',
+    experiment = models.ForeignKey(BiasedExperimentAssay, related_name='experiment_data_authors',
                                    on_delete=models.CASCADE)
     author = models.CharField(max_length=70)
 
@@ -530,7 +530,7 @@ class AnalyzedAssay(models.Model):
     t_factor = models.CharField(max_length=60, null=True)
     assay_description = models.CharField(max_length=900, null=True)
     reference_ligand_id= models.CharField(max_length=900, null=True)
-    reference_assay_initial = models.ForeignKey(ExperimentAssay, related_name='test_ExperimentAssay.bias_ligand_reference_assay+',
+    reference_assay_initial = models.ForeignKey(BiasedExperimentAssay, related_name='test_ExperimentAssay.bias_ligand_reference_assay+',
                                           on_delete=models.CASCADE,
                                           null=True, blank=True)
     emax_ligand_reference = models.ForeignKey(Ligand, related_name='ExperimentAssay.bias_ligand_reference+',

@@ -1042,20 +1042,22 @@
 					<h4>Showing unique:</h4>
 				</tr>
 			</thead>
+            <tbody>
+            	<tr>
+    				<td>Ligands</td>
+    				<td id="ligand_counter"></td>
+    			</tr>
+    			<tr>
+    				<td>Receptors</td>
+    				<td id="receptor_counter"></td>
+    			</tr>
+            </tbody>
 
-			<tr>
-				<td>Ligands</td>
-				<td id="ligand_counter"></td>
-			</tr>
-			<tr>
-				<td>Receptors</td>
-				<td id="receptor_counter"></td>
-			</tr>
 		</table>
 	</div>
 
 	<table class="display compact text-nowrap" id='structures_scrollable' style="width: 100%">
-		< <thead id="headers">
+		 <thead id="headers">
 			<tr class="header-spans" rowspan="2">
 				<th><span class="glyphicon glyphicon-info-sign" title="Click on this icon in a row for more details."></span></th>
 				<th id="receptor" style="border-left: 1px solid black; text-align:left" colspan="5">
@@ -1194,7 +1196,7 @@
                               max-width: 100px;">Authors</th>
 				<th id="doi_reference_filter_select">DOI/ <br>Reference</th>
 			</tr>
-			</thead>
+		</thead>
 			<tbody id='structures_scrollable_body'>
 				{%for e in data_test%}
 				<tr>
