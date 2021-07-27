@@ -150,7 +150,7 @@ li#arrestindb_menu {
   padding-left: 35px;
 }
 
-li#main_reference::marker,
-li#article_list::marker {
-  content: none;
+li#main_reference,
+li#article_list {
+  list-style-type: none;
 }
