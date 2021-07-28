@@ -1,43 +1,45 @@
 .seqv {
-    font-family: Lucida Console, monospace;
-    padding: 0px;
-    margin: 0px;
-    text-decoration: none;
-    cursor: pointer; cursor: hand;
+  font-family: Lucida Console, monospace;
+  padding: 0;
+  margin: 0;
+  text-decoration: none;
+  cursor: pointer;
+  cursor: hand;
 }
+
 .seqv-segment {
-    font-size: 10px;
-    line-height: 10px;
+  font-size: 10px;
+  line-height: 10px;
 }
+
 .seqv-sequence {
-    
-    font-size: 11px;
+  font-size: 11px;
 }
+
 .seqv-number {
-    font-size: 8px;
-    line-height: 10px;
-    text-align: right;
+  font-size: 8px;
+  line-height: 10px;
+  text-align: right;
 }
+
 .col-md-1 {
-    padding: 0;
+  padding: 0;
 }
+
 .no-wrap {
-    white-space: nowrap;
+  white-space: nowrap;
 }
 
 .schematic-block {
-    table-layout: fixed;
-    width:70px;
-    height:10px;
+  table-layout: fixed;
+  width: 70px;
+  height: 10px;
 }
 
 .construct_div {
-    padding-left:3px;
-    padding-right:3px;
-    float:left;
-    position: relative;
-    min-width: 80px;
-}
-
-.schematic_table td {
+  padding-left: 3px;
+  padding-right: 3px;
+  float: left;
+  position: relative;
+  min-width: 80px;
 }
