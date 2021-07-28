@@ -69,11 +69,11 @@ nav.navbar li.dropdown.open {
   background-color: #222;
 }
 
-nav.navbar li.dropdown a.dropdown-toggle, nav.navbar a#cite {
+nav.navbar li.dropdown a.dropdown-toggle:not(.select-link), nav.navbar a#cite {
   color: #CCC;
 }
 
-nav.navbar li.dropdown a.dropdown-toggle:hover, nav.navbar a#cite:hover {
+nav.navbar li.dropdown a.dropdown-toggle:hover:not(.select-link), nav.navbar a#cite:hover {
   color: #FFF;
   /*padding-top: 11px;*/
 }
@@ -123,7 +123,7 @@ li.highlight_menu.arrestin {
   border-top: 4px solid #55AE35;
 }
 
-nav.navbar li.dropdown:not(.gpcr):not(.gprotein):not(.arrestin), nav.navbar li#cite_menu {
+nav.navbar li.dropdown:not(.gpcr):not(.gprotein):not(.arrestin):not(.page-selection), nav.navbar li#cite_menu {
   border-top: 4px solid #5C5452;
 }
 
