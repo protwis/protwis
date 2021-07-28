@@ -71,26 +71,15 @@ nav.navbar li.dropdown.open {
   background-color: #222;
 }
 
-<<<<<<< HEAD
-nav.navbar li.dropdown a.dropdown-toggle,
+nav.navbar li.dropdown a.dropdown-toggle:not(.select-link),
 nav.navbar a#cite {
   color: #ccc;
 }
 
-nav.navbar li.dropdown a.dropdown-toggle:hover,
+nav.navbar li.dropdown a.dropdown-toggle:hover:not(.select-link),
 nav.navbar a#cite:hover {
   color: #fff;
-
   /* padding-top: 11px; */
-=======
-nav.navbar li.dropdown a.dropdown-toggle:not(.select-link), nav.navbar a#cite {
-  color: #CCC;
-}
-
-nav.navbar li.dropdown a.dropdown-toggle:hover:not(.select-link), nav.navbar a#cite:hover {
-  color: #FFF;
-  /*padding-top: 11px;*/
->>>>>>> 7c94c406... UPDATE: GproteinDb added as main reference
 }
 
 /* nav.navbar li.dropdown:hover a.dropdown-toggle {
