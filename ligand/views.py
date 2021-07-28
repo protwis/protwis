@@ -569,10 +569,11 @@ class BiasedRankOrder(TemplateView):
     assay = "tested_assays"
 
     @staticmethod
-    def jitter_tooltip(page, assay, ligand, value, headers, prefix='', small_data=None, large_data=None):
+    def jitter_tooltip(page, assay, ligand, value, headers, prefix='', small_data=None, large_data=None, small_ref=None):
         #small and large data has to structured
         #small --> pathway/value/value
         #large --> pathway1/delta/value/value pathway2/delta/value/value
+        ref_small = ''
         small = ''
         large = ''
         head = "<b>Compound Name:</b> " + str(ligand) + \
@@ -591,7 +592,22 @@ class BiasedRankOrder(TemplateView):
                      "        <td>" + str(small_data[1]) + "</td>" + \
                      "        <td>" + str(small_data[2]) + "</td>" + \
                      "      </tr>" + \
-                     "</table>"
+                     "</table>" + \
+                     "<hr class='solid'>"
+        if small_ref:
+            #small table to show reference ligand or single datapoint
+            ref_small =  "<table>" + \
+                         "      <tr>" + \
+                         "        <th>" + str(small_ref[3]) + "</th>" + \
+                         "        <th>" + headers[0] + "</th>" + \
+                         "        <th>" + headers[1] + "</th>" + \
+                         "      </tr>" + \
+                         "      <tr>" + \
+                         "        <td>" + str(small_ref[0]) + "</td>" + \
+                         "        <td>" + str(small_ref[1]) + "</td>" + \
+                         "        <td>" + str(small_ref[2]) + "</td>" + \
+                         "      </tr>" + \
+                         "</table>"
         if large_data:
             #large table showing also Δ data
             large =  "<table>" + \
@@ -630,8 +646,9 @@ class BiasedRankOrder(TemplateView):
                 tip = head + large + small
                 #dot plots with reference values
             else:
-                tip = head + small
-        return tip #+ small for reference ligand?
+                tip = head + small + ref_small
+                #line chart wtih reference values
+        return tip
         #line charts with reference values
 
     @staticmethod
@@ -710,6 +727,7 @@ class BiasedRankOrder(TemplateView):
         labels_dict = {}
 
         for result in publications:
+            print(result)
             try:
                 reference_path = tooltip_dict[result[18]]
             except KeyError:
@@ -800,7 +818,9 @@ class BiasedRankOrder(TemplateView):
                 jitterDict[jitterAuthors][lig_name]["Emax_Tau"] = emax_tau
                 jitterDict[jitterAuthors][lig_name]["EC50_KA"] = EC50_ka
 
-            tooltip_info = BiasedRankOrder.jitter_tooltip(self.page, self.assay, lig_name, value, components, small_data=[result[0], emax_tau, EC50_ka, lig_name])
+            tooltip_info = BiasedRankOrder.jitter_tooltip(self.page, self.assay, lig_name, value, components,
+                                                          small_data=[result[0], emax_tau, EC50_ka, lig_name],
+                                                          small_ref=[result[18], reference_emax_tau, reference_EC50_ka, result[19]])
 
             # initialization of the dictionary for new publication
             if result[2] not in full_data.keys():
@@ -865,14 +885,18 @@ class BiasedRankOrder(TemplateView):
                     try:
                         for i in indices:
                             name["PathwaysData"][i]["value"] = [MAX,"ARTIFICIAL"]
-                            name["PathwaysData"][i]["tooltip"] = BiasedRankOrder.jitter_tooltip(self.page, self.assay, lig_name, value, components, small_data=[result[0], emax_tau, 'High', lig_name])
+                            name["PathwaysData"][i]["tooltip"] = BiasedRankOrder.jitter_tooltip(self.page, self.assay, lig_name, value, components,
+                                                                                                small_data=[result[0], emax_tau, 'High', lig_name],
+                                                                                                small_ref=[result[18], reference_emax_tau, reference_EC50_ka, result[19]])
                     except ValueError:
                         continue
                 if quality in downgrade_value:
                     try:
                         for i in indices:
                             name["PathwaysData"][i]["value"] = [MIN,"ARTIFICIAL"]
-                            name["PathwaysData"][i]["tooltip"] = BiasedRankOrder.jitter_tooltip(self.page, self.assay, lig_name, value, components, small_data=[result[0], emax_tau, 'Low', lig_name])
+                            name["PathwaysData"][i]["tooltip"] = BiasedRankOrder.jitter_tooltip(self.page, self.assay, lig_name, value, components,
+                                                                                                small_data=[result[0], emax_tau, 'Low', lig_name],
+                                                                                                small_ref=[result[18], reference_emax_tau, reference_EC50_ka, result[19]])
                     except ValueError:
                         continue
 
@@ -921,6 +945,7 @@ class BiasedRankOrder(TemplateView):
                         tooltip = BiasedRankOrder.jitter_tooltip(self.page, self.assay, ligand, jitterDict[pub][ligand]['deltadelta'][1], components, prefix, small_data=little, large_data=big)
                     else:
                         tooltip = BiasedRankOrder.jitter_tooltip(self.page, self.assay, ligand, jitterDict[pub][ligand]['deltadelta'][0], components, prefix, small_data=little, large_data=big)
+                    print(jitterDict[pub][ligand]['deltadelta'])
                     jitterPlot[jitterDict[pub][ligand]["Pathway"]].append([pub, jitterDict[pub][ligand]['deltadelta'][0], Colors[ligand], ligand, jitterDict[pub][ligand]['deltadelta'][1], tooltip])
                     jitterLegend[jitterDict[pub][ligand]["Pathway"]].append(tuple((ligand, jitterDict[pub][ligand]['deltadelta'][0])))
                 except KeyError:

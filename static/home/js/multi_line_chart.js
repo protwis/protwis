@@ -132,17 +132,21 @@ function DrawMultiLineChart(Data, BaseDiv, Keys, ID, linkTitle, reference, linkP
 
     //Drawing title label
     svg.append("g")
-            .attr("transform", "translate(0, -" + margin.left +")")
-            .append("foreignObject")
-              .attr("width", width)
-              .attr("height", height)
-              .attr("class", "title")
-            .append("xhtml:body")
-              .style("color", "#357db5")
-              .style("font", "15px 'Arial'")
+            // .attr("transform", "translate(- " + margin.top + ",- " + margin.top + ")")
+            // .append("foreignObject")
+            //   .attr("width", width)
+            //   .attr("height", 40)
+            //   .attr("class", "title")
+            .append("text")
+              .attr("y", -20)
+              .attr("x", 30)
+              .style("fill", "#357db5")
+              .style("font-size", "15px")
+              .attr("font-family", "Arial")
+              .style("font-style", "italic")
               .style("padding-bottom", "3px")
               .style("padding-top", "15px")
-              .html(linkTitle)
+              .text(linkTitle)
               .on("click", function(){
                   window.open(a, '_blank').focus();
               });

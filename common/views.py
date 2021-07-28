@@ -258,7 +258,7 @@ def getReferenceTable(filtering):
         #                                          .annotate(num_ligands=Count("ligand", distinct=True)))
         # NEW CODE
         ligand_set = list(AnalyzedAssay.objects
-            .filter(log_bias_factor__gte=1,
+            .filter(#log_bias_factor__gte=1,
                     experiment__source=filtering)
             .values('experiment__receptor__family__slug')
             .annotate(num_ligands=Count('experiment__ligand_id', distinct=True)))

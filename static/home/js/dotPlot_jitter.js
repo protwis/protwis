@@ -30,6 +30,8 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
       .style("opacity", 1);
     d3.selectAll(".divider")
       .style("opacity", 1);
+    d3.selectAll(".domain")
+      .style("opacity", 1);
     d3.event.stopPropagation();
   }
 
@@ -138,6 +140,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
         return d[1];
       })])
       .range([height, 0]);
+
   }else{
     var y = d3.scale.linear()
       .domain([
@@ -148,8 +151,8 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
         return d[1];
       })])
       .range([height, 0]);
-  }
 
+  }
   var chart = d3.select("#" + ID)
     .append("svg:svg")
     .attr("width", width + margin.right + margin.left)
@@ -185,16 +188,28 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
     .scale(y)
     .orient("left");
 
+  var tickArray = yAxis.scale().ticks();
+  // console.log(tickArray);
+  // console.log(tickArray.slice(-1)[0]);
   var step = yAxis.scale().ticks()[1];
   var count_ticks = yAxis.scale().ticks().length;
 
   for(i = 0; i < data.length; i++) {
     if(data[i][4] == 'High Bias'){
       tmp = data[i][1];
-      hb = step_rounder(tmp, step);
+      if(tickArray.includes(tmp)){
+        hb = step_rounder(tmp, step);
+      }else{
+        hb = tickArray.slice(-1)[0];
+      };
     } else if(data[i][4] == 'Full Bias'){
       tmp = data[i][1];
-      fb = step_rounder(tmp, step);
+      if(tickArray.includes(tmp)){
+        fb = step_rounder(tmp, step);
+      }else{
+        fb = tickArray.slice(-1)[0];
+      };
+      // hb = step_rounder((tmp - step), step);
     }
   }
 
@@ -211,7 +226,6 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
   var gap = Math.round(380/count_ticks);
   var dividers = Math.round(380 - gap);
 
-
   main.append("g")
       .attr("class", "y axis")
       .style("font", "10px sans-serif")
@@ -225,41 +239,78 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
           .style("text-anchor", "end")
           .text(ylabel);
 
+  // additional gap calculated for ticks not on the top of the axis
+  nodes = d3.selectAll(".y.axis").selectAll(".tick").each(function(d){
+      additional_gap = d3.select(this).attr("transform");
+      additional_gap = Math.round(additional_gap.replace(/\(|\)/g,"").split(",")[1]);
+  });
+
   if(hb === null && fb === null){
 
   }else if(hb === null && fb !== null){
-    spacers = gap * (count_ticks - 1.5);
+    spacers = gap * (tickArray.indexOf(fb) - 1);
     main.append("rect")
         .attr("class", "divider")
         .attr("x", -5)
-        .attr("y", dividers - spacers)
+        .attr("y", dividers - spacers + additional_gap)
         .attr("height", 6)
         .attr("width", 10);
 
     main.append("rect")
         .attr("class", "divider")
         .attr("x", -5)
-        .attr("y", (dividers - spacers) + 1.5)
+        .attr("y", (dividers - spacers + additional_gap) + 1.5)
+        .attr("height", 3)
+        .attr("width", 10)
+        .style("fill", "white");
+  }else if(hb !== null && fb === null){
+    console.log('Here!');
+    console.log(hb);
+    console.log(tickArray);
+    spacers = gap * (tickArray.indexOf(hb) - 1);
+    main.append("rect")
+        .attr("class", "divider")
+        .attr("x", -5)
+        .attr("y", dividers - spacers + additional_gap)
+        .attr("height", 6)
+        .attr("width", 10);
+
+    main.append("rect")
+        .attr("class", "divider")
+        .attr("x", -5)
+        .attr("y", (dividers - spacers + additional_gap) + 1.5)
         .attr("height", 3)
         .attr("width", 10)
         .style("fill", "white");
   }else{
-    spacers = gap * (count_ticks - 2.5);
+    spacers = gap * (tickArray.indexOf(hb) - 1);
     main.append("rect")
         .attr("class", "divider")
         .attr("x", -5)
-        .attr("y", dividers - spacers)
+        .attr("y", dividers - spacers + additional_gap)
         .attr("height", 6)
         .attr("width", 10);
 
     main.append("rect")
         .attr("class", "divider")
         .attr("x", -5)
-        .attr("y", (dividers - spacers) + 1.5)
+        .attr("y", (dividers - spacers + additional_gap) + 1.5)
         .attr("height", 3)
         .attr("width", 10)
         .style("fill", "white");
   };
+
+  // remove tick in between full bias and high bias IF it exists
+  if((tickArray.indexOf(fb) - tickArray.indexOf(hb)) === 2){
+    idRemove = tickArray[tickArray.indexOf(fb) - 1];
+    nodes = d3.selectAll(".y.axis").selectAll(".tick").each(function(d){
+      if(d3.select(this).text() == idRemove){
+        d3.select(this)[0][0].innerHTML = '';
+      };
+    });
+  };
+
+
 
   var divToolTipTest = d3.select("body")
               .append("div")
@@ -325,7 +376,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
   g.selectAll("scatter-dots")
     .data(data)
     .enter().append("svg:circle")
-    .filter(function(d) { return d[4] == 'REAL'})
+    .filter(function(d) { return (d[4] !== "Full Bias" || d[4] !== "High Bias")})
     .attr("cx", function(d) {return x(d[0]) - jitterWidth/2 + Math.random()*jitterWidth ;})
     .attr("cy", function(d) {return y(d[1]);})
     .attr("r", 4)
@@ -465,6 +516,10 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
             .style("opacity", 1);
           d3.selectAll(".Legend")
             .style("opacity", 1);
+          d3.selectAll(".domain")
+            .style("opacity", 1);
+          d3.selectAll(".divider")
+            .style("opacity", 1);
           d3.event.stopPropagation();
       });
 
@@ -496,6 +551,10 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
           d3.selectAll("path#LC" + d.replace(/\[|\]|\(|\)|\s|\,|\'/g,""))
             .style("opacity", 1);
           d3.selectAll(".Legend")
+            .style("opacity", 1);
+          d3.selectAll(".domain")
+            .style("opacity", 1);
+          d3.selectAll(".divider")
             .style("opacity", 1);
           d3.event.stopPropagation();
       });
@@ -547,6 +606,10 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
             .style("opacity", 1);
           d3.selectAll(".Legend")
             .style("opacity", 1);
+          d3.selectAll(".domain")
+            .style("opacity", 1);
+          d3.selectAll(".divider")
+            .style("opacity", 1);
           d3.event.stopPropagation();
       });
 
@@ -578,6 +641,10 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
           d3.selectAll("path#LC" + d.replace(/\[|\]|\(|\)|\s|\,|\'/g,""))
             .style("opacity", 1);
           d3.selectAll(".Legend")
+            .style("opacity", 1);
+          d3.selectAll(".domain")
+            .style("opacity", 1);
+          d3.selectAll(".divider")
             .style("opacity", 1);
           d3.event.stopPropagation();
       });

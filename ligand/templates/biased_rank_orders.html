@@ -82,14 +82,13 @@
     tr:nth-child(even) {
       background-color: #dddddd;
     }
-</style>
 
-<style>
   .title {
     font: 15px Arial;
     font-weight: bold;
     padding-bottom: 3px;
   }
+
 </style>
 
 
@@ -386,6 +385,7 @@
 <script src="{% static 'home/js/multi_line_chart.js' %}"></script>
 <script src="{% static 'home/js/dotPlot_jitter.js' %}""></script>
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/saveSvg.js' %}"></script>
 <script>
   var spiders = {{ spider | safe }};
   var color = "red";
@@ -454,8 +454,7 @@
     $('#radarcontainer_'+type+' > div').map(function() {
       ids.push(this.id);
     });
-
-    var mergedHeight = 300 * Math.round(ids.length/4);
+    var mergedHeight = 300 * Math.round(ids.length/3);
     if(ids.length > 3){
       var mergedWidth = 900;
     } else {
@@ -520,8 +519,8 @@
   for(var propt in data){
 
     var link_name = data[propt]["Authors"];
-    link_name = link_name.replace("et al.,", "et al.,<i>");
-    link_name = link_name.replace(", (", "</i>, (");
+    // link_name = link_name.replace("et al.,", "et al.,<i>");
+    // link_name = link_name.replace(", (", "</i>, (");
     var link_destination = "https://doi.org/" + propt;
     var divID = 'PUB'+count;
     var reference = data[propt]["Endogenous"]
@@ -572,6 +571,8 @@ if(label == 'emax'){
 var count = 1;
 for(var path in realData){
   var name = 'Pathway' + parseInt(count);
+  console.log(path);
+  console.log(realData[path]);
   DotScatter(realData[path], 'boxplotChart', name, colors, legend[path], conversion[path], ylabel, qualitative);
   count = count + 1;
   gNodes = d3.select('#'+name).selectAll('.main.axis.date').selectAll('.tick');
