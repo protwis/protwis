@@ -36,7 +36,11 @@
 
 	table.dataTable thead th,
 	table.dataTable tbody td {
+<<<<<<< HEAD
 		/* max-width: 65px; */
+=======
+		max-width: 65px;
+>>>>>>> 73ff7cfb119f75d2a80bb2dd07558c223a9ff715
 		word-break: break-all;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -253,16 +257,28 @@
 					Receptor</th>
 				<th id="ligand" style="border-left: 1px solid black; text-align:left" colspan="3" style="">
 					Endogenous<br>Ligand</th>
+<<<<<<< HEAD
 				<th id="pathways_effector" style="border-left: 1px solid black; text-align:left" colspan="3">
 					pEC50</th>
 				<th id="pathways_measure" style="border-left: 1px solid black; text-align:left" colspan="3">
 					pKi</th>
+=======
+				<th id="transducers" style="border-left: 1px solid black; text-align:left" colspan="2" style="">
+					Receptor transducers</th>
+				<th id="pathways_effector" style="border-left: 1px solid black; text-align:left" colspan="3">
+					pKi</th>
+				<th id="pathways_measure" style="border-left: 1px solid black; text-align:left" colspan="3">
+					pEC50</th>
+>>>>>>> 73ff7cfb119f75d2a80bb2dd07558c223a9ff715
 				<th style="border-left: 1px solid black; text-align:left; overflow: hidden;
                           white-space: nowrap;
                           text-overflow: ellipsis;
                   max-width: 250px;" colspan="1">Reference</th>
+<<<<<<< HEAD
 				<th style='display: none'></th>
 				<th style='display: none'></th>
+=======
+>>>>>>> 73ff7cfb119f75d2a80bb2dd07558c223a9ff715
 			</tr>
 			<tr class="table-filter-dropdown">
 				<th>Link</th>
@@ -275,7 +291,12 @@
 				<th style="border-left: 1px solid black;" id="reference_ligand_filter_select">Ligand</th>
 				<th id="ligand_filter_select">Ligand<br>type</th>
 				<th id="ligand_filter_select">Ligand<br>princip</th>
+<<<<<<< HEAD
 
+=======
+				<th style="border-left: 1px solid black;" id="primary_filter_select">Primary</th>
+				<th id="secondary_filter_select">Secondary</th>
+>>>>>>> 73ff7cfb119f75d2a80bb2dd07558c223a9ff715
 
 				<th style="border-left: 1px solid black;" class="pathways" id="pathways_effector_p1_filter_select">Min</th>
 				<th class="pathways" id="pathways_effector_p2_filter_select">Avg</th>
@@ -289,17 +310,24 @@
                           white-space: nowrap;
                           text-overflow: ellipsis;
                           max-width:100px;">Publication</th>
+<<<<<<< HEAD
 				<th style='display: none'></th>
 				<th style='display: none'></th>
+=======
+>>>>>>> 73ff7cfb119f75d2a80bb2dd07558c223a9ff715
 			</tr>
 		</thead>
 		<tbody id='structures_scrollable_body'>
 			{%for e in data_test%}
+<<<<<<< HEAD
 			{%if e.publications == 'GPCRDb' %}
 			<tr style="font-weight: bold;">
 				{%else%}
 			<tr>
 				{%endif%}
+=======
+			<tr>
+>>>>>>> 73ff7cfb119f75d2a80bb2dd07558c223a9ff715
 				<td style="max-width: 30px">
 					<span style='display: none'>{{e.ligand.id}}</span>
 					<a href="{{e.gpt_link}}">
@@ -312,10 +340,19 @@
 				<td title='{{e.IUPHAR}}'>{{e.receptor.name.split|first}}</td>
 				<td title='{{e.receptor.species.common_name}}'>{{e.receptor.species.common_name}}</td>
 				<!-- ligand -->
+<<<<<<< HEAD
 				<td style="border-left: 1px solid black;" title='{{e.ligand}}'><a href='/ligand/{{e.ligand.id}}/info' target='_blank'>{{e.ligand}}</a></td>
 				<td title='{{e.ligand_type}}'>{{e.ligand_type}}</td>
 				<td style="text-align:left">princip</td>
 
+=======
+				<td style="border-left: 1px solid black;"  title='{{e.ligand}}'><a href='/ligand/{{e.ligand.id}}/info' target='_blank'>{{e.ligand}}</a></td>
+				<td title='{{e.ligand_type}}'>{{e.ligand_type}}</td>
+				<td style="text-align:left">princip</td>
+				<!-- receptor trunsducers -->
+				<td style="text-align:left; border-left: 1px solid black;"></td>
+				<td style="text-align:left"></td>
+>>>>>>> 73ff7cfb119f75d2a80bb2dd07558c223a9ff715
 				<!-- pathways -->
 				<td style="border-left: 1px solid black; text-align:left">{{e.pec50_min|default_if_none:""}}</td>
 				<td style="text-align:left">{{e.pec50_avg|default_if_none:""}}</td>
@@ -326,6 +363,7 @@
 				<td style="text-align:left">{{e.pKi_max|default_if_none:"-" }}</td>
 				<!-- Reference -->
 				<td class="name" style="border-left: 1px solid black;">
+<<<<<<< HEAD
 					{%if e.publications == 'GPCRDb' %}
 					{{e.publications}}
 					{%else%}
@@ -345,6 +383,10 @@
 
 				</td>
 				<td style='display: none'>{{e.group_name}}</td>
+=======
+					<a href='{{e.web_links}}' target='blank'>
+						{{e.web_links.all}}</a></td>
+>>>>>>> 73ff7cfb119f75d2a80bb2dd07558c223a9ff715
 			</tr>
 			{%endfor%}
 		</tbody>
@@ -389,11 +431,14 @@
 			dom: 'B<>flrtip',
 			"deferRender": true,
 			pageLength: 35,
+<<<<<<< HEAD
             orderFixed: [17, 'asc'],
 			rowGroup: {
 				dataSrc: 17
 			},
 			order: [9, "desc"],
+=======
+>>>>>>> 73ff7cfb119f75d2a80bb2dd07558c223a9ff715
 			"lengthChange": false,
 
 			"buttons": [{
@@ -454,6 +499,7 @@
 				},
 			],
 			"drawCallback": function(settings) {
+<<<<<<< HEAD
 				var api = this.api();
 				var rows = api.rows({
 					page: 'current'
@@ -479,6 +525,8 @@
 					}
 				});
 
+=======
+>>>>>>> 73ff7cfb119f75d2a80bb2dd07558c223a9ff715
 				setTimeout(function() {
 					var ligand_counter = read_unique_ids();
 					var receptor_counter = read_unique_ids_receptor();
@@ -486,7 +534,10 @@
 					document.getElementById("receptor_counter").innerHTML = receptor_counter;
 				}, 3000);
 			},
+<<<<<<< HEAD
 
+=======
+>>>>>>> 73ff7cfb119f75d2a80bb2dd07558c223a9ff715
 		});
 		yadcf.init(table,
 			[{
@@ -530,8 +581,11 @@
 					filter_type: "multi_select",
 					select_type: 'select2',
 					filter_default_label: "Select",
+<<<<<<< HEAD
 					column_data_type: "html",
 					html_data_type: "text",
+=======
+>>>>>>> 73ff7cfb119f75d2a80bb2dd07558c223a9ff715
 					filter_reset_button_text: false,
 				},
 				{
@@ -548,26 +602,47 @@
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
+<<<<<<< HEAD
 				// pec50
 				{
 					column_number: 9,
 					filter_type: "range_number",
 					filter_default_label: ["Min", "Max"],
+=======
+				//  Receptor Transducer
+				{
+					column_number: 9,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+>>>>>>> 73ff7cfb119f75d2a80bb2dd07558c223a9ff715
 					filter_reset_button_text: false,
 				},
 				{
 					column_number: 10,
+<<<<<<< HEAD
 					filter_type: "range_number",
 					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
+=======
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				// pec50
+>>>>>>> 73ff7cfb119f75d2a80bb2dd07558c223a9ff715
 				{
 					column_number: 11,
 					filter_type: "range_number",
 					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
+<<<<<<< HEAD
 				// pki50
+=======
+>>>>>>> 73ff7cfb119f75d2a80bb2dd07558c223a9ff715
 				{
 					column_number: 12,
 					filter_type: "range_number",
@@ -580,13 +655,18 @@
 					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
+<<<<<<< HEAD
 
+=======
+				// pki50
+>>>>>>> 73ff7cfb119f75d2a80bb2dd07558c223a9ff715
 				{
 					column_number: 14,
 					filter_type: "range_number",
 					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
+<<<<<<< HEAD
 				//Article
 				{
 					column_number: 15,
@@ -594,6 +674,27 @@
 					select_type: 'select2',
 					filter_default_label: "Authors",
 					text_data_delimiter: '<br>',
+=======
+
+				{
+					column_number: 15,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 16,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				//Article
+				{
+					column_number: 17,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Authors",
+>>>>>>> 73ff7cfb119f75d2a80bb2dd07558c223a9ff715
 					filter_reset_button_text: false,
 				},
 			],
@@ -603,7 +704,15 @@
 		function reset_filters() {
 			yadcf.exResetAllFilters(table);
 		}
+<<<<<<< HEAD
 
+=======
+		yadcf.exFilterColumn(table, [
+			[28, {
+				from: 1
+			}],
+		]);
+>>>>>>> 73ff7cfb119f75d2a80bb2dd07558c223a9ff715
 	});
 </script>
 

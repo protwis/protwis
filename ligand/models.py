@@ -568,7 +568,6 @@ class GTP_endogenous_ligand(models.Model):
     ligand = models.ForeignKey(Ligand, on_delete=models.CASCADE)
     ligand_type = models.TextField(null = True)
     endogenous_princip = models.TextField(null = True)# lignad_pubchem = models.CharField(max_length=40, null=True)
-    #web_links = models.ManyToManyField('common.WebLink')
     publication = models.ManyToManyField(Publication, null = True)
     receptor = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
     pec50_avg = models.FloatField(max_length=60, null=True)
@@ -578,4 +577,3 @@ class GTP_endogenous_ligand(models.Model):
     pKi_min = models.FloatField(max_length=60, null=True)
     pKi_max = models.FloatField(max_length=60, null=True)
     gpt_link = models.TextField(null = True)
->>>>>>> 524a5a21 (UPD: save endogenous ligand assay)
