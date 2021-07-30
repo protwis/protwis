@@ -79,9 +79,9 @@ class Command(BaseBuild):
         """
         print('---Starting---\n')
         print("\n#1 Get GPCR ids from target families")
-        target_list = self.get_gpcrs()
+        # target_list = self.get_gpcrs()
         print("\n#2 Get Endogeneous ligands")
-        self.get_endogenous(target_list)
+        # self.get_endogenous(target_list)
         print("\n#3 Get endogenous data from GPCRDb")
         endogenous_ligands_from_db = self.endogenous_ligands_from_db()
         print("\n#4 Convert_query_to_dict" )
@@ -176,7 +176,7 @@ class Command(BaseBuild):
                         try:
                             for reference in interaction['refs']:
                                 publication = self.fetch_publication(reference['pmid'])
-                                gtp_data.web_links.add(publication.web_link)
+                                gtp_data.publication.add(publication)
                         except:
                             publication= None
                     else:
@@ -189,7 +189,7 @@ class Command(BaseBuild):
         '''
         try:
             experiment = GTP_endogenous_ligand.objects.filter(
-                 ligand=ligand, receptor=receptor, pKi_avg=pavg,	pec50_avg=eavg)
+                 ligand=ligand, receptor=receptor, pKi_avg=pavg,pec50_avg=eavg)
             experiment = experiment.get()
             print('dublicate')
             return True
@@ -291,7 +291,7 @@ class Command(BaseBuild):
 
         return pub
 
-    def get_publication(self, web_link):
+    def get_publication(self, publication):
         return Publication.objects.filter(web_link = web_link)[0]
 
     def get_ligands(self):
@@ -365,8 +365,8 @@ class Command(BaseBuild):
             single_dict['pKi_max'] = assay.pKi_max
             single_dict['gpt_link'] = assay.gpt_link
             single_dict['references'] = list()
-            for publication in assay.web_links.all():
-                single_dict['references'].append(self.get_publication(publication))
+            for publication in assay.publication.all():
+                single_dict['references'].append(publication)
             endogenous_list.append(single_dict)
         return endogenous_list
 
@@ -377,12 +377,18 @@ class Command(BaseBuild):
                 '/' + str(assay['receptor'].id)
             if name in context:
                 # import pdb; pdb.set_trace()
-                context[name]['pec50_avg'].append(assay['pec50_avg'])
-                context[name]['pec50_min'].append(assay['pec50_min'])
-                context[name]['pec50_max'].append(assay['pec50_max'])
-                context[name]['pKi_avg'].append(assay['pKi_avg'])
-                context[name]['pKi_min'].append(assay['pKi_min'])
-                context[name]['pKi_max'].append(assay['pKi_max'])
+                if assay['pec50_avg'] is not None and isinstance(assay['pec50_avg'], float):
+                    context[name]['pec50_avg'].append(assay['pec50_avg'])
+                if assay['pec50_min'] is not None and isinstance(assay['pec50_min'], float):
+                    context[name]['pec50_min'].append(assay['pec50_min'])
+                if assay['pec50_max'] is not None and isinstance(assay['pec50_max'], float):
+                    context[name]['pec50_max'].append(assay['pec50_max'])
+                if assay['pKi_avg'] is not None and isinstance(assay['pKi_avg'], float):
+                    context[name]['pKi_avg'].append(assay['pKi_avg'])
+                if assay['pKi_min'] is not None and isinstance(assay['pKi_min'], float):
+                    context[name]['pKi_min'].append(assay['pKi_min'])
+                if assay['pKi_max'] is not None and isinstance(assay['pKi_max'], float):
+                    context[name]['pKi_max'].append(assay['pKi_max'])
                 context[name]['references'].extend(assay['references'])
             else:
                 context[name] = dict()
@@ -394,16 +400,23 @@ class Command(BaseBuild):
                 context[name]['pec50_avg'] = list()
                 context[name]['pec50_min'] = list()
                 context[name]['pec50_max'] = list()
-                context[name]['pec50_avg'].append(assay['pec50_avg'])
-                context[name]['pec50_min'].append(assay['pec50_min'])
-                context[name]['pec50_max'].append(assay['pec50_max'])
+                if assay['pec50_avg'] is not None and isinstance(assay['pec50_avg'], float):
+                    context[name]['pec50_avg'].append(assay['pec50_avg'])
+                if assay['pec50_min'] is not None and isinstance(assay['pec50_min'], float):
+                    context[name]['pec50_min'].append(assay['pec50_min'])
+                if assay['pec50_max'] is not None and isinstance(assay['pec50_max'], float):
+                    context[name]['pec50_max'].append(assay['pec50_max'])
 
                 context[name]['pKi_avg'] = list()
                 context[name]['pKi_min'] = list()
                 context[name]['pKi_max'] = list()
-                context[name]['pKi_avg'].append(assay['pKi_avg'])
-                context[name]['pKi_min'].append(assay['pKi_min'])
-                context[name]['pKi_max'].append(assay['pKi_max'])
+
+                if assay['pKi_avg'] is not None and isinstance(assay['pKi_avg'], float):
+                    context[name]['pKi_avg'].append(assay['pKi_avg'])
+                if assay['pKi_min'] is not None and isinstance(assay['pKi_min'], float):
+                    context[name]['pKi_min'].append(assay['pKi_min'])
+                if assay['pKi_max'] is not None and isinstance(assay['pKi_max'], float):
+                    context[name]['pKi_max'].append(assay['pKi_max'])
 
                 context[name]['gpt_link'] = assay['gpt_link']
                 context[name]['references'] = list()
@@ -418,30 +431,43 @@ class Command(BaseBuild):
 
     def calculate_averages(self, prepared_data):
         for assay in prepared_data:
+
             try:
-                assay['pKi_avg'] = sum(assay['pKi_avg'])/len(assay['pKi_avg'])
+                assay['pKi_avg'] = round(sum(assay['pKi_avg'])/len(assay['pKi_avg']),2)
             except:
-                assay['pKi_avg'] = None
+                if len(assay['pKi_avg']) < 1:
+                    assay['pKi_avg'] = None
+                # import pdb; pdb.set_trace()
             try:
-                assay['pKi_min'] = sum(assay['pKi_min'])/len(assay['pKi_min'])
+                assay['pKi_min'] = round(sum(assay['pKi_min'])/len(assay['pKi_min']),2)
             except:
-                assay['pKi_min'] = None
+                if len(assay['pKi_min']) < 1:
+                    assay['pKi_min'] = None
+                # import pdb; pdb.set_trace()
             try:
-                assay['pKi_max'] = sum(assay['pKi_max'])/len(assay['pKi_max'])
+                assay['pKi_max'] = round(sum(assay['pKi_max'])/len(assay['pKi_max']),2)
             except:
-                assay['pKi_max'] = None
+                if len(assay['pKi_max']) < 1:
+                    assay['pKi_max'] = None
+                # import pdb; pdb.set_trace()
             try:
-                assay['pec50_avg'] = sum(assay['pec50_avg'])/len(assay['pec50_avg'])
+                assay['pec50_avg'] = round(sum(assay['pec50_avg'])/len(assay['pec50_avg']),2)
             except:
-                assay['pec50_avg'] = None
+                if len(assay['pec50_avg']) < 1:
+                    assay['pec50_avg'] = None
+                # import pdb; pdb.set_trace()
             try:
-                assay['pec50_min'] = sum(assay['pec50_min'])/len(assay['pec50_min'])
+                assay['pec50_min'] = round(sum(assay['pec50_min'])/len(assay['pec50_min']),2)
             except:
-                assay['pec50_min'] = None
+                if len(assay['pec50_min']) < 1:
+                    assay['pec50_min'] = None
+                # import pdb; pdb.set_trace()
             try:
-                assay['pec50_max'] = sum(assay['pec50_max'])/len(assay['pec50_max'])
+                assay['pec50_max'] = round(sum(assay['pec50_max'])/len(assay['pec50_max']),2)
             except:
-                assay['pec50_max'] = None
+                if len(assay['pec50_max']) < 1:
+                    assay['pec50_max'] = None
+                # import pdb; pdb.set_trace()
         return prepared_data
 
     def save_data(self, save_data):

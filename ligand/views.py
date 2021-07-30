@@ -9,13 +9,13 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.views.generic import TemplateView, DetailView, ListView
 
-from django.db.models import Count, Subquery, OuterRef
+from django.db.models import Count, Subquery, OuterRef, Prefetch
 from django.views.decorators.csrf import csrf_exempt
 
 from django.core.cache import cache
 
 from common.views import AbsTargetSelectionTable, Alignment
-from common.models import ReleaseNotes
+from common.models import ReleaseNotes, Publication
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
 from ligand.models import Ligand, GTP_endogenous_ligand, LigandVendorLink,LigandVendors, AnalyzedExperiment, AnalyzedAssay, BiasedPathways, AssayExperiment, LigandReceptorStatistics
@@ -1578,39 +1578,46 @@ class EndogenousLigandsBrowser(ListView):
         # import pdb; pdb.set_trace()
         queryset = GTP_endogenous_ligand.objects.filter(
             receptor__in=protein_list,
-        )
-        self.process_data(queryset)
-        return queryset
+        ).prefetch_related('ligand','receptor', 'receptor__family','receptor__residue_numbering_scheme',
+        'receptor__family__parent', 'receptor__family__parent__parent__parent',
+        'receptor__family__parent__parent','receptor__species', Prefetch('publication'))
+        resultset = self.process_data(queryset)
+        # import pdb; pdb.set_trace()
+        return resultset
 
     def process_data(self, queryset):
-        context = dict()
+        context = list()
+        reference_dict = dict()
         for assay in queryset:
-            name = str(assay.ligand.id) + \
-                '/' + str(assay.receptor.id)
-            # if name in context:
+            if assay.gpt_link == 'GPCRDb':
+                name = str(assay.ligand.id) + \
+                    '/' + str(assay.receptor.id)
+                assay.group_name = name
+                reference_dict[name] = assay
 
-            context[name] = list()
-            temp_dict = dict()
+        for assay in queryset:
+            if assay.gpt_link != "GPCRDb":
+                name = str(assay.ligand.id) + \
+                    '/' + str(assay.receptor.id)
+                # if name in context:swww
+                temp_dict = dict()
+                temp_dict['group_name'] = name
+                temp_dict['group'] = reference_dict[name]
+                temp_dict['endogenous_princip'] = assay.endogenous_princip
+                temp_dict['ligand_type'] = assay.ligand_type
+                temp_dict['ligand'] = assay.ligand
+                temp_dict['receptor'] = assay.receptor
+                temp_dict['pec50_avg'] = assay.pec50_avg
+                temp_dict['pec50_min'] = assay.pec50_min
+                temp_dict['pec50_max'] = assay.pec50_max
+                temp_dict['pKi_avg'] = assay.pKi_avg
+                temp_dict['pKi_min'] = assay.pKi_min
+                temp_dict['pKi_max'] = assay.pKi_max
+                temp_dict['gpt_link'] = assay.gpt_link
+                temp_dict['ligand'] = assay.ligand
+                temp_dict['publications'] = list()
+                for link in assay.publication.all().select_related('journal').prefetch_related('gtp_endogenous_ligand_set'):
+                    temp_dict['publications'].append(link)
 
-            temp_dict['endogenous_princip'] = assay.endogenous_princip
-            temp_dict['ligand_type'] = assay.ligand_type
-            temp_dict['ligand'] = assay.ligand
-            temp_dict['receptor'] = assay.receptor
-            temp_dict['pec50_avg'] = assay.pec50_avg
-            temp_dict['pec50_min'] = assay.pec50_min
-            temp_dict['pec50_max'] = assay.pec50_max
-            temp_dict['pKi_avg'] = assay.pKi_avg
-            temp_dict['pKi_min'] = assay.pKi_min
-            temp_dict['pKi_max'] = assay.pKi_max
-            temp_dict['gpt_link'] = assay.gpt_link
-            temp_dict['ligand'] = assay.ligand
-            temp_dict['publications'] = list()
-            if temp_dict['gpt_link'] is not "GPCRDb":
-                import pdb; pdb.set_trace()
-                for link in assay.web_links.all():
-                    pass
-            context[name].append
-            single_assay = dict()
-            # signle_ass
-
-        return data
+            context.append(temp_dict)
+        return context
