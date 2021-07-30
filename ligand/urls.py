@@ -19,7 +19,7 @@ urlpatterns = [
 
     url(r'^biased/$', views.CachedBiasBrowser, name='bias_browser-list'),
     # url(r'^biased/$', views.BiasBrowser.as_view(), name='bias_browser-list'),
-#
+
     url(r'^biasedsubtypes/$',views.CachedBiasGBrowser, name='bias_browser-subtype'),
     # url(r'^biasedsubtypes/$',views.BiasGBrowser.as_view(), name='bias_browser-list'),
 
@@ -38,5 +38,8 @@ urlpatterns = [
     url(r'^browservendors$', views.BiasVendorBrowser.as_view(), name='browservendor'),
     url(r'^biasedpathways$', views.BiasPathways.as_view(), name='pathways'),
     url(r'^pathwaydata/(?P<pk>[-\w]+)/detail$', views.PathwayExperimentEntryView.as_view()),
+
+    url(r'^endogenous/',views.EndogenousTargetSelection.as_view(), name='endogenous'),
+    url(r'^endogenousbrowser/$', views.EndogenousLigandsBrowser.as_view(), name='endogenousbrowser_'),
 
 ]

@@ -1,0 +1,644 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% csrf_token %}
+
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+<!--<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.16/b-1.5.1/b-html5-1.5.1/datatables.min.css" />-->
+<link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+
+<!-- configure radio buttons style -->
+<style>
+	.highlight_green {
+		/* display: none; */
+		background-color: green;
+	}
+
+	.highlight {
+		/* display: none; */
+		background-color: red;
+	}
+
+	.inuse,
+	.ui-slider-range .inuse,
+	.yadcf-filter-range-number-slider .inuse {
+		border-color: yellow;
+		border-width: initial;
+	}
+</style>
+<style type="text/css">
+	.dataTables_scrollHeadInner {
+		margin-top: 20px;
+	}
+
+	table.dataTable thead th,
+	table.dataTable tbody td {
+		/* max-width: 65px; */
+		word-break: break-all;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	table.dataTable thead .sorting {
+		background-position: right;
+	}
+
+	.select2-container select2-container-multi {
+		width: 75%;
+	}
+
+	.select2-container-multi .select2-choices .select2-search-field input {
+		max-width: 50px;
+	}
+
+	.yadcf-filter-wrapper {
+		position: center;
+		display: flex;
+		white-space: nowrap;
+		margin-top: 7px;
+		width: 50% !important;
+	}
+
+	.yadcf-filter-wrapper-inner {
+		white-space: normal;
+	}
+
+	.select2-results {
+		background-color: white;
+		border: gray;
+		width: 150px !important;
+	}
+
+	.yadcf-filter-range {
+		grid-auto-columns: auto;
+		max-width: 50px !important;
+		font-family: sans-serif;
+		font-size: 80%;
+		font-weight: bold;
+		margin: auto;
+		margin-top: 10%;
+		min-width: 40px;
+	}
+
+	table.dataTable thead .sorting {
+		background-image: none !important;
+	}
+
+	table.dataTable thead .sorting_desc {
+		background-image: none !important;
+	}
+
+	table.dataTable thead .sorting_asc {
+		background-image: none !important;
+	}
+
+	table.dataTable.compact tbody th,
+	table.dataTable.compact tbody td {
+		padding: 5px 10px 5px 0px !important;
+		/* width: 0px; */
+	}
+
+	table.dataTable.compact thead th,
+	table.dataTable.compact thead td {
+		padding: 5px 10px 5px 0px;
+		/* width: 0px; */
+	}
+
+	table.dataTable.compact thead tr.over_header th {
+		border-bottom: 1px solid #ccc;
+	}
+
+	table.dataTable.compact thead th.leftborder {
+		border-left: 1px solid;
+	}
+
+	table.dataTable.compact thead th.rightborder {
+		border-right: 1px solid;
+	}
+
+	.yadcf-filter-range {
+		max-width: 40px !important;
+		font-family: sans-serif;
+		font-size: 80%;
+		font-weight: bold;
+		min-width: 40px;
+	}
+
+	.clicked_button {
+		background-color: rgb(215, 215, 215);
+	}
+
+	#overlay {
+		top: 0px;
+		position: absolute;
+		background: #f8f8f8;
+		/*border: 1px solid #333;*/
+		-webkit-box-shadow: 5px 0 2px -2px #888;
+		box-shadow: 5px 0 2px -2px #888;
+	}
+
+	.container {
+		width: 90%;
+		/* display:flex;
+            flex-direction: column; */
+	}
+
+	.wrapper {
+		overflow-x: scroll;
+		overflow-y: hidden;
+	}
+
+	#overlay tbody tr {
+		background-color: #f8f8f8;
+	}
+
+	#count_row th {
+		font-size: 11px;
+		text-align: center;
+	}
+
+	.switch-field label:hover {
+		cursor: pointer;
+		/* width: 100%; */
+	}
+
+	.switch-field input:checked+label {
+		background-color: #337ab7;
+		/* #a5dc86; */
+		box-shadow: none;
+	}
+
+	.border-left {
+		padding-left: 3px;
+	}
+
+	.switch-field label:first-of-type {
+		border-radius: 4px 0 0 4px;
+
+	}
+
+	.switch-field label:last-of-type {
+		border-radius: 0 4px 4px 0;
+	}
+
+	.name {
+		width: 100px;
+		text-overflow: ellipsis;
+		cursor: pointer;
+		word-break: break-all;
+		overflow: hidden;
+		white-space: nowrap;
+	}
+
+	.name:hover {
+		overflow: visible;
+		white-space: normal;
+
+	}
+
+	.toolbar_data_css {
+		width: 250px;
+		margin-right: auto;
+		margin-left: 0px;
+		/* border: 1px solid; */
+		font-family: "Lucida Grande", Tahoma, Verdana, sans-serif;
+		font-weight: normal;
+		font-size: 120%;
+		line-height: 1.625;
+	}
+
+	.toolbar_data_css.td {
+		height: 15px;
+		max-width: 150px;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+	}
+</style>
+{% endblock %}
+
+{% block content %}
+{% autoescape off %}
+
+<div style='padding-top: 0px; font-size: 10px; white-space: nowrap; overflow-y:hidden;  width:100%;'>
+
+	<table class="display compact text-nowrap" id='structures_scrollable' style="width: 100%">
+		<thead id="headers">
+			<tr class="header-spans" rowspan="2">
+				<th><span class="glyphicon glyphicon-info-sign" title="Click on this icon in a row for more details."></span></th>
+				<th id="receptor" style="border-left: 1px solid black; text-align:left" colspan="5">
+					Receptor</th>
+				<th id="ligand" style="border-left: 1px solid black; text-align:left" colspan="3" style="">
+					Endogenous<br>Ligand</th>
+				<th id="pathways_effector" style="border-left: 1px solid black; text-align:left" colspan="3">
+					pEC50</th>
+				<th id="pathways_measure" style="border-left: 1px solid black; text-align:left" colspan="3">
+					pKi</th>
+				<th style="border-left: 1px solid black; text-align:left; overflow: hidden;
+                          white-space: nowrap;
+                          text-overflow: ellipsis;
+                  max-width: 250px;" colspan="1">Reference</th>
+				<th style='display: none'></th>
+				<th style='display: none'></th>
+			</tr>
+			<tr class="table-filter-dropdown">
+				<th>Link</th>
+				<th id="class_filter_select">Class</th>
+				<th id="receptor_filter_select">Rec Fam</th>
+				<th id="uniprot_filter_select">UniProt</th>
+				<th id="iuphar_filter_select">IUPHAR</th>
+				<th id="species_filter_select">Species</th>
+
+				<th style="border-left: 1px solid black;" id="reference_ligand_filter_select">Ligand</th>
+				<th id="ligand_filter_select">Ligand<br>type</th>
+				<th id="ligand_filter_select">Ligand<br>princip</th>
+
+
+				<th style="border-left: 1px solid black;" class="pathways" id="pathways_effector_p1_filter_select">Min</th>
+				<th class="pathways" id="pathways_effector_p2_filter_select">Avg</th>
+				<th class="pathways" id="pathways_effector_p3_filter_select">Max</th>
+
+				<th style="border-left: 1px solid black;" class="pathways" id="pathways_effector_p1_filter_select">Min</th>
+				<th class="pathways" id="pathways_effector_p2_filter_select">Avg</th>
+				<th class="pathways" id="pathways_effector_p3_filter_select">Max</th>
+
+				<th id="authors_filter_select" style="border-left: 1px solid black; overflow: hidden;
+                          white-space: nowrap;
+                          text-overflow: ellipsis;
+                          max-width:250px;">Authors</th>
+				<th style='display: none'></th>
+				<th style='display: none'></th>
+			</tr>
+		</thead>
+		<tbody id='structures_scrollable_body'>
+			{%for e in data_test%}
+			{%if e.publications == 'GPCRDb' %}
+			<tr style="font-weight: bold;">
+				{%else%}
+			<tr>
+				{%endif%}
+				<td style="max-width: 30px">
+					<span style='display: none'>{{e.ligand.id}}</span>
+					<a href="{{e.gpt_link}}">
+						<span class="glyphicon glyphicon-info-sign" title="Click for more details"></span>
+					</a>
+				</td>
+				<td title='{{e.receptor.family.parent.parent.parent.name}}' style="border-left: 1px solid black;">{{e.receptor.family.parent.parent.parent.short|default_if_none:""}}</td>
+				<td title='{{e.receptor.family.parent}}'>{{e.receptor.family.parent.short}}</td>
+				<td title='{{e.uniprot}}'>{{e.receptor.entry_short}}</td>
+				<td title='{{e.IUPHAR}}'>{{e.receptor.name.split|first}}</td>
+				<td title='{{e.receptor.species.common_name}}'>{{e.receptor.species.common_name}}</td>
+				<!-- ligand -->
+				<td style="border-left: 1px solid black;" title='{{e.ligand}}'><a href='/ligand/{{e.ligand.id}}/info' target='_blank'>{{e.ligand}}</a></td>
+				<td title='{{e.ligand_type}}'>{{e.ligand_type}}</td>
+				<td style="text-align:left">{{e.endogenous_princip}}</td>
+
+				<!-- pathways -->
+				<td style="border-left: 1px solid black; text-align:left">{{e.pec50_min|default_if_none:""}}</td>
+				<td style="text-align:left">{{e.pec50_avg|default_if_none:""}}</td>
+				<td style="text-align:left">{{e.pec50_max|default_if_none:""}}</td>
+				<!-- Assay -->
+				<td style="border-left: 1px solid black; text-align:left">{{e.pKi_min|default_if_none:"-" }}</td>
+				<td style="text-align:left">{{e.pKi_avg|default_if_none:"-" }}</td>
+				<td style="text-align:left">{{e.pKi_max|default_if_none:"-" }}</td>
+				<!-- Reference -->
+				<td class="name" style="border-left: 1px solid black;">
+					{%if e.publications == 'GPCRDb' %}
+					{{e.publications}}
+					{%else%}
+					{% for pub in e.publications%}
+					<a href='{{pub.web_link}}' target='_blank'>{{pub.authors}}</a><br>
+					{% endfor %}
+					{% endif %}
+					<!-- <a href='{{e.web_links}}' target='blank'>{{e.publications}}</a></td> -->
+				<td style='display: none'>
+					__{{e.group.receptor.family.parent.parent.parent.short|default_if_none:""}}__{{e.group.receptor.family.parent.short}}
+					__{{e.group.receptor.entry_short}}__{{e.group.receptor.name.split|first}}
+					__{{e.group.receptor.species.common_name}}__{{e.group.ligand}}
+					__{{e.group.ligand_type}}__{{e.group.endogenous_princip}}__{{e.group.pec50_min|default_if_none:""}}
+					__{{e.group.pec50_avg|default_if_none:""}}__{{e.group.pec50_max|default_if_none:""}}
+					__{{e.group.pKi_min|default_if_none:"-" }}__{{e.group.pKi_avg|default_if_none:"-" }}
+					__{{e.group.pKi_max|default_if_none:"-" }}__GPCRDb
+
+				</td>
+				<td style='display: none'>{{e.group_name}}</td>
+			</tr>
+			{%endfor%}
+		</tbody>
+	</table>
+</div>
+
+<br>
+{% endautoescape %}
+<br>
+{% endblock %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/datatables.min.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+<script src="{% static 'home/js/dataTables.buttons.min.js' %}"> </script>
+<script src="{% static 'home/js/select2.js' %}"> </script>
+<script src="{% static 'home/js/shading.js' %}"></script>
+
+<script>
+	$(document).ready(function() {
+		function getCookie(name) {
+			let cookieValue = null;
+			if (document.cookie && document.cookie !== '') {
+				const cookies = document.cookie.split(';');
+				for (let i = 0; i < cookies.length; i++) {
+					const cookie = cookies[i].trim();
+					// Does this cookie string begin with the name we want?
+					if (cookie.substring(0, name.length + 1) === (name + '=')) {
+						cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+						break;
+					}
+				}
+			}
+			return cookieValue;
+		}
+		const csrftoken = getCookie('csrftoken');
+
+		var table = $('#structures_scrollable').DataTable({
+			stateSave: false,
+			processing: true,
+			deferRender: true,
+			dom: 'B<>flrtip',
+			"deferRender": true,
+			pageLength: 35,
+            orderFixed: [17, 'asc'],
+			rowGroup: {
+				dataSrc: 17
+			},
+			order: [9, "desc"],
+			"lengthChange": false,
+
+			"buttons": [{
+					extend: 'csv',
+					text: 'Export to CSV',
+					className: 'btn btn-primary',
+					init: function(api, node, config) {
+						$(node).removeClass('dt-button buttons-excel buttons-html5');
+					},
+					exportOptions: {
+						modifier: {
+							order: 'current',
+							page: 'all',
+							search: 'none'
+						}
+					}
+				},
+				{
+					text: 'Reset Filters',
+					className: 'btn btn-primary',
+					titleAttr: 'Reset All Filters',
+					init: function(api, node, config) {
+						$(node).removeClass('dt-button buttons-excel buttons-html5');
+					},
+					action: function(e, dt, node, config) {
+						reset_filters()
+					},
+				},
+				{
+					text: 'Get Vendors',
+					className: 'btn btn-primary',
+					titleAttr: 'Vendors info for top 20 ligands',
+					init: function(api, node, config) {
+						$(node).removeClass('dt-button buttons-excel buttons-html5');
+					},
+					action: function(e, dt, node, config) {
+						var id = read_ids()
+						var result
+						$.ajaxSetup({
+							headers: {
+								"X-CSRFToken": csrftoken
+							}
+						});
+						$.ajax({
+							type: 'POST',
+							url: '/ligand/vendors',
+							data: {
+								ids: id,
+								csrfmiddlewaretoken: '{{csrf_token }}',
+								action: 'post',
+							},
+							success: function() {
+
+								openPopup('/ligand/browservendors', 'Detail View', window, 850, 1000)
+							}
+						});
+					},
+				},
+			],
+			"drawCallback": function(settings) {
+				var api = this.api();
+				var rows = api.rows({
+					page: 'current'
+				}).nodes();
+				var last = null;
+				api.column(16, {
+					page: 'current'
+				}).data().each(function(group, i) {
+					if (last !== group) {
+						var test = group.split('__');
+						let qwe = "";
+						for (var ci = 0; ci < test.length; ci++) {
+							if (ci == 1 || ci == 6 || ci == 9 || ci == 12 || ci == 15) {
+								qwe += "<td style='border-left: 1px solid black;'>" + test[ci] + '</td>';
+							} else {
+								qwe += '<td>' + test[ci] + '</td>';
+							}
+						}
+						$(rows).eq(i).before(
+							'<tr style="border: 1px solid black; font-weight:bold" class="group">' + qwe + '</tr>'
+						);
+						last = group;
+					}
+				});
+
+				setTimeout(function() {
+					var ligand_counter = read_unique_ids();
+					var receptor_counter = read_unique_ids_receptor();
+					document.getElementById("ligand_counter").innerHTML = ligand_counter;
+					document.getElementById("receptor_counter").innerHTML = receptor_counter;
+				}, 3000);
+			},
+
+		});
+		yadcf.init(table,
+			[{
+					column_number: 1,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Class",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 2,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 3,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 4,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 5,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				// Ligand
+				{
+					column_number: 6,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					column_data_type: "html",
+					html_data_type: "text",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 7,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 8,
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
+					filter_reset_button_text: false,
+				},
+				// pec50
+				{
+					column_number: 9,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 10,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 11,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				// pki50
+				{
+					column_number: 12,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				{
+					column_number: 13,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+
+				{
+					column_number: 14,
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_reset_button_text: false,
+				},
+				//Article
+				{
+					column_number: 15,
+					select_type: 'select2',
+                    filter_type: "multi_select",
+					column_data_type: "html",
+					html_data_type: "text",
+					filter_default_label: "Authors",
+					text_data_delimiter: '<br>',
+					filter_reset_button_text: false,
+				},
+			],
+		);
+		shadeTable(table, [".shade"], 120, 200);
+
+		function reset_filters() {
+			yadcf.exResetAllFilters(table);
+		}
+
+	});
+</script>
+
+<script type="text/javascript">
+	function openPopup(url, title, win, w, h) {
+		const y = win.top.outerHeight / 2 + win.top.screenY - (h / 2);
+		const x = win.top.outerWidth / 2 + win.top.screenX - (w / 2);
+		return win.open(url, title, 'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width=' + w + ', height=' + h + ', top=' + y + ', left=' + x);
+	}
+
+	function read_unique_ids() {
+		var ids = [];
+		var table = document.getElementById("structures_scrollable")
+		var temp_lenght = table.rows.length;
+		var l = 0;
+		for (var i = 2; i < temp_lenght; i++) {
+			var x = table.rows[i].cells[0];
+			ids.push($(x).find('span:first')[0].innerText)
+		}
+		l = countUnique(ids);
+		return l
+	}
+
+	function read_unique_ids_receptor() {
+		var ids = [];
+		var table = document.getElementById("structures_scrollable")
+		var temp_lenght = table.rows.length;
+		var l = 0;
+		for (var i = 2; i < temp_lenght; i++) {
+			var x = table.rows[i].cells[3];
+			ids.push($(x)[0].innerText)
+		}
+		l = countUnique(ids);
+		return l
+	}
+
+	function countUnique(iterable) {
+		return new Set(iterable).size;
+	}
+
+	function read_ids() {
+		var ids = [];
+		var table = document.getElementById("structures_scrollable")
+		var temp_lenght = table.rows.length;
+		if (temp_lenght > 22) {
+			temp_lenght = 22;
+		}
+		for (var i = 2; i < temp_lenght; i++) {
+			var x = table.rows[i].cells[0];
+			ids.push($(x).find('span:first')[0].innerText)
+		}
+		var myJSON = JSON.stringify(ids);
+		return myJSON
+	}
+</script>
+{% endblock %}
