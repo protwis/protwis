@@ -229,7 +229,7 @@ def getTargetTable():
 
     return data_table
 
-def getReferenceTable(filtering):
+def getReferenceTable(filtering, assay_type):
     # data_table = cache.get("reference_table")
     data_table = None
 
@@ -256,21 +256,26 @@ def getReferenceTable(filtering):
         # original code
         # ligand_set = list(AssayExperiment.objects.values("protein__family__slug")
         #                                          .annotate(num_ligands=Count("ligand", distinct=True)))
-        # NEW CODE
-        ligand_set = list(AnalyzedAssay.objects
-            .filter(#log_bias_factor__gte=1,
-                    experiment__source=filtering)
-            .values('experiment__receptor__family__slug')
-            .annotate(num_ligands=Count('experiment__ligand_id', distinct=True)))
-
+        #NEW CODE
+        ligand_zero = list(AnalyzedAssay.objects
+            .filter(order_no__lte=1,
+                    experiment__source=filtering,
+                    assay_description=assay_type)
+            .values('experiment__receptor__family__slug',
+                    'experiment__ligand_id')
+            .annotate(orders=Count('order_no', distinct=True))
+            .filter(orders=2))
+        #NEW CODE
         ligand_count = {}
+        for entry in ligand_zero:
+            if entry['experiment__receptor__family__slug'] not in ligand_count.keys():
+                ligand_count[entry['experiment__receptor__family__slug']] = 0
+            ligand_count[entry['experiment__receptor__family__slug']] += 1
+
         # original code
         # for entry in ligand_set:
         #     ligand_count[entry["protein__family__slug"]] = entry["num_ligands"]
-        # NEW CODE
-        for entry in ligand_set:
-            ligand_count[entry["experiment__receptor__family__slug"]] = entry["num_ligands"]
-        # NEW CODE (needed only first 5 columns)
+
         data_table = "<table id='uniprot_selection' class='uniprot_selection stripe compact'> \
             <thead>\
               <tr> \
@@ -326,6 +331,8 @@ def getReferenceTable(filtering):
             t['ligand_count'] = 0
             if t['slug'] in ligand_count:
                 t['ligand_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_count[t['slug']])
+            else:
+                continue
 
 
             data_table += "<tr> \
@@ -413,7 +420,7 @@ class AbsReferenceSelectionTable(TemplateView):
     #         del ppf
 
             # Load the target table data
-    table_data = getReferenceTable('different_family')
+    table_data = getReferenceTable('different_family', 'tested_assays')
     # except Exception as e:
     #     pass
 

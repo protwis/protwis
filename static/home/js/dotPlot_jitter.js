@@ -264,9 +264,6 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
         .attr("width", 10)
         .style("fill", "white");
   }else if(hb !== null && fb === null){
-    console.log('Here!');
-    console.log(hb);
-    console.log(tickArray);
     spacers = gap * (tickArray.indexOf(hb) - 1);
     main.append("rect")
         .attr("class", "divider")
@@ -376,7 +373,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
   g.selectAll("scatter-dots")
     .data(data)
     .enter().append("svg:circle")
-    .filter(function(d) { return (d[4] !== "Full Bias" || d[4] !== "High Bias")})
+    .filter(function(d) { return (d[4] !== "Full Bias" && d[4] !== "High Bias")})
     .attr("cx", function(d) {return x(d[0]) - jitterWidth/2 + Math.random()*jitterWidth ;})
     .attr("cy", function(d) {return y(d[1]);})
     .attr("r", 4)

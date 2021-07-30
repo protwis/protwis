@@ -155,6 +155,10 @@
 <p><h4>Pathway preferred ligand counts</h4>
 <h6>Ligands with a bias factor equal or greater to 1</h6></p>
 <table style="width:60% !important" class="table table-stripped">
+{% elif render == "subtype" %}
+<p><h4>Pathway preferred ligand counts</h4>
+<h6>Ligands with a bias factor equal or greater to 2 (subtype)</h6></p>
+<table style="width:60% !important" class="table table-stripped">
 {% endif %}
     <thead>
         <tr>
@@ -207,6 +211,8 @@ Ligand statistics were last updated <strong>{{ release_notes.date|date:"Y-m-d" }
 <h4>Ligand bias coverage of GPCR Classes</h4><br />
 {% elif render == "pathway" %}
 <h4>Pathway preferred ligand coverage of GPCR Classes</h4><br />
+{% elif render == "subtype" %}
+<h4>Ligand bias (subtype) coverage of GPCR Classes</h4><br />
 {% endif %}
 
 {% if render == "not_bias" %}
@@ -413,13 +419,6 @@ $(window).on("load",function() {
     <div style="float: right; position: relative" class="text-center">
       <b>Primary transducer frequency (from low to high)</b>
       <div class="graydiv"></div>
-      <!-- <div style="display: table-row">
-        <div class="bluediv" style="display: table-cell"></div>
-        <div class="reddiv" style="display: table-cell"></div>
-        <div class="graydiv" style="display: table-cell"></div>
-        <div class="greendiv" style="display: table-cell" ></div>
-        <div class="orangediv" style="display: table-cell"></div>
-      </div> -->
     </div>
     <div style="float: left; position: relative" class="text-center">
       <b>Transducers</b> <br />

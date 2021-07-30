@@ -436,7 +436,7 @@ class RankOrderSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable("different_family")
+    table_data = getReferenceTable("different_family", "tested_assays")
 
 class TauRankOrderSelection(AbsReferenceSelectionTable):
     step = 1
@@ -460,7 +460,31 @@ class TauRankOrderSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable("different_family")
+    table_data = getReferenceTable("different_family", "tested_assays")
+
+class TauSubtypeRankOrderSelection(AbsReferenceSelectionTable):
+    step = 1
+    number_of_steps = 1
+    filters = False
+    filter_tableselect = False
+    family_tree = False
+    title = "SELECT RECEPTOR for Ligand Bias (subtype) Rank Order (Tau/KA)"
+    description = 'Select receptor in the table (below).' \
+        + ' \n\nOnce you have selected a receptor, click the green button.'
+    selection_boxes = OrderedDict([
+        ('reference', True),
+        ('targets', False),
+        ('segments', False),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Next',
+            'onclick': "submitSelection('/ligand/subtype_tau_rankorder');",
+            'color': 'success',
+        },
+    }
+
+    table_data = getReferenceTable("sub_different_family", "sub_tested_assays")
 
 class EmaxPathProfileSelection(AbsReferenceSelectionTable):
     step = 1
@@ -484,7 +508,7 @@ class EmaxPathProfileSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable("different_family")
+    table_data = getReferenceTable("different_family", "tested_assays")
 
 class TauPathProfileSelection(AbsReferenceSelectionTable):
     step = 1
@@ -508,7 +532,31 @@ class TauPathProfileSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable("different_family")
+    table_data = getReferenceTable("different_family", "tested_assays")
+
+class TauSubtypePathProfileSelection(AbsReferenceSelectionTable):
+    step = 1
+    number_of_steps = 1
+    filters = False
+    filter_tableselect = False
+    family_tree = False
+    title = "SELECT RECEPTOR for Ligand (subtype) Pathway Profiles (Tau/KA)"
+    description = 'Select receptor in the table (below).' \
+        + ' \n\nOnce you have selected a receptor, click the green button.'
+    selection_boxes = OrderedDict([
+        ('reference', True),
+        ('targets', False),
+        ('segments', False),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Next',
+            'onclick': "submitSelection('/ligand/subtype_tau_path_profiles');",
+            'color': 'success',
+        },
+    }
+
+    table_data = getReferenceTable("sub_different_family", "sub_tested_assays")
 
 class EmaxPathPrefRankOrderSelection(AbsReferenceSelectionTable):
     step = 1
@@ -532,7 +580,7 @@ class EmaxPathPrefRankOrderSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable('predicted_family')
+    table_data = getReferenceTable('predicted_family', 'predicted_tested_assays')
 
 
 class EmaxPathPrefPathProfilesSelection(AbsReferenceSelectionTable):
@@ -557,7 +605,56 @@ class EmaxPathPrefPathProfilesSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable('predicted_family')
+    table_data = getReferenceTable('predicted_family', 'predicted_tested_assays')
+
+
+class EmaxSubtypeRankOrderSelection(AbsReferenceSelectionTable):
+    step = 1
+    number_of_steps = 1
+    filters = False
+    filter_tableselect = False
+    family_tree = False
+    title = "SELECT RECEPTOR for Ligand biased (subtype) rank orders (ΔΔLog(Emax/EC50))"
+    description = 'Select receptor in the table (below).' \
+        + ' \n\nOnce you have selected a receptor, click the green button.'
+    selection_boxes = OrderedDict([
+        ('reference', True),
+        ('targets', False),
+        ('segments', False),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Next',
+            'onclick': "submitSelection('/ligand/subtype_emax_rankorder');",
+            'color': 'success',
+        },
+    }
+
+    table_data = getReferenceTable('sub_different_family', 'sub_tested_assays')
+
+class EmaxSubtypePathProfilesSelection(AbsReferenceSelectionTable):
+    step = 1
+    number_of_steps = 1
+    filters = False
+    filter_tableselect = False
+    family_tree = False
+    title = "SELECT RECEPTOR for Ligand biased (subtype) Pathway Profiles (Δlog(Emax/EC50))"
+    description = 'Select receptor in the table (below).' \
+        + ' \n\nOnce you have selected a receptor, click the green button.'
+    selection_boxes = OrderedDict([
+        ('reference', True),
+        ('targets', False),
+        ('segments', False),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Next',
+            'onclick': "submitSelection('/ligand/subtype_emax_path_profiles');",
+            'color': 'success',
+        },
+    }
+
+    table_data = getReferenceTable('sub_different_family', 'sub_tested_assays')
 
 
 class BiasedRankOrder(TemplateView):
@@ -684,7 +781,7 @@ class BiasedRankOrder(TemplateView):
 
         upgrade_value = ["High activity", "High activity (Potency and Emax)", "Full agonism"]
         downgrade_value = ["Low activity", "No activity", "Inverse agonism/antagonism"]
-        exclude_list = ["Agonism","Partial agonism","Medium activity"] #full agonism should be removed
+        exclude_list = ["Agonism", "Partial agonism", "Medium activity"] #full agonism should be removed
         publications = list(AnalyzedAssay.objects.filter(
                         family__isnull=False,
                         experiment__receptor=receptor,
@@ -725,9 +822,7 @@ class BiasedRankOrder(TemplateView):
         Colors = {}
         pathway_nr = {}
         labels_dict = {}
-
         for result in publications:
-            print(result)
             try:
                 reference_path = tooltip_dict[result[18]]
             except KeyError:
@@ -940,12 +1035,10 @@ class BiasedRankOrder(TemplateView):
                     little = [reference_path, reference_EC50_ka, reference_emax_tau, result[19]]
                     big = [jitterDict[pub][ligand]["Pathway"], jitterDict[pub][ligand]['delta'], jitterDict[pub][ligand]['Emax_Tau'], jitterDict[pub][ligand]['EC50_KA'],
                            jitterDict[pub][ligand]['2nd_Pathway'], jitterDict[pub][ligand]['2nd_Pathway_delta'], jitterDict[pub][ligand]['2nd_Pathway_emax_tau'], jitterDict[pub][ligand]['2nd_Pathway_EC50_KA']]
-
                     if (jitterDict[pub][ligand]['deltadelta'][1] == 'High Bias') or (jitterDict[pub][ligand]['deltadelta'][1] == 'Full Bias'):
                         tooltip = BiasedRankOrder.jitter_tooltip(self.page, self.assay, ligand, jitterDict[pub][ligand]['deltadelta'][1], components, prefix, small_data=little, large_data=big)
                     else:
                         tooltip = BiasedRankOrder.jitter_tooltip(self.page, self.assay, ligand, jitterDict[pub][ligand]['deltadelta'][0], components, prefix, small_data=little, large_data=big)
-                    print(jitterDict[pub][ligand]['deltadelta'])
                     jitterPlot[jitterDict[pub][ligand]["Pathway"]].append([pub, jitterDict[pub][ligand]['deltadelta'][0], Colors[ligand], ligand, jitterDict[pub][ligand]['deltadelta'][1], tooltip])
                     jitterLegend[jitterDict[pub][ligand]["Pathway"]].append(tuple((ligand, jitterDict[pub][ligand]['deltadelta'][0])))
                 except KeyError:
@@ -989,30 +1082,30 @@ class LigandStatistics(TemplateView):
     """
 
     template_name = 'ligand_statistics.html'
-    page = 'ligands' #either ligand_bias or pathway_pref (NEW PAGE)
+    page = 'ligands' #either ligand_bias or pathway_pref OR subtype (NEW PAGE)
 
     def get_context_data(self, **kwargs):
 
         context = super().get_context_data(**kwargs)
         # assays = AssayExperiment.objects.all().prefetch_related('protein__family__parent__parent__parent', 'protein__family')
         lig_count_dict = {}
+        # create a dict for conversion of input data,
+        # if new families will be added to db just add values to this dict
+        # values are: log_bias_factor threshold, experiment_source, assay_description, render for html
+        conversion = {
+        'ligand_bias': [2, 'different_family', 'tested_assays', 'bias'],
+        'pathway_pref': [1, 'predicted_family', 'predicted_tested_assays', 'pathway'],
+        'subtype': [2, 'sub_different_family', 'sub_tested_assays', 'subtype']
+        }
         if self.page == 'ligands':
             assays_lig = list(AssayExperiment.objects.all().values(
                 'protein__family__parent__parent__parent__name').annotate(c=Count('ligand', distinct=True)))
             for a in assays_lig:
                 lig_count_dict[a['protein__family__parent__parent__parent__name']] = a['c']
-        elif self.page == 'ligand_bias':
+        else:
             assays_lig = list(AnalyzedAssay.objects
-                .filter(log_bias_factor__gte=2,
-                        experiment__source='different_family')
-                .values('experiment__receptor__family__parent__parent__parent__name')
-                .annotate(c=Count('experiment__ligand_id', distinct=True)))
-            for a in assays_lig:
-                lig_count_dict[a['experiment__receptor__family__parent__parent__parent__name']] = a['c']
-        elif self.page == 'pathway_pref':
-            assays_lig = list(AnalyzedAssay.objects
-                .filter(log_bias_factor__gte=1,
-                        experiment__source='predicted_family')
+                .filter(log_bias_factor__gte=conversion[self.page][0],
+                        experiment__source=conversion[self.page][1])
                 .values('experiment__receptor__family__parent__parent__parent__name')
                 .annotate(c=Count('experiment__ligand_id', distinct=True)))
             for a in assays_lig:
@@ -1158,16 +1251,17 @@ class LigandStatistics(TemplateView):
         context["whole_receptors"] = json.dumps(whole_rec_dict)
         if self.page == 'ligands':
             context["render"] = "not_bias"
-        elif self.page == 'ligand_bias':
+
+        else:
             assay_qs = AnalyzedAssay.objects.filter(
-                assay_description='tested_assays').values_list(
+                assay_description=conversion[self.page][2]).values_list(
                 "family", "experiment__receptor__entry_name").order_by(
                 "family", "experiment__receptor__entry_name").distinct(
                 "family", "experiment__receptor__entry_name")
 
             ligand_qs = AnalyzedAssay.objects.filter(
                 order_no=0,
-                assay_description='tested_assays').values_list(
+                assay_description=conversion[self.page][2]).values_list(
                 "family", "experiment__receptor__entry_name", "experiment__ligand").order_by(
                 "family", "experiment__receptor__entry_name", "experiment__ligand").distinct(
                 "family", "experiment__receptor__entry_name", "experiment__ligand")
@@ -1188,38 +1282,8 @@ class LigandStatistics(TemplateView):
                     circles[key][data[0]] += 1
 
             context["circles_data"] = json.dumps(circles)
-            context["render"] = "bias"
-        elif self.page == 'pathway_pref':
-            assay_qs = AnalyzedAssay.objects.filter(
-                assay_description='predicted_tested_assays').values_list(
-                "family", "experiment__receptor__entry_name").order_by(
-                "family", "experiment__receptor__entry_name").distinct(
-                "family", "experiment__receptor__entry_name")
+            context["render"] = conversion[self.page][3]
 
-            ligand_qs = AnalyzedAssay.objects.filter(
-                order_no=0,
-                assay_description='predicted_tested_assays').values_list(
-                "family", "experiment__receptor__entry_name", "experiment__ligand").order_by(
-                "family", "experiment__receptor__entry_name", "experiment__ligand").distinct(
-                "family", "experiment__receptor__entry_name", "experiment__ligand")
-
-            circles = {}
-            for data in assay_qs:
-                if data[1].split('_')[1] == 'human':
-                    key = data[1].split('_')[0].upper()
-                    if key not in circles.keys():
-                        circles[key] = {}
-                        circles[key][data[0]] = 0
-                    else:
-                        circles[key][data[0]] = 0
-
-            for data in ligand_qs:
-                if data[1].split('_')[1] == 'human':
-                    key = data[1].split('_')[0].upper()
-                    circles[key][data[0]] += 1
-
-            context["circles_data"] = json.dumps(circles)
-            context["render"] = "pathway"
         return context
 
 class ExperimentEntryView(DetailView):

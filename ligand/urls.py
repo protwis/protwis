@@ -15,7 +15,8 @@ urlpatterns = [
     url(r'^targets_purchasable', views.TargetPurchasabilityDetails, name='ligand_target_detail_purchasable'),
     url(r'^(?P<ligand_id>[-\w]+)/details$', views.LigandDetails, name='ligand_detail'),
     url(r'^statistics', cache_page(3600*24*7)(views.LigandStatistics.as_view()), name='ligand_statistics'),
-    url(r'^bias_statistics', cache_page(3600*24)(views.LigandStatistics.as_view(page='ligand_bias')), name='ligand_statistics'),
+    # url(r'^statistics', views.LigandStatistics.as_view(), name='ligand_statistics'),
+    url(r'^bias_statistics', cache_page(3600*24*7)(views.LigandStatistics.as_view(page='ligand_bias')), name='ligand_statistics'),
     # url(r'^bias_statistics', views.LigandStatistics.as_view(page='ligand_bias'), name='ligand_statistics'),
 
     path('emax_rank_order_selection', views.RankOrderSelection.as_view(), name='emax_ro_selection'),
@@ -28,10 +29,24 @@ urlpatterns = [
     path('tau_path_profiles', views.BiasedRankOrder.as_view(page='pathwayprofiles', label='tau'), name='biased_rank_order'),
 
     url(r'^path_preference_statistics', cache_page(3600*24)(views.LigandStatistics.as_view(page='pathway_pref')), name='ligand_statistics'),
+    # url(r'^path_preference_statistics', views.LigandStatistics.as_view(page='pathway_pref'), name='ligand_statistics'),
     path('path_preference_emax_rankorder_selection', views.EmaxPathPrefRankOrderSelection.as_view(), name='ema_pathpref_ro_selection'),
     path('path_preference_emax_rankorder', views.BiasedRankOrder.as_view(source='predicted_family', assay='predicted_tested_assays'), name='biased_rank_order'),
     path('path_preference_emax_path_profiles_selection', views.EmaxPathPrefPathProfilesSelection.as_view(), name='ema_pathpref_pathprof_selection'),
     path('path_preference_emax_path_profiles', views.BiasedRankOrder.as_view(page='pathwayprofiles', source='predicted_family', assay='predicted_tested_assays'), name='biased_rank_order'),
+
+    #sub_different_family
+    url(r'^subtype_statistics', cache_page(3600*24*7)(views.LigandStatistics.as_view(page='subtype')), name='ligand_statistics'),
+    # url(r'^subtype_statistics', views.LigandStatistics.as_view(page='subtype'), name='ligand_statistics'),
+    path('subtype_emax_rankorder_selection', views.EmaxSubtypeRankOrderSelection.as_view(), name='ema_subtype_ro_selection'),
+    path('subtype_emax_rankorder', views.BiasedRankOrder.as_view(source='sub_different_family', assay='sub_tested_assays'), name='biased_rank_order'),
+    path('subtype_emax_path_profiles_selection', views.EmaxSubtypePathProfilesSelection.as_view(), name='ema_pathpref_pathprof_selection'),
+    path('subtype_emax_path_profiles', views.BiasedRankOrder.as_view(page='pathwayprofiles', source='sub_different_family', assay='sub_tested_assays'), name='biased_rank_order'),
+    path('subtype_tau_rank_order_selection', views.TauSubtypeRankOrderSelection.as_view(), name='tau_subtype_ro_selection'),
+    path('subtype_tau_rankorder', views.BiasedRankOrder.as_view(label='tau', source='sub_different_family', assay='sub_tested_assays'), name='biased_rank_order'),
+    path('subtype_tau_path_profiles_selection', views.TauSubtypePathProfileSelection.as_view(), name='tau_subtype_pp_selection'),
+    path('subtype_tau_path_profiles', views.BiasedRankOrder.as_view(page='pathwayprofiles', source='sub_different_family', assay='sub_tested_assays', label='tau'), name='biased_rank_order'),
+
 
     url(r'^(?P<pk>[-\w]+)/info$', views.LigandInformationView.as_view()),
 

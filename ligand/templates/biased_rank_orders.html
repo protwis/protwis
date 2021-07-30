@@ -15,14 +15,6 @@
     /* body{
       font: 10px sans-serif;
     } */
-    li{
-      font: 15px sans-serif;
-    }
-    .dropdown {
-    display: inline-block;
-    margin-right: 6px;
-    margin-bottom: 10px;
-    }
     .axis path,
     .axis line {
         fill: none;
@@ -546,6 +538,7 @@
 
 <script>
 var realData = {{ scatter | safe }};
+console.log(realData);
 var colors = {{ colors | safe }};
 var legend = {{ scatter_legend | safe }};
 var source = "{{ source }}";
@@ -571,8 +564,6 @@ if(label == 'emax'){
 var count = 1;
 for(var path in realData){
   var name = 'Pathway' + parseInt(count);
-  console.log(path);
-  console.log(realData[path]);
   DotScatter(realData[path], 'boxplotChart', name, colors, legend[path], conversion[path], ylabel, qualitative);
   count = count + 1;
   gNodes = d3.select('#'+name).selectAll('.main.axis.date').selectAll('.tick');
