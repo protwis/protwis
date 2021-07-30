@@ -268,7 +268,7 @@
 				<th id="authors_filter_select" style="border-left: 1px solid black; overflow: hidden;
                           white-space: nowrap;
                           text-overflow: ellipsis;
-                          max-width:100px;">Publication</th>
+                          max-width:250px;">Authors</th>
 				<th style='display: none'></th>
 				<th style='display: none'></th>
 			</tr>
@@ -310,7 +310,7 @@
 					{{e.publications}}
 					{%else%}
 					{% for pub in e.publications%}
-					<a href='{{pub.web_link}}' target='blank'>{{pub.authors}}</a><br>
+					<a href='{{pub.web_link}}' target='_blank'>{{pub.authors}}</a><br>
 					{% endfor %}
 					{% endif %}
 					<!-- <a href='{{e.web_links}}' target='blank'>{{e.publications}}</a></td> -->
@@ -570,7 +570,8 @@
 				//Article
 				{
 					column_number: 15,
-					select_type: 'select2',					
+					select_type: 'select2',
+                    filter_type: "multi_select",
 					column_data_type: "html",
 					html_data_type: "text",
 					filter_default_label: "Authors",
