@@ -1619,5 +1619,5 @@ class EndogenousLigandsBrowser(ListView):
                 for link in assay.publication.all().select_related('journal').prefetch_related('gtp_endogenous_ligand_set'):
                     temp_dict['publications'].append(link)
 
-            context.append(temp_dict)
+                context.append(temp_dict)        
         return context

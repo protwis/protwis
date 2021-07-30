@@ -294,7 +294,7 @@
 				<!-- ligand -->
 				<td style="border-left: 1px solid black;" title='{{e.ligand}}'><a href='/ligand/{{e.ligand.id}}/info' target='_blank'>{{e.ligand}}</a></td>
 				<td title='{{e.ligand_type}}'>{{e.ligand_type}}</td>
-				<td style="text-align:left">princip</td>
+				<td style="text-align:left">{{e.endogenous_princip}}</td>
 
 				<!-- pathways -->
 				<td style="border-left: 1px solid black; text-align:left">{{e.pec50_min|default_if_none:""}}</td>
@@ -310,7 +310,7 @@
 					{{e.publications}}
 					{%else%}
 					{% for pub in e.publications%}
-					{{pub.authors}}<br>
+					<a href='{{pub.web_link}}' target='blank'>{{pub.authors}}</a><br>
 					{% endfor %}
 					{% endif %}
 					<!-- <a href='{{e.web_links}}' target='blank'>{{e.publications}}</a></td> -->
@@ -318,7 +318,7 @@
 					__{{e.group.receptor.family.parent.parent.parent.short|default_if_none:""}}__{{e.group.receptor.family.parent.short}}
 					__{{e.group.receptor.entry_short}}__{{e.group.receptor.name.split|first}}
 					__{{e.group.receptor.species.common_name}}__{{e.group.ligand}}
-					__{{e.group.ligand_type}}__princip__{{e.group.pec50_min|default_if_none:""}}
+					__{{e.group.ligand_type}}__{{e.group.endogenous_princip}}__{{e.group.pec50_min|default_if_none:""}}
 					__{{e.group.pec50_avg|default_if_none:""}}__{{e.group.pec50_max|default_if_none:""}}
 					__{{e.group.pKi_min|default_if_none:"-" }}__{{e.group.pKi_avg|default_if_none:"-" }}
 					__{{e.group.pKi_max|default_if_none:"-" }}__GPCRDb
@@ -570,8 +570,9 @@
 				//Article
 				{
 					column_number: 15,
-					filter_type: "multi_select",
-					select_type: 'select2',
+					select_type: 'select2',					
+					column_data_type: "html",
+					html_data_type: "text",
 					filter_default_label: "Authors",
 					text_data_delimiter: '<br>',
 					filter_reset_button_text: false,
