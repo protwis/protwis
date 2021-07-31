@@ -38,7 +38,7 @@ function citation_tool(url) {
     cit_request.open('GET', url.split('/')[0] + '/citations');
     cit_request.onload = function() {
 		var data = JSON.parse(cit_request.responseText)
-		for (var i = 0; i < data.length; i++) {
+		for (let i = 0; i < data.length; i++) {
 			var link = "";
 			if (!domains.includes(env)) {
 				link = "/" + data[i][0].split("//")[1].split("/").slice(1).join("/");
@@ -71,7 +71,7 @@ function citation_tool(url) {
 		// Create HTML once per call
 		var articles = {};
 		var tags = [];
-		for (var i = 0; i < data.length; i++) {
+		for (let i = 0; i < data.length; i++) {
 			if (data[i][11]==='') {
 				continue;
 			}
