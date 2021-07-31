@@ -41,7 +41,7 @@ function citation_tool(url) {
 		for (var i = 0; i < data.length; i++) {
 			var link = "";
 			if (!domains.includes(env)) {
-				link = '/'+data[i][0].split('//')[1].split('/').slice(1).join('/');
+				link = "/" + data[i][0].split("//")[1].split("/").slice(1).join("/");
 			}
 			else {
 				link = data[i][0];
@@ -71,29 +71,30 @@ function citation_tool(url) {
 		// Create HTML once per call
 		var articles = {};
 		var tags = [];
-		for (i = 0; i < data.length; i++) {
+		for (var i = 0; i < data.length; i++) {
 			if (data[i][11]==='') {
 				continue;
 			}
 			var site = parse_url_long(data[i][0]);
 			tags.push(site);
 			// Dropdown menus
+			var a_sub, submenu, submenu_ul;
 			if (document.getElementById(data[i][11])===null) {
-				var submenu = document.createElement("li");
+				submenu = document.createElement("li");
 				submenu.setAttribute("id", data[i][11]);
 				submenu.classList.add("dropdown-submenu");
-				var a_sub = document.createElement("a");
+				a_sub = document.createElement("a");
 				a_sub.innerHTML = data[i][11];
 				a_sub.setAttribute('tabindex', '0');
 				submenu.appendChild(a_sub);
-				var submenu_ul = document.createElement("ul");
+				submenu_ul = document.createElement("ul");
 				submenu_ul.classList.add('dropdown-menu');
 				submenu_ul.classList.add('dropdown-auto-overflow')
 				submenu.appendChild(submenu_ul);
 			}
 			else {
-				var submenu = document.getElementById(data[i][11])
-				var submenu_ul = submenu.getElementsByTagName('ul')[0];
+				submenu = document.getElementById(data[i][11])
+				submenu_ul = submenu.getElementsByTagName('ul')[0];
 			}
 
 			// Dropdown options
@@ -124,7 +125,7 @@ function citation_tool(url) {
 				articles[data[i][5]]['journal'] = data[i][9];
 				articles[data[i][5]]['doi'] = data[i][10];
 				articles[data[i][5]]['menu'] = data[i][11];
-				if (data[i][3]=="GPCRdb" || data[i][3]=="GproteinDb") {
+				if (data[i][3] === "GPCRdb" || data[i][3] === "GproteinDb") {
 					main_ref_id.push(site);
 				}
 			}
