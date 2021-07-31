@@ -1,56 +1,57 @@
 .slider-container {
-    background-color: #f2f2f9;
+  background-color: #f2f2f9;
 }
 
 .slider {
-    position: absolute;
-    border: 1px solid #AAB;
-    background: #BCE;
-    height: 100%;
-    width: 58px;
-    top: 0px;
-    cursor: move;
-    /*margin:-0.5px;*/
+  position: absolute;
+  border: 1px solid #aab;
+  background: #bce;
+  height: 100%;
+  width: 58px;
+  top: 0;
+  cursor: move;
+
+  /* margin:-0.5px; */
 }
 
 .slider .handle {
-    position: absolute;
-    height: 9px;
-    width: 9px;
-    border: 1px solid #AAB;
-    background: #9AC;
+  position: absolute;
+  height: 9px;
+  width: 9px;
+  border: 1px solid #aab;
+  background: #9ac;
 
-    /* Support for bootstrap */
-    box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    -webkit-box-sizing: border-box;
+  /* Support for bootstrap */
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
 }
 
 .slider .EE {
-    right: -4px;
-    cursor: e-resize;
+  right: -4px;
+  cursor: e-resize;
 }
 
 .slider .WW {
-    cursor: w-resize;
-    left: -4px;
+  cursor: w-resize;
+  left: -4px;
 }
 
-.slider .EE, .slider .WW {
-    top: 50%;
-    margin-top: -4px;
+.slider .EE,
+.slider .WW {
+  top: 50%;
+  margin-top: -4px;
 }
 
-.play-container .button{
-    fill-opacity: 0.0;
-    stroke: #AAB;
-    stroke-width: 1.6;
+.play-container .button {
+  fill-opacity: 0;
+  stroke: #aab;
+  stroke-width: 1.6;
 }
 
-.play-container .play, .play-container .stop {
-    fill: #BCE;
-    stroke: #AAB;
-    stroke-width: 1;
+.play-container .play,
+.play-container .stop {
+  fill: #bce;
+  stroke: #aab;
+  stroke-width: 1;
 }
-
-

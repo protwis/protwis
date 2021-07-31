@@ -1,6 +1,6 @@
 function citation_tool(url) {
 	// Modal part
-	$('#modal_table tbody').empty();
+	$('#citation_modal_table tbody').empty();
     var modal = document.getElementById('citation-tool');
     var span = document.getElementById("close-citation");
     modal.classList.add("modal");
@@ -32,13 +32,20 @@ function citation_tool(url) {
     var dropdown_articles = document.getElementById("dropdown_articles");
     var article_list = document.getElementById("article_list");
     var env = url.split('//')[1].split('/')[0];
-    var main_ref_id = false;
+    var main_ref_id = [];
     var cit_request = new XMLHttpRequest();
+    var domains = ["gpcrdb.org", "gproteindb.org", "arrestindb.org"];
     cit_request.open('GET', url.split('/')[0] + '/citations');
     cit_request.onload = function() {
 		var data = JSON.parse(cit_request.responseText)
-		for (i = 0; i < data.length; i++) {
-			var link = '/'+data[i][0].split('//')[1].split('/').slice(1).join('/');
+		for (let i = 0; i < data.length; i++) {
+			var link = "";
+			if (!domains.includes(env)) {
+				link = "/" + data[i][0].split("//")[1].split("/").slice(1).join("/");
+			}
+			else {
+				link = data[i][0];
+			}
 			if (link[link.length-1]==='/') {
 				link = link.substring(0, link.length-1);
 			}
@@ -53,7 +60,7 @@ function citation_tool(url) {
 			}
 			else {
 				if (link==="/protein/ste2_yeast") {
-					data[i].push("Receptors");
+					data[i].push("GPCRdb");
 				}
 				else {
 					data[i].push($('a[href="'+link+'"]').first().parent().parent().parent().first().find(">:first-child").text().trim());
@@ -64,30 +71,30 @@ function citation_tool(url) {
 		// Create HTML once per call
 		var articles = {};
 		var tags = [];
-		for (i = 0; i < data.length; i++) {
+		for (let i = 0; i < data.length; i++) {
 			if (data[i][11]==='') {
 				continue;
 			}
 			var site = parse_url_long(data[i][0]);
 			tags.push(site);
-
 			// Dropdown menus
+			var a_sub, submenu, submenu_ul;
 			if (document.getElementById(data[i][11])===null) {
-				var submenu = document.createElement("li");
+				submenu = document.createElement("li");
 				submenu.setAttribute("id", data[i][11]);
 				submenu.classList.add("dropdown-submenu");
-				var a_sub = document.createElement("a");
+				a_sub = document.createElement("a");
 				a_sub.innerHTML = data[i][11];
 				a_sub.setAttribute('tabindex', '0');
 				submenu.appendChild(a_sub);
-				var submenu_ul = document.createElement("ul");
+				submenu_ul = document.createElement("ul");
 				submenu_ul.classList.add('dropdown-menu');
 				submenu_ul.classList.add('dropdown-auto-overflow')
 				submenu.appendChild(submenu_ul);
 			}
 			else {
-				var submenu = document.getElementById(data[i][11])
-				var submenu_ul = submenu.getElementsByTagName('ul')[0];
+				submenu = document.getElementById(data[i][11])
+				submenu_ul = submenu.getElementsByTagName('ul')[0];
 			}
 
 			// Dropdown options
@@ -118,14 +125,14 @@ function citation_tool(url) {
 				articles[data[i][5]]['journal'] = data[i][9];
 				articles[data[i][5]]['doi'] = data[i][10];
 				articles[data[i][5]]['menu'] = data[i][11];
-				if (data[i][3]) {
-					main_ref_id = site;
+				if (data[i][3] === "GPCRdb" || data[i][3] === "GproteinDb") {
+					main_ref_id.push(site);
 				}
 			}
 			else {
 				articles[data[i][5]]['tools'][site] = option.innerHTML;
-				if (data[i][3]) {
-					main_ref_id = site;
+				if (data[i][3]=="GPCRdb" || data[i][3]=="GproteinDb") {
+					main_ref_id.push(site);
 				}
 			}
 		}
@@ -152,7 +159,7 @@ function citation_tool(url) {
 				// separator.innerHTML = '\u00A0&bull;\u00A0';
 				// separator.style.display = 'inline-block';
 				// tools_list.appendChild(separator);
-				if (tool_key===main_ref_id) {
+				if (main_ref_id.includes(tool_key)) {
 					main_ref = true;
 				}
 			}
@@ -189,12 +196,21 @@ function citation_tool(url) {
 			}
 			if (main_ref) {
 				var main_ref_list = document.getElementById("main_reference");
+
 				main_ref_list.appendChild(entry);
 			}
 			else {
 				article_list.appendChild(entry);
 			}
 		}
+		if (env=="https://gproteindb.org") {
+			main_ref_id = main_ref_id[0];
+		}
+		else {
+			main_ref_id = main_ref_id[1];
+		}
+		$(".article").first().css("border-top","4px solid #F46615");
+		$(".article").eq(1).css("border-top","4px solid #BE00BE");
 		if (highlight_main || $('.highlight_reference').length==0) {
 			highlight_article(main_ref_id);
 			$('#dropdown_articles option#'+main_ref_id).attr('selected', 'selected');

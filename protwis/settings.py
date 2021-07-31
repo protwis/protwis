@@ -80,6 +80,9 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
+# Default site configuration (gpcr - GPCRdb, gprotein - GproteinDb, arrestin - ArrestinDb)
+DEFAULT_SITE = "gpcr"
+
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 STATIC_ROOT = '/protwis/static/protwis'
@@ -112,8 +115,10 @@ TEMPLATES = [
                 'django.template.context_processors.static',
                 'django.template.context_processors.tz',
                 'django.contrib.messages.context_processors.messages',
-                'protwis.context_processors.current_domain',
-                'protwis.context_processors.google_analytics'
+                'protwis.context_processors.current_site',
+                'protwis.context_processors.documentation_url',
+                'protwis.context_processors.google_analytics',
+                'protwis.context_processors.site_title'
             ],
         },
     },

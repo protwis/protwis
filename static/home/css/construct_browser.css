@@ -1,14 +1,16 @@
-/*input.form-control, select.form-control {
+/* input.form-control, select.form-control {
     width: 50px;
     height: 20px;
     font-size: 9px;
     padding: 2px 2px;
-}*/
-input.number_range_filter, input.date_range_filter {
-    width: 20px;
-    font-size: 8px;
+} */
+input.number_range_filter,
+input.date_range_filter {
+  width: 20px;
+  font-size: 8px;
 }
-/*.protein-th {
+
+/* .protein-th {
     background-color: #98df8a;
 }
 .pdb-th {
@@ -35,106 +37,116 @@ input.number_range_filter, input.date_range_filter {
 }
 .pub-th {
     background-color: #ffbb78;
-}*/
+} */
 .similarity-th {
-    background-color: gold;
+  background-color: gold;
 }
 
 .construct_div {
-    padding-left:3px;
-    padding-right:3px;
-    float:left;
-    position: relative;
+  padding-left: 3px;
+  padding-right: 3px;
+  float: left;
+  position: relative;
 }
 
-/*Annotations*/
+/* Annotations */
 .deletion {
-    background-color: red;
+  background-color: red;
 }
+
 .modification {
-    background-color: gold;
+  background-color: gold;
 }
+
 .mutation {
-    background-color: orange;
+  background-color: orange;
 }
+
 .insertion {
-    background-color: purple;
+  background-color: purple;
 }
 
 .fusion {
-    background-color: purple;
-    /*color: white;*/
-    background-color: rgb(142, 68, 173 );
-    background-color: rgba(142, 68, 173 , 0.6);
-}
-.fusiontop {
-    background-color: rgb(142, 68, 173 );
+  background-color: purple;
+
+  /* color: white; */
+  background-color: rgb(142, 68, 173);
+  background-color: rgba(142, 68, 173, 0.6);
 }
 
-.tag  {
-    background-color: gold;
-    background-color: rgb(244, 208, 63 );
-    background-color: rgba(244, 208, 63 , 0.6);
+.fusiontop {
+  background-color: rgb(142, 68, 173);
+}
+
+.tag {
+  background-color: gold;
+  background-color: rgb(244, 208, 63);
+  background-color: rgba(244, 208, 63, 0.6);
 }
 
 .tagtop {
-    background-color: rgb(244, 208, 63 );
+  background-color: rgb(244, 208, 63);
 }
 
 .signal {
-    background-color: #2ECC40;
-    background-color: rgba(46, 204, 64 , 0.6);
+  background-color: #2ecc40;
+  background-color: rgba(46, 204, 64, 0.6);
 }
+
 .signaltop {
-    background-color: #2ECC40;
+  background-color: #2ecc40;
 }
 
 .prot_cleavage {
-    background-color: #FFA233;
-    background-color: rgb(230, 126, 34 );
-    background-color: rgba(230, 126, 34 , 0.6);
+  background-color: #ffa233;
+  background-color: rgb(230, 126, 34);
+  background-color: rgba(230, 126, 34, 0.6);
 }
+
 .prot_cleavagetop {
-    background-color: rgb(230, 126, 34 );
+  background-color: rgb(230, 126, 34);
 }
 
 .linker {
-    background-color: #58A2A1;
-    background-color: rgb(93, 173, 226 );
-    background-color: rgba(93, 173, 226 , 0.6);   
+  background-color: #58a2a1;
+  background-color: rgb(93, 173, 226);
+  background-color: rgba(93, 173, 226, 0.6);
 }
+
 .linkertop {
-    background-color: #58A2A1;
-    background-color: rgb(93, 173, 226 ); 
+  background-color: #58a2a1;
+  background-color: rgb(93, 173, 226);
 }
 
 .insert_text {
-    opacity: 0.5;
+  opacity: 0.5;
 }
 
 .bg-insertion {
-    background-color: #d9b3ff;
+  background-color: #d9b3ff;
 }
 
 .bg-deletion {
-    background-color: red;
+  background-color: red;
 }
+
 .bg-mutation {
-    background-color: orange;
+  background-color: orange;
 }
+
 #constructs_schematics_div {
-    display: none;
+  display: none;
 }
+
 #wt_schematics_div {
-    display: none;
+  display: none;
 }
+
 #constructs_div {
-    display: none;
+  display: none;
 }
 
-.tooltip-inner  {
-
-    white-space:pre; /* you can also try white-space: normal; */
-    max-width:none;
-
+.tooltip-inner {
+  white-space: pre; /* you can also try white-space: normal; */
+  max-width: none;
 }

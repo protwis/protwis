@@ -1,4 +1,6 @@
 {% load static %}
+{% load menu_extras %}
+{% get_hostnames as hosts %}
 
 <!-- Fixed navbar -->
 <nav class="navbar navbar-inverse navbar-static-top" role="navigation">
@@ -10,21 +12,74 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="/" alt="{{ site_title }}"><img src="{% static logo_path %}" class="main-logo"></a>
+      <!-- <a class="navbar-brand" href="/" alt="{{ site_title }}"><img src="{% static logo_path %}" class="main-logo"></a> -->
     </div>
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav navbar-left">
-      {% include menu_template %}
+        <!-- INFO -->
+        {% include "home/common.html" %}
+
+        <!-- GPCRdb -->
+        {% include "home/gpcrdb.html" %}
+
+        <!-- GProteinDB -->
+        {% include "home/gproteindb.html" %}
+
+        <!-- ArrestinDB -->
+        {% include "home/arrestindb.html" %}
+
+        <!-- Cite and join us -->
+        {% include "home/cite_and_join_us.html" %}
+
+        <link href="{% static 'home/css/mainmenu.css' %}" rel="stylesheet">
+        <link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href="{% static 'home/css/jquery.powertip.css' %}" />
+        <script src="{% static 'home/js/jquery-3.1.1.min.js' %}"></script>
+        <script src="{% static 'home/js/citation_tool.js' %}"></script>
+        <script src="{% static 'home/js/joinus_tool.js' %}"></script>
+        <script type="text/javascript" charset="utf-8">
+          $(document).ready(function() {
+            if (window.location.pathname != '/') {
+              $('#ref_widget_div').css('display', 'block');
+              check_for_video(window.location.href);
+            }
+            $('#cite').click(function() {
+              citation_tool(window.location.href);
+            })
+            $('#icon_citation').click(function() {
+              citation_tool(window.location.href);
+            })
+            $('.dropdown-menu').on('click', '.article_option', function() {
+              highlight_article($(this).parent().attr('id'));
+              var anchor_id = $('#' + $(this).parent().attr('id').toString() + '_tag').parent().parent().parent().attr('id')
+              document.getElementById(anchor_id).scrollIntoView(true);
+              $('#page_select_button').html($(this).text());
+            })
+            $('#ref_widget_openclose').click(function() {
+              toggle_widget();
+            })
+            setTimeout(function() {
+              if ($('#widget_chevron').hasClass("glyphicon glyphicon-chevron-left")) {
+                toggle_widget();
+              }
+            }, 8000)
+
+          });
+        </script>
       </ul>
       <form class="navbar-form navbar-right" role="search">
         <div class="input-group">
-            <!-- <input class="form-control" name="srch-term" id="srch-term"> -->
-            <input type="text" id="nav-selection-autocomplete" class="optional form-control ui-autocomplete-input" size="15" autocomplete="on" placeholder="Jump to receptor">
-            <div class="input-group-btn">
-                <button class="btn btn-default" type="submit"><i class="glyphicon glyphicon-search"></i></button>
-            </div>
+          <!-- <input class="form-control" name="srch-term" id="srch-term"> -->
+          <input type="text" id="nav-selection-autocomplete" class="optional form-control ui-autocomplete-input" size="15" autocomplete="on" placeholder="Quick search">
+          <div class="input-group-btn">
+            <button class="btn btn-default" type="submit"><i class="glyphicon glyphicon-search"></i></button>
+          </div>
         </div>
-        </form>
-    </div><!--/.nav-collapse -->
+      </form>
+    </div>
+    <!--/.nav-collapse -->
   </div>
 </nav>
+
+<!-- Cite widget and modal -->
+{% include "home/cite_widget_and_modal.html" %}
