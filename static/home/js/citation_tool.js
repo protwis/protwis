@@ -34,15 +34,17 @@ function citation_tool(url) {
     var env = url.split('//')[1].split('/')[0];
     var main_ref_id = [];
     var cit_request = new XMLHttpRequest();
+    var domains = ["gpcrdb.org", "gproteindb.org", "arrestindb.org"];
     cit_request.open('GET', url.split('/')[0] + '/citations');
     cit_request.onload = function() {
 		var data = JSON.parse(cit_request.responseText)
-		for (i = 0; i < data.length; i++) {
-			if (env=="localhost:8000") {
-				var link = '/'+data[i][0].split('//')[1].split('/').slice(1).join('/');
+		for (var i = 0; i < data.length; i++) {
+			var link = "";
+			if (!domains.includes(env)) {
+				link = '/'+data[i][0].split('//')[1].split('/').slice(1).join('/');
 			}
 			else {
-				var link = data[i][0];
+				link = data[i][0];
 			}
 			if (link[link.length-1]==='/') {
 				link = link.substring(0, link.length-1);
