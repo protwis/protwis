@@ -255,7 +255,7 @@ def PdbTableData(request):
             <th colspan=5>Receptor</th> \
             <th colspan=3>Species</th> \
             <th colspan=4>Structure</th> \
-            <th colspan=3>Receptor state</th> \
+            <th colspan=3>Receptor state <a href=\"https://docs.gpcrdb.org/structures.html#structure-descriptors\" target=\"_blank\"><span class=\"glyphicon glyphicon-info-sign\"></span></a></th> \
             <th colspan=4>Signalling protein</th> \
             <th colspan=2>Auxiliary protein</th> \
             <th colspan=2>Ligand</th> \
@@ -273,7 +273,7 @@ def PdbTableData(request):
             <th></th> \
             <th></th> \
             <th></th> \
-            <th>Degree<br> active (%)</th> \
+            <th>Degree active (%)</th> \
             <th>TM6 tilt</th>"
 #            <th><a href=\"http://docs.gpcrdb.org/structures.html\" target=\"_blank\">Cytosolic</br> opening</a></th>"
 #            <th><a href=\"http://docs.gpcrdb.org/structures.html\" target=\"_blank\">7TM Open IC (Å)</a></th> \
