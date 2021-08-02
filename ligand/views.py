@@ -1575,14 +1575,12 @@ class EndogenousLigandsBrowser(ListView):
                 protein_list.append(items.protein)
         except:
             protein_list.append(1)
-        # import pdb; pdb.set_trace()
         queryset = GTP_endogenous_ligand.objects.filter(
-            receptor__in=protein_list,
-        ).prefetch_related('ligand','receptor', 'receptor__family','receptor__residue_numbering_scheme',
+            receptor__in=protein_list
+        ).prefetch_related('ligand','ligand__properities','receptor', 'receptor__family','receptor__residue_numbering_scheme',
         'receptor__family__parent', 'receptor__family__parent__parent__parent',
-        'receptor__family__parent__parent','receptor__species', Prefetch('publication'))
+        'receptor__family__parent__parent','receptor__species')
         resultset = self.process_data(queryset)
-        # import pdb; pdb.set_trace()
         return resultset
 
     def process_data(self, queryset):
@@ -1599,7 +1597,6 @@ class EndogenousLigandsBrowser(ListView):
             if assay.gpt_link != "GPCRDb":
                 name = str(assay.ligand.id) + \
                     '/' + str(assay.receptor.id)
-                # if name in context:swww
                 temp_dict = dict()
                 temp_dict['group_name'] = name
                 temp_dict['group'] = reference_dict[name]
@@ -1616,8 +1613,7 @@ class EndogenousLigandsBrowser(ListView):
                 temp_dict['gpt_link'] = assay.gpt_link
                 temp_dict['ligand'] = assay.ligand
                 temp_dict['publications'] = list()
-                for link in assay.publication.all().select_related('journal').prefetch_related('gtp_endogenous_ligand_set'):
+                for link in assay.publication.all().select_related('journal','web_link', 'web_link__web_resource'):
                     temp_dict['publications'].append(link)
-
-                context.append(temp_dict)        
+                context.append(temp_dict)
         return context
