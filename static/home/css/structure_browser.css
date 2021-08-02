@@ -1,22 +1,31 @@
-.select2-result-label{
+.select2-result-label {
   font-size: x-small;
   font-size: 10px;
 }
 
-#filters{
+#filters {
   font-size: 10px;
   padding: 7px 15px;
 }
 
-@media (min-width: 1600px){
+@media (min-width: 1600px) {
   #content {
     width: 1570px;
   }
 }
-@media (min-width: 1800px){
+
+@media (min-width: 1800px) {
   #content {
     width: 1770px;
   }
+}
+
+.centered-header th {
+  text-align: center;
+}
+
+table.dataTable.compact thead th {
+  padding: 4px 16px 4px 2px;
 }
 
 table.dataTable.compact thead th.over_header {
@@ -43,22 +52,19 @@ table.dataTable.compact thead th.checkbox_tr {
   padding: 4px 4px 4px 4px;
 }
 
-table.dataTable.compact thead th {
-  padding: 4px 16px 4px 2px;
-}
-
 .yadcf-filter-wrapper {
   margin-top: 0;
 }
 
-input.yadcf-filter  {
+input.yadcf-filter {
   width: 100px;
   font-family: sans-serif;
   font-size: 100%;
   font-weight: bold;
 }
 
-.yadcf-filter-range-date, .yadcf-filter-range-number {
+.yadcf-filter-range-date,
+.yadcf-filter-range-number {
   width: 30px;
   font-family: sans-serif;
   font-size: 100%;
@@ -79,7 +85,7 @@ input.yadcf-filter  {
 }
 
 #overlay {
-  top: 0px;
+  top: 0;
   position: absolute;
   background: #f8f8f8;
   -webkit-box-shadow: 5px 0 2px -2px #888;
@@ -164,8 +170,4 @@ div.overhead_close {
 .expand:hover {
   overflow: visible;
   white-space: normal;
-}
-
-.centered-header th {
-  text-align: center;
 }

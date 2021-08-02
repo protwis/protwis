@@ -5,7 +5,7 @@
 .inuse,
 .ui-slider-range .inuse,
 .yadcf-filter-range-number-slider .inuse {
-  background: #8BBEF0;
+  background: #8bbef0;
 }
 
 .yadcf-filter-reset-button {
@@ -59,7 +59,7 @@
 
 .yadcf-filter-wrapper-inner {
   display: inline-block;
-  border: 1px solid #ABADB3;
+  border: 1px solid #abadb3;
 }
 
 .yadcf-number-slider-filter-wrapper-inner {
@@ -72,9 +72,6 @@
   height: 5px;
   margin-left: 6px;
   margin-right: 6px;
-}
-
-.yadcf-filter-range-number-slider {
   overflow: visible;
 }
 

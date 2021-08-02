@@ -1,13 +1,14 @@
-/*﻿input.form-control, select.form-control {
+/* ﻿input.form-control, select.form-control {
     width: 50px;
   	height: 20px;
   	font-size: 9px;
   	padding: 2px 2px;
-}*/
+} */
 
-input.number_range_filter, input.date_range_filter {
-    width: 20px;
-    font-size: 8px;
+input.number_range_filter,
+input.date_range_filter {
+  width: 20px;
+  font-size: 8px;
 }
 
 /*
@@ -46,80 +47,81 @@ div.yadcf-number-slider-filter-wrapper-inner {
   width: 80%;
 }
 
-.select2-result-label{
-    font-size:x-small;
-    font-size: 10px;
+.select2-result-label {
+  font-size: x-small;
+  font-size: 10px;
 }
 
-#filters{
-
-    font-size: 10px;
-    padding:  7px 15px;
+#filters {
+  font-size: 10px;
+  padding: 7px 15px;
 }
 
-@media (min-width: 1600px){
-    #content {
-        width: 1570px;
-    }
+@media (min-width: 1600px) {
+  #content {
+    width: 1570px;
+  }
 }
-@media (min-width: 1800px){
-    #content {
-        width: 1770px;
-    }
+
+@media (min-width: 1800px) {
+  #content {
+    width: 1770px;
+  }
+}
+
+/* table.dataTable.compact thead th {
+    padding: 4px 16px 4px 2px;
+} */
+
+table.dataTable.compact td,
+table.dataTable.compact th {
+  text-align: center;
 }
 
 table.dataTable.compact thead th.over_header {
-    border-right: 1px solid;
-    border-left: 0px solid;
-    text-align: center;
-    padding: 4px 4px 4px 4px;
+  border-right: 1px solid;
+  border-left: 0 solid;
+  text-align: center;
+  padding: 4px 4px 4px 4px;
 }
 
 table.dataTable.compact thead tr.over_header th {
-    border-bottom: 1px solid #ccc;
-    padding: 4px 4px 4px 4px;
+  border-bottom: 1px solid #ccc;
+  padding: 4px 4px 4px 4px;
 }
 
 table.dataTable.compact thead th.leftborder {
-    border-left: 1px solid;
+  border-left: 1px solid;
 }
 
 table.dataTable.compact thead th.rightborder {
-    border-right: 1px solid;
+  border-right: 1px solid;
 }
 
 table.dataTable.compact thead th.checkbox_tr {
-    text-align: left;
-    padding: 4px 4px 4px 4px;
+  text-align: left;
+  padding: 4px 4px 4px 4px;
 }
 
-/*table.dataTable.compact thead th {
-    padding: 4px 16px 4px 2px;
-}*/
-
-table.dataTable.compact td, table.dataTable.compact th {
-    text-align: center;
+.tooltip-inner {
+  white-space: pre; /* you can also try white-space: normal; */
+  max-width: none;
 }
-
-.tooltip-inner  {
-    white-space:pre; /* you can also try white-space: normal; */
-    max-width:none;
-}
-
 
 .yadcf-filter-wrapper {
-    margin-top: 0px;
+  margin-top: 0;
 }
 
-.yadcf-filter-wrapper .yadcf-filter-range, .yadcf-filter-wrapper span.yadcf-filter-range-number-seperator {
+.yadcf-filter-wrapper .yadcf-filter-range,
+.yadcf-filter-wrapper span.yadcf-filter-range-number-seperator {
   display: none;
 }
 
-input.yadcf-filter  {
-    width: 100px;
-    font-family: sans-serif;
-    font-size: 100%;
-    font-weight: bold;
+input.yadcf-filter {
+  width: 100px;
+  font-family: sans-serif;
+  font-size: 100%;
+  font-weight: bold;
 }
 
 input.yadcf-filter-range-number {
