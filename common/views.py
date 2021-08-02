@@ -230,9 +230,9 @@ def getTargetTable():
     return data_table
 
 def getReferenceTable(filtering, assay_type):
-    # data_table = cache.get("reference_table")
-    data_table = None
-
+    cache_key = "reference_table_" + filtering + "_" + assay_type
+    data_table = cache.get(cache_key)
+    # data_table = None
     if data_table == None:
         #get all the proteins that are in ligandanalyzedassay
         biased_proteins = list(AnalyzedAssay.objects.filter(
@@ -356,7 +356,7 @@ def getReferenceTable(filtering, assay_type):
             )
 
         data_table += "</tbody></table>"
-        cache.set("reference_table", data_table, 60*60*24*7)
+        cache.set(cache_key, data_table, 60*60*24*7)
 
     return data_table
 

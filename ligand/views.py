@@ -1,8 +1,6 @@
 import hashlib
 import itertools
 import json
-import math
-import random
 import re
 
 from random import SystemRandom
