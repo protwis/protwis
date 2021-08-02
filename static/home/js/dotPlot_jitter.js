@@ -5,8 +5,8 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
   var hb = null;
   var fb = null;
   var pubs = new Array();
-  var first = ylabel.replace(/\Δ|\(|\)|[Log]/g,"").split('/')[0];
-  var second = ylabel.replace(/\Δ|\(|\)|[Log]/g,"").split('/')[1];
+  var first = ylabel.replace(/\Δ|\(|\)|[Log]/g,"").split("/")[0];
+  var second = ylabel.replace(/\Δ|\(|\)|[Log]/g,"").split("/")[1];
   for (var i = 0; i < data.length; i++){
     pubs.indexOf(data[i][0]) === -1 ? pubs.push(data[i][0]) : console.log();
   }
@@ -58,8 +58,8 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
 
   var margin = {top: 20, right: 200, bottom: 100, left: 150};
   // width = 1000 - margin.left - margin.right;
-  width = pubs.length * 62;
-  xSeed = 0;
+  var width = pubs.length * 62;
+  var xSeed = 0;
   var jitterWidth = 30;
   function position(d,i) {
     var c = 1;   // number of columns
@@ -70,9 +70,9 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
     return "translate(" + x + "," + y + ")";
   }
 
-    height = 600 - margin.top - margin.bottom;
+    var height = 600 - margin.top - margin.bottom;
 
-    var parentDiv = document.getElementById(BaseDiv)
+    var parentDiv = document.getElementById(BaseDiv);
 
     var nestedDiv = document.createElement("div");
       nestedDiv.setAttribute("id", ID);
@@ -195,20 +195,20 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
   var count_ticks = yAxis.scale().ticks().length;
 
   for(i = 0; i < data.length; i++) {
-    if(data[i][4] == 'High Bias'){
+    if(data[i][4] == "High Bias"){
       tmp = data[i][1];
       if(tickArray.includes(tmp)){
         hb = step_rounder(tmp, step);
       }else{
         hb = tickArray.slice(-1)[0];
-      };
-    } else if(data[i][4] == 'Full Bias'){
+      }
+    } else if(data[i][4] == "Full Bias"){
       tmp = data[i][1];
       if(tickArray.includes(tmp)){
         fb = step_rounder(tmp, step);
       }else{
         fb = tickArray.slice(-1)[0];
-      };
+      }
       // hb = step_rounder((tmp - step), step);
     }
   }

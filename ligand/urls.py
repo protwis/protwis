@@ -28,7 +28,7 @@ urlpatterns = [
     path('tau_path_profiles_selection', views.TauPathProfileSelection.as_view(), name='tau_pp_selection'),
     path('tau_path_profiles', views.BiasedRankOrder.as_view(page='pathwayprofiles', label='tau'), name='biased_rank_order'),
 
-    url(r'^path_preference_statistics', cache_page(3600*24)(views.LigandStatistics.as_view(page='pathway_pref')), name='ligand_statistics'),
+    url(r'^path_preference_statistics', cache_page(3600*24*7)(views.LigandStatistics.as_view(page='pathway_pref')), name='ligand_statistics'),
     # url(r'^path_preference_statistics', views.LigandStatistics.as_view(page='pathway_pref'), name='ligand_statistics'),
     path('path_preference_emax_rankorder_selection', views.EmaxPathPrefRankOrderSelection.as_view(), name='ema_pathpref_ro_selection'),
     path('path_preference_emax_rankorder', views.BiasedRankOrder.as_view(source='predicted_family', assay='predicted_tested_assays'), name='biased_rank_order'),
