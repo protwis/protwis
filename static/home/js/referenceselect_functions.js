@@ -1,6 +1,7 @@
 /*eslint complexity: ["error", 8]*/
 /*eslint quotes: ["error", "double", { "avoidEscape": true }]*/
 /*global showAlert */
+/*global yadcf*/
 
 var referenceTable;
 var selectedTargets = new Set();

@@ -1,9 +1,16 @@
+/*global d3*/
+/*eslint complexity: ["error", 20]*/
+
 function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, qualitative){
 
   // check if there are qualitative values in the dataset
   // for specify the y labels later
-  var hb = null;
-  var fb = null;
+  var additional_gap;
+  var y;
+  var hb;
+  var fb;
+  var spacers;
+  var idRemove;
   var pubs = new Array();
   var first = ylabel.replace(/\Δ|\(|\)|[Log]/g,"").split("/")[0];
   var second = ylabel.replace(/\Δ|\(|\)|[Log]/g,"").split("/")[1];
@@ -42,18 +49,6 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
       .style("opacity", 1.0);
     d3.selectAll("path")
       .style("opacity", 1.0);
-  }
-
-  function mouseover() {
-      divToolTipTest.transition()
-          .duration(500)
-          .style("opacity", 1);
-  }
-
-  function mouseout() {
-      divToolTipTest.transition()
-          .duration(500)
-          .style("opacity", 0);
   }
 
   var margin = {top: 20, right: 200, bottom: 100, left: 150};
@@ -134,7 +129,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
     .rangePoints([0, width], 0.5);
 
   if(qualitative === true){
-    var y = d3.scale.linear()
+    y = d3.scale.linear()
       .domain([0,
         d3.max(data, function(d) {
         return d[1];
@@ -142,7 +137,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
       .range([height, 0]);
 
   }else{
-    var y = d3.scale.linear()
+    y = d3.scale.linear()
       .domain([
         d3.min(data, function(d) {
         return d[1];
@@ -194,20 +189,20 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
   var step = yAxis.scale().ticks()[1];
   var count_ticks = yAxis.scale().ticks().length;
 
-  for(i = 0; i < data.length; i++) {
+  for(let i = 0; i < data.length; i++) {
     if(data[i][4] == "High Bias"){
-      var tmp = data[i][1];
+      let tmp = data[i][1];
       if(tickArray.includes(tmp)){
-        var hb = step_rounder(tmp, step);
+        hb = step_rounder(tmp, step);
       }else{
-        var hb = tickArray.slice(-1)[0];
+        hb = tickArray.slice(-1)[0];
       }
     } else if(data[i][4] == "Full Bias"){
-      var tmp = data[i][1];
+      let tmp = data[i][1];
       if(tickArray.includes(tmp)){
-        var fb = step_rounder(tmp, step);
+        fb = step_rounder(tmp, step);
       }else{
-        var fb = tickArray.slice(-1)[0];
+        fb = tickArray.slice(-1)[0];
       }
       // hb = step_rounder((tmp - step), step);
     }
@@ -240,13 +235,13 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
           .text(ylabel);
 
   // additional gap calculated for ticks not on the top of the axis
-  var nodes = d3.selectAll(".y.axis").selectAll(".tick").each(function(d){
-      var additional_gap = d3.select(this).attr("transform");
-      var additional_gap = Math.round(additional_gap.replace(/\(|\)/g,"").split(",")[1]);
+  var node_checks = d3.selectAll(".y.axis").selectAll(".tick").each(function(d){
+      additional_gap = d3.select(this).attr("transform");
+      additional_gap = Math.round(additional_gap.replace(/\(|\)/g,"").split(",")[1]);
   });
 
   if(hb === null && fb !== null){
-    var spacers = gap * (tickArray.indexOf(fb) - 1);
+    spacers = gap * (tickArray.indexOf(fb) - 1);
     main.append("rect")
         .attr("class", "divider")
         .attr("x", -5)
@@ -262,7 +257,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
         .attr("width", 10)
         .style("fill", "white");
   }else if(hb !== null && fb === null){
-    var spacers = gap * (tickArray.indexOf(hb) - 1);
+    spacers = gap * (tickArray.indexOf(hb) - 1);
     main.append("rect")
         .attr("class", "divider")
         .attr("x", -5)
@@ -278,7 +273,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
         .attr("width", 10)
         .style("fill", "white");
   }else if(hb !== null && fb !== null){
-    var spacers = gap * (tickArray.indexOf(hb) - 1);
+    spacers = gap * (tickArray.indexOf(hb) - 1);
     main.append("rect")
         .attr("class", "divider")
         .attr("x", -5)
@@ -297,7 +292,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
 
   // remove tick in between full bias and high bias IF it exists
   if((tickArray.indexOf(fb) - tickArray.indexOf(hb)) === 2){
-    var idRemove = tickArray[tickArray.indexOf(fb) - 1];
+    idRemove = tickArray[tickArray.indexOf(fb) - 1];
     nodes = d3.selectAll(".y.axis").selectAll(".tick").each(function(d){
       if(d3.select(this).text() == idRemove){
         d3.select(this)[0][0].innerHTML = "";
@@ -305,12 +300,22 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
     });
   };
 
-
-
   var divToolTipTest = d3.select("body")
               .append("div")
               .attr("class", "tooltip")
               .style("opacity", 0);
+
+  function mouseover() {
+      divToolTipTest.transition()
+          .duration(500)
+          .style("opacity", 1);
+  }
+
+  function mouseout() {
+      divToolTipTest.transition()
+          .duration(500)
+          .style("opacity", 0);
+  }
 
   var g = main.append("svg:g");
 
@@ -319,7 +324,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
             .data(data)
             .enter()
             .append("rect")
-            .filter(function(d) { return d[4] === "Full Bias"};)
+            .filter(function(d) { return d[4] === "Full Bias";})
             .attr("class", "FullBias")
             .attr("id", function(d) {return "LC" + d[3].replace(/\[|\]|\(|\)|\s|\,/g,"");})
             .attr("x", function(d) {return x(d[0]) - jitterWidth/2 + Math.random()*jitterWidth ;})
@@ -346,7 +351,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
             .data(data)
             .enter()
             .append("rect")
-            .filter(function(d) { return d[4] === "High Bias"};)
+            .filter(function(d) { return d[4] === "High Bias";})
             .attr("class", "HighBias")
             .attr("id", function(d) {return "LC" + d[3].replace(/\[|\]|\(|\)|\s|\,/g,"");})
             .attr("x", function(d) {return x(d[0]) - jitterWidth/2 + Math.random()*jitterWidth ;})
@@ -371,7 +376,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
   g.selectAll("scatter-dots")
     .data(data)
     .enter().append("svg:circle")
-    .filter(function(d) { return (d[4] !== "Full Bias" && d[4] !== "High Bias")};)
+    .filter(function(d) { return (d[4] !== "Full Bias" && d[4] !== "High Bias");})
     .attr("cx", function(d) {return x(d[0]) - jitterWidth/2 + Math.random()*jitterWidth ;})
     .attr("cy", function(d) {return y(d[1]);})
     .attr("r", 4)
@@ -450,7 +455,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
             });
 
     chart.append("g")
-       .attr("classv, "ytitle")
+       .attr("class", "ytitle")
        .attr("transform", position)
           .append("text")
             .attr("x", xSeed + 20)
@@ -471,7 +476,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
             .attr("cx", xSeed + 10)
             .attr("cy", margin.top + 67)
             .attr("r", 4)
-            .style("strokev, "black")
+            .style("stroke", "black")
             .attr("class", "Legend")
             .attr("fill", "#FAFAFA"); //'url(#gradient)'
 
@@ -494,8 +499,8 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
       .attr("width", 8)
       .attr("height", 2)
       .attr("id", function(d) {return "LC" + d.replace(/\[|\]|\(|\)|\s|\,/g,"");})
-      .style("stroke", function(d) { return colors[d] };)
-      .attr("fill", function(d) { return colors[d] };)
+      .style("stroke", function(d) { return colors[d];})
+      .attr("fill", function(d) { return colors[d];})
       .on("click", function (d) {
           d3.selectAll("circle")
              .style("opacity", 0.2);
@@ -524,11 +529,11 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
       // .style("fill", function(d){ return colors[d]})
       .text(function(d) {
               if (d.length > 25) {
-                  return d.substring(0,25)+"..."
+                  return d.substring(0,25)+"...";
               }else {
-                  return d
+                  return d;
               }
-      };)
+      })
       .attr("text-anchor", "left")
       .style("font", "10px sans-serif")
       .style("alignment-baseline", "middle")
