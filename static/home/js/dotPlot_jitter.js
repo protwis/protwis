@@ -5,10 +5,10 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
 
   // check if there are qualitative values in the dataset
   // for specify the y labels later
-  var additional_gap;
+  var additionalGap;
   var y;
-  var hb;
-  var fb;
+  var hb = null;
+  var fb = null;
   var spacers;
   var idRemove;
   var pubs = new Array();
@@ -191,14 +191,14 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
 
   for(let i = 0; i < data.length; i++) {
     if(data[i][4] == "High Bias"){
-      let tmp = data[i][1];
+      tmp = data[i][1];
       if(tickArray.includes(tmp)){
         hb = step_rounder(tmp, step);
       }else{
         hb = tickArray.slice(-1)[0];
       }
     } else if(data[i][4] == "Full Bias"){
-      let tmp = data[i][1];
+      tmp = data[i][1];
       if(tickArray.includes(tmp)){
         fb = step_rounder(tmp, step);
       }else{
@@ -235,9 +235,9 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
           .text(ylabel);
 
   // additional gap calculated for ticks not on the top of the axis
-  var node_checks = d3.selectAll(".y.axis").selectAll(".tick").each(function(d){
-      additional_gap = d3.select(this).attr("transform");
-      additional_gap = Math.round(additional_gap.replace(/\(|\)/g,"").split(",")[1]);
+  var nodeChecks = d3.selectAll(".y.axis").selectAll(".tick").each(function(d){
+      additionalGap = d3.select(this).attr("transform");
+      additionalGap = Math.round(additionalGap.replace(/\(|\)/g,"").split(",")[1]);
   });
 
   if(hb === null && fb !== null){
@@ -245,14 +245,14 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
     main.append("rect")
         .attr("class", "divider")
         .attr("x", -5)
-        .attr("y", dividers - spacers + additional_gap)
+        .attr("y", dividers - spacers + additionalGap)
         .attr("height", 6)
         .attr("width", 10);
 
     main.append("rect")
         .attr("class", "divider")
         .attr("x", -5)
-        .attr("y", (dividers - spacers + additional_gap) + 1.5)
+        .attr("y", (dividers - spacers + additionalGap) + 1.5)
         .attr("height", 3)
         .attr("width", 10)
         .style("fill", "white");
@@ -261,14 +261,14 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
     main.append("rect")
         .attr("class", "divider")
         .attr("x", -5)
-        .attr("y", dividers - spacers + additional_gap)
+        .attr("y", dividers - spacers + additionalGap)
         .attr("height", 6)
         .attr("width", 10);
 
     main.append("rect")
         .attr("class", "divider")
         .attr("x", -5)
-        .attr("y", (dividers - spacers + additional_gap) + 1.5)
+        .attr("y", (dividers - spacers + additionalGap) + 1.5)
         .attr("height", 3)
         .attr("width", 10)
         .style("fill", "white");
@@ -277,14 +277,14 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
     main.append("rect")
         .attr("class", "divider")
         .attr("x", -5)
-        .attr("y", dividers - spacers + additional_gap)
+        .attr("y", dividers - spacers + additionalGap)
         .attr("height", 6)
         .attr("width", 10);
 
     main.append("rect")
         .attr("class", "divider")
         .attr("x", -5)
-        .attr("y", (dividers - spacers + additional_gap) + 1.5)
+        .attr("y", (dividers - spacers + additionalGap) + 1.5)
         .attr("height", 3)
         .attr("width", 10)
         .style("fill", "white");
