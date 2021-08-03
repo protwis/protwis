@@ -77,6 +77,7 @@ class Command(BaseBuild):
                 print(msg)
                 self.logger.error(msg)
         # import the structure data
+        self.purge_bias_data()
         self.prepare_all_data(options['filename'])
         try:
             print('CREATING BIAS DATA')
