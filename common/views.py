@@ -471,6 +471,99 @@ class AbsReferenceSelectionTable(TemplateView):
                 context[a[0]] = a[1]
         return context
 
+
+class BiasLigandSelectionTable(TemplateView):
+
+    """An abstract class for the table reference selection page used in many apps.
+    To use it in another app, create a class-based view that extends this class
+    """
+
+    template_name = 'common/bias_selection_table.html'
+
+    type_of_selection = 'reference_table'
+    selection_only_receptors = True
+    step = 1
+    number_of_steps = 2
+    title = 'SELECT TARGET'
+    description = 'Select target in the table (below) or browse the classification tree (right). You can select entire target' \
+        + ' families or individual targets.\n\nOnce you have selected all your targets, click the green button.'
+    documentation_url = settings.DOCUMENTATION_URL
+
+    docs = False
+    filters = True
+
+    target_input = False
+
+    default_species = 'Human'
+    default_slug = '000'
+    default_subslug = '00'
+
+    numbering_schemes = False
+    search = False
+    family_tree = True
+    redirect_on_select = True
+    filter_gprotein = False
+    selection_heading = False
+    buttons = {
+        'continue': {
+            'label': 'Continue to next step',
+            'url': '#',
+            'color': 'success',
+        },
+    }
+    # OrderedDict to preserve the order of the boxes
+    selection_boxes = OrderedDict([
+        ('reference', False ),
+        ('targets', True),
+        ('segments', False),
+    ])
+    table_data = getReferenceTable('different_family', 'tested_assays')
+    sps = Species.objects.all()
+    # numbering schemes
+    gns = ResidueNumberingScheme.objects.exclude(slug=settings.DEFAULT_NUMBERING_SCHEME).exclude(slug__in=default_schemes_excluded)
+
+    def get_context_data(self, **kwargs):
+        """Get context from parent class
+
+        (really only relevant for children of this class, as TemplateView does
+        not have any context variables)
+        """
+
+        context = super().get_context_data(**kwargs)
+        # get selection from session and add to context
+        # get simple selection from session
+        simple_selection = self.request.session.get('selection', False)
+
+        # create full selection and import simple selection (if it exists)
+        selection = Selection()
+
+        # on the first page of a workflow, clear the selection (or dont' import from the session)
+        if self.step is not 1:
+            if simple_selection:
+                selection.importer(simple_selection)
+
+        # update session
+        # receptor = Protein.objects.get(entry_name = simple_selection.reference)
+        # context['selection']['receptor_id'] = selection.receptor.id
+        simple_selection = selection.exporter()
+        self.request.session['selection'] = simple_selection
+
+        context['selection'] = {}
+        for selection_box, include in self.selection_boxes.items():
+            if include:
+                context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
+        # if self.filters:
+        #     context['selection']['species'] = selection.species
+        #     context['selection']['annotation'] = selection.annotation
+
+        # get attributes of this class and add them to the context
+        attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
+        for a in attributes:
+            if not(a[0].startswith('__') and a[0].endswith('__')):
+                context[a[0]] = a[1]
+        return context
+
+
 class AbsTargetSelectionTable(TemplateView):
     """An abstract class for the tablew target selection page used in many apps.
 
@@ -2058,7 +2151,6 @@ def ResiduesUpload(request):
 @csrf_exempt
 def ReadTargetInput(request):
     """Receives the data from the input form and adds the listed targets to the selection"""
-
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
 
@@ -2099,19 +2191,24 @@ def ReadTargetInput(request):
             except:
                 obj = None
 
+        if obj == None and (up_name.isnumeric()):
+            selection_subtype = 'protein'
+            try:
+                obj = up_name
+            except:
+                obj = None
+
         if obj != None:
             selection_object = SelectionItem(selection_subtype, obj)
             selection.add(selection_type, selection_subtype, selection_object)
 
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
-
     # add simple selection to session
     request.session['selection'] = simple_selection
-
     # context
+    
     context = selection.dict(selection_type)
-
     return render(request, 'common/selection_lists.html', context)
 
 @csrf_exempt

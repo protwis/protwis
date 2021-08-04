@@ -16,7 +16,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from django.core.cache import cache
 
-from common.views import AbsTargetSelectionTable, Alignment, AbsReferenceSelectionTable, getReferenceTable
+from common.views import AbsTargetSelectionTable, Alignment, AbsReferenceSelectionTable, getReferenceTable, BiasLigandSelectionTable
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
@@ -1541,14 +1541,16 @@ class BiasPathways(TemplateView):
     End  of Bias Browser
     '''
 
-class BiasTargetSelection(AbsTargetSelectionTable):
+class BiasTargetSelection(BiasLigandSelectionTable):
     step = 1
     number_of_steps = 1
+    filters = False
     filter_tableselect = False
-    docs = 'sequences.html#structure-based-alignments'
+    family_tree = False
     title = "SELECT RECEPTORS with ligands biased for a G protein or arrestin family (relative to an endogenous reference ligand)"
     description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
         + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
+
     selection_boxes = OrderedDict([
         ('reference', False),
         ('targets', True),
@@ -1561,12 +1563,15 @@ class BiasTargetSelection(AbsTargetSelectionTable):
             'color': 'success',
         },
     }
+    table_data = getReferenceTable("different_family", "tested_assays")
 
-class BiasGTargetSelection(AbsTargetSelectionTable):
+
+class BiasGTargetSelection(BiasLigandSelectionTable):
     step = 1
     number_of_steps = 1
+    filters = False
     filter_tableselect = False
-    docs = 'sequences.html#structure-based-alignments'
+    family_tree = False
     title = "SELECT RECEPTORS with ligands biased for a G protein or arrestin subtype"
     description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
         + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
@@ -1582,12 +1587,15 @@ class BiasGTargetSelection(AbsTargetSelectionTable):
             'color': 'success',
         },
     }
+    table_data = getReferenceTable("sub_different_family", "sub_tested_assays")
 
-class BiasPredictionTargetSelection(AbsTargetSelectionTable):
+
+class BiasPredictionTargetSelection(BiasLigandSelectionTable):
     step = 1
     number_of_steps = 1
+    filters = False
     filter_tableselect = False
-    docs = 'sequences.html#structure-based-alignments'
+    family_tree = False
     title = "SELECT RECEPTORS to retrieve ligands with a preferred G protein or arrestin pathway (ΔLog(Emax/EC50  values across pathways for one ligand (no reference ligand)))"
     description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
         + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
@@ -1603,6 +1611,8 @@ class BiasPredictionTargetSelection(AbsTargetSelectionTable):
             'color': 'success',
         },
     }
+    table_data = getReferenceTable("predicted_family", "predicted_tested_assays")
+
 
 def CachedBiasBrowser(request):
     return CachedBiasBrowsers("biasbrowser", request)
@@ -1671,14 +1681,11 @@ class BiasBrowser(ListView):
     # @cache_page(50000)
     def get_queryset(self):
         protein_list = list()
-
         try:
             simple_selection = self.request.session.get('selection', False)
-            a = Alignment()
-            # load data from selection into the alignment
-            a.load_proteins_from_selection(simple_selection)
-            for items in a.proteins:
-                protein_list.append(items.protein)
+
+            for item in simple_selection.targets:
+                protein_list.append(item.item)
         except:
             protein_list.append(1)
         assay_qs = AnalyzedAssay.objects.filter(
@@ -1864,14 +1871,10 @@ class BiasGBrowser(ListView):
     # @cache_page(50000)
     def get_queryset(self):
         protein_list = list()
-
         try:
             simple_selection = self.request.session.get('selection', False)
-            a = Alignment()
-            # load data from selection into the alignment
-            a.load_proteins_from_selection(simple_selection)
-            for items in a.proteins:
-                protein_list.append(items.protein)
+            for item in simple_selection.targets:
+                protein_list.append(item.item)
         except:
             protein_list.append(1)
         assay_qs = AnalyzedAssay.objects.filter(
@@ -2060,11 +2063,10 @@ class BiasPredictionBrowser(ListView):
 
         try:
             simple_selection = self.request.session.get('selection', False)
-            a = Alignment()
-            # load data from selection into the alignment
-            a.load_proteins_from_selection(simple_selection)
-            for items in a.proteins:
-                protein_list.append(items.protein)
+            #I know it's a for cycle, but it should be just one element
+            #since it's coming from a reference
+            for item in simple_selection.targets:
+                protein_list.append(item.item)
         except:
             protein_list.append(1)
         assay_qs = AnalyzedAssay.objects.filter(
