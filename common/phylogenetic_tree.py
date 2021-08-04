@@ -26,6 +26,8 @@ class PhylogeneticTreeNode(object):
             'mutations': 0,
             'ligands': 0,
             'ligand_bias': 0,
+            'pathway_pref': 0,
+            'subtype' : 0,
             }
 
     def get_value(self, param):
@@ -198,8 +200,11 @@ class PhylogeneticTreeGenerator(object):
                         'crystals': [],
                         'mutations': [],
                         'ligands': {},
-                        'ligand_bias': {}
+                        'ligand_bias': {},
+                        'pathway_pref': {},
+                        'subtype' : {}
                         }
+
         self.get_aux_data()
 
         self.d3_options = {
@@ -260,7 +265,8 @@ class PhylogeneticTreeGenerator(object):
             2000 : [x['protein'] for x in ligand_data if x['num_ligands'] > 1000] #more than 1000
             }
 
-        ligand_bias_data = AnalyzedExperiment.objects.values(
+        ligand_bias_data = AnalyzedExperiment.objects.filter(
+            source='different_family').values(
             'receptor',
             'receptor__entry_name'
             ).annotate(num_ligands=Count('ligand_id', distinct=True))
@@ -270,6 +276,32 @@ class PhylogeneticTreeGenerator(object):
             20 : [x['receptor'] for x in ligand_bias_data if 10 < x['num_ligands'] <= 20],
             30 : [x['receptor'] for x in ligand_bias_data if 20 < x['num_ligands'] <= 30],
             40 : [x['receptor'] for x in ligand_bias_data if x['num_ligands'] > 30] #more than 1000
+            }
+
+        pathway_pref_data = AnalyzedExperiment.objects.filter(
+            source='predicted_family').values(
+            'receptor',
+            'receptor__entry_name'
+            ).annotate(num_ligands=Count('ligand_id', distinct=True))
+
+        self.aux_data['pathway_pref'] = {
+            10 : [x['receptor'] for x in pathway_pref_data if x['num_ligands'] <= 10],
+            20 : [x['receptor'] for x in pathway_pref_data if 10 < x['num_ligands'] <= 20],
+            30 : [x['receptor'] for x in pathway_pref_data if 20 < x['num_ligands'] <= 30],
+            40 : [x['receptor'] for x in pathway_pref_data if x['num_ligands'] > 30] #more than 1000
+            }
+
+        subtype_data = AnalyzedExperiment.objects.filter(
+            source='sub_different_family').values(
+            'receptor',
+            'receptor__entry_name'
+            ).annotate(num_ligands=Count('ligand_id', distinct=True))
+
+        self.aux_data['subtype'] = {
+            10 : [x['receptor'] for x in subtype_data if x['num_ligands'] <= 10],
+            20 : [x['receptor'] for x in subtype_data if 10 < x['num_ligands'] <= 20],
+            30 : [x['receptor'] for x in subtype_data if 20 < x['num_ligands'] <= 30],
+            40 : [x['receptor'] for x in subtype_data if x['num_ligands'] > 30] #more than 1000
             }
 
     def map_family_colors(self):
@@ -315,6 +347,12 @@ class PhylogeneticTreeGenerator(object):
                         for key in self.aux_data['ligand_bias']:
                             if protein.id in self.aux_data['ligand_bias'][key]:
                                 tmp_node.increment_value('ligand_bias', key)
+                        for key in self.aux_data['pathway_pref']:
+                            if protein.id in self.aux_data['pathway_pref'][key]:
+                                tmp_node.increment_value('pathway_pref', key)
+                        for key in self.aux_data['subtype']:
+                            if protein.id in self.aux_data['subtype'][key]:
+                                tmp_node.increment_value('subtype', key)
                         coverage.add_data(protein.family.slug, tmp_node)
                 return coverage
             children = OrderedDict()

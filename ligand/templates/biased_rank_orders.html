@@ -1,0 +1,663 @@
+{% extends 'home/base.html' %}
+{% load static %}
+{% block addon_css %}
+<link rel='stylesheet' href='{% static 'home/css/nv.d3.min.css' %}' type='text/css' />
+<link rel='stylesheet' href='{% static 'home/css/nvd3-update.css' %}' type='text/css' />
+<link rel='stylesheet' href='{% static 'home/css/bootstrap-responsive.css' %}' media='screen'>
+<link href="{% static 'home/css/alignment.css' %}" rel="stylesheet">
+
+{% endblock %}
+
+
+{% block content %}
+
+<style>
+    /* body{
+      font: 10px sans-serif;
+    } */
+    .axis path,
+    .axis line {
+        fill: none;
+        stroke: #000;
+        shape-rendering: crispEdges;
+    }
+
+    .x.axis path {
+        display: none;
+    }
+
+    .line {
+        fill: none;
+        stroke: steelblue;
+        stroke-width: 1.5px;
+    }
+    svg{
+        border:1px solid white;
+    }
+    .grid {
+        fill: none;
+        shape-rendering: crispEdges;
+        stroke: lightgrey;
+        opacity: 0.7;
+        stroke-width: 1px;
+    }
+    .segmentText{
+        cursor:pointer;
+    }
+
+    .RadarTitle{
+        font-family:    Arial;
+        font-size:      20px;
+        font-weight:    bold;
+        width:          100%;
+        padding-bottom: 3px;
+        text-align:     center;
+    }
+        /* Solid border */
+    hr.solid {
+      border-top: 2px solid #bbb;
+      margin: 5px 0 5px 0;
+    }
+
+    table {
+      font-family: arial, sans-serif;
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    td, th {
+      border: 1px solid #dddddd;
+      text-align: left;
+      padding: 8px;
+    }
+
+    tr:nth-child(even) {
+      background-color: #dddddd;
+    }
+
+  .title {
+    font: 15px Arial;
+    font-weight: bold;
+    padding-bottom: 3px;
+  }
+
+</style>
+
+
+<br />
+<br />
+<br />
+
+<div class="container">
+
+  <h3>Results for receptor: <b>{{query|safe}}</b> </h3>
+  <!-- Nav tabs -->
+{% if page == 'pathwayprofiles' %}
+<style>
+  div.tooltip {
+      position: absolute;
+      text-align: left;
+      width: 280px; /*120*/
+      height: 200px; /*15*/
+      font: 10px sans-serif;
+      background: white;
+      border: solid 1px #aaa;
+      border-radius: 8px;
+      pointer-events: none;
+  }
+</style>
+  <ul class="nav nav-tabs">
+    <li class="nav-item">
+      <a class="nav-link active" data-toggle="tab" href="#lines">Line charts</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" data-toggle="tab" href="#spiders_pub">Radar plots (publications)</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link active" data-toggle="tab" href="#spiders_lig">Radar plots (ligands)</a>
+    </li>
+  </ul>
+
+  <!-- Tab panes -->
+  <div class="tab-content">
+    <div class="tab-pane container active" id="lines">
+      <br />
+      <div style="font: 15px sans-serif">
+        <p>Charts are <b>sorted</b> from the publications showing the larger number of <b>investigated pathways</b> (primary), and for <b>number of datapoints</b> (secondary). <br>
+      </div>
+      <div id='divChartTrends'></div>
+    </div>
+
+<!-- spiders for publications -->
+    <div class="tab-pane container fade" id="spiders_pub">
+      <br />
+      <div class="row">
+
+        <div class="form-group">
+          <input type="text" class="form-control" id="RadarPublicationsList" list="select-pub" placeholder="Select Publication" width="60%"/>
+
+          <div class="btn-group" role="group">
+              <button id="red_pub" class="btn btn-primary active">Red</button>
+              <button id="grey_pub" class="btn btn-primary">Grey</button>
+          </div>
+
+          <button type="Submit" class="btn btn-primary" onclick="ShowPlot('pub')">Update Plot</button>
+        </div>
+
+        <datalist id="select-pub">
+          {% for title in all_publications %}
+            <option value="{{title}}">{{title}}</li>
+          {% endfor %}
+        </datalist>
+
+      </div>
+
+      <div id='radarcontainer_pub' style='display: none;'></div>
+      <div id='mergedcontainer_pub'></div>
+
+      <div class="btn-group">
+          <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                  aria-haspopup="true" aria-expanded="false">
+              <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu">
+              <li>
+                  <a href="javascript:saveSvgAsPng(document.getElementById('merged_pub'), 'radar_plots.png');">PNG</a>
+              </li>
+              <li>
+                  <a href="javascript:saveSvgAsJpg(document.getElementById('merged_pub'), 'radar_plots.jpg');">JPG</a>
+              </li>
+              <li>
+                  <a href="javascript:saveSvgAsTiff(document.getElementById('merged_pub'), 'radar_plots.tiff');">TIFF</a>
+              </li>
+              <li>
+                  <a href="javascript:saveSvg(document.getElementById('merged_pub'), 'radar_plots.svg');">SVG</a>
+              </li>
+          </ul>
+      </div>
+
+      </div>
+      <!-- spiders for ligands -->
+      <div class="tab-pane container fade" id="spiders_lig">
+        <br />
+        <div class="row">
+
+          <div class="form-group">
+            <input type="text" class="form-control" id="RadarLigandList" list="select-ligand" placeholder="Select Ligand" width="60%"/>
+
+            <div class="btn-group" role="group">
+                <button id="red_lig" class="btn btn-primary active">Red</button>
+                <button id="grey_lig" class="btn btn-primary">Grey</button>
+            </div>
+
+            <button type="Submit" class="btn btn-primary" onclick="ShowPlot('ligand')">Update Plot</button>
+          </div>
+
+          <datalist id="select-ligand">
+            {% for ligand in all_ligands %}
+              <option data-value="{{ligand.0}}" value="{{ligand.1}}"></li>
+            {% endfor %}
+          </datalist>
+
+        </div>
+
+        <div id='radarcontainer_ligand' style='display: none;'></div>
+        <div id='mergedcontainer_ligand'></div>
+
+        <div class="btn-group">
+            <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                    aria-haspopup="true" aria-expanded="false">
+                <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                    <a href="javascript:saveSvgAsPng(document.getElementById('merged_ligand'), 'radar_plots.png');">PNG</a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvgAsJpg(document.getElementById('merged_ligand'), 'radar_plots.jpg');">JPG</a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvgAsTiff(document.getElementById('merged_ligand'), 'radar_plots.tiff');">TIFF</a>
+                </li>
+                <li>
+                    <a href="javascript:saveSvg(document.getElementById('merged_ligand'), 'radar_plots.svg');">SVG</a>
+                </li>
+            </ul>
+        </div>
+
+        </div>
+    </div>
+  {% else %}
+
+  <style>
+    div.tooltip {
+        position: absolute;
+        text-align: left;
+        width: 280px; /*120*/
+        height: 200px; /*15*/
+        font: 10px sans-serif;
+        background: white;
+        border: solid 1px #aaa;
+        border-radius: 8px;
+        pointer-events: none;
+    }
+  </style>
+
+  <!-- Tab panes -->
+  <div class="tab-content">
+    <div class="tab-pane container active" id="boxplot">
+      <br />
+
+      <div style="font: 15px sans-serif">
+        <p><b>Y-axis</b>: Intrinsic relative activity <br />
+           <b>X-axis</b>: Publications <br />
+           <b>Data points</b>: Ligands <br />
+           <br />
+           Each publication-ligand pair is only shown in <b>one</b> diagram. <br />
+           This is the diagram for the given pathway towards the specific ligand is biased.<br /></p>
+
+       <div class="btn-group" role="group">
+           <button id="full_length" class="btn btn-primary active">Full label</button>
+           <button id="short_length" class="btn btn-primary">Short label</button>
+       </div>
+
+       <div class="btn-group" role="group">
+           <button id="horizontal" class="btn btn-primary active">Horizontal label</button>
+           <button id="diagonal" class="btn btn-primary">Diagonal label</button>
+       </div>
+
+      </div>
+      <div id='boxplotChart'></div>
+    </div>
+<!-- spiders for publications -->
+    <div class="tab-pane container fade" id="spiders_pub">
+      <br />
+      <div class="row">
+
+        <div class="form-group">
+          <input type="text" class="form-control" id="RadarPublicationsList" list="select-pub" placeholder="Select Publication" width="60%"/>
+          <div class="btn-group" role="group">
+              <button id="red_pub" class="btn btn-primary active">Red</button>
+              <button id="grey_pub" class="btn btn-primary">Grey</button>
+          </div>
+          <button type="Submit" class="btn btn-primary" onclick="ShowPlot('pub')">Update Plot</button>
+        </div>
+
+        <datalist id="select-pub">
+          {% for title in all_publications %}
+            <option value="{{title}}">{{title}}</li>
+          {% endfor %}
+        </datalist>
+
+      </div>
+
+      <div id='radarcontainer_pub' style='display: none;'></div>
+      <div id='mergedcontainer_pub'></div>
+
+      <div class="btn-group">
+          <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                  aria-haspopup="true" aria-expanded="false">
+              <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu">
+              <li>
+                  <a href="javascript:saveSvgAsPng(document.getElementById('merged_pub'), 'radar_plots.png');">PNG</a>
+              </li>
+              <li>
+                  <a href="javascript:saveSvgAsJpg(document.getElementById('merged_pub'), 'radar_plots.jpg');">JPG</a>
+              </li>
+              <li>
+                  <a href="javascript:saveSvgAsTiff(document.getElementById('merged_pub'), 'radar_plots.tiff');">TIFF</a>
+              </li>
+              <li>
+                  <a href="javascript:saveSvg(document.getElementById('merged_pub'), 'radar_plots.svg');">SVG</a>
+              </li>
+          </ul>
+      </div>
+
+      </div>
+<!-- Spiders for ligands -->
+<div class="tab-pane container fade" id="spiders_lig">
+  <br />
+  <div class="row">
+
+    <div class="form-group">
+      <input type="text" class="form-control" id="RadarLigandList" list="select-ligand" placeholder="Select Ligand" width="60%"/>
+      <div class="btn-group" role="group">
+          <button id="red_lig" class="btn btn-primary active">Red</button>
+          <button id="grey_lig" class="btn btn-primary">Grey</button>
+      </div>
+      <button type="Submit" class="btn btn-primary" onclick="ShowPlot('ligand')">Update Plot</button>
+    </div>
+
+    <datalist id="select-ligand">
+      {% for ligand in all_ligands %}
+        <option data-value="{{ligand.0}}" value="{{ligand.1}}"></li>
+      {% endfor %}
+    </datalist>
+
+  </div>
+
+  <div id='radarcontainer_ligand' style='display: none;'></div>
+  <div id='mergedcontainer_ligand'></div>
+
+  <div class="btn-group">
+      <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+              aria-haspopup="true" aria-expanded="false">
+          <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+      </button>
+      <ul class="dropdown-menu">
+          <li>
+              <a href="javascript:saveSvgAsPng(document.getElementById('merged_ligand'), 'radar_plots.png');">PNG</a>
+          </li>
+          <li>
+              <a href="javascript:saveSvgAsJpg(document.getElementById('merged_ligand'), 'radar_plots.jpg');">JPG</a>
+          </li>
+          <li>
+              <a href="javascript:saveSvgAsTiff(document.getElementById('merged_ligand'), 'radar_plots.tiff');">TIFF</a>
+          </li>
+          <li>
+              <a href="javascript:saveSvg(document.getElementById('merged_ligand'), 'radar_plots.svg');">SVG</a>
+          </li>
+      </ul>
+  </div>
+
+  </div>
+      </div>
+    </div>
+  {% endif %}
+  </div>
+
+
+{% endblock %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/d3.v3.min.js' %}"></script>
+<script src="{% static 'home/js/radarchart.js' %}"></script>
+<script src="{% static 'home/js/multi_line_chart.js' %}"></script>
+<script src="{% static 'home/js/dotPlot_jitter.js' %}""></script>
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/saveSvg.js' %}"></script>
+<script>
+  var spiders = {{ spider | safe }};
+  var color = "red";
+  $("#red_pub").click(function() {
+      $("#red_pub").addClass("active");
+      $("#grey_pub").removeClass("active");
+      color = "red";
+  });
+  $("#grey_pub").click(function() {
+      $("#grey_pub").addClass("active");
+      $("#red_pub").removeClass("active");
+      color = "grey";
+  });
+  $("#red_lig").click(function() {
+      $("#red_lig").addClass("active");
+      $("#grey_lig").removeClass("active");
+      color = "red";
+  });
+  $("#grey_lig").click(function() {
+      $("#grey_lig").addClass("active");
+      $("#red_lig").removeClass("active");
+      color = "grey";
+  });
+  function ShowPlot(type){
+    var svgNS = "http://www.w3.org/2000/svg";
+    var parentDiv = document.getElementById("radarcontainer_"+type);
+    var mergedDiv = document.getElementById("mergedcontainer_"+type);
+    parentDiv.querySelectorAll('*').forEach(n => n.remove());
+    mergedDiv.querySelectorAll('*').forEach(n => n.remove());
+    var title = document.createElement("div");
+    title.setAttribute("class", "RadarTitle");
+    parentDiv.appendChild(title);
+    var ids = new Array();
+    if(type==='ligand'){
+      // $('#RadarPublicationsList').val('');
+      var lig = document.getElementById('RadarLigandList').value;
+      var pub_hash = document.querySelector("#select-ligand option[value='"+lig+"']").dataset.value;
+      var header = document.createTextNode(lig);
+      title.appendChild(header);
+      for(var pub in spiders){
+        name = pub.replace(/\[|\]|\(|\)|\s|\,|\'|\./g,"")
+        for(var web in spiders[pub]){
+          if(web === pub_hash){
+            spiders[pub][web]["Options"]["title"] = pub;
+            spiders[pub][web]["Options"]["filling"] = color;
+            RadarChart('radarcontainer_'+type, spiders[pub][web]["Data"], spiders[pub][web]["Options"], "radar"+name);
+          }
+        }
+      }
+    }else{
+      // $('#RadarLigandList').val('');
+      var pub = document.getElementById('RadarPublicationsList').value;
+      var header = document.createTextNode(pub);
+      title.appendChild(header);
+      for(var web in spiders[pub]){
+        spiders[pub][web]["Options"]["filling"] = color;
+        RadarChart('radarcontainer_'+type, spiders[pub][web]["Data"], spiders[pub][web]["Options"], "radar"+web);
+      }
+    }
+
+    // create a merged-div where we are going to merge the svgs
+    var merged = document.createElement('div');
+    merged.setAttribute('id', 'merged-div_'+type);
+    mergedDiv.appendChild(merged);
+
+    $('#radarcontainer_'+type+' > div').map(function() {
+      ids.push(this.id);
+    });
+    var mergedHeight = 300 * Math.round(ids.length/3);
+    if(ids.length > 3){
+      var mergedWidth = 900;
+    } else {
+      var mergedWidth = 300 * (ids.length - 1);
+    };
+
+    // createElementNS for svg
+    var mergedSvg = document.createElementNS(svgNS, 'svg');
+    mergedSvg.setAttribute('id', 'merged_'+type);
+    // keep the viewBox of the chart
+    mergedSvg.setAttribute('width', mergedWidth);
+    mergedSvg.setAttribute('height', mergedHeight);
+    merged.appendChild(mergedSvg);
+
+    var xMultiply = -1;
+    var yMultiply = 1;
+    for (let i = 1; i < ids.length; i++){
+      if (xMultiply < 2){
+        xMultiply = xMultiply + 1;
+      } else {
+        xMultiply = 0;
+        yMultiply = yMultiply + 1;
+      };
+      var plot = document.getElementById(ids[i]);
+      var plotSvg = plot.getElementsByTagName('svg')[0];
+      var plotContent = Array.from(plotSvg.childNodes)[0];
+      var xTranslate = (150 * (xMultiply + 1)) + (130 * xMultiply);
+      var yTranslate = (150 * yMultiply) + (150 * (yMultiply - 1));
+
+      plotContent.setAttribute('transform', 'translate('+ xTranslate + ',' + yTranslate + ')');
+
+      mergedSvg.appendChild(plotContent);
+    }
+    gNodes = d3.selectAll('.axisWrapper').selectAll('.axis');
+    gNodes.each(function(d) {
+      old = d3.select(this).select('text')[0][0].innerHTML;
+      old = old.replace("G12/13", 'G</tspan><tspan baseline-shift = "sub">12/13</tspan><tspan>');
+      old = old.replace("Gi/o", 'G</tspan><tspan baseline-shift = "sub">i/o</tspan><tspan>');
+      old = old.replace("Gq/11", 'G</tspan><tspan baseline-shift = "sub">q/11</tspan><tspan>');
+      old = old.replace("Gs", 'G</tspan><tspan baseline-shift = "sub">s</tspan><tspan>');
+      node = d3.select(this).select('text')[0][0];
+      node.innerHTML = old;
+    });
+  }
+</script>
+
+<script>
+  var data = {{ full_data | safe }};
+  var keys = {{ full_ligands | safe }};
+  var label =  "{{ label }}";
+  var source = "{{ source }}";
+  if(label == 'emax'){
+    if(source != 'predicted_family'){
+      ylabel = "ΔLog(Emax/EC50)";
+    }else{
+      ylabel = "Log(Emax/EC50)";
+    }
+  } else {
+    ylabel = "ΔLog(Tau/KA)"
+  };
+  var count = 0;
+  for(var propt in data){
+
+    var link_name = data[propt]["Authors"];
+    // link_name = link_name.replace("et al.,", "et al.,<i>");
+    // link_name = link_name.replace(", (", "</i>, (");
+    var link_destination = "https://doi.org/" + propt;
+    var divID = 'PUB'+count;
+    var reference = data[propt]["Endogenous"]
+    // var test = "{{ tooltip_line | safe}}";
+    // Calling function
+    DrawMultiLineChart(data[propt]['Data'], 'divChartTrends', keys[propt], divID, link_name, reference, link_destination, ylabel);
+    count = count + 1;
+    gNodes = d3.select('#'+divID).selectAll('.x.axis').selectAll('.tick');
+    gNodes.each(function(d) {
+      old = d3.select(this)[0][0].innerHTML;
+      old = old.replace("G12/13", 'G</tspan><tspan baseline-shift = "sub">12/13</tspan><tspan>');
+      old = old.replace("Gi/o", 'G</tspan><tspan baseline-shift = "sub">i/o</tspan><tspan>');
+      old = old.replace("Gq/11", 'G</tspan><tspan baseline-shift = "sub">q/11</tspan><tspan>');
+      old = old.replace("Gs", 'G</tspan><tspan baseline-shift = "sub">s</tspan><tspan>');
+      node = d3.select(this)[0][0];
+      node.innerHTML = old;
+    });
+
+  };
+  // var x_labels = d3.selectAll('.x.axis').selectAll('.tick text');
+
+</script>
+
+<script>
+var realData = {{ scatter | safe }};
+var colors = {{ colors | safe }};
+var legend = {{ scatter_legend | safe }};
+var source = "{{ source }}";
+var conversion = {'G12/13': 'G<sub>12/13</sub>',
+                  'Gi/o': 'G<sub>i/o</sub>',
+                  'Gq/11': 'G<sub>q/11</sub>',
+                  'Gs': 'G<sub>s</sub>',
+                  'Arrestin': 'Arrestin',
+                  'ERK': 'ERK'};
+var label =  "{{ label }}";
+if(label == 'emax'){
+  qualitative = true
+  if(source != 'predicted_family'){
+    ylabel = "ΔΔLog(Emax/EC50)";
+  }else{
+    ylabel = "ΔLog(Emax/EC50)";
+  }
+
+} else {
+  ylabel = "ΔΔLog(Tau/KA)"
+  qualitative = false
+};
+var count = 1;
+for(var path in realData){
+  var name = 'Pathway' + parseInt(count);
+  DotScatter(realData[path], 'boxplotChart', name, colors, legend[path], conversion[path], ylabel, qualitative);
+  count = count + 1;
+  gNodes = d3.select('#'+name).selectAll('.main.axis.date').selectAll('.tick');
+  headerNode = d3.select('#'+name).selectAll('.header').selectAll('text')[0][0];
+  headerHTML = headerNode.innerHTML;
+  headerHTML = headerHTML.replaceAll("&lt;sub&gt;", '<tspan x="12" dy="0.8em">');
+  headerHTML = headerHTML.replaceAll("&lt;/sub&gt;", '</tspan>');
+  headerNode.innerHTML = headerHTML;
+  gNodes.each(function(d) {
+    old = d3.select(this)[0][0].innerHTML;
+    old = old.replaceAll("openTS", '<tspan x="0" dy="1.2em">');
+    old = old.replaceAll("closeTS", '</tspan>');
+    node = d3.select(this)[0][0];
+    node.innerHTML = old;
+  });
+};
+</script>
+<script>
+  function getKeyByValue(object, value) {
+    return Object.keys(object).find(key => object[key] === value);
+  }
+
+  function oddOrEven(x) {
+    return ( x & 1 ) ? "odd" : "even";
+  }
+
+  var labels = {{ column_dict | safe }};
+
+  $("#full_length").click(function() {
+      if($("#short_length").hasClass("active")){
+        $("#full_length").addClass("active");
+        $("#short_length").removeClass("active");
+        gNodes = d3.selectAll('.main.axis.date').selectAll('.tick').selectAll('text');
+        gNodes.each(function(d) {
+        old = d3.select(this)[0][0].innerHTML;
+        change = getKeyByValue(labels, old);
+        change = change.replaceAll("openTS", '<tspan x="0" dy="1.2em">');
+        change = change.replaceAll("closeTS", '</tspan>');
+        old = old.replace(old, change);
+        node = d3.select(this)[0][0];
+        node.innerHTML = old;
+        });
+      }
+  });
+
+  $("#short_length").click(function() {
+    if($("#full_length").hasClass("active")){
+      $("#short_length").addClass("active");
+      $("#full_length").removeClass("active");
+      labelNodes = d3.selectAll('.column_label');
+      labelNodes.each(function(d) {
+        old = d3.select(this)[0][0].innerHTML;
+        text = d3.select(this).select('text');
+        text.attr("x", "-25");
+        old = old.replaceAll('<tspan x="0" dy="1.2em">', "openTS");
+        old = old.replaceAll('<tspan x="-25" dy="1.2em">', "openTS");
+        old = old.replaceAll('</tspan>', "closeTS");
+        old = labels[old];
+        node = d3.select(this)[0][0];
+        node.innerHTML = old;
+      });
+    }
+  });
+
+  $("#horizontal").click(function() {
+    $("#horizontal").addClass("active");
+    $("#diagonal").removeClass("active");
+    var count = 1;
+    gNodes = d3.selectAll('.main.axis.date').selectAll('.tick');
+    gNodes.each(function(d) {
+      value = oddOrEven(count);
+      tspan = d3.select(this).selectAll('tspan');
+      text = d3.select(this).select('text');
+      text.attr("transform", null);
+      tspan.attr("x", "-25");
+      if(value === "even"){
+        text.attr("y", "50");
+      }
+      // old.attr()
+      count = count + 1;
+    });
+  });
+  $("#diagonal").click(function() {
+    $("#diagonal").addClass("active");
+    $("#horizontal").removeClass("active");
+    gNodes = d3.selectAll('.main.axis.date').selectAll('.tick');
+    gNodes.each(function(d) {
+      tspan = d3.select(this).selectAll('tspan');
+      text = d3.select(this).select('text');
+      text.attr("transform", "rotate(45)");
+      text.attr("y", "5");
+      tspan.attr("x", "0");
+    });
+  });
+  document.getElementById("horizontal").click();
+</script>
+
+{% endblock %}
