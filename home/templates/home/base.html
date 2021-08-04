@@ -25,7 +25,9 @@
     {% block addon_css %}{% endblock %}
 
     {% if google_analytics %}
-        {% include "home/ga.html" %}
+      {% with 'home/ga_'|add:current_site|add:'.html' as ga_template %}
+        {% include ga_template %}
+      {% endwith %}
     {% endif %}
 
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
