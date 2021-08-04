@@ -199,7 +199,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
       }else{
         hb = tickArray.slice(-1)[0];
       }
-    } else if(data[i][4] == "Full Bias"){
+    } else if(data[i][4] === "Full Bias"){
       tmp = data[i][1];
       if(tickArray.includes(tmp)){
         fb = step_rounder(tmp, step);
@@ -296,11 +296,11 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
   if((tickArray.indexOf(fb) - tickArray.indexOf(hb)) === 2){
     idRemove = tickArray[tickArray.indexOf(fb) - 1];
     nodes = d3.selectAll(".y.axis").selectAll(".tick").each(function(d){
-      if(d3.select(this).text() == idRemove){
+      if(d3.select(this).text() === idRemove){
         d3.select(this)[0][0].innerHTML = "";
       }
     });
-  };
+  }
 
   var divToolTipTest = d3.select("body")
               .append("div")
