@@ -1,14 +1,3 @@
-.node circle {
-  fill: #fff;
-  stroke: black;
-  stroke-width: 0.5px;
-  cursor: pointer; 
-}
-
-.node, text {
-  font: 7px sans-serif;
-}
-
 .link {
   fill: none;
   stroke: #ccc;
@@ -16,11 +5,21 @@
 }
 
 circle {
-fill : #100;
+  fill: #100;
 }
-
 
 text {
   fill: #000;
 }
 
+.node circle {
+  fill: #fff;
+  stroke: black;
+  stroke-width: 0.5px;
+  cursor: pointer;
+}
+
+.node,
+text {
+  font: 7px sans-serif;
+}

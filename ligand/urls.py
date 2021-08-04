@@ -72,4 +72,7 @@ urlpatterns = [
     url(r'^biasedpathways$', views.BiasPathways.as_view(), name='pathways'),
     url(r'^pathwaydata/(?P<pk>[-\w]+)/detail$', views.PathwayExperimentEntryView.as_view()),
 
+    url(r'^endogenous/',views.EndogenousTargetSelection.as_view(), name='endogenous'),
+    url(r'^endogenousbrowser/$', views.EndogenousLigandsBrowser.as_view(), name='endogenousbrowser_'),
+
 ]

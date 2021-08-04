@@ -71,15 +71,14 @@ nav.navbar li.dropdown.open {
   background-color: #222;
 }
 
-nav.navbar li.dropdown a.dropdown-toggle,
+nav.navbar li.dropdown a.dropdown-toggle:not(.select-link),
 nav.navbar a#cite {
   color: #ccc;
 }
 
-nav.navbar li.dropdown a.dropdown-toggle:hover,
+nav.navbar li.dropdown a.dropdown-toggle:hover:not(.select-link),
 nav.navbar a#cite:hover {
   color: #fff;
-
   /* padding-top: 11px; */
 }
 
@@ -119,7 +118,7 @@ li.highlight_menu.arrestin {
   border-top: 4px solid #55ae35;
 }
 
-nav.navbar li.dropdown:not(.gpcr):not(.gprotein):not(.arrestin),
+nav.navbar li.dropdown:not(.gpcr):not(.gprotein):not(.arrestin):not(.page-selection),
 nav.navbar li#cite_menu {
   border-top: 4px solid #5c5452;
 }
@@ -150,7 +149,7 @@ li#arrestindb_menu {
   padding-left: 35px;
 }
 
-li#main_reference::marker,
-li#article_list::marker {
-  content: none;
+li#main_reference,
+li#article_list {
+  list-style-type: none;
 }

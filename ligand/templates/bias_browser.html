@@ -12,13 +12,13 @@
 <!-- configure radio buttons style -->
 <style>
 	.highlight_green {
-		/* display: none; */
-		background-color: green;
+		display: none;
+		/* background-color: green; */
 	}
 
 	.highlight {
-		/* display: none; */
-		background-color: red;
+		display: none;
+		/* background-color: red; */
 	}
 
 	.inuse,
@@ -242,7 +242,7 @@
     				<td>Receptors</td>
     				<td id="receptor_counter"></td>
     			</tr>
-            </tbody>			
+            </tbody>
 		</table>
 	</div>
 
@@ -1250,39 +1250,39 @@
 		function calculate_header() {
 			var columnIds = [];
 			var EmptyColumnIds = [];
-			$("#receptor").attr("colspan", 5);
-			$("#ligand").attr("colspan", 5);
-			$("#transducers").attr("colspan", 2);
-			$("#pathways_effector").attr("colspan", 5);
-			$("#pathways_measure").attr("colspan", 5);
+			// $("#receptor").attr("colspan", 5);
+			// $("#ligand").attr("colspan", 5);
+			// $("#transducers").attr("colspan", 2);
+			// $("#pathways_effector").attr("colspan", 5);
+			// $("#pathways_measure").attr("colspan", 5);
 			$("#opmodel").attr("colspan", 4);
-			$("#lbf").attr("colspan", 4);
-			$("#lbf_part").attr("colspan", 5);
-			$("#activity").attr("colspan", 5);
-			$("#emax").attr("colspan", 5);
-			$("#tfactor").attr("colspan", 5);
-			$("#mm1").attr("colspan", 5);
-			$("#mm2").attr("colspan", 5);
-			$("#bio").attr("colspan", 5);
-			$("#cell").attr("colspan", 5);
-			$("#time").attr("colspan", 5);
+			// $("#lbf").attr("colspan", 4);
+			// $("#lbf_part").attr("colspan", 5);
+			// $("#activity").attr("colspan", 5);
+			// $("#emax").attr("colspan", 5);
+			// $("#tfactor").attr("colspan", 5);
+			// $("#mm1").attr("colspan", 5);
+			// $("#mm2").attr("colspan", 5);
+			// $("#bio").attr("colspan", 5);
+			// $("#cell").attr("colspan", 5);
+			// $("#time").attr("colspan", 5);
 			colspan_default = {
-				receptor: [0, 1, 2, 3, 4, 5, 6],
-				ligand: [7, 8, 9, 10, 11],
-				transducers: [12, 13],
-				pathways_effector: [14, 15, 16, 17, 18],
-				pathways_measure: [19, 20, 21, 22, 23],
+				// receptor: [0, 1, 2, 3, 4, 5, 6],
+				// ligand: [7, 8, 9, 10, 11],
+				// transducers: [12, 13],
+				// pathways_effector: [14, 15, 16, 17, 18],
+				// pathways_measure: [19, 20, 21, 22, 23],
 				opmodel: [24, 25, 26, 27],
-				lbf: [28, 29, 30, 31],
-				lbf_part: [32, 33, 34, 35, 36],
-				activity: [37, 38, 39, 40, 41],
-				emax: [42, 43, 44, 45, 46],
-				tfactor: [47, 48, 49, 50, 51],
-				mm1: [52, 53, 54, 55, 56],
-				mm2: [57, 58, 59, 60, 61],
-				bio: [62, 63, 64, 65, 66],
-				cell: [67, 68, 69, 70, 71],
-				time: [72, 73, 74, 75, 76]
+				// lbf: [28, 29, 30, 31],
+				// lbf_part: [32, 33, 34, 35, 36],
+				// activity: [37, 38, 39, 40, 41],
+				// emax: [42, 43, 44, 45, 46],
+				// tfactor: [47, 48, 49, 50, 51],
+				// mm1: [52, 53, 54, 55, 56],
+				// mm2: [57, 58, 59, 60, 61],
+				// bio: [62, 63, 64, 65, 66],
+				// cell: [67, 68, 69, 70, 71],
+				// time: [72, 73, 74, 75, 76]
 			};
 
 			$('#structures_scrollable').removeClass("highlight");
@@ -1291,11 +1291,11 @@
 			$('#structures_scrollable .table-filter-dropdown th').each(function(index) {
 				var tds = $('.dataTable tbody td:nth-child(' + (index + 1) + ')');
 				if (tds.length > 0 && tds.length <= tds.filter(':empty').length) {
-					columnIds.push(tds[0].cellIndex)
-
-					tds.addClass('highlight');
+                    if (tds[0].cellIndex > 23 && tds[0].cellIndex<28){
+                        columnIds.push(tds[0].cellIndex)
+    					tds.addClass('highlight');
+                    }
 				}
-
 			});
 
 			if (columnIds) {
@@ -1325,32 +1325,14 @@
 			yadcf.exResetAllFilters(table);
 		}
 
+        document
+
 		yadcf.exFilterColumn(table, [
 			[28, {
-				from: 1
+				from: 1,
 			}],
 		]);
-
-		// $('#structures_scrollable').on( 'page.dt', function () {
-		//         $("#receptor").attr("colspan", 6);
-		// 		$("#ligand").attr("colspan", 5);
-		// 		$("#transducers").attr("colspan", 2);
-		// 		$("#pathways_effector").attr("colspan", 5);
-		// 		$("#pathways_measure").attr("colspan", 5);
-		// 		$("#opmodel").attr("colspan", 4);
-		// 		$("#lbf").attr("colspan", 4);
-		// 		$("#lbf_part").attr("colspan", 5);
-		// 		$("#activity").attr("colspan", 5);
-		// 		$("#emax").attr("colspan", 5);
-		// 		$("#tfactor").attr("colspan", 5);
-		// 		$("#mm1").attr("colspan", 5);
-		// 		$("#mm2").attr("colspan", 5);
-		// 		$("#bio").attr("colspan", 5);
-		// 		$("#cell").attr("colspan", 5);
-		// 		$("#time").attr("colspan", 5);
-		//
-		// } );
-
+    $(".inuse:last").removeClass("inuse")
 	});
 </script>
 
