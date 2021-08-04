@@ -11,6 +11,11 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
   var fb = null;
   var spacers;
   var idRemove;
+<<<<<<< HEAD
+=======
+  var nodes;
+  var tmp;
+>>>>>>> 26b5638adedc7bf6ba61573e5b4f9e2f9745110e
   var pubs = new Array();
   var first = ylabel.replace(/\Δ|\(|\)|[Log]/g,"").split("/")[0];
   var second = ylabel.replace(/\Δ|\(|\)|[Log]/g,"").split("/")[1];
@@ -152,7 +157,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
     .append("svg:svg")
     .attr("width", width + margin.right + margin.left)
     .attr("height", height + margin.top + margin.bottom)
-    .attr("class", "chart")
+    .attr("class", "chart");
 
   var main = chart.append("g")
     .attr("transform", "translate(" + (margin.left + 120) + "," + (margin.top/2) + ")")
@@ -190,14 +195,22 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
   var count_ticks = yAxis.scale().ticks().length;
 
   for(let i = 0; i < data.length; i++) {
+<<<<<<< HEAD
     if(data[i][4] == "High Bias"){
+=======
+    if(data[i][4] === "High Bias"){
+>>>>>>> 26b5638adedc7bf6ba61573e5b4f9e2f9745110e
       tmp = data[i][1];
       if(tickArray.includes(tmp)){
         hb = step_rounder(tmp, step);
       }else{
         hb = tickArray.slice(-1)[0];
       }
+<<<<<<< HEAD
     } else if(data[i][4] == "Full Bias"){
+=======
+    } else if(data[i][4] === "Full Bias"){
+>>>>>>> 26b5638adedc7bf6ba61573e5b4f9e2f9745110e
       tmp = data[i][1];
       if(tickArray.includes(tmp)){
         fb = step_rounder(tmp, step);
@@ -294,11 +307,19 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
   if((tickArray.indexOf(fb) - tickArray.indexOf(hb)) === 2){
     idRemove = tickArray[tickArray.indexOf(fb) - 1];
     nodes = d3.selectAll(".y.axis").selectAll(".tick").each(function(d){
+<<<<<<< HEAD
       if(d3.select(this).text() == idRemove){
         d3.select(this)[0][0].innerHTML = "";
       };
     });
   };
+=======
+      if(d3.select(this).text() === idRemove){
+        d3.select(this)[0][0].innerHTML = "";
+      }
+    });
+  }
+>>>>>>> 26b5638adedc7bf6ba61573e5b4f9e2f9745110e
 
   var divToolTipTest = d3.select("body")
               .append("div")
@@ -589,8 +610,13 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
       .attr("width", 8)
       .attr("height", 2)
       .attr("id", function(d) {return "LC" + d.replace(/\[|\]|\(|\)|\s|\,/g,"");})
+<<<<<<< HEAD
       .style("stroke", function(d) { return colors[d] })
       .attr("fill", function(d) { return colors[d] })
+=======
+      .style("stroke", function(d) { return colors[d];})
+      .attr("fill", function(d) { return colors[d];})
+>>>>>>> 26b5638adedc7bf6ba61573e5b4f9e2f9745110e
       .on("click", function (d) {
           d3.selectAll("circle")
              .style("opacity", 0.2);
@@ -619,9 +645,13 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
       // .style("fill", function(d){ return colors[d]})
       .text(function(d) {
               if (d.length > 25) {
+<<<<<<< HEAD
                   return d.substring(0,25)+"..."
+=======
+                  return d.substring(0,25)+"...";
+>>>>>>> 26b5638adedc7bf6ba61573e5b4f9e2f9745110e
               }else {
-                  return d
+                  return d;
               }
       })
       .attr("text-anchor", "left")

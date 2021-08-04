@@ -34,15 +34,17 @@ function citation_tool(url) {
     var env = url.split('//')[1].split('/')[0];
     var main_ref_id = [];
     var cit_request = new XMLHttpRequest();
+    var domains = ["gpcrdb.org", "gproteindb.org", "arrestindb.org"];
     cit_request.open('GET', url.split('/')[0] + '/citations');
     cit_request.onload = function() {
 		var data = JSON.parse(cit_request.responseText)
-		for (i = 0; i < data.length; i++) {
-			if (env=="localhost:8000") {
-				var link = '/'+data[i][0].split('//')[1].split('/').slice(1).join('/');
+		for (let i = 0; i < data.length; i++) {
+			var link = "";
+			if (!domains.includes(env)) {
+				link = "/" + data[i][0].split("//")[1].split("/").slice(1).join("/");
 			}
 			else {
-				var link = data[i][0];
+				link = data[i][0];
 			}
 			if (link[link.length-1]==='/') {
 				link = link.substring(0, link.length-1);
@@ -69,29 +71,30 @@ function citation_tool(url) {
 		// Create HTML once per call
 		var articles = {};
 		var tags = [];
-		for (i = 0; i < data.length; i++) {
+		for (let i = 0; i < data.length; i++) {
 			if (data[i][11]==='') {
 				continue;
 			}
 			var site = parse_url_long(data[i][0]);
 			tags.push(site);
 			// Dropdown menus
+			var a_sub, submenu, submenu_ul;
 			if (document.getElementById(data[i][11])===null) {
-				var submenu = document.createElement("li");
+				submenu = document.createElement("li");
 				submenu.setAttribute("id", data[i][11]);
 				submenu.classList.add("dropdown-submenu");
-				var a_sub = document.createElement("a");
+				a_sub = document.createElement("a");
 				a_sub.innerHTML = data[i][11];
 				a_sub.setAttribute('tabindex', '0');
 				submenu.appendChild(a_sub);
-				var submenu_ul = document.createElement("ul");
+				submenu_ul = document.createElement("ul");
 				submenu_ul.classList.add('dropdown-menu');
 				submenu_ul.classList.add('dropdown-auto-overflow')
 				submenu.appendChild(submenu_ul);
 			}
 			else {
-				var submenu = document.getElementById(data[i][11])
-				var submenu_ul = submenu.getElementsByTagName('ul')[0];
+				submenu = document.getElementById(data[i][11])
+				submenu_ul = submenu.getElementsByTagName('ul')[0];
 			}
 
 			// Dropdown options
@@ -122,7 +125,7 @@ function citation_tool(url) {
 				articles[data[i][5]]['journal'] = data[i][9];
 				articles[data[i][5]]['doi'] = data[i][10];
 				articles[data[i][5]]['menu'] = data[i][11];
-				if (data[i][3]=="GPCRdb" || data[i][3]=="GproteinDb") {
+				if (data[i][3] === "GPCRdb" || data[i][3] === "GproteinDb") {
 					main_ref_id.push(site);
 				}
 			}
