@@ -1,4 +1,7 @@
 from django.conf import settings
+from django.core.cache import cache
+
+from common.models import Citation
 
 def current_site(request):
     domain_switches = {"gpcrdb.org" : "gpcr", "gproteindb.org" : "gprotein", "arrestindb.org": "arrestin"}
@@ -23,6 +26,29 @@ def site_title(request):
     return {
        'site_title': domain_titles[domain]
      }
+
+def canonical_tag(request):
+    citation_dict = cache.get("citation_urls")
+    if citation_dict == None:
+        citation_dict = {}
+        citation_urls = Citation.objects.all().values_list("url", flat = True)
+        for url in citation_urls:
+            path = url.split(".org")[1]
+            citation_dict[path] = url
+        cache.set("citation_urls", citation_dict, 60*60*24*7)
+
+    if request.path in citation_dict:
+        return {
+           'canonical_tag': citation_dict[request.path]
+         }
+    elif request.path == "" or request.path == "/":
+        return {
+           'canonical_tag': "https://" + request.get_host()
+         }
+    else:
+        return {
+           'canonical_tag': "https://gpcrdb.org" + request.path
+         }
 
 def documentation_url(request):
     return {
