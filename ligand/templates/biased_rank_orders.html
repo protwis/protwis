@@ -140,7 +140,7 @@
               <button id="grey_pub" class="btn btn-primary">Grey</button>
           </div>
 
-          <!-- <button type="Submit" class="btn btn-primary" onclick="ShowPlot('pub')">Update Plot</button> -->
+          <!-- <button type="Submit" class="btn btn-primary" onclick="ShowRadarPlot('pub')">Update Plot</button> -->
         </div>
 
         <datalist id="select-pub">
@@ -189,7 +189,7 @@
                 <button id="grey_lig" class="btn btn-primary">Grey</button>
             </div>
 
-            <!-- <button type="Submit" class="btn btn-primary" onclick="ShowPlot('ligand')">Update Plot</button> -->
+            <!-- <button type="Submit" class="btn btn-primary" onclick="ShowRadarPlot('ligand')">Update Plot</button> -->
           </div>
 
           <datalist id="select-ligand">
@@ -277,7 +277,7 @@
               <button id="red_pub" class="btn btn-primary active">Red</button>
               <button id="grey_pub" class="btn btn-primary">Grey</button>
           </div>
-          <button type="Submit" class="btn btn-primary" onclick="ShowPlot('pub')">Update Plot</button>
+          <button type="Submit" class="btn btn-primary" onclick="ShowRadarPlot('pub')">Update Plot</button>
         </div>
 
         <datalist id="select-pub">
@@ -324,7 +324,7 @@
           <button id="red_lig" class="btn btn-primary active">Red</button>
           <button id="grey_lig" class="btn btn-primary">Grey</button>
       </div>
-      <button type="Submit" class="btn btn-primary" onclick="ShowPlot('ligand')">Update Plot</button>
+      <button type="Submit" class="btn btn-primary" onclick="ShowRadarPlot('ligand')">Update Plot</button>
     </div>
 
     <datalist id="select-ligand">
@@ -375,6 +375,7 @@
 <script src="{% static 'home/js/dotPlot_jitter.js' %}""></script>
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
 <script src="{% static 'home/js/saveSvg.js' %}"></script>
+{% if page == 'pathwayprofiles' %}
 <script>
   var spiders = {{ spider | safe }};
   var pub_color = "red";
@@ -407,96 +408,6 @@
   });
   $("#RadarLigandList").on("change", function(){ShowPlot('ligand')});
 
-  function ShowPlot(type){
-    var svgNS = "http://www.w3.org/2000/svg";
-    var parentDiv = document.getElementById("radarcontainer_"+type);
-    var mergedDiv = document.getElementById("mergedcontainer_"+type);
-    parentDiv.querySelectorAll('*').forEach(n => n.remove());
-    mergedDiv.querySelectorAll('*').forEach(n => n.remove());
-    var title = document.createElement("div");
-    title.setAttribute("class", "RadarTitle");
-    parentDiv.appendChild(title);
-    var ids = new Array();
-    if(type==='ligand'){
-      // $('#RadarPublicationsList').val('');
-      var lig = document.getElementById('RadarLigandList').value;
-      var pub_hash = document.querySelector("#select-ligand option[value='"+lig+"']").dataset.value;
-      var header = document.createTextNode(lig);
-      title.appendChild(header);
-      for(var pub in spiders){
-        name = pub.replace(/\[|\]|\(|\)|\s|\,|\'|\./g,"")
-        for(var web in spiders[pub]){
-          if(web === pub_hash){
-            spiders[pub][web]["Options"]["title"] = pub;
-            spiders[pub][web]["Options"]["filling"] = lig_color;
-            RadarChart('radarcontainer_'+type, spiders[pub][web]["Data"], spiders[pub][web]["Options"], "radar"+name);
-          }
-        }
-      }
-    }else{
-      // $('#RadarLigandList').val('');
-      var pub = document.getElementById('RadarPublicationsList').value;
-      var header = document.createTextNode(pub);
-      title.appendChild(header);
-      for(var web in spiders[pub]){
-        spiders[pub][web]["Options"]["filling"] = pub_color;
-        RadarChart('radarcontainer_'+type, spiders[pub][web]["Data"], spiders[pub][web]["Options"], "radar"+web);
-      }
-    }
-
-    // create a merged-div where we are going to merge the svgs
-    var merged = document.createElement('div');
-    merged.setAttribute('id', 'merged-div_'+type);
-    mergedDiv.appendChild(merged);
-
-    $('#radarcontainer_'+type+' > div').map(function() {
-      ids.push(this.id);
-    });
-    var mergedHeight = 300 * Math.round(ids.length/3);
-    if(ids.length > 3){
-      var mergedWidth = 900;
-    } else {
-      var mergedWidth = 300 * (ids.length - 1);
-    };
-
-    // createElementNS for svg
-    var mergedSvg = document.createElementNS(svgNS, 'svg');
-    mergedSvg.setAttribute('id', 'merged_'+type);
-    // keep the viewBox of the chart
-    mergedSvg.setAttribute('width', mergedWidth);
-    mergedSvg.setAttribute('height', mergedHeight);
-    merged.appendChild(mergedSvg);
-
-    var xMultiply = -1;
-    var yMultiply = 1;
-    for (let i = 1; i < ids.length; i++){
-      if (xMultiply < 2){
-        xMultiply = xMultiply + 1;
-      } else {
-        xMultiply = 0;
-        yMultiply = yMultiply + 1;
-      };
-      var plot = document.getElementById(ids[i]);
-      var plotSvg = plot.getElementsByTagName('svg')[0];
-      var plotContent = Array.from(plotSvg.childNodes)[0];
-      var xTranslate = (150 * (xMultiply + 1)) + (130 * xMultiply);
-      var yTranslate = (150 * yMultiply) + (150 * (yMultiply - 1));
-
-      plotContent.setAttribute('transform', 'translate('+ xTranslate + ',' + yTranslate + ')');
-
-      mergedSvg.appendChild(plotContent);
-    }
-    gNodes = d3.selectAll('.axisWrapper').selectAll('.axis');
-    gNodes.each(function(d) {
-      old = d3.select(this).select('text')[0][0].innerHTML;
-      old = old.replace("G12/13", 'G</tspan><tspan baseline-shift = "sub">12/13</tspan><tspan>');
-      old = old.replace("Gi/o", 'G</tspan><tspan baseline-shift = "sub">i/o</tspan><tspan>');
-      old = old.replace("Gq/11", 'G</tspan><tspan baseline-shift = "sub">q/11</tspan><tspan>');
-      old = old.replace("Gs", 'G</tspan><tspan baseline-shift = "sub">s</tspan><tspan>');
-      node = d3.select(this).select('text')[0][0];
-      node.innerHTML = old;
-    });
-  }
 </script>
 
 <script>
@@ -541,50 +452,50 @@
   // var x_labels = d3.selectAll('.x.axis').selectAll('.tick text');
 
 </script>
-
+{% else %}
 <script>
-var realData = {{ scatter | safe }};
-var colors = {{ colors | safe }};
-var legend = {{ scatter_legend | safe }};
-var source = "{{ source }}";
-var conversion = {'G12/13': 'G<sub>12/13</sub>',
-                  'Gi/o': 'G<sub>i/o</sub>',
-                  'Gq/11': 'G<sub>q/11</sub>',
-                  'Gs': 'G<sub>s</sub>',
-                  'Arrestin': 'Arrestin',
-                  'ERK': 'ERK'};
-var label =  "{{ label }}";
-if(label == 'emax'){
-  qualitative = true
-  if(source != 'predicted_family'){
-    ylabel = "ΔΔLog(Emax/EC50)";
-  }else{
-    ylabel = "ΔLog(Emax/EC50)";
-  }
+  var realData = {{ scatter | safe }};
+  var colors = {{ colors | safe }};
+  var legend = {{ scatter_legend | safe }};
+  var source = "{{ source }}";
+  var conversion = {'G12/13': 'G<sub>12/13</sub>',
+                    'Gi/o': 'G<sub>i/o</sub>',
+                    'Gq/11': 'G<sub>q/11</sub>',
+                    'Gs': 'G<sub>s</sub>',
+                    'Arrestin': 'Arrestin',
+                    'ERK': 'ERK'};
+  var label =  "{{ label }}";
+  if(label == 'emax'){
+    qualitative = true
+    if(source != 'predicted_family'){
+      ylabel = "ΔΔLog(Emax/EC50)";
+    }else{
+      ylabel = "ΔLog(Emax/EC50)";
+    }
 
-} else {
-  ylabel = "ΔΔLog(Tau/KA)"
-  qualitative = false
-};
-var count = 1;
-for(var path in realData){
-  var name = 'Pathway' + parseInt(count);
-  DotScatter(realData[path], 'boxplotChart', name, colors, legend[path], conversion[path], ylabel, qualitative);
-  count = count + 1;
-  gNodes = d3.select('#'+name).selectAll('.main.axis.date').selectAll('.tick');
-  headerNode = d3.select('#'+name).selectAll('.header').selectAll('text')[0][0];
-  headerHTML = headerNode.innerHTML;
-  headerHTML = headerHTML.replaceAll("&lt;sub&gt;", '<tspan x="12" dy="0.8em">');
-  headerHTML = headerHTML.replaceAll("&lt;/sub&gt;", '</tspan>');
-  headerNode.innerHTML = headerHTML;
-  gNodes.each(function(d) {
-    old = d3.select(this)[0][0].innerHTML;
-    old = old.replaceAll("openTS", '<tspan x="0" dy="1.2em">');
-    old = old.replaceAll("closeTS", '</tspan>');
-    node = d3.select(this)[0][0];
-    node.innerHTML = old;
-  });
-};
+  } else {
+    ylabel = "ΔΔLog(Tau/KA)"
+    qualitative = false
+  };
+  var count = 1;
+  for(var path in realData){
+    var name = 'Pathway' + parseInt(count);
+    DotScatter(realData[path], 'boxplotChart', name, colors, legend[path], conversion[path], ylabel, qualitative);
+    count = count + 1;
+    gNodes = d3.select('#'+name).selectAll('.main.axis.date').selectAll('.tick');
+    headerNode = d3.select('#'+name).selectAll('.header').selectAll('text')[0][0];
+    headerHTML = headerNode.innerHTML;
+    headerHTML = headerHTML.replaceAll("&lt;sub&gt;", '<tspan x="12" dy="0.8em">');
+    headerHTML = headerHTML.replaceAll("&lt;/sub&gt;", '</tspan>');
+    headerNode.innerHTML = headerHTML;
+    gNodes.each(function(d) {
+      old = d3.select(this)[0][0].innerHTML;
+      old = old.replaceAll("openTS", '<tspan x="0" dy="1.2em">');
+      old = old.replaceAll("closeTS", '</tspan>');
+      node = d3.select(this)[0][0];
+      node.innerHTML = old;
+    });
+  };
 </script>
 <script>
   function getKeyByValue(object, value) {
@@ -665,5 +576,6 @@ for(var path in realData){
   });
   document.getElementById("horizontal").click();
 </script>
+{% endif %}
 
 {% endblock %}
