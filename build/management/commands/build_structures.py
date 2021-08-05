@@ -1270,34 +1270,9 @@ class Command(BaseBuild):
                     # publication
                     try:
                         if 'doi_id' in sd:
-                            try:
-                                s.publication = Publication.objects.get(web_link__index=sd['doi_id'])
-                            except Publication.DoesNotExist as e:
-                                p = Publication()
-                                try:
-                                    p.web_link = WebLink.objects.get(index=sd['doi_id'], web_resource__slug='doi')
-                                except WebLink.DoesNotExist:
-                                    wl = WebLink.objects.create(index=sd['doi_id'],
-                                        web_resource = WebResource.objects.get(slug='doi'))
-                                    p.web_link = wl
-                                p.update_from_doi(doi=sd['doi_id'])
-                                p.save()
-                                s.publication = p
+                            s.publication = Publication.get_or_create_from_doi(sd['doi_id'])
                         elif 'pubmed_id' in sd:
-                            try:
-                                s.publication = Publication.objects.get(web_link__index=sd['pubmed_id'])
-                            except Publication.DoesNotExist as e:
-                                p = Publication()
-                                try:
-                                    p.web_link = WebLink.objects.get(index=sd['pubmed_id'],
-                                        web_resource__slug='pubmed')
-                                except WebLink.DoesNotExist:
-                                    wl = WebLink.objects.create(index=sd['pubmed_id'],
-                                        web_resource = WebResource.objects.get(slug='pubmed'))
-                                    p.web_link = wl
-                                p.update_from_pubmed_data(index=sd['pubmed_id'])
-                                p.save()
-                                s.publication = p
+                            s.publication = Publication.get_or_create_from_pubmed(sd['pubmed_id'])
                     except:
                         self.logger.error('Error saving publication'.format(sd['pdb']))
 

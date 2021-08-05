@@ -63,7 +63,7 @@ class Command(BaseCommand):
     local_uniprot_beta_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot_beta'])
     local_uniprot_gamma_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot_gamma'])
     remote_uniprot_dir = 'https://www.uniprot.org/uniprot/'
-    
+
 
     logger = logging.getLogger(__name__)
 
@@ -575,25 +575,12 @@ class Command(BaseCommand):
                             for pmid in primary_pubmed.split("|"):
                                 try:
                                     test = int(pmid)
+                                    pub = Publication.get_or_create_from_pubmed(pmid)
+                                    pub_years[pub.year] += 1
+                                    pub_years_protein[pub.year].add(entry_name)
+                                    gpair.references.add(pub)
                                 except:
                                     continue
-                                try:
-                                    pub = Publication.objects.get(web_link__index=pmid,
-                                                                  web_link__web_resource__slug='pubmed')
-                                except Publication.DoesNotExist as e:
-                                    pub = Publication()
-                                    try:
-                                        pub.web_link = WebLink.objects.get(index=pmid,
-                                                                           web_resource__slug='pubmed')
-                                    except WebLink.DoesNotExist:
-                                        wl = WebLink.objects.create(index=pmid,
-                                                                    web_resource=WebResource.objects.get(slug='pubmed'))
-                                        pub.web_link = wl
-                                pub.update_from_pubmed_data(index=pmid)
-                                pub.save()
-                                pub_years[pub.year] += 1
-                                pub_years_protein[pub.year].add(entry_name)
-                                gpair.references.add(pub)
 
                     except Exception as e:
                         print("error in primary assignment", p, gp, e)
@@ -612,26 +599,13 @@ class Command(BaseCommand):
                             for pmid in secondary_pubmed.split("|"):
                                 try:
                                     test = int(pmid)
+                                    pub = Publication.get_or_create_from_pubmed(pmid)
+                                    pub_years[pub.year] += 1
+                                    pub_years_protein[pub.year].add(entry_name)
+                                    gpair.references.add(pub)
                                 except:
                                     continue
 
-                                try:
-                                    pub = Publication.objects.get(web_link__index=pmid,
-                                                                  web_link__web_resource__slug='pubmed')
-                                except Publication.DoesNotExist as e:
-                                    pub = Publication()
-                                    try:
-                                        pub.web_link = WebLink.objects.get(index=pmid,
-                                                                           web_resource__slug='pubmed')
-                                    except WebLink.DoesNotExist:
-                                        wl = WebLink.objects.create(index=pmid,
-                                                                    web_resource=WebResource.objects.get(slug='pubmed'))
-                                        pub.web_link = wl
-                                pub.update_from_pubmed_data(index=pmid)
-                                pub.save()
-                                pub_years[pub.year] += 1
-                                pub_years_protein[pub.year].add(entry_name)
-                                gpair.references.add(pub)
                     except Exception as e:
                         print("error in secondary assignment", p, gp, e)
         # for key, value in sorted(pub_years.items()):
