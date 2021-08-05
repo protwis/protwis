@@ -454,30 +454,22 @@ class Command(BaseBuild):
         except StructureType.DoesNotExist as e:
             structure_type, c = StructureType.objects.get_or_create(slug=structure_type_slug, name=data["method"])
             self.logger.info("Created StructureType:"+str(structure_type))
+
         # Publication
+        pub = None
         if data["doi"]:
             try:
-                pub = Publication.objects.get(web_link__index=data["doi"])
-            except Publication.DoesNotExist as e:
-                pub = Publication()
-                wl, created = WebLink.objects.get_or_create(index=data["doi"], web_resource=WebResource.objects.get(slug="doi"))
-                pub.web_link = wl
-                pub.update_from_pubmed_data(index=data["doi"])
-                pub.save()
-                self.logger.info("Created Publication:"+str(pub))
-        else:
-            if data["pubmedId"]:
-                try:
-                    pub = Publication.objects.get(web_link__index=data["pubmedId"])
-                except Publication.DoesNotExist as e:
-                    pub = Publication()
-                    wl, created = WebLink.objects.get_or_create(index=data["pubmedId"], web_resource=WebResource.objects.get(slug="pubmed"))
-                    pub.web_link = wl
-                    pub.update_from_pubmed_data(index=data["pubmedId"])
-                    pub.save()
-                    self.logger.info("Created Publication:"+str(pub))
-            else:
-                pub = None
+                pub = Publication.get_or_create_from_doi(data["doi"])
+            except:
+                # 2nd try (in case of paralellization clash)
+                pub = Publication.get_or_create_from_doi(data["doi"])
+        elif data["pubmedId"]:
+            try:
+                pub = Publication.get_or_create_from_pubmed(data["pubmedId"])
+            except:
+                # 2nd try (in case of paralellization clash)
+                pub = Publication.get_or_create_from_pubmed(data["pubmedId"])
+
         # PDB data
         url = 'https://www.rcsb.org/pdb/files/{}.pdb'.format(pdb)
         req = urllib.request.Request(url)

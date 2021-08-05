@@ -75,7 +75,7 @@ class Command(BaseBuild):
         print('{} number of receptors to check'.format(len(uniprot_list)))
 
         # uniprot_list = ['P28223']
-        
+
         for uni in uniprot_list:
             # print(uni)
             q.new_xtals(uni)
@@ -231,34 +231,9 @@ class QueryPDB():
                         publication_date = d.strftime('%Y-%m-%d')
                         try:
                             if doi!='':
-                                try:
-                                    publication = Publication.objects.get(web_link__index=doi)
-                                except Publication.DoesNotExist as e:
-                                    p = Publication()
-                                    try:
-                                        p.web_link = WebLink.objects.get(index=doi, web_resource__slug='doi')
-                                    except WebLink.DoesNotExist:
-                                        wl = WebLink.objects.create(index=doi,
-                                            web_resource = WebResource.objects.get(slug='doi'))
-                                        p.web_link = wl
-                                    p.update_from_doi(doi=doi)
-                                    p.save()
-                                    publication = p
+                                publication = Publication.get_or_create_from_doi(doi)
                             elif pubmed!='':
-                                try:
-                                    publication = Publication.objects.get(web_link__index=pubmed)
-                                except Publication.DoesNotExist as e:
-                                    p = Publication()
-                                    try:
-                                        p.web_link = WebLink.objects.get(index=pubmed,
-                                            web_resource__slug='pubmed')
-                                    except WebLink.DoesNotExist:
-                                        wl = WebLink.objects.create(index=pubmed,
-                                            web_resource = WebResource.objects.get(slug='pubmed'))
-                                        p.web_link = wl
-                                    p.update_from_pubmed_data(index=pubmed)
-                                    p.save()
-                                    publication = p
+                                publication = Publication.get_or_create_from_pubmed(pubmed)
                         except:
                             pass
                         pcs = PdbChainSelector(s, protein)
@@ -340,7 +315,7 @@ class QueryPDB():
                     del self.db_list[self.db_list.index(s)]
                     missing_from_db = False
                     del self.yaml_list[self.yaml_list.index(s)]
-        
+
 
 
     def pdb_request_by_uniprot(self, uniprot_id):
