@@ -140,7 +140,7 @@
               <button id="grey_pub" class="btn btn-primary">Grey</button>
           </div>
 
-          <button type="Submit" class="btn btn-primary" onclick="ShowPlot('pub')">Update Plot</button>
+          <!-- <button type="Submit" class="btn btn-primary" onclick="ShowPlot('pub')">Update Plot</button> -->
         </div>
 
         <datalist id="select-pub">
@@ -189,7 +189,7 @@
                 <button id="grey_lig" class="btn btn-primary">Grey</button>
             </div>
 
-            <button type="Submit" class="btn btn-primary" onclick="ShowPlot('ligand')">Update Plot</button>
+            <!-- <button type="Submit" class="btn btn-primary" onclick="ShowPlot('ligand')">Update Plot</button> -->
           </div>
 
           <datalist id="select-ligand">
@@ -377,27 +377,36 @@
 <script src="{% static 'home/js/saveSvg.js' %}"></script>
 <script>
   var spiders = {{ spider | safe }};
-  var color = "red";
+  var pub_color = "red";
+  var lig_color = "red";
   $("#red_pub").click(function() {
       $("#red_pub").addClass("active");
       $("#grey_pub").removeClass("active");
-      color = "red";
+      pub_color = "red";
+      ShowPlot('pub')
   });
   $("#grey_pub").click(function() {
       $("#grey_pub").addClass("active");
       $("#red_pub").removeClass("active");
-      color = "grey";
+      pub_color = "grey";
+      ShowPlot('pub')
   });
+  $("#RadarPublicationsList").on("change", function(){ShowPlot('pub')});
+
   $("#red_lig").click(function() {
       $("#red_lig").addClass("active");
       $("#grey_lig").removeClass("active");
-      color = "red";
+      lig_color = "red";
+      ShowPlot('ligand')
   });
   $("#grey_lig").click(function() {
       $("#grey_lig").addClass("active");
       $("#red_lig").removeClass("active");
-      color = "grey";
+      lig_color = "grey";
+      ShowPlot('ligand')
   });
+  $("#RadarLigandList").on("change", function(){ShowPlot('ligand')});
+
   function ShowPlot(type){
     var svgNS = "http://www.w3.org/2000/svg";
     var parentDiv = document.getElementById("radarcontainer_"+type);
@@ -419,7 +428,7 @@
         for(var web in spiders[pub]){
           if(web === pub_hash){
             spiders[pub][web]["Options"]["title"] = pub;
-            spiders[pub][web]["Options"]["filling"] = color;
+            spiders[pub][web]["Options"]["filling"] = lig_color;
             RadarChart('radarcontainer_'+type, spiders[pub][web]["Data"], spiders[pub][web]["Options"], "radar"+name);
           }
         }
@@ -430,7 +439,7 @@
       var header = document.createTextNode(pub);
       title.appendChild(header);
       for(var web in spiders[pub]){
-        spiders[pub][web]["Options"]["filling"] = color;
+        spiders[pub][web]["Options"]["filling"] = pub_color;
         RadarChart('radarcontainer_'+type, spiders[pub][web]["Data"], spiders[pub][web]["Options"], "radar"+web);
       }
     }
