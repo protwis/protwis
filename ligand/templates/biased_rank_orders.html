@@ -89,8 +89,6 @@
 <br />
 
 <div class="container">
-
-  <h3>Results for receptor: <b>{{query|safe}}</b> </h3>
   <!-- Nav tabs -->
 {% if page == 'pathwayprofiles' %}
 <style>
@@ -106,6 +104,7 @@
       pointer-events: none;
   }
 </style>
+<h3>{{IUPHAR|safe}} ({{query|safe}})</h3>
   <ul class="nav nav-tabs">
     <li class="nav-item">
       <a class="nav-link active" data-toggle="tab" href="#lines">Line charts</a>
@@ -123,7 +122,7 @@
     <div class="tab-pane container active" id="lines">
       <br />
       <div style="font: 15px sans-serif">
-        <p>Charts are <b>sorted</b> from the publications showing the larger number of <b>investigated pathways</b> (primary), and for <b>number of datapoints</b> (secondary). <br>
+        <p>Plots/publications are sorted vertically by decreasing numbers of <b>investigated pathways</b> (primary) and <b>datapoints</b> (secondary).<br>
       </div>
       <div id='divChartTrends'></div>
     </div>
@@ -249,13 +248,11 @@
       <br />
 
       <div style="font: 15px sans-serif">
-        <p><b>Y-axis</b>: Intrinsic relative activity <br />
-           <b>X-axis</b>: Publications <br />
-           <b>Data points</b>: Ligands <br />
-           <br />
-           Each publication-ligand pair is only shown in <b>one</b> diagram. <br />
-           This is the diagram for the given pathway towards the specific ligand is biased.<br /></p>
-
+        <p>
+        <h3>{{IUPHAR|safe}} ({{query|safe}}) biased ligand (data points) rank orders by<br>
+          transducer or effector (stacked plots) and publication (x-axis)</h3><br>
+          Each ligand from a given publication is only shown in the plot for the pathway to which it is biased
+        </p>
        <div class="btn-group" role="group">
            <button id="full_length" class="btn btn-primary active">Full label</button>
            <button id="short_length" class="btn btn-primary">Short label</button>
