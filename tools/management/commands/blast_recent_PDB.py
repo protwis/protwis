@@ -20,7 +20,7 @@ class Command(BaseCommand):
     logger = logging.getLogger(__name__)
     rcsb_search_url = "https://search.rcsb.org/rcsbsearch/v1/query"
     rcsb_fasta_url = "https://www.rcsb.org/fasta"
-    months = 1
+    months = 2
 
     def handle(self, *args, **options):
         # Request PDBs from RCSB for past X months
@@ -70,8 +70,8 @@ class Command(BaseCommand):
 
             if rcsb_response.status_code == 200:
                 for header,sequence in grouped(rcsb_response.text.splitlines(), 2):
-                    # Removal of RNA sequences
-                    if not "U" in sequence:
+                    # Removal of RNA sequences and short sequences
+                    if not "U" in sequence and len(sequence) > 100:
                         fasta_results = fasta_results + header + "\n" + sequence + "\n"
             else:
                 print("Incorrect response from RCSB web services - exiting")
@@ -90,9 +90,10 @@ class Command(BaseCommand):
             # Process results and remove structures already present in GPCRdb
             blast_results = NCBIXML.parse(StringIO(blast_out))
             for result in blast_results:
-                if len(result.alignments)>=1 and Structure.objects.filter(pdb_code__index=result.query[:4]).count() == 0 and top_hit.score > 200:
+                if len(result.alignments)>=1 and Structure.objects.filter(pdb_code__index=result.query[:4]).count() == 0:
                     top_hit = result.alignments[0].hsps[0]
-                    print("HIT", "{0:>7}{1:>8}".format(top_hit.score, round(top_hit.expect,5)), result.query)
+                    if top_hit.score > 100:
+                        print("HIT", "{0:>7}{1:>8}".format(top_hit.score, round(top_hit.expect,5)), result.query)
 
 def grouped(iterable, n):
     return zip(*[iter(iterable)]*n)
