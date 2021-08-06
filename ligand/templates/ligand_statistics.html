@@ -149,20 +149,20 @@
 <table style="width:80% !important" class="table table-stripped">
 {% elif render == "bias" %}
 <p><h4>Biased ligand counts</h4>
-<h6>Ligands with a bias factor equal or greater to 2</h6></p>
+<h6>The number of ligands with a bias factor equal or greater to 1</h6></p>
 <table style="width:60% !important" class="table table-stripped">
 {% elif render == "pathway" %}
 <p><h4>Pathway preferred ligand counts</h4>
-<h6>Ligands with a bias factor equal or greater to 1</h6></p>
+<h6>The number of ligands with a bias factor equal or greater to 1</h6></p>
 <table style="width:60% !important" class="table table-stripped">
 {% elif render == "subtype" %}
 <p><h4>Pathway preferred ligand counts</h4>
-<h6>Ligands with a bias factor equal or greater to 2 (subtype)</h6></p>
+<h6>The number of ligands with a bias factor equal or greater to 1 (subtype)</h6></p>
 <table style="width:60% !important" class="table table-stripped">
 {% endif %}
     <thead>
         <tr>
-            <td><b>Class<br />(Family)</b></td>
+            <td><b>Class (Family)</b></td>
             {% for data in ligands_by_class %}
             <td align="center"><b>
               {% if data.name == " T (Taste 2)" %}T2 (Taste&nbsp;2)
@@ -174,6 +174,7 @@
             <td align="center"><b>Total</b></td>
         </tr>
     </thead>
+    {% if render == "not_bias" %}
     <tbody>
         <tr>
             <td>No. ligands</td>
@@ -197,23 +198,55 @@
             <td align="center" style="vertical-align:middle !important; white-space: nowrap; overflow: hidden;"> {{ ligands_total.target_count|floatformat:0 }} ({{ ligands_total.target_percentage|floatformat:0 }})</td>
         </tr>
     </tbody>
+    {% else %}
+    <tbody>
+        <tr>
+            <td>No. biased ligands</td>
+            {% for data in ligands_by_class %}
+            <td align="center" style="vertical-align:middle !important">{{ data.num_ligands|floatformat:0|intcomma }}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ ligands_total.num_ligands|floatformat:0|intcomma }}</td>
+        </tr>
+        <tr>
+            <td nowrap>No. GPCRs with ligand (%)</td>
+            {% for data in ligands_by_class %}
+            <td align="center" style="vertical-align:middle !important">{{ data.target_count|floatformat:0 }} ({{ data.target_percentage|floatformat:0 }})</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important; white-space: nowrap; overflow: hidden;"> {{ ligands_total.target_count|floatformat:0 }} ({{ ligands_total.target_percentage|floatformat:0 }})</td>
+        </tr>
+    </tbody>
+    {% endif %}
     <tr> </tr>
 
 </table>
 
-Specific sets of ligands can be downloaded from the <a href="/ligand">ligand browser</a>.<br />
-Ligand statistics were last updated <strong>{{ release_notes.date|date:"Y-m-d" }}</strong>.<br />
+{% if render == "not_bias" %}
+Specific sets of ligands can be downloaded from the <a href="/ligand"> biased ligand browser</a>.<br />
+{% elif render == "bias" %}
+Specific sets of ligands can be downloaded from the <a href="/ligand/biasedbrowser"> biased ligand browser</a>.<br />
+{% elif render == "pathway" %}
+Specific sets of ligands can be downloaded from the <a href="/ligand/biasedpredictedbrowser"> biased ligand browser</a>.<br />
+{% elif render == "subtype" %}
+Specific sets of ligands can be downloaded from the <a href="/ligand/biasedsubtypebrowser"> biased ligand browser</a>.<br />
+{% endif %}
+
+Biased ligand statistics were last updated <strong>{{ release_notes.date|date:"Y-m-d" }}</strong>.<br />
 <br />
 <br />
 {% if render == "not_bias" %}
 <h4>Ligand coverage of GPCR Classes</h4><br />
-{% elif render == "bias" %}
-<h4>Ligand bias coverage of GPCR Classes</h4><br />
-{% elif render == "pathway" %}
-<h4>Pathway preferred ligand coverage of GPCR Classes</h4><br />
-{% elif render == "subtype" %}
-<h4>Ligand bias (subtype) coverage of GPCR Classes</h4><br />
+{% else %}
+<h4>Biased ligand coverage by GPCR Class</h4><br />
 {% endif %}
+
+<div>
+  Receptor names:
+    <div class="btn-group" role="group" id="gtp_plus">
+        <button id="UniProtNames" class="btn btn-info active">UniProt</button>
+        <button id="IUPHARNames" class="btn btn-info">IUPHAR</button>
+    </div>
+</div>
+<br />
 
 {% if render == "not_bias" %}
 Circle colors indicate a number of ligands:
@@ -292,14 +325,7 @@ Inner circle colors indicate a number of ligands:
 </table>
 {% endif %}
 <br />
-<div>
-  Receptor names:
-    <div class="btn-group" role="group" id="gtp_plus">
-        <button id="UniProtNames" class="btn btn-info active">UniProt</button>
-        <button id="IUPHARNames" class="btn btn-info">IUPHAR</button>
-    </div>
-</div>
-<br />
+
 <script type="text/javascript" charset="utf-8">
     class_a = {{ class_a | safe }};
     class_a_options = {{ class_a_options | safe }};
