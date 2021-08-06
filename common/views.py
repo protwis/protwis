@@ -231,8 +231,8 @@ def getTargetTable():
 
 def getReferenceTable(filtering, assay_type):
     cache_key = "reference_table_" + filtering + "_" + assay_type
-    # data_table = cache.get(cache_key)
-    data_table = None
+    data_table = cache.get(cache_key)
+    # data_table = None
     if data_table == None:
         #get all the proteins that are in ligandanalyzedassay
         biased_proteins = list(AnalyzedAssay.objects.filter(
