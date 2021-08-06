@@ -112,7 +112,7 @@ def index(request):
 
     return render(request, 'home/index.html', context)
 
-# @cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24 * 7)
 def citations_json(request):
     context = {}
     citations_q = Citation.objects.all().values_list("url", "video", "docs", "main", "page_name", "publication__title", "publication__authors", "publication__year", "publication__reference",
