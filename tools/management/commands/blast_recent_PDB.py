@@ -67,8 +67,12 @@ class Command(BaseCommand):
                 }
             rcsb_response = requests.post(self.rcsb_fasta_url, data=post_data)
 
+
             if rcsb_response.status_code == 200:
-                fasta_results = fasta_results + rcsb_response.text
+                for header,sequence in grouped(rcsb_response.text.splitlines(), 2):
+                    # Removal of RNA sequences
+                    if not "U" in sequence:
+                        fasta_results = fasta_results + header + "\n" + sequence + "\n"
             else:
                 print("Incorrect response from RCSB web services - exiting")
                 return
@@ -88,4 +92,7 @@ class Command(BaseCommand):
             for result in blast_results:
                 if len(result.alignments)>=1 and Structure.objects.filter(pdb_code__index=result.query[:4]).count() == 0:
                     top_hit = result.alignments[0].hsps[0]
-                    print("HIT", "{0:>7}{1:>7}".format(top_hit.score, round(top_hit.expect,5)), result.query)
+                    print("HIT", "{0:>7}{1:>8}".format(top_hit.score, round(top_hit.expect,5)), result.query)
+
+def grouped(iterable, n):
+    return zip(*[iter(iterable)]*n)
