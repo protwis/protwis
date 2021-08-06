@@ -90,7 +90,7 @@ class Command(BaseCommand):
             # Process results and remove structures already present in GPCRdb
             blast_results = NCBIXML.parse(StringIO(blast_out))
             for result in blast_results:
-                if len(result.alignments)>=1 and Structure.objects.filter(pdb_code__index=result.query[:4]).count() == 0:
+                if len(result.alignments)>=1 and Structure.objects.filter(pdb_code__index=result.query[:4]).count() == 0 and top_hit.score > 200:
                     top_hit = result.alignments[0].hsps[0]
                     print("HIT", "{0:>7}{1:>8}".format(top_hit.score, round(top_hit.expect,5)), result.query)
 
