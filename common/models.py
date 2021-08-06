@@ -155,8 +155,6 @@ class Publication(models.Model):
                 # Sometimes 'DA' field does not exist, use alternative
                 self.year = record['DP'][:4]
 
-            record['JT'] = record['JT']
-            record['TA'] = record['TA']
             try:
                 self.journal, created = PublicationJournal.objects.get_or_create(name=record['JT'],
                         defaults={'slug': record['TA']})
