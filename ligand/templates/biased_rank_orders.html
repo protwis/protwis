@@ -384,29 +384,29 @@
       $("#red_pub").addClass("active");
       $("#grey_pub").removeClass("active");
       pub_color = "red";
-      ShowPlot('pub')
+      ShowRadarPlot('pub')
   });
   $("#grey_pub").click(function() {
       $("#grey_pub").addClass("active");
       $("#red_pub").removeClass("active");
       pub_color = "grey";
-      ShowPlot('pub')
+      ShowRadarPlot('pub')
   });
-  $("#RadarPublicationsList").on("change", function(){ShowPlot('pub')});
+  $("#RadarPublicationsList").on("change", function(){ShowRadarPlot('pub')});
 
   $("#red_lig").click(function() {
       $("#red_lig").addClass("active");
       $("#grey_lig").removeClass("active");
       lig_color = "red";
-      ShowPlot('ligand')
+      ShowRadarPlot('ligand')
   });
   $("#grey_lig").click(function() {
       $("#grey_lig").addClass("active");
       $("#red_lig").removeClass("active");
       lig_color = "grey";
-      ShowPlot('ligand')
+      ShowRadarPlot('ligand')
   });
-  $("#RadarLigandList").on("change", function(){ShowPlot('ligand')});
+  $("#RadarLigandList").on("change", function(){ShowRadarPlot('ligand')});
 
 </script>
 
