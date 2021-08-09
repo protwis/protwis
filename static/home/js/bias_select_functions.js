@@ -108,7 +108,20 @@ function selectedTargetFilter(filterVal, columnVal, rowValues, stateVal){
     return false;
   }
 }
+function onlySelectedTargets(target){
+  var msg1 = "Only selected";
+  var msg2 = "Show all";
 
+  if (target.textContent === "Only selected"){
+    yadcf.exFilterColumn(referenceTable, [[0]]);
+    target.textContent = msg2;
+  } else {
+    // clear filters + show allTargets
+    yadcf.exResetAllFilters(referenceTable);
+    target.textContent = msg1;
+    clearFilters();
+  }
+}
 /**
  * This is a custom YADCF function that checks if a row is selected or not
  * In this case this is done using the checkbox in the first column
@@ -251,7 +264,7 @@ function submitSelection(url, minimum = 1, maximum = 0) {
 
     // Submit proteins to target selection
     var group = Array.from(selectedTargets);
-    $.post("/common/targetformread", { "input-targets": group.join("\r") },  function (data) {
+    $.post("/common/biastargetformread", { "input-targets": group.join("\r") },  function (data) {
       // On success go to alignment page
       window.location.href = url;
     })

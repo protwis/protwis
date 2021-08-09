@@ -527,7 +527,6 @@ class Command(BaseBuild):
         fetch publication with Publication model
         requires: publication doi or pmid
         """
-        pub = None
         try:
             float(publication_doi)
             publication_doi = str(int(publication_doi))
@@ -538,38 +537,18 @@ class Command(BaseBuild):
             pub_type = 'pubmed'
         else:  # assume doi
             pub_type = 'doi'
+
         if publication_doi not in self.publication_cache:
-            try:
-                wl = WebLink.objects.get(
-                    index=publication_doi, web_resource__slug=pub_type)
-            except WebLink.DoesNotExist:
-                try:
-                    wl = WebLink.objects.create(index=publication_doi,
-                                                web_resource=WebResource.objects.get(slug=pub_type))
-                except IntegrityError:
-                    wl = WebLink.objects.get(
-                        index=publication_doi, web_resource__slug=pub_type)
+            pub = False
+            if pub_type == 'doi':
+                pub = Publication.get_or_create_from_doi(publication_doi)
+            elif pub_type == 'pubmed':
+                pub = Publication.get_or_create_from_pubmed(publication_doi)
 
-            try:
-                pub = Publication.objects.get(web_link=wl)
-            except Publication.DoesNotExist:
-                pub = Publication()
-                try:
-                    pub.web_link = wl
-                    pub.save()
-                except IntegrityError:
-                    pub = Publication.objects.get(web_link=wl)
+            if not pub:
+                self.mylog.debug(
+                    "publication fetching error | module: fetch_publication. Row # is : " + str(publication_doi) + ' ' + pub_type)
 
-                if pub_type == 'doi':
-                    pub.update_from_doi(doi=publication_doi)
-                elif pub_type == 'pubmed':
-                    pub.update_from_pubmed_data(index=publication_doi)
-                try:
-                    pub.save()
-                except:
-                    self.mylog.debug(
-                        "publication fetching error | module: fetch_publication. Row # is : " + str(publication_doi) + ' ' + pub_type)
-                    # if something off with publication, skip.
             self.publication_cache[publication_doi] = pub
         else:
             pub = self.publication_cache[publication_doi]

@@ -30,6 +30,7 @@ urlpatterns = [
     url(r'^selectiongproteinpredefined', views.SelectionGproteinPredefined, name='selectiongproteinpredefined'),
     url(r'^selectiongproteintoggle', views.SelectionGproteinToggle, name='selectiongproteintoggle'),
     url(r'^targetformread', views.ReadTargetInput, name='targetformread'),
+    url(r'^biastargetformread', views.ReadBiasTargetInput, name='biastargetformread'),
     url(r'^referenceformread', views.ReadReferenceInput, name='referenceformread'),
     url(r'^exportexcelsuggestions$', views.ExportExcelSuggestions, name='exportexcelsuggestions'),
     url(r'^exportexcelmodifications$', views.ExportExcelModifications, name='exportexcelmodifications'),

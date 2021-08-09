@@ -4,7 +4,7 @@ from django.views.generic import TemplateView
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-from django.db.models import Count, Case, When, Min
+from django.db.models import Count, Case, When, Min, Q
 from django.core.cache import cache
 
 from common import definitions
@@ -264,13 +264,16 @@ def getReferenceTable(filtering, assay_type):
             .values('experiment__receptor__family__slug',
                     'experiment__ligand_id')
             .annotate(orders=Count('order_no', distinct=True))
-            .filter(orders=2))
+            .filter(orders=2)
+            .values('experiment__receptor__family__slug')
+            .annotate(total=Count('experiment__ligand_id', distinct=True))
+            .annotate(biased=Count('log_bias_factor', filter=Q(log_bias_factor__gte=1))))
+
         #NEW CODE
         ligand_count = {}
         for entry in ligand_zero:
             if entry['experiment__receptor__family__slug'] not in ligand_count.keys():
-                ligand_count[entry['experiment__receptor__family__slug']] = 0
-            ligand_count[entry['experiment__receptor__family__slug']] += 1
+                ligand_count[entry['experiment__receptor__family__slug']] = [entry['total'], entry['biased']]
 
         # original code
         # for entry in ligand_set:
@@ -281,7 +284,7 @@ def getReferenceTable(filtering, assay_type):
               <tr> \
                 <th colspan=1>&nbsp;</th> \
                 <th colspan=5>Receptor classification</th> \
-                <th colspan=1>Number of tested ligands</th> \
+                <th colspan=2>Number of ligands</th> \
               </tr> \
               <tr> \
                 <th><br><br><input autocomplete='off' class='form-check-input' type='checkbox' onclick='return check_all_targets();'></th> \
@@ -290,7 +293,8 @@ def getReferenceTable(filtering, assay_type):
                 <th style=\"width; 100px;\">Family<br>&nbsp;</th> \
                 <th class=\"text-highlight\">Receptor<br>(UniProt)</th> \
                 <th class=\"text-highlight\">Receptor<br>(GtP)</th> \
-                <th>Count</th> \
+                <th>Tested</th> \
+                <th>Biased (bf≥1)</th> \
               </tr> \
             </thead>\
             \n \
@@ -329,8 +333,10 @@ def getReferenceTable(filtering, assay_type):
 
             # Ligand count
             t['ligand_count'] = 0
+            t['biased_cound'] = 0
             if t['slug'] in ligand_count:
-                t['ligand_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_count[t['slug']])
+                t['ligand_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_count[t['slug']][0])
+                t['biased_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_count[t['slug']][1])
             else:
                 continue
 
@@ -343,6 +349,7 @@ def getReferenceTable(filtering, assay_type):
             <td><span class=\"expand\">{}</span></td> \
             <td><span class=\"expand\">{}</span></td> \
             <td>{}</td> \
+            <td>{}</td> \
             </tr> \n".format(
                 t['slug'],
                 t['name'],
@@ -353,6 +360,7 @@ def getReferenceTable(filtering, assay_type):
                 t['uniprot'],
                 t['iuphar'],
                 t['ligand_count'],
+                t['biased_count'],
             )
 
         data_table += "</tbody></table>"
@@ -2148,8 +2156,9 @@ def ResiduesUpload(request):
 
     return render(request, 'common/selection_lists.html', selection.dict(selection_type))
 
+
 @csrf_exempt
-def ReadTargetInput(request):
+def ReadBiasTargetInput(request):
     """Receives the data from the input form and adds the listed targets to the selection"""
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
@@ -2207,7 +2216,64 @@ def ReadTargetInput(request):
     # add simple selection to session
     request.session['selection'] = simple_selection
     # context
-    
+
+    context = selection.dict(selection_type)
+    return render(request, 'common/selection_lists.html', context)
+
+
+@csrf_exempt
+def ReadTargetInput(request):
+    """Receives the data from the input form and adds the listed targets to the selection"""
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
+    selection_type = 'targets'
+    selection_subtype = 'protein'
+
+    if request.POST == {}:
+        return render(request, 'common/selection_lists.html', '')
+
+    # Process input names
+    up_names = request.POST['input-targets'].split('\r')
+    for up_name in up_names:
+        up_name = up_name.strip()
+        obj = None
+        if "_" in up_name: # Maybe entry name
+            selection_subtype = 'protein'
+            try:
+                obj = Protein.objects.get(entry_name=up_name.lower())
+            except:
+                obj = None
+        else: # Maybe accession code
+            selection_subtype = 'protein'
+            try:
+                obj = Protein.objects.get(accession=up_name.upper())
+            except:
+                obj = None
+
+        # Try slugs
+        if obj == None and (up_name.isnumeric() or "_" in up_name):
+            selection_subtype = 'family'
+            try:
+                obj = ProteinFamily.objects.get(slug=up_name)
+            except:
+                obj = None
+
+        if obj != None:
+            selection_object = SelectionItem(selection_subtype, obj)
+            selection.add(selection_type, selection_subtype, selection_object)
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+    # context
+
     context = selection.dict(selection_type)
     return render(request, 'common/selection_lists.html', context)
 
