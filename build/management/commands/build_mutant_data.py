@@ -420,37 +420,16 @@ class Command(BaseBuild):
                 else: #assume doi
                     pub_type = 'doi'
 
-                if r['reference'] not in self.publication_cache:
-                    try:
-                        wl = WebLink.objects.get(index=r['reference'], web_resource__slug=pub_type)
-                    except WebLink.DoesNotExist:
-                        try:
-                            wl = WebLink.objects.create(index=r['reference'],
-                                    web_resource = WebResource.objects.get(slug=pub_type))
-                        except IntegrityError:
-                            wl = WebLink.objects.get(index=r['reference'], web_resource__slug=pub_type)
+                if r['reference'] not in self.publication_cache and len(r['reference']) > 0:
+                    if pub_type == 'doi':
+                        pub = Publication.get_or_create_from_doi(r['reference'])
+                    elif pub_type == 'pubmed':
+                        pub = Publication.get_or_create_from_pubmed(r['reference'])
 
+                    if not pub:
+                        self.logger.error('error with reference ' + str(r['reference']) + ' ' + pub_type)
+                        continue #if something off with publication, skip.
 
-                    try:
-                        pub = Publication.objects.get(web_link=wl)
-                    except Publication.DoesNotExist:
-                        pub = Publication()
-                        try:
-                            pub.web_link = wl
-                            pub.save()
-                        except IntegrityError:
-                            pub = Publication.objects.get(web_link=wl)
-
-
-                        if pub_type == 'doi':
-                            pub.update_from_doi(doi=r['reference'])
-                        elif pub_type == 'pubmed':
-                            pub.update_from_pubmed_data(index=r['reference'])
-                        try:
-                            pub.save()
-                        except:
-                            self.logger.error('error with reference ' + str(r['reference']) + ' ' + pub_type)
-                            continue #if something off with publication, skip.
                     self.publication_cache[r['reference']] = pub
                 else:
                     pub = self.publication_cache[r['reference']]
@@ -466,36 +445,33 @@ class Command(BaseBuild):
                 # print(r['review'],pub_type)
                 if r['review']:
                     if r['review'] not in self.publication_cache:
-                        try:
-                            wl = WebLink.objects.get(index=r['review'], web_resource__slug=pub_type)
-                        except WebLink.DoesNotExist:
+                        if pub_type == "doi":
+                            pub_review = Publication.get_or_create_from_doi(r['review'])
+                        elif pub_type == "pubmed":
+                            pub_review = Publication.get_or_create_from_pubmed(r['review'])
+                        elif pub_type == "raw_link":
                             try:
-                                wl = WebLink.objects.create(index=r['review'],
-                                        web_resource = WebResource.objects.get(slug=pub_type))
+                                wl, created = WebLink.objects.get_or_create(index__iexact=r['review'], web_resource__slug=pub_type)
                             except IntegrityError:
-                                wl = WebLink.objects.get(index=r['review'], web_resource__slug=pub_type)
+                                # Try again (paralellization)
+                                wl, created = WebLink.objects.get_or_create(index__iexact=r['review'], web_resource__slug=pub_type)
 
-                        try:
-                            pub_review = Publication.objects.get(web_link=wl)
-                        except Publication.DoesNotExist:
-                            pub_review = Publication()
                             try:
-                                pub_review.web_link = wl
-                                pub_review.save()
-                            except IntegrityError:
                                 pub_review = Publication.objects.get(web_link=wl)
+                            except Publication.DoesNotExist:
+                                pub_review = Publication()
+                                try:
+                                    pub_review.web_link = wl
+                                    pub_review.save()
+                                except IntegrityError:
+                                    pub_review = Publication.objects.get(web_link=wl)
+                                    pub_review.save()
 
+                        if not pub_review:
+                            self.logger.error('error with review ' + str(r['review']) + ' ' + pub_type)
+                            continue #if something off with publication, skip.
 
-                            if pub_type == 'doi':
-                                pub_review.update_from_doi(doi=r['review'])
-                            elif pub_type == 'pubmed':
-                                pub_review.update_from_pubmed_data(index=r['review'])
-                            try:
-                                pub_review.save()
-                            except:
-                                self.logger.error('error with review ' + str(r['review']) + ' ' + pub_type)
-                                continue #if something off with publication, skip.
-                            self.publication_cache[r['review']] = pub_review
+                        self.publication_cache[r['review']] = pub_review
                     else:
                         pub_review = self.publication_cache[r['review']]
                 else:
@@ -753,7 +729,9 @@ class Command(BaseBuild):
                 diff = round(end - current,2)
 
             except:
-                print('error with mutation record',r)
+                print('error with mutation record')
+                #traceback.print_exc()
+
             #print(diff)
 
         self.logger.info('Parsed '+str(c)+' mutant data entries. Skipped '+str(skipped))

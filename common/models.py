@@ -36,7 +36,7 @@ class WebResource(models.Model):
 
     def __str__(self):
         return self.url
-    
+
     class Meta():
         db_table = 'web_resource'
 
@@ -47,7 +47,7 @@ class WebLink(models.Model):
     # And now generating the working url is just a piece of cake
     def __str__(self):
         return Template(str(self.web_resource)).substitute(index=self.index)
-    
+
     class Meta():
         db_table = 'web_link'
         unique_together = ('web_resource', 'index')
@@ -68,24 +68,70 @@ class Publication(models.Model):
         db_table = 'publication'
 
 
+
+    @staticmethod
+    def get_or_create_from_type(identifier, wr):
+        if len(identifier) > 0:
+            # First test if identifier for publication already exists
+            try:
+                wl = WebLink.objects.get(index__iexact=identifier, web_resource=wr)
+                publications = Publication.objects.filter(web_link=wl)
+                if publications.count() == 1:
+                    return publications.first()
+            except WebLink.DoesNotExist:
+                wl = False
+
+            pub = Publication()
+            pub.web_link, created = WebLink.objects.get_or_create(index__iexact=identifier, web_resource=wr)
+            if wr.slug=="doi":
+                pub.update_from_doi(identifier)
+            elif wr.slug == "pubmed":
+                pub.update_from_pubmed_data(identifier)
+            pub.save()
+
+            return pub
+        else:
+            return False
+
+    @classmethod
+    def get_or_create_from_doi(cls, doi):
+        return cls.get_or_create_from_type(doi, WebResource.objects.get(slug="doi"))
+
+    @classmethod
+    def get_or_create_from_pubmed(cls, pmid):
+        return cls.get_or_create_from_type(pmid, WebResource.objects.get(slug="pubmed"))
+
     #http://www.ncbi.nlm.nih.gov/pubmed/?term=10.1124%2Fmol.107.040097&report=xml&format=text
     # use NCBI instead to correct year published (journal year)
 
     def update_from_doi(self, doi):
         logger = logging.getLogger('build')
-        # should entrez be tried as a backup?
-        try_entrez_on_fail = False
-        
+
+        # First use Entrez for consistency with PMID added entries
+        try:
+            Entrez.email = 'info@gpcrdb.org'
+            record = Entrez.read(Entrez.esearch(
+                db='pubmed',
+                retmax=1,
+                term=doi
+                ))
+            self.update_from_pubmed_data(record['IdList'][0])
+            return True
+        except:
+            return False
+
+        # Alternatively try Crossref
+
         # check whether this data is cached
         cache_dir = ['crossref', 'doi']
         url = 'http://api.crossref.org/works/$index'
         pub = fetch_from_web_api(url, doi, cache_dir)
-                
+
         if pub:
             # update record
             try:
                 self.title = pub['message']['title'][0]
-                try: 
+                try:
                     self.year = pub['message']['created']['date-parts'][0][0]
                 except:
                     self.year = pub['message']['deposited']['date-parts'][0][0]
@@ -94,7 +140,7 @@ class Publication(models.Model):
                 authors = ['{} {}'.format(x['family'], ''.join([y[:1] for y in x['given'].split()]))
                     for x in pub['message']['author']]
                 self.authors = ', '.join(authors)
-            
+
                 # get volume and pages if available
                 reference = {}
                 fields = ['volume', 'page']
@@ -105,15 +151,16 @@ class Publication(models.Model):
                         reference[f] = 'X'
                 self.reference = '{}:{}'.format(reference['volume'], reference['page'])
 
-                # journal
+                # Journal name and abbreviation
                 journal = pub['message']['container-title'][0]
-                try:
+                if "short-container-title" in pub['message'] and len(pub['message']['short-container-title']) != 0 and len(pub['message']['short-container-title'][0])>0:
                     # not all records have the journal abbreviation
-                    journal_abbr = pub['message']['container-title'][1]
-                except:
+                    journal_abbr = pub['message']['short-container-title'][0]
+                else:
                     journal_abbr = slugify(journal)
+
                 try:
-                    self.journal, created = PublicationJournal.objects.get_or_create(name=journal,
+                    self.journal, created = PublicationJournal.objects.get_or_create(name__iexact=journal,
                         defaults={'slug': journal_abbr})
                     if created:
                         logger.info('Created journal {}'.format(journal))
@@ -121,23 +168,10 @@ class Publication(models.Model):
                     self.journal = PublicationJournal.objects.get(name=journal)
             except Exception as msg:
                 logger.warning('Processing data from CrossRef for {} failed: {}'.format(doi, msg))
-                try_entrez_on_fail = False
         else:
-            print("Publication not on crossref",doi)
-            try_entrez_on_fail = False
+            print("Publication not on crossref or Entrez", doi)
 
-        if try_entrez_on_fail:
-            # try searching entrez for DOI
-            try:
-                Entrez.email = 'info@gpcrdb.org'
-                record = Entrez.read(Entrez.esearch(
-                    db='pubmed',
-                    retmax=1,
-                    term=doi
-                    ))
-                self.update_from_pubmed_data(record['IdList'][0])
-            except:
-                return False
+        return False
 
     def update_from_pubmed_data(self, index=None):
         logger = logging.getLogger('build')
@@ -155,16 +189,14 @@ class Publication(models.Model):
                 # Sometimes 'DA' field does not exist, use alternative
                 self.year = record['DP'][:4]
 
-            record['JT'] = record['JT']
-            record['TA'] = record['TA']
             try:
-                self.journal, created = PublicationJournal.objects.get_or_create(name=record['JT'],
-                        defaults={'slug': record['TA']})
+                self.journal, created = PublicationJournal.objects.get_or_create(name__iexact=record['JT'],
+                        defaults={'slug': slugify(record['TA'])})
             except PublicationJournal.DoesNotExist:
-                j = PublicationJournal(slug=record['TA'], name=record['JT'])
+                j = PublicationJournal(slug=slugify(record['TA']), name=record['JT'])
                 j.save()
                 self.journal = j
-            
+
             self.reference = ""
             if 'VI' in record:
                 self.reference += record['VI']
@@ -218,4 +250,3 @@ class ReleaseStatisticsType(models.Model):
 
     class Meta():
         db_table = 'release_statistics_type'
-
