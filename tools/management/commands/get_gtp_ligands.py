@@ -1,14 +1,11 @@
-from concurrent.futures import ProcessPoolExecutor
-from multiprocessing import Pool
 from django.db import IntegrityError
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import Protein
-from ligand.models import *
+from ligand.models import GTP_endogenous_ligand, Ligand
 from common.models import WebLink, WebResource, Publication
 import logging
 import time
 import requests
-from multiprocessing.dummy import Pool as ThreadPool
 
 MISSING_PROTEINS = {}
 SKIPPED = 0
@@ -296,7 +293,7 @@ class Command(BaseBuild):
         return pub
 
     def get_publication(self, publication):
-        return Publication.objects.filter(web_link = web_link)[0]
+        return Publication.objects.filter(Web_link = web_link)[0]
 
     def get_ligands(self):
         response = requests.get(
@@ -335,7 +332,6 @@ class Command(BaseBuild):
                         target_list.extend(entry['targetIds'])
             except:
                 print("Was a nice sleep, now let me continue...")
-                pass
         return target_list
 
     def get_ligand_assays(self, targets):
