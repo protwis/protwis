@@ -11,7 +11,7 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.views.generic import TemplateView, DetailView, ListView
 
-from django.db.models import Count, Subquery, OuterRef, Prefetch
+from django.db.models import Count, Subquery, OuterRef
 from django.views.decorators.csrf import csrf_exempt
 
 from django.core.cache import cache
@@ -2246,7 +2246,6 @@ class EndogenousLigandsBrowser(ListView):
     def get_queryset(self):
         protein_list = list()
         try:
-
             simple_selection = self.request.session.get('selection', False)
             a = Alignment()
             # load data from selection into the alignment
@@ -2260,10 +2259,11 @@ class EndogenousLigandsBrowser(ListView):
         ).prefetch_related('ligand','ligand__properities','receptor', 'receptor__family','receptor__residue_numbering_scheme',
         'receptor__family__parent', 'receptor__family__parent__parent__parent',
         'receptor__family__parent__parent','receptor__species')
-        resultset = self.process_data(queryset)
+        resultset = EndogenousLigandsBrowser.process_data(queryset)
         return resultset
 
-    def process_data(self, queryset):
+    @staticmethod
+    def process_data(queryset):
         context = list()
         reference_dict = dict()
         for assay in queryset:
