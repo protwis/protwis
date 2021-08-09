@@ -292,9 +292,6 @@ class Command(BaseBuild):
 
         return pub
 
-    def get_publication(self, publication):
-        return Publication.objects.filter(Web_link = web_link)[0]
-
     def get_ligands(self):
         response = requests.get(
             "https://www.guidetopharmacology.org/services/ligands")
@@ -307,7 +304,9 @@ class Command(BaseBuild):
                 temp['type'] = entry['type']
                 self.save_ligand_copy(temp)
             except:
-                pass
+                self.mylog.debug(
+                    "ligand fetching error | module: fetch_publication. Row # is :")
+
 
     def get_gpcrs(self):
         target_list = list()
