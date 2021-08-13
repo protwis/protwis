@@ -78,44 +78,58 @@ class Command(BaseBuild):
         self.gprot_cache = df.set_index('UniProt').T.to_dict('dict')
 
     def build_bias_data(self):
-        print('prestage, process excell')
+        print('1prestage, process excell')
         self.process_gproteins_excel()
         print('Build bias data gproteins')
         context = dict()
         content = self.get_from_model()
-        print('stage # 1 : Getting data finished, data points: ', len(content))
+        import pdb; pdb.set_trace()
+        print('stage # 2 : Getting data finished, data points: ', len(content))
         content_with_children = self.process_data(content)
-        print('stage # 2: Processing children in queryset finished',
+        import pdb; pdb.set_trace()
+        print('stage # 3: Processing children in queryset finished',
               len(content_with_children))
         changed_data = self.queryset_to_dict(content_with_children)
-        print('stage # 3: Converting queryset into dict finished', len(changed_data))
+        import pdb; pdb.set_trace()
+        print('stage # 4: Converting queryset into dict finished', len(changed_data))
         send = self.combine_unique(changed_data)
+        import pdb; pdb.set_trace()
         print('stage # 5: Selecting endogenous ligands finished')
         referenced_assay = self.process_referenced_assays(send)
+        import pdb; pdb.set_trace()
         print('stage # 6: Separating reference assays is finished',
               len(referenced_assay))
         ligand_data = self.separate_ligands(referenced_assay)
+        import pdb; pdb.set_trace()
         print('stage # 7: Separate ligands finished')
         limit_family = self.process_signalling_proteins(ligand_data)
+        import pdb; pdb.set_trace()
         print('stage # 8: process_signalling_proteins finished', len(limit_family))
         calculated_assay = self.process_calculation(limit_family)
+        import pdb; pdb.set_trace()
         print('stage # 9: Calucating finished')
         self.count_publications(calculated_assay)
+        import pdb; pdb.set_trace()
         print('stage # 10: labs and publications counted')
         context.update({'data': calculated_assay})
+        import pdb; pdb.set_trace()
         print('stage # 11: combining data into common dict is finished')
         # save dataset to model
         self.save_data_to_model(context, 'different_family')
         print('stage # 12: saving data to model is finished')
 
     def get_from_model(self):
-        try:
-            content = BiasedExperiment.objects.all().prefetch_related(
-                'experiment_data', 'ligand', 'receptor', 'publication', 'publication__web_link', 'experiment_data__emax_ligand_reference',
-            ).order_by('publication', 'receptor', 'ligand')
-        except BiasedExperiment.DoesNotExist:
-            self.logger.info('Data is not returned')
-            content = None
+        content = BiasedExperiment.objects.filter(receptor_id = 1).filter(publication_id= 4313).prefetch_related(
+            'experiment_data', 'ligand', 'receptor', 'publication', 'publication__web_link', 'experiment_data__emax_ligand_reference',
+        ).order_by('publication', 'receptor', 'ligand')
+
+        # try:
+        #     content = BiasedExperiment.objects.all().prefetch_related(
+        #         'experiment_data', 'ligand', 'receptor', 'publication', 'publication__web_link', 'experiment_data__emax_ligand_reference',
+        #     ).order_by('publication', 'receptor', 'ligand').filter(receptor_id = 7).filter(publication_id= 4102)
+        # except BiasedExperiment.DoesNotExist:
+        #     self.logger.info('Data is not returned')
+        #     content = None
         return content
 
     def process_data(self, content):
@@ -354,11 +368,13 @@ class Command(BaseBuild):
 
             i[1]['assay_list'] = self.calculate_bias_factor_value(
                 i[1]['assay_list'], i[1]['reference_assays_list'])
-
+            print('\n lbfcdbd')
+            
+            import pdb; pdb.set_trace()
             i[1]['assay_list'] = self.sort_assay_list(i[1]['assay_list'])
             i[1]['backup_assays'] = i[1]['assay_list']
-            i[1]['assay_list'] = self.limit_family_set(i[1]['assay_list'])
 
+            i[1]['assay_list'] = self.limit_family_set(i[1]['assay_list'])
             for item in enumerate(i[1]['assay_list']):
                 item[1]['order_no'] = item[0]
         self.logger.info('process_signalling_proteins')
@@ -461,7 +477,8 @@ class Command(BaseBuild):
                 if assay['family'] == reference['family']:
                     if assay['assay_type'] == reference['assay_type']:
                         if assay['cell_line'] == reference['cell_line']:
-                            assay['reference_ligand'].append(reference)
+                            assay['reference_ligand'] = reference
+
                             assay['reference_assay_id'] = reference['assay_id']
                             assay['assay_reference'] = reference['assay_initial']
                             if assay['order_bias_value']:
@@ -480,11 +497,10 @@ class Command(BaseBuild):
             # TODO: select primary endogneous
             # if len(reference)>1 and assay['qualitative_activity'] == 'No activity':
             #     import pdb; pdb.set_trace()
-
             assay_a = assay['quantitive_activity']
             assay_b = assay['quantitive_efficacy']
-            reference_a = reference[0]['quantitive_activity']
-            reference_b = reference[0]['quantitive_efficacy']
+            reference_a = reference['quantitive_activity']
+            reference_b = reference['quantitive_efficacy']
             result = math.log10((assay_b / assay_a)) - \
                 math.log10((reference_b / reference_a))
         except:
@@ -499,6 +515,8 @@ class Command(BaseBuild):
             # calculate log bias
             self.calc_bias_factor(i[1]['biasdata'], i[1]
                                   ['reference_assays_list'])
+            print('\n log bias factor')
+            import pdb; pdb.set_trace()
             # recalculates lbf if it is negative
             # i[1]['biasdata'] = self.validate_lbf(i)
             self.calc_potency_and_transduction(i[1]['biasdata'])

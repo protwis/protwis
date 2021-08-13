@@ -76,8 +76,7 @@ class Command(BaseBuild):
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
-        # import the structure data
-        self.purge_bias_data()
+        # import the structure data        
         self.prepare_all_data(options['filename'])
         try:
             print('CREATING BIAS DATA')

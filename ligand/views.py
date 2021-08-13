@@ -1544,7 +1544,8 @@ class BiasPathways(TemplateView):
     End  of Bias Browser
     '''
 
-class BiasTargetSelection(BiasLigandSelectionTable):
+
+class BiasTargetSelection(AbsReferenceSelectionTable):
     step = 1
     number_of_steps = 1
     filters = False
@@ -1555,8 +1556,8 @@ class BiasTargetSelection(BiasLigandSelectionTable):
         + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
 
     selection_boxes = OrderedDict([
-        ('reference', False),
-        ('targets', True),
+        ('reference', True),
+        ('targets', False),
         ('segments', False),
     ])
     buttons = {
@@ -1569,7 +1570,7 @@ class BiasTargetSelection(BiasLigandSelectionTable):
     table_data = getReferenceTable("different_family", "tested_assays")
 
 
-class BiasGTargetSelection(BiasLigandSelectionTable):
+class BiasGTargetSelection(AbsReferenceSelectionTable):
     step = 1
     number_of_steps = 1
     filters = False
@@ -1579,8 +1580,8 @@ class BiasGTargetSelection(BiasLigandSelectionTable):
     description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
         + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
     selection_boxes = OrderedDict([
-        ('reference', False),
-        ('targets', True),
+        ('reference', True),
+        ('targets', False),
         ('segments', False),
     ])
     buttons = {
@@ -1593,7 +1594,7 @@ class BiasGTargetSelection(BiasLigandSelectionTable):
     table_data = getReferenceTable("sub_different_family", "sub_tested_assays")
 
 
-class BiasPredictionTargetSelection(BiasLigandSelectionTable):
+class BiasPredictionTargetSelection(AbsReferenceSelectionTable):
     step = 1
     number_of_steps = 1
     filters = False
@@ -1603,8 +1604,8 @@ class BiasPredictionTargetSelection(BiasLigandSelectionTable):
     description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
         + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
     selection_boxes = OrderedDict([
-        ('reference', False),
-        ('targets', True),
+        ('reference', True),
+        ('targets', False),
         ('segments', False),
     ])
     buttons = {
@@ -1631,8 +1632,8 @@ def CachedBiasBrowsers(browser_type, request):
     try:
         simple_selection = request.session.get('selection', False)
 
-        families = []
-        for target in simple_selection.targets:
+        families = []    
+        for target in simple_selection.reference:
             if target.type == 'protein':
                 protein_ids.append(target.item.entry_name)
             elif target.type == 'family':
@@ -1686,8 +1687,9 @@ class BiasBrowser(ListView):
         protein_list = list()
         try:
             simple_selection = self.request.session.get('selection', False)
-
-            for item in simple_selection.targets:
+            #I know it's a for cycle, but it should be just one element
+            #since it's coming from a reference
+            for item in simple_selection.reference:
                 protein_list.append(item.item)
         except:
             protein_list.append(1)
@@ -1876,7 +1878,9 @@ class BiasGBrowser(ListView):
         protein_list = list()
         try:
             simple_selection = self.request.session.get('selection', False)
-            for item in simple_selection.targets:
+            #I know it's a for cycle, but it should be just one element
+            #since it's coming from a reference
+            for item in simple_selection.reference:
                 protein_list.append(item.item)
         except:
             protein_list.append(1)
@@ -2068,7 +2072,7 @@ class BiasPredictionBrowser(ListView):
             simple_selection = self.request.session.get('selection', False)
             #I know it's a for cycle, but it should be just one element
             #since it's coming from a reference
-            for item in simple_selection.targets:
+            for item in simple_selection.reference:
                 protein_list.append(item.item)
         except:
             protein_list.append(1)
