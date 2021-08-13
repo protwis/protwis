@@ -115,7 +115,7 @@ TEMPLATES = [
                 'django.template.context_processors.static',
                 'django.template.context_processors.tz',
                 'django.contrib.messages.context_processors.messages',
-                'protwis.context_processors.current_site',                
+                'protwis.context_processors.current_site',
                 'protwis.context_processors.documentation_url',
                 'protwis.context_processors.google_analytics',
                 'protwis.context_processors.site_title'

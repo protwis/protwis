@@ -774,6 +774,28 @@ class BiasedRankOrder(TemplateView):
                          'Gq/11': 'G<sub>q/11</sub>',
                          'Gs': 'G<sub>s</sub>'}
 
+        sign_prot_conversion = {'-' : 'None',
+                                'arrestin-2 (b-arrestin-1)': 'Arrestin 2 (&beta;<sub>1</sub>)',
+                                'arrestin-3 (b-arrestin-2)': 'Arrestin 3 (&beta;<sub>2</sub>)',
+                                'g11': 'G<sub>11</sub>',
+                                'g12': 'G<sub>12</sub>',
+                                'g13': 'G<sub>13</sub>',
+                                'g14': 'G<sub>14</sub>',
+                                'g15': 'G<sub>15</sub>',
+                                'g16': 'G<sub>16</sub>',
+                                'gaqi5': 'G&alpha;qi5',
+                                'gaqδ6i4myr': 'G&alpha;qδ6i4myr',
+                                'gi1': 'G<sub>i1</sub>',
+                                'gi2': 'G<sub>i2</sub>',
+                                'gi3': 'G<sub>i3</sub>',
+                                'goa': 'G<sub>o&alpha;</sub>',
+                                'gob': 'G<sub>o&beta;</sub>',
+                                'golf': 'G<sub>olfactory</sub>',
+                                'gq': 'G<sub>q</sub>',
+                                'gs': 'G<sub>s</sub>',
+                                'gz': 'G<sub>z</sub>',
+                                'minigi': 'Mini-G'}
+
         if self.assay != "predicted_tested_assays":
             prefix = 'Δ'
         else:
@@ -809,6 +831,8 @@ class BiasedRankOrder(TemplateView):
                         "reference_assay_initial_id__quantitive_efficacy", #            17 Emax compared drug
                         "reference_assay_initial_id__family", # Pathway compared drug   18
                         "reference_assay_initial_id__biased_experiment__ligand__name", #19 Name compared drug
+                        "signalling_protein",   #subtype                                20
+                        "reference_assay_initial_id__signalling_protein", #             21 Compared signalling protein
                         ).distinct()) #check
 
         list_of_ligands = []
@@ -822,11 +846,15 @@ class BiasedRankOrder(TemplateView):
         Colors = {}
         pathway_nr = {}
         labels_dict = {}
+
         for result in publications:
-            try:
-                reference_path = tooltip_dict[result[18]]
-            except KeyError:
-                reference_path = result[18]
+            if self.assay == 'sub_tested_assays':
+                reference_path = sign_prot_conversion[result[21]]
+            else:
+                try:
+                    reference_path = tooltip_dict[result[18]]
+                except KeyError:
+                    reference_path = result[18]
 
             #checking the value to plot
             #based on the landing page
@@ -906,6 +934,7 @@ class BiasedRankOrder(TemplateView):
                     jitterDict[jitterAuthors][lig_name]['2nd_Pathway_emax_tau'] = emax_tau
                     jitterDict[jitterAuthors][lig_name]['2nd_Pathway_EC50_KA'] = EC50_ka
                 jitterDict[jitterAuthors][lig_name]['deltadelta'] = DD
+                jitterDict[jitterAuthors][lig_name]['signalling_prot'] = result[20]
 
             if result[11] == 0:
                 jitterDict[jitterAuthors][lig_name]["Pathway"] = result[0]
@@ -1033,8 +1062,12 @@ class BiasedRankOrder(TemplateView):
                         color = '#%02x%02x%02x' % (BiasedRankOrder.create_rgb_color(), BiasedRankOrder.create_rgb_color(), BiasedRankOrder.create_rgb_color())
                         Colors[ligand] = color
                     little = [reference_path, reference_EC50_ka, reference_emax_tau, result[19]]
-                    big = [jitterDict[pub][ligand]["Pathway"], jitterDict[pub][ligand]['delta'], jitterDict[pub][ligand]['Emax_Tau'], jitterDict[pub][ligand]['EC50_KA'],
-                           jitterDict[pub][ligand]['2nd_Pathway'], jitterDict[pub][ligand]['2nd_Pathway_delta'], jitterDict[pub][ligand]['2nd_Pathway_emax_tau'], jitterDict[pub][ligand]['2nd_Pathway_EC50_KA']]
+                    if self.assay == "sub_tested_assays":
+                        big = [sign_prot_conversion[jitterDict[pub][ligand]["signalling_prot"]], jitterDict[pub][ligand]['delta'], jitterDict[pub][ligand]['Emax_Tau'], jitterDict[pub][ligand]['EC50_KA'],
+                               sign_prot_conversion[jitterDict[pub][ligand]["signalling_prot"]], jitterDict[pub][ligand]['2nd_Pathway_delta'], jitterDict[pub][ligand]['2nd_Pathway_emax_tau'], jitterDict[pub][ligand]['2nd_Pathway_EC50_KA']]
+                    else:
+                        big = [jitterDict[pub][ligand]["Pathway"], jitterDict[pub][ligand]['delta'], jitterDict[pub][ligand]['Emax_Tau'], jitterDict[pub][ligand]['EC50_KA'],
+                               jitterDict[pub][ligand]['2nd_Pathway'], jitterDict[pub][ligand]['2nd_Pathway_delta'], jitterDict[pub][ligand]['2nd_Pathway_emax_tau'], jitterDict[pub][ligand]['2nd_Pathway_EC50_KA']]
                     if (jitterDict[pub][ligand]['deltadelta'][1] == 'High Bias') or (jitterDict[pub][ligand]['deltadelta'][1] == 'Full Bias'):
                         tooltip = BiasedRankOrder.jitter_tooltip(self.page, self.assay, ligand, jitterDict[pub][ligand]['deltadelta'][1], components, prefix, small_data=little, large_data=big)
                     else:
