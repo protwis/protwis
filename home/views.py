@@ -7,7 +7,7 @@ from django.db.models import F
 from protwis.context_processors import site_title
 from news.models import News
 from common.models import ReleaseNotes, ReleaseStatistics, Citation
-from protein.models import Protein, ProteinGProteinPair
+from protein.models import Protein, ProteinCouplings
 from structure.models import StructureComplexModel
 from contactnetwork.models import InteractingResiduePair
 from signprot.models import SignprotComplex, SignprotStructure
@@ -80,7 +80,7 @@ def index(request):
             context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + "GPCR-G protein interface" + "</span>", "value": "<span  class=\"stats_value\">" + "{:,}".format(interface_interactions_count) + "</span>"})
 
             context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry stats_title\"><i>Couplings</i></span>", "value" : "<span  class=\"stats_value\"></span>"})
-            context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + "GPCR-G protein coupling" + "</span>", "value": "<span  class=\"stats_value\">" + "{:,}".format(ProteinGProteinPair.objects.all().count()) + "</span>"})
+            context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + "GPCR-G protein coupling" + "</span>", "value": "<span  class=\"stats_value\">" + "{:,}".format(ProteinCouplings.objects.all().count()) + "</span>"})
 
             context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry stats_title\"><i>Mutations</i></span>", "value" : "<span  class=\"stats_value\"></span>"})
             context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + "Interface mutations" + "</span>", "value": "<span  class=\"stats_value\">" + "{:,}".format(54) + "</span>"})

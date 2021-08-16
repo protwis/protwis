@@ -9,7 +9,7 @@ from collections import Counter
 
 from residue.models import ResidueGenericNumberEquivalent
 from signprot.models import SignprotComplex
-from protein.models import Protein, ProteinSegment, ProteinFamily, ProteinGProteinPair
+from protein.models import Protein, ProteinSegment, ProteinFamily, ProteinCouplings
 from common.definitions import *
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -371,7 +371,7 @@ def fill_coupling_data_container(data, sources=["GuideToPharma", "Aska"]):
     distinct_g_subunit_families = {}
     distinct_sources = sources
 
-    couplings = ProteinGProteinPair.objects.all().prefetch_related(
+    couplings = ProteinCouplings.objects.all().prefetch_related(
         "protein", "g_protein_subunit", "g_protein"
     )
 
@@ -380,7 +380,7 @@ def fill_coupling_data_container(data, sources=["GuideToPharma", "Aska"]):
         # Skip entries without any annotation
         if p not in data:
             continue
-        
+
         s = c.source
         t = c.transduction
         m = c.log_rai_mean

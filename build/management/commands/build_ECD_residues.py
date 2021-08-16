@@ -4,7 +4,7 @@ from django.conf import settings
 from django.db import connection
 from django.db import IntegrityError
 
-from protein.models import (Protein, ProteinGProtein,ProteinGProteinPair, ProteinConformation, ProteinState, ProteinFamily, ProteinAlias,
+from protein.models import (Protein, ProteinConformation, ProteinState, ProteinFamily, ProteinAlias,
         ProteinSequenceType, Species, Gene, ProteinSource, ProteinSegment, ProteinAnomaly)
 
 from residue.models import (ResidueNumberingScheme, ResidueGenericNumber, Residue, ResidueGenericNumberEquivalent)
@@ -28,7 +28,7 @@ AA = {'ALA':'A', 'ARG':'R', 'ASN':'N', 'ASP':'D',
      'CYS':'C', 'GLN':'Q', 'GLU':'E', 'GLY':'G',
      'HIS':'H', 'ILE':'I', 'LEU':'L', 'LYS':'K',
      'MET':'M', 'PHE':'F', 'PRO':'P', 'SER':'S',
-     'THR':'T', 'TRP':'W', 'TYR':'Y', 'VAL':'V', 
+     'THR':'T', 'TRP':'W', 'TYR':'Y', 'VAL':'V',
      'YCM':'C', 'CSD':'C', 'TYS':'Y', 'SEP':'S'} #non-standard AAs
 
 
@@ -69,7 +69,7 @@ class Command(BaseBuild):
 		# wt_annotation = OrderedDict([('sctr_human', wt_annotation['sctr_human'])])
 		with open(self.B1_annotation_file, 'r') as fB1:
 			B1_annotation = yaml.load(fB1, Loader=yaml.FullLoader)
-		
+
 		for entry_name, val in wt_annotation.items():
 			protein = Protein.objects.get(entry_name=entry_name)
 			prot_conf = ProteinConformation.objects.get(protein=protein)

@@ -8,8 +8,8 @@ from decimal import Decimal
 from build.management.commands.base_build import Command as BaseBuild
 from common.tools import fetch_from_cache, save_to_cache, fetch_from_web_api
 from residue.models import Residue
-from protein.models import Protein
-from ligand.models import BiasedExperiment, BiasedExperimentVendors,AnalyzedExperiment, ExperimentAssay, ExperimentAssayAuthors, Ligand, LigandProperities, LigandType, LigandVendorLink
+from protein.models import Protein, ProteinCouplings
+from ligand.models import BiasedExperiment, BiasedExperimentVendors, AnalyzedExperiment, BiasedExperimentAssay, ExperimentAssayAuthors, Ligand, LigandProperities, LigandType, LigandVendorLink
 from mutation.models import Mutation
 from ligand.functions import get_or_make_ligand
 from common.models import WebLink, WebResource, Publication
@@ -450,10 +450,21 @@ class Command(BaseBuild):
             if assay_type == 'Ca2+ accumulation':
                 family = 'CA2'
 
-        else:
-            family = 'G-protein'
-        self.logger.info("family saved")
-        return family
+    def fetch_receptor_trunsducers(self, receptor):
+        primary = set()
+        temp = list()
+        try:
+            gprotein = ProteinCouplings.objects.filter(protein=receptor)
+            for x in gprotein:
+                if x.transduction and x.transduction == 'primary':
+                    primary.add(x.g_protein.name)
+
+            for i in primary:
+                temp.append(str(i))
+            return temp
+        except:
+            self.logger.info('receptor not found error')
+            return None
 
     def fetch_endogenous(self, protein):
         try:

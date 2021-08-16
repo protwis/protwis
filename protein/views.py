@@ -6,7 +6,7 @@ from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 from django.urls import reverse
 
-from protein.models import (Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene, ProteinGProteinPair,
+from protein.models import (Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene, ProteinCouplings,
                             ProteinSegment)
 from residue.models import Residue
 from structure.models import Structure, StructureModel, StructureExtraProteins
@@ -273,10 +273,10 @@ def SelectionAutocomplete(request):
 
 def g_proteins(request, **response_kwargs):
     """ Example of g_proteins """
-    proteins = Protein.objects.filter(source__name='SWISSPROT').prefetch_related('proteingproteinpair_set')
+    proteins = Protein.objects.filter(source__name='SWISSPROT').prefetch_related('proteincouplings_set')
     jsondata = {}
     for p in proteins:
-        gps = p.proteingproteinpair_set.all()
+        gps = p.protein_couplings_set.all()
         if gps:
             jsondata[str(p)] = []
             for gp in gps:

@@ -17,8 +17,8 @@ from common.tools import fetch_from_web_api
 from common.views import AbsTargetSelection
 from contactnetwork.models import InteractingResiduePair
 from mutation.models import MutationExperiment
-from protein.models import (Gene, Protein, ProteinAlias, ProteinConformation, ProteinFamily, ProteinGProtein,
-                            ProteinGProteinPair, ProteinArrestinPair, ProteinSegment)
+from protein.models import (Gene, Protein, ProteinAlias, ProteinConformation, ProteinFamily,
+                            ProteinCouplings, ProteinSegment)
 
 from residue.models import (Residue, ResidueGenericNumberEquivalent, ResiduePositionSet)
 from seqsign.sequence_signature import (SequenceSignature, SignatureMatch)
@@ -108,7 +108,7 @@ class ArrestinCoupling(TemplateView):
     Class based generic view which serves coupling data between Receptors and Arrestins.
     Data coming from Michel Bouvier only at the moment.
 
-    :param dataset: ProteinArrestinPair (see build/management/commands/build_arrestins.py)
+    :param dataset: ProteinCouplings (see build/management/commands/build_arrestins.py)
     :return: context
     """
 
@@ -132,26 +132,24 @@ class ArrestinCoupling(TemplateView):
         This function returns the required fields for the Arrestin subtypes table.
 
         :return: key.value pairs from dictotemplate dictionary
-        keys = id values in ProteinArrestinPair table.
+        keys = id values in ProteinCouplings table.
         values = source, class, family, uniprotid, iupharid, logmaxec50_deg, pec50_deg, emax_deg
         """
 
-        arrestins = ProteinArrestinPair.objects.filter(protein__species__common_name='Human',
-                                                       protein__sequence_type__slug='wt',
-                                                       protein__family__slug__startswith='00').prefetch_related(
+        arrestins = ProteinCouplings.objects.filter(protein__family__slug__startswith='00').prefetch_related(
             "protein__family",  # REMEMBER. Whatever you call in template prefetch to reduce SQL queries.
             "protein__family__parent__parent__parent",
-            "arrestin_subtype",
-            "arrestin_subtype__source"
+            "g_protein_subunit",
+            "g_protein_subunit__source"
         )
 
         signaling_data = {}
         for pairing in arrestins.values_list(
                 "protein__entry_name",
-                "arrestin_subtype__entry_name",
-                "emax_deg",
-                "pec50_deg",
-                "logmaxec50_deg"
+                "g_protein_subunit_id__entry_name",
+                "emax",
+                "pec50",
+                "logmaxec50"
         ):
             if pairing[0] not in signaling_data:
                 signaling_data[pairing[0]] = {}
@@ -179,7 +177,7 @@ class ArrestinCoupling(TemplateView):
             protein_data[prot.id]['accession'] = prot.protein.accession
             protein_data[prot.id]['entryname'] = prot.protein.entry_name
             protein_data[prot.id]['source'] = prot.source
-            protein_data[prot.id]['subtype'] = prot.arrestin_subtype
+            protein_data[prot.id]['subtype'] = prot.g_protein_subunit_id
 
             # MAKES 2396 SQL QUERIES, have to find out how to make it faster.
             # uniprot_links = prot.web_links.filter(web_resource__slug='uniprot')
@@ -235,7 +233,7 @@ class CouplingBrowser(TemplateView):
     Class based generic view which serves coupling data between Receptors and G-proteins.
     Data coming from Guide to Pharmacology, Asuka Inuoue and Michel Bouvier at the moment.
     More data might come later from Roth and Strachan TRUPATH biosensor and Neville Lambert.
-    :param dataset: ProteinGProteinPair (see build/management/commands/build_g_proteins.py)
+    :param dataset: ProteinCouplings (see build/management/commands/build_g_proteins.py)
     :return: context
     """
 
@@ -273,7 +271,7 @@ class CouplingBrowser(TemplateView):
             'web_links'
         )
 
-        couplings = ProteinGProteinPair.objects.filter(source="GuideToPharma").values_list('protein__entry_name',
+        couplings = ProteinCouplings.objects.filter(source="GuideToPharma").values_list('protein__entry_name',
                                                                                            'g_protein__name',
                                                                                            'transduction')
 
@@ -303,7 +301,7 @@ class CouplingBrowser(TemplateView):
             if len(gtop_links) > 0:
                 protein_data[prot.id]['gtp_link'] = gtop_links[0]
 
-            gprotein_families = ["Gs family", "Gi/Go family", "Gq/G11 family", "G12/G13 family"]
+            gprotein_families = ["Gs", "Gi/o", "Gq/11", "G12/13"]
             for gprotein in gprotein_families:
                 if prot.entry_name in signaling_data and gprotein in signaling_data[prot.entry_name]:
                     if signaling_data[prot.entry_name][gprotein] == "primary":
@@ -320,11 +318,11 @@ class CouplingBrowser(TemplateView):
             protein_data[prot.id]['gq11'] = protein_data[prot.id][gprotein_families[2]]
             protein_data[prot.id]['g1213'] = protein_data[prot.id][gprotein_families[3]]
 
-        couplings2 = ProteinGProteinPair.objects.filter(source__in=["Inoue", "Bouvier"]) \
+        couplings2 = ProteinCouplings.objects.filter(source__in=["Inoue", "Bouvier", "Roth"]) \
             .filter(g_protein_subunit__family__slug__startswith="100_001").order_by("g_protein_subunit__family__slug", "source") \
             .prefetch_related('g_protein_subunit__family', 'g_protein')
 
-        coupling_headers = ProteinGProteinPair.objects.filter(source__in=["Inoue", "Bouvier"]) \
+        coupling_headers = ProteinCouplings.objects.filter(source__in=["Inoue", "Bouvier", "Roth"]) \
             .filter(g_protein_subunit__family__slug__startswith="100_001") \
             .order_by("g_protein_subunit__family__slug", "source").distinct("g_protein_subunit__family__slug") \
             .values_list("g_protein_subunit__family__name", "g_protein_subunit__family__parent__name")
@@ -369,7 +367,7 @@ class CouplingBrowser(TemplateView):
                 dictotemplate[pair.protein_id]['couplingmax'][pair.source]['logemaxec50'] = deepcopy(coupling_placeholder3)
                 dictotemplate[pair.protein_id]['couplingmax'][pair.source]['pec50'] = deepcopy(coupling_placeholder3)
                 dictotemplate[pair.protein_id]['couplingmax'][pair.source]['emax'] = deepcopy(coupling_placeholder3)
-            subunit = pair.g_protein_subunit.family.name
+            subunit = pair.g_protein_subunit_id.family.name
             dictotemplate[pair.protein_id]['coupling'][pair.source]['logemaxec50'][subunit] = round(pair.logmaxec50_deg, 1)
             dictotemplate[pair.protein_id]['coupling'][pair.source]['pec50'][subunit] = round(pair.pec50_deg, 1)
             dictotemplate[pair.protein_id]['coupling'][pair.source]['emax'][subunit] = round(pair.emax_deg)
@@ -424,8 +422,8 @@ class CouplingBrowser(TemplateView):
                     dictotemplate[prot][dict_name][i][propval] = {}
 
                 for sub in dictotemplate[prot]['coupling']['1'][propval]: # use family here instead of sub for families "loop"
-                    family = coupling_reverse_header_names[sub].replace("/", "/G")
-                    gtp = protein_data[prot][family+" family"]
+                    family = coupling_reverse_header_names[sub]
+                    gtp = protein_data[prot][family]
                     baseconfidence = dictotemplate[prot]['coupling']['1'][propval][sub]
                     confidence = 0
                     if gtp != "-":
@@ -473,7 +471,7 @@ class CouplingBrowser(TemplateView):
                     dictotemplate[prot][dict_name][i][propval] = {}
 
                 for family in dictotemplate[prot]['couplingmax']['1'][propval]:
-                    gtp = protein_data[prot][family.replace("/", "/G") + " family"]
+                    gtp = protein_data[prot][family]
 
                     baseconfidence = dictotemplate[prot]['couplingmax']['1'][propval][family]
                     confidence = 0
@@ -498,50 +496,6 @@ class CouplingBrowser(TemplateView):
 
         return dictotemplate, coupling_header_names
 
-
-def GProtein(request, dataset="GuideToPharma", render_part="both"):
-    name_of_cache = 'gprotein_statistics_{}'.format(dataset)
-
-    context = cache.get(name_of_cache)
-    if context == None:
-
-        context = OrderedDict()
-        i = 0
-        gproteins = ProteinGProtein.objects.all().prefetch_related('proteingproteinpair_set')
-
-        slug_translate = {'001': "ClassA", '002': "ClassB1", '004': "ClassC", '006': "ClassF"}
-        selectivitydata = {}
-        for slug in slug_translate.keys():
-            jsondata = {}
-            for gp in gproteins:
-                # ps = gp.proteingproteinpair_set.all()
-                ps = gp.proteingproteinpair_set.filter(protein__family__slug__startswith=slug,
-                                                       source=dataset).prefetch_related('protein')
-                # print(ps,len(ps))
-                if ps:
-                    jsondata[str(gp)] = []
-                    for p in ps:
-                        if dataset == "Aska" and p.log_rai_mean < -1:
-                            continue
-                        if str(p.protein.entry_name).split('_')[0].upper() not in selectivitydata:
-                            selectivitydata[str(p.protein.entry_name).split('_')[0].upper()] = []
-                        selectivitydata[str(p.protein.entry_name).split('_')[0].upper()].append(str(gp))
-                        # print(p.protein.family.parent.parent.parent)
-                        jsondata[str(gp)].append(str(p.protein.entry_name) + '\n')
-
-                    jsondata[str(gp)] = ''.join(jsondata[str(gp)])
-
-            context[slug_translate[slug]] = jsondata
-
-        context["selectivitydata"] = selectivitydata
-
-    cache.set(name_of_cache, context, 60 * 60 * 24 * 7)  # seven days timeout on cache
-    context["render_part"] = render_part
-
-    return render(request,
-                  'signprot/gprotein.html',
-                  context
-                  )
 
 def CouplingProfiles(request, render_part="both", signalling_data="empty"):
     name_of_cache = 'coupling_profiles_' + signalling_data
@@ -602,16 +556,16 @@ def CouplingProfiles(request, render_part="both", signalling_data="empty"):
         context['tree_orphan_a'] = json.dumps(orphan_data)
         # end copied section from StructureStatistics View
         # gprot_id = ProteinGProteinPair.objects.all().values_list('g_protein_id', flat=True).order_by('g_protein_id').distinct()
-        gproteins = ProteinGProtein.objects.filter(pk__lte = 4) #here GPa1 is fetched
-        arrestins = ProteinArrestinPair.objects.all().values_list('arrestin_subtype_id', flat=True).order_by('arrestin_subtype_id').distinct()
+        gproteins = ProteinCouplings.objects.filter(g_protein__slug__startswith="100").exclude(gprotein_id=553) #here GPa1 is fetched
+        arrestins = ProteinCouplings.objects.filter(g_protein__slug__startswith="200").values_list('g_protein_subunit', flat=True).order_by('g_protein_subunit').distinct()
         arrestin_prots = list(Protein.objects.filter(family__slug__startswith="200", species__id=1, sequence_type__slug='wt').values_list("pk","name"))
         arrestin_translate = {}
         for arr in arrestin_prots:
             arrestin_translate[arr[0]] = arr[1]
 
         slug_translate = {'001': "ClassA", '002': "ClassB1", '003': "ClassB2", '004': "ClassC", '006': "ClassF", '007': "ClassT"}
-        key_translate ={'Gs':"G<sub>s</sub>", 'Gi/Go':"G<sub>i/o</sub>",
-                        'Gq/G11':"G<sub>q/11</sub>", 'G12/G13':"G<sub>12/13</sub>",
+        key_translate ={'Gs':"G<sub>s</sub>", 'Gi/o':"G<sub>i/o</sub>",
+                        'Gq/11':"G<sub>q/11</sub>", 'G12/13':"G<sub>12/13</sub>",
                         'Beta-arrestin-1':"&beta;-Arrestin<sub>1</sub>", 'Beta-arrestin-2':"&beta;-Arrestin<sub>2</sub>"}
         selectivitydata_gtp_plus = {}
         receptor_dictionary = []
@@ -628,14 +582,14 @@ def CouplingProfiles(request, render_part="both", signalling_data="empty"):
             if signalling_data == "gprot":
                 for gp in gproteins:
                     # Collect GTP
-                    gtp_couplings = list(ProteinGProteinPair.objects.filter(protein__family__slug__startswith=slug, source="GuideToPharma", g_protein=gp)\
+                    gtp_couplings = list(ProteinCouplings.objects.filter(protein__family__slug__startswith=slug, source="GuideToPharma", g_protein=gp)\
                                     .order_by("protein__entry_name")\
                                     .values_list("protein__entry_name", flat=True)\
                                     .distinct())
                     # Other coupling data with logmaxec50 greater than 0
-                    other_couplings = list(ProteinGProteinPair.objects.filter(protein__family__slug__startswith=slug)\
+                    other_couplings = list(ProteinCouplings.objects.filter(protein__family__slug__startswith=slug)\
                                     .exclude(source="GuideToPharma")
-                                    .filter(g_protein=gp, logmaxec50_deg__gt=0)\
+                                    .filter(g_protein=gp, logmaxec50__gt=0)\
                                     .order_by("protein__entry_name")\
                                     .values_list("protein__entry_name").distinct()\
                                     .annotate(num_sources=Count("source", distinct=True)))
@@ -690,8 +644,8 @@ def CouplingProfiles(request, render_part="both", signalling_data="empty"):
             else: #here may need and elif if other signalling proteins will be added
                 for arr in arrestins:
                     # arrestins?
-                    arrestin_couplings = list(ProteinArrestinPair.objects.filter(protein__family__slug__startswith=slug, arrestin_subtype=arr)\
-                                    .filter(logmaxec50_deg__gt=0)\
+                    arrestin_couplings = list(ProteinCouplings.objects.filter(protein__family__slug__startswith=slug, g_protein_subunit=arr)\
+                                    .filter(logmaxec50__gt=0)\
                                     .order_by("protein__entry_name")\
                                     .values_list("protein__entry_name", flat=True)\
                                     .distinct())
@@ -989,7 +943,7 @@ def Ginterface(request, protein=None):
     GS_equivalent_interacting_pos = list(
         residuelist.filter(display_generic_number__label__in=interacting_gn).values_list('sequence_number', flat=True))
 
-    gProteinData = ProteinGProteinPair.objects.filter(protein__entry_name=protein)
+    gProteinData = ProteinCouplings.objects.filter(protein__entry_name=protein)
 
     primary = []
     secondary = []

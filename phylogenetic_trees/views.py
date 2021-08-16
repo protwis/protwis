@@ -12,7 +12,7 @@ from common.views import AbsMiscSelection
 from common.selection import SimpleSelection, Selection, SelectionItem
 from mutation.models import *
 from phylogenetic_trees.PrepareTree import *
-from protein.models import ProteinFamily, ProteinAlias, ProteinSet, Protein, ProteinSegment, ProteinGProteinPair
+from protein.models import ProteinFamily, ProteinAlias, ProteinSet, Protein, ProteinSegment, ProteinCouplings
 
 from copy import deepcopy
 import json
@@ -486,7 +486,7 @@ def render_tree_v3(request):
     # Grab G-protein coupling profile for all receptors covered by the selection
     # TODO: make general cache(s) for these kinds of data
     selectivitydata = {}
-    coupling = ProteinGProteinPair.objects.filter(protein__family__slug__in=protein_slugs, source="GuideToPharma").values_list('protein__family__slug', 'transduction').annotate(arr=ArrayAgg('g_protein__name'))
+    coupling = ProteinCouplings.objects.filter(protein__family__slug__in=protein_slugs, source="GuideToPharma").values_list('protein__family__slug', 'transduction').annotate(arr=ArrayAgg('g_protein__name'))
 
     for pairing in coupling:
         if pairing[0] not in selectivitydata:
