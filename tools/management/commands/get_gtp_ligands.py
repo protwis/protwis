@@ -114,75 +114,76 @@ class Command(BaseBuild):
                     if ligand and protein:
                         # if target == 1:
 
-                        self.get_ligand_interactions(ligand=ligand, ligand_id_gtp=data[0]['ligandId'], ligand_type=data[0]['type'],receptor=protein)
+                        self.get_ligand_interactions(target=target,ligand=ligand, ligand_id_gtp=data[0]['ligandId'], ligand_type=data[0]['type'],receptor=protein)
                     else:
                         pass
                     # except:
                     #     pass
 
-    def get_ligand_interactions(self, ligand, ligand_id_gtp, ligand_type, receptor):
+    def get_ligand_interactions(self, target, ligand, ligand_id_gtp, ligand_type, receptor):
         response = requests.get(
             "https://www.guidetopharmacology.org/services/ligands/" + str(ligand_id_gtp) + "/interactions")
         if response.status_code == 200:
             # import pdb; pdb.set_trace()
             data = response.json()
             for interaction in data:
-
-                emin=emax=eavg=kmin=kmax=kavg = None
-                if interaction['endogenous'] == True:
+                if interaction['targetId'] == target:
                     # import pdb; pdb.set_trace()
-                    if interaction['affinityParameter'] == 'pKi':
-                        try:
-                            temp = interaction['affinity'].strip().split("-")
-                            kmin = float(temp[0])
-                            kmax = float(temp[1])
-                            kavg = (kmin + kmax) / 2
-                        except:
-                            kavg = float(interaction['affinity'])
+                    emin=emax=eavg=kmin=kmax=kavg = None
+                    if interaction['endogenous'] == True:
+                        # import pdb; pdb.set_trace()
+                        if interaction['affinityParameter'] == 'pKi':
+                            try:
+                                temp = interaction['affinity'].strip().split("-")
+                                kmin = float(temp[0])
+                                kmax = float(temp[1])
+                                kavg = (kmin + kmax) / 2
+                            except:
+                                kavg = float(interaction['affinity'])
 
-                    if interaction['affinityParameter'] == 'pEC50':
-                        try:
-                            temp = interaction['affinity'].strip().split("-")
-                            emin = float(temp[0])
-                            emax = float(temp[1])
-                            eavg = (emin + emax) / 2
-                        except:
-                            eavg = float(interaction['affinity'])
-                    if kavg or eavg:
+                        if interaction['affinityParameter'] == 'pEC50':
+                            try:
+                                temp = interaction['affinity'].strip().split("-")
+                                emin = float(temp[0])
+                                emax = float(temp[1])
+                                eavg = (emin + emax) / 2
+                            except:
+                                eavg = float(interaction['affinity'])
+                        if kavg or eavg:
 
-                        try:
-                            ligand_type = ligand.properities.ligand_type.name
-                        except:
-                            ligand_type = None
-                        try:
-                            endo_ligand_type = interaction['type']
-                        except:
-                            endo_ligand_type = None
+                            try:
+                                ligand_type = ligand.properities.ligand_type.name
+                            except:
+                                ligand_type = None
+                            try:
+                                endo_ligand_type = interaction['type']
+                            except:
+                                endo_ligand_type = None
 
-                        link = "https://www.guidetopharmacology.org/GRAC/LigandDisplayForward?ligandId="+str(ligand_id_gtp)
-                        if self.fetch_experiment(ligand=ligand, receptor=receptor, pavg=kavg, eavg=eavg)==False:
-                            gtp_data = GTP_endogenous_ligand(
-                                    ligand = ligand,
-                                    ligand_type = ligand_type,
-                                    endogenous_princip = endo_ligand_type,
-                                    receptor = receptor,
-                                    pec50_avg = eavg,
-                                    pec50_min = emin,
-                                    pec50_max = emax,
-                                    pKi_avg = kavg,
-                                    pKi_min = kmin,
-                                    pKi_max = kmax,
-                                    gpt_link = link,
-                            )
-                            gtp_data.save()
-                        try:
-                            for reference in interaction['refs']:
-                                publication = self.fetch_publication(reference['pmid'])
-                                gtp_data.publication.add(publication)
-                        except:
-                            publication= None
-                    else:
-                        pass
+                            link = "https://www.guidetopharmacology.org/GRAC/LigandDisplayForward?ligandId="+str(ligand_id_gtp)
+                            if self.fetch_experiment(ligand=ligand, receptor=receptor, pavg=kavg, eavg=eavg)==False:
+                                gtp_data = GTP_endogenous_ligand(
+                                        ligand = ligand,
+                                        ligand_type = ligand_type,
+                                        endogenous_princip = endo_ligand_type,
+                                        receptor = receptor,
+                                        pec50_avg = eavg,
+                                        pec50_min = emin,
+                                        pec50_max = emax,
+                                        pKi_avg = kavg,
+                                        pKi_min = kmin,
+                                        pKi_max = kmax,
+                                        gpt_link = link,
+                                )
+                                gtp_data.save()
+                            try:
+                                for reference in interaction['refs']:
+                                    publication = self.fetch_publication(reference['pmid'])
+                                    gtp_data.publication.add(publication)
+                            except:
+                                publication= None
+                        else:
+                            pass
 
     def fetch_experiment(self, ligand, receptor, pavg, eavg):
         '''
