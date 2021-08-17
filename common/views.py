@@ -1327,7 +1327,7 @@ def SelectionGproteinToggle(request):
     g_prots_slugs = ['100_001_002', '100_001_003', '100_001_001', '100_001_004', '100_001_005']
     all_gprots = ProteinFamily.objects.filter(slug__in=g_prots_slugs)
     # all_gprots = ProteinGProtein.objects.all()
-    gprots = ProteinFamily.object.filter(pk=conversion[gprotein_id])
+    gprots = ProteinFamily.object.filter(pk=conversion[g_protein_id])
     # gprots = ProteinGProtein.objects.filter(pk=g_protein_id)
     # print("'{}'".format(ProteinGProtein.objects.get(pk=g_protein_id).name))
 
