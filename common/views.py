@@ -590,6 +590,12 @@ class AbsSegmentSelection(TemplateView):
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
+
+        # Set segment selection check if not set
+        for button in context["buttons"]:
+            if "onclick" not in context["buttons"][button]:
+                context["buttons"][button]["onclick"] = 'return VerifyMinSegmentSelection()'
+
         return context
 
 
