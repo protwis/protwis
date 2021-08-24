@@ -168,9 +168,10 @@ class Treeclass:
         ##################################################################
         else:
             simple_selection=request.session.get('selection', False)
-            a.load_proteins_from_selection(simple_selection)
+            a.load_proteins_from_selection(simple_selection, True)
             a.load_segments_from_selection(simple_selection)
             self.bootstrap,self.UPGMA,self.branches,self.ttype = map(int,simple_selection.tree_settings)
+
         if self.bootstrap!=0:
             self.bootstrap=pow(10,self.bootstrap)
         #### Create an alignment object
@@ -205,7 +206,8 @@ class Treeclass:
             if acc:
                 acc = acc.replace('-','_')
             else:
-                acc = link.replace('-','_')[:6]
+                acc = name
+
             spec = str(n.protein.species)
             fam += '_'+n.protein.species.common_name.replace(' ','_').upper()
             desc = name

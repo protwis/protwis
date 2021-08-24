@@ -153,7 +153,7 @@ class Alignment:
         self.update_numbering_schemes()
         self.stats_done = False
 
-    def load_proteins_from_selection(self, simple_selection):
+    def load_proteins_from_selection(self, simple_selection, only_wildtype = False):
         """Read user selection and add selected proteins"""
         # local protein list
         proteins = []
@@ -173,14 +173,14 @@ class Alignment:
                 for protein_source in simple_selection.annotation:
                     protein_source_list.append(protein_source.item)
 
+                family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug, source__in=(protein_source_list))
                 if species_list:
-                    family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
-                                                             species__in=(species_list), source__in=(protein_source_list)).select_related(
-                        'residue_numbering_scheme', 'species')
-                else:
-                    family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
-                                                             source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
+                    family_proteins = family_proteins.filter(species__in=(species_list))
 
+                if only_wildtype:
+                    family_proteins = family_proteins.filter(sequence_type__slug="wt")
+
+                family_proteins.select_related('residue_numbering_scheme', 'species')
                 for fp in family_proteins:
                     proteins.append(fp)
 
