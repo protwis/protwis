@@ -1,8 +1,6 @@
 import hashlib
-import json
 import logging
 import os
-import time
 from collections import OrderedDict
 from copy import deepcopy
 from operator import itemgetter
@@ -12,16 +10,13 @@ import numpy as np
 from alignment.functions import prepare_aa_group_preference
 from Bio.Align import substitution_matrices
 from common.definitions import *
-from common.selection import Selection
 from django.conf import settings
 from django.core.cache import cache, caches
 from django.db.models import Q
 from protein.models import (Protein, ProteinConformation, ProteinFamily,
-                            ProteinFusionProtein, ProteinSegment, ProteinState)
+                            ProteinSegment, ProteinState)
 from residue.functions import dgn, ggn
-from residue.models import (Residue, ResidueGenericNumber,
-                            ResidueGenericNumberEquivalent,
-                            ResidueNumberingScheme)
+from residue.models import (Residue, ResidueGenericNumber, ResidueNumberingScheme)
 # from structure.functions import StructureSeqNumOverwrite
 from signprot.models import SignprotComplex
 from structure.models import Rotamer, Structure
@@ -33,7 +28,7 @@ except:
 
 
 class Alignment:
-    """A class representing a protein sequence alignment, with or without a reference sequence"""
+    """A class representing a protein sequence alignment, with or without a reference sequence."""
     def __init__(self):
         self.reference = False
         self.proteins = []
@@ -113,7 +108,7 @@ class Alignment:
         return pref_feat
 
     def load_reference_protein(self, protein):
-        """Loads a protein into the alignment as a reference"""
+        """Loads a protein into the alignment as a reference."""
         self.reference = True
 
         # fetch the selected conformations of the protein
@@ -129,13 +124,13 @@ class Alignment:
         self.stats_done = False
 
     def load_reference_protein_from_selection(self, simple_selection):
-        """Read user selection and add selected reference protein"""
+        """Read user selection and add selected reference protein."""
         if simple_selection and simple_selection.reference:
             self.load_reference_protein(simple_selection.reference[0].item)
         self.stats_done = False
 
     def load_proteins(self, proteins):
-        """Load a list of protein objects into the alignment"""
+        """Load a list of protein objects into the alignment."""
         # fetch all conformations of selected proteins
         # FIXME only show inactive?
         protein_conformations = ProteinConformation.objects.order_by('protein__family__slug',
@@ -154,7 +149,7 @@ class Alignment:
         self.stats_done = False
 
     def load_proteins_from_selection(self, simple_selection, only_wildtype = False):
-        """Read user selection and add selected proteins"""
+        """Read user selection and add selected proteins."""
         # local protein list
         proteins = []
 
@@ -270,7 +265,7 @@ class Alignment:
         self.stats_done = False
 
     def load_segments_from_selection(self, simple_selection):
-        """Read user selection and add selected protein segments/residue positions"""
+        """Read user selection and add selected protein segments/residue positions."""
         # local segment list
         segments = []
 
@@ -283,7 +278,7 @@ class Alignment:
         self.stats_done = False
 
     def load_generic_numbers(self, segment_slug, residues):
-        """Loads generic numbers in the schemes of all selected proteins"""
+        """Loads generic numbers in the schemes of all selected proteins."""
         for ns in self.numbering_schemes:
             if ns[0] not in self.generic_numbers:
                 self.generic_numbers[ns[0]] = OrderedDict()
@@ -297,7 +292,7 @@ class Alignment:
         self.stats_done = False
 
     def update_numbering_schemes(self):
-        """Update numbering scheme list"""
+        """Update numbering scheme list."""
         self.numbering_schemes = {}
         for pc in self.proteins:
             if pc.protein.residue_numbering_scheme.slug not in self.numbering_schemes:
@@ -331,8 +326,7 @@ class Alignment:
 
     # AJK: point for optimization - primary bottleneck (#1 cleaning, #2 last for-loop in this function)
     def build_alignment(self):
-        """Fetch selected residues from DB and build an alignment"""
-
+        """Fetch selected residues from DB and build an alignment."""
         # AJK: prevent prefetching all data for large alignments before checking #residues (DB + memory killer)
         rs = Residue.objects.filter(protein_segment__slug__in=self.segments, protein_conformation__in=self.proteins)
 
@@ -700,7 +694,7 @@ class Alignment:
         self.proteins = [prot2 for prot1 in self.proteins for prot2 in self.unique_proteins if prot1.id==prot2.id]
 
     def remove_non_generic_numbers_from_alignment(self):
-        """Remove all positions without a generic number from the protein alignment property"""
+        """Remove all positions without a generic number from the protein alignment property."""
         to_delete = {}
         for prot in self.proteins:
             for seg in prot.alignment:
@@ -717,7 +711,7 @@ class Alignment:
                     offset+=1
 
     def clear_empty_positions(self):
-        """Remove empty columns from the segments and matrix"""
+        """Remove empty columns from the segments and matrix."""
         # segments
 
         # AJK optimized cleaning alignment - deepcopy not required and faster removal
@@ -771,7 +765,7 @@ class Alignment:
 
 
     def merge_generic_numbers(self):
-        """Check whether there are many display numbers for each position, and merge them if there are"""
+        """Check whether there are many display numbers for each position, and merge them if there are."""
         # deepcopy is required because the dictionary changes during the loop
         generic_numbers = deepcopy(self.generic_numbers)
         for ns, segments in generic_numbers.items():
@@ -798,12 +792,11 @@ class Alignment:
                     self.generic_numbers[ns][segment] = ordered_generic_numbers
 
     def format_generic_number(self, generic_number):
-        """A placeholder for an instance specific function"""
+        """A placeholder for an instance specific function."""
         return generic_number
 
     def calculate_statistics(self, ignore={}):
-        """Calculate consensus sequence and amino acid and feature frequency"""
-
+        """Calculate consensus sequence and amino acid and feature frequency."""
         if not self.stats_done:
             feature_count = OrderedDict()
             most_freq_aa = OrderedDict()
@@ -1042,7 +1035,7 @@ class Alignment:
             self.stats_done = True
 
     def calculate_aa_count_per_generic_number(self):
-        ''' Small function to return a dictionary of display_generic_number and the frequency of each AA '''
+        """Small function to return a dictionary of display_generic_number and the frequency of each AA."""
         generic_lookup_aa_freq = {}
         num_proteins = len(self.unique_proteins)
         for j, a in self.aa_count.items():
@@ -1056,7 +1049,7 @@ class Alignment:
         return generic_lookup_aa_freq
 
     def calculate_similarity(self, normalized=False):
-        """Calculate the sequence identity/similarity of every selected protein compared to a selected reference"""
+        """Calculate the sequence identity/similarity of every selected protein compared to a selected reference."""
         for i, protein in enumerate(self.proteins):
             # skip the first row, as it is the reference
             if i == 0:
@@ -1100,8 +1093,7 @@ class Alignment:
         self.proteins.insert(0, ref)
 
     def calculate_similarity_matrix(self):
-        """Calculate a matrix of sequence identity/similarity for every selected protein"""
-
+        """Calculate a matrix of sequence identity/similarity for every selected protein."""
         # Init results matrix
         self.similarity_matrix = OrderedDict()
         for i, protein in enumerate(self.proteins):
@@ -1135,8 +1127,7 @@ class Alignment:
                 self.similarity_matrix[protein_key]['values'][k] = [value, color_class]
 
     def calculate_zscales(self, from_stats = False):
-        """Calculate Z-scales distribution for current alignment set"""
-
+        """Calculate Z-scales distribution for current alignment set."""
         if not self.stats_done:
             # Check if alignment statistics need to be calculated
             if len(self.aa_count) == 0 and not from_stats:
@@ -1172,7 +1163,7 @@ class Alignment:
                                 self.zscales[zscale][segment][generic_number] = [z_mean, z_std, z_count, display]
 
     def evaluate_sites(self, request):
-        """Evaluate which user selected site definitions match each protein sequence"""
+        """Evaluate which user selected site definitions match each protein sequence."""
         # get simple selection from session
         simple_selection = request.session.get('selection', False)
 
@@ -1230,7 +1221,7 @@ class Alignment:
         self.proteins = [p for p in self.proteins if p not in self.non_matching_proteins]
 
     def pairwise_similarity(self, protein_1, protein_2):
-        """Calculate the identity, similarity and similarity score between a pair of proteins"""
+        """Calculate the identity, similarity and similarity score between a pair of proteins."""
         identityscore = 0
         similarityscore = 0
         totalcount = 0
@@ -1269,8 +1260,10 @@ class Alignment:
             return "{:10.0f}".format(-1), "{:10.0f}".format(-1), 0
 
     def pairwise_similarity_normalized(self, protein_1, protein_2):
-        """Calculate the identity, similarity and similarity score between a pair of proteins but delete gaps and normalize. Used for finding closest
-           receptor homologue with crystal structure."""
+        """Calculate the identity, similarity and similarity score between a pair of proteins but delete gaps and normalize.
+
+        Used for finding closest receptor homologue with crystal structure.
+        """
         identities = OrderedDict()
         similarities = OrderedDict()
         similarity_scores = OrderedDict()
@@ -1316,7 +1309,7 @@ class Alignment:
 
 
 class AlignedReferenceTemplate(Alignment):
-    ''' Creates a structure based alignment between reference protein and target proteins that are made up from the
+    """ Creates a structure based alignment between reference protein and target proteins that are made up from the
         best available unique structures. It marks the best match as the main template structure.
 
         @param reference_protein: Protein object of reference protein. \n
@@ -1325,7 +1318,8 @@ class AlignedReferenceTemplate(Alignment):
         @param order_by: str of ordering the aligned proteins. Identity, similarity or simscore.
         @param provide_main_temlpate_structure: Structure object, use only when aligning loops and when the main
         template is already known.
-    '''
+    """
+
     def __init__(self):
         super(AlignedReferenceTemplate, self).__init__()
         self.reference_dict = OrderedDict()
@@ -1394,8 +1388,7 @@ class AlignedReferenceTemplate(Alignment):
             self.main_template_structure = self.get_main_template()
 
     def local_pairwise_alignment(self, reference, template, segment):
-        '''
-        '''
+        """Local pairwise alignment."""
         self.load_reference_protein(reference)
         self.load_proteins(template)
         self.load_segments(ProteinSegment.objects.get(slug__in=segment))
@@ -1407,8 +1400,7 @@ class AlignedReferenceTemplate(Alignment):
                                                                        self.main_template_structure)
 
     def load_proteins_by_structure(self):
-        ''' Loads proteins into alignment based on available structures in the database.
-        '''
+        """Loads proteins into alignment based on available structures in the database."""
         if self.reference_protein.family.parent.parent.parent.slug=='003':
             template_family = ProteinFamily.objects.get(slug='002')
         elif self.reference_protein.family.parent.parent.parent.slug=='007':
@@ -1435,8 +1427,7 @@ class AlignedReferenceTemplate(Alignment):
             [Protein.objects.get(id=target.protein_conformation.protein.parent.id) for target in self.structures_data])
 
     def get_main_template(self):
-        ''' Returns main template structure after checking for matching helix start and end positions.
-        '''
+        """Returns main template structure after checking for matching helix start and end positions."""
         if self.force_main_temp:
             st = Structure.objects.get(pdb_code__index=self.force_main_temp.upper())
             # if self.core_alignment and st.pdb_code.index in self.seq_num_overwrite_files:
@@ -1477,8 +1468,7 @@ class AlignedReferenceTemplate(Alignment):
         self.logger.info('Structure {} residue table sequence number overwrite pdb to wt'.format(structure))
 
     def create_helix_similarity_table(self):
-        ''' Creates an ordered dictionary of structure objects, where templates are sorted by similarity and resolution.
-        '''
+        """Creates an ordered dictionary of structure objects, where templates are sorted by similarity and resolution."""
         temp_list = []
         self.ordered_proteins = [self.proteins[0]]
         similarity_table = OrderedDict()
@@ -1509,9 +1499,11 @@ class AlignedReferenceTemplate(Alignment):
         return similarity_table
 
     def create_loop_similarity_table(self):
-        ''' Creates an ordered dictionary of structure objects, where templates are sorted by similarity and resolution.
-            Only templates that have the same loop length as the reference are considered.
-        '''
+        """
+        Creates an ordered dictionary of structure objects, where templates are sorted by similarity and resolution.
+
+        Only templates that have the same loop length as the reference are considered.
+        """
         temp_list, temp_list1, temp_list2, temp_list_mid = [],[],[],[]
         similarity_table = OrderedDict()
         self.main_template_protein = self.main_template_structure.protein_conformation.protein.parent
@@ -1730,9 +1722,7 @@ class AlignedReferenceTemplate(Alignment):
         return[ECL2_1,ECL2_mid,ECL2_2]
 
     def enhance_alignment(self, reference, template, keep_all=False):
-        ''' Creates an alignment between reference and main_template where matching residues are depicted with the
-            one-letter residue code, mismatches with '.', gaps with '-', gaps due to shorter sequences with 'x'.
-        '''
+        """Creates an alignment between reference and main_template where matching residues are depicted with the one-letter residue code, mismatches with '.', gaps with '-', gaps due to shorter sequences with 'x'."""
         for ref_seglab, temp_seglab in zip(reference.alignment, template.alignment):
             if 'TM' in ref_seglab or ref_seglab in ['ICL1','ECL1','ICL2','ECL2','H8']:
                 ref_segment_dict,temp_segment_dict,align_segment_dict = OrderedDict(), OrderedDict(), OrderedDict()
@@ -1889,8 +1879,7 @@ class GProteinAlignment(Alignment):
 
 
 class ClosestReceptorHomolog():
-    ''' Finds the closest receptor homolog that has a structure. Uses the pairwise_similarity_normalized function that deletes gaps.
-    '''
+    """Finds the closest receptor homolog that has a structure. Uses the pairwise_similarity_normalized function that deletes gaps."""
     def __init__(self, protein, protein_segments=['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8'], normalized=True):
         self.protein = protein
         self.protein_segments = protein_segments
