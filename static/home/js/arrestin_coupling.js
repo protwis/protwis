@@ -35,6 +35,66 @@ function reset_tab() {
     window.location.href = "/signprot/arrestincouplings";
 }
 
+// Calculation of normalized rank for a given column
+function createRank(table_id, column) {
+    // Set default values for all cells
+    $(table_id+" tbody tr td").filter(":nth-child(" + column + ")").each( function() {
+        let cell_span = $(this.firstChild);
+        let cell_value = cell_span.text();
+        cell_span.attr("data-raw", cell_value);
+        cell_span.attr("data-column-nr", column-1);
+        $(this).attr("data-sort", cell_value);
+    });
+
+    // Looping over the support values (GPCRdb # 1-3)
+    for (let i=1; i <= 3; i++){
+      // Step 1 - collect all values for a given column
+      let min_max = [];
+      $(table_id+" tbody tr[data-source='" + i + "'] td").filter(":nth-child(" + column + ")").each( function() {
+          var cell_value = $(this).text();
+          if (/^-?\d*(\.\d+)?$/.test(cell_value) && cell_value!=="-"){
+              min_max.push(parseFloat(cell_value));
+          }
+      });
+
+      // Step 2 - normalize all values and add them to a data attribute
+      let min = Math.min(...min_max);
+      let max = Math.max(...min_max);
+      $(table_id+" tbody tr[data-source='" + i + "'] td").filter(":nth-child(" + column + ")").each( function() {
+          let cell_span = $(this.firstChild);
+          let cell_value = cell_span.text();
+
+          // Check if data source is a number, if so confidence value for GPCRdb source
+          if (/^-?\d*(\.\d+)?$/.test(cell_value) && cell_value!=="-"){
+              cell_span.attr("data-normalized", Math.round((1-(parseFloat(cell_value)-min)/(max-min))*100),0);
+          } else {
+              // not value - empty init
+              cell_span.attr("data-normalized","-");
+          }
+      });
+    }
+}
+
+/**
+ * This is a custom YADCF function that checks ....
+ * ....
+ * @param {object} filterVal Value to filter on (not applicable)
+ * @param {object} columnVal Element in the filtered column
+ * @param {object} rowValues All elements in this row (not used)
+ * @param {object} stateVal Current DOM state of the row (not sufficient in this case)
+ * @returns {boolean} true if row contains selected target otherwise false
+ */
+function supportFilter(filterVal, columnVal, rowValues, stateVal){
+    //console.log(!/^\d+$/.test(columnVal), columnVal, filterVal);
+    //console.log(columnVal === filterVal);
+    return (!/^\d+$/.test(columnVal) || columnVal === filterVal);
+}
+
+// Create the ranks for the families table
+for (let i=12; i <= 22; i++) {
+    createRank("#arrestintable", i); // GS
+}
+
 $(document).ready(function() {
 // Activate tooltips and popovers from Bootstrap   * Bootstrap v3.3.7 (http://getbootstrap.com)
     $("[data-toggle='tooltip']").tooltip();
@@ -56,134 +116,140 @@ $(document).ready(function() {
         paging: false,
         bSortCellsTop: false, //prevent sort arrows going on bottom row
         aaSorting: [],
-        order: [[4,"asc"]],
+        order: [
+                [3,"asc"],
+                [5,"asc"],
+                [21, "asc"]
+              ],
         autoWidth: false,
         bInfo: true,
         columnDefs: [
             {
-                targets: [0],
-                visible: true,
-                orderable: false
+                targets: [21],
+                visible: false
             }
         ],
     });
 
     yadcf.init(oTable1,
         [
-            {
-                column_number: 0,
-                filter_type: "none",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 1,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "80px",
-                }
-            },
+          {
+              column_number: 0,
+              filter_type: "none",
+              filter_default_label: "",
+              filter_reset_button_text: false,
+          },
+          {
+              column_number: 1,
+              filter_type: "multi_select",
+              select_type: "select2",
+              column_data_type: "html",
+              filter_default_label: "",
+              filter_reset_button_text: false,
+              select_type_options: {
+                  width: "60px",
+              }
+          },
+          {
+              column_number: 2,
+              filter_type: "multi_select",
+              select_type: "select2",
+              // column_data_type: "html",
+              filter_default_label: "",
+              filter_reset_button_text: false,
+              select_type_options: {
+                  width: "40px",
+              }
+          },
+          {
+              column_number: 3,
+              filter_type: "multi_select",
+              select_type: "select2",
+              filter_default_label: "",
+              filter_reset_button_text: false,
+              select_type_options: {
+                  width: "40px",
+              }
+          },
+          {
+              column_number: 4,
+              filter_type: "multi_select",
+              select_type: "select2",
+              filter_default_label: "",
+              filter_reset_button_text: false,
+              select_type_options: {
+                  width: "150px",
+              }
+          },
+          {
+              column_number: 5,
+              filter_type: "multi_select",
+              select_type: "select2",
+              column_data_type: "html",
+              html_data_type: "text",
+              filter_default_label: "UniProt",
+              filter_match_mode : "exact",
+              filter_reset_button_text: false,
+              select_type_options: {
+                  width: "60px",
+              }
+          },
+          {
+              column_number: 6,
+              filter_type: "multi_select",
+              select_type: "select2",
+              column_data_type: "html",
+              html_data_type: "text",
+              filter_default_label: "",
+              filter_match_mode : "exact",
+              filter_reset_button_text: false,
+              select_type_options: {
+                  width: "80px",
+              }
+          },
+// Ligands selection
+          {
+              column_number: 7,
+              filter_type: "multi_select",
+              select_type: "select2",
+              column_data_type: "html",
+              html_data_type: "text",
+              filter_default_label: "",
+              filter_match_mode : "exact",
+              filter_reset_button_text: false,
+              select_type_options: {
+                  width: "200px",
+              }
+          },
+          {
+              column_number: 8,
+              filter_type: "multi_select",
+              select_type: "select2",
+              // column_data_type: "html",
+              filter_default_label: "",
+              filter_reset_button_text: false,
+              select_type_options: {
+                  width: "140px",
+              }
+          },
 
-            {
-                column_number: 2,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "40px",
-                }
-            },
-            {
-                column_number: 3,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "200px",
-                }
-            },
-            {
-                column_number: 4,
-                filter_type: "multi_select",
-                select_type: "select2",
-                column_data_type: "html",
-                html_data_type: "text",
-                filter_default_label: "UniProt",
-                filter_match_mode : "exact",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "60px",
-                }
-            },
-            {
-                column_number: 5,
-                filter_type: "multi_select",
-                select_type: "select2",
-                column_data_type: "html",
-                html_data_type: "text",
-                filter_default_label: "",
-                filter_match_mode : "exact",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "80px",
-                }
-            },
+// Hidden GPCRdb support type column calls customized function
+          {
+              column_number: 21,
+              filter_type: "custom_func",
+              custom_func: supportFilter,
+              filter_container_id: "hide_filter3",
+          },
+      ],
 
-// log(Emax/EC50)
-            {
-                column_number : 6,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 7,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
+      {
+          filters_tr_index: 2
+      },
 
-// pEC50
-            {
-                column_number : 8,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 9,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-
-// Emax
-            {
-                column_number : 10,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 11,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-
-        ],
-
-        {filters_tr_index: 2},
-
-        {
-            cumulative_filtering: true
-        }
-    );
+      {
+          cumulative_filtering: false
+      }
+  );
 
 
     $("#arrestintable"+" > tbody > tr").click(function(event) {

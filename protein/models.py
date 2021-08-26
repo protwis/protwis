@@ -361,6 +361,7 @@ class ProteinCouplings(models.Model):
     pec50 = models.FloatField(null=True, blank=True)  # Value from David Gloriam
     logmaxec50 = models.FloatField(null=True, blank=True) # Value from David Gloriam
     stand_dev = models.FloatField(null=True, blank=True) # Value from David Gloriam
+    physiological_ligand = models.BooleanField(default=False)
     g_protein_subunit = models.ForeignKey('Protein', on_delete=models.CASCADE, related_name='gprotein', null=True)
     references = models.ManyToManyField('common.Publication')
 

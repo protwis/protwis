@@ -206,8 +206,8 @@ function make_range_number_cols(start_column, repeat_number, tab) {
     }
 }
 
-repfilterfamtab = make_range_number_cols(11, 12, "famtab");
-repfiltersubtab = make_range_number_cols(11, 39, "subtab");
+repfilterfamtab = make_range_number_cols(13, 14, "famtab");
+repfiltersubtab = make_range_number_cols(13, 41, "subtab");
 
 let lastRangeRankFilter = "";
 
@@ -221,7 +221,7 @@ $(document).ready(function() {
     $("[data-toggle='popover']").popover();
 
 // Create the ranks for the families table
-for (let i=12; i <= 23; i++) {
+for (let i=12; i <= 29; i++) {
     createRank("#familiestabletab", i); // GS
 }
 
@@ -241,13 +241,13 @@ for (let i=12; i <= 23; i++) {
         order: [
             [3, "asc"],
             [5, "asc"],
-            [23, "asc"],
+            [29, "asc"],
         ],
         autoWidth: false,
         bInfo: true,
         columnDefs: [
             {
-                targets: [23],
+                targets: [29],
                 visible: false
             }
         ],
@@ -334,27 +334,32 @@ for (let i=12; i <= 23; i++) {
                 }
             },
 
-// Guide to Pharmacology
+// Ligands section
             {
                 column_number: 7,
                 filter_type: "multi_select",
                 select_type: "select2",
+                column_data_type: "html",
+                html_data_type: "text",
                 filter_default_label: "",
+                filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: "40px"
-                },
+                    width: "200px",
+                }
             },
             {
                 column_number: 8,
                 filter_type: "multi_select",
                 select_type: "select2",
+                // column_data_type: "html",
                 filter_default_label: "",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: "40px"
-                },
+                    width: "140px",
+                }
             },
+// Guide to Pharmacology
             {
                 column_number: 9,
                 filter_type: "multi_select",
@@ -375,10 +380,30 @@ for (let i=12; i <= 23; i++) {
                     width: "40px"
                 },
             },
+            {
+                column_number: 11,
+                filter_type: "multi_select",
+                select_type: "select2",
+                filter_default_label: "",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: "40px"
+                },
+            },
+            {
+                column_number: 12,
+                filter_type: "multi_select",
+                select_type: "select2",
+                filter_default_label: "",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: "40px"
+                },
+            },
 
 // Hidden GPCRdb support type column calls customized function
             {
-                column_number: 23,
+                column_number: 29,
                 filter_type: "custom_func",
                 custom_func: supportFilter,
                 filter_container_id: "hide_filter1",
@@ -416,9 +441,9 @@ for (let i=12; i <= 23; i++) {
     });
 
 
-// This prefilters the value 2 in the hidden column 22 which corresponds to being in at least two of the supporting GPCRdb
+// This prefilters the value 2 in the hidden column 29 which corresponds to being in at least two of the supporting GPCRdb
 // datasets
-    yadcf.exFilterColumn(oTable1, [[23, 2]]);
+    yadcf.exFilterColumn(oTable1, [[29, 2]]);
 //    yadcf.exResetAllFilters(oTable1);
 
 //  Select clicked-on boxes for families table
@@ -445,7 +470,7 @@ for (let i=12; i <= 23; i++) {
 // =============================================================================
 
 // Create the ranks for the subtypes table
-for (let i=12; i <= 50; i++) {
+for (let i=12; i <= 69; i++) {
     createRank("#subtypestabletab", i); // GS
 }
 
@@ -462,13 +487,13 @@ for (let i=12; i <= 50; i++) {
         order: [
             [3, "asc"],
             [5, "asc"],
-            [50, "asc"]
+            [69, "asc"]
         ],
         autoWidth: false,
         bInfo: true,
         columnDefs: [
             {
-                targets: [50],
+                targets: [69],
                 visible: false
             }
         ],
@@ -554,28 +579,34 @@ for (let i=12; i <= 50; i++) {
                     width: "80px",
                 }
             },
+// Ligands selection
 
-// Guide to Pharmacology
             {
                 column_number: 7,
                 filter_type: "multi_select",
                 select_type: "select2",
+                column_data_type: "html",
+                html_data_type: "text",
                 filter_default_label: "",
+                filter_match_mode : "exact",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: "40px"
-                },
+                    width: "200px",
+                }
             },
             {
                 column_number: 8,
                 filter_type: "multi_select",
                 select_type: "select2",
+                // column_data_type: "html",
                 filter_default_label: "",
                 filter_reset_button_text: false,
                 select_type_options: {
-                    width: "40px"
-                },
+                    width: "140px",
+                }
             },
+
+// Guide to Pharmacology
             {
                 column_number: 9,
                 filter_type: "multi_select",
@@ -596,10 +627,30 @@ for (let i=12; i <= 50; i++) {
                     width: "40px"
                 },
             },
+            {
+                column_number: 11,
+                filter_type: "multi_select",
+                select_type: "select2",
+                filter_default_label: "",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: "40px"
+                },
+            },
+            {
+                column_number: 12,
+                filter_type: "multi_select",
+                select_type: "select2",
+                filter_default_label: "",
+                filter_reset_button_text: false,
+                select_type_options: {
+                    width: "40px"
+                },
+            },
 
 // Hidden GPCRdb support type column calls customized function
             {
-                column_number: 50,
+                column_number: 69,
                 filter_type: "custom_func",
                 custom_func: supportFilter,
                 filter_container_id: "hide_filter2",
@@ -640,7 +691,7 @@ for (let i=12; i <= 50; i++) {
 
 
 
-    yadcf.exFilterColumn(oTable2, [[50, 2]]);
+    yadcf.exFilterColumn(oTable2, [[69, 2]]);
 
 //  Select clicked-on boxes for subtypes table
     $("#subtypestabletab"+" > tbody > tr").click(function(event) {
@@ -670,11 +721,6 @@ for (let i=12; i <= 50; i++) {
 
 //    yadcf.exResetAllFilters(oTable2);
     console.timeEnd("table2load");
-
-
-
-
-
 
 
 // =============================================================================

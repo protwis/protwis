@@ -136,7 +136,10 @@ class ArrestinCoupling(TemplateView):
         values = source, class, family, uniprotid, iupharid, logmaxec50_deg, pec50_deg, emax_deg
         """
 
-        arrestins = ProteinCouplings.objects.filter(protein__family__slug__startswith='00').prefetch_related(
+        arrestins = ProteinCouplings.objects.filter(source__in=["Inoue", "Bouvier", "Roth", "GuideToPharma"],
+                                                    protein__sequence_type__slug='wt',
+                                                    protein__family__slug__startswith='00',
+                                                    protein__species__common_name="Human").prefetch_related(
             "protein__family",  # REMEMBER. Whatever you call in template prefetch to reduce SQL queries.
             "protein__family__parent__parent__parent",
             "g_protein_subunit",
@@ -149,27 +152,53 @@ class ArrestinCoupling(TemplateView):
                 "g_protein_subunit_id__entry_name",
                 "emax",
                 "pec50",
-                "logmaxec50"
+                "logmaxec50",
+                "stand_dev",
+                "variant",
+                "ligand_id",
+                "ligand__name",
+                "physiological_ligand",
+                "source"
         ):
+            #remove the empty records
+            data = list(pairing[2:6])
+            if data == [0.0, 0.0, 0.0, 0.0] or data == [None, None, None, None]:
+                continue
+
             if pairing[0] not in signaling_data:
                 signaling_data[pairing[0]] = {}
-            signaling_data[pairing[0]][pairing[1]] = {}
 
-            if 'emax' not in signaling_data[pairing[0]][pairing[1]]:
-                signaling_data[pairing[0]][pairing[1]]['emax'] = {}
-            signaling_data[pairing[0]][pairing[1]]['emax'] = pairing[2]
+            if pairing[6] == "Regular":
+                subunit = pairing[1]
+            else:
+                subunit = pairing[1] + '-' + pairing[6]
 
-            if 'pec50' not in signaling_data[pairing[0]][pairing[1]]:
-                signaling_data[pairing[0]][pairing[1]]['pec50'] = {}
-            signaling_data[pairing[0]][pairing[1]]['pec50'] = pairing[3]
+            signaling_data[pairing[0]][subunit] = {}
 
-            if 'logmaxec50' not in signaling_data[pairing[0]][pairing[1]]:
-                signaling_data[pairing[0]][pairing[1]]['logmaxec50'] = {}
-            signaling_data[pairing[0]][pairing[1]]['logmaxec50'] = pairing[4]
+            if 'emax' not in signaling_data[pairing[0]][subunit]:
+                signaling_data[pairing[0]][subunit]['emax'] = {}
+            signaling_data[pairing[0]][subunit]['emax'] = pairing[2]
+
+            if 'pec50' not in signaling_data[pairing[0]][subunit]:
+                signaling_data[pairing[0]][subunit]['pec50'] = {}
+            signaling_data[pairing[0]][subunit]['pec50'] = pairing[3]
+
+            if 'logmaxec50' not in signaling_data[pairing[0]][subunit]:
+                signaling_data[pairing[0]][subunit]['logmaxec50'] = {}
+            signaling_data[pairing[0]][subunit]['logmaxec50'] = pairing[4]
+
+            if 'stand_dev' not in signaling_data[pairing[0]][subunit]:
+                signaling_data[pairing[0]][subunit]['stand_dev'] = {}
+            signaling_data[pairing[0]][subunit]['stand_dev'] = pairing[5]
 
         protein_data = {}
         for prot in arrestins.distinct("protein_id"):
+            if prot.physiological_ligand:
+                physio = "Physiological"
+            else:
+                physio = "Surrogate"
             protein_data[prot.id] = {}
+            print(prot)
             protein_data[prot.id]['class'] = prot.protein.family.parent.parent.parent.shorter()
             protein_data[prot.id]['family'] = prot.protein.family.parent.short()
             protein_data[prot.id]['uniprot'] = prot.protein.entry_short()
@@ -178,7 +207,10 @@ class ArrestinCoupling(TemplateView):
             protein_data[prot.id]['entryname'] = prot.protein.entry_name
             protein_data[prot.id]['source'] = prot.source
             protein_data[prot.id]['subtype'] = prot.g_protein_subunit_id
-
+            protein_data[prot.id]['ligand_id'] = prot.ligand_id
+            protein_data[prot.id]['ligand_name'] = prot.ligand.name
+            protein_data[prot.id]['ligand_physiological'] = physio
+            print(protein_data[prot.id])
             # MAKES 2396 SQL QUERIES, have to find out how to make it faster.
             # uniprot_links = prot.web_links.filter(web_resource__slug='uniprot')
             # if uniprot_links.count() > 0:
@@ -237,30 +269,34 @@ class CouplingBrowser(TemplateView):
     :return: context
     """
 
+    page = "gprot"
+    subunit_filter = "100_001"
+    families = ["Gs", "Gi/o", "Gq/11", "G12/13"]
     template_name = "signprot/coupling_browser.html"
 
     @method_decorator(csrf_exempt)
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        tab_fields, header = self.tab_fields()
+        tab_fields, header = self.tab_fields(self.subunit_filter, self.families)
 
         context['tabfields'] = tab_fields
         context['header'] = header
         flat_list = [item for sublist in header.values() for item in sublist]
         context['subunitheader'] = flat_list
+        context['page'] = self.page
 
         return context
 
     @staticmethod
-    def tab_fields():
+    def tab_fields(subunit_filter, families):
         """
         This function returns the required fields for the G-protein families table and the G-protein subtypes table
         which are to be rendered in separate tabs in the same page.
 
         :return: key.value pairs from dictotemplate dictionary
-        keys =id values in ProteinGProteinPair table.
-        values = source, class, family, uniprotid, iupharid, logmaxec50_deg, pec50_deg, emax_deg
+        keys =id values in ProteinCouplings table.
+        values = source, class, family, variant, uniprotid, iupharid, logmaxec50, pec50, emax, stand_dev
         """
 
         proteins = Protein.objects.filter(sequence_type__slug='wt',
@@ -301,8 +337,9 @@ class CouplingBrowser(TemplateView):
             if len(gtop_links) > 0:
                 protein_data[prot.id]['gtp_link'] = gtop_links[0]
 
-            gprotein_families = ["Gs", "Gi/o", "Gq/11", "G12/13"]
-            for gprotein in gprotein_families:
+            #VARIABLE (arrestins/gprots)
+            # gprotein_families = ["Gs", "Gi/o", "Gq/11", "G12/13"]
+            for gprotein in families:
                 if prot.entry_name in signaling_data and gprotein in signaling_data[prot.entry_name]:
                     if signaling_data[prot.entry_name][gprotein] == "primary":
                         protein_data[prot.id][gprotein] = "1'"
@@ -313,19 +350,20 @@ class CouplingBrowser(TemplateView):
                 else:
                     protein_data[prot.id][gprotein] = "-"
 
-            protein_data[prot.id]['gs'] = protein_data[prot.id][gprotein_families[0]]
-            protein_data[prot.id]['gio'] = protein_data[prot.id][gprotein_families[1]]
-            protein_data[prot.id]['gq11'] = protein_data[prot.id][gprotein_families[2]]
-            protein_data[prot.id]['g1213'] = protein_data[prot.id][gprotein_families[3]]
+            # protein_data[prot.id]['gs'] = protein_data[prot.id][gprotein_families[0]]
+            # protein_data[prot.id]['gio'] = protein_data[prot.id][gprotein_families[1]]
+            # protein_data[prot.id]['gq11'] = protein_data[prot.id][gprotein_families[2]]
+            # protein_data[prot.id]['g1213'] = protein_data[prot.id][gprotein_families[3]]
 
+        #VARIABLE
         couplings2 = ProteinCouplings.objects.filter(source__in=["Inoue", "Bouvier", "Roth"]) \
-            .filter(g_protein_subunit__family__slug__startswith="100_001").order_by("g_protein_subunit__family__slug", "source") \
+            .filter(g_protein_subunit__family__slug__startswith=subunit_filter).order_by("g_protein_subunit__family__slug", "source") \
             .prefetch_related('g_protein_subunit__family', 'g_protein')
-
+        #VARIABLE
         coupling_headers = ProteinCouplings.objects.filter(source__in=["Inoue", "Bouvier", "Roth"]) \
-            .filter(g_protein_subunit__family__slug__startswith="100_001") \
-            .order_by("g_protein_subunit__family__slug", "source").distinct("g_protein_subunit__family__slug") \
-            .values_list("g_protein_subunit__family__name", "g_protein_subunit__family__parent__name")
+            .filter(g_protein_subunit__family__slug__startswith=subunit_filter) \
+            .order_by("g_protein_subunit__family__slug", "source", "variant") \
+            .values_list("g_protein_subunit__family__name", "g_protein_subunit__family__parent__name", "variant").distinct()
 
         coupling_header_names = {}
         coupling_reverse_header_names = {}
@@ -333,17 +371,27 @@ class CouplingBrowser(TemplateView):
         coupling_placeholder2 = {}
         coupling_placeholder3 = {}
         for name in coupling_headers:
+            if name[2] == "Regular":
+                subname = name[0]
+            else:
+                subname = name[0] + '-' + name[2]
             if name[1] not in coupling_header_names:
                 coupling_header_names[name[1]] = []
                 coupling_placeholder3[name[1]] = []
-            coupling_reverse_header_names[name[0]] = name[1]
-            coupling_header_names[name[1]].append(name[0])
-            coupling_placeholder[name[0]] = "--"
-            coupling_placeholder2[name[0]] = []
+            coupling_reverse_header_names[subname] = name[1]
+            if subname not in coupling_header_names[name[1]]:
+                coupling_header_names[name[1]].append(subname)
+            coupling_placeholder[subname] = "--"
+            coupling_placeholder2[subname] = []
 
         dictotemplate = {}
         sourcenames = set()
         for pair in couplings2:
+            #from here fetch the ligand_id and physiological_ligand information
+            try:
+                std = round(pair.stand_dev)
+            except TypeError:
+                std = 0
             if pair.protein_id not in dictotemplate:
                 dictotemplate[pair.protein_id] = {}
                 dictotemplate[pair.protein_id]['protein'] = protein_data[pair.protein_id]
@@ -353,10 +401,20 @@ class CouplingBrowser(TemplateView):
                 dictotemplate[pair.protein_id]['coupling']['1']['logemaxec50'] = deepcopy(coupling_placeholder2)
                 dictotemplate[pair.protein_id]['coupling']['1']['pec50'] = deepcopy(coupling_placeholder2)
                 dictotemplate[pair.protein_id]['coupling']['1']['emax'] = deepcopy(coupling_placeholder2)
+                dictotemplate[pair.protein_id]['coupling']['1']['std'] = deepcopy(coupling_placeholder2)##
+                dictotemplate[pair.protein_id]['coupling']['1']['ligand_id'] = deepcopy(coupling_placeholder2)##
+                dictotemplate[pair.protein_id]['coupling']['1']['ligand_name'] = deepcopy(coupling_placeholder2)##
+                dictotemplate[pair.protein_id]['coupling']['1']['ligand_physiological'] = deepcopy(coupling_placeholder2)##
+                # dictotemplate[pair.protein_id]['coupling']['1']['variant'] = deepcopy(coupling_placeholder2)##
                 dictotemplate[pair.protein_id]['couplingmax']['1'] = {}
                 dictotemplate[pair.protein_id]['couplingmax']['1']['logemaxec50'] = deepcopy(coupling_placeholder3)
                 dictotemplate[pair.protein_id]['couplingmax']['1']['pec50'] = deepcopy(coupling_placeholder3)
                 dictotemplate[pair.protein_id]['couplingmax']['1']['emax'] = deepcopy(coupling_placeholder3)
+                dictotemplate[pair.protein_id]['couplingmax']['1']['std'] = deepcopy(coupling_placeholder3)##
+                dictotemplate[pair.protein_id]['couplingmax']['1']['ligand_id'] = deepcopy(coupling_placeholder3)##
+                dictotemplate[pair.protein_id]['couplingmax']['1']['ligand_name'] = deepcopy(coupling_placeholder3)##
+                dictotemplate[pair.protein_id]['couplingmax']['1']['ligand_physiological'] = deepcopy(coupling_placeholder3)##
+                # dictotemplate[pair.protein_id]['couplingmax']['1']['variant'] = deepcopy(coupling_placeholder3)##
             if pair.source not in dictotemplate[pair.protein_id]['coupling']:
                 sourcenames.add(pair.source)
                 dictotemplate[pair.protein_id]['coupling'][pair.source] = {}
@@ -364,50 +422,101 @@ class CouplingBrowser(TemplateView):
                 dictotemplate[pair.protein_id]['coupling'][pair.source]['logemaxec50'] = coupling_placeholder.copy()
                 dictotemplate[pair.protein_id]['coupling'][pair.source]['pec50'] = coupling_placeholder.copy()
                 dictotemplate[pair.protein_id]['coupling'][pair.source]['emax'] = coupling_placeholder.copy()
+                dictotemplate[pair.protein_id]['coupling'][pair.source]['std'] = coupling_placeholder.copy() ##
+                dictotemplate[pair.protein_id]['coupling'][pair.source]['ligand_id'] = coupling_placeholder.copy() ##
+                dictotemplate[pair.protein_id]['coupling'][pair.source]['ligand_name'] = coupling_placeholder.copy() ##
+                dictotemplate[pair.protein_id]['coupling'][pair.source]['ligand_physiological'] = coupling_placeholder.copy() ##
+                # dictotemplate[pair.protein_id]['coupling'][pair.source]['variant'] = coupling_placeholder.copy() ##
                 dictotemplate[pair.protein_id]['couplingmax'][pair.source]['logemaxec50'] = deepcopy(coupling_placeholder3)
                 dictotemplate[pair.protein_id]['couplingmax'][pair.source]['pec50'] = deepcopy(coupling_placeholder3)
                 dictotemplate[pair.protein_id]['couplingmax'][pair.source]['emax'] = deepcopy(coupling_placeholder3)
-            subunit = pair.g_protein_subunit_id.family.name
-            dictotemplate[pair.protein_id]['coupling'][pair.source]['logemaxec50'][subunit] = round(pair.logmaxec50_deg, 1)
-            dictotemplate[pair.protein_id]['coupling'][pair.source]['pec50'][subunit] = round(pair.pec50_deg, 1)
-            dictotemplate[pair.protein_id]['coupling'][pair.source]['emax'][subunit] = round(pair.emax_deg)
-            dictotemplate[pair.protein_id]['coupling']['1']['logemaxec50'][subunit].append(round(pair.logmaxec50_deg, 1))
-            dictotemplate[pair.protein_id]['coupling']['1']['pec50'][subunit].append(round(pair.pec50_deg, 1))
-            dictotemplate[pair.protein_id]['coupling']['1']['emax'][subunit].append(round(pair.emax_deg))
+                dictotemplate[pair.protein_id]['couplingmax'][pair.source]['std'] = deepcopy(coupling_placeholder3) ##
+                dictotemplate[pair.protein_id]['couplingmax'][pair.source]['ligand_id'] = deepcopy(coupling_placeholder3) ##
+                dictotemplate[pair.protein_id]['couplingmax'][pair.source]['ligand_name'] = deepcopy(coupling_placeholder3) ##
+                dictotemplate[pair.protein_id]['couplingmax'][pair.source]['ligand_physiological'] = deepcopy(coupling_placeholder3) ##
+                # dictotemplate[pair.protein_id]['couplingmax'][pair.source]['variant'] = deepcopy(coupling_placeholder3) ##
+
+            ## check the subunit
+            if pair.variant == "Regular":
+                subunit = pair.g_protein_subunit.family.name
+            else:
+                subunit = pair.g_protein_subunit.family.name + '-' + pair.variant
+
+            ## check the physiological property
+            if pair.physiological_ligand == True:
+                physio = 'Physiological'
+            else:
+                physio = 'Surrogate'
+
+            dictotemplate[pair.protein_id]['coupling'][pair.source]['logemaxec50'][subunit] = round(pair.logmaxec50, 1)
+            dictotemplate[pair.protein_id]['coupling'][pair.source]['pec50'][subunit] = round(pair.pec50, 1)
+            dictotemplate[pair.protein_id]['coupling'][pair.source]['emax'][subunit] = round(pair.emax)
+            dictotemplate[pair.protein_id]['coupling'][pair.source]['std'][subunit] = std##
+            dictotemplate[pair.protein_id]['coupling'][pair.source]['ligand_id'] = pair.ligand_id##
+            dictotemplate[pair.protein_id]['coupling'][pair.source]['ligand_name'] = pair.ligand.name##
+            dictotemplate[pair.protein_id]['coupling'][pair.source]['ligand_physiological'] = physio##
+            # dictotemplate[pair.protein_id]['coupling'][pair.source]['variant'][subunit] = pair.variant##
+            dictotemplate[pair.protein_id]['coupling']['1']['logemaxec50'][subunit].append(round(pair.logmaxec50, 1))
+            dictotemplate[pair.protein_id]['coupling']['1']['pec50'][subunit].append(round(pair.pec50, 1))
+            dictotemplate[pair.protein_id]['coupling']['1']['emax'][subunit].append(round(pair.emax))
+            dictotemplate[pair.protein_id]['coupling']['1']['std'][subunit].append(std)
+            dictotemplate[pair.protein_id]['coupling']['1']['ligand_id'] = pair.ligand_id
+            dictotemplate[pair.protein_id]['coupling']['1']['ligand_name'] = pair.ligand.name
+            dictotemplate[pair.protein_id]['coupling']['1']['ligand_physiological'] = physio
+            # dictotemplate[pair.protein_id]['coupling']['1']['variant'][subunit].append(pair.variant)
             family = coupling_reverse_header_names[subunit]
-            dictotemplate[pair.protein_id]['couplingmax'][pair.source]['logemaxec50'][family].append(round(pair.logmaxec50_deg, 1))
-            dictotemplate[pair.protein_id]['couplingmax'][pair.source]['pec50'][family].append(round(pair.pec50_deg, 1))
-            dictotemplate[pair.protein_id]['couplingmax'][pair.source]['emax'][family].append(round(pair.emax_deg))
-            dictotemplate[pair.protein_id]['couplingmax']['1']['logemaxec50'][family].append(round(pair.logmaxec50_deg, 1))
-            dictotemplate[pair.protein_id]['couplingmax']['1']['pec50'][family].append(round(pair.pec50_deg, 1))
-            dictotemplate[pair.protein_id]['couplingmax']['1']['emax'][family].append(round(pair.emax_deg))
+            dictotemplate[pair.protein_id]['couplingmax'][pair.source]['logemaxec50'][family].append(round(pair.logmaxec50, 1))
+            dictotemplate[pair.protein_id]['couplingmax'][pair.source]['pec50'][family].append(round(pair.pec50, 1))
+            dictotemplate[pair.protein_id]['couplingmax'][pair.source]['emax'][family].append(round(pair.emax))
+            dictotemplate[pair.protein_id]['couplingmax'][pair.source]['std'][family].append(std)
+            dictotemplate[pair.protein_id]['couplingmax'][pair.source]['ligand_id'] = pair.ligand_id
+            dictotemplate[pair.protein_id]['couplingmax'][pair.source]['ligand_name'] = pair.ligand.name
+            dictotemplate[pair.protein_id]['couplingmax'][pair.source]['ligand_physiological'] = physio
+            # dictotemplate[pair.protein_id]['couplingmax'][pair.source]['variant'][family].append(pair.variant)
+            dictotemplate[pair.protein_id]['couplingmax']['1']['logemaxec50'][family].append(round(pair.logmaxec50, 1))
+            dictotemplate[pair.protein_id]['couplingmax']['1']['pec50'][family].append(round(pair.pec50, 1))
+            dictotemplate[pair.protein_id]['couplingmax']['1']['emax'][family].append(round(pair.emax))
+            dictotemplate[pair.protein_id]['couplingmax']['1']['std'][family].append(std)
+            dictotemplate[pair.protein_id]['couplingmax']['1']['ligand_id'] = pair.ligand_id
+            dictotemplate[pair.protein_id]['couplingmax']['1']['ligand_name'] = pair.ligand.name
+            dictotemplate[pair.protein_id]['couplingmax']['1']['ligand_physiological'] = physio
+            # dictotemplate[pair.protein_id]['couplingmax']['1']['variant'][family].append(pair.variant)
 
         for prot in dictotemplate:
             for propval in dictotemplate[prot]['coupling']['1']:
-                for sub in dictotemplate[prot]['coupling']['1'][propval]:
-                    valuelist = dictotemplate[prot]['coupling']['1'][propval][sub]
-                    if len(valuelist) == 0:
-                        dictotemplate[prot]['coupling']['1'][propval][sub] = "--"
+                if propval not in ['ligand_id', 'ligand_name', 'ligand_physiological']:
+                    for sub in dictotemplate[prot]['coupling']['1'][propval]:
+                        valuelist = dictotemplate[prot]['coupling']['1'][propval][sub]
+                        fixedlist = [i for i in valuelist if i != 0]
 
-                    elif len(valuelist) > 0 and propval == "logemaxec50":
-                        if all(i > 0 for i in valuelist):
-                            dictotemplate[prot]['coupling']['1'][propval][sub] = round(mean(valuelist), 1)
-                        else:
-                            dictotemplate[prot]['coupling']['1'][propval][sub] = round(max(valuelist), 1)
+                        if len(valuelist) == 0:
+                            dictotemplate[prot]['coupling']['1'][propval][sub] = "--"
 
-                    elif len(valuelist) > 0 and propval == "pec50":
-                        if all(i > 0 for i in valuelist):
-                            dictotemplate[prot]['coupling']['1'][propval][sub] = round(mean(valuelist), 1)
-                        else:
-                            dictotemplate[prot]['coupling']['1'][propval][sub] = round(max(valuelist), 1)
+                        elif len(valuelist) > 0 and propval == "logemaxec50":
+                            if len(fixedlist) == 0:
+                                dictotemplate[prot]['coupling']['1'][propval][sub] = "--"
+                            else:
+                                dictotemplate[prot]['coupling']['1'][propval][sub] = round(mean(fixedlist), 1)
 
-                    elif len(valuelist) > 0 and propval == "emax":
-                        if all(i > 0 for i in valuelist):
-                            dictotemplate[prot]['coupling']['1'][propval][sub] = round(mean(valuelist))
+                        elif len(valuelist) > 0 and propval == "pec50":
+                            if len(fixedlist) == 0:
+                                dictotemplate[prot]['coupling']['1'][propval][sub] = "--"
+                            else:
+                                dictotemplate[prot]['coupling']['1'][propval][sub] = round(mean(fixedlist), 1)
+
+                        elif len(valuelist) > 0 and propval == "emax":
+                            if len(fixedlist) == 0:
+                                dictotemplate[prot]['coupling']['1'][propval][sub] = "--"
+                            else:
+                                dictotemplate[prot]['coupling']['1'][propval][sub] = round(mean(fixedlist))
+
+                        elif len(valuelist) > 0 and propval == "std":
+                            if len(fixedlist) == 0:
+                                dictotemplate[prot]['coupling']['1'][propval][sub] = "--"
+                            else:
+                                dictotemplate[prot]['coupling']['1'][propval][sub] = round(mean(fixedlist), 1)
                         else:
-                            dictotemplate[prot]['coupling']['1'][propval][sub] = round(max(valuelist))
-                    else:
-                        dictotemplate[prot]['coupling']['1'][propval][sub] = round(mean(valuelist))
+                            dictotemplate[prot]['coupling']['1'][propval][sub] = round(mean(fixedlist), 1)
 
         #dict_name = 'confidence'
         dict_name = 'coupling'
@@ -415,49 +524,58 @@ class CouplingBrowser(TemplateView):
             if dict_name not in dictotemplate[prot]:
                 dictotemplate[prot][dict_name] = {}
 
-            for i in range(2, len(sourcenames)+2):
-                dictotemplate[prot][dict_name][i] = {}
+            for i in range(2, len(sourcenames)+2): #
+                dictotemplate[prot][dict_name][str(i)] = {}
             for propval in dictotemplate[prot]['coupling']['1']:
                 for i in range(2, len(sourcenames)+2):
-                    dictotemplate[prot][dict_name][i][propval] = {}
-
-                for sub in dictotemplate[prot]['coupling']['1'][propval]: # use family here instead of sub for families "loop"
-                    family = coupling_reverse_header_names[sub]
-                    gtp = protein_data[prot][family]
-                    baseconfidence = dictotemplate[prot]['coupling']['1'][propval][sub]
-                    confidence = 0
-                    if gtp != "-":
-                        confidence += 1
-                        if baseconfidence == "-":
-                            baseconfidence == gtp
-                    for source in sourcenames:
-                        if source in dictotemplate[prot]['coupling'] and dictotemplate[prot]['coupling'][source][propval][sub] != "--":
-                            if dictotemplate[prot]['coupling'][source][propval][sub] > 0:
+                    dictotemplate[prot][dict_name][str(i)][propval] = {}
+                if propval not in ['ligand_id', 'ligand_name', 'ligand_physiological']:
+                    for sub in dictotemplate[prot]['coupling']['1'][propval]: # use family here instead of sub for families "loop"
+                            family = coupling_reverse_header_names[sub]
+                            gtp = protein_data[prot][family]
+                            baseconfidence = dictotemplate[prot][dict_name][str(i)][propval][sub] = gtp
+                            confidence = 0
+                            if gtp != "-":
                                 confidence += 1
+                                if baseconfidence == "-":
+                                    baseconfidence == gtp
+                            for source in sourcenames:
+                                if source in dictotemplate[prot]['coupling'] and dictotemplate[prot]['coupling'][source][propval][sub] != "--":
+                                    if dictotemplate[prot]['coupling'][source][propval][sub] > 0:
+                                        confidence += 1
 
+                            for i in range(2, len(sourcenames)+2):
+                                if confidence >= i:
+                                    dictotemplate[prot][dict_name][str(i)][propval][sub] = baseconfidence
+                                else:
+                                    dictotemplate[prot][dict_name][str(i)][propval][sub] = gtp
+                else:
                     for i in range(2, len(sourcenames)+2):
-                        if confidence >= i:
-                            dictotemplate[prot][dict_name][i][propval][sub] = baseconfidence
-                        else:
-                            dictotemplate[prot][dict_name][i][propval][sub] = gtp
+                        dictotemplate[prot][dict_name][str(i)][propval] = dictotemplate[prot]['coupling']['1'][propval]
 
         for prot in dictotemplate:
             for source in dictotemplate[prot]['couplingmax']:
                 for propval in dictotemplate[prot]['couplingmax'][source]:
-                    for fam in dictotemplate[prot]['couplingmax'][source][propval]:
-                        valuelist = dictotemplate[prot]['couplingmax'][source][propval][fam]
-                        if len(valuelist) == 0:
-                            dictotemplate[prot]['couplingmax'][source][propval][fam] = "--"
-                        # elif len(valuelist) == 1:
-                        #     dictotemplate[prot]['coupling'][source][propval][fam] = valuelist[0]
-                        elif propval == "logemaxec50":
-                            dictotemplate[prot]['couplingmax'][source][propval][fam] = round(max(valuelist), 1)
-                        elif propval == "pec50":
-                            dictotemplate[prot]['couplingmax'][source][propval][fam] = round(max(valuelist), 1)
-                        elif propval == "emax":
-                            dictotemplate[prot]['couplingmax'][source][propval][fam] = round(max(valuelist))
-                        else:
-                            dictotemplate[prot]['couplingmax'][source][propval][fam] = max(valuelist)
+                    if propval not in ['ligand_id', 'ligand_name', 'ligand_physiological']:
+                        for fam in dictotemplate[prot]['couplingmax'][source][propval]:
+                            valuelist = dictotemplate[prot]['couplingmax'][source][propval][fam]
+                            fixedlist = [i for i in valuelist if i != 0]
+                            if len(fixedlist) == 0:
+                                dictotemplate[prot]['couplingmax'][source][propval][fam] = "--"
+                            # elif len(valuelist) == 1:
+                            #     dictotemplate[prot]['coupling'][source][propval][fam] = valuelist[0]
+                            elif propval == "logemaxec50":
+                                dictotemplate[prot]['couplingmax'][source][propval][fam] = round(mean(fixedlist), 1)
+                            elif propval == "pec50":
+                                dictotemplate[prot]['couplingmax'][source][propval][fam] = round(mean(fixedlist), 1)
+                            elif propval == "std":
+                                dictotemplate[prot]['couplingmax'][source][propval][fam] = round(mean(fixedlist), 1)
+                            elif propval == "emax":
+                                dictotemplate[prot]['couplingmax'][source][propval][fam] = round(mean(fixedlist))
+                            # elif propval == "variant":
+                            #     dictotemplate[prot]['couplingmax'][source][propval][fam] = valuelist[0]
+                            else:
+                                dictotemplate[prot]['couplingmax'][source][propval][fam] = round(mean(fixedlist), 1)
 
         dict_name = 'couplingmax'
         for prot in dictotemplate:
@@ -465,34 +583,37 @@ class CouplingBrowser(TemplateView):
                 dictotemplate[prot][dict_name] = {}
 
             for i in range(2, len(sourcenames)+2):
-                dictotemplate[prot][dict_name][i] = {}
+                dictotemplate[prot][dict_name][str(i)] = {}
             for propval in dictotemplate[prot]['couplingmax']['1']:
                 for i in range(2, len(sourcenames)+2):
-                    dictotemplate[prot][dict_name][i][propval] = {}
+                    dictotemplate[prot][dict_name][str(i)][propval] = {}
+                if propval not in ['ligand_id', 'ligand_name', 'ligand_physiological']:
+                    for family in dictotemplate[prot]['couplingmax']['1'][propval]:
+                            gtp = protein_data[prot][family]
 
-                for family in dictotemplate[prot]['couplingmax']['1'][propval]:
-                    gtp = protein_data[prot][family]
-
-                    baseconfidence = dictotemplate[prot]['couplingmax']['1'][propval][family]
-                    confidence = 0
-                    if gtp != "-":
-                        confidence += 1
-                        if baseconfidence == "-":
-                            baseconfidence == gtp
-                    for source in sourcenames:
-                        if source in dictotemplate[prot]['couplingmax'] and dictotemplate[prot]['couplingmax'][source][propval][family] != "--":
-                            if dictotemplate[prot]['couplingmax'][source][propval][family] > 0:
+                            baseconfidence = dictotemplate[prot]['couplingmax']['1'][propval][family]
+                            confidence = 0
+                            if gtp != "-":
                                 confidence += 1
+                                if baseconfidence == "-":
+                                    baseconfidence == gtp
+                            for source in sourcenames:
+                                if source in dictotemplate[prot]['couplingmax'] and dictotemplate[prot]['couplingmax'][source][propval][family] != "--":
+                                    if dictotemplate[prot]['couplingmax'][source][propval][family] > 0:
+                                        confidence += 1
 
+                            for i in range(2, len(sourcenames)+2):
+                                if confidence >= i:
+                                    dictotemplate[prot][dict_name][str(i)][propval][family] = baseconfidence
+                                else:
+                                    dictotemplate[prot][dict_name][str(i)][propval][family] = gtp
+                else:
                     for i in range(2, len(sourcenames)+2):
-                        if confidence >= i:
-                            dictotemplate[prot][dict_name][i][propval][family] = baseconfidence
-                        else:
-                            dictotemplate[prot][dict_name][i][propval][family] = gtp
+                        dictotemplate[prot][dict_name][str(i)][propval] = dictotemplate[prot]['couplingmax']['1'][propval]
 
 
-        # pprint(dictotemplate[348]) # only Bouvier
-        # pprint(dictotemplate[1]) # Inoue and Bouvier
+        # print(dictotemplate[348]) # only Bouvier
+        # print(dictotemplate[1]) # Inoue and Bouvier
 
         return dictotemplate, coupling_header_names
 

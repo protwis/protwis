@@ -803,6 +803,10 @@ class Command(BaseCommand):
                 protein = tuple[0].cell_value(i, 0)
                 protein_dict = {}
                 protein_dict['ligand_id'] = tuple[0].cell_value(i, 4)
+                if tuple[0].cell_value(i, 5) == 'Physiological':
+                    protein_dict['ligand_physiological'] = True
+                else:
+                    protein_dict['ligand_physiological'] = False
                 #for each block of data parse the sheet
                 #and retrieve the associated info
                 for key in columns.keys():
@@ -851,7 +855,7 @@ class Command(BaseCommand):
                     print("protein not found for ", entry_name)
                     continue
 
-                gproteins = list(couplings.keys())[3:]
+                gproteins = list(couplings.keys())[2:]
 
                 for header in gproteins:
                     # print("PROCESSING: "+str(header)+" COLUMN")
@@ -909,6 +913,7 @@ class Command(BaseCommand):
                                                    pec50=couplings[header]['pec50deg'],
                                                    emax=couplings[header]['emaxdeg'],
                                                    stand_dev=couplings[header]['stddeg'],
+                                                   physiological_ligand=couplings['ligand_physiological'],
                                                    g_protein_subunit=gp)
                         # print("APPENDING CALL TO BULK")
                         bulk.append(gpair)
