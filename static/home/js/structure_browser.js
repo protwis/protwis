@@ -295,7 +295,7 @@ function structurebrowser() {
                     width: "100px",
                 },
                 data: ["Agonist", "Agonist (partial)", "Allosteric antagonist", "Allosteric agonist", "AgonistNAM", "Antagonist", "AntagonistCofactor", "AntagonistNAM", "Apo (no ligand)", "Inverse agonist", "Inverse agonistNAM",
-                        "AgonistPAM", "NAM", "PAM", "unknown", "-"]
+                        "AgonistPAM", "NAM", "PAM", "unknown", "-", "Ago-PAM"]
             },
             {
                 column_number : 23,
