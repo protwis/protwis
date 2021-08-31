@@ -270,18 +270,7 @@
 					}
 				},
 				{
-					text: 'Reset Filters',
-					className: 'btn btn-primary',
-					titleAttr: 'Reset All Filters',
-					init: function(api, node, config) {
-						$(node).removeClass('dt-button buttons-excel buttons-html5');
-					},
-					action: function(e, dt, node, config) {
-						reset_filters()
-					},
-				},
-				{
-					text: 'Get Vendors',
+					text: 'Get ligand vendors',
 					className: 'btn btn-primary',
 					titleAttr: 'Vendors info for top 20 ligands',
 					init: function(api, node, config) {
@@ -310,16 +299,20 @@
 						});
 					},
 				},
+                {
+					text: 'Reset filters',
+					className: 'btn btn-primary',
+					titleAttr: 'Reset All Filters',
+					init: function(api, node, config) {
+						$(node).removeClass('dt-button buttons-excel buttons-html5');
+					},
+					action: function(e, dt, node, config) {
+						reset_filters()
+					},
+				},
 			],
-			"drawCallback": function(settings) {
-				setTimeout(function() {
-					var ligand_counter = read_unique_ids();
-					var receptor_counter = read_unique_ids_receptor();
-					document.getElementById("ligand_counter").innerHTML = ligand_counter;
-					document.getElementById("receptor_counter").innerHTML = receptor_counter;
-				}, 2000);
-
-			},
+			// "drawCallback": function(settings) {
+			// },
 		});
 		yadcf.init(table,
 			[{
@@ -973,26 +966,6 @@
 {% autoescape off %}
 
 <div style='padding-top: 0px; font-size: 10px; white-space: nowrap; overflow-y:hidden;  width:100%;'>
-	<div class="toolbar_data_css" id="toolbar_data">
-		<table class="display compact text-nowrap toolbar_data_css">
-			<thead>
-				<tr>
-					<h4>Showing unique:</h4>
-				</tr>
-			</thead>
-            <tbody>
-                <tr>
-                    <td>Ligands</td>
-                    <td id="ligand_counter"></td>
-                </tr>
-                <tr>
-                    <td>Receptors</td>
-                    <td id="receptor_counter"></td>
-                </tr>
-            </tbody>
-		</table>
-	</div>
-
 	<table class="display compact text-nowrap" id='structures_scrollable' style="width: 100%">
 		<thead id="headers">
 			<tr class="header-spans" rowspan="2">

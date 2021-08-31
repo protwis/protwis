@@ -76,7 +76,7 @@ class Command(BaseBuild):
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
-        # import the structure data        
+        # import the structure data
         self.prepare_all_data(options['filename'])
         try:
             print('CREATING BIAS DATA')
@@ -349,8 +349,8 @@ class Command(BaseBuild):
                                                efficacy_sign=d['emax_equation'],
                                                efficacy_unit=d['emax_unit'],
                                                bias_reference=d['ligand_reference'],
-                                               bias_value=d['transduction_coef'],
-                                               bias_value_initial=d['relative_transduction_coef'],
+                                               transduction_coef=d['transduction_coef'],
+                                               relative_transduction_coef=d['relative_transduction_coef'],
                                                emax_ligand_reference=reference_ligand,
                                                )
         experiment_assay.save()
@@ -478,17 +478,21 @@ class Command(BaseBuild):
         fetch receptor with Protein model
         requires: protein id, source
         """
-        test = None
-        if Protein.objects.filter(entry_name=protein_from_excel):
-            protein = Protein.objects.filter(entry_name=protein_from_excel)
-            test = protein.get()
-        elif Protein.objects.filter(web_links__index=protein_from_excel, web_links__web_resource__slug='uniprot'):
-            protein1 = Protein.objects.filter(
-                web_links__index=protein_from_excel, web_links__web_resource__slug='uniprot')
-            test = protein1[0]
-        if test == None:
-            self.logger.info("fetch_protein  error")
-        return test
+        try:
+            test = None
+            if Protein.objects.filter(entry_name=protein_from_excel):
+                protein = Protein.objects.filter(entry_name=protein_from_excel)
+                test = protein.get()
+            elif Protein.objects.filter(web_links__index=protein_from_excel, web_links__web_resource__slug='uniprot'):
+                protein1 = Protein.objects.filter(
+                    web_links__index=protein_from_excel, web_links__web_resource__slug='uniprot')
+                test = protein1[0]
+            if test == None:
+                self.logger.info("fetch_protein  error")
+            return test
+        except:
+            import pdb; pdb.set_trace()
+
 
     def fetch_ligand(self, ligand_id, ligand_type, ligand_name, source_file):
         """
@@ -536,22 +540,23 @@ class Command(BaseBuild):
             pub_type = 'pubmed'
         else:  # assume doi
             pub_type = 'doi'
+        try:
+            if publication_doi not in self.publication_cache:
+                pub = False
+                if pub_type == 'doi':
+                    pub = Publication.get_or_create_from_doi(publication_doi)
+                elif pub_type == 'pubmed':
+                    pub = Publication.get_or_create_from_pubmed(publication_doi)
 
-        if publication_doi not in self.publication_cache:
-            pub = False
-            if pub_type == 'doi':
-                pub = Publication.get_or_create_from_doi(publication_doi)
-            elif pub_type == 'pubmed':
-                pub = Publication.get_or_create_from_pubmed(publication_doi)
+                if not pub:
+                    self.mylog.debug(
+                        "publication fetching error | module: fetch_publication. Row # is : " + str(publication_doi) + ' ' + pub_type)
 
-            if not pub:
-                self.mylog.debug(
-                    "publication fetching error | module: fetch_publication. Row # is : " + str(publication_doi) + ' ' + pub_type)
-
-            self.publication_cache[publication_doi] = pub
-        else:
-            pub = self.publication_cache[publication_doi]
-
+                self.publication_cache[publication_doi] = pub
+            else:
+                pub = self.publication_cache[publication_doi]
+        except:
+            pub = Publication.objects.filter(web_link__index = publication_doi).first() 
         return pub
 
     def fetch_experiment(self, publication, ligand, receptor, source):

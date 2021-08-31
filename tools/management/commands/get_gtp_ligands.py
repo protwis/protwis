@@ -20,7 +20,7 @@ class Command(BaseBuild):
     file_handler.setFormatter(formatter)
     mylog.addHandler(file_handler)
 
-    help = 'Updates ChEMBL data and imports it'
+    help = 'Updates GuideToPharma data and imports it'
     publication_cache = {}
     ligand_cache = {}
     data_all = []

@@ -226,28 +226,103 @@
 {% autoescape off %}
 
 <div style='padding-top: 0px; font-size: 10px; white-space: nowrap; overflow-y:hidden;  width:100%;'>
-	<div class="toolbar_data_css" id="toolbar_data">
-		<table class="display compact text-nowrap toolbar_data_css">
-			<thead>
-				<tr>
-					<h4>Showing unique:</h4>
-				</tr>
-			</thead>
-            <tbody>
-                <tr>
-    				<td>Ligands</td>
-    				<td id="ligand_counter"></td>
-    			</tr>
-    			<tr>
-    				<td>Receptors</td>
-    				<td id="receptor_counter"></td>
-    			</tr>
-            </tbody>
-		</table>
-	</div>
+
 
 	<table class="display compact text-nowrap" id='structures_scrollable' style="width: 100%">
 		<thead id="headers">
+            <tr style="display: None">
+    				<th></th>
+    				<th>Class</th>
+    				<th>Rec Fam</th>
+    				<th>UniProt</th>
+    				<th>IUPHAR</th>
+    				<th>Species</th>
+    				<th id="endogenous_ligand_filter_select">Endogenous<br>Ligand</th>
+    				<th>Reference<br>Ligand</th>
+    				<th>Tested<br>ligand</th>
+    				<th>#Ven<br>dors</th>
+    				<th>#Arti<br>cles</th>
+    				<th>#Labs<br></th>
+    				<th>Primary</th>
+    				<th>Secondary</th>
+    				<th>P 1</th>
+    				<th>P 2</th>
+    				<th>P 3</th>
+    				<th>P 4</th>
+    				<th>P 5</th>
+    				<th>P 1</th>
+    				<th>P 2</th>
+    				<th>P 3</th>
+    				<th>P 4</th>
+    				<th>P 5</th>
+
+    				<th>P1 - P2</th>
+    				<th>P1 - P3</th>
+    				<th>P1 - P4</th>
+    				<th>P1 - P5</th>
+
+    				<th>P1 - P2</th>
+    				<th>P1 - P3</th>
+    				<th>P1 - P4</th>
+    				<th>P1 - P5</th>
+
+    				<th>P 1</th>
+    				<th>P 2</th>
+    				<th>P 3</th>
+    				<th>P 4</th>
+    				<th>P 5</th>
+
+    				<th>P 1</th>
+    				<th>P 2</th>
+    				<th>P 3</th>
+    				<th>P 4</th>
+    				<th>P 5</th>
+
+    				<th>P 1</th>
+    				<th>P 2</th>
+    				<th>P 3</th>
+    				<th>P 4</th>
+    				<th>P 5</th>
+
+    				<th>P 1</th>
+    				<th>P 2</th>
+    				<th>P 3</th>
+    				<th>P 4</th>
+    				<th>P 5</th>
+
+    				<th>P 1</th>
+    				<th>P 2</th>
+    				<th>P 3</th>
+    				<th>P 4</th>
+    				<th>P 5</th>
+
+    				<th>P 1</th>
+    				<th>P 2</th>
+    				<th>P 3</th>
+    				<th>P 4</th>
+    				<th>P 5</th>
+
+    				<th>P 1</th>
+    				<th>P 2</th>
+    				<th>P 3</th>
+    				<th>P 4</th>
+    				<th>P 5</th>
+
+    				<th>P 1</th>
+    				<th>P 2</th>
+    				<th>P 3</th>
+    				<th>P 4</th>
+    				<th>P 5</th>
+
+    				<th>P 1</th>
+    				<th>P 2</th>
+    				<th>P 3</th>
+    				<th>P 4</th>
+    				<th>P 5</th>
+    				<th>Authors</th>
+    				<th>DOI/ <br>Reference</th>
+			</tr>
+
 			<tr class="header-spans" rowspan="2">
 				<th><span class="glyphicon glyphicon-info-sign" title="Click on this icon in a row for more details."></span></th>
 				<th id="receptor" style="border-left: 1px solid black; text-align:left" colspan="5">
@@ -594,6 +669,9 @@
 <script src="{% static 'home/js/dataTables.buttons.min.js' %}"> </script>
 <script src="{% static 'home/js/select2.js' %}"> </script>
 <script src="{% static 'home/js/shading.js' %}"></script>
+<script src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.colVis.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.0.0/js/buttons.html5.min.js"></script>
 
 <script>
 	$(document).ready(function() {
@@ -625,7 +703,16 @@
 			order: [
 				[28, "desc"]
 			],
-			"buttons": [{
+			"buttons": [
+                {
+                    extend: 'excelHtml5',
+                    text: 'Export to Excel',
+                    className: 'btn btn-primary',
+					init: function(api, node, config) {
+						$(node).removeClass('dt-button buttons-excel buttons-html5');
+					},
+                },
+                {
 					extend: 'csv',
 					text: 'Export to CSV',
 					className: 'btn btn-primary',
@@ -641,18 +728,7 @@
 					}
 				},
 				{
-					text: 'Reset Filters',
-					className: 'btn btn-primary',
-					titleAttr: 'Reset All Filters',
-					init: function(api, node, config) {
-						$(node).removeClass('dt-button buttons-excel buttons-html5');
-					},
-					action: function(e, dt, node, config) {
-						reset_filters()
-					},
-				},
-				{
-					text: 'Get Vendors',
+					text: 'Get ligand vendors',
 					className: 'btn btn-primary',
 					titleAttr: 'Vendors info for top 20 ligands',
 					init: function(api, node, config) {
@@ -681,16 +757,39 @@
 						});
 					},
 				},
+                {
+                    extend: 'colvisGroup',
+                    text: 'Hide pathways',
+                    className: 'btn btn-primary',
+					init: function(api, node, config) {
+						$(node).removeClass('dt-button buttons-excel buttons-html5');
+					},
+                    hide: [ 16, 17, 18 ]
+                },
+                {
+                    extend: 'colvisGroup',
+                    text: 'Show pathways',
+                    className: 'btn btn-primary',
+					init: function(api, node, config) {
+						$(node).removeClass('dt-button buttons-excel buttons-html5');
+					},
+                    show: [ 16, 17, 18 ],
+                },
+                {
+    				text: 'Reset filters',
+    				className: 'btn btn-primary',
+    				titleAttr: 'Reset All Filters',
+    				init: function(api, node, config) {
+    					$(node).removeClass('dt-button buttons-excel buttons-html5');
+    				},
+    				action: function(e, dt, node, config) {
+    					reset_filters()
+    				},
+				},
 			],
-			"drawCallback": function(settings) {
-				setTimeout(function() {
-					var ligand_counter = read_unique_ids();
-					var receptor_counter = read_unique_ids_receptor();
-					document.getElementById("ligand_counter").innerHTML = ligand_counter;
-					document.getElementById("receptor_counter").innerHTML = receptor_counter;
-					// calculate_header()
-				}, 3000);
-			},
+			// "drawCallback": function(settings) {
+            //
+			// },
 		});
 		yadcf.init(table,
 			[{

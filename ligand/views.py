@@ -46,6 +46,7 @@ class LigandTargetSelection(AbsTargetSelectionTable):
         },
     }
 
+
 class LigandBrowser(TemplateView):
     """
     Per target summary of ligands.
@@ -115,6 +116,7 @@ class LigandBrowser(TemplateView):
         except:
             self.logger.info('receptor not found error')
             return None, None
+
 
 def LigandDetails(request, ligand_id):
     """
@@ -1665,7 +1667,7 @@ def CachedBiasBrowsers(browser_type, request):
     try:
         simple_selection = request.session.get('selection', False)
 
-        families = []    
+        families = []
         for target in simple_selection.reference:
             if target.type == 'protein':
                 protein_ids.append(target.item.entry_name)
@@ -1758,10 +1760,10 @@ class BiasBrowser(ListView):
             pathways_p4=Subquery(assay_qs.values('family')[3:4]),
             pathways_p5=Subquery(assay_qs.values('family')[4:5]),
             # t_factor
-            opmodel_p2_p1=Subquery(assay_qs.values('t_factor')[1:2]),
-            opmodel_p3_p1=Subquery(assay_qs.values('t_factor')[2:3]),
-            opmodel_p4_p1=Subquery(assay_qs.values('t_factor')[3:4]),
-            opmodel_p5_p1=Subquery(assay_qs.values('t_factor')[4:5]),
+            opmodel_p2_p1=Subquery(assay_qs.values('delta_relative_transduction_coef')[1:2]),
+            opmodel_p3_p1=Subquery(assay_qs.values('delta_relative_transduction_coef')[2:3]),
+            opmodel_p4_p1=Subquery(assay_qs.values('delta_relative_transduction_coef')[3:4]),
+            opmodel_p5_p1=Subquery(assay_qs.values('delta_relative_transduction_coef')[4:5]),
             # log bias factor
             lbf_p2_p1=Subquery(assay_qs.values('log_bias_factor')[1:2]),
             lbf_p3_p1=Subquery(assay_qs.values('log_bias_factor')[2:3]),
@@ -1811,11 +1813,11 @@ class BiasBrowser(ListView):
             emax_p4=Subquery(assay_qs.values('quantitive_efficacy')[3:4]),
             emax_p5=Subquery(assay_qs.values('quantitive_efficacy')[4:5]),
 
-            lbf_part_p1=Subquery(assay_qs.values('log_bias_factor_a')[:1]),
-            lbf_part_p2=Subquery(assay_qs.values('log_bias_factor_a')[1:2]),
-            lbf_part_p3=Subquery(assay_qs.values('log_bias_factor_a')[2:3]),
-            lbf_part_p4=Subquery(assay_qs.values('log_bias_factor_a')[3:4]),
-            lbf_part_p5=Subquery(assay_qs.values('log_bias_factor_a')[4:5]),
+            lbf_part_p1=Subquery(assay_qs.values('delta_emax_ec50')[:1]),
+            lbf_part_p2=Subquery(assay_qs.values('delta_emax_ec50')[1:2]),
+            lbf_part_p3=Subquery(assay_qs.values('delta_emax_ec50')[2:3]),
+            lbf_part_p4=Subquery(assay_qs.values('delta_emax_ec50')[3:4]),
+            lbf_part_p5=Subquery(assay_qs.values('delta_emax_ec50')[4:5]),
             # reference assay
             reference_ligand_p1=Subquery(assay_qs.values('reference_ligand_id')[:1]),
             reference_ligand_p2=Subquery(assay_qs.values('reference_ligand_id')[1:2]),
@@ -1824,11 +1826,11 @@ class BiasBrowser(ListView):
             reference_ligand_p5=Subquery(assay_qs.values('reference_ligand_id')[4:5]),
 
             # T factor
-            tfactor_p1=Subquery(assay_qs.values('t_value')[:1]),
-            tfactor_p2=Subquery(assay_qs.values('t_value')[1:2]),
-            tfactor_p3=Subquery(assay_qs.values('t_value')[2:3]),
-            tfactor_p4=Subquery(assay_qs.values('t_value')[3:4]),
-            tfactor_p5=Subquery(assay_qs.values('t_value')[4:5]),
+            tfactor_p1=Subquery(assay_qs.values('transduction_coef')[:1]),
+            tfactor_p2=Subquery(assay_qs.values('transduction_coef')[1:2]),
+            tfactor_p3=Subquery(assay_qs.values('transduction_coef')[2:3]),
+            tfactor_p4=Subquery(assay_qs.values('transduction_coef')[3:4]),
+            tfactor_p5=Subquery(assay_qs.values('transduction_coef')[4:5]),
 
             molecule1_p1=Subquery(assay_qs.values('molecule_1')[:1]),
             molecule1_p2=Subquery(assay_qs.values('molecule_1')[1:2]),
@@ -1893,11 +1895,11 @@ class BiasBrowser(ListView):
             reference_assay_type_p4=Subquery(ref_assay_qs.values('assay_type')[3:4]),
             reference_assay_type_p5=Subquery(ref_assay_qs.values('assay_type')[4:5]),
 
-            reference_a_p1=Subquery(assay_qs.values('log_bias_factor_a')[:1]),
-            reference_a_p2=Subquery(assay_qs.values('log_bias_factor_a')[1:2]),
-            reference_a_p3=Subquery(assay_qs.values('log_bias_factor_a')[2:3]),
-            reference_a_p4=Subquery(assay_qs.values('log_bias_factor_a')[3:4]),
-            reference_a_p5=Subquery(assay_qs.values('log_bias_factor_a')[4:5]),
+            reference_a_p1=Subquery(assay_qs.values('delta_emax_ec50')[:1]),
+            reference_a_p2=Subquery(assay_qs.values('delta_emax_ec50')[1:2]),
+            reference_a_p3=Subquery(assay_qs.values('delta_emax_ec50')[2:3]),
+            reference_a_p4=Subquery(assay_qs.values('delta_emax_ec50')[3:4]),
+            reference_a_p5=Subquery(assay_qs.values('delta_emax_ec50')[4:5]),
         )
         return queryset
 
