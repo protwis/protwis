@@ -546,6 +546,8 @@ class HomologyModeling(object):
             self.prot_conf = ProteinConformation.objects.get(protein=self.reference_protein.parent)
             self.uniprot_id = self.reference_protein.parent.accession
             self.revise_xtal = True
+            if self.reference_entry_name.upper()=='5LWE':
+                raise AssertionError('Skipping 5LWE refined structure model')
             try:
                 sc = SignprotComplex.objects.get(structure__pdb_code__index=self.reference_entry_name.upper())
                 self.complex = True
