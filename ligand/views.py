@@ -17,7 +17,7 @@ from common.views import AbsTargetSelectionTable, Alignment
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
-from ligand.models import Ligand, LigandVendorLink,LigandVendors, AnalyzedExperiment, AnalyzedAssay, BiasedPathways, AssayExperiment, LigandReceptorStatistics
+from ligand.models import Ligand, LigandVendorLink,LigandVendors, AnalyzedExperiment, AnalyzedAssay, BiasedPathways, AssayExperiment
 from protein.models import Protein, ProteinFamily, ProteinCouplings
 from interaction.models import StructureLigandInteraction
 from mutation.models import MutationExperiment
@@ -46,7 +46,7 @@ class LigandBrowser(TemplateView):
 
         return context
 
-    def fetch_receptor_trunsducers(self, receptor):
+    def fetch_receptor_transducers(self, receptor):
         primary = set()
         temp = str()
         temp1 = str()

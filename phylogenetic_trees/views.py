@@ -12,7 +12,7 @@ from common.views import AbsMiscSelection
 from common.selection import SimpleSelection, Selection, SelectionItem
 from mutation.models import *
 from phylogenetic_trees.PrepareTree import *
-from protein.models import ProteinFamily, ProteinAlias, ProteinSet, Protein, ProteinSegment, ProteinCouplings
+from protein.models import ProteinFamily, ProteinSet, Protein, ProteinSegment, ProteinCouplings
 
 from copy import deepcopy
 import json

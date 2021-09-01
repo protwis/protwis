@@ -9,7 +9,7 @@ from collections import Counter
 
 from residue.models import ResidueGenericNumberEquivalent
 from signprot.models import SignprotComplex
-from protein.models import Protein, ProteinSegment, ProteinFamily, ProteinCouplings
+from protein.models import Protein, ProteinCouplings
 from common.definitions import *
 
 from django.core.exceptions import ObjectDoesNotExist

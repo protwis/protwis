@@ -2,7 +2,7 @@ from . import views
 from django.urls import path
 from django.views.decorators.cache import cache_page
 from django.views.generic.base import RedirectView
-from signprot.views import CouplingBrowser, ArrestinCoupling
+from signprot.views import CouplingBrowser
 from contactnetwork.views import PdbTableData
 
 urlpatterns = [

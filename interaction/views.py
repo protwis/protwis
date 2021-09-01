@@ -24,7 +24,6 @@ from common.selection import SimpleSelection, Selection, SelectionItem
 from common import definitions
 from common.views import AbsTargetSelection
 from common.alignment import Alignment
-from protein.models import Protein, ProteinFamily
 
 import os
 from os import listdir, devnull, makedirs

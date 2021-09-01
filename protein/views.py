@@ -6,8 +6,7 @@ from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 from django.urls import reverse
 
-from protein.models import (Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene, ProteinCouplings,
-                            ProteinSegment)
+from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene, ProteinSegment
 from residue.models import Residue
 from structure.models import Structure, StructureModel, StructureExtraProteins
 # from structure.views import StructureBrowser

@@ -56,13 +56,14 @@ class Command(BaseCommand):
     lookup = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'CGN_lookup.csv'])
     alignment_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'CGN_referenceAlignment.fasta'])
     ortholog_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'gprotein_orthologs.csv'])
-    iupharcoupling_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', '200416_iuphar_coupling_data.csv'])
+    iupharcoupling_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'iuphar_coupling_data.csv'])
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot'])
     local_uniprot_beta_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot_beta'])
     local_uniprot_gamma_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot_gamma'])
     remote_uniprot_dir = 'https://www.uniprot.org/uniprot/'
-    #reading the master file (which right now is my personal file to avoid overlap)
-    master_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'GPCR-G_protein_couplings_JC_Copy.xlsx'])
+
+    #reading the master file
+    master_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'GPCR-G_protein_couplings.xlsx'])
 
     logger = logging.getLogger(__name__)
 
@@ -721,20 +722,14 @@ class Command(BaseCommand):
         return IDsdata
 
 
-    def assess_variants(self, dictionary, iterator, B1_GRK, B2_GRK, GoA, GoB):
+    def assess_variants(self, dictionary, iterator, column_variants):
         """
         Function that assesses the variants of the G-Protein coupling or Arrestin coupling.
-        For now variants assessed are: GoB and Arrestin with GRK, but more can be further
+        For now variants assessed are: Isoform 2 of Go and Arrestin without GRK, but more can be further
         implemented, thus we need to keep this function highly flexible.
         """
-        if (iterator == B1_GRK or iterator == B2_GRK):
-            dictionary['variant'] = 'GRK'
-        elif iterator == GoB:
-            dictionary['variant'] = 'GoB'
-        elif iterator == GoA:
-            dictionary['variant'] = 'GoA'
-        else:
-            dictionary['variant'] = 'Regular'
+        if iterator in column_variants:
+            dictionary['variant'] = column_variants[iterator]
 
     def assess_type(self, accession_id):
         """
@@ -773,12 +768,15 @@ class Command(BaseCommand):
         #please update this number
         subunits = 17
         #each key if the section of data in the spreadsheet
-        #values are: start column, B1_GRK column, B2_GRK column, GoA column and GoB column
+        #values are: start column, ArrB2_NO_GRK column, GoA column and GoB column
+        variants = ["isoform 1 (GoA)", "isoform 2 (GoB)", "no GRK"]
+        variant_indices = [31, 32, 40]
+        start_index = 26
         columns = {
-                    'logmaxec50': [26, 41, 42, 31, 32],
-                    'pec50deg': [43, 58, 59, 48, 49],
-                    'emaxdeg': [60, 75, 76, 65, 66],
-                    'stddeg': [77, 92, 93, 82, 83]
+                    'logmaxec50':   {"start": start_index, "variants": dict(zip(variant_indices, variants))},
+                    'pec50deg':     {"start": start_index+subunits*1, "variants": dict(zip([i+subunits*1 for i in variant_indices], variants))},
+                    'emaxdeg':      {"start": start_index+subunits*2, "variants": dict(zip([i+subunits*2 for i in variant_indices], variants))},
+                    'stddeg':       {"start": start_index+subunits*3, "variants": dict(zip([i+subunits*3 for i in variant_indices], variants))}
                     }
 
         data = {}
@@ -810,7 +808,7 @@ class Command(BaseCommand):
                 #for each block of data parse the sheet
                 #and retrieve the associated info
                 for key in columns.keys():
-                    for j in range(columns[key][0], (columns[key][0] + subunits)):
+                    for j in range(columns[key]["start"], (columns[key]["start"] + subunits)):
                         gproteinsubunit = tuple[0].cell_value(1, j).split("\n")[-1]
                         if gproteinsubunit not in protein_dict.keys():
                             protein_dict[gproteinsubunit] = {}
@@ -819,7 +817,7 @@ class Command(BaseCommand):
                             protein_dict[gproteinsubunit][key] = None
                         else:
                             protein_dict[gproteinsubunit][key] = tuple[0].cell_value(i, j)
-                        self.assess_variants(protein_dict[gproteinsubunit], j, columns[key][1], columns[key][2], columns[key][3], columns[key][4])
+                        self.assess_variants(protein_dict[gproteinsubunit], j, column[key]["variants"])
                 #apply temporary dict to master dict
                 data[tuple[2]][protein] = protein_dict
 

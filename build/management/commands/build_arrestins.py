@@ -28,7 +28,6 @@ class Command(BaseCommand):
 
     # source files
     arrestin_data_file = os.sep.join([settings.DATA_DIR, 'arrestin_data', 'ortholog_alignment.xlsx'])
-    bouvier_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', '201025_bouvier_gloriam.xlsx'])
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'protein_data', 'uniprot'])
     remote_uniprot_dir = 'https://uniprot.org/uniprot/'
 
