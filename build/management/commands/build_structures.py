@@ -333,6 +333,13 @@ class Command(BaseBuild):
                 deletions.remove(i)
         elif structure.pdb_code.index=='7EB2':
             deletions, removed = [], []
+        elif structure.pdb_code.index=='7F1R':
+            deletions = list(range(314,400))
+            removed = list(range(1,128))+list(range(188,192))
+        elif structure.pdb_code.index=='7F1Q':
+            removed = list(range(1,113))
+        elif structure.pdb_code.index in ['7EPE','7EPF']:
+            removed, deletions = list(range(1000,1148)), list(range(1000,1148))
 
         if self.debug:
             print('Deletions: ', deletions)
@@ -534,6 +541,12 @@ class Command(BaseBuild):
             temp_seq = temp_seq[:224]+'S'+temp_seq[224:234]+temp_seq[235:]
         elif structure.pdb_code.index=='7M3J':
             temp_seq = temp_seq[:100]+'I'+temp_seq[100:115]+temp_seq[116:337]+'N'+temp_seq[337:380]+temp_seq[381:]
+        elif structure.pdb_code.index=='7DUQ':
+            temp_seq = temp_seq[:105]+'S------'+temp_seq[112:]
+        elif structure.pdb_code.index in ['7KI0','7KI1']:
+            temp_seq = temp_seq[:105]+'S-------'+temp_seq[113:]
+        elif structure.pdb_code.index=='7MTQ':
+            temp_seq = temp_seq[:694]+'E---'+temp_seq[698:]
 
         for i, r in enumerate(ref_seq, 1): #loop over alignment to create lookups (track pos)
             if self.debug:
@@ -577,6 +590,9 @@ class Command(BaseBuild):
         for line in pdblines_temp: #Get rid of all odd records
             if line.startswith('ATOM') or (line[17:20] in ['YCM','CSD','TYS','SEP'] and line.startswith('HETATM')):
                 pdblines.append(line)
+            # Only build residues for the first model
+            if line.startswith('MODEL        2'):
+                break
         pdblines.append('') #add a line to not "run out"
         rotamer_bulk = []
         rotamer_data_bulk = []
@@ -607,6 +623,8 @@ class Command(BaseBuild):
                     else: #if this is a new residue
                         #print(pdb.splitlines()[i+1][22:26].strip(),check)
                         temp += line + "\n"
+                        if structure.pdb_code.index=='7E9H' and line[17:20]=='SEP':
+                            continue
                         #(int(check.strip())<2000 or structure.pdb_code.index=="4PHU") and
                         if int(check.strip()) not in removed:
                             # print(line)
@@ -1368,7 +1386,10 @@ class Command(BaseBuild):
                                     db_lig = Ligand.objects.filter(name=ligand['title'])
                                 else:
                                     pdb_reference = ligand['name']
-                                    db_lig = Ligand.objects.filter(pdbe=ligand['name'])
+                                    if ligand['name']=='RET':
+                                        db_lig = Ligand.objects.filter(name=ligand['title'])
+                                    else:
+                                        db_lig = Ligand.objects.filter(pdbe=ligand['name'])
 
                                 # check if ligand exists already
                                 if len(db_lig)>0:

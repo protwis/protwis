@@ -278,6 +278,20 @@ class StructureList(views.APIView):
                     ligands.append(ligand)
             structure_data['ligands'] = ligands
 
+            # signalling protein
+            if structure.signprot_complex:
+                sign_prot = {'type': 'G protein', 'data': {}}
+                sign_prot['data']['entity1'] = {'entry_name':structure.signprot_complex.protein.entry_name, 'chain':structure.signprot_complex.alpha}
+                if structure.signprot_complex.beta_protein:
+                    sign_prot['data']['entity2'] = {'entry_name':structure.signprot_complex.beta_protein.entry_name, 'chain':structure.signprot_complex.beta_chain}
+                if structure.signprot_complex.gamma_protein:
+                    sign_prot['data']['entity3'] = {'entry_name':structure.signprot_complex.gamma_protein.entry_name, 'chain':structure.signprot_complex.gamma_chain}
+                structure_data['signalling_protein'] = sign_prot
+            if len(structure.extra_proteins.all())>0:
+                for ep in structure.extra_proteins.all():
+                    if ep.wt_protein and ep.wt_protein.family.slug.startswith('200'):
+                        structure_data['signalling_protein'] = {'type': 'Arrestin', 'data': {'entity1':{'entry_name':ep.wt_protein.entry_name, 'chain':ep.chain}}}
+
             s.append(structure_data)
 
         # if a structure is selected, return a single dict rather then a list of dicts
