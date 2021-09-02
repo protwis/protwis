@@ -1,5 +1,5 @@
 /*global yadcf*/
-/*eslint complexity: ["error", 8]*/
+/*eslint complexity: ["error", 20]*/
 /*eslint wrap-iife: ["error", "outside"]*/
 /*eslint quotes: ["error", "double", { "avoidEscape": true }]*/
 let oTable1 = [];
@@ -179,8 +179,6 @@ function make_range_number_cols(start_column, repeat_number, tab) {
     return repeated_filter;
 }
 
-repfilter = make_range_number_cols(9, 12, "subtab");
-
 $(document).ready(function() {
 // Activate tooltips and popovers from Bootstrap   * Bootstrap v3.3.7 (http://getbootstrap.com)
     $("[data-toggle='tooltip']").tooltip();
@@ -217,6 +215,7 @@ $(document).ready(function() {
         ],
     });
 
+    let repfilter = make_range_number_cols(9, 12, "subtab");
     let columnfilters = [
         {
             column_number: 0,
@@ -326,7 +325,6 @@ $(document).ready(function() {
             filter_container_id: "hide_filter3",
         },
     ].concat(repfilter);
-    console.log(columnfilters)
 
     yadcf.init(oTable1, columnfilters, { cumulative_filtering: false});
 
@@ -335,6 +333,7 @@ $(document).ready(function() {
       event.stopPropagation();
   });
 
+let lastRangeRankFilter = "";
   $(".ranked_range_min3, .ranked_range_max3, .ranked_range_rank3").on("input", function(event) {
       // Get column #
       let column_nr = event.target.id.split("_")[3];
@@ -435,20 +434,31 @@ $(document).ready(function() {
 // --------- overlay for table 1 ---------
     var left1 = 0;
     var old_left1 = 0;
+    let isScrolling;
     $("#arrestintable").closest(".dataTables_scrollBody").scroll(function(){
-        // If user scrolls and it's > 100px from left, then attach fixed columns overlay
-        left1 = $("#arrestintable").closest(".dataTables_scrollBody").scrollLeft();
-        if (left1!==old_left1) {
-            $("#overlay1").hide();
+        // Hide overlay1
+        if ($("#overlay1").is(":visible")) {
+          $("#overlay1").hide();
         }
-        old_left1 = left1;
 
-        if (left1 > 50 && toggle_enabled) {
-            $("#overlay1").css({ left: left1 + "px" });
-            if ($("#overlay1").is(":hidden")) {
-                $("#overlay1").show();
-            }
-        }
+        // Clear our timeout while scrolling
+        window.clearTimeout(isScrolling);
+
+        // Run update when scrolling ended
+        isScrolling = setTimeout(function(){
+          // If user scrolls and it's > 100px from left, then attach fixed columns overlay
+          left1 = $("#arrestintable").closest(".dataTables_scrollBody").scrollLeft();
+          if (left1!==old_left1) {
+              $("#overlay1").hide();
+          }
+          old_left1 = left1;
+
+          if (left1 > 50 && toggle_enabled) {
+              $("#overlay1").css({ left: left1 + "px" });
+              if ($("#overlay1").is(":hidden")) {
+                  $("#overlay1").show();
+              }
+          }}, 70);
     });
 
     $("#arrestintable").closest(".dataTables_scrollBody").append('<div id="overlay1"><table id="overlay_table1" class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
