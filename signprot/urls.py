@@ -9,7 +9,6 @@ urlpatterns = [
     path('', RedirectView.as_view(url='gprotein', permanent=False), name='index'),
     path('gprotein', views.BrowseSelection.as_view(), name='index'),
     path('arrestin', views.ArrestinSelection.as_view(), name='arrestin'),
-    # path('arrestincouplings', cache_page(60*60*24*7)(ArrestinCoupling.as_view()), name='arrestin_coupling'),
     path('arrestincouplings', cache_page(60*60*24*7)(CouplingBrowser.as_view(subunit_filter = "200_000_001", families = ["Beta"], page='arrestin')), name='arrestin_coupling'),
     # path('statistics/<dataset>/',  views.GProtein, name='gprotein'),
     path('statistics_venn',  views.GProteinVenn, name='gprotein'),

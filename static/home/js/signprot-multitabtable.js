@@ -80,7 +80,6 @@ function createRank(table_id, column) {
     }
 }
 
-// # custom rankedRangeFilter draft for YADCF
 /**
  * This is a custom YADCF function that checks ....
  * ....
@@ -92,15 +91,6 @@ function createRank(table_id, column) {
  */
 let counter = 0;
 function rankedRangeFilter(filterVal, columnVal, rowValues, stateVal, tableNum) {
-    // DEBUG
-    /*if (counter < 1) {
-        counter++;
-        console.log("FILTERING FOR", filterVal);
-        console.log(columnVal);
-        console.log(rowValues);
-        console.log(stateVal);
-    }*/
-
     let table_nr = tableNum;
     let column_value = $(columnVal).text();
     let column_nr = $(columnVal).attr("data-column-nr");
@@ -172,42 +162,29 @@ function supportFilter(filterVal, columnVal, rowValues, stateVal){
  * When there's a need to repeat the same yadcf filter_type one can use this function to concatenate
  * the range_number filter_type.
  */
-function make_range_number_cols(start_column, repeat_number, tab) {
-    let from_to1 = {
-        filter_type: "custom_func",
-//        html5_data: "",
-        custom_func: rankedRangeFiltert1,
-    };
-    let from_to2 = {
-        filter_type: "custom_func",
-//        html5_data: "",
-        custom_func: rankedRangeFiltert2,
-    };
-    let repeated_from_to1 = [];
-    let repeated_from_to2 = [];
-    if (tab == "famtab") {
-        for (let i = start_column; i < start_column + repeat_number; i++) {
-            let column_info = Object.assign({}, from_to1);
-            column_info["column_number"] = i;
-            column_info["filter_container_id"] = "hide_rankfam" + i;
-            repeated_from_to1.push(column_info);
-        }
-        return repeated_from_to1;
-    } else if (tab == "subtab") {
-        for (let i = start_column; i < start_column + repeat_number; i++) {
-            let column_info = Object.assign({}, from_to2);
-            column_info["column_number"] = i;
-            column_info["filter_container_id"] = "hide_ranksub" + i;
-            repeated_from_to2.push(column_info);
-        }
-        return repeated_from_to2;
-    } else {
-        //
+function make_rank_col_filters(start_column, repeat_number, tab) {
+    let repeated_filter = [];
+
+    let default_filter = rankedRangeFiltert1;
+    let cont_prefix = "hide_rankfam";
+    if (tab == "subtab"){
+      default_filter = rankedRangeFiltert2;
+      cont_prefix = "hide_ranksub";
     }
+    for (let i = start_column; i <= start_column + repeat_number; i++) {
+        let column_info = {
+            filter_type: "custom_func",
+            column_data_type: "text",
+            column_number: i,
+            filter_container_id: cont_prefix + i,
+            custom_func: default_filter,
+        };
+        repeated_filter.push(column_info);
+    }
+    return repeated_filter;
 }
 
-repfilterfamtab = make_range_number_cols(13, 14, "famtab");
-repfiltersubtab = make_range_number_cols(13, 41, "subtab");
+
 
 let lastRangeRankFilter = "";
 
@@ -253,169 +230,162 @@ for (let i=12; i <= 29; i++) {
         ],
     });
 
-
-    yadcf.init(oTable1,
-        [
-            {
-                column_number: 0,
-                filter_type: "none",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 1,
-                filter_type: "multi_select",
-                select_type: "select2",
-                column_data_type: "html",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "80px",
-                }
-            },
-
-            {
-                column_number: 2,
-                filter_type: "multi_select",
-                select_type: "select2",
-                // column_data_type: "html",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "80px",
-                }
-            },
-
-
-            {
-                column_number: 3,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "40px",
-                }
-            },
-            {
-                column_number: 4,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "200px",
-                }
-            },
-            {
-                column_number: 5,
-                filter_type: "multi_select",
-                select_type: "select2",
-                column_data_type: "html",
-                html_data_type: "text",
-                filter_default_label: "UniProt",
-                filter_match_mode : "exact",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "60px",
-                }
-            },
-            {
-                column_number: 6,
-                filter_type: "multi_select",
-                select_type: "select2",
-                column_data_type: "html",
-                html_data_type: "text",
-                filter_default_label: "",
-                filter_match_mode : "exact",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "80px",
-                }
-            },
-
-// Ligands section
-            {
-                column_number: 7,
-                filter_type: "multi_select",
-                select_type: "select2",
-                column_data_type: "html",
-                html_data_type: "text",
-                filter_default_label: "",
-                filter_match_mode : "exact",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "200px",
-                }
-            },
-            {
-                column_number: 8,
-                filter_type: "multi_select",
-                select_type: "select2",
-                // column_data_type: "html",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "140px",
-                }
-            },
-// Guide to Pharmacology
-            {
-                column_number: 9,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "40px"
-                },
-            },
-            {
-                column_number: 10,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "40px"
-                },
-            },
-            {
-                column_number: 11,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "40px"
-                },
-            },
-            {
-                column_number: 12,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "40px"
-                },
-            },
-
-// Hidden GPCRdb support type column calls customized function
-            {
-                column_number: 29,
-                filter_type: "custom_func",
-                custom_func: supportFilter,
-                filter_container_id: "hide_filter1",
-            },
-        ].concat(repfilterfamtab),
-
-        {filters_tr_index: 2},
+    let repfilterfamtab = make_rank_col_filters(13, 14, "famtab");
+    let column_filters = [
+        {
+            column_number: 0,
+            filter_type: "none",
+            filter_default_label: "",
+            filter_reset_button_text: false,
+        },
+        {
+            column_number: 1,
+            filter_type: "multi_select",
+            select_type: "select2",
+            column_data_type: "html",
+            filter_default_label: "",
+            filter_reset_button_text: false,
+            select_type_options: {
+                width: "80px",
+            }
+        },
 
         {
-            cumulative_filtering: false
-        }
-    );
+            column_number: 2,
+            filter_type: "multi_select",
+            select_type: "select2",
+            // column_data_type: "html",
+            filter_default_label: "",
+            filter_reset_button_text: false,
+            select_type_options: {
+                width: "80px",
+            }
+        },
+
+
+        {
+            column_number: 3,
+            filter_type: "multi_select",
+            select_type: "select2",
+            filter_default_label: "",
+            filter_reset_button_text: false,
+            select_type_options: {
+                width: "40px",
+            }
+        },
+        {
+            column_number: 4,
+            filter_type: "multi_select",
+            select_type: "select2",
+            filter_default_label: "",
+            filter_reset_button_text: false,
+            select_type_options: {
+                width: "200px",
+            }
+        },
+        {
+            column_number: 5,
+            filter_type: "multi_select",
+            select_type: "select2",
+            column_data_type: "html",
+            html_data_type: "text",
+            filter_default_label: "UniProt",
+            filter_match_mode : "exact",
+            filter_reset_button_text: false,
+            select_type_options: {
+                width: "60px",
+            }
+        },
+        {
+            column_number: 6,
+            filter_type: "multi_select",
+            select_type: "select2",
+            column_data_type: "html",
+            html_data_type: "text",
+            filter_default_label: "",
+            filter_match_mode : "exact",
+            filter_reset_button_text: false,
+            select_type_options: {
+                width: "80px",
+            }
+        },
+
+// Ligands section
+        {
+            column_number: 7,
+            filter_type: "multi_select",
+            select_type: "select2",
+            column_data_type: "html",
+            html_data_type: "text",
+            filter_default_label: "",
+            filter_match_mode : "exact",
+            filter_reset_button_text: false,
+            select_type_options: {
+                width: "200px",
+            }
+        },
+        {
+            column_number: 8,
+            filter_type: "multi_select",
+            select_type: "select2",
+            // column_data_type: "html",
+            filter_default_label: "",
+            filter_reset_button_text: false,
+            select_type_options: {
+                width: "140px",
+            }
+        },
+// Guide to Pharmacology
+        {
+            column_number: 9,
+            filter_type: "multi_select",
+            select_type: "select2",
+            filter_default_label: "",
+            filter_reset_button_text: false,
+            select_type_options: {
+                width: "40px"
+            },
+        },
+        {
+            column_number: 10,
+            filter_type: "multi_select",
+            select_type: "select2",
+            filter_default_label: "",
+            filter_reset_button_text: false,
+            select_type_options: {
+                width: "40px"
+            },
+        },
+        {
+            column_number: 11,
+            filter_type: "multi_select",
+            select_type: "select2",
+            filter_default_label: "",
+            filter_reset_button_text: false,
+            select_type_options: {
+                width: "40px"
+            },
+        },
+        {
+            column_number: 12,
+            filter_type: "multi_select",
+            select_type: "select2",
+            filter_default_label: "",
+            filter_reset_button_text: false,
+            select_type_options: {
+                width: "40px"
+            },
+        },
+
+// Hidden GPCRdb support type column calls customized function
+        {
+            column_number: 29,
+            filter_type: "custom_func",
+            custom_func: supportFilter,
+            filter_container_id: "hide_filter1",
+        },
+    ].concat(repfilterfamtab);
+    yadcf.init(oTable1, column_filters, { cumulative_filtering: false});
 
     // Initialize ranked Range Filtering options
     $(".ranked_range_min1, .ranked_range_max1, .ranked_range_rank1").on("click", function(event) {
@@ -499,172 +469,164 @@ for (let i=12; i <= 69; i++) {
         ],
     });
 
-    yadcf.init(oTable2,
-        [
-            {
-                column_number: 0,
-                filter_type: "none",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 1,
-                filter_type: "multi_select",
-                select_type: "select2",
-                column_data_type: "html",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "80px",
-                }
-            },
+    let repfiltersubtab = make_rank_col_filters(13, 41, "subtab");
+    let column_filters2 = [
+          {
+              column_number: 0,
+              filter_type: "none",
+              filter_default_label: "",
+              filter_reset_button_text: false,
+          },
+          {
+              column_number: 1,
+              filter_type: "multi_select",
+              select_type: "select2",
+              column_data_type: "html",
+              filter_default_label: "",
+              filter_reset_button_text: false,
+              select_type_options: {
+                  width: "80px",
+              }
+          },
 
-            {
-                column_number: 2,
-                filter_type: "multi_select",
-                select_type: "select2",
-                // column_data_type: "html",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "80px",
-                }
-            },
+          {
+              column_number: 2,
+              filter_type: "multi_select",
+              select_type: "select2",
+              // column_data_type: "html",
+              filter_default_label: "",
+              filter_reset_button_text: false,
+              select_type_options: {
+                  width: "80px",
+              }
+          },
 
 
 
-            {
-                column_number: 3,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "40px",
-                }
-            },
-            {
-                column_number: 4,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "200px",
-                }
-            },
-            {
-                column_number: 5,
-                filter_type: "multi_select",
-                select_type: "select2",
-                column_data_type: "html",
-                html_data_type: "text",
-                filter_default_label: "UniProt",
-                filter_match_mode : "exact",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "60px",
-                }
-            },
-            {
-                column_number: 6,
-                filter_type: "multi_select",
-                select_type: "select2",
-                column_data_type: "html",
-                html_data_type: "text",
-                filter_default_label: "",
-                filter_match_mode : "exact",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "80px",
-                }
-            },
-// Ligands selection
+          {
+              column_number: 3,
+              filter_type: "multi_select",
+              select_type: "select2",
+              filter_default_label: "",
+              filter_reset_button_text: false,
+              select_type_options: {
+                  width: "40px",
+              }
+          },
+          {
+              column_number: 4,
+              filter_type: "multi_select",
+              select_type: "select2",
+              filter_default_label: "",
+              filter_reset_button_text: false,
+              select_type_options: {
+                  width: "200px",
+              }
+          },
+          {
+              column_number: 5,
+              filter_type: "multi_select",
+              select_type: "select2",
+              column_data_type: "html",
+              html_data_type: "text",
+              filter_default_label: "UniProt",
+              filter_match_mode : "exact",
+              filter_reset_button_text: false,
+              select_type_options: {
+                  width: "60px",
+              }
+          },
+          {
+              column_number: 6,
+              filter_type: "multi_select",
+              select_type: "select2",
+              column_data_type: "html",
+              html_data_type: "text",
+              filter_default_label: "",
+              filter_match_mode : "exact",
+              filter_reset_button_text: false,
+              select_type_options: {
+                  width: "80px",
+              }
+          },
+  // Ligands selection
 
-            {
-                column_number: 7,
-                filter_type: "multi_select",
-                select_type: "select2",
-                column_data_type: "html",
-                html_data_type: "text",
-                filter_default_label: "",
-                filter_match_mode : "exact",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "200px",
-                }
-            },
-            {
-                column_number: 8,
-                filter_type: "multi_select",
-                select_type: "select2",
-                // column_data_type: "html",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "140px",
-                }
-            },
+          {
+              column_number: 7,
+              filter_type: "multi_select",
+              select_type: "select2",
+              column_data_type: "html",
+              html_data_type: "text",
+              filter_default_label: "",
+              filter_match_mode : "exact",
+              filter_reset_button_text: false,
+              select_type_options: {
+                  width: "200px",
+              }
+          },
+          {
+              column_number: 8,
+              filter_type: "multi_select",
+              select_type: "select2",
+              // column_data_type: "html",
+              filter_default_label: "",
+              filter_reset_button_text: false,
+              select_type_options: {
+                  width: "140px",
+              }
+          },
 
-// Guide to Pharmacology
-            {
-                column_number: 9,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "40px"
-                },
-            },
-            {
-                column_number: 10,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "40px"
-                },
-            },
-            {
-                column_number: 11,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "40px"
-                },
-            },
-            {
-                column_number: 12,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "40px"
-                },
-            },
+  // Guide to Pharmacology
+          {
+              column_number: 9,
+              filter_type: "multi_select",
+              select_type: "select2",
+              filter_default_label: "",
+              filter_reset_button_text: false,
+              select_type_options: {
+                  width: "40px"
+              },
+          },
+          {
+              column_number: 10,
+              filter_type: "multi_select",
+              select_type: "select2",
+              filter_default_label: "",
+              filter_reset_button_text: false,
+              select_type_options: {
+                  width: "40px"
+              },
+          },
+          {
+              column_number: 11,
+              filter_type: "multi_select",
+              select_type: "select2",
+              filter_default_label: "",
+              filter_reset_button_text: false,
+              select_type_options: {
+                  width: "40px"
+              },
+          },
+          {
+              column_number: 12,
+              filter_type: "multi_select",
+              select_type: "select2",
+              filter_default_label: "",
+              filter_reset_button_text: false,
+              select_type_options: {
+                  width: "40px"
+              },
+          },
 
-// Hidden GPCRdb support type column calls customized function
-            {
-                column_number: 69,
-                filter_type: "custom_func",
-                custom_func: supportFilter,
-                filter_container_id: "hide_filter2",
-            },
-        ].concat(repfiltersubtab),
-
-        {
-            filters_tr_index: 3
-        },
-
-        {
-            cumulative_filtering: false
-        }
-    );
+  // Hidden GPCRdb support type column calls customized function
+          {
+              column_number: 69,
+              filter_type: "custom_func",
+              custom_func: supportFilter,
+              filter_container_id: "hide_filter2",
+          },
+      ].concat(repfiltersubtab);
+    yadcf.init(oTable2, column_filters2, { cumulative_filtering: false });
 
     // Initialize ranked Range Filtering options
     $(".ranked_range_min2, .ranked_range_max2, .ranked_range_rank2").on("click", function(event) {
@@ -688,8 +650,6 @@ for (let i=12; i <= 69; i++) {
         // Clean filter type
         lastRangeRankFilter = "";
     });
-
-
 
     yadcf.exFilterColumn(oTable2, [[69, 2]]);
 
