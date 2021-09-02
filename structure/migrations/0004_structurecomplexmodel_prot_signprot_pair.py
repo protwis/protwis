@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='structurecomplexmodel',
             name='prot_signprot_pair',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='protein.ProteinCouplings'),
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='protein.ProteinGProteinPair'),
         ),
     ]
