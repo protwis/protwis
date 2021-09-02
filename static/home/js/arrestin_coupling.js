@@ -85,6 +85,7 @@ function createRank(table_id, column) {
  * @returns {boolean} true if row contains selected target otherwise false
  */
 let counter = 0;
+let lastRangeRankFilter;
 function rankedRangeFilter(filterVal, columnVal, rowValues, stateVal, tableNum = "3") {
     // DEBUG
     /*if (counter < 1) {
@@ -333,7 +334,6 @@ $(document).ready(function() {
       event.stopPropagation();
   });
 
-let lastRangeRankFilter = "";
   $(".ranked_range_min3, .ranked_range_max3, .ranked_range_rank3").on("input", function(event) {
       // Get column #
       let column_nr = event.target.id.split("_")[3];
