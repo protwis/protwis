@@ -465,3 +465,13 @@ function ReadDefinitionFromFile(form, url) {
     });
     return false;
 }
+
+function VerifyMinSegmentSelection() {
+    if ($("#selection-segments .target-selection").length === 0){
+      showAlert("Please select at least 1 segment item to continue", "danger");
+      // Remove active button class => stop spinner after short timeout
+      setTimeout(function(){ $("#selection-button").removeClass("active"); }, 1000);
+      return false;
+    }
+    return true;
+}

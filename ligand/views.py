@@ -18,7 +18,7 @@ from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
 from ligand.models import Ligand, LigandVendorLink,LigandVendors, AnalyzedExperiment, AnalyzedAssay, BiasedPathways, AssayExperiment
-from protein.models import Protein, ProteinFamily
+from protein.models import Protein, ProteinFamily, ProteinCouplings
 from interaction.models import StructureLigandInteraction
 from mutation.models import MutationExperiment
 
@@ -46,6 +46,27 @@ class LigandBrowser(TemplateView):
 
         return context
 
+    def fetch_receptor_transducers(self, receptor):
+        primary = set()
+        temp = str()
+        temp1 = str()
+        secondary = set()
+        try:
+            gprotein = ProteinCouplings.objects.filter(protein=receptor)
+            for x in gprotein:
+                if x.transduction and x.transduction == 'primary':
+                    primary.add(x.g_protein.name)
+                elif x.transduction and x.transduction == 'secondary':
+                    secondary.add(x.g_protein.name)
+            for i in primary:
+                temp += str(i.replace(' family', '')) + str(', ')
+
+            for i in secondary:
+                temp1 += str(i.replace('family', '')) + str(', ')
+            return temp, temp1
+        except:
+            self.logger.info('receptor not found error')
+            return None, None
 
 def LigandDetails(request, ligand_id):
     """

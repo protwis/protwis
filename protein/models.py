@@ -350,38 +350,20 @@ class ProteinConformationTemplateStructure(models.Model):
     class Meta():
         db_table = 'protein_conformation_template_structure'
 
-
-class ProteinGProtein(models.Model):
-    proteins = models.ManyToManyField('Protein', through='ProteinGProteinPair', through_fields=('g_protein','protein'))
-    name = models.CharField(max_length=100, unique=True)
-    slug = models.SlugField(max_length=20, unique=True)
-
-    def __str__(self):
-        return self.name
-
-    class Meta():
-        db_table = 'protein_gprotein'
-
-
-class ProteinGProteinPair(models.Model):
+class ProteinCouplings(models.Model):
     protein = models.ForeignKey('Protein', on_delete=models.CASCADE)
-    g_protein = models.ForeignKey('ProteinGProtein', on_delete=models.CASCADE)
+    g_protein = models.ForeignKey('ProteinFamily', on_delete=models.CASCADE)
+    ligand = models.ForeignKey('ligand.Ligand', on_delete=models.CASCADE, null=True)
+    variant = models.TextField(null=True, blank=True)
     transduction = models.TextField(null=True)
-    source = models.TextField(null=True) # GuideToPharma, Aska, Bouvier
-    emax_mean = models.FloatField(null=True, blank=True)
-    emax_sem = models.FloatField(null=True, blank=True)
-    emax_dnorm = models.FloatField(null=True, blank=True)
-    emax_deg = models.FloatField(null=True, blank=True)  # Value from David Gloriam
-    pec50_mean = models.FloatField(null=True, blank=True)
-    pec50_sem = models.FloatField(null=True, blank=True)
-    pec50_dnorm = models.FloatField(null=True, blank=True)
-    pec50_deg = models.FloatField(null=True, blank=True)  # Value from David Gloriam
-    log_rai_mean = models.FloatField(null=True, blank=True)
-    log_rai_sem  = models.FloatField(null=True, blank=True)
-    logmaxec50_deg = models.FloatField(null=True, blank=True) # Value from David Gloriam
+    source = models.TextField(null=True) # GuideToPharma, Inoue, Bouvier, Roth
+    emax = models.FloatField(null=True, blank=True)  # Value from David Gloriam
+    pec50 = models.FloatField(null=True, blank=True)  # Value from David Gloriam
+    logmaxec50 = models.FloatField(null=True, blank=True) # Value from David Gloriam
+    stand_dev = models.FloatField(null=True, blank=True) # Value from David Gloriam
+    physiological_ligand = models.BooleanField(default=False)
     g_protein_subunit = models.ForeignKey('Protein', on_delete=models.CASCADE, related_name='gprotein', null=True)
     references = models.ManyToManyField('common.Publication')
-
 
     def __str__(self):
         # NOTE: The following return breaks when there's no data for transduction since a null
@@ -390,25 +372,7 @@ class ProteinGProteinPair(models.Model):
         return "{} {} {}".format(self.protein.entry_name,  self.g_protein.name, self.transduction)
 
     class Meta():
-        db_table = 'protein_gprotein_pair'
-
-
-class ProteinArrestinPair(models.Model):
-    protein = models.ForeignKey('Protein', on_delete=models.CASCADE)
-    publication = models.ForeignKey('common.Publication', on_delete=models.CASCADE, null=True)
-    source = models.TextField(null=True)  # Bouvier
-    emax_deg = models.FloatField(null=True, blank=True)  # Value from David Gloriam
-    pec50_deg = models.FloatField(null=True, blank=True)  # Value from David Gloriam
-    logmaxec50_deg = models.FloatField(null=True, blank=True) # Value from David Gloriam
-    arrestin_subtype = models.ForeignKey('Protein', on_delete=models.CASCADE, related_name='arrestin', null=True)
-
-
-    def __str__(self):
-        # return "{} {}".format(self.protein.entry_name, self.arrestin_subtype)
-        return "{}".format(self.protein.entry_name)
-
-    class Meta():
-        db_table = 'protein_arrestin_pair'
+        db_table = 'protein_couplings'
 
 def dgn(gn, protein_conformation):
     """Convert generic number to display generic number."""

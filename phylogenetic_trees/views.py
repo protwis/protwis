@@ -12,7 +12,7 @@ from common.views import AbsMiscSelection
 from common.selection import SimpleSelection, Selection, SelectionItem
 from mutation.models import *
 from phylogenetic_trees.PrepareTree import *
-from protein.models import ProteinFamily, ProteinAlias, ProteinSet, Protein, ProteinSegment, ProteinGProteinPair
+from protein.models import ProteinFamily, ProteinSet, Protein, ProteinSegment, ProteinCouplings
 
 from copy import deepcopy
 import json
@@ -168,9 +168,10 @@ class Treeclass:
         ##################################################################
         else:
             simple_selection=request.session.get('selection', False)
-            a.load_proteins_from_selection(simple_selection)
+            a.load_proteins_from_selection(simple_selection, True)
             a.load_segments_from_selection(simple_selection)
             self.bootstrap,self.UPGMA,self.branches,self.ttype = map(int,simple_selection.tree_settings)
+
         if self.bootstrap!=0:
             self.bootstrap=pow(10,self.bootstrap)
         #### Create an alignment object
@@ -205,7 +206,8 @@ class Treeclass:
             if acc:
                 acc = acc.replace('-','_')
             else:
-                acc = link.replace('-','_')[:6]
+                acc = name
+
             spec = str(n.protein.species)
             fam += '_'+n.protein.species.common_name.replace(' ','_').upper()
             desc = name
@@ -484,7 +486,7 @@ def render_tree_v3(request):
     # Grab G-protein coupling profile for all receptors covered by the selection
     # TODO: make general cache(s) for these kinds of data
     selectivitydata = {}
-    coupling = ProteinGProteinPair.objects.filter(protein__family__slug__in=protein_slugs, source="GuideToPharma").values_list('protein__family__slug', 'transduction').annotate(arr=ArrayAgg('g_protein__name'))
+    coupling = ProteinCouplings.objects.filter(protein__family__slug__in=protein_slugs, source="GuideToPharma").values_list('protein__family__slug', 'transduction').annotate(arr=ArrayAgg('g_protein__name'))
 
     for pairing in coupling:
         if pairing[0] not in selectivitydata:

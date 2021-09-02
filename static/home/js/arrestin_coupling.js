@@ -1,5 +1,5 @@
 /*global yadcf*/
-/*eslint complexity: ["error", 8]*/
+/*eslint complexity: ["error", 20]*/
 /*eslint wrap-iife: ["error", "outside"]*/
 /*eslint quotes: ["error", "double", { "avoidEscape": true }]*/
 let oTable1 = [];
@@ -16,7 +16,7 @@ function select_all(e) {
     });
 }
 
-function resetHidden1() {
+function resetHidden3() {
     var columns = Array.from(new Array(17), (x,i) => i + 3);
     columns.forEach(function(column) {
         column = oTable1.column( column );
@@ -33,6 +33,151 @@ function resetHidden1() {
 function reset_tab() {
 // Just a button to go back to the main page.
     window.location.href = "/signprot/arrestincouplings";
+}
+
+// Calculation of normalized rank for a given column
+function createRank(table_id, column) {
+    // Set default values for all cells
+    $(table_id+" tbody tr td").filter(":nth-child(" + column + ")").each( function() {
+        let cell_span = $(this.firstChild);
+        let cell_value = cell_span.text();
+        cell_span.attr("data-raw", cell_value);
+        cell_span.attr("data-column-nr", column-1);
+        $(this).attr("data-sort", cell_value);
+    });
+
+    // Looping over the support values (GPCRdb # 1-3)
+    /*for (let i=1; i <= 3; i++){
+      // Step 1 - collect all values for a given column
+      let min_max = [];
+      $(table_id+" tbody tr[data-source='" + i + "'] td").filter(":nth-child(" + column + ")").each( function() {
+          var cell_value = $(this).text();
+          if (/^-?\d*(\.\d+)?$/.test(cell_value) && cell_value!=="-"){
+              min_max.push(parseFloat(cell_value));
+          }
+      });
+
+      // Step 2 - normalize all values and add them to a data attribute
+      let min = Math.min(...min_max);
+      let max = Math.max(...min_max);
+      $(table_id+" tbody tr[data-source='" + i + "'] td").filter(":nth-child(" + column + ")").each( function() {
+          let cell_span = $(this.firstChild);
+          let cell_value = cell_span.text();
+
+          // Check if data source is a number, if so confidence value for GPCRdb source
+          if (/^-?\d*(\.\d+)?$/.test(cell_value) && cell_value!=="-"){
+              cell_span.attr("data-normalized", Math.round((1-(parseFloat(cell_value)-min)/(max-min))*100),0);
+          } else {
+              // not value - empty init
+              cell_span.attr("data-normalized","-");
+          }
+      });
+    }*/
+}
+
+/**
+ * This is a custom YADCF function that checks ....
+ * ....
+ * @param {object} filterVal Value to filter on (not applicable)
+ * @param {object} columnVal Element in the filtered column
+ * @param {object} rowValues All elements in this row (not used)
+ * @param {object} stateVal Current DOM state of the row (not sufficient in this case)
+ * @returns {boolean} true if row contains selected target otherwise false
+ */
+let counter = 0;
+let lastRangeRankFilter;
+function rankedRangeFilter(filterVal, columnVal, rowValues, stateVal, tableNum = "3") {
+    // DEBUG
+    /*if (counter < 1) {
+        counter++;
+        console.log("FILTERING FOR", filterVal);
+        console.log(columnVal);
+        console.log(rowValues);
+        console.log(stateVal);
+    }*/
+
+    let table_nr = tableNum;
+    let column_value = $(columnVal).text();
+    let column_nr = $(columnVal).attr("data-column-nr");
+    let min_filtering = parseFloat($("#ranked_range_min" + table_nr + "_" + column_nr).val());
+    let max_filtering = parseFloat($("#ranked_range_max" + table_nr + "_"  + column_nr).val());
+    let rank_filtering = parseFloat($("#ranked_range_rank" + table_nr + "_"  + column_nr).val());
+
+
+    if (!isNaN(rank_filtering) && lastRangeRankFilter!=="max" && lastRangeRankFilter!=="min") {
+      // If filtering on rank - clean range filter
+      $("#ranked_range_min" + table_nr + "_"  + column_nr).val("");
+      $("#ranked_range_max" + table_nr + "_"  + column_nr).val("");
+
+      let ranked_value = parseFloat($(columnVal).attr("data-normalized"));
+      if (isNaN(ranked_value)) {
+          return false;
+      } else {
+          return ranked_value <= rank_filtering;
+      }
+    } else if (!isNaN(min_filtering) || !isNaN(max_filtering)) {
+        // If filtering on range - clean rank filter
+        $("#ranked_range_rank" + table_nr + "_" + column_nr).val("");
+
+        // Filter range on current columnVal
+        let range_value = parseFloat(column_value);
+         if (isNaN(range_value)) {
+              return false;
+          } else {
+             if (!isNaN(min_filtering) && !isNaN(max_filtering)) {
+                return range_value >= min_filtering && range_value <= max_filtering;
+             } else if (!isNaN(min_filtering)) {
+                  return range_value >= min_filtering;
+              } else if(!isNaN(max_filtering)) {
+                 return range_value <= max_filtering;
+             } else {
+                  // Should never happen
+              }
+          }
+    } else {
+        return true;
+    }
+}
+
+/**
+ * This is a custom YADCF function that checks ....
+ * ....
+ * @param {object} filterVal Value to filter on (not applicable)
+ * @param {object} columnVal Element in the filtered column
+ * @param {object} rowValues All elements in this row (not used)
+ * @param {object} stateVal Current DOM state of the row (not sufficient in this case)
+ * @returns {boolean} true if row contains selected target otherwise false
+ */
+function supportFilter(filterVal, columnVal, rowValues, stateVal){
+    //console.log(!/^\d+$/.test(columnVal), columnVal, filterVal);
+    //console.log(columnVal === filterVal);
+    return (!/^\d+$/.test(columnVal) || columnVal === filterVal);
+}
+
+// Create the ranks for the families table
+for (let i=9; i <= 20; i++) {
+    createRank("#arrestintable", i); // GS
+}
+
+/**
+ * Function copied from contactbrowser-tabtables.js
+ * When there's a need to repeat the same yadcf filter_type one can use this function to concatenate
+ * the range_number filter_type.
+ */
+function make_range_number_cols(start_column, repeat_number, tab) {
+    let filter = {
+        filter_type: "custom_func",
+        custom_func: rankedRangeFilter,
+    };
+
+    let repeated_filter = [];
+    for (let i = start_column; i < start_column + repeat_number; i++) {
+        let column_info = Object.assign({}, filter);
+        column_info["column_number"] = i;
+        column_info["filter_container_id"] = "hide_ranksub" + i;
+        repeated_filter.push(column_info);
+    }
+    return repeated_filter;
 }
 
 $(document).ready(function() {
@@ -56,135 +201,159 @@ $(document).ready(function() {
         paging: false,
         bSortCellsTop: false, //prevent sort arrows going on bottom row
         aaSorting: [],
-        order: [[4,"asc"]],
+        order: [
+                [3,"asc"],
+                [5,"asc"],
+                [21, "asc"]
+              ],
         autoWidth: false,
         bInfo: true,
         columnDefs: [
             {
-                targets: [0],
-                visible: true,
-                orderable: false
+                targets: [21],
+                visible: false
             }
         ],
     });
 
-    yadcf.init(oTable1,
-        [
-            {
-                column_number: 0,
-                filter_type: "none",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-            },
-            {
-                column_number: 1,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "80px",
-                }
-            },
-
-            {
-                column_number: 2,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "40px",
-                }
-            },
-            {
-                column_number: 3,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "200px",
-                }
-            },
-            {
-                column_number: 4,
-                filter_type: "multi_select",
-                select_type: "select2",
-                column_data_type: "html",
-                html_data_type: "text",
-                filter_default_label: "UniProt",
-                filter_match_mode : "exact",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "60px",
-                }
-            },
-            {
-                column_number: 5,
-                filter_type: "multi_select",
-                select_type: "select2",
-                column_data_type: "html",
-                html_data_type: "text",
-                filter_default_label: "",
-                filter_match_mode : "exact",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "80px",
-                }
-            },
-
-// log(Emax/EC50)
-            {
-                column_number : 6,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 7,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-
-// pEC50
-            {
-                column_number : 8,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 9,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-
-// Emax
-            {
-                column_number : 10,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-            {
-                column_number : 11,
-                filter_type: "range_number",
-                filter_default_label: ["Min", "Max"],
-                filter_reset_button_text: false,
-            },
-
-        ],
-
-        {filters_tr_index: 2},
-
+    let repfilter = make_range_number_cols(9, 12, "subtab");
+    let columnfilters = [
         {
-            cumulative_filtering: true
-        }
-    );
+            column_number: 0,
+            filter_type: "none",
+            filter_default_label: "",
+            filter_reset_button_text: false,
+        },
+        {
+            column_number: 1,
+            filter_type: "multi_select",
+            select_type: "select2",
+            column_data_type: "html",
+            filter_default_label: "",
+            filter_reset_button_text: false,
+            select_type_options: {
+                width: "60px",
+            }
+        },
+        {
+            column_number: 2,
+            filter_type: "multi_select",
+            select_type: "select2",
+            // column_data_type: "html",
+            filter_default_label: "",
+            filter_reset_button_text: false,
+            select_type_options: {
+                width: "40px",
+            }
+        },
+        {
+            column_number: 3,
+            filter_type: "multi_select",
+            select_type: "select2",
+            filter_default_label: "",
+            filter_reset_button_text: false,
+            select_type_options: {
+                width: "40px",
+            }
+        },
+        {
+            column_number: 4,
+            filter_type: "multi_select",
+            select_type: "select2",
+            filter_default_label: "",
+            filter_reset_button_text: false,
+            select_type_options: {
+                width: "150px",
+            }
+        },
+        {
+            column_number: 5,
+            filter_type: "multi_select",
+            select_type: "select2",
+            column_data_type: "html",
+            html_data_type: "text",
+            filter_default_label: "UniProt",
+            filter_match_mode : "exact",
+            filter_reset_button_text: false,
+            select_type_options: {
+                width: "60px",
+            }
+        },
+        {
+            column_number: 6,
+            filter_type: "multi_select",
+            select_type: "select2",
+            column_data_type: "html",
+            html_data_type: "text",
+            filter_default_label: "",
+            filter_match_mode : "exact",
+            filter_reset_button_text: false,
+            select_type_options: {
+                width: "80px",
+            }
+        },
+  // Ligands selection
+        {
+            column_number: 7,
+            filter_type: "multi_select",
+            select_type: "select2",
+            column_data_type: "html",
+            html_data_type: "text",
+            filter_default_label: "",
+            filter_match_mode : "exact",
+            filter_reset_button_text: false,
+            select_type_options: {
+                width: "200px",
+            }
+        },
+        {
+            column_number: 8,
+            filter_type: "multi_select",
+            select_type: "select2",
+            // column_data_type: "html",
+            filter_default_label: "",
+            filter_reset_button_text: false,
+            select_type_options: {
+                width: "140px",
+            }
+        },
 
+  // Hidden GPCRdb support type column calls customized function
+        {
+            column_number: 21,
+            filter_type: "custom_func",
+            custom_func: supportFilter,
+            filter_container_id: "hide_filter3",
+        },
+    ].concat(repfilter);
+
+    yadcf.init(oTable1, columnfilters, { cumulative_filtering: false});
+
+  // Initialize ranked Range Filtering options
+  $(".ranked_range_min3, .ranked_range_max3, .ranked_range_rank3").on("click", function(event) {
+      event.stopPropagation();
+  });
+
+  $(".ranked_range_min3, .ranked_range_max3, .ranked_range_rank3").on("input", function(event) {
+      // Get column #
+      let column_nr = event.target.id.split("_")[3];
+
+      // Store current type of filtering globally
+      lastRangeRankFilter = event.target.id.split("_")[2];
+
+      // SELECT one option in real YADCF filter to trick YADCF into calling the filter function
+      let adjust_node1 = $("#yadcf-filter--arrestintable-" + column_nr + " option").filter(":nth-child(2)").first();
+      adjust_node1.prop("selected", true);
+
+      // Invoke filtering
+      $("#yadcf-filter--arrestintable-" + column_nr).change();
+
+      // Clean filter type
+      lastRangeRankFilter = "";
+  });
+
+
+  yadcf.exResetAllFilters(oTable1);
 
     $("#arrestintable"+" > tbody > tr").click(function(event) {
         if (event.target.type !== "checkbox") {
@@ -214,7 +383,7 @@ $(document).ready(function() {
 
 
 // Hide column button for table1
-    $(".hide_columns1").click(function(evt) {
+    $(".hide_columns3").click(function(evt) {
         var columns = $(this).attr("columns").split(",");
         columns.forEach(function(column) {
             column = oTable1.column( column );
@@ -265,20 +434,31 @@ $(document).ready(function() {
 // --------- overlay for table 1 ---------
     var left1 = 0;
     var old_left1 = 0;
+    let isScrolling;
     $("#arrestintable").closest(".dataTables_scrollBody").scroll(function(){
-        // If user scrolls and it's > 100px from left, then attach fixed columns overlay
-        left1 = $("#arrestintable").closest(".dataTables_scrollBody").scrollLeft();
-        if (left1!==old_left1) {
-            $("#overlay1").hide();
+        // Hide overlay1
+        if ($("#overlay1").is(":visible")) {
+          $("#overlay1").hide();
         }
-        old_left1 = left1;
 
-        if (left1 > 50 && toggle_enabled) {
-            $("#overlay1").css({ left: left1 + "px" });
-            if ($("#overlay1").is(":hidden")) {
-                $("#overlay1").show();
-            }
-        }
+        // Clear our timeout while scrolling
+        window.clearTimeout(isScrolling);
+
+        // Run update when scrolling ended
+        isScrolling = setTimeout(function(){
+          // If user scrolls and it's > 100px from left, then attach fixed columns overlay
+          left1 = $("#arrestintable").closest(".dataTables_scrollBody").scrollLeft();
+          if (left1!==old_left1) {
+              $("#overlay1").hide();
+          }
+          old_left1 = left1;
+
+          if (left1 > 50 && toggle_enabled) {
+              $("#overlay1").css({ left: left1 + "px" });
+              if ($("#overlay1").is(":hidden")) {
+                  $("#overlay1").show();
+              }
+          }}, 70);
     });
 
     $("#arrestintable").closest(".dataTables_scrollBody").append('<div id="overlay1"><table id="overlay_table1" class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');

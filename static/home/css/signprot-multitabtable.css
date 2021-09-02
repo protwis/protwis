@@ -60,6 +60,12 @@ table.dataTable.compact thead th {
   padding: 4px 16px 4px 2px;
 }
 
+table.dataTable.compact thead th span.couplingvariant {
+  font-weight: normal;
+  color: red;
+  font-size: 0.9em;
+}
+
 /*thead.bottomborder {*/
 /*    border-right: 1px solid;*/
 /*    border-left: 0px solid;*/
