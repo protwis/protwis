@@ -400,18 +400,19 @@ class CouplingBrowser(TemplateView):
         # Calculate mean values for all families for the individual sources
         for prot in dictotemplate:
             for source in sourcenames:
-                for propval in dictotemplate[prot]['couplingmax'][source]:
-                    if propval not in ['ligand_id', 'ligand_name', 'ligand_physiological']:
-                        for fam in dictotemplate[prot]['couplingmax'][source][propval]:
-                            valuelist = dictotemplate[prot]['couplingmax'][source][propval][fam]
-                            fixedlist = [i for i in valuelist if i != 0]
-                            if len(fixedlist) == 0:
-                                dictotemplate[prot]['couplingmax'][source][propval][fam] = "-"
-                            else:
-                                if propval == "emax":
-                                    dictotemplate[prot]['couplingmax'][source][propval][fam] = round(mean(fixedlist))
+                if source in dictotemplate[prot]['couplingmax']:
+                    for propval in dictotemplate[prot]['couplingmax'][source]:
+                        if propval not in ['ligand_id', 'ligand_name', 'ligand_physiological']:
+                            for fam in dictotemplate[prot]['couplingmax'][source][propval]:
+                                valuelist = dictotemplate[prot]['couplingmax'][source][propval][fam]
+                                fixedlist = [i for i in valuelist if i != 0]
+                                if len(fixedlist) == 0:
+                                    dictotemplate[prot]['couplingmax'][source][propval][fam] = "-"
                                 else:
-                                    dictotemplate[prot]['couplingmax'][source][propval][fam] = round(mean(fixedlist), 1)
+                                    if propval == "emax":
+                                        dictotemplate[prot]['couplingmax'][source][propval][fam] = round(mean(fixedlist))
+                                    else:
+                                        dictotemplate[prot]['couplingmax'][source][propval][fam] = round(mean(fixedlist), 1)
 
         # Calculate mean values for all families for the GPCRdb rows (support 1)
         for prot in dictotemplate:
