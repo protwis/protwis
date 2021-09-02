@@ -16,7 +16,7 @@ function select_all(e) {
     });
 }
 
-function resetHidden1() {
+function resetHidden3() {
     var columns = Array.from(new Array(17), (x,i) => i + 3);
     columns.forEach(function(column) {
         column = oTable1.column( column );
@@ -47,7 +47,7 @@ function createRank(table_id, column) {
     });
 
     // Looping over the support values (GPCRdb # 1-3)
-    for (let i=1; i <= 3; i++){
+    /*for (let i=1; i <= 3; i++){
       // Step 1 - collect all values for a given column
       let min_max = [];
       $(table_id+" tbody tr[data-source='" + i + "'] td").filter(":nth-child(" + column + ")").each( function() {
@@ -72,6 +72,69 @@ function createRank(table_id, column) {
               cell_span.attr("data-normalized","-");
           }
       });
+    }*/
+}
+
+/**
+ * This is a custom YADCF function that checks ....
+ * ....
+ * @param {object} filterVal Value to filter on (not applicable)
+ * @param {object} columnVal Element in the filtered column
+ * @param {object} rowValues All elements in this row (not used)
+ * @param {object} stateVal Current DOM state of the row (not sufficient in this case)
+ * @returns {boolean} true if row contains selected target otherwise false
+ */
+let counter = 0;
+function rankedRangeFilter(filterVal, columnVal, rowValues, stateVal, tableNum = "3") {
+    // DEBUG
+    /*if (counter < 1) {
+        counter++;
+        console.log("FILTERING FOR", filterVal);
+        console.log(columnVal);
+        console.log(rowValues);
+        console.log(stateVal);
+    }*/
+
+    let table_nr = tableNum;
+    let column_value = $(columnVal).text();
+    let column_nr = $(columnVal).attr("data-column-nr");
+    let min_filtering = parseFloat($("#ranked_range_min" + table_nr + "_" + column_nr).val());
+    let max_filtering = parseFloat($("#ranked_range_max" + table_nr + "_"  + column_nr).val());
+    let rank_filtering = parseFloat($("#ranked_range_rank" + table_nr + "_"  + column_nr).val());
+
+
+    if (!isNaN(rank_filtering) && lastRangeRankFilter!=="max" && lastRangeRankFilter!=="min") {
+      // If filtering on rank - clean range filter
+      $("#ranked_range_min" + table_nr + "_"  + column_nr).val("");
+      $("#ranked_range_max" + table_nr + "_"  + column_nr).val("");
+
+      let ranked_value = parseFloat($(columnVal).attr("data-normalized"));
+      if (isNaN(ranked_value)) {
+          return false;
+      } else {
+          return ranked_value <= rank_filtering;
+      }
+    } else if (!isNaN(min_filtering) || !isNaN(max_filtering)) {
+        // If filtering on range - clean rank filter
+        $("#ranked_range_rank" + table_nr + "_" + column_nr).val("");
+
+        // Filter range on current columnVal
+        let range_value = parseFloat(column_value);
+         if (isNaN(range_value)) {
+              return false;
+          } else {
+             if (!isNaN(min_filtering) && !isNaN(max_filtering)) {
+                return range_value >= min_filtering && range_value <= max_filtering;
+             } else if (!isNaN(min_filtering)) {
+                  return range_value >= min_filtering;
+              } else if(!isNaN(max_filtering)) {
+                 return range_value <= max_filtering;
+             } else {
+                  // Should never happen
+              }
+          }
+    } else {
+        return true;
     }
 }
 
@@ -91,9 +154,32 @@ function supportFilter(filterVal, columnVal, rowValues, stateVal){
 }
 
 // Create the ranks for the families table
-for (let i=12; i <= 22; i++) {
+for (let i=9; i <= 20; i++) {
     createRank("#arrestintable", i); // GS
 }
+
+/**
+ * Function copied from contactbrowser-tabtables.js
+ * When there's a need to repeat the same yadcf filter_type one can use this function to concatenate
+ * the range_number filter_type.
+ */
+function make_range_number_cols(start_column, repeat_number, tab) {
+    let filter = {
+        filter_type: "custom_func",
+        custom_func: rankedRangeFilter,
+    };
+
+    let repeated_filter = [];
+    for (let i = start_column; i < start_column + repeat_number; i++) {
+        let column_info = Object.assign({}, filter);
+        column_info["column_number"] = i;
+        column_info["filter_container_id"] = "hide_ranksub" + i;
+        repeated_filter.push(column_info);
+    }
+    return repeated_filter;
+}
+
+repfilter = make_range_number_cols(9, 12, "subtab");
 
 $(document).ready(function() {
 // Activate tooltips and popovers from Bootstrap   * Bootstrap v3.3.7 (http://getbootstrap.com)
@@ -131,126 +217,144 @@ $(document).ready(function() {
         ],
     });
 
-    yadcf.init(oTable1,
-        [
-          {
-              column_number: 0,
-              filter_type: "none",
-              filter_default_label: "",
-              filter_reset_button_text: false,
-          },
-          {
-              column_number: 1,
-              filter_type: "multi_select",
-              select_type: "select2",
-              column_data_type: "html",
-              filter_default_label: "",
-              filter_reset_button_text: false,
-              select_type_options: {
-                  width: "60px",
-              }
-          },
-          {
-              column_number: 2,
-              filter_type: "multi_select",
-              select_type: "select2",
-              // column_data_type: "html",
-              filter_default_label: "",
-              filter_reset_button_text: false,
-              select_type_options: {
-                  width: "40px",
-              }
-          },
-          {
-              column_number: 3,
-              filter_type: "multi_select",
-              select_type: "select2",
-              filter_default_label: "",
-              filter_reset_button_text: false,
-              select_type_options: {
-                  width: "40px",
-              }
-          },
-          {
-              column_number: 4,
-              filter_type: "multi_select",
-              select_type: "select2",
-              filter_default_label: "",
-              filter_reset_button_text: false,
-              select_type_options: {
-                  width: "150px",
-              }
-          },
-          {
-              column_number: 5,
-              filter_type: "multi_select",
-              select_type: "select2",
-              column_data_type: "html",
-              html_data_type: "text",
-              filter_default_label: "UniProt",
-              filter_match_mode : "exact",
-              filter_reset_button_text: false,
-              select_type_options: {
-                  width: "60px",
-              }
-          },
-          {
-              column_number: 6,
-              filter_type: "multi_select",
-              select_type: "select2",
-              column_data_type: "html",
-              html_data_type: "text",
-              filter_default_label: "",
-              filter_match_mode : "exact",
-              filter_reset_button_text: false,
-              select_type_options: {
-                  width: "80px",
-              }
-          },
-// Ligands selection
-          {
-              column_number: 7,
-              filter_type: "multi_select",
-              select_type: "select2",
-              column_data_type: "html",
-              html_data_type: "text",
-              filter_default_label: "",
-              filter_match_mode : "exact",
-              filter_reset_button_text: false,
-              select_type_options: {
-                  width: "200px",
-              }
-          },
-          {
-              column_number: 8,
-              filter_type: "multi_select",
-              select_type: "select2",
-              // column_data_type: "html",
-              filter_default_label: "",
-              filter_reset_button_text: false,
-              select_type_options: {
-                  width: "140px",
-              }
-          },
+    let columnfilters = [
+        {
+            column_number: 0,
+            filter_type: "none",
+            filter_default_label: "",
+            filter_reset_button_text: false,
+        },
+        {
+            column_number: 1,
+            filter_type: "multi_select",
+            select_type: "select2",
+            column_data_type: "html",
+            filter_default_label: "",
+            filter_reset_button_text: false,
+            select_type_options: {
+                width: "60px",
+            }
+        },
+        {
+            column_number: 2,
+            filter_type: "multi_select",
+            select_type: "select2",
+            // column_data_type: "html",
+            filter_default_label: "",
+            filter_reset_button_text: false,
+            select_type_options: {
+                width: "40px",
+            }
+        },
+        {
+            column_number: 3,
+            filter_type: "multi_select",
+            select_type: "select2",
+            filter_default_label: "",
+            filter_reset_button_text: false,
+            select_type_options: {
+                width: "40px",
+            }
+        },
+        {
+            column_number: 4,
+            filter_type: "multi_select",
+            select_type: "select2",
+            filter_default_label: "",
+            filter_reset_button_text: false,
+            select_type_options: {
+                width: "150px",
+            }
+        },
+        {
+            column_number: 5,
+            filter_type: "multi_select",
+            select_type: "select2",
+            column_data_type: "html",
+            html_data_type: "text",
+            filter_default_label: "UniProt",
+            filter_match_mode : "exact",
+            filter_reset_button_text: false,
+            select_type_options: {
+                width: "60px",
+            }
+        },
+        {
+            column_number: 6,
+            filter_type: "multi_select",
+            select_type: "select2",
+            column_data_type: "html",
+            html_data_type: "text",
+            filter_default_label: "",
+            filter_match_mode : "exact",
+            filter_reset_button_text: false,
+            select_type_options: {
+                width: "80px",
+            }
+        },
+  // Ligands selection
+        {
+            column_number: 7,
+            filter_type: "multi_select",
+            select_type: "select2",
+            column_data_type: "html",
+            html_data_type: "text",
+            filter_default_label: "",
+            filter_match_mode : "exact",
+            filter_reset_button_text: false,
+            select_type_options: {
+                width: "200px",
+            }
+        },
+        {
+            column_number: 8,
+            filter_type: "multi_select",
+            select_type: "select2",
+            // column_data_type: "html",
+            filter_default_label: "",
+            filter_reset_button_text: false,
+            select_type_options: {
+                width: "140px",
+            }
+        },
 
-// Hidden GPCRdb support type column calls customized function
-          {
-              column_number: 21,
-              filter_type: "custom_func",
-              custom_func: supportFilter,
-              filter_container_id: "hide_filter3",
-          },
-      ],
+  // Hidden GPCRdb support type column calls customized function
+        {
+            column_number: 21,
+            filter_type: "custom_func",
+            custom_func: supportFilter,
+            filter_container_id: "hide_filter3",
+        },
+    ].concat(repfilter);
+    console.log(columnfilters)
 
-      {
-          filters_tr_index: 2
-      },
+    yadcf.init(oTable1, columnfilters, { cumulative_filtering: false});
 
-      {
-          cumulative_filtering: false
-      }
-  );
+  // Initialize ranked Range Filtering options
+  $(".ranked_range_min3, .ranked_range_max3, .ranked_range_rank3").on("click", function(event) {
+      event.stopPropagation();
+  });
 
+  $(".ranked_range_min3, .ranked_range_max3, .ranked_range_rank3").on("input", function(event) {
+      // Get column #
+      let column_nr = event.target.id.split("_")[3];
+
+      // Store current type of filtering globally
+      lastRangeRankFilter = event.target.id.split("_")[2];
+
+      // SELECT one option in real YADCF filter to trick YADCF into calling the filter function
+      let adjust_node1 = $("#yadcf-filter--arrestintable-" + column_nr + " option").filter(":nth-child(2)").first();
+      adjust_node1.prop("selected", true);
+
+      // Invoke filtering
+      $("#yadcf-filter--arrestintable-" + column_nr).change();
+
+      // Clean filter type
+      lastRangeRankFilter = "";
+  });
+
+
+  yadcf.exResetAllFilters(oTable1);
 
     $("#arrestintable"+" > tbody > tr").click(function(event) {
         if (event.target.type !== "checkbox") {
@@ -280,7 +384,7 @@ $(document).ready(function() {
 
 
 // Hide column button for table1
-    $(".hide_columns1").click(function(evt) {
+    $(".hide_columns3").click(function(evt) {
         var columns = $(this).attr("columns").split(",");
         columns.forEach(function(column) {
             column = oTable1.column( column );

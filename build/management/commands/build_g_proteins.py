@@ -414,11 +414,10 @@ class Command(BaseCommand):
         """DROP data from the protein_gprotein_pair table."""
         try:
             ProteinCouplings.objects.filter().delete()
-            ProteinAlias.objects.filter(protein__family__slug__startswith='100').delete()
-            sequence_sql = connection.ops.sequence_reset_sql(no_style(), [ProteinCouplings, ProteinGProtein])
-            with connection.cursor() as cursor:
-                for sql in sequence_sql:
-                    cursor.execute(sql)
+            #sequence_sql = connection.ops.sequence_reset_sql(no_style(), [ProteinCouplings, ProteinGProtein])
+            #with connection.cursor() as cursor:
+            #    for sql in sequence_sql:
+            #        cursor.execute(sql)
 
         except Exception as msg:
             self.logger.warning('Existing protein_gprotein and protein_gprotein_pair data cannot be deleted' + str(msg))
@@ -730,6 +729,8 @@ class Command(BaseCommand):
         """
         if iterator in column_variants:
             dictionary['variant'] = column_variants[iterator]
+        else:
+            dictionary['variant'] = 'Regular'
 
     def assess_type(self, accession_id):
         """
@@ -817,7 +818,7 @@ class Command(BaseCommand):
                             protein_dict[gproteinsubunit][key] = None
                         else:
                             protein_dict[gproteinsubunit][key] = tuple[0].cell_value(i, j)
-                        self.assess_variants(protein_dict[gproteinsubunit], j, column[key]["variants"])
+                        self.assess_variants(protein_dict[gproteinsubunit], j, columns[key]["variants"])
                 #apply temporary dict to master dict
                 data[tuple[2]][protein] = protein_dict
 
@@ -865,9 +866,8 @@ class Command(BaseCommand):
                         gp = lookup[gprotein]
                     # Assume they are there.
                     if gp.family.slug not in lookup:
-                        print("SEARCHING FOR FAMILY OF SLUG: " + str("_".join(gp.family.slug.split("_")[:3])))
-                        g = ProteinFamily.objects.get(slug="_".join(gp.family.slug.split("_")[:3]))
-                        lookup[gp.family.slug] = g
+                        # print("SEARCHING FOR FAMILY OF SLUG: " + str("_".join(gp.family.slug.split("_")[:3])))
+                        lookup[gp.family.slug] = ProteinFamily.objects.get(slug="_".join(gp.family.slug.split("_")[:3]))
                     else:
                         g = lookup[gp.family.slug]
                     # print("PROCESSING: LIGANDS INFORMATION OF " + str(ligands[couplings['ligand_id']][0]) + " FOR "+ str(g))
@@ -922,6 +922,7 @@ class Command(BaseCommand):
     def purge_cgn_proteins(self):
         try:
             Protein.objects.filter(residue_numbering_scheme__slug='cgn').delete()
+            ProteinAlias.objects.filter(protein__family__slug__startswith='100').delete()
         except:
             self.logger.info('Protein to delete not found')
 

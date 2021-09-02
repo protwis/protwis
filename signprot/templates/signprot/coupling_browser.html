@@ -150,11 +150,11 @@
                     </th>
                     <th>IUPHAR</th>
                     <th>Ligand name</th>
-                    <th>Physiological / Surrogate</th>
+                    <th>Phys. / Surr.</th>
 
                     {% for n in "x"|rjust:"5" %}  <!-- 5 -->
                         {% for p, subval in header.items  %}
-                            <th>{{ p }}</th>
+                            <th>{{ p|safe }}</th>
                         {% endfor %}
                     {% endfor %}
                 </tr>
@@ -167,13 +167,13 @@
 
                     {% for n in "x"|rjust:"16" %} <!-- 16 -->
                     <th>
-                      <input  placeholder="Min" id="ranked_range_min1_{{ forloop.counter|add:"10" }}"
+                      <input  placeholder="Min" id="ranked_range_min1_{{ forloop.counter|add:"12" }}"
                        class="yadcf-filter-range-number yadcf-filter-range ranked_range_min1">
                       <span class="yadcf-filter-range-number-seperator"></span><br>
-                      <input  placeholder="Max" id="ranked_range_max1_{{ forloop.counter|add:"10" }}"
+                      <input  placeholder="Max" id="ranked_range_max1_{{ forloop.counter|add:"12" }}"
                        class="yadcf-filter-range-number yadcf-filter-range ranked_range_max1">
                       <span class="yadcf-filter-range-number-seperator"></span><br>
-                      <input  placeholder="Rank" id="ranked_range_rank1_{{ forloop.counter|add:"10" }}"
+                      <input  placeholder="Rank" id="ranked_range_rank1_{{ forloop.counter|add:"12" }}"
                       class="yadcf-filter-range-number yadcf-filter-range ranked_range_rank1">
                     </th>
                     {% endfor %}
@@ -211,10 +211,12 @@
                             </td>
                             <td class="text-left">
                                 <a href="{{ pvals.protein.gtp_link }}" target="_blank">{{ pvals.protein.iuphar|safe }}</a>
-{#                                <a href="https://gpcrdb.org/protein/{{ pvals.protein.entryname }}" target="_blank">{{ pvals.protein.iuphar|safe }}</a>#}
+{#                                <a href="/protein/{{ pvals.protein.entryname }}" target="_blank">{{ pvals.protein.iuphar|safe }}</a>#}
                             </td>
                             <td class="text-left">
-                                <a href="https://gpcrdb.org/ligand/{{ cvals.ligand_id }}/info" target="_blank">{{ cvals.ligand_name|safe }}</a>
+                              {% if cvals.ligand_name != "-" %}
+                                <a href="/ligand/{{ cvals.ligand_id }}/info" target="_blank">{{ cvals.ligand_name|safe }}</a>
+                              {% endif %}
                             </td>
                             <td>{{ cvals.ligand_physiological }}</td>
                             <td>{{ pvals.protein.gs }}</td>
@@ -250,7 +252,7 @@
             </table>
             <div id="hide_filter1"></div>
             {% for n in "x"|rjust:"18" %}  <!-- 16 -->
-                <div id="hide_rankfam{{ forloop.counter|add:"10" }}" style="display: none;"></div>
+                <div id="hide_rankfam{{ forloop.counter|add:"12" }}" style="display: none;"></div>
             {% endfor %}
 
         </div>
@@ -401,13 +403,13 @@
 
                     {% for n in "x"|rjust:"56" %}
                     <th>
-                      <input  placeholder="Min" id="ranked_range_min2_{{ forloop.counter|add:"10" }}"
+                      <input  placeholder="Min" id="ranked_range_min2_{{ forloop.counter|add:"12" }}"
                        class="yadcf-filter-range-number yadcf-filter-range ranked_range_min2">
                       <span class="yadcf-filter-range-number-seperator"></span><br>
-                      <input  placeholder="Max" id="ranked_range_max2_{{ forloop.counter|add:"10" }}"
+                      <input  placeholder="Max" id="ranked_range_max2_{{ forloop.counter|add:"12" }}"
                        class="yadcf-filter-range-number yadcf-filter-range ranked_range_max2">
                       <span class="yadcf-filter-range-number-seperator"></span><br>
-                      <input  placeholder="Rank" id="ranked_range_rank2_{{ forloop.counter|add:"10" }}"
+                      <input  placeholder="Rank" id="ranked_range_rank2_{{ forloop.counter|add:"12" }}"
                       class="yadcf-filter-range-number yadcf-filter-range ranked_range_rank2">
                     </th>
                     {% endfor %}
@@ -445,10 +447,10 @@
                             </td>
                             <td class="text-left">
                                 <a href="{{ pvals.protein.gtp_link }}" target="_blank">{{ pvals.protein.iuphar|safe }}</a>
-{#                                <a href="https://gpcrdb.org/protein/{{ pvals.protein.entryname }}" target="_blank">{{ pvals.protein.iuphar|safe }}</a>#}
+{#                                <a href="/protein/{{ pvals.protein.entryname }}" target="_blank">{{ pvals.protein.iuphar|safe }}</a>#}
                             </td>
                             <td class="text-left">
-                                <a href="https://gpcrdb.org/ligand/{{ cvals.ligand_id }}/info" target="_blank">{{ cvals.ligand_name|safe }}</a>
+                                <a href="/ligand/{{ cvals.ligand_id }}/info" target="_blank">{{ cvals.ligand_name|safe }}</a>
                             </td>
                             <td>{{ cvals.ligand_physiological }}</td>
                             <td>{{ pvals.protein.gs }}</td>
@@ -482,7 +484,7 @@
             </table>
             <div id="hide_filter2"></div>
             {% for n in "x"|rjust:"59" %}
-                <div id="hide_ranksub{{ forloop.counter|add:"10" }}" style="display: none;"></div>
+                <div id="hide_ranksub{{ forloop.counter|add:"12" }}" style="display: none;"></div>
             {% endfor %}
 
 
@@ -500,7 +502,7 @@
 
       <div style='width:100%; display:inline;'>
           <!-- Dropdown button -->
-          <div class="btn-group">
+          <!--<div class="btn-group">
               <button type="button" class="btn btn-primary btn-sm">Supporting datasets</button>
               <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown"
                       aria-haspopup="true" aria-expanded="false">
@@ -513,7 +515,7 @@
                   <li><a href="#" onclick="yadcf.exFilterColumn(oTable3, [[22, 3]]);">3</a></li>
                   <li><a href="#" onclick="yadcf.exFilterColumn(oTable3, [[22, 4]]);">4</a></li>
               </ul>
-          </div>
+          </div>-->
 
           <div class="btn-group" style="padding-left:10px;">
               <a id="dlink" style="display:none;"></a>
@@ -548,25 +550,25 @@
               </th>
               <th colspan=3 style='height:35px; text-align:left;'>
                   log(Emax/EC50)
-                  <button type="button" class="close hide_columns3" columns="10,11,12"
+                  <button type="button" class="close hide_columns3" columns="9,10,11"
                           style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                   </button>
               </th>
               <th colspan=3 style='height:35px; text-align:left;'>
                   pEC50
-                  <button type="button" class="close hide_columns3" columns="13,14,15"
+                  <button type="button" class="close hide_columns3" columns="12,13,14"
                           style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                   </button>
               </th>
               <th colspan=3 style='height:35px; text-align:left;'>
                   Emax
-                  <button type="button" class="close hide_columns3" columns="16,17,18"
+                  <button type="button" class="close hide_columns3" columns="15,16,17"
                           style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                   </button>
               </th>
               <th colspan=4 style='height:35px; text-align:left;'>
                   Standard Deviation
-                  <button type="button" class="close hide_columns3" columns="19,20,21"
+                  <button type="button" class="close hide_columns3" columns="18,19,20"
                           style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                   </button>
               </th>
@@ -586,12 +588,12 @@
               </th>
               <th>IUPHAR</th>        <!-- 7 -->
               <th>Ligand name</th>   <!-- 8 -->
-              <th>Physiological / Surrogate</th>  <!-- 9 -->
+              <th>Phys. / Surr.</th>  <!-- 9 -->
 
               {% for n in "x"|rjust:"4" %}        <!-- 10 -> 21 -->
                   {% for subval in subunitheader %}
                       <th>
-                          {{ subval}}
+                          {{ subval|safe }}
                       </th>
                   {% endfor %}
               {% endfor %}
@@ -608,14 +610,14 @@
 
               {% for n in "x"|rjust:"12" %}
               <th>
-                <input  placeholder="Min" id="ranked_range_min3_{{ forloop.counter|add:"10" }}"
+                <input  placeholder="Min" id="ranked_range_min3_{{ forloop.counter|add:"8" }}"
                  class="yadcf-filter-range-number yadcf-filter-range ranked_range_min3">
                 <span class="yadcf-filter-range-number-seperator"></span><br>
-                <input  placeholder="Max" id="ranked_range_max3_{{ forloop.counter|add:"10" }}"
+                <input  placeholder="Max" id="ranked_range_max3_{{ forloop.counter|add:"8" }}"
                  class="yadcf-filter-range-number yadcf-filter-range ranked_range_max3">
                 <span class="yadcf-filter-range-number-seperator"></span><br>
-                <input  placeholder="Rank" id="ranked_range_rank3_{{ forloop.counter|add:"10" }}"
-                class="yadcf-filter-range-number yadcf-filter-range ranked_range_rank3">
+                <!--<input  placeholder="Rank" id="ranked_range_rank3_{{ forloop.counter|add:"8" }}"
+                class="yadcf-filter-range-number yadcf-filter-range ranked_range_rank3">-->
               </th>
               {% endfor %}
 
@@ -626,6 +628,9 @@
           <tbody>
           {% for p, pvals in tabfields.items %}
               {% for c, cvals in pvals.coupling.items %}
+                {% if c == "1" or c == "2" or c == "3" or c == "4" %}
+
+                {% else %}
                   <tr data-source="{{ c }}"> {# And then use the data to apply the javascript filters.#}
                       <td class="text-center"><input class="alt" type="checkbox"></td> <!-- 1 -->
                       {% if c == "1" or c == "2" or c == "3" or c == "4" %}
@@ -651,7 +656,9 @@
                           <a href="{{ pvals.protein.gtp_link }}" target="_blank">{{ pvals.protein.iuphar|safe }}</a>
                       </td>
                       <td class="text-left">               <!-- 8 -->
-                          <a href="https://gpcrdb.org/ligand/{{ cvals.ligand_id }}/info" target="_blank">{{ cvals.ligand_name|safe }}</a>
+                          {% if cvals.ligand_name != "-" %}
+                            <a href="/ligand/{{ cvals.ligand_id }}/info" target="_blank">{{ cvals.ligand_name|safe }}</a>
+                          {% endif %}
                       </td>
                       <td class="text-left">{{ cvals.ligand_physiological }}</td> <!-- 9 -->
 
@@ -673,6 +680,7 @@
                       <td>{{ c }}</td>                                 <!-- 22 -->
 
                   </tr>
+                {% endif %}
               {% endfor %}
 
           {% endfor %}
@@ -681,7 +689,7 @@
       </table>
       <div id="hide_filter3"></div>
       {% for n in "x"|rjust:"12" %}
-          <div id="hide_ranksub{{ forloop.counter|add:"10" }}" style="display: none;"></div>
+          <div id="hide_ranksub{{ forloop.counter|add:"8" }}" style="display: none;"></div>
       {% endfor %}
     {% endif %}
 
@@ -698,8 +706,8 @@
     {#        <script src="https://cdnjs.cloudflare.com/ajax/libs/yadcf/0.9.4/jquery.dataTables.yadcf.min.js"></script>#}
     {#        <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>#}
     {% if page == 'gprot' %}
-    <script src="{% static 'home/js/signprot-multitabtable.js' %}" async></script>
+      <script src="{% static 'home/js/signprot-multitabtable.js' %}" async></script>
     {% else %}
-    <script src="{% static 'home/js/arrestin_coupling.js' %}"></script>
+      <script src="{% static 'home/js/arrestin_coupling.js' %}"></script>
     {% endif %}
 {% endblock %}

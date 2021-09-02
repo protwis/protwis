@@ -357,12 +357,13 @@ class CouplingBrowser(TemplateView):
 
         #VARIABLE
         couplings2 = ProteinCouplings.objects.filter(source__in=["Inoue", "Bouvier", "Roth"]) \
-            .filter(g_protein_subunit__family__slug__startswith=subunit_filter).order_by("g_protein_subunit__family__slug", "source") \
+            .filter(g_protein_subunit__family__slug__startswith=subunit_filter) \
+            .order_by("g_protein_subunit__family__slug", "source", "-variant") \
             .prefetch_related('g_protein_subunit__family', 'g_protein')
         #VARIABLE
         coupling_headers = ProteinCouplings.objects.filter(source__in=["Inoue", "Bouvier", "Roth"]) \
             .filter(g_protein_subunit__family__slug__startswith=subunit_filter) \
-            .order_by("g_protein_subunit__family__slug", "source", "variant") \
+            .order_by("g_protein_subunit__family__slug", "source", "-variant") \
             .values_list("g_protein_subunit__family__name", "g_protein_subunit__family__parent__name", "variant").distinct()
 
         coupling_header_names = {}
@@ -374,7 +375,7 @@ class CouplingBrowser(TemplateView):
             if name[2] == "Regular":
                 subname = name[0]
             else:
-                subname = name[0] + '-' + name[2]
+                subname = name[0] + '<br><span class="couplingvariant">' + name[2] + '</span>'
             if name[1] not in coupling_header_names:
                 coupling_header_names[name[1]] = []
                 coupling_placeholder3[name[1]] = []
@@ -440,7 +441,7 @@ class CouplingBrowser(TemplateView):
             if pair.variant == "Regular":
                 subunit = pair.g_protein_subunit.family.name
             else:
-                subunit = pair.g_protein_subunit.family.name + '-' + pair.variant
+                subunit = pair.g_protein_subunit.family.name + '<br><span class="couplingvariant">' + pair.variant + '</span>'
 
             ## check the physiological property
             if pair.physiological_ligand == True:
@@ -460,9 +461,9 @@ class CouplingBrowser(TemplateView):
             dictotemplate[pair.protein_id]['coupling']['1']['pec50'][subunit].append(round(pair.pec50, 1))
             dictotemplate[pair.protein_id]['coupling']['1']['emax'][subunit].append(round(pair.emax))
             dictotemplate[pair.protein_id]['coupling']['1']['std'][subunit].append(std)
-            dictotemplate[pair.protein_id]['coupling']['1']['ligand_id'] = pair.ligand_id
-            dictotemplate[pair.protein_id]['coupling']['1']['ligand_name'] = pair.ligand.name
-            dictotemplate[pair.protein_id]['coupling']['1']['ligand_physiological'] = physio
+            dictotemplate[pair.protein_id]['coupling']['1']['ligand_id'] = "-"
+            dictotemplate[pair.protein_id]['coupling']['1']['ligand_name'] = "-"
+            dictotemplate[pair.protein_id]['coupling']['1']['ligand_physiological'] = "-"
             # dictotemplate[pair.protein_id]['coupling']['1']['variant'][subunit].append(pair.variant)
             family = coupling_reverse_header_names[subunit]
             dictotemplate[pair.protein_id]['couplingmax'][pair.source]['logemaxec50'][family].append(round(pair.logmaxec50, 1))
@@ -477,9 +478,9 @@ class CouplingBrowser(TemplateView):
             dictotemplate[pair.protein_id]['couplingmax']['1']['pec50'][family].append(round(pair.pec50, 1))
             dictotemplate[pair.protein_id]['couplingmax']['1']['emax'][family].append(round(pair.emax))
             dictotemplate[pair.protein_id]['couplingmax']['1']['std'][family].append(std)
-            dictotemplate[pair.protein_id]['couplingmax']['1']['ligand_id'] = pair.ligand_id
-            dictotemplate[pair.protein_id]['couplingmax']['1']['ligand_name'] = pair.ligand.name
-            dictotemplate[pair.protein_id]['couplingmax']['1']['ligand_physiological'] = physio
+            dictotemplate[pair.protein_id]['couplingmax']['1']['ligand_id'] = "-"
+            dictotemplate[pair.protein_id]['couplingmax']['1']['ligand_name'] = "-"
+            dictotemplate[pair.protein_id]['couplingmax']['1']['ligand_physiological'] = "-"
             # dictotemplate[pair.protein_id]['couplingmax']['1']['variant'][family].append(pair.variant)
 
         for prot in dictotemplate:
