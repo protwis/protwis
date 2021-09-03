@@ -50,7 +50,7 @@ class Command(BaseCommand):
             ['build_blast_database'],
             ['build_links'],
             ['build_construct_proteins'],
-            ['build_structures', {'proc': safe_proc_num],
+            ['build_structures', {'proc': safe_proc_num}],
             ['build_endogenous_ligands'],
             ['build_consensus_sequences', {'proc': options['proc']}],
             ['build_g_proteins'],
