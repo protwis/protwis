@@ -14,7 +14,6 @@ from common import definitions
 from common.diagrams_gpcr import DrawSnakePlot
 from common.diagrams_gprotein import DrawGproteinPlot
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
-from common.tools import fetch_from_web_api
 from common.views import AbsTargetSelection
 from contactnetwork.models import InteractingResiduePair
 from mutation.models import MutationExperiment
@@ -29,11 +28,9 @@ from signprot.models import (SignprotBarcode, SignprotComplex, SignprotStructure
 from structure.models import Structure
 
 import json
-import re
 import time
+
 from collections import Counter, OrderedDict
-from decimal import Decimal
-from pprint import pprint
 from copy import deepcopy
 from statistics import mean
 
@@ -482,7 +479,6 @@ def CouplingProfiles(request, render_part="both", signalling_data="empty"):
     if context == None:
 
         context = OrderedDict()
-        i = 0
         # adding info for tree from StructureStatistics View
         tree = PhylogeneticTreeGenerator()
         class_a_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
@@ -732,7 +728,6 @@ def familyDetail(request, slug):
     no_of_proteins = proteins.count()
     no_of_human_proteins = Protein.objects.filter(family__slug__startswith=pf.slug, species__id=1,
                                                   sequence_type__slug='wt').count()
-    list_proteins = list(proteins.values_list('pk', flat=True))
 
     # get structures of this family
     structures = SignprotStructure.objects.filter(protein__family__slug__startswith=slug)
@@ -1036,10 +1031,7 @@ def StructureInfo(request, pdbname):
     Show structure details
     """
 
-    #protein = Protein.objects.get(signprotstructure__pdb_code__index=pdbname)
     protein = Protein.objects.filter(signprotstructure__pdb_code__index=pdbname).first()
-
-    #crystal = SignprotStructure.objects.get(pdb_code__index=pdbname)
     crystal = SignprotStructure.objects.filter(pdb_code__index=pdbname).first()
 
     return render(request,
@@ -1404,7 +1396,7 @@ def render_IMSigMat(request):
     # signature_match = request.session.get('signature_match')
     signature_data = request.session.get('signature')
     ss_pos = request.session.get('ss_pos')
-    cutoff = request.session.get('cutoff')
+    #cutoff = request.session.get('cutoff')
 
     pos_set = Protein.objects.filter(entry_name__in=ss_pos).select_related('residue_numbering_scheme', 'species')
     pos_set = [protein for protein in pos_set]
