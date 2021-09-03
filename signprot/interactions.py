@@ -292,8 +292,6 @@ def fill_coupling_data_container(data):
     threshold_primary = -0.1
     threshold_secondary = -1
 
-    distinct_g_families = []
-    distinct_g_subunit_families = {}
     distinct_sources = ["GuideToPharma", "Aska"]
 
     couplings = ProteinCouplings.objects.filter(source__in=distinct_sources).prefetch_related(
@@ -312,19 +310,9 @@ def fill_coupling_data_container(data):
         gf = c.g_protein.name
         gf = gf.replace(" family", "")
 
-        if gf not in distinct_g_families:
-            distinct_g_families.append(gf)
-            distinct_g_subunit_families[gf] = []
-
         if c.g_protein_subunit:
             g = c.g_protein_subunit.entry_name
             g = g.replace("_human", "")
-            # print("g",g)
-            if g not in distinct_g_subunit_families[gf]:
-                distinct_g_subunit_families[gf].append(g)
-                distinct_g_subunit_families[gf] = sorted(
-                    distinct_g_subunit_families[gf]
-                )
 
         if s not in data[p]:
             data[p][s] = {}
@@ -395,7 +383,6 @@ def process_coupling_data(data):
 
 def extract_coupling_bool(gp, source):
     distinct_g_families = ['Gs','Gi/o', 'Gq/11', 'G12/13', ]
-    distinct_g_subunit_families = OrderedDict([('Gs',['gnas2','gnal']), ('Gi/o',['gnai1', 'gnai3', 'gnao', 'gnaz']), ('Gq/11',['gnaq', 'gna14', 'gna15']), ('G12/13',['gna12', 'gna13'])])
     threshold_primary = -0.1
     threshold_secondary = -1
 
