@@ -1,16 +1,15 @@
 import json
 import re
-import time
-from itertools import chain
 import string
 import random
 
 from collections import Counter
+from decimal import Decimal
 
 from residue.models import ResidueGenericNumberEquivalent
 from signprot.models import SignprotComplex
 from protein.models import Protein, ProteinCouplings
-from common.definitions import *
+from common.definitions import AMINO_ACID_GROUPS
 
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -48,12 +47,10 @@ def get_protein_segments(request):
     segment_raw = request.POST.getlist("seg[]")
     selected_receptor_classes = request.POST.getlist("selectedreceptorclasses[]")
     most_common_class = Counter(selected_receptor_classes).most_common(1)
-    slug_ending = get_class_slug(most_common_class)
 
     for s in segment_raw:
         try:
             gen_object = ResidueGenericNumberEquivalent.objects.filter(
-                # label=s, scheme__slug__in=['gpcrdb' + slug_ending]
                 label=s, scheme__slug__in=['gpcrdba']
             ).get()
             segments.append(gen_object)
@@ -257,13 +254,11 @@ def prepare_coupling_data_container():
     class_names = {}
     data = {}
 
-    complex_objs = SignprotComplex.objects.prefetch_related('structure__protein_conformation__protein').values_list('structure__protein_conformation__protein__parent_id', flat=True)
     proteins = (
         Protein.objects.filter(
             sequence_type__slug="wt",
             family__slug__startswith="00",
             species__common_name="Human")
-        # .exclude(id__in=complex_objs)
         .prefetch_related("family")
     )
 
@@ -289,9 +284,6 @@ def prepare_coupling_data_container():
 
 
 def fill_coupling_data_container(data):
-    threshold_primary = -0.1
-    threshold_secondary = -1
-
     distinct_sources = ["GuideToPharma", "Aska"]
 
     couplings = ProteinCouplings.objects.filter(source__in=distinct_sources).prefetch_related(
