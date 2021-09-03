@@ -1,4 +1,4 @@
-/*global yadcf*/
+/*global yadcf, rankedRangeFilter, createRank, createYADCFfilters, supportFilter, make_rank_col_filters, lastRangeRankFilter, initFixedColumnsOverlay, copyListToClipboard*/
 /*eslint complexity: ["error", 20]*/
 /*eslint wrap-iife: ["error", "outside"]*/
 /*eslint quotes: ["error", "double", { "avoidEscape": true }]*/
@@ -136,12 +136,12 @@ $(document).ready(function() {
   });
 
   // Enable columns overlay
-  initFixedColumnsOverlay("arrestintable")
+  initFixedColumnsOverlay("arrestintable");
 
   // Hide column buttons
   $(".hide_columns3").click(function(evt) {
     var columns = $(this).attr("columns").split(",");
-    oTable1.columns(columns).visible(false, false)
+    oTable1.columns(columns).visible(false, false);
     oTable1.draw();
   });
 

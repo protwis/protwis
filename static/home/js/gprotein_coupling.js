@@ -1,4 +1,4 @@
-/*global yadcf*/
+/*global yadcf, rankedRangeFilter, createRank, createYADCFfilters, supportFilter, make_rank_col_filters, lastRangeRankFilter, initFixedColumnsOverlay, copyListToClipboard*/
 /*eslint complexity: ["error", 20]*/
 /*eslint wrap-iife: ["error", "outside"]*/
 /*eslint quotes: ["error", "double", { "avoidEscape": true }]*/
@@ -140,7 +140,7 @@ $(document).ready(function() {
   // Hide column button for table1
   $(".hide_columns1").click(function(evt) {
     var columns = $(this).attr("columns").split(",");
-    oTable1.columns(columns).visible(false, false)
+    oTable1.columns(columns).visible(false, false);
     oTable1.draw();
   });
 
@@ -155,7 +155,7 @@ $(document).ready(function() {
   });
 
   // Enable columns overlay
-  initFixedColumnsOverlay("familiestabletab")
+  initFixedColumnsOverlay("familiestabletab");
 
   // Enable copy to clipboard option
   $("#uniprot_copy1").click(function() {
@@ -282,11 +282,11 @@ function initCouplingTable2() {
   // Hide column button for table2
   $(".hide_columns2").click(function(evt) {
     var columns = $(this).attr("columns").split(",");
-    oTable2.columns(columns).visible(false, false)
+    oTable2.columns(columns).visible(false, false);
     oTable2.draw();
   });
 
-  initFixedColumnsOverlay("subtypestabletab")
+  initFixedColumnsOverlay("subtypestabletab");
 
   // Enable copy to clipboard option
   $("#uniprot_copy2").click(function() {

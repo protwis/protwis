@@ -6,7 +6,7 @@
 function resetHiddenColumns(table) {
   let col_length = table.columns()[0].length;
   let columns = Array.from(new Array(col_length - 1), (x, i) => i);
-  table.columns(columns).visible(true, false)
+  table.columns(columns).visible(true, false);
   table.draw();
 }
 
@@ -155,6 +155,23 @@ function make_rank_col_filters(start_column, repeat_number, cont_prefix, default
 let isScrolling;
 let leftOverlayOffset = [];
 
+function createFixedColumnsOverlay(table_id, clone_cols = 6) {
+  // When called after filtering: remove current overlay rows
+  $("#overlay_" + table_id + " table tbody tr").remove();
+
+  // Clone first X columns for each row
+  $("#" + table_id + " tbody tr").each(function() {
+    let tds = $(this).children();
+    let overlay_row = $("<tr></tr>");
+
+    for (let i = 0; i < clone_cols; i++) {
+      overlay_row.append(tds.eq(i).clone());
+    }
+    $("#overlay_" + table_id + " table tbody").append(overlay_row);
+    overlay_row.height($(this).height());
+  });
+}
+
 function initFixedColumnsOverlay(table_id) {
   // Create overlay container and hide
   $("#" + table_id).closest(".dataTables_scrollBody").append('<div id="overlay_' + table_id + '" class="table_overlay"><table class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
@@ -172,7 +189,7 @@ function initFixedColumnsOverlay(table_id) {
   leftOverlayOffset[table_id] = 0;
   $("#" + table_id).closest(".dataTables_scrollBody").scroll(function() {
     let left_tmp = $("#" + table_id).closest(".dataTables_scrollBody").scrollLeft();
-    if (left_tmp != leftOverlayOffset[table_id]) {
+    if (left_tmp !== leftOverlayOffset[table_id]) {
       leftOverlayOffset[table_id] = left_tmp;
 
       // Clear our timeout while still scrolling
@@ -200,23 +217,50 @@ function initFixedColumnsOverlay(table_id) {
   });
 }
 
-function createFixedColumnsOverlay(table_id, clone_cols = 6) {
-  // When called after filtering: remove current overlay rows
-  $("#overlay_" + table_id + " table tbody tr").remove();
-
-  // Clone first X columns for each row
-  $("#" + table_id + " tbody tr").each(function() {
-    let tds = $(this).children();
-    let overlay_row = $("<tr></tr>");
-
-    for (let i = 0; i < clone_cols; i++) {
-      overlay_row.append(tds.eq(i).clone());
-    }
-    $("#overlay_" + table_id + " table tbody").append(overlay_row);
-    overlay_row.height($(this).height());
-  });
-}
-
 // =============================================================================
 // END OVERLAY COLUMNS CODE HERE
 // =============================================================================
+
+/**
+ * Function to convert html tables to excel.
+ * TODO: create standardized version for GPCRdb.js + remove copies
+ * @return {tableidtag, name, filename}      <table id=tableidtag>
+ */
+let tableToExcel = (function() {
+    let uri = "data:application/vnd.ms-excel;base64,",
+    template = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:x='urn:schemas-microsoft-com:office:excel' xmlns='http://www.w3.org/TR/REC-html40'><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>",
+    base64 = function(s) {
+      return window.btoa(unescape(encodeURIComponent(s)));
+    },
+    format = function(s, c) {
+      return s.replace(/{(\w+)}/g, function(m, p) {
+        return c[p];
+      });
+    };
+  return function(table, name, filename) {
+    table = $("#" + table).clone();
+    $("#excel_table").html(table);
+    // Clean up table to remove yadcf stuff
+    $("#excel_table thead tr").css("height", "");
+    $("#excel_table thead th").css("height", "");
+    $("#excel_table thead div").css("height", "");
+    $("#excel_table thead .yadcf-filter-wrapper").remove();
+    $("#excel_table thead button").remove();
+    let tr = $("#excel_table thead tr:eq(1)");
+    // reattach th titles
+    tr.find("th").each(function(column, th) {
+      if ($(th).attr("title")) {
+        $(th).html($(th).attr("title"));
+      }
+    });
+
+    let ctx = {
+      worksheet: name || "Worksheet",
+      table: $("#excel_table").html()
+    };
+    $("#excel_table").html("");
+    document.getElementById("dlink").href = uri + base64(format(template, ctx));
+    document.getElementById("dlink").download = filename;
+    document.getElementById("dlink").click();
+  };
+}());
