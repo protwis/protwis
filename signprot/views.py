@@ -926,12 +926,18 @@ def Ginterface(request, protein=None):
     secondary = []
 
     for entry in gProteinData:
-        layout_name = entry.g_protein.name.replace("Gs", "G<sub>s</sub>").replace("Gi/o", "G<sub>i</sub>/<sub>o</sub>").replace(
-            "Gq/11", "G<sub>q</sub>/<sub>11</sub>").replace("G12/13", "G<sub>12</sub>/<sub>13</sub>").replace("G", "G&alpha;")
         if entry.transduction == 'primary':
-            primary.append((layout_name, entry.g_protein.slug))
+            primary.append((entry.g_protein.name.replace("Gs", "G<sub>s</sub>").replace("Gi", "G<sub>i</sub>").replace(
+                "Go", "G<sub>o</sub>").replace("G11", "G<sub>11</sub>").replace("G12", "G<sub>12</sub>").replace("G13",
+                                                                                                                 "G<sub>13</sub>").replace(
+                "Gq", "G<sub>q</sub>").replace("G", "G&alpha;"), entry.g_protein.slug))
         elif entry.transduction == 'secondary':
-            secondary.append((layout_name, entry.g_protein.slug))
+            secondary.append((
+                entry.g_protein.name.replace("Gs", "G<sub>s</sub>").replace("Gi", "G<sub>i</sub>").replace(
+                    "Go", "G<sub>o</sub>").replace("G11", "G<sub>11</sub>").replace("G12",
+                                                                                    "G<sub>12</sub>").replace(
+                    "G13", "G<sub>13</sub>").replace("Gq", "G<sub>q</sub>").replace("G", "G&alpha;"),
+                entry.g_protein.slug))
 
     return render(request,
                   'signprot/ginterface.html',
