@@ -417,6 +417,8 @@ class BiasedExperiment(models.Model):
     auxiliary_protein = models.TextField(null=True)
     ligand_source_id = models.TextField(null=True)
     ligand_source_type = models.TextField(null=True)
+    receptor_isoform = models.TextField(null=True)
+    receptor_gtpo = models.TextField(null=True)
 
 class BiasedExperimentAssay(models.Model):
     biased_experiment = models.ForeignKey(
@@ -431,7 +433,7 @@ class BiasedExperimentAssay(models.Model):
     assay_type = models.CharField(max_length=60, null=True)
     molecule_1 = models.CharField(max_length=60, null=True)
     molecule_2 = models.CharField(max_length=60, null=True)
-
+    pathway_level = models.TextField(null=True)
     measured_biological_process = models.CharField(max_length=60, null=True)
     signal_detection_tecnique = models.TextField(null=True)
     assay_time_resolved = models.CharField(max_length=60, null=True)
@@ -448,11 +450,9 @@ class BiasedExperimentAssay(models.Model):
     bias_reference = models.CharField(max_length=60, null=True)
     transduction_coef = models.FloatField(max_length=60, null=True)
     relative_transduction_coef = models.FloatField(max_length=60, null=True)
-
     emax_ligand_reference = models.ForeignKey(Ligand, related_name = 'ExperimentAssay.bias_ligand_reference+',
                                         on_delete = models.CASCADE,
                                         null = True, blank = True)
-
 
 
 class ExperimentAssayAuthors(models.Model):

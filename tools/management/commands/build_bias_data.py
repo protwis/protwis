@@ -258,7 +258,6 @@ class Command(BaseBuild):
                 temp_dict['quantitive_activity_initial'])
             temp_dict['quantitive_activity_initial'] = "{:.2F}".format(
                 Decimal(temp_dict['quantitive_activity_initial']))
-        temp_dict['quantitive_activity'] = Command.process_low_potency(temp_dict)
         return temp_dict['quantitive_activity'], temp_dict['quantitive_activity_initial']
 
     @staticmethod
@@ -680,15 +679,6 @@ class Command(BaseBuild):
         return return_message
 
     @staticmethod
-    def process_low_potency(i):
-        try:
-            if float(i['quantitive_activity_initial']) < 5 and i['quantitive_efficacy'] > 0:
-                i['quantitive_activity'] == 12500 * (10**(-9))
-            return i['quantitive_activity']
-        except:
-            return i['quantitive_activity']
-
-    @staticmethod
     def lbf_calculate_bias(i, most_potent):
         return_message = None
         try:
@@ -884,12 +874,6 @@ class Command(BaseBuild):
                                                          emax_ligand_reference=emax_ligand
                                                          )
                         experiment_assay.save()
-                        # except:
-                        #     self.logger.info('get_rid_of_gprot')
-                    # except:
-                    #     import pdb; pdb.set_trace()
-                    #     self.logger.info('get_rid_of_gprot')
-
 
                 for ex in i[1]['backup_assays']:
                     assay_description = 'backup_assays'
@@ -929,7 +913,6 @@ class Command(BaseBuild):
                     experiment_assay.save()
             else:
                 self.logger.info('saving error')
-
     def fetch_experiment(self, publication, ligand, receptor, source):
         '''
         fetch receptor with Protein model

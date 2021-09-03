@@ -230,106 +230,13 @@
 
 	<table class="display compact text-nowrap" id='structures_scrollable' style="width: 100%">
 		<thead id="headers">
-            <tr style="display: None">
-    				<th></th>
-    				<th>Class</th>
-    				<th>Rec Fam</th>
-    				<th>UniProt</th>
-    				<th>IUPHAR</th>
-    				<th>Species</th>
-    				<th id="endogenous_ligand_filter_select">Endogenous<br>Ligand</th>
-    				<th>Reference<br>Ligand</th>
-    				<th>Tested<br>ligand</th>
-    				<th>#Ven<br>dors</th>
-    				<th>#Arti<br>cles</th>
-    				<th>#Labs<br></th>
-    				<th>Primary</th>
-    				<th>Secondary</th>
-    				<th>P 1</th>
-    				<th>P 2</th>
-    				<th>P 3</th>
-    				<th>P 4</th>
-    				<th>P 5</th>
-    				<th>P 1</th>
-    				<th>P 2</th>
-    				<th>P 3</th>
-    				<th>P 4</th>
-    				<th>P 5</th>
-
-    				<th>P1 - P2</th>
-    				<th>P1 - P3</th>
-    				<th>P1 - P4</th>
-    				<th>P1 - P5</th>
-
-    				<th>P1 - P2</th>
-    				<th>P1 - P3</th>
-    				<th>P1 - P4</th>
-    				<th>P1 - P5</th>
-
-    				<th>P 1</th>
-    				<th>P 2</th>
-    				<th>P 3</th>
-    				<th>P 4</th>
-    				<th>P 5</th>
-
-    				<th>P 1</th>
-    				<th>P 2</th>
-    				<th>P 3</th>
-    				<th>P 4</th>
-    				<th>P 5</th>
-
-    				<th>P 1</th>
-    				<th>P 2</th>
-    				<th>P 3</th>
-    				<th>P 4</th>
-    				<th>P 5</th>
-
-    				<th>P 1</th>
-    				<th>P 2</th>
-    				<th>P 3</th>
-    				<th>P 4</th>
-    				<th>P 5</th>
-
-    				<th>P 1</th>
-    				<th>P 2</th>
-    				<th>P 3</th>
-    				<th>P 4</th>
-    				<th>P 5</th>
-
-    				<th>P 1</th>
-    				<th>P 2</th>
-    				<th>P 3</th>
-    				<th>P 4</th>
-    				<th>P 5</th>
-
-    				<th>P 1</th>
-    				<th>P 2</th>
-    				<th>P 3</th>
-    				<th>P 4</th>
-    				<th>P 5</th>
-
-    				<th>P 1</th>
-    				<th>P 2</th>
-    				<th>P 3</th>
-    				<th>P 4</th>
-    				<th>P 5</th>
-
-    				<th>P 1</th>
-    				<th>P 2</th>
-    				<th>P 3</th>
-    				<th>P 4</th>
-    				<th>P 5</th>
-    				<th>Authors</th>
-    				<th>DOI/ <br>Reference</th>
-			</tr>
-
 			<tr class="header-spans" rowspan="2">
 				<th><span class="glyphicon glyphicon-info-sign" title="Click on this icon in a row for more details."></span></th>
 				<th id="receptor" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Receptor</th>
 				<th style="border-left: 1px solid black; text-align:left" colspan="5" style="">
 					Ligands</th>
-				<th id="transducers" style="border-left: 1px solid black; text-align:left" colspan="2" style="">
+				<th id="transducers" style="display: None" colspan="2" style="">
 					Receptor transducers</th>
 				<th id="pathways_effector" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Pathway rank order<br>(by &#916;Log(Emax/EC50)</th>
@@ -377,8 +284,8 @@
 				<th id="vendor_quantity_filter_select">#Ven<br>dors</th>
 				<th id="article_quantity_filter_select">#Arti<br>cles</th>
 				<th id="labs_quantity_filter_select">#Labs<br></th>
-				<th id="primary_filter_select">Primary</th>
-				<th id="secondary_filter_select">Secondary</th>
+				<th style="display: None" id="primary_filter_select">Primary</th>
+				<th style="display: None" id="secondary_filter_select">Secondary</th>
 				<th class="pathways" id="pathways_effector_p1_filter_select">P 1</th>
 				<th class="pathways" id="pathways_effector_p2_filter_select">P 2</th>
 				<th class="pathways" id="pathways_effector_p3_filter_select">P 3</th>
@@ -506,8 +413,8 @@
 				<td style="text-align:right">{{e.labs_quantity}}</td>
 
 				<!-- receptor trunsducers -->
-				<td style="text-align:left; border-left: 1px solid black;">{{e.primary}}</td>
-				<td style="text-align:left">{{e.secondary}}</td>
+				<td style="display: None">{{e.primary}}</td>
+				<td style="display: None">{{e.secondary}}</td>
 
 				<!-- pathways -->
 				<td style="text-align:left" class="pathway">{{e.pathways_p1|default_if_none:""}}</td>
