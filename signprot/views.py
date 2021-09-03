@@ -532,7 +532,8 @@ def CouplingProfiles(request, render_part="both", signalling_data="empty"):
         context['tree_orphan_a'] = json.dumps(orphan_data)
         # end copied section from StructureStatistics View
         # gprot_id = ProteinGProteinPair.objects.all().values_list('g_protein_id', flat=True).order_by('g_protein_id').distinct()
-        gproteins = ProteinCouplings.objects.filter(g_protein__slug__startswith="100").exclude(gprotein_id=553) #here GPa1 is fetched
+        coupling_gproteins = list(ProteinCouplings.objects.filter(g_protein__slug__startswith="100").exclude(g_protein_id=589).values_list("g_protein_id", flat = True).distinct()) #here GPa1 is fetched
+        gproteins = ProteinFamily.objects.filter(id__in=coupling_gproteins)
         arrestins = ProteinCouplings.objects.filter(g_protein__slug__startswith="200").values_list('g_protein_subunit', flat=True).order_by('g_protein_subunit').distinct()
         arrestin_prots = list(Protein.objects.filter(family__slug__startswith="200", species__id=1, sequence_type__slug='wt').values_list("pk","name"))
         arrestin_translate = {}
@@ -546,7 +547,7 @@ def CouplingProfiles(request, render_part="both", signalling_data="empty"):
         selectivitydata_gtp_plus = {}
         receptor_dictionary = []
         if signalling_data == "gprot":
-            table = {'Class':[], 'Gs': [], 'GiGo': [], 'GqG11': [], 'G12G13': [], 'Total': []}
+            table = {'Class':[], 'Gs': [], 'Gio': [], 'Gq11': [], 'G1213': [], 'Total': []}
         else: #here there may be the need of a elif if more signalling proteins will be added
             table = {'Class':[], 'Betaarrestin1': [], 'Betaarrestin2': [], 'Total': []}
         for slug in slug_translate.keys():
