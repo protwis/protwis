@@ -56,6 +56,7 @@ class Command(BaseCommand):
             ['build_g_proteins'],
             ['build_consensus_sequences', {'proc': options['proc'], 'signprot': 'Alpha'}],
             ['build_arrestins'],
+            ['build_coupling_data'],
             ['build_consensus_sequences', {'proc': options['proc'], 'signprot': 'Arrestin'}],
             ['build_signprot_complex'],
             ['build_g_protein_structures'],
