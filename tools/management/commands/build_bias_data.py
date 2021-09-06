@@ -3,7 +3,7 @@ import logging
 import math
 
 from build.management.commands.base_build import Command as BaseBuild
-from protein.models import ProteinGProteinPair
+from protein.models import ProteinCouplings
 from ligand.models import Ligand, BiasedExperiment, AnalyzedExperiment,AnalyzedAssay
 
 MISSING_PROTEINS = {}
@@ -468,7 +468,7 @@ class Command(BaseBuild):
     def save_data_to_model(self, context, source):
         for i in context['data'].items():
             if self.fetch_experiment(i[1]['publication'], i[1]['ligand'], i[1]['receptor'], source) == False:
-                primary, secondary = self.fetch_receptor_trunsducers(
+                primary, secondary = self.fetch_receptor_transducers(
                     i[1]['receptor'])
                 if len(i[1]['biasdata']) > 1:
                     experiment_entry = AnalyzedExperiment(publication=i[1]['publication'],
@@ -565,23 +565,23 @@ class Command(BaseBuild):
             experiment = None
             return False
 
-    def fetch_receptor_trunsducers(self, receptor):
+    def fetch_receptor_transducers(self, receptor):
         primary = set()
         temp = str()
         temp1 = str()
         secondary = set()
         try:
-            gprotein = ProteinGProteinPair.objects.filter(protein=receptor)
+            gprotein = ProteinCouplings.objects.filter(protein=receptor)
             for x in gprotein:
                 if x.transduction and x.transduction == 'primary':
                     primary.add(x.g_protein.name)
                 elif x.transduction and x.transduction == 'secondary':
                     secondary.add(x.g_protein.name)
             for i in primary:
-                temp += str(i) + str(', ')
+                temp += str(i.replace(' family', '')) + str(', ')
 
             for i in secondary:
-                temp1 += str(i) + str(', ')
+                temp1 += str(i.replace('family', '')) + str(', ')
             return temp, temp1
         except:
             self.logger.info('receptor not found error')
