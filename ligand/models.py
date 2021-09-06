@@ -482,11 +482,12 @@ class AnalyzedExperiment(models.Model):
     labs_quantity = models.CharField(max_length=5)
     auxiliary_protein = models.ForeignKey(
         'protein.Protein', on_delete=models.CASCADE, related_name='bias_auxiliary_protein', null=True)
-    primary = models.CharField(max_length=100, null=True)
-    secondary = models.CharField(max_length=100, null=True)
     ligand_source_id = models.TextField(null=True)
     ligand_source_type = models.TextField(null=True)
     external_ligand_ids = models.TextField(null=True, blank=True)
+    receptor_isoform = models.TextField(null=True)
+    receptor_gtpo = models.TextField(null=True)
+
 
 class AnalyzedAssay(models.Model):
     experiment = models.ForeignKey(
@@ -497,6 +498,7 @@ class AnalyzedAssay(models.Model):
     order_no = models.IntegerField(null=True)
     signalling_protein = models.CharField(
         max_length=60)  # TODO link to actual protein
+    pathway_level = models.TextField(null=True)
     cell_line = models.CharField(max_length=60, null=True)
     molecule_1 = models.CharField(max_length=60, null=True)
     molecule_2 = models.CharField(max_length=60, null=True)

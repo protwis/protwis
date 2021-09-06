@@ -16,6 +16,7 @@ from decimal import Decimal
 import logging
 import math
 import pandas as pd
+import numpy as np
 import os
 import traceback
 import time
@@ -141,6 +142,8 @@ class Command(BaseBuild):
         #cast everything to str
         df = df.astype(str)
         #cast NaN to none
+        for column in df:
+            df[column] = df[column].replace({'nan':None})
         # df = df.replace({'nan':None})
         #convert pandas df into list of dicts
         return_list_of_dicts = df.to_dict('records')
@@ -197,7 +200,13 @@ class Command(BaseBuild):
 
     @staticmethod
     def main_process(df_from_excel):
+        row_counter = 0
         for d in df_from_excel:
+            row_counter = row_counter + 1
+            # if(row_counter < 434):
+            #     continue
+            # if(row_counter > 489):
+            #     break
             try:
                  d['Alt 1)\nQuantitative activity'] = float( d['Alt 1)\nQuantitative activity'])
             except:
@@ -244,19 +253,20 @@ class Command(BaseBuild):
             try:
                 d['Unit'] = str(d['Unit'])
             except:
-                d['Unit'] = None
+                d['Unit']
             d['Alt 1)\nQuantitative activity'], d['Measure type'] = Command.fetch_measurements(potency=d['Alt 1)\nQuantitative activity'],
                                                                         p_type= d['Measure type'],
                                                                         unit = d['Unit'])
             protein = Command.fetch_protein(d['Receptor\nUniProt entry name or code'].lower())
             # family = self.define_g_family(d['Primary effector subtype'].lower(), d['assay_type'], protein )
-            pub = Command.fetch_publication(d['Reference\nDOI or PMID'].lower())
+            pub = Command.fetch_publication(d['Reference\nDOI or PMID'])
             l = Command.fetch_ligand(
-                d['ID'], d['ID type'].lower(), d['Ligand tested for bias or func. Sel.\nName'].lower())
+                d['ID'], d['ID type'], d['Ligand tested for bias or func. Sel.\nName'])
 
             # fetch reference_ligand
-            reference_ligand = Command.fetch_ligand(
-                d['ID.1'], d['ID type.1'].lower(), d['Emax reference ligand\nName'])
+            if (d['Emax reference ligand\nName'] is not None):
+                reference_ligand = Command.fetch_ligand(
+                    d['ID.1'], d['ID type.1'], d['Emax reference ligand\nName'])
             # fetch protein
             if protein == None:
                 return None
@@ -271,40 +281,40 @@ class Command(BaseBuild):
                                                 publication=pub,
                                                 ligand=l,
                                                 receptor=protein,
-                                                auxiliary_protein = d['Auxiliary protein\nUniProt entry name or code'].replace('nan',None),
+                                                auxiliary_protein = d['Auxiliary protein\nUniProt entry name or code'],
                                                 endogenous_ligand = end_ligand,
                                                 ligand_source_id = d['ID'],
-                                                ligand_source_type = d['ID type'].replace('nan',None),
-                                                receptor_isoform = d['UniProt identifier code (isoform)'].replace('nan',None),
-                                                receptor_gtpo = d['GtoP receptor name'].replace('nan',None)
+                                                ligand_source_type = d['ID type'],
+                                                receptor_isoform = d['UniProt identifier code (isoform)'],
+                                                receptor_gtpo = d['GtoP receptor name']
                                                 )
             # try:
             experiment_entry.save()
             Command.fetch_vendor(l,experiment_entry)
             experiment_assay = BiasedExperimentAssay(biased_experiment=experiment_entry,
-                                                   signalling_protein=d['Primary effector subtype'].replace('nan',None),
-                                                   family = d['Primary effector family'].replace('nan',None),
-                                                   cell_line=d['Cell line'].replace('nan',None),
-                                                   assay_type=d['Assay type'].replace('nan',None),
-                                                   molecule_1=d['Measured molecule 1'].replace('nan',None),
-                                                   molecule_2=d['Measured molecule 2'].replace('nan',None),
-                                                   pathway_level = d['Pathway level'].replace('nan',None),
-                                                   measured_biological_process=d['Measured process'].replace('nan',None),
-                                                   signal_detection_tecnique=d['Signal detection technique'].replace('nan',None),
-                                                   assay_time_resolved=d['Time resolved'].replace('nan',None),
-                                                   ligand_function=d['Signaling protein\nligand activity\nLigand modality'].replace('nan',None),
-                                                   quantitive_measure_type=d['Measure type'].replace('nan',None),
-                                                   quantitive_activity=d['Alt 1)\nQuantitative activity'].replace('nan',None),
-                                                   quantitive_activity_sign=d['>\n<\n=\n~'].replace('nan',None),
-                                                   quantitive_unit=d['Unit'].replace('nan',None),
-                                                   qualitative_activity=d['Alt 2)\nQualitative activity'].replace('nan',None),
-                                                   quantitive_efficacy=d['Alt 1)\nQuantitative efficacy'].replace('nan',None),
-                                                   efficacy_measure_type=d['Measure type.1'].replace('nan',None),
-                                                   efficacy_sign=d['>\n<\n=\n~.1'].replace('nan',None),
-                                                   efficacy_unit=d['Unit.1'].replace('nan',None),
-                                                   bias_reference=d['Endogenous and/or reference ligand'].replace('nan',None),
-                                                   transduction_coef=d['Transduction Coefficient [log(τ/KA)]'].replace('nan',None),
-                                                   relative_transduction_coef=d['Relative Transduction Coefficient [Δlog(τ/KA)]'].replace('nan',None),
+                                                   signalling_protein=d['Primary effector subtype'],
+                                                   family = d['Primary effector family'],
+                                                   cell_line=d['Cell line'],
+                                                   assay_type=d['Assay type'],
+                                                   molecule_1=d['Measured molecule 1'],
+                                                   molecule_2=d['Measured molecule 2'],
+                                                   pathway_level = d['Pathway level'],
+                                                   measured_biological_process=d['Measured process'],
+                                                   signal_detection_tecnique=d['Signal detection technique'],
+                                                   assay_time_resolved=d['Time resolved'],
+                                                   ligand_function=d['Signaling protein\nligand activity\nLigand modality'],
+                                                   quantitive_measure_type=d['Measure type'],
+                                                   quantitive_activity=d['Alt 1)\nQuantitative activity'],
+                                                   quantitive_activity_sign=d['>\n<\n=\n~'],
+                                                   quantitive_unit=d['Unit'],
+                                                   qualitative_activity=d['Alt 2)\nQualitative activity'],
+                                                   quantitive_efficacy=d['Alt 1)\nQuantitative efficacy'],
+                                                   efficacy_measure_type=d['Measure type.1'],
+                                                   efficacy_sign=d['>\n<\n=\n~.1'],
+                                                   efficacy_unit=d['Unit.1'],
+                                                   bias_reference=d['Endogenous and/or reference ligand'],
+                                                   transduction_coef=d['Transduction Coefficient [log(τ/KA)]'],
+                                                   relative_transduction_coef=d['Relative Transduction Coefficient [Δlog(τ/KA)]'],
                                                    emax_ligand_reference=reference_ligand,
                                                    )
             experiment_assay.save()

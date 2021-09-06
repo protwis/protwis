@@ -186,6 +186,8 @@ class Command(BaseBuild):
             temp['endogenous_ligand'] = j['main'].endogenous_ligand
             temp['auxiliary_protein'] = j['main'].auxiliary_protein
             temp['receptor'] = j['main'].receptor
+            temp['receptor_isoform'] = j['main'].receptor_isoform
+            temp['receptor_gtpo'] = j['main'].receptor_gtpo
             temp['vendor_counter'] = j['vendor_counter']
             temp['authors'] = j['authors']
             temp['article_quantity'] = 0
@@ -205,6 +207,7 @@ class Command(BaseBuild):
         temp_dict['ligand_source_id'] = j['main'].ligand_source_id
         temp_dict['ligand_source_type'] = j['main'].ligand_source_type
         temp_dict['potency'] = None
+        temp_dict['pathway_level'] = j['children'][0].pathway_level
         temp_dict['delta_relative_transduction_coef'] = None
         temp_dict['log_bias_factor'] = None
         temp_dict['delta_emax_ec50'] = None
@@ -333,14 +336,18 @@ class Command(BaseBuild):
             if(len(i[1]['reference_assays_list'])) > 0:
                 for assay in i[1]['assay_list']:
                     if command == 'inferred':
-                        name = str(i[1]['publication'].id) + \
-                            '/' + str(assay['ligand'].id) + '/' + \
+                        name = str(i[1]['publication'].id) + '/' +\
+                            str(assay['auxiliary_protein'].id) + '/' + \
+                            str(assay['receptor_isoform']) + '/' + \
+                            str(assay['ligand'].id) + '/' + \
                             str(i[1]['receptor'].id) # may be add cell line tissue and species and assay type
 
                     elif command == 'subtypes':
-                        name = str(i[1]['publication'].id) + \
-                            '/' + str(assay['ligand'].id)  + \
-                            '/' + '/' + str(assay['family'])  + \
+                        name = str(i[1]['publication'].id) + '/' + \
+                            str(assay['ligand'].id)  + \
+                            str(assay['auxiliary_protein'].id) + '/' + \
+                            str(assay['receptor_isoform']) + '/' + \
+                            str(assay['family']) + '/'  + \
                             str(i[1]['receptor'].id) # may be add cell line tissue and species and assay type
 
                     if name in content:
