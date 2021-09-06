@@ -1,6 +1,5 @@
 from Bio.Blast import NCBIXML
-from django.core.management.base import BaseCommand, CommandError
-from django.core.management import call_command
+from django.core.management.base import BaseCommand
 from django.conf import settings
 
 from datetime import date
@@ -10,7 +9,6 @@ import logging, os
 import requests
 from subprocess import Popen, PIPE
 
-from structure.functions import BlastSearch
 from structure.models import Structure
 
 class Command(BaseCommand):
@@ -59,9 +57,9 @@ class Command(BaseCommand):
         pdb_sets = [new_pdbs[i:i + max_entries] for i in range(0, len(new_pdbs), max_entries)]
 
         fasta_results = ""
-        for set in pdb_sets:
+        for pdb_set in pdb_sets:
             post_data = {
-                    "structureIdList": ",".join(set),
+                    "structureIdList": ",".join(pdb_set),
                     "type": "entry",
                     "outputType": "single"
                 }
