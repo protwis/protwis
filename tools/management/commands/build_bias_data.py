@@ -119,7 +119,7 @@ class Command(BaseBuild):
         # import pdb; pdb.set_trace()
         print('stage # 17: combining data into common dict is finished')
         # save dataset to model
-        self.save_data_to_model(context, 'sub_different_family')
+        self.save_data_to_model(context, 'same_family')
         print('stage # 18: saving data to model is finished')
 
 
@@ -286,11 +286,17 @@ class Command(BaseBuild):
         '''
         separate tested assays and reference assays
         '''
+        return_list = list()
+        counter = 0
         for j in data.items():
+            counter = counter+1
+            return_dict = dict()
             assays, reference = Command.return_refenced_assays(j[1]['assay'])
-            j[1].pop('assay')
+            if reference:
+                print(counter)
             j[1]['assay_list'] = assays
             j[1]['reference_assays_list'] = reference
+            j[1].pop('assay')
         return data
 
     @staticmethod
@@ -298,19 +304,19 @@ class Command(BaseBuild):
         main, reference = list(), list()
         for assay in assays:
             # TODO: change to primary_Endogenous
-            if assay['bias_reference'] == 'Endogenous' or assay['bias_reference'] == 'Ref. and endo.':
+            if assay['bias_reference'] == '' or assay['bias_reference']== 'Reference' or assay['bias_reference'] == None:
+                main.append(assay)
+            else:
                 if assay['quantitive_activity'] is not None:
                     reference.append(assay)
-            elif assay['bias_reference'] == '':
-                main.append(assay)
         main = Command.fetch_endogenous_assay(main, reference)
-
         return main, reference
 
     @staticmethod
     def fetch_endogenous_assay(main, references):
         result_list = list()
         for assay in main:
+            temp_reference_list = list()
             for reference in references:
                 if assay['family'] == reference['family']:
                     if assay['signalling_protein']:
@@ -318,14 +324,23 @@ class Command(BaseBuild):
                             if assay['assay_type'] == reference['assay_type']:
                                 if assay['cell_line'] == reference['cell_line']:
                                     if assay['measured_biological_process'] == reference['measured_biological_process']:
-                                        assay['endogenous_assay'] = reference
+                                        temp_reference_list.append(reference)
                     else:
                         if assay['assay_type'] == reference['assay_type']:
                             if assay['cell_line'] == reference['cell_line']:
                                 if assay['measured_biological_process'] == reference['measured_biological_process']:
-                                    assay['endogenous_assay'] = reference
+                                    temp_reference_list.append(reference)
+            if len(temp_reference_list)>1:
+                for _reference_assay in temp_reference_list:
+                    if _reference_assay['bias_reference'] == "Principal endogenous" or _reference_assay['bias_reference'] == "Ref. and principal endo.":
+                        assay['endogenous_assay'] = _reference_assay
+                        break
+                    else:
+                        assay['endogenous_assay'] = _reference_assay
+
         for assay in main:
             if len(assay['endogenous_assay']) > 0:
+                # import pdb; pdb.set_trace()
                 result_list.append(assay)
         return result_list
 
@@ -335,21 +350,17 @@ class Command(BaseBuild):
         for i in context.items():
             if(len(i[1]['reference_assays_list'])) > 0:
                 for assay in i[1]['assay_list']:
+                    _pub_name = str(i[1]['publication'].id)
+                    _ligand_name = str(assay['ligand'].id)
+                    _receptor_name = str(i[1]['receptor'].id)
+                    _receptor_iso_name = str(i[1]['receptor_isoform'])
+                    _aux_prot_name = str(i[1]['auxiliary_protein'])
                     if command == 'inferred':
-                        name = str(i[1]['publication'].id) + '/' +\
-                            str(assay['auxiliary_protein'].id) + '/' + \
-                            str(assay['receptor_isoform']) + '/' + \
-                            str(assay['ligand'].id) + '/' + \
-                            str(i[1]['receptor'].id) # may be add cell line tissue and species and assay type
-
+                        name = _pub_name + '/' + _ligand_name+ '/' +_receptor_name+ '/' +_receptor_iso_name+ '/' +_aux_prot_name
+                            # may be add cell line tissue and species and assay type
                     elif command == 'subtypes':
-                        name = str(i[1]['publication'].id) + '/' + \
-                            str(assay['ligand'].id)  + \
-                            str(assay['auxiliary_protein'].id) + '/' + \
-                            str(assay['receptor_isoform']) + '/' + \
-                            str(assay['family']) + '/'  + \
-                            str(i[1]['receptor'].id) # may be add cell line tissue and species and assay type
-
+                        name = _pub_name + '/' + _ligand_name+ '/' +_receptor_name+ '/' +_receptor_iso_name+ '/' +_aux_prot_name+  '/' +str(assay['family'])
+                             # may be add cell line tissue and species and assay type
                     if name in content:
                         content[name]['assay_list'].append(assay)
                     else:
@@ -357,6 +368,8 @@ class Command(BaseBuild):
                         content[name]['assay_list'] = list()
                         content[name]['publication'] = i[1]['publication']
                         content[name]['ligand'] = assay['ligand']
+                        content[name]['receptor_isoform']=i[1]['receptor_isoform']
+                        content[name]['receptor_gtpo']=i[1]['receptor_gtpo']
                         content[name]['ligand_links'] = Command.get_external_ligand_ids(
                             content[name]['ligand'])
                         try:
@@ -510,8 +523,6 @@ class Command(BaseBuild):
                                 option) != compare_val[option]]
                             families.append(assay)
         return families
-
-
 
 
     @staticmethod
@@ -794,19 +805,16 @@ class Command(BaseBuild):
     def save_data_to_model(self, context, source):
         for i in context['data'].items():
             if len(i[1]['biasdata']) > 1:
-
-                primary, secondary = self.fetch_receptor_trunsducers(
-                    i[1]['receptor'])
                 experiment_entry = AnalyzedExperiment(publication=i[1]['publication'],
                                                       ligand=i[1]['ligand'],
                                                       external_ligand_ids=i[1]['ligand_links'],
                                                       receptor=i[1]['receptor'],
                                                       source=source,
+                                                      receptor_isoform=i[1]['receptor_isoform'],
+                                                      receptor_gtpo=i[1]['receptor_gtpo'],
                                                       endogenous_ligand=i[1]['endogenous_ligand'],
                                                       vendor_quantity=i[1]['vendor_counter'],
                                                       reference_ligand=i[1]['reference_ligand'],
-                                                      primary=primary,
-                                                      secondary=secondary,
                                                       article_quantity=i[1]['article_quantity'],
                                                       labs_quantity=i[1]['labs'],
                                                       ligand_source_id=i[1]['ligand_source_id'],
@@ -847,7 +855,7 @@ class Command(BaseBuild):
                         except:
                             import pdb; pdb.set_trace()
                         assay_description = 'tested_assays'
-                        if source == 'sub_different_family':
+                        if source == 'same_family':
                             assay_description = 'sub_tested_assays'
                         experiment_assay = AnalyzedAssay(experiment=experiment_entry,
                                                          assay_description=assay_description,
@@ -856,6 +864,7 @@ class Command(BaseBuild):
                                                          signalling_protein=ex['signalling_protein'],
                                                          cell_line=ex['cell_line'],
                                                          assay_type=ex['assay_type'],
+                                                         pathway_level=ex['pathway_level'],
                                                          reference_assay_initial = endogenous_assay_used,
                                                          molecule_1=ex['molecule_1'],
                                                          molecule_2=ex['molecule_2'],
@@ -884,7 +893,7 @@ class Command(BaseBuild):
 
                 for ex in i[1]['backup_assays']:
                     assay_description = 'backup_assays'
-                    if source == 'sub_different_family':
+                    if source == 'same_family':
                         assay_description = 'sub_backup_assays'
                     experiment_assay = AnalyzedAssay(experiment=experiment_entry,
                                                      reference_assay_initial = None,

@@ -148,48 +148,7 @@ class Command(BaseBuild):
         #convert pandas df into list of dicts
         return_list_of_dicts = df.to_dict('records')
         return return_list_of_dicts
-
-    @staticmethod
-    def initialize_return_row():
-        d = dict()
-        d['submitting_group'] = None
-        d['Reference\nDOI or PMID'] = None
-        d['Ligand tested for bias or func. Sel.\nName'] = None
-        d['ID type'] = None
-        d['ID'] = None
-        d['ligand_reference'] = None
-        d['Emax reference ligand\nName'] = None
-        d['ID type.1'] = None
-        d['ID.1'] = None
-        d['Receptor\nUniProt entry name or code'] = None
-        d['receptor_uniprot_id'] = None
-
-        d['cell_line'] = None
-        d['Primary effector subtype'] = '-'
-        d['effector_family'] = None
-
-        d['molecule_1'] = None
-        d['molecule_2'] = None
-
-        d['assay_type'] = None
-        d['spatial_level'] = None
-        d['signal_detection_tecnique'] = None
-        d['time_resolved'] = None
-        d['ligand_modality'] = None
-        d['Measure type'] = None
-        d['potency_equation'] = None
-        d['Alt 1)\nQuantitative activity'] = 0.0
-        d['protein_unit'] = None
-        d['potency_quality'] = None
-        d['emax_type'] = None
-        d['emax_equation'] = None
-        d['emax_quantity'] = None
-        d['emax_unit'] = None
-        d['transduction_coef'] = None
-        d['relative_transduction_coef'] = None
-        d['auxiliary_protein'] = None
-        return d
-
+    
     @staticmethod
     def read_excel_pandas():
         source_file_path = os.sep.join(
@@ -205,8 +164,9 @@ class Command(BaseBuild):
             row_counter = row_counter + 1
             # if(row_counter < 434):
             #     continue
-            # if(row_counter > 489):
-            #     break
+            if(row_counter > 2):
+                break
+            import pdb; pdb.set_trace()
             try:
                  d['Alt 1)\nQuantitative activity'] = float( d['Alt 1)\nQuantitative activity'])
             except:
