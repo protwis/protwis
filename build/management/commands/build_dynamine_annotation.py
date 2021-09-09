@@ -29,6 +29,14 @@ class Command(BaseBuild):
                             help="Number of processes to run")
 
     def handle(self, *args, **options):
+        # Purge previous dynamine data
+        ResidueDataPoint.objects.filter(data_type__slug=slugify("dynamine")).delete()
+        ResidueDataType.objects.filter(slug=slugify("dynamine"), name="Dynamine Prediction").delete()
+
+        # Create a new dynamine residue data type here (previously a parallel unsafe operation)
+        dynamine_type = ResidueDataType(slug=slugify("dynamine"), name="Dynamine Prediction")
+        dynamine_type.save()
+
         # All human proteins and xtaled
         # self.proteins = list(set(list(Protein.objects.filter(sequence_type__slug='wt',species__common_name="Human").all())+list(ProteinSet.objects.get(name='All').proteins.all())))
         self.proteins = list(
@@ -132,6 +140,7 @@ class Command(BaseBuild):
 
     # @transaction.atomic
     def main_func(self, positions, iteration, count, lock):
+        # Process all proteins
         while count.value < len(self.proteins):
             with lock:
                 p = self.proteins[count.value]
