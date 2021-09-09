@@ -46,7 +46,6 @@ def get_protein_segments(request):
     segments = []
     segment_raw = request.POST.getlist("seg[]")
     selected_receptor_classes = request.POST.getlist("selectedreceptorclasses[]")
-    most_common_class = Counter(selected_receptor_classes).most_common(1)
 
     for s in segment_raw:
         try:
