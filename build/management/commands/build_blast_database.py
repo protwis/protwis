@@ -23,13 +23,21 @@ class Command(BaseCommand):
 
 
     def handle(self, *args, **options):
+        # BLAST database all sequences
+        proteins = Protein.objects.filter(sequence_type__slug="wt")
+        self.build_database(proteins, "protwis_blastdb")
+
         # BLAST database all GPCR sequences
         proteins = Protein.objects.filter(sequence_type__slug="wt", family__slug__startswith="00")
-        self.build_database(proteins, "protwis_blastdb")
+        self.build_database(proteins, "protwis_gpcr_blastdb")
+
+        # BLAST database only human sequences
+        proteins = Protein.objects.filter(sequence_type__slug="wt", species__common_name="Human")
+        self.build_database(proteins, "protwis_human_blastdb")
 
         # BLAST database only human GPCR sequences
         proteins = Protein.objects.filter(sequence_type__slug="wt", species__common_name="Human", family__slug__startswith="00")
-        self.build_database(proteins, "protwis_human_blastdb")
+        self.build_database(proteins, "protwis_human_gpcr_blastdb")
 
         # BLAST database only human GPCR sequences for 7TM bundle
         proteins = Protein.objects.filter(sequence_type__slug="wt", species__common_name="Human", family__slug__startswith="00")
