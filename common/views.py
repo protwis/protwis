@@ -178,7 +178,7 @@ def getTargetTable():
             t['approved_target'] = "Yes" if p.entry_name in drugtargets_approved else "No"
             t['clinical_target'] = "Yes" if p.entry_name in drugtargets_trials else "No"
 
-            gprotein_families = ["Gs family", "Gi/Go family", "Gq/G11 family", "G12/G13 family"]
+            gprotein_families = ["Gs", "Gi/o", "Gq/11", "G12/13"]
             for gprotein in gprotein_families:
                 if p.entry_name in signaling_data and gprotein in signaling_data[p.entry_name]:
                     t[gprotein] = signaling_data[p.entry_name][gprotein]
@@ -1254,10 +1254,10 @@ def SelectionGproteinPredefined(request):
     preferred = request.GET['preferred']
 
     conversion = {
-        'Gs family': 'Gs',
-        'Gi/Go family': 'Gi/o',
-        'Gq/G11 family': 'Gq/11',
-        'G12/G13 family': 'G12/13',
+        'Gs': 'Gs',
+        'Gi/o': 'Gi/o',
+        'Gq/11': 'Gq/11',
+        'G12/13': 'G12/13',
         'GPa1 family': 'GPa1 family'
     }
     # get simple selection from session

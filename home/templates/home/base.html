@@ -69,6 +69,7 @@
 <!-- the bootstrap vendor overlay wrapper -->
 <script src="{% static 'flowplayer/flowplayer.overlay.bootstrap.js' %}"></script>
 <!-- Comply with GDPR Minified Cookie Consent from https://github.com/osano/cookieconsent -->
+<script src="{% static 'home/js/gpcrdb.js' %}"></script>
 <script src="{% static 'home/js/cookieconsent.min.js' %}"></script>
 
 <script type="text/javascript">
@@ -127,19 +128,6 @@
 
 <!-- Include custom ajax functions -->
 {% block addon_js %}{% endblock %}
-
-<!-- Default Bootstrap alert for all pages -->
-<script>
-  // Alerttype: success, info, warning, danger
-  // See https://getbootstrap.com/docs/3.3/components/#alerts
-  function showAlert(message, alerttype) {
-    $('#gpcrdb_alert_placeholder').append('<div id="gpcrdb_alert" class="alert alert-' +
-      alerttype +
-      '"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>' +
-      message+'</div>')
-    setTimeout(function() { $("#gpcrdb_alert").remove();}, 4000);
-  }
-</script>
 
 <!-- GDPR Banner Customize -->
 <script>

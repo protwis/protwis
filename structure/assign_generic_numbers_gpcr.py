@@ -100,7 +100,6 @@ class GenericNumbering(object):
 
 
     def map_blast_seq (self, prot_id, hsps, chain):
-
         #find uniprot residue numbers corresponding to those in pdb file
         q_seq = list(hsps.query)
         tmp_seq = list(hsps.sbjct)

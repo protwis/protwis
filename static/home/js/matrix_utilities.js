@@ -374,20 +374,20 @@ const run_sig_match = function() {
           className: "gtop dt-center",
           visible: true,
         }, {
-          data: "GuideToPharma.Gi/Go.html",
-          title: "Gi / Go ",
+          data: "GuideToPharma.Gi/o.html",
+          title: "Gi/o ",
           targets: 8,
           className: "gtop dt-center",
           visible: true,
         }, {
-          data: "GuideToPharma.Gq/G11.html",
-          title: "Gq / G11",
+          data: "GuideToPharma.Gq/11.html",
+          title: "Gq/11",
           targets: 9,
           className: "gtop dt-center",
           visible: true,
         }, {
-          data: "GuideToPharma.G12/G13.html",
-          title: "G12 / G13",
+          data: "GuideToPharma.G12/13.html",
+          title: "G12/13",
           targets: 10,
           className: "gtop dt-center",
           visible: true,
@@ -398,20 +398,20 @@ const run_sig_match = function() {
           className: "aska dt-center",
           visible: false,
         }, {
-          data: "Aska.Gi/Go.html",
-          title: "Gi / Go ",
+          data: "Aska.Gi/o.html",
+          title: "Gi/o ",
           targets: 12,
           className: "aska dt-center",
           visible: false,
         }, {
-          data: "Aska.Gq/G11.html",
-          title: "Gq / G11",
+          data: "Aska.Gq/11.html",
+          title: "Gq/11",
           targets: 13,
           className: "aska dt-center",
           visible: false,
         }, {
-          data: "Aska.G12/G13.html",
-          title: "G12 / G13",
+          data: "Aska.G12/13.html",
+          title: "G12/13",
           targets: 14,
           className: "aska dt-center",
           visible: false,
@@ -422,20 +422,20 @@ const run_sig_match = function() {
           className: "merg dt-center",
           visible: false,
         }, {
-          data: "Merged.Gi/Go.html",
-          title: "Gi / Go ",
+          data: "Merged.Gi/o.html",
+          title: "Gi/o ",
           targets: 16,
           className: "merg dt-center",
           visible: false,
         }, {
-          data: "Merged.Gq/G11.html",
-          title: "Gq / G11",
+          data: "Merged.Gq/11.html",
+          title: "Gq/11",
           targets: 17,
           className: "merg dt-center",
           visible: false,
         }, {
-          data: "Merged.G12/G13.html",
-          title: "G12 / G13",
+          data: "Merged.G12/13.html",
+          title: "G12/13",
           targets: 18,
           className: "merg dt-center",
           visible: false,
@@ -449,7 +449,7 @@ const run_sig_match = function() {
         paging: false,
         buttons: [{
             text: "Toggle <b>GuideToPharma</b> / Asuka Inoue / Merged Data",
-            className: "toggle-source",
+            className: "toggle-source hidden",
             action() {
               let gtopText = "<span>Toggle <b>GuideToPharma</b> / Asuka Inoue / Merged Data</span>";
               let askaText = "<span>Toggle GuideToPharma / <b>Asuka Inoue</b> / Merged Data</span>";
@@ -501,17 +501,17 @@ const run_sig_match = function() {
                 r["subfamily"] = i["subfamily"];
                 r["score"] = i["nscore"];
                 r["aska_gs"] = i["Aska"]["Gs"]["text"];
-                r["aska_gio"] = i["Aska"]["Gi/Go"]["text"];
-                r["aska_gq11"] = i["Aska"]["Gq/G11"]["text"];
-                r["aska_g1213"] = i["Aska"]["G12/G13"]["text"];
+                r["aska_gio"] = i["Aska"]["Gi/o"]["text"];
+                r["aska_gq11"] = i["Aska"]["Gq/11"]["text"];
+                r["aska_g1213"] = i["Aska"]["G12/13"]["text"];
                 r["gtop_gs"] = i["GuideToPharma"]["Gs"]["text"];
-                r["gtop_gio"] = i["GuideToPharma"]["Gi/Go"]["text"];
-                r["gtop_gq11"] = i["GuideToPharma"]["Gq/G11"]["text"];
-                r["gtop_g1213"] = i["GuideToPharma"]["G12/G13"]["text"];
+                r["gtop_gio"] = i["GuideToPharma"]["Gi/o"]["text"];
+                r["gtop_gq11"] = i["GuideToPharma"]["Gq/11"]["text"];
+                r["gtop_g1213"] = i["GuideToPharma"]["G12/13"]["text"];
                 r["merg_gs"] = i["Merged"]["Gs"]["text"];
-                r["merg_gio"] = i["Merged"]["Gi/Go"]["text"];
-                r["merg_gq11"] = i["Merged"]["Gq/G11"]["text"];
-                r["merg_g1213"] = i["Merged"]["G12/G13"]["text"];
+                r["merg_gio"] = i["Merged"]["Gi/o"]["text"];
+                r["merg_gq11"] = i["Merged"]["Gq/11"]["text"];
+                r["merg_g1213"] = i["Merged"]["G12/13"]["text"];
                 export_data.push(r);
               }
 
@@ -645,7 +645,8 @@ const run_sig_match = function() {
           true
         );
       })
-
+      // Recalculate table layout incl. column widths
+      yadcf.exResetAllFilters(sigmatch_table);
     },
     error(jqXHR, exception) {
       console.log(jqXHR);

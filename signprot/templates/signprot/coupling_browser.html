@@ -5,9 +5,6 @@
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css"/>
     <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css"/>
     <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css"/>
-    <link rel="stylesheet" href="{% static 'home/css/jquery.powertip.css' %}" type="text/css"/>
-    {#        <link rel="stylesheet" href="https://cdn.datatables.net/1.10.22/css/jquery.dataTables.min.css">#}
-    {#        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css">#}
     <link rel="stylesheet" href="{% static 'home/css/signprot-multitabtable.css' %}" type="text/css"/>
 {% endblock %}
 
@@ -22,13 +19,13 @@
     <br><br>
 
     <ul class="nav nav-tabs" id="couplingtabs" role="tablist">
-        <li class="nav-item">
-            <a class="nav-link active" id="table1-tab" data-toggle="tab" href="#table_1" role="tab"
+        <li class="nav-item active">
+            <a class="nav-link" id="table1-tab" data-toggle="tab" href="#table_1" role="tab"
                aria-controls="table_1" aria-selected="true">Families</a>
         </li>
         <li class="nav-item">
             <a class="nav-link" id="table2-tab" data-toggle="tab" href="#table_2" role="tab"
-               aria-controls="table_2" aria-selected="false">Subtypes</a>
+               aria-controls="table_2" aria-selected="false" onclick="initCouplingTable2()">Subtypes</a>
         </li>
     </ul>
 
@@ -37,7 +34,7 @@
         {# ====================================================================== #}
         {# FAMILIES TAB STARTS HERE id='familiestabletab' connects to js #}
         {# ====================================================================== #}
-        <div class="tab-pane fade active" id="table_1" role="tabpanel" aria-labelledby="table1-tab">
+        <div class="tab-pane active" id="table_1" role="tabpanel" aria-labelledby="table1-tab">
             <div style='width:100%; display:inline;'>
                 <br>
 
@@ -60,9 +57,9 @@
                 <div class="btn-group" style="padding-left:10px;">
                     <a id="dlink" style="display:none;"></a>
                     <div id="excel_table" style2="display:none;"></div>
-                    <input class="btn btn-primary btn-sm" type="button" id="toggle_fixed_btn1" value="Disable fixed columns"
-                           href="javascript:void(0)" data-toggle="buttons">
-                    <input class="btn btn-primary btn-sm" type="button" onclick="resetHidden1()" id="toggle"
+                    <!--<input class="btn btn-primary btn-sm" type="button" id="toggle_fixed_btn1" value="Disable fixed columns"
+                           href="javascript:void(0)" data-toggle="buttons">-->
+                    <input class="btn btn-primary btn-sm" type="button" onclick="resetHiddenColumns(oTable1)" id="toggle"
                            value="Show hidden columns">
                 </div>
 
@@ -70,7 +67,7 @@
                     <input class="btn btn-primary btn-sm" type="button"
                            onclick="tableToExcel('familiestabletab', 'Families data', 'families_coupling.xls')"
                            value="Excel">
-                    <input class="btn btn-primary btn-sm" type="button" onclick="reset_tab()" value="Reset All">
+                    <input class="btn btn-primary btn-sm" type="button" onclick="reset_tab(oTable1);" value="Reset All">
                 </div>
             </div>
 
@@ -144,15 +141,14 @@
                     <th>
                         <div>
                             <div>Uniprot</div>
-                            <div><button class='icon-button' type='button'><i id='uniprot_copy1' class="glyphicon
-                            glyphicon-export uniprot-export1"></i></button></div>
+                            <div><button class='icon-button' type='button' data-toggle="tooltip" data-placement="top" title="Export UniProt IDs"><i id='uniprot_copy1' class="glyphicon glyphicon-export"></i></button></div>
                         </div>
                     </th>
                     <th>IUPHAR</th>
                     <th>Ligand name</th>
                     <th>Phys. / Surr.</th>
 
-                    {% for n in "x"|rjust:"5" %}  <!-- 5 -->
+                    {% for n in "x"|rjust:"5" %}
                         {% for p, subval in header.items  %}
                             <th>{{ p|safe }}</th>
                         {% endfor %}
@@ -165,7 +161,7 @@
                         <th></th>
                     {% endfor %}
 
-                    {% for n in "x"|rjust:"16" %} <!-- 16 -->
+                    {% for n in "x"|rjust:"16" %}
                     <th>
                       <input  placeholder="Min" id="ranked_range_min1_{{ forloop.counter|add:"12" }}"
                        class="yadcf-filter-range-number yadcf-filter-range ranked_range_min1">
@@ -251,7 +247,7 @@
 
             </table>
             <div id="hide_filter1"></div>
-            {% for n in "x"|rjust:"18" %}  <!-- 16 -->
+            {% for n in "x"|rjust:"18" %}
                 <div id="hide_rankfam{{ forloop.counter|add:"12" }}" style="display: none;"></div>
             {% endfor %}
 
@@ -283,9 +279,9 @@
                 <div class="btn-group" style="padding-left:10px;">
                     <a id="dlink" style="display:none;"></a>
                     <div id="excel_table" style2="display:none;"></div>
-                    <input class="btn btn-primary btn-sm" type="button" id="toggle_fixed_btn2" value="Disable fixed columns"
-                           href="javascript:void(0)" data-toggle="buttons">
-                    <input class="btn btn-primary btn-sm" type="button" onclick="resetHidden2()" id="toggle"
+                    <!--<input class="btn btn-primary btn-sm" type="button" id="toggle_fixed_btn2" value="Disable fixed columns"
+                           href="javascript:void(0)" data-toggle="buttons">-->
+                    <input class="btn btn-primary btn-sm" type="button" onclick="resetHiddenColumns(oTable2)" id="toggle"
                            value="Show hidden columns">
                 </div>
 
@@ -293,7 +289,7 @@
                     <input class="btn btn-primary btn-sm" type="button"
                            onclick="tableToExcel('subtypestabletab', 'Subtypes data', 'subtypes_coupling.xls')"
                            value="Excel">
-                    <input class="btn btn-primary btn-sm" type="button" onclick="reset_tab()" value="Reset All">
+                    <input class="btn btn-primary btn-sm" type="button" onclick="reset_tab(oTable2);" value="Reset All">
                 </div>
             </div>
 
@@ -352,7 +348,7 @@
                     <th>
                         <div>
                             <div>Uniprot</div>
-                            <div><button class='icon-button' type='button'><i id='uniprot_copy2' class="glyphicon glyphicon-export uniprot-export2"></i></button></div>
+                            <div><button class='icon-button' type='button' data-toggle="tooltip" data-placement="bottom" title="Export UniProt IDs"><i id='uniprot_copy2' class="glyphicon glyphicon-export"></i></button></div>
                         </div>
                     </th>
                     <th>IUPHAR</th>
@@ -489,9 +485,9 @@
 
 
         </div>
-
     </div>
-    {% elif page == 'arrestin' %}
+
+  {% elif page == 'arrestin' %}
 
     <div style="display:block;">
         <div style="display:inline; float:left;">
@@ -520,9 +516,9 @@
           <div class="btn-group" style="padding-left:10px;">
               <a id="dlink" style="display:none;"></a>
               <div id="excel_table" style="display:none;"></div>
-              <input class="btn btn-primary btn-sm" type="button" id="toggle_fixed_btn3" value="Disable fixed columns"
-                     href="javascript:void(0)" data-toggle="buttons">
-              <input class="btn btn-primary btn-sm" type="button" onclick="resetHidden3()" id="toggle"
+              <!--<input class="btn btn-primary btn-sm" type="button" id="toggle_fixed_btn3" value="Disable fixed columns"
+                     href="javascript:void(0)" data-toggle="buttons">-->
+              <input class="btn btn-primary btn-sm" type="button" onclick="resetHiddenColumns(oTable1)" id="toggle"
                      value="Show hidden columns">
           </div>
 
@@ -530,7 +526,7 @@
               <input class="btn btn-primary btn-sm" type="button"
                      onclick="tableToExcel('arrestintable', 'Arrestin coupling data', 'arrestin_coupling.xls')"
                      value="Export Excel">
-              <input class="btn btn-primary btn-sm" type="button" onclick="reset_tab()" value="Reset All">
+              <input class="btn btn-primary btn-sm" type="button" onclick="reset_tab(oTable1);" value="Reset All">
           </div>
       </div>
 
@@ -575,22 +571,22 @@
           </tr>
 
           <tr>
-              <th></th>              <!-- 1 -->
-              <th>Group</th>         <!-- 2 -->
-              <th>Biosensor</th>     <!-- 3 -->
-              <th>Cl</th>            <!-- 4 -->
-              <th>Receptor fam.</th> <!-- 5 -->
-              <th>                   <!-- 6 -->
+              <th></th>
+              <th>Group</th>
+              <th>Biosensor</th>
+              <th>Cl</th>
+              <th>Receptor fam.</th>
+              <th>
                   <div>
                       <div>Uniprot</div>
-                      <div><button class='icon-button' type='button'><i id='uniprot_copy2' class="glyphicon glyphicon-export uniprot-export2"></i></button></div>
+                      <div><button class='icon-button' type='button' data-toggle="tooltip" data-placement="bottom" title="Export UniProt IDs"><i id='uniprot_copy1' class="glyphicon glyphicon-export"></i></button></div>
                   </div>
               </th>
-              <th>IUPHAR</th>        <!-- 7 -->
-              <th>Ligand name</th>   <!-- 8 -->
-              <th>Phys. / Surr.</th>  <!-- 9 -->
+              <th>IUPHAR</th>
+              <th>Ligand name</th>
+              <th>Phys. / Surr.</th>
 
-              {% for n in "x"|rjust:"4" %}        <!-- 10 -> 21 -->
+              {% for n in "x"|rjust:"4" %}
                   {% for subval in subunitheader %}
                       <th>
                           {{ subval|safe }}
@@ -598,7 +594,7 @@
                   {% endfor %}
               {% endfor %}
 
-              <th></th>              <!-- 22 -->
+              <th></th>
           </tr>
           <tr>
               <th class='no-sort checkbox_tr'>
@@ -630,52 +626,52 @@
               {% for c, cvals in pvals.coupling.items %}
                 {% if c|length > 1 %}
                   <tr data-source="{{ c }}"> {# And then use the data to apply the javascript filters.#}
-                      <td class="text-center"><input class="alt" type="checkbox"></td> <!-- 1 -->
+                      <td class="text-center"><input class="alt" type="checkbox"></td>
                       {% if c|length == 1 %}
-                          <td><span style="font-weight:bold">GPCRdb</span></td>        <!-- 2 -->
+                          <td><span style="font-weight:bold">GPCRdb</span></td>
                       {% else %}
-                          <td><span style="font-weight:normal">{{ c }}</span></td>     <!-- 2 -->
+                          <td><span style="font-weight:normal">{{ c }}</span></td>
                       {% endif %}
 
                       {% if c|length == 1 %}
-                          <td>Mean</td>                                                <!-- 3 -->
+                          <td>Mean</td>
                       {% elif c == "Bouvier" %}
-                          <td>GEMTA</td>                                               <!-- 3 -->
+                          <td>GEMTA</td>
                       {% else %}
-                          <td>TGF</td>                                                 <!-- 3 -->
+                          <td>TGF</td>
                       {% endif %}
 
-                      <td>{{ pvals.protein.class }}</td>   <!-- 4 -->
-                      <td>{{ pvals.protein.family }}</td>  <!-- 5 -->
-                      <td class="uniprot2">                <!-- 6 -->
+                      <td>{{ pvals.protein.class }}</td>
+                      <td>{{ pvals.protein.family }}</td>
+                      <td class="uniprot1">
                           <a href="https://www.uniprot.org/uniprot/{{ pvals.protein.accession }}" target="_blank">{{ pvals.protein.uniprot|safe }}</a>
                       </td>
-                      <td class="text-left">               <!-- 7 -->
+                      <td class="text-left">
                           <a href="{{ pvals.protein.gtp_link }}" target="_blank">{{ pvals.protein.iuphar|safe }}</a>
                       </td>
-                      <td class="text-left">               <!-- 8 -->
+                      <td class="text-left">
                           {% if cvals.ligand_name != "-" %}
                             <a href="/ligand/{{ cvals.ligand_id }}/info" target="_blank">{{ cvals.ligand_name|safe }}</a>
                           {% endif %}
                       </td>
-                      <td class="text-left">{{ cvals.ligand_physiological }}</td> <!-- 9 -->
+                      <td class="text-left">{{ cvals.ligand_physiological }}</td>
 
-                      {% for q, logval in cvals.logemaxec50.items %}   <!-- 10-11-12 -->
+                      {% for q, logval in cvals.logemaxec50.items %}
                           <td><span>{{ logval }}</span></td>
                       {% endfor %}
 
-                      {% for q, pecval in cvals.pec50.items %}         <!-- 13-14-15 -->
+                      {% for q, pecval in cvals.pec50.items %}
                           <td><span>{{ pecval }}</span></td>
                       {% endfor %}
 
-                      {% for q, maxval in cvals.emax.items %}          <!-- 16-17-18 -->
+                      {% for q, maxval in cvals.emax.items %}
                           <td><span>{{ maxval }}</span></td>
                       {% endfor %}
 
-                      {% for q, std in cvals.std.items %}              <!-- 19-20-21 -->
+                      {% for q, std in cvals.std.items %}
                           <td><span>{{ std }}</span></td>
                       {% endfor %}
-                      <td>{{ c }}</td>                                 <!-- 22 -->
+                      <td>{{ c }}</td>
 
                   </tr>
                 {% endif %}
@@ -697,14 +693,9 @@
     <script src="{% static 'home/js/jquery.dataTables.min.js' %}"></script>
     <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"></script>
     <script src="{% static 'home/js/select2.js' %}"></script>
-    <script src="{% static 'home/js/jquery.powertip.js' %}"></script>
-    <script src="{% static 'home/js/gpcrdb.js' %}"></script>
-    {#        <script src="{% static 'home/js/datatables.min.js' %}"></script>#}
-    {#        <script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>#}
-    {#        <script src="https://cdnjs.cloudflare.com/ajax/libs/yadcf/0.9.4/jquery.dataTables.yadcf.min.js"></script>#}
-    {#        <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>#}
+    <script src="{% static 'home/js/signprot-multitabtable.js' %}"></script>
     {% if page == 'gprot' %}
-      <script src="{% static 'home/js/signprot-multitabtable.js' %}" async></script>
+      <script src="{% static 'home/js/gprotein_coupling.js' %}"></script>
     {% else %}
       <script src="{% static 'home/js/arrestin_coupling.js' %}"></script>
     {% endif %}
