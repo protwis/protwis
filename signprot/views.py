@@ -528,8 +528,8 @@ def CouplingProfiles(request, render_part="both", signalling_data="empty"):
         context['tree_orphan_a'] = json.dumps(orphan_data)
         # end copied section from StructureStatistics View
         # gprot_id = ProteinGProteinPair.objects.all().values_list('g_protein_id', flat=True).order_by('g_protein_id').distinct()
-        coupling_gproteins = list(ProteinCouplings.objects.filter(g_protein__slug__startswith="100").exclude(g_protein_id=589).values_list("g_protein_id", flat = True).distinct()) #here GPa1 is fetched
-        gproteins = ProteinFamily.objects.filter(id__in=coupling_gproteins)
+        coupling_gproteins = list(ProteinCouplings.objects.filter(g_protein__slug__startswith="100").values_list("g_protein_id", flat = True).distinct())
+        gproteins = ProteinFamily.objects.filter(id__in=coupling_gproteins).exclude(name__startswith="GPa1")
         arrestins = ProteinCouplings.objects.filter(g_protein__slug__startswith="200").values_list('g_protein_subunit', flat=True).order_by('g_protein_subunit').distinct()
         arrestin_prots = list(Protein.objects.filter(family__slug__startswith="200", species__id=1, sequence_type__slug='wt').values_list("pk","name"))
         arrestin_translate = {}
