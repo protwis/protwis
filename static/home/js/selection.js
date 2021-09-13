@@ -1,3 +1,5 @@
+/*global showAlert*/
+
 $(function () {
     $('#selection-button').click(function () {
         toggleButtonClass('selection-button');
