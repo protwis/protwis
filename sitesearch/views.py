@@ -100,8 +100,8 @@ class TargetSelectionPdb(TargetSelection):
     docs = 'sites.html#site-search-from-pdb-complex'
     buttons = {
         'continue': {
-            'label': 'Continue to next step',
-            'url': '/sitesearch/structureupload',
+            'label': 'Continue',
+            "onclick": "submitSelection('/sitesearch/structureupload');",
             'color': 'success',
         },
     }
@@ -122,8 +122,8 @@ class StructureUpload(AbsSegmentSelection):
     ])
     buttons = {
         'continue': {
-            'label': 'Continue to next step',
-            'onclick': 'document.getElementById("form").submit()',
+            'label': 'Continue',
+            'onclick': "document.getElementById('form').submit()",
             'color': 'success',
         },
     }

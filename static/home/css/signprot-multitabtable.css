@@ -19,20 +19,10 @@
   }
 }
 
-/*
-#overlay_table1 tbody > tr > td {
-white-space: nowrap;
-height:28px;
-overflow:hidden;
-word-wrap:break-word;
-}
-*/
-
 table.dataTable.compact thead th.over_header {
   border-right: 1px solid;
   border-left: 0 solid;
   text-align: center;
-  /*padding: 4px 4px 4px 4px;*/
 }
 
 table.dataTable.compact thead tr.over_header th {
@@ -60,13 +50,11 @@ table.dataTable.compact thead th {
   padding: 4px 16px 4px 2px;
 }
 
-/*thead.bottomborder {*/
-/*    border-right: 1px solid;*/
-/*    border-left: 0px solid;*/
-/*    text-align: center;*/
-/*    padding: 4px 4px 4px 4px;*/
-/*    border-bottom: 10px solid coral;*/
-/*}*/
+table.dataTable.compact thead th span.couplingvariant {
+  font-weight: normal;
+  color: red;
+  font-size: 0.9em;
+}
 
 .yadcf-filter-wrapper {
   margin-top: 0;
@@ -102,29 +90,15 @@ input.yadcf-filter {
   overflow-y: hidden;
 }
 
-#overlay1 {
+div.table_overlay {
   top: 0;
   position: absolute;
   background: #f8f8f8;
-  /*border: 1px solid #333;*/
   -webkit-box-shadow: 5px 0 2px -2px #888;
   box-shadow: 5px 0 2px -2px #888;
 }
 
-#overlay1 tbody tr {
-  background-color: #f8f8f8;
-}
-
-#overlay2 {
-  top: 0;
-  position: absolute;
-  background: #f8f8f8;
-  /*border: 1px solid #333;*/
-  -webkit-box-shadow: 5px 0 2px -2px #888;
-  box-shadow: 5px 0 2px -2px #888;
-}
-
-#overlay2 tbody tr {
+div.table_overlay table tbody tr {
   background-color: #f8f8f8;
 }
 
@@ -168,22 +142,17 @@ input.yadcf-filter {
 }
 
 /* NOTE -- THIS HAS TO GO LAST SO THAT IT OVERRIDES ALL */
-th, td { white-space: nowrap; }
+th,
+td {
+  white-space: nowrap;
+}
 
 div.dataTables_wrapper {
   margin: 0 auto;
 }
 
-/*
-#subtypestabletab tr {
-  height: 40px;
-}
-*/
-
-div#hide_filter1 {
-  display: none;
-}
-
-div#hide_filter2 {
+div#hide_filter1,
+div#hide_filter2,
+div#hide_filter3 {
   display: none;
 }

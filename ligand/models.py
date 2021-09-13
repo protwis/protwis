@@ -230,7 +230,8 @@ class Ligand(models.Model):
             wl, created = WebLink.objects.get_or_create(index=pubchem_id, web_resource=web_resource)
             self.properities.web_links.add(wl)
             # ligand type
-            self.properities.ligand_type, created = LigandType.objects.get_or_create(slug='sm', defaults={'name':'Small molecule'})
+            self.properities.ligand_type, created = LigandType.objects.get_or_create(
+                slug='small-molecule', defaults={'name': 'Small molecule'})
             self.properities.inchikey = pubchem_inchikey
             self.properities.smiles = pubchem_smiles
             self.properities.save()

@@ -4,7 +4,7 @@ from django.conf import settings
 from django.db import connection
 from django.db import IntegrityError
 
-from protein.models import (Protein, ProteinGProtein,ProteinGProteinPair, ProteinConformation, ProteinState, ProteinFamily, ProteinAlias,
+from protein.models import (Protein, ProteinConformation, ProteinState, ProteinFamily, ProteinAlias,
         ProteinSequenceType, Species, Gene, ProteinSource, ProteinSegment)
 from residue.models import (ResidueNumberingScheme, ResidueGenericNumber, Residue, ResidueGenericNumberEquivalent)
 from signprot.models import SignprotComplex, SignprotStructure, SignprotStructureExtraProteins
@@ -69,7 +69,7 @@ class Command(BaseBuild):
             # Building protein and protconf objects for g protein structure in complex
             if options["s"]:
                 scs = SignprotComplex.objects.filter(structure__pdb_code__index__in=[i.upper() for i in options["s"]])
-            else:    
+            else:
                 scs = SignprotComplex.objects.all()
             for sc in scs:
                 self.logger.info("Protein, ProteinConformation and Residue build for alpha subunit of {} is building".format(sc))
@@ -392,7 +392,7 @@ class Command(BaseBuild):
             data["pubmedId"] = json_data["rcsb_entry_container_identifiers"]["pubmed_id"]
         else:
             data["pubmedId"] = None
-        
+
         # Format server time stamp to match release date shown on entry pages
         # print(pdb, json_data["rcsb_accession_info"]["initial_release_date"])
         # date = datetime.date.fromisoformat(json_data["rcsb_accession_info"]["initial_release_date"][:10])
@@ -436,7 +436,7 @@ class Command(BaseBuild):
             else:
                 if json_data["rcsb_polymer_entity"]["pdbx_description"] not in data["other"]:
                     data["other"].append(json_data["rcsb_polymer_entity"]["pdbx_description"])
-        return data   
+        return data
 
     def build_g_prot_struct(self, alpha_prot, pdb, data):
         ss = SignprotStructure()
@@ -555,4 +555,3 @@ class Command(BaseBuild):
             # ss.extra_proteins.add(gamma_sep)
         # ss.save()
         self.logger.info("Created SignprotStructure: {}".format(ss.pdb_code))
-

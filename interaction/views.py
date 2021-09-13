@@ -1,49 +1,39 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
-from django import forms
-from django.db.models import Count, Min, Sum, Avg, Q
+from django.db.models import Count, Sum, Avg, Q
 from django.utils.text import slugify
-from django.core.cache import cache
-from django.views.decorators.cache import cache_page
 
-from interaction.models import *
+from interaction.models import ResidueFragmentInteraction, StructureLigandInteraction, ResidueFragmentInteractionType
 from interaction.forms import PDBform
 from ligand.models import Ligand
 from ligand.models import LigandType
-from ligand.models import LigandRole, LigandProperities
+from ligand.models import LigandRole
 from structure.models import Structure, PdbData, Rotamer, Fragment
-from structure.functions import BlastSearch
 from structure.assign_generic_numbers_gpcr import GenericNumbering
-from protein.models import ProteinConformation, Protein, ProteinSegment
-from residue.models import Residue, ResidueGenericNumber, ResidueGenericNumberEquivalent, ResidueNumberingScheme
+from protein.models import Protein, ProteinSegment
+from residue.models import Residue, ResidueGenericNumberEquivalent, ResidueNumberingScheme
 from common.models import WebResource
 from common.models import WebLink
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
-from common.selection import SimpleSelection, Selection, SelectionItem
+from common.selection import Selection, SelectionItem
 from common import definitions
 from common.views import AbsTargetSelection
-from common.alignment import Alignment
-from protein.models import Protein, ProteinFamily, ProteinGProtein, ProteinGProteinPair
 
 import os
-from os import listdir, devnull, makedirs
 import yaml
 from operator import itemgetter
 from datetime import datetime
 import re
 import json
 import logging
-from subprocess import call, Popen, DEVNULL
+from subprocess import call
 import urllib
 import collections
 from collections import OrderedDict
-from io import StringIO, BytesIO
+from io import BytesIO
 from Bio.PDB import PDBIO, PDBParser
 import xlsxwriter
-
-######@
-import numpy as np
 
 AA = {'ALA': 'A', 'ARG': 'R', 'ASN': 'N', 'ASP': 'D',
       'CYS': 'C', 'GLN': 'Q', 'GLU': 'E', 'GLY': 'G',
@@ -399,7 +389,7 @@ def runcalculation(pdbname, peptide=""):
         [os.path.dirname(__file__), 'legacy_functions.py'])
 
     call(["python2.7", calc_script, "-p", pdbname, "-c", peptide],
-         stdout=open(devnull, 'wb'), stderr=open(devnull, 'wb'))
+         stdout=open(os.devnull, 'wb'), stderr=open(os.devnull, 'wb'))
 
     return None
 
@@ -461,8 +451,6 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
     web_link, created = WebLink.objects.get_or_create(
         web_resource=web_resource, index=pdbname)
 
-    annotated_found = 0
-
     structure = Structure.objects.filter(pdb_code=web_link)
     if structure.exists():
         structure = Structure.objects.get(pdb_code=web_link)
@@ -480,9 +468,8 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
 
         protein = structure.protein_conformation
 
-        for f in listdir(mypath):
+        for f in os.listdir(mypath):
             if os.path.isfile(os.path.join(mypath, f)):
-                annotated = 0
                 #print(mypath + "/" +f)
                 result = yaml.load(open(mypath + "/" + f, 'rb'), Loader=yaml.FullLoader)
                 output = result
@@ -512,7 +499,6 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
                 structureligandinteraction = StructureLigandInteraction.objects.filter(
                     pdb_reference=temp[1], structure=structure, annotated=True) #, pdb_file=None
                 if structureligandinteraction.exists():  # if the annotated exists
-                    annotated_found = 1
                     annotated = 1
                     try:
                         structureligandinteraction = structureligandinteraction.get()
@@ -586,13 +572,10 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
                         fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(
                                         structure_ligand_pair=structureligandinteraction, interaction_type=interaction_type, fragment=fragment, rotamer=rotamer)
                 #print("Inserted",len(output['interactions']),"interactions","ligand",temp[1],"annotated",annotated)
-        # if not annotated_found:
-        #     print("No interactions for annotated ligand")
-
     else:
         if debug:
             logger.info("Structure not in DB?!??!")
-        for f in listdir(mypath):
+        for f in os.listdir(mypath):
             if os.path.isfile(os.path.join(mypath, f)):
                 result = yaml.load(open(mypath + "/" + f, 'rb'), Loader=yaml.FullLoader)
                 output = result
@@ -623,7 +606,7 @@ def parseusercalculation(pdbname, session, debug=True, ignore_ligand_preset=Fals
     module_dir = '/tmp/interactions/' + session
     results = []
 
-    for f in listdir(mypath):
+    for f in os.listdir(mypath):
         if os.path.isfile(os.path.join(mypath, f)):
             result = yaml.load(open(mypath + "/" + f, 'rb'), Loader=yaml.FullLoader)
             output = result
@@ -650,6 +633,27 @@ def showcalculation(request):
 
 # NOTE: this function is solely used by the sitesearch functionality
 def calculate(request, redirect=None):
+    # convert identified interactions to residue features and add them to the session
+    # numbers in lists represent the interaction "hierarchy", i.e. if a residue has more than one
+    # interaction,
+    interaction_name_dict = {
+        'polar_double_neg_protein': [1, 'neg'],
+        'polar_double_pos_protein': [1, 'neg'],
+        'polar_pos_protein': [2, 'pos'],
+        'polar_neg_protein': [3, 'neg'],
+        'polar_neg_ligand': [4, 'hbd'],
+        'polar_pos_ligand': [5, 'hba'],
+        'polar_unknown_protein': [5, 'charge'],
+        'polar_donor_protein': [6, 'hbd'],
+        'polar_acceptor_protein': [7, 'hba'],
+        'polar_unspecified': [8, 'hb'],
+        'aro_ff': [9, 'ar'],
+        'aro_ef_protein': [10, 'ar'],
+        'aro_fe_protein':  [11, 'ar'],
+        'aro_ion_protein':  [12, 'pos'],
+        'aro_ion_ligand':  [12, 'ar'],
+    }
+
     if request.method == 'POST':
         form = PDBform(request.POST, request.FILES)
         if form.is_valid():
@@ -704,7 +708,7 @@ def calculate(request, redirect=None):
                 runusercalculation(pdbname, session_key)
 
             # MAPPING GPCRdb numbering onto pdb.
-            generic_numbering = GenericNumbering(temp_path,top_results=1)
+            generic_numbering = GenericNumbering(temp_path,top_results=1, blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_gpcr_blastdb']))
             out_struct = generic_numbering.assign_generic_numbers()
             structure_residues = generic_numbering.residues
             prot_id_list = generic_numbering.prot_id_list
@@ -936,27 +940,6 @@ def calculate(request, redirect=None):
                 if simple_selection:
                     selection.importer(simple_selection)
 
-                # convert identified interactions to residue features and add them to the session
-                # numbers in lists represent the interaction "hierarchy", i.e. if a residue has more than one
-                # interaction,
-                interaction_name_dict = {
-                    'polar_double_neg_protein': [1, 'neg'],
-                    'polar_double_pos_protein': [1, 'neg'],
-                    'polar_pos_protein': [2, 'pos'],
-                    'polar_neg_protein': [3, 'neg'],
-                    'polar_neg_ligand': [4, 'hbd'],
-                    'polar_pos_ligand': [5, 'hba'],
-                    'polar_unknown_protein': [5, 'charge'],
-                    'polar_donor_protein': [6, 'hbd'],
-                    'polar_acceptor_protein': [7, 'hba'],
-                    'polar_unspecified': [8, 'hb'],
-                    'aro_ff': [9, 'ar'],
-                    'aro_ef_protein': [10, 'ar'],
-                    'aro_fe_protein':  [11, 'ar'],
-                    'aro_ion_protein':  [12, 'pos'],
-                    'aro_ion_ligand':  [12, 'ar'],
-                }
-
                 interaction_counter = 0
                 for gn, interactions in simple_generic_number[mainligand].items():
                     if gn != 'score' and gn != 0.0:  # FIXME leave these out when dict is created
@@ -1055,7 +1038,6 @@ def excel(request, slug, **response_kwargs):
                 r = structure_residues[chain][int(pos)]
                 display = r.display
                 segment = r.segment
-                generic = r.gpcrdb
             else:
                 display = ''
                 segment = ''
@@ -1139,7 +1121,7 @@ def ajax(request, slug, **response_kwargs):
             if interaction.rotamer.residue.generic_number.label in lookup:
                 sequence_number = lookup[interaction.rotamer.residue.generic_number.label]
 
-            label = interaction.rotamer.residue.generic_number.label
+            #label = interaction.rotamer.residue.generic_number.label
             aa = interaction.rotamer.residue.amino_acid
             interactiontype = interaction.interaction_type.name
             if sequence_number not in jsondata:
@@ -1180,8 +1162,8 @@ def ajaxLigand(request, slug, ligand, **response_kwargs):
 
 
 def pdbfragment(request):
-    pdbname = request.GET.get('pdb')
-    ligand = request.GET.get('ligand')
+    #pdbname = request.GET.get('pdb')
+    #ligand = request.GET.get('ligand')
     fragment = request.GET.get('fragment')
 
     result = ResidueFragmentInteraction.objects.filter(id=fragment).get()
