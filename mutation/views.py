@@ -2935,7 +2935,7 @@ def designStateDetailsGN(request):
             freq_results[gn][1] = int(round(freq_set2[gn]))
         freq_results[gn][2] = freq_results[gn][0]-freq_results[gn][1]
 
-    table = "<table class=\"display table-striped\"><thead><tr><th>GN</th><th>Desired set</th><th>Undesired set</th><th>Diff</th></tr></thead><tbody>"
+    table = "<table class=\"display table-striped\"><thead><tr><th>GN</th><th>Inactive state</th><th>Active state</th><th>Diff</th></tr></thead><tbody>"
     for gn in freq_results:
         table += "<tr><td>{}</td><td>{}</td><td>{}</td><td class=\"color-column\">{}</td></tr>".format(gn, freq_results[gn][0], freq_results[gn][1], freq_results[gn][2])
     table += "</tbody></table>"
