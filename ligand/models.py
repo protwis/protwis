@@ -427,7 +427,7 @@ class BiasedExperimentAssay(models.Model):
                         )
 
     signalling_protein = models.CharField(
-        max_length=60)  # TODO link to actual protein
+        max_length=60, null=True)  # TODO link to actual protein
     family = models.CharField(max_length=60, null=True)
     cell_line = models.CharField(max_length=60, null=True)
     assay_type = models.CharField(max_length=60, null=True)
@@ -497,7 +497,7 @@ class AnalyzedAssay(models.Model):
     family = models.CharField(max_length=60, null=True)
     order_no = models.IntegerField(null=True)
     signalling_protein = models.CharField(
-        max_length=60)  # TODO link to actual protein
+        max_length=60, null=True)  # TODO link to actual protein
     pathway_level = models.TextField(null=True)
     cell_line = models.CharField(max_length=60, null=True)
     molecule_1 = models.CharField(max_length=60, null=True)

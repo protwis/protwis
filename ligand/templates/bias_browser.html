@@ -5,10 +5,10 @@
 {% block addon_css %}
 <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
 <!--<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.16/b-1.5.1/b-html5-1.5.1/datatables.min.css" />-->
-<link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
+<!-- <link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" /> -->
 <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
-
+<link rel="stylesheet" href="{% static 'home/css/signprot-multitabtable.css' %}" type="text/css" />
 <!-- configure radio buttons style -->
 <style>
 	.highlight_green {
@@ -227,34 +227,34 @@
 
 <div style='padding-top: 0px; font-size: 10px; white-space: nowrap; overflow-y:hidden;  width:100%;'>
 
-
+	<a id="dlink" style="display:none;"></a>
+	<div id="excel_table" style2="display:none;"></div>
 	<table class="display compact text-nowrap" id='structures_scrollable' style="width: 100%">
 		<thead id="headers">
-			<tr class="header-spans" rowspan="2">
+			<tr class="header-spans">
 				<th><span class="glyphicon glyphicon-info-sign" title="Click on this icon in a row for more details."></span></th>
 				<th id="receptor" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Receptor</th>
 				<th style="border-left: 1px solid black; text-align:left" colspan="5" style="">
 					Ligands</th>
-				<th id="transducers" style="display: None" colspan="2" style="">
-					Receptor transducers</th>
 				<th id="pathways_effector" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Pathway rank order<br>(by &#916;Log(Emax/EC50)</th>
 				<th id="pathways_measure" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Bias rank order:<br>Measured effector</th>
-				<th id="opmodel" class="shade" style="border-left: 1px solid black; text-align:left" colspan="4">
+				<th id="delta_relative_transduction_coef" class="shade" style="border-left: 1px solid black; text-align:left" colspan="4">
 					Operational model <br> &#916;&#916;(Tau/Ka)</th>
 				<th id="lbf" class="shade" style="border-left: 1px solid black; text-align:left" colspan="4">
-					Intrinsic relative<br>activity<br>(&#916;&#916;Log(Emax/EC50))</th>
-				<th id="lbf_part" class="shade" style="border-left: 1px solid black; text-align:left" colspan="5">
+					Relative<br>activity<br>(&#916;&#916;Log(Emax/EC50))</th>
+				<th id="delta_emax_ec50_part" class="shade" style="border-left: 1px solid black; text-align:left" colspan="5">
+					Ligand &#916;(Tau/KA)</th>
+				<th id="relative_transduction_coef" class="shade" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Ligand &#916;Log(Emax/EC50)</th>
 				<th class="shade" id="activity" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Potency (pEC50 or<br>
-					<font color="#FF0000">pIC50)</font></th>
+					<font color="#FF0000">pIC50)</font>
+				</th>
 				<th id="emax" class="shade" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Emax (% of ref ligand)</th>
-				<th id="tfactor" class="shade" style="border-left: 1px solid black; text-align:left" colspan="5">
-					Transduction coefficient</th>
 				<th id="mm1" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Measured molecule 1</th>
 				<th id="mm2" style="border-left: 1px solid black; text-align:left" colspan="5">
@@ -269,28 +269,29 @@
                           white-space: nowrap;
                           text-overflow: ellipsis;
                   max-width: 250px;" colspan="2">Reference</th>
-				<!-- <th style="border-left: 1px solid black; text-align:left" colspan="15">reference</th> -->
+				<th style="border-left: 1px solid black; text-align:left" colspan="4">reference</th>
 			</tr>
 			<tr class="table-filter-dropdown">
 				<th></th>
+
 				<th id="class_filter_select">Class</th>
 				<th id="receptor_filter_select">Rec Fam</th>
 				<th id="uniprot_filter_select">UniProt</th>
 				<th id="iuphar_filter_select">IUPHAR</th>
 				<th id="species_filter_select">Species</th>
-				<th style="display:None" id="endogenous_ligand_filter_select">Endogenous<br>Ligand</th>
-				<th id="reference_ligand_filter_select">Reference<br>Ligand</th>
+
+				<th id="reference_ligand_filter_select">Reference<br>ligand</th>
 				<th id="ligand_filter_select">Tested<br>ligand</th>
 				<th id="vendor_quantity_filter_select">#Ven<br>dors</th>
 				<th id="article_quantity_filter_select">#Arti<br>cles</th>
 				<th id="labs_quantity_filter_select">#Labs<br></th>
-				<th style="display: None" id="primary_filter_select">Primary</th>
-				<th style="display: None" id="secondary_filter_select">Secondary</th>
+
 				<th class="pathways" id="pathways_effector_p1_filter_select">P 1</th>
 				<th class="pathways" id="pathways_effector_p2_filter_select">P 2</th>
 				<th class="pathways" id="pathways_effector_p3_filter_select">P 3</th>
 				<th class="pathways" id="pathways_effector_p4_filter_select">P 4</th>
 				<th class="pathways" id="pathways_effector_p5_filter_select">P 5</th>
+
 				<th class="pathways" id="pathways_measure_p1_filter_select">P 1</th>
 				<th class="pathways" id="pathways_measure_p2_filter_select">P 2</th>
 				<th class="pathways" id="pathways_measure_p3_filter_select">P 3</th>
@@ -307,11 +308,17 @@
 				<th class="shade" id="lbf_p4_p1_filter_select">P1 - P4</th>
 				<th class="shade" id="lbf_p5_p1_filter_select">P1 - P5</th>
 
-				<th class="shade" id="lbf_p2_p1_filter_select">P 1</th>
-				<th class="shade" id="lbf_p2_p1_filter_select">P 2</th>
-				<th class="shade" id="lbf_p3_p1_filter_select">P 3</th>
-				<th class="shade" id="lbf_p4_p1_filter_select">P 4</th>
-				<th class="shade" id="lbf_p5_p1_filter_select">P 5</th>
+				<th class="shade" id="delta_emax_ec50_part_p2_p1_filter_select">P 1</th>
+				<th class="shade" id="delta_emax_ec50_part_p2_p1_filter_select">P 2</th>
+				<th class="shade" id="delta_emax_ec50_part_p3_p1_filter_select">P 3</th>
+				<th class="shade" id="delta_emax_ec50_part_p4_p1_filter_select">P 4</th>
+				<th class="shade" id="delta_emax_ec50_part_p5_p1_filter_select">P 5</th>
+
+				<th class="shade" id="relative_transduction_coef_p2_p1_filter_select">P 1</th>
+				<th class="shade" id="relative_transduction_coef_p2_p1_filter_select">P 2</th>
+				<th class="shade" id="relative_transduction_coef_p3_p1_filter_select">P 3</th>
+				<th class="shade" id="relative_transduction_coef_p4_p1_filter_select">P 4</th>
+				<th class="shade" id="relative_transduction_coef_p5_p1_filter_select">P 5</th>
 
 				<th class="shade" id="activity_p1_filter_select">P 1</th>
 				<th class="shade" id="activity_p2_filter_select">P 2</th>
@@ -324,12 +331,6 @@
 				<th class="shade" id="emax_p3_filter_select">P 3</th>
 				<th class="shade" id="emax_p4_filter_select">P 4</th>
 				<th class="shade" id="emax_p5_filter_select">P 5</th>
-
-				<th class="shade" id="tfactor_p1_filter_select">P 1</th>
-				<th class="shade" id="tfactor_p2_filter_select">P 2</th>
-				<th class="shade" id="tfactor_p3_filter_select">P 3</th>
-				<th class="shade" id="tfactor_p4_filter_select">P 4</th>
-				<th class="shade" id="tfactor_p5_filter_select">P 5</th>
 
 				<th id="measured_molecule_p1_filter_select">P 1</th>
 				<th id="measured_molecule_p2_filter_select">P 2</th>
@@ -366,24 +367,10 @@
                           text-overflow: ellipsis;
                           max-width: 100px;">Authors</th>
 				<th id="doi_reference_filter_select">DOI/ <br>Reference</th>
-				<!-- <th>references</th>
-                    <th id="time_p1_filter_select">reference P 1</th>
-					<th id="time_p2_filter_select">reference P 2</th>
-					<th id="time_p3_filter_select">reference P 3</th>
-					<th id="time_p4_filter_select">reference P 4</th>
-					<th id="time_p5_filter_select">reference P 5</th>
-
-                    <th id="time_p1_filter_select">assay P 1</th>
-					<th id="time_p2_filter_select">assay P 2</th>
-					<th id="time_p3_filter_select">assay P 3</th>
-					<th id="time_p4_filter_select">assay P 4</th>
-					<th id="time_p5_filter_select">assay P 5</th>
-
-
-                    <th id="time_p4_filter_select">lig id</th>
-					<th id="time_p5_filter_select">lig source</th>
-                    <th id="time_p5_filter_select">lig id displayed</th>
-                    <th id="time_p5_filter_select">lig external</th> -->
+				<th>PubChem CID</th>
+				<th>PubChem SID</th>
+				<th>other</th>
+                <th>gpcrdb</th>
 			</tr>
 		</thead>
 		<tbody id='structures_scrollable_body'>
@@ -402,8 +389,6 @@
 				<td title='{{e.uniprot}}'>{{e.receptor.entry_short}}</td>
 				<td title='{{e.IUPHAR}}'>{{e.receptor.name.split|first}}</td>
 				<td title='{{e.receptor.species.common_name}}'>{{e.receptor.species.common_name}}</td>
-				<td style="display:None"></td>
-
 				<!-- ligand -->
 				<td title='{{e.reference_ligand}}' style="border-left: 1px solid black;">{{e.reference_ligand}}</td>
 				<td title='{{e.ligand}}'><a href='/ligand/{{e.ligand.id}}/info' target='_blank'>{{e.ligand}}</a>
@@ -411,11 +396,6 @@
 				<td style="text-align:right">{{e.vendor_quantity}}</td>
 				<td style="text-align:right">{{e.article_quantity}}</td>
 				<td style="text-align:right">{{e.labs_quantity}}</td>
-
-				<!-- receptor trunsducers -->
-				<td style="display: None">{{e.primary}}</td>
-				<td style="display: None">{{e.secondary}}</td>
-
 				<!-- pathways -->
 				<td style="text-align:left" class="pathway">{{e.pathways_p1|default_if_none:""}}</td>
 				<td style="text-align:left" class="pathway">{{e.pathways_p2|default_if_none:""}}</td>
@@ -423,28 +403,33 @@
 				<td style="text-align:left" class="pathway">{{e.pathways_p4|default_if_none:""}}</td>
 				<td style="text-align:left" class="pathway">{{e.pathways_p5|default_if_none:""}}</td>
 				<!-- Assay -->
-				<td style="text-align:left" title='{{e.assay_p1}}'>{{e.assay_p1|default_if_none:"-" }}</td>
-				<td style="text-align:left" title='{{e.assay_p2}}'>{{e.assay_p2|default_if_none:"-" }}</td>
-				<td style="text-align:left" title='{{e.assay_p3}}'>{{e.assay_p3|default_if_none:"-" }}</td>
-				<td style="text-align:left" title='{{e.assay_p4}}'>{{e.assay_p4|default_if_none:"-" }}</td>
-				<td style="text-align:left" title='{{e.assay_p5}}'>{{e.assay_p5|default_if_none:"-" }}</td>
+				<td style="text-align:left" title='{{e.assay_p1}}'>{{e.assay_p1|default_if_none:e.molecule1_p1 }}</td>
+				<td style="text-align:left" title='{{e.assay_p2}}'>{{e.assay_p2|default_if_none:e.molecule1_p2 }}</td>
+				<td style="text-align:left" title='{{e.assay_p3}}'>{{e.assay_p3|default_if_none:e.molecule1_p3 }}</td>
+				<td style="text-align:left" title='{{e.assay_p4}}'>{{e.assay_p4|default_if_none:e.molecule1_p4 }}</td>
+				<td style="text-align:left" title='{{e.assay_p5}}'>{{e.assay_p5|default_if_none:e.molecule1_p5 }}</td>
 				<!-- t factor -->
-				<td style="text-align:right" class="shade" id="opmodel_p2_p1">{{e.opmodel_p2_p1|default_if_none:""}}</td>
-				<td style="text-align:right" class="shade" id="opmodel_p3_p1">{{e.opmodel_p3_p1|default_if_none:""}}</td>
-				<td style="text-align:right" class="shade" id="opmodel_p4_p1">{{e.opmodel_p4_p1|default_if_none:""}}</td>
-				<td style="text-align:right" class="shade" id="opmodel_p5_p1">{{e.opmodel_p5_p1|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade" id="opmodel_p2_p1">{{e.delta_relative_transduction_coef_p2_p1|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade" id="opmodel_p3_p1">{{e.delta_relative_transduction_coef_p3_p1|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade" id="opmodel_p4_p1">{{e.delta_relative_transduction_coef_p4_p1|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade" id="opmodel_p5_p1">{{e.delta_relative_transduction_coef_p5_p1|default_if_none:""}}</td>
 				<!-- log bias facrtor <> id=""---->
 				<td style="text-align:right" class="shade" id="lbf_p2_p1">{{e.lbf_p2_p1|default_if_none:""}}</td>
 				<td style="text-align:right" class="shade" id="lbf_p3_p1">{{e.lbf_p3_p1|default_if_none:""}}</td>
 				<td style="text-align:right" class="shade" id="lbf_p4_p1">{{e.lbf_p4_p1|default_if_none:""}}</td>
 				<td style="text-align:right" class="shade" id="lbf_p5_p1">{{e.lbf_p5_p1|default_if_none:""}}</td>
+				<!-- T coefficient -->
+				<td style="text-align:right" class="shade">{{e.relative_transduction_coef_p1|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade">{{e.relative_transduction_coef_p2|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade">{{e.relative_transduction_coef_p3|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade">{{e.relative_transduction_coef_p4|default_if_none:""}}</td>
+				<td style="text-align:right" class="shade">{{e.relative_transduction_coef_p5|default_if_none:""}}</td>
 				<!-- lbf_part -->
-				<td style="text-align:right" title='{{e.lbf_part_p1}}'>{{e.lbf_part_p1|default_if_none:"" }}</td>
-				<td style="text-align:right" title='{{e.lbf_part_p2}}'>{{e.lbf_part_p2|default_if_none:"" }}</td>
-				<td style="text-align:right" title='{{e.lbf_part_p3}}'>{{e.lbf_part_p3|default_if_none:"" }}</td>
-				<td style="text-align:right" title='{{e.lbf_part_p4}}'>{{e.lbf_part_p4|default_if_none:"" }}</td>
-				<td style="text-align:right" title='{{e.lbf_part_p5}}'>{{e.lbf_part_p5|default_if_none:"" }}</td>
-
+				<td style="text-align:right" title='{{e.lbf_part_p1}}'>{{e.delta_emax_ec50_part_p1|default_if_none:"" }}</td>
+				<td style="text-align:right" title='{{e.lbf_part_p2}}'>{{e.delta_emax_ec50_part_p2|default_if_none:"" }}</td>
+				<td style="text-align:right" title='{{e.lbf_part_p3}}'>{{e.delta_emax_ec50_part_p3|default_if_none:"" }}</td>
+				<td style="text-align:right" title='{{e.lbf_part_p4}}'>{{e.delta_emax_ec50_part_p4|default_if_none:"" }}</td>
+				<td style="text-align:right" title='{{e.lbf_part_p5}}'>{{e.delta_emax_ec50_part_p5|default_if_none:"" }}</td>
 				<!-- potency -->
 				{%if e.activity_p1 %}
 				{%if e.standard_type_p1 == 'EC50' %}
@@ -513,12 +498,6 @@
 				<td style="text-align:right" class="shade">{{e.emax_p4|default_if_none:""|floatformat:0}}</td>
 				<td style="text-align:right" class="shade">{{e.emax_p5|default_if_none:""|floatformat:0}}</td>
 
-				<!-- T coefficient -->
-				<td style="text-align:right" class="shade">{{e.tfactor_p1|default_if_none:""}}</td>
-				<td style="text-align:right" class="shade">{{e.tfactor_p2|default_if_none:""}}</td>
-				<td style="text-align:right" class="shade">{{e.tfactor_p3|default_if_none:""}}</td>
-				<td style="text-align:right" class="shade">{{e.tfactor_p4|default_if_none:""}}</td>
-				<td style="text-align:right" class="shade">{{e.tfactor_p5|default_if_none:""}}</td>
 				<!-- Molecule 1 -->
 				<td class="shade">{{e.molecule1_p1|default_if_none:""}}</td>
 				<td class="shade">{{e.molecule1_p2|default_if_none:""}}</td>
@@ -557,6 +536,22 @@
 				<td class="name">
 					<a href='{{e.publication.web_link}}' target='blank'>
 						{{e.publication.web_link.index}}</a></td>
+
+
+				{%if e.ligand_source_type == 'PubChem CID' %}
+				<td>{{e.ligand_source_id|default_if_none:""}}</td>
+				<td></td>
+				<td></td>
+				{%elif e.ligand_source_type == 'PubChem SID'%}
+				<td></td>
+				<td>{{e.ligand_source_id|default_if_none:""}}</td>
+				<td></td>
+				{%else%}
+				<td></td>
+				<td></td>
+				<td>{{e.ligand_source_id|default_if_none:""}}</td>
+				{%endif%}
+                <td>{{e.ligand.id}}</td>
 			</tr>
 			{%endfor%}
 		</tbody>
@@ -576,6 +571,7 @@
 <script src="{% static 'home/js/dataTables.buttons.min.js' %}"> </script>
 <script src="{% static 'home/js/select2.js' %}"> </script>
 <script src="{% static 'home/js/shading.js' %}"></script>
+<script src="{% static 'home/js/gpcrdb.js' %}"></script>
 <script src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.colVis.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.0.0/js/buttons.html5.min.js"></script>
@@ -604,25 +600,36 @@
 			processing: true,
 			deferRender: true,
 			dom: 'B<>flrtip',
+			paging: false,
+			scrollY: '60vh',
+			scrollX: 'TRUE',
+			scrollCollapse: true,
 			"deferRender": true,
-			pageLength: 35,
 			"lengthChange": false,
 			order: [
 				[28, "desc"]
 			],
-			"buttons": [
-                {
-                    extend: 'excelHtml5',
-                    text: 'Export to Excel',
-                    className: 'btn btn-primary',
+			'columnDefs': [
+				//hide the second & fourth column
+				{
+					'visible': false,
+					'targets': [13, 14, 15, 18, 19, 20, 23, 24, 27, 28, 31, 32, 33, 36, 37, 38, 41, 42, 43, 46, 47, 48, 51, 52, 53, 56, 57, 58, 61, 62, 63, 66, 67, 68, 71, 72, 73]
+				}
+			],
+			"buttons": [{
+					text: 'Export to Excel',
+					className: 'btn btn-primary btn-sm',
 					init: function(api, node, config) {
 						$(node).removeClass('dt-button buttons-excel buttons-html5');
 					},
-                },
-                {
+					action: function(e, dt, node, config) {
+						tableToExcel('structures_scrollable', 'Families data', 'test.xls')
+					},
+				},
+				{
 					extend: 'csv',
 					text: 'Export to CSV',
-					className: 'btn btn-primary',
+					className: 'btn btn-primary btn-sm',
 					init: function(api, node, config) {
 						$(node).removeClass('dt-button buttons-excel buttons-html5');
 					},
@@ -636,7 +643,7 @@
 				},
 				{
 					text: 'Get ligand vendors',
-					className: 'btn btn-primary',
+					className: 'btn btn-primary btn-sm',
 					titleAttr: 'Vendors info for top 20 ligands',
 					init: function(api, node, config) {
 						$(node).removeClass('dt-button buttons-excel buttons-html5');
@@ -664,39 +671,30 @@
 						});
 					},
 				},
-                {
-                    extend: 'colvisGroup',
-                    text: 'Hide pathways',
-                    className: 'btn btn-primary',
+				{
+					extend: 'colvisGroup',
+					text: 'Show pathways',
+					className: 'btn btn-primary btn-sm',
+					init: function(api, node, config) {
+						$(node).removeClass('dt-button buttons-excel buttons-html5');
+
+					},
+
+					show: [13, 14, 15, 18, 19, 20, 23, 24, 27, 28, 31, 32, 33, 36, 37, 38, 41, 42, 43, 46, 47, 48, 51, 52, 53, 56, 57, 58, 61, 62, 63, 66, 67, 68, 71, 72, 73],
+				},
+				{
+					text: 'Reset filters',
+					className: 'btn btn-primary btn-sm',
+					titleAttr: 'Reset All Filters',
 					init: function(api, node, config) {
 						$(node).removeClass('dt-button buttons-excel buttons-html5');
 					},
-                    hide: [ 16, 17, 18 ]
-                },
-                {
-                    extend: 'colvisGroup',
-                    text: 'Show pathways',
-                    className: 'btn btn-primary',
-					init: function(api, node, config) {
-						$(node).removeClass('dt-button buttons-excel buttons-html5');
+					action: function(e, dt, node, config) {
+						reset_filters()
 					},
-                    show: [ 16, 17, 18 ],
-                },
-                {
-    				text: 'Reset filters',
-    				className: 'btn btn-primary',
-    				titleAttr: 'Reset All Filters',
-    				init: function(api, node, config) {
-    					$(node).removeClass('dt-button buttons-excel buttons-html5');
-    				},
-    				action: function(e, dt, node, config) {
-    					reset_filters()
-    				},
 				},
 			],
-			// "drawCallback": function(settings) {
-            //
-			// },
+
 		});
 		yadcf.init(table,
 			[{
@@ -736,6 +734,7 @@
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
+				// Ligand
 				{
 					column_number: 6,
 					filter_type: "multi_select",
@@ -743,7 +742,6 @@
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
-				// Ligand
 				{
 					column_number: 7,
 					filter_type: "multi_select",
@@ -753,11 +751,11 @@
 				},
 				{
 					column_number: 8,
-					filter_type: "multi_select",
-					select_type: 'select2',
-					filter_default_label: "Select",
-					column_data_type: "html",
-					html_data_type: "text",
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
+					filter_plugin_options: {
+						width: '30px'
+					},
 					filter_reset_button_text: false,
 				},
 				{
@@ -778,13 +776,14 @@
 					},
 					filter_reset_button_text: false,
 				},
+				// pathway_bias
 				{
 					column_number: 11,
-					filter_type: "range_number",
-					filter_default_label: ["Min", "Max"],
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
-				//  Receptor Transducer
 				{
 					column_number: 12,
 					filter_type: "multi_select",
@@ -799,7 +798,6 @@
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
-				// pathway_bias
 				{
 					column_number: 14,
 					select_type: 'select2',
@@ -815,6 +813,7 @@
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
+				//pathways_subtype
 				{
 					column_number: 16,
 					select_type: 'select2',
@@ -849,37 +848,33 @@
 					select_type: 'select2',
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
-
 				},
+				//op model
 				{
 					column_number: 21,
-					filter_type: "multi_select",
-					select_type: 'select2',
-					filter_default_label: "Select",
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
-
 				{
 					column_number: 22,
-					filter_type: "multi_select",
-					select_type: 'select2',
-					filter_default_label: "Select",
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
 				{
 					column_number: 23,
-					filter_type: "multi_select",
-					select_type: 'select2',
-					filter_default_label: "Select",
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
-				// pathway operational model
 				{
 					column_number: 24,
 					filter_type: "range_number",
 					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
+				//lbf
 				{
 					column_number: 25,
 					filter_type: "range_number",
@@ -898,14 +893,13 @@
 					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
-
-				//Log bias factor <br>(ddLog(Emax/EC50)
 				{
 					column_number: 28,
 					filter_type: "range_number",
 					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
+				//delta_emax_ec50
 				{
 					column_number: 29,
 					filter_type: "range_number",
@@ -924,7 +918,6 @@
 					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
-				//"lbf part"
 				{
 					column_number: 32,
 					filter_type: "range_number",
@@ -937,6 +930,7 @@
 					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
+				//relative_transduction_coef
 				{
 					column_number: 34,
 					filter_type: "range_number",
@@ -955,7 +949,6 @@
 					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
-				//potency or ic50
 				{
 					column_number: 37,
 					filter_type: "range_number",
@@ -968,6 +961,7 @@
 					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
+				//potency or ic50
 				{
 					column_number: 39,
 					filter_type: "range_number",
@@ -986,7 +980,6 @@
 					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
-				// Emax
 				{
 					column_number: 42,
 					filter_type: "range_number",
@@ -999,6 +992,7 @@
 					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
+				// Emax
 				{
 					column_number: 44,
 					filter_type: "range_number",
@@ -1017,7 +1011,6 @@
 					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
-				//t_factor
 				{
 					column_number: 47,
 					filter_type: "range_number",
@@ -1030,25 +1023,28 @@
 					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
+				//measured_molecule p1
 				{
 					column_number: 49,
-					filter_type: "range_number",
-					filter_default_label: ["Min", "Max"],
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
 				{
 					column_number: 50,
-					filter_type: "range_number",
-					filter_default_label: ["Min", "Max"],
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
 				{
 					column_number: 51,
-					filter_type: "range_number",
-					filter_default_label: ["Min", "Max"],
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
-				//mm1
 				{
 					column_number: 52,
 					filter_type: "multi_select",
@@ -1063,6 +1059,7 @@
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
+				//mm2
 				{
 					column_number: 54,
 					filter_type: "multi_select",
@@ -1084,7 +1081,6 @@
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
-				//mm2
 				{
 					column_number: 57,
 					filter_type: "multi_select",
@@ -1100,7 +1096,7 @@
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
-
+				//bioprocess_p1_filter_select
 				{
 					column_number: 59,
 					filter_type: "multi_select",
@@ -1122,7 +1118,6 @@
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
-				//bio
 				{
 					column_number: 62,
 					filter_type: "multi_select",
@@ -1137,6 +1132,7 @@
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
+				//cell line
 				{
 					column_number: 64,
 					filter_type: "multi_select",
@@ -1158,7 +1154,6 @@
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
-				//cell
 				{
 					column_number: 67,
 					filter_type: "multi_select",
@@ -1173,6 +1168,7 @@
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
+				//time resovled
 				{
 					column_number: 69,
 					filter_type: "multi_select",
@@ -1208,38 +1204,16 @@
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
+				//Article
 				{
 					column_number: 74,
 					filter_type: "multi_select",
 					select_type: 'select2',
-					filter_default_label: "Select",
+					filter_default_label: "Authors",
 					filter_reset_button_text: false,
 				},
 				{
 					column_number: 75,
-					filter_type: "multi_select",
-					select_type: 'select2',
-					filter_default_label: "Select",
-					filter_reset_button_text: false,
-				},
-				{
-					column_number: 76,
-					filter_type: "multi_select",
-					select_type: 'select2',
-					filter_default_label: "Select",
-					filter_reset_button_text: false,
-				},
-				//Article
-				{
-					column_number: 77,
-					filter_type: "multi_select",
-					select_type: 'select2',
-					filter_default_label: "Authors",
-					filter_reset_button_text: false,
-
-				},
-				{
-					column_number: 78,
 					filter_type: "multi_select",
 					select_type: 'select2',
 					filter_default_label: "DOI",
@@ -1247,98 +1221,19 @@
 					html_data_type: "text",
 					filter_reset_button_text: false,
 				},
-
 			], );
-		shadeTable(table, [".shade"], 120, 200);
-		// calculate_header()
-
-
-		function calculate_header() {
-			var columnIds = [];
-			var EmptyColumnIds = [];
-			// $("#receptor").attr("colspan", 5);
-			// $("#ligand").attr("colspan", 5);
-			// $("#transducers").attr("colspan", 2);
-			// $("#pathways_effector").attr("colspan", 5);
-			// $("#pathways_measure").attr("colspan", 5);
-			$("#opmodel").attr("colspan", 4);
-			// $("#lbf").attr("colspan", 4);
-			// $("#lbf_part").attr("colspan", 5);
-			// $("#activity").attr("colspan", 5);
-			// $("#emax").attr("colspan", 5);
-			// $("#tfactor").attr("colspan", 5);
-			// $("#mm1").attr("colspan", 5);
-			// $("#mm2").attr("colspan", 5);
-			// $("#bio").attr("colspan", 5);
-			// $("#cell").attr("colspan", 5);
-			// $("#time").attr("colspan", 5);
-			colspan_default = {
-				// receptor: [0, 1, 2, 3, 4, 5, 6],
-				// ligand: [7, 8, 9, 10, 11],
-				// transducers: [12, 13],
-				// pathways_effector: [14, 15, 16, 17, 18],
-				// pathways_measure: [19, 20, 21, 22, 23],
-				opmodel: [24, 25, 26, 27],
-				// lbf: [28, 29, 30, 31],
-				// lbf_part: [32, 33, 34, 35, 36],
-				// activity: [37, 38, 39, 40, 41],
-				// emax: [42, 43, 44, 45, 46],
-				// tfactor: [47, 48, 49, 50, 51],
-				// mm1: [52, 53, 54, 55, 56],
-				// mm2: [57, 58, 59, 60, 61],
-				// bio: [62, 63, 64, 65, 66],
-				// cell: [67, 68, 69, 70, 71],
-				// time: [72, 73, 74, 75, 76]
-			};
-
-			$('#structures_scrollable').removeClass("highlight");
-			$('#structures_scrollable .header-spans th').removeClass("highlight");
-			$('#structures_scrollable .table-filter-dropdown th').removeClass("highlight");
-			$('#structures_scrollable .table-filter-dropdown th').each(function(index) {
-				var tds = $('.dataTable tbody td:nth-child(' + (index + 1) + ')');
-				if (tds.length > 0 && tds.length <= tds.filter(':empty').length) {
-                    if (tds[0].cellIndex > 23 && tds[0].cellIndex<28){
-                        columnIds.push(tds[0].cellIndex)
-    					tds.addClass('highlight');
-                    }
-				}
-			});
-
-			if (columnIds) {
-				columnIds.forEach((item) => {
-
-					var filterRow = $('.dataTable .table-filter-dropdown th:nth-child(' + (item + 1) + ')');
-					filterRow[0].setAttribute("style", "background-color: green;");
-
-				});
-				columnIds.forEach((item) => {
-
-					for (key in colspan_default) {
-						if (colspan_default[key].includes(item)) {
-							$("#" + key).addClass('highlight');
-							// var temp_colspan = $("#" + key).attr('colspan')
-							// $("#" + key).attr("colspan", temp_colspan - 1)
-							// if ($("#" + key).attr('colspan') == 0) {
-							// 	$("#" + key).addClass('highlight');
-							// }
-						}
-					}
-				});
-			}
-		}
 
 		function reset_filters() {
 			yadcf.exResetAllFilters(table);
 		}
 
-        document
-
 		yadcf.exFilterColumn(table, [
-			[28, {
+			[25, {
 				from: 1,
 			}],
 		]);
-    $(".inuse:last").removeClass("inuse")
+		$("#yadcf-filter--structures_scrollable-to-25").removeClass("inuse")
+
 	});
 </script>
 
@@ -1347,36 +1242,6 @@
 		const y = win.top.outerHeight / 2 + win.top.screenY - (h / 2);
 		const x = win.top.outerWidth / 2 + win.top.screenX - (w / 2);
 		return win.open(url, title, 'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width=' + w + ', height=' + h + ', top=' + y + ', left=' + x);
-	}
-
-	function read_unique_ids() {
-		var ids = [];
-		var table = document.getElementById("structures_scrollable")
-		var temp_lenght = table.rows.length;
-		var l = 0;
-		for (var i = 2; i < temp_lenght; i++) {
-			var x = table.rows[i].cells[0];
-			ids.push($(x).find('span:first')[0].innerText)
-		}
-		l = countUnique(ids);
-		return l
-	}
-
-	function read_unique_ids_receptor() {
-		var ids = [];
-		var table = document.getElementById("structures_scrollable")
-		var temp_lenght = table.rows.length;
-		var l = 0;
-		for (var i = 2; i < temp_lenght; i++) {
-			var x = table.rows[i].cells[3];
-			ids.push($(x)[0].innerText)
-		}
-		l = countUnique(ids);
-		return l
-	}
-
-	function countUnique(iterable) {
-		return new Set(iterable).size;
 	}
 
 	function read_ids() {
@@ -1393,5 +1258,26 @@
 		var myJSON = JSON.stringify(ids);
 		return myJSON
 	}
+
+	function calculate_header() {
+		var columnIds = [];
+		var EmptyColumnIds = [];
+
+		$("#pathways_effector").attr("colspan", 5);
+		$("#pathways_measure").attr("colspan", 5);
+		$("#opmodel").attr("colspan", 4);
+		$("#delta_relative_transduction_coef").attr("colspan", 4);
+		$("#lbf").attr("colspan", 5);
+		$("#delta_emax_ec50_part").attr("colspan", 5);
+		$("#relative_transduction_coef").attr("colspan", 5);
+		$("#activity").attr("colspan", 5);
+		$("#emax").attr("colspan", 5);
+		$("#mm1").attr("colspan", 5);
+		$("#mm2").attr("colspan", 5);
+		$("#bio").attr("colspan", 5);
+		$("#cell").attr("colspan", 5);
+		$("#time").attr("colspan", 5);
+		table.columns([16, 17]).visible(true);
+	};
 </script>
 {% endblock %}
