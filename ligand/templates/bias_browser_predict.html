@@ -266,7 +266,7 @@
 				//hide the second & fourth column
 				{
 					'visible': false,
-					'targets': [12, 13, 14, 17, 18, 19, 22, 23, 26, 27, 28, 31, 32, 33, 36, 37, 38, 41, 42, 43, 46, 47, 48, 51, 52, 53, 56, 57, 58, 61, 62, 63]
+					'targets': [12, 13, 14, 16, 17, 18, 21, 22, 23, 26, 27,28, 31, 32, 33, 36, 37, 38, 41, 42, 43, 46, 47, 48, 51, 52, 53, 56, 57, 58]
 				}
 			],
             "buttons": [{
@@ -332,8 +332,7 @@
 						$(node).removeClass('dt-button buttons-excel buttons-html5');
 
 					},
-
-					show: [12, 13, 14, 17, 18, 19, 22, 23, 26, 27, 28, 31, 32, 33, 36, 37, 38, 41, 42, 43, 46, 47, 48, 51, 52, 53, 56, 57, 58, 61, 62, 63]
+					show: [12, 13, 14, 16, 17, 18, 21, 22, 23, 26, 27,28, 31, 32, 33, 36, 37, 38, 41, 42, 43, 46, 47, 48, 51, 52, 53, 56, 57, 58]
 				},
 				{
 					text: 'Reset filters',
@@ -463,43 +462,38 @@
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
-                //subtypes
+                //lbf
 				{
 					column_number: 15,
-					select_type: 'select2',
-					filter_type: "multi_select",
-					filter_default_label: "Select",
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
 				{
 					column_number: 16,
-					select_type: 'select2',
-					filter_type: "multi_select",
-					filter_default_label: "Select",
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
 				{
 					column_number: 17,
-					select_type: 'select2',
-					filter_type: "multi_select",
-					filter_default_label: "Select",
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
 				{
 					column_number: 18,
-					select_type: 'select2',
-					filter_type: "multi_select",
-					filter_default_label: "Select",
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
+                //delta
 				{
 					column_number: 19,
-					filter_type: "multi_select",
-					select_type: 'select2',
-					filter_default_label: "Select",
+					filter_type: "range_number",
+					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
-                //lbf
 				{
 					column_number: 20,
 					filter_type: "range_number",
@@ -524,7 +518,7 @@
 					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
-                //delta
+                //potency
 				{
 					column_number: 24,
 					filter_type: "range_number",
@@ -555,7 +549,7 @@
 					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
-                //potency
+                //emax
 				{
 					column_number: 29,
 					filter_type: "range_number",
@@ -586,38 +580,43 @@
 					filter_default_label: ["Min", "Max"],
 					filter_reset_button_text: false,
 				},
-                //emax
+                //mm1
 				{
 					column_number: 34,
-					filter_type: "range_number",
-					filter_default_label: ["Min", "Max"],
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
 				{
 					column_number: 35,
-					filter_type: "range_number",
-					filter_default_label: ["Min", "Max"],
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
 				{
 					column_number: 36,
-					filter_type: "range_number",
-					filter_default_label: ["Min", "Max"],
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
 				{
 					column_number: 37,
-					filter_type: "range_number",
-					filter_default_label: ["Min", "Max"],
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
 				{
 					column_number: 38,
-					filter_type: "range_number",
-					filter_default_label: ["Min", "Max"],
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
-                //mm
+                //mm2
 				{
 					column_number: 39,
 					filter_type: "multi_select",
@@ -639,7 +638,6 @@
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
-
 				{
 					column_number: 42,
 					filter_type: "multi_select",
@@ -654,7 +652,7 @@
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
-                //mm2
+                //bio
 				{
 					column_number: 44,
 					filter_type: "multi_select",
@@ -690,7 +688,7 @@
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
-                //bio
+                //cell
 				{
 					column_number: 49,
 					filter_type: "multi_select",
@@ -726,7 +724,7 @@
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
-                //cell line
+                //time
 				{
 					column_number: 54,
 					filter_type: "multi_select",
@@ -763,45 +761,9 @@
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
 				},
-                //time
-				{
-					column_number: 59,
-					filter_type: "multi_select",
-					select_type: 'select2',
-					filter_default_label: "Select",
-					filter_reset_button_text: false,
-				},
-				{
-					column_number: 60,
-					filter_type: "multi_select",
-					select_type: 'select2',
-					filter_default_label: "Select",
-					filter_reset_button_text: false,
-				},
-				{
-					column_number: 61,
-					filter_type: "multi_select",
-					select_type: 'select2',
-					filter_default_label: "Select",
-					filter_reset_button_text: false,
-				},
-				{
-					column_number: 62,
-					filter_type: "multi_select",
-					select_type: 'select2',
-					filter_default_label: "Select",
-					filter_reset_button_text: false,
-				},
-				{
-					column_number: 63,
-					filter_type: "multi_select",
-					select_type: 'select2',
-					filter_default_label: "Select",
-					filter_reset_button_text: false,
-				},
                 //article
 				{
-					column_number: 64,
+					column_number: 59,
 					filter_type: "multi_select",
 					select_type: 'select2',
 					filter_default_label: "Authors",
@@ -809,7 +771,7 @@
 
 				},
 				{
-					column_number: 65,
+					column_number: 60,
 					filter_type: "multi_select",
 					select_type: 'select2',
 					filter_default_label: "DOI",
@@ -894,8 +856,6 @@
 					Tested ligand</th>
 				<th id="pathways_effector" style="border-left: 1px solid black; text-align:left; " colspan="5">
                     Pathway preference <br>&#916;Log(Emax/EC50)</th>
-				<th id="pathways_measure" style="display: None" colspan="0">
-					Bias rank order:<br>Measured effector</th>
 				<th id="lbf" class="shade" style="border-left: 1px solid black; text-align:left" colspan="4">
 					Relative pathway activity<br>&#916;Log(Emax/EC50)</th>
 				<th id="lbf_part" class="shade" style="border-left: 1px solid black; text-align:left" colspan="5">
@@ -938,12 +898,6 @@
 				<th class="pathways" id="pathways_effector_p3_filter_select">P 3</th>
 				<th class="pathways" id="pathways_effector_p4_filter_select">P 4</th>
 				<th class="pathways" id="pathways_effector_p5_filter_select">P 5</th>
-				<th class="pathways" style="display: None" id="pathways_measure_p1_filter_select">P 1</th>
-				<th class="pathways" style="display: None" id="pathways_measure_p2_filter_select">P 2</th>
-				<th class="pathways" style="display: None" id="pathways_measure_p3_filter_select">P 3</th>
-				<th class="pathways" style="display: None" id="pathways_measure_p4_filter_select">P 4</th>
-				<th class="pathways" style="display: None" id="pathways_measure_p5_filter_select">P 5</th>
-
 				<th class="shade" id="lbf_p2_p1_filter_select">P1 - P2</th>
 				<th class="shade" id="lbf_p3_p1_filter_select">P1 - P3</th>
 				<th class="shade" id="lbf_p4_p1_filter_select">P1 - P4</th>
@@ -1035,12 +989,6 @@
 				<td style="text-align:left" class="pathway">{{e.pathways_p3|default_if_none:""}}</td>
 				<td style="text-align:left" class="pathway">{{e.pathways_p4|default_if_none:""}}</td>
 				<td style="text-align:left" class="pathway">{{e.pathways_p5|default_if_none:""}}</td>
-				<!-- Assay -->
-				<td style="display: None" title='{{e.assay_p1}}'>{{e.assay_p1|default_if_none:"-" }}</td>
-				<td style="display: None" title='{{e.assay_p2}}'>{{e.assay_p2|default_if_none:"-" }}</td>
-				<td style="display: None" title='{{e.assay_p3}}'>{{e.assay_p3|default_if_none:"-" }}</td>
-				<td style="display: None" title='{{e.assay_p4}}'>{{e.assay_p4|default_if_none:"-" }}</td>
-				<td style="display: None" title='{{e.assay_p5}}'>{{e.assay_p5|default_if_none:"-" }}</td>
 				<!-- log bias facrtor <> id=""---->
 				<td style="text-align:left" class="shade" id="lbf_p2_p1">{{e.lbf_p2_p1|default_if_none:""}}</td>
 				<td style="text-align:left" class="shade" id="lbf_p3_p1">{{e.lbf_p3_p1|default_if_none:""}}</td>

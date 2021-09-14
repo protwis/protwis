@@ -24,19 +24,20 @@ from Bio import SeqIO, pairwise2
 from Bio.pairwise2 import format_alignment
 from common.models import Publication, WebLink, WebResource
 from django.conf import settings
+from django.utils.text import slugify
 from django.core.management.base import BaseCommand, CommandError
 from django.core.management.color import no_style
 from django.db import IntegrityError, connection
 from protein.models import (Gene, Protein, ProteinAlias, ProteinConformation,
-                            ProteinFamily, ProteinGProtein,
-                            ProteinGProteinPair, ProteinSegment,
-                            ProteinSequenceType, ProteinSource, ProteinState,
-                            Species)
+                            ProteinFamily, Species, ProteinSegment,
+                            ProteinSequenceType, ProteinSource, ProteinState)
 from residue.models import (Residue, ResidueGenericNumber,
                             ResidueGenericNumberEquivalent,
                             ResidueNumberingScheme)
 from signprot.models import SignprotBarcode, SignprotComplex, SignprotStructure, SignprotStructureExtraProteins
 from structure.models import Structure, StructureStabilizingAgent, StructureType, StructureExtraProteins
+from ligand.models import Ligand, LigandType, LigandProperities
+from ligand.functions import get_or_make_ligand
 
 
 class Command(BaseCommand):
@@ -54,11 +55,6 @@ class Command(BaseCommand):
     lookup = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'CGN_lookup.csv'])
     alignment_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'CGN_referenceAlignment.fasta'])
     ortholog_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'gprotein_orthologs.csv'])
-    iupharcoupling_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', '200416_iuphar_coupling_data.csv'])
-    inoue_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', '200204_inoue.xlsx'])
-    bouvier_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', '200127_bouvier.xlsx'])
-    inoue_file2 = os.sep.join([settings.DATA_DIR, 'g_protein_data', '201025_inoue_gloriam.xlsx'])
-    bouvier_file2 = os.sep.join([settings.DATA_DIR, 'g_protein_data', '201025_bouvier_gloriam.xlsx'])
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot'])
     local_uniprot_beta_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot_beta'])
     local_uniprot_gamma_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot_gamma'])
@@ -84,10 +80,6 @@ class Command(BaseCommand):
                             default=False,
                             action='store_true',
                             help='Build PDB_UNIPROT_ENSEMBLE_ALL file')
-        parser.add_argument('--coupling',
-                            default=False,
-                            action='store_true',
-                            help='Purge and import GPCR-Gprotein coupling data')
 
     def handle(self, *args, **options):
         self.options = options
@@ -99,38 +91,11 @@ class Command(BaseCommand):
             self.add_entry()
         elif self.options['build_datafile']:
             self.build_table_from_fasta()
-        elif self.options['coupling']:
-            self.purge_coupling_data()
-            self.logger.info('PASS: purge_coupling_data')
-            self.create_g_proteins(filenames)
-            self.logger.info('PASS: create_g_proteins')
-            if os.path.exists(self.inoue_file):
-               self.add_inoue_coupling_data()
-               self.logger.info('PASS: add_inoue_coupling_data')
-            else:
-               self.logger.warning('Inoue source data ' + self.inoue_file + ' not found')
-            if os.path.exists(self.bouvier_file):
-               self.add_bouvier_coupling_data()
-               self.logger.info('PASS: add_bouvier_coupling_data')
-            else:
-               self.logger.warning('Bouvier source data ' + self.bouvier_file + ' not found')
-            if os.path.exists(self.inoue_file2):
-               self.add_inoue_coupling_data2()
-               self.logger.info('PASS: add_inoue_coupling_data2')
-            else:
-               self.logger.warning('Inoue-DEG source data ' + self.inoue_file2 + ' not found')
-            if os.path.exists(self.bouvier_file2):
-               self.add_bouvier_coupling_data2()
-               self.logger.info('PASS: add_bouvier_coupling_data2')
-            else:
-               self.logger.warning('Bouvier source data ' + self.bouvier_file2 + ' not found')
         else:
             # Add G-proteins from CGN-db Common G-alpha Numbering <https://www.mrc-lmb.cam.ac.uk/CGN/>
             try:
                 self.purge_signprot_complex_data()
                 self.logger.info('PASS: purge_signprot_complex_data')
-                self.purge_coupling_data()
-                self.logger.info('PASS: purge_coupling_data')
                 self.purge_cgn_proteins()
                 self.logger.info('PASS: purge_cgn_proteins')
                 self.purge_other_subunit_proteins()
@@ -154,8 +119,6 @@ class Command(BaseCommand):
                                 self.ortholog_mapping[column + '_' + header[j]] = row[0]
                 self.logger.info('PASS: ortholog_mapping')
 
-                self.create_g_proteins(filenames)
-                self.logger.info('PASS: create_g_proteins')
                 self.cgn_create_proteins_and_families()
                 self.logger.info('PASS: cgn_create_proteins_and_families')
 
@@ -167,26 +130,6 @@ class Command(BaseCommand):
                 self.logger.info('PASS: create_barcode')
                 self.add_other_subunits()
                 self.logger.info('PASS: add_other_subunits')
-                if os.path.exists(self.inoue_file):
-                    self.add_inoue_coupling_data()
-                    self.logger.info('PASS: add_inoue_coupling_data')
-                else:
-                    self.logger.warning('Inoue source data ' + self.inoue_file + ' not found')
-                if os.path.exists(self.bouvier_file):
-                    self.add_bouvier_coupling_data()
-                    self.logger.info('PASS: add_bouvier_coupling_data')
-                else:
-                    self.logger.warning('Bouvier source data ' + self.bouvier_file + ' not found')
-                if os.path.exists(self.inoue_file2):
-                    self.add_inoue_coupling_data2()
-                    self.logger.info('PASS: add_inoue_coupling_data2')
-                else:
-                    self.logger.warning('Inoue-DEG source data ' + self.inoue_file2 + ' not found')
-                if os.path.exists(self.bouvier_file2):
-                    self.add_bouvier_coupling_data2()
-                    self.logger.info('PASS: add_bouvier_coupling_data2')
-                else:
-                    self.logger.warning('Bouvier source data ' + self.bouvier_file2 + ' not found')
 
             except Exception as msg:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -439,20 +382,6 @@ class Command(BaseCommand):
                 continue
             command = "/env/bin/python3 manage.py build_g_proteins --wt " + str(name.lower())
             subprocess.call(shlex.split(command))
-
-    def purge_coupling_data(self):
-        """DROP data from the protein_gprotein_pair table."""
-        try:
-            ProteinGProteinPair.objects.filter().delete()
-            ProteinGProtein.objects.all().delete()
-            ProteinAlias.objects.filter(protein__family__slug__startswith='100').delete()
-            sequence_sql = connection.ops.sequence_reset_sql(no_style(), [ProteinGProteinPair, ProteinGProtein])
-            with connection.cursor() as cursor:
-                for sql in sequence_sql:
-                    cursor.execute(sql)
-
-        except Exception as msg:
-            self.logger.warning('Existing protein_gprotein and protein_gprotein_pair data cannot be deleted' + str(msg))
 
     def purge_cgn_residues(self):
         try:
@@ -1189,6 +1118,7 @@ class Command(BaseCommand):
     def purge_cgn_proteins(self):
         try:
             Protein.objects.filter(residue_numbering_scheme__slug='cgn').delete()
+            ProteinAlias.objects.filter(protein__family__slug__startswith='100').delete()
         except:
             self.logger.info('Protein to delete not found')
 

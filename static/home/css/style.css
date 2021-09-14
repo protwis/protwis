@@ -297,3 +297,7 @@ span.stats_value {
 span.stats_indent {
   padding-left: 1.5em;
 }
+
+ul.nav-tabs li a {
+  white-space: nowrap;
+}
