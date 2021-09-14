@@ -148,7 +148,7 @@ class Command(BaseBuild):
         #convert pandas df into list of dicts
         return_list_of_dicts = df.to_dict('records')
         return return_list_of_dicts
-    
+
     @staticmethod
     def read_excel_pandas():
         source_file_path = os.sep.join(
@@ -161,12 +161,12 @@ class Command(BaseBuild):
     def main_process(df_from_excel):
         row_counter = 0
         for d in df_from_excel:
-            row_counter = row_counter + 1
+            # row_counter = row_counter + 1
             # if(row_counter < 434):
-            #     continue
-            if(row_counter > 2):
-                break
-            import pdb; pdb.set_trace()
+            # #     continue
+            # if(row_counter > 2):
+            #     break
+            #     import pdb; pdb.set_trace()
             try:
                  d['Alt 1)\nQuantitative activity'] = float( d['Alt 1)\nQuantitative activity'])
             except:
@@ -233,9 +233,9 @@ class Command(BaseBuild):
             end_ligand  = Command.fetch_endogenous(protein)
             try:
                 if len(d['Primary effector subtype']) < 1:
-                    d['Primary effector subtype'] = '-'
+                    d['Primary effector subtype'] = None
             except:
-                d['Primary effector subtype'] = '-'
+                d['Primary effector subtype'] = None
 
             experiment_entry = BiasedExperiment(submission_author=d['Data submitting group leader'],
                                                 publication=pub,
