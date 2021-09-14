@@ -235,7 +235,7 @@ function initCouplingTable2() {
       column_number: 69,
       filter_type: "custom_func",
       custom_func: supportFilter,
-      filter_container_id: "hide_filter1",
+      filter_container_id: "hide_filter2",
     }]);
 
   yadcf.init(oTable2, column_filters, {
