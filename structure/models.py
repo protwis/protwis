@@ -4,7 +4,7 @@ from django.core.cache import cache
 from io import StringIO
 from Bio.PDB import PDBIO
 import re
-from protein.models import ProteinGProteinPair
+from protein.models import ProteinCouplings
 
 class Structure(models.Model):
     # linked onto the Xtal ProteinConformation, which is linked to the Xtal protein
@@ -160,7 +160,7 @@ class StructureComplexModel(models.Model):
     main_template = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
     pdb_data = models.ForeignKey('PdbData', null=True, on_delete=models.CASCADE)
     version = models.DateField()
-    # prot_signprot_pair = models.ForeignKey('protein.ProteinGProteinPair', related_name='+', on_delete=models.CASCADE, null=True)
+    # prot_signprot_pair = models.ForeignKey('protein.ProteinCouplings', related_name='+', on_delete=models.CASCADE, null=True)
     stats_text = models.ForeignKey('StatsText', on_delete=models.CASCADE)
 
     def __repr__(self):
@@ -177,9 +177,9 @@ class StructureComplexModel(models.Model):
 
     def get_prot_gprot_pair(self):
         if self.receptor_protein.accession:
-            pgp = ProteinGProteinPair.objects.filter(protein=self.receptor_protein, g_protein__slug=self.sign_protein.family.parent.slug, source='GuideToPharma')
+            pgp = ProteinCouplings.objects.filter(protein=self.receptor_protein, g_protein__slug=self.sign_protein.family.parent.slug, source='GuideToPharma')
         else:
-            pgp = ProteinGProteinPair.objects.filter(protein=self.receptor_protein.parent, g_protein__slug=self.sign_protein.family.parent.slug, source='GuideToPharma')
+            pgp = ProteinCouplings.objects.filter(protein=self.receptor_protein.parent, g_protein__slug=self.sign_protein.family.parent.slug, source='GuideToPharma')
         if len(pgp)>0:
             return pgp[0].transduction
         else:

@@ -1137,6 +1137,7 @@ class StructureBuildCheck():
         self.missing_seg = []
         self.start_error = []
         self.end_error = []
+        self.duplicate_residue_error = {}
 
     def check_structures(self):
         for y in self.yamls:
@@ -1145,6 +1146,20 @@ class StructureBuildCheck():
                 Structure.objects.get(pdb_code__index=pdb)
             except Structure.DoesNotExist:
                 print('Error: {} Structure object has not been built'.format(pdb))
+
+    def check_duplicate_residues(self):
+        for s in Structure.objects.all():
+            resis = Residue.objects.filter(protein_conformation=s.protein_conformation)
+            if len(resis)!=len(resis.values_list('sequence_number').distinct()):
+                for r in resis:
+                    try:
+                        Residue.objects.get(protein_conformation=s.protein_conformation, sequence_number=r.sequence_number)
+                    except Residue.MultipleObjectsReturned:
+                        if s in self.duplicate_residue_error: 
+                            self.duplicate_residue_error[s].append(r)
+                        else:
+                            self.duplicate_residue_error[s] = [r]
+
 
     def check_segment_ends(self, structure):
         key = structure.protein_conformation.protein.parent.entry_name + '_' + structure.pdb_code.index

@@ -26,7 +26,7 @@ from interaction.forms import PDBform
 
 from residue.models import Residue,ResidueNumberingScheme, ResidueGenericNumberEquivalent
 from residue.views import ResidueTablesDisplay
-from protein.models import Protein, ProteinSegment, ProteinFamily, ProteinConformation, ProteinGProteinPair
+from protein.models import Protein, ProteinSegment, ProteinFamily, ProteinConformation, ProteinCouplings
 from structure.models import Structure
 
 from seqsign.sequence_signature import SequenceSignature
@@ -112,8 +112,9 @@ def render_mutations(request, protein = None, family = None, download = None, re
 
     # get the user selection from session
     simple_selection = request.session.get('selection', False)
-    if simple_selection == False or not simple_selection.targets :
+    if (simple_selection == False or not simple_selection.targets) and (receptor_class == None and gn == None and aa == None):
         return redirect("/mutations/")
+    
      # local protein list
     proteins = []
     alignment_proteins = []
@@ -2935,7 +2936,7 @@ def designStateDetailsGN(request):
             freq_results[gn][1] = int(round(freq_set2[gn]))
         freq_results[gn][2] = freq_results[gn][0]-freq_results[gn][1]
 
-    table = "<table class=\"display table-striped\"><thead><tr><th>GN</th><th>Desired set</th><th>Undesired set</th><th>Diff</th></tr></thead><tbody>"
+    table = "<table class=\"display table-striped\"><thead><tr><th>GN</th><th>Inactive state</th><th>Active state</th><th>Diff</th></tr></thead><tbody>"
     for gn in freq_results:
         table += "<tr><td>{}</td><td>{}</td><td>{}</td><td class=\"color-column\">{}</td></tr>".format(gn, freq_results[gn][0], freq_results[gn][1], freq_results[gn][2])
     table += "</tbody></table>"
@@ -3222,7 +3223,7 @@ def gprotMutationDesign(request, goal):
         target_class = target.family.slug[:3]
 
         # Collect GTP
-        gtp_couplings = ProteinGProteinPair.objects.filter(source="GuideToPharma")\
+        gtp_couplings = ProteinCouplings.objects.filter(source="GuideToPharma")\
                         .filter(protein__family__slug__startswith=target_class)\
                         .values_list('protein__entry_name', 'g_protein__name', 'transduction')
 
@@ -3236,9 +3237,9 @@ def gprotMutationDesign(request, goal):
             unique_receptors.add(pairing[0])
 
         # Other coupling data
-        other_couplings = ProteinGProteinPair.objects.exclude(source="GuideToPharma")\
-                        .filter(protein__family__slug__startswith=target_class, g_protein_subunit__family__slug__startswith="100_001", logmaxec50_deg__gt=0)\
-                        .values_list('protein__entry_name', 'g_protein__name', 'source', 'logmaxec50_deg', 'g_protein_subunit__entry_name')
+        other_couplings = ProteinCouplings.objects.exclude(source="GuideToPharma")\
+                        .filter(protein__family__slug__startswith=target_class, g_protein_subunit__family__slug__startswith="100_001", logmaxec50__gt=0)\
+                        .values_list('protein__entry_name', 'g_protein__name', 'source', 'logmaxec50', 'g_protein_subunit__entry_name')
 
         coupling_data = {}
         for pairing in other_couplings:

@@ -106,12 +106,14 @@ class Command(BaseCommand):
         gpcr_class = {
             'gpcrdba':'001',
             'gpcrdbb': '002',
+            'gpcrdbb2': '003',
             'gpcrdbc': '004',
             'gpcrdbf': '006',
             }
         set_names = {
             'gpcrdba': "Class A",
             'gpcrdbb': "Class B1",
+            'gpcrdbb2': "Class B2",
             'gpcrdbc': "Class C",
             'gpcrdbf': "Class F",
             }
@@ -144,7 +146,10 @@ class Command(BaseCommand):
                     bw, gpcrdb = g.split('x')
                     h, pos = bw.split('.')
                     try:
-                        rs.residue_position.add(ResidueGenericNumberEquivalent.objects.get(label='{}x{}'.format(h,gpcrdb), scheme__slug=c))
+                        scheme = c
+                        if scheme == "gpcrdbb2":
+                            scheme = "gpcrdbb"
+                        rs.residue_position.add(ResidueGenericNumberEquivalent.objects.get(label='{}x{}'.format(h,gpcrdb), scheme__slug=scheme))
                     except Exception as msg:
                         print(g)
                         print(msg)
