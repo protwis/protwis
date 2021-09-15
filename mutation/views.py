@@ -26,7 +26,7 @@ from interaction.forms import PDBform
 
 from residue.models import Residue,ResidueNumberingScheme, ResidueGenericNumberEquivalent
 from residue.views import ResidueTablesDisplay
-from protein.models import Protein, ProteinSegment, ProteinFamily, ProteinConformation, ProteinGProteinPair
+from protein.models import Protein, ProteinSegment, ProteinFamily, ProteinConformation, ProteinCouplings
 from structure.models import Structure
 
 from seqsign.sequence_signature import SequenceSignature
@@ -3222,7 +3222,7 @@ def gprotMutationDesign(request, goal):
         target_class = target.family.slug[:3]
 
         # Collect GTP
-        gtp_couplings = ProteinGProteinPair.objects.filter(source="GuideToPharma")\
+        gtp_couplings = ProteinCouplings.objects.filter(source="GuideToPharma")\
                         .filter(protein__family__slug__startswith=target_class)\
                         .values_list('protein__entry_name', 'g_protein__name', 'transduction')
 
@@ -3236,9 +3236,9 @@ def gprotMutationDesign(request, goal):
             unique_receptors.add(pairing[0])
 
         # Other coupling data
-        other_couplings = ProteinGProteinPair.objects.exclude(source="GuideToPharma")\
-                        .filter(protein__family__slug__startswith=target_class, g_protein_subunit__family__slug__startswith="100_001", logmaxec50_deg__gt=0)\
-                        .values_list('protein__entry_name', 'g_protein__name', 'source', 'logmaxec50_deg', 'g_protein_subunit__entry_name')
+        other_couplings = ProteinCouplings.objects.exclude(source="GuideToPharma")\
+                        .filter(protein__family__slug__startswith=target_class, g_protein_subunit__family__slug__startswith="100_001", logmaxec50__gt=0)\
+                        .values_list('protein__entry_name', 'g_protein__name', 'source', 'logmaxec50', 'g_protein_subunit__entry_name')
 
         coupling_data = {}
         for pairing in other_couplings:

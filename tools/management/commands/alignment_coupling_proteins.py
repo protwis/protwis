@@ -7,7 +7,7 @@ from django.template.loader import render_to_string
 from django.shortcuts import render
 from django.template import loader
 from django.template import Template, Context
-from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinSegment, ProteinFamily, Gene, ProteinGProtein, ProteinGProteinPair
+from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinSegment, ProteinFamily, Gene, ProteinCouplings
 from residue.models import ResidueGenericNumber, ResidueGenericNumberEquivalent
 from common import definitions
 from common.selection import SelectionItem
@@ -31,7 +31,7 @@ class Command(BaseCommand):
 
 
         ## For GPCRs
-        # couplings = ProteinGProteinPair.objects.filter(source='Aska').distinct('protein').prefetch_related('protein')
+        # couplings = ProteinCouplings.objects.filter(source='Aska').distinct('protein').prefetch_related('protein')
         # print(len(couplings))
 
         # segments = ProteinSegment.objects.filter(proteinfamily="GPCR")
@@ -59,7 +59,7 @@ class Command(BaseCommand):
 
 
         # For Gproteins
-        couplings = ProteinGProteinPair.objects.filter(source='Aska').distinct('g_protein_subunit').prefetch_related('g_protein_subunit')
+        couplings = ProteinCouplings.objects.filter(source='Inoue').distinct('g_protein_subunit').prefetch_related('g_protein_subunit')
         print(len(couplings))
 
         segments = ProteinSegment.objects.filter(proteinfamily="Alpha")
@@ -84,7 +84,3 @@ class Command(BaseCommand):
             f.write(string)
             f.close()
             # break
-
-            
-
-

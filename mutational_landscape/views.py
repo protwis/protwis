@@ -12,7 +12,7 @@ from django.views.decorators.cache import cache_page
 
 import hashlib
 
-from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene, ProteinGProtein, ProteinGProteinPair
+from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene
 from residue.models import Residue, ResiduePositionSet, ResidueSet
 from mutational_landscape.models import NaturalMutations, CancerMutations, DiseaseMutations, PTMs, NHSPrescribings
 

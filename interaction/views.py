@@ -24,7 +24,6 @@ from common.selection import SimpleSelection, Selection, SelectionItem
 from common import definitions
 from common.views import AbsTargetSelection
 from common.alignment import Alignment
-from protein.models import Protein, ProteinFamily, ProteinGProtein, ProteinGProteinPair
 
 import os
 from os import listdir, devnull, makedirs
@@ -650,6 +649,27 @@ def showcalculation(request):
 
 # NOTE: this function is solely used by the sitesearch functionality
 def calculate(request, redirect=None):
+    # convert identified interactions to residue features and add them to the session
+    # numbers in lists represent the interaction "hierarchy", i.e. if a residue has more than one
+    # interaction,
+    interaction_name_dict = {
+        'polar_double_neg_protein': [1, 'neg'],
+        'polar_double_pos_protein': [1, 'neg'],
+        'polar_pos_protein': [2, 'pos'],
+        'polar_neg_protein': [3, 'neg'],
+        'polar_neg_ligand': [4, 'hbd'],
+        'polar_pos_ligand': [5, 'hba'],
+        'polar_unknown_protein': [5, 'charge'],
+        'polar_donor_protein': [6, 'hbd'],
+        'polar_acceptor_protein': [7, 'hba'],
+        'polar_unspecified': [8, 'hb'],
+        'aro_ff': [9, 'ar'],
+        'aro_ef_protein': [10, 'ar'],
+        'aro_fe_protein':  [11, 'ar'],
+        'aro_ion_protein':  [12, 'pos'],
+        'aro_ion_ligand':  [12, 'ar'],
+    }
+
     if request.method == 'POST':
         form = PDBform(request.POST, request.FILES)
         if form.is_valid():
@@ -704,7 +724,7 @@ def calculate(request, redirect=None):
                 runusercalculation(pdbname, session_key)
 
             # MAPPING GPCRdb numbering onto pdb.
-            generic_numbering = GenericNumbering(temp_path,top_results=1)
+            generic_numbering = GenericNumbering(temp_path,top_results=1, blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_gpcr_blastdb']))
             out_struct = generic_numbering.assign_generic_numbers()
             structure_residues = generic_numbering.residues
             prot_id_list = generic_numbering.prot_id_list
@@ -935,27 +955,6 @@ def calculate(request, redirect=None):
                 selection = Selection()
                 if simple_selection:
                     selection.importer(simple_selection)
-
-                # convert identified interactions to residue features and add them to the session
-                # numbers in lists represent the interaction "hierarchy", i.e. if a residue has more than one
-                # interaction,
-                interaction_name_dict = {
-                    'polar_double_neg_protein': [1, 'neg'],
-                    'polar_double_pos_protein': [1, 'neg'],
-                    'polar_pos_protein': [2, 'pos'],
-                    'polar_neg_protein': [3, 'neg'],
-                    'polar_neg_ligand': [4, 'hbd'],
-                    'polar_pos_ligand': [5, 'hba'],
-                    'polar_unknown_protein': [5, 'charge'],
-                    'polar_donor_protein': [6, 'hbd'],
-                    'polar_acceptor_protein': [7, 'hba'],
-                    'polar_unspecified': [8, 'hb'],
-                    'aro_ff': [9, 'ar'],
-                    'aro_ef_protein': [10, 'ar'],
-                    'aro_fe_protein':  [11, 'ar'],
-                    'aro_ion_protein':  [12, 'pos'],
-                    'aro_ion_ligand':  [12, 'ar'],
-                }
 
                 interaction_counter = 0
                 for gn, interactions in simple_generic_number[mainligand].items():
