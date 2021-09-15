@@ -412,6 +412,106 @@ def TargetPurchasabilityDetails(request, **kwargs):
 
     return render(request, 'target_purchasability_details.html', context)
 
+#Biased Effector Family Browser
+class BiasTargetSelection(AbsReferenceSelectionTable):
+    step = 1
+    number_of_steps = 1
+    filters = False
+    filter_tableselect = False
+    family_tree = False
+    docs = 'sequences.html#structure-based-alignments'
+    title = "SELECT RECEPTORS with ligands biased for a G protein or arrestin family (relative to an endogenous reference ligand)"
+    description = 'Select a receptor in the table (below) or browse the classification tree (center).\nThen click a green button (right)'
+    selection_boxes = OrderedDict([
+        ('reference', False),
+        ('targets', True),
+        ('segments', False),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
+            'onclick': "submitSelection('/ligand/biased');",
+            'color': 'success',
+        },
+        "pathway": {
+            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
+            "modal": "path_bias",
+            "color": 'default active',
+            "sameSize": True,
+        },
+        "biased": {
+            "label": "Biased ligands<br>(any reference ligand)",
+            "modal": "biased",
+            "color": 'default active',
+            "sameSize": True,
+        },
+    }
+
+    table_data = getReferenceTable("different_family", "tested_assays")
+
+#Biased Pathway Preferred Browser
+class BiasPredictionTargetSelection(AbsReferenceSelectionTable):
+    step = 1
+    number_of_steps = 1
+    filters = False
+    filter_tableselect = False
+    family_tree = False
+    docs = 'sequences.html#structure-based-alignments'
+    title = "SELECT RECEPTORS to retrieve ligands with a preferred G protein or arrestin pathway (ΔLog(Emax/EC50  values across pathways for one ligand (no reference ligand)))"
+    description = 'Select a receptor in the table (below) or browse the classification tree (center).\nThen click the green button (right)'
+    selection_boxes = OrderedDict([
+        ('reference', False),
+        ('targets', True),
+        ('segments', False),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Physiology-biased ligands<br>(no reference ligand)',
+            'onclick': "submitSelection('/ligand/biasedpredicted');",
+            'color': 'success',
+        },
+    }
+
+    table_data = getReferenceTable('predicted_family', 'predicted_tested_assays')
+
+#Biased Subtype Browser
+class BiasGTargetSelection(AbsReferenceSelectionTable):
+    step = 1
+    number_of_steps = 1
+    filters = False
+    filter_tableselect = False
+    family_tree = False
+    docs = 'sequences.html#structure-based-alignments'
+    title = "SELECT RECEPTORS with ligands biased for a G protein or arrestin subtype"
+    description = 'Select a receptor in the table (below) or browse the classification tree (center).\nThen click a green button (right)'
+    selection_boxes = OrderedDict([
+        ('reference', False),
+        ('targets', True),
+        ('segments', False),
+    ])
+    buttons = {
+        "continue": {
+            "label": "Physiology-biased ligands<br>(endogenous agonist reference)",
+            "onclick": "submitSelection('/ligand/biasedsubtypes');",
+            "color": 'success',
+            "sameSize": True,
+        },
+        "pathway": {
+            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
+            "modal": "path_bias",
+            "color": 'default active',
+            "sameSize": True,
+        },
+        "biased": {
+            "label": "Biased ligands<br>(any reference ligand)",
+            "modal": "biased",
+            "color": 'default active',
+            "sameSize": True,
+        },
+    }
+
+    table_data = getReferenceTable("sub_different_family", "sub_tested_assays")
+
 class RankOrderSelection(AbsReferenceSelectionTable):
     step = 1
     number_of_steps = 1
@@ -428,9 +528,21 @@ class RankOrderSelection(AbsReferenceSelectionTable):
     ])
     buttons = {
         'continue': {
-            'label': 'Next',
+            'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
             'onclick': "submitSelection('/ligand/emax_rankorder');",
             'color': 'success',
+        },
+        "pathway": {
+            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
+            "modal": "path_bias",
+            "color": 'default active',
+            "sameSize": True,
+        },
+        "biased": {
+            "label": "Biased ligands<br>(any reference ligand)",
+            "modal": "biased",
+            "color": 'default active',
+            "sameSize": True,
         },
     }
 
@@ -452,9 +564,21 @@ class TauRankOrderSelection(AbsReferenceSelectionTable):
     ])
     buttons = {
         'continue': {
-            'label': 'Next',
+            'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
             'onclick': "submitSelection('/ligand/tau_rankorder');",
             'color': 'success',
+        },
+        "pathway": {
+            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
+            "modal": "path_bias",
+            "color": 'default active',
+            "sameSize": True,
+        },
+        "biased": {
+            "label": "Biased ligands<br>(any reference ligand)",
+            "modal": "biased",
+            "color": 'default active',
+            "sameSize": True,
         },
     }
 
@@ -476,9 +600,21 @@ class TauSubtypeRankOrderSelection(AbsReferenceSelectionTable):
     ])
     buttons = {
         'continue': {
-            'label': 'Next',
+            'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
             'onclick': "submitSelection('/ligand/subtype_tau_rankorder');",
             'color': 'success',
+        },
+        "pathway": {
+            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
+            "modal": "path_bias",
+            "color": 'default active',
+            "sameSize": True,
+        },
+        "biased": {
+            "label": "Biased ligands<br>(any reference ligand)",
+            "modal": "biased",
+            "color": 'default active',
+            "sameSize": True,
         },
     }
 
@@ -500,9 +636,21 @@ class EmaxPathProfileSelection(AbsReferenceSelectionTable):
     ])
     buttons = {
         'continue': {
-            'label': 'Next',
+            'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
             'onclick': "submitSelection('/ligand/emax_path_profiles');",
             'color': 'success',
+        },
+        "pathway": {
+            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
+            "modal": "path_bias",
+            "color": 'default active',
+            "sameSize": True,
+        },
+        "biased": {
+            "label": "Biased ligands<br>(any reference ligand)",
+            "modal": "biased",
+            "color": 'default active',
+            "sameSize": True,
         },
     }
 
@@ -524,9 +672,21 @@ class TauPathProfileSelection(AbsReferenceSelectionTable):
     ])
     buttons = {
         'continue': {
-            'label': 'Next',
+            'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
             'onclick': "submitSelection('/ligand/tau_path_profiles');",
             'color': 'success',
+        },
+        "pathway": {
+            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
+            "modal": "path_bias",
+            "color": 'default active',
+            "sameSize": True,
+        },
+        "biased": {
+            "label": "Biased ligands<br>(any reference ligand)",
+            "modal": "biased",
+            "color": 'default active',
+            "sameSize": True,
         },
     }
 
@@ -548,9 +708,21 @@ class TauSubtypePathProfileSelection(AbsReferenceSelectionTable):
     ])
     buttons = {
         'continue': {
-            'label': 'Next',
+            'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
             'onclick': "submitSelection('/ligand/subtype_tau_path_profiles');",
             'color': 'success',
+        },
+        "pathway": {
+            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
+            "modal": "path_bias",
+            "color": 'default active',
+            "sameSize": True,
+        },
+        "biased": {
+            "label": "Biased ligands<br>(any reference ligand)",
+            "modal": "biased",
+            "color": 'default active',
+            "sameSize": True,
         },
     }
 
@@ -572,7 +744,7 @@ class EmaxPathPrefRankOrderSelection(AbsReferenceSelectionTable):
     ])
     buttons = {
         'continue': {
-            'label': 'Next',
+            'label': 'Physiology-biased ligands<br>(no reference ligand)',
             'onclick': "submitSelection('/ligand/path_preference_emax_rankorder');",
             'color': 'success',
         },
@@ -597,7 +769,7 @@ class EmaxPathPrefPathProfilesSelection(AbsReferenceSelectionTable):
     ])
     buttons = {
         'continue': {
-            'label': 'Next',
+            'label': 'Physiology-biased ligands<br>(no reference ligand)',
             'onclick': "submitSelection('/ligand/path_preference_emax_path_profiles');",
             'color': 'success',
         },
@@ -622,9 +794,21 @@ class EmaxSubtypeRankOrderSelection(AbsReferenceSelectionTable):
     ])
     buttons = {
         'continue': {
-            'label': 'Next',
+            'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
             'onclick': "submitSelection('/ligand/subtype_emax_rankorder');",
             'color': 'success',
+        },
+        "pathway": {
+            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
+            "modal": "path_bias",
+            "color": 'default active',
+            "sameSize": True,
+        },
+        "biased": {
+            "label": "Biased ligands<br>(any reference ligand)",
+            "modal": "biased",
+            "color": 'default active',
+            "sameSize": True,
         },
     }
 
@@ -646,9 +830,21 @@ class EmaxSubtypePathProfilesSelection(AbsReferenceSelectionTable):
     ])
     buttons = {
         'continue': {
-            'label': 'Next',
+            'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
             'onclick': "submitSelection('/ligand/subtype_emax_path_profiles');",
             'color': 'success',
+        },
+        "pathway": {
+            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
+            "modal": "path_bias",
+            "color": 'default active',
+            "sameSize": True,
+        },
+        "biased": {
+            "label": "Biased ligands<br>(any reference ligand)",
+            "modal": "biased",
+            "color": 'default active',
+            "sameSize": True,
         },
     }
 
@@ -1214,8 +1410,7 @@ class LigandStatistics(TemplateView):
         context['release_notes'] = ReleaseNotes.objects.all()[0]
 
         tree = PhylogeneticTreeGenerator()
-        class_a_data = tree.get_tree_data(
-            ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
+        class_a_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
         context['class_a_options'] = deepcopy(tree.d3_options)
         context['class_a_options']['anchor'] = 'class_a'
         context['class_a_options']['leaf_offset'] = 50
@@ -1576,69 +1771,6 @@ class BiasPathways(TemplateView):
     '''
     End  of Bias Browser
     '''
-
-class BiasTargetSelection(AbsTargetSelectionTable):
-    step = 1
-    number_of_steps = 1
-    filter_tableselect = False
-    docs = 'sequences.html#structure-based-alignments'
-    title = "SELECT RECEPTORS with ligands biased for a G protein or arrestin family (relative to an endogenous reference ligand)"
-    description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
-        + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
-    selection_boxes = OrderedDict([
-        ('reference', False),
-        ('targets', True),
-        ('segments', False),
-    ])
-    buttons = {
-        'continue': {
-            'label': 'Next',
-            'onclick': "submitSelection('/ligand/biased');",
-            'color': 'success',
-        },
-    }
-
-class BiasGTargetSelection(AbsTargetSelectionTable):
-    step = 1
-    number_of_steps = 1
-    filter_tableselect = False
-    docs = 'sequences.html#structure-based-alignments'
-    title = "SELECT RECEPTORS with ligands biased for a G protein or arrestin subtype"
-    description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
-        + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
-    selection_boxes = OrderedDict([
-        ('reference', False),
-        ('targets', True),
-        ('segments', False),
-    ])
-    buttons = {
-        'continue': {
-            'label': 'Next',
-            'onclick': "submitSelection('/ligand/biasedsubtypes');",
-            'color': 'success',
-        },
-    }
-
-class BiasPredictionTargetSelection(AbsTargetSelectionTable):
-    step = 1
-    number_of_steps = 1
-    filter_tableselect = False
-    docs = 'sequences.html#structure-based-alignments'
-    title = "SELECT RECEPTORS to retrieve ligands with a preferred G protein or arrestin pathway (ΔLog(Emax/EC50  values across pathways for one ligand (no reference ligand)))"
-    description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
-        + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
-    selection_boxes = OrderedDict([
-        ('reference', False),
-        ('targets', True),
-        ('segments', False),
-    ])
-    buttons = {
-        'continue': {
-            'label': 'Next',
-            'onclick': "submitSelection('/ligand/biasedpredicted');",
-            'color': 'success',
-        },
-    }
 
 def CachedBiasBrowser(request):
     return CachedBiasBrowsers("biasbrowser", request)
