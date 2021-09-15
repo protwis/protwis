@@ -275,6 +275,15 @@ def getReferenceTable(filtering, assay_type):
             if entry['experiment__receptor__family__slug'] not in ligand_count.keys():
                 ligand_count[entry['experiment__receptor__family__slug']] = [entry['total'], entry['biased']]
 
+        #MOCKUP QUERY FOR BALANCED LIGANDS
+        #THIS IS PURELY A SETUP FOR THE FURTHER
+        #IMPLEMENTATION OF BALANCED LIGAND DATA
+        # ligand_balanced = list(BalancedLigands.objects.values("protein__family__slug")
+        #                                          .annotate(num_ligands=Count("ligand", distinct=True)))
+        # balanced_count = {}
+        # for entry in ligand_balanced:
+        #     balanced_count[entry["protein__family__slug"]] = entry["num_ligands"]
+
         # original code
         # for entry in ligand_set:
         #     ligand_count[entry["protein__family__slug"]] = entry["num_ligands"]
@@ -284,7 +293,7 @@ def getReferenceTable(filtering, assay_type):
               <tr> \
                 <th colspan=1>&nbsp;</th> \
                 <th colspan=5>Receptor classification</th> \
-                <th colspan=2>Number of ligands</th> \
+                <th colspan=3>Number of ligands</th> \
               </tr> \
               <tr> \
                 <th><br><br><input autocomplete='off' class='form-check-input' type='checkbox' onclick='return check_all_targets();'></th> \
@@ -293,8 +302,9 @@ def getReferenceTable(filtering, assay_type):
                 <th style=\"width; 100px;\">Family<br>&nbsp;</th> \
                 <th class=\"text-highlight\">Receptor<br>(UniProt)</th> \
                 <th class=\"text-highlight\">Receptor<br>(GtP)</th> \
-                <th>Tested</th> \
-                <th>Biased (bf≥1)</th> \
+                <th>Tested<br>(total)</th> \
+                <th>Physiology<br>biased</th> \
+                <th>Balanced<br>references</th> \
               </tr> \
             </thead>\
             \n \
@@ -350,6 +360,7 @@ def getReferenceTable(filtering, assay_type):
             <td><span class=\"expand\">{}</span></td> \
             <td>{}</td> \
             <td>{}</td> \
+            <td>{}</td> \
             </tr> \n".format(
                 t['slug'],
                 t['name'],
@@ -361,6 +372,7 @@ def getReferenceTable(filtering, assay_type):
                 t['iuphar'],
                 t['ligand_count'],
                 t['biased_count'],
+                '-', #this should be t['balanced_count']
             )
 
         data_table += "</tbody></table>"
