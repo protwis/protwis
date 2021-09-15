@@ -582,19 +582,19 @@ function linkLikeClick(element, color) {
                     </tr>
                     <tr>
                         <td nowrap>G<sub>i/o</sub></td>
-                        {% for text in table.GiGo %}
+                        {% for text in table.Gio %}
                         <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='ToTable(" {{ text.1}} "); linkLikeClick(this, "purple")' align="center">{{ text.0 }}</td>
                         {% endfor %}
                     </tr>
                     <tr>
                         <td nowrap>G<sub>q/11</sub></td>
-                        {% for text in table.GqG11 %}
+                        {% for text in table.Gq11 %}
                         <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='ToTable(" {{ text.1}} "); linkLikeClick(this, "purple")' align="center">{{ text.0 }}</td>
                         {% endfor %}
                     </tr>
                     <tr>
                         <td nowrap>G<sub>12/13</sub></td>
-                        {% for text in table.G12G13 %}
+                        {% for text in table.G1213 %}
                         <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='ToTable(" {{ text.1}} "); linkLikeClick(this, "purple")' align="center">{{ text.0 }}</td>
                         {% endfor %}
                     </tr>
@@ -693,7 +693,7 @@ $(window).on("load",function() {
     maxLeafNodeLenght = 46;
     var env = "{{ signalling_data|safe }}";
     if(env === "gprot"){
-      conversion = {"Gs":"blue", "Gi/Go":"red", "Gq/G11":"black", "G12/G13":"green"};
+      conversion = {"Gs":"blue", "Gi/o":"red", "Gq/11":"black", "G12/13":"green"};
     } else {
       conversion = {"Beta-arrestin-1":"orange", "Beta-arrestin-2":"purple"};
     };

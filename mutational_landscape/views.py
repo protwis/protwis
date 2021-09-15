@@ -1,4 +1,4 @@
-from django.shortcuts import get_object_or_404, render, redirect
+from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.core.cache import cache
 from django.core.cache import caches
@@ -7,44 +7,36 @@ try:
 except:
     cache_variation = cache
 
-from django.db.models import Count, Min, Sum, Avg, Q
+from django.db.models import Count, Sum, Avg, Q
 from django.views.decorators.cache import cache_page
 
 import hashlib
 
-from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene, ProteinGProtein, ProteinGProteinPair
-from residue.models import Residue, ResiduePositionSet, ResidueSet
-from mutational_landscape.models import NaturalMutations, CancerMutations, DiseaseMutations, PTMs, NHSPrescribings
+from protein.models import Protein, ProteinConformation, ProteinFamily, Gene
+from residue.models import Residue, ResiduePositionSet
+from mutational_landscape.models import NaturalMutations, DiseaseMutations, PTMs, NHSPrescribings
 
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 
-from drugs.models import Drugs
+from interaction.models import ResidueFragmentInteraction
 
 from mutation.functions import *
-from mutation.models import *
+from mutation.models import MutationExperiment
 
 from interaction.models import *
-from interaction.views import ajax #import x-tal interactions
 
-from common import definitions
 from collections import OrderedDict
 from common.views import AbsTargetSelectionTable
-from common.views import AbsSegmentSelection
-from family.views import linear_gradient, color_dict, RGB_to_hex, hex_to_RGB
+from family.views import linear_gradient
 
-import re
 import json
 import numpy as np
-from collections import OrderedDict
 from copy import deepcopy
 
 from io import BytesIO
-import re
-import math
 import unicodedata
 import urllib
 import xlsxwriter #sudo pip3 install XlsxWriter
-import operator
 import string
 
 class TargetSelection(AbsTargetSelectionTable):
@@ -179,8 +171,8 @@ def render_variants(request, protein=None, family=None, download=None, receptor_
             if interaction.rotamer.residue.generic_number:
                 sequence_number = interaction.rotamer.residue.sequence_number
                 # sequence_number = lookup[interaction.rotamer.residue.generic_number.label]
-                label = interaction.rotamer.residue.generic_number.label
-                aa = interaction.rotamer.residue.amino_acid
+                # label = interaction.rotamer.residue.generic_number.label
+                # aa = interaction.rotamer.residue.amino_acid
                 interactiontype = interaction.interaction_type.name
                 if sequence_number not in interaction_data:
                     interaction_data[sequence_number] = []
@@ -353,8 +345,8 @@ def ajaxNaturalMutation(request, slug, **response_kwargs):
         if interaction.rotamer.residue.generic_number:
             sequence_number = interaction.rotamer.residue.sequence_number
             # sequence_number = lookup[interaction.rotamer.residue.generic_number.label]
-            label = interaction.rotamer.residue.generic_number.label
-            aa = interaction.rotamer.residue.amino_acid
+            # label = interaction.rotamer.residue.generic_number.label
+            # aa = interaction.rotamer.residue.amino_acid
             interactiontype = interaction.interaction_type.name
             if sequence_number not in interaction_data:
                 interaction_data[sequence_number] = []
@@ -371,9 +363,7 @@ def ajaxNaturalMutation(request, slug, **response_kwargs):
         for NM in NMs:
 
             SN = NM.residue.sequence_number
-            type = NM.type
-
-            if type == 'missense':
+            if NM.type == 'missense':
                 if NM.sift_score != None and NM.polyphen_score != None:
                     effect = 'deleterious' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else 'tolerated'
                     color = '#e30e0e' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else '#70c070'

@@ -264,7 +264,14 @@ function exportTargets(){
  * @param {string} url The url to go to after synchronizing the target selection
  */
 function submitSelection(url, minimum = 1, maximum = 0) {
-  if (selected_targets.size >= minimum && (maximum === 0 || selected_targets.size <= maximum)) {
+  // Check species selection and assume correct # species if not human
+  let species = $("div#filters-species a.btn.active")[0].innerText.trim();
+  let species_exemption = false;
+  if (species !== "Human"){
+    species_exemption = true;
+  }
+
+  if (species_exemption || (selected_targets.size >= minimum && (maximum === 0 || selected_targets.size <= maximum))) {
     // set CSRF csrf_token
     $.ajaxSetup({
         headers:
