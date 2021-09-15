@@ -973,6 +973,7 @@ class BiasedRankOrder(TemplateView):
                          'Gs': 'G<sub>s</sub>'}
 
         sign_prot_conversion = {'-' : 'None',
+                                None : 'None',
                                 'arrestin-2 (b-arrestin-1)': 'Arrestin 2 (&beta;<sub>1</sub>)',
                                 'arrestin-3 (b-arrestin-2)': 'Arrestin 3 (&beta;<sub>2</sub>)',
                                 'g11': 'G<sub>11</sub>',
@@ -1926,10 +1927,8 @@ class BiasBrowser(ListView):
         assay_qs = AnalyzedAssay.objects.filter(
             order_no__lte=5,
             assay_description='tested_assays',
-
             experiment=OuterRef('pk'),
         ).order_by('order_no')
-
         queryset = AnalyzedExperiment.objects.filter(
             source='different_family',
             receptor__in=protein_list,

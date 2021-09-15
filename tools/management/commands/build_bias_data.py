@@ -115,7 +115,7 @@ class Command(BaseBuild):
         # import pdb; pdb.set_trace()
         print('stage # 11: combining data into common dict is finished')
         # save dataset to model
-        self.save_data_to_model(context, 'different_family')
+        Command.save_data_to_model(context, 'different_family')
         print('stage # 12: saving data to model is finished')
         print('\nStarted processing subtypes')
         ligand_data = Command.separate_ligands(referenced_assay, 'subtypes')
@@ -134,7 +134,7 @@ class Command(BaseBuild):
         # import pdb; pdb.set_trace()
         print('stage # 17: combining data into common dict is finished')
         # save dataset to model
-        self.save_data_to_model(context, 'sub_different_family')
+        Command.save_data_to_model(context, 'sub_different_family')
         print('stage # 18: saving data to model is finished')
 
 
@@ -400,11 +400,12 @@ class Command(BaseBuild):
                     _aux_prot_name = str(i[1]['auxiliary_protein'])
                     _tissue = assay['_tissue']
                     _species = assay['_species']
+                    _pathway = assay['pathway_level']
                     if command == 'inferred':
-                        name = _pub_name+'/'+_ligand_name+'/'+_receptor_name+'/'+_receptor_iso_name+'/'+_aux_prot_name+'/'+_tissue+'/'+_species
+                        name = _pub_name+'/'+_ligand_name+'/'+_receptor_name+'/'+_receptor_iso_name+'/'+_aux_prot_name+'/'+_tissue+'/'+_species+'/'+_pathway
                             # may be add cell line tissue and species and assay type
                     elif command == 'subtypes':
-                        name = _pub_name+'/'+_ligand_name+'/'+_receptor_name+'/'+_receptor_iso_name+'/'+_aux_prot_name+'/'+str(assay['family'])+'/'+_tissue+'/'+_species
+                        name = _pub_name+'/'+_ligand_name+'/'+_receptor_name+'/'+_receptor_iso_name+'/'+_aux_prot_name+'/'+str(assay['family'])+'/'+_tissue+'/'+_species+'/'+_pathway
                              # may be add cell line tissue and species and assay type
                     if name in content:
                         content[name]['assay_list'].append(assay)
@@ -570,12 +571,14 @@ class Command(BaseBuild):
         list_to_remove = list()
         for i in context.items():
             if len(i[1]['assay_list'])>1:
+                for assay in i[1]['assay_list']:
+                    if assay['order_no'] == 0 and assay['delta_emax_ec50'] is None:
+                        list_to_remove.append(i[0])
                 i[1]['biasdata'] = i[1]['assay_list']
                 i[1].pop('assay_list')
                 # calculate log bias
                 Command.calc_bias_factor(i[1]['biasdata'])
                 # Command.calc_potency_and_transduction(i[1]['biasdata'])
-
             else:
                 list_to_remove.append(i[0])
         for experiment in list_to_remove:
@@ -738,7 +741,8 @@ class Command(BaseBuild):
             if name in temp:
                 i[1]['article_quantity'] = temp[name]
 
-    def save_data_to_model(self, context, source):
+    @staticmethod
+    def save_data_to_model(context, source):
         for i in context['data'].items():
             if len(i[1]['biasdata']) > 1:
                 experiment_entry = AnalyzedExperiment(publication=i[1]['publication'],
@@ -858,7 +862,6 @@ class Command(BaseBuild):
                                                      potency=ex['potency'],
                                                      relative_transduction_coef=ex['relative_transduction_coef'],
                                                      transduction_coef=ex['transduction_coef'],
-                                                     t_factor=ex['delta_relative_transduction_coef'],
                                                      log_bias_factor=ex['log_bias_factor'],
                                                      delta_emax_ec50=ex['delta_emax_ec50'],
                                                      effector_family=ex['family'],
@@ -867,5 +870,3 @@ class Command(BaseBuild):
                                                      emax_ligand_reference=ex['ligand']
                                                      )
                     experiment_assay.save()
-            else:
-                self.logger.info('saving error')
