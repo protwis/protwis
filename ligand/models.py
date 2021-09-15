@@ -528,7 +528,6 @@ class AnalyzedAssay(models.Model):
     delta_emax_ec50 = models.FloatField(max_length=60, null=True)
     t_factor = models.CharField(max_length=60, null=True)
     assay_description = models.CharField(max_length=900, null=True)
-    reference_ligand_id= models.CharField(max_length=900, null=True)
     reference_assay_initial = models.ForeignKey(BiasedExperimentAssay, related_name='test_ExperimentAssay.bias_ligand_reference_assay+',
                                           on_delete=models.CASCADE,
                                           null=True, blank=True)
