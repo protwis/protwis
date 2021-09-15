@@ -16,7 +16,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from django.core.cache import cache
 
-from common.views import AbsTargetSelectionTable, Alignment, AbsReferenceSelectionTable, getReferenceTable, BiasLigandSelectionTable
+from common.views import AbsTargetSelectionTable, Alignment, AbsReferenceSelectionTable, getReferenceTable
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
