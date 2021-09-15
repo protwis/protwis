@@ -1293,7 +1293,7 @@ class SignatureMatch():
             ).filter(
                 protein__in=class_proteins,
                 protein__sequence_type__slug='wt'
-                ).exclude(protein__entry_name__endswith='-consensus').prefetch_related('protein','protein__family__parent','protein__species')
+            ).exclude(protein__entry_name__endswith='-consensus').prefetch_related('protein','protein__family__parent','protein__species')
 
         relevant_gns_total = []
         for segment in  self.relevant_segments:
@@ -1384,7 +1384,7 @@ class SignatureMatch():
         #norm = 0.0
         consensus_match = OrderedDict([(x, []) for x in self.relevant_segments])
 
-        if resi_dict_all == None:
+        if resi_dict_all == None or pcf.pk not in resi_dict_all:
             relevant_gns_total = []
             for segment in  self.relevant_segments:
                 for idx, pos in enumerate(self.relevant_gn[self.schemes[0][0]][segment].keys()):

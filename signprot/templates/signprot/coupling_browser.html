@@ -122,7 +122,7 @@
                         </button>
                     </th>
                     <th colspan=5 style='height:35px; text-align:left;'>
-                        Standad Deviation
+                        Standard Deviation
                         <span data-toggle="popover" data-placement="bottom" class="glyphicon glyphicon-info-sign"
                               title="Info" data-content="Standand deviation of G protein family members">
                         </span>
@@ -247,7 +247,7 @@
 
             </table>
             <div id="hide_filter1"></div>
-            {% for n in "x"|rjust:"18" %}
+            {% for n in "x"|rjust:"16" %}
                 <div id="hide_rankfam{{ forloop.counter|add:"12" }}" style="display: none;"></div>
             {% endfor %}
 
@@ -479,7 +479,7 @@
 
             </table>
             <div id="hide_filter2"></div>
-            {% for n in "x"|rjust:"59" %}
+            {% for n in "x"|rjust:"56" %}
                 <div id="hide_ranksub{{ forloop.counter|add:"12" }}" style="display: none;"></div>
             {% endfor %}
 
