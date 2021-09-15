@@ -95,13 +95,13 @@ class LigandBrowser(TemplateView):
 
         return context
 
-    def fetch_receptor_transducers(self, receptor):
+    def fetch_receptor_trunsducers(self, receptor):
         primary = set()
         temp = str()
         temp1 = str()
         secondary = set()
         try:
-            gprotein = ProteinCouplings.objects.filter(protein=receptor)
+            gprotein = ProteinGProteinPair.objects.filter(protein=receptor)
             for x in gprotein:
                 if x.transduction and x.transduction == 'primary':
                     primary.add(x.g_protein.name)
@@ -116,6 +116,7 @@ class LigandBrowser(TemplateView):
         except:
             self.logger.info('receptor not found error')
             return None, None
+
 
 def LigandDetails(request, ligand_id):
     """
