@@ -4,7 +4,6 @@ import math
 import pandas as pd
 import os
 from build.management.commands.base_build import Command as BaseBuild
-from protein.models import ProteinGProteinPair
 from ligand.models import BiasedExperiment, AnalyzedExperiment, AnalyzedAssay
 from django.conf import settings
 
