@@ -5,7 +5,8 @@ import pandas as pd
 import os
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import ProteinCouplings
-from ligand.models import Ligand, BiasedExperiment, AnalyzedExperiment,AnalyzedAssay
+from ligand.models import BiasedExperiment, AnalyzedExperiment, AnalyzedAssay
+from django.conf import settings
 
 
 class Command(BaseBuild):

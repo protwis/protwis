@@ -20,7 +20,7 @@ from common.views import AbsTargetSelectionTable, Alignment, AbsReferenceSelecti
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
-from ligand.models import Ligand, LigandVendorLink,LigandVendors, AnalyzedExperiment, AnalyzedAssay, BiasedPathways, AssayExperiment
+from ligand.models import Ligand,GTP_endogenous_ligand, LigandVendorLink,LigandVendors, AnalyzedExperiment, AnalyzedAssay, BiasedPathways, AssayExperiment, LigandReceptorStatistics
 from protein.models import Protein, ProteinFamily, ProteinCouplings
 from interaction.models import StructureLigandInteraction
 from mutation.models import MutationExperiment
@@ -821,11 +821,11 @@ class BiasedRankOrder(TemplateView):
                         "experiment__ligand",    #ligand_id for hash                    6
                         "experiment__endogenous_ligand__name", #endogenous              7
                         "qualitative_activity",  #activity values                       8
-                        "log_bias_factor_a", #ΔLog(Emax/EC50)                           9
+                        "delta_emax_ec50", #ΔLog(Emax/EC50)                           9
                         "log_bias_factor",  #ΔΔLog(Emax/EC50)                           10
                         "order_no",         #ranking                                    11
-                        "t_coefficient",    #ΔLog(TAU/Ka)                               12
-                        "t_factor",         #ΔΔLog(TAU/Ka)                              13
+                        "relative_transduction_coef",    #ΔLog(TAU/Ka)                               12
+                        "delta_relative_transduction_coef",         #ΔΔLog(TAU/Ka)                              13
                         "quantitive_activity",   #EC 50                                 14
                         "quantitive_efficacy",   #Emax                                  15
                         "reference_assay_initial_id__quantitive_activity", #            16 EC 50 compared drug
@@ -1752,7 +1752,7 @@ class BiasBrowser(ListView):
             pathways_p3=Subquery(assay_qs.values('family')[2:3]),
             pathways_p4=Subquery(assay_qs.values('family')[3:4]),
             pathways_p5=Subquery(assay_qs.values('family')[4:5]),
-            # t_factor
+            # delta_relative_transduction_coef
             delta_relative_transduction_coef_p2_p1=Subquery(assay_qs.values('delta_relative_transduction_coef')[1:2]),
             delta_relative_transduction_coef_p3_p1=Subquery(assay_qs.values('delta_relative_transduction_coef')[2:3]),
             delta_relative_transduction_coef_p4_p1=Subquery(assay_qs.values('delta_relative_transduction_coef')[3:4]),
@@ -1919,7 +1919,7 @@ class BiasGBrowser(ListView):
             pathways_p3=Subquery(assay_qs.values('family')[2:3]),
             pathways_p4=Subquery(assay_qs.values('family')[3:4]),
             pathways_p5=Subquery(assay_qs.values('family')[4:5]),
-            # t_factor
+            # delta_relative_transduction_coef
             delta_relative_transduction_coef_p2_p1=Subquery(assay_qs.values('delta_relative_transduction_coef')[1:2]),
             delta_relative_transduction_coef_p3_p1=Subquery(assay_qs.values('delta_relative_transduction_coef')[2:3]),
             delta_relative_transduction_coef_p4_p1=Subquery(assay_qs.values('delta_relative_transduction_coef')[3:4]),
@@ -2081,7 +2081,7 @@ class BiasPredictionBrowser(ListView):
                 pathways_p3=Subquery(assay_qs.values('family')[2:3]),
                 pathways_p4=Subquery(assay_qs.values('family')[3:4]),
                 pathways_p5=Subquery(assay_qs.values('family')[4:5]),
-                # t_factor
+                # delta_relative_transduction_coef
                 delta_relative_transduction_coef_p2_p1=Subquery(assay_qs.values('delta_relative_transduction_coef')[1:2]),
                 delta_relative_transduction_coef_p3_p1=Subquery(assay_qs.values('delta_relative_transduction_coef')[2:3]),
                 delta_relative_transduction_coef_p4_p1=Subquery(assay_qs.values('delta_relative_transduction_coef')[3:4]),
