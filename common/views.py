@@ -4,14 +4,14 @@ from django.views.generic import TemplateView
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-from django.db.models import Count, Case, When, Min
+from django.db.models import Count, Case, When, Min, Q
 from django.core.cache import cache
 
 from common import definitions
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 from common.selection import SimpleSelection, Selection, SelectionItem
-from ligand.models import AssayExperiment
+from ligand.models import AssayExperiment, AnalyzedAssay
 from structure.models import Structure, StructureModel, StructureComplexModel
 from protein.models import Protein, ProteinFamily, ProteinSegment, Species, ProteinSource, ProteinSet, ProteinCouplings
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent, ResiduePositionSet, Residue
@@ -178,7 +178,7 @@ def getTargetTable():
             t['approved_target'] = "Yes" if p.entry_name in drugtargets_approved else "No"
             t['clinical_target'] = "Yes" if p.entry_name in drugtargets_trials else "No"
 
-            gprotein_families = ["Gs family", "Gi/Go family", "Gq/G11 family", "G12/G13 family"]
+            gprotein_families = ["Gs", "Gi/o", "Gq/11", "G12/13"]
             for gprotein in gprotein_families:
                 if p.entry_name in signaling_data and gprotein in signaling_data[p.entry_name]:
                     t[gprotein] = signaling_data[p.entry_name][gprotein]
@@ -228,6 +228,268 @@ def getTargetTable():
         cache.set("target_table", data_table, 60*60*24*7)
 
     return data_table
+
+def getReferenceTable(filtering, assay_type):
+    cache_key = "reference_table_" + filtering + "_" + assay_type
+    data_table = cache.get(cache_key)
+    # data_table = None
+    if data_table == None:
+        #get all the proteins that are in ligandanalyzedassay
+        biased_proteins = list(AnalyzedAssay.objects.filter(
+                        family__isnull=False,
+                        experiment__source=filtering).values_list(
+                        "experiment__receptor__entry_name").distinct())
+
+        biased_entry_names = [b[0] for b in biased_proteins]
+        #original code
+        proteins = Protein.objects.filter(
+                                          entry_name__in=biased_entry_names,
+                                          sequence_type__slug="wt",
+                                          family__slug__startswith="00",
+                                          species__common_name="Human").prefetch_related(
+            "family",
+            "family__parent__parent__parent"
+        )
+        # Acquired slugs
+        #original code
+        slug_list = [ p.family.slug for p in proteins ]
+        # original code
+        # ligand_set = list(AssayExperiment.objects.values("protein__family__slug")
+        #                                          .annotate(num_ligands=Count("ligand", distinct=True)))
+        #NEW CODE
+        ligand_zero = list(AnalyzedAssay.objects
+            .filter(order_no__lte=1,
+                    experiment__source=filtering,
+                    assay_description=assay_type)
+            .values('experiment__receptor__family__slug',
+                    'experiment__ligand_id')
+            .annotate(orders=Count('order_no', distinct=True))
+            .filter(orders=2)
+            .values('experiment__receptor__family__slug')
+            .annotate(total=Count('experiment__ligand_id', distinct=True))
+            .annotate(biased=Count('log_bias_factor', filter=Q(log_bias_factor__gte=1))))
+
+        #NEW CODE
+        ligand_count = {}
+        for entry in ligand_zero:
+            if entry['experiment__receptor__family__slug'] not in ligand_count.keys():
+                ligand_count[entry['experiment__receptor__family__slug']] = [entry['total'], entry['biased']]
+
+        #MOCKUP QUERY FOR BALANCED LIGANDS
+        #THIS IS PURELY A SETUP FOR THE FURTHER
+        #IMPLEMENTATION OF BALANCED LIGAND DATA
+        # ligand_balanced = list(BalancedLigands.objects.values("protein__family__slug")
+        #                                          .annotate(num_ligands=Count("ligand", distinct=True)))
+        # balanced_count = {}
+        # for entry in ligand_balanced:
+        #     balanced_count[entry["protein__family__slug"]] = entry["num_ligands"]
+
+        # original code
+        # for entry in ligand_set:
+        #     ligand_count[entry["protein__family__slug"]] = entry["num_ligands"]
+
+        data_table = "<table id='uniprot_selection' class='uniprot_selection stripe compact'> \
+            <thead>\
+              <tr> \
+                <th colspan=1>&nbsp;</th> \
+                <th colspan=5>Receptor classification</th> \
+                <th colspan=3>Number of ligands</th> \
+              </tr> \
+              <tr> \
+                <th><br><br><input autocomplete='off' class='form-check-input' type='checkbox' onclick='return check_all_targets();'></th> \
+                <th>Class<br>&nbsp;</th> \
+                <th>Ligand type<br>&nbsp;</th> \
+                <th style=\"width; 100px;\">Family<br>&nbsp;</th> \
+                <th class=\"text-highlight\">Receptor<br>(UniProt)</th> \
+                <th class=\"text-highlight\">Receptor<br>(GtP)</th> \
+                <th>Tested<br>(total)</th> \
+                <th>Physiology<br>biased</th> \
+                <th>Balanced<br>references</th> \
+              </tr> \
+            </thead>\
+            \n \
+            <tbody>\n"
+
+        slug_list = []
+        #link_setup = "<a target=\"_blank\" href=\"{}\"><span class=\"glyphicon glyphicon-new-window btn-xs\"></span></a>"
+        link_setup = "<a target=\"_blank\" href=\"{}\">{}</a>"
+
+        # NEW CODE
+        for p in proteins:
+            # Do not repeat slugs (only unhuman proteins)
+            if p.family.slug in slug_list:
+                continue
+            slug_list.append(p.family.slug)
+            t = {}
+            t['id'] = p.id
+            t['accession'] = p.accession
+            t['name'] = p.entry_name.split("_")[0]
+            t['slug'] = p.family.slug
+            t['class'] = p.family.parent.parent.parent.short().split(' ')[0]
+            t['ligandtype'] = p.family.parent.parent.short()
+            t['family'] = p.family.parent.short()
+            t['uniprot'] = p.entry_short()
+            t['iuphar'] = p.family.name.replace("receptor", '').strip()
+
+            uniprot_links = p.web_links.filter(web_resource__slug='uniprot')
+            if uniprot_links.count() > 0:
+                #t['uniprot_link'] = link_setup.format(p.web_links.filter(web_resource__slug='uniprot')[0])
+                t['uniprot'] = link_setup.format(p.web_links.filter(web_resource__slug='uniprot')[0], t['uniprot'])
+
+            gtop_links = p.web_links.filter(web_resource__slug='gtop')
+            if gtop_links.count() > 0:
+                #t['gtp_link'] = link_setup.format(p.web_links.filter(web_resource__slug='gtop')[0])
+                t['iuphar'] = link_setup.format(p.web_links.filter(web_resource__slug='gtop')[0], t['iuphar'])
+
+            # Ligand count
+            t['ligand_count'] = 0
+            t['biased_cound'] = 0
+            if t['slug'] in ligand_count:
+                t['ligand_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_count[t['slug']][0])
+                t['biased_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_count[t['slug']][1])
+            else:
+                continue
+
+
+            data_table += "<tr> \
+            <td data-sort=\"0\"><input autocomplete='off' class=\"form-check-input\" type=\"checkbox\" name=\"reference\" id=\"{}\" data-entry=\"{}\" entry-value=\"{}\"></td> \
+            <td>{}</td> \
+            <td>{}</td> \
+            <td>{}</td> \
+            <td><span class=\"expand\">{}</span></td> \
+            <td><span class=\"expand\">{}</span></td> \
+            <td>{}</td> \
+            <td>{}</td> \
+            <td>{}</td> \
+            </tr> \n".format(
+                t['slug'],
+                t['name'],
+                t['id'],
+                t['class'],
+                t['ligandtype'],
+                t['family'],
+                t['uniprot'],
+                t['iuphar'],
+                t['ligand_count'],
+                t['biased_count'],
+                '-', #this should be t['balanced_count']
+            )
+
+        data_table += "</tbody></table>"
+        cache.set(cache_key, data_table, 60*60*24*7)
+
+    return data_table
+
+class AbsReferenceSelectionTable(TemplateView):
+
+    """An abstract class for the table reference selection page used in many apps.
+    To use it in another app, create a class-based view that extends this class
+    """
+
+    template_name = 'common/referenceselectiontable.html'
+
+    type_of_selection = 'reference_table'
+    selection_only_receptors = True
+    step = 1
+    number_of_steps = 2
+    title = 'SELECT TARGET'
+    description = 'Select target in the table (below) or browse the classification tree (right). You can select entire target' \
+        + ' families or individual targets.\n\nOnce you have selected all your targets, click the green button.'
+    documentation_url = settings.DOCUMENTATION_URL
+
+    docs = False
+    filters = True
+
+    target_input = False
+
+    default_species = 'Human'
+    default_slug = '000'
+    default_subslug = '00'
+
+    numbering_schemes = False
+    search = False
+    family_tree = True
+    redirect_on_select = True
+    filter_gprotein = False
+    selection_heading = False
+    buttons = {
+        'continue': {
+            'label': 'Continue to next step',
+            'url': '#',
+            'color': 'success',
+        },
+    }
+    # OrderedDict to preserve the order of the boxes
+    selection_boxes = OrderedDict([
+        ('reference', True),
+        ('targets', False),
+        ('segments', False),
+    ])
+
+    # proteins and families
+    #try - except block prevents manage.py from crashing - circular dependencies between protein - common
+    # try:
+    #     if ProteinFamily.objects.filter(slug=default_slug).exists():
+    #         ppf = ProteinFamily.objects.get(slug=default_slug)
+    #         pfs = ProteinFamily.objects.filter(parent=ppf.id).filter(slug__startswith=default_subslug)
+    #         ps = Protein.objects.filter(family=ppf)
+    #         psets = ProteinSet.objects.all().prefetch_related('proteins')
+    #         tree_indent_level = []
+    #         action = 'expand'
+    #         # remove the parent family (for all other families than the root of the tree, the parent should be shown)
+    #         del ppf
+
+            # Load the target table data
+    table_data = getReferenceTable('different_family', 'tested_assays')
+    # except Exception as e:
+    #     pass
+
+    # species
+    sps = Species.objects.all()
+
+    # numbering schemes
+    gns = ResidueNumberingScheme.objects.exclude(slug=settings.DEFAULT_NUMBERING_SCHEME).exclude(slug__in=default_schemes_excluded)
+
+    def get_context_data(self, **kwargs):
+        """Get context from parent class
+
+        (really only relevant for children of this class, as TemplateView does
+        not have any context variables)
+        """
+
+        context = super().get_context_data(**kwargs)
+        # get selection from session and add to context
+        # get simple selection from session
+        simple_selection = self.request.session.get('selection', False)
+
+        # create full selection and import simple selection (if it exists)
+        selection = Selection()
+
+        # on the first page of a workflow, clear the selection (or dont' import from the session)
+        if self.step is not 1:
+            if simple_selection:
+                selection.importer(simple_selection)
+
+        # update session
+        # receptor = Protein.objects.get(entry_name = simple_selection.reference)
+        # context['selection']['receptor_id'] = selection.receptor.id
+        simple_selection = selection.exporter()
+        self.request.session['selection'] = simple_selection
+
+        context['selection'] = {}
+        for selection_box, include in self.selection_boxes.items():
+            if include:
+                context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
+        # if self.filters:
+        #     context['selection']['species'] = selection.species
+        #     context['selection']['annotation'] = selection.annotation
+
+        # get attributes of this class and add them to the context
+        attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
+        for a in attributes:
+            if not(a[0].startswith('__') and a[0].endswith('__')):
+                context[a[0]] = a[1]
+        return context
 
 class AbsTargetSelectionTable(TemplateView):
     """An abstract class for the tablew target selection page used in many apps.
@@ -1254,10 +1516,10 @@ def SelectionGproteinPredefined(request):
     preferred = request.GET['preferred']
 
     conversion = {
-        'Gs family': 'Gs',
-        'Gi/Go family': 'Gi/o',
-        'Gq/G11 family': 'Gq/11',
-        'G12/G13 family': 'G12/13',
+        'Gs': 'Gs',
+        'Gi/o': 'Gi/o',
+        'Gq/11': 'Gq/11',
+        'G12/13': 'G12/13',
         'GPa1 family': 'GPa1 family'
     }
     # get simple selection from session
@@ -1888,6 +2150,73 @@ def ReadTargetInput(request):
             selection_subtype = 'family'
             try:
                 obj = ProteinFamily.objects.get(slug=up_name)
+            except:
+                obj = None
+
+        if obj != None:
+            selection_object = SelectionItem(selection_subtype, obj)
+            selection.add(selection_type, selection_subtype, selection_object)
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+
+    # context
+    context = selection.dict(selection_type)
+
+    return render(request, 'common/selection_lists.html', context)
+
+@csrf_exempt
+def ReadReferenceInput(request):
+    """Receives the data from the input form and adds the selected reference to the selection"""
+
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
+    selection_type = 'reference'
+    selection_subtype = 'protein'
+
+    if request.POST == {}:
+        return render(request, 'common/selection_lists.html', '')
+
+    # Process input names
+    up_names = request.POST['input-targets'].split('\r')
+    for up_name in up_names:
+        up_name = up_name.strip()
+        obj = None
+        if "_" in up_name: # Maybe entry name
+            selection_subtype = 'protein'
+            try:
+                obj = Protein.objects.get(entry_name=up_name.lower())
+            except:
+                obj = None
+        else: # Maybe accession code
+            selection_subtype = 'protein'
+            try:
+                obj = Protein.objects.get(accession=up_name.upper())
+            except:
+                obj = None
+
+        # Try slugs
+        if obj == None and (up_name.isnumeric() or "_" in up_name):
+            selection_subtype = 'family'
+            try:
+                obj = ProteinFamily.objects.get(slug=up_name)
+            except:
+                obj = None
+
+        # # Try id
+        if obj == None and (up_name.isnumeric()):
+            selection_subtype = 'protein'
+            try:
+                obj = up_name
             except:
                 obj = None
 

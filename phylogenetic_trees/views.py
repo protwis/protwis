@@ -1,6 +1,5 @@
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.conf import settings
-from django.core.files import File
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
@@ -9,7 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 from common.views import AbsTargetSelectionTable
 from common.views import AbsSegmentSelection
 from common.views import AbsMiscSelection
-from common.selection import SimpleSelection, Selection, SelectionItem
+from common.selection import Selection, SelectionItem
 from mutation.models import *
 from phylogenetic_trees.PrepareTree import *
 from protein.models import ProteinFamily, ProteinSet, Protein, ProteinSegment, ProteinCouplings
@@ -148,13 +147,12 @@ class Treeclass:
         ################################## FOR BUILDING STATISTICS ONLY##########################
             build_proteins=[]
             if build == '001':
-                cons_prots = []
                 for prot in Protein.objects.filter(sequence_type__slug='consensus', species_id=1):
                     if prot.family.slug.startswith('001') and len(prot.family.slug.split('_'))==3:
                         build_proteins.append(prot)
-                for set in sets:
-                    if set.id==1:
-                        for prot in set.proteins.all():
+                for rset in sets:
+                    if rset.id==1:
+                        for prot in rset.proteins.all():
                             if prot.family.slug.startswith('001_') and prot.species.latin_name=='Homo sapiens':
                                 build_proteins.append(prot)
             else:
@@ -186,7 +184,7 @@ class Treeclass:
         self.famdict = {}
         for n in families:
             self.famdict[self.Tree.trans_0_2_A(n.slug)]=n.name
-        dirname = unique_filename = uuid.uuid4()
+        dirname = uuid.uuid4()
         os.mkdir('/tmp/%s' %dirname)
         infile = open('/tmp/%s/infile' %dirname,'w')
         infile.write('    '+str(self.total)+'    '+str(total_length)+'\n')
@@ -368,12 +366,6 @@ def render_tree_v2(request):
     if phylogeny_input == 'More_prots':
         return render(request, 'phylogenetic_trees/warning.html')
 
-    if ttype == '1':
-        float(total)/4*100
-    else:
-        count = 1900 - 1400/math.sqrt(float(total))
-
-
     protein_data = []
 
     #FIXME remove
@@ -461,9 +453,6 @@ def render_tree_v3(request):
     protein_entries = []
     for pc in proteins:
         protein_entries.append(pc.protein.entry_name)
-
-    # load all
-    cluster_method = 0
 
     # Collect structure annotations
     protein_annotations = {}

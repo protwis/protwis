@@ -1028,6 +1028,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
             #{{v.id}} {{v.range}} {{v.description}} {{v.pdbCcId}} <br><br>
 
     else:
+        d['modifications'] = []
         d['modifications2'] = 'None'
         # print('failed pdbe_mod')
 

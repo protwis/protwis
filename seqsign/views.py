@@ -294,19 +294,20 @@ def render_signature_match_scores(request, cutoff):
         cutoff = int(cutoff)
     )
     signature_match.score_protein_class(get_proteins_from_selection(ss_pos)[0].family.slug[:3])
-    request.session['signature_match'] = {
-        'scores': signature_match.protein_report,
 
-        'scores_pos': signature_match.scores_pos,
-        'scores_neg': signature_match.scores_neg,
-        'protein_signatures': signature_match.protein_signatures,
-        'signatures_pos': signature_match.signatures_pos,
-        'signatures_neg': signature_match.signatures_neg,
-        'signature_filtered': signature_match.signature_consensus,
-        'relevant_gn': signature_match.relevant_gn,
-        'relevant_segments': signature_match.relevant_segments,
-        'numbering_schemes': signature_match.schemes,
-    }
+    # Temp disabling Excel due to issue with serializing SeqSign object
+    # request.session['signature_match'] = {
+    #     'scores': dict(signature_match.protein_report),
+    #     'scores_pos': dict(signature_match.scores_pos),
+    #     'scores_neg': dict(signature_match.scores_neg),
+    #     'protein_signatures': dict(signature_match.protein_signatures),
+    #     'signatures_pos': dict(signature_match.signatures_pos),
+    #     'signatures_neg': dict(signature_match.signatures_neg),
+    #     'signature_filtered': dict(signature_match.signature_consensus),
+    #     'relevant_gn': dict(signature_match.relevant_gn),
+    #     'relevant_segments': dict(signature_match.relevant_segments),
+    #     'numbering_schemes': signature_match.schemes,
+    # }
 
     response = render(
         request,

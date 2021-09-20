@@ -72,7 +72,7 @@
         .label--active {
             font-weight: bold;
         }
-    #circle_100 {
+    #circle_lightgray {
         width: 10px;
         height: 10px;
         -webkit-border-radius: 5px;
@@ -80,7 +80,7 @@
         border-radius: 5px;
         background: LightGray;
     }
-    #circle_500 {
+    #circle_darkgray {
         width: 10px;
         height: 10px;
         -webkit-border-radius: 5px;
@@ -88,7 +88,7 @@
         border-radius: 5px;
         background: DarkGray;
     }
-    #circle_1k {
+    #circle_gray {
         width: 10px;
         height: 10px;
         -webkit-border-radius: 5px;
@@ -96,7 +96,7 @@
         border-radius: 5px;
         background: Gray;
     }
-    #circle_2k {
+    #circle_black {
         width: 10px;
         height: 10px;
         -webkit-border-radius: 5px;
@@ -104,37 +104,6 @@
         border-radius: 5px;
         background: Black;
     }
-    #circle_10 {
-        width: 10px;
-        height: 10px;
-        -webkit-border-radius: 5px;
-        -moz-border-radius: 5px;
-        border-radius: 5px;
-        background: LightSkyBlue;
-    }
-    #circle_20 {
-        width: 10px;
-        height: 10px;
-        -webkit-border-radius: 5px;
-        -moz-border-radius: 5px;
-        border-radius: 5px;
-        background: CornflowerBlue;
-    }
-    #circle_30 {
-        width: 10px;
-        height: 10px;
-        -webkit-border-radius: 5px;
-        -moz-border-radius: 5px;
-        border-radius: 5px;
-        background: Blue;
-    }
-    #circle_40 {
-        width: 10px;
-        height: 10px;
-        -webkit-border-radius: 5px;
-        -moz-border-radius: 5px;
-        border-radius: 5px;
-        background: DarkBlue;
     }
 </style>
 {% endblock %}
@@ -144,17 +113,39 @@
 
 {% block content %}
 
-{% if render != "bias" %}
+<!-- Starting the tab panel section -->
+{% if render != "not_bias" %}
+<ul class="nav nav-tabs">
+  <li class="nav-item active">
+    <a class="nav-link active" data-toggle="tab" href="#physio">Physiology-biased (endogenous reference ligand)</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" data-toggle="tab" href="#path_bias">Pathway-bias (balanced reference ligand)</a>
+  </li>
+</ul>
+<div class="tab-content">
+  <div class="tab-pane container active" id="physio">
+    <br />
+{% endif %}
+{% if render == "not_bias" %}
 <h4>Number of unique ligands per receptor class</h4>
 <table style="width:80% !important" class="table table-stripped">
-{% else %}
+{% elif render == "bias" %}
 <p><h4>Biased ligand counts</h4>
-<h6>Ligands with a bias factor equal or greater to 2</h6></p>
+<h6>The number of ligands with a bias factor equal or greater than 1</h6></p>
+<table style="width:60% !important" class="table table-stripped">
+{% elif render == "pathway" %}
+<p><h4>Pathway preferred ligand counts</h4>
+<h6>The number of ligands with a bias factor equal or greater than 1</h6></p>
+<table style="width:60% !important" class="table table-stripped">
+{% elif render == "subtype" %}
+<p><h4>Pathway preferred ligand counts</h4>
+<h6>The number of ligands with a bias factor equal or greater than 1 (subtype)</h6></p>
 <table style="width:60% !important" class="table table-stripped">
 {% endif %}
     <thead>
         <tr>
-            <td><b>Class<br />(Family)</b></td>
+            <td align="right"><b>Class (Family)</b></td>
             {% for data in ligands_by_class %}
             <td align="center"><b>
               {% if data.name == " T (Taste 2)" %}T2 (Taste&nbsp;2)
@@ -166,6 +157,7 @@
             <td align="center"><b>Total</b></td>
         </tr>
     </thead>
+    {% if render == "not_bias" %}
     <tbody>
         <tr>
             <td>No. ligands</td>
@@ -189,31 +181,67 @@
             <td align="center" style="vertical-align:middle !important; white-space: nowrap; overflow: hidden;"> {{ ligands_total.target_count|floatformat:0 }} ({{ ligands_total.target_percentage|floatformat:0 }})</td>
         </tr>
     </tbody>
+    {% else %}
+    <tbody>
+        <tr>
+            <td>No. biased ligands</td>
+            {% for data in ligands_by_class %}
+            <td align="center" style="vertical-align:middle !important">{{ data.num_ligands|floatformat:0|intcomma }}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ ligands_total.num_ligands|floatformat:0|intcomma }}</td>
+        </tr>
+        <tr>
+            <td nowrap>No. GPCRs with ligand (%)</td>
+            {% for data in ligands_by_class %}
+            <td align="center" style="vertical-align:middle !important">{{ data.target_count|floatformat:0 }} ({{ data.target_percentage|floatformat:0 }})</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important; white-space: nowrap; overflow: hidden;"> {{ ligands_total.target_count|floatformat:0 }} ({{ ligands_total.target_percentage|floatformat:0 }})</td>
+        </tr>
+    </tbody>
+    {% endif %}
     <tr> </tr>
 
 </table>
 
-Specific sets of ligands can be downloaded from the <a href="/ligand">ligand browser</a>.<br />
-Ligand statistics were last updated <strong>{{ release_notes.date|date:"Y-m-d" }}</strong>.<br />
-<br />
-<br />
-{% if render != "bias" %}
-<h4>Ligand coverage of GPCR Classes</h4><br />
-{% else %}
-<h4>Ligand bias coverage of GPCR Classes</h4><br />
+{% if render == "not_bias" %}
+Specific sets of ligands can be downloaded from the <a href="/ligand"> biased ligand browser</a>.<br />
+{% elif render == "bias" %}
+Specific sets of ligands can be downloaded from the <a href="/ligand/biasedbrowser"> biased ligand browser</a>.<br />
+{% elif render == "pathway" %}
+Specific sets of ligands can be downloaded from the <a href="/ligand/biasedpredictedbrowser"> biased ligand browser</a>.<br />
+{% elif render == "subtype" %}
+Specific sets of ligands can be downloaded from the <a href="/ligand/biasedsubtypebrowser"> biased ligand browser</a>.<br />
 {% endif %}
 
-{% if render != "bias" %}
+Biased ligand statistics were last updated <strong>{{ release_notes.date|date:"Y-m-d" }}</strong>.<br />
+<br />
+<br />
+{% if render == "not_bias" %}
+<h4>Ligand coverage of GPCR Classes</h4><br />
+{% else %}
+<h4>Biased ligand coverage by GPCR Class</h4><br />
+{% endif %}
+
+<div>
+  Receptor names:
+    <div class="btn-group" role="group" id="gtp_plus">
+        <button id="UniProtNames" class="btn btn-info active">UniProt</button>
+        <button id="IUPHARNames" class="btn btn-info">IUPHAR</button>
+    </div>
+</div>
+<br />
+
+{% if render == "not_bias" %}
 Circle colors indicate a number of ligands:
 <table style="width:30%">
     <tr>
-        <td ><div id="circle_100"></div></td>
+        <td ><div id="circle_lightgray"></div></td>
         <td> < 100 </td>
-        <td ><div id="circle_500"></div></td>
+        <td ><div id="circle_darkgray"></div></td>
         <td> < 500 </td>
-        <td ><div id="circle_1k"></div></td>
+        <td ><div id="circle_gray"></div></td>
         <td> < 1000 </td>
-        <td ><div id="circle_2k"></div></td>
+        <td ><div id="circle_black"></div></td>
         <td> 1000+</td>
     </tr>
 </table>
@@ -268,26 +296,19 @@ Circle colors indicate a number of ligands:
 Inner circle colors indicate a number of ligands:
 <table style="width:30%">
     <tr>
-        <td ><div id="circle_10"></div></td>
+        <td ><div id="circle_lightgray"></div></td>
         <td> < 10 </td>
-        <td ><div id="circle_20"></div></td>
+        <td ><div id="circle_darkgray"></div></td>
         <td> < 20 </td>
-        <td ><div id="circle_30"></div></td>
+        <td ><div id="circle_gray"></div></td>
         <td> < 30 </td>
-        <td ><div id="circle_40"></div></td>
+        <td ><div id="circle_black"></div></td>
         <td> 30+</td>
     </tr>
 </table>
 {% endif %}
 <br />
-<div>
-  Receptor names:
-    <div class="btn-group" role="group" id="gtp_plus">
-        <button id="UniProtNames" class="btn btn-info active">UniProt</button>
-        <button id="IUPHARNames" class="btn btn-info">IUPHAR</button>
-    </div>
-</div>
-<br />
+
 <script type="text/javascript" charset="utf-8">
     class_a = {{ class_a | safe }};
     class_a_options = {{ class_a_options | safe }};
@@ -305,7 +326,7 @@ Inner circle colors indicate a number of ligands:
     orphan_options = {{ orphan_options | safe }};
     whole_dict = {{ whole_receptors|safe }};
 </script>
-{% if render != "bias" %}
+{% if render == "not_bias" %}
 <script language='javascript'>
   $("#UniProtNames").click(function() {
       $("#UniProtNames").addClass("active");
@@ -401,19 +422,12 @@ $(window).on("load",function() {
 {% endif %}
 <div id="class_a" class="text-center">
   <h4>Class A<br />(Rhodopsin)</h4>
-{% if render == "bias" %}
+{% if render != "not_bias" %}
   <br />
   <div>
     <div style="float: right; position: relative" class="text-center">
       <b>Primary transducer frequency (from low to high)</b>
       <div class="graydiv"></div>
-      <!-- <div style="display: table-row">
-        <div class="bluediv" style="display: table-cell"></div>
-        <div class="reddiv" style="display: table-cell"></div>
-        <div class="graydiv" style="display: table-cell"></div>
-        <div class="greendiv" style="display: table-cell" ></div>
-        <div class="orangediv" style="display: table-cell"></div>
-      </div> -->
     </div>
     <div style="float: left; position: relative" class="text-center">
       <b>Transducers</b> <br />
@@ -674,8 +688,17 @@ $(window).on("load",function() {
     </div>
   </div>
 </div>
-
-
+{% if render != "not_bias" %}
+  </div>
+  <div class="tab-pane container active" id="path_bias">
+    <br />
+      Ligand pathway-bias is calculated relative to a referenced ligand with balanced (near-equal)
+      signaling across two pathways measured in the same system (<b>add pre-print link</b>).<br>
+      GPCRdb is currently collecting such reference ligands and will avail this page when done.<br>
+      Please help by submitting your balanced reference ligands <b>here</b>.
+  </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block addon_js %}
@@ -683,7 +706,7 @@ $(window).on("load",function() {
 <script src="{% static 'home/js/nv.d3.min.js' %}"></script>
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
 <script src="{% static 'home/js/phylo_tree.js' %}"></script>
-{% if render != "bias" %}
+{% if render == "not_bias" %}
 <script type="text/javascript" charset="utf-8">
     $(window).on("load", function () {
         draw_tree(class_a, class_a_options);
