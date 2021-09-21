@@ -4,10 +4,8 @@ import math
 import pandas as pd
 import os
 from build.management.commands.base_build import Command as BaseBuild
-from protein.models import ProteinCouplings
 from ligand.models import BiasedExperiment, AnalyzedExperiment, AnalyzedAssay
 from django.conf import settings
-
 
 class Command(BaseBuild):
     mylog = logging.getLogger(__name__)
@@ -157,11 +155,8 @@ class Command(BaseBuild):
             fin_obj = {}
             fin_obj['main'] = (instance[1])
             vendor_counter = 0
-            vendors_quantity = None
             for i in instance[1].experiment_data_vendors.all():
                 vendor_counter = vendor_counter + 1
-                if not vendor_counter:
-                    vendors_quantity = i
 
             for entry in instance[1].experiment_data.all():
                 author_list = list()
@@ -316,11 +311,7 @@ class Command(BaseBuild):
         '''
         separate tested assays and reference assays
         '''
-        return_list = list()
-        counter = 0
         for j in data.items():
-            counter = counter+1
-            return_dict = dict()
             assays, reference = Command.return_refenced_assays(j[1]['assay'])
             j[1]['assay_list'] = assays
             j[1]['reference_assays_list'] = reference
@@ -477,7 +468,6 @@ class Command(BaseBuild):
     def limit_family_set(assay_list, command):
         families = list()
         proteins = set()
-        test = int()
         if command == 'inferred':
             option = 'family'
         else:

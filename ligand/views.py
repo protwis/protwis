@@ -2019,12 +2019,6 @@ class BiasGBrowser(ListView):
             experiment=OuterRef('pk'),
         ).order_by('order_no')
 
-        ref_assay_qs = AnalyzedAssay.objects.filter(
-            order_no__lte=5,
-            assay_description='sub_endogenous',
-            experiment=OuterRef('pk'),
-        ).order_by('order_no')
-
         queryset = AnalyzedExperiment.objects.filter(
             source='sub_different_family',
             receptor__in=protein_list,
