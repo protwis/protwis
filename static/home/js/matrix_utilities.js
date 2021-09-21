@@ -1,4 +1,5 @@
-/*global Papa,d3,yadcf,showPDBtable,showAlert, _, signprotmat, con_seq, non_interactions,interactions_metadata,interactions,gprot,receptor*/
+/*global Papa,d3,yadcf,showPDBtable,showAlert, _, signprotmat, con_seq, non_interactions,interactions_metadata,interactions,gprot,receptor,csrf_token*/
+/*eslint complexity: ["error", 20]*/
 
 let pdb_sel = [];
 
@@ -44,7 +45,7 @@ const get_gn = function() {
       segments.push(comb_gn);
       orig.push(curr);
     }
-  };
+  }
   return {
     orig: _.uniq(orig),
     label: _.uniq(segments)
@@ -77,7 +78,7 @@ const get_ignore = function() {
   // but also exclude all proteins that already
   // have an interaction registered in the data_int object
   const ignore_markers = data_non.reduce(function(acc, current) {
-    let protein_array = data_int[current.rec_gn]
+    let protein_array = data_int[current.rec_gn];
     if (!protein_array.includes(current.pdb_id)) {
       acc[current.rec_gn] = [current.pdb_id.toLowerCase()].concat(acc[current.rec_gn]);
     }
@@ -90,107 +91,11 @@ const get_ignore = function() {
   //}
 
   return ignore_markers;
-}
+};
 
 const get_receptor_classes = function(receptor_metadata, pdb_id_array) {
   return receptor_metadata.filter((x) => pdb_id_array.includes(x.pdb_id)).map((x) => x.class);
 }
-
-const run_seq_sig = function(interface_data) {
-  let segments = get_gn();
-  let ignore_markers = get_ignore();
-  var selected_receptor_classes = get_receptor_classes(interactions_metadata, pdb_sel);
-
-  if (pos_set.length < 1) {
-    showAlert("No valid set selected.", "warning");
-    return;
-  };
-
-  if (_.isEqual(old_sets.sort(), pos_set.sort())) {
-    showAlert("The selected set is identical to the previously selected one.", "warning");
-    return;
-  };
-
-  // api request
-  let req = $.ajax({
-    type: "POST",
-    url: "/signprot/matrix/seqsig/",
-    data: {
-      csrfmiddlewaretoken: csrf_token,
-      pos: pos_set,
-      seg: segments.label,
-      selectedreceptorclasses: selected_receptor_classes,
-      ignore: JSON.stringify(ignore_markers),
-    },
-    beforeSend() {
-      old_sets = pos_set;
-    },
-    success(data) {
-      $(".svg-content.seqsig").remove();
-      $(".svg-content.conseq").remove();
-
-      // sorting data correctly, first by frequency; then by length
-      let tmp_data = {}
-      for (let rec_gn in data.feat) {
-        let position = _.orderBy(
-          data.feat[rec_gn],
-          ["freq", "sort_score"],
-          ["desc", "asc"]
-        )
-        tmp_data[rec_gn] = position
-      }
-
-      data.feat = tmp_data
-      document.querySelector("#seqsig-container").style.display = "block";
-      document.querySelector("#conseq-container").style.display = "block";
-
-      // Calculate interaction conservation
-      let int_cons_list = {};
-      for (const interaction of interface_data["transformed"]) {
-        let struct = interaction.pdb_id;
-        let gn = interaction.rec_gn;
-        if (typeof(int_cons_list[gn]) == "undefined") {
-          int_cons_list[gn] = [struct];
-        } else {
-          if (int_cons_list[gn].indexOf(struct) === -1) {
-            int_cons_list[gn].push(struct)
-          }
-        }
-      }
-
-      // Add interaction frequencies to residue property data 
-      let struct_count = interface_data["pdbids"].length;
-      for (let i in data.feat){
-        for (const obj of data.feat[i]){
-          if (typeof(int_cons_list[obj.gn]) == "undefined") {
-            obj.int_freq = 0;
-          } else {
-            obj.int_freq = Math.round(int_cons_list[obj.gn].length/struct_count*100,0);
-          }
-        }
-      }
-
-      // d3 draw
-      svg = signprotmat.d3.setup("div#seqsig-svg", "seqsig");
-      signprotmat.d3.draw_seq_sig(
-        data,
-        svg,
-        xScale,
-      );
-
-      initialize_consensus(data.feat);
-
-      // Once done run the signature match
-      run_sig_match();
-    },
-    error(jqXHR, exception) {
-      console.log(jqXHR);
-      console.log(exception);
-    },
-    complete() {
-    }
-  });
-};
 
 const initialize_consensus = function(cons_data) {
   const row_height = 30;
@@ -258,22 +163,34 @@ const initialize_consensus = function(cons_data) {
     con_seq[key] = [cons_data[key][0]];
   };
 
-  non_interactions.push(...data.receptor)
+  non_interactions.push(...data.receptor);
   var gn;
-  var seq_cons_data = []
+  var seq_cons_data = [];
   for (gn of xScale.domain()) {
     if (Object.keys(con_seq).includes(gn)) {
       var aa = con_seq[String(gn)][0]["aa"];
       var seq_cons = parseInt(
-        (_.uniqBy(non_interactions.filter((x) => {x.rec_gn === String(gn);}), "pdb_id")
-          .filter((x) => {pdbScale.domain().includes(x.pdb_id);})
-          .filter((x) => {x.rec_aa === aa;}).length /
+        (_.uniqBy(non_interactions.filter((x) => {
+            x.rec_gn === String(gn);
+          }), "pdb_id")
+          .filter((x) => {
+            pdbScale.domain().includes(x.pdb_id);
+          })
+          .filter((x) => {
+            x.rec_aa === aa;
+          }).length /
           pdbScale.domain().length) *
         100
       );
 
       var sort_code = con_seq[String(gn)][0]["sort_code"].replace("α", "a");
-      var gn_aa = _.uniqBy(non_interactions.filter((x) => {x.rec_gn === String(gn);}), "pdb_id").filter((x) => {pdbScale.domain().includes(x.pdb_id);}).map((x) => {x.rec_aa;});
+      var gn_aa = _.uniqBy(non_interactions.filter((x) => {
+        x.rec_gn === String(gn);
+      }), "pdb_id").filter((x) => {
+        pdbScale.domain().includes(x.pdb_id);
+      }).map((x) => {
+        x.rec_aa;
+      });
       var prop_seq_cons = 0;
       var ignore_sort_code = ["-_", "Sm_any"];
       for (var aa_item of gn_aa) {
@@ -288,6 +205,103 @@ const initialize_consensus = function(cons_data) {
     }
   }
   signprotmat.d3.conSeqUpdate(row_height);
+};
+
+const run_seq_sig = function(interface_data) {
+  let segments = get_gn();
+  let ignore_markers = get_ignore();
+  var selected_receptor_classes = get_receptor_classes(interactions_metadata, pdb_sel);
+
+  if (pos_set.length < 1) {
+    showAlert("No valid set selected.", "warning");
+    return;
+  };
+
+  if (_.isEqual(old_sets.sort(), pos_set.sort())) {
+    showAlert("The selected set is identical to the previously selected one.", "warning");
+    return;
+  };
+
+  // api request
+  let req = $.ajax({
+    type: "POST",
+    url: "/signprot/matrix/seqsig/",
+    data: {
+      csrfmiddlewaretoken: csrf_token,
+      pos: pos_set,
+      seg: segments.label,
+      selectedreceptorclasses: selected_receptor_classes,
+      ignore: JSON.stringify(ignore_markers),
+    },
+    beforeSend() {
+      old_sets = pos_set;
+    },
+    success(data) {
+      $(".svg-content.seqsig").remove();
+      $(".svg-content.conseq").remove();
+
+      // sorting data correctly, first by frequency; then by length
+      let tmp_data = {};
+      for (let rec_gn in data.feat) {
+        let position = _.orderBy(
+          data.feat[rec_gn],
+          ["freq", "sort_score"],
+          ["desc", "asc"]
+        );
+        tmp_data[rec_gn] = position;
+      }
+
+      data.feat = tmp_data;
+      document.querySelector("#seqsig-container").style.display = "block";
+      document.querySelector("#conseq-container").style.display = "block";
+
+      // Calculate interaction conservation
+      let int_cons_list = {};
+      for (const interaction of interface_data["transformed"]) {
+        let struct = interaction.pdb_id;
+        let gn = interaction.rec_gn;
+        if (typeof(int_cons_list[gn]) == "undefined") {
+          int_cons_list[gn] = [struct];
+        } else {
+          if (int_cons_list[gn].indexOf(struct) === -1) {
+            int_cons_list[gn].push(struct);
+          }
+        }
+      }
+
+      // Add interaction frequencies to residue property data
+      let struct_count = interface_data["pdbids"].length;
+      for (let i in data.feat){
+        if (Object.prototype.hasOwnProperty.call(data.feat, i)) {
+          for (const obj of data.feat[i]){
+            if (typeof(int_cons_list[obj.gn]) == "undefined") {
+              obj.int_freq = 0;
+            } else {
+              obj.int_freq = Math.round(int_cons_list[obj.gn].length/struct_count*100,0);
+            }
+          }
+        }
+      }
+
+      // d3 draw
+      svg = signprotmat.d3.setup("div#seqsig-svg", "seqsig");
+      signprotmat.d3.draw_seq_sig(
+        data,
+        svg,
+        xScale,
+      );
+
+      initialize_consensus(data.feat);
+
+      // Once done run the signature match
+      run_sig_match();
+    },
+    error(jqXHR, exception) {
+      console.log(jqXHR);
+      console.log(exception);
+    },
+    complete() {}
+  });
 };
 
 var tableToExcel = (function() {
@@ -670,7 +684,7 @@ const run_sig_match = function() {
           xAxis,
           true
         );
-      })
+      });
       // Recalculate table layout incl. column widths
       yadcf.exResetAllFilters(sigmatch_table);
     },
@@ -685,15 +699,6 @@ const run_sig_match = function() {
     }
   })
 }
-
-const replace_filter_value = function(d) {
-  const num = parseInt($("#currentpairs").text());
-  if (d === "dec") {
-    num > 1 ? $("#currentpairs").text(num - 1) : null;
-  } else if (d === "inc") {
-    $("#currentpairs").text(num + 1);
-  }
-};
 
 const get_max_interface_count = function() {
   // return parseInt($("#single-crystal-group-pdbs-modal-text").text().match(/\d+/))
