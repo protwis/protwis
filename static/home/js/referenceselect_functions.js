@@ -292,10 +292,12 @@ function initTargetTable(elementID) {
             },{
                 targets: 1,
                 className: "text-center"
-            },{
-                targets: 6, //[6,7,9,10,11,12],
-                className: "text-center"
-            },],
+            },
+            // {
+            //     targets: [6,7,8], //[6,7,9,10,11,12],
+            //     className: "text-center"
+            // },
+          ],
         });
 
         yadcf.init(referenceTable,
@@ -366,24 +368,22 @@ function initTargetTable(elementID) {
                     //html5_data: "data-search",
                     column_data_type: "html",
                 },
-                // {
-                //     column_number: 7,
-                //     filter_type: "range_number",
-                //     filter_default_label: ["From", "To"],
-                //     filter_reset_button_text: false,
-                //     style_class: "center",
-                // },
-                // {
-                //     column_number: 8,
-                //     filter_type: "text",
-                //     select_type: "select2",
-                //     html5_data: "data-search",
-                //     filter_default_label: "PDB",
-                //     filter_reset_button_text: false,
-                //     select_type_options: {
-                //         "width": "110px",
-                //     }
-                // },
+                {
+                    column_number: 7,
+                    filter_type: "range_number",
+                    filter_default_label: ["From", "To"],
+                    filter_reset_button_text: false,
+                    // style_class: "center",
+                    column_data_type: "html",
+                },
+                {
+                    column_number: 8,
+                    filter_type: "range_number",
+                    filter_default_label: ["From", "To"],
+                    filter_reset_button_text: false,
+                    // style_class: "center",
+                    column_data_type: "html",
+                },
                 /*{
                     column_number: 7,
                     filter_type: "multi_select",

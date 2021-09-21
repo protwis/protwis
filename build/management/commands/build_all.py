@@ -35,6 +35,11 @@ class Command(BaseCommand):
         if options['test']:
             print('Running in test mode')
 
+        if options['proc']>4:
+            safe_proc_num = 4
+        else:
+            safe_proc_num = options['proc']
+
         phase1 = [
             ['build_common'],
             ['build_citations'],
@@ -45,12 +50,13 @@ class Command(BaseCommand):
             ['build_blast_database'],
             ['build_links'],
             ['build_construct_proteins'],
-            ['build_structures', {'proc': options['proc']}],
+            ['build_structures', {'proc': safe_proc_num}],
             ['build_endogenous_ligands'],
             ['build_consensus_sequences', {'proc': options['proc']}],
             ['build_g_proteins'],
             ['build_consensus_sequences', {'proc': options['proc'], 'signprot': 'Alpha'}],
             ['build_arrestins'],
+            ['build_coupling_data'],
             ['build_consensus_sequences', {'proc': options['proc'], 'signprot': 'Arrestin'}],
             ['build_signprot_complex'],
             ['build_g_protein_structures'],

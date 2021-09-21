@@ -715,6 +715,8 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                             if not uniprot_pos:
                                 uniprot_pos = pos
                             # print(chain,pos,uniprot_pos,uniprot_aa)
+                            if pdbname in ['7EPE','7EPF'] and pos>1000:
+                                continue
                             wt_aa = d['wt_seq'][uniprot_pos-1]
                             prev_receptor = True
                             # if pos==250 or uniprot_pos==250:
@@ -1026,6 +1028,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
             #{{v.id}} {{v.range}} {{v.description}} {{v.pdbCcId}} <br><br>
 
     else:
+        d['modifications'] = []
         d['modifications2'] = 'None'
         # print('failed pdbe_mod')
 

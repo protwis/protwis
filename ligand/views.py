@@ -16,12 +16,12 @@ from django.views.decorators.csrf import csrf_exempt
 
 from django.core.cache import cache
 
-from common.views import AbsTargetSelectionTable, Alignment, AbsReferenceSelectionTable, getReferenceTable, BiasLigandSelectionTable
+from common.views import AbsTargetSelectionTable, Alignment, AbsReferenceSelectionTable, getReferenceTable
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
-from ligand.models import Ligand, GTP_endogenous_ligand, LigandVendorLink,LigandVendors, AnalyzedExperiment, AnalyzedAssay, BiasedPathways, AssayExperiment, LigandReceptorStatistics
-from protein.models import Protein, ProteinFamily, ProteinGProteinPair
+from ligand.models import Ligand,GTP_endogenous_ligand, LigandVendorLink,LigandVendors, AnalyzedExperiment, AnalyzedAssay, BiasedPathways, AssayExperiment, LigandReceptorStatistics
+from protein.models import Protein, ProteinFamily, ProteinCouplings
 from interaction.models import StructureLigandInteraction
 from mutation.models import MutationExperiment
 
@@ -101,7 +101,7 @@ class LigandBrowser(TemplateView):
         temp1 = str()
         secondary = set()
         try:
-            gprotein = ProteinGProteinPair.objects.filter(protein=receptor)
+            gprotein = ProteinCouplings.objects.filter(protein=receptor)
             for x in gprotein:
                 if x.transduction and x.transduction == 'primary':
                     primary.add(x.g_protein.name)
@@ -414,6 +414,109 @@ def TargetPurchasabilityDetails(request, **kwargs):
 
     return render(request, 'target_purchasability_details.html', context)
 
+#Biased Effector Family Browser
+class BiasTargetSelection(AbsReferenceSelectionTable):
+    step = 1
+    number_of_steps = 1
+    filters = False
+    filter_tableselect = False
+    family_tree = False
+    docs = 'sequences.html#structure-based-alignments'
+    title = "SELECT RECEPTORS with ligands biased for a G protein or arrestin family (relative to an endogenous reference ligand)"
+    description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
+        + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
+    selection_boxes = OrderedDict([
+        ('reference', True),
+        ('targets', False),
+        ('segments', False),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
+            'onclick': "submitSelection('/ligand/biased');",
+            'color': 'success',
+        },
+        "pathway": {
+            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
+            "modal": "path_bias",
+            "color": 'default active',
+            "sameSize": True,
+        },
+        "biased": {
+            "label": "Biased ligands<br>(any reference ligand)",
+            "modal": "biased",
+            "color": 'default active',
+            "sameSize": True,
+        },
+    }
+
+    table_data = getReferenceTable("different_family", "tested_assays")
+
+#Biased Pathway Preferred Browser
+class BiasPredictionTargetSelection(AbsReferenceSelectionTable):
+    step = 1
+    number_of_steps = 1
+    filters = False
+    filter_tableselect = False
+    family_tree = False
+    docs = 'sequences.html#structure-based-alignments'
+    title = "SELECT RECEPTORS to retrieve ligands with a preferred G protein or arrestin pathway (ΔLog(Emax/EC50) values across pathways for one ligand (no reference ligand))"
+    description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
+        + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
+    selection_boxes = OrderedDict([
+        ('reference', True),
+        ('targets', False),
+        ('segments', False),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Physiology-biased ligands<br>(no reference ligand)',
+            'onclick': "submitSelection('/ligand/biasedpredicted');",
+            'color': 'success',
+        },
+    }
+
+    table_data = getReferenceTable('predicted_family', 'predicted_tested_assays')
+
+#Biased Subtype Browser
+class BiasGTargetSelection(AbsReferenceSelectionTable):
+    step = 1
+    number_of_steps = 1
+    filters = False
+    filter_tableselect = False
+    family_tree = False
+    docs = 'sequences.html#structure-based-alignments'
+    title = "SELECT RECEPTORS with ligands biased for a G protein or arrestin subtype"
+    description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
+        + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
+    selection_boxes = OrderedDict([
+        ('reference', True),
+        ('targets', False),
+        ('segments', False),
+    ])
+    buttons = {
+        "continue": {
+            "label": "Physiology-biased ligands<br>(endogenous agonist reference)",
+            "onclick": "submitSelection('/ligand/biasedsubtypes');",
+            "color": 'success',
+            "sameSize": True,
+        },
+        "pathway": {
+            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
+            "modal": "path_bias",
+            "color": 'default active',
+            "sameSize": True,
+        },
+        "biased": {
+            "label": "Biased ligands<br>(any reference ligand)",
+            "modal": "biased",
+            "color": 'default active',
+            "sameSize": True,
+        },
+    }
+
+    table_data = getReferenceTable("sub_different_family", "sub_tested_assays")
+
 class RankOrderSelection(AbsReferenceSelectionTable):
     step = 1
     number_of_steps = 1
@@ -430,9 +533,21 @@ class RankOrderSelection(AbsReferenceSelectionTable):
     ])
     buttons = {
         'continue': {
-            'label': 'Next',
+            'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
             'onclick': "submitSelection('/ligand/emax_rankorder');",
             'color': 'success',
+        },
+        "pathway": {
+            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
+            "modal": "path_bias",
+            "color": 'default active',
+            "sameSize": True,
+        },
+        "biased": {
+            "label": "Biased ligands<br>(any reference ligand)",
+            "modal": "biased",
+            "color": 'default active',
+            "sameSize": True,
         },
     }
 
@@ -454,9 +569,21 @@ class TauRankOrderSelection(AbsReferenceSelectionTable):
     ])
     buttons = {
         'continue': {
-            'label': 'Next',
+            'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
             'onclick': "submitSelection('/ligand/tau_rankorder');",
             'color': 'success',
+        },
+        "pathway": {
+            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
+            "modal": "path_bias",
+            "color": 'default active',
+            "sameSize": True,
+        },
+        "biased": {
+            "label": "Biased ligands<br>(any reference ligand)",
+            "modal": "biased",
+            "color": 'default active',
+            "sameSize": True,
         },
     }
 
@@ -478,9 +605,21 @@ class TauSubtypeRankOrderSelection(AbsReferenceSelectionTable):
     ])
     buttons = {
         'continue': {
-            'label': 'Next',
+            'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
             'onclick': "submitSelection('/ligand/subtype_tau_rankorder');",
             'color': 'success',
+        },
+        "pathway": {
+            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
+            "modal": "path_bias",
+            "color": 'default active',
+            "sameSize": True,
+        },
+        "biased": {
+            "label": "Biased ligands<br>(any reference ligand)",
+            "modal": "biased",
+            "color": 'default active',
+            "sameSize": True,
         },
     }
 
@@ -502,9 +641,21 @@ class EmaxPathProfileSelection(AbsReferenceSelectionTable):
     ])
     buttons = {
         'continue': {
-            'label': 'Next',
+            'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
             'onclick': "submitSelection('/ligand/emax_path_profiles');",
             'color': 'success',
+        },
+        "pathway": {
+            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
+            "modal": "path_bias",
+            "color": 'default active',
+            "sameSize": True,
+        },
+        "biased": {
+            "label": "Biased ligands<br>(any reference ligand)",
+            "modal": "biased",
+            "color": 'default active',
+            "sameSize": True,
         },
     }
 
@@ -526,9 +677,21 @@ class TauPathProfileSelection(AbsReferenceSelectionTable):
     ])
     buttons = {
         'continue': {
-            'label': 'Next',
+            'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
             'onclick': "submitSelection('/ligand/tau_path_profiles');",
             'color': 'success',
+        },
+        "pathway": {
+            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
+            "modal": "path_bias",
+            "color": 'default active',
+            "sameSize": True,
+        },
+        "biased": {
+            "label": "Biased ligands<br>(any reference ligand)",
+            "modal": "biased",
+            "color": 'default active',
+            "sameSize": True,
         },
     }
 
@@ -550,9 +713,21 @@ class TauSubtypePathProfileSelection(AbsReferenceSelectionTable):
     ])
     buttons = {
         'continue': {
-            'label': 'Next',
+            'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
             'onclick': "submitSelection('/ligand/subtype_tau_path_profiles');",
             'color': 'success',
+        },
+        "pathway": {
+            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
+            "modal": "path_bias",
+            "color": 'default active',
+            "sameSize": True,
+        },
+        "biased": {
+            "label": "Biased ligands<br>(any reference ligand)",
+            "modal": "biased",
+            "color": 'default active',
+            "sameSize": True,
         },
     }
 
@@ -574,7 +749,7 @@ class EmaxPathPrefRankOrderSelection(AbsReferenceSelectionTable):
     ])
     buttons = {
         'continue': {
-            'label': 'Next',
+            'label': 'Physiology-biased ligands<br>(no reference ligand)',
             'onclick': "submitSelection('/ligand/path_preference_emax_rankorder');",
             'color': 'success',
         },
@@ -599,7 +774,7 @@ class EmaxPathPrefPathProfilesSelection(AbsReferenceSelectionTable):
     ])
     buttons = {
         'continue': {
-            'label': 'Next',
+            'label': 'Physiology-biased ligands<br>(no reference ligand)',
             'onclick': "submitSelection('/ligand/path_preference_emax_path_profiles');",
             'color': 'success',
         },
@@ -624,9 +799,21 @@ class EmaxSubtypeRankOrderSelection(AbsReferenceSelectionTable):
     ])
     buttons = {
         'continue': {
-            'label': 'Next',
+            'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
             'onclick': "submitSelection('/ligand/subtype_emax_rankorder');",
             'color': 'success',
+        },
+        "pathway": {
+            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
+            "modal": "path_bias",
+            "color": 'default active',
+            "sameSize": True,
+        },
+        "biased": {
+            "label": "Biased ligands<br>(any reference ligand)",
+            "modal": "biased",
+            "color": 'default active',
+            "sameSize": True,
         },
     }
 
@@ -648,9 +835,21 @@ class EmaxSubtypePathProfilesSelection(AbsReferenceSelectionTable):
     ])
     buttons = {
         'continue': {
-            'label': 'Next',
+            'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
             'onclick': "submitSelection('/ligand/subtype_emax_path_profiles');",
             'color': 'success',
+        },
+        "pathway": {
+            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
+            "modal": "path_bias",
+            "color": 'default active',
+            "sameSize": True,
+        },
+        "biased": {
+            "label": "Biased ligands<br>(any reference ligand)",
+            "modal": "biased",
+            "color": 'default active',
+            "sameSize": True,
         },
     }
 
@@ -777,6 +976,7 @@ class BiasedRankOrder(TemplateView):
                          'Gs': 'G<sub>s</sub>'}
 
         sign_prot_conversion = {'-' : 'None',
+                                None : 'None',
                                 'arrestin-2 (b-arrestin-1)': 'Arrestin 2 (&beta;<sub>1</sub>)',
                                 'arrestin-3 (b-arrestin-2)': 'Arrestin 3 (&beta;<sub>2</sub>)',
                                 'g11': 'G<sub>11</sub>',
@@ -822,11 +1022,11 @@ class BiasedRankOrder(TemplateView):
                         "experiment__ligand",    #ligand_id for hash                    6
                         "experiment__endogenous_ligand__name", #endogenous              7
                         "qualitative_activity",  #activity values                       8
-                        "log_bias_factor_a", #ΔLog(Emax/EC50)                           9
+                        "delta_emax_ec50", #ΔLog(Emax/EC50)                           9
                         "log_bias_factor",  #ΔΔLog(Emax/EC50)                           10
                         "order_no",         #ranking                                    11
-                        "t_coefficient",    #ΔLog(TAU/Ka)                               12
-                        "t_factor",         #ΔΔLog(TAU/Ka)                              13
+                        "relative_transduction_coef",    #ΔLog(TAU/Ka)                               12
+                        "delta_relative_transduction_coef",         #ΔΔLog(TAU/Ka)                              13
                         "quantitive_activity",   #EC 50                                 14
                         "quantitive_efficacy",   #Emax                                  15
                         "reference_assay_initial_id__quantitive_activity", #            16 EC 50 compared drug
@@ -1216,8 +1416,7 @@ class LigandStatistics(TemplateView):
         context['release_notes'] = ReleaseNotes.objects.all()[0]
 
         tree = PhylogeneticTreeGenerator()
-        class_a_data = tree.get_tree_data(
-            ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
+        class_a_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
         context['class_a_options'] = deepcopy(tree.d3_options)
         context['class_a_options']['anchor'] = 'class_a'
         context['class_a_options']['leaf_offset'] = 50
@@ -1579,80 +1778,6 @@ class BiasPathways(TemplateView):
     End  of Bias Browser
     '''
 
-
-class BiasTargetSelection(AbsReferenceSelectionTable):
-    step = 1
-    number_of_steps = 1
-    filters = False
-    filter_tableselect = False
-    family_tree = False
-    title = "SELECT RECEPTORS with ligands biased for a G protein or arrestin family (relative to an endogenous reference ligand)"
-    description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
-        + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
-
-    selection_boxes = OrderedDict([
-        ('reference', True),
-        ('targets', False),
-        ('segments', False),
-    ])
-    buttons = {
-        'continue': {
-            'label': 'Next',
-            'onclick': "submitSelection('/ligand/biased');",
-            'color': 'success',
-        },
-    }
-    table_data = getReferenceTable("different_family", "tested_assays")
-
-
-class BiasGTargetSelection(AbsReferenceSelectionTable):
-    step = 1
-    number_of_steps = 1
-    filters = False
-    filter_tableselect = False
-    family_tree = False
-    title = "SELECT RECEPTORS with ligands biased for a G protein or arrestin subtype"
-    description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
-        + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
-    selection_boxes = OrderedDict([
-        ('reference', True),
-        ('targets', False),
-        ('segments', False),
-    ])
-    buttons = {
-        'continue': {
-            'label': 'Next',
-            'onclick': "submitSelection('/ligand/biasedsubtypes');",
-            'color': 'success',
-        },
-    }
-    table_data = getReferenceTable("sub_different_family", "sub_tested_assays")
-
-
-class BiasPredictionTargetSelection(AbsReferenceSelectionTable):
-    step = 1
-    number_of_steps = 1
-    filters = False
-    filter_tableselect = False
-    family_tree = False
-    title = "SELECT RECEPTORS to retrieve ligands with a preferred G protein or arrestin pathway (ΔLog(Emax/EC50  values across pathways for one ligand (no reference ligand)))"
-    description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
-        + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
-    selection_boxes = OrderedDict([
-        ('reference', True),
-        ('targets', False),
-        ('segments', False),
-    ])
-    buttons = {
-        'continue': {
-            'label': 'Next',
-            'onclick': "submitSelection('/ligand/biasedpredicted');",
-            'color': 'success',
-        },
-    }
-    table_data = getReferenceTable("predicted_family", "predicted_tested_assays")
-
-
 def CachedBiasBrowser(request):
     return CachedBiasBrowsers("biasbrowser", request)
 
@@ -1731,16 +1856,8 @@ class BiasBrowser(ListView):
         assay_qs = AnalyzedAssay.objects.filter(
             order_no__lte=5,
             assay_description='tested_assays',
-
             experiment=OuterRef('pk'),
         ).order_by('order_no')
-
-        ref_assay_qs = AnalyzedAssay.objects.filter(
-            order_no__lte=5,
-            assay_description='endogenous',
-            experiment=OuterRef('pk'),
-        ).order_by('order_no')
-
         queryset = AnalyzedExperiment.objects.filter(
             source='different_family',
             receptor__in=protein_list,
@@ -1759,11 +1876,11 @@ class BiasBrowser(ListView):
             pathways_p3=Subquery(assay_qs.values('family')[2:3]),
             pathways_p4=Subquery(assay_qs.values('family')[3:4]),
             pathways_p5=Subquery(assay_qs.values('family')[4:5]),
-            # t_factor
-            opmodel_p2_p1=Subquery(assay_qs.values('delta_relative_transduction_coef')[1:2]),
-            opmodel_p3_p1=Subquery(assay_qs.values('delta_relative_transduction_coef')[2:3]),
-            opmodel_p4_p1=Subquery(assay_qs.values('delta_relative_transduction_coef')[3:4]),
-            opmodel_p5_p1=Subquery(assay_qs.values('delta_relative_transduction_coef')[4:5]),
+            # delta_relative_transduction_coef
+            delta_relative_transduction_coef_p2_p1=Subquery(assay_qs.values('delta_relative_transduction_coef')[1:2]),
+            delta_relative_transduction_coef_p3_p1=Subquery(assay_qs.values('delta_relative_transduction_coef')[2:3]),
+            delta_relative_transduction_coef_p4_p1=Subquery(assay_qs.values('delta_relative_transduction_coef')[3:4]),
+            delta_relative_transduction_coef_p5_p1=Subquery(assay_qs.values('delta_relative_transduction_coef')[4:5]),
             # log bias factor
             lbf_p2_p1=Subquery(assay_qs.values('log_bias_factor')[1:2]),
             lbf_p3_p1=Subquery(assay_qs.values('log_bias_factor')[2:3]),
@@ -1813,24 +1930,31 @@ class BiasBrowser(ListView):
             emax_p4=Subquery(assay_qs.values('quantitive_efficacy')[3:4]),
             emax_p5=Subquery(assay_qs.values('quantitive_efficacy')[4:5]),
 
-            lbf_part_p1=Subquery(assay_qs.values('delta_emax_ec50')[:1]),
-            lbf_part_p2=Subquery(assay_qs.values('delta_emax_ec50')[1:2]),
-            lbf_part_p3=Subquery(assay_qs.values('delta_emax_ec50')[2:3]),
-            lbf_part_p4=Subquery(assay_qs.values('delta_emax_ec50')[3:4]),
-            lbf_part_p5=Subquery(assay_qs.values('delta_emax_ec50')[4:5]),
-            # reference assay
-            reference_ligand_p1=Subquery(assay_qs.values('reference_ligand_id')[:1]),
-            reference_ligand_p2=Subquery(assay_qs.values('reference_ligand_id')[1:2]),
-            reference_ligand_p3=Subquery(assay_qs.values('reference_ligand_id')[2:3]),
-            reference_ligand_p4=Subquery(assay_qs.values('reference_ligand_id')[3:4]),
-            reference_ligand_p5=Subquery(assay_qs.values('reference_ligand_id')[4:5]),
+            reference_assay_p1=Subquery(assay_qs.values('reference_assay_initial_id')[:1]),
+            reference_assay_p2=Subquery(assay_qs.values('reference_assay_initial_id')[1:2]),
+            reference_assay_p3=Subquery(assay_qs.values('reference_assay_initial_id')[2:3]),
+            reference_assay_p4=Subquery(assay_qs.values('reference_assay_initial_id')[3:4]),
+            reference_assay_p5=Subquery(assay_qs.values('reference_assay_initial_id')[4:5]),
+
+            pathway_level_p1=Subquery(assay_qs.values('pathway_level')[:1]),
+            pathway_level_p2=Subquery(assay_qs.values('pathway_level')[1:2]),
+            pathway_level_p3=Subquery(assay_qs.values('pathway_level')[2:3]),
+            pathway_level_p4=Subquery(assay_qs.values('pathway_level')[3:4]),
+            pathway_level_p5=Subquery(assay_qs.values('pathway_level')[4:5]),
+
+            # pathway_level
+            delta_emax_ec50_part_p1=Subquery(assay_qs.values('delta_emax_ec50')[:1]),
+            delta_emax_ec50_part_p2=Subquery(assay_qs.values('delta_emax_ec50')[1:2]),
+            delta_emax_ec50_part_p3=Subquery(assay_qs.values('delta_emax_ec50')[2:3]),
+            delta_emax_ec50_part_p4=Subquery(assay_qs.values('delta_emax_ec50')[3:4]),
+            delta_emax_ec50_part_p5=Subquery(assay_qs.values('delta_emax_ec50')[4:5]),
 
             # T factor
-            tfactor_p1=Subquery(assay_qs.values('transduction_coef')[:1]),
-            tfactor_p2=Subquery(assay_qs.values('transduction_coef')[1:2]),
-            tfactor_p3=Subquery(assay_qs.values('transduction_coef')[2:3]),
-            tfactor_p4=Subquery(assay_qs.values('transduction_coef')[3:4]),
-            tfactor_p5=Subquery(assay_qs.values('transduction_coef')[4:5]),
+            relative_transduction_coef_p1=Subquery(assay_qs.values('relative_transduction_coef')[:1]),
+            relative_transduction_coef_p2=Subquery(assay_qs.values('relative_transduction_coef')[1:2]),
+            relative_transduction_coef_p3=Subquery(assay_qs.values('relative_transduction_coef')[2:3]),
+            relative_transduction_coef_p4=Subquery(assay_qs.values('relative_transduction_coef')[3:4]),
+            relative_transduction_coef_p5=Subquery(assay_qs.values('relative_transduction_coef')[4:5]),
 
             molecule1_p1=Subquery(assay_qs.values('molecule_1')[:1]),
             molecule1_p2=Subquery(assay_qs.values('molecule_1')[1:2]),
@@ -1869,37 +1993,6 @@ class BiasBrowser(ListView):
             measured_biological_process_p3=Subquery(assay_qs.values('measured_biological_process')[2:3]),
             measured_biological_process_p4=Subquery(assay_qs.values('measured_biological_process')[3:4]),
             measured_biological_process_p5=Subquery(assay_qs.values('measured_biological_process')[4:5]),
-
-
-            reference_quantitive_activity_initial_p1=Subquery(ref_assay_qs.values('quantitive_activity_initial')[:1]),
-            reference_quantitive_activity_initial_p2=Subquery(ref_assay_qs.values('quantitive_activity_initial')[1:2]),
-            reference_quantitive_activity_initial_p3=Subquery(ref_assay_qs.values('quantitive_activity_initial')[2:3]),
-            reference_quantitive_activity_initial_p4=Subquery(ref_assay_qs.values('quantitive_activity_initial')[3:4]),
-            reference_quantitive_activity_initial_p5=Subquery(ref_assay_qs.values('quantitive_activity_initial')[4:5]),
-
-            reference_qualitative_activity_p1=Subquery(ref_assay_qs.values('qualitative_activity')[:1]),
-            reference_qualitative_activity_p2=Subquery(ref_assay_qs.values('qualitative_activity')[1:2]),
-            reference_qualitative_activity_p3=Subquery(ref_assay_qs.values('qualitative_activity')[2:3]),
-            reference_qualitative_activity_p4=Subquery(ref_assay_qs.values('qualitative_activity')[3:4]),
-            reference_qualitative_activity_p5=Subquery(ref_assay_qs.values('qualitative_activity')[4:5]),
-
-            reference_quantitive_efficacy_p1=Subquery(ref_assay_qs.values('quantitive_efficacy')[:1]),
-            reference_quantitive_efficacy_p2=Subquery(ref_assay_qs.values('quantitive_efficacy')[1:2]),
-            reference_quantitive_efficacy_p3=Subquery(ref_assay_qs.values('quantitive_efficacy')[2:3]),
-            reference_quantitive_efficacy_p4=Subquery(ref_assay_qs.values('quantitive_efficacy')[3:4]),
-            reference_quantitive_efficacy_p5=Subquery(ref_assay_qs.values('quantitive_efficacy')[4:5]),
-
-            reference_assay_type_p1=Subquery(ref_assay_qs.values('assay_type')[:1]),
-            reference_assay_type_p2=Subquery(ref_assay_qs.values('assay_type')[1:2]),
-            reference_assay_type_p3=Subquery(ref_assay_qs.values('assay_type')[2:3]),
-            reference_assay_type_p4=Subquery(ref_assay_qs.values('assay_type')[3:4]),
-            reference_assay_type_p5=Subquery(ref_assay_qs.values('assay_type')[4:5]),
-
-            reference_a_p1=Subquery(assay_qs.values('delta_emax_ec50')[:1]),
-            reference_a_p2=Subquery(assay_qs.values('delta_emax_ec50')[1:2]),
-            reference_a_p3=Subquery(assay_qs.values('delta_emax_ec50')[2:3]),
-            reference_a_p4=Subquery(assay_qs.values('delta_emax_ec50')[3:4]),
-            reference_a_p5=Subquery(assay_qs.values('delta_emax_ec50')[4:5]),
         )
         return queryset
 
@@ -1926,12 +2019,6 @@ class BiasGBrowser(ListView):
             experiment=OuterRef('pk'),
         ).order_by('order_no')
 
-        ref_assay_qs = AnalyzedAssay.objects.filter(
-            order_no__lte=5,
-            assay_description='sub_endogenous',
-            experiment=OuterRef('pk'),
-        ).order_by('order_no')
-
         queryset = AnalyzedExperiment.objects.filter(
             source='sub_different_family',
             receptor__in=protein_list,
@@ -1950,11 +2037,11 @@ class BiasGBrowser(ListView):
             pathways_p3=Subquery(assay_qs.values('family')[2:3]),
             pathways_p4=Subquery(assay_qs.values('family')[3:4]),
             pathways_p5=Subquery(assay_qs.values('family')[4:5]),
-            # t_factor
-            opmodel_p2_p1=Subquery(assay_qs.values('t_factor')[1:2]),
-            opmodel_p3_p1=Subquery(assay_qs.values('t_factor')[2:3]),
-            opmodel_p4_p1=Subquery(assay_qs.values('t_factor')[3:4]),
-            opmodel_p5_p1=Subquery(assay_qs.values('t_factor')[4:5]),
+            # delta_relative_transduction_coef
+            delta_relative_transduction_coef_p2_p1=Subquery(assay_qs.values('delta_relative_transduction_coef')[1:2]),
+            delta_relative_transduction_coef_p3_p1=Subquery(assay_qs.values('delta_relative_transduction_coef')[2:3]),
+            delta_relative_transduction_coef_p4_p1=Subquery(assay_qs.values('delta_relative_transduction_coef')[3:4]),
+            delta_relative_transduction_coef_p5_p1=Subquery(assay_qs.values('delta_relative_transduction_coef')[4:5]),
             # log bias factor
             lbf_p2_p1=Subquery(assay_qs.values('log_bias_factor')[1:2]),
             lbf_p3_p1=Subquery(assay_qs.values('log_bias_factor')[2:3]),
@@ -2004,24 +2091,31 @@ class BiasGBrowser(ListView):
             emax_p4=Subquery(assay_qs.values('quantitive_efficacy')[3:4]),
             emax_p5=Subquery(assay_qs.values('quantitive_efficacy')[4:5]),
 
-            lbf_part_p1=Subquery(assay_qs.values('log_bias_factor_a')[:1]),
-            lbf_part_p2=Subquery(assay_qs.values('log_bias_factor_a')[1:2]),
-            lbf_part_p3=Subquery(assay_qs.values('log_bias_factor_a')[2:3]),
-            lbf_part_p4=Subquery(assay_qs.values('log_bias_factor_a')[3:4]),
-            lbf_part_p5=Subquery(assay_qs.values('log_bias_factor_a')[4:5]),
-            # reference assay
-            reference_ligand_p1=Subquery(assay_qs.values('reference_ligand_id')[:1]),
-            reference_ligand_p2=Subquery(assay_qs.values('reference_ligand_id')[1:2]),
-            reference_ligand_p3=Subquery(assay_qs.values('reference_ligand_id')[2:3]),
-            reference_ligand_p4=Subquery(assay_qs.values('reference_ligand_id')[3:4]),
-            reference_ligand_p5=Subquery(assay_qs.values('reference_ligand_id')[4:5]),
+            reference_assay_p1=Subquery(assay_qs.values('reference_assay_initial_id')[:1]),
+            reference_assay_p2=Subquery(assay_qs.values('reference_assay_initial_id')[1:2]),
+            reference_assay_p3=Subquery(assay_qs.values('reference_assay_initial_id')[2:3]),
+            reference_assay_p4=Subquery(assay_qs.values('reference_assay_initial_id')[3:4]),
+            reference_assay_p5=Subquery(assay_qs.values('reference_assay_initial_id')[4:5]),
+
+            pathway_level_p1=Subquery(assay_qs.values('pathway_level')[:1]),
+            pathway_level_p2=Subquery(assay_qs.values('pathway_level')[1:2]),
+            pathway_level_p3=Subquery(assay_qs.values('pathway_level')[2:3]),
+            pathway_level_p4=Subquery(assay_qs.values('pathway_level')[3:4]),
+            pathway_level_p5=Subquery(assay_qs.values('pathway_level')[4:5]),
+
+            # pathway_level
+            delta_emax_ec50_part_p1=Subquery(assay_qs.values('delta_emax_ec50')[:1]),
+            delta_emax_ec50_part_p2=Subquery(assay_qs.values('delta_emax_ec50')[1:2]),
+            delta_emax_ec50_part_p3=Subquery(assay_qs.values('delta_emax_ec50')[2:3]),
+            delta_emax_ec50_part_p4=Subquery(assay_qs.values('delta_emax_ec50')[3:4]),
+            delta_emax_ec50_part_p5=Subquery(assay_qs.values('delta_emax_ec50')[4:5]),
 
             # T factor
-            tfactor_p1=Subquery(assay_qs.values('t_value')[:1]),
-            tfactor_p2=Subquery(assay_qs.values('t_value')[1:2]),
-            tfactor_p3=Subquery(assay_qs.values('t_value')[2:3]),
-            tfactor_p4=Subquery(assay_qs.values('t_value')[3:4]),
-            tfactor_p5=Subquery(assay_qs.values('t_value')[4:5]),
+            relative_transduction_coef_p1=Subquery(assay_qs.values('relative_transduction_coef')[:1]),
+            relative_transduction_coef_p2=Subquery(assay_qs.values('relative_transduction_coef')[1:2]),
+            relative_transduction_coef_p3=Subquery(assay_qs.values('relative_transduction_coef')[2:3]),
+            relative_transduction_coef_p4=Subquery(assay_qs.values('relative_transduction_coef')[3:4]),
+            relative_transduction_coef_p5=Subquery(assay_qs.values('relative_transduction_coef')[4:5]),
 
             molecule1_p1=Subquery(assay_qs.values('molecule_1')[:1]),
             molecule1_p2=Subquery(assay_qs.values('molecule_1')[1:2]),
@@ -2034,7 +2128,7 @@ class BiasGBrowser(ListView):
             molecule2_p3=Subquery(assay_qs.values('molecule_2')[2:3]),
             molecule2_p4=Subquery(assay_qs.values('molecule_2')[3:4]),
             molecule2_p5=Subquery(assay_qs.values('molecule_2')[4:5]),
-            # signalling protein
+            # Assay
             assay_p1=Subquery(assay_qs.values('signalling_protein')[:1]),
             assay_p2=Subquery(assay_qs.values('signalling_protein')[1:2]),
             assay_p3=Subquery(assay_qs.values('signalling_protein')[2:3]),
@@ -2060,37 +2154,6 @@ class BiasGBrowser(ListView):
             measured_biological_process_p3=Subquery(assay_qs.values('measured_biological_process')[2:3]),
             measured_biological_process_p4=Subquery(assay_qs.values('measured_biological_process')[3:4]),
             measured_biological_process_p5=Subquery(assay_qs.values('measured_biological_process')[4:5]),
-
-
-            reference_quantitive_activity_initial_p1=Subquery(ref_assay_qs.values('quantitive_activity_initial')[:1]),
-            reference_quantitive_activity_initial_p2=Subquery(ref_assay_qs.values('quantitive_activity_initial')[1:2]),
-            reference_quantitive_activity_initial_p3=Subquery(ref_assay_qs.values('quantitive_activity_initial')[2:3]),
-            reference_quantitive_activity_initial_p4=Subquery(ref_assay_qs.values('quantitive_activity_initial')[3:4]),
-            reference_quantitive_activity_initial_p5=Subquery(ref_assay_qs.values('quantitive_activity_initial')[4:5]),
-
-            reference_qualitative_activity_p1=Subquery(ref_assay_qs.values('qualitative_activity')[:1]),
-            reference_qualitative_activity_p2=Subquery(ref_assay_qs.values('qualitative_activity')[1:2]),
-            reference_qualitative_activity_p3=Subquery(ref_assay_qs.values('qualitative_activity')[2:3]),
-            reference_qualitative_activity_p4=Subquery(ref_assay_qs.values('qualitative_activity')[3:4]),
-            reference_qualitative_activity_p5=Subquery(ref_assay_qs.values('qualitative_activity')[4:5]),
-
-            reference_quantitive_efficacy_p1=Subquery(ref_assay_qs.values('quantitive_efficacy')[:1]),
-            reference_quantitive_efficacy_p2=Subquery(ref_assay_qs.values('quantitive_efficacy')[1:2]),
-            reference_quantitive_efficacy_p3=Subquery(ref_assay_qs.values('quantitive_efficacy')[2:3]),
-            reference_quantitive_efficacy_p4=Subquery(ref_assay_qs.values('quantitive_efficacy')[3:4]),
-            reference_quantitive_efficacy_p5=Subquery(ref_assay_qs.values('quantitive_efficacy')[4:5]),
-
-            reference_assay_type_p1=Subquery(ref_assay_qs.values('assay_type')[:1]),
-            reference_assay_type_p2=Subquery(ref_assay_qs.values('assay_type')[1:2]),
-            reference_assay_type_p3=Subquery(ref_assay_qs.values('assay_type')[2:3]),
-            reference_assay_type_p4=Subquery(ref_assay_qs.values('assay_type')[3:4]),
-            reference_assay_type_p5=Subquery(ref_assay_qs.values('assay_type')[4:5]),
-
-            reference_a_p1=Subquery(assay_qs.values('log_bias_factor_a')[:1]),
-            reference_a_p2=Subquery(assay_qs.values('log_bias_factor_a')[1:2]),
-            reference_a_p3=Subquery(assay_qs.values('log_bias_factor_a')[2:3]),
-            reference_a_p4=Subquery(assay_qs.values('log_bias_factor_a')[3:4]),
-            reference_a_p5=Subquery(assay_qs.values('log_bias_factor_a')[4:5]),
         )
         return queryset
 
@@ -2129,130 +2192,131 @@ class BiasPredictionBrowser(ListView):
             'publication', 'publication__web_link', 'publication__web_link__web_resource',
             'publication__journal', 'ligand__ref_ligand_bias_analyzed',
             'analyzed_data__emax_ligand_reference'
-        ).annotate(
-            # pathways
-            pathways_p1=Subquery(assay_qs.values('family')[:1]),
-            pathways_p2=Subquery(assay_qs.values('family')[1:2]),
-            pathways_p3=Subquery(assay_qs.values('family')[2:3]),
-            pathways_p4=Subquery(assay_qs.values('family')[3:4]),
-            pathways_p5=Subquery(assay_qs.values('family')[4:5]),
-            # t_factor
-            opmodel_p2_p1=Subquery(assay_qs.values('t_factor')[1:2]),
-            opmodel_p3_p1=Subquery(assay_qs.values('t_factor')[2:3]),
-            opmodel_p4_p1=Subquery(assay_qs.values('t_factor')[3:4]),
-            opmodel_p5_p1=Subquery(assay_qs.values('t_factor')[4:5]),
-            # log bias factor
-            lbf_p2_p1=Subquery(assay_qs.values('log_bias_factor')[1:2]),
-            lbf_p3_p1=Subquery(assay_qs.values('log_bias_factor')[2:3]),
-            lbf_p4_p1=Subquery(assay_qs.values('log_bias_factor')[3:4]),
-            lbf_p5_p1=Subquery(assay_qs.values('log_bias_factor')[4:5]),
-            # Potency ratio
-            potency_p2_p1=Subquery(assay_qs.values('potency')[1:2]),
-            potency_p3_p1=Subquery(assay_qs.values('potency')[2:3]),
-            potency_p4_p1=Subquery(assay_qs.values('potency')[3:4]),
-            potency_p5_p1=Subquery(assay_qs.values('potency')[4:5]),
-            # Potency
-            activity_p1=Subquery(assay_qs.values(
-                'quantitive_activity_initial')[:1]),
-            activity_p2=Subquery(assay_qs.values(
-                'quantitive_activity_initial')[1:2]),
-            activity_p3=Subquery(assay_qs.values(
-                'quantitive_activity_initial')[2:3]),
-            activity_p4=Subquery(assay_qs.values(
-                'quantitive_activity_initial')[3:4]),
-            activity_p5=Subquery(assay_qs.values(
-                'quantitive_activity_initial')[4:5]),
-            quality_activity_p1=Subquery(
-                assay_qs.values('qualitative_activity')[:1]),
-            quality_activity_p2=Subquery(
-                assay_qs.values('qualitative_activity')[1:2]),
-            quality_activity_p3=Subquery(
-                assay_qs.values('qualitative_activity')[2:3]),
-            quality_activity_p4=Subquery(
-                assay_qs.values('qualitative_activity')[3:4]),
-            quality_activity_p5=Subquery(
-                assay_qs.values('qualitative_activity')[4:5]),
-            # quality_activity
-            standard_type_p1=Subquery(
-                assay_qs.values('quantitive_measure_type')[:1]),
-            standard_type_p2=Subquery(assay_qs.values(
-                'quantitive_measure_type')[1:2]),
-            standard_type_p3=Subquery(assay_qs.values(
-                'quantitive_measure_type')[2:3]),
-            standard_type_p4=Subquery(assay_qs.values(
-                'quantitive_measure_type')[3:4]),
-            standard_type_p5=Subquery(assay_qs.values(
-                'quantitive_measure_type')[4:5]),
-            # E Max
-            emax_p1=Subquery(assay_qs.values('quantitive_efficacy')[:1]),
-            emax_p2=Subquery(assay_qs.values('quantitive_efficacy')[1:2]),
-            emax_p3=Subquery(assay_qs.values('quantitive_efficacy')[2:3]),
-            emax_p4=Subquery(assay_qs.values('quantitive_efficacy')[3:4]),
-            emax_p5=Subquery(assay_qs.values('quantitive_efficacy')[4:5]),
+            ).annotate(
+                # pathways
+                pathways_p1=Subquery(assay_qs.values('family')[:1]),
+                pathways_p2=Subquery(assay_qs.values('family')[1:2]),
+                pathways_p3=Subquery(assay_qs.values('family')[2:3]),
+                pathways_p4=Subquery(assay_qs.values('family')[3:4]),
+                pathways_p5=Subquery(assay_qs.values('family')[4:5]),
+                # delta_relative_transduction_coef
+                delta_relative_transduction_coef_p2_p1=Subquery(assay_qs.values('delta_relative_transduction_coef')[1:2]),
+                delta_relative_transduction_coef_p3_p1=Subquery(assay_qs.values('delta_relative_transduction_coef')[2:3]),
+                delta_relative_transduction_coef_p4_p1=Subquery(assay_qs.values('delta_relative_transduction_coef')[3:4]),
+                delta_relative_transduction_coef_p5_p1=Subquery(assay_qs.values('delta_relative_transduction_coef')[4:5]),
+                # log bias factor
+                lbf_p2_p1=Subquery(assay_qs.values('log_bias_factor')[1:2]),
+                lbf_p3_p1=Subquery(assay_qs.values('log_bias_factor')[2:3]),
+                lbf_p4_p1=Subquery(assay_qs.values('log_bias_factor')[3:4]),
+                lbf_p5_p1=Subquery(assay_qs.values('log_bias_factor')[4:5]),
+                # Potency ratio
+                potency_p2_p1=Subquery(assay_qs.values('potency')[1:2]),
+                potency_p3_p1=Subquery(assay_qs.values('potency')[2:3]),
+                potency_p4_p1=Subquery(assay_qs.values('potency')[3:4]),
+                potency_p5_p1=Subquery(assay_qs.values('potency')[4:5]),
+                # Potency
+                activity_p1=Subquery(assay_qs.values(
+                    'quantitive_activity_initial')[:1]),
+                activity_p2=Subquery(assay_qs.values(
+                    'quantitive_activity_initial')[1:2]),
+                activity_p3=Subquery(assay_qs.values(
+                    'quantitive_activity_initial')[2:3]),
+                activity_p4=Subquery(assay_qs.values(
+                    'quantitive_activity_initial')[3:4]),
+                activity_p5=Subquery(assay_qs.values(
+                    'quantitive_activity_initial')[4:5]),
+                quality_activity_p1=Subquery(
+                    assay_qs.values('qualitative_activity')[:1]),
+                quality_activity_p2=Subquery(
+                    assay_qs.values('qualitative_activity')[1:2]),
+                quality_activity_p3=Subquery(
+                    assay_qs.values('qualitative_activity')[2:3]),
+                quality_activity_p4=Subquery(
+                    assay_qs.values('qualitative_activity')[3:4]),
+                quality_activity_p5=Subquery(
+                    assay_qs.values('qualitative_activity')[4:5]),
+                # quality_activity
+                standard_type_p1=Subquery(
+                    assay_qs.values('quantitive_measure_type')[:1]),
+                standard_type_p2=Subquery(assay_qs.values(
+                    'quantitive_measure_type')[1:2]),
+                standard_type_p3=Subquery(assay_qs.values(
+                    'quantitive_measure_type')[2:3]),
+                standard_type_p4=Subquery(assay_qs.values(
+                    'quantitive_measure_type')[3:4]),
+                standard_type_p5=Subquery(assay_qs.values(
+                    'quantitive_measure_type')[4:5]),
+                # E Max
+                emax_p1=Subquery(assay_qs.values('quantitive_efficacy')[:1]),
+                emax_p2=Subquery(assay_qs.values('quantitive_efficacy')[1:2]),
+                emax_p3=Subquery(assay_qs.values('quantitive_efficacy')[2:3]),
+                emax_p4=Subquery(assay_qs.values('quantitive_efficacy')[3:4]),
+                emax_p5=Subquery(assay_qs.values('quantitive_efficacy')[4:5]),
 
-            lbf_part_p1=Subquery(assay_qs.values('log_bias_factor_a')[:1]),
-            lbf_part_p2=Subquery(assay_qs.values('log_bias_factor_a')[1:2]),
-            lbf_part_p3=Subquery(assay_qs.values('log_bias_factor_a')[2:3]),
-            lbf_part_p4=Subquery(assay_qs.values('log_bias_factor_a')[3:4]),
-            lbf_part_p5=Subquery(assay_qs.values('log_bias_factor_a')[4:5]),
-            # reference assay
-            reference_ligand_p1=Subquery(assay_qs.values('reference_ligand_id')[:1]),
-            reference_ligand_p2=Subquery(assay_qs.values('reference_ligand_id')[1:2]),
-            reference_ligand_p3=Subquery(assay_qs.values('reference_ligand_id')[2:3]),
-            reference_ligand_p4=Subquery(assay_qs.values('reference_ligand_id')[3:4]),
-            reference_ligand_p5=Subquery(assay_qs.values('reference_ligand_id')[4:5]),
+                reference_assay_p1=Subquery(assay_qs.values('reference_assay_initial_id')[:1]),
+                reference_assay_p2=Subquery(assay_qs.values('reference_assay_initial_id')[1:2]),
+                reference_assay_p3=Subquery(assay_qs.values('reference_assay_initial_id')[2:3]),
+                reference_assay_p4=Subquery(assay_qs.values('reference_assay_initial_id')[3:4]),
+                reference_assay_p5=Subquery(assay_qs.values('reference_assay_initial_id')[4:5]),
 
-            # T factor
-            tfactor_p1=Subquery(assay_qs.values('t_value')[:1]),
-            tfactor_p2=Subquery(assay_qs.values('t_value')[1:2]),
-            tfactor_p3=Subquery(assay_qs.values('t_value')[2:3]),
-            tfactor_p4=Subquery(assay_qs.values('t_value')[3:4]),
-            tfactor_p5=Subquery(assay_qs.values('t_value')[4:5]),
+                pathway_level_p1=Subquery(assay_qs.values('pathway_level')[:1]),
+                pathway_level_p2=Subquery(assay_qs.values('pathway_level')[1:2]),
+                pathway_level_p3=Subquery(assay_qs.values('pathway_level')[2:3]),
+                pathway_level_p4=Subquery(assay_qs.values('pathway_level')[3:4]),
+                pathway_level_p5=Subquery(assay_qs.values('pathway_level')[4:5]),
 
-            molecule1_p1=Subquery(assay_qs.values('molecule_1')[:1]),
-            molecule1_p2=Subquery(assay_qs.values('molecule_1')[1:2]),
-            molecule1_p3=Subquery(assay_qs.values('molecule_1')[2:3]),
-            molecule1_p4=Subquery(assay_qs.values('molecule_1')[3:4]),
-            molecule1_p5=Subquery(assay_qs.values('molecule_1')[4:5]),
-            #molecule
-            molecule2_p1=Subquery(assay_qs.values('molecule_2')[:1]),
-            molecule2_p2=Subquery(assay_qs.values('molecule_2')[1:2]),
-            molecule2_p3=Subquery(assay_qs.values('molecule_2')[2:3]),
-            molecule2_p4=Subquery(assay_qs.values('molecule_2')[3:4]),
-            molecule2_p5=Subquery(assay_qs.values('molecule_2')[4:5]),
-            # signalling protein
-            assay_p1=Subquery(assay_qs.values('signalling_protein')[:1]),
-            assay_p2=Subquery(assay_qs.values('signalling_protein')[1:2]),
-            assay_p3=Subquery(assay_qs.values('signalling_protein')[2:3]),
-            assay_p4=Subquery(assay_qs.values('signalling_protein')[3:4]),
-            assay_p5=Subquery(assay_qs.values('signalling_protein')[4:5]),
+                # pathway_level
+                delta_emax_ec50_part_p1=Subquery(assay_qs.values('delta_emax_ec50')[:1]),
+                delta_emax_ec50_part_p2=Subquery(assay_qs.values('delta_emax_ec50')[1:2]),
+                delta_emax_ec50_part_p3=Subquery(assay_qs.values('delta_emax_ec50')[2:3]),
+                delta_emax_ec50_part_p4=Subquery(assay_qs.values('delta_emax_ec50')[3:4]),
+                delta_emax_ec50_part_p5=Subquery(assay_qs.values('delta_emax_ec50')[4:5]),
 
-            # Cell Line
-            cell_p1=Subquery(assay_qs.values('cell_line')[:1]),
-            cell_p2=Subquery(assay_qs.values('cell_line')[1:2]),
-            cell_p3=Subquery(assay_qs.values('cell_line')[2:3]),
-            cell_p4=Subquery(assay_qs.values('cell_line')[3:4]),
-            cell_p5=Subquery(assay_qs.values('cell_line')[4:5]),
+                # T factor
+                relative_transduction_coef_p1=Subquery(assay_qs.values('relative_transduction_coef')[:1]),
+                relative_transduction_coef_p2=Subquery(assay_qs.values('relative_transduction_coef')[1:2]),
+                relative_transduction_coef_p3=Subquery(assay_qs.values('relative_transduction_coef')[2:3]),
+                relative_transduction_coef_p4=Subquery(assay_qs.values('relative_transduction_coef')[3:4]),
+                relative_transduction_coef_p5=Subquery(assay_qs.values('relative_transduction_coef')[4:5]),
 
-            # Time
-            time_p1=Subquery(assay_qs.values('assay_time_resolved')[:1]),
-            time_p2=Subquery(assay_qs.values('assay_time_resolved')[1:2]),
-            time_p3=Subquery(assay_qs.values('assay_time_resolved')[2:3]),
-            time_p4=Subquery(assay_qs.values('assay_time_resolved')[3:4]),
-            time_p5=Subquery(assay_qs.values('assay_time_resolved')[4:5]),
+                molecule1_p1=Subquery(assay_qs.values('molecule_1')[:1]),
+                molecule1_p2=Subquery(assay_qs.values('molecule_1')[1:2]),
+                molecule1_p3=Subquery(assay_qs.values('molecule_1')[2:3]),
+                molecule1_p4=Subquery(assay_qs.values('molecule_1')[3:4]),
+                molecule1_p5=Subquery(assay_qs.values('molecule_1')[4:5]),
+                #molecule
+                molecule2_p1=Subquery(assay_qs.values('molecule_2')[:1]),
+                molecule2_p2=Subquery(assay_qs.values('molecule_2')[1:2]),
+                molecule2_p3=Subquery(assay_qs.values('molecule_2')[2:3]),
+                molecule2_p4=Subquery(assay_qs.values('molecule_2')[3:4]),
+                molecule2_p5=Subquery(assay_qs.values('molecule_2')[4:5]),
+                # Assay
+                assay_p1=Subquery(assay_qs.values('signalling_protein')[:1]),
+                assay_p2=Subquery(assay_qs.values('signalling_protein')[1:2]),
+                assay_p3=Subquery(assay_qs.values('signalling_protein')[2:3]),
+                assay_p4=Subquery(assay_qs.values('signalling_protein')[3:4]),
+                assay_p5=Subquery(assay_qs.values('signalling_protein')[4:5]),
 
-            measured_biological_process_p1=Subquery(assay_qs.values('measured_biological_process')[:1]),
-            measured_biological_process_p2=Subquery(assay_qs.values('measured_biological_process')[1:2]),
-            measured_biological_process_p3=Subquery(assay_qs.values('measured_biological_process')[2:3]),
-            measured_biological_process_p4=Subquery(assay_qs.values('measured_biological_process')[3:4]),
-            measured_biological_process_p5=Subquery(assay_qs.values('measured_biological_process')[4:5]),
+                # Cell Line
+                cell_p1=Subquery(assay_qs.values('cell_line')[:1]),
+                cell_p2=Subquery(assay_qs.values('cell_line')[1:2]),
+                cell_p3=Subquery(assay_qs.values('cell_line')[2:3]),
+                cell_p4=Subquery(assay_qs.values('cell_line')[3:4]),
+                cell_p5=Subquery(assay_qs.values('cell_line')[4:5]),
 
-            reference_a_p1=Subquery(assay_qs.values('log_bias_factor_a')[:1]),
-            reference_a_p2=Subquery(assay_qs.values('log_bias_factor_a')[1:2]),
-            reference_a_p3=Subquery(assay_qs.values('log_bias_factor_a')[2:3]),
-            reference_a_p4=Subquery(assay_qs.values('log_bias_factor_a')[3:4]),
-            reference_a_p5=Subquery(assay_qs.values('log_bias_factor_a')[4:5]),
-        )
+                # Time
+                time_p1=Subquery(assay_qs.values('assay_time_resolved')[:1]),
+                time_p2=Subquery(assay_qs.values('assay_time_resolved')[1:2]),
+                time_p3=Subquery(assay_qs.values('assay_time_resolved')[2:3]),
+                time_p4=Subquery(assay_qs.values('assay_time_resolved')[3:4]),
+                time_p5=Subquery(assay_qs.values('assay_time_resolved')[4:5]),
+
+                measured_biological_process_p1=Subquery(assay_qs.values('measured_biological_process')[:1]),
+                measured_biological_process_p2=Subquery(assay_qs.values('measured_biological_process')[1:2]),
+                measured_biological_process_p3=Subquery(assay_qs.values('measured_biological_process')[2:3]),
+                measured_biological_process_p4=Subquery(assay_qs.values('measured_biological_process')[3:4]),
+                measured_biological_process_p5=Subquery(assay_qs.values('measured_biological_process')[4:5]),
+            )
         return queryset
 
 

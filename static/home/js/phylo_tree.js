@@ -56,6 +56,7 @@ function draw_tree(data, options) {
         .attr("d", diagonal) //function (d) { return step(d.source.x, d.source.y, d.target.x, d.target.y) })
         .style("stroke", function (d) { return d.target.color; })
         .style("stroke-width", function (d) { if (d.target.depth > 0) { return 4 - d.target.depth; } else { return 0; } })
+        .style("fill-opacity", 0)
         .style("opacity", function (d) {
             if ((d.target.interactions > 0 && d.target.mutations_an > 0) || 1 == 1) { return 0.8 } //|| 1==1
             else if (d.target.interactions > 0) { return 0.5 }
@@ -73,22 +74,24 @@ function draw_tree(data, options) {
         .filter(function (d) { return (d.value !== 3000) })
         .append("circle")
         .attr("r", function (d) { if (d.name == '') { return "0" } else { return "4.0" } })
+        .style("stroke", "black")
+        .style("stroke-width", ".3px")
         .style("fill", function (d) {
             if (d.color && d.depth < options.depth) { return d.color }
             else if ( d.value === 1) {
                 return "FireBrick";
             }
             else if ( d.value === 10) {
-                return "LightSkyBlue";
+                return "LightGray";
             }
             else if ( d.value === 20) {
-                return "CornflowerBlue";
+                return "DarkGray";
             }
             else if ( d.value === 30) {
-                return "Blue";
+                return "Gray";
             }
             else if ( d.value === 40) {
-                return "DarkBlue";
+                return "Black";
             }
             else if (d.value === 100) {
                 return 'LightGray';

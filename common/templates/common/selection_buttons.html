@@ -9,8 +9,9 @@
           btn-lg
         {% endif %}
         btn-block has-spinner"
+        {% if button.modal %}data-toggle="modal" data-target="#{{ button.modal}}"{% endif %}
         {% if button.onclick %}onclick="{{ button.onclick | safe }}" {% endif %}>
-            <span class="spinner"><i class="fa fa-spinner fa-spin"></i></span> {{ button.label }}
+            <span class="spinner"><i class="fa fa-spinner fa-spin"></i></span> {{ button.label | safe}}
         </a>
     {% endfor %}
     </div>

@@ -7,7 +7,7 @@ from django.db.models import F
 from protwis.context_processors import site_title
 from news.models import News
 from common.models import ReleaseNotes, ReleaseStatistics, Citation
-from protein.models import Protein, ProteinGProteinPair
+from protein.models import Protein, ProteinCouplings
 from structure.models import StructureComplexModel
 from contactnetwork.models import InteractingResiduePair
 from signprot.models import SignprotComplex, SignprotStructure
@@ -49,7 +49,7 @@ def index(request):
         users_year = service.data().ga().get(ids='ga:' + profile_id, start_date='365daysAgo', end_date='today', metrics='ga:users').execute().get('rows')[0][0]
         users_month = service.data().ga().get(ids='ga:' + profile_id, start_date='30daysAgo', end_date='today', metrics='ga:users').execute().get('rows')[0][0]
 
-        context['users'] = "GPCRdb had {:,} different users since this date last year and {:,} users in the last 30 days (<a href='https://analytics.google.com'>Google Analytics</a>).".format(int(users_year), int(users_month))
+        context['users'] = "<a href='https://gpcrdb.org'>GPCRdb</a>, <a href='https://gproteindb.org'>GproteinDb</a>, and <a href='https://arrestindb.org'>ArrestinDb</a> had {:,} different users since this date last year and {:,} users in the last 30 days (<a href='https://analytics.google.com'>Google Analytics</a>).".format(int(users_year), int(users_month))
 
     # get news
     context['news'] = News.objects.order_by('-date').all()[:3]
@@ -80,7 +80,7 @@ def index(request):
             context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + "GPCR-G protein interface" + "</span>", "value": "<span  class=\"stats_value\">" + "{:,}".format(interface_interactions_count) + "</span>"})
 
             context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry stats_title\"><i>Couplings</i></span>", "value" : "<span  class=\"stats_value\"></span>"})
-            context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + "GPCR-G protein coupling" + "</span>", "value": "<span  class=\"stats_value\">" + "{:,}".format(ProteinGProteinPair.objects.all().count()) + "</span>"})
+            context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + "GPCR-G protein coupling" + "</span>", "value": "<span  class=\"stats_value\">" + "{:,}".format(ProteinCouplings.objects.all().count()) + "</span>"})
 
             context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry stats_title\"><i>Mutations</i></span>", "value" : "<span  class=\"stats_value\"></span>"})
             context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + "Interface mutations" + "</span>", "value": "<span  class=\"stats_value\">" + "{:,}".format(54) + "</span>"})

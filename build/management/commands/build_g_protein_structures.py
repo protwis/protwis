@@ -4,7 +4,7 @@ from django.conf import settings
 from django.db import connection
 from django.db import IntegrityError
 
-from protein.models import (Protein, ProteinGProtein,ProteinGProteinPair, ProteinConformation, ProteinState, ProteinFamily, ProteinAlias,
+from protein.models import (Protein, ProteinConformation, ProteinState, ProteinFamily, ProteinAlias,
         ProteinSequenceType, Species, Gene, ProteinSource, ProteinSegment)
 from residue.models import (ResidueNumberingScheme, ResidueGenericNumber, Residue, ResidueGenericNumberEquivalent)
 from signprot.models import SignprotComplex, SignprotStructure, SignprotStructureExtraProteins

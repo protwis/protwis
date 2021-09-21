@@ -72,7 +72,7 @@
         .label--active {
             font-weight: bold;
         }
-    #circle_100 {
+    #circle_lightgray {
         width: 10px;
         height: 10px;
         -webkit-border-radius: 5px;
@@ -80,7 +80,7 @@
         border-radius: 5px;
         background: LightGray;
     }
-    #circle_500 {
+    #circle_darkgray {
         width: 10px;
         height: 10px;
         -webkit-border-radius: 5px;
@@ -88,7 +88,7 @@
         border-radius: 5px;
         background: DarkGray;
     }
-    #circle_1k {
+    #circle_gray {
         width: 10px;
         height: 10px;
         -webkit-border-radius: 5px;
@@ -96,7 +96,7 @@
         border-radius: 5px;
         background: Gray;
     }
-    #circle_2k {
+    #circle_black {
         width: 10px;
         height: 10px;
         -webkit-border-radius: 5px;
@@ -104,37 +104,6 @@
         border-radius: 5px;
         background: Black;
     }
-    #circle_10 {
-        width: 10px;
-        height: 10px;
-        -webkit-border-radius: 5px;
-        -moz-border-radius: 5px;
-        border-radius: 5px;
-        background: LightSkyBlue;
-    }
-    #circle_20 {
-        width: 10px;
-        height: 10px;
-        -webkit-border-radius: 5px;
-        -moz-border-radius: 5px;
-        border-radius: 5px;
-        background: CornflowerBlue;
-    }
-    #circle_30 {
-        width: 10px;
-        height: 10px;
-        -webkit-border-radius: 5px;
-        -moz-border-radius: 5px;
-        border-radius: 5px;
-        background: Blue;
-    }
-    #circle_40 {
-        width: 10px;
-        height: 10px;
-        -webkit-border-radius: 5px;
-        -moz-border-radius: 5px;
-        border-radius: 5px;
-        background: DarkBlue;
     }
 </style>
 {% endblock %}
@@ -144,25 +113,39 @@
 
 {% block content %}
 
+<!-- Starting the tab panel section -->
+{% if render != "not_bias" %}
+<ul class="nav nav-tabs">
+  <li class="nav-item active">
+    <a class="nav-link active" data-toggle="tab" href="#physio">Physiology-biased (endogenous reference ligand)</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" data-toggle="tab" href="#path_bias">Pathway-bias (balanced reference ligand)</a>
+  </li>
+</ul>
+<div class="tab-content">
+  <div class="tab-pane container active" id="physio">
+    <br />
+{% endif %}
 {% if render == "not_bias" %}
 <h4>Number of unique ligands per receptor class</h4>
 <table style="width:80% !important" class="table table-stripped">
 {% elif render == "bias" %}
 <p><h4>Biased ligand counts</h4>
-<h6>The number of ligands with a bias factor equal or greater to 1</h6></p>
+<h6>The number of ligands with a bias factor equal or greater than 1</h6></p>
 <table style="width:60% !important" class="table table-stripped">
 {% elif render == "pathway" %}
 <p><h4>Pathway preferred ligand counts</h4>
-<h6>The number of ligands with a bias factor equal or greater to 1</h6></p>
+<h6>The number of ligands with a bias factor equal or greater than 1</h6></p>
 <table style="width:60% !important" class="table table-stripped">
 {% elif render == "subtype" %}
 <p><h4>Pathway preferred ligand counts</h4>
-<h6>The number of ligands with a bias factor equal or greater to 1 (subtype)</h6></p>
+<h6>The number of ligands with a bias factor equal or greater than 1 (subtype)</h6></p>
 <table style="width:60% !important" class="table table-stripped">
 {% endif %}
     <thead>
         <tr>
-            <td><b>Class (Family)</b></td>
+            <td align="right"><b>Class (Family)</b></td>
             {% for data in ligands_by_class %}
             <td align="center"><b>
               {% if data.name == " T (Taste 2)" %}T2 (Taste&nbsp;2)
@@ -252,13 +235,13 @@ Biased ligand statistics were last updated <strong>{{ release_notes.date|date:"Y
 Circle colors indicate a number of ligands:
 <table style="width:30%">
     <tr>
-        <td ><div id="circle_100"></div></td>
+        <td ><div id="circle_lightgray"></div></td>
         <td> < 100 </td>
-        <td ><div id="circle_500"></div></td>
+        <td ><div id="circle_darkgray"></div></td>
         <td> < 500 </td>
-        <td ><div id="circle_1k"></div></td>
+        <td ><div id="circle_gray"></div></td>
         <td> < 1000 </td>
-        <td ><div id="circle_2k"></div></td>
+        <td ><div id="circle_black"></div></td>
         <td> 1000+</td>
     </tr>
 </table>
@@ -313,13 +296,13 @@ Circle colors indicate a number of ligands:
 Inner circle colors indicate a number of ligands:
 <table style="width:30%">
     <tr>
-        <td ><div id="circle_10"></div></td>
+        <td ><div id="circle_lightgray"></div></td>
         <td> < 10 </td>
-        <td ><div id="circle_20"></div></td>
+        <td ><div id="circle_darkgray"></div></td>
         <td> < 20 </td>
-        <td ><div id="circle_30"></div></td>
+        <td ><div id="circle_gray"></div></td>
         <td> < 30 </td>
-        <td ><div id="circle_40"></div></td>
+        <td ><div id="circle_black"></div></td>
         <td> 30+</td>
     </tr>
 </table>
@@ -705,8 +688,17 @@ $(window).on("load",function() {
     </div>
   </div>
 </div>
-
-
+{% if render != "not_bias" %}
+  </div>
+  <div class="tab-pane container active" id="path_bias">
+    <br />
+      Ligand pathway-bias is calculated relative to a referenced ligand with balanced (near-equal)
+      signaling across two pathways measured in the same system (<b>add pre-print link</b>).<br>
+      GPCRdb is currently collecting such reference ligands and will avail this page when done.<br>
+      Please help by submitting your balanced reference ligands <b>here</b>.
+  </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block addon_js %}

@@ -427,7 +427,7 @@ class BiasedExperimentAssay(models.Model):
                         )
 
     signalling_protein = models.CharField(
-        max_length=60)  # TODO link to actual protein
+        max_length=60, null=True)  # TODO link to actual protein
     family = models.CharField(max_length=60, null=True)
     cell_line = models.CharField(max_length=60, null=True)
     assay_type = models.CharField(max_length=60, null=True)
@@ -497,7 +497,7 @@ class AnalyzedAssay(models.Model):
     family = models.CharField(max_length=60, null=True)
     order_no = models.IntegerField(null=True)
     signalling_protein = models.CharField(
-        max_length=60)  # TODO link to actual protein
+        max_length=60, null=True)  # TODO link to actual protein
     pathway_level = models.TextField(null=True)
     cell_line = models.CharField(max_length=60, null=True)
     molecule_1 = models.CharField(max_length=60, null=True)
@@ -528,7 +528,6 @@ class AnalyzedAssay(models.Model):
     delta_emax_ec50 = models.FloatField(max_length=60, null=True)
     t_factor = models.CharField(max_length=60, null=True)
     assay_description = models.CharField(max_length=900, null=True)
-    reference_ligand_id= models.CharField(max_length=900, null=True)
     reference_assay_initial = models.ForeignKey(BiasedExperimentAssay, related_name='test_ExperimentAssay.bias_ligand_reference_assay+',
                                           on_delete=models.CASCADE,
                                           null=True, blank=True)

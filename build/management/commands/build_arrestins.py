@@ -14,7 +14,7 @@ from django.core.management.color import no_style
 from django.db import IntegrityError, connection
 from common.tools import urlopen_with_retry
 from protein.models import (Gene, Protein, ProteinAlias, ProteinConformation,
-                            ProteinFamily, ProteinArrestinPair, ProteinSegment,
+                            ProteinFamily, ProteinSegment,
                             ProteinSequenceType, ProteinSource, ProteinState, Species)
 from residue.models import (Residue, ResidueGenericNumber,
                             ResidueGenericNumberEquivalent,
@@ -28,7 +28,6 @@ class Command(BaseCommand):
 
     # source files
     arrestin_data_file = os.sep.join([settings.DATA_DIR, 'arrestin_data', 'ortholog_alignment.xlsx'])
-    bouvier_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', '201025_bouvier_gloriam.xlsx'])
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'protein_data', 'uniprot'])
     remote_uniprot_dir = 'https://uniprot.org/uniprot/'
 
@@ -39,10 +38,6 @@ class Command(BaseCommand):
                             action='append',
                             dest='filename',
                             help='Filename to import. Can be used multiple times')
-        parser.add_argument('--coupling',
-                            default=False,
-                            action='store_true',
-                            help='Purge and import GPCR-Arrestin coupling data')
 
     def handle(self, *args, **options):
         self.options = options
@@ -50,46 +45,28 @@ class Command(BaseCommand):
             filenames = options['filename']
         else:
             filenames = False
-        if self.options['coupling']:
-            self.purge_coupling_data()
-            self.logger.info('PASS: purge_coupling_data')
-            if os.path.exists(self.bouvier_file):
-                self.add_bouvier_coupling_data()
-                self.logger.info('PASS: add_bouvier_coupling_data')
-            else:
-                self.logger.warning('Bouvier source data ' + self.bouvier_file + ' not found')
 
-        else:
-            try:
-                self.purge_can_residues()
-                self.logger.info('PASS: purge_can_residues')
-                self.purge_can_proteins()
-                self.logger.info('PASS: purge_can_proteins')
+        try:
+            self.purge_can_residues()
+            self.logger.info('PASS: purge_can_residues')
+            self.purge_can_proteins()
+            self.logger.info('PASS: purge_can_proteins')
 
-                # add proteins
-                self.can_create_families()
-                self.logger.info('PASS: can_create_families')
-                self.can_add_proteins()
-                self.logger.info('PASS: can_add_proteins')
+            # add proteins
+            self.can_create_families()
+            self.logger.info('PASS: can_create_families')
+            self.can_add_proteins()
+            self.logger.info('PASS: can_add_proteins')
 
-                # add residues
-                self.add_can_residues()
-                self.logger.info('PASS: add_can_residues')
+            # add residues
+            self.add_can_residues()
+            self.logger.info('PASS: add_can_residues')
 
-                # add coupling data
-                self.purge_coupling_data()
-                self.logger.info('PASS: purge_coupling_data')
-                if os.path.exists(self.bouvier_file):
-                    self.add_bouvier_coupling_data()
-                    self.logger.info('PASS: add_bouvier_coupling_data')
-                else:
-                    self.logger.warning('Bouvier source data ' + self.bouvier_file + ' not found')
-
-            except Exception as msg:
-                exc_type, exc_obj, exc_tb = sys.exc_info()
-                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                print(exc_type, exc_obj, fname, exc_tb.tb_lineno)
-                self.logger.error(msg)
+        except Exception as msg:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            print(exc_type, exc_obj, fname, exc_tb.tb_lineno)
+            self.logger.error(msg)
 
     def purge_can_residues(self):
         """Purge residues."""
@@ -104,145 +81,6 @@ class Command(BaseCommand):
             Protein.objects.filter(residue_numbering_scheme__slug='can').delete()
         except Exception as msg:
             self.logger.warning('Protein to delete not found' + str(msg))
-
-    def purge_coupling_data(self):
-        """DROP data from the protein_arrestin_pair table."""
-        try:
-            ProteinArrestinPair.objects.filter().delete()
-            sequence_sql = connection.ops.sequence_reset_sql(no_style(), [ProteinArrestinPair])
-            with connection.cursor() as cursor:
-                for sql in sequence_sql:
-                    cursor.execute(sql)
-
-        except Exception as msg:
-            self.logger.warning('Existing protein_arrestin_pair data cannot be deleted' + str(msg))
-
-    @staticmethod
-    def read_coupling(filenames=False):
-        """
-        Function to read Coupling data from Excel files.
-
-        The ideal would be for the excel organization to hopefully be fixed in the same way for data
-        coming from different groups. For now the data comes from Bouvier and has been processed by David E. Gloriam.
-        """
-        book = xlrd.open_workbook(filenames)
-        sheet1 = book.sheet_by_name("plain")
-        rows = sheet1.nrows
-        beglogmaxec50 = 36
-        endlogmaxec50 = 38
-        begpec50 = 52
-        endpec50 = 54
-        begemax = 68
-        endemax = 70
-
-        data = {}
-        # data dictionary format:
-        # {'<protein>':
-        #     {'<arrestinsubtype>':
-        #         {'logmaxec50': <logmaxec50>,
-        #          'pec50deg': <pec50deg>}
-        #     }
-        # }
-
-        def cleanValue(s):
-            """
-            Function to return a 0.0 (a value which means no coupling) since returning
-            an NA string to the database field declared as a float won't work, also
-            because NULL might have a meaning. In Python to return NULL one uses None
-
-            :param s:
-            :return: float
-            """
-            if s == '':
-                # return None
-                return float(0.0)
-            else:
-                # return float(str(s).strip())
-                return format(float(s), '.2f').strip()
-                # return str(s).strip()
-
-        for i in range(3, rows):
-            protein = sheet1.cell_value(i, 0)
-            protein_dict = {}
-
-            # logemaxec50
-            for j in range(beglogmaxec50, endlogmaxec50):
-                arrestinsubtype = sheet1.cell_value(2, j)
-                protein_dict[arrestinsubtype] = {}
-                protein_dict[arrestinsubtype]['logmaxec50'] = cleanValue(sheet1.cell_value(i, j))
-
-            # pec50 deg = david e gloriam
-            for j in range(begpec50, endpec50):
-                arrestinsubtype = sheet1.cell_value(2, j)
-                protein_dict[arrestinsubtype]['pec50deg'] = cleanValue(sheet1.cell_value(i, j))
-
-            # emax deg = david e gloriam
-            for j in range(begemax, endemax):
-                arrestinsubtype = sheet1.cell_value(2, j)
-                protein_dict[arrestinsubtype]['emaxdeg'] = cleanValue(sheet1.cell_value(i, j))
-
-            data[protein] = protein_dict
-        #            pprint(protein_dict[arrestin_subtype])
-        # pprint(data)
-
-        return data
-
-    def add_bouvier_coupling_data(self):
-        """
-        This function adds coupling data coming from Michel Bouvier processed by David Gloriam
-
-        @return:
-        p, source, values['logemaxec50'], values['pec50deg'], ..., ap
-        p = protein_name
-        source = One of GuideToPharma, Aska, Bouvier
-        values = selfdescriptive
-        ap = arrestin uniprot name, e.g.
-        """
-        self.logger.info('BEGIN ADDING Bouvier-Gloriam coupling data')
-
-        # read source files
-        filepath = self.bouvier_file
-        self.logger.info('Reading file ' + filepath)
-        data = self.read_coupling(filepath)
-        # pprint(data['AVPR2'])
-        # pprint(data['AVP2R'])
-        # pprint(data['BDKRB1'])
-        source = 'Bouvier'
-        lookup = {}
-
-        for entry_name, couplings in data.items():
-            # if it has / then pick first, since it gets same protein
-            entry_name = entry_name.split("/")[0]
-            # append _human to entry name
-            # entry_name = "{}_HUMAN".format(entry_name).lower()
-
-            # Fetch protein
-            try:
-                p = Protein.objects.filter(genes__name=entry_name, species__common_name="Human")[0]
-
-            except Protein.DoesNotExist:
-                self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
-                print("protein not found for ", entry_name)
-                continue
-
-            for arrestin, values in couplings.items():
-                if arrestin not in lookup:
-                    ap = Protein.objects.filter(family__name=arrestin, species__common_name="Human")[0]
-                    lookup[arrestin] = ap
-                else:
-                    ap = lookup[arrestin]
-
-                # print(p, source, ap)
-                # print(p, source, values['logmaxec50'], values['pec50deg'], values['emaxdeg'], ap)
-                apair = ProteinArrestinPair(protein=p,
-                                            source=source,
-                                            logmaxec50_deg=values['logmaxec50'],
-                                            pec50_deg=values['pec50deg'],
-                                            emax_deg=values['emaxdeg'],
-                                            arrestin_subtype=ap)
-                apair.save()
-
-        self.logger.info('COMPLETED ADDING Bouvier-Gloriam coupling data')
 
     def add_can_residues(self):
         """Add CAN residues from source file provided by Andrija Sente."""
