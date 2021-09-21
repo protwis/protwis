@@ -224,7 +224,6 @@
 <script src="{% static 'home/js/select2.js' %}"> </script>
 <script src="{% static 'home/js/shading.js' %}"></script>
 <script src="{% static 'home/js/signprot-multitabtable.js' %}"></script>
-<script src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.colVis.js"></script>
 
 <script>
 	$(document).ready(function() {
@@ -322,12 +321,12 @@
 					},
 				},
 				{
-					extend: 'colvisGroup',
 					text: 'Show pathways',
 					className: 'btn btn-primary btn-sm',
 					init: function(api, node, config) {
 						$(node).removeClass('dt-button buttons-excel buttons-html5');
-					},action: function(e, dt, node, config) {
+					},
+                    action: function(e, dt, node, config) {
                         resetHiddenColumns(table)
                     },
 				},
