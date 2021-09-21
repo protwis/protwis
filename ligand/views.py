@@ -423,10 +423,11 @@ class BiasTargetSelection(AbsReferenceSelectionTable):
     family_tree = False
     docs = 'sequences.html#structure-based-alignments'
     title = "SELECT RECEPTORS with ligands biased for a G protein or arrestin family (relative to an endogenous reference ligand)"
-    description = 'Select a receptor in the table (below) or browse the classification tree (center).\nThen click a green button (right)'
+    description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
+        + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
     selection_boxes = OrderedDict([
-        ('reference', False),
-        ('targets', True),
+        ('reference', True),
+        ('targets', False),
         ('segments', False),
     ])
     buttons = {
@@ -459,11 +460,12 @@ class BiasPredictionTargetSelection(AbsReferenceSelectionTable):
     filter_tableselect = False
     family_tree = False
     docs = 'sequences.html#structure-based-alignments'
-    title = "SELECT RECEPTORS to retrieve ligands with a preferred G protein or arrestin pathway (ΔLog(Emax/EC50  values across pathways for one ligand (no reference ligand)))"
-    description = 'Select a receptor in the table (below) or browse the classification tree (center).\nThen click the green button (right)'
+    title = "SELECT RECEPTORS to retrieve ligands with a preferred G protein or arrestin pathway (ΔLog(Emax/EC50) values across pathways for one ligand (no reference ligand))"
+    description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
+        + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
     selection_boxes = OrderedDict([
-        ('reference', False),
-        ('targets', True),
+        ('reference', True),
+        ('targets', False),
         ('segments', False),
     ])
     buttons = {
@@ -485,10 +487,11 @@ class BiasGTargetSelection(AbsReferenceSelectionTable):
     family_tree = False
     docs = 'sequences.html#structure-based-alignments'
     title = "SELECT RECEPTORS with ligands biased for a G protein or arrestin subtype"
-    description = 'Select a receptor in the table (below) or browse the classification tree (center).\nThen click a green button (right)'
+    description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
+        + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
     selection_boxes = OrderedDict([
-        ('reference', False),
-        ('targets', True),
+        ('reference', True),
+        ('targets', False),
         ('segments', False),
     ])
     buttons = {
@@ -1774,80 +1777,6 @@ class BiasPathways(TemplateView):
     '''
     End  of Bias Browser
     '''
-
-
-class BiasTargetSelection(AbsReferenceSelectionTable):
-    step = 1
-    number_of_steps = 1
-    filters = False
-    filter_tableselect = False
-    family_tree = False
-    title = "SELECT RECEPTORS with ligands biased for a G protein or arrestin family (relative to an endogenous reference ligand)"
-    description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
-        + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
-
-    selection_boxes = OrderedDict([
-        ('reference', True),
-        ('targets', False),
-        ('segments', False),
-    ])
-    buttons = {
-        'continue': {
-            'label': 'Next',
-            'onclick': "submitSelection('/ligand/biased');",
-            'color': 'success',
-        },
-    }
-    table_data = getReferenceTable("different_family", "tested_assays")
-
-
-class BiasGTargetSelection(AbsReferenceSelectionTable):
-    step = 1
-    number_of_steps = 1
-    filters = False
-    filter_tableselect = False
-    family_tree = False
-    title = "SELECT RECEPTORS with ligands biased for a G protein or arrestin subtype"
-    description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
-        + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
-    selection_boxes = OrderedDict([
-        ('reference', True),
-        ('targets', False),
-        ('segments', False),
-    ])
-    buttons = {
-        'continue': {
-            'label': 'Next',
-            'onclick': "submitSelection('/ligand/biasedsubtypes');",
-            'color': 'success',
-        },
-    }
-    table_data = getReferenceTable("sub_different_family", "sub_tested_assays")
-
-
-class BiasPredictionTargetSelection(AbsReferenceSelectionTable):
-    step = 1
-    number_of_steps = 1
-    filters = False
-    filter_tableselect = False
-    family_tree = False
-    title = "SELECT RECEPTORS to retrieve ligands with a preferred G protein or arrestin pathway (ΔLog(Emax/EC50) values across pathways for one ligand (no reference ligand))"
-    description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
-        + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
-    selection_boxes = OrderedDict([
-        ('reference', True),
-        ('targets', False),
-        ('segments', False),
-    ])
-    buttons = {
-        'continue': {
-            'label': 'Next',
-            'onclick': "submitSelection('/ligand/biasedpredicted');",
-            'color': 'success',
-        },
-    }
-    table_data = getReferenceTable("predicted_family", "predicted_tested_assays")
-
 
 def CachedBiasBrowser(request):
     return CachedBiasBrowsers("biasbrowser", request)

@@ -12,16 +12,13 @@ from ligand.models import BiasedExperiment, BiasedExperimentVendors,AnalyzedExpe
 
 from ligand.functions import get_or_make_ligand
 from common.models import WebLink, WebResource, Publication
-from decimal import Decimal
 import logging
 import math
 import pandas as pd
-import numpy as np
 import os
 import traceback
 import time
 import requests
-import re
 import timeit
 
 MISSING_PROTEINS = {}
@@ -68,7 +65,7 @@ class Command(BaseBuild):
         if options['purge']:
             try:
                 print('Started purging bias data')
-                self.purge_bias_data()
+                Command.purge_bias_data()
                 print('Ended purging bias data')
             except Exception as msg:
                 print(msg)
@@ -76,51 +73,13 @@ class Command(BaseBuild):
         # import the structure data
         Command.prepare_all_data()
 
-    def purge_bias_data(self):
+    @staticmethod
+    def purge_bias_data():
         delete_bias_excel = BiasedExperiment.objects.all()
         delete_bias_excel.delete()
         delete_bias_experiment = AnalyzedExperiment.objects.all()
         delete_bias_experiment.delete()
-        self.logger.info("Bias data purgedAk47aspirine1Ak47aspirine1Ak47aspirine1Ak47aspirine1")
 
-    def loaddatafromexcel(self, excelpath):
-        '''
-        Reads excel file (require specific excel sheet)
-
-        '''
-        num_rows = 0
-        try:
-            workbook = xlrd.open_workbook(excelpath)
-            worksheets = workbook.sheet_names()
-
-            temp = []
-            for worksheet_name in worksheets:
-                if worksheet_name == 'Data':
-
-                    worksheet = workbook.sheet_by_name(worksheet_name)
-                    num_rows = worksheet.nrows - 1
-                    num_cells = worksheet.ncols - 1
-                    curr_row = 0  # skip first, otherwise -1
-                    while curr_row < num_rows:
-                        curr_row += 1
-                        row = worksheet.row(curr_row)
-                        curr_cell = -1
-                        temprow = []
-                        while curr_cell < num_cells:
-                            curr_cell += 1
-                            cell_value = worksheet.cell_value(curr_row, curr_cell)
-                            cell_type = worksheet.cell_type(curr_row, curr_cell)
-                            # fix wrong spaced cells
-                            if cell_value == " ":
-                                cell_value = ""
-                            temprow.append(cell_value)
-                        temp.append(temprow)
-
-
-            return temp
-        except:
-            self.logger.info(
-                "The error appeared during reading the excel", num_rows)
 
     @staticmethod
     def prepare_all_data():
@@ -158,7 +117,7 @@ class Command(BaseBuild):
 
     @staticmethod
     def main_process(df_from_excel):
-        row_counter = 0
+        # row_counter = 0
         for d in df_from_excel:
             # row_counter = row_counter + 1
             # if(row_counter < 434):
@@ -212,10 +171,9 @@ class Command(BaseBuild):
             try:
                 d['Unit'] = str(d['Unit'])
             except:
-                d['Unit']
+                d['Unit'] = d['Unit']
             d['Alt 1)\nQuantitative activity'], d['Measure type'] = Command.fetch_measurements(potency=d['Alt 1)\nQuantitative activity'],
-                                                                        p_type= d['Measure type'],
-                                                                        unit = d['Unit'])
+                                                                        p_type= d['Measure type'], unit = d['Unit'])
             protein = Command.fetch_protein(d['Receptor\nUniProt entry name or code'].lower())
             # family = self.define_g_family(d['Primary effector subtype'].lower(), d['assay_type'], protein )
             pub = Command.fetch_publication(d['Reference\nDOI or PMID'])
@@ -357,22 +315,6 @@ class Command(BaseBuild):
                 return potency,p_type
         else:
             return None, None
-
-    def fetch_receptor_trunsducers(self, receptor):
-        primary = set()
-        temp = list()
-        try:
-            gprotein = ProteinGProteinPair.objects.filter(protein=receptor)
-            for x in gprotein:
-                if x.transduction and x.transduction == 'primary':
-                    primary.add(x.g_protein.name)
-
-            for i in primary:
-                temp.append(str(i))
-            return temp
-        except:
-            self.logger.info('receptor not found error')
-            return None
 
     @staticmethod
     def fetch_endogenous(protein):
