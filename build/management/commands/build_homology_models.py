@@ -549,7 +549,8 @@ class HomologyModeling(object):
             if self.reference_entry_name.upper()=='5LWE':
                 raise AssertionError('Skipping 5LWE refined structure model')
             try:
-                sc = SignprotComplex.objects.get(structure__pdb_code__index=self.reference_entry_name.upper())
+                # Added beta protein check to avoid main tempalte switch for structures that only have the alpha subunit (5G53, 6FUF) - FIX later
+                sc = SignprotComplex.objects.get(structure__pdb_code__index=self.reference_entry_name.upper(), beta_protein__isnull=False)
                 self.complex = True
                 self.signprot = sc.protein.entry_name
             except SignprotComplex.DoesNotExist:
