@@ -145,12 +145,8 @@ class Command(BaseBuild):
             fin_obj = {}
             fin_obj['main'] = (instance[1])
             vendor_counter = 0
-            vendors_quantity = None
             for i in instance[1].experiment_data_vendors.all():
                 vendor_counter = vendor_counter + 1
-                if not vendor_counter:
-                    vendors_quantity = i
-
             for entry in instance[1].experiment_data.all():
                 author_list = list()
                 for author in entry.experiment_data_authors.all():

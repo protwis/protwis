@@ -357,7 +357,6 @@ class Command(BaseBuild):
 
             if len(temp_reference_list)>0:
                 if len(temp_reference_list)>1:
-                    return_back_list = list()
                     final_end = None
                     for _reference_assay in temp_reference_list:
                         if _reference_assay['bias_reference'] == "Principal endogenous" or _reference_assay['bias_reference'] == "Ref. and principal endo.":
@@ -370,8 +369,6 @@ class Command(BaseBuild):
                                 result_list.append(_reference_assay)
                 else:
                     assay['endogenous_assay'] = temp_reference_list[0]
-
-
         for assay in main:
             if len(assay['endogenous_assay']) > 0:
                 assay['calculated_relative_tau'] = Command.calculate_relative_transduction_coef(assay)
