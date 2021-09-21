@@ -145,12 +145,8 @@ class Command(BaseBuild):
             fin_obj = {}
             fin_obj['main'] = (instance[1])
             vendor_counter = 0
-            vendors_quantity = None
             for i in instance[1].experiment_data_vendors.all():
                 vendor_counter = vendor_counter + 1
-                if not vendor_counter:
-                    vendors_quantity = i
-
             for entry in instance[1].experiment_data.all():
                 author_list = list()
                 for author in entry.experiment_data_authors.all():
@@ -302,11 +298,9 @@ class Command(BaseBuild):
         '''
         separate tested assays and reference assays
         '''
-        return_list = list()
         counter = 0
         for j in data.items():
             counter = counter+1
-            return_dict = dict()
             assays, reference = Command.return_refenced_assays(j[1]['assay'])
             j[1]['assay_list'] = assays
             j[1]['reference_assays_list'] = reference
@@ -349,10 +343,8 @@ class Command(BaseBuild):
                     #         if assay['cell_line'] == reference['cell_line']:
                     #             if assay['measured_biological_process'] == reference['measured_biological_process']:
                     #                 temp_reference_list.append(reference)
-
             if len(temp_reference_list)>0:
                 if len(temp_reference_list)>1:
-                    return_back_list = list()
                     final_end = None
                     for _reference_assay in temp_reference_list:
                         if _reference_assay['bias_reference'] == "Principal endogenous" or _reference_assay['bias_reference'] == "Ref. and principal endo.":
@@ -365,7 +357,6 @@ class Command(BaseBuild):
                                 result_list.append(_reference_assay)
                 else:
                     assay['endogenous_assay'] = temp_reference_list[0]
-
         return main
 
     @staticmethod
