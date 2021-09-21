@@ -1,7 +1,11 @@
 ﻿<b>Preferred G protein</b><br />
 <div class="btn-group btn-group-sm" role="group">
-    <a href="javascript:void(0)" onclick="SelectionGproteinPredefined('Gi/Go family', true)"
+    <!-- <a href="javascript:void(0)" onclick="SelectionGproteinPredefined('Gi/Go family', true)"
        class="btn btn-primary{% if selection.pref_g_proteins|length == 1 and selection.pref_g_proteins.0.item.name == 'Gi/Go family' %} active{% endif %}">
+        Gi/Go family
+    </a> -->
+    <a href="javascript:void(0)" onclick="SelectionGproteinPredefined('Gi/o', true)"
+       class="btn btn-primary{% if selection.pref_g_proteins|length == 1 and selection.pref_g_proteins.0.item.name == 'Gi/o' %} active{% endif %}">
         Gi/Go family
     </a>
     <a href="javascript:void(0)" onclick="SelectionGproteinPredefined('All', true)"

@@ -332,7 +332,6 @@ class Command(BaseBuild):
                         target_list.extend(entry['targetIds'])
             except:
                 print("Was a nice sleep, now let me continue...")
-
         return target_list
 
     def get_ligand_assays(self, targets):

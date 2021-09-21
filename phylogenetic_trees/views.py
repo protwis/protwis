@@ -1,6 +1,5 @@
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.conf import settings
-from django.core.files import File
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
@@ -9,10 +8,10 @@ from django.views.decorators.csrf import csrf_exempt
 from common.views import AbsTargetSelectionTable
 from common.views import AbsSegmentSelection
 from common.views import AbsMiscSelection
-from common.selection import SimpleSelection, Selection, SelectionItem
+from common.selection import Selection, SelectionItem
 from mutation.models import *
 from phylogenetic_trees.PrepareTree import *
-from protein.models import ProteinFamily, ProteinAlias, ProteinSet, Protein, ProteinSegment, ProteinGProteinPair
+from protein.models import ProteinFamily, ProteinSet, Protein, ProteinSegment, ProteinCouplings
 
 from copy import deepcopy
 import json
@@ -148,13 +147,12 @@ class Treeclass:
         ################################## FOR BUILDING STATISTICS ONLY##########################
             build_proteins=[]
             if build == '001':
-                cons_prots = []
                 for prot in Protein.objects.filter(sequence_type__slug='consensus', species_id=1):
                     if prot.family.slug.startswith('001') and len(prot.family.slug.split('_'))==3:
                         build_proteins.append(prot)
-                for set in sets:
-                    if set.id==1:
-                        for prot in set.proteins.all():
+                for rset in sets:
+                    if rset.id==1:
+                        for prot in rset.proteins.all():
                             if prot.family.slug.startswith('001_') and prot.species.latin_name=='Homo sapiens':
                                 build_proteins.append(prot)
             else:
@@ -168,9 +166,10 @@ class Treeclass:
         ##################################################################
         else:
             simple_selection=request.session.get('selection', False)
-            a.load_proteins_from_selection(simple_selection)
+            a.load_proteins_from_selection(simple_selection, True)
             a.load_segments_from_selection(simple_selection)
             self.bootstrap,self.UPGMA,self.branches,self.ttype = map(int,simple_selection.tree_settings)
+
         if self.bootstrap!=0:
             self.bootstrap=pow(10,self.bootstrap)
         #### Create an alignment object
@@ -185,7 +184,7 @@ class Treeclass:
         self.famdict = {}
         for n in families:
             self.famdict[self.Tree.trans_0_2_A(n.slug)]=n.name
-        dirname = unique_filename = uuid.uuid4()
+        dirname = uuid.uuid4()
         os.mkdir('/tmp/%s' %dirname)
         infile = open('/tmp/%s/infile' %dirname,'w')
         infile.write('    '+str(self.total)+'    '+str(total_length)+'\n')
@@ -205,7 +204,8 @@ class Treeclass:
             if acc:
                 acc = acc.replace('-','_')
             else:
-                acc = link.replace('-','_')[:6]
+                acc = name
+
             spec = str(n.protein.species)
             fam += '_'+n.protein.species.common_name.replace(' ','_').upper()
             desc = name
@@ -366,12 +366,6 @@ def render_tree_v2(request):
     if phylogeny_input == 'More_prots':
         return render(request, 'phylogenetic_trees/warning.html')
 
-    if ttype == '1':
-        float(total)/4*100
-    else:
-        count = 1900 - 1400/math.sqrt(float(total))
-
-
     protein_data = []
 
     #FIXME remove
@@ -460,9 +454,6 @@ def render_tree_v3(request):
     for pc in proteins:
         protein_entries.append(pc.protein.entry_name)
 
-    # load all
-    cluster_method = 0
-
     # Collect structure annotations
     protein_annotations = {}
 
@@ -484,7 +475,7 @@ def render_tree_v3(request):
     # Grab G-protein coupling profile for all receptors covered by the selection
     # TODO: make general cache(s) for these kinds of data
     selectivitydata = {}
-    coupling = ProteinGProteinPair.objects.filter(protein__family__slug__in=protein_slugs, source="GuideToPharma").values_list('protein__family__slug', 'transduction').annotate(arr=ArrayAgg('g_protein__name'))
+    coupling = ProteinCouplings.objects.filter(protein__family__slug__in=protein_slugs, source="GuideToPharma").values_list('protein__family__slug', 'transduction').annotate(arr=ArrayAgg('g_protein__name'))
 
     for pairing in coupling:
         if pairing[0] not in selectivitydata:

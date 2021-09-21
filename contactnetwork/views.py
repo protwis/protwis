@@ -20,7 +20,7 @@ from contactnetwork.functions import *
 from structure.models import Structure, StructureVectors, StructureExtraProteins
 from structure.templatetags.structure_extras import *
 from construct.models import Construct
-from protein.models import Protein, ProteinSegment, ProteinGProtein, ProteinGProteinPair, ProteinConformation
+from protein.models import Protein, ProteinSegment, ProteinCouplings, ProteinConformation
 from residue.models import Residue, ResidueGenericNumber
 from signprot.models import SignprotComplex
 from interaction.models import StructureLigandInteraction, ResidueFragmentInteraction
@@ -2893,7 +2893,7 @@ def ClusteringData(request):
         # Grab G-protein coupling profile for all receptors covered by the selection
         # TODO: make general cache(s) for these kinds of data
         selectivitydata = {}
-        coupling = ProteinGProteinPair.objects.filter(protein__family__slug__in=protein_slugs, source="GuideToPharma").values_list('protein__family__slug', 'transduction').annotate(arr=ArrayAgg('g_protein__name'))
+        coupling = ProteinCouplings.objects.filter(protein__family__slug__in=protein_slugs, source="GuideToPharma").values_list('protein__family__slug', 'transduction').annotate(arr=ArrayAgg('g_protein__name'))
 
         for pairing in coupling:
             if pairing[0] not in selectivitydata:

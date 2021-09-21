@@ -29,6 +29,7 @@ class Command(BaseCommand):
             help='Filename to import. Can be used multiple times')
         parser.add_argument('--local', action='store_true', dest='local', default=False,
             help='Read local construct files')
+        parser.add_argument('--purge', help='Purge all existing records', default=False, action='store_true')
 
     logger = logging.getLogger(__name__)
 
@@ -47,9 +48,10 @@ class Command(BaseCommand):
         else:
             local_fill = False
 
+        if options['purge']:
+            self.purge_construct_data()
+
         print(filenames)
-        # try:
-        #     # self.purge_construct_data()
         if not local_fill:
             self.create_construct_data(filenames)
         else:

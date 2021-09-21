@@ -1,16 +1,15 @@
 import json
 import re
-import time
-from itertools import chain
 import string
 import random
 
 from collections import Counter
+from decimal import Decimal
 
 from residue.models import ResidueGenericNumberEquivalent
 from signprot.models import SignprotComplex
-from protein.models import Protein, ProteinSegment, ProteinFamily, ProteinGProteinPair
-from common.definitions import *
+from protein.models import Protein, ProteinCouplings
+from common.definitions import AMINO_ACID_GROUPS
 
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -47,13 +46,10 @@ def get_protein_segments(request):
     segments = []
     segment_raw = request.POST.getlist("seg[]")
     selected_receptor_classes = request.POST.getlist("selectedreceptorclasses[]")
-    most_common_class = Counter(selected_receptor_classes).most_common(1)
-    slug_ending = get_class_slug(most_common_class)
 
     for s in segment_raw:
         try:
             gen_object = ResidueGenericNumberEquivalent.objects.filter(
-                # label=s, scheme__slug__in=['gpcrdb' + slug_ending]
                 label=s, scheme__slug__in=['gpcrdba']
             ).get()
             segments.append(gen_object)
@@ -65,37 +61,11 @@ def get_protein_segments(request):
 
 def get_generic_numbers(signature_data):
     """Parse the generic numbers in the signature data"""
-    trans = {
-        'N-term': 'N',
-        'TM1': 1,
-        'ICL1': 12,
-        'TM2': 2,
-        'ECL1': 23,
-        'TM3': 3,
-        'ICL2': 34,
-        'TM4': 4,
-        'ECL2': 45,
-        'TM5': 5,
-        'ICL3': 56,
-        'TM6': 6,
-        'ECL3': 67,
-        'TM7': 7,
-        'ICL4': 78,
-        'H8': 8,
-        'C-term': 'C',
-    }
     generic_numbers = []
     for _, segments in signature_data["common_generic_numbers"].items():
         for elem, num in segments.items():
             gnl = []
             for x, dn in num.items():
-                # print(dn)
-                # if dn != "":
-                #     rexp = r"(?<=<b>)\d{1,}|\.?\d{2,}[\-?\d{2,}]*|x\d{2,}"
-                #     gn = re.findall(rexp, dn)
-                # else:
-                #     gn = "".join([str(trans[elem]), ".", str(x)])
-                # gnl.append("".join(gn))
                 gnl.append(x)
             generic_numbers.append(gnl)
 
@@ -217,7 +187,7 @@ def prepare_signature_match(signature_match):
     sign_true_1 = '<div class="{}">'.format(repl_str)
     sign_true_2 = '{}</div>'
     sign_false = '<div></div>'
-    gprots = ['Gs','Gi/Go','Gq/G11','G12/G13']
+    gprots = ['Gs','Gi/o','Gq/11','G12/13']
     class_coupling = 'coupling '
 
     coupling_data = prepare_coupling_data_container()
@@ -276,55 +246,6 @@ def prepare_signature_match(signature_match):
                     out[entry][source][gprot]['html'] = sign_false
                     out[entry][source][gprot]['text'] = ''
 
-    # for elem in signature_match['signature_filtered'].items():
-    # print(elem)
-
-    # for elem in signature_match["protein_signatures"].items():
-    #     prot_entry = elem[0].protein.entry_name
-    #     prot_scheme_id = elem[0].protein.residue_numbering_scheme.id
-    #     sig = []
-    #     for signature in elem[1].values():
-    #         for sig_elem in signature:
-    #             # 0: feat code
-    #             # 1: feature
-    #             # 2: cons
-    #             # 3: color
-    #             # 4: aa
-    #             # 5: gn
-    #             # try:
-    #             # generic_number = ResidueGenericNumberEquivalent.objects.filter(
-    #             # label=str(sig_elem[5]),
-    #             # scheme_id=prot_scheme_id
-    #             # )
-    #             # gn = generic_number.values_list('default_generic_number__label',
-    #             # flat=True)[0].split('x')
-    #             # except ObjectDoesNotExist as e:
-    #             # print('For {} a {} '.format(s, e))
-    #             # continue
-    #
-    #             sig.append(
-    #                 {
-    #                     "code": str(
-    #                         AMINO_ACID_GROUP_PROPERTIES.get(sig_elem[0]).get(
-    #                             "display_name_short", None
-    #                         )
-    #                     ),
-    #                     "length": str(
-    #                         AMINO_ACID_GROUP_PROPERTIES.get(sig_elem[0]).get(
-    #                             "length", None
-    #                         )
-    #                     ),
-    #                     "gn": str(sig_elem[5]),
-    #                     # 'gn': str('{}.{}x{}'.format(gn[0], gn[1], gn[1])),
-    #                     "aa": str(sig_elem[4]),
-    #                     "score": str(sig_elem[2]),
-    #                     "feature": str(AMINO_ACID_GROUP_NAMES.get(sig_elem[0], None)),
-    #                 }
-    #             )
-    #
-    #     if prot_entry in out:
-    #         out[prot_entry]["cons"] = sig
-
     return out
 
 
@@ -332,13 +253,11 @@ def prepare_coupling_data_container():
     class_names = {}
     data = {}
 
-    complex_objs = SignprotComplex.objects.prefetch_related('structure__protein_conformation__protein').values_list('structure__protein_conformation__protein__parent_id', flat=True)
     proteins = (
         Protein.objects.filter(
             sequence_type__slug="wt",
             family__slug__startswith="00",
             species__common_name="Human")
-        # .exclude(id__in=complex_objs)
         .prefetch_related("family")
     )
 
@@ -363,15 +282,10 @@ def prepare_coupling_data_container():
     return data
 
 
-def fill_coupling_data_container(data, sources=["GuideToPharma", "Aska"]):
-    threshold_primary = -0.1
-    threshold_secondary = -1
+def fill_coupling_data_container(data):
+    distinct_sources = ["GuideToPharma", "Aska"]
 
-    distinct_g_families = []
-    distinct_g_subunit_families = {}
-    distinct_sources = sources
-
-    couplings = ProteinGProteinPair.objects.all().prefetch_related(
+    couplings = ProteinCouplings.objects.filter(source__in=distinct_sources).prefetch_related(
         "protein", "g_protein_subunit", "g_protein"
     )
 
@@ -380,30 +294,16 @@ def fill_coupling_data_container(data, sources=["GuideToPharma", "Aska"]):
         # Skip entries without any annotation
         if p not in data:
             continue
-        
+
         s = c.source
         t = c.transduction
-        m = c.log_rai_mean
+        m = c.logmaxec50
         gf = c.g_protein.name
-        # print(gf)
         gf = gf.replace(" family", "")
-
-        if s not in distinct_sources:
-            continue
-
-        if gf not in distinct_g_families:
-            distinct_g_families.append(gf)
-            distinct_g_subunit_families[gf] = []
 
         if c.g_protein_subunit:
             g = c.g_protein_subunit.entry_name
             g = g.replace("_human", "")
-            # print("g",g)
-            if g not in distinct_g_subunit_families[gf]:
-                distinct_g_subunit_families[gf].append(g)
-                distinct_g_subunit_families[gf] = sorted(
-                    distinct_g_subunit_families[gf]
-                )
 
         if s not in data[p]:
             data[p][s] = {}
@@ -458,20 +358,10 @@ def process_coupling_data(data):
         e["coupling"]["Aska"] = c_aska[1]
         e["coupling"]["Merged"] = c_merg[1]
 
-        e["GuideToPharma"]["Gi/Go"] = c_gtop["Gi/Go"]
-        e["GuideToPharma"]["Gs"] = c_gtop["Gs"]
-        e["GuideToPharma"]["Gq/G11"] = c_gtop["Gq/G11"]
-        e["GuideToPharma"]["G12/G13"] = c_gtop["G12/G13"]
-
-        e["Aska"]["Gi/Go"] = c_aska[0]["Gi/Go"]
-        e["Aska"]["Gs"] = c_aska[0]["Gs"]
-        e["Aska"]["Gq/G11"] = c_aska[0]["Gq/G11"]
-        e["Aska"]["G12/G13"] = c_aska[0]["G12/G13"]
-
-        e["Merged"]["Gi/Go"] = c_merg[0]["Gi/Go"]
-        e["Merged"]["Gs"] = c_merg[0]["Gs"]
-        e["Merged"]["Gq/G11"] = c_merg[0]["Gq/G11"]
-        e["Merged"]["G12/G13"] = c_merg[0]["G12/G13"]
+        for x in ["Gs", "Gi/o", "Gq/11", "G12/13"]:
+            e["GuideToPharma"][x] = c_gtop[x]
+            e["Aska"][x] = c_aska[0][x]
+            e["Merged"][x] = c_merg[0][x]
 
         e["GuideToPharma"]["gprot"] = p_gtop
         e["Aska"]["gprot"] = p_aska
@@ -483,14 +373,13 @@ def process_coupling_data(data):
 
 
 def extract_coupling_bool(gp, source):
-    distinct_g_families = ['Gs','Gi/Go', 'Gq/G11', 'G12/G13', ]
-    distinct_g_subunit_families = OrderedDict([('Gs',['gnas2','gnal']), ('Gi/Go',['gnai1', 'gnai3', 'gnao', 'gnaz']), ('Gq/G11',['gnaq', 'gna14', 'gna15']), ('G12/G13',['gna12', 'gna13'])])
+    distinct_g_families = ['Gs','Gi/o', 'Gq/11', 'G12/13', ]
     threshold_primary = -0.1
     threshold_secondary = -1
 
     if source == 'GuideToPharma':
         gp = gp[source]
-        c = {"Gi/Go": False, "Gs": False, "Gq/G11": False, "G12/G13": False}
+        c = {"Gi/o": False, "Gs": False, "Gq/11": False, "G12/13": False}
         for key in c:
             if key in gp:
                 c[key] = True
@@ -498,7 +387,7 @@ def extract_coupling_bool(gp, source):
 
     elif source == 'Aska':
         gp = gp[source]
-        c = {"Gi/Go": False, "Gs": False, "Gq/G11": False, "G12/G13": False}
+        c = {"Gi/o": False, "Gs": False, "Gq/11": False, "G12/13": False}
         c_levels = {}
 
         for gf in distinct_g_families:
@@ -515,7 +404,7 @@ def extract_coupling_bool(gp, source):
         return (c, c_levels)
 
     elif source == 'Merged':
-        c = {"Gi/Go": False, "Gs": False, "Gq/G11": False, "G12/G13": False}
+        c = {"Gi/o": False, "Gs": False, "Gq/11": False, "G12/13": False}
         c_levels = {}
         v = gp
 

@@ -348,7 +348,7 @@ class AnalyzedExperimentSerializer(serializers.ModelSerializer):
     article_quantity = serializers.CharField()
     labs_quantity = serializers.CharField()
 
-    # Receptor trunsducers
+    # Receptor transducers
     primary = serializers.SerializerMethodField()
     secondary = serializers.SerializerMethodField()
 

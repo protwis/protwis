@@ -13,6 +13,7 @@ class Command(BaseBuild):
         sbc = StructureBuildCheck()
         sbc.check_structures()
         structs = Structure.objects.all()
+        sbc.check_duplicate_residues()
         for s in structs:
             sbc.check_segment_ends(s)
         print("Missing segments: ", len(sbc.missing_seg))
@@ -24,3 +25,6 @@ class Command(BaseBuild):
         print("End errors: ", len(sbc.end_error))
         for i in sbc.end_error:
             print("Error: {} {} ends at {} instead of annotated {}".format(i[0],i[1],i[2],i[3]))
+        print("Residue duplicate errors: ", len(sbc.duplicate_residue_error))
+        for i, j in sbc.duplicate_residue_error.items():
+            print("Error: {} has duplicate residue for {}".format(i,j))

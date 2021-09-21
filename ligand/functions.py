@@ -6,7 +6,7 @@ from common.models import WebResource
 from common.models import WebLink
 from ligand.models import Ligand, LigandType, LigandProperities
 
-def get_or_make_ligand(ligand_id,type_id, name = None):
+def get_or_make_ligand(ligand_id, type_id, name = None, pep_or_prot = None):
     if type_id=='PubChem CID' or type_id=='SMILES':
         if type_id=='PubChem CID':
             pubchem_lookup_value = 'cid'
@@ -89,7 +89,10 @@ def get_or_make_ligand(ligand_id,type_id, name = None):
                                 if Ligand.objects.filter(name=ligand_name).exists():
                                     ls = Ligand.objects.filter(name__startswith=ligand_name, canonical=True).order_by("pk")
                                     for l_temp in ls:
-                                        last = l_temp.name.split("_")[-1]
+                                        try:
+                                            last = int(l_temp.name.split("_")[-1])
+                                        except ValueError:
+                                            continue
                                     if last==ligand_name: #no addition yet
                                         ligand_name = ligand_name +"_1"
                                     else:
@@ -148,6 +151,10 @@ def get_or_make_ligand(ligand_id,type_id, name = None):
                 l.load_by_name(str(name))
             except IntegrityError:
                 l = Ligand.objects.get(name=str(name), canonical=True)
+            #if provided, update the ligand_type field of properities
+            #with correct labeling as peptide or protein
+            if pep_or_prot:
+                l.properities.ligand_type = LigandType.objects.get(name = pep_or_prot)
     else:
         l = None
 

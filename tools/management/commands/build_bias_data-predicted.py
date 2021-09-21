@@ -7,6 +7,7 @@ from build.management.commands.base_build import Command as BaseBuild
 from ligand.models import BiasedExperiment, AnalyzedExperiment, AnalyzedAssay
 from django.conf import settings
 
+
 class Command(BaseBuild):
     mylog = logging.getLogger(__name__)
     mylog.setLevel(logging.INFO)
@@ -21,17 +22,33 @@ class Command(BaseBuild):
         [settings.DATA_DIR, 'ligand_data', 'cell_line'])
     help = 'Reads bias data and imports it'
 
-    gprot_cache = dict()
+    gprot_cache = {}
     cell_cache = dict()
 
     def add_arguments(self, parser):
+        parser.add_argument('-p', '--proc',
+                            type=int,
+                            action='store',
+                            dest='proc',
+                            default=1,
+                            help='Number of processes to run')
+        parser.add_argument('-f', '--filename',
+                            action='append',
+                            dest='filename',
+                            help='Filename to import. Can be used multiple times')
         parser.add_argument('-u', '--purge',
                             action='store_true',
                             dest='purge',
                             default=False,
                             help='Purge existing bias records')
+        parser.add_argument('--test_run', action='store_true', help='Skip this during a test run',
+                            default=False)
+        self.logger.info('COMPLETED CREATING BIAS DATA')
 
     def handle(self, *args, **options):
+        if options['test_run']:
+            print('Skipping in test run')
+            return
         # delete any existing structure data
         if options['purge']:
             try:
@@ -41,7 +58,7 @@ class Command(BaseBuild):
             except Exception as msg:
                 print(msg)
         print('CREATING BIAS DATA')
-
+        print(options['filename'])
         self.build_bias_data()
         self.logger.info('COMPLETED CREATING BIAS DATA')
 
@@ -62,6 +79,7 @@ class Command(BaseBuild):
         df = pd.read_excel(source_file_path)
         Command.gprot_cache = df.set_index('UniProt').T.to_dict('dict')
 
+
     @staticmethod
     def process_cell_line_excel():
         source_file_path = None
@@ -74,7 +92,7 @@ class Command(BaseBuild):
         Command.cell_cache = df.set_index("Cell_line_name").T.to_dict('dict')
 
     def build_bias_data(self):
-        print('stage # 1, process excell with g_proteins')
+        print('prestage, process excell')
         Command.process_gproteins_excel()
         Command.process_cell_line_excel()
         print('Build bias data gproteins')
@@ -90,51 +108,23 @@ class Command(BaseBuild):
         # import pdb; pdb.set_trace()
         print('stage # 4: Converting queryset into dict finished', len(changed_data))
         send = Command.combine_unique(changed_data)
-        # import pdb; pdb.set_trace()
         print('stage # 5: Selecting endogenous ligands finished')
         referenced_assay = self.process_referenced_assays(send)
-        # import pdb; pdb.set_trace()
         print('stage # 6: Separating reference assays is finished',
-              Command._reference_assay_counter)
-        ligand_data = Command.separate_ligands(referenced_assay, 'inferred')
-        # TODO: save for on the fly calculations
-        # import pdb; pdb.set_trace()
+              len(referenced_assay))
+        ligand_data = Command.separate_ligands(referenced_assay)
         print('stage # 7: Separate ligands finished')
-        limit_family = Command.process_signalling_proteins(ligand_data, 'inferred')
-        # import pdb; pdb.set_trace()
+        limit_family = self.process_signalling_proteins(ligand_data)
         print('stage # 8: process_signalling_proteins finished', len(limit_family))
         calculated_assay = Command.process_calculation(limit_family)
-        # import pdb; pdb.set_trace()
         print('stage # 9: Calucating finished')
         Command.count_publications(calculated_assay)
-        # import pdb; pdb.set_trace()
         print('stage # 10: labs and publications counted')
         context.update({'data': calculated_assay})
-        # import pdb; pdb.set_trace()
         print('stage # 11: combining data into common dict is finished')
         # save dataset to model
-        Command.save_data_to_model(context, 'different_family')
+        Command.save_data_to_model(context, 'predicted_family')
         print('stage # 12: saving data to model is finished')
-        print('\nStarted processing subtypes')
-        ligand_data = Command.separate_ligands(referenced_assay, 'subtypes')
-        # subtypes part
-        print('stage # 13: Separate ligands finished')
-        limit_family = Command.process_signalling_proteins(ligand_data, 'subtypes')
-        # import pdb; pdb.set_trace()
-        print('stage # 14: process_signalling_proteins finished', len(limit_family))
-        calculated_assay = Command.process_calculation(limit_family)
-        # import pdb; pdb.set_trace()
-        print('stage # 15: Calucating finished')
-        Command.count_publications(calculated_assay)
-        # import pdb; pdb.set_trace()
-        print('stage # 16: labs and publications counted')
-        context.update({'data': calculated_assay})
-        # import pdb; pdb.set_trace()
-        print('stage # 17: combining data into common dict is finished')
-        # save dataset to model
-        Command.save_data_to_model(context, 'sub_different_family')
-        print('stage # 18: saving data to model is finished')
-
 
     @staticmethod
     def get_data_from_model():
@@ -157,7 +147,6 @@ class Command(BaseBuild):
             vendor_counter = 0
             for i in instance[1].experiment_data_vendors.all():
                 vendor_counter = vendor_counter + 1
-
             for entry in instance[1].experiment_data.all():
                 author_list = list()
                 for author in entry.experiment_data_authors.all():
@@ -284,12 +273,12 @@ class Command(BaseBuild):
                 Decimal(temp_dict['quantitive_activity_initial']))
         return temp_dict['quantitive_activity'], temp_dict['quantitive_activity_initial']
 
+
     @staticmethod
     def combine_unique(data):
         '''
         combining tested assays and reference assays
         '''
-        _counter_of_assays = 0
         context = dict()
         for j in data:
             name = str(j['publication'].id) + \
@@ -301,9 +290,7 @@ class Command(BaseBuild):
                 temp_obj.append(i)
             context[name] = j
             context[name]['assay'] = temp_obj
-            _counter_of_assays = _counter_of_assays + len(context[name]['assay'])
         print("******len of experiments:", len(context), "******")
-        print("******len of assays:", _counter_of_assays, "******")
         return context
 
     @staticmethod
@@ -311,7 +298,9 @@ class Command(BaseBuild):
         '''
         separate tested assays and reference assays
         '''
+        counter = 0
         for j in data.items():
+            counter = counter+1
             assays, reference = Command.return_refenced_assays(j[1]['assay'])
             j[1]['assay_list'] = assays
             j[1]['reference_assays_list'] = reference
@@ -354,7 +343,6 @@ class Command(BaseBuild):
                     #         if assay['cell_line'] == reference['cell_line']:
                     #             if assay['measured_biological_process'] == reference['measured_biological_process']:
                     #                 temp_reference_list.append(reference)
-
             if len(temp_reference_list)>0:
                 if len(temp_reference_list)>1:
                     final_end = None
@@ -369,17 +357,13 @@ class Command(BaseBuild):
                                 result_list.append(_reference_assay)
                 else:
                     assay['endogenous_assay'] = temp_reference_list[0]
-        for assay in main:
-            if len(assay['endogenous_assay']) > 0:
-                assay['calculated_relative_tau'] = Command.calculate_relative_transduction_coef(assay)
-                result_list.append(assay)
-        return result_list
+        return main
 
     @staticmethod
-    def separate_ligands(context, command):
+    def separate_ligands(context):
         content = dict()
         for i in context.items():
-            if(len(i[1]['reference_assays_list'])) > 0:
+            if(len(i[1]['reference_assays_list'])) < 1:
                 for assay in i[1]['assay_list']:
                     _pub_name = str(i[1]['publication'].id)
                     _ligand_name = str(assay['ligand'].id)
@@ -388,15 +372,10 @@ class Command(BaseBuild):
                     _aux_prot_name = str(i[1]['auxiliary_protein'])
                     _tissue = assay['_tissue']
                     _species = assay['_species']
-                    _pathway = assay['pathway_level']
-                    if command == 'inferred':
-                        name = _pub_name+'/'+_ligand_name+'/'+_receptor_name+'/'+_receptor_iso_name+'/'+_aux_prot_name+'/'+_tissue+'/'+_species+'/'+_pathway
-                            # may be add cell line tissue and species and assay type
-                    elif command == 'subtypes':
-                        name = _pub_name+'/'+_ligand_name+'/'+_receptor_name+'/'+_receptor_iso_name+'/'+_aux_prot_name+'/'+str(assay['family'])+'/'+_tissue+'/'+_species+'/'+_pathway
-                             # may be add cell line tissue and species and assay type
+                    name = _pub_name+'/'+_ligand_name+'/'+_receptor_name+'/'+_receptor_iso_name+'/'+_aux_prot_name+'/'+_tissue+'/'+_species
                     if name in content:
                         content[name]['assay_list'].append(assay)
+
                     else:
                         content[name] = dict()
                         content[name]['assay_list'] = list()
@@ -435,74 +414,52 @@ class Command(BaseBuild):
         return ligand_list
 
     @staticmethod
-    def process_signalling_proteins(context, command):
+    def process_signalling_proteins(context):
         for i in context.items():
+
             i[1]['assay_list'] = Command.calculate_bias_factor_value(
                 i[1]['assay_list'])
-            i[1]['assay_list'] = Command.sort_assay_list(i[1]['assay_list'])
-            i[1]['backup_assays'] = i[1]['assay_list']
-            i[1]['assay_list'] = Command.limit_family_set(i[1]['assay_list'], command)
-            # TODO: order by transduction_coef
-            i[1]['assay_list'] = Command.order_assays(i[1]['assay_list'])
 
+            i[1]['assay_list'] = Command.sort_assay_list(i[1]['assay_list'])
+
+            i[1]['assay_list'] = Command.limit_family_set(i[1]['assay_list'])
+
+            i[1]['assay_list'] = Command.order_assays(i[1]['assay_list'])
         return context
 
     @staticmethod
     def order_assays(assays):
-        try:
-            sorted_assay = sorted(assays, key=lambda k: k['calculated_relative_tau'], reverse=True)
-        except:
-            try:
-                sorted_assay = sorted(assays, key=lambda k: k['relative_transduction_coef'], reverse=True)
-            except:
-                sorted_assay = sorted(assays, key=lambda k: k['delta_emax_ec50']
+        sorted_assay = sorted(assays, key=lambda k: k['delta_emax_ec50']
                                       if k['delta_emax_ec50'] else float(-1000), reverse=True)
         for item in enumerate(sorted_assay):
             item[1]['order_no'] = item[0]
         return assays
 
     @staticmethod
-    def limit_family_set(assay_list, command):
+    def limit_family_set(assay_list):
         families = list()
         proteins = set()
-        if command == 'inferred':
-            option = 'family'
-        else:
-            option = 'signalling_protein'
         for assay in assay_list:
-            if assay[option] not in proteins:
-                proteins.add(assay[option])
-                families.append(assay)
+            if assay['family'] not in proteins:
+                # if assay['family'] == 'Gq/11 or Gi/o':
+                #     assay = self.get_rid_of_gprot(assay, families, proteins)
+                if assay:
+                    proteins.add(assay['family'])
+                    families.append(assay)
             else:
-                try:
+                # if assay['family'] == 'Gq/11 or Gi/o':
+                #     assay = self.get_rid_of_gprot(assay, families, proteins)
+                if assay:
                     compare_val = next(
-                        item for item in families if item[option] == assay[option])
-                except StopIteration:
-                    pass
-                if assay['relative_transduction_coef']:
+                        item for item in families if item["family"] == assay['family'])
                     try:
-                        if assay['relative_transduction_coef'] > compare_val['relative_transduction_coef']:
-                            families[:] = [d for d in families if d.get(
-                                option) != compare_val[option]]
-                    except:
-                        families[:] = [d for d in families if d.get(
-                            option) != compare_val[option]]
-                elif assay['transduction_coef']:
-                    try:
-                        if assay['transduction_coef'] > compare_val['transduction_coef']:
-                            families[:] = [d for d in families if d.get(
-                                option) != compare_val[option]]
-                    except:
-                        families[:] = [d for d in families if d.get(
-                            option) != compare_val[option]]
-                else:
-                    if (assay['delta_emax_ec50'] is not None and compare_val['delta_emax_ec50'] is not None):
                         if assay['delta_emax_ec50'] > compare_val['delta_emax_ec50']:
                             families[:] = [d for d in families if d.get(
-                                option) != compare_val[option]]
+                                'family') != compare_val['family']]
                             families.append(assay)
+                    except TypeError:
+                        pass
         return families
-
 
     @staticmethod
     def sort_assay_list(i):
@@ -513,44 +470,20 @@ class Command(BaseBuild):
 
     @staticmethod
     def calculate_bias_factor_value(sorted_assays):
-        ## TODO: pick
+        # TODO: pick
         for assay in sorted_assays:
-            if assay['delta_emax_ec50']:
-                temp_value = Command.calc_order_bias_value(
-                    assay, assay['endogenous_assay'])
-                try:
-                    if assay['delta_emax_ec50'] < temp_value:
-                        assay['delta_emax_ec50'] = temp_value
-                except:
-                    pass
-            else:
-                assay['delta_emax_ec50'] = Command.calc_order_bias_value(
-                    assay, assay['endogenous_assay'])
+            assay['delta_emax_ec50'] = Command.calc_delta_emax_ec50(assay)
         return sorted_assays
 
     @staticmethod
-    def calc_order_bias_value(assay,reference):
+    def calc_delta_emax_ec50(assay):
         result = None
         try:
             assay_a = assay['quantitive_activity']
             assay_b = assay['quantitive_efficacy']
-            reference_a = reference['quantitive_activity']
-            reference_b = reference['quantitive_efficacy']
-            result = math.log10((assay_b / assay_a)) - \
-                math.log10((reference_b / reference_a))
+            result = math.log10(assay_b / assay_a)
         except:
-            try:
-                if assay['quantitive_activity_initial']:
-                    assay_a = float(assay['quantitive_activity_initial'])
-                    assay_a = 10**(assay_a*(-1))
-                    assay_b = assay['quantitive_efficacy']
-                    reference_a = reference['quantitive_activity']
-                    reference_b = reference['quantitive_efficacy']
-                    result = math.log10((assay_b / assay_a)) - \
-                        math.log10((reference_b / reference_a))
-            except:
-                # import pdb; pdb.set_trace()
-                result = None
+            result = None
         return result
 
     @staticmethod
@@ -558,19 +491,14 @@ class Command(BaseBuild):
         list_to_remove = list()
         for i in context.items():
             if len(i[1]['assay_list'])>1:
-                for assay in i[1]['assay_list']:
-                    if assay['order_no'] == 0 and assay['delta_emax_ec50'] is None:
-                        list_to_remove.append(i[0])
                 i[1]['biasdata'] = i[1]['assay_list']
                 i[1].pop('assay_list')
                 # calculate log bias
                 Command.calc_bias_factor(i[1]['biasdata'])
-                # Command.calc_potency_and_transduction(i[1]['biasdata'])
             else:
                 list_to_remove.append(i[0])
         for experiment in list_to_remove:
             context.pop(experiment)
-
         return context
 
     @staticmethod
@@ -579,74 +507,17 @@ class Command(BaseBuild):
         for i in biasdata:
             if i['order_no'] == 0:
                 most_potent = i
+
         for i in biasdata:
             if i['order_no'] != 0:
-                try:
-                    i['potency'] = round(
-                        i['quantitive_activity'] / most_potent['quantitive_activity'], 1)
-                except:
-                    i['potency'] = None
-                i['relative_transduction_coef'], i['delta_relative_transduction_coef'] = Command.calcualte_trunsduction(most_potent, i)
                 i['log_bias_factor'] = Command.lbf_process_qualitative_data(i)
                 if i['log_bias_factor'] == None:
-                    # import pdb; pdb.set_trace()
-                    i['log_bias_factor'] = Command.lbf_process_efficacy(i)
-                if i['log_bias_factor'] == None:
-                    # import pdb; pdb.set_trace()
-                    i['log_bias_factor'] = Command.lbf_calculate_bias(
-                                            i,most_potent)
-                if i['log_bias_factor'] == None:
                     i['log_bias_factor'] = Command.lbf_process_ic50(i)
-
-    @staticmethod
-    def calcualte_trunsduction(most_potent, i):
-        result = None
-        pre_result = None
-        if most_potent['calculated_relative_tau'] is not None:
-            if i['transduction_coef']:
-                try:
-                    pre_result = Command.calculate_relative_transduction_coef(i)
-                    result = most_potent['calculated_relative_tau'] - pre_result
-                    # print('***calculated***', result)
-                except:
-                    pre_result = None
-                    result = None
-            elif i['transduction_coef'] is None and i['relative_transduction_coef']:
-                try:
-                    if i['endogenous_assay']['relative_transduction_coef'] and i['endogenous_assay']['relative_transduction_coef'] == 0:
-                        if most_potent['relative_transduction_coef'] is not None:
-                            try:
-                                pre_result = i['relative_transduction_coef']
-                                result = most_potent['relative_transduction_coef'] - i['relative_transduction_coef']
-                            except Exception:
-                                pre_result = None
-                                result = None
-                except:
-                    pre_result = None
-                    result = None
-        elif most_potent['relative_transduction_coef'] is not None:
-            try:
-                if most_potent['endogenous_assay']['relative_transduction_coef'] and most_potent['endogenous_assay']['relative_transduction_coef'] == 0:
+                if i['log_bias_factor'] == None:
                     try:
-                        pre_result = i['relative_transduction_coef']
-                        result = most_potent['relative_transduction_coef'] - i['relative_transduction_coef']
-                    except Exception:
-                        pre_result = None
-                        result = None
-            except:
-                pre_result = None
-                result = None
-        return pre_result, result
-
-    @staticmethod
-    def calculate_relative_transduction_coef(i):
-        relative_transduction_coef = None
-        try:
-            if i['transduction_coef'] is not None:
-                relative_transduction_coef = i['transduction_coef'] - i['endogenous_assay']['transduction_coef']
-        except Exception:
-            relative_transduction_coef = None
-        return relative_transduction_coef
+                        i['log_bias_factor'] = round(most_potent['delta_emax_ec50'] - i['delta_emax_ec50'], 1)
+                    except:
+                        i['log_bias_factor'] = None
 
     @staticmethod
     def lbf_process_qualitative_data(i):
@@ -664,32 +535,12 @@ class Command(BaseBuild):
             return_message = None
         return return_message
 
-    @staticmethod
-    def lbf_process_efficacy(i):
-        return_message = None
-        try:
-            if i['quantitive_efficacy'] == 0:
-                return_message = "Full Bias"
-        except:
-            return_message = None
-        return return_message
-
-    @staticmethod
-    def lbf_calculate_bias(i, most_potent):
-        return_message = None
-        try:
-            temp_calculation = most_potent['delta_emax_ec50'] - i['delta_emax_ec50']
-            return_message = round(temp_calculation, 1)
-        except:
-            return_message = None
-        return return_message
 
     @staticmethod
     def lbf_process_ic50(i):
         return_message = None
         try:
-            if (i['quantitive_measure_type'].lower() == 'ic50' and
-                    i['endogenous_assay']['quantitive_measure_type'].lower() == 'ic50'):
+            if (i['quantitive_measure_type'].lower() == 'ic50'):
                 return_message = 'Only agonist in main pathway'
         except:
             return_message = None
@@ -749,91 +600,16 @@ class Command(BaseBuild):
                                                       )
                 experiment_entry.save()
                 for ex in i[1]['biasdata']:
-                    # try:
-                    if ex['endogenous_assay'] is not None:
-                        try:
-                            ex['log_bias_factor'] = round(
-                                ex['log_bias_factor'], 1)
-                        except:
-                            ex['log_bias_factor'] = ex['log_bias_factor']
-                        try:
-                            ex['delta_emax_ec50'] = round(ex['delta_emax_ec50'], 1)
-                        except:
-                            ex['delta_emax_ec50'] = ex['delta_emax_ec50']
-                        try:
-                            if ex['calculated_relative_tau'] is not None:
-                                ex['relative_transduction_coef'] = ex['calculated_relative_tau']
-                            ex['transduction_coef'] = round(ex['transduction_coef'], 1)
-                            ex['relative_transduction_coef'] = round(ex['relative_transduction_coef'], 1)
-                            ex['delta_relative_transduction_coef'] = round(ex['delta_relative_transduction_coef'],1)
-                        except:
-                            ex['transduction_coef'] = ex['transduction_coef']
-                            ex['relative_transduction_coef'] = ex['relative_transduction_coef']
-                            ex['delta_relative_transduction_coef'] = ex['delta_relative_transduction_coef']
-                        try:
-                            ex['quantitive_activity'] = round(
-                                ex['quantitive_activity'], 1)
-                        except:
-                            ex['quantitive_activity'] = ex['quantitive_activity']
-                        try:
-                            ex['quantitive_efficacy'] = int(
-                                ex['quantitive_efficacy'])
-                        except:
-                            ex['quantitive_efficacy'] = ex['quantitive_efficacy']
-                        emax_ligand = ex['emax_reference_ligand']
-                        try:
-                            endogenous_assay_used = ex['endogenous_assay']['assay_initial']
-                        except:
-                            import pdb; pdb.set_trace()
-                        assay_description = 'tested_assays'
-                        if source == 'sub_different_family':
-                            assay_description = 'sub_tested_assays'
-                        experiment_assay = AnalyzedAssay(experiment=experiment_entry,
-                                                         assay_description=assay_description,
-                                                         family=ex['family'],
-                                                         order_no=ex['order_no'],
-                                                         signalling_protein=ex['signalling_protein'],
-                                                         cell_line=ex['cell_line'],
-                                                         assay_type=ex['assay_type'],
-                                                         pathway_level=ex['pathway_level'],
-                                                         reference_assay_initial = endogenous_assay_used,
-                                                         molecule_1=ex['molecule_1'],
-                                                         molecule_2=ex['molecule_2'],
-                                                         assay_time_resolved=ex['assay_time_resolved'],
-                                                         ligand_function=ex['ligand_function'],
-                                                         quantitive_measure_type=ex['quantitive_measure_type'],
-                                                         quantitive_activity=ex['quantitive_activity'],
-                                                         quantitive_activity_initial=ex['quantitive_activity_initial'],
-                                                         quantitive_unit=ex['quantitive_unit'],
-                                                         qualitative_activity=ex['qualitative_activity'],
-                                                         quantitive_efficacy=ex['quantitive_efficacy'],
-                                                         efficacy_measure_type=ex['efficacy_measure_type'],
-                                                         efficacy_unit=ex['efficacy_unit'],
-                                                         potency=ex['potency'],
-                                                         relative_transduction_coef=ex['relative_transduction_coef'],
-                                                         transduction_coef=ex['transduction_coef'],
-                                                         delta_relative_transduction_coef=ex['delta_relative_transduction_coef'],
-                                                         log_bias_factor=ex['log_bias_factor'],
-                                                         delta_emax_ec50=ex['delta_emax_ec50'],
-                                                         effector_family=ex['family'],
-                                                         measured_biological_process=ex['measured_biological_process'],
-                                                         signal_detection_tecnique=ex['signal_detection_tecnique'],
-                                                         emax_ligand_reference=emax_ligand
-                                                         )
-                        experiment_assay.save()
-
-                for ex in i[1]['backup_assays']:
-                    assay_description = 'backup_assays'
-                    if source == 'sub_different_family':
-                        assay_description = 'sub_backup_assays'
+                    emax_ligand = ex['emax_reference_ligand']
                     experiment_assay = AnalyzedAssay(experiment=experiment_entry,
-                                                     reference_assay_initial = None,
+                                                     assay_description='predicted_tested_assays',
                                                      family=ex['family'],
                                                      order_no=ex['order_no'],
                                                      signalling_protein=ex['signalling_protein'],
                                                      cell_line=ex['cell_line'],
                                                      assay_type=ex['assay_type'],
-                                                     assay_description=assay_description,
+                                                     pathway_level=ex['pathway_level'],
+                                                     reference_assay_initial=None,
                                                      molecule_1=ex['molecule_1'],
                                                      molecule_2=ex['molecule_2'],
                                                      assay_time_resolved=ex['assay_time_resolved'],
@@ -849,11 +625,12 @@ class Command(BaseBuild):
                                                      potency=ex['potency'],
                                                      relative_transduction_coef=ex['relative_transduction_coef'],
                                                      transduction_coef=ex['transduction_coef'],
+                                                     delta_relative_transduction_coef=ex['delta_relative_transduction_coef'],
                                                      log_bias_factor=ex['log_bias_factor'],
                                                      delta_emax_ec50=ex['delta_emax_ec50'],
                                                      effector_family=ex['family'],
                                                      measured_biological_process=ex['measured_biological_process'],
                                                      signal_detection_tecnique=ex['signal_detection_tecnique'],
-                                                     emax_ligand_reference=ex['ligand']
+                                                     emax_ligand_reference=emax_ligand
                                                      )
                     experiment_assay.save()

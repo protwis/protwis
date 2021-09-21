@@ -4,6 +4,7 @@
 {% block addon_css %}
 <link rel="stylesheet" href="{% static 'home/css/button_spinner.css' %}" type="text/css" />
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+<link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
@@ -16,6 +17,7 @@
     {% endif %}
     <div class="row">
 
+        {% if filters and family_tree %}
         <!-- description column -->
         <div class="col-md-4">
 
@@ -91,8 +93,85 @@
 {% endcomment %}
 
         </div>
+        {% else %}
+        <!-- description column -->
+        <div class="col-md-7">
 
+            <!-- main description -->
+            <div class="col-md-12 panel panel-primary">
+                <div class="panel-body">
+                    {% if step and number_of_steps and number_of_steps > 1 %}
+                    <h2>STEP {{ step }} of {{ number_of_steps }}</h2>
+                    {% endif %}
+                    <h4>{{ title }}</h4>
+                    {{ description|linebreaks }}
+                    {% if docs %}
+                    For more information on this tool, see the <a href="{{ documentation_url }}{{ docs }}">docs</a>.
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="col-md-12 panel panel-primary">
+                <div class="panel-body" id="selection-{{ selection_box }}">
+                  <div><input type="text" id="copyboxTargets" class="form-control" placeholder="UniProt names"></div>
+                  <div>
+                    <button type="button" onclick="importTargets();" class="btn btn-primary">Import</button>
+                    <button type="button" onclick="exportTargets();" class="btn btn-primary">Export</button>
+                  </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- selection column -->
+        <div class="col-md-5">
+
+            <!-- button(s) -->
+            {% if buttons.continue.label %}
+            <div id="selection-buttons">
+                {% include 'common/selection_buttons.html' %}
+            </div>
+            {% endif %}
+
+        </div>
+        {% endif %}
     </div>
+
+    <div id="path_bias" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+          <h4 class="modal-title">Pathway-biased ligands (balance reference ligand)</h4>
+        </div>
+        <div class="modal-body">
+          <!-- <a href="#close" title="Close" class="close">X</a> -->
+          <p>Ligand pathway-bias is calculated relative to a referenced ligand with balanced (near-equal)
+            signaling across two pathways measured in the same system (see <a href="#">pre-print)</a>.</p>
+          <p>GPCRdb is currently collecting such reference ligands and will avail this page when done.
+          Please help by submitting your balanced reference ligands <a href="#">here</a>.</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="biased" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+          <h4 class="modal-title">Biased ligands (any reference ligand)</h4>
+        </div>
+        <div class="modal-body">
+          <!-- <a href="#close" title="Close" class="close">X</a> -->
+          <p>GPCRdb is currently working on this page.<br>
+            It will allow users to select which ligand from an annotated publication should be
+            used as the reference ligand to calculate bias for the other tested ligands in
+            the same publication.</p>
+        </div>
+      </div>
+    </div>
+
     <div class="row">
       <div class="col-md-4">
         <span>
