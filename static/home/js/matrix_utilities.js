@@ -96,7 +96,7 @@ const get_receptor_classes = function(receptor_metadata, pdb_id_array) {
   return receptor_metadata.filter((x) => pdb_id_array.includes(x.pdb_id)).map((x) => x.class);
 }
 
-const run_seq_sig = function() {
+const run_seq_sig = function(interface_data) {
   let segments = get_gn();
   let ignore_markers = get_ignore();
   var selected_receptor_classes = get_receptor_classes(interactions_metadata, pdb_sel);
@@ -143,6 +143,32 @@ const run_seq_sig = function() {
       data.feat = tmp_data
       document.querySelector("#seqsig-container").style.display = "block";
       document.querySelector("#conseq-container").style.display = "block";
+
+      // Calculate interaction conservation
+      let int_cons_list = {};
+      for (const interaction of interface_data["transformed"]) {
+        let struct = interaction.pdb_id;
+        let gn = interaction.rec_gn;
+        if (typeof(int_cons_list[gn]) == "undefined") {
+          int_cons_list[gn] = [struct];
+        } else {
+          if (int_cons_list[gn].indexOf(struct) === -1) {
+            int_cons_list[gn].push(struct)
+          }
+        }
+      }
+
+      // Add interaction frequencies to residue property data 
+      let struct_count = interface_data["pdbids"].length;
+      for (let i in data.feat){
+        for (const obj of data.feat[i]){
+          if (typeof(int_cons_list[obj.gn]) == "undefined") {
+            obj.int_freq = 0;
+          } else {
+            obj.int_freq = Math.round(int_cons_list[obj.gn].length/struct_count*100,0);
+          }
+        }
+      }
 
       // d3 draw
       svg = signprotmat.d3.setup("div#seqsig-svg", "seqsig");
@@ -813,7 +839,7 @@ $(document).ready(function() {
       document.querySelector("#resbut").classList.remove("active");
 
       reset_slider();
-      run_seq_sig();
+      run_seq_sig(data);
     };
   });
 });
