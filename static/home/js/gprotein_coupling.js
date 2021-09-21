@@ -27,6 +27,7 @@ $(document).ready(function() {
   // Families Table
   // =============================================================================
   console.time("table1load");
+  $("#familiestabletab").show();
   oTable1 = $("#familiestabletab").DataTable({
     deferRender: true,
     scrollY: "50vh",
@@ -190,6 +191,7 @@ function initCouplingTable2() {
   }
 
   console.time("table2load");
+  $("#subtypestabletab").show();
   oTable2 = $("#subtypestabletab").DataTable({
     deferRender: true,
     scrollY: "50vh",
