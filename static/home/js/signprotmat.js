@@ -956,6 +956,7 @@ var signprotmat = {
 
 
             // * APPENDING COL TICK ANNOTATION FOR RECEPTOR GNs
+            let greek_match = {"&alpha;": "\u03B1", "&beta;": "\u03B2", "&gamma;": "\u03B3", "&delta;": "\u03B4", "&kappa;": "\u03BA", "&mu;": "\u03BC"};
             svg
                 .append("g")
                 .attr("id", "recPDB")
@@ -973,8 +974,11 @@ var signprotmat = {
                 .attr("dy", 75)
                 .text(function (d) {
                     var i_obj = _.find(interactions_metadata, function (e) { return e.pdb_id == d; });
-                    var text = i_obj.name.replace("&beta;", "\u03B2"); // beta
-                    text = text.replace("&mu;", "\u03BC"); // mu
+                    var text = i_obj.name;
+                    // replace greek letters
+                    for (var code in greek_match) {
+                      text = text.replace(code, greek_match[code]);
+                    }
                     return text.replace(/<[^>]*>/g, "") + " (" + d.toUpperCase() + ")";
                     // return d;
                 });
