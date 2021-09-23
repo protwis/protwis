@@ -310,9 +310,10 @@
 					{{e.publications}}
 					{%else%}
 					{% for pub in e.publications%}
-					<a href='{{pub.web_link}}' target='_blank'>{{pub.authors}}</a><br>
+					<a class="name" href='{{pub.web_link}}' target='_blank'>{{pub.authors}}</a><br>
 					{% endfor %}
 					{% endif %}
+                </td>
 					<!-- <a href='{{e.web_links}}' target='blank'>{{e.publications}}</a></td> -->
 				<td style='display: none'>
 					__{{e.group.receptor.family.parent.parent.parent.short|default_if_none:""}}__{{e.group.receptor.family.parent.short}}
