@@ -95,7 +95,7 @@ class LigandBrowser(TemplateView):
 
         return context
 
-    def fetch_receptor_transducers(self, receptor):
+    def fetch_receptor_trunsducers(self, receptor):
         primary = set()
         temp = str()
         temp1 = str()
