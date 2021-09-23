@@ -57,8 +57,7 @@ class Command(ParseExcel):
 			doi = vals['DOI']
 			pub = False
 			if vals['Journal'] in ['Preprint at Research Square', 'Submitted']:
-				pubjournal, created = PublicationJournal.objects.get_or_create(name__iexact=vals['Journal'],
-					defaults={'slug': slugify(vals['Journal'])})
+				pubjournal, created = PublicationJournal.objects.get_or_create(defaults={"name": vals["Journal"], 'slug': slugify(vals['Journal'])}, name__iexact=vals["Journal"])
 				pub = self.create_publication(doi, wr, pubjournal)
 			elif len(doi) > 0:
 				pub = Publication.get_or_create_from_doi(vals['DOI'])
