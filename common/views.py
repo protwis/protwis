@@ -439,8 +439,12 @@ class AbsReferenceSelectionTable(TemplateView):
     #         # remove the parent family (for all other families than the root of the tree, the parent should be shown)
     #         del ppf
 
-            # Load the target table data
-    table_data = getReferenceTable('different_family', 'tested_assays')
+    # Load the reference table data if possible
+    try:
+        table_data = getReferenceTable('different_family', 'tested_assays')
+    except Exception as e:
+        pass
+
     # except Exception as e:
     #     pass
 
