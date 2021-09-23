@@ -451,10 +451,10 @@ class Command(BaseBuild):
                             pub_review = Publication.get_or_create_from_pubmed(r['review'])
                         elif pub_type == "raw_link":
                             try:
-                                wl, created = WebLink.objects.get_or_create(index__iexact=r['review'], web_resource__slug=pub_type)
+                                wl, created = WebLink.objects.get_or_create(defaults={"index": r["review"]}, index__iexact=r['review'], web_resource__slug=pub_type)
                             except IntegrityError:
                                 # Try again (paralellization)
-                                wl, created = WebLink.objects.get_or_create(index__iexact=r['review'], web_resource__slug=pub_type)
+                                wl, created = WebLink.objects.get_or_create(defaults={"index": r["review"]}, index__iexact=r['review'], web_resource__slug=pub_type)
 
                             try:
                                 pub_review = Publication.objects.get(web_link=wl)

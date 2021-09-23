@@ -82,7 +82,7 @@ class Publication(models.Model):
                 wl = False
 
             pub = Publication()
-            pub.web_link, created = WebLink.objects.get_or_create(index__iexact=identifier, web_resource=wr)
+            pub.web_link, created = WebLink.objects.get_or_create(defaults={"index": identifier}, index__iexact=identifier, web_resource=wr)
             if wr.slug=="doi":
                 pub.update_from_doi(identifier)
             elif wr.slug == "pubmed":
@@ -160,8 +160,7 @@ class Publication(models.Model):
                     journal_abbr = slugify(journal)
 
                 try:
-                    self.journal, created = PublicationJournal.objects.get_or_create(name__iexact=journal,
-                        defaults={'slug': journal_abbr})
+                    self.journal, created = PublicationJournal.objects.get_or_create(defaults={"name": journal, 'slug': journal_abbr}, name__iexact=journal)
                     if created:
                         logger.info('Created journal {}'.format(journal))
                 except IntegrityError:
@@ -190,8 +189,7 @@ class Publication(models.Model):
                 self.year = record['DP'][:4]
 
             try:
-                self.journal, created = PublicationJournal.objects.get_or_create(name__iexact=record['JT'],
-                        defaults={'slug': slugify(record['TA'])})
+                self.journal, created = PublicationJournal.objects.get_or_create(defaults={"name": record['JT'], 'slug': slugify(record['TA'])}, name__iexact=record['JT'])
             except PublicationJournal.DoesNotExist:
                 j = PublicationJournal(slug=slugify(record['TA']), name=record['JT'])
                 j.save()
