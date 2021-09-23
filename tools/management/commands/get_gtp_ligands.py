@@ -55,13 +55,7 @@ class Command(BaseBuild):
                 print(msg)
                 self.logger.error(msg)
         self.analyse_rows()
-        try:
-            print('Updatind ligand data from GuideToPharma')
 
-            print('COMPLETED updating GuideToPharma Data')
-        except Exception as msg:
-            print('--error--', msg, '\n')
-            self.logger.info("The error appeared in def handle")
 
 # pylint: disable=R0201
     def purge_bias_data(self):
@@ -96,29 +90,37 @@ class Command(BaseBuild):
     def get_endogenous(self, targets):
         for target in targets:
             protein = self.fetch_protein(target)
-            response = requests.get(
-                "https://www.guidetopharmacology.org/services/targets/" + str(target) + "/naturalLigands")
-            if response.status_code == 200:
-                data = response.json()
-                for i in data:
-                    # try:
-                    # import pdb; pdb.set_trace()
-                    ligand_name = str()
-                    try:
-                        ligand_name = self.ligand_cache[i['targetId']]
-                    except:
-                        ligand_name = ""
+            response = ''
+            while response == '':
+                try:
+                    response = requests.get(
+                        "https://www.guidetopharmacology.org/services/targets/" + str(target) + "/naturalLigands")
+                    if response.status_code == 200:
+                        data = response.json()
+                        for i in data:
+                            # try:
+                            # import pdb; pdb.set_trace()
+                            ligand_name = str()
+                            try:
+                                ligand_name = self.ligand_cache[i['targetId']]
+                            except:
+                                ligand_name = ""
 
-                    ligand = self.fetch_ligand(
-                        i['ligandId'], i['type'], ligand_name)
-                    if ligand and protein:
-                        # if target == 1:
+                            ligand = self.fetch_ligand(
+                                i['ligandId'], i['type'], ligand_name)
+                            if ligand and protein:
+                                # if target == 1:
 
-                        self.get_ligand_interactions(target=target,ligand=ligand, ligand_id_gtp=data[0]['ligandId'], ligand_type=data[0]['type'],receptor=protein)
-                    else:
-                        pass
-                    # except:
-                    #     pass
+                                self.get_ligand_interactions(target=target,ligand=ligand, ligand_id_gtp=data[0]['ligandId'], ligand_type=data[0]['type'],receptor=protein)
+                            else:
+                                pass
+                            # except:
+                            #     pass
+                except:
+                    print("Connection refused by the server..")
+                    time.sleep(1)
+                    response == ''
+
 
     def get_ligand_interactions(self, target, ligand, ligand_id_gtp, ligand_type, receptor):
         response = requests.get(
@@ -332,7 +334,6 @@ class Command(BaseBuild):
                         target_list.extend(entry['targetIds'])
             except:
                 print("Was a nice sleep, now let me continue...")
-
         return target_list
 
     def get_ligand_assays(self, targets):
