@@ -23,6 +23,7 @@ $(document).ready(function() {
   // Families Table
   // =============================================================================
   console.time("table1load");
+  $("#arrestintable").show();
   oTable1 = $("#arrestintable").DataTable({
     deferRender: true,
     scrollY: "50vh",
