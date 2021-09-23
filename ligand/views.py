@@ -95,7 +95,7 @@ class LigandBrowser(TemplateView):
 
         return context
 
-    def fetch_receptor_transducers(self, receptor):
+    def fetch_receptor_trunsducers(self, receptor):
         primary = set()
         temp = str()
         temp1 = str()
@@ -425,6 +425,7 @@ class BiasTargetSelection(AbsReferenceSelectionTable):
     title = "SELECT RECEPTORS with ligands biased for a G protein or arrestin family (relative to an endogenous reference ligand)"
     description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
         + ' individual receptor.\n\nOnce you have selected your receptor, click the green button.'
+
     selection_boxes = OrderedDict([
         ('reference', True),
         ('targets', False),
@@ -463,6 +464,7 @@ class BiasPredictionTargetSelection(AbsReferenceSelectionTable):
     title = "SELECT RECEPTORS to retrieve ligands with a preferred G protein or arrestin pathway (ΔLog(Emax/EC50) values across pathways for one ligand (no reference ligand))"
     description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
         + ' individual receptor.\n\nOnce you have selected your receptor, click the green button.'
+
     selection_boxes = OrderedDict([
         ('reference', True),
         ('targets', False),
@@ -2319,7 +2321,7 @@ class BiasPredictionBrowser(ListView):
             )
         return queryset
 
-
+      
 class EndogenousTargetSelection(AbsTargetSelectionTable):
     step = 1
     number_of_steps = 1
