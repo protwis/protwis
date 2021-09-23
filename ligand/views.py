@@ -424,7 +424,7 @@ class BiasTargetSelection(AbsReferenceSelectionTable):
     docs = 'sequences.html#structure-based-alignments'
     title = "SELECT RECEPTORS with ligands biased for a G protein or arrestin family (relative to an endogenous reference ligand)"
     description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
-        + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
+        + ' individual receptor.\n\nOnce you have selected your receptor, click the green button.'
     selection_boxes = OrderedDict([
         ('reference', True),
         ('targets', False),
@@ -462,7 +462,7 @@ class BiasPredictionTargetSelection(AbsReferenceSelectionTable):
     docs = 'sequences.html#structure-based-alignments'
     title = "SELECT RECEPTORS to retrieve ligands with a preferred G protein or arrestin pathway (ΔLog(Emax/EC50) values across pathways for one ligand (no reference ligand))"
     description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
-        + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
+        + ' individual receptor.\n\nOnce you have selected your receptor, click the green button.'
     selection_boxes = OrderedDict([
         ('reference', True),
         ('targets', False),
@@ -488,7 +488,7 @@ class BiasGTargetSelection(AbsReferenceSelectionTable):
     docs = 'sequences.html#structure-based-alignments'
     title = "SELECT RECEPTORS with ligands biased for a G protein or arrestin subtype"
     description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
-        + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
+        + ' individual receptor.\n\nOnce you have selected your receptor, click the green button.'
     selection_boxes = OrderedDict([
         ('reference', True),
         ('targets', False),
