@@ -357,7 +357,7 @@ class Command(BaseBuild):
                 test = protein1[0]
             return test
         except:
-            import pdb; pdb.set_trace()
+            return None
 
     @staticmethod
     def fetch_ligand(ligand_id, ligand_type, ligand_name):
