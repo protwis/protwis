@@ -379,53 +379,34 @@ class Command(BaseBuild):
         for assay in endogenous_list:
             name = str(assay['ligand'].id) + \
                 '/' + str(assay['receptor'].id)
-            if name in context:
-                # import pdb; pdb.set_trace()
-                if assay['pec50_avg'] is not None and isinstance(assay['pec50_avg'], float):
-                    context[name]['pec50_avg'].append(assay['pec50_avg'])
-                if assay['pec50_min'] is not None and isinstance(assay['pec50_min'], float):
-                    context[name]['pec50_min'].append(assay['pec50_min'])
-                if assay['pec50_max'] is not None and isinstance(assay['pec50_max'], float):
-                    context[name]['pec50_max'].append(assay['pec50_max'])
-                if assay['pKi_avg'] is not None and isinstance(assay['pKi_avg'], float):
-                    context[name]['pKi_avg'].append(assay['pKi_avg'])
-                if assay['pKi_min'] is not None and isinstance(assay['pKi_min'], float):
-                    context[name]['pKi_min'].append(assay['pKi_min'])
-                if assay['pKi_max'] is not None and isinstance(assay['pKi_max'], float):
-                    context[name]['pKi_max'].append(assay['pKi_max'])
-                context[name]['references'].extend(assay['references'])
-            else:
+            if name not in context:
                 context[name] = dict()
-
                 context[name]['ligand'] = assay['ligand']
                 context[name]['ligand_type'] = assay['ligand_type']
                 context[name]['endogenous_princip'] = assay['endogenous_princip']
                 context[name]['receptor'] = assay['receptor']
-
                 context[name]['pec50_avg'] = list()
                 context[name]['pec50_min'] = list()
                 context[name]['pec50_max'] = list()
-                if assay['pec50_avg'] is not None and isinstance(assay['pec50_avg'], float):
-                    context[name]['pec50_avg'].append(assay['pec50_avg'])
-                if assay['pec50_min'] is not None and isinstance(assay['pec50_min'], float):
-                    context[name]['pec50_min'].append(assay['pec50_min'])
-                if assay['pec50_max'] is not None and isinstance(assay['pec50_max'], float):
-                    context[name]['pec50_max'].append(assay['pec50_max'])
-
                 context[name]['pKi_avg'] = list()
                 context[name]['pKi_min'] = list()
                 context[name]['pKi_max'] = list()
-
-                if assay['pKi_avg'] is not None and isinstance(assay['pKi_avg'], float):
-                    context[name]['pKi_avg'].append(assay['pKi_avg'])
-                if assay['pKi_min'] is not None and isinstance(assay['pKi_min'], float):
-                    context[name]['pKi_min'].append(assay['pKi_min'])
-                if assay['pKi_max'] is not None and isinstance(assay['pKi_max'], float):
-                    context[name]['pKi_max'].append(assay['pKi_max'])
-
                 context[name]['gpt_link'] = assay['gpt_link']
                 context[name]['references'] = list()
-                context[name]['references'].extend(assay['references'])
+
+            if assay['pec50_avg'] is not None and isinstance(assay['pec50_avg'], float):
+                context[name]['pec50_avg'].append(assay['pec50_avg'])
+            if assay['pec50_min'] is not None and isinstance(assay['pec50_min'], float):
+                context[name]['pec50_min'].append(assay['pec50_min'])
+            if assay['pec50_max'] is not None and isinstance(assay['pec50_max'], float):
+                context[name]['pec50_max'].append(assay['pec50_max'])
+            if assay['pKi_avg'] is not None and isinstance(assay['pKi_avg'], float):
+                context[name]['pKi_avg'].append(assay['pKi_avg'])
+            if assay['pKi_min'] is not None and isinstance(assay['pKi_min'], float):
+                context[name]['pKi_min'].append(assay['pKi_min'])
+            if assay['pKi_max'] is not None and isinstance(assay['pKi_max'], float):
+                context[name]['pKi_max'].append(assay['pKi_max'])
+            context[name]['references'].extend(assay['references'])
         return context
 
     def prepare_calculate_averages_and_save(self, context):
