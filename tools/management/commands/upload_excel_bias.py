@@ -184,6 +184,8 @@ class Command(BaseBuild):
             if (d['Emax reference ligand\nName'] is not None):
                 reference_ligand = Command.fetch_ligand(
                     d['ID.1'], d['ID type.1'], d['Emax reference ligand\nName'])
+            else:
+                reference_ligand = None
             # fetch protein
             if protein == None:
                 return None

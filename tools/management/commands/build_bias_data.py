@@ -362,6 +362,9 @@ class Command(BaseBuild):
                         if _reference_assay['bias_reference'] == "Principal endogenous" or _reference_assay['bias_reference'] == "Ref. and principal endo.":
                             assay['endogenous_assay'] = _reference_assay
                             final_end = _reference_assay
+                        else:
+                            assay['endogenous_assay'] = _reference_assay
+                            final_end = _reference_assay
                     if final_end is not None:
                         for _reference_assay in temp_reference_list:
                             if _reference_assay['bias_reference'] != "Principal endogenous" or _reference_assay['bias_reference'] != "Ref. and principal endo.":
@@ -379,48 +382,47 @@ class Command(BaseBuild):
     def separate_ligands(context, command):
         content = dict()
         for i in context.items():
-            if(len(i[1]['reference_assays_list'])) > 0:
-                for assay in i[1]['assay_list']:
-                    _pub_name = str(i[1]['publication'].id)
-                    _ligand_name = str(assay['ligand'].id)
-                    _receptor_name = str(i[1]['receptor'].id)
-                    _receptor_iso_name = str(i[1]['receptor_isoform'])
-                    _aux_prot_name = str(i[1]['auxiliary_protein'])
-                    _tissue = assay['_tissue']
-                    _species = assay['_species']
-                    _pathway = assay['pathway_level']
-                    if command == 'inferred':
-                        name = _pub_name+'/'+_ligand_name+'/'+_receptor_name+'/'+_receptor_iso_name+'/'+_aux_prot_name+'/'+_tissue+'/'+_species+'/'+_pathway
-                            # may be add cell line tissue and species and assay type
-                    elif command == 'subtypes':
-                        name = _pub_name+'/'+_ligand_name+'/'+_receptor_name+'/'+_receptor_iso_name+'/'+_aux_prot_name+'/'+str(assay['family'])+'/'+_tissue+'/'+_species+'/'+_pathway
-                             # may be add cell line tissue and species and assay type
-                    if name in content:
-                        content[name]['assay_list'].append(assay)
-                    else:
-                        content[name] = dict()
-                        content[name]['assay_list'] = list()
-                        content[name]['publication'] = i[1]['publication']
-                        content[name]['ligand'] = assay['ligand']
-                        content[name]['receptor_isoform']=i[1]['receptor_isoform']
-                        content[name]['receptor_gtpo']=i[1]['receptor_gtpo']
-                        content[name]['ligand_links'] = Command.get_external_ligand_ids(
-                            content[name]['ligand'])
-                        try:
-                            content[name]['reference_ligand'] = i[1]['reference_assays_list'][0]['ligand']
-                        except:
-                            content[name]['reference_ligand'] = None
-                        content[name]['auxiliary_protein'] = i[1]['auxiliary_protein']
-                        # TODO: add external LigandStatistics
-                        content[name]['endogenous_ligand'] = i[1]['endogenous_ligand']
-                        content[name]['receptor'] = i[1]['receptor']
-                        content[name]['vendor_counter'] = i[1]['vendor_counter']
-                        content[name]['authors'] = i[1]['authors']
-                        content[name]['article_quantity'] = i[1]['article_quantity']
-                        content[name]['labs_quantity'] = i[1]['labs_quantity']
-                        content[name]['assay_list'].append(assay)
-                        content[name]['ligand_source_id'] = assay['ligand_source_id']
-                        content[name]['ligand_source_type'] = assay['ligand_source_type']
+            for assay in i[1]['assay_list']:
+                _pub_name = str(i[1]['publication'].id)
+                _ligand_name = str(assay['ligand'].id)
+                _receptor_name = str(i[1]['receptor'].id)
+                _receptor_iso_name = str(i[1]['receptor_isoform'])
+                _aux_prot_name = str(i[1]['auxiliary_protein'])
+                _tissue = assay['_tissue']
+                _species = assay['_species']
+                _pathway = assay['pathway_level']
+                if command == 'inferred':
+                    name = _pub_name+'/'+_ligand_name+'/'+_receptor_name+'/'+_receptor_iso_name+'/'+_aux_prot_name+'/'+_tissue+'/'+_species+'/'+_pathway
+                        # may be add cell line tissue and species and assay type
+                elif command == 'subtypes':
+                    name = _pub_name+'/'+_ligand_name+'/'+_receptor_name+'/'+_receptor_iso_name+'/'+_aux_prot_name+'/'+str(assay['family'])+'/'+_tissue+'/'+_species+'/'+_pathway
+                         # may be add cell line tissue and species and assay type
+                if name in content:
+                    content[name]['assay_list'].append(assay)
+                else:
+                    content[name] = dict()
+                    content[name]['assay_list'] = list()
+                    content[name]['publication'] = i[1]['publication']
+                    content[name]['ligand'] = assay['ligand']
+                    content[name]['receptor_isoform']=i[1]['receptor_isoform']
+                    content[name]['receptor_gtpo']=i[1]['receptor_gtpo']
+                    content[name]['ligand_links'] = Command.get_external_ligand_ids(
+                        content[name]['ligand'])
+                    try:
+                        content[name]['reference_ligand'] = i[1]['reference_assays_list'][0]['ligand']
+                    except:
+                        content[name]['reference_ligand'] = None
+                    content[name]['auxiliary_protein'] = i[1]['auxiliary_protein']
+                    # TODO: add external LigandStatistics
+                    content[name]['endogenous_ligand'] = i[1]['endogenous_ligand']
+                    content[name]['receptor'] = i[1]['receptor']
+                    content[name]['vendor_counter'] = i[1]['vendor_counter']
+                    content[name]['authors'] = i[1]['authors']
+                    content[name]['article_quantity'] = i[1]['article_quantity']
+                    content[name]['labs_quantity'] = i[1]['labs_quantity']
+                    content[name]['assay_list'].append(assay)
+                    content[name]['ligand_source_id'] = assay['ligand_source_id']
+                    content[name]['ligand_source_type'] = assay['ligand_source_type']
         return content
 
     @staticmethod
