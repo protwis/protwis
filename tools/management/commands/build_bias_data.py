@@ -86,13 +86,13 @@ class Command(BaseBuild):
         # import pdb; pdb.set_trace()
         print('stage # 3: Processing children in queryset finished',
               len(content_with_children))
-        changed_data = self.queryset_to_dict(content_with_children)
+        changed_data = Command.queryset_to_dict(content_with_children)
         # import pdb; pdb.set_trace()
         print('stage # 4: Converting queryset into dict finished', len(changed_data))
         send = Command.combine_unique(changed_data)
         # import pdb; pdb.set_trace()
         print('stage # 5: Selecting endogenous ligands finished')
-        referenced_assay = self.process_referenced_assays(send)
+        referenced_assay = Command.process_referenced_assays(send)
         # import pdb; pdb.set_trace()
         print('stage # 6: Separating reference assays is finished',
               Command._reference_assay_counter)

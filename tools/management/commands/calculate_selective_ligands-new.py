@@ -1,5 +1,5 @@
 from build.management.commands.base_build import Command as BaseBuild
-from protein.models import Protein, ProteinGProteinPair
+from protein.models import Protein, ProteinCouplings
 from ligand.models import LigandReceptorStatistics, AssayExperiment
 from django.db.models import Q
 import logging
@@ -204,7 +204,7 @@ class Command(BaseBuild):
         temp1 = str()
         secondary = set()
         try:
-            gprotein = ProteinGProteinPair.objects.filter(protein=receptor)
+            gprotein = ProteinCouplings.objects.filter(protein=receptor)
             for x in gprotein:
                 if x.transduction and x.transduction == 'primary':
                     primary.add(x.g_protein.name)
