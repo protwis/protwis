@@ -238,11 +238,11 @@ class Command(BaseBuild):
         temp_dict['cell_line'] = j['children'][0].cell_line
         temp_dict['_tissue'], temp_dict['_species']  = Command.process_cell_line(temp_dict['cell_line'])
         temp_dict['family'] = j['children'][0].family
+        # if temp_dict['family'] == 'G protein' or temp_dict['family'] == 'Gq/11 or Gi/o':
+        #     temp_dict['family'] = Command.process_g_protein(
+        #         temp_dict['family'], receptor)
         if temp_dict['family'] == 'G protein' or temp_dict['family'] == 'Gq/11 or Gi/o':
-            temp_dict['family'] = Command.process_g_protein(
-                temp_dict['family'], receptor)
-        if temp_dict['family'] == 'G protein' or temp_dict['family'] == 'Gq/11 or Gi/o':
-            return None
+            temp_dict['family'] = 'Gq/11'
 
         temp_dict['measured_biological_process'] = j['children'][0].measured_biological_process
         temp_dict['assay_type'] = j['children'][0].assay_type
@@ -392,10 +392,10 @@ class Command(BaseBuild):
                 _species = assay['_species']
                 _pathway = assay['pathway_level']
                 if command == 'inferred':
-                    name = _pub_name+'/'+_ligand_name+'/'+_receptor_name+'/'+_receptor_iso_name+'/'+_aux_prot_name+'/'+_tissue+'/'+_species+'/'+_pathway
+                    name = _pub_name+'/'+_ligand_name+'/'+_receptor_name+'/'+_receptor_iso_name+'/'+_aux_prot_name+'/'+_tissue+'/'+_species
                         # may be add cell line tissue and species and assay type
                 elif command == 'subtypes':
-                    name = _pub_name+'/'+_ligand_name+'/'+_receptor_name+'/'+_receptor_iso_name+'/'+_aux_prot_name+'/'+str(assay['family'])+'/'+_tissue+'/'+_species+'/'+_pathway
+                    name = _pub_name+'/'+_ligand_name+'/'+_receptor_name+'/'+_receptor_iso_name+'/'+_aux_prot_name+'/'+str(assay['family'])+'/'+_tissue+'/'+_species
                          # may be add cell line tissue and species and assay type
                 if name in content:
                     content[name]['assay_list'].append(assay)
@@ -481,7 +481,16 @@ class Command(BaseBuild):
                         item for item in families if item[option] == assay[option])
                 except StopIteration:
                     pass
-                if assay['relative_transduction_coef']:
+                if assay['calculated_relative_tau']:
+                    try:
+                        if assay['calculated_relative_tau'] > compare_val['calculated_relative_tau']:
+                            families[:] = [d for d in families if d.get(
+                                option) != compare_val[option]]
+                    except:
+                        families[:] = [d for d in families if d.get(
+                            option) != compare_val[option]]
+
+                elif assay['relative_transduction_coef']:
                     try:
                         if assay['relative_transduction_coef'] > compare_val['relative_transduction_coef']:
                             families[:] = [d for d in families if d.get(
