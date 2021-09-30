@@ -115,8 +115,5 @@ class Command(ParseExcel):
 					pub.save()
 				self.logger.info('Created Publication:'+str(pub))
 			return pub
-		elif pubjournal and pubjournal.slug=='submitted':
-			pub = Publication.objects.get_or_create(title='The G protein database, GproteinDb', authors='Pándy-Szekeres G, Esguerra M, Hauser AS, Caroli J, Munk C, Pilger S, Keserű GM, Kooistra AJ, Gloriam DE', year='2021', reference='X:X', journal=pubjournal, web_link=None)[0]
-			return pub
 		else:
 			return None
