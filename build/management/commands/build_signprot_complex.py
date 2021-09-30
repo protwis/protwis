@@ -14,7 +14,15 @@ class Command(BaseCommand):
 
     signprot_complex_data_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'complex_model_templates.yaml'])
 
+    def add_arguments(self, parser):
+        parser.add_argument('-u', '--purge',
+            action='store_true',
+            dest='purge',
+            help='Purge signprot complex entries')
+
     def handle(self, *args, **options):
+        if options['purge']:
+            SignprotComplex.objects.all().delete()
         self.create_signprot_complex()
 
     def create_signprot_complex(self):
