@@ -340,6 +340,9 @@ class Command(BaseBuild):
             removed = list(range(1,113))
         elif structure.pdb_code.index in ['7EPE','7EPF']:
             removed, deletions = list(range(1000,1148)), list(range(1000,1148))
+        elif structure.pdb_code.index in ['7EZM','7EZK','7EZH']:
+            for i in range(38,64):
+                removed.remove(i)
 
         if self.debug:
             print('Deletions: ', deletions)

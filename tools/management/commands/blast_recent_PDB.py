@@ -21,6 +21,9 @@ class Command(BaseCommand):
     months = 2
 
     def handle(self, *args, **options):
+        self.run()
+
+    def run(self):
         # Request PDBs from RCSB for past X months
         match_date = (date.today() + relativedelta(months=-1*self.months)).strftime('%Y-%m-%d')
 
@@ -81,6 +84,7 @@ class Command(BaseCommand):
             universal_newlines=True, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
         (blast_out, blast_err) = blast.communicate(input=str(fasta_results))
 
+        pdb_list = []
         if len(blast_err) != 0:
             print("BLAST search returned an error - exiting")
             return
@@ -92,6 +96,8 @@ class Command(BaseCommand):
                     top_hit = result.alignments[0].hsps[0]
                     if top_hit.score > 100:
                         print("HIT", "{0:>7}{1:>8}".format(top_hit.score, round(top_hit.expect,5)), result.query)
+                        pdb_list.append(result.query.split('_')[0])
+        return pdb_list
 
 def grouped(iterable, n):
     return zip(*[iter(iterable)]*n)

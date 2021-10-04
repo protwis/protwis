@@ -106,7 +106,7 @@ class Command(BuildHumanProteins):
             ###GP - class D addition - just temporary - FIXME
             construct_entry_names = construct_entry_names+['a0a0w0dd93_cangb', 'q8wzm9_sorma', 'b1gvb8_pench', 'mam2_schpo', 'q4wyu8_aspfu', 'q8nir1_neucs', 'ste2_lackl', 'q6fly8_canga', 'g2ye05_botf4', 's6exb4_zygb2', 'c5dx97_zygrc']
             # added seq with no human ortholog
-            construct_entry_names = construct_entry_names+['5ht1b_rat','5ht5b_mouse', '5ht5b_rat', 'taar4_mouse', 'taar4_rat']
+            construct_entry_names = construct_entry_names+['5ht5b_mouse', '5ht5b_rat', 'taar4_mouse', 'taar4_rat']
             # custom family mapping for these entries
             non_human_family_entries = ['5ht5b_mouse', '5ht5b_rat', 'taar4_mouse', 'taar4_rat']
 
