@@ -174,6 +174,7 @@ def LigandDetails(request, ligand_id):
 
 
 def TargetDetailsCompact(request, **kwargs):
+    ps = None
     if 'slug' in kwargs:
         slug = kwargs['slug']
         if slug.count('_') == 0:
@@ -288,7 +289,7 @@ def TargetDetailsCompact(request, **kwargs):
 
 
 def TargetDetails(request, **kwargs):
-
+    ps = None
     if 'slug' in kwargs:
         slug = kwargs['slug']
         if slug.count('_') == 0:
@@ -363,7 +364,7 @@ def TargetDetails(request, **kwargs):
 
 
 def TargetPurchasabilityDetails(request, **kwargs):
-
+    ps = None
     simple_selection = request.session.get('selection', False)
     selection = Selection()
     if simple_selection:

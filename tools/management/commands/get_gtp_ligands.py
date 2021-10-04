@@ -1,7 +1,7 @@
 from django.db import IntegrityError
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import Protein
-from ligand.models import GTP_endogenous_ligand, Ligand
+from ligand.models import GTP_endogenous_ligand, Ligand, LigandProperities, LigandType
 from common.models import WebLink, WebResource, Publication
 import logging
 import time
@@ -89,7 +89,6 @@ class Command(BaseBuild):
 
     def get_endogenous(self, targets):
         for target in targets:
-            protein = self.fetch_protein(target)
             response = ''
             while response == '':
                 try:
@@ -108,84 +107,131 @@ class Command(BaseBuild):
 
                             ligand = self.fetch_ligand(
                                 i['ligandId'], i['type'], ligand_name)
-                            if ligand and protein:
-                                # if target == 1:
-
-                                self.get_ligand_interactions(target=target,ligand=ligand, ligand_id_gtp=data[0]['ligandId'], ligand_type=data[0]['type'],receptor=protein)
-                            else:
-                                pass
+                            if ligand:
+                                self.get_ligand_interactions(target=target,ligand=ligand, ligand_id_gtp=data[0]['ligandId'], ligand_type=data[0]['type'])
+                            # else:
+                            #     ligand_name  = "gtpo_lig_id_"+ str(i['ligandId'])
+                            #     ligand = Command.create_empty_ligand(ligand_name)
+                            #     print('created l', ligand)
+                            #     self.get_ligand_interactions(target=target,ligand=ligand, ligand_id_gtp=data[0]['ligandId'], ligand_type=data[0]['type'])
                             # except:
                             #     pass
                 except:
                     print("Connection refused by the server..")
-                    time.sleep(1)
+                    time.sleep(2)
                     response == ''
 
 
-    def get_ligand_interactions(self, target, ligand, ligand_id_gtp, ligand_type, receptor):
-        response = requests.get(
-            "https://www.guidetopharmacology.org/services/ligands/" + str(ligand_id_gtp) + "/interactions")
-        if response.status_code == 200:
-            # import pdb; pdb.set_trace()
-            data = response.json()
-            for interaction in data:
-                if interaction['targetId'] == target:
+    def get_ligand_interactions(self, target, ligand, ligand_id_gtp, ligand_type):
+        response = ''
+        while response == '':
+            try:
+                response = requests.get(
+                    "https://www.guidetopharmacology.org/services/ligands/" + str(ligand_id_gtp) + "/interactions")
+                if response.status_code == 200:
                     # import pdb; pdb.set_trace()
-                    emin=emax=eavg=kmin=kmax=kavg = None
-                    if interaction['endogenous'] == True:
-                        # import pdb; pdb.set_trace()
-                        if interaction['affinityParameter'] == 'pKi':
-                            try:
-                                temp = interaction['affinity'].strip().split("-")
-                                kmin = float(temp[0])
-                                kmax = float(temp[1])
-                                kavg = (kmin + kmax) / 2
-                            except:
-                                kavg = float(interaction['affinity'])
+                    data = response.json()
+                    for interaction in data:
+                        if interaction['targetId'] == target:
+                            receptor = None
+                            targetSpecies = interaction['targetSpecies']
+                            protein_list = self.fetch_protein(target)
+                            for _receptor in protein_list:
+                                if _receptor.species.common_name == targetSpecies:
+                                    receptor = _receptor
+                                    break
+                            emin=emax=eavg=kmin=kmax=kavg = None
+                            if interaction['endogenous'] == True:
+                                # import pdb; pdb.set_trace()
+                                if interaction['affinityParameter'] == 'pKi':
+                                    try:
+                                        temp = interaction['affinity'].strip().split("-")
+                                        kmin = float(temp[0])
+                                        kmax = float(temp[1])
+                                        kavg = (kmin + kmax) / 2
+                                    except:
+                                        kavg = float(interaction['affinity'])
 
-                        if interaction['affinityParameter'] == 'pEC50':
-                            try:
-                                temp = interaction['affinity'].strip().split("-")
-                                emin = float(temp[0])
-                                emax = float(temp[1])
-                                eavg = (emin + emax) / 2
-                            except:
-                                eavg = float(interaction['affinity'])
-                        if kavg or eavg:
+                                if interaction['affinityParameter'] == 'pEC50':
+                                    try:
+                                        temp = interaction['affinity'].strip().split("-")
+                                        emin = float(temp[0])
+                                        emax = float(temp[1])
+                                        eavg = (emin + emax) / 2
+                                    except:
+                                        eavg = float(interaction['affinity'])
+                                if kavg or eavg:
 
-                            try:
-                                ligand_type = ligand.properities.ligand_type.name
-                            except:
-                                ligand_type = None
-                            try:
-                                endo_ligand_type = interaction['type']
-                            except:
-                                endo_ligand_type = None
+                                    try:
+                                        ligand_type = ligand.properities.ligand_type.name
+                                    except:
+                                        ligand_type = None
+                                    try:
+                                        endo_ligand_type = interaction['type']
+                                    except:
+                                        endo_ligand_type = None
 
-                            link = "https://www.guidetopharmacology.org/GRAC/LigandDisplayForward?ligandId="+str(ligand_id_gtp)
-                            if self.fetch_experiment(ligand=ligand, receptor=receptor, pavg=kavg, eavg=eavg)==False:
-                                gtp_data = GTP_endogenous_ligand(
-                                        ligand = ligand,
-                                        ligand_type = ligand_type,
-                                        endogenous_princip = endo_ligand_type,
-                                        receptor = receptor,
-                                        pec50_avg = eavg,
-                                        pec50_min = emin,
-                                        pec50_max = emax,
-                                        pKi_avg = kavg,
-                                        pKi_min = kmin,
-                                        pKi_max = kmax,
-                                        gpt_link = link,
-                                )
-                                gtp_data.save()
-                            try:
-                                for reference in interaction['refs']:
-                                    publication = self.fetch_publication(reference['pmid'])
-                                    gtp_data.publication.add(publication)
-                            except:
-                                publication= None
-                        else:
-                            pass
+                                    link = "https://www.guidetopharmacology.org/GRAC/LigandDisplayForward?ligandId="+str(ligand_id_gtp)
+                                    if self.fetch_experiment(ligand=ligand, receptor=receptor, pavg=kavg, eavg=eavg)==False:
+                                        gtp_data = GTP_endogenous_ligand(
+                                                ligand = ligand,
+                                                ligand_type = ligand_type,
+                                                endogenous_princip = endo_ligand_type,
+                                                receptor = receptor,
+                                                pec50_avg = eavg,
+                                                pec50_min = emin,
+                                                pec50_max = emax,
+                                                pKi_avg = kavg,
+                                                pKi_min = kmin,
+                                                pKi_max = kmax,
+                                                gpt_link = link,
+                                        )
+                                        gtp_data.save()
+                                    try:
+                                        for reference in interaction['refs']:
+                                            publication = self.fetch_publication(reference['pmid'])
+                                            gtp_data.publication.add(publication)
+                                    except:
+                                        publication= None
+                                else:
+                                    pass
+            except:
+                print("Connection refused by the server..")
+                time.sleep(2)
+                response == ''
+
+    @staticmethod
+    def create_empty_ligand(ligand_name):
+        # gtoplig webresource
+        lp = Command.build_ligand_properties()
+        ligand = Ligand()
+        ligand.properities = lp
+        ligand.name = ligand_name
+        ligand.canonical = True
+        ligand.ambigious_alias = False
+        ligand.pdbe = None
+        try:
+            ligand.save()
+        except IntegrityError:
+            return Ligand.objects.get(name=ligand_name, canonical=True)
+        return ligand
+
+    @staticmethod
+    def build_ligand_properties():
+        lp = LigandProperities()
+        lt =  LigandType.objects.get(name = 'small molecule')
+        lp.ligand_type = lt
+        lp.smiles = None
+        lp.inchikey = None
+        lp.sequence= None
+        lp.mw = None
+        lp.rotatable_bonds = None
+        lp.hacc = None
+        lp.hdon = None
+        lp.logp = None
+        lp.save()
+        return lp
+
 
     def fetch_experiment(self, ligand, receptor, pavg, eavg):
         '''
@@ -209,8 +255,8 @@ class Command(BaseBuild):
         """
         try:
             test = None
-            test = Protein.objects.filter(
-                web_links__index=target, web_links__web_resource__slug='gtop').first()
+            test = list(Protein.objects.filter(
+                web_links__index=target, web_links__web_resource__slug='gtop'))
             return test
         except:
             return None
@@ -321,10 +367,7 @@ class Command(BaseBuild):
 
             except:
                 print("Connection refused by the server..")
-                print("Let me sleep for 1 second")
-                print("ZZzzzz...")
                 time.sleep(1)
-                print("Was a nice sleep, now let me continue...")
                 response == ''
 
         for entry in response.json():

@@ -80,29 +80,29 @@ class Command(BaseBuild):
         print('Build bias data gproteins')
         context = dict()
         content = Command.get_data_from_model()
-        # import pdb; pdb.set_trace()
         print('stage # 2 : Getting data finished, data points: ', len(content))
-        content_with_children = Command.process_data(content)
         # import pdb; pdb.set_trace()
+        content_with_children = Command.process_data(content)
         print('stage # 3: Processing children in queryset finished',
               len(content_with_children))
+        # import pdb; pdb.set_trace()
         changed_data = Command.queryset_to_dict(content_with_children)
-        # import pdb; pdb.set_trace()
         print('stage # 4: Converting queryset into dict finished', len(changed_data))
+        # import pdb; pdb.set_trace()
         send = Command.combine_unique(changed_data)
-        # import pdb; pdb.set_trace()
         print('stage # 5: Selecting endogenous ligands finished')
-        referenced_assay = Command.process_referenced_assays(send)
         # import pdb; pdb.set_trace()
+        referenced_assay = Command.process_referenced_assays(send)
         print('stage # 6: Separating reference assays is finished',
               Command._reference_assay_counter)
+        # import pdb; pdb.set_trace()
         ligand_data = Command.separate_ligands(referenced_assay, 'inferred')
         # TODO: save for on the fly calculations
-        # import pdb; pdb.set_trace()
         print('stage # 7: Separate ligands finished')
-        limit_family = Command.process_signalling_proteins(ligand_data, 'inferred')
         # import pdb; pdb.set_trace()
+        limit_family = Command.process_signalling_proteins(ligand_data, 'inferred')
         print('stage # 8: process_signalling_proteins finished', len(limit_family))
+        # import pdb; pdb.set_trace()
         calculated_assay = Command.process_calculation(limit_family)
         # import pdb; pdb.set_trace()
         print('stage # 9: Calucating finished')
@@ -241,8 +241,8 @@ class Command(BaseBuild):
         # if temp_dict['family'] == 'G protein' or temp_dict['family'] == 'Gq/11 or Gi/o':
         #     temp_dict['family'] = Command.process_g_protein(
         #         temp_dict['family'], receptor)
-        if temp_dict['family'] == 'G protein' or temp_dict['family'] == 'Gq/11 or Gi/o':
-            temp_dict['family'] = 'Gq/11'
+        # if temp_dict['family'] == 'G protein' or temp_dict['family'] == 'Gq/11 or Gi/o':
+        #     temp_dict['family'] = 'Gq/11'
 
         temp_dict['measured_biological_process'] = j['children'][0].measured_biological_process
         temp_dict['assay_type'] = j['children'][0].assay_type
@@ -319,6 +319,7 @@ class Command(BaseBuild):
         return data
 
     _reference_assay_counter = 0
+    _tested_assay_counter = 0
     @staticmethod
     def return_refenced_assays(assays):
         main, reference = list(), list()
@@ -333,6 +334,7 @@ class Command(BaseBuild):
                     Command._reference_assay_counter = Command._reference_assay_counter+1
             else:
                 main.append(assay)
+                Command._tested_assay_counter =Command._tested_assay_counter +1
         main = Command.fetch_endogenous_assay(main, reference)
         return main, reference
 
@@ -362,14 +364,15 @@ class Command(BaseBuild):
                         if _reference_assay['bias_reference'] == "Principal endogenous" or _reference_assay['bias_reference'] == "Ref. and principal endo.":
                             assay['endogenous_assay'] = _reference_assay
                             final_end = _reference_assay
+                            break
                         else:
                             assay['endogenous_assay'] = _reference_assay
                             final_end = _reference_assay
-                    if final_end is not None:
-                        for _reference_assay in temp_reference_list:
-                            if _reference_assay['bias_reference'] != "Principal endogenous" or _reference_assay['bias_reference'] != "Ref. and principal endo.":
-                                _reference_assay['endogenous_assay'] = final_end
-                                result_list.append(_reference_assay)
+
+                    for _reference_assay in temp_reference_list:
+                        if _reference_assay['bias_reference'] != "Principal endogenous" and _reference_assay['bias_reference'] != "Ref. and principal endo.":
+                            _reference_assay['endogenous_assay'] = final_end
+                            result_list.append(_reference_assay)
                 else:
                     assay['endogenous_assay'] = temp_reference_list[0]
         for assay in main:
