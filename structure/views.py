@@ -10,7 +10,7 @@ from django.shortcuts import redirect
 
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from protein.models import ProteinSegment
-from structure.models import Structure, StructureModel, StructureComplexModel, StructureExtraProteins, StructureModelRMSD
+from structure.models import Structure, StructureModel, StructureComplexModel, StructureExtraProteins, StructureVectors, StructureModelRMSD
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, ModelRotamer
 from structure.assign_generic_numbers_gpcr import GenericNumbering, GenericNumberingFromDB
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
@@ -496,7 +496,23 @@ def StructureDetails(request, pdbname):
 	p = Protein.objects.get(protein=crystal.protein_conformation.protein)
 	residues = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__pdb_code__index=pdbname, structure_ligand_pair__annotated=True).order_by('rotamer__residue__sequence_number')
 
-	return render(request,'structure_details.html',{'pdbname': pdbname, 'structures': structures, 'crystal': crystal, 'protein':p, 'residues':residues, 'annotated_resn': resn_list, 'main_ligand': main_ligand, 'ligands': ligands})
+	# positioning data
+	sv = StructureVectors.objects.filter(structure=crystal)
+	translation = center_axis = None
+	if sv.exists():
+		sv = sv.get()
+		translation = sv.translation
+		center_axis = sv.center_axis
+
+	# GN list
+	only_gns = list(crystal.protein_conformation.residue_set.exclude(generic_number=None).values_list('protein_segment__slug','sequence_number','generic_number__label','display_generic_number__label').all())
+	gn_list = [x[1] for x in only_gns]
+	filter_tm1 = [x[1] for x in only_gns if x[2] == "1x46"]
+	ref_tm1 = ""
+	if len(filter_tm1) > 0:
+		ref_tm1 = filter_tm1[0]
+
+	return render(request,'structure_details.html',{'pdbname': pdbname, 'structures': structures, 'crystal': crystal, 'protein':p, 'residues':residues, 'annotated_resn': resn_list, 'main_ligand': main_ligand, 'ligands': ligands, 'translation': translation, 'center_axis': center_axis, 'gn_list': gn_list, 'ref_tm1': ref_tm1})
 
 def ServePdbDiagram(request, pdbname):
 	structure=Structure.objects.filter(pdb_code__index=pdbname)

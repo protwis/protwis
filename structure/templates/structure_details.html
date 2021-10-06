@@ -3,199 +3,235 @@
 
 {% block content %}
 <style>
-canvas {
+  canvas {
     border:2px solid #888888;
-}
-.col-md-3 {
-    color: black;
-}
+  }
+  .col-md-3 {
+      color: black;
+  }
 </style>
 
- <script src="http://cdn.jsdelivr.net/3dmol.js/latest/3Dmol-min.js"></script>
 <div class="row text-success">
-<div class="text-center">
-        <h2>{{ crystal.protein_conformation.protein.family.name|safe }}</h2>
-    </div>
+  <div class="text-center">
+    <h2>{{ crystal.protein_conformation.protein.family.name|safe }}</h2>
+  </div>
 </div>
 
 <div class="row">
-    <div class="col-md-3 text-right text-info">
-        <h4>PROTEIN CLASS</h4>
-    </div>
-    <div class="col-md-9">
+  <div class="col-md-3 text-right text-info">
+    <h4>PROTEIN CLASS</h4>
+  </div>
+  <div class="col-md-9">
     {{ crystal.protein_conformation.protein.get_protein_class }}
-    </div>
+  </div>
 </div>
 
 <div class="row">
-    <div class="col-md-3 text-right text-info">
-        <h4>RECEPTOR</h4>
-    </div>
-    <div class="col-md-9">
+  <div class="col-md-3 text-right text-info">
+    <h4>RECEPTOR</h4>
+  </div>
+  <div class="col-md-9">
     <a href="../protein/{{ crystal.protein_conformation.protein.parent.entry_name }}">{{ crystal.protein_conformation.protein.parent.name|safe }}</a>
-    </div>
+  </div>
 </div>
 
 <div class="row">
-    <div class="col-md-3 text-right text-info">
-        <h4>PDB CODE</h4>
-    </div>
-    <div class="col-md-9">
+  <div class="col-md-3 text-right text-info">
+    <h4>PDB CODE</h4>
+  </div>
+  <div class="col-md-9">
     <a href="https://www.rcsb.org/structure/{{ crystal.pdb_code.index }}">{{ crystal.pdb_code.index }}</a>
-    </div>
+  </div>
 </div>
 
 <div class="row">
-    <div class="col-md-3 text-right text-info">
-        <h4>SPECIES</h4>
-    </div>
-    <div class="col-md-9">
+  <div class="col-md-3 text-right text-info">
+    <h4>SPECIES</h4>
+  </div>
+  <div class="col-md-9">
     {{ crystal.protein_conformation.protein.species.latin_name }}
-    </div>
+  </div>
 </div>
 
 <div class="row">
-    <div class="col-md-3 text-right text-info">
-        <h4>RESOLUTION</h4>
-    </div>
-    <div class="col-md-9">
+  <div class="col-md-3 text-right text-info">
+    <h4>RESOLUTION</h4>
+  </div>
+  <div class="col-md-9">
     {{ crystal.resolution}}
-    </div>
+  </div>
 </div>
 
 <div class="row">
-    <div class="col-md-3 text-right text-info">
-        <h4>PREFERRED CHAIN</h4>
-    </div>
-    <div class="col-md-9">
+  <div class="col-md-3 text-right text-info">
+    <h4>PREFERRED CHAIN</h4>
+  </div>
+  <div class="col-md-9">
     {{ crystal.preferred_chain }}
-    </div>
+  </div>
 </div>
 
 <div class="row">
-    <div class="col-md-3 text-right text-info">
-        <h4>REFERENCE</h4>
-    </div>
-    <div class="col-md-9">
+  <div class="col-md-3 text-right text-info">
+    <h4>REFERENCE</h4>
+  </div>
+  <div class="col-md-9">
     <a href="{{ crystal.publication.web_link }}">{{ crystal.publication.web_link.index }}</a>
-    </div>
+  </div>
 </div>
 
 <div class="row">
-    <div class="col-md-3 text-right text-info">
-        <h4>PUBLICATION DATE</h4>
-    </div>
-    <div class="col-md-9">
+  <div class="col-md-3 text-right text-info">
+    <h4>PUBLICATION DATE</h4>
+  </div>
+  <div class="col-md-9">
     {{ crystal.publication_date }}
-    </div>
+  </div>
 </div>
 
 
 
 <div class="row">
-    <div class="col-md-3 text-right text-info">
-        <h4>RECEPTOR PDB</h4>
-    </div>
-    <div class="col-md-9">
+  <div class="col-md-3 text-right text-info">
+    <h4>RECEPTOR PDB</h4>
+  </div>
+  <div class="col-md-9">
     <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
     <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
-        <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a> is a WebGL based 3D viewer powered by <a href="https://mmtf.rcsb.org">MMTF</a>.</p>
+      <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a> is a WebGL based 3D viewer powered by <a href="https://mmtf.rcsb.org">MMTF</a>.</p>
     </div>
     <div> <button id=fullscreen>Full Screen</button></div>
-
-<!--     <div style="height: 400px; width: 500px; position: relative;" class='viewer_3Dmoljs'  data-backgroundcolor='0xffffff' data-href='pdb/{{pdbname}}' data-type='pdb' data-backgroundcolor='0xffffff' data-labelres2='fontSize:12;opacity:.2;color:black' data-select1='{"hetflag":false}'  data-style1='{"cartoon":{"color":"spectrum"}}' data-select2='{"resn":["test"{{ annotated_resn}}]}' data-style2='{"stick":{"colorscheme":"greenCarbon"}}'></div>
-         <a href="pdb/{{pdbname}}">Download PDB file</a>
-
-    </div> -->
+  </div>
 </div>
 
 <div class="row">
-    <div class="col-md-3 text-right text-info">
-        <h4>INTERACTING RESIDUES</h4>
-    </div>
-    <div class="col-md-9">
+  <div class="col-md-3 text-right text-info">
+    <h4>INTERACTING RESIDUES</h4>
+  </div>
+  <div class="col-md-9">
     <a href="../interaction/{{pdbname}}"> {{residues|length}} interactions (Click to see)</a>
-    </div>
+  </div>
 </div>
 
 <div class="row">
-    <div class="col-md-3 text-right text-info">
-        <h4>LIGANDS</h4>
-    </div>
-    <div class="col-md-9">
-        {% for l in ligands %}
-            <p style="display: inline;">{{ l.ligand.name|safe }} - {{l.ligand_role.name|safe}}
-                {% for link in l.ligand.properities.web_links.all %}
-                    <a href="{{link}}" target="_blank">{{link.web_resource.slug}}</a>
-                {% endfor %}
-                {% if forloop.last %}{% else %}, {% endif %}
-            </p>
-        {% empty %}
-        No ligands
-        {% endfor %}
-    </div>
+  <div class="col-md-3 text-right text-info">
+    <h4>LIGANDS</h4>
+  </div>
+  <div class="col-md-9">
+    {% for l in ligands %}
+    <p style="display: inline;">{{ l.ligand.name|safe }} - {{l.ligand_role.name|safe}}
+      {% for link in l.ligand.properities.web_links.all %}
+      <a href="{{link}}" target="_blank">{{link.web_resource.slug}}</a>
+      {% endfor %}
+      {% if forloop.last %}{% else %}, {% endif %}
+    </p>
+    {% empty %}
+    No ligands
+    {% endfor %}
+  </div>
 </div>
 
 <div class="row">
-    <div class="col-md-3 text-right text-info">
-        <h4>ENDOGENOUS LIGANDS</h4>
-    </div>
-    <div class="col-md-9">
-        {% for e in crystal.protein_conformation.protein.parent.endogenous_ligands.all %}
-        <p style="display: inline;">{{ e.name|safe }}{% if forloop.last %}{% else %}, {% endif %}</p>
-        {% empty %}
-        No endogenous ligands available
-        {% endfor %}
-    </div>
+  <div class="col-md-3 text-right text-info">
+    <h4>ENDOGENOUS LIGANDS</h4>
+  </div>
+  <div class="col-md-9">
+    {% for e in crystal.protein_conformation.protein.parent.endogenous_ligands.all %}
+    <p style="display: inline;">{{ e.name|safe }}{% if forloop.last %}{% else %}, {% endif %}</p>
+    {% empty %}
+    No endogenous ligands available
+    {% endfor %}
+  </div>
 </div>
 
 {% endblock %}
 {% block addon_js %}
-    <script src="{% static 'home/js/ngl.js' %}"> </script>
-        <script>
-        // http://proteinformatics.charite.de/ngl/doc/#User_manual/Usage/Molecular_representations
-        // http://arose.github.io/ngl/api/Stage.html
-        // http://arose.github.io/ngl/js/examples.js
-        // http://arose.github.io/ngl/
-        document.addEventListener( "DOMContentLoaded", function(){
-            stage = new NGL.Stage( "viewport", { backgroundColor: "white" } );
-            var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( [
-                [ "red", "64-74 or 134-154 or 222-254 or 310-310 or 322-326" ],
-                [ "green", "311-322" ],
-                [ "yellow", "40-63 or 75-95 or 112-133 or 155-173 or 202-221 or 255-277 or 289-309" ],
-                [ "blue", "1-39 or 96-112 or 174-201 or 278-288" ],
-                [ "white", "*" ]
-            ], "Transmembrane 3dqb" );
+<!-- NGL -->
+<script type="text/javascript" src="https://cdn.rawgit.com/arose/ngl/v2.0.0-dev.39/dist/ngl.js"> </script>
+<script>
+  // http://proteinformatics.charite.de/ngl/doc/#User_manual/Usage/Molecular_representations
+  // http://arose.github.io/ngl/api/Stage.html
+  // http://arose.github.io/ngl/js/examples.js
+  // http://arose.github.io/ngl/
+  document.addEventListener("DOMContentLoaded", function() {
+    stage = new NGL.Stage("viewport", {
+      backgroundColor: "white"
+    });
 
-            var mySelectionScheme = NGL.ColorMakerRegistry.addSelectionScheme( [
-                [ "red" , "{{ main_ligand|safe}}" ]
-            ] );
-            //var stringBlob = new Blob( [ "pdb/{{pdbname}}" ], { type: 'text/plain'} );
-            // stage.loadFile( "http://localhost:8000/structure/pdb/{{pdbname}}", { ext: "pdb" } );
-            // NGL.autoLoad( "https://files.rcsb.org/download/5IOS.cif" );
-            //stage.loadFile( "https://files.rcsb.org/download/{{pdbname}}.pdb", { ext: "pdb" } );
-            stage.loadFile( "pdb/{{pdbname}}", { ext: "pdb" }  ).then( function( o ){
-                o.addRepresentation( "cartoon");  // pass schemeId here ,{ color: schemeId }
-                o.centerView();
-                o.addRepresentation("licorice", { sele: "{{ main_ligand}} and hetero " } );
-                // o.addRepresentation("ball+stick", { sele: "{{ main_ligand}}", scale: 3, aspectRatio: 1.5 } );
-                {% if main_ligand != "None" %}
-                o.addRepresentation("surface", { sele: "{{ main_ligand}}", opacity: 0.4,
-                                                 useWorker: false } );
-                {% endif %}
-                // o.addRepresentation("hyperball", { sele: "{{ main_ligand}}" } );
-                o.addRepresentation( "label", {
-                    sele: "{{ main_ligand}} and hetero and .C1",
-                    color: "white", scale: 4.0, labelType: "resname"
-                } );
+    stage.loadFile("pdb/{{pdbname}}", {
+      ext: "pdb"
+    }).then(function(o) {
+      o.addRepresentation("cartoon", {colorScheme: "atomindex"});
 
-                // TODO update NGL to enable autoview
-                // stage.autoView()
-            } );
-            //stage.loadFile( "rcsb://1crn.mmtf", { defaultRepresentation: true } );
-        } );
-        $( "#fullscreen" ).click(function() {
-            stage.toggleFullscreen();
+      {% if main_ligand != "None" %}
+        o.addRepresentation("licorice", {
+          sele: "{{ main_ligand}} and hetero "
         });
-    </script>
+
+        o.addRepresentation("surface", {
+          sele: "{{ main_ligand}}",
+          opacity: 0.4,
+          useWorker: false
+        });
+
+        // o.addRepresentation("hyperball", { sele: "{{ main_ligand}}" } );
+        o.addRepresentation("label", {
+          sele: "{{ main_ligand}} and hetero and .C1",
+          color: "white",
+          scale: 4.0,
+          labelType: "resname"
+        });
+      {% endif %}
+
+      // Automatic GPCR positioning
+      let preferred_chain = "{{ crystal.preferred_chain }}";
+      let translation = JSON.parse("{{ translation }}");
+      let center_axis = JSON.parse("{{ center_axis }}");
+      let gn_list = JSON.parse("{{ gn_list }}");
+      let ref_tm1 = 0{{ ref_tm1 }};
+      if (typeof translation !== "undefined" && typeof center_axis !== "undefined") {
+        // calculate rotation and apply
+        let v1 = new NGL.Vector3(0, 1, 0)
+        let v2 = new NGL.Vector3(center_axis[0], center_axis[1], center_axis[2])
+        let quaternion = new NGL.Quaternion(); // create one and reuse it
+        quaternion.setFromUnitVectors(v2, v1)
+        o.setRotation(quaternion)
+
+        // calculate translation and apply
+        let v = new NGL.Vector3(-1 * translation[0], -1 * translation[1], -1 * translation[2])
+        v.applyMatrix4(o.matrix)
+        o.setPosition([-1 * v.x, -1 * v.y, -1 * v.z])
+
+        // calculate H8 position (based on TM1)
+        if (ref_tm1 > 0) {
+          let tm1_vector
+          o.structure.eachAtom(function(ap) {
+            tm1_vector = new NGL.Vector3(ap.x, ap.y, ap.z)
+            tm1_vector.applyMatrix4(o.matrix)
+          }, new NGL.Selection(":" + preferred_chain + " and " + ref_tm1 + " and .CA"))
+          tm1_vector.y = 0 // height position doesn't matter
+          tm1_vector.normalize()
+
+          // calculate rotation angle around Y-axis (as the GPCR is now upright)
+          let v3 = new NGL.Vector3(-1, 0, 0)
+          let m = new NGL.Matrix4()
+          if (tm1_vector.z < 0)
+            m.makeRotationY(v3.angleTo(tm1_vector))
+          else if (tm1_vector.z > 0)
+            m.makeRotationY(-1 * v3.angleTo(tm1_vector))
+
+          o.setTransform(m)
+        }
+      }
+
+      // Optimize view
+      o.autoView(":" + preferred_chain + " and (" + gn_list.join(", ") + ") and (.CA)")
+
+    });
+    //stage.loadFile( "rcsb://1crn.mmtf", { defaultRepresentation: true } );
+  });
+  $("#fullscreen").click(function() {
+    stage.toggleFullscreen();
+  });
+</script>
 {% endblock %}
