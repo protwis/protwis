@@ -7,6 +7,7 @@ from build.management.commands.base_build import Command as BaseBuild
 from ligand.models import BiasedExperiment, AnalyzedExperiment, AnalyzedAssay
 from django.conf import settings
 
+
 class Command(BaseBuild):
     mylog = logging.getLogger(__name__)
     mylog.setLevel(logging.INFO)
@@ -49,7 +50,6 @@ class Command(BaseBuild):
     def purge_bias_data():
         delete_bias_experiment = AnalyzedExperiment.objects.all()
         delete_bias_experiment.delete()
-
 
     @staticmethod
     def process_gproteins_excel():
@@ -100,7 +100,8 @@ class Command(BaseBuild):
         # TODO: save for on the fly calculations
         print('stage # 7: Separate ligands finished')
         # import pdb; pdb.set_trace()
-        limit_family = Command.process_signalling_proteins(ligand_data, 'inferred')
+        limit_family = Command.process_signalling_proteins(
+            ligand_data, 'inferred')
         print('stage # 8: process_signalling_proteins finished', len(limit_family))
         # import pdb; pdb.set_trace()
         calculated_assay = Command.process_calculation(limit_family)
@@ -119,7 +120,8 @@ class Command(BaseBuild):
         ligand_data = Command.separate_ligands(referenced_assay, 'subtypes')
         # subtypes part
         print('stage # 13: Separate ligands finished')
-        limit_family = Command.process_signalling_proteins(ligand_data, 'subtypes')
+        limit_family = Command.process_signalling_proteins(
+            ligand_data, 'subtypes')
         # import pdb; pdb.set_trace()
         print('stage # 14: process_signalling_proteins finished', len(limit_family))
         calculated_assay = Command.process_calculation(limit_family)
@@ -134,7 +136,6 @@ class Command(BaseBuild):
         # save dataset to model
         Command.save_data_to_model(context, 'sub_different_family')
         print('stage # 18: saving data to model is finished')
-
 
     @staticmethod
     def get_data_from_model():
@@ -213,7 +214,8 @@ class Command(BaseBuild):
             temp['article_quantity'] = 0
             temp['labs_quantity'] = 0
             if j['children']:
-                temp_dict = Command.process_children_from_queryset(j, temp['receptor'])
+                temp_dict = Command.process_children_from_queryset(
+                    j, temp['receptor'])
                 if temp_dict is not None:
                     doubles.append(temp_dict)
             temp['assay'] = doubles
@@ -233,16 +235,17 @@ class Command(BaseBuild):
         temp_dict['delta_emax_ec50'] = None
         temp_dict['calculated_relative_tau'] = None
         temp_dict['order_no'] = 0
-        temp_dict['endogenous_assay'] = dict() #shall be only one
+        temp_dict['endogenous_assay'] = dict()  # shall be only one
         temp_dict['signalling_protein'] = j['children'][0].signalling_protein
         temp_dict['cell_line'] = j['children'][0].cell_line
-        temp_dict['_tissue'], temp_dict['_species']  = Command.process_cell_line(temp_dict['cell_line'])
+        temp_dict['_tissue'], temp_dict['_species'] = Command.process_cell_line(
+            temp_dict['cell_line'])
         temp_dict['family'] = j['children'][0].family
         # if temp_dict['family'] == 'G protein' or temp_dict['family'] == 'Gq/11 or Gi/o':
         #     temp_dict['family'] = Command.process_g_protein(
         #         temp_dict['family'], receptor)
-        # if temp_dict['family'] == 'G protein' or temp_dict['family'] == 'Gq/11 or Gi/o':
-        #     temp_dict['family'] = 'Gq/11'
+        if temp_dict['family'] == 'G protein' or temp_dict['family'] == 'Gq/11 or Gi/o':
+            temp_dict['family'] = 'Gq/11'
 
         temp_dict['measured_biological_process'] = j['children'][0].measured_biological_process
         temp_dict['assay_type'] = j['children'][0].assay_type
@@ -267,13 +270,15 @@ class Command(BaseBuild):
         temp_dict['emax_reference_ligand'] = j['children'][0].emax_ligand_reference
         temp_dict['ligand_function'] = j['children'][0].ligand_function
         temp_dict['ligand'] = j['main'].ligand
-        temp_dict['quantitive_activity'], temp_dict['quantitive_activity_initial'] = Command.process_ec50_children_from_queryset(temp_dict)
+        temp_dict['quantitive_activity'], temp_dict['quantitive_activity_initial'] = Command.process_ec50_children_from_queryset(
+            temp_dict)
         return temp_dict
 
     @staticmethod
     def process_ec50_children_from_queryset(temp_dict):
         try:
-            temp_dict['quantitive_activity'] = float(temp_dict['quantitive_activity'])
+            temp_dict['quantitive_activity'] = float(
+                temp_dict['quantitive_activity'])
         except:
             temp_dict['quantitive_activity'] = temp_dict['quantitive_activity']
         if (temp_dict['quantitive_activity_initial'] and
@@ -301,7 +306,8 @@ class Command(BaseBuild):
                 temp_obj.append(i)
             context[name] = j
             context[name]['assay'] = temp_obj
-            _counter_of_assays = _counter_of_assays + len(context[name]['assay'])
+            _counter_of_assays = _counter_of_assays + \
+                len(context[name]['assay'])
         print("******len of experiments:", len(context), "******")
         print("******len of assays:", _counter_of_assays, "******")
         return context
@@ -320,6 +326,7 @@ class Command(BaseBuild):
 
     _reference_assay_counter = 0
     _tested_assay_counter = 0
+
     @staticmethod
     def return_refenced_assays(assays):
         main, reference = list(), list()
@@ -328,13 +335,13 @@ class Command(BaseBuild):
             if (assay['bias_reference'] == 'Ref. and principal endo.' or
             assay['bias_reference'] == 'Endogenous' or
             assay['bias_reference'] == 'Principal endogenous' or
-            assay['bias_reference'] ==  'Ref. and endo.'):
+            assay['bias_reference'] == 'Ref. and endo.'):
                 if assay['quantitive_activity'] is not None:
                     reference.append(assay)
-                    Command._reference_assay_counter = Command._reference_assay_counter+1
+                    Command._reference_assay_counter = Command._reference_assay_counter + 1
             else:
                 main.append(assay)
-                Command._tested_assay_counter =Command._tested_assay_counter +1
+                Command._tested_assay_counter = Command._tested_assay_counter + 1
         main = Command.fetch_endogenous_assay(main, reference)
         return main, reference
 
@@ -345,18 +352,11 @@ class Command(BaseBuild):
             temp_reference_list = list()
             for reference in references:
                 if assay['family'] == reference['family']:
-                    # if assay['signalling_protein']:
                     if assay['signalling_protein'] == reference['signalling_protein']:
                         if assay['assay_type'] == reference['assay_type']:
                             if assay['cell_line'] == reference['cell_line']:
                                 if assay['measured_biological_process'] == reference['measured_biological_process']:
                                     temp_reference_list.append(reference)
-                    # else:
-                    #     if assay['assay_type'] == reference['assay_type']:
-                    #         if assay['cell_line'] == reference['cell_line']:
-                    #             if assay['measured_biological_process'] == reference['measured_biological_process']:
-                    #                 temp_reference_list.append(reference)
-
             if len(temp_reference_list)>0:
                 if len(temp_reference_list)>1:
                     final_end = None
@@ -449,7 +449,6 @@ class Command(BaseBuild):
             i[1]['assay_list'] = Command.limit_family_set(i[1]['assay_list'], command)
             # TODO: order by transduction_coef
             i[1]['assay_list'] = Command.order_assays(i[1]['assay_list'])
-
         return context
 
     @staticmethod
@@ -527,7 +526,7 @@ class Command(BaseBuild):
 
     @staticmethod
     def calculate_bias_factor_value(sorted_assays):
-        ## TODO: pick
+        # TODO: pick
         for assay in sorted_assays:
             if assay['delta_emax_ec50']:
                 temp_value = Command.calc_order_bias_value(
@@ -584,7 +583,6 @@ class Command(BaseBuild):
                 list_to_remove.append(i[0])
         for experiment in list_to_remove:
             context.pop(experiment)
-
         return context
 
     @staticmethod
@@ -723,7 +721,6 @@ class Command(BaseBuild):
                         lab_counter += 1
                         labs.append(j[1]['publication'])
                         i[1]['labs'] = lab_counter
-
             temp_obj = 1
             name = str(i[1]['endogenous_ligand']) + \
                 '/' + str(i[1]['ligand'])+'/'+str(i[1]['receptor'])
@@ -732,7 +729,6 @@ class Command(BaseBuild):
                     if assays['order_no'] > 0:
                         if assays['log_bias_factor'] != None and assays['log_bias_factor'] != '' or assays['delta_relative_transduction_coef'] != None and assays['delta_relative_transduction_coef'] != '':
                             temp_obj = temp[name] + 1
-
             temp[name] = temp_obj
 
         for i in context.items():
