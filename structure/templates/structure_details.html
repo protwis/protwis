@@ -161,22 +161,23 @@
     stage.loadFile("pdb/{{pdbname}}", {
       ext: "pdb"
     }).then(function(o) {
-      o.addRepresentation("cartoon", {colorScheme: "atomindex"});
+      let preferred_chain = "{{ crystal.preferred_chain }}";
+
+      o.addRepresentation("cartoon", {sele: ":" + preferred_chain, colorScheme: "atomindex"});
 
       {% if main_ligand != "None" %}
         o.addRepresentation("licorice", {
-          sele: "{{ main_ligand}} and hetero "
+          sele: ":" + preferred_chain + " and {{ main_ligand}} and hetero "
         });
 
         o.addRepresentation("surface", {
-          sele: "{{ main_ligand}}",
+          sele: ":" + preferred_chain + " and {{ main_ligand}}",
           opacity: 0.4,
           useWorker: false
         });
 
-        // o.addRepresentation("hyperball", { sele: "{{ main_ligand}}" } );
         o.addRepresentation("label", {
-          sele: "{{ main_ligand}} and hetero and .C1",
+          sele: ":" + preferred_chain + " and {{ main_ligand}} and hetero and .C1",
           color: "white",
           scale: 4.0,
           labelType: "resname"
@@ -184,11 +185,10 @@
       {% endif %}
 
       // Automatic GPCR positioning
-      let preferred_chain = "{{ crystal.preferred_chain }}";
       let translation = JSON.parse("{{ translation }}");
       let center_axis = JSON.parse("{{ center_axis }}");
       let gn_list = JSON.parse("{{ gn_list }}");
-      let ref_tm1 = 0{{ ref_tm1 }};
+      let ref_tm1 = parseInt("{{ ref_tm1 }}");
       if (typeof translation !== "undefined" && typeof center_axis !== "undefined") {
         // calculate rotation and apply
         let v1 = new NGL.Vector3(0, 1, 0)
@@ -204,11 +204,11 @@
 
         // calculate H8 position (based on TM1)
         if (ref_tm1 > 0) {
-          let tm1_vector
+          let tm1_vector;
           o.structure.eachAtom(function(ap) {
-            tm1_vector = new NGL.Vector3(ap.x, ap.y, ap.z)
-            tm1_vector.applyMatrix4(o.matrix)
-          }, new NGL.Selection(":" + preferred_chain + " and " + ref_tm1 + " and .CA"))
+              tm1_vector = new NGL.Vector3(ap.x, ap.y, ap.z)
+              tm1_vector.applyMatrix4(o.matrix)
+            }, new NGL.Selection(":" + preferred_chain + " and " + ref_tm1 + " and .CA"))
           tm1_vector.y = 0 // height position doesn't matter
           tm1_vector.normalize()
 
