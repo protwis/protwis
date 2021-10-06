@@ -60,6 +60,7 @@ class Command(BaseCommand):
     local_uniprot_gamma_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot_gamma'])
     remote_uniprot_dir = 'https://www.uniprot.org/uniprot/'
 
+
     logger = logging.getLogger(__name__)
 
     def add_arguments(self, parser):

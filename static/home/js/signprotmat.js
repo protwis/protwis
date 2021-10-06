@@ -1078,7 +1078,7 @@ var signprotmat = {
         .attr("dy", 68)
         .text(function (d) {
           var i_obj = _.find(interactions_metadata, function (e) {
-            return e.pdb_id == d;
+            return e.pdb_id === d;
           });
           // let text = i_obj.gprot.replace('Engineered', 'Eng.')
           var text = i_obj.gprot.replace("Engineered", "E.");
