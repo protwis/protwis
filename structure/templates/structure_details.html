@@ -189,11 +189,14 @@
       {% endif %}
 
       // Automatic GPCR positioning
-      let translation = JSON.parse("{{ translation }}");
-      let center_axis = JSON.parse("{{ center_axis }}");
+      let translation = "{{ translation }}";
+      let center_axis = "{{ center_axis }}";
       let gn_list = JSON.parse("{{ gn_list }}");
       let ref_tm1 = parseInt("{{ ref_tm1 }}");
-      if (typeof translation !== "undefined" && typeof center_axis !== "undefined") {
+      if (translation !== "" && typeof center_axis !== "") {
+        translation = JSON.parse(translation);
+        center_axis = JSON.parse(center_axis);
+
         // calculate rotation and apply
         let v1 = new NGL.Vector3(0, 1, 0)
         let v2 = new NGL.Vector3(center_axis[0], center_axis[1], center_axis[2])

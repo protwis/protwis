@@ -498,7 +498,7 @@ def StructureDetails(request, pdbname):
 
 	# positioning data
 	sv = StructureVectors.objects.filter(structure=crystal)
-	translation = center_axis = None
+	translation = center_axis = ""
 	if sv.exists():
 		sv = sv.get()
 		translation = sv.translation
