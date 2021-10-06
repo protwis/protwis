@@ -504,6 +504,9 @@ def StructureDetails(request, pdbname):
 		translation = sv.translation
 		center_axis = sv.center_axis
 
+	# Check if the structure is in complex with a signaling protein
+	signaling_complex = SignprotComplex.objects.filter(structure=crystal).count() > 0
+
 	# GN list
 	only_gns = list(crystal.protein_conformation.residue_set.exclude(generic_number=None).values_list('protein_segment__slug','sequence_number','generic_number__label','display_generic_number__label').all())
 	gn_list = [x[1] for x in only_gns]
@@ -512,7 +515,7 @@ def StructureDetails(request, pdbname):
 	if len(filter_tm1) > 0:
 		ref_tm1 = filter_tm1[0]
 
-	return render(request,'structure_details.html',{'pdbname': pdbname, 'structures': structures, 'crystal': crystal, 'protein':p, 'residues':residues, 'annotated_resn': resn_list, 'main_ligand': main_ligand, 'ligands': ligands, 'translation': translation, 'center_axis': center_axis, 'gn_list': gn_list, 'ref_tm1': ref_tm1})
+	return render(request,'structure_details.html',{'pdbname': pdbname, 'structures': structures, 'crystal': crystal, 'protein':p, 'residues':residues, 'annotated_resn': resn_list, 'main_ligand': main_ligand, 'ligands': ligands, 'translation': translation, 'center_axis': center_axis, 'gn_list': gn_list, 'ref_tm1': ref_tm1, 'signaling_complex': signaling_complex})
 
 def ServePdbDiagram(request, pdbname):
 	structure=Structure.objects.filter(pdb_code__index=pdbname)

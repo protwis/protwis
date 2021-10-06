@@ -163,7 +163,11 @@
     }).then(function(o) {
       let preferred_chain = "{{ crystal.preferred_chain }}";
 
-      o.addRepresentation("cartoon", {sele: ":" + preferred_chain, colorScheme: "atomindex"});
+      {% if signaling_complex %}
+        o.addRepresentation("cartoon", {colorScheme: "chainid"});
+      {% else %}
+        o.addRepresentation("cartoon", {sele: ":" + preferred_chain, colorScheme: "atomindex"});
+      {% endif %}
 
       {% if main_ligand != "None" %}
         o.addRepresentation("licorice", {
