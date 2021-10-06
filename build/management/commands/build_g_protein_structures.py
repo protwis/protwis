@@ -213,7 +213,7 @@ class Command(BaseBuild):
                         seq = ""
                         for pp in ppb.build_peptides(chain, aa_only=False):
                             seq += str(pp.get_sequence())
-                        if sc.structure.pdb_code.index in ['7JVQ','7L1U','7L1V','7D68']:
+                        if sc.structure.pdb_code.index in ['7JVQ','7L1U','7L1V','7D68','7EZK']:
                             pw2 = pairwise2.align.localms(sc.protein.sequence, seq, 3, -4, -3, -1)
                         else:
                             pw2 = pairwise2.align.localms(sc.protein.sequence, seq, 2, -1, -.5, -.1)
@@ -234,6 +234,9 @@ class Command(BaseBuild):
                             temp_seq = (9*'-')+temp_seq[2:5]+temp_seq[5:54].replace('-','')+temp_seq[54:]
                         elif sc.structure.pdb_code.index=='7D68':
                             temp_seq = temp_seq[:203]+'-T'+temp_seq[205:]
+                        elif sc.structure.pdb_code.index=='7EZK':
+                            temp_seq = temp_seq[:12]+temp_seq[157:204]+(145*'-')+temp_seq[204:]
+
                         wt_pdb_dict = OrderedDict()
                         pdb_wt_dict = OrderedDict()
                         j, k = 0, 0
@@ -254,7 +257,7 @@ class Command(BaseBuild):
                                 pdb_wt_dict[i] = resis[j]
                                 j+=1
                         # Custom fix for 7JJO isoform difference
-                        if sc.structure.pdb_code.index in ['7JJO', '7JOZ', '7AUE']:
+                        if sc.structure.pdb_code.index in ['7JJO', '7JOZ', '7AUE', '7EZK']:
                             pdb_num_dict = OrderedDict()
                             for wt_res, st_res in wt_pdb_dict.items():
                                 if type(st_res)==type([]):

@@ -57,8 +57,7 @@ class Command(ParseExcel):
 			doi = vals['DOI']
 			pub = False
 			if vals['Journal'] in ['Preprint at Research Square', 'Submitted']:
-				pubjournal, created = PublicationJournal.objects.get_or_create(name__iexact=vals['Journal'],
-					defaults={'slug': slugify(vals['Journal'])})
+				pubjournal, created = PublicationJournal.objects.get_or_create(defaults={"name": vals["Journal"], 'slug': slugify(vals['Journal'])}, name__iexact=vals["Journal"])
 				pub = self.create_publication(doi, wr, pubjournal)
 			elif len(doi) > 0:
 				pub = Publication.get_or_create_from_doi(vals['DOI'])
@@ -115,9 +114,6 @@ class Command(ParseExcel):
 					pub.journal = pubjournal
 					pub.save()
 				self.logger.info('Created Publication:'+str(pub))
-			return pub
-		elif pubjournal and pubjournal.slug=='submitted':
-			pub = Publication.objects.get_or_create(title='The G protein database, GproteinDb', authors='Pándy-Szekeres G, Esguerra M, Hauser AS, Caroli J, Munk C, Pilger S, Keserű GM, Kooistra AJ, Gloriam DE', year='2021', reference='X:X', journal=pubjournal, web_link=None)[0]
 			return pub
 		else:
 			return None

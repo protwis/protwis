@@ -105,6 +105,10 @@ class Command(BuildHumanProteins):
 
             ###GP - class D addition - just temporary - FIXME
             construct_entry_names = construct_entry_names+['a0a0w0dd93_cangb', 'q8wzm9_sorma', 'b1gvb8_pench', 'mam2_schpo', 'q4wyu8_aspfu', 'q8nir1_neucs', 'ste2_lackl', 'q6fly8_canga', 'g2ye05_botf4', 's6exb4_zygb2', 'c5dx97_zygrc']
+            # added seq with no human ortholog
+            construct_entry_names = construct_entry_names+['5ht5b_mouse', '5ht5b_rat', 'taar4_mouse', 'taar4_rat']
+            # custom family mapping for these entries
+            non_human_family_entries = ['5ht5b_mouse', '5ht5b_rat', 'taar4_mouse', 'taar4_rat']
 
             # Keep track of first or second iteration
             reviewed = ['SWISSPROT','TREMBL'][iteration-1]
@@ -198,6 +202,8 @@ class Command(BuildHumanProteins):
                         # use first hit from BLAST as template for reference positions
                         try:
                             p = Protein.objects.get(pk=blast_out[0][0])
+                            if up['entry_name']=='q3ksp2_ebvg':
+                                p = Protein.objects.get(entry_name='gpr55_human')
                             # class D exception
                             if p.entry_name=='ste2_yeast':
                                 ortholog = True
@@ -248,6 +254,26 @@ class Command(BuildHumanProteins):
                 if ortholog:
                     # for orthologs, use properties from the human protein
                     self.create_protein(p.name, p.family, p.sequence_type, p.residue_numbering_scheme, accession, up)
+                # custom entries with no human ortholog and specific classification
+                elif up['entry_name'] in non_human_family_entries:
+                    parent_fam = p.family.parent
+                    if '5ht5b' in up['genes']:
+                        fam_name = '5-HT<sub>5B</sub> receptor'
+                        gene = '5HT5B'
+                    elif 'Taar4' in up['genes']:
+                        fam_name =  '<i>TAAR4P</i>'
+                        gene = 'TAAR4'
+                        parent_fam = ProteinFamily.objects.get(name='Class A orphans')
+                    else:
+                        fam_name = up['genes'][0].upper()
+                        gene = up['genes'][0]
+
+                    num_families = ProteinFamily.objects.filter(parent=parent_fam).count()
+                    family_slug = parent_fam.slug + "_" + str(num_families + 1).zfill(3)
+                    family, created = ProteinFamily.objects.get_or_create(parent=parent_fam, name=fam_name, defaults={'slug': family_slug})
+                    if created:
+                        self.logger.info('Created protein family {}'.format(family))
+                    self.create_protein(gene, family, p.sequence_type, p.residue_numbering_scheme, accession, up)
                 else:
                     # otherwise, create a new family, and use Uniprot name
                     top_level_parent_family = ProteinFamily.objects.get(slug=p.family.slug.split('_')[0])
