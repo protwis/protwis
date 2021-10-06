@@ -94,7 +94,7 @@ class Command(BaseBuild):
 
         for uni in uniprot_list:
             # print(uni)
-            q.new_xtals(uni)
+            q.new_xtals(uni, self.blast_uniprot_dict)
             for i in q.consider_list:
                 if i not in consider_list and i not in structs_with_missing_x50:
                     consider_list.append(i)
@@ -136,7 +136,7 @@ class QueryPDB():
         self.missing_x50_exceptions = ['6TPG','6TPJ']
         self.consider_list, self.error_list = [], []
 
-    def new_xtals(self, uniprot):
+    def new_xtals(self, uniprot, blast_uniprot_dict):
         ''' List GPCR crystal structures missing from GPCRdb and the yaml files. Adds missing structures to DB.
         '''
         # structs = self.pdb_request_by_uniprot(uniprot)
@@ -149,8 +149,8 @@ class QueryPDB():
             x50s = Residue.objects.filter(protein_conformation__protein=protein, generic_number__label__in=['1x50','2x50','3x50','4x50','5x50','6x50','7x50'])
         except:
             x50s = None
-        if uniprot in self.blast_uniprot_dict:
-            for i in self.blast_uniprot_dict[uniprot]:
+        if uniprot in blast_uniprot_dict:
+            for i in blast_uniprot_dict[uniprot]:
                 if i not in structs:
                     if structs==['null']:
                         structs = [i]
