@@ -71,6 +71,8 @@ class Publication(models.Model):
 
     @staticmethod
     def get_or_create_from_type(identifier, wr):
+        if isinstance(identifier, int):
+            identifier = str(identifier)
         if len(identifier) > 0:
             # First test if identifier for publication already exists
             try:
