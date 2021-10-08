@@ -15,11 +15,13 @@ from structure.functions import PdbChainSelector, PdbStateIdentifier, get_pdb_id
 from structure.management.commands.structure_yaml_editor import StructureYaml
 from construct.functions import *
 from common.models import WebResource, WebLink, Publication
+from tools.management.commands.blast_recent_PDB import Command as BlastRecentPDB
 
 import Bio.PDB as PDB
 from datetime import datetime
 import urllib
 import re
+import json
 import os
 import xmltodict
 import yaml
@@ -38,7 +40,7 @@ structs_with_missing_x50 = ['5EM9', '5AER', '3BEF', '3LU9', '3HKI', '3HKJ', '1NR
                             '6B7H', '3LMK', '6N4Y', '6N4X', '6N50', '3MQ4', '5C5C', '6E5V', '6BSZ', '6BT5', '6C0B', '5BPB', '5BQC', '5UWG', '5BPQ', '5BQE', '6NE1',
                             '5CL1', '5CM4', '5URZ', '5URY', '6O39', '5URV', '4Z33', '6NE2', '6NE4', '6O3B', '6O3A', '5WBS', '5T44', '5UN6', '5UN5', '6NDZ', '5KZV',
                             '5KZY', '5KZZ', '7JQD', '2PUX', '2PV9', '6EXJ', '7JNZ', '7NW3', '4F8K', '1RY1', '2J28', '4UE5', '6O9I', '6O9H', '7ALO', '6SKA', '4DLQ',
-                            '5OVP', '6SKE', '5FTT', '5FTU', '4YEB', '4RMK', '4RML', '6JBU', '6IDX', '5KVM', '6V55']
+                            '5OVP', '6SKE', '5FTT', '5FTU', '4YEB', '4RMK', '4RML', '6JBU', '6IDX', '5KVM', '6V55', '7NJZ', '3N96', '3N93', '3N95', '7D86']
 
 
 class Command(BaseBuild):
@@ -71,11 +73,26 @@ class Command(BaseBuild):
         else:
             uniprot_list = self.uniprots[positions[0]:positions[1]]
         q = QueryPDB(self.uniprots, self.yamls)
+
+        brp = BlastRecentPDB()
+        blast_pdbs = brp.run()
+        self.blast_uniprot_dict = {}
+        for b in blast_pdbs:
+            blast_uniprots = q.pdb_request_by_pdb(b, 'polymer_entity')
+            if not blast_uniprots:
+                self.yaml_list.append(b)
+                continue
+            for bu in blast_uniprots:
+                if bu not in self.blast_uniprot_dict:
+                    self.blast_uniprot_dict[bu] = [b]
+                else:
+                    self.blast_uniprot_dict[bu].append(b)
+
         consider_list, error_list = [], []
         print('{} number of receptors to check'.format(len(uniprot_list)))
 
         # uniprot_list = ['P28223']
-        
+
         for uni in uniprot_list:
             # print(uni)
             q.new_xtals(uni)
@@ -130,9 +147,16 @@ class QueryPDB():
         except:
             protein = None
         try:
-            x50s = Residue.objects.filter(protein_conformation__protein=protein,generic_number__label__in=['1x50','2x50','3x50','4x50','5x50','6x50','7x50'])
+            x50s = Residue.objects.filter(protein_conformation__protein=protein, generic_number__label__in=['1x50','2x50','3x50','4x50','5x50','6x50','7x50'])
         except:
             x50s = None
+        if uniprot in self.blast_uniprot_dict:
+            for i in self.blast_uniprot_dict[uniprot]:
+                if i not in structs:
+                    if structs==['null']:
+                        structs = [i]
+                    else:
+                        structs.append(i)
         if structs!=['null']:
             for s in structs:
                 # print(s)
@@ -141,14 +165,14 @@ class QueryPDB():
                     st_obj = Structure.objects.get(pdb_code__index=s)
                 except:
                     if s not in self.exceptions:
-                        check = self.pdb_request_by_pdb(s)
+                        check = self.pdb_request_by_pdb(s, 'entry')
                         if check:
                             self.db_list.append(s)
                             missing_from_db = True
 
                 if s not in self.yamls and s not in self.exceptions:
                     if s not in self.db_list:
-                        check = self.pdb_request_by_pdb(s)
+                        check = self.pdb_request_by_pdb(s, 'entry')
                     else:
                         check = True
                     if check:
@@ -231,34 +255,9 @@ class QueryPDB():
                         publication_date = d.strftime('%Y-%m-%d')
                         try:
                             if doi!='':
-                                try:
-                                    publication = Publication.objects.get(web_link__index=doi)
-                                except Publication.DoesNotExist as e:
-                                    p = Publication()
-                                    try:
-                                        p.web_link = WebLink.objects.get(index=doi, web_resource__slug='doi')
-                                    except WebLink.DoesNotExist:
-                                        wl = WebLink.objects.create(index=doi,
-                                            web_resource = WebResource.objects.get(slug='doi'))
-                                        p.web_link = wl
-                                    p.update_from_doi(doi=doi)
-                                    p.save()
-                                    publication = p
+                                publication = Publication.get_or_create_from_doi(doi)
                             elif pubmed!='':
-                                try:
-                                    publication = Publication.objects.get(web_link__index=pubmed)
-                                except Publication.DoesNotExist as e:
-                                    p = Publication()
-                                    try:
-                                        p.web_link = WebLink.objects.get(index=pubmed,
-                                            web_resource__slug='pubmed')
-                                    except WebLink.DoesNotExist:
-                                        wl = WebLink.objects.create(index=pubmed,
-                                            web_resource = WebResource.objects.get(slug='pubmed'))
-                                        p.web_link = wl
-                                    p.update_from_pubmed_data(index=pubmed)
-                                    p.save()
-                                    publication = p
+                                publication = Publication.get_or_create_from_pubmed(pubmed)
                         except:
                             pass
                         pcs = PdbChainSelector(s, protein)
@@ -340,7 +339,7 @@ class QueryPDB():
                     del self.db_list[self.db_list.index(s)]
                     missing_from_db = False
                     del self.yaml_list[self.yaml_list.index(s)]
-        
+
 
 
     def pdb_request_by_uniprot(self, uniprot_id):
@@ -360,20 +359,38 @@ class QueryPDB():
         structures = [i.split(':')[0] for i in result.decode('utf-8').split('\n')[:-1]]
         return structures
 
-    def pdb_request_by_pdb(self, pdb):
+    def pdb_request_by_pdb(self, pdb, request_type):
         data = {}
         response = urlopen('https://data.rcsb.org/rest/v1/core/entry/{}'.format(pdb))
         json_data = json.loads(response.read())
         response.close()
-
-        data['method'] = json_data['exptl'][0]['method']
-        if data['method'].startswith("THEORETICAL") or data['method'] in ['SOLUTION NMR','SOLID-STATE NMR']:
-            return False
-        if 'pubmed_id' in json_data['rcsb_entry_container_identifiers']:
-            data['pubmedId'] = json_data['rcsb_entry_container_identifiers']['pubmed_id']
-        else:
-            data['pubmedId'] = None
-        return True
+        if request_type=='entry':
+            data['method'] = json_data['exptl'][0]['method']
+            if data['method'].startswith("THEORETICAL") or data['method'] in ['SOLUTION NMR','SOLID-STATE NMR']:
+                return False
+            if 'pubmed_id' in json_data['rcsb_entry_container_identifiers']:
+                data['pubmedId'] = json_data['rcsb_entry_container_identifiers']['pubmed_id']
+            else:
+                data['pubmedId'] = None
+            return True
+        elif request_type=='polymer_entity':
+            entity_list = json_data['rcsb_entry_container_identifiers']['entity_ids']
+            uniprot_ids = []
+            for i in entity_list:
+                try:
+                    response2 = urlopen('https://data.rcsb.org/rest/v1/core/polymer_entity/{}/{}'.format(pdb, i))
+                except urllib.error.HTTPError:
+                    continue
+                json_data2 = json.loads(response2.read())
+                response2.close()
+                try:
+                    uniprot_ids+=json_data2['rcsb_polymer_entity_container_identifiers']['uniprot_ids']
+                except KeyError:
+                    continue
+            if len(uniprot_ids)>0:
+                return uniprot_ids
+            else:
+                return False
 
     def pdb_request_by_pdb_deprecated(self, pdb_code):
         response = urllib.request.urlopen('https://www.rcsb.org/pdb/rest/describePDB?structureId={}'.format(pdb_code.lower()))

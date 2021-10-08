@@ -311,6 +311,12 @@ class Command(BaseBuild):
                 # print(counter,p)
                 if p.protein.species.common_name != "Human" and entry_name not in proteins:
                     human_ortholog = Protein.objects.filter(family=p.protein.family, sequence_type__slug='wt', species__common_name='Human')
+                    # custom ortholog pairings for simple sequence mapping
+                    if entry_name.startswith('5ht5b_'):
+                        human_ortholog = Protein.objects.filter(entry_name='5ht5a_human')
+                    elif entry_name.startswith('taar4_'):
+                        human_ortholog = Protein.objects.filter(entry_name='taar2_human')
+                    ###
                     if human_ortholog.exists():
                         human_ortholog = human_ortholog.get()
                         if human_ortholog.entry_name not in proteins:

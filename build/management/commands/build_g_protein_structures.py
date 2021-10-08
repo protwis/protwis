@@ -213,7 +213,7 @@ class Command(BaseBuild):
                         seq = ""
                         for pp in ppb.build_peptides(chain, aa_only=False):
                             seq += str(pp.get_sequence())
-                        if sc.structure.pdb_code.index in ['7JVQ','7L1U','7L1V','7D68']:
+                        if sc.structure.pdb_code.index in ['7JVQ','7L1U','7L1V','7D68','7EZK']:
                             pw2 = pairwise2.align.localms(sc.protein.sequence, seq, 3, -4, -3, -1)
                         else:
                             pw2 = pairwise2.align.localms(sc.protein.sequence, seq, 2, -1, -.5, -.1)
@@ -234,6 +234,9 @@ class Command(BaseBuild):
                             temp_seq = (9*'-')+temp_seq[2:5]+temp_seq[5:54].replace('-','')+temp_seq[54:]
                         elif sc.structure.pdb_code.index=='7D68':
                             temp_seq = temp_seq[:203]+'-T'+temp_seq[205:]
+                        elif sc.structure.pdb_code.index=='7EZK':
+                            temp_seq = temp_seq[:12]+temp_seq[157:204]+(145*'-')+temp_seq[204:]
+
                         wt_pdb_dict = OrderedDict()
                         pdb_wt_dict = OrderedDict()
                         j, k = 0, 0
@@ -254,7 +257,7 @@ class Command(BaseBuild):
                                 pdb_wt_dict[i] = resis[j]
                                 j+=1
                         # Custom fix for 7JJO isoform difference
-                        if sc.structure.pdb_code.index in ['7JJO', '7JOZ', '7AUE']:
+                        if sc.structure.pdb_code.index in ['7JJO', '7JOZ', '7AUE', '7EZK']:
                             pdb_num_dict = OrderedDict()
                             for wt_res, st_res in wt_pdb_dict.items():
                                 if type(st_res)==type([]):
@@ -454,30 +457,22 @@ class Command(BaseBuild):
         except StructureType.DoesNotExist as e:
             structure_type, c = StructureType.objects.get_or_create(slug=structure_type_slug, name=data["method"])
             self.logger.info("Created StructureType:"+str(structure_type))
+
         # Publication
+        pub = None
         if data["doi"]:
             try:
-                pub = Publication.objects.get(web_link__index=data["doi"])
-            except Publication.DoesNotExist as e:
-                pub = Publication()
-                wl, created = WebLink.objects.get_or_create(index=data["doi"], web_resource=WebResource.objects.get(slug="doi"))
-                pub.web_link = wl
-                pub.update_from_pubmed_data(index=data["doi"])
-                pub.save()
-                self.logger.info("Created Publication:"+str(pub))
-        else:
-            if data["pubmedId"]:
-                try:
-                    pub = Publication.objects.get(web_link__index=data["pubmedId"])
-                except Publication.DoesNotExist as e:
-                    pub = Publication()
-                    wl, created = WebLink.objects.get_or_create(index=data["pubmedId"], web_resource=WebResource.objects.get(slug="pubmed"))
-                    pub.web_link = wl
-                    pub.update_from_pubmed_data(index=data["pubmedId"])
-                    pub.save()
-                    self.logger.info("Created Publication:"+str(pub))
-            else:
-                pub = None
+                pub = Publication.get_or_create_from_doi(data["doi"])
+            except:
+                # 2nd try (in case of paralellization clash)
+                pub = Publication.get_or_create_from_doi(data["doi"])
+        elif data["pubmedId"]:
+            try:
+                pub = Publication.get_or_create_from_pubmed(data["pubmedId"])
+            except:
+                # 2nd try (in case of paralellization clash)
+                pub = Publication.get_or_create_from_pubmed(data["pubmedId"])
+
         # PDB data
         url = 'https://www.rcsb.org/pdb/files/{}.pdb'.format(pdb)
         req = urllib.request.Request(url)
@@ -491,6 +486,9 @@ class Command(BaseBuild):
         ss.publication = pub
         ss.protein = alpha_prot
         ss.pdb_data = pdbdata_object
+        if len(SignprotStructure.objects.filter(pdb_code=ss.pdb_code))>0:
+            self.logger.warning('SignprotStructure {} already created, skipping'.format(pdb_code))
+            return 0
         ss.save()
         # Stabilizing agent
         for o in data["other"]:
