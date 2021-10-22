@@ -241,10 +241,10 @@ class Command(BaseBuild):
         temp_dict['_tissue'], temp_dict['_species'] = Command.process_cell_line(
             temp_dict['cell_line'])
         temp_dict['family'] = j['children'][0].family
-        # if temp_dict['family'] == 'G protein' or temp_dict['family'] == 'Gq/11 or Gi/o':
-        #     temp_dict['family'] = Command.process_g_protein(
-        #         temp_dict['family'], receptor)
-        if temp_dict['family'] == 'G protein' or temp_dict['family'] == 'Gq/11 or Gi/o':
+        if temp_dict['family'] == 'G protein':
+            temp_dict['family'] = Command.process_g_protein(
+                temp_dict['family'], receptor)
+        if temp_dict['family'] == 'Gq/11 or Gi/o':
             temp_dict['family'] = 'Gq/11'
 
         temp_dict['measured_biological_process'] = j['children'][0].measured_biological_process
