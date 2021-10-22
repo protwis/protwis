@@ -8,12 +8,11 @@ from copy import deepcopy
 from collections import defaultdict, OrderedDict
 
 from django.shortcuts import render, redirect
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.views.generic import TemplateView, DetailView, ListView
-
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, Subquery, OuterRef
 from django.views.decorators.csrf import csrf_exempt
-
 from django.core.cache import cache
 
 from common.views import AbsTargetSelectionTable, Alignment, AbsReferenceSelectionTable, getReferenceTable
@@ -1593,13 +1592,17 @@ class LigandInformationView(TemplateView):
     def get_context_data(self, *args, **kwargs):
         context = super(LigandInformationView, self).get_context_data(**kwargs)
         ligand_id = self.kwargs['pk']
-        ligand_data = Ligand.objects.get(id=ligand_id)
+        try:
+            ligand_data = Ligand.objects.get(id=ligand_id)
+        except Ligand.DoesNotExist:
+            raise Http404
         assay_data = list(AssayExperiment.objects.filter(ligand=ligand_id).prefetch_related(
-            'ligand', 'ligand__properities', 'protein', 'protein__family',
-            'protein__family__parent', 'protein__family__parent__parent__parent',
-            'protein__family__parent__parent', 'protein__family', 'protein__species',
-            'publication', 'publication__web_link', 'publication__web_link__web_resource',
-            'publication__journal'))
+                'ligand', 'ligand__properities', 'protein', 'protein__family',
+                'protein__family__parent', 'protein__family__parent__parent__parent',
+                'protein__family__parent__parent', 'protein__family', 'protein__species',
+                'publication', 'publication__web_link', 'publication__web_link__web_resource',
+                'publication__journal'))
+
         context = dict()
         structures = LigandInformationView.get_structure(ligand_data)
         ligand_data = LigandInformationView.process_ligand(ligand_data)
@@ -1611,6 +1614,13 @@ class LigandInformationView(TemplateView):
         context.update({'assay': assay_data})
         context.update({'mutations': mutations})
         return context
+
+    # @staticmethod
+    # def render_to_response(context, **response_kwargs):
+    #     if context is None:
+    #         return redirect("ligand_selection")
+    #     return super(LigandInformationView).render_to_response(
+    #         context, **response_kwargs)
 
     @staticmethod
     def get_structure(ligand):

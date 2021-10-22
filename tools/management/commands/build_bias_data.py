@@ -328,6 +328,13 @@ class Command(BaseBuild):
     _tested_assay_counter = 0
 
     @staticmethod
+    def check_endogenous_assay_numbers(number):
+        if number is not None:
+            return True
+        else:
+            return False
+
+    @staticmethod
     def return_refenced_assays(assays):
         main, reference = list(), list()
         for assay in assays:
@@ -336,7 +343,11 @@ class Command(BaseBuild):
             assay['bias_reference'] == 'Endogenous' or
             assay['bias_reference'] == 'Principal endogenous' or
             assay['bias_reference'] == 'Ref. and endo.'):
-                if assay['quantitive_activity'] is not None:
+                _ec50 = Command.check_endogenous_assay_numbers(assay['quantitive_activity'])
+                _tau = Command.check_endogenous_assay_numbers(assay['transduction_coef'])
+                _delta_tau = Command.check_endogenous_assay_numbers(assay['relative_transduction_coef'])
+                if any([_ec50,_tau,_delta_tau]):
+                # if assay['quantitive_activity'] is not None:
                     reference.append(assay)
                     Command._reference_assay_counter = Command._reference_assay_counter + 1
             else:
