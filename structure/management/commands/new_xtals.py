@@ -21,6 +21,7 @@ import Bio.PDB as PDB
 from datetime import datetime
 import urllib
 import re
+import json
 import os
 import xmltodict
 import yaml

@@ -2852,8 +2852,8 @@ def ClusteringData(request):
         # Adding signaling protein data on top
         signaling_proteins = {}
         common_signaling = {'Gi1': "Gi/o", 'Gi2': "Gi/o", 'Go': "Gi/o", 'Gq': "Gq/11", 'G11': "Gq/11", 'Gs': "Gs", 'G12': "G12/13", 'G13': "G12/13", 'Gt1': "Gt", 'Gt3': "Gt",
-                            'GPa1': "Gpa1", 'Beta-arrestin-1': "Arrestin", 'S-arrestin':  "Arrestin", 'Erk': "ERK"}
-        signal_ps = StructureExtraProteins.objects.filter(structure__pdb_code__index__in=pdbs, category__in=["G alpha", "Arrestin", "GRK"]).values('structure__pdb_code__index','display_name', 'wt_protein__family__name').order_by().annotate(coverage = Max('wt_coverage'))
+                            'GPa1': "Gpa1", 'Beta-arrestin-1': "Arrestin", 'S-arrestin':  "Arrestin"}
+        signal_ps = StructureExtraProteins.objects.filter(structure__pdb_code__index__in=pdbs, category__in=["G alpha", "Arrestin"]).values('structure__pdb_code__index','display_name', 'wt_protein__family__name').order_by().annotate(coverage = Max('wt_coverage'))
         for ps in signal_ps:
             if not ps["structure__pdb_code__index"] in signaling_proteins:
                 if ps["display_name"] in common_signaling:
@@ -2861,6 +2861,11 @@ def ClusteringData(request):
                 else:
                     signaling_proteins[ps["structure__pdb_code__index"]] = ps['display_name']
 
+        # Check for GRK complexes
+        grk_complexes = list(Structure.objects.filter(stabilizing_agents__name__contains="GRK").values_list("pdb_code__index", flat = True))
+        for pdb in grk_complexes:
+            if not pdb in signaling_proteins:
+                signaling_proteins[pdb] = "GRK"
 
         protein_slugs = set()
         for an in annotations:

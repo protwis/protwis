@@ -33,7 +33,7 @@ function renderTree(data) {
     dataClasses[10] = dataClasses[8]
     dataClasses[11] = ['0%', '50%', '100%'] // percentage
     dataClasses[12] = ['0%', '50%', '100%'] // percentage
-    dataClasses[13] = ['Gi/o', 'Gq/11', 'Gs', 'G12/13', 'Gt', 'Gpa1', 'Arrestin', 'ERK']
+    dataClasses[13] = ['Gi/o', 'Gq/11', 'Gs', 'G12/13', 'Gt', 'Gpa1', 'Arrestin', 'GRK']
 
     // Receptor family coloring
     if (dataClasses[3].length > 20 && dataClasses[3].length < 32)

@@ -439,6 +439,9 @@ class Command(BaseBuild):
                     pub_type = 'pubmed'
                 elif r['review'].startswith('http'):
                     pub_type = 'raw_link'
+                    if r['review'].startswith("https://doi.org/"):
+                        r['review'] = r['review'][len("https://doi.org/"):]
+                        pub_type = 'doi'
                 else: #assume doi
                     pub_type = 'doi'
 
@@ -450,11 +453,12 @@ class Command(BaseBuild):
                         elif pub_type == "pubmed":
                             pub_review = Publication.get_or_create_from_pubmed(r['review'])
                         elif pub_type == "raw_link":
+                            wr = WebResource.objects.get(slug=pub_type)
                             try:
-                                wl, created = WebLink.objects.get_or_create(defaults={"index": r["review"]}, index__iexact=r['review'], web_resource__slug=pub_type)
+                                wl, created = WebLink.objects.get_or_create(defaults={"index": r['review']}, index__iexact=r['review'], web_resource=wr)
                             except IntegrityError:
                                 # Try again (paralellization)
-                                wl, created = WebLink.objects.get_or_create(defaults={"index": r["review"]}, index__iexact=r['review'], web_resource__slug=pub_type)
+                                wl, created = WebLink.objects.get_or_create(defaults={"index": r['review']}, index__iexact=r['review'], web_resource=wr)
 
                             try:
                                 pub_review = Publication.objects.get(web_link=wl)

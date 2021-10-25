@@ -486,6 +486,9 @@ class Command(BaseBuild):
         ss.publication = pub
         ss.protein = alpha_prot
         ss.pdb_data = pdbdata_object
+        if len(SignprotStructure.objects.filter(pdb_code=ss.pdb_code))>0:
+            self.logger.warning('SignprotStructure {} already created, skipping'.format(pdb_code))
+            return 0
         ss.save()
         # Stabilizing agent
         for o in data["other"]:

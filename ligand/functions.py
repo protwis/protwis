@@ -88,11 +88,16 @@ def get_or_make_ligand(ligand_id, type_id, name = None, pep_or_prot = None):
                                 ## now insert a new ligand, but first make sure name is unique
                                 if Ligand.objects.filter(name=ligand_name).exists():
                                     ls = Ligand.objects.filter(name__startswith=ligand_name, canonical=True).order_by("pk")
+                                    last = ""
                                     for l_temp in ls:
+                                        if last == "":
+                                            last = l_temp.name
                                         try:
                                             last = int(l_temp.name.split("_")[-1])
                                         except ValueError:
                                             continue
+
+                                    # TODO: better solution
                                     if last==ligand_name: #no addition yet
                                         ligand_name = ligand_name +"_1"
                                     else:
