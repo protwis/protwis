@@ -27,6 +27,7 @@ import yaml
 import shlex
 import subprocess
 import pprint
+import csv
 
 
 structs_with_missing_x50 = ['5EM9', '5AER', '3BEF', '3LU9', '3HKI', '3HKJ', '1NRR', '1NRQ', '1NRP', '1NRO', '1NRN', '3QDZ', '2ZPK', '1YTV', '4JQI', '6NI2', '5YD3',
@@ -520,3 +521,136 @@ class QueryPDBClassifiedGPCR():
         self.num_struct = len(structures)
         self.new_structures = new_struct
         self.new_uniques = new_unique
+
+
+def yamls_to_csv():
+    s_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'structures'])
+    c_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'constructs'])
+    g_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data'])
+    yamls = os.listdir(s_dir)
+    constructs = os.listdir(s_dir)
+    d = OrderedDict()
+    for i in yamls:
+        pdb = i.split('.')[0]
+        try:
+            s_obj = Structure.objects.get(pdb_code__index=pdb)
+        except Structure.DoesNotExist:
+            continue
+        with open(os.sep.join([s_dir, i]), 'r') as f1:
+            s_y = yaml.load(f1, Loader=yaml.FullLoader)
+            d[pdb] = s_y
+        with open(os.sep.join([c_dir, i]), 'r') as f2:
+            c_y = yaml.load(f2, Loader=yaml.FullLoader)
+            d[pdb]['protein'] = c_y['protein']
+        d[pdb]['obj'] = s_obj
+        if type(d[pdb]['ligand'])!=type([]):
+            d[pdb]['ligand'] = [d[pdb]['ligand']]
+    # structures.csv
+    with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'structures.csv']), 'w', newline='') as s_csv:
+        struct_w = csv.writer(s_csv, delimiter=',', quotechar="'", quoting=csv.QUOTE_MINIMAL)
+        struct_w.writerow(['PDB', 'Receptor_UniProt', 'Method', 'Resolution', 'State', 'ChainID', 'Note'])
+        for pdb, vals in d.items():
+            if vals['obj'].structure_type.name.startswith('X-ray'):
+                method = 'X-ray'
+            elif vals['obj'].structure_type.name=='Electron microscopy':
+                method = 'cryo-EM'
+            else:
+                method = vals['obj'].structure_type.name
+            struct_w.writerow([pdb, vals['protein'], method, vals['obj'].resolution, vals['state'], vals['preferred_chain'], ''])
+    # ligands.csv
+    with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'ligands.csv']), 'w', newline='') as l_csv:
+        lig_w = csv.writer(l_csv, delimiter=',', quotechar="'", quoting=csv.QUOTE_MINIMAL)
+        lig_w.writerow(['PDB', 'ChainID', 'Name', 'PubChemID', 'Role', 'Title', 'Type'])
+        for pdb, vals in d.items():
+            lig = d[pdb]['ligand']
+            if isinstance(lig, list):
+                for l in lig:
+                    if 'chain' in l:
+                        chain = l['chain']
+                    else:
+                        chain = ''
+                    if 'title' not in l:
+                        title = l['name']
+                    else:
+                        title = l['title']
+                    lig_w.writerow([pdb, chain, l['name'], l['pubchemId'], l['role'], title, l['type']])
+    fusion_prots = OrderedDict()
+    ramp, grk = OrderedDict(), OrderedDict()
+    # nanobodies.csv fusion_proteins.csv ramp.csv grk.csv
+    with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'nanobodies.csv']), 'w', newline='') as n_csv:
+        nb_w = csv.writer(n_csv, delimiter=',', quotechar="'", quoting=csv.QUOTE_MINIMAL)
+        nb_w.writerow(['PDB', 'Name'])
+        for pdb, vals in d.items():
+            auxs = d[pdb]['auxiliary_protein'].split(',')
+            for aux in auxs:
+                if aux=='' or aux=='None' or aux.startswith('GABA'):
+                    continue
+                if aux[0]==' ':
+                    aux = aux[1:]
+                if aux.startswith('Antibody') or aux.startswith('scFv') or 'Fab' in aux or 'Nanobody' in aux or aux.startswith('Camelid') or aux.startswith('IgG') or aux in ['Sb51','DN13','Anti-RON nanobody','T-cell surface glycoprotein CD4']:
+                    if aux.startswith('Nanobody '):
+                        aux = aux.split(' ')[0]+'-'+aux.split(' ')[1]
+                    elif aux.startswith('Nanobody') and '-' not in aux and aux!='Nanobody':
+                        aux = 'Nanobody-'+aux[8:]
+                    nb_w.writerow([pdb, aux])
+                elif aux in ['BRIL', 'T4-Lysozyme', 'Flavodoxin', 'Rubredoxin', 'GlgA glycogen synthase', 'Glycogen synthase', 'Thioredoxin 1', 'TrxA', 'Sialidase NanA']:
+                    fusion_prots[pdb] = aux
+                elif aux.startswith('RAMP'):
+                    ramp[pdb] = aux
+                elif aux.startswith('GRK'):
+                    grk[pdb] = aux
+                else:
+                    print('====',aux)
+    with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'fusion_proteins.csv']), 'w', newline='') as f_csv:
+        f_w = csv.writer(f_csv, delimiter=',', quotechar="'", quoting=csv.QUOTE_MINIMAL)
+        f_w.writerow(['PDB', 'Name'])
+        for pdb, name in fusion_prots.items():
+            f_w.writerow([pdb, name])
+    with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'ramp.csv']), 'w', newline='') as r_csv:
+        r_w = csv.writer(r_csv, delimiter=',', quotechar="'", quoting=csv.QUOTE_MINIMAL)
+        r_w.writerow(['PDB', 'Name'])
+        for pdb, name in ramp.items():
+            r_w.writerow([pdb, name])
+    with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'grk.csv']), 'w', newline='') as g_csv:
+        g_w = csv.writer(g_csv, delimiter=',', quotechar="'", quoting=csv.QUOTE_MINIMAL)
+        g_w.writerow(['PDB', 'Name'])
+        for pdb, name in grk.items():
+            g_w.writerow([pdb, name])
+    # g proteins
+    with open(os.sep.join([g_dir, 'complex_model_templates.yaml']), 'r') as f2:
+        gprots = yaml.load(f2, Loader=yaml.FullLoader)
+    with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'extra_protein_notes.yaml']), 'r') as f3:
+        extra = yaml.load(f3, Loader=yaml.FullLoader)
+    arrestin = OrderedDict()
+    with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'g_proteins.csv']), 'w', newline='') as gp_csv:
+        gp_w = csv.writer(gp_csv, delimiter=',', quotechar="'", quoting=csv.QUOTE_MINIMAL)
+        gp_w.writerow(['PDB', 'Alpha_UniProt', 'Alpha_ChainID', 'Beta_UniProt', 'Beta_ChainID', 'Gamma_UniProt', 'Gamma_ChainID', 'Note'])
+        gprot_pdbs = []
+        for alpha, vals_l in gprots.items():
+            for vals in vals_l:
+                note = ''
+                if vals['pdb'] in extra:
+                    note = extra[vals['pdb']]['note']
+                if vals['beta']['protein']=='None':
+                    beta_prot, beta_chain = '', ''
+                else:
+                    beta_prot, beta_chain = vals['beta']['protein'], vals['beta']['chain']
+                if vals['gamma']['protein']=='None':
+                    gamma_prot, gamma_chain = '', ''
+                else:
+                    gamma_prot, gamma_chain = vals['gamma']['protein'], vals['gamma']['chain']
+                gprot_pdbs.append(vals['pdb'])
+                gp_w.writerow([vals['pdb'], alpha, vals['alpha'], beta_prot, beta_chain, gamma_prot, gamma_chain, note])
+        prot_code = {'GNAS2':'gnas2_human','GNAT1':'gnat1_bovin','GNAT3':'gnat3_bovin'}
+        for pdb, vals in extra.items():
+            if 'category' in vals:
+                if vals['category']=='G alpha':
+                    gp_w.writerow([pdb, vals['prot'], vals['chain'], '', '', '', '', vals['note']])
+                elif vals['category']=='Arrestin':
+                    arrestin[pdb] = vals
+    with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'arrestins.csv']), 'w', newline='') as ar_csv:
+        ar_w = csv.writer(ar_csv, delimiter=',', quotechar="'", quoting=csv.QUOTE_MINIMAL)
+        ar_w.writerow(['PDB', 'UniProt', 'ChainID', 'Note'])
+        for pdb, vals in arrestin.items():
+            ar_w.writerow([pdb, vals['prot'], vals['chain'], vals['note']])
+
