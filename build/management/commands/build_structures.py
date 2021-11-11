@@ -323,7 +323,7 @@ class Command(BaseBuild):
             deletions = list(range(222,405))
         elif structure.pdb_code.index=='2I35':
             removed = [330,331,332]
-        elif structure.pdb_code.index=='7ARO':
+        elif structure.pdb_code.index in ['7ARO', '7RM5']:
             removed.remove(1)
             deletions.remove(1)
         elif structure.pdb_code.index in ['7BTS','7BU6','7BU7','7BVQ']:
@@ -550,6 +550,8 @@ class Command(BaseBuild):
             temp_seq = temp_seq[:105]+'S-------'+temp_seq[113:]
         elif structure.pdb_code.index=='7MTQ':
             temp_seq = temp_seq[:694]+'E---'+temp_seq[698:]
+        elif structure.pdb_code.index=='7FD9':
+            temp_seq = temp_seq[:99]+'S'+temp_seq[99:118]+temp_seq[119:]
 
         for i, r in enumerate(ref_seq, 1): #loop over alignment to create lookups (track pos)
             if self.debug:

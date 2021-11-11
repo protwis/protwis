@@ -235,7 +235,7 @@ class StructureModelRMSD(models.Model):
 
 
 class StructureType(models.Model):
-    slug = models.SlugField(max_length=20, unique=True)
+    slug = models.SlugField(max_length=25, unique=True)
     name = models.CharField(max_length=100)
 
     def type_short(self):
@@ -243,6 +243,8 @@ class StructureType(models.Model):
             return "X-ray"
         elif self.name=="Electron microscopy":
             return "cryo-EM"
+        elif self.name=="Electron crystallography":
+            return "MicroED"
         else:
             return self.name
 
