@@ -404,140 +404,167 @@ class LigandVendorLink(models.Model):
     vendor_external_id = models.CharField(max_length=300)  # RegistryID
     sid = models.CharField(max_length=200, unique=True)  # SID
 
-# Biased Signalling - start
+# Biased Signalling Data NEW MODEL
 
-
-class BiasedExperiment(models.Model):
-    submission_author = models.CharField(max_length=50)
-    ligand = models.ForeignKey(Ligand, on_delete=models.CASCADE)
-    publication = models.ForeignKey(Publication, on_delete=models.CASCADE)
-    receptor = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
-    endogenous_ligand = models.ForeignKey(
-        Ligand, related_name='endogenous_ligand_bias', on_delete=models.CASCADE,  null=True)
-    auxiliary_protein = models.TextField(null=True)
-    ligand_source_id = models.TextField(null=True)
-    ligand_source_type = models.TextField(null=True)
-
-class BiasedExperimentAssay(models.Model):
-    biased_experiment = models.ForeignKey(
-                        BiasedExperiment, related_name='experiment_data',
-                        on_delete = models.CASCADE, null = True
-                        )
-
-    signalling_protein = models.CharField(
-        max_length=60)  # TODO link to actual protein
-    family = models.CharField(max_length=60, null=True)
+class BiasedData(models.Model):
+    ligand = models.ForeignKey(Ligand, on_delete=models.CASCADE) #LINK
+    publication = models.ForeignKey(Publication, on_delete=models.CASCADE) #LINK
+    experiment = models.CharField(max_length=60, null=True) #to be added by Kasper (TBA)
+    endogenous_status = models.CharField(max_length=60, null=True) #need to fetch from endogenous ligand browser now fetching from the excel datasheet (Link?)
+    receptor = models.ForeignKey('protein.Protein', on_delete=models.CASCADE) #LINK
+    receptor_isoform = models.CharField(max_length=60, null=True)
+    active_receptor_complex = models.CharField(max_length=60, null=True)
     cell_line = models.CharField(max_length=60, null=True)
-    assay_type = models.CharField(max_length=60, null=True)
+    tissue = models.CharField(max_length=60, null=True)
+    specie = models.CharField(max_length=60, null=True)
+    primary_effector_family = models.CharField(max_length=60, null=True)
+    primary_effector_subtype = models.CharField(max_length=60)
     molecule_1 = models.CharField(max_length=60, null=True)
     molecule_2 = models.CharField(max_length=60, null=True)
-
-    measured_biological_process = models.CharField(max_length=60, null=True)
-    signal_detection_tecnique = models.TextField(null=True)
-    assay_time_resolved = models.CharField(max_length=60, null=True)
-    ligand_function = models.CharField(max_length=60, null=True)
-    quantitive_measure_type = models.CharField(max_length=60, null=True)
-    quantitive_activity = models.FloatField(max_length=60, null=True)
-    quantitive_activity_sign = models.CharField(max_length=3, null=True)
-    quantitive_unit = models.CharField(max_length=60, null=True)
-    qualitative_activity = models.CharField(max_length=60, null=True)
-    quantitive_efficacy = models.FloatField(max_length=60, null=True)
-    efficacy_measure_type = models.CharField(max_length=60, null=True)
-    efficacy_sign = models.CharField(max_length=3, null=True)
-    efficacy_unit = models.CharField(max_length=60, null=True)
-    bias_reference = models.CharField(max_length=60, null=True)
-    bias_value = models.FloatField(max_length=60, null=True)
-    bias_value_initial = models.FloatField(max_length=60, null=True)
-
-    emax_ligand_reference = models.ForeignKey(Ligand, related_name = 'ExperimentAssay.bias_ligand_reference+',
-                                        on_delete = models.CASCADE,
-                                        null = True, blank = True)
-
-
-
-class ExperimentAssayAuthors(models.Model):
-    experiment = models.ForeignKey(BiasedExperimentAssay, related_name='experiment_data_authors',
-                                   on_delete=models.CASCADE)
-    author = models.CharField(max_length=70)
-
-class BiasedExperimentVendors(models.Model):
-    experiment = models.ForeignKey(BiasedExperiment, related_name='experiment_data_vendors',
-                                   on_delete=models.CASCADE)
-    vendor = models.ForeignKey(LigandVendorLink, related_name='ex_LigandVendorLink',
-                               on_delete=models.CASCADE)
-
-
-class AnalyzedExperiment(models.Model):
-    ligand = models.ForeignKey(Ligand, on_delete=models.CASCADE)
-    publication = models.ForeignKey(
-        Publication, on_delete=models.CASCADE, null=True)
-    receptor = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
-    source = models.CharField(max_length=60)
-    endogenous_ligand = models.ForeignKey(
-        Ligand, related_name='endogenous_ligand_bias_analyzed', on_delete=models.CASCADE, null=True)
-    reference_ligand = models.ForeignKey(
-        Ligand, related_name='ref_ligand_bias_analyzed', on_delete=models.CASCADE, null=True)
-    vendor_quantity = models.CharField(max_length=5)
-    article_quantity = models.CharField(max_length=5)
-    labs_quantity = models.CharField(max_length=5)
-    auxiliary_protein = models.ForeignKey(
-        'protein.Protein', on_delete=models.CASCADE, related_name='bias_auxiliary_protein', null=True)
-    primary = models.CharField(max_length=100, null=True)
-    secondary = models.CharField(max_length=100, null=True)
-    ligand_source_id = models.TextField(null=True)
-    ligand_source_type = models.TextField(null=True)
-    external_ligand_ids = models.TextField(null=True, blank=True)
-
-class AnalyzedAssay(models.Model):
-    experiment = models.ForeignKey(
-                        AnalyzedExperiment, related_name='analyzed_data',
-                        on_delete = models.CASCADE
-                        )
-    family = models.CharField(max_length=60, null=True)
-    order_no = models.IntegerField(null=True)
-    signalling_protein = models.CharField(
-        max_length=60)  # TODO link to actual protein
-    cell_line = models.CharField(max_length=60, null=True)
-    molecule_1 = models.CharField(max_length=60, null=True)
-    molecule_2 = models.CharField(max_length=60, null=True)
+    pathway_level = models.CharField(max_length=60, null=True)
     assay_type = models.CharField(max_length=60, null=True)
-    effector_family = models.CharField(max_length=60, null=True)
-    measured_effector = models.CharField(max_length=60, null=True)
-    measured_biological_process = models.CharField(max_length=60, null=True)
-    signal_detection_tecnique = models.TextField(null=True)
-    assay_measure = models.CharField(max_length=60, null=True)
-    assay_time_resolved = models.CharField(max_length=60, null=True)
-    ligand_function = models.CharField(max_length=60, null=True)
-    quantitive_measure_type = models.CharField(max_length=60, null=True)
-    quantitive_activity_initial = models.FloatField(max_length=60, null=True)
-    quantitive_activity = models.FloatField(max_length=60, null=True)
-    quantitive_activity_sign = models.CharField(max_length=3, null=True)
-    quantitive_unit = models.CharField(max_length=60, null=True)
+    EC50 = models.FloatField(max_length=60, null=True)
+    EC50_sign = models.CharField(max_length=60, null=True)
     qualitative_activity = models.CharField(max_length=60, null=True)
-    quantitive_efficacy = models.FloatField(max_length=60, null=True)
-    efficacy_measure_type = models.CharField(max_length=60, null=True)
-    efficacy_sign = models.CharField(max_length=3, null=True)
-    efficacy_unit = models.CharField(max_length=60, null=True)
-    potency = models.CharField(max_length=60, null=True)
-    t_coefficient = models.CharField(max_length=60, null=True)
-    t_value = models.CharField(max_length=60, null=True)
-    log_bias_factor = models.CharField(max_length=60, null=True)
-    log_bias_factor_a = models.CharField(max_length=60, null=True)
-    log_bias_factor_b = models.CharField(max_length=60, null=True)
-    log_bias_factor_c = models.CharField(max_length=60, null=True)
-    log_bias_factor_d = models.CharField(max_length=60, null=True)
-    log_bias_factor_e = models.CharField(max_length=60, null=True)
-    t_factor = models.CharField(max_length=60, null=True)
-    assay_description = models.CharField(max_length=900, null=True)
-    reference_ligand_id= models.CharField(max_length=900, null=True)
-    reference_assay_initial = models.ForeignKey(BiasedExperimentAssay, related_name='test_ExperimentAssay.bias_ligand_reference_assay+',
-                                          on_delete=models.CASCADE,
-                                          null=True, blank=True)
-    emax_ligand_reference = models.ForeignKey(Ligand, related_name='ExperimentAssay.bias_ligand_reference+',
-                                              on_delete=models.CASCADE,
-                                              null=True, blank=True)
+    Emax = models.FloatField(max_length=60, null=True)
+    Emax_sign = models.CharField(max_length=60, null=True)
+    Tau_KA = models.FloatField(max_length=60, null=True)
+    delta_Tau_KA = models.FloatField(max_length=60, null=True)
 
+#To Be Removed
+# class BiasedExperiment(models.Model):
+#     submission_author = models.CharField(max_length=50)
+#     ligand = models.ForeignKey(Ligand, on_delete=models.CASCADE)
+#     publication = models.ForeignKey(Publication, on_delete=models.CASCADE)
+#     receptor = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
+#     endogenous_ligand = models.ForeignKey(
+#         Ligand, related_name='endogenous_ligand_bias', on_delete=models.CASCADE,  null=True)
+#     auxiliary_protein = models.TextField(null=True)
+#     ligand_source_id = models.TextField(null=True)
+#     ligand_source_type = models.TextField(null=True)
 
+#To Be Removed
+# class BiasedExperimentAssay(models.Model):
+#     biased_experiment = models.ForeignKey(
+#                         BiasedExperiment, related_name='experiment_data',
+#                         on_delete = models.CASCADE, null = True
+#                         )
+#
+#     signalling_protein = models.CharField(
+#         max_length=60)  # TODO link to actual protein
+#     family = models.CharField(max_length=60, null=True)
+#     cell_line = models.CharField(max_length=60, null=True)
+#     assay_type = models.CharField(max_length=60, null=True)
+#     molecule_1 = models.CharField(max_length=60, null=True)
+#     molecule_2 = models.CharField(max_length=60, null=True)
+#
+#     measured_biological_process = models.CharField(max_length=60, null=True)
+#     signal_detection_tecnique = models.TextField(null=True)
+#     assay_time_resolved = models.CharField(max_length=60, null=True)
+#     ligand_function = models.CharField(max_length=60, null=True)
+#     quantitive_measure_type = models.CharField(max_length=60, null=True)
+#     quantitive_activity = models.FloatField(max_length=60, null=True)
+#     quantitive_activity_sign = models.CharField(max_length=3, null=True)
+#     quantitive_unit = models.CharField(max_length=60, null=True)
+#     qualitative_activity = models.CharField(max_length=60, null=True)
+#     quantitive_efficacy = models.FloatField(max_length=60, null=True)
+#     efficacy_measure_type = models.CharField(max_length=60, null=True)
+#     efficacy_sign = models.CharField(max_length=3, null=True)
+#     efficacy_unit = models.CharField(max_length=60, null=True)
+#     bias_reference = models.CharField(max_length=60, null=True)
+#     bias_value = models.FloatField(max_length=60, null=True)
+#     bias_value_initial = models.FloatField(max_length=60, null=True)
+#
+#     emax_ligand_reference = models.ForeignKey(Ligand, related_name = 'ExperimentAssay.bias_ligand_reference+',
+#                                         on_delete = models.CASCADE,
+#                                         null = True, blank = True)
+
+#To Be Removed
+# class ExperimentAssayAuthors(models.Model):
+#     experiment = models.ForeignKey(BiasedExperimentAssay, related_name='experiment_data_authors',
+#                                    on_delete=models.CASCADE)
+#     author = models.CharField(max_length=70)
+
+#To Be Removed
+# class BiasedExperimentVendors(models.Model):
+#     experiment = models.ForeignKey(BiasedExperiment, related_name='experiment_data_vendors',
+#                                    on_delete=models.CASCADE)
+#     vendor = models.ForeignKey(LigandVendorLink, related_name='ex_LigandVendorLink',
+#                                on_delete=models.CASCADE)
+
+#To Be Removed
+# class AnalyzedExperiment(models.Model):
+#     ligand = models.ForeignKey(Ligand, on_delete=models.CASCADE)
+#     publication = models.ForeignKey(
+#         Publication, on_delete=models.CASCADE, null=True)
+#     receptor = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
+#     source = models.CharField(max_length=60)
+#     endogenous_ligand = models.ForeignKey(
+#         Ligand, related_name='endogenous_ligand_bias_analyzed', on_delete=models.CASCADE, null=True)
+#     reference_ligand = models.ForeignKey(
+#         Ligand, related_name='ref_ligand_bias_analyzed', on_delete=models.CASCADE, null=True)
+#     vendor_quantity = models.CharField(max_length=5)
+#     article_quantity = models.CharField(max_length=5)
+#     labs_quantity = models.CharField(max_length=5)
+#     auxiliary_protein = models.ForeignKey(
+#         'protein.Protein', on_delete=models.CASCADE, related_name='bias_auxiliary_protein', null=True)
+#     primary = models.CharField(max_length=100, null=True)
+#     secondary = models.CharField(max_length=100, null=True)
+#     ligand_source_id = models.TextField(null=True)
+#     ligand_source_type = models.TextField(null=True)
+#     external_ligand_ids = models.TextField(null=True, blank=True)
+
+#To Be Removed
+# class AnalyzedAssay(models.Model):
+#     experiment = models.ForeignKey(
+#                         AnalyzedExperiment, related_name='analyzed_data',
+#                         on_delete = models.CASCADE
+#                         )
+#     family = models.CharField(max_length=60, null=True)
+#     order_no = models.IntegerField(null=True)
+#     signalling_protein = models.CharField(
+#         max_length=60)  # TODO link to actual protein
+#     cell_line = models.CharField(max_length=60, null=True)
+#     molecule_1 = models.CharField(max_length=60, null=True)
+#     molecule_2 = models.CharField(max_length=60, null=True)
+#     assay_type = models.CharField(max_length=60, null=True)
+#     effector_family = models.CharField(max_length=60, null=True)
+#     measured_effector = models.CharField(max_length=60, null=True)
+#     measured_biological_process = models.CharField(max_length=60, null=True)
+#     signal_detection_tecnique = models.TextField(null=True)
+#     assay_measure = models.CharField(max_length=60, null=True)
+#     assay_time_resolved = models.CharField(max_length=60, null=True)
+#     ligand_function = models.CharField(max_length=60, null=True)
+#     quantitive_measure_type = models.CharField(max_length=60, null=True)
+#     quantitive_activity_initial = models.FloatField(max_length=60, null=True)
+#     quantitive_activity = models.FloatField(max_length=60, null=True)
+#     quantitive_activity_sign = models.CharField(max_length=3, null=True)
+#     quantitive_unit = models.CharField(max_length=60, null=True)
+#     qualitative_activity = models.CharField(max_length=60, null=True)
+#     quantitive_efficacy = models.FloatField(max_length=60, null=True)
+#     efficacy_measure_type = models.CharField(max_length=60, null=True)
+#     efficacy_sign = models.CharField(max_length=3, null=True)
+#     efficacy_unit = models.CharField(max_length=60, null=True)
+#     potency = models.CharField(max_length=60, null=True)
+#     t_coefficient = models.CharField(max_length=60, null=True)
+#     t_value = models.CharField(max_length=60, null=True)
+#     log_bias_factor = models.CharField(max_length=60, null=True)
+#     log_bias_factor_a = models.CharField(max_length=60, null=True)
+#     log_bias_factor_b = models.CharField(max_length=60, null=True)
+#     log_bias_factor_c = models.CharField(max_length=60, null=True)
+#     log_bias_factor_d = models.CharField(max_length=60, null=True)
+#     log_bias_factor_e = models.CharField(max_length=60, null=True)
+#     t_factor = models.CharField(max_length=60, null=True)
+#     assay_description = models.CharField(max_length=900, null=True)
+#     reference_ligand_id= models.CharField(max_length=900, null=True)
+#     reference_assay_initial = models.ForeignKey(BiasedExperimentAssay, related_name='test_ExperimentAssay.bias_ligand_reference_assay+',
+#                                           on_delete=models.CASCADE,
+#                                           null=True, blank=True)
+#     emax_ligand_reference = models.ForeignKey(Ligand, related_name='ExperimentAssay.bias_ligand_reference+',
+#                                               on_delete=models.CASCADE,
+#                                               null=True, blank=True)
+
+# Pathways part - start
 class BiasedPathways(models.Model):
     submission_author = models.CharField(max_length=50)
     ligand = models.ForeignKey(Ligand, on_delete=models.CASCADE)

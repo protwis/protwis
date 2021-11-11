@@ -1,0 +1,588 @@
+from django.db import IntegrityError
+from build.management.commands.base_build import Command as BaseBuild
+from protein.models import Protein
+from ligand.models import GTP_endogenous_ligand, Ligand, LigandProperities, LigandType
+from common.models import WebLink, WebResource, Publication
+from bs4 import BeautifulSoup #will need to be removed
+import logging
+import time
+import requests
+import statistics
+import pandas as pd
+import numpy as np
+
+MISSING_PROTEINS = {}
+SKIPPED = 0
+
+#defining globals and URLs
+missing_info = []
+not_commented = []
+
+#This command will build the endogenous data starting
+#from an excel file. First iteration will be based on Excel file
+#obtained from Guide to Pharmacologia via scraped data (scraper implemented here)
+#Second iteration will be designed upon data directly provided by
+#Guide to Pharmacology in csv/xls sheet to be further processed.
+
+class Command(BaseBuild):
+    mylog = logging.getLogger(__name__)
+    mylog.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(message)s')
+    file_handler = logging.FileHandler('biasDataTest.log')
+    file_handler.setLevel(logging.ERROR)
+    file_handler.setFormatter(formatter)
+    mylog.addHandler(file_handler)
+
+    help = 'Updates GuideToPharma data and imports it'
+    publication_cache = {}
+    ligand_cache = {}
+    data_all = []
+    gtp_url = "https://www.guidetopharmacology.org/services/targets/families"
+    DRUG = 'https://www.guidetopharmacology.org/GRAC/LigandDisplayForward?tab=biology&ligandId={}'
+    Summary = 'https://www.guidetopharmacology.org/GRAC/LigandDisplayForward?&ligandId={}'
+    URL = 'https://www.guidetopharmacology.org/GRAC/ObjectDisplayForward?objectId={}'
+    interactions = "https://www.guidetopharmacology.org/services/ligands/{}/interactions"
+    pub_link = "https://www.guidetopharmacology.org/GRAC/LigandDisplayForward?tab=refs&ligandId={}"
+
+    def add_arguments(self, parser):
+        parser.add_argument('-p', '--proc',
+                            type=int,
+                            action='store',
+                            dest='proc',
+                            default=1,
+                            help='Number of processes to run')
+        parser.add_argument('-f', '--filename',
+                            action='append',
+                            dest='filename',
+                            help='Filename to import. Can be used multiple times')
+        parser.add_argument('-u', '--purge',
+                            action='store_true',
+                            dest='purge',
+                            default=False,
+                            help='Purge existing bias records')
+        parser.add_argument('--test_run', action='store_true', help='Skip this during a test run',
+                            default=False)
+
+    def handle(self, *args, **options):
+        if options['test_run']:
+            print('Skipping in test run')
+            return
+        if options['purge']:
+            try:
+                self.purge_bias_data()
+            except Exception as msg:
+                print(msg)
+                self.logger.error(msg)
+        self.analyse_rows()
+
+
+# pylint: disable=R0201
+    def purge_bias_data(self):
+        print("# Purging data")
+        delete_bias_experiment = GTP_endogenous_ligand.objects.all()
+        delete_bias_experiment.delete()
+
+    def analyse_rows(self):
+        """
+        Fetch data to models
+        Saves to DB
+        """
+        print('---Starting---\n')
+        print("\n#1 Get GPCR ids from target families")
+        target_list = self.get_gpcrs() #updated
+        print("\n#2 Get Guide to Pharmacology endogenous ligand data")
+        endogenous_data = self.scrape_data(target_list)   #updated
+        #Here will need to be updated with the fetching from the actual data from GtoP
+        print("\n#3 Adding drug data")
+        endogenous_data = self.adding_drug_info(endogenous_data)
+        print("\n#4 Assessing principal endogenous from comments")
+        endogenous_data, to_be_ranked = self.labeling_principals(endogenous_data)
+        print("\n#5 Adding potency ranking (pEC50, pKi)")
+        endogenous_data, problematic_data = self.adding_potency_rankings(self, endogenous_data, to_be_ranked)
+        print("\n#6 Clean dataframe and upload")
+        # print("\n#3 Get endogenous data from GPCRDb")
+        # endogenous_ligands_from_db = self.endogenous_ligands_from_db()
+        # print("\n#4 Convert_query_to_dict" )
+        # endogenous_list = self.convert_query_to_dict(endogenous_ligands_from_db)
+        print("\n#5 Combine same assays")
+        combined_assays = self.process_assays(endogenous_list)
+        print("\n#6 Prepare to calculate averages and save")
+        prepared_data = self.prepare_calculate_averages_and_save(combined_assays)
+        print("\n#7 Calculate averages")
+        averaged_list = self.calculate_averages(prepared_data)
+        print("\n#8 Save")
+        self.save_data(averaged_list)
+        print('\n\n---Finished---')
+
+    @staticmethod
+    def get_soup(URL, id):
+        r = requests.get(URL.format(id))
+        soup = BeautifulSoup(r.text, "html.parser")
+        return soup
+
+    @staticmethod
+    def get_infos(drug_info_rows, INFO, search_class = False):
+        compound_classes = {'Metabolite or derivative': 'Metabolite',
+                            'Natural product or derivative': 'Natural product',
+                            'Endogenous peptide in human, mouse or rat': 'Peptide',
+                            'Inorganic': 'Inorganic',
+                            'Synthetic organic': 'Synthetic organic',
+                            'Peptide or derivative': 'Peptide'}
+        useful_info = ['PubChem SID','PubChem CID','InChIKey']
+        for row in drug_info_rows:
+            if search_class == False:
+                for info in useful_info:
+                    try:
+                        if info in str(row.find('a')) and info not in INFO.keys():
+                            INFO[info] = row.find('a').text
+                    except TypeError:
+                        pass
+            else:
+                try:
+                    if str(row.find('a').text).strip() in compound_classes.keys():
+                        INFO['Compound Class'] = compound_classes[str(row.find('a').text).strip()]
+                except (TypeError, AttributeError):
+                    pass
+        return INFO
+
+    @staticmethod
+    def get_pub_info(drug_id, pub_list):
+        pub_ids = []
+        pub_page = Command.get_soup(pub_link, drug_id)
+        pub_data = pub_page.find('table', {'class' : 'receptor_data_tables'})
+        pub_rows = pub_data.findAll('tr')
+        for row in pub_rows[1:]:
+            if row.find('span').text.split('.')[0] in pub_list:
+                pmid = row.find('a').text
+                pub_ids.append(pmid)
+                # pub = fetch_publication(pmid)
+        return pub_ids
+
+    @staticmethod
+    def fetch_publication(publication_doi):
+        try:
+            float(publication_doi)
+            publication_doi = str(int(publication_doi))
+        except ValueError:
+            pass
+        if publication_doi.isdigit():  # assume pubmed
+            pub_type = 'pubmed'
+        else:  # assume doi
+            pub_type = 'doi'
+        if publication_doi not in publication_cache:
+            try:
+                wl = WebLink.objects.get(index=publication_doi, web_resource__slug=pub_type)
+            except WebLink.DoesNotExist:
+                try:
+                    wl = WebLink.objects.create(index=publication_doi, web_resource=WebResource.objects.get(slug=pub_type))
+                except IntegrityError:
+                    wl = WebLink.objects.get(index=publication_doi, web_resource__slug=pub_type)
+            try:
+                pub = Publication.objects.get(web_link=wl)
+            except Publication.DoesNotExist:
+                pub = Publication()
+                try:
+                    pub.web_link = wl
+                    pub.save()
+                except IntegrityError:
+                    pub = Publication.objects.get(web_link=wl)
+                if pub_type == 'doi':
+                    pub.update_from_doi(doi=publication_doi)
+                elif pub_type == 'pubmed':
+                    pub.update_from_pubmed_data(index=publication_doi)
+                try:
+                    pub.save()
+                except:
+                    pass
+            publication_cache[publication_doi] = pub
+        else:
+            pub = publication_cache[publication_doi]
+        return pub
+
+    @staticmethod
+    def get_gpcrs(self):
+        gpcr_gtp_ids = []
+        response = ''
+        while response == '':
+            try:
+                response = requests.get(gtp_url)
+            except:
+                print("Connection refused by the server..")
+                time.sleep(1)
+                response == ''
+
+        for entry in response.json():
+            if entry['parentFamilyIds']:
+                if entry['parentFamilyIds'][0] == 694 or entry['parentFamilyIds'][0] == 115:
+                    gpcr_gtp_ids.extend(entry['targetIds'])
+        return gpcr_gtp_ids
+
+    @staticmethod
+    def scrape_data(self, data):
+        final = {}
+        for id in data:
+            soup = Command.get_soup(URL, id)
+            title = str(soup.title).split(' receptor')[0].strip('<title>').split(' |')[0]
+            clean_title = str(soup.title.text).split(' |')[0]
+            final[id] = {"Receptor": clean_title}
+            tables = soup.findAll('table', { 'class' : 'receptor_data_tables' })
+            #we need to find the correct table among the ones we have fetched
+            to_parse = ''
+            for table in tables:
+                row = ''
+                rows = table.findAll('tr')
+                for row in rows:
+                    if(row.text.find("Natural/Endogenous") > -1):
+                        to_parse = table
+                        break
+            #now we have the actual table with all the info.
+            #we need to parse THIS table and get all the other info by fetching data via links
+            if to_parse != '':
+                drugtable = to_parse.findAll('tr')
+                for i in range(1, len(drugtable)):
+                    final[id]['Comment'] = ''
+                    if 'Comments' not in drugtable[i].text:
+                        try:
+                            #this has to be fixed
+                            drug = drugtable[i].find('a').text.lower()
+                            drug_ids = [x['href'].split('=')[1] for x in drugtable[i].findAll('a')]
+                            for drug_id in drug_ids:
+                                final[id][drug_id] = {"Name": drug}
+                                dsoup = Command.get_soup(DRUG, drug_id)
+                                try:
+                                    drug_data = dsoup.find('table', {'id' : 'Selectivity at GPCRs'})
+                                    drug_rows = drug_data.findAll('tr')
+                                    for k in range(len(drug_rows)):
+                                        if drug_rows[k].find('a') and (drug_rows[k].find('a')['href'].split('=')[1] == str(id)):
+                                            target_specie = drug_rows[k].findAll('td')[3].find('a')['title']
+                                            if not target_specie:
+                                                target_specie = 'No Data'
+                                            if target_specie not in final[id][drug_id].keys():
+                                                final[id][drug_id][target_specie] = {"Target Specie": target_specie}
+                                            if drug_rows[k].findAll('td')[2].find('img'):
+                                                if 'endogenous' in drug_rows[k].findAll('td')[2].find('img')['alt']:
+                                                    final[id][drug_id][target_specie]['Endogenous'] = 'True'
+                                            else:
+                                                final[id][drug_id][target_specie]['Endogenous'] = 'False'
+                                            pubs = drug_rows[k].findAll('td')[-2].text.replace('-',',').split(',')
+                                            final[id][drug_id][target_specie]['PMIDs'] = Command.get_pub_info(drug_id, pubs)
+                                            final[id][drug_id][target_specie]['Type'] = drug_rows[k].findAll('td')[4].text
+                                            final[id][drug_id][target_specie]['Action'] = drug_rows[k].findAll('td')[5].text
+                                            parameter = drug_rows[k].findAll('td')[7].text
+                                            if '–' in drug_rows[k].findAll('td')[6].text:
+                                                first = float(drug_rows[k].findAll('td')[6].text.split(' – ')[0])
+                                                second = float(drug_rows[k].findAll('td')[6].text.split(' – ')[1])
+                                                final[id][drug_id][target_specie][parameter+'_min'] = first
+                                                final[id][drug_id][target_specie][parameter+'_max'] = second
+                                                final[id][drug_id][target_specie][parameter+'_avg'] = statistics.mean([first, second])
+                                            else:
+                                                final[id][drug_id][target_specie][parameter+'_max'] = drug_rows[k].findAll('td')[6].text
+
+                                    ligand_specie = dsoup.findAll('div', {'class': 'textright_ligsum'})[-1].text.strip()
+                                    if len(ligand_specie) > 0:
+                                        try:
+                                            ligand_specie = ligand_specie.split(u'\xa0')[1]
+                                            final[id][drug_id]['Ligand Specie'] =  ligand_specie
+                                        except IndexError:
+                                            final[id][drug_id]['Ligand Specie'] = 'Same as target'
+                                    else:
+                                        final[id][drug_id]['Ligand Specie'] = 'Same as target'
+                                except AttributeError:
+                                    # final[id][drug_id]['Human'] = {"Name": drug}
+                                    print('Something went wrong on ligand: ' + str(drug) + ' , ' + str(drug_id))
+                                    pass
+                        except AttributeError:
+                            drug = drugtable[i].text.lower().split(', ')
+                            final[id]['Drugs'] = []
+                            if len(drug) > 1:
+                                for entry in drug:
+                                    final[id]['Drugs'].append(entry)
+                            else:
+                                final[id]['Drugs'].append(drug[0])
+                            final[id]['Comment'] = "No drug link available"
+                    else:
+                        final[id]['Comment'] = str(drugtable[i].text).split(': ')[1]
+        return final
+
+    @staticmethod
+    def adding_drug_info(self, scraped_data):
+        keys_to_skip = ['Receptor', 'Comment', 'Drugs']
+        for gpcr in scraped_data.keys():
+            for drug in scraped_data[gpcr]:
+                if drug not in keys_to_skip:
+                    INFO = {}
+                    SummarySoup = Command.get_soup(Summary, drug)
+                    drug_info = SummarySoup.findAll('table', {'class' : 'receptor_data_tables'})[-1]
+                    drug_class = SummarySoup.findAll('table', {'class' : 'receptor_data_tables'})[0]
+                    drug_info_rows = drug_info.findAll('tr')
+                    drug_class_rows = drug_class.findAll('tr')
+                    if len(drug_info_rows) <= 2:
+                        drug_info = SummarySoup.findAll('table', {'class' : 'receptor_data_tables'})[-2]
+                        drug_info_rows = drug_info.findAll('tr')
+                    INFO = Command.get_infos(drug_info_rows, INFO)
+                    INFO = Command.get_infos(drug_class_rows, INFO, True)
+                    for specie in scraped_data[gpcr][drug].keys():
+                        if specie not in ['Name', 'Ligand Specie']:
+                            scraped_data[gpcr][drug][specie].update(INFO)
+        return scraped_data
+
+    @staticmethod
+    def generating_dataframe(self, processed_data):
+        GtoP_endogenous = pd.DataFrame(columns=['Receptor ID', 'Receptor Name', 'Ligand ID', 'Ligand Specie', 'Compound Class',
+                        'PubChem CID', 'PubChem SID', 'InChIKey', 'Name', 'Target Specie', 'Type', 'Action',
+                        'pKi_min', 'pKi_avg', 'pKi_max', 'pEC50_min', 'pEC50_avg', 'pEC50_max',
+                        'pKd_min', 'pKd_avg', 'pKd_max', 'pIC50_min', 'pIC50_avg', 'pIC50_max',
+                        'Endogenous', 'Comment', 'Potency Ranking', 'Principal / Secondary', 'PMIDs'])
+        for ID in processed_data:
+            for drug in processed_data[ID].keys():
+                row = {}
+                row['Receptor ID'] = ID
+                row['Receptor Name'] = processed_data[ID]['Receptor']
+                try:
+                    row['Comment'] = processed_data[ID]['Comment']
+                except KeyError:
+                    row['Comment'] =  ''
+                if drug == 'Receptor':
+                    continue
+                if drug == 'Drugs':
+                    for value in processed_data[ID][drug]:
+                        row['Name'] = value
+                        GtoP_endogenous = GtoP_endogenous.append(row, ignore_index=True)
+                    continue
+                if drug == 'Comment':
+                    continue
+                row['Ligand ID'] = drug
+                row['Name'] = processed_data[ID][drug]['Name']
+                try:
+                    row['Ligand Specie'] = processed_data[ID][drug]['Ligand Specie']
+                except KeyError:
+                    pass
+                for specie in processed_data[ID][drug].keys():
+                    if specie not in row.keys():
+                        row['Target Specie'] = specie
+                        temp = {}
+                        for value in processed_data[ID][drug][specie].keys():
+                            if value in GtoP_endogenous.keys():
+                                temp[value] = processed_data[ID][drug][specie][value]
+                        to_add = {**row, **temp}
+                        GtoP_endogenous = GtoP_endogenous.append(to_add, ignore_index=True)
+                if (len(row) > 3) and (len(row) < 6):
+                    GtoP_endogenous = GtoP_endogenous.append(row, ignore_index=True)
+        return GtoP_endogenous
+
+    @staticmethod
+    def labeling_principals(self, dataframe):
+        IDS = list(dataframe['Receptor ID'].unique())
+        not_commented = []
+        for id in IDS:
+            slice = dataframe.loc[dataframe['Receptor ID'] == id]
+            comment = slice['Comment'].unique()[0].split('.')[0].lower()
+            if len(slice['Name'].unique()) == 1:
+                dataframe.loc[dataframe['Receptor ID'] == id, 'Principal / Secondary'] = 'Principal'
+            if 'principal' in comment:
+                if 'agonists' in comment:
+                    drugs = comment.replace(' and ', ', ').split(' are')[0].split(', ')
+                    drugs = [x.strip(',') for x in drugs]
+                    dataframe.loc[(dataframe['Receptor ID'] == id) & (dataframe.Name.isin(drugs)), 'Principal / Secondary'] = 'Principal'
+                    dataframe.loc[(dataframe['Receptor ID'] == id) & (~dataframe.Name.isin(drugs)), 'Principal / Secondary'] = 'Secondary'
+                else:
+                    drugs = comment.split(' is')[0]
+                    dataframe.loc[(dataframe['Receptor ID'] == id) & (dataframe['Name'] == drugs), 'Principal / Secondary'] = 'Principal'
+                    dataframe.loc[(dataframe['Receptor ID'] == id) & (dataframe['Name'] != drugs), 'Principal / Secondary'] = 'Secondary'
+            else:
+                not_commented.append(id)
+        return dataframe, not_commented
+
+    @staticmethod
+    def adding_potency_rankings(self, GtoP_endogenous, not_commented):
+        #fix things, drop unused values
+        GtoP_endogenous.pKi_avg.fillna(GtoP_endogenous.pKi_max, inplace=True)
+        GtoP_endogenous.pEC50_avg.fillna(GtoP_endogenous.pEC50_max, inplace=True)
+        GtoP_endogenous.pKd_avg.fillna(GtoP_endogenous.pKd_max, inplace=True)
+        GtoP_endogenous.pIC50_avg.fillna(GtoP_endogenous.pIC50_max, inplace=True)
+
+        #Adding Potency Ranking to ligands in receptors without Principal status information
+        #while tracking problematic values (missing info, symbols in data etc)
+        for id in not_commented:
+          slice = GtoP_endogenous.loc[GtoP_endogenous['Receptor ID'] == id]
+          if len(slice['Name'].unique()) != 1:
+              if slice['pEC50_avg'].isna().any() == False:
+                  try:
+                      #we have all pEC50 values
+                      sorted_list = sorted(list(set([float(x) for x in slice['pEC50_avg'].to_list()])), reverse=True)
+                      counter = 1
+                      for item in sorted_list:
+                          if item in slice['pEC50_avg'].to_list():
+                              GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pEC50_avg'] == item), 'Potency Ranking'] = counter
+                          else:
+                              GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pEC50_avg'] == str(item)), 'Potency Ranking'] = counter
+                          counter += 1
+                  except ValueError:
+                      missing_info.append(id)
+              elif slice['pKi_avg'].isna().any() == False:
+                  try:
+                      #we have all pEC50 values
+                      sorted_list = sorted(list(set([float(x) for x in slice['pKi_avg'].to_list()])), reverse=True)
+                      counter = 1
+                      for item in sorted_list:
+                          if item in slice['pKi_avg'].to_list():
+                              GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pKi_avg'] == item), 'Potency Ranking'] = counter
+                          else:
+                              GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pKi_avg'] == str(item)), 'Potency Ranking'] = counter
+                          counter += 1
+                  except ValueError:
+                      missing_info.append(id)
+              else:
+                  #we don't have full values, grab higher pEC50 or higher pKi?
+                  values_pEC50 = slice['pEC50_avg'].dropna().to_list()
+                  values_pKi = slice['pKi_avg'].dropna().to_list()
+                  if len(values_pEC50) > 0:
+                      try:
+                          #we have all pEC50 values
+                          sorted_list = sorted(list(set([float(x) for x in slice['pEC50_avg'].dropna().to_list()])), reverse=True)
+                          counter = 1
+                          for item in sorted_list:
+                              if item in slice['pEC50_avg'].to_list():
+                                  GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pEC50_avg'] == item), 'Potency Ranking'] = counter
+                              else:
+                                  GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pEC50_avg'] == str(item)), 'Potency Ranking'] = counter
+                              counter += 1
+                          GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pEC50_avg'].isna()), 'Potency Ranking'] = counter
+                      except ValueError:
+                          missing_info.append(id)
+                  elif len(values_pKi) > 0:
+                      try:
+                          #we have all pEC50 values
+                          sorted_list = sorted(list(set([float(x) for x in slice['pKi_avg'].dropna().to_list()])), reverse=True)
+                          counter = 1
+                          for item in sorted_list:
+                              if item in slice['pKi_avg'].to_list():
+                                  GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pKi_avg'] == item), 'Potency Ranking'] = counter
+                              else:
+                                  GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pKi_avg'] == str(item)), 'Potency Ranking'] = counter
+                              counter += 1
+                          GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pKi_avg'].isna()), 'Potency Ranking'] = counter
+                      except ValueError:
+                          missing_info.append(id)
+                  else:
+                      missing_info.append(id)
+        return GtoP_endogenous, missing_info
+
+
+
+#OLD CODE
+
+    @staticmethod
+    def create_empty_ligand(ligand_name):
+        # gtoplig webresource
+        lp = Command.build_ligand_properties()
+        ligand = Ligand()
+        ligand.properities = lp
+        ligand.name = ligand_name
+        ligand.canonical = True
+        ligand.ambigious_alias = False
+        ligand.pdbe = None
+        try:
+            ligand.save()
+        except IntegrityError:
+            return Ligand.objects.get(name=ligand_name, canonical=True)
+        return ligand
+
+    @staticmethod
+    def build_ligand_properties():
+        lp = LigandProperities()
+        lt =  LigandType.objects.get(name = 'small molecule')
+        lp.ligand_type = lt
+        lp.smiles = None
+        lp.inchikey = None
+        lp.sequence= None
+        lp.mw = None
+        lp.rotatable_bonds = None
+        lp.hacc = None
+        lp.hdon = None
+        lp.logp = None
+        lp.save()
+        return lp
+
+
+    def fetch_experiment(self, ligand, receptor, pavg, eavg):
+        '''
+        fetch receptor with Protein model
+        requires: protein id, source
+        '''
+        try:
+            experiment = GTP_endogenous_ligand.objects.filter(
+                 ligand=ligand, receptor=receptor, pKi_avg=pavg,pec50_avg=eavg)
+            experiment = experiment.get()
+            return True
+        except Exception:
+            self.logger.info('fetch_experiment error')
+            experiment = None
+            return False
+
+    def fetch_protein(self, target):
+        """
+        fetch receptor with Protein model
+        requires: protein id, source
+        """
+        try:
+            test = None
+            test = list(Protein.objects.filter(
+                web_links__index=target, web_links__web_resource__slug='gtop'))
+            return test
+        except:
+            return None
+
+    def fetch_ligand(self, ligand_id, ligand_type, name):
+        """
+        fetch ligands with Ligand model
+        requires: ligand id, ligand id type, ligand name
+        requires: source_file name
+        """
+        l = None
+
+        try:
+            l = Ligand.objects.filter(
+                properities__web_links__index=ligand_id).first()
+            if l:
+                cid = l.properities.web_links.filter(
+                    web_resource__slug='gtoplig').first()
+                if cid:
+                    return l
+                else:
+                    lig = Ligand()
+                    l = lig.load_by_gtop_id(name, ligand_id, ligand_type)
+            else:
+                lig = Ligand()
+                l = lig.load_by_gtop_id(name, ligand_id, ligand_type)
+        except Exception:
+            l = None
+        return l
+
+    def save_data(self, save_data):
+        for assay in save_data:
+            gtp_data = GTP_endogenous_ligand(
+                    ligand = assay['ligand'],
+                    compound_class = assay['ligand_type'],
+                    ligand_specie = ,
+                    ligand_type = ,#agonist,antagonist
+                    ligand_action = , #full agonist, negative ...
+                    endogenous_status = , #principal/secondary
+                    potency_ranking = , #potency ranking
+                    receptor = assay['receptor'],
+                    receptor_specie = ,
+                    pec50_avg = assay['pec50_avg'],
+                    pec50_min = assay['pec50_min'],
+                    pec50_max = assay['pec50_max'],
+                    pKi_avg = assay['pKi_avg'],
+                    pKi_min = assay['pKi_min'],
+                    pKi_max = assay['pKi_max'],
+                    pic50_avg = ,
+                    pic50_min = ,
+                    pic50_max = ,
+                    pKd_avg = ,
+                    pKd_min = ,
+                    pKd_max = ,
+                    gpt_link = "GPCRDb", #needed?
+            )
+            gtp_data.save()
