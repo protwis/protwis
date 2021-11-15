@@ -18,7 +18,14 @@ def get_infos(drug_info_rows, INFO, search_class = False):
             for info in useful_info:
                 try:
                     if info in str(row.find('a')) and info not in INFO.keys():
-                        INFO[info] = row.find('a').text
+                        data = row.findAll('a')
+                        if len(data) > 1:
+                            info_add = []
+                            for piece in data:
+                                info_add.append(piece.text)
+                            INFO[info] = (' | ').join(info_add)
+                        else:
+                            INFO[info] = row.find('a').text
                 except TypeError:
                     pass
         else:
@@ -36,50 +43,14 @@ def get_pub_info(drug_id, pub_list):
     pub_rows = pub_data.findAll('tr')
     for row in pub_rows[1:]:
         if row.find('span').text.split('.')[0] in pub_list:
-            pmid = row.find('a').text
-            pub_ids.append(pmid)
-            # pub = fetch_publication(pmid)
+            try:
+                pmid = row.find('a').text
+                pub_ids.append(pmid)
+            except AttributeError:
+                pmid = row.find('td').text.strip().split('\n')[-1].strip()
+                pub_ids.append(pmid)
+    pub_ids = (' | ').join(pub_ids)
     return pub_ids
-
-def fetch_publication(publication_doi):
-    try:
-        float(publication_doi)
-        publication_doi = str(int(publication_doi))
-    except ValueError:
-        pass
-    if publication_doi.isdigit():  # assume pubmed
-        pub_type = 'pubmed'
-    else:  # assume doi
-        pub_type = 'doi'
-    if publication_doi not in publication_cache:
-        try:
-            wl = WebLink.objects.get(index=publication_doi, web_resource__slug=pub_type)
-        except WebLink.DoesNotExist:
-            try:
-                wl = WebLink.objects.create(index=publication_doi, web_resource=WebResource.objects.get(slug=pub_type))
-            except IntegrityError:
-                wl = WebLink.objects.get(index=publication_doi, web_resource__slug=pub_type)
-        try:
-            pub = Publication.objects.get(web_link=wl)
-        except Publication.DoesNotExist:
-            pub = Publication()
-            try:
-                pub.web_link = wl
-                pub.save()
-            except IntegrityError:
-                pub = Publication.objects.get(web_link=wl)
-            if pub_type == 'doi':
-                pub.update_from_doi(doi=publication_doi)
-            elif pub_type == 'pubmed':
-                pub.update_from_pubmed_data(index=publication_doi)
-            try:
-                pub.save()
-            except:
-                pass
-        publication_cache[publication_doi] = pub
-    else:
-        pub = publication_cache[publication_doi]
-    return pub
 
 #defining globals and URLs
 gpcr_gtp_ids = []
@@ -87,7 +58,8 @@ final = {}
 missing_info = []
 not_commented = []
 publication_cache = {}
-useful_info = ['PubChem SID','PubChem CID','InChIKey']
+ligand_info_cache = {}
+useful_info = ['PubChem SID','PubChem CID','InChIKey', 'UniProtKB']
 compound_classes = {'Metabolite or derivative': 'Metabolite',
                     'Natural product or derivative': 'Natural product',
                     'Endogenous peptide in human, mouse or rat': 'Peptide',
@@ -95,7 +67,8 @@ compound_classes = {'Metabolite or derivative': 'Metabolite',
                     'Synthetic organic': 'Synthetic organic',
                     'Peptide or derivative': 'Peptide'}
 keys_to_skip = ['Receptor', 'Comment', 'Drugs']
-GtoP_endogenous = pd.DataFrame(columns=['Receptor ID', 'Receptor Name', 'Ligand ID', 'Ligand Specie', 'Compound Class',
+GtoP_endogenous = pd.DataFrame(columns=
+               ['Receptor ID', 'Receptor Name', 'Ligand ID', 'UniProtKB', 'Ligand Specie', 'Compound Class',
                 'PubChem CID', 'PubChem SID', 'InChIKey', 'Name', 'Target Specie', 'Type', 'Action',
                 'pKi_min', 'pKi_avg', 'pKi_max', 'pEC50_min', 'pEC50_avg', 'pEC50_max',
                 'pKd_min', 'pKd_avg', 'pKd_max', 'pIC50_min', 'pIC50_avg', 'pIC50_max',
@@ -153,6 +126,15 @@ for id in gpcr_gtp_ids:
                     for drug_id in drug_ids:
                         final[id][drug_id] = {"Name": drug}
                         dsoup = get_soup(DRUG, drug_id)
+                        ligand_specie = dsoup.findAll('div', {'class': 'textright_ligsum'})[-1].text.strip()
+                        if len(ligand_specie) > 0:
+                            try:
+                                ligand_specie = ligand_specie.split(u'\xa0')[1]
+                                final[id][drug_id]['Ligand Specie'] =  ligand_specie
+                            except IndexError:
+                                final[id][drug_id]['Ligand Specie'] = 'Same as target'
+                        else:
+                            final[id][drug_id]['Ligand Specie'] = 'Same as target'
                         try:
                             drug_data = dsoup.find('table', {'id' : 'Selectivity at GPCRs'})
                             drug_rows = drug_data.findAll('tr')
@@ -160,7 +142,7 @@ for id in gpcr_gtp_ids:
                                 if drug_rows[k].find('a') and (drug_rows[k].find('a')['href'].split('=')[1] == str(id)):
                                     target_specie = drug_rows[k].findAll('td')[3].find('a')['title']
                                     if not target_specie:
-                                        target_specie = 'No Data'
+                                        target_specie = 'No Specie'
                                     if target_specie not in final[id][drug_id].keys():
                                         final[id][drug_id][target_specie] = {"Target Specie": target_specie}
                                     if drug_rows[k].findAll('td')[2].find('img'):
@@ -168,8 +150,10 @@ for id in gpcr_gtp_ids:
                                             final[id][drug_id][target_specie]['Endogenous'] = 'True'
                                     else:
                                         final[id][drug_id][target_specie]['Endogenous'] = 'False'
-                                    pubs = drug_rows[k].findAll('td')[-2].text.replace('-',',').split(',')
-                                    final[id][drug_id][target_specie]['PMIDs'] = get_pub_info(drug_id, pubs)
+                                    pubs = drug_rows[k].findAll('td')[-2].text
+                                    if pubs != '':
+                                        pubs = pubs.replace('-',',').split(',')
+                                        final[id][drug_id][target_specie]['PMIDs'] = get_pub_info(drug_id, pubs)
                                     final[id][drug_id][target_specie]['Type'] = drug_rows[k].findAll('td')[4].text
                                     final[id][drug_id][target_specie]['Action'] = drug_rows[k].findAll('td')[5].text
                                     parameter = drug_rows[k].findAll('td')[7].text
@@ -181,19 +165,9 @@ for id in gpcr_gtp_ids:
                                         final[id][drug_id][target_specie][parameter+'_avg'] = statistics.mean([first, second])
                                     else:
                                         final[id][drug_id][target_specie][parameter+'_max'] = drug_rows[k].findAll('td')[6].text
-
-                            ligand_specie = dsoup.findAll('div', {'class': 'textright_ligsum'})[-1].text.strip()
-                            if len(ligand_specie) > 0:
-                                try:
-                                    ligand_specie = ligand_specie.split(u'\xa0')[1]
-                                    final[id][drug_id]['Ligand Specie'] =  ligand_specie
-                                except IndexError:
-                                    final[id][drug_id]['Ligand Specie'] = 'Same as target'
-                            else:
-                                final[id][drug_id]['Ligand Specie'] = 'Same as target'
                         except AttributeError:
                             # final[id][drug_id]['Human'] = {"Name": drug}
-                            print('Something went wrong on ligand: ' + str(drug) + ' , ' + str(drug_id))
+                            print('Something went wrong on ligand: ' + str(drug) + ' , ' + str(drug_id) + ' , Receptor: ' + str(id))
                             pass
                 except AttributeError:
                     drug = drugtable[i].text.lower().split(', ')
@@ -211,22 +185,27 @@ for id in gpcr_gtp_ids:
 for gpcr in final.keys():
     for drug in final[gpcr]:
         if drug not in keys_to_skip:
-            INFO = {}
-            SummarySoup = get_soup(Summary, drug)
-            drug_info = SummarySoup.findAll('table', {'class' : 'receptor_data_tables'})[-1]
-            drug_class = SummarySoup.findAll('table', {'class' : 'receptor_data_tables'})[0]
-            drug_info_rows = drug_info.findAll('tr')
-            drug_class_rows = drug_class.findAll('tr')
-            if len(drug_info_rows) <= 2:
-                drug_info = SummarySoup.findAll('table', {'class' : 'receptor_data_tables'})[-2]
+            if drug not in ligand_info_cache.keys():
+                INFO = {}
+                SummarySoup = get_soup(Summary, drug)
+                drug_info = SummarySoup.findAll('table', {'class' : 'receptor_data_tables'})[-1]
+                drug_class = SummarySoup.findAll('table', {'class' : 'receptor_data_tables'})[0]
                 drug_info_rows = drug_info.findAll('tr')
-            INFO = get_infos(drug_info_rows, INFO)
-            INFO = get_infos(drug_class_rows, INFO, True)
-            for specie in final[gpcr][drug].keys():
-                if specie not in ['Name', 'Ligand Specie']:
-                    final[gpcr][drug][specie].update(INFO)
+                drug_class_rows = drug_class.findAll('tr')
+                if len(drug_info_rows) <= 2:
+                    drug_info = SummarySoup.findAll('table', {'class' : 'receptor_data_tables'})[-2]
+                    drug_info_rows = drug_info.findAll('tr')
+                INFO = get_infos(drug_info_rows, INFO)
+                INFO = get_infos(drug_class_rows, INFO, True)
+                ligand_info_cache[drug] = INFO
+                final[gpcr][drug].update(INFO)
+            else:
+                final[gpcr][drug].update(ligand_info_cache[drug])
+
+
 
 #Populating the Pandas Dataframe with all the scraped info
+useful_info = ['PubChem SID','PubChem CID','InChIKey', 'UniProtKB', 'Name', 'Ligand Specie', 'Compound Class']
 for ID in final:
     for drug in final[ID].keys():
         row = {}
@@ -246,11 +225,11 @@ for ID in final:
         if drug == 'Comment':
             continue
         row['Ligand ID'] = drug
-        row['Name'] = final[ID][drug]['Name']
-        try:
-            row['Ligand Specie'] = final[ID][drug]['Ligand Specie']
-        except KeyError:
-            pass
+        for key in useful_info:
+            try:
+                row[key] = final[ID][drug][key]
+            except KeyError:
+                pass
         for specie in final[ID][drug].keys():
             if specie not in row.keys():
                 row['Target Specie'] = specie
@@ -258,9 +237,9 @@ for ID in final:
                 for value in final[ID][drug][specie].keys():
                     if value in GtoP_endogenous.keys():
                         temp[value] = final[ID][drug][specie][value]
-                to_add = {**row, **temp}
-                GtoP_endogenous = GtoP_endogenous.append(to_add, ignore_index=True)
-        if (len(row) > 3) and (len(row) < 6):
+                row = {**row, **temp}
+                GtoP_endogenous = GtoP_endogenous.append(row, ignore_index=True)
+        if (len(row) > 3) and (len(row) < 13):
             GtoP_endogenous = GtoP_endogenous.append(row, ignore_index=True)
 
 #Adding the Principal / Secondary labels where comments explicitly states principal
@@ -363,7 +342,7 @@ GtoP_endogenous_monkey = GtoP_endogenous.loc[GtoP_endogenous['Specie'] == 'Monke
 GtoP_endogenous_guinea_pig = GtoP_endogenous.loc[GtoP_endogenous['Specie'] == 'Guinea pig']
 
 
-GtoP_endogenous.to_excel("GtoP_Endogenous_Full_Data.xlsx", sheet_name='Data', index=False)
+GtoP_endogenous.to_excel("GtoP_Endogenous_Testing_Data.xlsx", sheet_name='Data', index=False)
 GtoP_endogenous_human.to_excel("GtoP_Endogenous_Data.xlsx", sheet_name='Human', index=False)
 GtoP_endogenous_mouse.to_excel("GtoP_Endogenous_Data.xlsx", sheet_name='Mouse', index=False)
 GtoP_endogenous_rat.to_excel("GtoP_Endogenous_Data.xlsx", sheet_name='Rat', index=False)
@@ -372,5 +351,4 @@ GtoP_endogenous_guinea_pig.to_excel("GtoP_Endogenous_Data.xlsx", sheet_name='Gui
 
 #TODOs (easier matching with GPCRdb):
 # Getting Entry Names for each receptor
-# Handling formatting of the PMIDs values
 # Handling string to integer value shifts

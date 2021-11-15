@@ -162,7 +162,7 @@ class Command(BaseBuild):
             experiment_data= BiasedData(
                                         ligand = l,
                                         publication = pub,
-                                        experiment = d['Experiment'], #to be added by Kasper (TBA)
+                                        experiment = d['Table'], #to be added by Kasper (TBA)
                                         endogenous_status = endogenous_status, #need to fetch from endogenous ligand browser now fetching from the excel datasheet
                                         receptor = protein,
                                         receptor_isoform = d['UniProt identifier code (isoform)'],
