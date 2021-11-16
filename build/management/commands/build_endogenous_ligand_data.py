@@ -29,17 +29,17 @@ class Command(BaseBuild):
     file_handler.setLevel(logging.ERROR)
     file_handler.setFormatter(formatter)
     mylog.addHandler(file_handler)
+    endogenous_data_dir = os.sep.join([settings.DATA_DIR, 'ligand_data', 'endogenous_data'])
 
     help = 'Updates GuideToPharma data and imports it'
     publication_cache = {}
+    receptor_cache = {}
     ligand_cache = {}
     ligand_info_cache = {}
-    data_all = []
     gtp_url = "https://www.guidetopharmacology.org/services/targets/families"
     DRUG = 'https://www.guidetopharmacology.org/GRAC/LigandDisplayForward?tab=biology&ligandId={}'
     Summary = 'https://www.guidetopharmacology.org/GRAC/LigandDisplayForward?&ligandId={}'
     URL = 'https://www.guidetopharmacology.org/GRAC/ObjectDisplayForward?objectId={}'
-    interactions = "https://www.guidetopharmacology.org/services/ligands/{}/interactions"
     pub_link = "https://www.guidetopharmacology.org/GRAC/LigandDisplayForward?tab=refs&ligandId={}"
 
     def add_arguments(self, parser):
@@ -86,20 +86,34 @@ class Command(BaseBuild):
         Saves to DB
         """
         print('---Starting---\n')
-        print("\n#1 Get GPCR ids from target families")
-        target_list = self.get_gpcrs() #updated
-        print("\n#2 Get Guide to Pharmacology endogenous ligand data")
-        endogenous_data = self.scrape_data(target_list)   #updated
-        #Here will need to be updated with the fetching from the actual data from GtoP
-        print("\n#3 Adding drug data")
-        endogenous_data = self.adding_drug_info(endogenous_data)
-        print("\n#4 Assessing principal endogenous from comments")
-        endogenous_data, to_be_ranked = self.labeling_principals(endogenous_data)
-        print("\n#5 Adding potency ranking (pEC50, pKi)")
-        endogenous_data, problematic_data = self.adding_potency_rankings(self, endogenous_data, to_be_ranked)
-        print("\n#6 Clean dataframe and upload")
+        #### START BLOCK WITH SCRAPER
+        # print("\n#1 Get GPCR ids from target families")
+        # target_list = self.get_gpcrs() #updated
+        # print("\n#2 Get Guide to Pharmacology endogenous ligand data")
+        # endogenous_data = self.scrape_data(target_list)   #updated
+        # print("\n#3 Adding drug data")
+        # endogenous_data = self.adding_drug_info(endogenous_data)
+        # print("\n#4 Assessing principal endogenous from comments")
+        # endogenous_data, to_be_ranked = self.labeling_principals(endogenous_data)
+        # print("\n#5 Adding potency ranking (pEC50, pKi)")
+        # endogenous_data, problematic_data = self.adding_potency_rankings(self, endogenous_data, to_be_ranked)
+        #### END BLOCK WITH SCRAPER
+        print('\n#1 Reading and Parsing Excel')
+        endogenous_data = Command.read_and_convert_excel(endogenous_data_dir, 'GtoP_Endogenous_Full_Data.xlsx')
+        print("\n#2 Clean dataframe and upload")
         self.create_model(endogenous_data)
         print('\n\n---Finished---')
+
+    @staticmethod
+    def read_and_convert_excel(datadir, filename):
+        source_file_path = os.sep.join([Command.datadir, filename]).replace('//', '/')
+        xls = pd.ExcelFile(source_file_path)
+        df = pd.read_excel(xls, 'Data')
+        df = df.astype(str)
+        for column in df:
+            df[column] = df[column].replace({'nan':None})
+        return_list_of_dicts = df.to_dict('records')
+        return return_list_of_dicts
 
     @staticmethod
     def get_soup(URL, id):
@@ -135,7 +149,7 @@ class Command(BaseBuild):
     @staticmethod
     def get_pub_info(drug_id, pub_list):
         pub_ids = []
-        pub_page = get_soup(pub_link, drug_id)
+        pub_page = get_soup(self.pub_link, drug_id)
         pub_data = pub_page.find('table', {'class' : 'receptor_data_tables'})
         pub_rows = pub_data.findAll('tr')
         for row in pub_rows[1:]:
@@ -150,53 +164,12 @@ class Command(BaseBuild):
         return pub_ids
 
     @staticmethod
-    def fetch_publication(publication_doi):
-        try:
-            float(publication_doi)
-            publication_doi = str(int(publication_doi))
-        except ValueError:
-            pass
-        if publication_doi.isdigit():  # assume pubmed
-            pub_type = 'pubmed'
-        else:  # assume doi
-            pub_type = 'doi'
-        if publication_doi not in publication_cache:
-            try:
-                wl = WebLink.objects.get(index=publication_doi, web_resource__slug=pub_type)
-            except WebLink.DoesNotExist:
-                try:
-                    wl = WebLink.objects.create(index=publication_doi, web_resource=WebResource.objects.get(slug=pub_type))
-                except IntegrityError:
-                    wl = WebLink.objects.get(index=publication_doi, web_resource__slug=pub_type)
-            try:
-                pub = Publication.objects.get(web_link=wl)
-            except Publication.DoesNotExist:
-                pub = Publication()
-                try:
-                    pub.web_link = wl
-                    pub.save()
-                except IntegrityError:
-                    pub = Publication.objects.get(web_link=wl)
-                if pub_type == 'doi':
-                    pub.update_from_doi(doi=publication_doi)
-                elif pub_type == 'pubmed':
-                    pub.update_from_pubmed_data(index=publication_doi)
-                try:
-                    pub.save()
-                except:
-                    pass
-            publication_cache[publication_doi] = pub
-        else:
-            pub = publication_cache[publication_doi]
-        return pub
-
-    @staticmethod
     def get_gpcrs(self):
         gpcr_gtp_ids = []
         response = ''
         while response == '':
             try:
-                response = requests.get(gtp_url)
+                response = requests.get(self.gtp_url)
             except:
                 print("Connection refused by the server..")
                 time.sleep(1)
@@ -212,7 +185,7 @@ class Command(BaseBuild):
     def scrape_data(self, gpcr_gtp_ids):
         final = {}
         for id in gpcr_gtp_ids:
-            soup = get_soup(URL, id)
+            soup = get_soup(self.URL, id)
             title = str(soup.title).split(' receptor')[0].strip('<title>').split(' |')[0]
             clean_title = str(soup.title.text).split(' |')[0]
             final[id] = {"Receptor": clean_title}
@@ -239,7 +212,7 @@ class Command(BaseBuild):
                             drug_ids = [x['href'].split('=')[1] for x in drugtable[i].findAll('a')]
                             for drug_id in drug_ids:
                                 final[id][drug_id] = {"Name": drug}
-                                dsoup = get_soup(DRUG, drug_id)
+                                dsoup = get_soup(self.DRUG, drug_id)
                                 ligand_specie = dsoup.findAll('div', {'class': 'textright_ligsum'})[-1].text.strip()
                                 if len(ligand_specie) > 0:
                                     try:
@@ -303,9 +276,9 @@ class Command(BaseBuild):
         for gpcr in final.keys():
             for drug in final[gpcr]:
                 if drug not in keys_to_skip:
-                    if drug not in ligand_info_cache.keys():
+                    if drug not in self.ligand_info_cache.keys():
                         INFO = {}
-                        SummarySoup = get_soup(Summary, drug)
+                        SummarySoup = get_soup(self.Summary, drug)
                         drug_info = SummarySoup.findAll('table', {'class' : 'receptor_data_tables'})[-1]
                         drug_class = SummarySoup.findAll('table', {'class' : 'receptor_data_tables'})[0]
                         drug_info_rows = drug_info.findAll('tr')
@@ -315,10 +288,10 @@ class Command(BaseBuild):
                             drug_info_rows = drug_info.findAll('tr')
                         INFO = get_infos(drug_info_rows, INFO)
                         INFO = get_infos(drug_class_rows, INFO, True)
-                        ligand_info_cache[drug] = INFO
+                        self.ligand_info_cache[drug] = INFO
                         final[gpcr][drug].update(INFO)
                     else:
-                        final[gpcr][drug].update(ligand_info_cache[drug])
+                        final[gpcr][drug].update(self.ligand_info_cache[drug])
         return final
 
     @staticmethod
@@ -465,10 +438,7 @@ class Command(BaseBuild):
         return GtoP_endogenous, missing_info
 
     @staticmethod
-    def create_model(self, GtoP_endogenous):
-        required_fields = ['Receptor ID', 'Ligand ID',
-        'Ligand Specie', 'Type', 'Action', 'pKi', 'pEC50', 'pKd', 'pIC50'
-        'Endogenous', 'Potency Ranking', 'Principal / Secondary', 'PMIDs']
+    def create_model(self, GtoP_endogenous):]
         types_dict = {'Inorganic': 'small-molecule',
                       'Metabolite': 'small-molecule',
                       'Natural product': 'small-molecule',
@@ -476,24 +446,29 @@ class Command(BaseBuild):
                       'Synthetic organic': 'small-molecule',
                       '': 'na'}
         values = ['pKi', 'pEC50', 'pKd', 'pIC50']
-        receptor_cache = {}
-        ligand_cache = {}
         for row in GtoP_endogenous:
-            row = row.to_dict(orient='records')
-            row = row[0]
+            # row = row.to_dict(orient='records')
+            # row = row[0]
             numeric_data = {}
-            if row['Receptor ID'] not in receptor_cache.keys():
+            if row['Receptor ID'] not in self.receptor_cache.keys():
                 receptor = fetch_protein(row['Receptor ID'])
                 receptor_cache[row['Receptor ID']] = receptor
-            if row['Ligand ID'] not in ligand_cache.keys():
-                ligand = fetch_ligand(row['Ligand ID'], types_dict[row['Compound Class']], row['Name'])
-                ligand_cache[row['Ligand ID']] = ligand
-            role = fetch_role(row['Type'].lower(), row['Action'].lower())
+            if row['Ligand ID'] not in self.ligand_cache.keys():
+                ligand_id = LigandType.objects.get(slug=types_dict[row['Compound Class']])
+                ligand = fetch_ligand(row['Ligand ID'], ligand_id, row['Name'])
+                self.ligand_cache[row['Ligand ID']] = ligand
+            try:
+                role = fetch_role(row['Type'].lower(), row['Action'].lower())
+            except AttributeError:
+                role = None
             for v in values:
                 try:
                     numeric_data[v] = (' | ').join([str(row[v+'_min']), str(row[v+'_avg']), str(row[v+'_max'])])
                 except KeyError: #missing info on pEC50
                     numeric_data[v] = ''
+
+            #Adding publications from the PMIDs section
+            pmids = row['PMIDs'].split(' | ')
 
             #last step because it requires multiple uploads in case we have multiple species
             if len(row['Ligand Specie'].split(', ')) == 1:
@@ -512,6 +487,12 @@ class Command(BaseBuild):
                             publication = pubs, #manytomany field
                             )
                 gtp_data.save()
+                try:
+                    for pmid in pmids:
+                        publication = self.fetch_publication(pmid)
+                        gtp_data.publication.add(publication)
+                except:
+                    publication= None
             else:
                 species = row['Ligand Specie'].split(', ')
                 for s in species:
@@ -530,43 +511,12 @@ class Command(BaseBuild):
                                 publication = pubs, #manytomany field
                                 )
                     gtp_data.save()
-
-    @staticmethod
-    def fetch_role(self, drug_type, drug_action):
-        try:
-            query = drug_type.title()
-            if drug_type == 'agonist':
-                if 'partial' in drug_action:
-                    query == 'Agonist (partial)'
-                else:
-                    query == 'Agonist'
-            elif drug_type == 'antagonist':
-                if 'reverse' in drug_action:
-                    query == 'Inverse agonist'
-            elif drug_type == 'allosteric modulator':
-                if drug_action == 'negative':
-                    query = 'NAM'
-                else:
-                    query = 'PAM'
-            else:
-                query = 'unknown'
-            lr = LigandRole.objects.get(name=query)
-            return lr
-        except:
-            return None
-
-    @staticmethod
-    def fetch_specie(self, ligand_specie, target_specie):
-        try:
-            if ligand_specie == 'Same as target':
-                specie = Species.objects.get(common_name=target_specie)
-            elif ligand_specie == None:
-                specie = None
-            else:
-                specie = Species.objects.get(common_name=ligand_specie)
-            return specie
-        except:
-            return None
+                    try:
+                        for pmid in pmids:
+                            publication = self.fetch_publication(reference['pmid'])
+                            gtp_data.publication.add(publication)
+                    except:
+                        publication= None
 
     @staticmethod
     def fetch_protein(self, target):
@@ -596,6 +546,101 @@ class Command(BaseBuild):
                 lig = Ligand()
                 l = lig.load_by_gtop_id(name, ligand_id, ligand_type)
                 return l
+
+    @staticmethod
+    def fetch_role(self, drug_type, drug_action):
+        try:
+            query = drug_type.title()
+            if drug_type == 'agonist':
+                if 'partial' in drug_action:
+                    query == 'Agonist (partial)'
+                else:
+                    query == 'Agonist'
+            elif drug_type == 'antagonist':
+                if 'reverse' in drug_action:
+                    query == 'Inverse agonist'
+            elif drug_type == 'allosteric modulator':
+                if drug_action == 'negative':
+                    query = 'NAM'
+                else:
+                    query = 'PAM'
+            else:
+                query = 'unknown'
+            lr = LigandRole.objects.get(name=query)
+            return lr
+        except:
+            return None
+
+    @staticmethod
+    def fetch_publication(self, publication_doi):
+        """
+        fetch publication with Publication model
+        requires: publication doi or pmid
+
+        """
+        if ("ISBN" in publication_doi) or (int(publication_doi) == 0):
+            return None
+
+        try:
+            float(publication_doi)
+            publication_doi = str(int(publication_doi))
+        except ValueError:
+            pass
+
+        if publication_doi.isdigit():  # assume pubmed
+            pub_type = 'pubmed'
+        else:  # assume doi
+            pub_type = 'doi'
+        if publication_doi not in self.publication_cache:
+            try:
+                wl = WebLink.objects.get(
+                    index=publication_doi, web_resource__slug=pub_type)
+            except WebLink.DoesNotExist:
+                try:
+                    wl = WebLink.objects.create(index=publication_doi,
+                                                web_resource=WebResource.objects.get(slug=pub_type))
+                except IntegrityError:
+                    wl = WebLink.objects.get(
+                        index=publication_doi, web_resource__slug=pub_type)
+
+            try:
+                pub = Publication.objects.get(web_link=wl)
+            except Publication.DoesNotExist:
+                pub = Publication()
+                try:
+                    pub.web_link = wl
+                    pub.save()
+                except IntegrityError:
+                    pub = Publication.objects.get(web_link=wl)
+
+                if pub_type == 'doi':
+                    pub.update_from_doi(doi=publication_doi)
+                elif pub_type == 'pubmed':
+                    pub.update_from_pubmed_data(index=publication_doi)
+                try:
+                    pub.save()
+                except:
+                    self.mylog.debug(
+                        "publication fetching error | module: fetch_publication. Row # is : " + str(publication_doi) + ' ' + pub_type)
+                    # if something off with publication, skip.
+            self.publication_cache[publication_doi] = pub
+        else:
+            pub = self.publication_cache[publication_doi]
+
+        return pub
+
+    @staticmethod
+    def fetch_specie(self, ligand_specie, target_specie):
+        try:
+            if ligand_specie == 'Same as target':
+                specie = Species.objects.get(common_name=target_specie)
+            elif ligand_specie == None:
+                specie = None
+            else:
+                specie = Species.objects.get(common_name=ligand_specie)
+            return specie
+        except:
+            return None
 
     @staticmethod
     def create_empty_ligand(ligand_name):

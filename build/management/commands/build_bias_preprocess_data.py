@@ -8,7 +8,7 @@ from decimal import Decimal
 from build.management.commands.base_build import Command as BaseBuild
 from common.tools import fetch_from_cache, save_to_cache, fetch_from_web_api
 from protein.models import Protein, ProteinCouplings
-from ligand.models import BiasedExperiment, BiasedExperimentVendors, AnalyzedExperiment, BiasedExperimentAssay, ExperimentAssayAuthors, Ligand, LigandProperities, LigandType, LigandVendorLink
+from ligand.models import  Ligand, LigandProperities, LigandType, Endogenous_GTP
 
 from ligand.functions import get_or_make_ligand
 from common.models import WebLink, WebResource, Publication
@@ -143,7 +143,7 @@ class Command(BaseBuild):
             #also need to be added some parameter to check onto (not all our data has PubChem CIDs)
             #translate SMILES into CID?
             if d['ID type'] == 'PubChem CID':
-                endogenous_status  = Command.fetch_endogenous(protein, d)
+                endogenous_status  = Command.fetch_endogenous(protein.id, l.id)
 
             signalling_protein = d['Primary effector subtype']
             try:
@@ -162,7 +162,7 @@ class Command(BaseBuild):
             experiment_data= BiasedData(
                                         ligand = l,
                                         publication = pub,
-                                        experiment = d['Table'], #to be added by Kasper (TBA)
+                                        experiment = d['Fig./table No. '], #to be added by Kasper (TBA)
                                         endogenous_status = endogenous_status, #need to fetch from endogenous ligand browser now fetching from the excel datasheet
                                         receptor = protein,
                                         receptor_isoform = d['UniProt identifier code (isoform)'],
@@ -302,18 +302,13 @@ class Command(BaseBuild):
         return specie, tissue
 
     @staticmethod
-    def fetch_endogenous(protein, d):
-        receptor = html.unescape(protein.name)
-        rec = receptor.replace('<sub>', '').replace('</sub>', '')
-        d_CID = int(d['ID'])
-        principal_CID = [int(x) for x in endo_data.loc[(endo_data['Receptor Name'] == rec) & (endo_data['Ranking'] == 'Principal')]['PubChem CID'].to_list() if str(x) != 'nan']
-        secondary_CID = [int(x) for x in endo_data.loc[(endo_data['Receptor Name'] == rec) & (endo_data['Ranking'] == 'Secondary')]['PubChem CID'].to_list() if str(x) != 'nan']
-        if d_CID in principal_CID:
-            return 'Principal Endogenous'
-        elif d_CID in secondary_CID:
-            return 'Secondary Endogenous'
-        else:
-            return "Not Endogenous"
+    def fetch_endogenous(protein, ligand):
+        try:
+            data = Endogenous_GTP.objects.filter(receptor=protein, ligand=ligand).values_list("endogenous_status")
+            return data
+        except:
+            return None
+
 
     @staticmethod
     def fetch_protein(protein_from_excel):
