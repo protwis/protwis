@@ -1,4 +1,9 @@
+from django.core.management.base import BaseCommand, CommandError
+from django.conf import settings
+from django.db import connection
 from django.db import IntegrityError
+from django.utils.text import slugify
+from django.http import HttpResponse, JsonResponse
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import Protein, Species
 from ligand.models import Endogenous_GTP, Ligand, LigandProperities, LigandType, LigandRole
@@ -8,6 +13,7 @@ import logging
 import time
 import requests
 import statistics
+import os
 import pandas as pd
 import numpy as np
 
@@ -76,9 +82,12 @@ class Command(BaseBuild):
 
 # pylint: disable=R0201
     def purge_bias_data(self):
-        print("# Purging data")
-        delete_bias_experiment = GTP_endogenous_ligand.objects.all()
-        delete_bias_experiment.delete()
+        print("\n# Purging data")
+        endo_data = Endogenous_GTP.objects.all()
+        # endo_pub_data = Endogenous_GTP_publication.objects.all()
+        endo_data.delete()
+        # endo_pub_data.delete()
+        print("\n# Old data removed")
 
     def analyse_rows(self):
         """
@@ -99,14 +108,14 @@ class Command(BaseBuild):
         # endogenous_data, problematic_data = self.adding_potency_rankings(self, endogenous_data, to_be_ranked)
         #### END BLOCK WITH SCRAPER
         print('\n#1 Reading and Parsing Excel')
-        endogenous_data = Command.read_and_convert_excel(endogenous_data_dir, 'GtoP_Endogenous_Full_Data.xlsx')
+        endogenous_data = Command.read_and_convert_excel(self.endogenous_data_dir, 'GtoP_Endogenous_Full_Data.xlsx')
         print("\n#2 Clean dataframe and upload")
-        self.create_model(endogenous_data)
+        Command.create_model(endogenous_data)
         print('\n\n---Finished---')
 
     @staticmethod
     def read_and_convert_excel(datadir, filename):
-        source_file_path = os.sep.join([Command.datadir, filename]).replace('//', '/')
+        source_file_path = os.sep.join([datadir, filename]).replace('//', '/')
         xls = pd.ExcelFile(source_file_path)
         df = pd.read_excel(xls, 'Data')
         df = df.astype(str)
@@ -438,27 +447,28 @@ class Command(BaseBuild):
         return GtoP_endogenous, missing_info
 
     @staticmethod
-    def create_model(self, GtoP_endogenous):]
+    def create_model(GtoP_endogenous):
         types_dict = {'Inorganic': 'small-molecule',
                       'Metabolite': 'small-molecule',
                       'Natural product': 'small-molecule',
                       'Peptide': 'peptide',
                       'Synthetic organic': 'small-molecule',
-                      '': 'na'}
+                      None: 'na'}
         values = ['pKi', 'pEC50', 'pKd', 'pIC50']
         for row in GtoP_endogenous:
             # row = row.to_dict(orient='records')
             # row = row[0]
             numeric_data = {}
-            if row['Receptor ID'] not in self.receptor_cache.keys():
-                receptor = fetch_protein(row['Receptor ID'])
-                receptor_cache[row['Receptor ID']] = receptor
-            if row['Ligand ID'] not in self.ligand_cache.keys():
+            if row['Receptor ID'] not in Command.receptor_cache.keys():
+                receptor = Command.fetch_protein(row['Receptor ID'])
+                #multiple output, pick first one?
+                Command.receptor_cache[row['Receptor ID']] = receptor
+            if row['Ligand ID'] not in Command.ligand_cache.keys():
                 ligand_id = LigandType.objects.get(slug=types_dict[row['Compound Class']])
-                ligand = fetch_ligand(row['Ligand ID'], ligand_id, row['Name'])
-                self.ligand_cache[row['Ligand ID']] = ligand
+                ligand = Command.fetch_ligand(row['Ligand ID'], ligand_id, row['Name'])
+                Command.ligand_cache[row['Ligand ID']] = ligand
             try:
-                role = fetch_role(row['Type'].lower(), row['Action'].lower())
+                role = Command.fetch_role(row['Type'].lower(), row['Action'].lower())
             except AttributeError:
                 role = None
             for v in values:
@@ -468,71 +478,107 @@ class Command(BaseBuild):
                     numeric_data[v] = ''
 
             #Adding publications from the PMIDs section
-            pmids = row['PMIDs'].split(' | ')
+            try:
+                pmids = row['PMIDs'].split(' | ')
+            except AttributeError:
+                pmids = None
 
-            #last step because it requires multiple uploads in case we have multiple species
-            if len(row['Ligand Specie'].split(', ')) == 1:
-                ligand_specie = fetch_specie(row['Ligand Specie'], row['Target Specie'])
-                gtp_data = Endogenous_GTP(
-                            ligand = ligand,
-                            ligand_specie = ligand_specie,
-                            ligand_action = role,
-                            endogenous_status = row['Principal / Secondary'], #principal/secondary
-                            potency_ranking = row['Potency Ranking'], #potency ranking
-                            receptor = receptor, #link to protein model
-                            pec50 = numeric_data['pEC50'],
-                            pKi = numeric_data['pKi'],
-                            pic50 = numeric_data['pIC50'],
-                            pKd = numeric_data['pKd'],
-                            publication = pubs, #manytomany field
-                            )
-                gtp_data.save()
-                try:
-                    for pmid in pmids:
-                        publication = self.fetch_publication(pmid)
-                        gtp_data.publication.add(publication)
-                except:
-                    publication= None
-            else:
+            #Specie check
+            try:
                 species = row['Ligand Specie'].split(', ')
-                for s in species:
-                    specie = fetch_specie(row['Ligand Specie'], row['Target Specie'])
+            except AttributeError:
+                species = None
+
+            try:
+                potency = int(float(row['Potency Ranking']))
+            except TypeError:
+                potency = None
+
+            if receptor is not None:
+            #last step because it requires multiple uploads in case we have multiple species
+                if species is None:
                     gtp_data = Endogenous_GTP(
                                 ligand = ligand,
-                                ligand_specie = specie,
+                                ligand_specie = species,
                                 ligand_action = role,
                                 endogenous_status = row['Principal / Secondary'], #principal/secondary
-                                potency_ranking = row['Potency Ranking'], #potency ranking
+                                potency_ranking = potency, #potency ranking
                                 receptor = receptor, #link to protein model
                                 pec50 = numeric_data['pEC50'],
                                 pKi = numeric_data['pKi'],
                                 pic50 = numeric_data['pIC50'],
                                 pKd = numeric_data['pKd'],
-                                publication = pubs, #manytomany field
                                 )
                     gtp_data.save()
                     try:
                         for pmid in pmids:
-                            publication = self.fetch_publication(reference['pmid'])
+                            publication = Command.fetch_publication(pmid)
                             gtp_data.publication.add(publication)
                     except:
                         publication= None
+                elif len(species) == 1:
+                    ligand_specie = Command.fetch_specie(species[0], row['Target Specie'])
+                    gtp_data = Endogenous_GTP(
+                                ligand = ligand,
+                                ligand_specie = ligand_specie,
+                                ligand_action = role,
+                                endogenous_status = row['Principal / Secondary'], #principal/secondary
+                                potency_ranking = potency, #potency ranking
+                                receptor = receptor, #link to protein model
+                                pec50 = numeric_data['pEC50'],
+                                pKi = numeric_data['pKi'],
+                                pic50 = numeric_data['pIC50'],
+                                pKd = numeric_data['pKd'],
+                                )
+                    gtp_data.save()
+                    try:
+                        for pmid in pmids:
+                            publication = Command.fetch_publication(pmid)
+                            gtp_data.publication.add(publication)
+                    except:
+                        publication= None
+                else:
+                    for s in species:
+                        specie = Command.fetch_specie(s, row['Target Specie'])
+                        gtp_data = Endogenous_GTP(
+                                    ligand = ligand,
+                                    ligand_specie = specie,
+                                    ligand_action = role,
+                                    endogenous_status = row['Principal / Secondary'], #principal/secondary
+                                    potency_ranking = row['Potency Ranking'], #potency ranking
+                                    receptor = receptor, #link to protein model
+                                    pec50 = numeric_data['pEC50'],
+                                    pKi = numeric_data['pKi'],
+                                    pic50 = numeric_data['pIC50'],
+                                    pKd = numeric_data['pKd'],
+                                    )
+                        gtp_data.save()
+                        try:
+                            for pmid in pmids:
+                                publication = Command.fetch_publication(pmid)
+                                gtp_data.publication.add(publication)
+                        except:
+                            publication= None
 
     @staticmethod
-    def fetch_protein(self, target):
+    def fetch_protein(target):
         """
         fetch receptor with Protein model
         requires: protein id, source
         """
         try:
             test = None
-            test = list(Protein.objects.filter(web_links__index=target, web_links__web_resource__slug='gtop'))
-            return test
+            test = Protein.objects.filter(web_links__index=target, web_links__web_resource__slug='gtop')
+            if test.count() > 0:
+                test = test.first()
+                return test
+            else:
+                return None
         except:
             return None
 
     @staticmethod
-    def fetch_ligand(self, ligand_id, ligand_type, name):
+    def fetch_ligand(ligand_id, ligand_type, name):
             """
             fetch ligands with Ligand model
             requires: ligand id, ligand id type, ligand name
@@ -548,7 +594,7 @@ class Command(BaseBuild):
                 return l
 
     @staticmethod
-    def fetch_role(self, drug_type, drug_action):
+    def fetch_role(drug_type, drug_action):
         try:
             query = drug_type.title()
             if drug_type == 'agonist':
@@ -572,7 +618,7 @@ class Command(BaseBuild):
             return None
 
     @staticmethod
-    def fetch_publication(self, publication_doi):
+    def fetch_publication(publication_doi):
         """
         fetch publication with Publication model
         requires: publication doi or pmid
@@ -591,17 +637,15 @@ class Command(BaseBuild):
             pub_type = 'pubmed'
         else:  # assume doi
             pub_type = 'doi'
-        if publication_doi not in self.publication_cache:
+
+        if publication_doi not in Command.publication_cache:
             try:
-                wl = WebLink.objects.get(
-                    index=publication_doi, web_resource__slug=pub_type)
+                wl = WebLink.objects.get(index=publication_doi, web_resource__slug=pub_type)
             except WebLink.DoesNotExist:
                 try:
-                    wl = WebLink.objects.create(index=publication_doi,
-                                                web_resource=WebResource.objects.get(slug=pub_type))
+                    wl = WebLink.objects.create(index=publication_doi, web_resource=WebResource.objects.get(slug=pub_type))
                 except IntegrityError:
-                    wl = WebLink.objects.get(
-                        index=publication_doi, web_resource__slug=pub_type)
+                    wl = WebLink.objects.get(index=publication_doi, web_resource__slug=pub_type)
 
             try:
                 pub = Publication.objects.get(web_link=wl)
@@ -623,14 +667,14 @@ class Command(BaseBuild):
                     self.mylog.debug(
                         "publication fetching error | module: fetch_publication. Row # is : " + str(publication_doi) + ' ' + pub_type)
                     # if something off with publication, skip.
-            self.publication_cache[publication_doi] = pub
+            Command.publication_cache[publication_doi] = pub
         else:
-            pub = self.publication_cache[publication_doi]
+            pub = Command.publication_cache[publication_doi]
 
         return pub
 
     @staticmethod
-    def fetch_specie(self, ligand_specie, target_specie):
+    def fetch_specie(ligand_specie, target_specie):
         try:
             if ligand_specie == 'Same as target':
                 specie = Species.objects.get(common_name=target_specie)

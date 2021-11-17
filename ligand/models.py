@@ -592,8 +592,8 @@ class BiasedPathwaysAssay(models.Model):
 
 class Endogenous_GTP(models.Model):
     ligand = models.ForeignKey(Ligand, on_delete=models.CASCADE)
-    ligand_specie = models.ForeignKey('protein.Species', on_delete=models.CASCADE)
-    ligand_action = models.ForeignKey('ligand.LigandRole', on_delete=models.CASCADE)
+    ligand_specie = models.ForeignKey('protein.Species', on_delete=models.CASCADE, null=True)
+    ligand_action = models.ForeignKey('ligand.LigandRole', on_delete=models.CASCADE, null=True)
     endogenous_status = models.CharField(max_length=200, null=True)
     potency_ranking = models.CharField(max_length=200, null=True)
     receptor = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)

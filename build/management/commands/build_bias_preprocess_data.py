@@ -305,6 +305,7 @@ class Command(BaseBuild):
     def fetch_endogenous(protein, ligand):
         try:
             data = Endogenous_GTP.objects.filter(receptor=protein, ligand=ligand).values_list("endogenous_status")
+            print(data)
             return data
         except:
             return None
