@@ -551,7 +551,7 @@ class BiasedData(models.Model):
     tissue = models.CharField(max_length=60, null=True)
     specie = models.CharField(max_length=60, null=True)
     primary_effector_family = models.CharField(max_length=60, null=True)
-    primary_effector_subtype = models.CharField(max_length=60)
+    primary_effector_subtype = models.CharField(max_length=60, null=True)
     molecule_1 = models.CharField(max_length=60, null=True)
     molecule_2 = models.CharField(max_length=60, null=True)
     pathway_level = models.CharField(max_length=60, null=True)

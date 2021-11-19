@@ -230,17 +230,21 @@ for ID in final:
                 row[key] = final[ID][drug][key]
             except KeyError:
                 pass
+        spec_count = 0
         for specie in final[ID][drug].keys():
             if specie not in row.keys():
-                row['Target Specie'] = specie
+                spec_count +=1
                 temp = {}
+                temp['Target Specie'] = specie
                 for value in final[ID][drug][specie].keys():
                     if value in GtoP_endogenous.keys():
                         temp[value] = final[ID][drug][specie][value]
-                row = {**row, **temp}
-                GtoP_endogenous = GtoP_endogenous.append(row, ignore_index=True)
-        if (len(row) > 3) and (len(row) < 13):
+                temp1 = {**row, **temp}
+                GtoP_endogenous = GtoP_endogenous.append(temp1, ignore_index=True)
+        if spec_count == 0:
             GtoP_endogenous = GtoP_endogenous.append(row, ignore_index=True)
+        # if (len(row) > 3) and (len(row) < 13):
+
 
 #Adding the Principal / Secondary labels where comments explicitly states principal
 #and to receptors with a single reported endogenous ligand, while tracking not commented ones

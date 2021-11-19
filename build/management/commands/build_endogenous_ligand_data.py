@@ -39,8 +39,6 @@ class Command(BaseBuild):
 
     help = 'Updates GuideToPharma data and imports it'
     publication_cache = {}
-    receptor_cache = {}
-    ligand_cache = {}
     ligand_info_cache = {}
     gtp_url = "https://www.guidetopharmacology.org/services/targets/families"
     DRUG = 'https://www.guidetopharmacology.org/GRAC/LigandDisplayForward?tab=biology&ligandId={}'
@@ -108,7 +106,7 @@ class Command(BaseBuild):
         # endogenous_data, problematic_data = self.adding_potency_rankings(self, endogenous_data, to_be_ranked)
         #### END BLOCK WITH SCRAPER
         print('\n#1 Reading and Parsing Excel')
-        endogenous_data = Command.read_and_convert_excel(self.endogenous_data_dir, 'GtoP_Endogenous_Full_Data.xlsx')
+        endogenous_data = Command.read_and_convert_excel(Command.endogenous_data_dir, 'GtoP_Endogenous_Full_Data.xlsx')
         print("\n#2 Clean dataframe and upload")
         Command.create_model(endogenous_data)
         print('\n\n---Finished---')
@@ -459,21 +457,21 @@ class Command(BaseBuild):
             # row = row.to_dict(orient='records')
             # row = row[0]
             numeric_data = {}
-            if row['Receptor ID'] not in Command.receptor_cache.keys():
-                receptor = Command.fetch_protein(row['Receptor ID'])
-                #multiple output, pick first one?
-                Command.receptor_cache[row['Receptor ID']] = receptor
-            if row['Ligand ID'] not in Command.ligand_cache.keys():
-                ligand_id = LigandType.objects.get(slug=types_dict[row['Compound Class']])
-                ligand = Command.fetch_ligand(row['Ligand ID'], ligand_id, row['Name'])
-                Command.ligand_cache[row['Ligand ID']] = ligand
+            receptor = Command.fetch_protein(row['Receptor ID'], row['Target Specie'])
+            ligand_id = LigandType.objects.get(slug=types_dict[row['Compound Class']])
+            ligand = Command.fetch_ligand(row['Ligand ID'], ligand_id, row['Name'])
             try:
                 role = Command.fetch_role(row['Type'].lower(), row['Action'].lower())
             except AttributeError:
                 role = None
             for v in values:
+                #adapting average values to 2 decimal numbers when available
                 try:
-                    numeric_data[v] = (' | ').join([str(row[v+'_min']), str(row[v+'_avg']), str(row[v+'_max'])])
+                    avg = "{:.2f}".format(float(row[v+'_avg']))
+                except (ValueError, TypeError):
+                    avg = row[v+'_avg']
+                try:
+                    numeric_data[v] = (' | ').join([str(row[v+'_min']), str(avg), str(row[v+'_max'])])
                 except KeyError: #missing info on pEC50
                     numeric_data[v] = ''
 
@@ -561,7 +559,7 @@ class Command(BaseBuild):
                             publication= None
 
     @staticmethod
-    def fetch_protein(target):
+    def fetch_protein(target, species):
         """
         fetch receptor with Protein model
         requires: protein id, source
@@ -570,8 +568,11 @@ class Command(BaseBuild):
             test = None
             test = Protein.objects.filter(web_links__index=target, web_links__web_resource__slug='gtop')
             if test.count() > 0:
-                test = test.first()
-                return test
+                if species == None:
+                    return test.first()
+                for data in test:
+                    if data.species.common_name == species:
+                        return data
             else:
                 return None
         except:

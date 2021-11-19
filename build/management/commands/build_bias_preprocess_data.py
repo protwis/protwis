@@ -8,7 +8,7 @@ from decimal import Decimal
 from build.management.commands.base_build import Command as BaseBuild
 from common.tools import fetch_from_cache, save_to_cache, fetch_from_web_api
 from protein.models import Protein, ProteinCouplings
-from ligand.models import  Ligand, LigandProperities, LigandType, Endogenous_GTP
+from ligand.models import  Ligand, LigandProperities, LigandType, Endogenous_GTP, BiasedData
 
 from ligand.functions import get_or_make_ligand
 from common.models import WebLink, WebResource, Publication
@@ -87,9 +87,9 @@ class Command(BaseBuild):
     def prepare_all_data():
         start = timeit.default_timer()
         print('**** Stage #1 : reading Excel  ****')
-        bias_data = Command.read_excel_pandas(structure_data_dir, 'Biased_ligand_single_pathway_data.xlsx')
-        endo_data = Command.read_excel_pandas(endogenous_data_dir, 'GtoP_Endogenous_Data.xlsx')
-        cell_data = Command.read_excel_pandas(cell_data_dir, 'Cell_lines.xlsx')
+        bias_data = Command.read_excel_pandas(Command.structure_data_dir, 'Biased_ligand_single_pathway_data.xlsx')
+        endo_data = Command.read_excel_pandas(Command.endogenous_data_dir, 'GtoP_Endogenous_Full_Data.xlsx')
+        cell_data = Command.read_excel_pandas(Command.cell_data_dir, 'Cell_lines.xlsx')
         print('**** Stage #2 : parsing Excel  ****')
         df_from_excel = Command.convert_df_to_dict(bias_data)
         print('**** Stage #3 : processing data  ****')
@@ -100,7 +100,7 @@ class Command(BaseBuild):
 
     @staticmethod
     def read_excel_pandas(datadir, filename):
-        source_file_path = os.sep.join([Command.datadir, filename]).replace('//', '/')
+        source_file_path = os.sep.join([datadir, filename]).replace('//', '/')
         xls = pd.ExcelFile(source_file_path)
         df = pd.read_excel(xls, 'Data')
         return df
@@ -129,7 +129,7 @@ class Command(BaseBuild):
             protein = Command.fetch_protein(d['Receptor\nUniProt entry name or code'].lower())
             #re-labeling "G protein" and "Gq/11 or Gi/o" based on data from the GProtein Couplings db
             if d['Primary effector family'] == 'G protein':
-                d['Primary effector family'] = fetch_g_protein(protein.id)
+                d['Primary effector family'] = Command.fetch_g_protein(protein.id)
             #fetching publication info
             pub = Command.fetch_publication(d['Reference\nDOI or PMID'])
             #fetching the tissue and specie info from the excel sheet
@@ -142,8 +142,8 @@ class Command(BaseBuild):
             #Fetching from the endogenous excel datasheet (will need to be updated with GtoP data)
             #also need to be added some parameter to check onto (not all our data has PubChem CIDs)
             #translate SMILES into CID?
-            if d['ID type'] == 'PubChem CID':
-                endogenous_status  = Command.fetch_endogenous(protein.id, l.id)
+            # if d['ID type'] == 'PubChem CID':
+            endogenous_status  = Command.fetch_endogenous(protein.id, l.id)
 
             signalling_protein = d['Primary effector subtype']
             try:
@@ -155,9 +155,6 @@ class Command(BaseBuild):
             EC50 = None
             if d['Measure type'] != 'IC50':
                 EC50 = d['Alt 1)\nQuantitative activity']
-
-            EC50_sign = Command.sign_to_label(d['>\n<\n=\n~'])
-            Emax_sign = Command.sign_to_label(d['>\n<\n=\n~.1'])
 
             experiment_data= BiasedData(
                                         ligand = l,
@@ -177,12 +174,12 @@ class Command(BaseBuild):
                                         pathway_level = d['Pathway level'],
                                         assay_type = d['Assay type'],
                                         EC50 = EC50,
-                                        EC50_sign = EC50_sign,
+                                        EC50_sign = d['>\n<\n=\n~'],
                                         qualitative_activity=d['Alt 2)\nQualitative activity'],
                                         Emax = d['Alt 1)\nQuantitative efficacy'],
-                                        Emax_sign = Emax_sign,
-                                        transduction_coef=d['Transduction Coefficient [log(τ/KA)]'],
-                                        relative_transduction_coef=d['Relative Transduction Coefficient [Δlog(τ/KA)]'],
+                                        Emax_sign = d['>\n<\n=\n~.1'],
+                                        Tau_KA=d['Transduction Coefficient [log(τ/KA)]'],
+                                        delta_Tau_KA=d['Relative Transduction Coefficient [Δlog(τ/KA)]'],
                                         )
 
             experiment_data.save()
@@ -203,7 +200,7 @@ class Command(BaseBuild):
             pass
         try: ## relabeling qualitative activity when EC50 but no Emax/log(Tau/KA)
             if data['Measure type'] == 'EC50' or data['Measure type'] == 'pEC50':
-                if (data['Alt 1)\nQuantitative efficacy'] ==  None) and (data['Transduction Coefficient [log(τ/KA)]'] ==  None) and (data['Alt 1)\nQuantitative activity'] is not None):)
+                if (data['Alt 1)\nQuantitative efficacy'] ==  None) and (data['Transduction Coefficient [log(τ/KA)]'] ==  None) and (data['Alt 1)\nQuantitative activity'] is not None):
                     data['Alt 2)\nQualitative activity'] = 'No Activity'
         except TypeError:
             pass
@@ -232,20 +229,6 @@ class Command(BaseBuild):
         except ValueError:
             pass
         return data
-
-    @staticmethod
-    def sign_to_label(data):
-        if data == '=':
-            sign = 'equal'
-        elif data == '<':
-            sign = 'lower'
-        elif data == '>' or data == '≥':
-            sign = 'higher'
-        elif data == '~':
-            sign = 'equal'
-        else:
-            sign = None
-        return sign
 
     @staticmethod
     def fetch_measurements(potency, p_type, unit, sign):
@@ -305,8 +288,10 @@ class Command(BaseBuild):
     def fetch_endogenous(protein, ligand):
         try:
             data = Endogenous_GTP.objects.filter(receptor=protein, ligand=ligand).values_list("endogenous_status")
-            print(data)
-            return data
+            if data.count() > 0:
+                return data.first()[0]
+            else:
+                return None
         except:
             return None
 
