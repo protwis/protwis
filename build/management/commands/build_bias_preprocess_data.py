@@ -36,7 +36,6 @@ class Command(BaseBuild):
     mylog.addHandler(file_handler)
     help = 'Reads bias data and imports it'
     structure_data_dir = os.sep.join([settings.DATA_DIR, 'ligand_data', 'bias_data'])
-    endogenous_data_dir = os.sep.join([settings.DATA_DIR, 'ligand_data', 'endogenous_data'])
     cell_data_dir = os.sep.join([settings.DATA_DIR, 'ligand_data', 'cell_line'])
     publication_cache = {}
     cell_cache = {}
@@ -88,12 +87,11 @@ class Command(BaseBuild):
         start = timeit.default_timer()
         print('**** Stage #1 : reading Excel  ****')
         bias_data = Command.read_excel_pandas(Command.structure_data_dir, 'Biased_ligand_single_pathway_data.xlsx')
-        endo_data = Command.read_excel_pandas(Command.endogenous_data_dir, 'GtoP_Endogenous_Full_Data.xlsx')
         cell_data = Command.read_excel_pandas(Command.cell_data_dir, 'Cell_lines.xlsx')
         print('**** Stage #2 : parsing Excel  ****')
         df_from_excel = Command.convert_df_to_dict(bias_data)
         print('**** Stage #3 : processing data  ****')
-        Command.main_process(df_from_excel)
+        Command.main_process(df_from_excel, cell_data)
         print('**** Stage #4 : uploading data  ****')
         stop = timeit.default_timer() #TO DEFINE
         print('Total Time:', stop - start)
@@ -119,7 +117,7 @@ class Command(BaseBuild):
         return return_list_of_dicts
 
     @staticmethod
-    def main_process(df_from_excel):
+    def main_process(df_from_excel, cell_data):
         for d in df_from_excel:
             #checking data values: float, string and low_activity checks
             d = Command.data_checks(d)
@@ -133,7 +131,7 @@ class Command(BaseBuild):
             #fetching publication info
             pub = Command.fetch_publication(d['Reference\nDOI or PMID'])
             #fetching the tissue and specie info from the excel sheet
-            specie, tissue = Command.fetch_cell_line_info(d['Cell line'])
+            specie, tissue = Command.fetch_cell_line_info(d['Cell line'], cell_data)
             #fetching ligand information
             l = Command.fetch_ligand(d['ID'], d['ID type'], d['Ligand tested for bias or func. Sel.\nName'])
             #assessing protein
@@ -275,14 +273,19 @@ class Command(BaseBuild):
             return None, None, None
 
     @staticmethod
-    def fetch_cell_line_info(cell_line):
+    def fetch_cell_line_info(cell_line, cell_data):
         if cell_line in Command.cell_cache:
-            specie = Command.cell_cache[cell_line]["Species"]
+            species = Command.cell_cache[cell_line]["Species"]
             tissue = Command.cell_cache[cell_line]["Tissue/organ"]
         else:
-            specie = cell_line
-            tissue = cell_line
-        return specie, tissue
+            if cell_line in list(cell_data['Cell_line_name'].unique()):
+                species = cell_data.loc[cell_data['Cell_line_name'] == cell_line, 'Species'].item()
+                tissue = cell_data.loc[cell_data['Cell_line_name'] == cell_line, 'Tissue/organ'].item()
+                Command.cell_cache[cell_line] ={"Species": species, "Tissue/organ": tissue}
+            else:
+                species = cell_line
+                tissue = cell_line
+        return species, tissue
 
     @staticmethod
     def fetch_endogenous(protein, ligand):
