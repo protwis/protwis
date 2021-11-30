@@ -71,5 +71,7 @@ urlpatterns = [
     url(r'^browservendors$', views.BiasVendorBrowser.as_view(), name='browservendor'),
     url(r'^biasedpathways$', views.BiasPathways.as_view(), name='pathways'),
     url(r'^pathwaydata/(?P<pk>[-\w]+)/detail$', views.PathwayExperimentEntryView.as_view()),
+    #GUIDELINES SECTION cache_page(3600*24*7)(views.LigandStatistics.as_view()), name='ligand_statistics'),
+    url(r'^bias_guidelines', views.BiasGuidelines.as_view(), name='bias_guidelines'),
 
 ]

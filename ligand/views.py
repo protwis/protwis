@@ -2378,3 +2378,13 @@ class BiasPredictionBrowser(ListView):
             reference_a_p5=Subquery(assay_qs.values('log_bias_factor_a')[4:5]),
         )
         return queryset
+
+class BiasGuidelines(TemplateView):
+
+    template_name = 'bias_guidelines.html'
+
+    def get_context_data(self, **kwargs):
+
+        context = super().get_context_data(**kwargs)
+        # assays = AssayExperiment.objects.all().prefetch_related('protein__family__parent__parent__parent', 'protein__family')
+        return context
