@@ -50,7 +50,8 @@ class Command(BaseBuild):
         display_name_lookup = yaml.load(y, Loader=yaml.FullLoader)
 
     def add_arguments(self, parser):
-        parser.add_argument("--purge", default=False, action="store_true", help="Purge G protein structures from database")
+        parser.add_argument("--purge_complex", default=False, action="store_true", help="Purge G protein complex structures from database")
+        parser.add_argument("--purge_non_complex", default=False, action="store_true", help="Purge G protein non-complex structures from database")
         parser.add_argument("--only_signprot_structures", default=False, action="store_true", help="Only build SignprotStructure objects")
         parser.add_argument("-s", default=False, type=str, action="store", nargs="+", help="PDB codes to build")
         parser.add_argument("--debug", default=False, action="store_true", help="Debug mode")
@@ -58,10 +59,11 @@ class Command(BaseBuild):
     def handle(self, *args, **options):
         startTime = datetime.datetime.now()
         self.options = options
-        if self.options["purge"]:
+        if self.options["purge_complex"]:
             Residue.objects.filter(protein_conformation__protein__entry_name__endswith="_a", protein_conformation__protein__family__parent__parent__name="Alpha").delete()
             ProteinConformation.objects.filter(protein__entry_name__endswith="_a", protein__family__parent__parent__name="Alpha").delete()
             Protein.objects.filter(entry_name__endswith="_a", family__parent__parent__name="Alpha").delete()
+        if self.options["purge_non_complex"]:
             SignprotStructureExtraProteins.objects.all().delete()
             SignprotStructure.objects.all().delete()
 

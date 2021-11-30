@@ -98,7 +98,7 @@ def get_or_make_ligand(ligand_id, type_id, name = None, pep_or_prot = None):
                                             continue
 
                                     # TODO: better solution
-                                    if last==ligand_name: #no addition yet
+                                    if last == ligand_name or last == "": #no addition yet
                                         ligand_name = ligand_name +"_1"
                                     else:
                                         ligand_name = ligand_name +"_"+str(int(last)+1)
