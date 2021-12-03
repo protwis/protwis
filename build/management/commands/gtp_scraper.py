@@ -52,11 +52,34 @@ def get_pub_info(drug_id, pub_list):
     pub_ids = (' | ').join(pub_ids)
     return pub_ids
 
+def add_ranking(slice, rank, id, df, status=None):
+    if status:
+        statusslice = slice.loc[slice['Principal / Secondary'] == status]
+    else:
+        statusslice = slice.loc[slice['Principal / Secondary'].isnull()]
+    statusdrugs = list(statusslice['Name'].unique())
+    status_pEC50 = list(statusslice[['Name','pEC50_avg']].dropna().sort_values(by=['pEC50_avg'], ascending=False)['Name'].unique())
+    for drug in status_pEC50:
+        rank += 1
+        df.loc[(df['Receptor ID'] == id) & (df['Name'] == drug), 'Ranking'] = rank
+    leftovers = list(set(statusdrugs) - set(status_pEC50))
+    if len(leftovers) > 0:
+        status_pKi = list(statusslice[['Name','pKi_avg']].dropna().sort_values(by=['pKi_avg'], ascending=False)['Name'].unique())
+        for drug in status_pKi:
+            rank += 1
+            df.loc[(df['Receptor ID'] == id) & (df['Name'] == drug), 'Ranking'] = rank
+        leftovers = list(set(leftovers) - set(status_pKi))
+        if len(leftovers) > 0:
+            rank += 1
+            for drug in leftovers:
+                df.loc[(df['Receptor ID'] == id) & (df['Name'] == drug), 'Ranking'] = rank
+    return rank
+
+
 #defining globals and URLs
 gpcr_gtp_ids = []
 final = {}
 missing_info = []
-not_commented = []
 publication_cache = {}
 ligand_info_cache = {}
 useful_info = ['PubChem SID','PubChem CID','InChIKey', 'UniProtKB']
@@ -72,7 +95,7 @@ GtoP_endogenous = pd.DataFrame(columns=
                 'PubChem CID', 'PubChem SID', 'InChIKey', 'Name', 'Target Specie', 'Type', 'Action',
                 'pKi_min', 'pKi_avg', 'pKi_max', 'pEC50_min', 'pEC50_avg', 'pEC50_max',
                 'pKd_min', 'pKd_avg', 'pKd_max', 'pIC50_min', 'pIC50_avg', 'pIC50_max',
-                'Endogenous', 'Comment', 'Potency Ranking', 'Principal / Secondary', 'PMIDs'])
+                'Endogenous', 'Comment', 'Ranking', 'Principal / Secondary', 'PMIDs'])
 
 gtp_url = "https://www.guidetopharmacology.org/services/targets/families"
 DRUG = 'https://www.guidetopharmacology.org/GRAC/LigandDisplayForward?tab=biology&ligandId={}'
@@ -264,80 +287,25 @@ for id in IDS:
             drugs = comment.split(' is')[0]
             GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['Name'] == drugs), 'Principal / Secondary'] = 'Principal'
             GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['Name'] != drugs), 'Principal / Secondary'] = 'Secondary'
-    else:
-        not_commented.append(id)
 
 #fix things, drop unused values
 GtoP_endogenous.pKi_avg.fillna(GtoP_endogenous.pKi_max, inplace=True)
 GtoP_endogenous.pEC50_avg.fillna(GtoP_endogenous.pEC50_max, inplace=True)
 GtoP_endogenous.pKd_avg.fillna(GtoP_endogenous.pKd_max, inplace=True)
 GtoP_endogenous.pIC50_avg.fillna(GtoP_endogenous.pIC50_max, inplace=True)
+GtoP_endogenous = GtoP_endogenous[GtoP_endogenous.Endogenous != False]
 
-#Adding Potency Ranking to ligands in receptors without Principal status information
-#while tracking problematic values (missing info, symbols in data etc)
-for id in not_commented:
-  slice = GtoP_endogenous.loc[GtoP_endogenous['Receptor ID'] == id]
-  if len(slice['Name'].unique()) != 1:
-      if slice['pEC50_avg'].isna().any() == False:
-          try:
-              #we have all pEC50 values
-              sorted_list = sorted(list(set([float(x) for x in slice['pEC50_avg'].to_list()])), reverse=True)
-              counter = 1
-              for item in sorted_list:
-                  if item in slice['pEC50_avg'].to_list():
-                      GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pEC50_avg'] == item), 'Potency Ranking'] = counter
-                  else:
-                      GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pEC50_avg'] == str(item)), 'Potency Ranking'] = counter
-                  counter += 1
-          except ValueError:
-              missing_info.append(id)
-      elif slice['pKi_avg'].isna().any() == False:
-          try:
-              #we have all pEC50 values
-              sorted_list = sorted(list(set([float(x) for x in slice['pKi_avg'].to_list()])), reverse=True)
-              counter = 1
-              for item in sorted_list:
-                  if item in slice['pKi_avg'].to_list():
-                      GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pKi_avg'] == item), 'Potency Ranking'] = counter
-                  else:
-                      GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pKi_avg'] == str(item)), 'Potency Ranking'] = counter
-                  counter += 1
-          except ValueError:
-              missing_info.append(id)
-      else:
-          #we don't have full values, grab higher pEC50 or higher pKi?
-          values_pEC50 = slice['pEC50_avg'].dropna().to_list()
-          values_pKi = slice['pKi_avg'].dropna().to_list()
-          if len(values_pEC50) > 0:
-              try:
-                  #we have all pEC50 values
-                  sorted_list = sorted(list(set([float(x) for x in slice['pEC50_avg'].dropna().to_list()])), reverse=True)
-                  counter = 1
-                  for item in sorted_list:
-                      if item in slice['pEC50_avg'].to_list():
-                          GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pEC50_avg'] == item), 'Potency Ranking'] = counter
-                      else:
-                          GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pEC50_avg'] == str(item)), 'Potency Ranking'] = counter
-                      counter += 1
-                  GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pEC50_avg'].isna()), 'Potency Ranking'] = counter
-              except ValueError:
-                  missing_info.append(id)
-          elif len(values_pKi) > 0:
-              try:
-                  #we have all pEC50 values
-                  sorted_list = sorted(list(set([float(x) for x in slice['pKi_avg'].dropna().to_list()])), reverse=True)
-                  counter = 1
-                  for item in sorted_list:
-                      if item in slice['pKi_avg'].to_list():
-                          GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pKi_avg'] == item), 'Potency Ranking'] = counter
-                      else:
-                          GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pKi_avg'] == str(item)), 'Potency Ranking'] = counter
-                      counter += 1
-                  GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pKi_avg'].isna()), 'Potency Ranking'] = counter
-              except ValueError:
-                  missing_info.append(id)
-          else:
-              missing_info.append(id)
+IDS = list(GtoP_endogenous['Receptor ID'].unique())
+for id in IDS:
+    slice = GtoP_endogenous.loc[GtoP_endogenous['Receptor ID'] == id]
+    if len(slice['Name'].unique()) == 1:
+        GtoP_endogenous.loc[GtoP_endogenous['Receptor ID'] == id, 'Ranking'] = 1
+    else:
+        rank = 0
+        rank = add_ranking(slice, rank, id, GtoP_endogenous, 'Principal')
+        rank = add_ranking(slice, rank, id, GtoP_endogenous, 'Secondary')
+        rank = add_ranking(slice, rank, id, GtoP_endogenous)
+        #rank the principals
 
 GtoP_endogenous_human = GtoP_endogenous.loc[GtoP_endogenous['Specie'] == 'Human']
 GtoP_endogenous_mouse = GtoP_endogenous.loc[GtoP_endogenous['Specie'] == 'Mouse']

@@ -102,7 +102,7 @@ class Command(BaseBuild):
         # endogenous_data = self.adding_drug_info(endogenous_data)
         # print("\n#4 Assessing principal endogenous from comments")
         # endogenous_data, to_be_ranked = self.labeling_principals(endogenous_data)
-        # print("\n#5 Adding potency ranking (pEC50, pKi)")
+        # print("\n#5 Adding Ranking (pEC50, pKi)")
         # endogenous_data, problematic_data = self.adding_potency_rankings(self, endogenous_data, to_be_ranked)
         #### END BLOCK WITH SCRAPER
         print('\n#1 Reading and Parsing Excel')
@@ -308,7 +308,7 @@ class Command(BaseBuild):
                         'PubChem CID', 'PubChem SID', 'InChIKey', 'Name', 'Target Specie', 'Type', 'Action',
                         'pKi_min', 'pKi_avg', 'pKi_max', 'pEC50_min', 'pEC50_avg', 'pEC50_max',
                         'pKd_min', 'pKd_avg', 'pKd_max', 'pIC50_min', 'pIC50_avg', 'pIC50_max',
-                        'Endogenous', 'Comment', 'Potency Ranking', 'Principal / Secondary', 'PMIDs'])
+                        'Endogenous', 'Comment', 'Ranking', 'Principal / Secondary', 'PMIDs'])
         for ID in final:
             for drug in final[ID].keys():
                 row = {}
@@ -377,7 +377,7 @@ class Command(BaseBuild):
         GtoP_endogenous.pKd_avg.fillna(GtoP_endogenous.pKd_max, inplace=True)
         GtoP_endogenous.pIC50_avg.fillna(GtoP_endogenous.pIC50_max, inplace=True)
 
-        #Adding Potency Ranking to ligands in receptors without Principal status information
+        #Adding Ranking to ligands in receptors without Principal status information
         #while tracking problematic values (missing info, symbols in data etc)
         for id in not_commented:
           slice = GtoP_endogenous.loc[GtoP_endogenous['Receptor ID'] == id]
@@ -389,9 +389,9 @@ class Command(BaseBuild):
                       counter = 1
                       for item in sorted_list:
                           if item in slice['pEC50_avg'].to_list():
-                              GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pEC50_avg'] == item), 'Potency Ranking'] = counter
+                              GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pEC50_avg'] == item), 'Ranking'] = counter
                           else:
-                              GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pEC50_avg'] == str(item)), 'Potency Ranking'] = counter
+                              GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pEC50_avg'] == str(item)), 'Ranking'] = counter
                           counter += 1
                   except ValueError:
                       missing_info.append(id)
@@ -402,9 +402,9 @@ class Command(BaseBuild):
                       counter = 1
                       for item in sorted_list:
                           if item in slice['pKi_avg'].to_list():
-                              GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pKi_avg'] == item), 'Potency Ranking'] = counter
+                              GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pKi_avg'] == item), 'Ranking'] = counter
                           else:
-                              GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pKi_avg'] == str(item)), 'Potency Ranking'] = counter
+                              GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pKi_avg'] == str(item)), 'Ranking'] = counter
                           counter += 1
                   except ValueError:
                       missing_info.append(id)
@@ -419,11 +419,11 @@ class Command(BaseBuild):
                           counter = 1
                           for item in sorted_list:
                               if item in slice['pEC50_avg'].to_list():
-                                  GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pEC50_avg'] == item), 'Potency Ranking'] = counter
+                                  GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pEC50_avg'] == item), 'Ranking'] = counter
                               else:
-                                  GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pEC50_avg'] == str(item)), 'Potency Ranking'] = counter
+                                  GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pEC50_avg'] == str(item)), 'Ranking'] = counter
                               counter += 1
-                          GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pEC50_avg'].isna()), 'Potency Ranking'] = counter
+                          GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pEC50_avg'].isna()), 'Ranking'] = counter
                       except ValueError:
                           missing_info.append(id)
                   elif len(values_pKi) > 0:
@@ -433,11 +433,11 @@ class Command(BaseBuild):
                           counter = 1
                           for item in sorted_list:
                               if item in slice['pKi_avg'].to_list():
-                                  GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pKi_avg'] == item), 'Potency Ranking'] = counter
+                                  GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pKi_avg'] == item), 'Ranking'] = counter
                               else:
-                                  GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pKi_avg'] == str(item)), 'Potency Ranking'] = counter
+                                  GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pKi_avg'] == str(item)), 'Ranking'] = counter
                               counter += 1
-                          GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pKi_avg'].isna()), 'Potency Ranking'] = counter
+                          GtoP_endogenous.loc[(GtoP_endogenous['Receptor ID'] == id) & (GtoP_endogenous['pKi_avg'].isna()), 'Ranking'] = counter
                       except ValueError:
                           missing_info.append(id)
                   else:
@@ -488,7 +488,7 @@ class Command(BaseBuild):
                 species = None
 
             try:
-                potency = int(float(row['Potency Ranking']))
+                potency = int(float(row['Ranking']))
             except TypeError:
                 potency = None
 
@@ -500,7 +500,7 @@ class Command(BaseBuild):
                                 ligand_specie = species,
                                 ligand_action = role,
                                 endogenous_status = row['Principal / Secondary'], #principal/secondary
-                                potency_ranking = potency, #potency ranking
+                                potency_ranking = potency, #Ranking
                                 receptor = receptor, #link to protein model
                                 pec50 = numeric_data['pEC50'],
                                 pKi = numeric_data['pKi'],
@@ -521,7 +521,7 @@ class Command(BaseBuild):
                                 ligand_specie = ligand_specie,
                                 ligand_action = role,
                                 endogenous_status = row['Principal / Secondary'], #principal/secondary
-                                potency_ranking = potency, #potency ranking
+                                potency_ranking = potency, #Ranking
                                 receptor = receptor, #link to protein model
                                 pec50 = numeric_data['pEC50'],
                                 pKi = numeric_data['pKi'],
@@ -543,7 +543,7 @@ class Command(BaseBuild):
                                     ligand_specie = specie,
                                     ligand_action = role,
                                     endogenous_status = row['Principal / Secondary'], #principal/secondary
-                                    potency_ranking = row['Potency Ranking'], #potency ranking
+                                    potency_ranking = row['Ranking'], #Ranking
                                     receptor = receptor, #link to protein model
                                     pec50 = numeric_data['pEC50'],
                                     pKi = numeric_data['pKi'],
