@@ -346,14 +346,15 @@ class Command(BaseBuild):
         """
         l = None
         try:
-            if ligand_id in Command.ligand_cache:
-                l = Command.ligand_cache[ligand_id]
-            else:
-                if l == None:
-                    l = get_or_make_ligand(ligand_id, ligand_type, ligand_name)
-                    Command.ligand_cache[ligand_id] = l
+            if ligand_id is not None:
+                if ligand_id in ligand_cache:
+                    l = ligand_cache[ligand_id]
+                else:
+                    if l == None:
+                        l = get_or_make_ligand(ligand_id, ligand_type, ligand_name)
+                        ligand_cache[ligand_id] = l
             if l == None:
-                l = Command.create_empty_ligand(ligand_name)
+                l = create_empty_ligand(ligand_name)
         except:
             web_resource = WebResource.objects.get(slug='pubchem')
             try:
