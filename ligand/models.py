@@ -554,6 +554,7 @@ class BiasedData(models.Model):
     primary_effector_subtype = models.CharField(max_length=60, null=True)
     molecule_1 = models.CharField(max_length=60, null=True)
     molecule_2 = models.CharField(max_length=60, null=True)
+    measured_process = models.CharField(max_length=60, null=True)
     pathway_level = models.CharField(max_length=60, null=True)
     assay_type = models.CharField(max_length=60, null=True)
     EC50 = models.FloatField(max_length=60, null=True)

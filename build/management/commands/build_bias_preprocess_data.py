@@ -117,7 +117,7 @@ class Command(BaseBuild):
         return return_list_of_dicts
 
     @staticmethod
-    def main_process(df_from_excel, cell_data):
+    def main_process(df_from_excel, cell):
         for d in df_from_excel:
             #checking data values: float, string and low_activity checks
             d = Command.data_checks(d)
@@ -131,7 +131,7 @@ class Command(BaseBuild):
             #fetching publication info
             pub = Command.fetch_publication(d['Reference\nDOI or PMID'])
             #fetching the tissue and specie info from the excel sheet
-            specie, tissue = Command.fetch_cell_line_info(d['Cell line'], cell_data)
+            specie, tissue = Command.fetch_cell_line_info(d['Cell line'], cell)
             #fetching ligand information
             l = Command.fetch_ligand(d['ID'], d['ID type'], d['Ligand tested for bias or func. Sel.\nName'])
             #assessing protein
@@ -169,6 +169,7 @@ class Command(BaseBuild):
                                         primary_effector_subtype = signalling_protein,
                                         molecule_1 = d['Measured molecule 1'],
                                         molecule_2 = d['Measured molecule 2'],
+                                        measured_process = d['Measured process'],
                                         pathway_level = d['Pathway level'],
                                         assay_type = d['Assay type'],
                                         EC50 = EC50,
