@@ -200,12 +200,12 @@ class Command(BaseBuild):
         try: ## relabeling qualitative activity when EC50 but no Emax/log(Tau/KA)
             if data['Measure type'] == 'EC50' or data['Measure type'] == 'pEC50':
                 if (data['Alt 1)\nQuantitative efficacy'] ==  None) and (data['Transduction Coefficient [log(τ/KA)]'] ==  None) and (data['Alt 1)\nQuantitative activity'] is not None):
-                    data['Alt 2)\nQualitative activity'] = 'No Activity'
+                    data['Alt 2)\nQualitative activity'] = 'No activity'
         except TypeError:
             pass
         try: ## relabeling qualitative activity when IC50 or pIC50
             if data['Measure type'] == 'pIC50' or data['Measure type'] == 'IC50':
-                    data['Alt 2)\nQualitative activity'] = 'No Activity'
+                    data['Alt 2)\nQualitative activity'] = 'No activity'
         except TypeError:
             pass
         #low activity check
