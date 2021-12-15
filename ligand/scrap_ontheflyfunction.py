@@ -8,6 +8,29 @@
 # -	Pathway-Preferring calculation
 # -	Subtype calculation
 
+from django.core.management.base import BaseCommand, CommandError
+from django.conf import settings
+from django.db import connection
+from django.db import IntegrityError
+from django.utils.text import slugify
+from django.http import HttpResponse, JsonResponse
+from decimal import Decimal
+from build.management.commands.base_build import Command as BaseBuild
+from common.tools import fetch_from_cache, save_to_cache, fetch_from_web_api
+from protein.models import Protein, ProteinCouplings
+from ligand.models import  Ligand, LigandProperities, LigandType, Endogenous_GTP, BiasedData, LigandVendorLink
+
+from ligand.functions import get_or_make_ligand
+from common.models import WebLink, WebResource, Publication
+import logging
+import math
+import pandas as pd
+import os
+import traceback
+import time
+import requests
+import timeit
+
 def assess_reference(data_dict, user=False):
     gtp_info = {}
     reference = {}
@@ -94,6 +117,11 @@ def calculate_first_delta(comparisons, reference, tested, subtype=False):
             except TypeError:
                 delta_logemaxec50 = None
             tested[test]['Delta_log(Emax/EC50)'] = delta_logemaxec50
+            #Adding the section ragarding reference values
+            tested[test]['Reference_ligand'] = reference[ref]['ligand_name']
+            tested[test]['Reference_Emax'] = r_emax
+            tested[test]['Reference_EC50'] = r_ec50
+            tested[test]['Reference_Tau/KA'] = r_logtauka
     return comparisons, tested, skip
 
 def find_best_subtype(comparisons, reference, tested):
@@ -129,15 +157,19 @@ def calculate_second_delta(comparisons, tested):
         if len(ranking[drug]) > 1:
         #Set reference pathway (first in list)
             path1 = ranking[drug][0]
+            tested[path1]['Pathway Rank'] = 'P1'
+            path_count = 1
             for test in ranking[drug][1:]:
+                path_count +=1
+                tested[test]['Pathway Rank'] = 'P'+str(path_count)
                 #Match pathway levels + skip matching if Arrestin involved
                 if (tested[test]['pathway_level'] == tested[path1]['pathway_level']) or ('Arrestin' in [tested[path1]['primary_effector_family'], tested[test]['primary_effector_family']]):
-                    tested[path1]['preferred_pathway'] = True
+                    tested[test]['P1'] = tested[path1]['primary_effector_family']
                     try:
                         deltadelta_logemaxec50 = round(tested[path1]['Delta_log(Emax/EC50)'] - tested[test]['Delta_log(Emax/EC50)'], 3)
                     except (TypeError, KeyError):
                         if tested[test]['qualitative_activity'] == 'No activity':
-                            deltadelta_logemaxec50 = 'High Bias'
+                            deltadelta_logemaxec50 = 'Full Bias'
                         elif tested[path1]['Delta_log(Emax/EC50)'] == None:
                             deltadelta_logemaxec50 = None
                     tested[test]['DeltaDelta_log(Emax/EC50)'] = deltadelta_logemaxec50
@@ -145,11 +177,11 @@ def calculate_second_delta(comparisons, tested):
                         deltadelta_logtauka = round(tested[path1]['Delta_log(Tau/KA)'] - tested[test]['Delta_log(Tau/KA)'], 3)
                     except (TypeError, KeyError):
                         if tested[test]['qualitative_activity'] == 'No activity':
-                            deltadelta_logtauka = 'High Bias'
+                            deltadelta_logtauka = 'Full Bias'
                         elif tested[path1]['Delta_log(Tau/KA)'] == None:
                             deltadelta_logtauka = None
                     tested[test]['DeltaDelta_log(Tau/KA)'] = deltadelta_logtauka
-    return tested
+    return tested, ranking
 
 def assess_pathway_preferences(comparisons, tested):
     pathway_preference = {}
@@ -196,12 +228,24 @@ for entry in test_data:
     if entry.publication_id not in publications.keys():
         publications[entry.publication_id] = {}
     if entry.id not in publications[entry.publication_id].keys():
+        pub_data = Publication.objects.filter(id=entry.publication_id).values_list("web_link_id__index",
+                                                                                   "year",
+                                                                                   "journal_id__name",
+                                                                                   "authors")
+        ligand_data = Ligand.objects.filter(id=entry.ligand_id).values_list("name",
+                                                                            "properities_id")
         publications[entry.publication_id][entry.id] = {'experiment': entry.experiment,
                                                         'endogenous_status': entry.endogenous_status,
                                                         'publication': entry.publication_id,
+                                                        'doi': pub_data[0][0],
+                                                        'pub_year': pub_data[0][1],
+                                                        'journal': pub_data[0][2],
+                                                        'authors': pub_data[0][3],
                                                         'receptor': entry.receptor.name,
                                                         'receptor_id': entry.receptor_id,
                                                         'ligand_id': entry.ligand_id,
+                                                        'ligand_name': ligand_data[0][0],
+                                                        'ligand__properities_id': ligand_data[0][1], #for browser vendors
                                                         'receptor_isoform': entry.receptor_isoform,
                                                         'active_receptor_complex': entry.active_receptor_complex,
                                                         'cell_line': entry.cell_line,
@@ -228,18 +272,168 @@ for pub in publications.keys():
             publications[pub][assay]['ligand_id'] = 273200
 
 #find the endogenous ligand for each publication based on endogenous_status (make a call)
+#TESTING pub 1135
 for pub in publications:
     print("Performing analysis on publication id: " + str(pub))
     #Assess reference and tested ligands
     reference, tested = assess_reference(publications[pub])
+    #9 reference dicts, 27 tested dicts
     #Assess available comparisons
     comparisons = assess_comparisons(reference, tested)
+    #OUTPUT comparisons:
+    # Reference id --> tested ids
+    # {90178: [90151, 90160, 90169],
+    #  90179: [90152, 90161, 90170], #different subtype
+    #  90180: [90153, 90162, 90171],
+    #  90181: [90154, 90163, 90172], #different subtype
+    #  90182: [90155, 90164, 90173],
+    #  90183: [90156, 90165, 90174],
+    #  90184: [90157, 90166, 90175], #different subtype
+    #  90185: [90158, 90167, 90176], #different subtype
+    #  90186: [90159, 90168, 90177]}
     #calculate the first delta, remove excess data if needed
     print("Calculating the first Delta")
     comparisons, tested, skip = calculate_first_delta(comparisons, reference, tested)
+    #OUTPUT comparisons (shaved):
+    # {90178: [90151, 90160, 90169],
+    #  90180: [90153, 90162, 90171],
+    #  90182: [90155, 90164, 90173],
+    #  90183: [90156, 90165, 90174],
+    #  90186: [90159, 90168, 90177]}
+    #9 reference dicts, 15 tested dicts
+    #all tested have calculated Δlog(Emax/EC50) and Δlog(Tau/KA)
     #this check might be added somewhere else
     if skip == True:
         continue
     #calculate the second delta (across pathways)
     print("Test that can be assessed for second delta: " + str(len(tested)))
-    tested = calculate_second_delta(comparisons, tested) #need more?
+    tested, ranking = calculate_second_delta(comparisons, tested) #need more?
+    reference.update(tested)
+    publications[pub] = reference)
+    #OUTPUT Ranking:
+    #ligand id --> ranking by pathway (Δlog(Emax/EC50) and Δlog(Tau/KA))
+    # {1824: [90153, 90155, 90151, 90156, 90159],
+    #  1815: [90162, 90165, 90168, 90160, 90164],
+    #  1806: [90173, 90169, 90171, 90174, 90177]}
+
+
+###########################
+# Quindi per ogni ligando comparato devo avere
+# la lista di dati qui sotto descritta
+#
+#
+#RANK ORDER (Scatter Plot)
+'Gi/o',        #Highest biased pathway for ligand
+'Rotigotine',  #ligand name                                                     #CHECK
+'10.1124/jpet.114.220293', #publication DOI                                     #CHECK
+2014,          #publication year                                                #CHECK
+'Journal of Pharmacology and Experimental Therapeutics', #publication journal   #CHECK
+'Brust TF, Hayes MP, Roman DL, Burris KD, Watts VJ',     #publication authors   #CHECK
+1635,          # ligand ID                                                      #CHECK
+'dopamine',    # reference ligand name                                          #CHECK
+ None,         # qualitative activity --> this should exclude the exclude list  #CHECK
+ 1.8,          # ΔLog(Emax/EC50)                                                #CHECK
+ None,         # ΔΔLog(Emax/EC50)                                               #CHECK
+ 0,            # ranking                                                        #what is this?
+ 2.1,          # ΔLog(Tau/KA)                                                   #CHECK
+ None,         # ΔΔLog(Tau/KA)                                                  #CHECK
+ 0.0,          # EC50                                                           #CHECK
+ 95.0,         # Emax                                                           #CHECK
+ 1.2e-09,      # EC50 of reference                                              #CHECK
+ 100.0,        # Emax of reference                                              #CHECK
+ 'Gi/o',       # Pathway of Reference                                           #CHECK
+ 'Dopamine',   # Name reference ligand                                          #CHECK
+ None,         # subtype                                                        #CHECK
+ None          # compared subtype                                               #CHECK
+###########################
+exclude_list = ["Agonism", "Partial agonism", "Medium activity"] #full agonism should be removed
+publications = list(AnalyzedAssay.objects.filter(
+                family__isnull=False,
+                experiment__receptor=receptor,
+                assay_description=self.assay,
+                experiment__source=self.source).exclude(
+                qualitative_activity__in=exclude_list,
+                ).values_list(
+                "family", #pathway                                              0
+                "experiment__ligand__name", #name                               1
+                "experiment__publication__web_link__index", # DOI               2
+                "experiment__publication__year", #year                          3
+                "experiment__publication__journal__name", #journal              4
+                "experiment__publication__authors",  #authors                   5
+                "experiment__ligand",    #ligand_id for hash                    6
+                "experiment__endogenous_ligand__name", #endogenous              7
+                "qualitative_activity",  #activity values                       8
+                "delta_emax_ec50", #ΔLog(Emax/EC50)                           9
+                "log_bias_factor",  #ΔΔLog(Emax/EC50)                           10
+                "order_no",         #ranking                                    11
+                "relative_transduction_coef",    #ΔLog(TAU/Ka)                               12
+                "delta_relative_transduction_coef",         #ΔΔLog(TAU/Ka)                              13
+                "quantitive_activity",   #EC 50                                 14
+                "quantitive_efficacy",   #Emax                                  15
+                "reference_assay_initial_id__quantitive_activity", #            16 EC 50 compared drug
+                "reference_assay_initial_id__quantitive_efficacy", #            17 Emax compared drug
+                "reference_assay_initial_id__family", # Pathway compared drug   18
+                "reference_assay_initial_id__biased_experiment__ligand__name", #19 Name compared drug
+                "signalling_protein",   #subtype                                20
+                "reference_assay_initial_id__signalling_protein", #             21 Compared signalling protein
+                ).distinct()) #check
+################################################################################
+#Post Parsing data for Browser section
+#Setting the function for adding based on pathway rank
+def add_pathway_data(master, data, rank):
+    master[rank+' - Pathway'] = data['primary_effector_family']
+    try:
+        master[rank+' - Delta_log(Emax/EC50)'] = data['Delta_log(Emax/EC50)']
+    except KeyError: #Delta_log(Emax/EC50) was not calculated
+        master[rank+' - Delta_log(Emax/EC50)'] = None
+    master[rank+' - EC50'] = data['EC50']
+    master[rank+' - Emax'] = data['Emax']
+    master[rank+' - Delta_log(Tau/KA)'] = data['delta_Tau_KA']
+    master[rank+' - Measured molecule 1'] = data['molecule_1']
+    master[rank+' - Measured molecule 2'] = data['molecule_1']
+    master[rank+' - Biological process'] = data['measured_process']
+    if set(['DeltaDelta_log(Emax/EC50)','DeltaDelta_log(Tau/KA)']).issubset(set(data.keys())):
+        master['P1-'+rank+' - ΔΔLog(Emax/EC50)'] = data['DeltaDelta_log(Emax/EC50)']
+        master['P1-'+rank+' - ΔΔLog(Tau/KA)'] = data['DeltaDelta_log(Tau/KA)']
+#Setting the final dict
+table = pd.DataFrame()
+#receptor_id
+receptor_info = Protein.objects.filter(id=37).values_list("family__parent__parent__parent__name",
+                                                          "family__parent__name",
+                                                          "entry_name",
+                                                          "name")
+#Parsing through the pubs
+#in a one big open dict
+#over the data we go
+#swearing all the way
+for pub in publications:
+    ligands = {}
+    slice = pd.DataFrame()
+    for key in publications[pub]:
+        if 'Pathway Rank' in publications[pub][key].keys():
+            if publications[pub][key]['ligand_id'] not in ligands.keys():
+                labs = []
+                ligands[publications[pub][key]['ligand_id']] = {}
+                ligands[publications[pub][key]['ligand_id']]['Name'] = publications[pub][key]['ligand_name']
+                ligands[publications[pub][key]['ligand_id']]['Species'] = publications[pub][key]['specie']
+                ligands[publications[pub][key]['ligand_id']]['Cell line'] = publications[pub][key]['cell_line']
+                ligands[publications[pub][key]['ligand_id']]['Authors'] = publications[pub][key]['authors']
+                ligands[publications[pub][key]['ligand_id']]['DOI/Reference'] = publications[pub][key]['doi']
+                ligands[publications[pub][key]['ligand_id']]['#Vendors'] = LigandVendorLink.objects.filter(lp_id=publications[pub][key]['ligand__properities_id']).values_list("vendor_id").distinct().count()
+                ligands[publications[pub][key]['ligand_id']]['#Articles'] = BiasedData.objects.filter(ligand_id=publications[pub][key]['ligand_id']).values_list("publication_id").distinct().count()
+                for authors in BiasedData.objects.filter(ligand_id=publications[pub][key]['ligand_id']).values_list("publication_id__authors").distinct():
+                    if authors[0].split(',')[-1] not in labs:
+                        labs.append(authors[0].split(',')[-1])
+                ligands[publications[pub][key]['ligand_id']]['#Labs'] = len(labs)
+            add_pathway_data(ligands[publications[pub][key]['ligand_id']], publications[pub][key], publications[pub][key]['Pathway Rank'])
+        else:
+            Reference_ligand = publications[pub][key]['ligand_name']
+    for drug in ligands:
+        slice = slice.append(ligands[drug], ignore_index=True)
+    slice['Class'] = receptor_info[0][0]
+    slice['Receptor family'] = receptor_info[0][1].strip('receptors')
+    slice['Uniprot'] = receptor_info[0][2].split('_')[0].upper()
+    slice['IUPHAR'] = receptor_info[0][3]
+    slice['Reference ligand'] = Reference_ligand
+
+    table = table.append(slice, ignore_index=True)
