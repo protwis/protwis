@@ -179,6 +179,7 @@ class Command(BaseBuild):
                                         Emax_sign = d['>\n<\n=\n~.1'],
                                         Tau_KA=d['Transduction Coefficient [log(τ/KA)]'],
                                         delta_Tau_KA=d['Relative Transduction Coefficient [Δlog(τ/KA)]'],
+                                        time_resolved=d['Time resolved'],
                                         )
 
             experiment_data.save()

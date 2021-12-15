@@ -564,6 +564,7 @@ class BiasedData(models.Model):
     Emax_sign = models.CharField(max_length=60, null=True)
     Tau_KA = models.FloatField(max_length=60, null=True)
     delta_Tau_KA = models.FloatField(max_length=60, null=True)
+    time_resolved = models.CharField(max_length=60, null=True)
 
 # Pathways part - start
 class BiasedPathways(models.Model):
