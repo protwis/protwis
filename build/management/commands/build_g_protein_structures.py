@@ -105,9 +105,15 @@ class Command(BaseBuild):
                     s = pdbp.get_structure("struct", StringIO(sc.structure.pdb_data.pdb))
                     chain = s[0][sc.alpha]
                     nums = []
+                    structure_seq = ''
                     for res in chain:
                         if "CA" in res and res.id[0]==" ":
                             nums.append(res.get_id()[1])
+                            structure_seq+=Polypeptide.three_to_one(res.get_resname())
+
+                    if options['debug']:
+                        print('Structure seq:')
+                        print(structure_seq)
 
                     resis = Residue.objects.filter(protein_conformation__protein=sc.protein)
                     num_i = 0
@@ -117,8 +123,10 @@ class Command(BaseBuild):
                     for n in nums:
                         if sc.structure.pdb_code.index=="6OIJ" and n<30:
                             nr = n+6
-                        elif sc.structure.pdb_code.index=='7MBY' and n>58:
+                        elif sc.structure.pdb_code.index in ['7MBY', '7F9Y'] and n>58:
                             nr = n-35
+                        elif sc.structure.pdb_code.index=='7EIB':
+                            nr = n-2
                         else:
                             nr = n
                         pdb_num_dict[n] = [chain[n], resis.get(sequence_number=nr)]
@@ -173,7 +181,7 @@ class Command(BaseBuild):
                         print(remaining_mismatches)
                         pprint.pprint(pdb_num_dict)
 
-                    no_seqnum_shift = ['6OY9', '6OYA', '6LPB', '6WHA', '7D77', '6XOX', '7L1U', '7L1V', '7MBY']
+                    no_seqnum_shift = ['6OY9', '6OYA', '6LPB', '6WHA', '7D77', '6XOX', '7L1U', '7L1V', '7MBY', '7EIB', '7F9Y']
 
                     # Check if HN is mutated to GNAI1 for the scFv16 stabilizer
                     if sc.protein.entry_name!='gnai1_human' and len(remaining_mismatches)>0:
@@ -281,13 +289,19 @@ class Command(BaseBuild):
                             elif sc.structure.pdb_code.index=='6PB0':
                                 pdb_num_dict[205][1] = Residue.objects.get(protein_conformation__protein=sc.protein, sequence_number=205)
                     ### Custom alignment fix for 6WHA, 7MBY mini-Gq/Gi/Gs chimera
-                    elif sc.structure.pdb_code.index in ['6WHA', '7MBY']:
+                    elif sc.structure.pdb_code.index in ['6WHA', '7MBY', '7EIB', '7F9Y']:
                         if sc.structure.pdb_code.index=='6WHA':
                             ref_seq  = "MTLESIMACCLSEEAKEARRINDEIERQLRRDKRDARRELKLLLLGTGESGKSTFIKQMRIIHGSGYSDEDKRGFTKLVYQNIFTAMQAMIRAMDTLKIPYKYEHNKAHAQLVREVDVEKVSAFENPYVDAIKSLWNDPGIQECYDRRREYQLSDSTKYYLNDLDRVADPAYLPTQQDVLRVRVPTTGIIEYPFDLQSVIFRMVDVGGQRSERRKWIHCFENVTSIMFLVALSEYDQVLVESDNENRMEESKALFRTIITYPWFQNSSVILFLNKKDLLEEKIM--YSHLVDYFPEYDGP----QRDAQAAREFILKMFVDL---NPDSDKIIYSHFTCATDTENIRFVFAAVKDTILQLNLKEYNLV"
                             temp_seq = "----------VSAEDKAAAERSKMIDKNLREDGEKARRTLRLLLLGADNSGKSTIVK----------------------------------------------------------------------------------------------------------------------------------GIFETKFQVDKVNFHMFDVG-----RRKWIQCFNDVTAIIFVVDSSDYNR----------LQEALNDFKSIWNNRWLRTISVILFLNKQDLLAEKVLAGKSKIEDYFPEFARYTTPDPRVTRAKY-FIRKEFVDISTASGDGRHICYPHFTC-VDTENARRIFNDCKDIILQMNLREYNLV"
                         elif sc.structure.pdb_code.index=='7MBY':
                             ref_seq =  'MTLESIMACCLSEEAKEARRINDEIERQLRRDKRDARRELKLLLLGTGESGKSTFIKQMRIIHGSGYSDEDKRGFTKLVYQNIFTAMQAMIRAMDTLKIPYKYEHNKAHAQLVREVDVEKVSAFENPYVDAIKSLWNDPGIQECYDRRREYQLSDSTKYYLNDLDRVADPAYLPTQQDVLRVRVPTTGIIEYPFDLQSVIFRMVDVGGQRSERRKWIHCFENVTSIMFLVALSEYDQVLVESDNENRMEESKALFRTIITYPWFQNSSVILFLNKKDLLEEKIM-YSHLVDYFPEYDGP----QRDAQAAREFILKMFVDL---NPDSDKIIYSHFTCATDTENIRFVFAAVKDTILQLNLKEYNLV'
                             temp_seq = '----------------AAVERSKMIDRNLREDGEKARRTLRLLLLGADNSGKSTIVKQ----------------------------------------------------------------------------------------------------------------------------------IFETKFQVDKVNFHMFDVG-----RRKWIQCFNDVTAIIFVVDSSDYN----------RLQEALNDFKSIWNNRWLRTISVILFLNKQDLLAEKVLA-SKIEDYFPEFARYTTEDPRVTRAKY-FIRKEFVDISTASGDGRHICYPHFTCAVDTENARRIFNDCKDIILQMNLREYNLV'
+                        elif sc.structure.pdb_code.index=='7EIB':
+                            ref_seq =  'MTLESIMACCLSEEAKEARRINDEIERQLRRDKRDARRELKLLLLGTGESGKSTFIKQMRIIHGSGYSDEDKRGFTKLVYQNIFTAMQAMIRAMDTLKIPYKYEHNKAHAQLVREVDVEKVSA--FENPYVDAIKSLWNDPGIQECYDRRREYQLSDSTKYYLNDLDRVADPAYLPTQQDVLRVRVPTTGIIEYPFDLQSVIFRMVDVGGQRSERRKWIHCFENVTSIMFLVALSEYDQVLVESDNENRMEESKALFRTIITYPWFQNSSVILFLNKKDLLEEKIMYS--HLVDYFPEYDGPQR------------DAQAAREFILKMFVDL---NPDSDKIIYSHFTCATDTENIRFVFAAVKDTILQLNLKEYNLV'
+                            temp_seq = '----------LSAEDKAAVERSKMIEKQLQKDKQVYRRTLRLLLLGADNSGKSTIVKQMRIYH---------------------------------------------------------------------------------------------------------------------------KTSGIFETKFQVDKVNFHMFDVGAQRDERRKWIQCFNDVTAIIFVVDSSDYN----------RLQEALNDFKSIWNNRWLRTISVILFLNKQDLLAEKVLAGKSKIEDYFPEFARYTTPEDATPEPGEDPRVTRAKYFIRKEFVDISTASGDGRHICYPHFTCSVDTENARRIFNDCKDIILQMNLREYNLV'
+                        elif sc.structure.pdb_code.index=='7F9Y':
+                            ref_seq =  'MTLESIMACCLSEEAKEARRINDEIERQLRRDKRDARRELKLLLLGTGESGKSTFIKQMRIIHGSGYSDEDKRGFTKLVYQNIFTAMQAMIRAMDTLKIPYKYEHNKAHAQLVREVDVEKVSA--FENPYVDAIKSLWNDPGIQECYDRRREYQLSDSTKYYLNDLDRVADPAYLPTQQDVLRVRVPTTGIIEYPFDLQSVIFRMVDVGGQRSERRKWIHCFENVTSIMFLVALSEYDQVLVESDNENRMEESKALFRTIITYPWFQNSSVILFLNKKDLLEEKIMYS--HLVDYFPEYDGPQR------------DAQAAREFILKMFVDL---NPDSDKIIYSHFTCATDTENIRFVFAAVKDTILQLNLKEYNLV'
+                            temp_seq = '-------------EDKAAVERSKMIEKQLQKDKQVYRRTLRLLLLGADNSGKSTIVKQMRI------------------------------------------------------------------------------------------------------------------------------TSGIFETKFQVDKVNFHMFDVGAQRDERRKWIQCFNDVTAIIFVVDSSDN-----------RLQEALNDFKSIWNNRWLRTISVILFLNKQDLLAEKVLAGKSKIEDYFPEFARYTTPEDATPEPGEDPRVTRAKYFIRKEFVDISTASGDGRHICYPHFTCSVDTENARRIFNDCKDIILQMNLREYNLV'
                         pdb_num_dict = OrderedDict()
                         temp_resis = [res for res in chain]
                         temp_i = 0
@@ -305,7 +319,8 @@ class Command(BaseBuild):
                                             res = self.get_next_presumed_cgn(res)
                                     else:
                                         print("Error: {} CGN does not exist. Incorrect mapping of {} in {}".format(next_presumed_cgn, chain[nums[temp_i]], sc.structure))
-                                mapped_cgns.append(res.display_generic_number.label)
+                                if res:
+                                    mapped_cgns.append(res.display_generic_number.label)
                                 pdb_num_dict[nums[temp_i]] = [chain[nums[temp_i]], res]
                                 temp_i+=1
 
