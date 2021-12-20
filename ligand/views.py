@@ -445,6 +445,19 @@ class BiasTargetSelection(AbsReferenceSelectionTable):
             "color": 'default active',
             "sameSize": True,
         },
+        "OTF_biased": {
+            "label": "Testing for biased browser (ΔΔ)",
+            'onclick': "onTheFlySelection('/ligand/test_biased');",
+            # "onlick": "onTheFlySelection('/ligand/biased');",
+            "color": 'warning',
+            "sameSize": True,
+        },
+        "OTF_pathway": {
+            "label": "Testing for pathway browser (Δ)",
+            'onclick': "onTheFlySelection('/ligand/test_pathwaypreference', false, true);",
+            "color": 'warning',
+            "sameSize": True,
+        },
     }
 
     table_data = getReferenceTable("different_family", "tested_assays")
@@ -1827,6 +1840,67 @@ def CachedBiasBrowsers(browser_type, request):
         cache.set(cache_key, return_html, 60*60*24*7)
     return return_html
 
+################################################################################
+################### NEW STUFF ##################################################
+
+def OTFBiasBrowser(request):
+    return OTFBiasBrowsers("biasbrowser", request)
+
+def OTFBiasSubtypeBrowser(request):
+    return OTFBiasBrowsers("biassubtypebrowser", request)
+
+def OTFPathwayPrefBrowser(request):
+    return OTFBiasBrowsers("pathwayprefbrowser", request)
+
+def OTFBiasBrowsers(browser_type, request):
+    protein_ids = []
+    try:
+        simple_selection = request.session.get('selection', False)
+        print(simple_selection)
+        import pdb; pdb.set_trace()
+        families = []
+        for target in simple_selection.targets:
+            if target.type == 'protein':
+                protein_ids.append(target.item.entry_name)
+            elif target.type == 'family':
+                families.append(target.item.slug)
+
+        if len(families) > 0:
+            # species filter
+            species_list = []
+            for species in simple_selection.species:
+                species_list.append(species.item)
+
+            # annotation filter
+            protein_source_list = []
+            for protein_source in simple_selection.annotation:
+                protein_source_list.append(protein_source.item)
+
+            family_proteins = Protein.objects.filter(family__slug__in=families, source__in=(protein_source_list))
+            if len(species_list) > 0:
+                family_proteins.filter(species__in=(species_list))
+
+            for prot_name in family_proteins.values_list("entry_name", flat=True):
+                protein_ids.append(prot_name)
+
+    except:
+        protein_ids = ["NOSELECTION"]
+
+    protein_ids.sort()
+    cache_key = "BIASBROWSER_" + browser_type + "_" + hashlib.md5("_".join(protein_ids).encode('utf-8')).hexdigest()
+    return_html = cache.get(cache_key)
+    if return_html == None:
+        if browser_type == "biasbrowser":
+            return_html = BiasBrowser.as_view()(request).render()
+        elif browser_type == "biasgbrowser":
+            return_html = BiasGBrowser.as_view()(request).render()
+        else:
+            return_html = BiasPredictionBrowser.as_view()(request).render()
+        cache.set(cache_key, return_html, 60*60*24*7)
+    return return_html
+
+################################################################################
+################### END NEW STUFF###############################################
 
 '''
 Bias browser between families
