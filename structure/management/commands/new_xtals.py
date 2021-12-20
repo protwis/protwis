@@ -40,7 +40,7 @@ structs_with_missing_x50 = ['5EM9', '5AER', '3BEF', '3LU9', '3HKI', '3HKJ', '1NR
                             '6B7H', '3LMK', '6N4Y', '6N4X', '6N50', '3MQ4', '5C5C', '6E5V', '6BSZ', '6BT5', '6C0B', '5BPB', '5BQC', '5UWG', '5BPQ', '5BQE', '6NE1',
                             '5CL1', '5CM4', '5URZ', '5URY', '6O39', '5URV', '4Z33', '6NE2', '6NE4', '6O3B', '6O3A', '5WBS', '5T44', '5UN6', '5UN5', '6NDZ', '5KZV',
                             '5KZY', '5KZZ', '7JQD', '2PUX', '2PV9', '6EXJ', '7JNZ', '7NW3', '4F8K', '1RY1', '2J28', '4UE5', '6O9I', '6O9H', '7ALO', '6SKA', '4DLQ',
-                            '5OVP', '6SKE', '5FTT', '5FTU', '4YEB', '4RMK', '4RML', '6JBU', '6IDX', '5KVM', '6V55', '7NJZ', '3N96', '3N93', '3N95', '7D86']
+                            '5OVP', '6SKE', '5FTT', '5FTU', '4YEB', '4RMK', '4RML', '6JBU', '6IDX', '5KVM', '6V55', '7NJZ', '3N96', '3N93', '3N95', '7D86', '7DO4']
 
 
 class Command(BaseBuild):
@@ -188,6 +188,8 @@ class QueryPDB():
                         st_type = StructureType.objects.get(slug='electron-microscopy')
                     elif exp_method=='X-ray diffraction':
                         st_type = StructureType.objects.get(slug='x-ray-diffraction')
+                    elif exp_method=='Electron crystallography':
+                        st_type = StructureType.objects.get(slug='electron-crystallography')
 
                     if 'deletions' in pdb_data_dict:
                         for d in pdb_data_dict['deletions']:
@@ -559,7 +561,7 @@ def yamls_to_csv():
             struct_w.writerow([pdb, vals['protein'], method, vals['obj'].resolution, vals['state'], vals['preferred_chain'], ''])
     # ligands.csv
     with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'ligands.csv']), 'w', newline='') as l_csv:
-        lig_w = csv.writer(l_csv, delimiter=',', quotechar="'", quoting=csv.QUOTE_MINIMAL)
+        lig_w = csv.writer(l_csv, delimiter='\t', quotechar="'", quoting=csv.QUOTE_MINIMAL)
         lig_w.writerow(['PDB', 'ChainID', 'Name', 'PubChemID', 'Role', 'Title', 'Type'])
         for pdb, vals in d.items():
             lig = d[pdb]['ligand']

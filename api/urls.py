@@ -8,7 +8,7 @@ urlpatterns = [
     url(r'^protein/accession/(?P<accession>[^/].+)/$', views.ProteinByAccessionDetail.as_view(),
         name='proteinbyaccession'),
     url(r'^protein/(?P<entry_name>[^/].+)/$', views.ProteinDetail.as_view(), name='protein-detail'),
-
+    url(r'^receptorlist/$', views.ReceptorList.as_view(), name='receptor-list'),
     url(r'^proteinfamily/$', views.ProteinFamilyList.as_view(), name='proteinfamily-list'),
     url(r'^proteinfamily/(?P<slug>[^/]+)/$', views.ProteinFamilyDetail.as_view(), name='proteinfamily-detail'),
     url(r'^proteinfamily/children/(?P<slug>[^/]+)/$', views.ProteinFamilyChildrenList.as_view(),

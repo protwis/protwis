@@ -15,7 +15,7 @@ from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.sequence_parser import SequenceParser
 from api.serializers import (ProteinSerializer, ProteinFamilySerializer, SpeciesSerializer, ResidueSerializer,
                              ResidueExtendedSerializer, StructureLigandInteractionSerializer,
-                             MutationSerializer)
+                             MutationSerializer, ReceptorListSerializer)
 from api.renderers import PDBRenderer
 from common.alignment import Alignment
 from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS
@@ -55,6 +55,17 @@ class ProteinByAccessionDetail(ProteinDetail):
     """
 
     lookup_field = 'accession'
+
+
+class ReceptorList(generics.ListAPIView):
+
+    """
+    Get a list of receptor proteins
+    \n/receptorlist/
+    """
+
+    queryset = Protein.objects.filter(accession=True, parent__isnull=True, family__slug__startswith='001').prefetch_related('family','endogenous_ligands')
+    serializer_class = ReceptorListSerializer
 
 
 class ProteinFamilyList(generics.ListAPIView):

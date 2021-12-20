@@ -459,6 +459,10 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
         pdb_resid_total = []
         pdb_resid_total_accounted = []
         # print(d['wt_seq'])
+
+        if pdbname.upper() in ['7F9Z', '7F9Y']:
+            return d
+
         for elem in sifts.findall('.//{'+sfits_https+'://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}segment'):
             if 'segId' not in elem.attrib:
                 continue #not receptor
