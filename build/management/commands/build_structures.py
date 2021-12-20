@@ -561,6 +561,10 @@ class Command(BaseBuild):
             ref_seq = ref_seq[:23]+ref_seq[24:211]+ref_seq[212:]
         elif structure.pdb_code.index in ['7NA7', '7NA8']:
             temp_seq = temp_seq[:242]+'R'+temp_seq[242:253]+temp_seq[254:]
+        elif structure.pdb_code.index in ['7F8V', '7F8W']:
+            temp_seq = temp_seq[:247]+'L'+temp_seq[247:323]+temp_seq[324:]
+        elif structure.pdb_code.index=='7RTB':
+            temp_seq = temp_seq[:107]+'S'+temp_seq[107:113]+temp_seq[114:]
 
         for i, r in enumerate(ref_seq, 1): #loop over alignment to create lookups (track pos)
             if self.debug:
