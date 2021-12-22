@@ -3,8 +3,8 @@ from rest_framework.response import Response
 from rest_framework.parsers import FileUploadParser
 from rest_framework.renderers import JSONRenderer
 from django.template.loader import render_to_string
+
 from django.db.models import Q
-from django.conf import settings
 
 from interaction.models import ResidueFragmentInteraction
 from mutation.models import MutationRaw
@@ -60,13 +60,12 @@ class ProteinByAccessionDetail(ProteinDetail):
 class ReceptorList(generics.ListAPIView):
 
     """
-    Get a list of receptor proteins
+    Get a list of all receptor proteins in GPCRdb (source: SWISSPROT)
     \n/receptorlist/
     """
 
-    queryset = Protein.objects.filter(accession__isnull=False, parent__isnull=True, family__slug__startswith='001').prefetch_related('family','endogenous_ligands')
+    queryset = Protein.objects.filter(accession__isnull=False, parent__isnull=True, family__slug__startswith="00", source__name="SWISSPROT").prefetch_related('family','endogenous_ligands')
     serializer_class = ReceptorListSerializer
-
 
 class ProteinFamilyList(generics.ListAPIView):
 
