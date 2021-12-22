@@ -227,7 +227,7 @@
                         <td><span><a target='_blank' href="http://www.uniprot.org/uniprot/{{ structure.protein_conformation.protein.parent.accession }}">{{ structure.protein_conformation.protein.parent.entry_short|safe }}</a></span></td>
                         <td class='uniprot'><a target='_blank' href="/protein/{{ structure.protein_conformation.protein.parent.entry_name }}">{{ structure.protein_conformation.protein.parent.short|safe }}</a></td>
                         <td class="expand"><span>{{ structure.protein_conformation.protein.family.parent.short|safe }}</span></td>
-                        <td class="expand" style="max-width: 30px;"><span>{{ structure.protein_conformation.protein.family.parent.parent.parent.short|safe }}</span></td>
+                        <td class="expand" style="max-width: 30px;">{{ structure.protein_conformation.protein.family.parent.parent.parent.shorter|safe }}</td>
                         <td class="expand">{{ structure.protein_conformation.protein.species.common_name }}</td>
                         <!-- Structure -->
                         <td>
