@@ -27,6 +27,10 @@ from common.models import ReleaseNotes
 from common.alignment import Alignment, GProteinAlignment
 from residue.models import Residue
 
+import io
+import numpy as np
+from Bio.PDB.vectors import Vector, rotmat
+
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 import inspect
@@ -518,7 +522,7 @@ def StructureDetails(request, pdbname):
 	return render(request,'structure_details.html',{'pdbname': pdbname, 'structures': structures, 'crystal': crystal, 'protein':p, 'residues':residues, 'annotated_resn': resn_list, 'main_ligand': main_ligand, 'ligands': ligands, 'translation': translation, 'center_axis': center_axis, 'gn_list': gn_list, 'ref_tm1': ref_tm1, 'signaling_complex': signaling_complex})
 
 def ServePdbDiagram(request, pdbname):
-	structure=Structure.objects.filter(pdb_code__index=pdbname)
+	structure=Structure.objects.filter(pdb_code__index=pdbname.upper())
 	if structure.exists():
 		structure=structure.get()
 	else:
@@ -530,6 +534,69 @@ def ServePdbDiagram(request, pdbname):
 	response = HttpResponse(structure.pdb_data.pdb, content_type='text/plain')
 	return response
 
+
+def ServeUprightPdbDiagram(request, pdbname):
+	structure = Structure.objects.filter(pdb_code__index=pdbname.upper())
+	if structure.exists():
+		structure = structure.get()
+	else:
+		 quit() #quit!
+
+	if structure.pdb_data is None:
+		quit()
+
+	sv = StructureVectors.objects.filter(structure=structure)
+	struct = translation = center_axis = ""
+	if sv.exists():
+		sv = sv.get()
+		translation = json.loads(sv.translation)
+		center_axis = json.loads(sv.center_axis)
+
+	# Load structure
+	parser = PDBParser(QUIET=True)
+	with io.StringIO(structure.pdb_data.pdb) as f:
+		struct = parser.get_structure(structure.pdb_code.index, f)
+
+	# Neutral references
+	translation_neutral = np.array((0, 0, 0), 'f')
+	qn_neutral = rotmat(Vector(0, 1, 0), Vector(0, 1, 0))
+
+	# Calculate translation
+	translation_matrix = np.array((translation[0], translation[1], translation[2]), 'f')
+
+	# Calculate rotation
+	v1 = Vector(0, 1, 0)
+	v2 = Vector(center_axis[0], center_axis[1], center_axis[2])
+	v3 = Vector(-1, 0, 0)
+	qn_upright = rotmat(v1, v2)
+
+	# Calculate rotation around axis (TM1 placement)
+	ref_tm1 = Residue.objects.filter(protein_conformation=structure.protein_conformation, generic_number_id__label="1x46")
+	if ref_tm1.count() > 0:
+		ref_tm1 = ref_tm1.first().sequence_number
+		tm1_coord = struct[0][structure.preferred_chain][ref_tm1]["CA"].get_vector()
+		ref_vector = Vector(tm1_coord[0], 0, tm1_coord[2]) #height position doesn't matter
+		ref_vector = ref_vector.normalized()
+		qn_axis = rotmat(ref_vector, v3)
+
+
+	# Apply transformations
+	for atom in struct.get_atoms():
+		# First apply translation before rotation
+		atom.transform(qn_neutral, translation_matrix)
+		# Second rotate - calculate rotation and apply
+		atom.transform(qn_upright, translation_neutral)
+		# Finally, rotate around axis to place helices correctly
+		atom.transform(qn_axis, translation_neutral)
+
+	# Save PDB transformed structure
+	out_stream = StringIO()
+	pdb_out = PDBIO()
+	pdb_out.set_structure(struct)
+	pdb_out.save(out_stream)
+
+	# Send as response
+	return HttpResponse(out_stream.getvalue(), content_type='chemical/x-pdb')
 
 def ServePdbLigandDiagram(request,pdbname,ligand):
 	pair = StructureLigandInteraction.objects.filter(structure__pdb_code__index=pdbname).filter(Q(ligand__properities__inchikey=ligand) | Q(ligand__name=ligand)).exclude(pdb_file__isnull=True).get()
