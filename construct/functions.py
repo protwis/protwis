@@ -1234,21 +1234,22 @@ def add_construct(d):
 
     #DELETIONS
     insert_deletions = {}
-    for deletion in d['deletions']:
-        # if a 'deletion' is a single type and of non-user origin, assume its an insert and the pos is not actually deleted (3odu)
-        dele = False
-        if 'start' in deletion:
-            dele, created = ConstructDeletion.objects.get_or_create(construct=construct, start=deletion['start'],end=deletion['end'])
-        else:
-            if deletion['origin']=='user':
-                dele, created = ConstructDeletion.objects.get_or_create(construct=construct, start=deletion['pos'],end=deletion['pos'])
-        # if dele:
-        #     construct.deletions.add(dele)
-        if deletion['origin']!='user':
-            id = deletion['origin'].split('_')[1]
-            if id in ip_lookup:
-                id = ip_lookup[id]
-            insert_deletions[id] = deletion
+    if 'deletions' in d:
+        for deletion in d['deletions']:
+            # if a 'deletion' is a single type and of non-user origin, assume its an insert and the pos is not actually deleted (3odu)
+            dele = False
+            if 'start' in deletion:
+                dele, created = ConstructDeletion.objects.get_or_create(construct=construct, start=deletion['start'],end=deletion['end'])
+            else:
+                if deletion['origin']=='user':
+                    dele, created = ConstructDeletion.objects.get_or_create(construct=construct, start=deletion['pos'],end=deletion['pos'])
+            # if dele:
+            #     construct.deletions.add(dele)
+            if deletion['origin']!='user':
+                id = deletion['origin'].split('_')[1]
+                if id in ip_lookup:
+                    id = ip_lookup[id]
+                insert_deletions[id] = deletion
 
 
 
@@ -1275,17 +1276,17 @@ def add_construct(d):
         # construct.insertions.add(insert)
 
     #MODIFICATIONS
-    for modification in d['modifications']:
-        mod, created = ConstructModification.objects.get_or_create(construct=construct, modification=modification['type'],position_type=modification['position'][0],
-                                                   pos_start=modification['position'][1][0],
-                                                   pos_end=modification['position'][1][1],remark=modification['remark'] )
-        # construct.modifications.add(mod)
+    if 'modifications' in d:
+        for modification in d['modifications']:
+            mod, created = ConstructModification.objects.get_or_create(construct=construct, modification=modification['type'],position_type=modification['position'][0],
+                                                       pos_start=modification['position'][1][0],
+                                                       pos_end=modification['position'][1][1],remark=modification['remark'] )
+            # construct.modifications.add(mod)
 
 
     #EXPRESSION
     if 'expression' in d:
         if 'expr_method' in d['expression']:
-
             if 'expr_remark' not in d['expression']:
                 d['expression']['expr_remark'] = ''
 
