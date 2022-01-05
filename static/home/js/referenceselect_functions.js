@@ -266,42 +266,6 @@ function submitSelection(url, minimum = 1) {
 }
 
 /**
- * This function submits the selected targets to the backend and moves to the
- * next page. This function should be executed upon pressing the green button
- * after target selection.
- * @param {string} url The url to go to after synchronizing the target selection
- */
-function onTheFlySelection(url, subtype=false, pathway=false, minimum = 1) {
-  // console.log(selected_targets);
-  console.log(subtype);
-  console.log(pathway);
-  console.log(selectedTargets);
-  if (selectedTargets.size >= minimum) {
-    // set CSRF csrf_token
-    $.ajaxSetup({
-        headers:
-        { "X-CSRF-TOKEN": $("meta[name=\"csrf-token\"]").attr("content") }
-    });
-
-    // Submit proteins to target selection
-    var group = Array.from(selectedTargets);
-    console.log(group);
-    console.log(url);
-    $.post("/common/referenceformread", { "input-targets": group.join("\r"), "subtype": subtype, "pathway": pathway  },
-      function (data) {
-      // On success go to url page
-      window.location.href = url;
-    })
-    .fail(
-      function(){
-        showAlert("Something went wrong, please try again or contact us.", "danger");
-      });
-  } else {
-      showAlert("Please select a target.", "warning");
-    }
-}
-
-/**
  * This function initializes the YADCF datatables for a specific element
  * @param {string} elementID The identifier of the container containing the table
  */

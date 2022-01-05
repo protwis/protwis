@@ -2174,13 +2174,10 @@ def ReadReferenceInput(request):
 
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
-    print(simple_selection)
-    print(request)
     # create full selection and import simple selection (if it exists)
     selection = Selection()
     if simple_selection:
         selection.importer(simple_selection)
-    print(selection)
     selection_type = 'reference'
     selection_subtype = 'protein'
 
