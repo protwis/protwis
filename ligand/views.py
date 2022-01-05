@@ -10,7 +10,7 @@ from collections import defaultdict, OrderedDict
 
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
-from django.views.generic import TemplateView, DetailView, ListView
+from django.views.generic import TemplateView, DetailView
 
 from django.db.models import Count, Subquery, OuterRef
 from django.views.decorators.csrf import csrf_exempt
@@ -18,7 +18,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core.cache import cache
 
 from common.views import AbsTargetSelectionTable, Alignment, AbsReferenceSelectionTable, getReferenceTable
-from common.models import ReleaseNotes, WebLink, WebResource, Publication
+from common.models import ReleaseNotes, WebResource, Publication
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
 from ligand.models import Ligand, LigandVendorLink, LigandVendors, AnalyzedExperiment, AnalyzedAssay, BiasedPathways, AssayExperiment, BiasedData, Endogenous_GTP
@@ -1790,7 +1790,6 @@ def CachedOTFBiasBrowsers(browser_type, request):
     protein_ids = []
     try:
         simple_selection = request.session.get('selection', False)
-        families = []
         for target in simple_selection.reference:
             protein_ids.append(target.item)
     except:
@@ -1866,7 +1865,7 @@ class OTFBiasBrowser(TemplateView):
 
         for pub in data:
             ligands = {}
-            slice = pd.DataFrame()
+            data_subset = pd.DataFrame()
             for key in data[pub]:
                 if 'Pathway Rank' in data[pub][key].keys():
                     if data[pub][key]['ligand_id'] not in ligands.keys():
@@ -1892,15 +1891,15 @@ class OTFBiasBrowser(TemplateView):
                 if 'Reference_ligand' in data[pub][key].keys():
                     Reference_ligand = data[pub][key]['Reference_ligand']
             for drug in ligands:
-                slice = slice.append(ligands[drug], ignore_index=True)
-            slice['Class'] = receptor_info[0][0]
-            slice['Receptor family'] = receptor_info[0][1].strip('receptors')
-            slice['UniProt'] = receptor_info[0][2].split('_')[0].upper()
-            slice['IUPHAR'] = receptor_info[0][3]
+                data_subset = data_subset.append(ligands[drug], ignore_index=True)
+            data_subset['Class'] = receptor_info[0][0]
+            data_subset['Receptor family'] = receptor_info[0][1].strip('receptors')
+            data_subset['UniProt'] = receptor_info[0][2].split('_')[0].upper()
+            data_subset['IUPHAR'] = receptor_info[0][3]
             if not self.pathway:
-                slice['Reference ligand'] = Reference_ligand
+                data_subset['Reference ligand'] = Reference_ligand
 
-            table = table.append(slice, ignore_index=True)
+            table = table.append(data_subset, ignore_index=True)
 
         table.fillna('', inplace=True)
         context = dict()

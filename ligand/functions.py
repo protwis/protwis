@@ -1,10 +1,11 @@
+#mccabe complexity: ["error", 31]
 import math
 
 from django.utils.text import slugify
 from django.db import IntegrityError
 
 #from chembl_webresource_client import new_client
-from common.models import WebLink, WebResource, Publication
+from common.models import WebResource, Publication
 from ligand.models import Ligand, LigandType, LigandProperities, BiasedData, Endogenous_GTP
 
 def get_or_make_ligand(ligand_id, type_id, name = None, pep_or_prot = None):
@@ -295,14 +296,19 @@ def find_best_subtype(comparisons, reference, tested):
 
         if reference[ref]['primary_effector_family'] not in families.keys():
             #adding new family and values
-            families[reference[ref]['primary_effector_family']] = [r_logemaxec50, ref]
+            families[reference[ref]['primary_effector_family']] = [r_logemaxec50, r_logtauka, ref]
         else:
             #updating with most relevant subtype
-            if r_logemaxec50 > families[reference[ref]['primary_effector_family']][0]:
-                families[reference[ref]['primary_effector_family']] = [r_logemaxec50, ref]
-                for test in comparisons[families[reference[ref]['primary_effector_family']][1]]:
+            if r_logtauka > families[reference[ref]['primary_effector_family']][1]:
+                families[reference[ref]['primary_effector_family']] = [r_logemaxec50, r_logtauka, ref]
+                for test in comparisons[families[reference[ref]['primary_effector_family']][2]]:
                     del tested[test]
-                del comparisons[families[reference[ref]['primary_effector_family']][1]]
+                del comparisons[families[reference[ref]['primary_effector_family']][2]]
+            elif r_logemaxec50 > families[reference[ref]['primary_effector_family']][0]:
+                families[reference[ref]['primary_effector_family']] = [r_logemaxec50, r_logtauka, ref]
+                for test in comparisons[families[reference[ref]['primary_effector_family']][2]]:
+                    del tested[test]
+                del comparisons[families[reference[ref]['primary_effector_family']][2]]
             else:
                 for test in comparisons[ref]:
                     del tested[test]
@@ -410,24 +416,24 @@ def assess_pathway_preferences(comparisons, tested, subtype=False, pathway=False
             pathway_preference[tested[test]['ligand_id']][path_label] = [Tau_KA, Emax_EC50]
 
     #ranking accordingly to ∆Tau/KA or ∆Emax/EC50 (depending on how many missing values are)
-    for id in pathway_preference.keys():
+    for val in pathway_preference.keys():
         temp = []
-        none_tau = len([pathway_preference[id][key][0] for key in pathway_preference[id] if pathway_preference[id][key][0] is None])
-        none_emax = len([pathway_preference[id][key][1] for key in pathway_preference[id] if pathway_preference[id][key][1] is None])
+        none_tau = len([pathway_preference[val][key][0] for key in pathway_preference[val] if pathway_preference[val][key][0] is None])
+        none_emax = len([pathway_preference[val][key][1] for key in pathway_preference[val] if pathway_preference[val][key][1] is None])
         if none_tau <= none_emax:
-            pathway_preference[id] = list(dict(sorted(pathway_preference[id].items(), key=lambda item: -1000 if (item[1][0] == 'No activity' or item[1][0] == None or item[1][0] == 'Inverse agonism/antagonism') else item[1][0], reverse=True)).keys())
+            pathway_preference[val] = list(dict(sorted(pathway_preference[val].items(), key=lambda item: -1000 if (item[1][0] == 'No activity' or item[1][0] == None or item[1][0] == 'Inverse agonism/antagonism') else item[1][0], reverse=True)).keys())
         else:
-            pathway_preference[id] = list(dict(sorted(pathway_preference[id].items(), key=lambda item: -1000 if (item[1][1] == 'No activity' or item[1][1] == None or item[1][1] == 'Inverse agonism/antagonism') else item[1][1], reverse=True)).keys())
+            pathway_preference[val] = list(dict(sorted(pathway_preference[val].items(), key=lambda item: -1000 if (item[1][1] == 'No activity' or item[1][1] == None or item[1][1] == 'Inverse agonism/antagonism') else item[1][1], reverse=True)).keys())
     #provide ranked keys
-        for path in pathway_preference[id]:
+        for path in pathway_preference[val]:
             if subtype:
                 if path.split(' - ')[1] == 'None':
-                    temp.append([key for key in tested.keys() if (tested[key]['ligand_id'] == id and tested[key]['primary_effector_family'] == path.split(' - ')[0] and tested[key]['primary_effector_subtype'] ==  None)][0])
+                    temp.append([key for key in tested.keys() if (tested[key]['ligand_id'] == val and tested[key]['primary_effector_family'] == path.split(' - ')[0] and tested[key]['primary_effector_subtype'] ==  None)][0])
                 else:
-                    temp.append([key for key in tested.keys() if (tested[key]['ligand_id'] == id and tested[key]['primary_effector_family'] == path.split(' - ')[0] and tested[key]['primary_effector_subtype'] == path.split(' - ')[1])][0])
+                    temp.append([key for key in tested.keys() if (tested[key]['ligand_id'] == val and tested[key]['primary_effector_family'] == path.split(' - ')[0] and tested[key]['primary_effector_subtype'] == path.split(' - ')[1])][0])
             else:
-                temp.append([key for key in tested.keys() if (tested[key]['ligand_id'] == id and tested[key]['primary_effector_family'] == path)][0])
-        pathway_preference[id] = temp
+                temp.append([key for key in tested.keys() if (tested[key]['ligand_id'] == val and tested[key]['primary_effector_family'] == path)][0])
+        pathway_preference[val] = temp
     return pathway_preference
 
 def define_ligand_pathways(master):
