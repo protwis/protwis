@@ -3,6 +3,11 @@
 /*eslint wrap-iife: ["error", "outside"]*/
 /*eslint quotes: ["error", "double", { "avoidEscape": true }]*/
 
+function hideColumns(table, columns) {
+  table.columns(columns).visible(false, true);
+  table.draw();
+}
+
 function resetHiddenColumns(table) {
   let col_length = table.columns()[0].length;
   let columns = Array.from(new Array(col_length - 1), (x, i) => i);

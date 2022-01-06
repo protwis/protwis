@@ -2,6 +2,7 @@ import hashlib
 import itertools
 import json
 import re
+import time
 import pandas as pd
 
 from random import SystemRandom
@@ -545,6 +546,16 @@ class RankOrderSelection(AbsReferenceSelectionTable):
             "modal": "biased",
             "color": 'default active',
             "sameSize": True,
+        },
+        'dot_plot_test': {
+            'label': 'DotPlot Test (OnTheFly)',
+            'onclick': "submitSelection('/ligand/test_emax_rankorder');",
+            'color': 'warning',
+        },
+        'multiline_test': {
+            'label': 'Multiline Test (OnTheFly)',
+            'onclick': "submitSelection('/ligand/test_emax_path_profiles');",
+            'color': 'warning',
         },
     }
 
@@ -1308,6 +1319,466 @@ class BiasedRankOrder(TemplateView):
         context['full_ligands'] = json.dumps(full_ligands)
         return context
 
+class BiasedRankOrderOnTheFly(TemplateView):
+    #set a global variable for different pages
+    page = "rankorder"
+    label = "emax"
+    template_name = "test_biased_rank_orders.html"
+    subtype = False
+    pathway = False
+    source = "different_family" #to be removed
+    assay = "tested_assays"     #to be removed
+
+    @staticmethod
+    def jitter_tooltip(page, assay, ligand, value, headers, prefix='', small_data=None, large_data=None, small_ref=None):
+        #small and large data has to structured
+        #small --> pathway/value/value
+        #large --> pathway1/delta/value/value pathway2/delta/value/value
+        ref_small = ''
+        small = ''
+        large = ''
+        head = "<b>Compound Name:</b> " + str(ligand) + \
+               "<br><b>Plotted Value:</b> " + str(value) + \
+               "<hr class='solid'>"
+        if small_data:
+            #small table to show reference ligand or single datapoint
+            small =  "<table>" + \
+                     "      <tr>" + \
+                     "        <th>" + str(small_data[3]) + "</th>" + \
+                     "        <th>" + headers[0] + "</th>" + \
+                     "        <th>" + headers[1] + "</th>" + \
+                     "      </tr>" + \
+                     "      <tr>" + \
+                     "        <td>" + str(small_data[0]) + "</td>" + \
+                     "        <td>" + str(small_data[1]) + "</td>" + \
+                     "        <td>" + str(small_data[2]) + "</td>" + \
+                     "      </tr>" + \
+                     "</table>" + \
+                     "<hr class='solid'>"
+        if small_ref:
+            #small table to show reference ligand or single datapoint
+            ref_small =  "<table>" + \
+                         "      <tr>" + \
+                         "        <th>" + str(small_ref[3]) + "</th>" + \
+                         "        <th>" + headers[0] + "</th>" + \
+                         "        <th>" + headers[1] + "</th>" + \
+                         "      </tr>" + \
+                         "      <tr>" + \
+                         "        <td>" + str(small_ref[0]) + "</td>" + \
+                         "        <td>" + str(small_ref[1]) + "</td>" + \
+                         "        <td>" + str(small_ref[2]) + "</td>" + \
+                         "      </tr>" + \
+                         "</table>"
+        if large_data:
+            #large table showing also Δ data
+            large =  "<table>" + \
+                     "      <tr>" + \
+                     "        <th>" + str(ligand) + "</th>" + \
+                     "        <th>" + prefix + "Log(" + headers[0] + "/" + headers[1] + ") </th>" + \
+                     "        <th>" + headers[0] + "</th>" + \
+                     "        <th>" + headers[1] + "</th>" + \
+                     "      </tr>" + \
+                     "      <tr>" + \
+                     "        <td>" + str(large_data[0]) + "</td>" + \
+                     "        <td>" + str(large_data[1]) + "</td>" + \
+                     "        <td>" + str(large_data[2]) + "</td>" + \
+                     "        <td>" + str(large_data[3]) + "</td>" + \
+                     "      </tr>" + \
+                     "      <tr>" + \
+                     "        <td>" + str(large_data[4]) + "</td>" + \
+                     "        <td>" + str(large_data[5]) + "</td>" + \
+                     "        <td>" + str(large_data[6]) + "</td>" + \
+                     "        <td>" + str(large_data[7]) + "</td>" + \
+                     "      </tr>" + \
+                     "</table>" + \
+                     "<hr class='solid'>"
+
+        if assay == "predicted_tested_assays":
+            #no reference values
+            if page == "rankorder":
+                tip = head + large
+                #dot plots without reference values
+            else:
+                tip = head + small
+                #line charts without reference values
+        else:
+            #reference values required
+            if page == "rankorder":
+                tip = head + large + small
+                #dot plots with reference values
+            else:
+                tip = head + small + ref_small
+                #line chart wtih reference values
+        return tip
+        #line charts with reference values
+
+    @staticmethod
+    def create_rgb_color(): #, name, power): # pseudo-randomization function
+        cryptogen = SystemRandom()          # added cryptography random number creation
+        output = cryptogen.randrange(0,225) # 225 instead of 255 to avoid all very pale colors
+        return output
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        simple_selection = self.request.session.get('selection', False)
+        #I know it's a for cycle, but it should be just one element
+        #since it's coming from a reference
+        for item in simple_selection.reference:
+            receptor = item.item
+
+        upgrade_value = ["High activity", "High activity (Potency and Emax)", "Full agonism"]
+        downgrade_value = ["Low activity", "No activity", "Inverse agonism/antagonism"]
+        exclude_list = ["Agonism", "Partial agonism", "Medium activity"] #full agonism should be removed
+
+        tooltip_dict =  {'G12/13': 'G<sub>12/13</sub>',
+                         'Gi/o': 'G<sub>i/o</sub>',
+                         'Gq/11': 'G<sub>q/11</sub>',
+                         'Gs': 'G<sub>s</sub>'}
+
+        sign_prot_conversion = {'-' : 'None',
+                                'arrestin-2 (b-arrestin-1)': 'Arrestin 2 (&beta;<sub>1</sub>)',
+                                'arrestin-3 (b-arrestin-2)': 'Arrestin 3 (&beta;<sub>2</sub>)',
+                                'g11': 'G<sub>11</sub>',
+                                'g12': 'G<sub>12</sub>',
+                                'g13': 'G<sub>13</sub>',
+                                'g14': 'G<sub>14</sub>',
+                                'g15': 'G<sub>15</sub>',
+                                'g16': 'G<sub>16</sub>',
+                                'gaqi5': 'G&alpha;qi5',
+                                'gaqδ6i4myr': 'G&alpha;qδ6i4myr',
+                                'gi1': 'G<sub>i1</sub>',
+                                'gi2': 'G<sub>i2</sub>',
+                                'gi3': 'G<sub>i3</sub>',
+                                'goa': 'G<sub>o&alpha;</sub>',
+                                'gob': 'G<sub>o&beta;</sub>',
+                                'golf': 'G<sub>olfactory</sub>',
+                                'gq': 'G<sub>q</sub>',
+                                'gs': 'G<sub>s</sub>',
+                                'gz': 'G<sub>z</sub>',
+                                'minigi': 'Mini-G'}
+
+        if self.pathway:
+            prefix = ''
+        else:
+            prefix = 'Δ'
+        start = time.time()
+        data = OnTheFly(receptor, self.subtype, self.pathway)
+        end = time.time() - start
+        print(end)
+        #### added code
+        flat_data = {}
+        for key, value in data.items():
+            for row_key, data_dict in value.items():
+                flat_data[row_key] = data_dict
+        ####
+        rec_name = list(Protein.objects.filter(id=receptor).values_list('entry_name','name'))
+
+        publications = list(AnalyzedAssay.objects.filter(
+                        family__isnull=False,
+                        experiment__receptor=receptor,
+                        assay_description=self.assay,
+                        experiment__source=self.source).exclude(
+                        qualitative_activity__in=exclude_list,
+                        ).values_list(
+                        "family", #pathway                                              0
+                        "experiment__ligand__name", #name                               1
+                        "experiment__publication__web_link__index", # DOI               2
+                        "experiment__publication__year", #year                          3
+                        "experiment__publication__journal__name", #journal              4
+                        "experiment__publication__authors",  #authors                   5
+                        "experiment__ligand",    #ligand_id for hash                    6
+                        "experiment__endogenous_ligand__name", #endogenous              7
+                        "qualitative_activity",  #activity values                       8
+                        "log_bias_factor_a", #ΔLog(Emax/EC50)                           9
+                        "log_bias_factor",  #ΔΔLog(Emax/EC50)                           10
+                        "order_no",         #ranking                                    11
+                        "t_coefficient",    #ΔLog(TAU/Ka)                               12
+                        "t_factor",         #ΔΔLog(TAU/Ka)                              13
+                        "quantitive_activity",   #EC 50                                 14
+                        "quantitive_efficacy",   #Emax                                  15
+                        "reference_assay_initial_id__quantitive_activity", #            16 EC 50 compared drug
+                        "reference_assay_initial_id__quantitive_efficacy", #            17 Emax compared drug
+                        "reference_assay_initial_id__family", # Pathway compared drug   18
+                        "reference_assay_initial_id__biased_experiment__ligand__name", #19 Name compared drug
+                        "signalling_protein",   #subtype                                20
+                        "reference_assay_initial_id__signalling_protein", #             21 Compared signalling protein
+                        ).distinct()) #check
+
+        list_of_ligands = []
+        list_of_publications = []
+        full_data = {}
+        full_ligands = {}
+        SpiderOptions = {}
+        jitterDict = {}
+        jitterPlot = {}
+        jitterLegend = {}
+        Colors = {}
+        pathway_nr = {}
+        labels_dict = {}
+        import pdb; pdb.set_trace()
+        for result in publications:
+            if self.assay == 'sub_tested_assays':
+                reference_path = sign_prot_conversion[result[21]]
+            else:
+                try:
+                    reference_path = tooltip_dict[result[18]]
+                except KeyError:
+                    reference_path = result[18]
+
+            #checking the value to plot
+            #based on the landing page
+            if self.label == 'emax':
+                single_delta = result[9]
+                double_delta = result[10]
+                emax_tau = result[15]
+                EC50_ka = result[14]
+                components = ['Emax', 'EC50']
+                reference_emax_tau = result[17]
+                reference_EC50_ka = result[16]
+            else:
+                single_delta = result[12]
+                double_delta = result[13]
+                emax_tau = "NA" #need to be updated IF datacolumn for TAU will be added
+                EC50_ka = "NA"  #need to be updated IF datacolumn for KA will be added
+                components = ['Tau', 'KA']
+                reference_emax_tau = "NA" #need to be updated IF datacolumn for TAU will be added
+                reference_EC50_ka = "NA"  #need to be updated IF datacolumn for KA will be added
+
+            #fixing ligand name (hash hash baby)
+            lig_name = result[1]
+            if result[1][0].isdigit():
+                lig_name = "Ligand-"+result[1]
+
+            hashed_lig_name = 'L' + hashlib.md5((str(result[6])).encode('utf-8')).hexdigest()
+            # replace second white space with closing and opening tspan for svg
+            journal_name = result[4]
+            if result[4]:
+                if ' ' in result[4]:
+                    journal_name  = re.sub(r'(\s\S*?)\s', r'\1 closeTS openTS ', result[4])
+            else:
+                journal_name = "Not listed"
+            if result[5] == None:
+                authors = "Authors not listed, (" + str(result[3]) + ')'
+                shortAuthors = "Authors not listed, (" + str(result[3]) + ')'
+                jitterAuthors = 'openTS ' + shortAuthors + ' closeTS openTS ' + journal_name + ' closeTS openTS (' + str(result[3]) + ') closeTS'
+                labels_dict[jitterAuthors] = shortAuthors
+            else:
+                authors = result[5].split(',')[0] + ', et al., ' + str(result[4]) + ', (' + str(result[3]) + ')'
+                shortAuthors = result[5].split(',')[0] + ', et al.'
+                jitterAuthors = 'openTS ' + shortAuthors + ' closeTS openTS ' + journal_name + ' closeTS openTS (' + str(result[3]) + ') closeTS'
+                labels_dict[jitterAuthors] = shortAuthors
+
+            list_of_ligands.append(tuple((hashed_lig_name, lig_name)))
+            list_of_publications.append(authors)
+            #start parsing the data to create the big dictionary
+            if single_delta == None:               #∆Emax / ∆Tau flex
+                value = 0
+            else:
+                value = float(single_delta)
+
+            if result[0] not in jitterPlot.keys():
+                jitterLegend[result[0]] = []
+                jitterPlot[result[0]] = []
+
+            if jitterAuthors not in jitterDict.keys():
+                jitterDict[jitterAuthors] =  {}
+
+            if lig_name not in jitterDict[jitterAuthors].keys():
+                jitterDict[jitterAuthors][lig_name] = {}
+
+            try:
+                DD = [float(double_delta), "REAL"]
+            except (ValueError, TypeError):
+                DD = [0, double_delta]
+
+            if result[11] == 1:
+                try:
+                    jitterDict[jitterAuthors][lig_name]['2nd_Pathway'] = tooltip_dict[result[0]]
+                    jitterDict[jitterAuthors][lig_name]['2nd_Pathway_delta'] = value
+                    jitterDict[jitterAuthors][lig_name]['2nd_Pathway_emax_tau'] = emax_tau
+                    jitterDict[jitterAuthors][lig_name]['2nd_Pathway_EC50_KA'] = EC50_ka
+                except KeyError:
+                    jitterDict[jitterAuthors][lig_name]['2nd_Pathway'] = result[0]
+                    jitterDict[jitterAuthors][lig_name]['2nd_Pathway_delta'] = value
+                    jitterDict[jitterAuthors][lig_name]['2nd_Pathway_emax_tau'] = emax_tau
+                    jitterDict[jitterAuthors][lig_name]['2nd_Pathway_EC50_KA'] = EC50_ka
+                jitterDict[jitterAuthors][lig_name]['deltadelta'] = DD
+                jitterDict[jitterAuthors][lig_name]['signalling_prot'] = result[20]
+
+            if result[11] == 0:
+                jitterDict[jitterAuthors][lig_name]["Pathway"] = result[0]
+                jitterDict[jitterAuthors][lig_name]["delta"] = value
+                jitterDict[jitterAuthors][lig_name]["Emax_Tau"] = emax_tau
+                jitterDict[jitterAuthors][lig_name]["EC50_KA"] = EC50_ka
+
+            tooltip_info = BiasedRankOrder.jitter_tooltip(self.page, self.assay, lig_name, value, components,
+                                                          small_data=[result[0], emax_tau, EC50_ka, lig_name],
+                                                          small_ref=[result[18], reference_emax_tau, reference_EC50_ka, result[19]])
+
+            # initialization of the dictionary for new publication
+            if result[2] not in full_data.keys():
+                full_ligands[result[2]] = []
+                full_data[result[2]] = {"Authors": authors,
+                                        "Journal": result[4],
+                                        "Year": result[3],
+                                        "Endogenous": result[7],
+                                        "Ligand": [lig_name],
+                                        "Qualitative": [result[8]],
+                                        "Data": [{"name": hashed_lig_name,
+                                                 "PathwaysData":
+                                                    [{"Pathway": result[0],
+                                                      "value": [value, "REAL"],
+                                                      "tooltip": tooltip_info}]}]}
+                SpiderOptions[authors] = {}
+                SpiderOptions[authors][hashed_lig_name] = {"Data":[[{'axis':result[0],
+                                                                     'value':value}]],
+                                                             "Options": {'levels': 4,
+                                                                         'maxValue': 4,
+                                                                         'roundStrokes': False,
+                                                                         'title': lig_name}}
+            #new ligand pushed into existing publication
+            if hashed_lig_name not in [d['name'] for d in full_data[result[2]]["Data"]]:
+                full_data[result[2]]["Ligand"].append(lig_name)
+                full_data[result[2]]["Qualitative"].append(result[8])
+                full_data[result[2]]["Data"].append(
+                                            {"name": hashed_lig_name,
+                                             "PathwaysData":
+                                                [{"Pathway": result[0],
+                                                  "value": [value,"REAL"],
+                                                  "tooltip": tooltip_info}]})
+
+                SpiderOptions[authors][hashed_lig_name] = {"Data":[[{'axis':result[0],
+                                                                     'value':value}]],
+                                                             "Options": {'levels': 4,
+                                                                         'maxValue': 4,
+                                                                         'roundStrokes': False,
+                                                                         'title': lig_name}}
+            else:
+                ID = [d['name'] for d in full_data[result[2]]["Data"]].index(hashed_lig_name)
+                if result[0] not in [d["Pathway"] for d in full_data[result[2]]["Data"][ID]["PathwaysData"]]:
+                    full_data[result[2]]["Data"][ID]["PathwaysData"].append(
+                                            {"Pathway": result[0],
+                                             "value": [value, "REAL"],
+                                             "tooltip": tooltip_info})
+                    SpiderOptions[authors][hashed_lig_name]["Data"][0].append({'axis':result[0],
+                                                                               'value':value})
+
+        for item in full_data.keys():
+            vals = []
+            for name in full_data[item]["Data"]:
+                to_fix = [subdict['value'][0] for subdict in name['PathwaysData']]
+                vals = vals + to_fix
+            MIN = min(vals) - 1
+            MAX = max(vals) + 1
+            for name in full_data[item]["Data"]:
+                to_fix = [subdict['value'][0] for subdict in name['PathwaysData']]
+                indices = [i for i, x in enumerate(to_fix) if x == 0]
+                quality = full_data[item]["Qualitative"][full_data[item]["Data"].index(name)]
+                if quality in upgrade_value:
+                    try:
+                        for i in indices:
+                            name["PathwaysData"][i]["value"] = [MAX,"ARTIFICIAL"]
+                            name["PathwaysData"][i]["tooltip"] = BiasedRankOrder.jitter_tooltip(self.page, self.assay, lig_name, value, components,
+                                                                                                small_data=[result[0], emax_tau, 'High', lig_name],
+                                                                                                small_ref=[result[18], reference_emax_tau, reference_EC50_ka, result[19]])
+                    except ValueError:
+                        continue
+                if quality in downgrade_value:
+                    try:
+                        for i in indices:
+                            name["PathwaysData"][i]["value"] = [MIN,"ARTIFICIAL"]
+                            name["PathwaysData"][i]["tooltip"] = BiasedRankOrder.jitter_tooltip(self.page, self.assay, lig_name, value, components,
+                                                                                                small_data=[result[0], emax_tau, 'Low', lig_name],
+                                                                                                small_ref=[result[18], reference_emax_tau, reference_EC50_ka, result[19]])
+                    except ValueError:
+                        continue
+
+        #The big dictionary is created, now it needs to be ordered
+        #the publication with more pathway (or tied) should be first
+
+        #From this, reorder the original one
+        for key in full_data.keys():
+            for item in full_data[key]["Data"]:
+                if len(item['PathwaysData']) not in pathway_nr.keys():
+                    pathway_nr[len(item['PathwaysData'])] = []
+                pathway_nr[len(item['PathwaysData'])].append(tuple((key, len(full_data[key]["Data"]))))
+        #get the number of pathways available
+        keys = sorted(list(pathway_nr.keys()))[::-1]
+        #starting from the highest value
+        sorted_full_data = {}
+        for value in keys:
+            pairs = sorted(list(set(pathway_nr[value])), key=lambda x: x[1], reverse=True)
+            for item in pairs:
+                sorted_full_data[item[0]] = deepcopy(full_data[item[0]])
+                # test_data[item[0]] = deepcopy(full_data[item[0]])
+                max_values = []
+                for name in full_data[item[0]]['Data']:
+                    max_values.append(tuple((full_data[item[0]]['Data'].index(name), max([subdict['value'] for subdict in name['PathwaysData']]), name['name'])))
+                max_values = sorted(max_values, key=lambda x: x[1], reverse=True)
+                sorted_full_data[item[0]]["Data"] = [] #need to be sorted_full_data
+                for couple in max_values:
+                    sorted_full_data[item[0]]["Data"].append(full_data[item[0]]["Data"][couple[0]]) #need to be sorted_full_data
+                    if tuple((couple[2], full_data[item[0]]["Ligand"][couple[0]])) not in full_ligands[item[0]]:
+                        full_ligands[item[0]].append(tuple((couple[2], full_data[item[0]]["Ligand"][couple[0]])))
+
+        #now the sorted dict is done, we can clear cache the og one
+        del full_data
+
+        for pub in jitterDict.keys():
+            for ligand in jitterDict[pub]:
+                try:
+                    if ligand not in Colors.keys():
+                        color = '#%02x%02x%02x' % (BiasedRankOrder.create_rgb_color(), BiasedRankOrder.create_rgb_color(), BiasedRankOrder.create_rgb_color())
+                        Colors[ligand] = color
+                    little = [reference_path, reference_EC50_ka, reference_emax_tau, result[19]]
+                    if self.assay == "sub_tested_assays":
+                        big = [sign_prot_conversion[jitterDict[pub][ligand]["signalling_prot"]], jitterDict[pub][ligand]['delta'], jitterDict[pub][ligand]['Emax_Tau'], jitterDict[pub][ligand]['EC50_KA'],
+                               sign_prot_conversion[jitterDict[pub][ligand]["signalling_prot"]], jitterDict[pub][ligand]['2nd_Pathway_delta'], jitterDict[pub][ligand]['2nd_Pathway_emax_tau'], jitterDict[pub][ligand]['2nd_Pathway_EC50_KA']]
+                    else:
+                        big = [jitterDict[pub][ligand]["Pathway"], jitterDict[pub][ligand]['delta'], jitterDict[pub][ligand]['Emax_Tau'], jitterDict[pub][ligand]['EC50_KA'],
+                               jitterDict[pub][ligand]['2nd_Pathway'], jitterDict[pub][ligand]['2nd_Pathway_delta'], jitterDict[pub][ligand]['2nd_Pathway_emax_tau'], jitterDict[pub][ligand]['2nd_Pathway_EC50_KA']]
+                    if (jitterDict[pub][ligand]['deltadelta'][1] == 'High Bias') or (jitterDict[pub][ligand]['deltadelta'][1] == 'Full Bias'):
+                        tooltip = BiasedRankOrder.jitter_tooltip(self.page, self.assay, ligand, jitterDict[pub][ligand]['deltadelta'][1], components, prefix, small_data=little, large_data=big)
+                    else:
+                        tooltip = BiasedRankOrder.jitter_tooltip(self.page, self.assay, ligand, jitterDict[pub][ligand]['deltadelta'][0], components, prefix, small_data=little, large_data=big)
+                    jitterPlot[jitterDict[pub][ligand]["Pathway"]].append([pub, jitterDict[pub][ligand]['deltadelta'][0], Colors[ligand], ligand, jitterDict[pub][ligand]['deltadelta'][1], tooltip])
+                    jitterLegend[jitterDict[pub][ligand]["Pathway"]].append(tuple((ligand, jitterDict[pub][ligand]['deltadelta'][0])))
+                except KeyError:
+                    continue
+                jitterLegend[jitterDict[pub][ligand]["Pathway"]] = sorted(list(set(jitterLegend[jitterDict[pub][ligand]["Pathway"]])), key=lambda x: x[1], reverse=True)
+
+        #addressing qualitative points in the ∆∆ data (full bias/high bias/none)
+        for pathway in jitterPlot.keys():
+            highest = 0
+            for datapoint in jitterPlot[pathway]:
+                if datapoint[1] > highest:
+                    highest = datapoint[1]
+            change = {'None' : 0, "High Bias": highest + 1, "Full Bias": highest + 1.5}
+            for datapoint in jitterPlot[pathway]:
+                if datapoint[4] in change:
+                    datapoint[1] = change[datapoint[4]]
+
+        jitterPlot = {k: v for k, v in jitterPlot.items() if len(v) > 0}
+
+        for key in jitterLegend.keys():
+            jitterLegend[key] = list(dict.fromkeys([name[0] for name in jitterLegend[key]]))[:20]
+
+        context['column_dict'] = json.dumps(labels_dict)
+        context['source'] = self.source
+        context['label'] = self.label
+        context['page'] = self.page
+        context['scatter_legend'] = json.dumps(jitterLegend)
+        context['colors'] = json.dumps(Colors)
+        context['scatter'] = json.dumps(jitterPlot)
+        context['spider'] = json.dumps(SpiderOptions)
+        context['all_ligands'] = list(set(list_of_ligands))
+        context['all_publications'] = list(set(list_of_publications))
+        context['query'] = rec_name[0][0]
+        context['IUPHAR'] = rec_name[0][1]
+        context['full_data'] = json.dumps(sorted_full_data)
+        context['full_ligands'] = json.dumps(full_ligands)
+        return context
+
 class LigandStatistics(TemplateView):
     """
     Per class statistics of known ligands.
@@ -1796,9 +2267,9 @@ def CachedOTFBiasBrowsers(browser_type, request):
         protein_ids = ["NOSELECTION"]
 
     protein_ids.sort()
-    cache_key = "OTF_BROWSER_" + browser_type + "_" + hashlib.md5("_".join(protein_ids).encode('utf-8')).hexdigest()
+    cache_key = "OTFBROWSER_" + browser_type + "_" + hashlib.md5("_".join(protein_ids).encode('utf-8')).hexdigest()
     return_html = cache.get(cache_key)
-    # return_html = None #testing
+    return_html = None #testing
     if return_html == None:
         if browser_type == "bias":
             return_html = OTFBiasBrowser.as_view(protein_id=protein_ids[0])(request).render()

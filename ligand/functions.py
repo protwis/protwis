@@ -288,7 +288,7 @@ def find_best_subtype(comparisons, reference, tested):
     families = {}
     for ref in list(comparisons.keys()):
         #assessing the values
-        r_emax, r_ec50, r_logtauka = reference[ref]['Emax'], reference[ref]['EC50'], reference[ref]['Tau_KA']
+        r_emax, r_ec50 = reference[ref]['Emax'], reference[ref]['EC50']
         try:
             r_logemaxec50 = math.log(r_emax/r_ec50)
         except TypeError:
@@ -296,19 +296,14 @@ def find_best_subtype(comparisons, reference, tested):
 
         if reference[ref]['primary_effector_family'] not in families.keys():
             #adding new family and values
-            families[reference[ref]['primary_effector_family']] = [r_logemaxec50, r_logtauka, ref]
+            families[reference[ref]['primary_effector_family']] = [r_logemaxec50, ref]
         else:
             #updating with most relevant subtype
-            if r_logtauka > families[reference[ref]['primary_effector_family']][1]:
-                families[reference[ref]['primary_effector_family']] = [r_logemaxec50, r_logtauka, ref]
-                for test in comparisons[families[reference[ref]['primary_effector_family']][2]]:
+            if r_logemaxec50 > families[reference[ref]['primary_effector_family']][0]:
+                families[reference[ref]['primary_effector_family']] = [r_logemaxec50, ref]
+                for test in comparisons[families[reference[ref]['primary_effector_family']][1]]:
                     del tested[test]
-                del comparisons[families[reference[ref]['primary_effector_family']][2]]
-            elif r_logemaxec50 > families[reference[ref]['primary_effector_family']][0]:
-                families[reference[ref]['primary_effector_family']] = [r_logemaxec50, r_logtauka, ref]
-                for test in comparisons[families[reference[ref]['primary_effector_family']][2]]:
-                    del tested[test]
-                del comparisons[families[reference[ref]['primary_effector_family']][2]]
+                del comparisons[families[reference[ref]['primary_effector_family']][1]]
             else:
                 for test in comparisons[ref]:
                     del tested[test]
@@ -358,18 +353,16 @@ def calculate_second_delta(comparisons, tested, subtype=False, pathway=False):
                     else:
                         try:
                             deltadelta_logtauka = round(tested[path1]['Delta_log(Tau/KA)'] - tested[test]['Delta_log(Tau/KA)'], 3)
-                            bias_factor = round(10**deltadelta_logtauka, 3)
                         except (TypeError, KeyError):
-                            bias_factor = None
                             if tested[test]['qualitative_activity'] == 'No activity':
                                 deltadelta_logtauka = 'Full Bias'
                             elif tested[path1]['Delta_log(Tau/KA)'] == None:
                                 deltadelta_logtauka = None
                         try:
                             deltadelta_logemaxec50 = round(tested[path1]['Delta_log(Emax/EC50)'] - tested[test]['Delta_log(Emax/EC50)'], 3)
-                            if bias_factor == None:
-                                bias_factor = round(10**deltadelta_logemaxec50, 3)
+                            bias_factor = round(10**deltadelta_logemaxec50, 3)
                         except (TypeError, KeyError):
+                            bias_factor = None
                             if tested[test]['qualitative_activity'] == 'No activity':
                                 deltadelta_logemaxec50 = 'Full Bias'
                             elif tested[path1]['Delta_log(Emax/EC50)'] == None:
