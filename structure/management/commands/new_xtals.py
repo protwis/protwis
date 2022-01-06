@@ -548,10 +548,16 @@ def yamls_to_csv():
         d[pdb]['obj'] = s_obj
         if type(d[pdb]['ligand'])!=type([]):
             d[pdb]['ligand'] = [d[pdb]['ligand']]
+    # Order by pub date
+    ordered_structs = Structure.objects.filter(pdb_code__index__in=d.keys()).order_by('publication_date', 'pdb_code__index__in').values_list('pdb_code__index', flat=True)
+    temp_d = OrderedDict()
+    for s in ordered_structs:
+        temp_d[s] = d[s]
+    d = temp_d
     # structures.csv
     with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'structures.csv']), 'w', newline='') as s_csv:
         struct_w = csv.writer(s_csv, delimiter=',', quotechar="'", quoting=csv.QUOTE_MINIMAL)
-        struct_w.writerow(['PDB', 'Receptor_UniProt', 'Method', 'Resolution', 'State', 'ChainID', 'Note'])
+        struct_w.writerow(['PDB', 'Receptor_UniProt', 'Method', 'Resolution', 'State', 'ChainID', 'Note', 'Date'])
         for pdb, vals in d.items():
             if vals['obj'].structure_type.name.startswith('X-ray'):
                 method = 'X-ray'
@@ -559,7 +565,7 @@ def yamls_to_csv():
                 method = 'cryo-EM'
             else:
                 method = vals['obj'].structure_type.name
-            struct_w.writerow([pdb, vals['protein'], method, vals['obj'].resolution, vals['state'], vals['preferred_chain'], ''])
+            struct_w.writerow([pdb, vals['protein'], method, vals['obj'].resolution, vals['state'], vals['preferred_chain'], '', vals['obj'].publication_date])
     # ligands.csv
     with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'ligands.csv']), 'w', newline='') as l_csv:
         lig_w = csv.writer(l_csv, delimiter='\t', quotechar="'", quoting=csv.QUOTE_MINIMAL)
@@ -625,6 +631,15 @@ def yamls_to_csv():
     with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'extra_protein_notes.yaml']), 'r') as f3:
         extra = yaml.load(f3, Loader=yaml.FullLoader)
     arrestin = OrderedDict()
+    # # Order g proteins and extra by pub date
+    # temp_gprots, temp_extra = OrderedDict(), OrderedDict()
+    # ordered_g_structs = Structure.objects.filter(pdb_code__index__in=gprots.keys()).order_by('publication_date').values_list('pdb_code__index', flat=True)
+    # ordered_extra = Structure.objects.filter(pdb_code__index__in=extra.keys()).order_by('publication_date').values_list('pdb_code__index', flat=True)
+    # for s in ordered_g_structs:
+    #     temp_gprots[s] =  gprots[s]
+    # for s in ordered_extra:
+    #     temp_extra[s] = extra[s]
+    # gprots, extra = temp_gprots, temp_extra
     with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'g_proteins.csv']), 'w', newline='') as gp_csv:
         gp_w = csv.writer(gp_csv, delimiter=',', quotechar="'", quoting=csv.QUOTE_MINIMAL)
         gp_w.writerow(['PDB', 'Alpha_UniProt', 'Alpha_ChainID', 'Beta_UniProt', 'Beta_ChainID', 'Gamma_UniProt', 'Gamma_ChainID', 'Note'])
