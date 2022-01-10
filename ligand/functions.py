@@ -211,8 +211,12 @@ def assess_reference(data_dict, user=False):
     for assay in data_dict.keys():
         if data_dict[assay]['ligand_id'] == reference_ligand:
             reference[assay] =  data_dict[assay]
+            reference_name = data_dict[assay]['ligand_name']
         else:
             tested[assay] =  data_dict[assay]
+    for assay in tested.keys():
+        tested[assay]['Reference_ligand'] = reference_name
+
     return reference, tested, skip
 
 def assess_comparisons(reference, tested, subtype=False):
@@ -246,7 +250,7 @@ def calculate_first_delta(comparisons, reference, tested, subtype=False):
     for ref in list(comparisons.keys()):
         r_emax, r_ec50, r_logtauka = reference[ref]['Emax'], reference[ref]['EC50'], reference[ref]['Tau_KA']
         try:
-            r_logemaxec50 = math.log(r_emax/r_ec50)
+            r_logemaxec50 = math.log((r_emax/r_ec50),10)
         except TypeError:
             r_logemaxec50 = None
         #Check for lacking of ALL values, then break cycle and skip publication
@@ -257,7 +261,7 @@ def calculate_first_delta(comparisons, reference, tested, subtype=False):
         for test in comparisons[ref]:
             t_emax, t_ec50, t_logtauka = tested[test]['Emax'], tested[test]['EC50'], tested[test]['Tau_KA']
             try:
-                t_logemaxec50 = math.log(t_emax/t_ec50)
+                t_logemaxec50 = math.log((t_emax/t_ec50),10)
             except TypeError:
                 t_logemaxec50 = None
             #Here assess if both values of tested ligand are negative
@@ -278,7 +282,6 @@ def calculate_first_delta(comparisons, reference, tested, subtype=False):
                 delta_logemaxec50 = None
             tested[test]['Delta_log(Emax/EC50)'] = delta_logemaxec50
             #Adding the section ragarding reference values
-            tested[test]['Reference_ligand'] = reference[ref]['ligand_name']
             tested[test]['Reference_Emax'] = r_emax
             tested[test]['Reference_EC50'] = r_ec50
             tested[test]['Reference_Tau/KA'] = r_logtauka
@@ -290,7 +293,7 @@ def find_best_subtype(comparisons, reference, tested):
         #assessing the values
         r_emax, r_ec50 = reference[ref]['Emax'], reference[ref]['EC50']
         try:
-            r_logemaxec50 = math.log(r_emax/r_ec50)
+            r_logemaxec50 = math.log((r_emax/r_ec50),10)
         except TypeError:
             r_logemaxec50 = None
 
@@ -334,11 +337,11 @@ def calculate_second_delta(comparisons, tested, subtype=False, pathway=False):
                             else:
                                 delta_logtauka = None
                         try:
-                            tested[path1]['log(Emax/EC50)'] = round(math.log(tested[path1]['Emax']/tested[path1]['EC50']), 3)
+                            tested[path1]['log(Emax/EC50)'] = round(math.log((tested[path1]['Emax']/tested[path1]['EC50']),10), 3)
                         except (TypeError, ValueError):
                             tested[path1]['log(Emax/EC50)'] = None
                         try:
-                            tested[test]['log(Emax/EC50)'] = round(math.log(tested[test]['Emax']/tested[test]['EC50']), 3)
+                            tested[test]['log(Emax/EC50)'] = round(math.log((tested[test]['Emax']/tested[test]['EC50']),10), 3)
                         except (TypeError, ValueError):
                             tested[test]['log(Emax/EC50)'] = None
                         try:
@@ -383,7 +386,7 @@ def assess_pathway_preferences(comparisons, tested, subtype=False, pathway=False
                 path_label = tested[test]['primary_effector_family']
                 Tau_KA = tested[test]['Tau_KA']
                 try:
-                    Emax_EC50 = round(math.log(tested[test]['Emax']/tested[test]['EC50']), 3)
+                    Emax_EC50 = round(math.log((tested[test]['Emax']/tested[test]['EC50']),10), 3)
                 except (TypeError, ValueError):
                     Emax_EC50 = None
             elif subtype:
@@ -514,12 +517,13 @@ def OnTheFly(receptor_id, subtype=False, pathway=False, user=False):
                 if user:
                     user = 273275
 
-    for pub in publications:
+    for pub in list(publications.keys()):
         #Calculation branch 1 for Biased ligands
         if pathway == False:
             #Assess reference and tested ligands
             reference, tested, skip = assess_reference(publications[pub], user)
             if skip == True:
+                del publications[pub]
                 continue
             #Assess available comparisons
             comparisons = assess_comparisons(reference, tested, subtype)
@@ -528,6 +532,7 @@ def OnTheFly(receptor_id, subtype=False, pathway=False, user=False):
             #all tested have calculated Δlog(Emax/EC50) and Δlog(Tau/KA)
             #this check might be added somewhere else
             if skip == True:
+                del publications[pub]
                 continue
             #calculate the second delta (across pathways)
             tested = calculate_second_delta(comparisons, tested, subtype, pathway) #need subtype (defined by button)
@@ -542,7 +547,10 @@ def OnTheFly(receptor_id, subtype=False, pathway=False, user=False):
 
 def AddPathwayData(master, data, rank, pathway=False):
     master[rank+' - Pathway'] = data['primary_effector_family']
-    master[rank+' - EC50'] = str(data['EC50'])
+    try:
+        master[rank+' - EC50'] = -math.log(data['EC50'],10)
+    except TypeError:
+        master[rank+' - EC50'] = data['EC50']
     master[rank+' - Emax'] = data['Emax']
     master[rank+' - Measured molecule 1'] = data['molecule_1']
     master[rank+' - Measured molecule 2'] = data['molecule_1']
