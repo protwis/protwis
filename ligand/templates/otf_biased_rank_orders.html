@@ -416,7 +416,7 @@
   var label =  "{{ label }}";
   var pathway = "{{ pathway }}";
   if(label == 'emax'){
-    if(pathway == false){
+    if(pathway == 'False'){
       ylabel = "ΔLog(Emax/EC50)";
     }else{
       ylabel = "Log(Emax/EC50)";
@@ -467,7 +467,7 @@
   var label =  "{{ label }}";
   if(label == 'emax'){
     qualitative = true
-    if(pathway == false){
+    if(pathway == 'False'){
       ylabel = "ΔΔLog(Emax/EC50)";
     }else{
       ylabel = "ΔLog(Emax/EC50)";

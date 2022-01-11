@@ -319,6 +319,13 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
           .style("opacity", 0);
   }
 
+  var symbolTypes = {
+      "triangleDown": d3.svg.symbol().size(30).type("triangle-down"),
+      "triangleUp": d3.svg.symbol().size(30).type("triangle-up"),
+      "diamond": d3.svg.symbol().size(40).type("diamond"),
+      "cross": d3.svg.symbol().size(40).type("cross")
+  };
+
   var g = main.append("svg:g");
 
     // Creating Full Bias Squares
@@ -375,13 +382,64 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
                 highlight(tempId);
             });
 
+  // Appending circles
   g.selectAll("scatter-dots")
     .data(data)
     .enter().append("svg:circle")
-    .filter(function(d) { return (d[4] !== "Full Bias" && d[4] !== "High Bias");})
+    .filter(function(d) { return (d[4] !== "Full Bias" && d[4] !== "High Bias" && d[6] === '=' && d[7] === '=');})
     .attr("cx", function(d) {return x(d[0]) - jitterWidth/2 + Math.random()*jitterWidth ;})
     .attr("cy", function(d) {return y(d[1]);})
     .attr("r", 4)
+    .attr("id", function(d) {return "LC" + d[3].replace(/\[|\]|\(|\)|\s|\,/g,"");})
+    .style("fill", function(d) {return d[2];})
+    .style("opacity", 1.0)
+    .on("mouseover", mouseover)
+    .on("mousemove", function (d) {
+        divToolTipTest
+          .style("left", (d3.event.pageX) + "px")
+          .style("top", (d3.event.pageY) + "px")
+          .html(d[5]);
+    })
+    .on("mouseout", mouseout)
+    .on("click", function (d) {
+        var tempId = d3.select(this).attr("id");
+        highlight(tempId);
+    });
+
+  // Appending triangle downs
+  g.selectAll("scatter-dots")
+    .data(data)
+    .enter().append("path")
+    .filter(function(d) { return (d[4] !== "Full Bias" && d[4] !== "High Bias");})
+    .filter(function(d) { return (d[6] === '<' || d[7] === '<');})
+    .attr("class", "dot")
+    .attr("transform", function(d) { return "translate(" + (x(d[0]) - jitterWidth/2 + Math.random()*jitterWidth) + "," +  y(d[1]) + ")"; })
+    .attr("d", symbolTypes.triangleDown())
+    .attr("id", function(d) {return "LC" + d[3].replace(/\[|\]|\(|\)|\s|\,/g,"");})
+    .style("fill", function(d) {return d[2];})
+    .style("opacity", 1.0)
+    .on("mouseover", mouseover)
+    .on("mousemove", function (d) {
+        divToolTipTest
+          .style("left", (d3.event.pageX) + "px")
+          .style("top", (d3.event.pageY) + "px")
+          .html(d[5]);
+    })
+    .on("mouseout", mouseout)
+    .on("click", function (d) {
+        var tempId = d3.select(this).attr("id");
+        highlight(tempId);
+    });
+
+  // Appending triangle ups
+  g.selectAll("scatter-dots")
+    .data(data)
+    .enter().append("path")
+    .filter(function(d) { return (d[4] !== "Full Bias" && d[4] !== "High Bias");})
+    .filter(function(d) { return (d[6] === '>' || d[7] === '>');})
+    .attr("class", "dot")
+    .attr("transform", function(d) { return "translate(" + (x(d[0]) - jitterWidth/2 + Math.random()*jitterWidth) + "," +  y(d[1]) + ")"; })
+    .attr("d", symbolTypes.triangleUp())
     .attr("id", function(d) {return "LC" + d[3].replace(/\[|\]|\(|\)|\s|\,/g,"");})
     .style("fill", function(d) {return d[2];})
     .style("opacity", 1.0)
@@ -495,9 +553,55 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
             .style("font", "10px sans-serif")
             .style("alignment-baseline", "middle");
 
+    chart.append("g")
+      .attr("transform", position)
+        .append("path")
+        .attr("class", "dot")
+        .attr("transform", function(d) { return "translate(" + (xSeed + 10) + "," +  (margin.top + 80) + ")"; })
+        .attr("d", symbolTypes.triangleUp())
+        .style("stroke", "black")
+        .attr("class", "Legend")
+        .attr("fill", "#FAFAFA"); //'url(#gradient)'
+
+    chart.append("g")
+       .attr("class", "ytitle")
+       .attr("transform", position)
+          .append("text")
+            .attr("x", xSeed + 20)
+            .attr("y", margin.top + 80)
+            .attr("class", "Legend")
+            .text("Minimum estimated value")
+            .attr("text-anchor", "left")
+            .attr("font-weight", "bold")
+            .style("font", "10px sans-serif")
+            .style("alignment-baseline", "middle");
+
+    chart.append("g")
+      .attr("transform", position)
+        .append("path")
+        .attr("class", "dot")
+        .attr("transform", function(d) { return "translate(" + (xSeed + 10) + "," +  (margin.top + 94) + ")"; })
+        .attr("d", symbolTypes.triangleDown())
+        .style("stroke", "black")
+        .attr("class", "Legend")
+        .attr("fill", "#FAFAFA"); //'url(#gradient)'
+
+    chart.append("g")
+       .attr("class", "ytitle")
+       .attr("transform", position)
+          .append("text")
+            .attr("x", xSeed + 20)
+            .attr("y", margin.top + 94)
+            .attr("class", "Legend")
+            .text("Maximum estimated value")
+            .attr("text-anchor", "left")
+            .attr("font-weight", "bold")
+            .style("font", "10px sans-serif")
+            .style("alignment-baseline", "middle");
+
     legend.append("rect")
       .attr("x", xSeed + 6)
-      .attr("y", margin.top + 83.5)
+      .attr("y", margin.top + 108)
       .attr("width", 8)
       .attr("height", 2)
       .attr("id", function(d) {return "LC" + d.replace(/\[|\]|\(|\)|\s|\,/g,"");})
@@ -527,7 +631,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
 
     legend.append("text")
       .attr("x", xSeed + 20)
-      .attr("y", margin.top + 85)
+      .attr("y", margin.top + 108)
       // .style("fill", function(d){ return colors[d]})
       .text(function(d) {
               if (d.length > 25) {

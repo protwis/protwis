@@ -555,6 +555,7 @@ def AddPathwayData(master, data, rank, pathway=False):
     master[rank+' - Measured molecule 1'] = data['molecule_1']
     master[rank+' - Measured molecule 2'] = data['molecule_1']
     master[rank+' - Biological process'] = data['measured_process']
+    master[rank+' - Cell line'] = data['cell_line']
     #This is should also check for the Pathway Preferred columns
     if set(['DeltaDelta_log(Emax/EC50)','DeltaDelta_log(Tau/KA)']).issubset(set(data.keys())):
         master['P1-'+rank+' - ΔΔLog(Emax/EC50)'] = data['DeltaDelta_log(Emax/EC50)']

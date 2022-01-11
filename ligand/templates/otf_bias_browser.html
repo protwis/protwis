@@ -244,86 +244,54 @@
 	<table class="display compact text-nowrap" id='structures_scrollable' style="width: 100%">
 		<thead id="headers">
 			<tr class="header-spans">
-				<!-- 1 -->
 				<th><span class="glyphicon glyphicon-info-sign" title="Click on this icon in a row for more details."></span></th>
-				<!-- 2,3,4,5,6 -->
 				<th id="receptor" style="border-left: 1px solid black; text-align:left" colspan="5">Receptor</th>
 				{% if Pathway %}
-				<!-- 7,8,9,10 -->
 				<th style="border-left: 1px solid black; text-align:left" colspan="4" style="">
 					Tested ligands</th>
-				<!-- 11,12,13,14,15 -->
 				<th id="pathways_effector" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Pathway preference<br>(Log(&#964;/KA) or Log(Emax/EC50))</th>
-				<!-- 16,17,18,19 -->
 				<th id="pathways_activity_tk" class="color-column" style="border-left: 1px solid black; text-align:left" colspan="4">
 					Relative pathway activity<br>(&#916;Log(&#964;/KA))</th>
-				<!-- 20,21,22,23 -->
 				<th id="pathways_activity_ee" class="color-column" style="border-left: 1px solid black; text-align:left" colspan="4">
 					Relative pathway activity<br>(&#916;Log(Emax/EC50))</th>
-				<!-- 24,25,26,27,28 -->
 				<th id="delta_emax_ec50_part" class="color-column" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Pathway activity Log(&#964;/KA)</th>
-				<!-- 29,30,31,32,33 -->
 				<th id="relative_transduction_coef" class="color-column" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Pathway activity Log(Emax/EC50)</th>
 				{% else %}
-				<!-- 7,8,9,10,11 -->
 				<th style="border-left: 1px solid black; text-align:left" colspan="5" style="">
 					Ligands</th>
-				<!-- 12,13,14,15,16 -->
 				<th id="pathways_effector" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Pathway rank order<br>(&#916;Log(&#964;/KA) or &#916;Log(Emax/EC50))</th>
-				<!-- 17,18,19,20,21 -->
-				<th id="bias_factor" class="color-column" style="border-left: 1px solid black; text-align:left" colspan="5">
+				<th id="bias_factor" class="color-column" style="border-left: 1px solid black; text-align:left" colspan="4">
 					Bias factor<br>(antilog of &#916;&#916;Log(Emax/EC50))</th>
-				<!-- 22,23,24,25,26 -->
 				<th id="pathways_measure" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Specific pathway:<br>Measured molecule</th>
-				<!-- 27,28,29,30 -->
 				<th id="delta_relative_transduction_coef" class="color-column" style="border-left: 1px solid black; text-align:left" colspan="4">
 					Operational model <br>(&#916;&#916;Log(&#964;/Ka))</th>
-				<!-- 31,32,33,34 -->
 				<th id="lbf" class="color-column" style="border-left: 1px solid black; text-align:left" colspan="4">
 					Relative<br>activity<br>(&#916;&#916;Log(Emax/EC50))</th>
-				<!-- 35,36,37,38,39 -->
 				<th id="delta_emax_ec50_part" class="color-column" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Ligand &#916;Log(&#964;/KA)</th>
-				<!-- 40,41,42,43,44 -->
 				<th id="relative_transduction_coef" class="color-column" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Ligand &#916;Log(Emax/EC50)</th>
 				{% endif %}
-				<!-- Pathway: 34,35,36,37,38 -->
-				<!-- Biased:  45,46,47,48,49 -->
 				<th class="color-column" id="activity" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Potency (pEC50)
 				</th>
-				<!-- Pathway: 39,40,41,42,43 -->
-				<!-- Biased:  50,51,52,53,54 -->
 				<th id="emax" class="color-column" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Emax (% of ref ligand)</th>
-				<!-- Pathway: 44,45,46,47,48-->
-				<!-- Biased:  55,56,57,58,59 -->
 				<th id="mm1" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Measured molecule 1</th>
-				<!-- Pathway: 49,50,51,52,53 -->
-				<!-- Biased:  60,61,62,63,64 -->
 				<th id="mm2" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Measured molecule 2</th>
-				<!-- Pathway: 54,55,56,57,58 -->
-				<!-- Biased:  65,66,67,68,69 -->
 				<th id="bio" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Biological process</th>
-				<!-- Pathway: 59 -->
-				<!-- Biased:  70 -->
-				<th id="cell" style="border-left: 1px solid black; text-align:left" colspan="1">
+				<th id="cell" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Cell line</th>
-				<!-- Pathway: 60 -->
-				<!-- Biased:  71 -->
 				<th id="time" style="border-left: 1px solid black; text-align:left" colspan="1">
 					Time resolved</th>
-				<!-- Pathway: 61,62 -->
-				<!-- Biased:  72,73 -->
 				<th style="border-left: 1px solid black; text-align:left; overflow: hidden;
                           white-space: nowrap;
                           text-overflow: ellipsis;
@@ -331,7 +299,6 @@
 				<!-- <th style="border-left: 1px solid black; text-align:left" colspan="4">reference</th> -->
 			</tr>
 			<tr class="table-filter-dropdown">
-				<!-- 1,2,3,4,5,6 -->
 				<th></th>
 				<th id="class_filter_select">Class</th>
 				<th id="receptor_filter_select">Rec Fam</th>
@@ -340,21 +307,15 @@
 				<th id="species_filter_select">Species</th>
 
 				{% if Pathway %}
-				<!-- 7 -->
 				<th id="ligand_filter_select">Ligand</th>
 				{% else %}
-				<!-- 7,8 -->
 				<th id="reference_ligand_filter_select">Reference<br>ligand</th>
 				<th id="ligand_filter_select">Tested<br>ligand</th>
 				{% endif %}
-				<!-- Pathway: 8,9,10 -->
-				<!-- Biased:  9,10,11 -->
 				<th id="vendor_quantity_filter_select">#Vendors</th>
 				<th id="article_quantity_filter_select">#Articles</th>
 				<th id="labs_quantity_filter_select">#Labs</th>
 				<!-- Pathway rank order / pathway preference -->
-				<!-- Pathway: 11,12,13,14,15 -->
-				<!-- Biased:  12,13,14,15,16 -->
 				<th class="pathways" id="pathways_effector_p1_filter_select">P 1</th>
 				<th class="pathways" id="pathways_effector_p2_filter_select">P 2</th>
 				<th class="pathways" id="pathways_effector_p3_filter_select">P 3</th>
@@ -362,26 +323,22 @@
 				<th class="pathways" id="pathways_effector_p5_filter_select">P 5</th>
 				{% if Pathway %}
 				<!-- Relative pathway activity (delta log (Tau/KA) -->
-				<!-- Pathway: 16,17,18,19 -->
 				<th class="color-column" id="pathways_activity_tk_p2_p1_filter_select">P1 - P2</th>
 				<th class="color-column" id="pathways_activity_tk_p3_p1_filter_select">P1 - P3</th>
 				<th class="color-column" id="pathways_activity_tk_p4_p1_filter_select">P1 - P4</th>
 				<th class="color-column" id="pathways_activity_tk_p5_p1_filter_select">P1 - P5</th>
 				<!-- Relative pathway activity (delta log (Emax/EC50) -->
-				<!-- Pathway: 20,21,22,23 -->
 				<th class="color-column" id="pathways_activity_ee_p2_p1_filter_select">P1 - P2</th>
 				<th class="color-column" id="pathways_activity_ee_p3_p1_filter_select">P1 - P3</th>
 				<th class="color-column" id="pathways_activity_ee_p4_p1_filter_select">P1 - P4</th>
 				<th class="color-column" id="pathways_activity_ee_p5_p1_filter_select">P1 - P5</th>
 				<!-- log emax/ec50 -->
-				<!-- Pathway: 24,25,26,27,28 -->
 				<th class="color-column" id="log_emax_ec50_p2_filter_select">P 1</th>
 				<th class="color-column" id="log_emax_ec50_p2_filter_select">P 2</th>
 				<th class="color-column" id="log_emax_ec50_p3_filter_select">P 3</th>
 				<th class="color-column" id="log_emax_ec50_p4_filter_select">P 4</th>
 				<th class="color-column" id="log_emax_ec50_p5_filter_select">P 5</th>
 				<!-- log tau/ka -->
-				<!-- Pathway: 29,30,31,32,33 -->
 				<th class="color-column" id="log_tau_ka_p1_filter_select">P 1</th>
 				<th class="color-column" id="log_tau_ka_p2_filter_select">P 2</th>
 				<th class="color-column" id="log_tau_ka_p3_filter_select">P 3</th>
@@ -389,40 +346,33 @@
 				<th class="color-column" id="log_tau_ka_p5_filter_select">P 5</th>
 				{% else %}
 				<!-- Bias factor -->
-				<!-- Biased: 17,18,19,20,21 -->
-				<th class="color-column" id="bias_factor_p1_filter_select">P 1</th>
-				<th class="color-column" id="bias_factor_p2_filter_select">P 2</th>
-				<th class="color-column" id="bias_factor_p3_filter_select">P 3</th>
-				<th class="color-column" id="bias_factor_p4_filter_select">P 4</th>
-				<th class="color-column" id="bias_factor_p5_filter_select">P 5</th>
+				<th class="color-column" id="bias_factor_p1_filter_select">P1-P2</th>
+				<th class="color-column" id="bias_factor_p2_filter_select">P1-P3</th>
+				<th class="color-column" id="bias_factor_p3_filter_select">P1-P4</th>
+				<th class="color-column" id="bias_factor_p4_filter_select">P1-P5</th>
 				<!-- Specific pathway measured molecule -->
-				<!-- Biased: 22,23,24,25,26 -->
 				<th class="pathways" id="pathways_measure_p1_filter_select">P 1</th>
 				<th class="pathways" id="pathways_measure_p2_filter_select">P 2</th>
 				<th class="pathways" id="pathways_measure_p3_filter_select">P 3</th>
 				<th class="pathways" id="pathways_measure_p4_filter_select">P 4</th>
 				<th class="pathways" id="pathways_measure_p5_filter_select">P 5</th>
 				<!-- Operational model (delta delta log tau/KA)-->
-				<!-- Biased: 27,28,29,30 -->
 				<th class="color-column" id="opmodel_p2_p1_filter_select">P1 - P2</th>
 				<th class="color-column" id="opmodel_p3_p1_filter_select">P1 - P3</th>
 				<th class="color-column" id="opmodel_p4_p1_filter_select">P1 - P4</th>
 				<th class="color-column" id="opmodel_p5_p1_filter_select">P1 - P5</th>
 				<!-- delta delta log emax/ec50 -->
-				<!-- Biased: 31,32,33,34 -->
 				<th class="color-column" id="lbf_p2_p1_filter_select">P1 - P2</th>
 				<th class="color-column" id="lbf_p3_p1_filter_select">P1 - P3</th>
 				<th class="color-column" id="lbf_p4_p1_filter_select">P1 - P4</th>
 				<th class="color-column" id="lbf_p5_p1_filter_select">P1 - P5</th>
 				<!-- delta log tau/KA -->
-				<!-- Biased: 35,36,37,38,39 -->
 				<th class="color-column" id="delta_emax_ec50_part_p2_p1_filter_select">P 1</th>
 				<th class="color-column" id="delta_emax_ec50_part_p2_p1_filter_select">P 2</th>
 				<th class="color-column" id="delta_emax_ec50_part_p3_p1_filter_select">P 3</th>
 				<th class="color-column" id="delta_emax_ec50_part_p4_p1_filter_select">P 4</th>
 				<th class="color-column" id="delta_emax_ec50_part_p5_p1_filter_select">P 5</th>
 				<!-- delta log emax/ec50 -->
-				<!-- Biased: 40,41,42,43,44-->
 				<th class="color-column" id="relative_transduction_coef_p2_p1_filter_select">P 1</th>
 				<th class="color-column" id="relative_transduction_coef_p2_p1_filter_select">P 2</th>
 				<th class="color-column" id="relative_transduction_coef_p3_p1_filter_select">P 3</th>
@@ -430,56 +380,44 @@
 				<th class="color-column" id="relative_transduction_coef_p5_p1_filter_select">P 5</th>
 				{% endif %}
 				<!-- EC50 -->
-				<!-- Pathway: 34,35,36,37,38 -->
-				<!-- Biased:  45,46,47,48,49 -->
 				<th class="color-column" id="activity_p1_filter_select">P 1</th>
 				<th class="color-column" id="activity_p2_filter_select">P 2</th>
 				<th class="color-column" id="activity_p3_filter_select">P 3</th>
 				<th class="color-column" id="activity_p4_filter_select">P 4</th>
 				<th class="color-column" id="activity_p5_filter_select">P 5</th>
 				<!-- Emax -->
-				<!-- Pathway: 39,40,41,42,43 -->
-				<!-- Biased:  50,51,52,53,54 -->
 				<th class="color-column" id="emax_p1_filter_select">P 1</th>
 				<th class="color-column" id="emax_p2_filter_select">P 2</th>
 				<th class="color-column" id="emax_p3_filter_select">P 3</th>
 				<th class="color-column" id="emax_p4_filter_select">P 4</th>
 				<th class="color-column" id="emax_p5_filter_select">P 5</th>
 				<!-- Measured Molecule 1 -->
-				<!-- Pathway: 44,45,46,47,48 -->
-				<!-- Biased:  55,56,57,58,59 -->
 				<th id="measured_molecule_p1_filter_select">P 1</th>
 				<th id="measured_molecule_p2_filter_select">P 2</th>
 				<th id="measured_molecule_p3_filter_select" class="">P 3</th>
 				<th id="measured_molecule_p4_filter_select" class="">P 4</th>
 				<th id="measured_molecule_p5_filter_select" class="">P 5</th>
 				<!-- Measured Molecule 2 -->
-				<!-- Pathway: 49,50,51,52,53 -->
-				<!-- Biased:  60,61,62,63,64 -->
 				<th id="measured_molecule2_p1_filter_select">P 1</th>
 				<th id="measured_molecule2_p2_filter_select">P 2</th>
 				<th id="measured_molecule2_p3_filter_select" class="">P 3</th>
 				<th id="measured_molecule2_p4_filter_select" class="">P 4</th>
 				<th id="measured_molecule2_p5_filter_select" class="">P 5</th>
 				<!-- biological process -->
-				<!-- Pathway: 54,55,56,57,58 -->
-				<!-- Biased:  65,66,67,68,69 -->
 				<th id="bioprocess_p1_filter_select">P 1</th>
 				<th id="bioprocess_p2_filter_select">P 2</th>
 				<th id="bioprocess_p3_filter_select" class="">P 3</th>
 				<th id="bioprocess_p4_filter_select" class="">P 4</th>
 				<th id="bioprocess_p5_filter_select" class="">P 5</th>
 				<!-- cell line -->
-				<!-- Pathway: 59 -->
-				<!-- Biased:  70 -->
-				<th id="cell_p1_filter_select">Cell</th>
+				<th id="cell_p1_filter_select">P1</th>
+				<th id="cell_p1_filter_select">P2</th>
+				<th id="cell_p1_filter_select">P3</th>
+				<th id="cell_p1_filter_select">P4</th>
+				<th id="cell_p1_filter_select">P5</th>
 				<!-- time resolved -->
-				<!-- Pathway: 60 -->
-				<!-- Biased:  71 -->
 				<th id="time_p1_filter_select">Time</th>
 				<!-- references -->
-				<!-- Pathway: 61,62 -->
-				<!-- Biased:  72,73 -->
 				<th id="authors_filter_select" style="overflow: hidden;
                           white-space: nowrap;
                           text-overflow: ellipsis;
@@ -491,7 +429,6 @@
 			{% if Pathway %}
 				{% for value in Array %}
 				<tr>
-					<!-- 1 -->
 					<td>
 						<span style='display: none'> {{value.61|floatformat}}</span>
 						<a href="#">
@@ -500,7 +437,6 @@
 					</td>
 
 					<!-- Receptor block -->
-					<!-- 2,3,4,5,6 -->
 					<td title='{{value.0}}' style="border-left: 1px solid black;">{{value.0}}</td>
 					<td title='{{value.1}}'>{{value.1}}</td>
 					<td title='{{value.2}}'>{{value.2}}</td>
@@ -508,14 +444,12 @@
 					<td title='{{value.4}}'>{{value.4}}</td>
 
 					<!-- Tested ligand block -->
-					<!-- 7,8,9,10 -->
 					<td title='{{value.5}}'><a href='/ligand/{{value.61}}/info' target='_blank'>{{value.5}}</a></td>
 					<td style="text-align:right">{{value.6|floatformat}}</td>
 					<td style="text-align:right">{{value.7|floatformat}}</td>
 					<td style="text-align:right">{{value.8|floatformat}}</td>
 
 					<!-- Pathway preference block -->
-					<!-- 11,12,13,14,15 -->
 					<td style="text-align:left" class="pathway">{{value.9}}</td>
 					<td style="text-align:left" class="pathway">{{value.10}}</td>
 					<td style="text-align:left" class="pathway ">{{value.11}}</td>
@@ -523,21 +457,18 @@
 					<td style="text-align:left" class="pathway ">{{value.13}}</td>
 
 					<!-- Relative pathway activity Delta log Tau/KA block ---->
-					<!-- 16,17,18,19 -->
 					<td style="text-align:right" class="color-column" id="lbf_p2_p1">{{value.14|floatformat:1}}</td>
 					<td style="text-align:right" class="color-column" id="lbf_p3_p1">{{value.15|floatformat:1}}</td>
 					<td style="text-align:right" class="color-column" id="lbf_p4_p1">{{value.16|floatformat:1}}</td>
 					<td style="text-align:right" class="color-column" id="lbf_p5_p1">{{value.17|floatformat:1}}</td>
 
 					<!-- Relative pathway activity Delta log Emax/EC50 block ---->
-					<!-- 20,21,22,23 -->
 					<td style="text-align:right" class="color-column" id="dee_p2_p1">{{value.18|floatformat:1}}</td>
 					<td style="text-align:right" class="color-column" id="dee_p3_p1">{{value.19|floatformat:1}}</td>
 					<td style="text-align:right" class="color-column" id="dee_p4_p1">{{value.20|floatformat:1}}</td>
 					<td style="text-align:right" class="color-column" id="dee_p5_p1">{{value.21|floatformat:1}}</td>
 
 					<!-- Pathway Log Tau/KA block -->
-					<!-- 24,25,26,27,28 -->
 					<td style="text-align:right" class="color-column">{{value.22|floatformat:1}}</td>
 					<td style="text-align:right" class="color-column">{{value.23|floatformat:1}}</td>
 					<td style="text-align:right" class="color-column">{{value.24|floatformat:1}}</td>
@@ -545,7 +476,6 @@
 					<td style="text-align:right" class="color-column">{{value.26|floatformat:1}}</td>
 
 					<!-- Pathway Log Emax/EC50 block -->
-					<!-- 29,30,31,32,33 -->
 					<td style="text-align:right" class="color-column">{{value.27|floatformat:1}}</td>
 					<td style="text-align:right" class="color-column">{{value.28|floatformat:1}}</td>
 					<td style="text-align:right" class="color-column">{{value.29|floatformat:1}}</td>
@@ -553,7 +483,6 @@
 					<td style="text-align:right" class="color-column">{{value.31|floatformat:1}}</td>
 
 					<!-- EC50 block -->
-					<!-- 34,35,36,37,38 -->
 					<td class="color-column" style="text-align:right">{{ value.32|default_if_none:""|floatformat:1 }}</td>
 					<td class="color-column" style="text-align:right">{{ value.33|default_if_none:""|floatformat:1 }}</td>
 					<td class="color-column" style="text-align:right">{{ value.34|default_if_none:""|floatformat:1 }}</td>
@@ -561,7 +490,6 @@
 					<td class="color-column" style="text-align:right">{{ value.36|default_if_none:""|floatformat:1 }}</td>
 
 					<!-- Emax block -->
-					<!-- 39,40,41,42,43 -->
 					<td style="text-align:right" class="color-column">{{ value.37|default_if_none:""|floatformat:1 }}</td>
 					<td style="text-align:right" class="color-column">{{ value.38|default_if_none:""|floatformat:1 }}</td>
 					<td style="text-align:right" class="color-column">{{ value.39|default_if_none:""|floatformat:1 }}</td>
@@ -569,7 +497,6 @@
 					<td style="text-align:right" class="color-column">{{ value.41|default_if_none:""|floatformat:1 }}</td>
 
 					<!-- Molecule 1 block -->
-					<!-- 44,45,46,47,48 -->
 					<td>{{ value.42|default_if_none:"" }}</td>
 					<td>{{ value.43|default_if_none:"" }}</td>
 					<td class="">{{ value.44|default_if_none:"" }}</td>
@@ -577,7 +504,6 @@
 					<td class="">{{ value.46|default_if_none:"" }}</td>
 
 					<!-- Molecule 2 block -->
-					<!-- 49,50,51,52,53 -->
 					<td>{{ value.47|default_if_none:"" }}</td>
 					<td>{{ value.48|default_if_none:"" }}</td>
 					<td class="">{{ value.49|default_if_none:"" }}</td>
@@ -585,7 +511,6 @@
 					<td class="">{{ value.51|default_if_none:"" }}</td>
 
 					<!-- Biological process block -->
-					<!-- 54,55,56,57,58 -->
 					<td title='{{ value.52 }}'>{{ value.52|default_if_none:"" }}</td>
 					<td title='{{ value.53 }}'>{{ value.53|default_if_none:"" }}</td>
 					<td title='{{ value.54 }}' class="">{{ value.54|default_if_none:"" }}</td>
@@ -593,23 +518,23 @@
 					<td title='{{ value.56 }}' class="">{{ value.56|default_if_none:"" }}</td>
 
 					<!-- Cell line -->
-					<!-- 59 -->
 					<td title='{{ value.57 }}'>{{ value.57|default_if_none:"" }}</td>
+					<td title='{{ value.58 }}'>{{ value.58|default_if_none:"" }}</td>
+					<td title='{{ value.59 }}'>{{ value.59|default_if_none:"" }}</td>
+					<td title='{{ value.60 }}'>{{ value.60|default_if_none:"" }}</td>
+					<td title='{{ value.61 }}'>{{ value.61|default_if_none:"" }}</td>
 
 					<!-- Time resolved -->
-					<!-- 60 -->
-					<td title='{{ value.58 }}'>{{ value.58|default_if_none:"" }}</td>
+					<td title='{{ value.62 }}'>{{ value.62|default_if_none:"" }}</td>
 
 					<!-- Reference -->
-					<!-- 61,62 -->
-					<td class="name" style="border-left: 1px solid black;">{{ value.59 }}</td>
-					<td class="name"><a href='{{e.publication.web_link}}' target='blank'>{{ value.60 }}</a></td>
+					<td class="name" style="border-left: 1px solid black;">{{ value.63 }}</td>
+					<td class="name"><a href='{{e.publication.web_link}}' target='blank'>{{ value.64 }}</a></td>
 				</tr>
 				{% endfor %}
 			{% else %}
 				{% for value in Array %}
 				<tr>
-					<!-- 1 -->
 					<td>
 						<span style='display: none'> {{ value.72|floatformat }}</span>
 						<a href="#">
@@ -618,7 +543,6 @@
 					</td>
 
 					<!-- Receptor block -->
-					<!-- 2,3,4,5,6 -->
 					<td title='{{ value.0 }}' style="border-left: 1px solid black;">{{ value.0 }}</td>
 					<td title='{{ value.1 }}'>{{ value.1 }}</td>
 					<td title='{{ value.2 }}'>{{ value.2 }}</td>
@@ -626,7 +550,6 @@
 					<td title='{{ value.4 }}'>{{ value.4 }}</td>
 
 					<!-- ligand block -->
-					<!-- 7,8,9,10,11 -->
 					<td title='{{ value.5 }}' style="border-left: 1px solid black;">{{ value.5 }}</td>
 					<td title='{{ value.6 }}'><a href='/ligand/{{ value.72 }}/info' target='_blank'>{{ value.6 }}</a></td>
 					<td title='#Vendor' style="text-align:right">{{ value.7|floatformat }}</td>
@@ -634,7 +557,6 @@
 					<td title='#Labs' style="text-align:right">{{ value.9|floatformat }}</td>
 
 					<!-- Pathway rank order block -->
-					<!-- 12,13,14,15,16 -->
 					<td style="text-align:left" class="pathway">{{ value.10 }}</td>
 					<td style="text-align:left" class="pathway">{{ value.11 }}</td>
 					<td style="text-align:left" class="pathway">{{ value.12 }}</td>
@@ -642,15 +564,12 @@
 					<td style="text-align:left" class="pathway">{{ value.14 }}</td>
 
 					<!-- Bias factor block -->
-					<!-- 17,18,19,20,21 -->
-					<td style="text-align:right" class="color-column" title="Bias Factor P1">{{ value.15|default_if_none:""|floatformat:1 }}</td>
 					<td style="text-align:right" class="color-column" title="Bias Factor P2">{{ value.16|default_if_none:""|floatformat:1 }}</td>
 					<td style="text-align:right" class="color-column" title="Bias Factor P3">{{ value.17|default_if_none:""|floatformat:1 }}</td>
 					<td style="text-align:right" class="color-column" title="Bias Factor P4">{{ value.18|default_if_none:""|floatformat:1 }}</td>
 					<td style="text-align:right" class="color-column" title="Bias Factor P5">{{ value.19|default_if_none:""|floatformat:1 }}</td>
 
 					<!-- Signaling protein block -->
-					<!-- 22,23,24,25,26 -->
 					<td style="text-align:left" title="Measured Molecule P1">{{ value.20 }}</td>
 					<td style="text-align:left" title="Measured Molecule P2">{{ value.21 }}</td>
 					<td style="text-align:left" title="Measured Molecule P3" class="">{{ value.22 }}</td>
@@ -658,21 +577,18 @@
 					<td style="text-align:left" title="Measured Molecule P5" class="">{{ value.24 }}</td>
 
 					<!-- delta delta log tau/KA block -->
-					<!-- 27,28,29,30 -->
 					<td style="text-align:right" class="color-column" id="opmodel_p2_p1" title="DDtkP1P2">{{ value.25|default_if_none:""|floatformat:1 }}</td>
 					<td style="text-align:right" class="color-column" id="opmodel_p3_p1" title="DDtkP1P3">{{ value.26|default_if_none:""|floatformat:1 }}</td>
 					<td style="text-align:right" class="color-column" id="opmodel_p4_p1" title="DDtkP1P4">{{ value.27|default_if_none:""|floatformat:1 }}</td>
 					<td style="text-align:right" class="color-column" id="opmodel_p5_p1" title="DDtkP1P5">{{ value.28|default_if_none:""|floatformat:1 }}</td>
 
 					<!-- delta delta log emax/ec50 block ---->
-					<!-- 31,32,33,34 -->
 					<td style="text-align:right" class="color-column" id="lbf_p2_p1" title="DDeeP1P2">{{ value.29|default_if_none:""|floatformat:1 }}</td>
 					<td style="text-align:right" class="color-column" id="lbf_p3_p1" title="DDeeP1P3">{{ value.30|default_if_none:""|floatformat:1 }}</td>
 					<td style="text-align:right" class="color-column" id="lbf_p4_p1" title="DDeeP1P4">{{ value.31|default_if_none:""|floatformat:1 }}</td>
 					<td style="text-align:right" class="color-column" id="lbf_p5_p1" title="DDeeP1P5">{{ value.32|default_if_none:""|floatformat:1 }}</td>
 
 					<!-- delta log tau/KA block -->
-					<!-- 35,36,37,38,39 -->
 					<td style="text-align:right" class="color-column">{{ value.33|default_if_none:""|floatformat:1 }}</td>
 					<td style="text-align:right" class="color-column">{{ value.34|default_if_none:""|floatformat:1 }}</td>
 					<td style="text-align:right" class="color-column">{{ value.35|default_if_none:""|floatformat:1 }}</td>
@@ -680,7 +596,6 @@
 					<td style="text-align:right" class="color-column">{{ value.37|default_if_none:""|floatformat:1 }}</td>
 
 					<!-- delta log emax/ec50 block -->
-					<!-- 40,41,42,43,44 -->
 					<td style="text-align:right" title='{{ value.38 }}' class="color-column">{{ value.38|default_if_none:""|floatformat:1 }}</td>
 					<td style="text-align:right" title='{{ value.39 }}' class="color-column">{{ value.39|default_if_none:""|floatformat:1 }}</td>
 					<td style="text-align:right" title='{{ value.40 }}' class="color-column">{{ value.40|default_if_none:""|floatformat:1 }}</td>
@@ -688,7 +603,6 @@
 					<td style="text-align:right" title='{{ value.42 }}' class="color-column">{{ value.42|default_if_none:""|floatformat:1 }}</td>
 
 					<!-- EC50 block -->
-					<!-- 45,46,47,48,49 -->
 					<td class="color-column" style="text-align:right">{{ value.43|default_if_none:""|floatformat:1 }}</td>
 					<td class="color-column" style="text-align:right">{{ value.44|default_if_none:""|floatformat:1 }}</td>
 					<td class="color-column" style="text-align:right">{{ value.45|default_if_none:""|floatformat:1 }}</td>
@@ -696,7 +610,6 @@
 					<td class="color-column" style="text-align:right">{{ value.47|default_if_none:""|floatformat:1 }}</td>
 
 					<!-- Emax block -->
-					<!-- 50,51,52,53,54 -->
 					<td style="text-align:right" class="color-column">{{ value.48|default_if_none:""|floatformat:1 }}</td>
 					<td style="text-align:right" class="color-column">{{ value.49|default_if_none:""|floatformat:1 }}</td>
 					<td style="text-align:right" class="color-column">{{ value.50|default_if_none:""|floatformat:1 }}</td>
@@ -704,7 +617,6 @@
 					<td style="text-align:right" class="color-column">{{ value.52|default_if_none:""|floatformat:1 }}</td>
 
 					<!-- Molecule 1 block -->
-					<!-- 55,56,57,58,59 -->
 					<td>{{ value.53 }}</td>
 					<td>{{ value.54 }}</td>
 					<td class="">{{ value.55 }}</td>
@@ -712,7 +624,6 @@
 					<td class="">{{ value.57 }}</td>
 
 					<!-- Molecule 2 block -->
-					<!-- 60,61,62,63,64 -->
 					<td>{{ value.58 }}</td>
 					<td>{{ value.59 }}</td>
 					<td class="">{{ value.60 }}</td>
@@ -720,7 +631,6 @@
 					<td class="">{{ value.62 }}</td>
 
 					<!-- Biological process block -->
-					<!-- 65,66,67,68,69 -->
 					<td title='{{ value.63 }}'>{{ value.63 }}</td>
 					<td title='{{ value.64 }}'>{{ value.64 }}</td>
 					<td title='{{ value.65 }}' class="">{{ value.65 }}</td>
@@ -728,17 +638,18 @@
 					<td title='{{ value.67 }}' class="">{{ value.67 }}</td>
 
 					<!-- Cell line -->
-					<!-- 70 -->
 					<td title='{{ value.68 }}'>{{ value.68|default_if_none:"" }}</td>
+					<td title='{{ value.69 }}'>{{ value.69|default_if_none:"" }}</td>
+					<td title='{{ value.70 }}'>{{ value.70|default_if_none:"" }}</td>
+					<td title='{{ value.71 }}'>{{ value.71|default_if_none:"" }}</td>
+					<td title='{{ value.72 }}'>{{ value.72|default_if_none:"" }}</td>
 
 					<!-- Time resolved -->
-					<!-- 71 -->
-					<td title='{{ value.69 }}'>{{ value.69|default_if_none:"" }}</td>
+					<td title='{{ value.73 }}'>{{ value.73|default_if_none:"" }}</td>
 
 					<!-- Reference -->
-					<!-- 72,73 -->
-					<td class="name" style="border-left: 1px solid black;">{{ value.70 }}</td>
-					<td class="name"><a href='{{ value.71 }}' target='blank'>{{ value.71 }}</a></td>
+					<td class="name" style="border-left: 1px solid black;">{{ value.74 }}</td>
+					<td class="name"><a href='{{ value.75 }}' target='blank'>{{ value.75 }}</a></td>
 				</tr>
 				{% endfor %}
 			{% endif %}
@@ -803,7 +714,8 @@
 									40,41,42,
 									45,46,47,
 									50,51,52,
-									55,56,57],
+									55,56,57,
+									60,61,62],
 				visible: false
 			}],
 	  });
@@ -825,11 +737,11 @@
 		// ΔLog(Tau/KA)(4)/ΔLog(Emax/EC50)(4)/Log(Tau/KA)(5)/Log(Emax/EC50)(5)/EC50(5)/Emax(5)
     column_filters = column_filters.concat(createYADCFfilters(15, 28, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
 		// Measured Molecule 1(5)/2(5)/Biological Process(5)/Cell Line(1)/Time Resolved(1)
-		column_filters = column_filters.concat(createYADCFfilters(43, 17, "multi_select", "select2", "Select", false, null, null, "30px"));
+		column_filters = column_filters.concat(createYADCFfilters(43, 21, "multi_select", "select2", "Select", false, null, null, "30px"));
     // Authors
-		column_filters = column_filters.concat(createYADCFfilters(60, 1, "multi_select", "select2", "Authors", false, null, null, "30px"));
+		column_filters = column_filters.concat(createYADCFfilters(64, 1, "multi_select", "select2", "Authors", false, null, null, "30px"));
 		// DOI
-		column_filters = column_filters.concat(createYADCFfilters(61, 1, "multi_select", "select2", "DOI", false, null, null, "80px"));
+		column_filters = column_filters.concat(createYADCFfilters(65, 1, "multi_select", "select2", "DOI", false, null, null, "80px"));
 
 		yadcf.init(oTable1.draw(), column_filters, {
 			cumulative_filtering: false
@@ -879,17 +791,18 @@
 	    bInfo: true,
 			columnDefs: [{
 				targets: [13,14,15,
-									18,19,20,
-									23,24,25,
-									27,28,29,
-									31,32,33,
-									36,37,38,
-									41,42,43,
-									46,47,48,
-									51,52,53,
-									56,57,58,
-									61,62,63,
-									66,67,68],
+									17,18,19,
+									22,23,24,
+									26,27,28,
+									30,31,32,
+									35,36,37,
+									40,41,42,
+									45,46,47,
+									50,51,52,
+									55,56,57,
+									60,61,62,
+									65,66,67,
+									70,71,72],
 				visible: false
 			}],
 	  });
@@ -915,17 +828,17 @@
 		// Pathway Rank Order block (5)
 		column_filters = column_filters.concat(createYADCFfilters(11, 5, "multi_select", "select2", "Select", false, null, null, "30px"));
 		// Bias Factor(5)
-		column_filters = column_filters.concat(createYADCFfilters(16, 5, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+		column_filters = column_filters.concat(createYADCFfilters(16, 4, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
 		// Signalling protein (5)
-		column_filters = column_filters.concat(createYADCFfilters(21, 5, "multi_select", "select2", "Select", false, null, null, "30px"));
+		column_filters = column_filters.concat(createYADCFfilters(20, 5, "multi_select", "select2", "Select", false, null, null, "30px"));
 		// ΔΔLog(Tau/KA)(4)/ΔΔLog(Emax/EC50)(4)/ΔLog(Tau/KA)(5)/ΔLog(Emax/EC50)(5)/EC50(5)/Emax(5)
-    column_filters = column_filters.concat(createYADCFfilters(26, 28, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+    column_filters = column_filters.concat(createYADCFfilters(25, 28, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
 		// Measured Molecule 1(5)/2(5)/Biological Process(5)/Cell Line(1)/Time Resolved(1)
-		column_filters = column_filters.concat(createYADCFfilters(54, 17, "multi_select", "select2", "Select", false, null, null, "30px"));
+		column_filters = column_filters.concat(createYADCFfilters(53, 21, "multi_select", "select2", "Select", false, null, null, "30px"));
     // Authors
-		column_filters = column_filters.concat(createYADCFfilters(71, 1, "multi_select", "select2", "Authors", false, null, null, "30px"));
+		column_filters = column_filters.concat(createYADCFfilters(74, 1, "multi_select", "select2", "Authors", false, null, null, "30px"));
 		// DOI
-		column_filters = column_filters.concat(createYADCFfilters(72, 1, "multi_select", "select2", "DOI", false, null, null, "80px"));
+		column_filters = column_filters.concat(createYADCFfilters(75, 1, "multi_select", "select2", "DOI", false, null, null, "80px"));
 
 		yadcf.init(oTable1.draw(), column_filters, {
 			cumulative_filtering: false
@@ -957,7 +870,8 @@
 																40,41,42,
 																45,46,47,
 																50,51,52,
-																55,56,57]);
+																55,56,57,
+																60,61,62]);
 	      });
 	    $("#full_pathway").click(function() {
 					$("#full_pathway").addClass("active");
@@ -967,6 +881,7 @@
 					$("#compressed_pathway").removeClass("btn-success");
 					$("#compressed_pathway").addClass("btn-light");
 					resetHiddenColumns(oTable1);
+					gray_scale_table($("#structures_scrollable"));
 	    });
 	});
 </script>
@@ -981,17 +896,18 @@
 					$("#full_biased").removeClass("btn-success");
 					$("#full_biased").addClass("btn-light");
 					hideColumns(oTable1, [13,14,15,
-																18,19,20,
-																23,24,25,
-																27,28,29,
-																31,32,33,
-																36,37,38,
-																41,42,43,
-																46,47,48,
-																51,52,53,
-																56,57,58,
-																61,62,63,
-																66,67,68]);
+																17,18,19,
+																22,23,24,
+																26,27,28,
+																30,31,32,
+																35,36,37,
+																40,41,42,
+																45,46,47,
+																50,51,52,
+																55,56,57,
+																60,61,62,
+																65,66,67,
+																70,71,72]);
 	      });
 	    $("#full_biased").click(function() {
 					$("#full_biased").addClass("active");
@@ -1001,6 +917,7 @@
 					$("#compressed_biased").removeClass("btn-success");
 					$("#compressed_biased").addClass("btn-light");
 					resetHiddenColumns(oTable1);
+					gray_scale_table($("#structures_scrollable"));
 	    });
 	});
 </script>

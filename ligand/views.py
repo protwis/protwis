@@ -547,16 +547,6 @@ class RankOrderSelection(AbsReferenceSelectionTable):
             "color": 'default active',
             "sameSize": True,
         },
-        'dot_plot_test': {
-            'label': 'DotPlot Test (OnTheFly)',
-            'onclick': "submitSelection('/ligand/test_emax_rankorder');",
-            'color': 'warning',
-        },
-        'multiline_test': {
-            'label': 'Multiline Test (OnTheFly)',
-            'onclick': "submitSelection('/ligand/test_emax_path_profiles');",
-            'color': 'warning',
-        },
     }
 
     table_data = getReferenceTable("different_family", "tested_assays")
@@ -867,7 +857,7 @@ class BiasedRankOrderOnTheFly(TemplateView):
     #set a global variable for different pages
     page = "rankorder"
     label = "emax"
-    template_name = "test_biased_rank_orders.html"
+    template_name = "otf_biased_rank_orders.html"
     subtype = False
     pathway = False
     user = ''
@@ -1021,12 +1011,12 @@ class BiasedRankOrderOnTheFly(TemplateView):
         for key, value in data.items():
             for row_key, data_dict in value.items():
                 #filtering out non compared
-                if (len(data_dict) > 33) and (data_dict['Pathway Rank'] in ['P1','P2']):
+                if (len(data_dict) > 33) and ('Pathway Rank' in data_dict.keys()):
                     flat_data[row_key] = data_dict
         ####
         upgrade_value = ["High activity", "High activity (Potency and Emax)", "Full agonism"]
         downgrade_value = ["Low activity", "No activity", "Inverse agonism/antagonism"]
-        exclude_list = ["Agonism", "Partial agonism", "Medium activity"]
+        # exclude_list = ["Agonism", "Partial agonism", "Medium activity"]
         list_of_ligands = []
         list_of_publications = []
         full_data = {}
@@ -1159,6 +1149,8 @@ class BiasedRankOrderOnTheFly(TemplateView):
                     jitterDict[jitterAuthors][lig_name]['2nd_Pathway_EC50_KA'] = EC50_ka
                 jitterDict[jitterAuthors][lig_name]['deltadelta'] = DD
                 jitterDict[jitterAuthors][lig_name]['signalling_prot'] = result['primary_effector_subtype']
+                jitterDict[jitterAuthors][lig_name]['EC50_sign'] = EC50_sign
+                jitterDict[jitterAuthors][lig_name]['Emax_sign'] = Emax_sign
 
 
             if result["Pathway Rank"] == 'P1':
@@ -1167,7 +1159,7 @@ class BiasedRankOrderOnTheFly(TemplateView):
                 jitterDict[jitterAuthors][lig_name]["Emax_Tau"] = emax_tau
                 jitterDict[jitterAuthors][lig_name]["EC50_KA"] = EC50_ka
 
-            tooltip_info = BiasedRankOrder.jitter_tooltip(self.page, self.pathway, lig_name, value, components,
+            tooltip_info = BiasedRankOrderOnTheFly.jitter_tooltip(self.page, self.pathway, lig_name, value, components,
                                                           small_data=[result['primary_effector_family'], emax_tau, EC50_ka, lig_name],
                                                           small_ref=[reference_path, reference_emax_tau, reference_EC50_ka, reference_ligand])
 
@@ -1235,7 +1227,7 @@ class BiasedRankOrderOnTheFly(TemplateView):
                     try:
                         for i in indices:
                             name["PathwaysData"][i]["value"] = [MAX,"ARTIFICIAL"]
-                            name["PathwaysData"][i]["tooltip"] = BiasedRankOrder.jitter_tooltip(self.page, self.pathway, lig_name, value, components,
+                            name["PathwaysData"][i]["tooltip"] = BiasedRankOrderOnTheFly.jitter_tooltip(self.page, self.pathway, lig_name, value, components,
                                                                                                 small_data=[result['primary_effector_family'], emax_tau, 'High', lig_name],
                                                                                                 small_ref=[reference_path, reference_emax_tau, reference_EC50_ka, reference_ligand])
                     except ValueError:
@@ -1244,7 +1236,7 @@ class BiasedRankOrderOnTheFly(TemplateView):
                     try:
                         for i in indices:
                             name["PathwaysData"][i]["value"] = [MIN,"ARTIFICIAL"]
-                            name["PathwaysData"][i]["tooltip"] = BiasedRankOrder.jitter_tooltip(self.page, self.pathway, lig_name, value, components,
+                            name["PathwaysData"][i]["tooltip"] = BiasedRankOrderOnTheFly.jitter_tooltip(self.page, self.pathway, lig_name, value, components,
                                                                                                 small_data=[result['primary_effector_family'], emax_tau, 'Low', lig_name],
                                                                                                 small_ref=[reference_path, reference_emax_tau, reference_EC50_ka, reference_ligand])
                     except ValueError:
@@ -1277,7 +1269,6 @@ class BiasedRankOrderOnTheFly(TemplateView):
                     sorted_full_data[item[0]]["Data"].append(full_data[item[0]]["Data"][couple[0]]) #need to be sorted_full_data
                     if tuple((couple[2], full_data[item[0]]["Ligand"][couple[0]])) not in full_ligands[item[0]]:
                         full_ligands[item[0]].append(tuple((couple[2], full_data[item[0]]["Ligand"][couple[0]])))
-
         #now the sorted dict is done, we can clear cache the og one
         del full_data
 
@@ -1285,9 +1276,9 @@ class BiasedRankOrderOnTheFly(TemplateView):
             for ligand in jitterDict[pub]:
                 try:
                     if ligand not in Colors.keys():
-                        color = '#%02x%02x%02x' % (BiasedRankOrder.create_rgb_color(), BiasedRankOrder.create_rgb_color(), BiasedRankOrder.create_rgb_color())
+                        color = '#%02x%02x%02x' % (BiasedRankOrderOnTheFly.create_rgb_color(), BiasedRankOrderOnTheFly.create_rgb_color(), BiasedRankOrderOnTheFly.create_rgb_color())
                         Colors[ligand] = color
-                    little = [reference_path, reference_EC50_ka, reference_emax_tau, reference_ligand]
+                    little = [reference_path, reference_emax_tau, reference_EC50_ka, reference_ligand]
                     if self.subtype:
                         big = [sign_prot_conversion[jitterDict[pub][ligand]["signalling_prot"]], jitterDict[pub][ligand]['delta'], jitterDict[pub][ligand]['Emax_Tau'], jitterDict[pub][ligand]['EC50_KA'],
                                sign_prot_conversion[jitterDict[pub][ligand]["signalling_prot"]], jitterDict[pub][ligand]['2nd_Pathway_delta'], jitterDict[pub][ligand]['2nd_Pathway_emax_tau'], jitterDict[pub][ligand]['2nd_Pathway_EC50_KA']]
@@ -1295,10 +1286,10 @@ class BiasedRankOrderOnTheFly(TemplateView):
                         big = [jitterDict[pub][ligand]["Pathway"], jitterDict[pub][ligand]['delta'], jitterDict[pub][ligand]['Emax_Tau'], jitterDict[pub][ligand]['EC50_KA'],
                                jitterDict[pub][ligand]['2nd_Pathway'], jitterDict[pub][ligand]['2nd_Pathway_delta'], jitterDict[pub][ligand]['2nd_Pathway_emax_tau'], jitterDict[pub][ligand]['2nd_Pathway_EC50_KA']]
                     if (jitterDict[pub][ligand]['deltadelta'][1] == 'High Bias') or (jitterDict[pub][ligand]['deltadelta'][1] == 'Full Bias'):
-                        tooltip = BiasedRankOrder.jitter_tooltip(self.page, self.pathway, ligand, jitterDict[pub][ligand]['deltadelta'][1], components, prefix, small_data=little, large_data=big)
+                        tooltip = BiasedRankOrderOnTheFly.jitter_tooltip(self.page, self.pathway, ligand, jitterDict[pub][ligand]['deltadelta'][1], components, prefix, small_data=little, large_data=big)
                     else:
-                        tooltip = BiasedRankOrder.jitter_tooltip(self.page, self.pathway, ligand, jitterDict[pub][ligand]['deltadelta'][0], components, prefix, small_data=little, large_data=big)
-                    jitterPlot[jitterDict[pub][ligand]["Pathway"]].append([pub, jitterDict[pub][ligand]['deltadelta'][0], Colors[ligand], ligand, jitterDict[pub][ligand]['deltadelta'][1], tooltip])
+                        tooltip = BiasedRankOrderOnTheFly.jitter_tooltip(self.page, self.pathway, ligand, jitterDict[pub][ligand]['deltadelta'][0], components, prefix, small_data=little, large_data=big)
+                    jitterPlot[jitterDict[pub][ligand]["Pathway"]].append([pub, jitterDict[pub][ligand]['deltadelta'][0], Colors[ligand], ligand, jitterDict[pub][ligand]['deltadelta'][1], tooltip, jitterDict[pub][ligand]['EC50_sign'], jitterDict[pub][ligand]['Emax_sign']])
                     jitterLegend[jitterDict[pub][ligand]["Pathway"]].append(tuple((ligand, jitterDict[pub][ligand]['deltadelta'][0])))
                 except KeyError:
                     continue
@@ -1321,7 +1312,7 @@ class BiasedRankOrderOnTheFly(TemplateView):
             jitterLegend[key] = list(dict.fromkeys([name[0] for name in jitterLegend[key]]))[:20]
 
         context['column_dict'] = json.dumps(labels_dict)
-        context['pathway'] = self.pathway
+        context['pathway'] = str(self.pathway)
         context['label'] = self.label
         context['page'] = self.page
         context['scatter_legend'] = json.dumps(jitterLegend)
@@ -1868,7 +1859,8 @@ class OTFBiasBrowser(TemplateView):
                            'P1 - Measured molecule 1', 'P2 - Measured molecule 1', 'P3 - Measured molecule 1', 'P4 - Measured molecule 1', 'P5 - Measured molecule 1',
                            'P1 - Measured molecule 2', 'P2 - Measured molecule 2', 'P3 - Measured molecule 2', 'P4 - Measured molecule 2', 'P5 - Measured molecule 2',
                            'P1 - Biological process', 'P2 - Biological process', 'P3 - Biological process', 'P4 - Biological process', 'P5 - Biological process',
-                           'Cell line', 'Time resolved', 'Authors', 'DOI/PMID', 'ID']
+                           'P1 - Cell line', 'P2 - Cell lines', 'P3 - Cell line', 'P4 - Cell line', 'P5 - Cell line',
+                           'Time resolved', 'Authors', 'DOI/PMID', 'ID']
         if self.pathway:
             browser_columns = ['Class', 'Receptor family', 'UniProt', 'IUPHAR', 'Species',
                                'Ligand', '#Vendors', '#Articles', '#Labs',
@@ -1882,7 +1874,8 @@ class OTFBiasBrowser(TemplateView):
                                'P1 - Measured molecule 1', 'P2 - Measured molecule 1', 'P3 - Measured molecule 1', 'P4 - Measured molecule 1', 'P5 - Measured molecule 1',
                                'P1 - Measured molecule 2', 'P2 - Measured molecule 2', 'P3 - Measured molecule 2', 'P4 - Measured molecule 2', 'P5 - Measured molecule 2',
                                'P1 - Biological process', 'P2 - Biological process', 'P3 - Biological process', 'P4 - Biological process', 'P5 - Biological process',
-                               'Cell line', 'Time resolved', 'Authors', 'DOI/PMID', 'ID']
+                               'P1 - Cell line', 'P2 - Cell lines', 'P3 - Cell line', 'P4 - Cell line', 'P5 - Cell line',
+                               'Time resolved', 'Authors', 'DOI/PMID', 'ID']
 
         table = pd.DataFrame(columns=browser_columns)
         #receptor_id
@@ -1905,7 +1898,6 @@ class OTFBiasBrowser(TemplateView):
                             ligands[data[pub][key]['ligand_id']]['Tested ligand'] = data[pub][key]['ligand_name']
                         ligands[data[pub][key]['ligand_id']]['ID'] = data[pub][key]['ligand_id']
                         ligands[data[pub][key]['ligand_id']]['Species'] = data[pub][key]['specie']
-                        ligands[data[pub][key]['ligand_id']]['Cell line'] = data[pub][key]['cell_line']
                         ligands[data[pub][key]['ligand_id']]['Authors'] = data[pub][key]['authors']
                         ligands[data[pub][key]['ligand_id']]['DOI/PMID'] = data[pub][key]['doi']
                         ligands[data[pub][key]['ligand_id']]['#Vendors'] = LigandVendorLink.objects.filter(lp_id=data[pub][key]['ligand__properities_id']).values_list("vendor_id").distinct().count()
