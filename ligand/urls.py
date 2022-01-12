@@ -21,7 +21,7 @@ urlpatterns = [
     url(r'^bias_statistics', cache_page(3600*24*7)(views.LigandStatistics.as_view(page='ligand_bias')), name='ligand_statistics'),
     # url(r'^bias_statistics', views.LigandStatistics.as_view(page='ligand_bias'), name='ligand_statistics'),
     path('emax_rank_order_selection', views.RankOrderSelection.as_view(), name='emax_ro_selection'),
-    path('emax_rankorder', cache_page(3600*24*7)(views.BiasedRankOrderOnTheFly.as_view()), name='biased_rank_order'),
+    path('emax_rankorder', views.BiasedRankOrderOnTheFly.as_view(), name='biased_rank_order'),
 
     #TESTING ONTHEFLY
     path('test_emax_rankorder', views.BiasedRankOrderOnTheFly.as_view(), name='biased_rank_order'),
