@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
 <!--<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.16/b-1.5.1/b-html5-1.5.1/datatables.min.css" />-->
 <!-- <link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" /> -->
+<link rel="stylesheet" href="{% static 'home/css/bootstrap2-toggle.min.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
 <!-- <link rel="stylesheet" href="{% static 'home/css/signprot-multitabtable.css' %}" type="text/css" /> -->
@@ -219,6 +220,10 @@
 		text-overflow: ellipsis;
 	}
 </style>
+<style>
+  .toggle.ios, .toggle-on.ios, .toggle-off.ios { border-radius: 20px; }
+  .toggle.ios .toggle-handle { border-radius: 20px; }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -230,15 +235,17 @@
 	<button onclick="tableToExcel('structures_scrollable', 'Families data', 'GPCRDB.xls')" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Export to Excel </button>
 	<button onclick="reset_filters()" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Reset filters </button>
 	{% if Pathway %}
-	<div class="btn-group" role="group" id="gtp_plus">
+	<input id="switch_pathway" type="checkbox" checked data-toggle="toggle" data-on="Pathway 1-2" data-off="All pathways" data-style="ios" data-width="130" data-height="35" data-offstyle="success">
+	<!-- <div class="btn-group" role="group" id="gtp_plus">
 			<button id="compressed_pathway" class="btn btn-success active">Pathway 1-2</button>
 			<button id="full_pathway" class="btn btn-light">All pathways</button>
-	</div>
+	</div> -->
 	{% else %}
-	<div class="btn-group" role="group" id="gtp_plus">
+	<input id="switch_biased" type="checkbox" checked data-toggle="toggle" data-on="Pathway 1-2" data-off="All pathways" data-style="ios" data-width="130" data-height="35" data-offstyle="success">
+	<!-- <div class="btn-group" role="group" id="gtp_plus">
 			<button id="compressed_biased" class="btn btn-success active">Pathway 1-2</button>
-			<button id="full_biased" class="btn btn-light">All pathways</button>
-	</div>
+			<button id="full_biased" class="btn btn-light">All pathway</button>
+	</div> -->
 	{% endif %}
 
 	<table class="display compact text-nowrap" id='structures_scrollable' style="width: 100%">
@@ -664,6 +671,7 @@
 {% block addon_js %}
 
 <script src="{% static 'home/js/datatables.min.js' %}"> </script>
+<script src="{% static 'home/js/bootstrap2-toggle.min.js' %}"></script>
 <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
 <script src="{% static 'home/js/dataTables.buttons.min.js' %}"> </script>
 <script src="{% static 'home/js/select2.js' %}"> </script>
@@ -854,71 +862,49 @@
 {% if Pathway %}
 <script>
 	$(window).on("load",function() {
-	    $("#compressed_pathway").click(function(){
-	        $("#compressed_pathway").addClass("active");
-					$("#compressed_pathway").removeClass("btn-light");
-					$("#compressed_pathway").addClass("btn-success");
-	        $("#full_pathway").removeClass("active");
-					$("#full_pathway").removeClass("btn-success");
-					$("#full_pathway").addClass("btn-light");
-					hideColumns(oTable1, [12,13,14,
-																16,17,18,
-																20,21,22,
-																25,26,27,
-																30,31,32,
-																35,36,37,
-																40,41,42,
-																45,46,47,
-																50,51,52,
-																55,56,57,
-																60,61,62]);
-	      });
-	    $("#full_pathway").click(function() {
-					$("#full_pathway").addClass("active");
-					$("#full_pathway").removeClass("btn-light");
-					$("#full_pathway").addClass("btn-success");
-					$("#compressed_pathway").removeClass("active");
-					$("#compressed_pathway").removeClass("btn-success");
-					$("#compressed_pathway").addClass("btn-light");
-					resetHiddenColumns(oTable1);
-					gray_scale_table($("#structures_scrollable"));
-	    });
+			$('#switch_pathway').change(function() {
+				if ($(this).prop('checked')) {
+						hideColumns(oTable1, [12,13,14,
+																	16,17,18,
+																	20,21,22,
+																	25,26,27,
+																	30,31,32,
+																	35,36,37,
+																	40,41,42,
+																	45,46,47,
+																	50,51,52,
+																	55,56,57,
+																	60,61,62]);
+				} else {
+						resetHiddenColumns(oTable1);
+						gray_scale_table($("#structures_scrollable"));
+				}
+			});
 	});
 </script>
 {% else %}
 <script>
 	$(window).on("load",function() {
-	    $("#compressed_biased").click(function(){
-	        $("#compressed_biased").addClass("active");
-					$("#compressed_biased").removeClass("btn-light");
-					$("#compressed_biased").addClass("btn-success");
-	        $("#full_biased").removeClass("active");
-					$("#full_biased").removeClass("btn-success");
-					$("#full_biased").addClass("btn-light");
-					hideColumns(oTable1, [13,14,15,
-																17,18,19,
-																22,23,24,
-																26,27,28,
-																30,31,32,
-																35,36,37,
-																40,41,42,
-																45,46,47,
-																50,51,52,
-																55,56,57,
-																60,61,62,
-																65,66,67,
-																70,71,72]);
-	      });
-	    $("#full_biased").click(function() {
-					$("#full_biased").addClass("active");
-					$("#full_biased").removeClass("btn-light");
-					$("#full_biased").addClass("btn-success");
-					$("#compressed_biased").removeClass("active");
-					$("#compressed_biased").removeClass("btn-success");
-					$("#compressed_biased").addClass("btn-light");
-					resetHiddenColumns(oTable1);
-					gray_scale_table($("#structures_scrollable"));
-	    });
+			$('#switch_biased').change(function() {
+				if ($(this).prop('checked')) {
+						hideColumns(oTable1, [13,14,15,
+																	17,18,19,
+																	22,23,24,
+																	26,27,28,
+																	30,31,32,
+																	35,36,37,
+																	40,41,42,
+																	45,46,47,
+																	50,51,52,
+																	55,56,57,
+																	60,61,62,
+																	65,66,67,
+																	70,71,72]);
+				} else {
+						resetHiddenColumns(oTable1);
+						gray_scale_table($("#structures_scrollable"));
+				}
+			});
 	});
 </script>
 {% endif %}
