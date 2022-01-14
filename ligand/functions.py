@@ -227,21 +227,20 @@ def assess_reference(data_dict, user=False):
 
     return reference, tested, skip
 
-def assess_comparisons(reference, tested, subtype=False):
+def assess_comparisons(reference, tested):
     # Do we need to add these fields for comparison's sake?
     # 'receptor_isoform', #this can be null
     # 'active_receptor_complex', #this can be null
     common_traits = ['tissue',
                      'specie',
                      'primary_effector_family',
+                     'primary_effector_subtype',
                      'experiment',
                      'molecule_1',
                      'molecule_2',
                      'measured_process',
                      'assay_type']
-    if subtype:
-        common_traits.append('primary_effector_subtype')
-        
+
     comparisons = {}
     for assay in reference:
         comparisons[assay] = []
@@ -555,7 +554,7 @@ def OnTheFly(receptor_id, subtype=False, pathway=False, user=False):
                 continue
 
             #Assess available comparisons
-            comparisons = assess_comparisons(reference, tested, subtype)
+            comparisons = assess_comparisons(reference, tested)
 
             #calculate the first delta, remove excess data if needed
             comparisons, tested, skip = calculate_first_delta(comparisons, reference, tested, subtype)
