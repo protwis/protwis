@@ -1883,6 +1883,22 @@ class OTFBiasBrowser(TemplateView):
                                                                                "family__parent__name",
                                                                                "entry_name",
                                                                                "name")
+        # Preprocess ligand vendors
+        ligprop_ids = set([data[pub][key]['ligand__properities_id'] for pub in data for key in data[pub]])
+        vendor_output = list(LigandVendorLink.objects.filter(lp_id__in=ligprop_ids).values_list("lp_id").annotate(Count('vendor_id', distinct=True)))
+        vendors_dict = {entry[0]:entry[1] for entry in vendor_output}
+
+        # Preprocess ligand_id => articles
+        lig_ids = set([data[pub][key]['ligand_id'] for pub in data for key in data[pub]])
+        articles_output = list(BiasedData.objects.filter(ligand_id__in=lig_ids).values_list("ligand_id").annotate(Count('publication_id', distinct=True)))
+        articles_dict = {entry[0]:entry[1] for entry in articles_output}
+
+        # Preprocess ligand id => labs
+        labs_dict = {}
+        for authors in BiasedData.objects.filter(ligand_id__in=lig_ids).values_list("ligand_id", "publication_id__authors").distinct():
+            if authors[0] not in labs_dict:
+                labs_dict[authors[0]] = set()
+            labs_dict[authors[0]].add(authors[1].split(',')[-1])
 
         for pub in data:
             ligands = {}
@@ -1900,12 +1916,9 @@ class OTFBiasBrowser(TemplateView):
                         ligands[data[pub][key]['ligand_id']]['Species'] = data[pub][key]['specie']
                         ligands[data[pub][key]['ligand_id']]['Authors'] = data[pub][key]['authors']
                         ligands[data[pub][key]['ligand_id']]['DOI/PMID'] = data[pub][key]['doi']
-                        ligands[data[pub][key]['ligand_id']]['#Vendors'] = LigandVendorLink.objects.filter(lp_id=data[pub][key]['ligand__properities_id']).values_list("vendor_id").distinct().count()
-                        ligands[data[pub][key]['ligand_id']]['#Articles'] = BiasedData.objects.filter(ligand_id=data[pub][key]['ligand_id']).values_list("publication_id").distinct().count()
-                        for authors in BiasedData.objects.filter(ligand_id=data[pub][key]['ligand_id']).values_list("publication_id__authors").distinct():
-                            if authors[0].split(',')[-1] not in labs:
-                                labs.append(authors[0].split(',')[-1])
-                        ligands[data[pub][key]['ligand_id']]['#Labs'] = len(labs)
+                        ligands[data[pub][key]['ligand_id']]['#Vendors'] = vendors_dict[data[pub][key]['ligand__properities_id']] if data[pub][key]['ligand__properities_id'] in vendors_dict else 0
+                        ligands[data[pub][key]['ligand_id']]['#Articles'] = articles_dict[data[pub][key]['ligand_id']]
+                        ligands[data[pub][key]['ligand_id']]['#Labs'] = len(labs_dict[data[pub][key]['ligand_id']])
                         ligands[data[pub][key]['ligand_id']]['Time resolved'] = data[pub][key]['time_resolved']
                     AddPathwayData(ligands[data[pub][key]['ligand_id']], data[pub][key], data[pub][key]['Pathway Rank'], self.pathway)
                 if 'Reference_ligand' in data[pub][key].keys():
