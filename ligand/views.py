@@ -1917,8 +1917,8 @@ class OTFBiasBrowser(TemplateView):
                         ligands[data[pub][key]['ligand_id']]['Authors'] = data[pub][key]['authors']
                         ligands[data[pub][key]['ligand_id']]['DOI/PMID'] = data[pub][key]['doi']
                         ligands[data[pub][key]['ligand_id']]['#Vendors'] = vendors_dict[data[pub][key]['ligand__properities_id']] if data[pub][key]['ligand__properities_id'] in vendors_dict else 0
-                        ligands[data[pub][key]['ligand_id']]['#Articles'] = articles_dict[data[pub][key]['ligand_id']]
-                        ligands[data[pub][key]['ligand_id']]['#Labs'] = len(labs_dict[data[pub][key]['ligand_id']])
+                        ligands[data[pub][key]['ligand_id']]['#Articles'] = articles_dict[data[pub][key]['ligand_id']] if data[pub][key]['ligand_id'] in articles_dict else 0
+                        ligands[data[pub][key]['ligand_id']]['#Labs'] = len(labs_dict[data[pub][key]['ligand_id']]) if data[pub][key]['ligand_id'] in labs_dict else 0
                         ligands[data[pub][key]['ligand_id']]['Time resolved'] = data[pub][key]['time_resolved']
                     AddPathwayData(ligands[data[pub][key]['ligand_id']], data[pub][key], data[pub][key]['Pathway Rank'], self.pathway)
                 if 'Reference_ligand' in data[pub][key].keys():
