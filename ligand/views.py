@@ -1002,10 +1002,7 @@ class BiasedRankOrderOnTheFly(TemplateView):
             prefix = ''
         else:
             prefix = 'Δ'
-        start = time.time()
         data = OnTheFly(int(receptor), self.subtype, self.pathway)
-        end = time.time() - start
-        print(end)
         #### added code
         flat_data = {}
         for key, value in data.items():
@@ -1028,6 +1025,17 @@ class BiasedRankOrderOnTheFly(TemplateView):
         Colors = {}
         pathway_nr = {}
         labels_dict = {}
+
+        if self.pathway:
+            delta_tk_key = 'log(Tau/KA)'
+            delta_ee_key = 'log(Emax/EC50)'
+            deltadelta_tk_key = 'Delta_log(Tau/KA)'
+            deltadelta_ee_key = 'Delta_log(Emax/EC50)'
+        else:
+            delta_tk_key = 'Delta_log(Tau/KA)'
+            delta_ee_key = 'Delta_log(Emax/EC50)'
+            deltadelta_tk_key = 'DeltaDelta_log(Tau/KA)'
+            deltadelta_ee_key = 'DeltaDelta_log(Emax/EC50)'
 
         for row in flat_data:
             result = flat_data[row]
@@ -1055,11 +1063,11 @@ class BiasedRankOrderOnTheFly(TemplateView):
             #based on the landing page
             if self.label == 'emax':
                 try:
-                    single_delta = result['Delta_log(Emax/EC50)']
+                    single_delta = result[delta_ee_key]
                 except KeyError:
                     single_delta = None
                 try:
-                    double_delta = result['DeltaDelta_log(Emax/EC50)']
+                    double_delta = result[deltadelta_ee_key]
                 except KeyError:
                     double_delta = None
                 emax_tau = result["Emax"]
@@ -1075,11 +1083,11 @@ class BiasedRankOrderOnTheFly(TemplateView):
                     reference_EC50_ka = 'NA'
             else:
                 try:
-                    single_delta = result['Delta_log(Tau/KA)']
+                    single_delta = result[delta_tk_key]
                 except KeyError:
                     single_delta = None
                 try:
-                    double_delta = result['DeltaDelta_log(Tau/KA)']
+                    double_delta = result[deltadelta_tk_key]
                 except KeyError:
                     double_delta = None
                 emax_tau = "NA" #need to be updated IF datacolumn for TAU will be added
@@ -1120,6 +1128,11 @@ class BiasedRankOrderOnTheFly(TemplateView):
             else:
                 value = float(single_delta)
 
+            try:
+                DD = [float(double_delta), "REAL"]
+            except (ValueError, TypeError):
+                DD = [0, double_delta]
+
             if result['primary_effector_family'] not in jitterPlot.keys():
                 jitterLegend[result['primary_effector_family']] = []
                 jitterPlot[result['primary_effector_family']] = []
@@ -1130,11 +1143,6 @@ class BiasedRankOrderOnTheFly(TemplateView):
 
             if lig_name not in jitterDict[jitterAuthors].keys():
                 jitterDict[jitterAuthors][lig_name] = {}
-
-            try:
-                DD = [float(double_delta), "REAL"]
-            except (ValueError, TypeError):
-                DD = [0, double_delta]
 
             if result['Pathway Rank'] == 'P2':
                 try:
