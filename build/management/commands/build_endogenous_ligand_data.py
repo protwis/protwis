@@ -8,7 +8,7 @@ from build.management.commands.base_build import Command as BaseBuild
 from protein.models import Protein, Species
 from ligand.models import Endogenous_GTP, Ligand, LigandProperities, LigandType, LigandRole
 from common.models import WebLink, WebResource, Publication
-from bs4 import BeautifulSoup #will need to be removed
+# from bs4 import BeautifulSoup #will need to be removed
 import logging
 import time
 import requests
