@@ -451,7 +451,7 @@
 					<td title='{{value.4}}'>{{value.4}}</td>
 
 					<!-- Tested ligand block -->
-					<td title='{{value.5}}'><a href='/ligand/{{value.61}}/info' target='_blank'>{{value.5}}</a></td>
+					<td title='{{value.5}}'><a href='/ligand/{{value.65|floatformat:"-1"}}/info' target='_blank'>{{value.5}}</a></td>
 					<td style="text-align:right">{{value.6|floatformat}}</td>
 					<td style="text-align:right">{{value.7|floatformat}}</td>
 					<td style="text-align:right">{{value.8|floatformat}}</td>
@@ -536,7 +536,7 @@
 
 					<!-- Reference -->
 					<td class="name" style="border-left: 1px solid black;">{{ value.63 }}</td>
-					<td class="name"><a href='{{e.publication.web_link}}' target='blank'>{{ value.64 }}</a></td>
+					<td class="name"><a href='{{ value.66 }}' target='blank'>{{ value.64 }}</a></td>
 				</tr>
 				{% endfor %}
 			{% else %}
@@ -558,7 +558,7 @@
 
 					<!-- ligand block -->
 					<td title='{{ value.5 }}' style="border-left: 1px solid black;">{{ value.5 }}</td>
-					<td title='{{ value.6 }}'><a href='/ligand/{{ value.72 }}/info' target='_blank'>{{ value.6 }}</a></td>
+					<td title='{{ value.6 }}'><a href='/ligand/{{ value.76|floatformat:"-1" }}/info' target='_blank'>{{ value.6 }}</a></td>
 					<td title='#Vendor' style="text-align:right">{{ value.7|floatformat }}</td>
 					<td title='#Articles' style="text-align:right">{{ value.8|floatformat }}</td>
 					<td title='#Labs' style="text-align:right">{{ value.9|floatformat }}</td>
@@ -656,7 +656,7 @@
 
 					<!-- Reference -->
 					<td class="name" style="border-left: 1px solid black;">{{ value.74 }}</td>
-					<td class="name"><a href='{{ value.75 }}' target='blank'>{{ value.75 }}</a></td>
+					<td class="name"><a href='{{ value.77 }}' target='blank'>{{ value.75 }}</a></td>
 				</tr>
 				{% endfor %}
 			{% endif %}

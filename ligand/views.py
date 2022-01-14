@@ -1868,7 +1868,7 @@ class OTFBiasBrowser(TemplateView):
                            'P1 - Measured molecule 2', 'P2 - Measured molecule 2', 'P3 - Measured molecule 2', 'P4 - Measured molecule 2', 'P5 - Measured molecule 2',
                            'P1 - Biological process', 'P2 - Biological process', 'P3 - Biological process', 'P4 - Biological process', 'P5 - Biological process',
                            'P1 - Cell line', 'P2 - Cell lines', 'P3 - Cell line', 'P4 - Cell line', 'P5 - Cell line',
-                           'Time resolved', 'Authors', 'DOI/PMID', 'ID']
+                           'Time resolved', 'Authors', 'DOI/PMID', 'ID', 'pub_link']
         if self.pathway:
             browser_columns = ['Class', 'Receptor family', 'UniProt', 'IUPHAR', 'Species',
                                'Ligand', '#Vendors', '#Articles', '#Labs',
@@ -1883,7 +1883,7 @@ class OTFBiasBrowser(TemplateView):
                                'P1 - Measured molecule 2', 'P2 - Measured molecule 2', 'P3 - Measured molecule 2', 'P4 - Measured molecule 2', 'P5 - Measured molecule 2',
                                'P1 - Biological process', 'P2 - Biological process', 'P3 - Biological process', 'P4 - Biological process', 'P5 - Biological process',
                                'P1 - Cell line', 'P2 - Cell lines', 'P3 - Cell line', 'P4 - Cell line', 'P5 - Cell line',
-                               'Time resolved', 'Authors', 'DOI/PMID', 'ID']
+                               'Time resolved', 'Authors', 'DOI/PMID', 'ID', 'pub_link']
 
         table = pd.DataFrame(columns=browser_columns)
         #receptor_id
@@ -1924,6 +1924,7 @@ class OTFBiasBrowser(TemplateView):
                         ligands[data[pub][key]['ligand_id']]['Species'] = data[pub][key]['specie']
                         ligands[data[pub][key]['ligand_id']]['Authors'] = data[pub][key]['authors']
                         ligands[data[pub][key]['ligand_id']]['DOI/PMID'] = data[pub][key]['doi']
+                        ligands[data[pub][key]['ligand_id']]['pub_link'] = "https://pubmed.ncbi.nlm.nih.gov/" + data[pub][key]['doi'] if data[pub][key]['doi'].isdigit() else "https://dx.doi.org/" + data[pub][key]['doi']
                         ligands[data[pub][key]['ligand_id']]['#Vendors'] = vendors_dict[data[pub][key]['ligand__properities_id']] if data[pub][key]['ligand__properities_id'] in vendors_dict else 0
                         ligands[data[pub][key]['ligand_id']]['#Articles'] = articles_dict[data[pub][key]['ligand_id']] if data[pub][key]['ligand_id'] in articles_dict else 0
                         ligands[data[pub][key]['ligand_id']]['#Labs'] = len(labs_dict[data[pub][key]['ligand_id']]) if data[pub][key]['ligand_id'] in labs_dict else 0
