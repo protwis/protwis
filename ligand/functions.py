@@ -226,13 +226,14 @@ def assess_comparisons(reference, tested, subtype=False):
     common_traits = ['tissue',
                      'specie',
                      'primary_effector_family',
-                     'primary_effector_subtype',
                      'experiment',
                      'molecule_1',
                      'molecule_2',
                      'measured_process',
                      'assay_type']
-
+    if subtype:
+        common_traits.append('primary_effector_subtype')
+        
     comparisons = {}
     for assay in reference:
         comparisons[assay] = []
