@@ -7,6 +7,7 @@ from django.db import IntegrityError
 #from chembl_webresource_client import new_client
 from common.models import WebResource, Publication
 from ligand.models import Ligand, LigandType, LigandProperities, BiasedData, Endogenous_GTP
+from protein.models import Protein
 
 def get_or_make_ligand(ligand_id, type_id, name = None, pep_or_prot = None):
     if type_id=='PubChem CID' or type_id=='SMILES':
@@ -189,17 +190,22 @@ def assess_reference(data_dict, user=False):
     skip = False
     #if reference ligand is not provided by user
     if user == False:
-        #check for highest ranking
-        for assay in data_dict.keys():
-            #grab the endogenous data for the ligand if present
-            data = Endogenous_GTP.objects.filter(receptor=data_dict[assay]['receptor_id'],
-                                                ligand=data_dict[assay]['ligand_id'],
-                                                # ligand_specie__latin_name=data_dict[assay]['specie'],
-                                                ).values_list("potency_ranking").distinct()
-            try:
-                gtp_info[data_dict[assay]['ligand_id']] = sum(data, ())[0]
-            except IndexError:
-                pass
+        receptor_id = data_dict[list(data_dict.keys())[0]]['receptor_id']
+        lig_ids = set([data_dict[assay]['ligand_id'] for assay in data_dict])
+        endo_objs = list(Endogenous_GTP.objects.filter(ligand__in = lig_ids, receptor = receptor_id).values_list("ligand", flat=True))
+
+        if len(endo_objs) > 0:
+            #check for highest ranking of the endogenous ligands
+            for endo_id in endo_objs:
+                data = Endogenous_GTP.objects.filter(receptor=receptor_id,
+                                                    ligand=endo_id,
+                                                    ).values_list("potency_ranking").distinct()
+
+                try:
+                    gtp_info[endo_id] = sum(data, ())[0]
+                except IndexError:
+                    pass
+
         if len(gtp_info) != 0: #check for actual endogenous ligands, otherwise skip pub
             reference_ligand = min(gtp_info, key=gtp_info.get)
         else:
@@ -208,12 +214,14 @@ def assess_reference(data_dict, user=False):
             return reference, tested, skip
     else:
         reference_ligand = user
+
     for assay in data_dict.keys():
         if data_dict[assay]['ligand_id'] == reference_ligand:
-            reference[assay] =  data_dict[assay]
+            reference[assay] = data_dict[assay]
             reference_name = data_dict[assay]['ligand_name']
         else:
             tested[assay] =  data_dict[assay]
+
     for assay in tested.keys():
         tested[assay]['Reference_ligand'] = reference_name
 
@@ -360,7 +368,7 @@ def calculate_second_delta(comparisons, tested, subtype=False, pathway=False):
                         except (TypeError, KeyError):
                             if tested[test]['qualitative_activity'] == 'No activity':
                                 deltadelta_logtauka = 'Full Bias'
-                            elif tested[path1]['Delta_log(Tau/KA)'] == None:
+                            elif 'Delta_log(Tau/KA)' not in tested[path1] or tested[path1]['Delta_log(Tau/KA)'] == None:
                                 deltadelta_logtauka = None
                         try:
                             deltadelta_logemaxec50 = round(tested[path1]['Delta_log(Emax/EC50)'] - tested[test]['Delta_log(Emax/EC50)'], 3)
@@ -369,7 +377,7 @@ def calculate_second_delta(comparisons, tested, subtype=False, pathway=False):
                             bias_factor = None
                             if tested[test]['qualitative_activity'] == 'No activity':
                                 deltadelta_logemaxec50 = 'Full Bias'
-                            elif tested[path1]['Delta_log(Emax/EC50)'] == None:
+                            elif 'Delta_log(Emax/EC50)' not in tested[path1] or tested[path1]['Delta_log(Emax/EC50)'] == None:
                                 deltadelta_logemaxec50 = None
                         tested[test]['DeltaDelta_log(Tau/KA)'] = deltadelta_logtauka
                         tested[test]['DeltaDelta_log(Emax/EC50)'] = deltadelta_logemaxec50
@@ -442,36 +450,55 @@ def define_ligand_pathways(master):
     return ligands
 
 def OnTheFly(receptor_id, subtype=False, pathway=False, user=False):
+    receptor_name = list(Protein.objects.filter(id=receptor_id).values_list("name", flat=True))[0]
+
     #fetching data given the receptor id
     if user == False:
         test_data = BiasedData.objects.filter(receptor=receptor_id) #37 for AGTR1
+        pub_ids = list(BiasedData.objects.filter(receptor=receptor_id).values_list("publication", flat=True).distinct())
+        lig_ids = list(BiasedData.objects.filter(receptor=receptor_id).values_list("ligand_id", flat=True).distinct())
     else:
-        pub_queryset = BiasedData.objects.filter(receptor=receptor_id, ligand=user).values_list("publication").distinct()
-        pub_ids = [pub[0] for pub in pub_queryset]
+        pub_ids = list(BiasedData.objects.filter(receptor=receptor_id, ligand=user).values_list("publication", flat=True).distinct())
         test_data = BiasedData.objects.filter(receptor=receptor_id, publication__in=pub_ids)
+        lig_ids = list(BiasedData.objects.filter(receptor=receptor_id, publication__in=pub_ids).values_list("ligand_id", flat=True).distinct())
+
+    # Performance: first collect all publication and ligand data
+    pub_objs = Publication.objects.filter(id__in=pub_ids).values_list("id", "web_link_id__index", "year", "journal_id__name", "authors")
+    pub_objs_dict = {pub_obj[0]:pub_obj[1:] for pub_obj in pub_objs}
+
+    lig_objs = Ligand.objects.filter(id__in=lig_ids).values_list("id", "name", "properities_id")
+    lig_objs_dict = {lig_obj[0]:lig_obj[1:] for lig_obj in lig_objs}
+
     publications = {}
     for entry in test_data:
         if entry.publication_id not in publications.keys():
             publications[entry.publication_id] = {}
         if entry.id not in publications[entry.publication_id].keys():
-            pub_data = Publication.objects.filter(id=entry.publication_id).values_list("web_link_id__index",
-                                                                                       "year",
-                                                                                       "journal_id__name",
-                                                                                       "authors")
-            ligand_data = Ligand.objects.filter(id=entry.ligand_id).values_list("name",
-                                                                                "properities_id")
+            if entry.publication_id in pub_objs_dict:
+                pub_data = pub_objs_dict[entry.publication_id]
+            else:
+                pub_data = Publication.objects.filter(id=entry.publication_id).values_list("web_link_id__index",
+                                                                                        "year",
+                                                                                        "journal_id__name",
+                                                                                        "authors")
+
+            if entry.ligand_id in lig_objs_dict:
+                ligand_data = lig_objs_dict[entry.ligand_id]
+            else:
+                ligand_data = Ligand.objects.filter(id=entry.ligand_id).values_list("name", "properities_id")
+
             publications[entry.publication_id][entry.id] = {'experiment': entry.experiment,
                                                             'endogenous_status': entry.endogenous_status,
                                                             'publication': entry.publication_id,
-                                                            'doi': pub_data[0][0],
-                                                            'pub_year': pub_data[0][1],
-                                                            'journal': pub_data[0][2],
-                                                            'authors': pub_data[0][3],
-                                                            'receptor': entry.receptor.name,
+                                                            'doi': pub_data[0],
+                                                            'pub_year': pub_data[1],
+                                                            'journal': pub_data[2],
+                                                            'authors': pub_data[3],
+                                                            'receptor': receptor_name,
                                                             'receptor_id': entry.receptor_id,
                                                             'ligand_id': entry.ligand_id,
-                                                            'ligand_name': ligand_data[0][0],
-                                                            'ligand__properities_id': ligand_data[0][1], #for browser vendors
+                                                            'ligand_name': ligand_data[0],
+                                                            'ligand__properities_id': ligand_data[1], #for browser vendors
                                                             'receptor_isoform': entry.receptor_isoform,
                                                             'active_receptor_complex': entry.active_receptor_complex,
                                                             'cell_line': entry.cell_line,
@@ -526,8 +553,10 @@ def OnTheFly(receptor_id, subtype=False, pathway=False, user=False):
             if skip == True:
                 del publications[pub]
                 continue
+
             #Assess available comparisons
             comparisons = assess_comparisons(reference, tested, subtype)
+
             #calculate the first delta, remove excess data if needed
             comparisons, tested, skip = calculate_first_delta(comparisons, reference, tested, subtype)
             #all tested have calculated Δlog(Emax/EC50) and Δlog(Tau/KA)
@@ -535,15 +564,19 @@ def OnTheFly(receptor_id, subtype=False, pathway=False, user=False):
             if skip == True:
                 del publications[pub]
                 continue
+
             #calculate the second delta (across pathways)
             tested = calculate_second_delta(comparisons, tested, subtype, pathway) #need subtype (defined by button)
+
             #save the updated data in the original key
             reference.update(tested)
             publications[pub] = reference
+
         #Calculation branch 2 for Pathway preference
         else:
             ligands = define_ligand_pathways(publications[pub])
             publications[pub] = calculate_second_delta(ligands, publications[pub], subtype, pathway)
+
     return publications
 
 def AddPathwayData(master, data, rank, pathway=False):
