@@ -39,6 +39,22 @@ class ProteinFamilySerializer(serializers.ModelSerializer):
         fields = ('slug', 'name', 'parent')
 
 
+class ReceptorListSerializer(serializers.ModelSerializer):
+    subfamily = serializers.ReadOnlyField(source='family.name')
+    ligand_type = serializers.ReadOnlyField(source='family.parent.name')
+    receptor_family = serializers.ReadOnlyField(source='family.parent.parent.name')
+    receptor_class = serializers.ReadOnlyField(source='family.parent.parent.parent.name')
+    endogenous_ligands = serializers.SlugRelatedField(
+        many=True,
+        read_only=True,
+        slug_field='name'
+    )
+    species = serializers.StringRelatedField(read_only=True)
+    class Meta:
+        model = Protein
+        fields = ('entry_name', 'name', 'accession', 'receptor_class', 'receptor_family', 'ligand_type', 'subfamily', 'receptor_class', 'endogenous_ligands', 'species')
+
+
 class SpeciesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Species

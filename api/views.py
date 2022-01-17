@@ -3,8 +3,8 @@ from rest_framework.response import Response
 from rest_framework.parsers import FileUploadParser
 from rest_framework.renderers import JSONRenderer
 from django.template.loader import render_to_string
+
 from django.db.models import Q
-from django.conf import settings
 
 from interaction.models import ResidueFragmentInteraction
 from mutation.models import MutationRaw
@@ -15,7 +15,7 @@ from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.sequence_parser import SequenceParser
 from api.serializers import (ProteinSerializer, ProteinFamilySerializer, SpeciesSerializer, ResidueSerializer,
                              ResidueExtendedSerializer, StructureLigandInteractionSerializer,
-                             MutationSerializer)
+                             MutationSerializer, ReceptorListSerializer)
 from api.renderers import PDBRenderer
 from common.alignment import Alignment
 from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS
@@ -56,6 +56,16 @@ class ProteinByAccessionDetail(ProteinDetail):
 
     lookup_field = 'accession'
 
+
+class ReceptorList(generics.ListAPIView):
+
+    """
+    Get a list of all receptor proteins in GPCRdb (source: SWISSPROT)
+    \n/receptorlist/
+    """
+
+    queryset = Protein.objects.filter(accession__isnull=False, parent__isnull=True, family__slug__startswith="00", source__name="SWISSPROT").prefetch_related('family','endogenous_ligands')
+    serializer_class = ReceptorListSerializer
 
 class ProteinFamilyList(generics.ListAPIView):
 

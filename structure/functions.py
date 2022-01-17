@@ -1160,7 +1160,6 @@ class StructureBuildCheck():
                         else:
                             self.duplicate_residue_error[s] = [r]
 
-
     def check_segment_ends(self, structure):
         key = structure.protein_conformation.protein.parent.entry_name + '_' + structure.pdb_code.index
         if key in self.segends_dict:
@@ -1220,6 +1219,12 @@ class StructureBuildCheck():
                                 self.end_error.append([structure, seg, seg_resis.reverse()[0].sequence_number, anno_e])
         else:
             print('Warning: {} not annotated'.format(key))
+
+    def check_g_prot_struct_residues(self, signprot_complex):
+        pdb = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('struct', StringIO(str(signprot_complex.structure.pdb_data.pdb)))[0]
+        resis = Residue.objects.filter(protein_conformation=ProteinConformation.objects.get(protein__entry_name=signprot_complex.structure.pdb_code.index.lower()+'_a'))
+        if len(pdb[signprot_complex.alpha])!=len(resis):
+            print(signprot_complex.structure, len(pdb[signprot_complex.alpha]), len(resis))
 
 
 class ModelRotamer(object):

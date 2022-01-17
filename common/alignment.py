@@ -1089,7 +1089,8 @@ class Alignment:
         ref = self.proteins.pop(0)
         order_by_value = int(getattr(self.proteins[0], self.order_by))
         if order_by_value:
-            self.proteins.sort(key=lambda x: getattr(x, self.order_by), reverse=True)
+            # Added secondary sorting by score
+            self.proteins.sort(key=lambda x: (getattr(x, self.order_by), getattr(x, "similarity_score")), reverse=True)
         self.proteins.insert(0, ref)
 
     def calculate_similarity_matrix(self):

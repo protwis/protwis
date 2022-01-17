@@ -107,8 +107,6 @@ function structurebrowser() {
                 column_number: 4,
                 filter_type: "multi_select",
                 select_type: "select2",
-                column_data_type: "html",
-                html_data_type: "text",
                 filter_default_label: "",
                 filter_reset_button_text: false,
                 select_type_options: {
