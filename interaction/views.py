@@ -351,39 +351,6 @@ def fragment(request):
     fragments = ResidueFragmentInteraction.objects.get(id=fragment)
     return render(request, 'interaction/fragment.html', {'form': form, 'pdbname': pdbname, 'ligand': ligand, 'fragmentid': fragment, 'fragments': fragments})
 
-
-def updateall(request):
-    structures = Structure.objects.values('pdb_code__index').distinct()
-    for s in structures:
-        pdbname = s['pdb_code__index']
-        check = ResidueFragmentInteraction.objects.filter(
-            structure_ligand_pair__structure__pdb_code__index=pdbname).all()
-
-        if check.count() == 0:
-            t1 = datetime.now()
-            runcalculation(pdbname)
-            t2 = datetime.now()
-            delta = t2 - t1
-            seconds = delta.total_seconds()
-            print("Calculation: Total time " +
-                  str(seconds) + " seconds for " + pdbname)
-            t1 = datetime.now()
-            results = parsecalculation(pdbname, False)
-            t2 = datetime.now()
-            delta = t2 - t1
-            seconds = delta.total_seconds()
-            print("Parsing: Total time " +
-                  str(seconds) + " seconds for " + pdbname)
-            check = ResidueFragmentInteraction.objects.filter(
-                structure_ligand_pair__structure__pdb_code__index=pdbname).all()
-            print("Interactions found: " + str(check.count()))
-        else:
-            print(pdbname + " already calculated")
-
-    # return render(request,'interaction/view.html',{'form': form, 'pdbname':
-    # pdbname, 'structures': structures})
-
-
 def runcalculation(pdbname, peptide=""):
     calc_script = os.sep.join(
         [os.path.dirname(__file__), 'legacy_functions.py'])

@@ -9,7 +9,6 @@ urlpatterns = [
     url(r'^calculate', views.showcalculation, name='showcalculation'),
     url(r'^sitesearch_calculate', views.calculate, {'redirect': '/sitesearch/segmentselectionpdb'},
         name='sitesearch_calculate'),
-    url(r'^updateall', views.updateall, name='updateall'),
     url(r'^download', views.download, name='download'),
     url(r'^pdbfragment', views.pdbfragment, name='pdbfragment'),
     url(r'^pdb', views.pdb, name='pdb'),
@@ -21,5 +20,5 @@ urlpatterns = [
     url(r'^excel/(?P<slug>[-\w]+)/$', views.excel, name='excel'),
     url(r'^ajax/(?P<slug>[-\w]+)/$', views.ajax, name='ajax'),
     url(r'^ajaxLigand/(?P<slug>[-\w]+)/(?P<ligand>.+)$', views.ajaxLigand, name='ajax'),
-    url(r'^(?P<pdbname>\w+)$', views.StructureDetails, name='structure_details'), 
+    url(r'^(?P<pdbname>\w+)$', views.StructureDetails, name='structure_details'),
 ]
