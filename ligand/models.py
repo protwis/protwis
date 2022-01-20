@@ -317,6 +317,35 @@ class LigandProperities(models.Model):
     class Meta():
         db_table = 'ligand_properities'
 
+class LigandProperties(models.Model):
+    ligand_type = models.ForeignKey('LigandType', null=True, on_delete=models.CASCADE)
+    web_links = models.ManyToManyField('common.WebLink')
+    #vendor_links = models.ManyToManyField('common.WebLink', related_name='vendors')
+    smiles = models.TextField(null=True)
+    inchikey = models.CharField(max_length=50, null=True, unique=True)
+    sequence = models.CharField(max_length=1000, null=True)
+    #vendors = models.ManyToManyField('LigandVenderLink')
+
+    mw = models.DecimalField(max_digits=15, decimal_places=3, null=True)
+    rotatable_bonds = models.SmallIntegerField(null=True)
+    hacc = models.SmallIntegerField(null=True)
+    hdon = models.SmallIntegerField(null=True)
+    logp = models.DecimalField(max_digits=10, decimal_places=3, null=True)
+
+    def __str__(self):
+        return self.inchikey
+
+    class Meta():
+        db_table = 'ligand_properties'
+
+class TestLigand(models.Model):
+    properties = models.ForeignKey('LigandProperties', on_delete=models.CASCADE)
+    name = models.TextField()
+    pdbe = models.CharField(max_length=3, null=True)
+    canonical = models.NullBooleanField()
+    # required to flag 'safe' alias, eg one parent
+    ambiguous_alias = models.NullBooleanField()
+    endogenous = models.BooleanField(default=False)
 
 class LigandType(models.Model):
     slug = models.SlugField(max_length=20, unique=True)
