@@ -1,20 +1,13 @@
-from django.core.management.base import BaseCommand, CommandError
-from django.db import IntegrityError
-
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import Protein
 from ligand.models import BiasedPathwaysAssay, BiasedPathways
 from ligand.functions import get_or_make_ligand
-from common.models import WebLink, WebResource, Publication
+from common.models import Publication
 
+from django.conf import settings
 import logging
 import os
 import xlrd
-
-
-MISSING_PROTEINS = {}
-SKIPPED = 0
-
 
 class Command(BaseBuild):
     mylog = logging.getLogger(__name__)
@@ -27,8 +20,7 @@ class Command(BaseBuild):
 
     help = 'Reads bias data and imports it'
     # source file directory
-    # structure_data_dir = os.sep.join([settings.EXCEL_DATA, 'ligand_data', 'bias'])
-    structure_data_dir = 'excel/pathways/'
+    structure_data_dir = os.sep.join([settings.DATA_DIR, 'ligand_data', 'bias_data', 'pathways'])
     publication_cache = {}
     ligand_cache = {}
     data_all = []
@@ -94,13 +86,13 @@ class Command(BaseBuild):
                 curr_row = 0  # skip first, otherwise -1
                 while curr_row < num_rows:
                     curr_row += 1
-                    row = worksheet.row(curr_row)
+                    #row = worksheet.row(curr_row)
                     curr_cell = -1
                     temprow = []
                     while curr_cell < num_cells:
                         curr_cell += 1
                         cell_value = worksheet.cell_value(curr_row, curr_cell)
-                        cell_type = worksheet.cell_type(curr_row, curr_cell)
+                        #cell_type = worksheet.cell_type(curr_row, curr_cell)
 
                         # fix wrong spaced cells
                         if cell_value == " ":
@@ -111,7 +103,7 @@ class Command(BaseBuild):
             return temp
         except:
             self.logger.info(
-                "The error appeared during reading the excel", num_rows)
+                "The error appeared during reading the excel" + num_rows)
 
     def analyse_rows(self, rows, source_file):
         """
@@ -119,7 +111,6 @@ class Command(BaseBuild):
         Fetch data to models.
         Saves to DB.
         """
-        skipped = 0
         # Analyse the rows from excel and assign the right headers
         temp = []
         print("start")
@@ -133,8 +124,6 @@ class Command(BaseBuild):
             d = {}
             if r[4] != '':  # checks if the receptor field exists
                 # try:
-                res = ''
-                mut = ''
                 d['submitting_group'] = r[0]
                 d['relevance'] = r[15]
                 # doi
@@ -159,9 +148,6 @@ class Command(BaseBuild):
 
                 if not isinstance(d['ligand_id'], str):
                     d['ligand_id'] = int(d['ligand_id'])
-
-                #define G family
-                family = self.define_g_family(d['signalling_protein'])
 
                 # fetch publicaition
                 pub = self.fetch_publication(d['reference'])
@@ -210,44 +196,6 @@ class Command(BaseBuild):
             temp.append(d)
         return temp
 
-    def define_g_family(self, protein):
-        if (protein == 'β-arrestin' or
-            protein == 'β-arrestin-1 (non-visual arrestin-2)' or
-                protein == 'β-arrestin-2 (non-visual arrestin-3)'):
-            family = 'B-arr'
-
-        elif (protein == 'gi/o-family' or
-              protein == 'gαi1' or
-              protein == 'gαi2' or
-              protein == 'gαi3' or
-              protein == 'gαo' or
-              protein == 'gαoA' or
-              protein == 'gαoB'):
-            family = 'Gi/o'
-
-        elif (protein == 'gq-family' or
-                protein == 'gαq' or
-                protein == 'gαq11' or
-                protein == 'gαq14' or
-                protein == 'gαq14' or
-                protein == 'gαq16' or
-                protein == 'gαq14 (gαq16)'):
-            family = 'Gq/11'
-
-        elif (protein == 'g12/13-family' or
-              protein == 'gα12' or
-              protein == 'gα13'):
-            family = 'G12/13'
-
-        elif (protein == 'gs-family' or
-              protein == 'gαs' or
-              protein == 'gαolf'):
-            family = 'Gs'
-        else:
-            family = 'No data'
-
-        return family
-
     def fetch_chembl(self,ligand):
         temp = ligand
         chembl_id = None
@@ -295,8 +243,8 @@ class Command(BaseBuild):
             except Exception as msg:
                 l = None
                 self.ligand_cache[str(ligand_name), ligand_id] = l
-                self.mylog.exception("Protein fetching error | module: fetch_ligand. Row # is : ",
-                                     ligand_name, ligand_type, ligand_id, source_file)
+                self.mylog.exception("Protein fetching error | module: fetch_ligand. Row # is : " +
+                                     " ".join([ligand_name,  ligand_type, ligand_id, source_file]))
         return l
 
     def fetch_publication(self, publication_doi):
