@@ -5,7 +5,6 @@ from django.conf import settings
 from common.models import WebResource, WebLink
 from ligand.models import Ligand, LigandProperities, LigandRole, LigandType, ChemblAssay, AssayExperiment
 from ligand.models import LigandVendorLink, LigandVendors
-from ligand.functions import get_or_make_ligand
 from common.tools import fetch_from_web_api
 from collections import defaultdict
 import requests
