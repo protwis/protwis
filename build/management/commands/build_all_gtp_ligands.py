@@ -1,24 +1,17 @@
 from django.core.management.base import BaseCommand, CommandError
-from django.conf import settings
-from django.db import connection
-from django.db import IntegrityError
-from django.utils.text import slugify
-from django.http import HttpResponse, JsonResponse
 from build.management.commands.base_build import Command as BaseBuild
+from build.management.commands.build_ligand_functions import *
+
 from protein.models import Protein, Species
-from ligand.models import Endogenous_GTP, Ligand, LigandProperties, LigandType, LigandRole, TestLigand
-from common.models import WebLink, WebResource, Publication
+from ligand.models import Ligand, LigandProperties, LigandType, LigandRole, TestLigand
+from common.models import WebLink, WebResource
+from common.tools import get_or_create_url_cache, fetch_from_web_api
+
 import logging
 import time
-import requests
 import statistics
 import os
 import pandas as pd
-import numpy as np
-
-#defining globals and URLs
-missing_info = []
-not_commented = []
 
 #This command will build ALL the Guide to Pharmacology data starting
 #from several data sheet. First implementation will feature all the
@@ -27,15 +20,6 @@ not_commented = []
 #correct URLs of the filenames
 
 class Command(BaseBuild):
-    mylog = logging.getLogger(__name__)
-    mylog.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(message)s')
-    file_handler = logging.FileHandler('biasDataTest.log')
-    file_handler.setLevel(logging.ERROR)
-    file_handler.setFormatter(formatter)
-    mylog.addHandler(file_handler)
-    endogenous_data_dir = os.sep.join([settings.DATA_DIR, 'ligand_data', 'gtp_data'])
-
     help = 'Update the Ligand Model with the data from ALL Guide to Pharmacology ligands'
 
     def add_arguments(self, parser):
@@ -71,11 +55,12 @@ class Command(BaseBuild):
         self.analyse_rows()
 
 # pylint: disable=R0201
-    def purge_old_data(self):
-        print("\n# Purging data")
+    @staticmethod
+    def purge_old_data():
+        print("# Purging data")
         TestLigand.objects.all().delete()
         LigandProperties.objects.all().delete()
-        print("\n# Old data removed")
+        print("# Old data removed")
 
     def analyse_rows(self):
         """
@@ -83,37 +68,49 @@ class Command(BaseBuild):
         Saves to DB
         """
         ligands_ids = []
-        gtp_uniprot_link = "https://www.guidetopharmacology.org/DATA/GtP_to_UniProt_mapping.csv"
-        gtp_complete_ligands_link = "https://www.guidetopharmacology.org/DATA/ligands.csv"
-        gtp_ligand_mapping_link = "https://www.guidetopharmacology.org/DATA/ligand_id_mapping.csv"
-        gtp_detailed_endogenous_link = "https://www.guidetopharmacology.org/DATA/detailed_endogenous_ligands.csv"
-        gtp_interactions_link = "https://www.guidetopharmacology.org/DATA/interactions.csv"
-        print('---Starting---')
+        print('\n---Starting---')
+
         print('\n#1 Reading info sheets from Guide to Pharmacology')
+        gtp_uniprot_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/GtP_to_UniProt_mapping.csv", 7 * 24 * 3600)
         gtp_uniprot = pd.read_csv(gtp_uniprot_link)
+
+        gtp_complete_ligands_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/ligands.csv", 7 * 24 * 3600)
         gtp_complete_ligands = pd.read_csv(gtp_complete_ligands_link)
+
+        gtp_ligand_mapping_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/ligand_id_mapping.csv", 7 * 24 * 3600)
         gtp_ligand_mapping = pd.read_csv(gtp_ligand_mapping_link)
+
+        gtp_detailed_endogenous_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/detailed_endogenous_ligands.csv", 7 * 24 * 3600)
         gtp_detailed_endogenous = pd.read_csv(gtp_detailed_endogenous_link)
+
+        gtp_interactions_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/interactions.csv", 7 * 24 * 3600)
         gtp_interactions = pd.read_csv(gtp_interactions_link)
+
         print('\n#2 Retrieving IUPHAR ids from UniProt ids')
         all_data_dataframe, iuphar_ids = self.compare_proteins(gtp_uniprot)
+
         print('\n#3 Retrieving ALL ligands from GTP associated to GPCRs')
         ligands_ids = self.obtain_ligands(ligands_ids, gtp_interactions, iuphar_ids, ['target_id','ligand_id']) #4181
         ligands_ids = self.obtain_ligands(ligands_ids, gtp_detailed_endogenous, iuphar_ids, ['Target ID','Ligand ID']) #4325
-        #remove nan
-        ligands_ids = [x for x in ligands_ids if x == x]
+        ligands_ids = [x for x in ligands_ids if x == x] #remove nan
+
         print('\n#4 Mapping ligands to the tested receptors')
         all_data_dataframe = self.add_ligands_to_dataframe(all_data_dataframe, iuphar_ids, ligands_ids, gtp_interactions, gtp_detailed_endogenous)
+
         print('\n#5 Collating all info from GPCR related ligands in the GTP')
         complete_data, ligand_data = self.get_ligands_data(all_data_dataframe, ligands_ids, gtp_complete_ligands, gtp_ligand_mapping)
+
         print('\n#6 Saving the ligands in the models')
         self.save_the_ligands_save_the_world(ligand_data)
+
         print('\n---Finished---')
 
-    # @staticmethod
-    def compare_proteins(self, gtp_data):
+    @staticmethod
+    def compare_proteins(gtp_data):
         data = pd.DataFrame(columns=['Name','UniProt','IUPHAR'])
         gpcrdb_proteins = Protein.objects.filter(family__slug__startswith="00", sequence_type__slug="wt").values_list('entry_name','accession')
+        # FOR DEBUGGING
+        #gpcrdb_proteins = Protein.objects.filter(family__slug__startswith="001_002", sequence_type__slug="wt").values_list('entry_name','accession')
         for protein in gpcrdb_proteins:
             try:
                 new_row = [protein[0], protein[1]]
@@ -124,8 +121,8 @@ class Command(BaseBuild):
         iuphar_ids = list(data['IUPHAR'].unique())
         return data, iuphar_ids
 
-    # @staticmethod
-    def obtain_ligands(self, ligands, data, compare_set, labels):
+    @staticmethod
+    def obtain_ligands(ligands, data, compare_set, labels):
         interactions_targets = list(data[labels[0]].unique())
         targets_with_ligands = set(interactions_targets).intersection(set(compare_set))
         for target_id in targets_with_ligands:
@@ -134,8 +131,8 @@ class Command(BaseBuild):
         return ligands
 
     #all_data_dataframe, iuphar_ids, ligands_ids, gtp_interactions, gtp_detailed_endogenous
-    # @staticmethod
-    def add_ligands_to_dataframe(self, df, ids, ligands, interactions, endogenous):
+    @staticmethod
+    def add_ligands_to_dataframe(df, ids, ligands, interactions, endogenous):
         uniprots = df['UniProt'].tolist()
         new_df = pd.DataFrame(columns=['Receptor', 'IUPHAR', 'UniProt', 'Ligand ID'])
         for target in uniprots:
@@ -150,8 +147,8 @@ class Command(BaseBuild):
         return new_df
 
     #gtp_complete_ligands, gtp_ligand_mapping
-    # @staticmethod
-    def get_ligands_data(self, data, ligands, complete_ligands, ligand_mapping):
+    @staticmethod
+    def get_ligands_data(data, ligands, complete_ligands, ligand_mapping):
         cols = data.columns.tolist()
         full_info = ['Name','Species','Type','Approved','Withdrawn','Labelled','Radioactive', 'PubChem SID', 'PubChem CID',
                      'UniProt id','IUPAC name', 'INN', 'Synonyms','SMILES','InChIKey','InChI','GtoImmuPdb','GtoMPdb']
@@ -163,11 +160,11 @@ class Command(BaseBuild):
                 data.loc[data['Ligand ID'] == lig, info] = complete_ligands.loc[complete_ligands['Ligand id'] ==  lig, info].values[0]
             for link in weblinks:
                 data.loc[data['Ligand ID'] == lig, link] = ligand_mapping.loc[ligand_mapping['Ligand id'] ==  lig, link].values[0]
-        ligs_info = data.drop(['Receptor','IUPHAR','UniProt'], 1).drop_duplicates()
+        ligs_info = data.drop(columns=['Receptor','IUPHAR','UniProt']).drop_duplicates()
         return data, ligs_info
 
-    # @staticmethod
-    def save_the_ligands_save_the_world(self, lig_df):
+    @staticmethod
+    def save_the_ligands_save_the_world(lig_df):
         types_dict = {'Inorganic': 'small-molecule',
                       'Metabolite': 'small-molecule',
                       'Natural product': 'small-molecule',
@@ -175,7 +172,9 @@ class Command(BaseBuild):
                       'Synthetic organic': 'small-molecule',
                       'Antibody': 'protein',
                       None: 'na'}
-        weblink_keys = {'pubchem': 'PubChem CID',
+        weblink_keys = {'smiles': 'SMILES',
+                        'inchikey': 'InChIKey',
+                        'pubchem': 'PubChem CID',
                         'gtoplig': 'Ligand ID',
                         'chembl_ligand': 'ChEMBl ID',
                         'drugbank': 'DrugBank ID',
@@ -184,54 +183,50 @@ class Command(BaseBuild):
         #remove radioactive ligands
         lig_df = lig_df.loc[lig_df['Radioactive'] != 'yes']
 
-        #convert dataframe into list of dictionaries
+        #Process dataframe and replace nan with None
         lig_df = lig_df.astype(str)
         for column in lig_df:
             lig_df[column] = lig_df[column].replace({'nan':None})
-        lig_dicts = lig_df.to_dict("records")
 
-        #start parsing the list of dictionaties
-        for row in lig_dicts:
+        #start parsing the GtP ligands
+        issues = []
+        for index, row in lig_df.iterrows():
             if row['Name']:
-                lt = LigandType.objects.get(slug=types_dict[row['Type']])
-                #check if inchikey exists in LigandProperties
-                check_inchi = None
-                if row['InChIKey']:
-                    check_inchi = LigandProperties.objects.filter(inchikey=row['InChIKey']).first()
+                ids = {}
+                for key, value in weblink_keys.items():
+                    if row[value] != None:
+                        ids[key] = str(row[value])
 
-                if check_inchi:
-                    ligand = TestLigand()
-                    ligand.name = row['Name']
-                    ligand.type = lt
-                    ligand.properties = check_inchi
-                    ligand.canonical = True
-                    ligand.ambiguous_alias = False
+                if types_dict[row['Type']] == "small-molecule":
+                    ligand = get_or_create_smallmolecule(row['Name'], ids)
+                    if not ligand:
+                        issues.append([row['Name'], row["Ligand ID"]])
                 else:
+                    # Handling peptide or protein => skipping InChIKey and SMILES
+                    lt = LigandType.objects.get(slug=types_dict[row['Type']])
                     lig_props = LigandProperties()
-                    lig_props.smiles = row['SMILES']
-                    lig_props.inchikey = row['InChIKey']
-                    lig_props.mw = None
-                    lig_props.rotatable_bonds = None
-                    lig_props.hacc = None
-                    lig_props.hdon = None
-                    lig_props.logp = None
                     lig_props.ligand_type = lt
-                    lig_props.sequence = None
+                    lig_props.sequence = None # TODO => update sequence for peptides
                     lig_props.save()
-                    for key, value in weblink_keys.items():
-                        if row[value]:
-                            try:
-                                index = int(row[value])
-                            except (ValueError,TypeError):
-                                index = row[value]
-                    #weblinks for each resource (PubChem, GtP, ChEMBL, )
-                            resource = WebResource.objects.get(slug=key)
-                            wl, created = WebLink.objects.get_or_create(index=index, web_resource=resource)
+
+                    # Weblinks for each resource (PubChem, GtP, ChEMBL, ..)
+                    for key in ids:
+                        if key not in ["smiles", "inchikey"] and ids[key]:
+                            value = ids[key]
+                            if value.isnumeric():
+                                value = int(value)
+
+                            wr = WebResource.objects.get(slug=key)
+                            wl, created = WebLink.objects.get_or_create(index=ids[key], web_resource=wr)
                             lig_props.web_links.add(wl)
+
                     ligand = TestLigand()
                     ligand.name = row['Name']
                     ligand.type = lt
                     ligand.properties = lig_props
                     ligand.canonical = True
                     ligand.ambiguous_alias = False
-                ligand.save()
+                    ligand.save()
+
+        print("DONE - Ligands with issues:")
+        print(issues)
