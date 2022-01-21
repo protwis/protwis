@@ -322,7 +322,8 @@ class LigandProperties(models.Model):
     web_links = models.ManyToManyField('common.WebLink')
     #vendor_links = models.ManyToManyField('common.WebLink', related_name='vendors')
     smiles = models.TextField(null=True)
-    inchikey = models.CharField(max_length=50, null=True, unique=True)
+    inchikey = models.CharField(max_length=27, null=True, unique=True)
+    clean_inchikey = models.CharField(max_length=27, null=True)
     sequence = models.CharField(max_length=1000, null=True)
     #vendors = models.ManyToManyField('LigandVenderLink')
 
