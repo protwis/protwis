@@ -10,6 +10,7 @@ import urllib
 from urllib.parse import quote
 from urllib.request import urlopen
 from urllib.error import HTTPError
+import hashlib
 import json
 import gzip
 from io import BytesIO
@@ -115,6 +116,27 @@ def fetch_from_web_api(url, index, cache_dir=False, xml=False, raw=False):
 
     # give up if the lookup fails 5 times
     logger.error('Failed fetching {} {} times, giving up'.format(full_url, max_tries))
+    return False
+
+def get_or_create_url_cache(url):
+    # Hash the url
+    url_hash = hashlib.md5(url.encode('utf-8')).hexdigest()
+
+    # Check the cache if exists
+    urlcache_dir = os.sep.join([settings.DATA_DIR, 'common_data','url_cache'])
+    cache_file = os.sep.join([urlcache_dir, url_hash])
+    if os.path.isfile(cache_file):
+        # return cached filepath
+        return cache_file
+    else:
+        # Does not yet exists => collect data and store in cache
+        response = urlopen_with_retry(url)
+        if response:
+            # Write new results to file cache
+            with open(cache_file, 'wb') as f:
+                f.write(response.read())
+                f.close()
+            return cache_file
     return False
 
 def fetch_from_entrez(index, cache_dir=''):
