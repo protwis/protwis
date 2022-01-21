@@ -118,25 +118,38 @@ def fetch_from_web_api(url, index, cache_dir=False, xml=False, raw=False):
     logger.error('Failed fetching {} {} times, giving up'.format(full_url, max_tries))
     return False
 
-def get_or_create_url_cache(url):
+def get_or_create_url_cache(url, validity = -1):
     # Hash the url
     url_hash = hashlib.md5(url.encode('utf-8')).hexdigest()
 
     # Check the cache if exists
+    valid = True
     urlcache_dir = os.sep.join([settings.DATA_DIR, 'common_data','url_cache'])
     cache_file = os.sep.join([urlcache_dir, url_hash])
     if os.path.isfile(cache_file):
-        # return cached filepath
-        return cache_file
-    else:
-        # Does not yet exists => collect data and store in cache
-        response = urlopen_with_retry(url)
-        if response:
-            # Write new results to file cache
-            with open(cache_file, 'wb') as f:
-                f.write(response.read())
-                f.close()
+        # Check if the data is still valid if set
+        if validity > 0:
+            seconds = int(time.time()) - int(os.path.getctime(cache_file))
+            valid = seconds < validity
+
+        # return cached filepath when still valid
+        if valid:
             return cache_file
+
+    # Data not yet exists => collect data and store in cache
+    response = urlopen_with_retry(url)
+    if response:
+        # Write new results to file cache
+        with open(cache_file, 'wb') as f:
+            f.write(response.read())
+            f.close()
+        return cache_file
+    elif not valid:
+        print("WARNING: file cache not valid anymore - but new version could not be downloaded")
+        print("WARNING:", url)
+        return cache_file
+
+    # Data could not be obtained
     return False
 
 def fetch_from_entrez(index, cache_dir=''):
