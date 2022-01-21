@@ -192,6 +192,16 @@ def create_ligand_from_id(name, type, id):
             print("Issues with molecule", name)
             # TODO - try again if we have other IDs
 
+        # Before storing - check one more time if we already have this ligand
+        if lp.inchikey != None:
+            checkligand = get_ligand_by_inchikey(lp.inchikey)
+            if checkligand != None:
+                return checkligand
+        if lp.clean_inchikey != None and lp.clean_inchikey != lp.inchikey:
+            checkligand = get_ligand_by_inchikey(lp.clean_inchikey)
+            if checkligand != None:
+                return checkligand
+
         # Store results and return
         lp.save()
         ligand.properties = lp
