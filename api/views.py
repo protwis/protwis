@@ -4,13 +4,13 @@ from rest_framework.parsers import FileUploadParser
 from rest_framework.renderers import JSONRenderer
 from django.template.loader import render_to_string
 
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 
 from interaction.models import ResidueFragmentInteraction
 from mutation.models import MutationRaw
 from protein.models import Protein, ProteinFamily, Species, ProteinSegment
 from residue.models import Residue, ResidueGenericNumberEquivalent
-from structure.models import Structure
+from structure.models import Structure, StructureExtraProteins
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.sequence_parser import SequenceParser
 from api.serializers import (ProteinSerializer, ProteinFamilySerializer, SpeciesSerializer, ResidueSerializer,
@@ -244,11 +244,17 @@ class StructureList(views.APIView):
 
         structures = structures.prefetch_related('protein_conformation__protein__parent__species', 'pdb_code',
             'protein_conformation__protein__parent__family', 'protein_conformation__protein__parent__species',
-            'publication__web_link', 'structureligandinteraction_set__ligand__properities', 'structure_type',
+            'publication__web_link', 'publication__web_link__web_resource', 'structure_type',
+            'structureligandinteraction_set__ligand',
+            'structureligandinteraction_set__ligand__properities',
             'structureligandinteraction_set__ligand__properities__ligand_type',
-            'structureligandinteraction_set__ligand_role')
+            'structureligandinteraction_set__ligand_role',
+            'signprot_complex', 'signprot_complex__protein', 'signprot_complex__protein__parent',
+            'signprot_complex__beta_protein', 'signprot_complex__gamma_protein',
+            'signprot_complex__protein__parent__family', 'signprot_complex__protein__parent__species', 'state',
+            Prefetch('extra_proteins', queryset=StructureExtraProteins.objects.filter(wt_protein__family__slug__startswith="200")),
+            'extra_proteins__wt_protein')
 
-        # structures = self.get_structures(pdb_code, entry_name, representative)
 
         # convert objects to a list of dictionaries
         # normal serializers can not be used because of abstraction of tables (e.g. protein_conformation)
@@ -276,16 +282,22 @@ class StructureList(views.APIView):
 
             # ligand
             ligands = []
-            for interaction in structure.structureligandinteraction_set.filter(annotated=True):
-                ligand = {}
-                if interaction.ligand.name:
-                    ligand['name'] = interaction.ligand.name
-                if interaction.ligand.properities.ligand_type and interaction.ligand.properities.ligand_type.name:
-                    ligand['type'] = interaction.ligand.properities.ligand_type.name
-                if interaction.ligand_role and interaction.ligand_role.name:
-                    ligand['function'] = interaction.ligand_role.name
-                if ligand:
-                    ligands.append(ligand)
+            #for interaction in structure.structureligandinteraction_set.filter(annotated=True): # does this cancel prefetch?
+            for interaction in structure.structureligandinteraction_set.all():
+                if interaction.annotated:
+                    ligand = {}
+                    if interaction.ligand.name:
+                        ligand['name'] = interaction.ligand.name
+                    if interaction.ligand.properities.ligand_type and interaction.ligand.properities.ligand_type.name:
+                        ligand['type'] = interaction.ligand.properities.ligand_type.name
+                    if interaction.ligand_role and interaction.ligand_role.name:
+                        ligand['function'] = interaction.ligand_role.name
+                    if interaction.ligand.pdbe:
+                        ligand['PDB'] = interaction.ligand.pdbe
+                    if interaction.ligand.properities.smiles:
+                        ligand['SMILES'] = interaction.ligand.properities.smiles
+                    if ligand:
+                        ligands.append(ligand)
             structure_data['ligands'] = ligands
 
             # signalling protein
@@ -298,9 +310,8 @@ class StructureList(views.APIView):
                     sign_prot['data']['entity3'] = {'entry_name':structure.signprot_complex.gamma_protein.entry_name, 'chain':structure.signprot_complex.gamma_chain}
                 structure_data['signalling_protein'] = sign_prot
             if len(structure.extra_proteins.all())>0:
-                for ep in structure.extra_proteins.all():
-                    if ep.wt_protein and ep.wt_protein.family.slug.startswith('200'):
-                        structure_data['signalling_protein'] = {'type': 'Arrestin', 'data': {'entity1':{'entry_name':ep.wt_protein.entry_name, 'chain':ep.chain}}}
+                for arrestin in structure.extra_proteins.all():
+                    structure_data['signalling_protein'] = {'type': 'Arrestin', 'data': {'entity1':{'entry_name':arrestin.wt_protein.entry_name, 'chain':arrestin.chain}}}
 
             s.append(structure_data)
 
