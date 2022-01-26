@@ -56,18 +56,18 @@ urlpatterns = [
 
 
     url(r'^(?P<pk>[-\w]+)/info$', views.LigandInformationView.as_view()),
-
-    # url(r'^biased/$', views.CachedBiasBrowser, name='bias_browser-list'),
+    #Browsers Cached
     url(r'^biased/$', views.CachedOTFBiasBrowser, name='bias_browser-list'),
-
-    # url(r'^biasedsubtypes/$',views.CachedBiasGBrowser, name='bias_browser-subtype'),
+    url(r'^userbiased/$', views.CachedOTFBiasBrowserUser, name='bias_browser-list'),
     url(r'^biasedsubtypes/$',views.CachedOTFBiasSubtypeBrowser, name='bias_browser-list'),
-
-    # url(r'^biasedpredicted/$',views.CachedBiasPredictBrowser, name='bias_browser-predict'),
+    url(r'^userbiasedsubtypes/$',views.CachedOTFBiasSubtypeBrowserUser, name='bias_browser-list'),
     url(r'^pathwaypreference/$',views.CachedOTFPathwayPrefBrowser, name='bias_browser-list'),
+    #User selected calculations
+    url(r'^userselectionbiased', views.UserBiased.as_view(), name='bias_browser-list'),
+    url(r'^userselectionbiasedsubtype', views.UserBiasedSubtype.as_view(), name='bias_browser-list'),
 
     url(r'^biasedbrowser',views.BiasTargetSelection.as_view(), name='bias_browser-list1'),
-    url(r'^biasedpredictedbrowser',views.BiasPredictionTargetSelection.as_view(), name='bias_browser-list1'),
+    url(r'^pathwaypreferencebrowser',views.BiasPredictionTargetSelection.as_view(), name='bias_browser-list1'),
     url(r'^biasedsubtypesbrowser',views.BiasGTargetSelection.as_view(), name='bias_browser-list1'),
 
     url(r'^biased/experiment/(?P<pk>[-\w]+)/detail$', views.ExperimentEntryView.as_view()),

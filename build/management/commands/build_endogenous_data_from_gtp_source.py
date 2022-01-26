@@ -323,6 +323,11 @@ class Command(BaseBuild):
             except (TypeError, ValueError):
                 potency = None
 
+            try:
+                endo_status = str(row['Principal/Secondary'])
+            except:
+                endo_status = None
+
             if receptor is not None:
             #last step because it requires multiple uploads in case we have multiple species
                 if species is None:

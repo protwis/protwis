@@ -3,6 +3,7 @@ import itertools
 import json
 import re
 import time
+import inspect
 import pandas as pd
 
 from random import SystemRandom
@@ -18,7 +19,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from django.core.cache import cache
 
-from common.views import AbsTargetSelectionTable, Alignment, AbsReferenceSelectionTable, getReferenceTable
+from common.views import AbsTargetSelectionTable, Alignment, AbsReferenceSelectionTable, getReferenceTable, getLigandTable
 from common.models import ReleaseNotes, WebResource, Publication
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
@@ -417,7 +418,6 @@ def TargetPurchasabilityDetails(request, **kwargs):
 
 #Biased Effector Family Browser
 class BiasTargetSelection(AbsReferenceSelectionTable):
-    step = 1
     number_of_steps = 1
     filters = False
     filter_tableselect = False
@@ -444,15 +444,101 @@ class BiasTargetSelection(AbsReferenceSelectionTable):
         },
         "biased": {
             "label": "Biased ligands<br>(any reference ligand)",
-            "modal": "biased",
-            "color": 'default active',
+            'onclick': "submitSelection('/ligand/userselectionbiased');",
+            "color": 'success',
             "sameSize": True,
         },
     }
 
     table_data = getReferenceTable("different_family", "tested_assays")
 
-#Biased Pathway Preferred Browser
+#Biased Effector Family Browser (Ligand Selection)
+class UserBiased(AbsReferenceSelectionTable):
+
+    template_name = 'common/userligandselectiontable.html'
+    step = 2
+    number_of_steps = 2
+    filters = False
+    filter_tableselect = False
+    family_tree = False
+    docs = 'sequences.html#structure-based-alignments'
+    title = "SELECT LIGAND to be used as reference for the calculation of bias ligands"
+    description = 'Select a ligand in the table (below)\nThen click the green button (right)'
+    selection_boxes = OrderedDict([
+        ('reference', True),
+        ('targets', True),
+        ('segments', False),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Calculate bias',
+            'onclick': "submitSelection('/ligand/userbiased');",
+            'color': 'success',
+        },
+    }
+
+    def get_context_data(self, **kwargs):
+        """Get context from parent class
+
+        (really only relevant for children of this class, as TemplateView does
+        not have any context variables)
+        """
+        protein_ids = []
+        context = super().get_context_data(**kwargs)
+        # get selection from session and add to context
+        # get simple selection from session
+        simple_selection = self.request.session.get('selection', False)
+        # create full selection and import simple selection (if it exists)
+        for target in simple_selection.reference:
+            protein_ids.append(target.item)
+        context['table_data'] = getLigandTable(protein_ids[0], "biased")
+
+        return context
+
+#Biased Effector Family Subtype Browser (Ligand Selection)
+class UserBiasedSubtype(AbsReferenceSelectionTable):
+
+    template_name = 'common/userligandselectiontable.html'
+    step = 2
+    number_of_steps = 2
+    filters = False
+    filter_tableselect = False
+    family_tree = False
+    docs = 'sequences.html#structure-based-alignments'
+    title = "SELECT LIGAND to be used as reference for the calculation of bias ligands"
+    description = 'Select a ligand in the table (below)\nThen click the green button (right)'
+    selection_boxes = OrderedDict([
+        ('reference', True),
+        ('targets', True),
+        ('segments', False),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Calculate bias',
+            'onclick': "submitSelection('/ligand/userbiasedsubtypes');",
+            'color': 'success',
+        },
+    }
+
+    def get_context_data(self, **kwargs):
+        """Get context from parent class
+
+        (really only relevant for children of this class, as TemplateView does
+        not have any context variables)
+        """
+        protein_ids = []
+        context = super().get_context_data(**kwargs)
+        # get selection from session and add to context
+        # get simple selection from session
+        simple_selection = self.request.session.get('selection', False)
+        # create full selection and import simple selection (if it exists)
+        for target in simple_selection.reference:
+            protein_ids.append(target.item)
+        context['table_data'] = getLigandTable(protein_ids[0], "biased")
+
+        return context
+
+#Pathway Preferred Browser
 class BiasPredictionTargetSelection(AbsReferenceSelectionTable):
     step = 1
     number_of_steps = 1
@@ -507,8 +593,8 @@ class BiasGTargetSelection(AbsReferenceSelectionTable):
         },
         "biased": {
             "label": "Biased ligands<br>(any reference ligand)",
-            "modal": "biased",
-            "color": 'default active',
+            'onclick': "submitSelection('/ligand/userselectionbiasedsubtypes');",
+            "color": 'success',
             "sameSize": True,
         },
     }
@@ -1805,16 +1891,23 @@ class BiasPathways(TemplateView):
 ################### NEW STUFF ##################################################
 
 def CachedOTFBiasBrowser(request):
-    return CachedOTFBiasBrowsers("bias", request)
+    return CachedOTFBiasBrowsers("bias", False, request)
 
 def CachedOTFBiasSubtypeBrowser(request):
-    return CachedOTFBiasBrowsers("subtype", request)
+    return CachedOTFBiasBrowsers("subtype", False, request)
 
 def CachedOTFPathwayPrefBrowser(request):
-    return CachedOTFBiasBrowsers("pathway", request)
+    return CachedOTFBiasBrowsers("pathway", False, request)
 
-def CachedOTFBiasBrowsers(browser_type, request):
+def CachedOTFBiasBrowserUser(request):
+    return CachedOTFBiasBrowsers("bias", True, request)
+
+def CachedOTFBiasSubtypeBrowserUser(request):
+    return CachedOTFBiasBrowsers("subtype", True, request)
+
+def CachedOTFBiasBrowsers(browser_type, user_ligand, request):
     protein_ids = []
+    user_ids = []
     try:
         simple_selection = request.session.get('selection', False)
         for target in simple_selection.reference:
@@ -1822,17 +1915,28 @@ def CachedOTFBiasBrowsers(browser_type, request):
     except:
         protein_ids = ["NOSELECTION"]
 
-    protein_ids.sort()
-    cache_key = "OTFBROWSER_" + browser_type + "_" + hashlib.md5("_".join(protein_ids).encode('utf-8')).hexdigest()
+    try:
+        for ligand in simple_selection.targets:
+            user_ids.append(ligand.item)
+    except:
+        user_ids = ["NOSELECTION"]
+    keygen = protein_ids + user_ids
+    cache_key = "OTFBROWSER_" + browser_type + "_" + hashlib.md5("_".join(keygen).encode('utf-8')).hexdigest()
     return_html = cache.get(cache_key)
     return_html = None #testing
     if return_html == None:
-        if browser_type == "bias":
-            return_html = OTFBiasBrowser.as_view(protein_id=protein_ids[0])(request).render()
-        elif browser_type == "subtype":
-            return_html = OTFBiasBrowser.as_view(protein_id=protein_ids[0], subtype=True)(request).render()
-        elif browser_type == "pathway":
-            return_html = OTFBiasBrowser.as_view(protein_id=protein_ids[0], pathway=True)(request).render()
+        if user_ligand == False:
+            if browser_type == "bias":
+                return_html = OTFBiasBrowser.as_view(protein_id=protein_ids[0])(request).render()
+            elif browser_type == "subtype":
+                return_html = OTFBiasBrowser.as_view(protein_id=protein_ids[0], subtype=True)(request).render()
+            elif browser_type == "pathway":
+                return_html = OTFBiasBrowser.as_view(protein_id=protein_ids[0], pathway=True)(request).render()
+        else:
+            if browser_type == "bias":
+                return_html = OTFBiasBrowser.as_view(protein_id=protein_ids[0], user=user_ids[0])(request).render()
+            elif browser_type == "subtype":
+                return_html = OTFBiasBrowser.as_view(protein_id=protein_ids[0], user=user_ids[0], subtype=True)(request).render()
         cache.set(cache_key, return_html, 60*60*24*7)
     return return_html
 
@@ -1848,10 +1952,11 @@ class OTFBiasBrowser(TemplateView):
     protein_id = ''
     subtype = False #need to pass these values onto the context
     pathway = False
+    user = False
     template_name = 'otf_bias_browser.html'
     context_object_name = 'data'
     def get_context_data(self, **kwargs):
-        data = OnTheFly(int(self.protein_id), self.subtype, self.pathway)
+        data = OnTheFly(int(self.protein_id), self.subtype, self.pathway, int(self.user))
 
         browser_columns = ['Class', 'Receptor family', 'UniProt', 'IUPHAR', 'Species',
                            'Reference ligand', 'Tested ligand', '#Vendors', '#Articles', '#Labs',

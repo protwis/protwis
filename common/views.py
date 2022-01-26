@@ -11,7 +11,7 @@ from common import definitions
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 from common.selection import SimpleSelection, Selection, SelectionItem
-from ligand.models import AssayExperiment, AnalyzedAssay
+from ligand.models import AssayExperiment, AnalyzedAssay, BiasedData
 from structure.models import Structure, StructureModel, StructureComplexModel
 from protein.models import Protein, ProteinFamily, ProteinSegment, Species, ProteinSource, ProteinSet, ProteinCouplings
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent, ResiduePositionSet, Residue
@@ -31,6 +31,77 @@ import time
 import json
 
 default_schemes_excluded = ["cgn", "ecd", "can"]
+
+def getLigandTable(receptor_id, type):
+    cache_key = "reference_table_" + str(receptor_id) + type
+    data_table = cache.get(cache_key)
+    data_table = None
+    if data_table == None:
+        ligands = list(BiasedData.objects.filter(receptor_id=receptor_id).values_list(
+            "ligand__name",
+            "endogenous_status",
+            "ligand__properities__ligand_type__name",
+            "ligand__id").distinct())
+
+        data_table = "<table id='uniprot_selection' class='uniprot_selection stripe compact'> \
+            <thead>\
+              <tr> \
+                <th colspan=1>&nbsp;</th> \
+                <th colspan=4>Ligands</th> \
+                <th colspan=2>Data</th> \
+              </tr> \
+              <tr> \
+                <th><br><br><input autocomplete='off' class='form-check-input' type='checkbox' onclick='return check_all_targets();'></th> \
+                <th style=\"width; 100px;\">Ligand name<br>&nbsp;</th> \
+                <th>2D structure<br>&nbsp;</th> \
+                <th>Ligand type<br>&nbsp;</th> \
+                <th>Endogenous<br>&nbsp;</th> \
+                <th>Publication count</th> \
+                <th>Comparable ligands</th> \
+              </tr> \
+            </thead>\
+            \n \
+            <tbody>\n"
+
+        #link_setup = "<a target=\"_blank\" href=\"{}\"><span class=\"glyphicon glyphicon-new-window btn-xs\"></span></a>"
+        link_setup = "<a target=\"_blank\" href=\"{}\">{}</a>"
+
+        for p in ligands:
+            pubs =list(BiasedData.objects.filter(receptor_id=receptor_id,
+                                                ligand_id=p[3]).values_list("publication_id", flat=True)
+                                                .distinct())
+            compared = len(BiasedData.objects.filter(receptor_id=receptor_id,
+                                                publication_id__in=pubs).values_list("ligand_id", flat=True).distinct())
+            t = {}
+            t['ligandname'] = link_setup.format(str(p[3])+"/info", p[0])
+            t['ligandtype'] = p[2]
+            t['endogenous'] = p[1]
+            t['publications'] = len(pubs)
+            t['compared'] = compared - len(pubs)
+            data_table += "<tr> \
+            <td data-sort=\"0\"><input autocomplete='off' class=\"form-check-input\" type=\"checkbox\" name=\"reference\" id=\"{}\" data-entry=\"{}\" entry-value=\"{}\"></td> \
+            <td data-html=\"true\">{}</td> \
+            <td>{}</td> \
+            <td>{}</td> \
+            <td>{}</td> \
+            <td>{}</td> \
+            <td>{}</td> \
+            </tr> \n".format(
+                p[0],
+                p[3],
+                p[3],
+                t['ligandname'],
+                '2D structure here',
+                t['ligandtype'],
+                ("No" if t['endogenous'] == None else t['endogenous']),
+                t['publications'],
+                t['compared'],
+            )
+
+        data_table += "</tbody></table>"
+        # cache.set("target_table", data_table, 60*60*24*7)
+
+    return data_table
 
 def getTargetTable():
     data_table = cache.get("target_table")
@@ -2153,13 +2224,20 @@ def ReadTargetInput(request):
             except:
                 obj = None
 
+        # # Try id
+        if obj == None and (up_name.isnumeric()):
+            selection_subtype = 'protein'
+            try:
+                obj = up_name
+            except:
+                obj = None
+
         if obj != None:
             selection_object = SelectionItem(selection_subtype, obj)
             selection.add(selection_type, selection_subtype, selection_object)
 
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
-
     # add simple selection to session
     request.session['selection'] = simple_selection
 
@@ -2225,9 +2303,9 @@ def ReadReferenceInput(request):
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
 
+
     # add simple selection to session
     request.session['selection'] = simple_selection
-
     # context
     context = selection.dict(selection_type)
 
