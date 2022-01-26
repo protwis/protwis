@@ -260,7 +260,7 @@ def calculate_first_delta(comparisons, reference, tested, subtype=False):
         r_emax, r_ec50, r_logtauka = reference[ref]['Emax'], reference[ref]['EC50'], reference[ref]['Tau_KA']
         try:
             r_logemaxec50 = math.log((r_emax/r_ec50),10)
-        except:
+        except (ValueError, TypeError, ZeroDivisionError):
             #excepting situations where one value is None or 0.0 [ValueError, TypeError, ZeroDivisionError]
             r_logemaxec50 = None
         #Check for lacking of ALL values, then break cycle and skip publication
@@ -272,7 +272,7 @@ def calculate_first_delta(comparisons, reference, tested, subtype=False):
             t_emax, t_ec50, t_logtauka = tested[test]['Emax'], tested[test]['EC50'], tested[test]['Tau_KA']
             try:
                 t_logemaxec50 = math.log((t_emax/t_ec50),10)
-            except:
+            except (ValueError, TypeError, ZeroDivisionError):
                 #excepting situations where one value is None or 0.0 [ValueError, TypeError, ZeroDivisionError]
                 t_logemaxec50 = None
             #Here assess if both values of tested ligand are negative
@@ -305,7 +305,7 @@ def find_best_subtype(comparisons, reference, tested):
         r_emax, r_ec50 = reference[ref]['Emax'], reference[ref]['EC50']
         try:
             r_logemaxec50 = math.log((r_emax/r_ec50),10)
-        except:
+        except (ValueError, TypeError, ZeroDivisionError):
             #setting a largely negative value insted of None for comparisons sake
             #excepting situations where one value is None or 0.0 [ValueError, TypeError, ZeroDivisionError]
             r_logemaxec50 = -100

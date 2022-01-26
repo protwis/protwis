@@ -32,8 +32,8 @@ import json
 
 default_schemes_excluded = ["cgn", "ecd", "can"]
 
-def getLigandTable(receptor_id, type):
-    cache_key = "reference_table_" + str(receptor_id) + type
+def getLigandTable(receptor_id, browser_type):
+    cache_key = "reference_table_" + str(receptor_id) + browser_type
     data_table = cache.get(cache_key)
     data_table = None
     if data_table == None:

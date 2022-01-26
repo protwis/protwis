@@ -3,7 +3,6 @@ import itertools
 import json
 import re
 import time
-import inspect
 import pandas as pd
 
 from random import SystemRandom
@@ -534,7 +533,7 @@ class UserBiasedSubtype(AbsReferenceSelectionTable):
         # create full selection and import simple selection (if it exists)
         for target in simple_selection.reference:
             protein_ids.append(target.item)
-        context['table_data'] = getLigandTable(protein_ids[0], "biased")
+        context['table_data'] = getLigandTable(protein_ids[0], "subtype")
 
         return context
 
