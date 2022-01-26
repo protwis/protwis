@@ -41,7 +41,9 @@ def getLigandTable(receptor_id, browser_type):
             "ligand__name",
             "endogenous_status",
             "ligand__properities__ligand_type__name",
-            "ligand__id").distinct())
+            "ligand__id",
+            "ligand__properities__inchikey",
+            "ligand__properities__smiles",).distinct())
 
         data_table = "<table id='uniprot_selection' class='uniprot_selection stripe compact'> \
             <thead>\
@@ -65,6 +67,8 @@ def getLigandTable(receptor_id, browser_type):
 
         #link_setup = "<a target=\"_blank\" href=\"{}\"><span class=\"glyphicon glyphicon-new-window btn-xs\"></span></a>"
         link_setup = "<a target=\"_blank\" href=\"{}\">{}</a>"
+        # img_setup_inchi = "<img style=\"max-height: 300px; max-width: 300px;\" src=\"http://www.ebi.ac.uk/chembl/api/data/image/{}.svg\">"
+        img_setup_smiles = "<img style=\"max-height: 300px; max-width: 300px;\" src=\"https://cactus.nci.nih.gov/chemical/structure/{}/image\">"
 
         for p in ligands:
             pubs =list(BiasedData.objects.filter(receptor_id=receptor_id,
@@ -78,6 +82,7 @@ def getLigandTable(receptor_id, browser_type):
             t['endogenous'] = p[1]
             t['publications'] = len(pubs)
             t['compared'] = compared - len(pubs)
+            t['2d_structure'] = img_setup_smiles.format(str(p[5])) if p[5] != None else "Image not available"
             data_table += "<tr> \
             <td data-sort=\"0\"><input autocomplete='off' class=\"form-check-input\" type=\"checkbox\" name=\"reference\" id=\"{}\" data-entry=\"{}\" entry-value=\"{}\"></td> \
             <td data-html=\"true\">{}</td> \
@@ -91,7 +96,7 @@ def getLigandTable(receptor_id, browser_type):
                 p[3],
                 p[3],
                 t['ligandname'],
-                '2D structure here',
+                t['2d_structure'],
                 t['ligandtype'],
                 ("No" if t['endogenous'] == None else t['endogenous']),
                 t['publications'],
