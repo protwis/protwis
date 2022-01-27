@@ -6,6 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.db.models import Count, Case, When, Min, Q
 from django.core.cache import cache
+from django.contrib.postgres.aggregates import ArrayAgg
 
 from common import definitions
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
@@ -70,18 +71,25 @@ def getLigandTable(receptor_id, browser_type):
         # img_setup_inchi = "<img style=\"max-height: 300px; max-width: 300px;\" src=\"http://www.ebi.ac.uk/chembl/api/data/image/{}.svg\">"
         img_setup_smiles = "<img style=\"max-height: 300px; max-width: 300px;\" src=\"https://cactus.nci.nih.gov/chemical/structure/{}/image\">"
 
+        # Prefetch and aggregate related data (ligand_ids and publication_ids)
+        lig_pubs = list(BiasedData.objects.filter(receptor_id=receptor_id).values("ligand_id").
+                        annotate(pubs_ids=ArrayAgg("publication_id", distinct=True)))
+        lig_pubs = { item["ligand_id"]: item["pubs_ids"] for item in lig_pubs }
+        pub_lig_ids = list(BiasedData.objects.filter(receptor_id=receptor_id).values("publication_id")
+                         .annotate(lig_ids=ArrayAgg("ligand_id", distinct=True)))
+        pub_lig_ids = { item["publication_id"]:item["lig_ids"] for item in pub_lig_ids }
         for p in ligands:
-            pubs =list(BiasedData.objects.filter(receptor_id=receptor_id,
-                                                ligand_id=p[3]).values_list("publication_id", flat=True)
-                                                .distinct())
-            compared = len(BiasedData.objects.filter(receptor_id=receptor_id,
-                                                publication_id__in=pubs).values_list("ligand_id", flat=True).distinct())
+            pubs = lig_pubs[p[3]]
+            compared = set()
+            for pub_id in pubs:
+                compared.update(pub_lig_ids[pub_id])
+
             t = {}
             t['ligandname'] = link_setup.format(str(p[3])+"/info", p[0])
             t['ligandtype'] = p[2]
             t['endogenous'] = p[1]
             t['publications'] = len(pubs)
-            t['compared'] = compared - len(pubs)
+            t['compared'] = len(compared) - 1
             t['2d_structure'] = img_setup_smiles.format(str(p[5])) if p[5] != None else "Image not available"
             data_table += "<tr> \
             <td data-sort=\"0\"><input autocomplete='off' class=\"form-check-input\" type=\"checkbox\" name=\"reference\" id=\"{}\" data-entry=\"{}\" entry-value=\"{}\"></td> \
