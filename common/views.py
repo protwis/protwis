@@ -318,11 +318,14 @@ def getReferenceTable(filtering, assay_type):
     data_table = cache.get(cache_key)
     # data_table = None
     if data_table == None:
+        # TEST
+        biased_proteins = list(BiasedData.objects.values_list("receptor_id__entry_name").distinct())
+
         #get all the proteins that are in ligandanalyzedassay
-        biased_proteins = list(AnalyzedAssay.objects.filter(
-                        family__isnull=False,
-                        experiment__source=filtering).values_list(
-                        "experiment__receptor__entry_name").distinct())
+        # biased_proteins = list(AnalyzedAssay.objects.filter(
+        #                 family__isnull=False,
+        #                 experiment__source=filtering).values_list(
+        #                 "experiment__receptor__entry_name").distinct())
 
         biased_entry_names = [b[0] for b in biased_proteins]
         #original code
@@ -334,12 +337,22 @@ def getReferenceTable(filtering, assay_type):
             "family",
             "family__parent__parent__parent"
         )
-        # Acquired slugs
-        #original code
-        slug_list = [ p.family.slug for p in proteins ]
-        # original code
-        # ligand_set = list(AssayExperiment.objects.values("protein__family__slug")
-        #                                          .annotate(num_ligands=Count("ligand", distinct=True)))
+
+        # TEST
+        totals = list(BiasedData.objects.values("receptor_id__family__slug").annotate(total=Count("ligand_id", distinct=True)))
+        # physio_bias = list(BiasedData.objects.filter(physiology_biased=True).values("receptor_id__family__slug").annotate(physio=Count("ligand_id", distinct=True)))
+        # path_bias = list(BiasedData.objects.filter(pathway_biased=True).values("receptor_id__family__slug").annotate(path=Count("ligand_id", distinct=True)))
+        ligand_tot = {}
+        for entry in totals:
+            if entry['receptor_id__family__slug'] not in ligand_tot.keys():
+                ligand_tot[entry['receptor_id__family__slug']] = entry['total']
+        # for entry in physio_bias:
+        #     if entry['receptor_id__family__slug'] in ligand_count.keys():
+        #         ligand_count[entry['receptor_id__family__slug']].append(entry['physio'])
+        # for entry in path_bias:
+        #     if entry['receptor_id__family__slug'] in ligand_count.keys():
+        #         ligand_count[entry['receptor_id__family__slug']].append(entry['path'])
+
         #NEW CODE
         ligand_zero = list(AnalyzedAssay.objects
             .filter(order_no__lte=1,
@@ -358,19 +371,6 @@ def getReferenceTable(filtering, assay_type):
         for entry in ligand_zero:
             if entry['experiment__receptor__family__slug'] not in ligand_count.keys():
                 ligand_count[entry['experiment__receptor__family__slug']] = [entry['total'], entry['biased']]
-
-        #MOCKUP QUERY FOR BALANCED LIGANDS
-        #THIS IS PURELY A SETUP FOR THE FURTHER
-        #IMPLEMENTATION OF BALANCED LIGAND DATA
-        # ligand_balanced = list(BalancedLigands.objects.values("protein__family__slug")
-        #                                          .annotate(num_ligands=Count("ligand", distinct=True)))
-        # balanced_count = {}
-        # for entry in ligand_balanced:
-        #     balanced_count[entry["protein__family__slug"]] = entry["num_ligands"]
-
-        # original code
-        # for entry in ligand_set:
-        #     ligand_count[entry["protein__family__slug"]] = entry["num_ligands"]
 
         data_table = "<table id='uniprot_selection' class='uniprot_selection stripe compact'> \
             <thead>\
@@ -427,13 +427,14 @@ def getReferenceTable(filtering, assay_type):
 
             # Ligand count
             t['ligand_count'] = 0
-            t['biased_cound'] = 0
+            t['biased_count'] = 0
+            if t['slug'] in ligand_tot:
+                t['ligand_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_tot[t['slug']])
+
             if t['slug'] in ligand_count:
-                t['ligand_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_count[t['slug']][0])
                 t['biased_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_count[t['slug']][1])
             else:
                 continue
-
 
             data_table += "<tr> \
             <td data-sort=\"0\"><input autocomplete='off' class=\"form-check-input\" type=\"checkbox\" name=\"reference\" id=\"{}\" data-entry=\"{}\" entry-value=\"{}\"></td> \
