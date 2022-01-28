@@ -4,6 +4,7 @@ from django.conf import settings
 from protein.models import Protein
 from structure.models import Structure
 from signprot.models import SignprotComplex
+from structure.functions import ParseStructureCSV
 
 import os
 import yaml
@@ -12,7 +13,6 @@ import yaml
 class Command(BaseCommand):
     help = 'Build signalling protein complex data'
 
-    signprot_complex_data_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'complex_model_templates.yaml'])
 
     def add_arguments(self, parser):
         parser.add_argument('-u', '--purge',
@@ -26,31 +26,28 @@ class Command(BaseCommand):
         self.create_signprot_complex()
 
     def create_signprot_complex(self):
-        with open(self.signprot_complex_data_file, 'r') as f:
-            signprot_complex_data = yaml.load(f, Loader=yaml.FullLoader)
-        for protein, data in signprot_complex_data.items():
-            if type(data)==type([]):
-                for i in data:
-                    if i['beta']['protein']=='None':
-                        b_protein = None
-                    else:
-                        b_protein = Protein.objects.get(entry_name=i['beta']['protein'])
-                    if i['gamma']['protein']=='None':
-                        g_protein = None
-                    else:
-                        g_protein = Protein.objects.get(entry_name=i['gamma']['protein'])
-                    if i['beta']['chain']=='None':
-                        b_chain = None
-                    else:
-                        b_chain = i['beta']['chain']
-                    if i['gamma']['chain']=='None':
-                        g_chain = None
-                    else:
-                        g_chain = i['gamma']['chain']
-                    structure = Structure.objects.get(pdb_code__index=i['pdb'])
-                    signprot_complex, created = SignprotComplex.objects.get_or_create(protein=Protein.objects.get(entry_name=protein),
-                                                                                      structure=structure,
-                                                                                      alpha=i['alpha'], beta_chain=b_chain, gamma_chain=g_chain,
-                                                                                      beta_protein=b_protein, gamma_protein=g_protein)
-                    structure.signprot_complex = signprot_complex
-                    structure.save()
+        psc = ParseStructureCSV()
+        psc.parse_g_proteins()
+        for pdb, data in psc.structures.items():
+            if 'g_protein' not in data:
+                continue
+            if data['g_protein']['beta_uniprot']=='':
+                b_protein = None
+                b_chain = None
+            else:
+                b_protein = Protein.objects.get(entry_name=data['g_protein']['beta_uniprot'])
+                b_chain = data['g_protein']['beta_chain']
+            if data['g_protein']['gamma_uniprot']=='':
+                g_protein = None
+                g_chain = None
+            else:
+                g_protein = Protein.objects.get(entry_name=data['g_protein']['gamma_uniprot'])
+                g_chain = data['g_protein']['gamma_chain']
+            
+            structure = Structure.objects.get(pdb_code__index=pdb)
+            signprot_complex, created = SignprotComplex.objects.get_or_create(protein=Protein.objects.get(entry_name=data['g_protein']['alpha_uniprot']),
+                                                                              structure=structure,
+                                                                              alpha=data['g_protein']['alpha_chain'], beta_chain=b_chain, gamma_chain=g_chain,
+                                                                              beta_protein=b_protein, gamma_protein=g_protein)
+            structure.signprot_complex = signprot_complex
+            structure.save()
