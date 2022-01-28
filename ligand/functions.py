@@ -3,6 +3,7 @@ import math
 
 from django.utils.text import slugify
 from django.db import IntegrityError
+from django.db.models import Q
 
 #from chembl_webresource_client import new_client
 from common.models import WebResource, Publication
@@ -188,34 +189,76 @@ def assess_reference(data_dict, user=False):
     reference = {}
     tested = {}
     skip = False
+    reference_ligand = None
+    checks = ['Principal', 'Secondary', None]
     #if reference ligand is not provided by user
     if user == False:
         receptor_id = data_dict[list(data_dict.keys())[0]]['receptor_id']
         lig_ids = set([data_dict[assay]['ligand_id'] for assay in data_dict])
-        endo_objs = list(Endogenous_GTP.objects.filter(ligand__in = lig_ids, receptor = receptor_id).values_list("ligand", flat=True))
+        for status in checks:
+            endo_objs = list(Endogenous_GTP.objects.filter(Q(ligand_specie_id__common_name="Human") | Q(ligand_specie_id__isnull=True),
+                                                           ligand__in = lig_ids,
+                                                           receptor = receptor_id,
+                                                           endogenous_status=status).values_list("ligand", flat=True).distinct())
 
-        if len(endo_objs) > 0:
-            #check for highest ranking of the endogenous ligands
-            for endo_id in endo_objs:
-                data = Endogenous_GTP.objects.filter(receptor=receptor_id,
-                                                    ligand=endo_id,
-                                                    ).values_list("potency_ranking").distinct()
+            if len(endo_objs) > 0:
+                if status != None:
+                    #if either principal or secondary check numerosity
+                    data = list(Endogenous_GTP.objects.filter(Q(ligand_specie_id__common_name="Human") | Q(ligand_specie_id__isnull=True),
+                                                         receptor=receptor_id,
+                                                         ligand__in = endo_objs,
+                                                         endogenous_status=status,
+                                                        ).values_list("ligand_id", "pec50", "pKi").distinct())
+                    if len(data) == 1:
+                        #if single principal ligand break the cycle and define the reference ligand
+                        reference_ligand = data[0][0]
+                        break
+                    else:
+                        #if multiple principals, assess best based on pEC50, than pKi when no pEC50 is provided
+                        pec50 = -100
+                        pki = -100
+                        for entry in data:
+                            try:
+                                if float(entry[1].split(' | ')[-1]) > pec50:
+                                    reference_ligand = entry[0]
+                            except ValueError:
+                                try:
+                                    if float(entry[2].split(' | ')[-1]) > pki:
+                                        reference_ligand = entry[0]
+                                except ValueError:
+                                    continue
+                        if status == "Principal" and reference_ligand:
+                            break
+                else:
+                #check for highest ranking of the endogenous ligands
+                    for endo_id in endo_objs:
+                        data = Endogenous_GTP.objects.filter(Q(ligand_specie_id__common_name="Human") | Q(ligand_specie_id__isnull=True),
+                                                            receptor=receptor_id,
+                                                            ligand=endo_id,
+                                                            ).values_list("potency_ranking").distinct()
 
-                try:
-                    gtp_info[endo_id] = sum(data, ())[0]
-                except IndexError:
-                    pass
+                        try:
+                            gtp_info[endo_id] = sum(data, ())[0]
+                        except IndexError:
+                            pass
 
-        if len(gtp_info) != 0: #check for actual endogenous ligands, otherwise skip pub
-            reference_ligand = min(gtp_info, key=gtp_info.get)
-        else:
+                    if len(gtp_info) != 0: #check for actual endogenous ligands, otherwise skip pub
+                        try:
+                            reference_ligand = min(gtp_info, key=gtp_info.get)
+                        except TypeError:
+                            print("You have encountered the only excpetion, hooray!")
+                            #grabbing the first ligand among the available as reference
+                            reference_ligand = list(gtp_info.keys())[0]
+
+        if not reference_ligand:
             skip = True
             # print("Skipping publication, no reference ligand tested")
             return reference, tested, skip
+
+    #if reference ligand is provided by the user
     else:
         reference_ligand = user
 
-    print(reference_ligand)
     for assay in data_dict.keys():
         if data_dict[assay]['ligand_id'] == reference_ligand:
             reference[assay] = data_dict[assay]
@@ -374,6 +417,8 @@ def calculate_second_delta(comparisons, tested, subtype=False, pathway=False):
                                 deltadelta_logtauka = 'Full Bias'
                             elif 'Delta_log(Tau/KA)' not in tested[path1] or tested[path1]['Delta_log(Tau/KA)'] == None:
                                 deltadelta_logtauka = None
+                            elif 'Delta_log(Tau/KA)' not in tested[test] or tested[test]['Delta_log(Tau/KA)'] == None:
+                                deltadelta_logtauka = None
                         try:
                             deltadelta_logemaxec50 = round(tested[path1]['Delta_log(Emax/EC50)'] - tested[test]['Delta_log(Emax/EC50)'], 3)
                             bias_factor = round(10**deltadelta_logemaxec50, 3)
@@ -383,6 +428,8 @@ def calculate_second_delta(comparisons, tested, subtype=False, pathway=False):
                                 deltadelta_logemaxec50 = 'Full Bias'
                             elif 'Delta_log(Emax/EC50)' not in tested[path1] or tested[path1]['Delta_log(Emax/EC50)'] == None:
                                 deltadelta_logemaxec50 = None
+                            elif 'Delta_log(Emax/EC50)' not in tested[test] or tested[test]['Delta_log(Emax/EC50)'] == None:
+                                deltadelta_logtauka = None
                         tested[test]['DeltaDelta_log(Tau/KA)'] = deltadelta_logtauka
                         tested[test]['DeltaDelta_log(Emax/EC50)'] = deltadelta_logemaxec50
                         tested[test]['Bias factor'] = bias_factor

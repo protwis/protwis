@@ -84,7 +84,7 @@ class Command(BaseBuild):
         print('\n#3 Adding potency ranking where required')
         ranked_data = Command.adding_potency_rankings(endogenous_data, to_be_ranked)
         print('\n#4 Creating and filling the Endogenous_GTP model')
-        endogenous_dicts = Command.convert_dataframe(endogenous_data)
+        endogenous_dicts = Command.convert_dataframe(ranked_data)
         Command.create_model(endogenous_dicts)
         print('\n *** Finished! ***')
 
@@ -173,13 +173,13 @@ class Command(BaseBuild):
 
     @staticmethod
     def labeling_principals(dataframe):
-        dataframe['Principal/Secondary'] = ''
+        dataframe['Principal/Secondary'] = np.nan
         IDS = list(dataframe['Target_ID'].unique())
         not_commented = []
         for id in IDS:
             slice = dataframe.loc[dataframe['Target_ID'] == id]
             try:
-                comment = slice['Natural/Endogenous_Ligand_Comments'].unique()[0].split('.')[0].lower()
+                comment = slice['Natural/Endogenous_Ligand_Comments'].unique()[0].split('.')[0]
             except AttributeError: #the comment is nan
                 comment = ''
             if len(slice['Ligand_Name'].unique()) == 1:
@@ -201,7 +201,7 @@ class Command(BaseBuild):
     @staticmethod
     def adding_potency_rankings(GtoP_endogenous, not_commented):
         #fix things, drop unused values
-        GtoP_endogenous['Ranking'] = ''
+        GtoP_endogenous['Ranking'] = np.nan
         missing_info = []
         GtoP_endogenous.pKi_avg.fillna(GtoP_endogenous.pKi_max, inplace=True)
         GtoP_endogenous.pEC50_avg.fillna(GtoP_endogenous.pEC50_max, inplace=True)
