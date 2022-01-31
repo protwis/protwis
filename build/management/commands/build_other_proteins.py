@@ -5,7 +5,7 @@ from django.db.models import Q
 
 from build.management.commands.build_human_proteins import Command as BuildHumanProteins
 from residue.functions import *
-from structure.functions import BlastSearch
+from structure.functions import BlastSearch, ParseStructureCSV
 from protein.models import Protein, ProteinFamily, Gene
 
 import logging
@@ -45,7 +45,6 @@ class Command(BuildHumanProteins):
 
     ref_position_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'reference_positions'])
     auto_ref_position_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'auto_reference_positions'])
-    construct_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'constructs'])
     uniprot_url = 'http://www.uniprot.org/uniprot/?query={}&columns=id&format=tab'
 
 
@@ -79,26 +78,10 @@ class Command(BuildHumanProteins):
             # go through constructs and finding their entry_names for lookup
             construct_entry_names = []
             self.logger.info('Getting construct accession codes')
-            filenames = os.listdir(self.construct_data_dir)
-            for source_file in filenames:
-                source_file_path = os.sep.join([self.construct_data_dir, source_file])
-                self.logger.info('Getting protein name from construct file {}'.format(source_file))
-                split_filename = source_file.split(".")
-                extension = split_filename[1]
-                if extension != 'yaml':
-                    continue
-
-                # read the yaml file
-                with open(source_file_path, 'r') as f:
-                    sd = yaml.load(f, Loader=yaml.FullLoader)
-
-                # check whether protein is specified
-                if 'protein' not in sd:
-                    continue
-
-                # append entry_name to lookup list
-                if sd['protein'] not in construct_entry_names:
-                    construct_entry_names.append(sd['protein'])
+            parsed_structures = ParseStructureCSV()
+            for pdb, vals in parsed_structures.structures.items():
+                if vals['protein'] not in construct_entry_names:
+                    construct_entry_names.append(vals['protein'])
 
             # parse files
             filenames = os.listdir(self.local_uniprot_dir)
