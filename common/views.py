@@ -549,7 +549,7 @@ class AbsReferenceSelectionTable(TemplateView):
     #         del ppf
 
             # Load the target table data
-    table_data = getReferenceTable('different_family', 'tested_assays')
+    table_data = getReferenceTable('no', 'no')
     # except Exception as e:
     #     pass
 

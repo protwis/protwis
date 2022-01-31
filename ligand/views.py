@@ -560,6 +560,7 @@ class BiasPredictionTargetSelection(AbsReferenceSelectionTable):
         },
     }
 
+    pathway = True
     table_data = getReferenceTable('yes', 'no')
 
 #Biased Subtype Browser
@@ -838,6 +839,7 @@ class EmaxPathPrefRankOrderSelection(AbsReferenceSelectionTable):
         },
     }
 
+    pathway = True
     table_data = getReferenceTable('yes', 'no')
 
 
@@ -863,6 +865,7 @@ class EmaxPathPrefPathProfilesSelection(AbsReferenceSelectionTable):
         },
     }
 
+    pathway = True
     table_data = getReferenceTable('yes', 'no')
 
 

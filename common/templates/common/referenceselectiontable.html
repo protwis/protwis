@@ -60,11 +60,11 @@
         const csrf_token = "{{ csrf_token }}";
         var button = document.getElementById("only_selected");
         button.remove();
-
+        var path = {{pathway|yesno:"true,false"}};
         $(document).ready(function() {
 
           // initialize YADCF table
-          initTargetTable('#target-table-container');
+          initTargetTable('#target-table-container', path);
           // initialize tooltips
           $('[data-toggle="tooltip"]').tooltip({
             trigger : 'hover'
