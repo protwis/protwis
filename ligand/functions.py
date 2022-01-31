@@ -429,7 +429,7 @@ def calculate_second_delta(comparisons, tested, subtype=False, pathway=False):
                             elif 'Delta_log(Emax/EC50)' not in tested[path1] or tested[path1]['Delta_log(Emax/EC50)'] == None:
                                 deltadelta_logemaxec50 = None
                             elif 'Delta_log(Emax/EC50)' not in tested[test] or tested[test]['Delta_log(Emax/EC50)'] == None:
-                                deltadelta_logtauka = None
+                                deltadelta_logemaxec50 = None
                         tested[test]['DeltaDelta_log(Tau/KA)'] = deltadelta_logtauka
                         tested[test]['DeltaDelta_log(Emax/EC50)'] = deltadelta_logemaxec50
                         tested[test]['Bias factor'] = bias_factor

@@ -449,7 +449,7 @@ class BiasTargetSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable("different_family", "tested_assays")
+    table_data = getReferenceTable("no", "no")
 
 #Biased Effector Family Browser (Ligand Selection)
 class UserBiased(AbsReferenceSelectionTable):
@@ -560,7 +560,7 @@ class BiasPredictionTargetSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable('predicted_family', 'predicted_tested_assays')
+    table_data = getReferenceTable('yes', 'no')
 
 #Biased Subtype Browser
 class BiasGTargetSelection(AbsReferenceSelectionTable):
@@ -598,7 +598,7 @@ class BiasGTargetSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable("sub_different_family", "sub_tested_assays")
+    table_data = getReferenceTable("no", "yes")
 
 class RankOrderSelection(AbsReferenceSelectionTable):
     step = 1
@@ -634,7 +634,7 @@ class RankOrderSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable("different_family", "tested_assays")
+    table_data = getReferenceTable("no", "no")
 
 class TauRankOrderSelection(AbsReferenceSelectionTable):
     step = 1
@@ -670,7 +670,7 @@ class TauRankOrderSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable("different_family", "tested_assays")
+    table_data = getReferenceTable("no", "no")
 
 class TauSubtypeRankOrderSelection(AbsReferenceSelectionTable):
     step = 1
@@ -706,7 +706,7 @@ class TauSubtypeRankOrderSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable("sub_different_family", "sub_tested_assays")
+    table_data = getReferenceTable("no", "yes")
 
 class EmaxPathProfileSelection(AbsReferenceSelectionTable):
     step = 1
@@ -742,7 +742,7 @@ class EmaxPathProfileSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable("different_family", "tested_assays")
+    table_data = getReferenceTable("no", "no")
 
 class TauPathProfileSelection(AbsReferenceSelectionTable):
     step = 1
@@ -778,7 +778,7 @@ class TauPathProfileSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable("different_family", "tested_assays")
+    table_data = getReferenceTable("no", "no")
 
 class TauSubtypePathProfileSelection(AbsReferenceSelectionTable):
     step = 1
@@ -814,7 +814,7 @@ class TauSubtypePathProfileSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable("sub_different_family", "sub_tested_assays")
+    table_data = getReferenceTable("no", "yes")
 
 class EmaxPathPrefRankOrderSelection(AbsReferenceSelectionTable):
     step = 1
@@ -838,7 +838,7 @@ class EmaxPathPrefRankOrderSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable('predicted_family', 'predicted_tested_assays')
+    table_data = getReferenceTable('yes', 'no')
 
 
 class EmaxPathPrefPathProfilesSelection(AbsReferenceSelectionTable):
@@ -863,7 +863,7 @@ class EmaxPathPrefPathProfilesSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable('predicted_family', 'predicted_tested_assays')
+    table_data = getReferenceTable('yes', 'no')
 
 
 class EmaxSubtypeRankOrderSelection(AbsReferenceSelectionTable):
@@ -900,7 +900,7 @@ class EmaxSubtypeRankOrderSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable('sub_different_family', 'sub_tested_assays')
+    table_data = getReferenceTable('no', 'yes')
 
 class EmaxSubtypePathProfilesSelection(AbsReferenceSelectionTable):
     step = 1
@@ -936,7 +936,7 @@ class EmaxSubtypePathProfilesSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable('sub_different_family', 'sub_tested_assays')
+    table_data = getReferenceTable('no', 'yes')
 
 class BiasedRankOrderOnTheFly(TemplateView):
     #set a global variable for different pages

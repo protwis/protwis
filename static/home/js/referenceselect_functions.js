@@ -384,6 +384,14 @@ function initTargetTable(elementID) {
                     // style_class: "center",
                     column_data_type: "html",
                 },
+                {
+                    column_number: 9,
+                    filter_type: "range_number",
+                    filter_default_label: ["From", "To"],
+                    filter_reset_button_text: false,
+                    // style_class: "center",
+                    column_data_type: "html",
+                },
                 /*{
                     column_number: 7,
                     filter_type: "multi_select",
