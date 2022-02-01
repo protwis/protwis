@@ -407,6 +407,9 @@ def calculate_second_delta(comparisons, tested, subtype=False, pathway=False):
                                 delta_logemaxec50 = 'Full Bias'
                             elif tested[path1]['log(Emax/EC50)'] == None:
                                 delta_logemaxec50 = None
+                            elif tested[test]['log(Emax/EC50)'] == None:
+                                delta_logemaxec50 = None
+
                         tested[test]['Delta_log(Tau/KA)'] = delta_logtauka
                         tested[test]['Delta_log(Emax/EC50)'] = delta_logemaxec50
                     else:

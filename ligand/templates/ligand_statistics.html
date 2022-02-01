@@ -114,7 +114,7 @@
 {% block content %}
 
 <!-- Starting the tab panel section -->
-{% if render != "not_bias" %}
+{% if render != "not_bias" and render != "pathway" %}
 <ul class="nav nav-tabs">
   <li class="nav-item active">
     <a class="nav-link active" data-toggle="tab" href="#physio">Physiology-biased (endogenous reference ligand)</a>
@@ -136,7 +136,7 @@
 <table style="width:60% !important" class="table table-stripped">
 {% elif render == "pathway" %}
 <p><h4>Pathway preferred ligand counts</h4>
-<h6>The number of ligands with a bias factor equal or greater than 1</h6></p>
+<h6>The number of ligands showing a pathway preference</h6></p>
 <table style="width:60% !important" class="table table-stripped">
 {% elif render == "subtype" %}
 <p><h4>Pathway preferred ligand counts</h4>
@@ -208,7 +208,7 @@ Specific sets of ligands can be downloaded from the <a href="/ligand"> biased li
 {% elif render == "bias" %}
 Specific sets of ligands can be downloaded from the <a href="/ligand/biasedbrowser"> biased ligand browser</a>.<br />
 {% elif render == "pathway" %}
-Specific sets of ligands can be downloaded from the <a href="/ligand/biasedpredictedbrowser"> biased ligand browser</a>.<br />
+Specific sets of ligands can be downloaded from the <a href="/ligand/pathwaypreferencebrowser"> biased ligand browser</a>.<br />
 {% elif render == "subtype" %}
 Specific sets of ligands can be downloaded from the <a href="/ligand/biasedsubtypebrowser"> biased ligand browser</a>.<br />
 {% endif %}
@@ -218,8 +218,12 @@ Biased ligand statistics were last updated <strong>{{ release_notes.date|date:"Y
 <br />
 {% if render == "not_bias" %}
 <h4>Ligand coverage of GPCR Classes</h4><br />
-{% else %}
+{% elif render == "bias" %}
 <h4>Biased ligand coverage by GPCR Class</h4><br />
+{% elif render == "subtype" %}
+<h4>Biased ligand coverage by GPCR Class</h4><br />
+{% elif render == "pathway" %}
+<h4>Pathway preference ligand coverage by GPCR Class</h4><br />
 {% endif %}
 
 <div>

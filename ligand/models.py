@@ -595,10 +595,10 @@ class BiasedData(models.Model):
     Tau_KA = models.FloatField(max_length=60, null=True)
     delta_Tau_KA = models.FloatField(max_length=60, null=True)
     time_resolved = models.CharField(max_length=60, null=True)
-    pathway_preferred = models.BooleanField(default=False) #pathway preference
-    subtype_biased = models.BooleanField(default=False)    #subtype biased ligands
-    physiology_biased = models.BooleanField(default=False) #biased ligands
-    pathway_biased = models.BooleanField(default=False)    #balanced ligands
+    pathway_preferred = models.CharField(max_length=60, null=True)  #pathway preference
+    subtype_biased = models.CharField(max_length=60, null=True)     #subtype biased ligands
+    physiology_biased = models.CharField(max_length=60, null=True)  #biased ligands
+    pathway_biased = models.CharField(max_length=60, null=True)     #balanced ligands
 
 # Pathways part - start
 class BiasedPathways(models.Model):

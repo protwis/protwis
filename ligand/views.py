@@ -1434,39 +1434,45 @@ class LigandStatistics(TemplateView):
     def get_context_data(self, **kwargs):
 
         context = super().get_context_data(**kwargs)
-        # assays = AssayExperiment.objects.all().prefetch_related('protein__family__parent__parent__parent', 'protein__family')
         lig_count_dict = {}
-        # create a dict for conversion of input data,
-        # if new families will be added to db just add values to this dict
-        # values are: experiment_source, assay_description, render for html
-        conversion = {
-        'ligand_bias': ['different_family', 'tested_assays', 'bias'],
-        'pathway_pref': ['predicted_family', 'predicted_tested_assays', 'pathway'],
-        'subtype': ['sub_different_family', 'sub_tested_assays', 'subtype']
-        }
+
         if self.page == 'ligands':
             assays_lig = list(AssayExperiment.objects.all().values(
                 'protein__family__parent__parent__parent__name').annotate(c=Count('ligand', distinct=True)))
             for a in assays_lig:
                 lig_count_dict[a['protein__family__parent__parent__parent__name']] = a['c']
         else:
-            assays_lig = list(AnalyzedAssay.objects
-                .filter(log_bias_factor__gte=1,
-                        experiment__source=conversion[self.page][0])
-                .values('experiment__receptor__family__parent__parent__parent__name')
-                .annotate(c=Count('experiment__ligand_id', distinct=True)))
+            if self.page == 'ligand_bias':
+                assays_lig = list(BiasedData.objects
+                    .filter(physiology_biased__isnull=False)
+                    .values('receptor_id__family__parent__parent__parent__name')
+                    .annotate(c=Count('ligand_id', distinct=True)))
+            elif self.page == 'pathway_pref':
+                assays_lig = list(BiasedData.objects
+                    .filter(pathway_preferred__isnull=False)
+                    .values('receptor_id__family__parent__parent__parent__name')
+                    .annotate(c=Count('ligand_id', distinct=True)))
+            elif self.page == 'subtype':
+                assays_lig = list(BiasedData.objects
+                    .filter(subtype_biased__isnull=False)
+                    .values('receptor_id__family__parent__parent__parent__name')
+                    .annotate(c=Count('ligand_id', distinct=True)))
             for a in assays_lig:
-                lig_count_dict[a['experiment__receptor__family__parent__parent__parent__name']] = a['c']
+                lig_count_dict[a['receptor_id__family__parent__parent__parent__name']] = a['c']
 
         target_count_dict = {}
+
         assays_target = list(AssayExperiment.objects.all().values(
             'protein__family__parent__parent__parent__name').annotate(c=Count('protein__family', distinct=True)))
+
         for a in assays_target:
             target_count_dict[a['protein__family__parent__parent__parent__name']] = a['c']
 
         prot_count_dict = {}
+
         proteins_count = list(Protein.objects.all().values(
             'family__parent__parent__parent__name').annotate(c=Count('family', distinct=True)))
+            
         for pf in proteins_count:
             prot_count_dict[pf['family__parent__parent__parent__name']] = pf['c']
 
@@ -1494,33 +1500,21 @@ class LigandStatistics(TemplateView):
                 'target_percentage': target_count / prot_count * 100,
                 'target_count': target_count
             })
+
         lig_count_total = sum([x['num_ligands'] for x in ligands])
+
         prot_count_total = Protein.objects.filter(
             family__slug__startswith='00').all().distinct('family').count()
+
         target_count_total = sum([x['target_count'] for x in ligands])
+
         lig_total = {
             'num_ligands': lig_count_total,
             'avg_num_ligands': lig_count_total / prot_count_total,
             'target_percentage': target_count_total / prot_count_total * 100,
             'target_count': target_count_total
         }
-        # Elegant solution but kinda slow (6s querries):
-        """
-        ligands = AssayExperiment.objects.values(
-            'protein__family__parent__parent__parent__name',
-            'protein__family__parent__parent__parent',
-            ).annotate(num_ligands=Count('ligand', distinct=True))
-        for prot_class in ligands:
-            class_subset = AssayExperiment.objects.filter(
-                id=prot_class['protein__family__parent__parent__parent']).values(
-                    'protein').annotate(
-                        avg_num_ligands=Avg('ligand', distinct=True),
-                        p_count=Count('protein')
-                        )
-            prot_class['avg_num_ligands']=class_subset[0]['avg_num_ligands']
-            prot_class['p_count']=class_subset[0]['p_count']
 
-        """
         context['ligands_total'] = lig_total
         context['ligands_by_class'] = ligands
 
@@ -1599,36 +1593,36 @@ class LigandStatistics(TemplateView):
             context["render"] = "not_bias"
 
         else:
-            assay_qs = AnalyzedAssay.objects.filter(
-                assay_description=conversion[self.page][1]).values_list(
-                "family", "experiment__receptor__entry_name").order_by(
-                "family", "experiment__receptor__entry_name").distinct(
-                "family", "experiment__receptor__entry_name")
-
-            ligand_qs = AnalyzedAssay.objects.filter(
-                order_no=0,
-                assay_description=conversion[self.page][1]).values_list(
-                "family", "experiment__receptor__entry_name", "experiment__ligand").order_by(
-                "family", "experiment__receptor__entry_name", "experiment__ligand").distinct(
-                "family", "experiment__receptor__entry_name", "experiment__ligand")
+            if self.page == 'ligand_bias':
+                context["render"] = "bias"
+                circle_data = BiasedData.objects.filter(physiology_biased__isnull=False).values_list(
+                              "physiology_biased", "receptor_id__entry_name", "ligand_id").order_by(
+                              "physiology_biased", "receptor_id__entry_name", "ligand_id").distinct(
+                              "physiology_biased", "receptor_id__entry_name", "ligand_id")
+            elif self.page == 'pathway_pref':
+                context["render"] = "pathway"
+                circle_data = BiasedData.objects.filter(pathway_preferred__isnull=False).values_list(
+                              "pathway_preferred", "receptor_id__entry_name", "ligand_id").order_by(
+                              "pathway_preferred", "receptor_id__entry_name", "ligand_id").distinct(
+                              "pathway_preferred", "receptor_id__entry_name", "ligand_id")
+            elif self.page == 'subtype':
+                context["render"] = "subtype"
+                circle_data = BiasedData.objects.filter(subtype_biased__isnull=False).values_list(
+                              "subtype_biased", "receptor_id__entry_name", "ligand_id").order_by(
+                              "subtype_biased", "receptor_id__entry_name", "ligand_id").distinct(
+                              "subtype_biased", "receptor_id__entry_name", "ligand_id")
 
             circles = {}
-            for data in assay_qs:
+            for data in circle_data:
                 if data[1].split('_')[1] == 'human':
                     key = data[1].split('_')[0].upper()
                     if key not in circles.keys():
                         circles[key] = {}
-                        circles[key][data[0]] = 0
-                    else:
-                        circles[key][data[0]] = 0
-
-            for data in ligand_qs:
-                if data[1].split('_')[1] == 'human':
-                    key = data[1].split('_')[0].upper()
+                    if data[0] not in circles[key].keys():
+                        circles[key][data[0]] = 1
                     circles[key][data[0]] += 1
 
             context["circles_data"] = json.dumps(circles)
-            context["render"] = conversion[self.page][2]
 
         return context
 

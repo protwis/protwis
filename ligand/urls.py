@@ -22,25 +22,12 @@ urlpatterns = [
     # url(r'^bias_statistics', views.LigandStatistics.as_view(page='ligand_bias'), name='ligand_statistics'),
     path('emax_rank_order_selection', views.RankOrderSelection.as_view(), name='emax_ro_selection'),
     path('emax_rankorder', views.BiasedRankOrderOnTheFly.as_view(), name='biased_rank_order'),
-
-    #TESTING ONTHEFLY
-    path('test_emax_rankorder', views.BiasedRankOrderOnTheFly.as_view(), name='biased_rank_order'),
-    path('test_emax_path_profiles', views.BiasedRankOrderOnTheFly.as_view(page='pathwayprofiles'), name='biased_rank_order'),
-
     path('emax_path_profiles_selection', views.EmaxPathProfileSelection.as_view(), name='ema_pp_selection'),
     path('emax_path_profiles', views.BiasedRankOrderOnTheFly.as_view(page='pathwayprofiles'), name='biased_rank_order'),
     path('tau_rank_order_selection', views.TauRankOrderSelection.as_view(), name='tau_ro_selection'),
     path('tau_rankorder', views.BiasedRankOrderOnTheFly.as_view(label='tau'), name='biased_rank_order'),
     path('tau_path_profiles_selection', views.TauPathProfileSelection.as_view(), name='tau_pp_selection'),
     path('tau_path_profiles', views.BiasedRankOrderOnTheFly.as_view(page='pathwayprofiles', label='tau'), name='biased_rank_order'),
-
-    # PATHWAY PREFERRED
-    url(r'^path_preference_statistics', cache_page(3600*24*7)(views.LigandStatistics.as_view(page='pathway_pref')), name='ligand_statistics'),
-    # url(r'^path_preference_statistics', views.LigandStatistics.as_view(page='pathway_pref'), name='ligand_statistics'),
-    path('path_preference_emax_rankorder_selection', views.EmaxPathPrefRankOrderSelection.as_view(), name='ema_pathpref_ro_selection'),
-    path('path_preference_emax_rankorder', views.BiasedRankOrderOnTheFly.as_view(pathway=True), name='biased_rank_order'),
-    path('path_preference_emax_path_profiles_selection', views.EmaxPathPrefPathProfilesSelection.as_view(), name='ema_pathpref_pathprof_selection'),
-    path('path_preference_emax_path_profiles', views.BiasedRankOrderOnTheFly.as_view(page='pathwayprofiles', pathway=True), name='biased_rank_order'),
 
     # SUBTYPE BIASED
     url(r'^subtype_statistics', cache_page(3600*24*7)(views.LigandStatistics.as_view(page='subtype')), name='ligand_statistics'),
@@ -54,6 +41,13 @@ urlpatterns = [
     path('subtype_tau_path_profiles_selection', views.TauSubtypePathProfileSelection.as_view(), name='tau_subtype_pp_selection'),
     path('subtype_tau_path_profiles', views.BiasedRankOrderOnTheFly.as_view(page='pathwayprofiles', subtype=True, label='tau'), name='biased_rank_order'),
 
+    # PATHWAY PREFERRED
+    url(r'^path_preference_statistics', cache_page(3600*24*7)(views.LigandStatistics.as_view(page='pathway_pref')), name='ligand_statistics'),
+    # url(r'^path_preference_statistics', views.LigandStatistics.as_view(page='pathway_pref'), name='ligand_statistics'),
+    path('path_preference_emax_rankorder_selection', views.EmaxPathPrefRankOrderSelection.as_view(), name='ema_pathpref_ro_selection'),
+    path('path_preference_emax_rankorder', views.BiasedRankOrderOnTheFly.as_view(pathway=True), name='biased_rank_order'),
+    path('path_preference_emax_path_profiles_selection', views.EmaxPathPrefPathProfilesSelection.as_view(), name='ema_pathpref_pathprof_selection'),
+    path('path_preference_emax_path_profiles', views.BiasedRankOrderOnTheFly.as_view(page='pathwayprofiles', pathway=True), name='biased_rank_order'),
 
     url(r'^(?P<pk>[-\w]+)/info$', views.LigandInformationView.as_view()),
     #Browsers Cached
