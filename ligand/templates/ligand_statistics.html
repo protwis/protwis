@@ -139,7 +139,7 @@
 <h6>The number of ligands showing a pathway preference</h6></p>
 <table style="width:60% !important" class="table table-stripped">
 {% elif render == "subtype" %}
-<p><h4>Pathway preferred ligand counts</h4>
+<p><h4>Biased ligand counts</h4>
 <h6>The number of ligands with a bias factor equal or greater than 1 (subtype)</h6></p>
 <table style="width:60% !important" class="table table-stripped">
 {% endif %}
@@ -363,7 +363,7 @@ Inner circle colors indicate a number of ligands:
 <script type="text/javascript" charset="utf-8">
 $(window).on("load",function() {
     maxLeafNodeLenght = 46;
-    conversion = {"Gs":"#0000FF", "Gi/o":"#FF0000", "Gq/11":"#000000", "G12/13":"#008000", "B-arr":"#FFA500"};
+    conversion = {"Gs":"#0000FF", "Gi/o":"#FF0000", "Gq/11":"#000000", "G12/13":"#008000", "Arrestin":"#FFA500"};
     $("#UniProtNames").click(function(){
         $("#UniProtNames").addClass("active");
         $("#IUPHARNames").removeClass("active");
