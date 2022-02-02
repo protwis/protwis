@@ -580,14 +580,6 @@ class StructureStatistics(TemplateView):
 		unique_g_F_complexes = all_g_F_complexes.annotate(distinct_name=Concat('signprot_complex__protein__family__parent__name', 'protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
 		unique_g_T2_complexes = all_g_T2_complexes.annotate(distinct_name=Concat('signprot_complex__protein__family__parent__name', 'protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
 		unique_active = unique_structs.filter(protein_conformation__state__slug = 'active')
-		tree_dots_data = {}
-		tree_dots_data = self.grab_matches(unique_g_A_complexes, tree_dots_data)
-		tree_dots_data = self.grab_matches(unique_g_B1_complexes, tree_dots_data)
-		tree_dots_data = self.grab_matches(unique_g_B2_complexes, tree_dots_data)
-		tree_dots_data = self.grab_matches(unique_g_C_complexes, tree_dots_data)
-		tree_dots_data = self.grab_matches(unique_g_D1_complexes, tree_dots_data)
-		tree_dots_data = self.grab_matches(unique_g_F_complexes, tree_dots_data)
-		tree_dots_data = self.grab_matches(unique_g_T2_complexes, tree_dots_data)
 		#Stats
 		struct_count = Structure.objects.all().annotate(Count('id'))
 		struct_lig_count = Structure.objects.exclude(ligands=None)
@@ -646,8 +638,6 @@ class StructureStatistics(TemplateView):
 		context['chartdata_class'] = self.get_per_class_cumulative_data_series(years, unique_structs, lookup)
 		context['chartdata_class_y'] = self.get_per_class_data_series(years, unique_structs, lookup)
 		context['chartdata_class_all'] = self.get_per_class_cumulative_data_series(years, all_structs, lookup)
-
-		context['tree_dots_data'] = tree_dots_data
 		#context['coverage'] = self.get_diagram_coverage()
 		#{
 		#    'depth': 3,
@@ -669,7 +659,7 @@ class StructureStatistics(TemplateView):
 		context['class_a_options']['leaf_offset'] = 50
 		context['class_a_options']['label_free'] = []
         # section to remove Orphan from Class A tree and apply to a different tree
-		whole_class_a = class_a_data.get_nodes_dict('crystals')
+		whole_class_a = class_a_data.get_nodes_dict(None)
 		for item in whole_class_a['children']:
 			if item['name'] == 'Orphan':
 				orphan_data = OrderedDict([('name', ''), ('value', 3000), ('color', ''), ('children',[item])])
@@ -721,6 +711,33 @@ class StructureStatistics(TemplateView):
 
 		context["whole_receptors"] = json.dumps(whole_rec_dict)
 		context["page"] = self.origin
+
+		#Adding external circles info about structure state
+		if self.origin == 'structure':
+			circle_data = all_structs.values_list(
+			              "state_id__slug", "protein_conformation__protein__parent__entry_name", "pdb_code_id__index").order_by(
+			              "state_id__slug", "protein_conformation__protein__parent__entry_name", "pdb_code_id__index").distinct(
+			              "state_id__slug", "protein_conformation__protein__parent__entry_name", "pdb_code_id__index")
+		elif self.origin == 'gprot':
+			circle_data = all_gprots.values_list(
+			              "signprot_complex__protein__family__parent__name", "protein_conformation__protein__parent__entry_name", "pdb_code_id__index").order_by(
+			              "signprot_complex__protein__family__parent__name", "protein_conformation__protein__parent__entry_name", "pdb_code_id__index").distinct(
+			              "signprot_complex__protein__family__parent__name", "protein_conformation__protein__parent__entry_name", "pdb_code_id__index")
+
+
+		circles = {}
+
+		for data in circle_data:
+		    if data[1].split('_')[1] == 'human':
+		        key = data[1].split('_')[0].upper()
+		        if key not in circles.keys():
+		            circles[key] = {}
+		        if data[0] not in circles[key].keys():
+		            circles[key][data[0]] = 1
+		        circles[key][data[0]] += 1
+
+		context["circles_data"] = json.dumps(circles)
+
 		return context
 
 	def get_families_dict(self, queryset, lookup):
@@ -733,20 +750,6 @@ class StructureStatistics(TemplateView):
 			if fname not in families:
 				families.append(fname)
 		return families
-
-	def grab_matches(self, queryset, output):
-
-		#Grab data from queryset
-		for s in queryset:
-			gprot = s.signprot_complex.protein.family.parent.name
-			receptor = s.protein_conformation.protein.parent.entry_short()
-			if receptor in output.keys():
-				output[receptor].append(gprot)
-			else:
-				output[receptor] = []
-				output[receptor].append(gprot)
-
-		return output
 
 	def count_by_class(self, queryset, lookup):
 

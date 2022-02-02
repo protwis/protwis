@@ -272,6 +272,25 @@
 Specific sets of structures can be downloaded from the <a href="/structure">Structures</a> page.<br />
 The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }}</strong>.<br />
 {% if page != 'gprot' %}
+<style type="text/css">
+  .gprot_orange {
+    color: orange;
+  }
+
+  .gprot_red {
+    color: red;
+  }
+
+  .gprot_green {
+    color: forestgreen;
+  }
+
+  .graydiv {
+      height: 20px;
+      width: 350px;
+      background: linear-gradient(to right, white 0%, black 100%)
+  }
+</style>
 <br />
 <br />
 <br />
@@ -548,31 +567,47 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
     class_t2_options = {{ class_t2_options|safe }};
     orphan = {{ orphan|safe }};
     orphan_options = {{ orphan_options|safe }};
-    whole_dict = {{ whole_receptors|safe }};
+    whole_dict = {{ whole_receptors|safe }}
+    circles_data = {{ circles_data | safe}}
 </script>
 <script language='javascript'>
+  maxLeafNodeLenght = 46;
+  conversion = {"active":"#008000", "intermediate":"#FFA500", "inactive":"#FF0000"};
   $("#UniProtNames").click(function() {
       $("#UniProtNames").addClass("active");
       $("#IUPHARNames").removeClass("active");
       changeLeavesLabels("class_a","UniProt", whole_dict);
+      DrawCircles('class_a', circles_data, maxLeafNodeLenght, conversion, true);
       changeLeavesLabels("class_b1","UniProt", whole_dict);
+      DrawCircles('class_b1', circles_data, maxLeafNodeLenght, conversion, true);
       changeLeavesLabels("class_b2","UniProt", whole_dict);
+      DrawCircles('class_b2', circles_data, maxLeafNodeLenght, conversion, true);
       changeLeavesLabels("class_c","UniProt", whole_dict);
+      DrawCircles('class_c', circles_data, maxLeafNodeLenght, conversion, true);
       changeLeavesLabels("class_f","UniProt", whole_dict);
+      DrawCircles('class_f', circles_data, maxLeafNodeLenght, conversion, true);
       changeLeavesLabels("class_t2","UniProt", whole_dict);
+      DrawCircles('class_t2', circles_data, maxLeafNodeLenght, conversion, true);
       changeLeavesLabels("orphan","UniProt", whole_dict);
+      DrawCircles('orphan', circles_data, maxLeafNodeLenght, conversion, true);
   });
-
   $("#IUPHARNames").click(function() {
       $("#UniProtNames").removeClass("active");
       $("#IUPHARNames").addClass("active");
       changeLeavesLabels("class_a","IUPHAR", whole_dict);
+      DrawCircles('class_a', circles_data, maxLeafNodeLenght, conversion, true);
       changeLeavesLabels("class_b1","IUPHAR", whole_dict);
+      DrawCircles('class_b1', circles_data, maxLeafNodeLenght, conversion, true);
       changeLeavesLabels("class_b2","IUPHAR", whole_dict);
+      DrawCircles('class_b2', circles_data, maxLeafNodeLenght, conversion, true);
       changeLeavesLabels("class_c","IUPHAR", whole_dict);
+      DrawCircles('class_c', circles_data, maxLeafNodeLenght, conversion, true);
       changeLeavesLabels("class_f","IUPHAR", whole_dict);
+      DrawCircles('class_f', circles_data, maxLeafNodeLenght, conversion, true);
       changeLeavesLabels("class_t2","IUPHAR", whole_dict);
+      DrawCircles('class_t2', circles_data, maxLeafNodeLenght, conversion, true);
       changeLeavesLabels("orphan","IUPHAR", whole_dict);
+      DrawCircles('orphan', circles_data, maxLeafNodeLenght, conversion, true);
   });
 </script>
 {% else %}
@@ -592,10 +627,15 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
   .gprot_pink {
     color: pink;
   }
+  .graydiv {
+      height: 20px;
+      width: 350px;
+      background: linear-gradient(to right, white 0%, black 100%)
+  }
 </style>
 <br />
 <br />
-<p><h4><strong>Structural coverage of GPCR-G protein complexes.</strong> The five dots depict G protein complex structure presence.</h4></p>
+<p><h4><strong>Structural coverage of GPCR-G protein complexes.</strong></h4></p>
 <br />
 <div>
   Receptor names:
@@ -605,13 +645,6 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
     </div>
 </div>
 <br />
-<div class="row text-center">
-    <span class="gprot_blue">&#11044; G&alpha;<sub>s</sub></span>
-    <span class="gprot_red">&#11044; G&alpha;<sub>i/o</sub></span>
-    <span class="gprot_black">&#11044; G&alpha;<sub>q/11</sub></span>
-    <span class="gprot_green">&#11044; G&alpha;<sub>12/13</sub></span>
-    <span class="gprot_pink">&#11044; GPa1</span>
-</div>
 <br />
 <script type="text/javascript" charset="utf-8">
     class_a = {{ class_a|safe }};
@@ -629,51 +662,82 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
     orphan = {{ orphan|safe }};
     orphan_options = {{ orphan_options|safe }};
     whole_dict = {{ whole_receptors|safe }};
-    matching = {{ tree_dots_data|safe }}
+    matching = {{ circles_data|safe }}
 </script>
 <script language='javascript'>
   maxLeafNodeLenght = 46;
-  conversion = {"Gs":"blue", "Gi/o":"red", "Gq/11":"black", "G12/13":"green", "GPa1 family":"pink"};
+  conversion = {"Gs":"#0000FF", "Gi/o":"#FF0000", "Gq/11":"#000000", "G12/13":"#008000", "GPa1 family":"#FFC0CB"};
   $("#UniProtNames").click(function() {
       $("#UniProtNames").addClass("active");
       $("#IUPHARNames").removeClass("active");
       changeLeavesLabels("class_a","UniProt", whole_dict);
-      DrawCircles('class_a', matching, maxLeafNodeLenght, conversion);
+      DrawCircles('class_a', matching, maxLeafNodeLenght, conversion, true);
       changeLeavesLabels("class_b1","UniProt", whole_dict);
-      DrawCircles('class_b1', matching, maxLeafNodeLenght, conversion);
+      DrawCircles('class_b1', matching, maxLeafNodeLenght, conversion, true);
       changeLeavesLabels("class_b2","UniProt", whole_dict);
-      DrawCircles('class_b2', matching, maxLeafNodeLenght, conversion);
+      DrawCircles('class_b2', matching, maxLeafNodeLenght, conversion, true);
       changeLeavesLabels("class_c","UniProt", whole_dict);
-      DrawCircles('class_c', matching, maxLeafNodeLenght, conversion);
+      DrawCircles('class_c', matching, maxLeafNodeLenght, conversion, true);
       changeLeavesLabels("class_f","UniProt", whole_dict);
-      DrawCircles('class_f', matching, maxLeafNodeLenght, conversion);
+      DrawCircles('class_f', matching, maxLeafNodeLenght, conversion, true);
       changeLeavesLabels("class_t2","UniProt", whole_dict);
-      DrawCircles('class_t2', matching, maxLeafNodeLenght, conversion);
+      DrawCircles('class_t2', matching, maxLeafNodeLenght, conversion, true);
       changeLeavesLabels("orphan","UniProt", whole_dict);
-      DrawCircles('orphan', matching, maxLeafNodeLenght, conversion);
+      DrawCircles('orphan', matching, maxLeafNodeLenght, conversion, true);
   });
   $("#IUPHARNames").click(function() {
       $("#UniProtNames").removeClass("active");
       $("#IUPHARNames").addClass("active");
       changeLeavesLabels("class_a","IUPHAR", whole_dict);
-      DrawCircles('class_a', matching, maxLeafNodeLenght, conversion);
+      DrawCircles('class_a', matching, maxLeafNodeLenght, conversion, true);
       changeLeavesLabels("class_b1","IUPHAR", whole_dict);
-      DrawCircles('class_b1', matching, maxLeafNodeLenght, conversion);
+      DrawCircles('class_b1', matching, maxLeafNodeLenght, conversion, true);
       changeLeavesLabels("class_b2","IUPHAR", whole_dict);
-      DrawCircles('class_b2', matching, maxLeafNodeLenght, conversion);
+      DrawCircles('class_b2', matching, maxLeafNodeLenght, conversion, true);
       changeLeavesLabels("class_c","IUPHAR", whole_dict);
-      DrawCircles('class_c', matching, maxLeafNodeLenght, conversion);
+      DrawCircles('class_c', matching, maxLeafNodeLenght, conversion, true);
       changeLeavesLabels("class_f","IUPHAR", whole_dict);
-      DrawCircles('class_f', matching, maxLeafNodeLenght, conversion);
+      DrawCircles('class_f', matching, maxLeafNodeLenght, conversion, true);
       changeLeavesLabels("class_t2","IUPHAR", whole_dict);
-      DrawCircles('class_t2', matching, maxLeafNodeLenght, conversion);
+      DrawCircles('class_t2', matching, maxLeafNodeLenght, conversion, true);
       changeLeavesLabels("orphan","IUPHAR", whole_dict);
-      DrawCircles('orphan', matching, maxLeafNodeLenght, conversion);
+      DrawCircles('orphan', matching, maxLeafNodeLenght, conversion, true);
   });
 </script>
 {% endif %}
 <div id="class_a" class="text-center">
   <h4>Class A<br />(Rhodopsin)</h4>
+  {% if page != 'gprot' %}
+    <br />
+    <div>
+      <div style="float: right; position: relative" class="text-center">
+        <b>Structure state frequency (from low to high)</b>
+        <div class="graydiv"></div>
+      </div>
+      <div style="float: left; position: relative" class="text-center">
+        <b>Structure state</b> <br />
+              <span class="gprot_green">&#9675; <b>Active</b></span>
+              <span class="gprot_orange">&#9675; <b>Intermediate</b></span>
+              <span class="gprot_red">&#9675; <b>Inactive</b></span>
+      </div>
+    </div>
+  {% else %}
+  <br />
+  <div>
+    <div style="float: right; position: relative" class="text-center">
+      <b>G Protein complexes structures frequency (from low to high)</b>
+      <div class="graydiv"></div>
+    </div>
+    <div style="float: left; position: relative" class="text-center">
+      <b>G Protein complexes</b> <br />
+              <span class="gprot_blue">&#9675; <b>G&alpha;<sub>s</sub></b></span>
+              <span class="gprot_red">&#9675; <b>G&alpha;<sub>i/o</sub></b></span>
+              <span class="gprot_black">&#9675; <b>G&alpha;<sub>q/11</sub></b></span>
+              <span class="gprot_green">&#9675; <b>G&alpha;<sub>12/13</sub></b></span>
+              <span class="gprot_pink">&#9675; <b>GPa1</b></span>
+    </div>
+  </div>
+  {% endif %}
 </div>
 <p>
   <div class="text-center">
@@ -936,6 +1000,8 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
 <script src="{% static 'home/js/phylo_tree.js' %}"></script>
 {% if page != 'gprot' %}
 <script type="text/javascript" charset="utf-8">
+    maxLeafNodeLenght = 46;
+    conversion = {"active":"#008000", "intermediate":"#FFA500", "inactive":"#FF0000"};
     $(window).on("load", function() {
         draw_tree(class_a, class_a_options);
         draw_tree(class_b1, class_b1_options);
@@ -944,17 +1010,29 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
         draw_tree(class_f, class_f_options);
         draw_tree(class_t2, class_t2_options);
         draw_tree(orphan, orphan_options);
-        $("#class_a svg g").first().attr('transform', 'translate(555,575)');
+        DrawCircles('class_a', circles_data, maxLeafNodeLenght, conversion, true);
+        DrawCircles('class_b1', circles_data, maxLeafNodeLenght, conversion, true);
+        DrawCircles('class_b2', circles_data, maxLeafNodeLenght, conversion, true);
+        DrawCircles('class_c', circles_data, maxLeafNodeLenght, conversion, true);
+        DrawCircles('class_f', circles_data, maxLeafNodeLenght, conversion, true);
+        DrawCircles('class_t2', circles_data, maxLeafNodeLenght, conversion, true);
+        DrawCircles('orphan', circles_data, maxLeafNodeLenght, conversion, true);
+        $("#class_a svg g").first().attr('transform', 'translate(555,555) scale(0.9,0.9) ');
         $("#class_a_svg").attr('height', 1210);
-        $("#class_b1 svg g").first().attr('transform', 'translate(180,220) scale(0.85,0.85)');
-        $("#class_b2 svg g").first().attr('transform', 'translate(182,200) scale(0.85,0.85) ');
+        $("#class_b1 svg g").first().attr('transform', 'translate(190,220) scale(0.80,0.80) ');
+        $("#class_b2 svg g").first().attr('transform', 'translate(195,182) scale(0.85,0.85) ');
+        $("#class_b2_svg").attr('height', 390);
         $("#class_c svg g").first().attr('transform', 'translate(200,200) scale(0.85,0.85) ');
+        $("#class_f svg g").first().attr('transform', 'translate(180,180) scale(0.85,0.85) ');
+        $("#class_t2 svg g").first().attr('transform', 'translate(172,172) scale(0.85,0.85) ');
+        $("#orphan svg g").first().attr('transform', 'translate(175,180) scale(0.85,0.85)');
+        $("#orphan_svg").attr('height', 360).attr('width', 360);
     });
 </script>
 {% else %}
 <script type="text/javascript" charset="utf-8">
     maxLeafNodeLenght = 46;
-    conversion = {"Gs":"blue", "Gi/o":"red", "Gq/11":"black", "G12/13":"green", "GPa1 family":"pink"};
+    conversion = {"Gs":"#0000FF", "Gi/o":"#FF0000", "Gq/11":"#000000", "G12/13":"#008000", "GPa1 family":"#FFC0CB"};
     $(window).on("load", function() {
         draw_tree(class_a, class_a_options);
         draw_tree(class_b1, class_b1_options);
@@ -963,13 +1041,13 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
         draw_tree(class_f, class_f_options);
         draw_tree(class_t2, class_t2_options);
         draw_tree(orphan, orphan_options);
-        DrawCircles('class_a', matching, maxLeafNodeLenght, conversion);
-        DrawCircles('class_b1', matching, maxLeafNodeLenght, conversion);
-        DrawCircles('class_b2', matching, maxLeafNodeLenght, conversion);
-        DrawCircles('class_c', matching, maxLeafNodeLenght, conversion);
-        DrawCircles('class_f', matching, maxLeafNodeLenght, conversion);
-        DrawCircles('class_t2', matching, maxLeafNodeLenght, conversion);
-        DrawCircles('orphan', matching, maxLeafNodeLenght, conversion);
+        DrawCircles('class_a', matching, maxLeafNodeLenght, conversion, true);
+        DrawCircles('class_b1', matching, maxLeafNodeLenght, conversion, true);
+        DrawCircles('class_b2', matching, maxLeafNodeLenght, conversion, true);
+        DrawCircles('class_c', matching, maxLeafNodeLenght, conversion, true);
+        DrawCircles('class_f', matching, maxLeafNodeLenght, conversion, true);
+        DrawCircles('class_t2', matching, maxLeafNodeLenght, conversion, true);
+        DrawCircles('orphan', matching, maxLeafNodeLenght, conversion, true);
         $("#class_a svg g").first().attr('transform', 'translate(555,555) scale(0.9,0.9) ');
         $("#class_a_svg").attr('height', 1210);
         $("#class_b1 svg g").first().attr('transform', 'translate(190,220) scale(0.80,0.80) ');
