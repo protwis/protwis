@@ -22,7 +22,7 @@ from common.views import AbsTargetSelectionTable, Alignment, AbsReferenceSelecti
 from common.models import ReleaseNotes, WebResource, Publication
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
-from ligand.models import Ligand, LigandVendorLink, LigandVendors, AnalyzedExperiment, AnalyzedAssay, BiasedPathways, AssayExperiment, BiasedData, Endogenous_GTP
+from ligand.models import Ligand, LigandVendorLink, LigandVendors, BiasedPathways, AssayExperiment, BiasedData, Endogenous_GTP
 from ligand.functions import OnTheFly, AddPathwayData
 from protein.models import Protein, ProteinFamily, ProteinCouplings
 from interaction.models import StructureLigandInteraction
@@ -1758,11 +1758,6 @@ class LigandStatistics(TemplateView):
 
         return context
 
-class ExperimentEntryView(DetailView):
-    context_object_name = 'experiment'
-    model = AnalyzedExperiment
-    template_name = 'biased_experiment_data.html'
-
 # Biased pathways part
 
 
@@ -2076,7 +2071,6 @@ Bias browser between families
 access data from db, fill empty fields with empty parse_children
 '''
 class OTFBiasBrowser(TemplateView):
-    # serializer_class = AnalyzedExperimentSerializer
     protein_id = ''
     subtype = False #need to pass these values onto the context
     pathway = False
@@ -2153,7 +2147,7 @@ class OTFBiasBrowser(TemplateView):
                             ligands[data[pub][key]['ligand_id']]['Ligand'] = data[pub][key]['ligand_name']
                         else:
                             ligands[data[pub][key]['ligand_id']]['Tested ligand'] = data[pub][key]['ligand_name']
-                        ligands[data[pub][key]['ligand_id']]['ID'] = data[pub][key]['ligand_id']
+                        ligands[data[pub][key]['ligand_id']]['ID'] = key #data[pub][key]['ligand_id']
                         ligands[data[pub][key]['ligand_id']]['Species'] = data[pub][key]['specie']
                         ligands[data[pub][key]['ligand_id']]['Authors'] = data[pub][key]['authors']
                         ligands[data[pub][key]['ligand_id']]['DOI/PMID'] = data[pub][key]['doi']

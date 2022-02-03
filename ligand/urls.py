@@ -59,14 +59,10 @@ urlpatterns = [
     #User selected calculations
     url(r'^userselectionbiased', views.UserBiased.as_view(), name='bias_browser-list'),
     url(r'^userselectionbiasedsubtype', views.UserBiasedSubtype.as_view(), name='bias_browser-list'),
-
+    #Browsers selection pages
     url(r'^biasedbrowser',views.BiasTargetSelection.as_view(), name='bias_browser-list1'),
     url(r'^pathwaypreferencebrowser',views.BiasPredictionTargetSelection.as_view(), name='bias_browser-list1'),
     url(r'^biasedsubtypesbrowser',views.BiasGTargetSelection.as_view(), name='bias_browser-list1'),
-
-    url(r'^biased/experiment/(?P<pk>[-\w]+)/detail$', views.ExperimentEntryView.as_view()),
-    url(r'^biasedsubtypes/experiment/(?P<pk>[-\w]+)/detail$', views.ExperimentEntryView.as_view()),
-    url(r'^biasedpredicted/experiment/(?P<pk>[-\w]+)/detail$', views.ExperimentEntryView.as_view()),
 
     url(r'^vendors$', views.test_link, name='test'),
     url(r'^browservendors$', views.BiasVendorBrowser.as_view(), name='browservendor'),

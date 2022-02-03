@@ -251,8 +251,7 @@
 	<table class="display compact text-nowrap" id='structures_scrollable' style="width: 100%">
 		<thead id="headers">
 			<tr class="header-spans">
-				<th><span class="glyphicon glyphicon-info-sign" title="Click on this icon in a row for more details."></span></th>
-				<th id="receptor" style="border-left: 1px solid black; text-align:left" colspan="5">Receptor</th>
+				<th id="receptor" style="text-align:left" colspan="5">Receptor</th>
 				{% if Pathway %}
 				<th style="border-left: 1px solid black; text-align:left" colspan="4" style="">
 					Tested ligands</th>
@@ -306,7 +305,6 @@
 				<!-- <th style="border-left: 1px solid black; text-align:left" colspan="4">reference</th> -->
 			</tr>
 			<tr class="table-filter-dropdown">
-				<th></th>
 				<th id="class_filter_select">Class</th>
 				<th id="receptor_filter_select">Rec Fam</th>
 				<th id="uniprot_filter_select">UniProt</th>
@@ -436,22 +434,15 @@
 			{% if Pathway %}
 				{% for value in Array %}
 				<tr>
-					<td>
-						<span style='display: none'> {{value.65|floatformat}}</span>
-						<a href="#">
-							<span class="glyphicon glyphicon-info-sign" title="Click for more details" onclick="openPopup('experiment/{{value.65|floatformat}}/detail', 'Detail View', window, 1500, 1000)"></span>
-						</a>
-					</td>
-
 					<!-- Receptor block -->
-					<td title='{{value.0}}' style="border-left: 1px solid black;">{{value.0}}</td>
+					<td title='{{value.0}}'>{{value.0}}</td>
 					<td title='{{value.1}}'>{{value.1}}</td>
 					<td title='{{value.2}}'>{{value.2}}</td>
 					<td title='{{value.3}}'>{{value.3}}</td>
 					<td title='{{value.4}}'>{{value.4}}</td>
 
 					<!-- Tested ligand block -->
-					<td title='{{value.5}}'><a href='/ligand/{{value.65|floatformat:"-1"}}/info' target='_blank'>{{value.5}}</a></td>
+					<td style="border-left: 1px solid black;" title='{{value.5}}'><a href='/ligand/{{value.65|floatformat:"-1"}}/info' target='_blank'>{{value.5}}</a></td>
 					<td style="text-align:right">{{value.6|floatformat}}</td>
 					<td style="text-align:right">{{value.7|floatformat}}</td>
 					<td style="text-align:right">{{value.8|floatformat}}</td>
@@ -542,15 +533,8 @@
 			{% else %}
 				{% for value in Array %}
 				<tr>
-					<td>
-						<span style='display: none'> {{ value.76|floatformat }}</span>
-						<a href="#">
-							<span class="glyphicon glyphicon-info-sign" title="Click for more details" onclick="openPopup('experiment/{{ value.76|floatformat }}/detail', 'Detail View', window, 1500, 1000)"></span>
-						</a>
-					</td>
-
 					<!-- Receptor block -->
-					<td title='{{ value.0 }}' style="border-left: 1px solid black;">{{ value.0 }}</td>
+					<td title='{{ value.0 }}'>{{ value.0 }}</td>
 					<td title='{{ value.1 }}'>{{ value.1 }}</td>
 					<td title='{{ value.2 }}'>{{ value.2 }}</td>
 					<td title='{{ value.3 }}'>{{ value.3 }}</td>
@@ -721,43 +705,41 @@ function openPopup(url, title, win, w, h) {
 	    autoWidth: true,
 	    bInfo: true,
 			columnDefs: [{
-				targets: [12,13,14,
-									16,17,18,
-									20,21,22,
-									25,26,27,
-									30,31,32,
-									35,36,37,
-									40,41,42,
-									45,46,47,
-									50,51,52,
-									55,56,57,
-									60,61,62],
+				targets: [11,12,13,
+									15,16,17,
+									19,20,21,
+									24,25,26,
+									29,30,31,
+									34,35,36,
+									39,40,41,
+									44,45,46,
+									49,50,51,
+									54,55,56,
+									59,60,61],
 				visible: false
 			}],
 	  });
 		// columns to hide: 3,14,15,18,19,22,23,26,27,28,31,32,33,36,37,38,41,42,43,46,47,48,51,52,53,56,57,58
 		let column_filters = [];
 		// createYADCFfilters(start_column, num_cols, filter_type, select_type = null, filter_default_label = "", filter_reset_button_text = false, filter_match_mode = null, column_data_type = null, width = null)
-		// Selector column
-		column_filters = column_filters.concat(createYADCFfilters(0, 1, "none"));
 		// Class
-		column_filters = column_filters.concat(createYADCFfilters(1, 1, "multi_select", "select2", "Class", false, null, null, "80px"));
+		column_filters = column_filters.concat(createYADCFfilters(0, 1, "multi_select", "select2", "Class", false, null, null, "80px"));
 		// Receptor section (4)
-		column_filters = column_filters.concat(createYADCFfilters(2, 4, "multi_select", "select2", "Select", false, null, null, "30px"));
+		column_filters = column_filters.concat(createYADCFfilters(1, 4, "multi_select", "select2", "Select", false, null, null, "30px"));
 		// Ligand column
-		column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "Select", false, null, "html", "80px"));
+		column_filters = column_filters.concat(createYADCFfilters(5, 1, "multi_select", "select2", "Select", false, null, "html", "80px"));
 		// Vendors/Articles/Labs (3)
-		column_filters = column_filters.concat(createYADCFfilters(7, 3, "range_number", null, ["Min", "Max"], false, null, null, "30px"));
+		column_filters = column_filters.concat(createYADCFfilters(6, 3, "range_number", null, ["Min", "Max"], false, null, null, "30px"));
 		// Pathway Preference block (5)
-		column_filters = column_filters.concat(createYADCFfilters(10, 5, "multi_select", "select2", "Select", false, null, null, "30px"));
+		column_filters = column_filters.concat(createYADCFfilters(9, 5, "multi_select", "select2", "Select", false, null, null, "30px"));
 		// ΔLog(Tau/KA)(4)/ΔLog(Emax/EC50)(4)/Log(Tau/KA)(5)/Log(Emax/EC50)(5)/EC50(5)/Emax(5)
-    column_filters = column_filters.concat(createYADCFfilters(15, 28, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+    column_filters = column_filters.concat(createYADCFfilters(14, 28, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
 		// Measured Molecule 1(5)/2(5)/Biological Process(5)/Cell Line(1)/Time Resolved(1)
-		column_filters = column_filters.concat(createYADCFfilters(43, 21, "multi_select", "select2", "Select", false, null, null, "30px"));
+		column_filters = column_filters.concat(createYADCFfilters(42, 21, "multi_select", "select2", "Select", false, null, null, "30px"));
     // Authors
-		column_filters = column_filters.concat(createYADCFfilters(64, 1, "multi_select", "select2", "Authors", false, null, null, "30px"));
+		column_filters = column_filters.concat(createYADCFfilters(63, 1, "multi_select", "select2", "Authors", false, null, null, "30px"));
 		// DOI
-		column_filters = column_filters.concat(createYADCFfilters(65, 1, "multi_select", "select2", "DOI", false, null, null, "80px"));
+		column_filters = column_filters.concat(createYADCFfilters(64, 1, "multi_select", "select2", "DOI", false, null, "html", "80px"));
 
 		yadcf.init(oTable1.draw(), column_filters, {
 			cumulative_filtering: false
@@ -806,55 +788,53 @@ function openPopup(url, title, win, w, h) {
 	    autoWidth: false,
 	    bInfo: true,
 			columnDefs: [{
-				targets: [13,14,15,
-									17,18,19,
-									22,23,24,
-									26,27,28,
-									30,31,32,
-									35,36,37,
-									40,41,42,
-									45,46,47,
-									50,51,52,
-									55,56,57,
-									60,61,62,
-									65,66,67,
-									70,71,72],
+				targets: [12,13,14,
+									16,17,18,
+									21,22,23,
+									25,26,27,
+									29,30,31,
+									34,35,36,
+									39,40,41,
+									44,45,46,
+									49,50,51,
+									54,55,56,
+									59,60,61,
+									64,65,66,
+									69,70,71],
 				visible: false
 			}],
 	  });
 
 		let column_filters = [];
 		// createYADCFfilters(start_column, num_cols, filter_type, select_type = null, filter_default_label = "", filter_reset_button_text = false, filter_match_mode = null, column_data_type = null, width = null)
-		// Selector column
-		column_filters = column_filters.concat(createYADCFfilters(0, 1, "none"));
 		// Class
-		column_filters = column_filters.concat(createYADCFfilters(1, 1, "multi_select", "select2", "Class", false, null, null, "80px"));
+		column_filters = column_filters.concat(createYADCFfilters(0, 1, "multi_select", "select2", "Class", false, null, null, "80px"));
 		// Rec Fam
-		column_filters = column_filters.concat(createYADCFfilters(2, 1, "multi_select", "select2", "Select", false, null, null, "40px"));
+		column_filters = column_filters.concat(createYADCFfilters(1, 1, "multi_select", "select2", "Select", false, null, null, "40px"));
 		// UniProt
-		column_filters = column_filters.concat(createYADCFfilters(3, 1, "multi_select", "select2", "Select", false, null, null, "30px"));
+		column_filters = column_filters.concat(createYADCFfilters(2, 1, "multi_select", "select2", "Select", false, null, null, "30px"));
 		// Receptor section (4)
-		column_filters = column_filters.concat(createYADCFfilters(4, 2, "multi_select", "select2", "Select", false, null, null, "60px"));
+		column_filters = column_filters.concat(createYADCFfilters(3, 2, "multi_select", "select2", "Select", false, null, null, "60px"));
 		// Reference Ligand
-		column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "Select", false, null, null, "40px"));
+		column_filters = column_filters.concat(createYADCFfilters(5, 1, "multi_select", "select2", "Select", false, null, null, "40px"));
 		// Tested Ligand column
-		column_filters = column_filters.concat(createYADCFfilters(7, 1, "multi_select", "select2", "Select", false, null, "html", "40px"));
+		column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "Select", false, null, "html", "40px"));
 		// Vendors/Articles/Labs (3)
-		column_filters = column_filters.concat(createYADCFfilters(8, 3, "range_number", null, ["Min", "Max"], false, null, null, "30px"));
+		column_filters = column_filters.concat(createYADCFfilters(7, 3, "range_number", null, ["Min", "Max"], false, null, null, "30px"));
 		// Pathway Rank Order block (5)
-		column_filters = column_filters.concat(createYADCFfilters(11, 5, "multi_select", "select2", "Select", false, null, null, "30px"));
+		column_filters = column_filters.concat(createYADCFfilters(10, 5, "multi_select", "select2", "Select", false, null, null, "30px"));
 		// Bias Factor(5)
-		column_filters = column_filters.concat(createYADCFfilters(16, 4, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+		column_filters = column_filters.concat(createYADCFfilters(15, 4, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
 		// Signalling protein (5)
-		column_filters = column_filters.concat(createYADCFfilters(20, 5, "multi_select", "select2", "Select", false, null, null, "30px"));
+		column_filters = column_filters.concat(createYADCFfilters(19, 5, "multi_select", "select2", "Select", false, null, null, "30px"));
 		// ΔΔLog(Tau/KA)(4)/ΔΔLog(Emax/EC50)(4)/ΔLog(Tau/KA)(5)/ΔLog(Emax/EC50)(5)/EC50(5)/Emax(5)
-    column_filters = column_filters.concat(createYADCFfilters(25, 28, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+    column_filters = column_filters.concat(createYADCFfilters(24, 28, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
 		// Measured Molecule 1(5)/2(5)/Biological Process(5)/Cell Line(1)/Time Resolved(1)
-		column_filters = column_filters.concat(createYADCFfilters(53, 21, "multi_select", "select2", "Select", false, null, null, "30px"));
+		column_filters = column_filters.concat(createYADCFfilters(52, 21, "multi_select", "select2", "Select", false, null, null, "30px"));
     // Authors
-		column_filters = column_filters.concat(createYADCFfilters(74, 1, "multi_select", "select2", "Authors", false, null, null, "30px"));
+		column_filters = column_filters.concat(createYADCFfilters(73, 1, "multi_select", "select2", "Authors", false, null, null, "30px"));
 		// DOI
-		column_filters = column_filters.concat(createYADCFfilters(75, 1, "multi_select", "select2", "DOI", false, null, null, "80px"));
+		column_filters = column_filters.concat(createYADCFfilters(74, 1, "multi_select", "select2", "DOI", false, null, null, "80px"));
 
 		yadcf.init(oTable1.draw(), column_filters, {
 			cumulative_filtering: false
@@ -872,17 +852,17 @@ function openPopup(url, title, win, w, h) {
 	$(window).on("load",function() {
 			$('#switch_pathway').change(function() {
 				if ($(this).prop('checked')) {
-						hideColumns(oTable1, [12,13,14,
-																	16,17,18,
-																	20,21,22,
-																	25,26,27,
-																	30,31,32,
-																	35,36,37,
-																	40,41,42,
-																	45,46,47,
-																	50,51,52,
-																	55,56,57,
-																	60,61,62]);
+						hideColumns(oTable1, [11,12,13,
+																	15,16,17,
+																	19,20,21,
+																	24,25,26,
+																	29,30,31,
+																	34,35,36,
+																	39,40,41,
+																	44,45,46,
+																	49,50,51,
+																	54,55,56,
+																	59,60,61]);
 				} else {
 						resetHiddenColumns(oTable1);
 						gray_scale_table($("#structures_scrollable"));
@@ -895,19 +875,19 @@ function openPopup(url, title, win, w, h) {
 	$(window).on("load",function() {
 			$('#switch_biased').change(function() {
 				if ($(this).prop('checked')) {
-						hideColumns(oTable1, [13,14,15,
-																	17,18,19,
-																	22,23,24,
-																	26,27,28,
-																	30,31,32,
-																	35,36,37,
-																	40,41,42,
-																	45,46,47,
-																	50,51,52,
-																	55,56,57,
-																	60,61,62,
-																	65,66,67,
-																	70,71,72]);
+						hideColumns(oTable1, [12,13,14,
+																	16,17,18,
+																	21,22,23,
+																	25,26,27,
+																	29,30,31,
+																	34,35,36,
+																	39,40,41,
+																	44,45,46,
+																	49,50,51,
+																	54,55,56,
+																	59,60,61,
+																	64,65,66,
+																	69,70,71]);
 				} else {
 						resetHiddenColumns(oTable1);
 						gray_scale_table($("#structures_scrollable"));

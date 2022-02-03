@@ -12,7 +12,7 @@ from common import definitions
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 from common.selection import SimpleSelection, Selection, SelectionItem
-from ligand.models import AssayExperiment, AnalyzedAssay, BiasedData
+from ligand.models import AssayExperiment, BiasedData
 from structure.models import Structure, StructureModel, StructureComplexModel
 from protein.models import Protein, ProteinFamily, ProteinSegment, Species, ProteinSource, ProteinSet, ProteinCouplings
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent, ResiduePositionSet, Residue
@@ -318,7 +318,7 @@ def getReferenceTable(pathway, subtype):
     data_table = cache.get(cache_key)
     data_table = None
     if data_table == None:
-        #get all the proteins that are in ligandanalyzedassay
+        #get all the proteins that are in biaseddata
         biased_proteins = list(BiasedData.objects.values_list("receptor_id__entry_name").distinct())
 
         biased_entry_names = [b[0] for b in biased_proteins]
