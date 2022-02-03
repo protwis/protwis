@@ -279,9 +279,10 @@ function changeLeavesLabels(location, value, dict){
 * @starter {integer} starter - the max length of the leaves, to start drawing the circles (calculated by changeLeavesLabels)
 * @dict {dictionary} dict - the translation dictionary for color codes
 * @fancy {boolean} fancy - set the option for fancy circles
+* @clean {boolean} clean - remove the inner circles in the plot
 */
 
-function DrawCircles(location, data, starter, dict, fancy=false){
+function DrawCircles(location, data, starter, dict, fancy=false, clean=true){
 
     const pSBC=(p,c0,c1,l)=>{
         let r,g,b,P,f,t,h,i=parseInt,m=Math.round,a=typeof(c1)=="string";
@@ -316,9 +317,11 @@ function DrawCircles(location, data, starter, dict, fancy=false){
 
     var svg = d3.select('#'+location);
     var node = svg.selectAll(".node");
+    if (clean === true) {
+      node.selectAll("circle").remove();
+    }
     if (fancy === false) {
     var spacer = 8;
-    node.selectAll("circle").remove();
       for (var x in data){
         for (var unit in dict){
           if (data[x].indexOf(unit)>= 0) {
