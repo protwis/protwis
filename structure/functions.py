@@ -1182,14 +1182,13 @@ class ParseStructureCSV():
 
 
 class StructureBuildCheck():
-    local_yaml_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'structures'])
     local_annotation_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation'])
     local_wt_pdb_lookup_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'wt_pdb_lookup'])
 
     def __init__(self):
         with open(self.local_annotation_dir+'/xtal_segends.yaml', 'r') as f:
             self.segends_dict = yaml.safe_load(f)
-        self.yamls = os.listdir(self.local_yaml_dir)
+        self.pdbs = ParseStructureCSV().pdb_ids
         self.wt_pdb_lookup_files = [i.split('.')[0] for i in os.listdir(self.local_wt_pdb_lookup_dir)]
         self.missing_seg = []
         self.start_error = []
@@ -1197,8 +1196,7 @@ class StructureBuildCheck():
         self.duplicate_residue_error = {}
 
     def check_structures(self):
-        for y in self.yamls:
-            pdb = y.split('.')[0]
+        for pdb in self.pdbs:
             try:
                 Structure.objects.get(pdb_code__index=pdb)
             except Structure.DoesNotExist:

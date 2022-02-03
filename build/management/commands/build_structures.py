@@ -77,8 +77,8 @@ class Command(BaseBuild):
             default=False,
             help='Purge existing records')
         parser.add_argument('--skip_cn',
-            action='store_false',
-            default=True,
+            action='store_true',
+            default=False,
             help='Skip building contact network for test build')
         parser.add_argument('-i', '--incremental',
             action='store_true',
@@ -123,9 +123,9 @@ class Command(BaseBuild):
                 self.logger.error(msg)
 
         if options['skip_cn']:
-            self.run_contactnetwork=True
-        else:
             self.run_contactnetwork=False
+        else:
+            self.run_contactnetwork=True
 
         self.parsed_structures = ParseStructureCSV()
         self.parsed_structures.parse_ligands()
@@ -1245,7 +1245,7 @@ class Command(BaseBuild):
                 if sd['pdb']=='6ORV':
                     structure_type_slug = 'electron-microscopy'
                 elif sd['pdb'] in ['6YVR','6Z4Q','6Z4S','6Z4V','6Z66','6Z8N','6ZA8','6ZIN']:
-                    structure_type_slug = 'x-ray'
+                    structure_type_slug = 'x-ray-diffraction'
 
                 try:
                     st, created = StructureType.objects.get_or_create(slug=structure_type_slug,
