@@ -335,9 +335,9 @@ def getReferenceTable(pathway, subtype):
         totals = list(BiasedData.objects.values("receptor_id__family__slug").annotate(total=Count("ligand_id", distinct=True)))
 
         if subtype == 'yes':
-            physio_bias = list(BiasedData.objects.filter(subtype_biased=True).values("receptor_id__family__slug").annotate(physio=Count("ligand_id", distinct=True)))
+            physio_bias = list(BiasedData.objects.filter(subtype_biased__isnull=False).values("receptor_id__family__slug").annotate(physio=Count("ligand_id", distinct=True)))
         else:
-            physio_bias = list(BiasedData.objects.filter(physiology_biased=True).values("receptor_id__family__slug").annotate(physio=Count("ligand_id", distinct=True)))
+            physio_bias = list(BiasedData.objects.filter(physiology_biased__isnull=False).values("receptor_id__family__slug").annotate(physio=Count("ligand_id", distinct=True)))
 
         # path_bias = list(BiasedData.objects.filter(pathway_biased=True).values("receptor_id__family__slug").annotate(path=Count("ligand_id", distinct=True)))
         ligand_tot = {}

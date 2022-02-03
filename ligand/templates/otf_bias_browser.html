@@ -437,9 +437,9 @@
 				{% for value in Array %}
 				<tr>
 					<td>
-						<span style='display: none'> {{value.61|floatformat}}</span>
+						<span style='display: none'> {{value.65|floatformat}}</span>
 						<a href="#">
-							<span class="glyphicon glyphicon-info-sign" title="Click for more details" onclick="openPopup('experiment/{{value.61|floatformat}}/detail', 'Detail View', window, 1500, 1000)"></span>
+							<span class="glyphicon glyphicon-info-sign" title="Click for more details" onclick="openPopup('experiment/{{value.65|floatformat}}/detail', 'Detail View', window, 1500, 1000)"></span>
 						</a>
 					</td>
 
@@ -543,9 +543,9 @@
 				{% for value in Array %}
 				<tr>
 					<td>
-						<span style='display: none'> {{ value.72|floatformat }}</span>
+						<span style='display: none'> {{ value.76|floatformat }}</span>
 						<a href="#">
-							<span class="glyphicon glyphicon-info-sign" title="Click for more details" onclick="openPopup('experiment/{{ value.72|floatformat }}/detail', 'Detail View', window, 1500, 1000)"></span>
+							<span class="glyphicon glyphicon-info-sign" title="Click for more details" onclick="openPopup('experiment/{{ value.76|floatformat }}/detail', 'Detail View', window, 1500, 1000)"></span>
 						</a>
 					</td>
 
@@ -678,7 +678,15 @@
 <script src="{% static 'home/js/grayscale.js' %}"></script>
 <script src="{% static 'home/js/gpcrdb.js' %}"></script>
 <script src="{% static 'home/js/signprot-multitabtable.js' %}"></script>
+<script>
+function openPopup(url, title, win, w, h) {
 
+		const y = win.top.outerHeight / 2 + win.top.screenY - (h / 2);
+		const x = win.top.outerWidth / 2 + win.top.screenX - (w / 2);
+		return win.open(url, title, 'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width=' + w + ', height=' + h + ', top=' + y + ', left=' + x);
+
+}
+</script>
 {% if Pathway %}
 <script>
 	$(document).ready(function() {

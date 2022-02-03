@@ -449,7 +449,19 @@ class BiasTargetSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable("no", "no")
+    def get_context_data(self, **kwargs):
+        """Get context from parent class
+
+        (really only relevant for children of this class, as TemplateView does
+        not have any context variables)
+        """
+        context = super().get_context_data(**kwargs)
+        # get selection from session and add to context
+        context['table_data'] = getReferenceTable("no", "no")
+
+        return context
+
+
 
 #Biased Effector Family Browser (Ligand Selection)
 class UserBiased(AbsReferenceSelectionTable):
@@ -544,6 +556,7 @@ class BiasPredictionTargetSelection(AbsReferenceSelectionTable):
     filters = False
     filter_tableselect = False
     family_tree = False
+    pathway = True
     docs = 'sequences.html#structure-based-alignments'
     title = "SELECT RECEPTORS to retrieve ligands with a preferred G protein or arrestin pathway (ΔLog(Emax/EC50  values across pathways for one ligand (no reference ligand)))"
     description = 'Select a receptor in the table (below) or browse the classification tree (center).\nThen click the green button (right)'
@@ -560,8 +573,17 @@ class BiasPredictionTargetSelection(AbsReferenceSelectionTable):
         },
     }
 
-    pathway = True
-    table_data = getReferenceTable('yes', 'no')
+    def get_context_data(self, **kwargs):
+        """Get context from parent class
+
+        (really only relevant for children of this class, as TemplateView does
+        not have any context variables)
+        """
+        context = super().get_context_data(**kwargs)
+        # get selection from session and add to context
+        context['table_data'] = getReferenceTable("yes", "no")
+
+        return context
 
 #Biased Subtype Browser
 class BiasGTargetSelection(AbsReferenceSelectionTable):
@@ -599,7 +621,17 @@ class BiasGTargetSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable("no", "yes")
+    def get_context_data(self, **kwargs):
+        """Get context from parent class
+
+        (really only relevant for children of this class, as TemplateView does
+        not have any context variables)
+        """
+        context = super().get_context_data(**kwargs)
+        # get selection from session and add to context
+        context['table_data'] = getReferenceTable("no", "yes")
+
+        return context
 
 class RankOrderSelection(AbsReferenceSelectionTable):
     step = 1
@@ -635,7 +667,17 @@ class RankOrderSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable("no", "no")
+    def get_context_data(self, **kwargs):
+        """Get context from parent class
+
+        (really only relevant for children of this class, as TemplateView does
+        not have any context variables)
+        """
+        context = super().get_context_data(**kwargs)
+        # get selection from session and add to context
+        context['table_data'] = getReferenceTable("no", "no")
+
+        return context
 
 class TauRankOrderSelection(AbsReferenceSelectionTable):
     step = 1
@@ -671,7 +713,17 @@ class TauRankOrderSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable("no", "no")
+    def get_context_data(self, **kwargs):
+        """Get context from parent class
+
+        (really only relevant for children of this class, as TemplateView does
+        not have any context variables)
+        """
+        context = super().get_context_data(**kwargs)
+        # get selection from session and add to context
+        context['table_data'] = getReferenceTable("no", "no")
+
+        return context
 
 class TauSubtypeRankOrderSelection(AbsReferenceSelectionTable):
     step = 1
@@ -707,7 +759,17 @@ class TauSubtypeRankOrderSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable("no", "yes")
+    def get_context_data(self, **kwargs):
+        """Get context from parent class
+
+        (really only relevant for children of this class, as TemplateView does
+        not have any context variables)
+        """
+        context = super().get_context_data(**kwargs)
+        # get selection from session and add to context
+        context['table_data'] = getReferenceTable("no", "yes")
+
+        return context
 
 class EmaxPathProfileSelection(AbsReferenceSelectionTable):
     step = 1
@@ -743,7 +805,17 @@ class EmaxPathProfileSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable("no", "no")
+    def get_context_data(self, **kwargs):
+        """Get context from parent class
+
+        (really only relevant for children of this class, as TemplateView does
+        not have any context variables)
+        """
+        context = super().get_context_data(**kwargs)
+        # get selection from session and add to context
+        context['table_data'] = getReferenceTable("no", "no")
+
+        return context
 
 class TauPathProfileSelection(AbsReferenceSelectionTable):
     step = 1
@@ -779,7 +851,17 @@ class TauPathProfileSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable("no", "no")
+    def get_context_data(self, **kwargs):
+        """Get context from parent class
+
+        (really only relevant for children of this class, as TemplateView does
+        not have any context variables)
+        """
+        context = super().get_context_data(**kwargs)
+        # get selection from session and add to context
+        context['table_data'] = getReferenceTable("no", "no")
+
+        return context
 
 class TauSubtypePathProfileSelection(AbsReferenceSelectionTable):
     step = 1
@@ -815,7 +897,17 @@ class TauSubtypePathProfileSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable("no", "yes")
+    def get_context_data(self, **kwargs):
+        """Get context from parent class
+
+        (really only relevant for children of this class, as TemplateView does
+        not have any context variables)
+        """
+        context = super().get_context_data(**kwargs)
+        # get selection from session and add to context
+        context['table_data'] = getReferenceTable("no", "yes")
+
+        return context
 
 class EmaxPathPrefRankOrderSelection(AbsReferenceSelectionTable):
     step = 1
@@ -823,6 +915,7 @@ class EmaxPathPrefRankOrderSelection(AbsReferenceSelectionTable):
     filters = False
     filter_tableselect = False
     family_tree = False
+    pathway = True
     title = "SELECT RECEPTOR for Ligand Pathway Preference rank orders (ΔLog(Emax/EC50))"
     description = 'Select a receptor in the table (below).' \
         + ' \n\nand click the green button (upper right).'
@@ -839,8 +932,17 @@ class EmaxPathPrefRankOrderSelection(AbsReferenceSelectionTable):
         },
     }
 
-    pathway = True
-    table_data = getReferenceTable('yes', 'no')
+    def get_context_data(self, **kwargs):
+        """Get context from parent class
+
+        (really only relevant for children of this class, as TemplateView does
+        not have any context variables)
+        """
+        context = super().get_context_data(**kwargs)
+        # get selection from session and add to context
+        context['table_data'] = getReferenceTable("yes", "no")
+
+        return context
 
 
 class EmaxPathPrefPathProfilesSelection(AbsReferenceSelectionTable):
@@ -849,6 +951,7 @@ class EmaxPathPrefPathProfilesSelection(AbsReferenceSelectionTable):
     filters = False
     filter_tableselect = False
     family_tree = False
+    pathway = True
     title = "SELECT RECEPTOR for Ligand Pathway Profiles (log(Emax/EC50))"
     description = 'Select a receptor in the table (below).' \
         + ' \n\nand click the green button (upper right).'
@@ -865,8 +968,17 @@ class EmaxPathPrefPathProfilesSelection(AbsReferenceSelectionTable):
         },
     }
 
-    pathway = True
-    table_data = getReferenceTable('yes', 'no')
+    def get_context_data(self, **kwargs):
+        """Get context from parent class
+
+        (really only relevant for children of this class, as TemplateView does
+        not have any context variables)
+        """
+        context = super().get_context_data(**kwargs)
+        # get selection from session and add to context
+        context['table_data'] = getReferenceTable("yes", "no")
+
+        return context
 
 
 class EmaxSubtypeRankOrderSelection(AbsReferenceSelectionTable):
@@ -903,7 +1015,17 @@ class EmaxSubtypeRankOrderSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable('no', 'yes')
+    def get_context_data(self, **kwargs):
+        """Get context from parent class
+
+        (really only relevant for children of this class, as TemplateView does
+        not have any context variables)
+        """
+        context = super().get_context_data(**kwargs)
+        # get selection from session and add to context
+        context['table_data'] = getReferenceTable("no", "yes")
+
+        return context
 
 class EmaxSubtypePathProfilesSelection(AbsReferenceSelectionTable):
     step = 1
@@ -939,7 +1061,17 @@ class EmaxSubtypePathProfilesSelection(AbsReferenceSelectionTable):
         },
     }
 
-    table_data = getReferenceTable('no', 'yes')
+    def get_context_data(self, **kwargs):
+        """Get context from parent class
+
+        (really only relevant for children of this class, as TemplateView does
+        not have any context variables)
+        """
+        context = super().get_context_data(**kwargs)
+        # get selection from session and add to context
+        context['table_data'] = getReferenceTable("no", "yes")
+
+        return context
 
 class BiasedRankOrderOnTheFly(TemplateView):
     #set a global variable for different pages
@@ -1472,7 +1604,7 @@ class LigandStatistics(TemplateView):
 
         proteins_count = list(Protein.objects.all().values(
             'family__parent__parent__parent__name').annotate(c=Count('family', distinct=True)))
-            
+
         for pf in proteins_count:
             prot_count_dict[pf['family__parent__parent__parent__name']] = pf['c']
 
