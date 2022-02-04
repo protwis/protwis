@@ -754,6 +754,28 @@ function openPopup(url, title, win, w, h) {
 		// $(".").hide()
 	});
 </script>
+<script>
+	$(window).on("load",function() {
+			$('#switch_pathway').change(function() {
+				if ($(this).prop('checked')) {
+						hideColumns(oTable1, [11,12,13,
+																	15,16,17,
+																	19,20,21,
+																	24,25,26,
+																	29,30,31,
+																	34,35,36,
+																	39,40,41,
+																	44,45,46,
+																	49,50,51,
+																	54,55,56,
+																	59,60,61]);
+				} else {
+						resetHiddenColumns(oTable1);
+						gray_scale_table($("#structures_scrollable"));
+				}
+			});
+	});
+</script>
 {% else %}
 <script>
 	$(document).ready(function() {
@@ -847,30 +869,6 @@ function openPopup(url, title, win, w, h) {
 		gray_scale_table($("#structures_scrollable"));
 	});
 </script>
-{% if Pathway %}
-<script>
-	$(window).on("load",function() {
-			$('#switch_pathway').change(function() {
-				if ($(this).prop('checked')) {
-						hideColumns(oTable1, [11,12,13,
-																	15,16,17,
-																	19,20,21,
-																	24,25,26,
-																	29,30,31,
-																	34,35,36,
-																	39,40,41,
-																	44,45,46,
-																	49,50,51,
-																	54,55,56,
-																	59,60,61]);
-				} else {
-						resetHiddenColumns(oTable1);
-						gray_scale_table($("#structures_scrollable"));
-				}
-			});
-	});
-</script>
-{% else %}
 <script>
 	$(window).on("load",function() {
 			$('#switch_biased').change(function() {
@@ -895,7 +893,5 @@ function openPopup(url, title, win, w, h) {
 			});
 	});
 </script>
-{% endif %}
-
 {% endif %}
 {% endblock %}
