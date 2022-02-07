@@ -238,7 +238,7 @@ def RefinedModelDetails(request, pdbname):
 		try:
 			structure = Structure.objects.get(pdb_code__index=pdbname.upper())
 			if structure.refined:
-				complex_mod_details = SignprotComplex.objects.filter(structure=structure)
+				complex_mod_details = SignprotComplex.objects.filter(structure=structure, beta_protein__isnull=False, gamma_protein__isnull=False) # Temp fix for G protein fragment coupled structures
 				if len(complex_mod_details) > 0:
 					complex_mod = complex_mod_details.first()
 					return ComplexModelDetails(request, pdbname.lower(), complex_mod.protein.entry_name)

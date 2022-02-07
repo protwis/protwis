@@ -52,8 +52,14 @@ class Command(BaseBuild):
         self.models_to_do = []
 
         if options['c'] and options['purge']:
+            for s in StructureComplexModel.objects.all():
+                s.main_template.refined = False
+                s.main_template.save()
             StructureComplexModel.objects.all().delete()
         elif options['purge']:
+            for s in StructureModel.objects.all():
+                s.main_template.refined = False
+                s.main_template.save()
             StructureModel.objects.all().delete()
         if options['c']:
             path = './structure/complex_models_zip/'
