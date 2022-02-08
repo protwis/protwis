@@ -17,7 +17,7 @@ from io import BytesIO
 from string import Template
 from Bio import Entrez, Medline
 import xml.etree.ElementTree as etree
-
+from http.client import HTTPException
 
 
 def save_to_cache(path, file_id, data):
@@ -102,6 +102,9 @@ def fetch_from_web_api(url, index, cache_dir=False, xml=False, raw=False):
                 return False
             else:
                 time.sleep(2)
+        except HTTPException as e:
+            tries += 1
+            time.sleep(2)
         except urllib.error.URLError as e:
             # Catches 101 network is unreachable -- I think it's auto limiting feature
             tries +=1
