@@ -216,7 +216,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
                                 Q(residue__protein_segment__in=original_segments) | Q(residue__generic_number__label__in=original_positions)
                                 ).prefetch_related('residue__display_generic_number',
                                 'residue__protein_segment','residue__generic_number','exp_func','exp_qual',
-                                'exp_measure', 'exp_type', 'ligand_role', 'ligand','refs','raw',
+                                'exp_type', 'ligand_role', 'ligand','refs','raw',
                                 'ligand__properities', 'refs__web_link', 'refs__web_link__web_resource', 'review__web_link__web_resource','protein','mutation__protein')
     else:
         # print(gn,receptor_class,aa)
@@ -231,7 +231,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
         mutations = MutationExperiment.objects.filter(protein__family__slug__startswith=receptor_class,
                                 residue__generic_number__label=gn, residue__amino_acid=aa).prefetch_related('residue__generic_number',
                                 'residue__protein_segment','residue__generic_number','exp_func','exp_qual',
-                                'exp_measure', 'exp_type', 'ligand_role', 'ligand','refs','raw',
+                                'exp_type', 'ligand_role', 'ligand','refs','raw',
                                 'ligand__properities', 'refs__web_link', 'refs__web_link__web_resource', 'review__web_link__web_resource','protein','mutation__protein')
 
     mutations_list = {}
