@@ -3,7 +3,7 @@ from django.conf import settings
 
 from common.models import ReleaseNotes, ReleaseStatistics, ReleaseStatisticsType
 from drugs.models import Drugs
-from interaction.models import StructureLigandInteraction, ProteinLigandInteraction, ResidueFragmentInteraction
+from interaction.models import ResidueFragmentInteraction
 from ligand.models import Ligand
 from mutation.models import MutationExperiment
 from mutational_landscape.models import NaturalMutations

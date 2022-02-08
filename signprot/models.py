@@ -66,13 +66,3 @@ class SignprotComplex(models.Model):
 
     class Meta():
         db_table = 'signprot_complex'
-
-
-class SignprotInteractions(models.Model):
-    gpcr_residue = models.ForeignKey('residue.Residue', on_delete=models.CASCADE, related_name='gpcr_residue')
-    signprot_residue = models.ForeignKey('residue.Residue', on_delete=models.CASCADE, related_name='signprot_residue')
-    interaction_type = models.CharField(max_length=200)
-    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
-
-    def __str__(self):
-        return '{} between {} and {}'.format(self.interaction_type, self.gpcr_residue, self.signprot_residue)
