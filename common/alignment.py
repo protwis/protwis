@@ -455,16 +455,6 @@ class Alignment:
                     # position label
                     pos_label =  prefix + ps + "-" + index
 
-                    # insert fusion protein FIXME add this
-                    # if not fusion_protein_inserted[pcid][ps] and aligned_residue_encountered[pcid][ps]:
-                    #     fp = ProteinFusionProtein.objects.get(protein=r.protein_conformation.protein,
-                    #         segment_after=r.protein_segment)
-                    #     fusion_pos_label = ps + "-" + str("%04d" % (segment_counters[pcid][ps]-1,)) + "-fusion"
-                    #     proteins[pcid][ps][fusion_pos_label] = Residue(amino_acid=fp.protein_fusion.name)
-                    #     if fusion_pos_label not in self.segments[ps]:
-                    #         self.segments[ps].append(fusion_pos_label)
-                    #     fusion_protein_inserted[pcid][ps] = True
-
                     # residue
                     proteins[pcid][ps][pos_label] = r
 

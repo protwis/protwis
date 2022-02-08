@@ -312,32 +312,6 @@ class ProteinAnomalyRule(models.Model):
     class Meta():
         db_table = 'protein_anomaly_rule'
 
-
-class ProteinFusion(models.Model):
-    proteins = models.ManyToManyField('Protein', through='ProteinFusionProtein')
-    name = models.CharField(max_length=100, unique=True)
-    sequence = models.TextField(null=True)
-
-    def __str__(self):
-        return self.name
-
-    class Meta():
-        db_table = 'protein_fusion'
-
-
-class ProteinFusionProtein(models.Model):
-    protein = models.ForeignKey('Protein', on_delete=models.CASCADE)
-    protein_fusion = models.ForeignKey('ProteinFusion', on_delete=models.CASCADE)
-    segment_before = models.ForeignKey('ProteinSegment', related_name='segment_before', on_delete=models.CASCADE)
-    segment_after = models.ForeignKey('ProteinSegment', related_name='segment_after', on_delete=models.CASCADE)
-
-    def __str__(self):
-        return self.protein.name + " " + self.protein_fusion.name
-
-    class Meta():
-        db_table = 'protein_fusion_protein'
-
-
 class ProteinConformationTemplateStructure(models.Model):
     protein_conformation = models.ForeignKey('ProteinConformation', on_delete=models.CASCADE)
     protein_segment = models.ForeignKey('ProteinSegment', on_delete=models.CASCADE)
