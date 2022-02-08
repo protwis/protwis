@@ -9,12 +9,10 @@ import xlrd
 
 from common.models import Publication, WebLink, WebResource
 from django.conf import settings
-from django.utils.text import slugify
-from django.core.management.base import BaseCommand, CommandError
-from django.db import IntegrityError, connection
+from django.core.management.base import BaseCommand
 
 from protein.models import Protein, ProteinFamily, ProteinCouplings
-from ligand.models import Ligand, LigandType, LigandProperities
+from ligand.models import Ligand
 from ligand.functions import get_or_make_ligand
 
 class Command(BaseCommand):
