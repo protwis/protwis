@@ -30,22 +30,6 @@ import operator
 import traceback
 import time
 
-## FOR VIGNIR ORDERED DICT YAML IMPORT/DUMP
-_mapping_tag = yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG
-def dict_constructor(loader, node):
-    return OrderedDict(loader.construct_pairs(node))
-
-def represent_ordereddict(dumper, data):
-    value = []
-
-    for item_key, item_value in data.items():
-        node_key = dumper.represent_data(item_key)
-        node_value = dumper.represent_data(item_value)
-
-        value.append((node_key, node_value))
-
-    return yaml.nodes.MappingNode(u'tag:yaml.org,2002:map', value)
-
 class Command(BaseBuild):
     help = 'Reads source data and creates pdb structure records'
 

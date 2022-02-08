@@ -549,7 +549,7 @@ class AbsReferenceSelectionTable(TemplateView):
     #         del ppf
 
             # Load the target table data
-    table_data = getReferenceTable('no', 'no')
+    # table_data = getReferenceTable('no', 'no')
     # except Exception as e:
     #     pass
 
@@ -567,6 +567,8 @@ class AbsReferenceSelectionTable(TemplateView):
         """
 
         context = super().get_context_data(**kwargs)
+
+        context["table_data"] = getReferenceTable('no', 'no')
         # get selection from session and add to context
         # get simple selection from session
         simple_selection = self.request.session.get('selection', False)
