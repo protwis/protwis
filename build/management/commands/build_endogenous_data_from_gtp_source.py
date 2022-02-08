@@ -312,7 +312,7 @@ class Command(BaseBuild):
             except AttributeError:
                 pmids = None
 
-            #Specie check
+            #Species check
             try:
                 species = row['Ligand_Species'].split('|')
             except AttributeError:
@@ -333,7 +333,7 @@ class Command(BaseBuild):
                 if species is None:
                     gtp_data = Endogenous_GTP(
                                 ligand = ligand,
-                                ligand_specie = species,
+                                ligand_species = species,
                                 ligand_action = role,
                                 endogenous_status = row['Principal/Secondary'], #principal/secondary
                                 potency_ranking = potency, #Ranking
@@ -351,10 +351,10 @@ class Command(BaseBuild):
                     except:
                         publication= None
                 elif len(species) == 1:
-                    ligand_specie = Command.fetch_specie(species[0], row['Interaction_Species'])
+                    ligand_species = Command.fetch_species(species[0], row['Interaction_Species'])
                     gtp_data = Endogenous_GTP(
                                 ligand = ligand,
-                                ligand_specie = ligand_specie,
+                                ligand_species = ligand_species,
                                 ligand_action = role,
                                 endogenous_status = row['Principal/Secondary'], #principal/secondary
                                 potency_ranking = potency, #Ranking
@@ -373,10 +373,10 @@ class Command(BaseBuild):
                         publication= None
                 else:
                     for s in species:
-                        specie = Command.fetch_specie(s, row['Interaction_Species'])
+                        species = Command.fetch_species(s, row['Interaction_Species'])
                         gtp_data = Endogenous_GTP(
                                     ligand = ligand,
-                                    ligand_specie = specie,
+                                    ligand_species = species,
                                     ligand_action = role,
                                     endogenous_status = row['Principal/Secondary'], #principal/secondary
                                     potency_ranking = potency, #Ranking
@@ -437,15 +437,15 @@ class Command(BaseBuild):
             return None
 
     @staticmethod
-    def fetch_specie(ligand_specie, target_specie):
+    def fetch_species(ligand_species, target_species):
         try:
-            if ligand_specie == 'Same as target':
-                specie = Species.objects.get(common_name=target_specie)
-            elif ligand_specie == None:
-                specie = None
+            if ligand_species == 'Same as target':
+                species = Species.objects.get(common_name=target_species)
+            elif ligand_species == None:
+                species = None
             else:
-                specie = Species.objects.get(common_name=ligand_specie)
-            return specie
+                species = Species.objects.get(common_name=ligand_species)
+            return species
         except:
             return None
 

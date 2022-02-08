@@ -446,7 +446,7 @@ class BiasedData(models.Model):
     active_receptor_complex = models.CharField(max_length=60, null=True)
     cell_line = models.CharField(max_length=60, null=True)
     tissue = models.CharField(max_length=60, null=True)
-    specie = models.CharField(max_length=60, null=True)
+    species = models.CharField(max_length=60, null=True)
     primary_effector_family = models.CharField(max_length=60, null=True)
     primary_effector_subtype = models.CharField(max_length=60, null=True)
     molecule_1 = models.CharField(max_length=60, null=True)
@@ -491,11 +491,10 @@ class BiasedPathwaysAssay(models.Model):
         max_length=200, null=True)
     experiment_system = models.CharField(max_length=40, null=True)
     experiment_outcome_method = models.CharField(max_length=200, null=True)
-# Pathways Part - end
 
 class Endogenous_GTP(models.Model):
     ligand = models.ForeignKey(Ligand, on_delete=models.CASCADE)
-    ligand_specie = models.ForeignKey('protein.Species', on_delete=models.CASCADE, null=True)
+    ligand_species = models.ForeignKey('protein.Species', on_delete=models.CASCADE, null=True)
     ligand_action = models.ForeignKey('ligand.LigandRole', on_delete=models.CASCADE, null=True)
     endogenous_status = models.CharField(max_length=200, null=True)
     potency_ranking = models.FloatField(max_length=60, null=True)
@@ -504,4 +503,4 @@ class Endogenous_GTP(models.Model):
     pKi = models.CharField(max_length=200, null=True)
     pic50 = models.CharField(max_length=200, null=True)
     pKd = models.CharField(max_length=200, null=True)
-    publication = models.ManyToManyField(Publication, null = True)
+    publication = models.ManyToManyField(Publication)

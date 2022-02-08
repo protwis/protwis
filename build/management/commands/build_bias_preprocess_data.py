@@ -164,7 +164,7 @@ class Command(BaseBuild):
                                         active_receptor_complex = d['GtoP receptor name'],
                                         cell_line = d['Cell line'],
                                         tissue = tissue,
-                                        specie = specie,
+                                        species = species,
                                         primary_effector_family = d['Primary effector family'],
                                         primary_effector_subtype = signalling_protein,
                                         molecule_1 = d['Measured molecule 1'],

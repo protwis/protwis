@@ -91,8 +91,8 @@ compound_classes = {'Metabolite or derivative': 'Metabolite',
                     'Peptide or derivative': 'Peptide'}
 keys_to_skip = ['Receptor', 'Comment', 'Drugs']
 GtoP_endogenous = pd.DataFrame(columns=
-               ['Receptor ID', 'Receptor Name', 'Ligand ID', 'UniProtKB', 'Ligand Specie', 'Compound Class',
-                'PubChem CID', 'PubChem SID', 'InChIKey', 'Name', 'Target Specie', 'Type', 'Action',
+               ['Receptor ID', 'Receptor Name', 'Ligand ID', 'UniProtKB', 'Ligand Species', 'Compound Class',
+                'PubChem CID', 'PubChem SID', 'InChIKey', 'Name', 'Target Species', 'Type', 'Action',
                 'pKi_min', 'pKi_avg', 'pKi_max', 'pEC50_min', 'pEC50_avg', 'pEC50_max',
                 'pKd_min', 'pKd_avg', 'pKd_max', 'pIC50_min', 'pIC50_avg', 'pIC50_max',
                 'Endogenous', 'Comment', 'Ranking', 'Principal / Secondary', 'PMIDs'])
@@ -149,45 +149,45 @@ for id in gpcr_gtp_ids:
                     for drug_id in drug_ids:
                         final[id][drug_id] = {"Name": drug}
                         dsoup = get_soup(DRUG, drug_id)
-                        ligand_specie = dsoup.findAll('div', {'class': 'textright_ligsum'})[-1].text.strip()
-                        if len(ligand_specie) > 0:
+                        ligand_species = dsoup.findAll('div', {'class': 'textright_ligsum'})[-1].text.strip()
+                        if len(ligand_species) > 0:
                             try:
-                                ligand_specie = ligand_specie.split(u'\xa0')[1]
-                                final[id][drug_id]['Ligand Specie'] =  ligand_specie
+                                ligand_species = ligand_species.split(u'\xa0')[1]
+                                final[id][drug_id]['Ligand Species'] =  ligand_species
                             except IndexError:
-                                final[id][drug_id]['Ligand Specie'] = 'Same as target'
+                                final[id][drug_id]['Ligand Species'] = 'Same as target'
                         else:
-                            final[id][drug_id]['Ligand Specie'] = 'Same as target'
+                            final[id][drug_id]['Ligand Species'] = 'Same as target'
                         try:
                             drug_data = dsoup.find('table', {'id' : 'Selectivity at GPCRs'})
                             drug_rows = drug_data.findAll('tr')
                             for k in range(len(drug_rows)):
                                 if drug_rows[k].find('a') and (drug_rows[k].find('a')['href'].split('=')[1] == str(id)):
-                                    target_specie = drug_rows[k].findAll('td')[3].find('a')['title']
-                                    if not target_specie:
-                                        target_specie = 'No Specie'
-                                    if target_specie not in final[id][drug_id].keys():
-                                        final[id][drug_id][target_specie] = {"Target Specie": target_specie}
+                                    target_species = drug_rows[k].findAll('td')[3].find('a')['title']
+                                    if not target_species:
+                                        target_species = 'No Species'
+                                    if target_species not in final[id][drug_id].keys():
+                                        final[id][drug_id][target_species] = {"Target Species": target_species}
                                     if drug_rows[k].findAll('td')[2].find('img'):
                                         if 'endogenous' in drug_rows[k].findAll('td')[2].find('img')['alt']:
-                                            final[id][drug_id][target_specie]['Endogenous'] = 'True'
+                                            final[id][drug_id][target_species]['Endogenous'] = 'True'
                                     else:
-                                        final[id][drug_id][target_specie]['Endogenous'] = 'False'
+                                        final[id][drug_id][target_species]['Endogenous'] = 'False'
                                     pubs = drug_rows[k].findAll('td')[-2].text
                                     if pubs != '':
                                         pubs = pubs.replace('-',',').split(',')
-                                        final[id][drug_id][target_specie]['PMIDs'] = get_pub_info(drug_id, pubs)
-                                    final[id][drug_id][target_specie]['Type'] = drug_rows[k].findAll('td')[4].text
-                                    final[id][drug_id][target_specie]['Action'] = drug_rows[k].findAll('td')[5].text
+                                        final[id][drug_id][target_species]['PMIDs'] = get_pub_info(drug_id, pubs)
+                                    final[id][drug_id][target_species]['Type'] = drug_rows[k].findAll('td')[4].text
+                                    final[id][drug_id][target_species]['Action'] = drug_rows[k].findAll('td')[5].text
                                     parameter = drug_rows[k].findAll('td')[7].text
                                     if '–' in drug_rows[k].findAll('td')[6].text:
                                         first = float(drug_rows[k].findAll('td')[6].text.split(' – ')[0])
                                         second = float(drug_rows[k].findAll('td')[6].text.split(' – ')[1])
-                                        final[id][drug_id][target_specie][parameter+'_min'] = first
-                                        final[id][drug_id][target_specie][parameter+'_max'] = second
-                                        final[id][drug_id][target_specie][parameter+'_avg'] = statistics.mean([first, second])
+                                        final[id][drug_id][target_species][parameter+'_min'] = first
+                                        final[id][drug_id][target_species][parameter+'_max'] = second
+                                        final[id][drug_id][target_species][parameter+'_avg'] = statistics.mean([first, second])
                                     else:
-                                        final[id][drug_id][target_specie][parameter+'_max'] = drug_rows[k].findAll('td')[6].text
+                                        final[id][drug_id][target_species][parameter+'_max'] = drug_rows[k].findAll('td')[6].text
                         except AttributeError:
                             # final[id][drug_id]['Human'] = {"Name": drug}
                             print('Something went wrong on ligand: ' + str(drug) + ' , ' + str(drug_id) + ' , Receptor: ' + str(id))
@@ -228,7 +228,7 @@ for gpcr in final.keys():
 
 
 #Populating the Pandas Dataframe with all the scraped info
-useful_info = ['PubChem SID','PubChem CID','InChIKey', 'UniProtKB', 'Name', 'Ligand Specie', 'Compound Class']
+useful_info = ['PubChem SID','PubChem CID','InChIKey', 'UniProtKB', 'Name', 'Ligand Species', 'Compound Class']
 for ID in final:
     for drug in final[ID].keys():
         row = {}
@@ -254,14 +254,14 @@ for ID in final:
             except KeyError:
                 pass
         spec_count = 0
-        for specie in final[ID][drug].keys():
-            if specie not in row.keys():
+        for species in final[ID][drug].keys():
+            if species not in row.keys():
                 spec_count +=1
                 temp = {}
-                temp['Target Specie'] = specie
-                for value in final[ID][drug][specie].keys():
+                temp['Target Species'] = species
+                for value in final[ID][drug][species].keys():
                     if value in GtoP_endogenous.keys():
-                        temp[value] = final[ID][drug][specie][value]
+                        temp[value] = final[ID][drug][species][value]
                 temp1 = {**row, **temp}
                 GtoP_endogenous = GtoP_endogenous.append(temp1, ignore_index=True)
         if spec_count == 0:
@@ -307,11 +307,11 @@ for id in IDS:
         rank = add_ranking(slice, rank, id, GtoP_endogenous)
         #rank the principals
 
-GtoP_endogenous_human = GtoP_endogenous.loc[GtoP_endogenous['Specie'] == 'Human']
-GtoP_endogenous_mouse = GtoP_endogenous.loc[GtoP_endogenous['Specie'] == 'Mouse']
-GtoP_endogenous_rat = GtoP_endogenous.loc[GtoP_endogenous['Specie'] == 'Rat']
-GtoP_endogenous_monkey = GtoP_endogenous.loc[GtoP_endogenous['Specie'] == 'Monkey']
-GtoP_endogenous_guinea_pig = GtoP_endogenous.loc[GtoP_endogenous['Specie'] == 'Guinea pig']
+GtoP_endogenous_human = GtoP_endogenous.loc[GtoP_endogenous['Species'] == 'Human']
+GtoP_endogenous_mouse = GtoP_endogenous.loc[GtoP_endogenous['Species'] == 'Mouse']
+GtoP_endogenous_rat = GtoP_endogenous.loc[GtoP_endogenous['Species'] == 'Rat']
+GtoP_endogenous_monkey = GtoP_endogenous.loc[GtoP_endogenous['Species'] == 'Monkey']
+GtoP_endogenous_guinea_pig = GtoP_endogenous.loc[GtoP_endogenous['Species'] == 'Guinea pig']
 
 
 GtoP_endogenous.to_excel("GtoP_Endogenous_Testing_Data.xlsx", sheet_name='Data', index=False)

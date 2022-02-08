@@ -2148,7 +2148,7 @@ class OTFBiasBrowser(TemplateView):
                         else:
                             ligands[data[pub][key]['ligand_id']]['Tested ligand'] = data[pub][key]['ligand_name']
                         ligands[data[pub][key]['ligand_id']]['ID'] = key #data[pub][key]['ligand_id']
-                        ligands[data[pub][key]['ligand_id']]['Species'] = data[pub][key]['specie']
+                        ligands[data[pub][key]['ligand_id']]['Species'] = data[pub][key]['species']
                         ligands[data[pub][key]['ligand_id']]['Authors'] = data[pub][key]['authors']
                         ligands[data[pub][key]['ligand_id']]['DOI/PMID'] = data[pub][key]['doi']
                         ligands[data[pub][key]['ligand_id']]['pub_link'] = "https://pubmed.ncbi.nlm.nih.gov/" + data[pub][key]['doi'] if data[pub][key]['doi'].isdigit() else "https://dx.doi.org/" + data[pub][key]['doi']

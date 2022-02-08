@@ -196,7 +196,7 @@ def assess_reference(data_dict, user=False):
         receptor_id = data_dict[list(data_dict.keys())[0]]['receptor_id']
         lig_ids = set([data_dict[assay]['ligand_id'] for assay in data_dict])
         for status in checks:
-            endo_objs = list(Endogenous_GTP.objects.filter(Q(ligand_specie_id__common_name="Human") | Q(ligand_specie_id__isnull=True),
+            endo_objs = list(Endogenous_GTP.objects.filter(Q(ligand_species_id__common_name="Human") | Q(ligand_species_id__isnull=True),
                                                            ligand__in = lig_ids,
                                                            receptor = receptor_id,
                                                            endogenous_status=status).values_list("ligand", flat=True).distinct())
@@ -204,7 +204,7 @@ def assess_reference(data_dict, user=False):
             if len(endo_objs) > 0:
                 if status != None:
                     #if either principal or secondary check numerosity
-                    data = list(Endogenous_GTP.objects.filter(Q(ligand_specie_id__common_name="Human") | Q(ligand_specie_id__isnull=True),
+                    data = list(Endogenous_GTP.objects.filter(Q(ligand_species_id__common_name="Human") | Q(ligand_species_id__isnull=True),
                                                          receptor=receptor_id,
                                                          ligand__in = endo_objs,
                                                          endogenous_status=status,
@@ -232,7 +232,7 @@ def assess_reference(data_dict, user=False):
                 else:
                 #check for highest ranking of the endogenous ligands
                     for endo_id in endo_objs:
-                        data = Endogenous_GTP.objects.filter(Q(ligand_specie_id__common_name="Human") | Q(ligand_specie_id__isnull=True),
+                        data = Endogenous_GTP.objects.filter(Q(ligand_species_id__common_name="Human") | Q(ligand_species_id__isnull=True),
                                                             receptor=receptor_id,
                                                             ligand=endo_id,
                                                             ).values_list("potency_ranking").distinct()
@@ -276,7 +276,7 @@ def assess_comparisons(reference, tested):
     # 'receptor_isoform', #this can be null
     # 'active_receptor_complex', #this can be null
     common_traits = ['tissue',
-                     'specie',
+                     'species',
                      'primary_effector_family',
                      'primary_effector_subtype',
                      'experiment',
@@ -557,7 +557,7 @@ def OnTheFly(receptor_id, subtype=False, pathway=False, user=False):
                                                             'active_receptor_complex': entry.active_receptor_complex,
                                                             'cell_line': entry.cell_line,
                                                             'tissue': entry.tissue,
-                                                            'specie': entry.specie,
+                                                            'species': entry.species,
                                                             'primary_effector_family': entry.primary_effector_family,
                                                             'primary_effector_subtype': entry.primary_effector_subtype,
                                                             'molecule_1': entry.molecule_1,
