@@ -108,7 +108,7 @@ def only_arrestins ( objs ):
 
 @register.filter
 def only_fusions ( objs ):
-    elements = [element for obj in objs for element in obj.name.split(',') if re.match(".*thase.*|PGS|BRIL|.*Lysozyme|.*b562.*|TrxA|Flavodoxin|Rubredoxin|Sialidase|.*Thioredoxin.*|Endolysin|.*cytochrome.*", element)] #not re.match(".*bod.*|.*Ab.*|.*Sign.*|.*G.*|.*restin.*|.*scFv.*|.*Fab.*|.*activity.*|.*RAMP.*|.*peptide.*|.*CD4.*", element) or 
+    elements = [element for obj in objs for element in obj.name.split(',') if re.match(".*thase.*|PGS|BRIL|.*Lysozyme|.*b562.*|TrxA|Flavodoxin|Rubredoxin|Sialidase|.*Thioredoxin.*|Endolysin|.*cytochrome.*|.*DARPin.*", element)] #not re.match(".*bod.*|.*Ab.*|.*Sign.*|.*G.*|.*restin.*|.*scFv.*|.*Fab.*|.*activity.*|.*RAMP.*|.*peptide.*|.*CD4.*", element) or 
     if len(elements) > 0:
         return "\n".join(elements)
     else:

@@ -1,4 +1,4 @@
-﻿from django.conf.urls import url
+from django.conf.urls import url
 from structure.views import *
 from structure import views
 from django.conf import settings
@@ -48,6 +48,7 @@ urlpatterns = [
     url(r'^webform/(?P<slug>[\w_]+)$', views.webform_download, name='webform_download'),
     url(r'^(?P<pdbname>\w+)$', cache_page(60*60*24*7)(StructureDetails), name='structure_details'),
     url(r'^pdb/(?P<pdbname>\w+)$', cache_page(60*60*24*7)(ServePdbDiagram), name='structure_serve_pdb'),
+    url(r'^pdb_upright/(?P<pdbname>\w+)$', ServeUprightPdbDiagram, name='structure_serve_upright_pdb'),
     url(r'^homology_models/(?P<modelname>\w+)_(?P<state>\w+)$', cache_page(60*60*24*7)(HomologyModelDetails), name='homology_model_details'),
     url(r'^homology_models/(?P<modelname>\w+)_(?P<state>\w+)_(?P<fullness>\w+)/download_pdb$', SingleModelDownload, name='single_model_download'),
     url(r'^refined/(?P<modelname>\w+)_(?P<fullness>\w+)/download_pdb$', SingleModelDownload, name='single_model_download'),

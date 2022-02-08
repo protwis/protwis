@@ -186,7 +186,7 @@ class SequenceParser(object):
         self.segments = {}
         self.blast = BlastSearch(blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_blastdb']))
         self.wt_protein_id = wt_protein_id
-        
+
         if pdb_file is not None:
             self.pdb_struct = PDBParser(QUIET=True).get_structure('pdb', pdb_file)[0]
             # a list of SeqRecord objects retrived from the pdb SEQRES section
@@ -230,7 +230,7 @@ class SequenceParser(object):
         extracting sequence and preparing dictionary of residues
         bio.pdb reads pdb in the following cascade: model->chain->residue->atom
         """
-        
+
         for chain in pdb_struct:
             self.residues[chain.id] = []
             
@@ -353,6 +353,7 @@ class SequenceParser(object):
                 continue
             for hsps in alignment[1].hsps:
                 self.map_hsps(hsps, chain_id, starting_aa, seqres)
+                # break
     
 
     def map_hsps(self, hsps, chain_id, offset = 1, seqres = False):
@@ -363,9 +364,8 @@ class SequenceParser(object):
         sbjct = hsps.sbjct
         sbjct_counter = hsps.sbjct_start	
         q_counter = hsps.query_start
-        
+
         for s, q in zip(sbjct, q):
-            
             if s == q:
                 if seqres:
                     self.mapping[chain_id][sbjct_counter].set_seqres(True)

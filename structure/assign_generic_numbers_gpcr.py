@@ -142,7 +142,7 @@ class GenericNumbering(object):
                             bw, gpcrdb = num.split('x')
                             # Handle non-numerical GNs - still add segment number
                             if not bw[0].isnumeric():
-                                bw[0] = "0"
+                                bw = "0"
 
                             gpcrdb = "{}.{}".format(bw.split('.')[0], gpcrdb)
                             self.residues[chain][resn].add_bw_number(bw)

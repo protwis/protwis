@@ -702,19 +702,16 @@ class Command(BaseCommand):
                 gn_res_ids = [res.sequence_number for res in gn_reslist]
 
                 # Order by GNs
-                # QUICK HACK: to be cleaned up and simplified
                 gns_order = []
-                for gn in gn_res_gns:
+                for idx, gn in enumerate(gn_res_gns):
                     part1, part2 = gn.split("x")
-                    multiply1 = 10000
-                    if len(part1)>=2:
-                        multiply1 = 1000
-
-                    multiply2 = 1
-                    if (len(part2))<=2:
-                        multiply2 = 10
-
-                    gns_order.append(int(part1)*multiply1 + int(part2)*multiply2)
+                    if part1.isnumeric():
+                        multiply1 = 1000 if len(part1)>=2 else 10000
+                        multiply2 = 10 if (len(part2))<=2 else 1
+                        gns_order.append(int(part1)*multiply1 + int(part2)*multiply2)
+                    else:
+                        # When not a numerical GN (e.g. D1e1) - just use seq num
+                        gns_order.append(gn_res_ids[idx])
 
 
                 gns_ids_list = [gn_res_ids[key] for key in np.argsort(gns_order)]

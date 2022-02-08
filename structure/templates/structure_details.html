@@ -171,18 +171,18 @@
 
       {% if main_ligand != "None" %}
         o.addRepresentation("licorice", {
-          sele: ":" + preferred_chain + " and {{ main_ligand}} and hetero "
+          sele: ":" + preferred_chain + " and [{{ main_ligand}}] and hetero "
         });
 
         o.addRepresentation("surface", {
-          sele: ":" + preferred_chain + " and {{ main_ligand}}",
+          sele: ":" + preferred_chain + " and [{{ main_ligand}}]",
           opacity: 0.4,
           useWorker: false
         });
 
         o.addRepresentation("label", {
-          sele: ":" + preferred_chain + " and {{ main_ligand}} and hetero and .C1",
-          color: "white",
+          sele: ":" + preferred_chain + " and [{{ main_ligand}}] and hetero and .C1",
+          color: "#888",
           scale: 4.0,
           labelType: "resname"
         });

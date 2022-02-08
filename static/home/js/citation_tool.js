@@ -203,7 +203,7 @@ function citation_tool(url) {
 				article_list.appendChild(entry);
 			}
 		}
-		if (env=="https://gproteindb.org") {
+		if (env=="gproteindb.org") {
 			main_ref_id = main_ref_id[0];
 		}
 		else {

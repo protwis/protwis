@@ -239,6 +239,10 @@ input.form-control {
   border-radius: 6px 0 6px 6px;
 }
 
+.dropdown-submenu.guidelines > a::after {
+  padding-left:300px;
+}
+
 h3.dropleft .dropleft > .dropdown-menu {
   right: 100% !important;
   left: auto !important;

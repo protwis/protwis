@@ -37,9 +37,9 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     # ignore_gaspar_annotation skips PDB_RANGE edits that mark missing residues as deleted, which messes up constructs.
 
     if not protein:
-        if pdbname=='6ORV':
-            with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs', '6ORV.pdb']), 'r') as pdb6orv:
-                pdbdata_raw = pdb6orv.read()
+        if pdbname in ['6ORV','6YVR','6Z4Q','6Z4S','6Z4V','6Z66','6Z8N','6ZA8','6ZIN']:
+            with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs', '{}.pdb'.format(pdbname)]), 'r') as pdbcustom:
+                pdbdata_raw = pdbcustom.read()
         else:
             url = 'https://www.rcsb.org/pdb/files/%s.pdb' % pdbname
             pdbdata_raw = urlopen(url).read().decode('utf-8')
@@ -459,6 +459,10 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
         pdb_resid_total = []
         pdb_resid_total_accounted = []
         # print(d['wt_seq'])
+
+        if pdbname.upper() in ['7F9Z', '7F9Y']:
+            return d
+
         for elem in sifts.findall('.//{'+sfits_https+'://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}segment'):
             if 'segId' not in elem.attrib:
                 continue #not receptor
@@ -1230,21 +1234,22 @@ def add_construct(d):
 
     #DELETIONS
     insert_deletions = {}
-    for deletion in d['deletions']:
-        # if a 'deletion' is a single type and of non-user origin, assume its an insert and the pos is not actually deleted (3odu)
-        dele = False
-        if 'start' in deletion:
-            dele, created = ConstructDeletion.objects.get_or_create(construct=construct, start=deletion['start'],end=deletion['end'])
-        else:
-            if deletion['origin']=='user':
-                dele, created = ConstructDeletion.objects.get_or_create(construct=construct, start=deletion['pos'],end=deletion['pos'])
-        # if dele:
-        #     construct.deletions.add(dele)
-        if deletion['origin']!='user':
-            id = deletion['origin'].split('_')[1]
-            if id in ip_lookup:
-                id = ip_lookup[id]
-            insert_deletions[id] = deletion
+    if 'deletions' in d:
+        for deletion in d['deletions']:
+            # if a 'deletion' is a single type and of non-user origin, assume its an insert and the pos is not actually deleted (3odu)
+            dele = False
+            if 'start' in deletion:
+                dele, created = ConstructDeletion.objects.get_or_create(construct=construct, start=deletion['start'],end=deletion['end'])
+            else:
+                if deletion['origin']=='user':
+                    dele, created = ConstructDeletion.objects.get_or_create(construct=construct, start=deletion['pos'],end=deletion['pos'])
+            # if dele:
+            #     construct.deletions.add(dele)
+            if deletion['origin']!='user':
+                id = deletion['origin'].split('_')[1]
+                if id in ip_lookup:
+                    id = ip_lookup[id]
+                insert_deletions[id] = deletion
 
 
 
@@ -1271,17 +1276,17 @@ def add_construct(d):
         # construct.insertions.add(insert)
 
     #MODIFICATIONS
-    for modification in d['modifications']:
-        mod, created = ConstructModification.objects.get_or_create(construct=construct, modification=modification['type'],position_type=modification['position'][0],
-                                                   pos_start=modification['position'][1][0],
-                                                   pos_end=modification['position'][1][1],remark=modification['remark'] )
-        # construct.modifications.add(mod)
+    if 'modifications' in d:
+        for modification in d['modifications']:
+            mod, created = ConstructModification.objects.get_or_create(construct=construct, modification=modification['type'],position_type=modification['position'][0],
+                                                       pos_start=modification['position'][1][0],
+                                                       pos_end=modification['position'][1][1],remark=modification['remark'] )
+            # construct.modifications.add(mod)
 
 
     #EXPRESSION
     if 'expression' in d:
         if 'expr_method' in d['expression']:
-
             if 'expr_remark' not in d['expression']:
                 d['expression']['expr_remark'] = ''
 

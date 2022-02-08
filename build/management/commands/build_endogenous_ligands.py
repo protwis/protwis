@@ -114,10 +114,6 @@ class EndogenousLigands():
                     wl, created = WebLink.objects.get_or_create(index=pubchemid, web_resource=WebResource.objects.get(slug='pubchem'))
                 if created or (len(wl.ligandproperities_set.all())==0 and not created):
                     lp = LigandProperities(ligand_type=ligand_type, sequence=sequence)
-                    if name=='succinic acid':
-                        sa = LigandProperities.objects.get(inchikey='KDYFGRWQOYBRFD-UHFFFAOYSA-N')
-                        sa.ligand_type = LigandType.objects.get(slug='small-molecule')
-                        sa.save()
                     lp.save()
                     if pubchemid:
                         lp.web_links.add(wl)

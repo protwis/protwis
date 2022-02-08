@@ -17,6 +17,7 @@ import structure.assign_generic_numbers_gpcr as as_gn
 import structure.homology_models_tests as tests
 from structure.signprot_modeling import SignprotModeling
 from structure.homology_modeling_functions import GPCRDBParsingPDB, ImportHomologyModel, Remodeling
+from ligand.models import LigandPeptideStructure
 
 import Bio.PDB as PDB
 from modeller import *
@@ -86,6 +87,7 @@ class Command(BaseBuild):
         parser.add_argument('--signprot', help='Specify signaling protein with UniProt name', default=False, type=str)
         parser.add_argument('--n_c_term', help='Model N- and C-termini', default=False, action='store_true')
         parser.add_argument('--force_main_temp', help='Build model using this xtal as main template', default=False, type=str)
+        parser.add_argument('--mutations', help='Add mutations based on array key', default=False, type=str, nargs='+')
         parser.add_argument('--fast_refinement', help='Chose fastest refinement option in MODELLER', default=False, action='store_true')
         parser.add_argument('--keep_hetatoms', help='Keep hetero atoms from main template, this includes ligands', default=False, action='store_true')
         parser.add_argument('--rerun', help='Skip models with matching zip archives and only run the missing models.', default=False, action='store_true')
@@ -116,6 +118,18 @@ class Command(BaseBuild):
         self.fast_refinement = options['fast_refinement']
         self.keep_hetatoms = options['keep_hetatoms']
         self.rerun = options['rerun']
+        self.added_mutations = options['mutations']
+
+        if options['mutations']:
+            mutations = options['mutations']
+            if len(mutations)>0 and len(mutations)%2!=0:
+                print('Error: Incorrect mutation input')
+            else:
+                self.added_mutations = OrderedDict()
+                for i in range(0,len(mutations),2):
+                    self.added_mutations[mutations[i]] = mutations[i+1]
+                if self.debug:
+                    print('Introducing mutations at: {}'.format(self.added_mutations))
 
         GPCR_class_codes = {'A':'001', 'B1':'002', 'B2':'003', 'C':'004', 'D1':'005', 'F':'006', 'T':'007'}
         self.modeller_iterations = options['i']
@@ -232,7 +246,7 @@ class Command(BaseBuild):
             if self.rerun:
                 # Init temporary model object for checks regarding signaling protein complexes etc.
                 temp_model_check = HomologyModeling(receptor[0].entry_name, receptor[1], [receptor[1]], iterations=self.modeller_iterations, complex_model=self.complex, signprot=self.signprot, debug=self.debug,
-                                                  force_main_temp=self.force_main_temp, fast_refinement=self.fast_refinement, keep_hetatoms=self.keep_hetatoms)
+                                                  force_main_temp=self.force_main_temp, fast_refinement=self.fast_refinement, keep_hetatoms=self.keep_hetatoms, mutations=self.added_mutations)
 
                 path = './structure/complex_models_zip/' if temp_model_check.complex else './structure/homology_models_zip/'
                 # Differentiate between structure refinement and homology modeling
@@ -248,7 +262,7 @@ class Command(BaseBuild):
             mod_startTime = datetime.now()
             logger.info('Generating model for  \'{}\' ({})... ({} out of {}) (processor:{} count:{})'.format(receptor[0].entry_name, receptor[1],count.value, len(self.receptor_list),processor_id,i))
             chm = CallHomologyModeling(receptor[0].entry_name, receptor[1], iterations=self.modeller_iterations, debug=self.debug,
-                                       update=self.update, complex_model=self.complex, signprot=self.signprot, force_main_temp=self.force_main_temp, keep_hetatoms=self.keep_hetatoms)
+                                       update=self.update, complex_model=self.complex, signprot=self.signprot, force_main_temp=self.force_main_temp, keep_hetatoms=self.keep_hetatoms, mutations=self.added_mutations)
             chm.run(fast_refinement=self.fast_refinement)
             logger.info('Model finished for  \'{}\' ({})... (processor:{} count:{}) (Time: {})'.format(receptor[0].entry_name, receptor[1],processor_id,i,datetime.now() - mod_startTime))
 
@@ -279,7 +293,7 @@ class Command(BaseBuild):
 
 
 class CallHomologyModeling():
-    def __init__(self, receptor, state, iterations=1, debug=False, update=False, complex_model=False, signprot=False, force_main_temp=False, keep_hetatoms=False, no_remodeling=False):
+    def __init__(self, receptor, state, iterations=1, debug=False, update=False, complex_model=False, signprot=False, force_main_temp=False, keep_hetatoms=False, no_remodeling=False, mutations=False):
         self.receptor = receptor
         self.state = state
         self.modeller_iterations = iterations
@@ -290,6 +304,7 @@ class CallHomologyModeling():
         self.force_main_temp = force_main_temp
         self.keep_hetatoms = keep_hetatoms
         self.no_remodeling = no_remodeling
+        self.mutations = mutations
 
 
     def run(self, import_receptor=False, fast_refinement=False):
@@ -302,7 +317,7 @@ class CallHomologyModeling():
                 sys.stdout = open(os.devnull, 'w')
 
             Homology_model = HomologyModeling(self.receptor, self.state, [self.state], iterations=self.modeller_iterations, complex_model=self.complex, signprot=self.signprot, debug=self.debug,
-                                              force_main_temp=self.force_main_temp, fast_refinement=fast_refinement, keep_hetatoms=self.keep_hetatoms)
+                                              force_main_temp=self.force_main_temp, fast_refinement=fast_refinement, keep_hetatoms=self.keep_hetatoms, mutations=self.mutations)
 
             if import_receptor:
                 ihm = ImportHomologyModel(self.receptor, self.signprot)
@@ -393,11 +408,11 @@ class CallHomologyModeling():
                     except:
                         pass
 
-            if residue_shift==True:
-                if self.debug:
-                    print('Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res))
-                logger.warning('Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res))
-                raise ValueError('Error: Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res))
+            # if residue_shift==True:
+            #     if self.debug:
+            #         print('Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res))
+            #     logger.warning('Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res))
+            #     raise ValueError('Error: Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res))
 
             # Check for clashes in model
             if len(hse.clash_pairs)>0:
@@ -514,7 +529,7 @@ class HomologyModeling(object):
                       45:'ECL2'}
 
     def __init__(self, reference_entry_name, state, query_states, iterations=1, complex_model=False, signprot=False, debug=False,
-                 force_main_temp=False, fast_refinement=False, keep_hetatoms=False):
+                 force_main_temp=False, fast_refinement=False, keep_hetatoms=False, mutations=False):
         self.debug = debug
         self.complex = complex_model
         self.modelname = ''
@@ -570,6 +585,7 @@ class HomologyModeling(object):
         self.main_pdb_array = OrderedDict()
         self.disulfide_pairs = []
         self.trimmed_residues = []
+        self.peptide_ligands = []
         for r in Residue.objects.filter(protein_conformation=self.prot_conf):
             if r.protein_segment.slug not in self.template_source:
                 self.template_source[r.protein_segment.slug] = OrderedDict()
@@ -577,6 +593,7 @@ class HomologyModeling(object):
                 self.template_source[r.protein_segment.slug][ggn(r.display_generic_number.label)] = [None,None]
             except:
                 self.template_source[r.protein_segment.slug][str(r.sequence_number)] = [None,None]
+        self.mutations = mutations
 
     def __repr__(self):
         return "<Hommod: {}, {}>".format(self.reference_entry_name, self.state)
@@ -592,6 +609,23 @@ class HomologyModeling(object):
         else:
             rotamer=rotamer[0]
         return rotamer
+
+    def pdb_line_whitespace(self, pos_list, i, group3, whitespace):
+        if len(str(pos_list[i]))-len(group3)==0:
+            whitespace = whitespace*' '
+        elif len(str(pos_list[i]))-len(group3)==1:
+            whitespace = (whitespace-1)*' '
+        elif len(str(pos_list[i]))-len(group3)==2:
+            whitespace = (whitespace-2)*' '
+        elif len(str(pos_list[i]))-len(group3)==-1:
+            whitespace = (whitespace+1)*' '
+        elif len(str(pos_list[i]))-len(group3)==-2:
+            whitespace = (whitespace+2)*' '
+        elif len(str(pos_list[i]))-len(group3)==-3:
+            whitespace = (whitespace+3)*' '
+        else:
+            whitespace = (whitespace-3)*' '
+        return whitespace
 
     def format_final_model(self):
         ''' Do final formatting on homology model pdb file. Adds REMARK line, correct residue numbering and
@@ -631,7 +665,7 @@ class HomologyModeling(object):
                 if int(p)<prev_p:
                     sp_first_indeces.append(i)
                 prev_p = int(p)
-        i = 0
+        i, pep_i = 0, 0
         path = './structure/homology_models/'
 
         with open (path+self.modelname+'.pdb', 'r+') as f:
@@ -641,6 +675,7 @@ class HomologyModeling(object):
             first_hetatm = False
             water_count = 0
             first_signprot_res_found = False
+            first_ligand_pep_res = False
             atom_num = 1
             atom_num_offset = []
             pref_chain = str(self.main_structure.preferred_chain)
@@ -660,21 +695,7 @@ class HomologyModeling(object):
                         i+=1
                         prev_num = int(pdb_re.group(3))
                         prev_chain = pdb_re.group(2).strip()
-                    whitespace = len(pdb_re.group(2))
-                    if len(pos_list[i])-len(pdb_re.group(3))==0:
-                        whitespace = whitespace*' '
-                    elif len(pos_list[i])-len(pdb_re.group(3))==1:
-                        whitespace = (whitespace-1)*' '
-                    elif len(pos_list[i])-len(pdb_re.group(3))==2:
-                        whitespace = (whitespace-2)*' '
-                    elif len(pos_list[i])-len(pdb_re.group(3))==-1:
-                        whitespace = (whitespace+1)*' '
-                    elif len(pos_list[i])-len(pdb_re.group(3))==-2:
-                        whitespace = (whitespace+2)*' '
-                    elif len(pos_list[i])-len(pdb_re.group(3))==-3:
-                        whitespace = (whitespace+3)*' '
-                    else:
-                        whitespace = (whitespace-3)*' '
+                    whitespace = self.pdb_line_whitespace(pos_list, i, pdb_re.group(3), len(pdb_re.group(2)))
                     whitespace = ' '+pref_chain+whitespace[2:]
                     group1 = pdb_re.group(1)
                     if 'OXT' in group1:
@@ -717,6 +738,25 @@ class HomologyModeling(object):
                         atom_num+=1
                     else:
                         try:
+                            # Peptide ligands
+                            if len(self.peptide_ligands)>0 and line.startswith('ATOM'):
+                                print(line)
+                                for l in self.peptide_ligands:
+                                    if l[0].chain==line[21]:
+                                        break
+                                pdb_re = re.search('(ATOM[A-Z\s\d]{13}\S{3})([\sA-Z]+)(\d+)([A-Z\s\d.-]{49,53})',line)
+                                if not first_ligand_pep_res:
+                                    prev_num = pdb_re.group(3)
+                                    prev_chain = pdb_re.group(2).strip()
+                                    first_ligand_pep_res = True
+                                if pdb_re.group(3)>prev_num:
+                                    pep_i+=1
+                                print(pep_i, l[-2][pep_i])
+                                prev_num = pdb_re.group(3)
+                                whitespace = self.pdb_line_whitespace(l[-2], pep_i, pdb_re.group(3), len(pdb_re.group(2)))
+                                whitespace = ' '+l[0].chain+whitespace[2:]
+                                out_list.append(pdb_re.group(1)+whitespace+str(l[-2][pep_i])+pdb_re.group(4))
+                            ###
                             if len(pref_chain)>1:
                                 pref_chain = pref_chain[0]
                             pdb_re = re.search('(HETATM[0-9\sA-Z{apo}]{{11}})([A-Z0-9\s]{{3}})([\sA-Z]+)(\d+)([\s0-9.A-Z-]+)'.format(apo="'"),line)
@@ -865,6 +905,12 @@ class HomologyModeling(object):
                 ws4 = ' '*(5-len(str(sg2)))
                 conect+='CONECT{}{}{}{}\n'.format(ws3, str(sg1), ws4, str(sg2))
 
+        # Put in peptide ligands
+        if len(self.peptide_ligands)>0:
+            for l in self.peptide_ligands:
+                pdb_struct.detach_child(l[0].chain)
+                pdb_struct.add(l[2][l[0].chain])
+
         io = PDB.PDBIO()
         io.set_structure(pdb_struct)
         io.save(path+self.modelname+'.pdb')
@@ -968,6 +1014,13 @@ class HomologyModeling(object):
                         alt_simtable = self.similarity_table_all
                         for struct in alt_simtable:
                             if struct.pdb_code.index in ['5UNF','5UNG','5UNH','5O9H']:
+                            ## NMUR2
+                            # if struct.pdb_code.index in ['5UNF','5UNG','5UNH','5O9H','7F9Z', '6KO5', '7F9Y', '4BUO', '4XES', '4GRV', '4XEE', '5T04', '7L0P', '7L0R', '7L0Q', '7L0S', '6OSA','6PWC','6OS9','6UP7','6B73','6VI4','4DJH','4N6H','6PT2','5XSZ','4RWD','6PT3','4EJ4','5X93','6TO7','5WS3','7DDZ','6ME2','5DHG','7L1V','7DB6','5WQC','6IGK','6TOD','6TOS','6TOT','6TQ4','6TP6','5GLI','4S0V','6TQ6','6TPN','6TQ7','6TQ9','6IGL','6K1Q','6TPG','6TPJ','4ZJ8','5GLH','4ZJC','6ME3','6LRY','5DHH','4EA3','6TP4','6TP3','7L1U','6ME4','6ME5','6PS8','6V9S','5XPR','5C1M','7F8Y','6BQH','7CMV','7JVR','4ZUD','4DKL','6CM4','3PBL','7EZM','6JOD','7MBX','7MBY','7BVQ','7BU7','7BU6','6OS2','6OS1','5UNF','5UNG','7F8U','6OS0','6DO1','4YAY','5UNH','6BQG','7CMU','7DFP','6LUQ','7EZK','7BTS','5XJM']:
+                            # if struct.pdb_code.index in ['5UNF','5UNG','5UNH','5O9H','7F9Z']:
+                            ## Kappa opioid
+                            # if struct.pdb_code.index in ['5UNF','5UNG','5UNH','5O9H','6B73', '6VI4', '4DJH', '5C1M', '4DKL', '6DDF']:
+                            ## NPY1R
+                            # if struct.pdb_code.index in ['5ZBH','5ZBQ','7DDZ','6TO7','5WS3','6ME2','7L1V','7F8W','7DB6','7L1U','6HLP','7F8Y','7EZM']:#,'6B73','6VI4','5C1M','4DKL','6DDE','4N6H','6PT2','7E32','5DHG','7EXD','1GZM','7JVR','6CM4','5JQH','3SN6','7F9Z','6KO5','4ZWJ','6OFJ','7F9Y','5X93','5ZKC','6OL9','6BQH','6KUX','7CMV','4IAQ','4ZUD','3PBL','7E33']:
                                 continue
                             try:
                                 gn_list = list(Residue.objects.filter(protein_conformation=struct.protein_conformation,
@@ -1772,9 +1825,13 @@ class HomologyModeling(object):
             # Shorten N- and C-termini
             n_count=1
             delete_termini = set()
+            # n_term_no_coord = [i for i in a.template_dict['N-term'] if a.template_dict['N-term'][i]=='-']
+            # n_term_coord = [i for i in a.template_dict['N-term'] if a.template_dict['N-term'][i]!='-']
             for num in list(a.template_dict['N-term'])[:-5]:
                 if a.template_dict['N-term'][num]=='-':
                     delete_termini.add(('N-term', num))
+                else:
+                    break
                 n_count+=1
 
             c_count=1
@@ -1843,6 +1900,15 @@ class HomologyModeling(object):
                     del main_pdb_array[i][ii]
         except:
             pass
+
+        # introducing mutations
+        if self.mutations:
+            for i, j in self.mutations.items():
+                for seg, resis in a.reference_dict.items():
+                    for gn, res in resis.items():
+                        if i==gn:
+                            a.reference_dict[seg][gn] = j
+                            break
 
         # non-conserved residue switching
         if switch_rotamers==True:
@@ -1974,6 +2040,13 @@ class HomologyModeling(object):
             post_file = '{}{}_{}_post.pdb'.format(path, self.reference_entry_name, self.target_signprot)
         else:
             post_file = path+self.reference_entry_name+'_'+self.state+"_post.pdb"
+        
+        ## NMUR2
+        # for i in ['ECL2|2','ECL2|3','ECL2|4','ECL2|5','ECL2|6','ECL2|7','ECL2|8','ECL2|9','ECL2|10','ECL2|11','ECL2|12','ECL2|13','ECL2|14','ECL2|15','ECL2|16','ECL2|17','ECL2|23','ECL2|24','ECL2|25']:
+        #     self.trimmed_residues.remove(i)
+        ## NPY1R
+        # for i in [ 'ECL2|2','ECL2|3','ECL2|4','ECL2|5','ECL2|6','ECL2|7','ECL2|8','ECL2|9','ECL2|10','ECL2|11','ECL2|12','ECL2|13','ECL2|14','ECL2|15','ECL2|17','ECL2|18','ECL2|19','ECL2|25','ECL3|2','ECL3|3','ECL3|4']:
+        #     self.trimmed_residues.remove(i)
 
         trimmed_res_nums, helix_restraints, icl3_mid, disulfide_nums, complex_start, beta_start, gamma_start = self.write_homology_model_pdb(post_file,
                                                                                                                     self.main_pdb_array, self.alignment,
@@ -2020,8 +2093,41 @@ class HomologyModeling(object):
                                 model.write(line)
                         except:
                             continue
+                try:
+                    ligand_pep_structs = LigandPeptideStructure.objects.filter(structure=self.main_structure)
+                    for l in ligand_pep_structs:
+                        model.write('TER\n')
+                        if self.debug:
+                            print(l)
+                        pdbdata = ''
+                        # pdbdata = '\n'.join([i for i in self.main_structure.pdb_data.pdb.split('\n') if i.startswith('ATOM') or i.startswith('HETATM') and len(i)>20 and i[21]==l.chain])
+                        for i in self.main_structure.pdb_data.pdb.split('\n'):
+                            if 'HOH' in i:
+                                continue
+                            if (i.startswith('ATOM') or i.startswith('HETATM')) and len(i)>20 and i[21]==l.chain:
+                                pdbdata+=i+'\n'
+                        model.write(pdbdata+'\n')
+                        pep = PDB.PDBParser().get_structure('pep', StringIO(pdbdata))[0]
+                        pep_resnums = []
+                        pep_seq = ''
+                        ppb = PDB.PPBuilder()
+                        for pp in ppb.build_peptides(pep, aa_only=False):
+                            pep_seq = pp.get_sequence()
+                        for r in pep[l.chain]:
+                            pep_resnums.append(r.get_id()[1])
+                        if len(pep_seq)!=len(pep_resnums):
+                            pep_seq = ''
+                            for r in pep[l.chain]:
+                                try:  
+                                    pep_seq+=PDB.Polypeptide.three_to_one(r.get_resname())
+                                except KeyError:
+                                    pep_seq+='X'
+                        self.peptide_ligands.append([l, pdbdata, pep, pep_resnums, pep_seq])
+                except LigandPeptideStructure.DoesNotExist:
+                    pass
+                model.write('TER\n')
                 model.write('END')
-
+        print(self.peptide_ligands)
         # correcting for side chain clashes
         p = PDB.PDBParser()
         post_model = p.get_structure('post', post_file)[0]
@@ -2085,7 +2191,7 @@ class HomologyModeling(object):
         self.run_MODELLER(pir_file, post_file,
                           self.uniprot_id, self.modeller_iterations, path+self.modelname+'.pdb',
                           atom_dict=trimmed_res_nums, helix_restraints=helix_restraints, icl3_mid=icl3_mid, disulfide_nums=disulfide_nums, complex_start=complex_start, beta_start=beta_start,
-                          gamma_start=gamma_start)
+                          gamma_start=gamma_start, peptide_ligands=self.peptide_ligands)
         # Resume output
         if not self.debug:
             sys.stdout.close()
@@ -2198,6 +2304,13 @@ class HomologyModeling(object):
         trimmed_residues = []
         inconsistencies = []
 
+        ###
+        ## Default Class A set
+        self.same_state_residues = ['1x49','1x50','1x53','12x50','12x51','2x37','2x39','2x40','2x42','2x43','2x47','2x50','3x40','3x41','3x43','3x46','3x49','3x50','4x49','5x50','5x51','5x54','5x58','6x34','6x37','6x38','6x40','6x41','6x44','6x47','6x48','7x40','7x46','7x49','7x50','7x52','7x53','7x54','8x49','8x50','8x51',]
+        ## Extended Class A set with TM5e, TM6b, TM7e, H8b
+        self.same_state_residues = ['1x49','1x50','1x53','12x50','12x51','2x37','2x39','2x40','2x42','2x43','2x47','2x50','3x40','3x41','3x43','3x46','3x49','3x50','4x49','5x50','5x51','5x54','5x57','5x58','5x59','5x60','5x61','5x62','5x63','5x64','5x65','5x66','5x67','5x68','5x69','5x70','5x71','5x72','5x73','6x23','6x24','6x25','6x26','6x27','6x28','6x29','6x30','6x31','6x32','6x33','6x34','6x35','6x36','6x37','6x38','6x39','6x40','6x41','6x44','6x47','6x48','7x40','7x46','7x49','7x50','7x52','7x53','7x54','7x56','8x47','8x48','8x49','8x50','8x51',]
+        ###
+
         if self.revise_xtal==True:
             ref_prot = self.reference_protein.parent
         else:
@@ -2211,6 +2324,14 @@ class HomologyModeling(object):
                 segment = ref_seg
             for ref_res, temp_res, aligned_res in zip(reference_dict[ref_seg], template_dict[temp_seg],
                                                       alignment_dict[aligned_seg]):
+                ### State change
+                # if temp_res not in self.same_state_residues and 'x' in temp_res:
+                #     alignment_dict[aligned_seg][aligned_res] = '.'
+                #     # template_dict[temp_seg][temp_res] = '.'
+                #     # inconsistencies.append(temp_res)
+                #     main_pdb_array[ref_seg][ref_res.replace('x','.')] = main_pdb_array[ref_seg][ref_res.replace('x','.')][:5]
+                ###
+
                 if self.revise_xtal==True and reference_dict[ref_seg][ref_res]!=template_dict[temp_seg][temp_res]:
                     alignment_dict[aligned_seg][aligned_res]='.'
                 if template_dict[temp_seg][temp_res]=='/':
@@ -2307,7 +2428,11 @@ class HomologyModeling(object):
                             pass
                     this_state_structs_with_resi, other_state_structs_with_resi = [],[]
 
-                    main_pdb_array, template_dict, non_cons_res_templates, switched_count, no_match = self.find_and_switch_rotamer(self.similarity_table, gn, gn_,
+                    # if gn in self.same_state_residues:
+                    #     main_pdb_array, template_dict, non_cons_res_templates, switched_count, no_match = self.find_and_switch_rotamer(self.similarity_table, gn, gn_,
+                    #                 reference_dict, ref_seg, ref_res, main_pdb_array, atom_num_dict, template_dict, temp_seg, temp_res, non_cons_res_templates, switched_count, no_match, segment)
+                    # else:
+                    main_pdb_array, template_dict, non_cons_res_templates, switched_count, no_match = self.find_and_switch_rotamer(self.similarity_table_other_states, gn, gn_,
                                 reference_dict, ref_seg, ref_res, main_pdb_array, atom_num_dict, template_dict, temp_seg, temp_res, non_cons_res_templates, switched_count, no_match, segment)
                     if no_match==True:
                         main_pdb_array, template_dict, non_cons_res_templates, switched_count, no_match = self.find_and_switch_rotamer(self.similarity_table_other_states, gn, gn_,
@@ -2584,6 +2709,11 @@ ATOM{atom_num}  {atom}{res} {chain}{res_num}{coord1}{coord2}{coord3}{occupancy}{
         for i in range(water_count):
             ref_sequence+='w'
             temp_sequence+='w'
+        if len(self.peptide_ligands)>0:
+            for l in self.peptide_ligands:
+                ref_sequence+='/'+l[-1]
+                temp_sequence+='/'+l[-1]
+
         self.model_sequence = temp_sequence
 
         if self.complex:
@@ -2610,7 +2740,7 @@ sequence:{uniprot}::::::::
             output_file.write(template.format(**context))
 
     def run_MODELLER(self, pir_file, template, reference, number_of_models, output_file_name, atom_dict=None,
-                     helix_restraints=[], icl3_mid=None, disulfide_nums=[], complex_start=None, beta_start=None, gamma_start=None):
+                     helix_restraints=[], icl3_mid=None, disulfide_nums=[], complex_start=None, beta_start=None, gamma_start=None, peptide_ligands=[]):
         ''' Build homology model with MODELLER.
 
             @param pir_file: str, file name of PIR file with path \n
@@ -2639,7 +2769,7 @@ sequence:{uniprot}::::::::
         else:
             a = HomologyMODELLER(env, alnfile = pir_file, knowns = template, sequence = reference,
                                  assess_methods=(assess.DOPE), atom_selection=atom_dict,
-                                 helix_restraints=helix_restraints, icl3_mid=icl3_mid, disulfide_nums=disulfide_nums, complex_start=complex_start, beta_start=beta_start, gamma_start=gamma_start)
+                                 helix_restraints=helix_restraints, icl3_mid=icl3_mid, disulfide_nums=disulfide_nums, complex_start=complex_start, beta_start=beta_start, gamma_start=gamma_start, peptide_ligands=peptide_ligands)
 
         a.starting_model = 1
         a.ending_model = number_of_models
@@ -2690,7 +2820,7 @@ class SilentModeller(object):
 
 
 class HomologyMODELLER(automodel):
-    def __init__(self, env, alnfile, knowns, sequence, assess_methods, atom_selection, helix_restraints=[], icl3_mid=None, disulfide_nums=[], complex_start=None, beta_start=None, gamma_start=None):
+    def __init__(self, env, alnfile, knowns, sequence, assess_methods, atom_selection, helix_restraints=[], icl3_mid=None, disulfide_nums=[], complex_start=None, beta_start=None, gamma_start=None, peptide_ligands=[]):
         super(HomologyMODELLER, self).__init__(env, alnfile=alnfile, knowns=knowns, sequence=sequence,
                                                assess_methods=assess_methods)
         self.alnfile = alnfile
@@ -2705,19 +2835,24 @@ class HomologyMODELLER(automodel):
         self.beta_start = beta_start
         self.gamma_start = gamma_start
         print(self.complex_start, self.beta_start, self.gamma_start)
+        self.peptide_ligands = peptide_ligands
 
     def identify_chain(self, seq_num):
+        if len(self.peptide_ligands)>0:
+            i = len(self.peptide_ligands)
+        else:
+            i = 0
         if self.complex_start!=None:
-            if len(self.chains)==2:
+            if len(self.chains)==2+i:
                 if seq_num<self.complex_start:
                     return 'A'
                 elif seq_num>=self.complex_start:
                     return 'B'
                 else:
                     return ''
-            elif len(self.chains)==3:
+            elif len(self.chains)==3+i:
                 ValueError('DEBUG me: 3 chains during modeller run. Complex model with long ICL3')
-            elif len(self.chains)==4:
+            elif len(self.chains)==4+i:
                 # Normal complex model with one receptor chain and 3 g protein subunits
                 if seq_num<self.complex_start:
                     return 'A'
@@ -2727,7 +2862,7 @@ class HomologyMODELLER(automodel):
                     return 'C'
                 elif seq_num>=self.gamma_start:
                     return 'D'
-            elif len(self.chains)==5:
+            elif len(self.chains)==5+i:
                 # Long ICL3 complex model with two receptor chains and 3 g protein subunits
                 print(seq_num, self.complex_start, self.beta_start, self.gamma_start, self.icl3_mid)
                 if seq_num<self.icl3_mid:
@@ -2744,7 +2879,7 @@ class HomologyMODELLER(automodel):
                 return ''
 
         else:
-            if len(self.chains)==2:
+            if len(self.chains)==2+i:
                 if self.icl3_mid==None:
                     return 'A'
                 elif seq_num<self.icl3_mid:
@@ -2753,6 +2888,8 @@ class HomologyMODELLER(automodel):
                     return 'B'
                 else:
                     return ''
+            elif len(self.chains)==1+i and i!=0:
+                return 'A'
             else:
                 return ''
 
@@ -2776,6 +2913,8 @@ class HomologyMODELLER(automodel):
         return out
 
     def select_atoms(self):
+        for r in self.residues:
+            print(r)
         selection_out = []
         for seg_id, segment in self.atom_dict.items():
             for gn, atom in segment.items():
@@ -2884,6 +3023,18 @@ class HelixEndsModeling(HomologyModeling):
         self.revise_xtal =  revise_xtal
         self.templates_to_skip = OrderedDict([('TM1',[['6BQG','6BQH'],[]]),('TM2',[[],[]]),('TM3',[[],[]]),('TM4',[[],[]]),
                                               ('TM5',[[],[]]),('TM6',[[],[]]),('TM7',[[],['5UNF','5UNG','5UNH']]),('H8',[[],[]])])
+        ## NMUR2
+        # self.templates_to_skip = OrderedDict([('TM1',[['6BQG','6BQH'],[]]),('TM2',[[],[]]),('TM3',[[],[]]),('TM4',[[],[]]),
+        #                                       ('TM5',[[],[]]),('TM6',[[],[]]),('TM7',[[],['5UNF','5UNG','5UNH','7F9Z', '6KO5', '7F9Y', '4BUO', '4XES', '4GRV', '4XEE', '5T04', '7L0P', '7L0R', '7L0Q', '7L0S', '6OSA','6PWC','6OS9','6UP7','6B73','6VI4','4DJH','4N6H','6PT2','5XSZ','4RWD','6PT3','4EJ4','5X93','6TO7','5WS3','7DDZ','6ME2','5DHG','7L1V','7DB6','5WQC','6IGK','6TOD','6TOS','6TOT','6TQ4','6TP6','5GLI','4S0V','6TQ6','6TPN','6TQ7','6TQ9','6IGL','6K1Q','6TPG','6TPJ','4ZJ8','5GLH','4ZJC','6ME3','6LRY','5DHH','4EA3','6TP4','6TP3','7L1U','6ME4','6ME5','6PS8','6V9S','5XPR','5C1M','7F8Y','6BQH','7CMV','7JVR','4ZUD','4DKL','6CM4','3PBL','7EZM','6JOD','7MBX','7MBY','7BVQ','7BU7','7BU6','6OS2','6OS1','5UNF','5UNG','7F8U','6OS0','6DO1','4YAY','5UNH','6BQG','7CMU','7DFP','6LUQ','7EZK','7BTS','5XJM']]),('H8',[[],[]])])
+        ## Kappa opioid
+        # self.templates_to_skip = OrderedDict([('TM1',[['6BQG','6BQH'],['6B73', '6VI4', '4DJH', '5C1M', '4DKL', '6DDF']]),('TM2',[['6B73', '6VI4', '4DJH', '5C1M', '4DKL', '6DDF'],[]]),('TM3',[[],['6B73', '6VI4', '4DJH', '5C1M', '4DKL', '6DDF']]),('TM4',[['6B73', '6VI4', '4DJH', '5C1M', '4DKL', '6DDF'],[]]),
+        #                                       ('TM5',[[],['6B73', '6VI4', '4DJH', '5C1M', '4DKL', '6DDF']]),('TM6',[['6B73', '6VI4', '4DJH', '5C1M', '4DKL', '6DDF'],[]]),('TM7',[[],['5UNF','5UNG','5UNH','6B73', '6VI4', '4DJH', '5C1M', '4DKL', '6DDF']]),('H8',[[],[]])])
+        ## NPY1R - OX2R based
+        # self.templates_to_skip = OrderedDict([('TM1',[['6BQG','6BQH'],[]]),('TM2',[[],[]]),('TM3',[[],[]]),('TM4',[[],[]]),
+        #                                       ('TM5',[[],['5ZBH','5ZBQ','7DDZ','6TO7','5WS3','6ME2','7L1V','7F8W','7DB6','7L1U','6HLP','7F8Y','7EZM','7EZH','6B73','6VI4','5C1M','4DKL','6DDE','4N6H','6PT2','7E32','5DHG','7EXD','1GZM']]),('TM6',[['5ZBH','5ZBQ','7DDZ','6TO7','5WS3','6ME2','7L1V','7F8W','7DB6','7L1U','6HLP','7F8Y','7EZM'],[]]),('TM7',[[],['5UNF','5UNG','5UNH','5ZBH','5ZBQ','7DDZ','6TO7','5WS3','6ME2','7L1V','7F8W','7DB6','7L1U','6HLP','7F8Y','7EZM']]),('H8',[[],[]])])
+        # ## NPY1R - CCKAR based
+        # self.templates_to_skip = OrderedDict([('TM1',[['6BQG','6BQH'],[]]),('TM2',[[],[]]),('TM3',[[],[]]),('TM4',[[],[]]),
+        #                                       ('TM5',[[],[]]),('TM6',[[],[]]),('TM7',[[],['5UNF','5UNG','5UNH']]),('H8',[[],[]])])
         self.debug = debug
 
     def find_ends(self, structure, protein_conformation):
@@ -3400,16 +3551,23 @@ class Loops(object):
         ''' Fetch list of Atom objects of the loop when there is an available template. Returns an OrderedDict().
         '''
         #################
-        # d2 = Structure.objects.get(pdb_code__index='6CM4')
+        # d2 = Structure.objects.get(pdb_code__index='7L1V')
         # d3 = Structure.objects.get(pdb_code__index='3PBL')
         # if self.loop_label=='ECL2':
         #     self.loop_template_structures['ECL2_1'] = [d2]
-        #     self.loop_template_structures['ECL2_mid'] = [d2]
-        #     self.loop_template_structures['ECL2_2'] = [d2]
+        #     # self.loop_template_structures['ECL2_mid'] = [d2]
+            # self.loop_template_structures['ECL2_2'] = [d2]
+        # if self.loop_label in ['ICL1', 'ICL2', 'ECL1']:
+        #     self.loop_template_structures = OrderedDict([(Structure.objects.get(pdb_code__index='7F9Y'), 100)])
         # if self.loop_label in ['ICL2', 'ICL1', 'ECL1']:
         #     self.loop_template_structures = OrderedDict([(d2, 100)])
         # if self.loop_label=='ECL3':
         #     self.loop_template_structures = OrderedDict([(d2, 100)])
+        # if self.loop_label=='ICL2':
+        #     self.loop_template_structures = OrderedDict([(self.main_structure, 100)])
+        ## Kappa opioid
+        # if self.loop_label in ['ICL1', 'ICL2', 'ICL3']:
+        #     self.loop_template_structures = OrderedDict([(Structure.objects.get(pdb_code__index='6DDE'), 100)])
         #################
 
         if (self.loop_label=='ECL2' and (self.loop_template_structures==None or 'ECL2_mid' in

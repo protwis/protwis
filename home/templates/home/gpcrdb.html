@@ -1,5 +1,4 @@
 {% load static %}
-
 <!-- RECEPTORS -->
 <li class="dropdown gpcr {% if current_site == 'gpcr' %}highlight_menu{% endif %}" id="gpcrdb_menu">
 
@@ -211,6 +210,14 @@
         Biased signalling<span class="caret"></span>
     </a>
     <ul class="dropdown-menu" role="menu">
+        <li class="dropdown-submenu guidelines">
+            <a tabindex="0" href="#">Guidelines</a>
+            <ul class="dropdown-menu">
+              <li><a href="{{ hosts.gpcr }}/biased_signalling/bias_guidelines">Guideline paper</a></li>
+              <li><a href="https://files.gpcrdb.org/bias_guidelines/Template_to_calculate_ligand_bias_factors.xlsx">Template to calculate ligand bias factors (MS Excel)</a></li>
+            </ul>
+        </li>
+        <li class="divider"></li>
         <li class="nav-header disabled"><a>BIASED LIGANDS (transducer family)</a></li>
         <li><a href="{{ hosts.gpcr }}/ligand/bias_statistics">Biased ligand statistics</a></li>
         <li><a href="{{ hosts.gpcr }}/ligand/biasedbrowser">Biased ligands (∆∆log(Emax/EC50) & ∆∆log(Tau/KA)</a></li>
@@ -234,6 +241,9 @@
         <li><a href="{{ hosts.gpcr }}/ligand/path_preference_emax_path_profiles_selection">Ligand pathway profiles (Log(Emax/EC50))</a></li>
         <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>Pathways</a></li>
-        <li><a href="{{ hosts.gpcr }}/ligand/biasedpathways">Pathway effects</a></li>
+        <li><a href="{{ hosts.gpcr }}/biased_signalling/biasedpathways">Pathway effects</a></li>
+        <li class="divider"></li>
+        <li class="nav-header disabled"><a>DATA DEPOSITION</a></li>
+        <li><a href="{{ documentation_url }}biasedsignaling.html#data-submission">Data submission</a></li>
     </ul>
 </li>

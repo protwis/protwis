@@ -235,7 +235,7 @@ class StructureModelRMSD(models.Model):
 
 
 class StructureType(models.Model):
-    slug = models.SlugField(max_length=20, unique=True)
+    slug = models.SlugField(max_length=25, unique=True)
     name = models.CharField(max_length=100)
 
     def type_short(self):
@@ -243,6 +243,8 @@ class StructureType(models.Model):
             return "X-ray"
         elif self.name=="Electron microscopy":
             return "cryo-EM"
+        elif self.name=="Electron crystallography":
+            return "MicroED"
         else:
             return self.name
 
@@ -317,75 +319,3 @@ class Fragment(models.Model):
 
     class Meta():
         db_table = "structure_fragment"
-
-
-class StructureSegment(models.Model):
-    structure = models.ForeignKey('Structure', on_delete=models.CASCADE)
-    protein_segment = models.ForeignKey('protein.ProteinSegment', on_delete=models.CASCADE)
-    start = models.IntegerField()
-    end = models.IntegerField()
-
-    def __str__(self):
-        return self.structure.pdb_code.index + " " + self.protein_segment.slug
-
-    class Meta():
-        db_table = "structure_segment"
-
-
-class StructureSegmentModeling(models.Model):
-    """Annotations of segment borders that are observed in exp. structures, and can be used for modeling.
-    This class is indentical to StructureSegment, but is kept separate to avoid confusion."""
-    structure = models.ForeignKey('Structure', on_delete=models.CASCADE)
-    protein_segment = models.ForeignKey('protein.ProteinSegment', on_delete=models.CASCADE)
-    start = models.IntegerField()
-    end = models.IntegerField()
-
-    def __str__(self):
-        return self.structure.pdb_code.index + " " + self.protein_segment.slug
-
-    class Meta():
-        db_table = "structure_segment_modeling"
-
-
-class StructureCoordinates(models.Model):
-    structure = models.ForeignKey('Structure', on_delete=models.CASCADE)
-    protein_segment = models.ForeignKey('protein.ProteinSegment', on_delete=models.CASCADE)
-    description = models.ForeignKey('StructureCoordinatesDescription', on_delete=models.CASCADE)
-
-    def __str__(self):
-        return "{} {} {}".format(self.structure.pdb_code.index, self.protein_segment.slug, self.description.text)
-
-    class Meta():
-        db_table = "structure_coordinates"
-
-
-class StructureCoordinatesDescription(models.Model):
-    text = models.CharField(max_length=200, unique=True)
-
-    def __str__(self):
-        return self.text
-
-    class Meta():
-        db_table = "structure_coordinates_description"
-
-
-class StructureEngineering(models.Model):
-    structure = models.ForeignKey('Structure', on_delete=models.CASCADE)
-    protein_segment = models.ForeignKey('protein.ProteinSegment', on_delete=models.CASCADE)
-    description = models.ForeignKey('StructureEngineeringDescription', on_delete=models.CASCADE)
-
-    def __str__(self):
-        return "{} {} {}".format(self.structure.pdb_code.index, self.protein_segment.slug, self.description.text)
-
-    class Meta():
-        db_table = "structure_engineering"
-
-
-class StructureEngineeringDescription(models.Model):
-    text = models.CharField(max_length=200, unique=True)
-
-    def __str__(self):
-        return self.text
-
-    class Meta():
-        db_table = "structure_engineering_description"
