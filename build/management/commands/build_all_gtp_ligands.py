@@ -109,7 +109,7 @@ class Command(BaseBuild):
     @staticmethod
     def compare_proteins(gtp_data):
         gpcrdb_proteins = Protein.objects.filter(family__slug__startswith="00", sequence_type__slug="wt").values_list('entry_name','accession')
-        entries = gtp_data.loc[gtp_data['uniprot_id'].isin([protein[1] for protein in gpcrdb_proteins]), ['uniprot_id', 'iuphar_id']]
+        entries = gtp_data.loc[gtp_data['uniprot_id'].isin([protein[1].split("-")[0] for protein in gpcrdb_proteins]), ['uniprot_id', 'iuphar_id']]
         entries = entries.rename(columns={"uniprot_id": "UniProt", "iuphar_id": "IUPHAR"})
         gpcrdb_dict = {protein[1]:protein[0] for protein in gpcrdb_proteins}
         names = [gpcrdb_dict[i] for i in entries['UniProt'].to_list()]
