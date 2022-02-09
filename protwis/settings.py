@@ -45,7 +45,7 @@ INSTALLED_APPS = (
     'mutation',
     'phylogenetic_trees',
     'sitesearch',
-    'build_' + SITE_NAME,
+    'build',
     'construct',
     'tools',
     'drugs',
