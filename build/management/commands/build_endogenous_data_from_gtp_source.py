@@ -6,8 +6,10 @@ from django.utils.text import slugify
 from django.http import HttpResponse, JsonResponse
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import Protein, Species
-from ligand.models import Endogenous_GTP, Ligand, LigandProperities, LigandType, LigandRole
+from ligand.models import Endogenous_GTP, Ligand, LigandType, LigandRole
 from common.models import WebLink, WebResource, Publication
+from build.management.commands.build_ligand_functions import *
+from build.management.commands.build_all_gtp_ligands import Command as GtPLigand
 import logging
 import time
 import requests
@@ -74,18 +76,25 @@ class Command(BaseBuild):
         """
         print('*** Starting *** \n')
         print('\n#1 Fetching and setting up the GTP endogenous data')
-        gtp_detailed_endogenous_link = "https://www.guidetopharmacology.org/DATA/detailed_endogenous_ligands.csv"
-        gtp_interactions_link = "https://www.guidetopharmacology.org/DATA/interactions.csv"
-        gtp_data = pd.read_csv(gtp_detailed_endogenous_link)
-        gtp_interactions = pd.read_csv(gtp_interactions_link)
-        processed_data = Command.data_preparation(gtp_data, gtp_interactions)
+        gtp_detailed_endogenous_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/detailed_endogenous_ligands.csv", 7 * 24 * 3600)
+        gtp_data = pd.read_csv(gtp_detailed_endogenous_link, dtype=str)
+        gtp_interactions_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/interactions.csv", 7 * 24 * 3600)
+        gtp_interactions = pd.read_csv(gtp_interactions_link, dtype=str)
+        gtp_uniprot_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/GtP_to_UniProt_mapping.csv", 7 * 24 * 3600)
+        gtp_uniprot = pd.read_csv(gtp_uniprot_link, dtype=str)
+        iuphar_ids = GtPLigand.compare_proteins(gtp_uniprot)
+
+        processed_data = self.data_preparation(gtp_data, gtp_interactions, iuphar_ids)
+
         print('\n#2 Labeling Principal and Secondary endogenous ligands')
-        endogenous_data, to_be_ranked = Command.labeling_principals(processed_data)
+        endogenous_data, to_be_ranked = self.labeling_principals(processed_data)
+
         print('\n#3 Adding potency ranking where required')
-        ranked_data = Command.adding_potency_rankings(endogenous_data, to_be_ranked)
+        ranked_data = self.adding_potency_rankings(endogenous_data, to_be_ranked)
+
         print('\n#4 Creating and filling the Endogenous_GTP model')
-        endogenous_dicts = Command.convert_dataframe(ranked_data)
-        Command.create_model(endogenous_dicts)
+        endogenous_dicts = self.convert_dataframe(ranked_data)
+        self.create_model(endogenous_dicts)
         print('\n *** Finished! ***')
 
     @staticmethod
@@ -97,11 +106,12 @@ class Command(BaseBuild):
         return return_list_of_dicts
 
     @staticmethod
-    def data_preparation(endogenous_data, interactions):
+    def data_preparation(endogenous_data, interactions, iuphar_ids):
         #Remove parameter, value and PMID is columns to have the complete dataset
-        uniq_rows = endogenous_data.drop(['Parameter','Value','PubMed IDs'], 1).drop_duplicates()
+        filtered_data = endogenous_data.loc[endogenous_data['Target ID'].isin(iuphar_ids)]
+        uniq_rows = filtered_data.drop(columns=['Parameter','Value','PubMed IDs']).drop_duplicates()
         uniq_rows = uniq_rows.dropna(subset=['Ligand Name'])
-        association = endogenous_data[['Ligand ID','Target ID']].drop_duplicates().groupby('Target ID')['Ligand ID'].apply(list).to_dict()
+        association = filtered_data[['Ligand ID','Target ID']].drop_duplicates().groupby('Target ID')['Ligand ID'].apply(list).to_dict()
 
         info_we_want = ['pKi', 'pIC50', 'pKd', 'pEC50']
         new_columns = ['pKi_min', 'pKi_avg', 'pKi_max',
@@ -284,13 +294,26 @@ class Command(BaseBuild):
                       'Synthetic organic': 'small-molecule',
                       None: 'na'}
         values = ['pKi', 'pEC50', 'pKd', 'pIC50']
+        ligands = {}
         for row in GtoP_endogenous:
             # row = row.to_dict(orient='records')
             # row = row[0]
             numeric_data = {}
             receptor = Command.fetch_protein(row['Target_ID'], row['Interaction_Species'])
-            ligand_id = LigandType.objects.get(slug=types_dict[row['Ligand_Type']])
-            ligand = Command.fetch_ligand(row['Ligand_ID'], ligand_id, row['Ligand_Name'])
+            #ligand_id = LigandType.objects.get(slug=types_dict[row['Ligand_Type']])
+            if row['Ligand_ID'] not in ligands:
+                ligands[row['Ligand_ID']] = "done"
+            else:
+                continue
+
+
+            ligand = get_ligand_by_id("gtoplig", row['Ligand_ID'])
+            if ligand != None:
+                ligand.endogenous = True
+                ligand.save()
+            else:
+                print("Ligand ", row['Ligand_ID'], "not found", row['Ligand_Name'])
+
             try:
                 role = Command.fetch_role(row['Ligand_Action'].lower(), row['Ligand_Role'].lower())
             except AttributeError:
@@ -448,22 +471,6 @@ class Command(BaseBuild):
             return species
         except:
             return None
-
-    @staticmethod
-    def fetch_ligand(ligand_id, ligand_type, name): #POINTS TO TESTLIGAND MODEL
-            """
-            fetch ligands with Ligand model
-            requires: ligand id, ligand id type, ligand name
-            requires: source_file name
-            """
-            #Points to the original Ligand Model with typo in properities
-            l = Ligand.objects.filter(properities__web_links__index=ligand_id, properities__web_links__web_resource__slug='gtoplig')
-            if l.count() > 0:
-                 return l.first()
-            else:
-                lig = Ligand()
-                l = lig.load_by_gtop_id(name, ligand_id, ligand_type)
-                return l
 
     @staticmethod
     def fetch_publication(publication_doi):

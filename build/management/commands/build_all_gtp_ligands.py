@@ -88,20 +88,17 @@ class Command(BaseBuild):
         gtp_peptides = pd.read_csv(gtp_peptides_link, dtype=str)
 
         print('\n#2 Retrieving IUPHAR ids from UniProt ids')
-        all_data_dataframe, iuphar_ids = self.compare_proteins(gtp_uniprot)
+        iuphar_ids = self.compare_proteins(gtp_uniprot)
 
         print('\n#3 Retrieving ALL ligands from GTP associated to GPCRs')
         bioactivity_ligands_ids = self.obtain_ligands(gtp_interactions, iuphar_ids, ['target_id','ligand_id']) #4181
         endogenous_ligands_ids = self.obtain_ligands(gtp_detailed_endogenous, iuphar_ids, ['Target ID','Ligand ID']) #4325
         ligand_ids = list(set(bioactivity_ligands_ids + endogenous_ligands_ids))
 
-        print('\n#4 Mapping ligands to the tested receptors')
-        all_data_dataframe = self.add_ligands_to_dataframe(all_data_dataframe, iuphar_ids, ligand_ids, gtp_interactions, gtp_detailed_endogenous)
+        print('\n#4 Collating all info from GPCR related ligands in the GTP')
+        ligand_data = self.get_ligands_data(ligand_ids, gtp_complete_ligands, gtp_ligand_mapping)
 
-        print('\n#5 Collating all info from GPCR related ligands in the GTP')
-        complete_data, ligand_data = self.get_ligands_data(all_data_dataframe, ligand_ids, gtp_complete_ligands, gtp_ligand_mapping)
-
-        print('\n#6 Saving the ligands in the models')
+        print('\n#5 Saving the ligands in the models')
         self.save_the_ligands_save_the_world(ligand_data, gtp_peptides)
 
         print('\n---Finished---')
@@ -110,13 +107,7 @@ class Command(BaseBuild):
     def compare_proteins(gtp_data):
         gpcrdb_proteins = Protein.objects.filter(family__slug__startswith="00", sequence_type__slug="wt").values_list('entry_name','accession')
         entries = gtp_data.loc[gtp_data['uniprot_id'].isin([protein[1].split("-")[0] for protein in gpcrdb_proteins]), ['uniprot_id', 'iuphar_id']]
-        entries = entries.rename(columns={"uniprot_id": "UniProt", "iuphar_id": "IUPHAR"})
-        gpcrdb_dict = {protein[1]:protein[0] for protein in gpcrdb_proteins}
-        names = [gpcrdb_dict[i] for i in entries['UniProt'].to_list()]
-        entries.insert(0, "Name", names, True)
-
-        iuphar_ids = list(entries['IUPHAR'].unique())
-        return entries, iuphar_ids
+        return list(entries['iuphar_id'].unique())
 
     @staticmethod
     def obtain_ligands(data, compare_set, labels):
@@ -126,24 +117,9 @@ class Command(BaseBuild):
         ligands = [x for x in ligands if x == x] #remove nan
         return ligands
 
-    #all_data_dataframe, iuphar_ids, ligands_ids, gtp_interactions, gtp_detailed_endogenous
-    @staticmethod
-    def add_ligands_to_dataframe(df, ids, ligands, interactions, endogenous):
-        uniprots = df['UniProt'].tolist()
-        inter_ligs = interactions.loc[interactions['target_uniprot'].isin(uniprots), ['target_uniprot', 'ligand_id']]
-        inter_ligs = inter_ligs.rename(columns={"target_uniprot": "UniProt", "ligand_id": "Ligand ID"})
-
-        endo_ligs = endogenous.loc[endogenous['Target UniProt ID'].isin(uniprots), ['Target UniProt ID', 'Ligand ID']]
-        endo_ligs = endo_ligs.rename(columns={"Target UniProt ID": "UniProt"})
-
-        tot_ligs = pd.concat([inter_ligs, endo_ligs]).drop_duplicates()
-        new_df = df.merge(tot_ligs, on="UniProt")
-        new_df = new_df.rename(columns={"Name": "Receptor"})
-        return new_df
-
     #gtp_complete_ligands, gtp_ligand_mapping
     @staticmethod
-    def get_ligands_data(data, ligands, complete_ligands, ligand_mapping):
+    def get_ligands_data(ligands, complete_ligands, ligand_mapping):
         full_info = ['Ligand id', 'Name','Species','Type','Approved','Withdrawn','Labelled','Radioactive', 'PubChem SID', 'PubChem CID',
                      'UniProt id','IUPAC name', 'INN', 'Synonyms','SMILES','InChIKey','InChI','GtoImmuPdb','GtoMPdb']
         ligand_data = complete_ligands.loc[complete_ligands['Ligand id'].isin(ligands), full_info]
@@ -153,10 +129,8 @@ class Command(BaseBuild):
 
         ligand_complete = ligand_data.merge(ligand_weblinks, on="Ligand id")
         ligand_complete = ligand_complete.rename(columns={"Ligand id": "Ligand ID"})
-        data = data.merge(ligand_complete, on="Ligand ID")
 
-        ligs_info = data.drop(columns=['Receptor','IUPHAR','UniProt']).drop_duplicates()
-        return data, ligs_info
+        return ligand_complete
 
     @staticmethod
     def save_the_ligands_save_the_world(lig_df, pep_df):
@@ -216,49 +190,6 @@ class Command(BaseBuild):
                 if ligand == None:
                     print("Issue with", row['Name'])
                     exit()
-
-                # if types_dict[row['Type']] == "small-molecule":
-                #     ligand = get_or_create_ligand(row['Name'], ids, True, False)
-                #     if not ligand:
-                #         issues.append([row['Name'], row["Ligand ID"]])
-                # else:
-                #     # Handling peptide or protein => skipping InChIKey and SMILES
-                #     lt = LigandType.objects.get(slug=types_dict[row['Type']])
-                #     lig_props = LigandProperties()
-                #
-                #     lig_props.ligand_type = lt
-                #     if pep_df["Ligand id"].eq(row["Ligand ID"]).any():
-                #         peptide_entry = pep_df.loc[pep_df["Ligand id"] == row["Ligand ID"]]
-                #
-                #         sequence = peptide_entry["Single letter amino acid sequence"].item()
-                #         if sequence != None and sequence != "" and len(sequence) < 1000:
-                #             lig_props.sequence = sequence
-                #         if sequence != None and len(sequence) >= 1000:
-                #             print(row['Name'], sequence)
-                #
-                #         uniprot = peptide_entry["UniProt id"].item()
-                #         if uniprot != None and uniprot != "":
-                #             # TODO - when multiple UniProt IDs => clone ligand add new UniProt IDs for other species
-                #             lig_props.uniprot = uniprot.split("|")[0]
-                #     lig_props.save()
-                #
-                #     # Weblinks for each resource (PubChem, GtP, ChEMBL, ..)
-                #     for key in ids:
-                #         if key not in ["smiles", "inchikey"] and ids[key]:
-                #             value = ids[key]
-                #             if value.isnumeric():
-                #                 value = int(value)
-                #
-                #             wr = WebResource.objects.get(slug=key)
-                #             wl, created = WebLink.objects.get_or_create(index=ids[key], web_resource=wr)
-                #             lig_props.web_links.add(wl)
-                #
-                #     ligand = TestLigand()
-                #     ligand.name = row['Name']
-                #     ligand.properties = lig_props
-                #     ligand.canonical = True
-                #     ligand.ambiguous_alias = False
-                #     ligand.save()
 
         print("DONE - Ligands with issues:")
         print(issues)
