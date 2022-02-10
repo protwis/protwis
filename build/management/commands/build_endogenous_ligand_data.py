@@ -6,7 +6,7 @@ from django.utils.text import slugify
 from django.http import HttpResponse, JsonResponse
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import Protein, Species
-from ligand.models import Endogenous_GTP, Ligand, LigandProperities, LigandType, LigandRole
+from ligand.models import Endogenous_GTP, Ligand, LigandType, LigandRole
 from common.models import WebLink, WebResource, Publication
 # from bs4 import BeautifulSoup #will need to be removed
 import logging
@@ -459,7 +459,7 @@ class Command(BaseBuild):
             numeric_data = {}
             receptor = Command.fetch_protein(row['Receptor ID'], row['Target Species'])
             ligand_id = LigandType.objects.get(slug=types_dict[row['Compound Class']])
-            ligand = Command.fetch_ligand(row['Ligand ID'], ligand_id, row['Name'])
+            ligand = LigandID.objects.get(index=ligand_id, web_resource__slug='gtoplig')
             try:
                 role = Command.fetch_role(row['Type'].lower(), row['Action'].lower())
             except AttributeError:
@@ -586,7 +586,7 @@ class Command(BaseBuild):
             requires: source_file name
             """
 
-            l = Ligand.objects.filter(properities__web_links__index=ligand_id, properities__web_links__web_resource__slug='gtoplig')
+            l = Ligand.objects.filter(ids__index=ligand_id, ids__web_resource__slug='gtoplig')
             if l.count() > 0:
                  return l.first()
             else:
@@ -690,9 +690,7 @@ class Command(BaseBuild):
     @staticmethod
     def create_empty_ligand(ligand_name):
         # gtoplig webresource
-        lp = Command.build_ligand_properties()
         ligand = Ligand()
-        ligand.properities = lp
         ligand.name = ligand_name
         ligand.canonical = True
         ligand.ambigious_alias = False
@@ -702,19 +700,3 @@ class Command(BaseBuild):
         except IntegrityError:
             return Ligand.objects.get(name=ligand_name, canonical=True)
         return ligand
-
-    @staticmethod
-    def build_ligand_properties():
-        lp = LigandProperities()
-        lt =  LigandType.objects.get(name = 'small molecule')
-        lp.ligand_type = lt
-        lp.smiles = None
-        lp.inchikey = None
-        lp.sequence= None
-        lp.mw = None
-        lp.rotatable_bonds = None
-        lp.hacc = None
-        lp.hdon = None
-        lp.logp = None
-        lp.save()
-        return lp
