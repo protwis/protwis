@@ -80,6 +80,30 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
             if ligand == None and type in ids:
                 ligand = get_ligand_by_id(type, ids[type])
 
+        # How about the InChiKey?
+        if ligand == None and "inchikey" in ids:
+            ligand = get_ligand_by_inchikey(ids["inchikey"])
+
+
+        # Tried direct ID matching options => no ligand found => try UniChem IDs before creating new ligand
+        if extended_matching and ligand == None:
+            external_ids = list(set.intersection(set(ids.keys()), set(external_sources)))
+            current_ids = list(ids.values())
+            for type in external_ids:
+                if ligand == None and type in ids:
+                    unichem_ids = match_id_via_unichem(type, ids[type])
+                    for row in unichem_ids:
+                        if row["id"] not in current_ids:
+                            ligand = get_ligand_by_id(row["type"], row["id"])
+                            current_ids.append(row["id"])
+                            if ligand != None:
+                                # print("UNICHEM MATCH!!", name)
+                                print("MATCHING", type, ids[type], "via UniChem")
+                                # print(ids)
+                                # print(row)
+                                # print("============")
+                                break
+
         # Peptide or protein entry Sequence - filter gtoplig as those entries are standalone and should not be merged
         if ligand == None and "sequence" in ids and len(ids["sequence"]) > 3 and "gtoplig" not in ids:
             result = Ligand.objects.filter(sequence = ids["sequence"])
@@ -87,11 +111,11 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
                 ligand = result.first()
                 # DEBUGGING
                 if result.count() > 1:
-                    print("Ambiguous sequence (", ids["sequence"],") as it has ", results.count(), " corresponding entries")
+                    print("Ambiguous sequence (", ids["sequence"],") for", name, "as it has ", result.count(), " corresponding entries")
 
         # UniProt ID if there's no sequence or other IDs
         # TODO figure out best way of matching when sequence and UniProt ID are mixed as there can be multiple variants
-        elif ligand == None and "uniprot" in ids and len(set.intersection(set(ids.keys()), set(external_sources)))==0:
+        elif ligand == None and "sequence" not in ids and "uniprot" in ids and len(set.intersection(set(ids.keys()), set(external_sources)))==0:
             result = Ligand.objects.filter(uniprot = ids["uniprot"], sequence = None)
             if result.count() > 0:
                 ligand = result.first()
@@ -99,12 +123,7 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
                 if result.count() > 1:
                     print("Ambiguous match - uniprot (", ids["uniprot"],") as it has ", results.count(), " corresponding entries")
 
-        # InChiKey
-        if ligand == None and "inchikey" in ids:
-            ligand = get_ligand_by_inchikey(ids["inchikey"])
-
-        # SMILES and calculated InChIKeys
-        # clean_inchi = None
+        # SMILES
         if ligand == None and "smiles" in ids:
             result = Ligand.objects.filter(smiles = ids["smiles"])
             if result.count() > 0:
@@ -122,24 +141,6 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
             #     if clean_inchi != None:
             #         ligand = get_ligand_by_inchikey(clean_inchi)
 
-        # Tried all default options => no ligand found => try UniChem IDs before creating new ligand
-        if extended_matching and ligand == None:
-            external_ids = list(set.intersection(set(ids.keys()), set(external_sources)))
-            current_ids = ids.values()
-            for type in external_ids:
-                if ligand == None and type in ids:
-                    unichem_ids = match_id_via_unichem(type, ids[type])
-                    for row in unichem_ids:
-                        if row["id"] not in current_ids:
-                            ligand = get_ligand_by_id(row["type"], row["id"])
-                            current_ids.append(row["id"])
-                            if ligand != None:
-                                # print("UNICHEM MATCH!!", name)
-                                # print("MATCHING", type, ids[type], "via UniChem")
-                                # print(ids)
-                                # print(row)
-                                # print("============")
-                                break
 
         # If the ligand has not been found => create ligand using the provided IDs
         # TODO merge this into one function

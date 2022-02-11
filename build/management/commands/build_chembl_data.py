@@ -194,7 +194,7 @@ class Command(BaseBuild):
             ids["chembl_ligand"] = row['molecule_chembl_id']
 
             # Filter types
-            ligand = get_or_create_ligand(row['pref_name'], ids, ligand_types[row['molecule_type']], False, False)
+            ligand = get_or_create_ligand(row['pref_name'], ids, ligand_types[row['molecule_type']], False, True)
 
             # Add LigandIDs
             if row['other_ids'] != None:
@@ -240,7 +240,7 @@ class Command(BaseBuild):
             bioacts[-1].assay_description = row["assay_description"]
             bioacts[-1].pchembl_value = row["pchembl_value"]
             bioacts[-1].standard_value = row["standard_value"]
-            bioacts[-1].standard_relation = row["standfard_relation"]
+            bioacts[-1].standard_relation = row["standard_relation"]
             bioacts[-1].standard_type = row["standard_type"]
             bioacts[-1].standard_units = row["standard_units"]
             bioacts[-1].document_chembl_id = row["document_chembl_id"]
