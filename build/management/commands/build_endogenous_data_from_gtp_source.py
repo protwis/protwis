@@ -296,16 +296,8 @@ class Command(BaseBuild):
         values = ['pKi', 'pEC50', 'pKd', 'pIC50']
         ligands = {}
         for row in GtoP_endogenous:
-            # row = row.to_dict(orient='records')
-            # row = row[0]
             numeric_data = {}
             receptor = Command.fetch_protein(row['Target_ID'], row['Interaction_Species'])
-            #ligand_id = LigandType.objects.get(slug=types_dict[row['Ligand_Type']])
-            if row['Ligand_ID'] not in ligands:
-                ligands[row['Ligand_ID']] = "done"
-            else:
-                continue
-
 
             ligand = get_ligand_by_id("gtoplig", row['Ligand_ID'])
             if ligand != None:
@@ -416,6 +408,8 @@ class Command(BaseBuild):
                                 gtp_data.publication.add(publication)
                         except:
                             publication= None
+            else:
+                print("SKIPPING", row["Ligand_ID"], row['Target_ID'], row['Interaction_Species'])
 
     @staticmethod
     def fetch_role(drug_type, drug_action):
@@ -446,16 +440,17 @@ class Command(BaseBuild):
         requires: protein id, source
         """
         try:
-            test = None
-            test = Protein.objects.filter(web_links__index=target, web_links__web_resource__slug='gtop')
-            if test.count() > 0:
-                if species == None:
-                    return test.first()
-                for data in test:
-                    if data.species.common_name == species:
-                        return data
+            if species == None or species == "None":
+                # Sorting by species => human first, otherwise next species in line
+                # TODO => potentially capture all species with GtP ID
+                return Protein.objects.filter(web_links__index=target, web_links__web_resource__slug='gtop').order_by("species_id").first()
             else:
-                return None
+                prots = Protein.objects.filter(web_links__index=target, web_links__web_resource__slug='gtop', species__common_name__iexact=species)
+                if prots.count() > 0:
+                    return prots.first()
+                else:
+                    receptor_fam = list(Protein.objects.filter(web_links__index=target, web_links__web_resource__slug='gtop').values_list("family_id", flat = True))[0]
+                    return Protein.objects.get(family_id=receptor_fam, species__common_name__iexact=species)
         except:
             return None
 

@@ -80,14 +80,15 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
             if ligand == None and type in ids:
                 ligand = get_ligand_by_id(type, ids[type])
 
-        # Peptide or protein entry Sequence
-        if ligand == None and "sequence" in ids and len(ids["sequence"]) > 3:
+        # Peptide or protein entry Sequence - filter gtoplig as those entries are standalone and should not be merged
+        if ligand == None and "sequence" in ids and len(ids["sequence"]) > 3 and "gtoplig" not in ids:
             result = Ligand.objects.filter(sequence = ids["sequence"])
             if result.count() > 0:
                 ligand = result.first()
                 # DEBUGGING
                 if result.count() > 1:
                     print("Ambiguous sequence (", ids["sequence"],") as it has ", results.count(), " corresponding entries")
+
         # UniProt ID if there's no sequence or other IDs
         # TODO figure out best way of matching when sequence and UniProt ID are mixed as there can be multiple variants
         elif ligand == None and "uniprot" in ids and len(set.intersection(set(ids.keys()), set(external_sources)))==0:
@@ -103,6 +104,7 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
             ligand = get_ligand_by_inchikey(ids["inchikey"])
 
         # SMILES and calculated InChIKeys
+        # clean_inchi = None
         if ligand == None and "smiles" in ids:
             result = Ligand.objects.filter(smiles = ids["smiles"])
             if result.count() > 0:
@@ -114,11 +116,11 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
                 # calculate inchikey from given SMILES and repeat inchikey check
                 input_mol = dm.to_mol(ids["smiles"], sanitize=False)
                 ligand = get_ligand_by_inchikey(dm.to_inchikey(input_mol))
-            elif ligand == None:
-                # calculate cleaned InchiKey and repeate check
-                clean_inchi = get_cleaned_inchikey(ids["smiles"])
-                if clean_inchi != None:
-                    ligand = get_ligand_by_inchikey(clean_inchi)
+            # elif ligand == None:
+            #     # calculate cleaned InchiKey and repeate check
+            #     clean_inchi = get_cleaned_inchikey(ids["smiles"])
+            #     if clean_inchi != None:
+            #         ligand = get_ligand_by_inchikey(clean_inchi)
 
         # Tried all default options => no ligand found => try UniChem IDs before creating new ligand
         if extended_matching and ligand == None:
@@ -300,8 +302,8 @@ def create_ligand_from_id(name, type, id, lig_type):
                 ligand.inchikey = dm.to_inchikey(input_mol)
 
             # Check if cleaned InChIKey has been set
-            if ligand.clean_inchikey == None:
-                ligand.clean_inchikey = get_cleaned_inchikey(ligand.smiles)
+            # if ligand.clean_inchikey == None:
+                # ligand.clean_inchikey = get_cleaned_inchikey(ligand.smiles)
 
             # Calculate RDkit properties
             ligand.mw = dm.descriptors.mw(input_mol)
@@ -313,15 +315,20 @@ def create_ligand_from_id(name, type, id, lig_type):
             print("Issues with molecule", name)
             # TODO - try again if we have other IDs
 
+        # Verify InChiKey
+        if ligand.inchikey == None and ligand.smiles != None:
+            ligand.inchikey = dm.to_inchikey(input_mol)
+
         # Before storing - check one more time if we already have this ligand
         if ligand.inchikey != None:
             checkligand = get_ligand_by_inchikey(ligand.inchikey)
             if checkligand != None:
                 return checkligand
-        if ligand.clean_inchikey != None and ligand.clean_inchikey != ligand.inchikey:
-            checkligand = get_ligand_by_inchikey(ligand.clean_inchikey)
-            if checkligand != None:
-                return checkligand
+
+        # if ligand.clean_inchikey != None and ligand.clean_inchikey != ligand.inchikey:
+        #     checkligand = get_ligand_by_inchikey(ligand.clean_inchikey)
+        #     if checkligand != None:
+        #         return checkligand
 
         return ligand
     elif lig_type != "small-molecule" or type == "":
@@ -350,18 +357,20 @@ def get_ligand_by_inchikey(inchikey):
         return None
 
 def get_cleaned_inchikey(smiles):
-    inchikey = None
-    try:
-        input_mol = dm.to_mol(smiles, sanitize=True)
-        if input_mol:
-            input_mol = dm.to_neutral(input_mol, verbose=False)
-            input_mol = dm.fix_mol(input_mol, verbose=False)
-            cleaned_smiles = dm.standardize_smiles(dm.to_smiles(input_mol), tautomer=True, verbose=False)
-            cleaned_mol = dm.to_mol(cleaned_smiles, sanitize=False)
-            inchikey = dm.to_inchikey(cleaned_mol)
-    except:
-        skip = True
-    return inchikey
+    return None
+    # inchikey = None
+    # try:
+    #     input_mol = dm.to_mol(smiles, sanitize=True)
+    #     if input_mol:
+    #         # Sligthly odd set of steps to get optimal cleaned and dominant tautomer
+    #         input_mol = dm.to_neutral(input_mol)
+    #         input_mol = dm.fix_mol(input_mol)
+    #         cleaned_smiles = dm.standardize_smiles(dm.to_smiles(input_mol), tautomer=True)
+    #         cleaned_mol = dm.to_mol(cleaned_smiles, sanitize=False)
+    #         inchikey = dm.to_inchikey(cleaned_mol)
+    # except:
+    #     skip = True
+    # return inchikey
 
 def is_float(element):
     try:
