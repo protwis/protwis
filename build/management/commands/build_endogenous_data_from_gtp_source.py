@@ -17,7 +17,10 @@ import statistics
 import os
 import pandas as pd
 import numpy as np
+import datamol as dm
 
+from rdkit import Chem
+from rdkit.Chem.EnumerateStereoisomers import EnumerateStereoisomers, StereoEnumerationOptions
 
 class Command(BaseBuild):
     mylog = logging.getLogger(__name__)
@@ -295,14 +298,36 @@ class Command(BaseBuild):
                       None: 'na'}
         values = ['pKi', 'pEC50', 'pKd', 'pIC50']
         ligands = {}
+        stereo_ligs = {}
         for row in GtoP_endogenous:
             numeric_data = {}
             receptor = Command.fetch_protein(row['Target_ID'], row['Interaction_Species'])
 
             ligand = get_ligand_by_id("gtoplig", row['Ligand_ID'])
             if ligand != None:
-                ligand.endogenous = True
-                ligand.save()
+                # Process stereoisomers when not specified:
+                if ligand != None and ligand.smiles != None and row['Ligand_ID'] not in stereo_ligs:
+                    stereo_ligs[row['Ligand_ID']] = []
+                    # Check if compound has undefined chiral centers
+                    input_mol = dm.to_mol(ligand.smiles, sanitize=False)
+                    chiral_centers = Chem.FindMolChiralCenters(input_mol, useLegacyImplementation=False, includeUnassigned=True)
+                    undefined_centers = [center for center in chiral_centers if center[1] == "?"]
+                    # If up to 2 chiral centers => generate and match them via UniChem
+                    if len(chiral_centers) > 0 and len(chiral_centers) <= 2 and len(chiral_centers) == len(undefined_centers):
+                        isomers = tuple(EnumerateStereoisomers(input_mol, options = StereoEnumerationOptions(unique=True)))
+                        for isomer in isomers:
+                            new_key = dm.to_inchikey(isomer)
+                            matches = match_id_via_unichem("inchikey", new_key)
+                            if len(matches) > 0:
+                                ster_ids = {}
+                                ster_ids["inchikey"] = new_key
+                                for match in matches:
+                                    if match["type"] in ["chembl_ligand", "pubchem"]:
+                                        ster_ids[match["type"]] = match["id"]
+                                        stereo_ligs[row['Ligand_ID']].append(get_or_create_ligand("", ster_ids, unichem = True, extended_matching = True))
+                                        continue
+                elif row['Ligand_ID'] not in stereo_ligs:
+                    stereo_ligs[row['Ligand_ID']] = []
             else:
                 print("Ligand ", row['Ligand_ID'], "not found", row['Ligand_Name'])
 
@@ -365,6 +390,14 @@ class Command(BaseBuild):
                             gtp_data.publication.add(publication)
                     except:
                         publication= None
+
+                    for isomer in stereo_ligs[row['Ligand_ID']]:
+                        gtp_data.pk = None
+                        gtp_data.ligand = isomer
+
+                        # Affinity/Activity varies between isomers/mixture => no copy
+                        gtp_data.pec50 = gtp_data.pKi = gtp_data.pic50 = gtp_data.pKd = "None | None | None"
+                        gtp_data.save()
                 elif len(species) == 1:
                     ligand_species = Command.fetch_species(species[0], row['Interaction_Species'])
                     gtp_data = Endogenous_GTP(

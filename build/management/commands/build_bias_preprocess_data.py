@@ -6,12 +6,15 @@ from django.utils.text import slugify
 from django.http import HttpResponse, JsonResponse
 from decimal import Decimal
 from build.management.commands.base_build import Command as BaseBuild
-from common.tools import fetch_from_cache, save_to_cache, fetch_from_web_api
-from protein.models import Protein, ProteinCouplings
-from ligand.models import  Ligand, LigandProperities, LigandType, Endogenous_GTP, BiasedData
+from build.management.commands.build_ligand_functions import *
 
-from ligand.functions import get_or_make_ligand
+from common.tools import fetch_from_cache, save_to_cache, fetch_from_web_api
 from common.models import WebLink, WebResource, Publication
+from protein.models import Protein, ProteinCouplings
+from ligand.models import  Ligand, LigandType, Endogenous_GTP, BiasedData
+from ligand.functions import get_or_make_ligand
+
+
 import logging
 import math
 import pandas as pd
@@ -100,7 +103,7 @@ class Command(BaseBuild):
     def read_excel_pandas(datadir, filename):
         source_file_path = os.sep.join([datadir, filename]).replace('//', '/')
         xls = pd.ExcelFile(source_file_path)
-        df = pd.read_excel(xls, 'Data')
+        df = pd.read_excel(xls, 'Data', dtype=str)
         return df
 
     @staticmethod
@@ -118,25 +121,53 @@ class Command(BaseBuild):
 
     @staticmethod
     def main_process(df_from_excel, cell):
+        prot_dict = {}
+        gprot_dict = {}
         for d in df_from_excel:
             #checking data values: float, string and low_activity checks
             d = Command.data_checks(d)
+
             #converting pEC50 to EC50. Normalizing to Molar
             d['Alt 1)\nQuantitative activity'], d['Measure type'], d['>\n<\n=\n~'] = Command.fetch_measurements(potency=d['Alt 1)\nQuantitative activity'], p_type= d['Measure type'], unit = d['Unit'], sign = d['>\n<\n=\n~'])
-            #fetch protein name
-            protein = Command.fetch_protein(d['Receptor\nUniProt entry name or code'].lower())
+
+            #fetch protein name - check for empty lines
+            if d['Receptor\nUniProt entry name or code'] == None:
+                continue
+            else:
+                prot_code = d['Receptor\nUniProt entry name or code'].lower()
+                if prot_code not in prot_dict:
+                    prot_dict[prot_code] = Command.fetch_protein(prot_code)
+                protein = prot_dict[prot_code]
+                if protein == None:
+                    continue # Skip if protein not found
+
             #re-labeling "G protein" and "Gq/11 or Gi/o" based on data from the GProtein Couplings db
             if d['Primary effector family'] == 'G protein':
-                d['Primary effector family'] = Command.fetch_g_protein(protein.id)
+                if protein.id not in gprot_dict:
+                    gprot_dict[protein.id] = Command.fetch_g_protein(protein.id)
+                d['Primary effector family'] = gprot_dict[protein.id]
+
             #fetching publication info
             pub = Command.fetch_publication(d['Reference\nDOI or PMID'])
+
             #fetching the tissue and specie info from the excel sheet
-            specie, tissue = Command.fetch_cell_line_info(d['Cell line'], cell)
+            species, tissue = Command.fetch_cell_line_info(d['Cell line'], cell)
+
             #fetching ligand information
-            l = Command.fetch_ligand(d['ID'], d['ID type'], d['Ligand tested for bias or func. Sel.\nName'])
-            #assessing protein
-            if protein == None:
-                return None
+            types = {"PubChem CID":"pubchem", "SMILES": "smiles", "IUPHAR/BPS Guide to pharmacology": "gtoplig"}
+            if d['ID'] != None:
+                ids = {}
+                if d['ID type'] in types:
+                    ids[types[d['ID type']]] = d['ID']
+                l = get_or_create_ligand(d['Ligand tested for bias or func. Sel.\nName'], ids, False, True)
+
+            # What about the other ligand => use as reference?
+            # if d['ID.1'] != None:
+            #     ids = {}
+            #     if d['ID type.1'] in types:
+            #         ids[types[d['ID type.1']]] = d['ID.1']
+            #     ligand = get_or_create_ligand(d['Emax reference ligand\nName'], ids)
+
             #Fetching from the endogenous excel datasheet (will need to be updated with GtoP data)
             #also need to be added some parameter to check onto (not all our data has PubChem CIDs)
             #translate SMILES into CID?
@@ -339,33 +370,6 @@ class Command(BaseBuild):
             return gprot
 
     @staticmethod
-    def fetch_ligand(ligand_id, ligand_type, ligand_name):
-        """
-        fetch ligands with Ligand model
-        requires: ligand id, ligand id type, ligand name
-        requires: source_file name
-        """
-        l = None
-        try:
-            if ligand_id is not None:
-                if ligand_id in ligand_cache:
-                    l = ligand_cache[ligand_id]
-                else:
-                    if l == None:
-                        l = get_or_make_ligand(ligand_id, ligand_type, ligand_name)
-                        ligand_cache[ligand_id] = l
-            if l == None:
-                l = create_empty_ligand(ligand_name)
-        except:
-            web_resource = WebResource.objects.get(slug='pubchem')
-            try:
-                l = Ligand.objects.get(properities__web_links__web_resource=web_resource,
-                properities__web_links__index=ligand_id)
-            except:
-                l = Command.create_empty_ligand(ligand_name)
-        return l
-
-    @staticmethod
     def fetch_publication(publication_doi):
         """
         fetch publication with Publication model
@@ -394,36 +398,3 @@ class Command(BaseBuild):
         except:
             pub = Publication.objects.filter(web_link__index = publication_doi).first()
         return pub
-
-
-    @staticmethod
-    def create_empty_ligand(ligand_name):
-        # gtoplig webresource
-        lp = Command.build_ligand_properties()
-        ligand = Ligand()
-        ligand.properities = lp
-        ligand.name = ligand_name
-        ligand.canonical = True
-        ligand.ambigious_alias = False
-        ligand.pdbe = None
-        try:
-            ligand.save()
-        except IntegrityError:
-            return Ligand.objects.get(name=ligand_name, canonical=True)
-        return ligand
-
-    @staticmethod
-    def build_ligand_properties():
-        lp = LigandProperities()
-        lt =  LigandType.objects.get(name = 'small molecule')
-        lp.ligand_type = lt
-        lp.smiles = None
-        lp.inchikey = None
-        lp.sequence= None
-        lp.mw = None
-        lp.rotatable_bonds = None
-        lp.hacc = None
-        lp.hdon = None
-        lp.logp = None
-        lp.save()
-        return lp

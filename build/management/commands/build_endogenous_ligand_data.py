@@ -579,22 +579,6 @@ class Command(BaseBuild):
             return None
 
     @staticmethod
-    def fetch_ligand(ligand_id, ligand_type, name):
-            """
-            fetch ligands with Ligand model
-            requires: ligand id, ligand id type, ligand name
-            requires: source_file name
-            """
-
-            l = Ligand.objects.filter(ids__index=ligand_id, ids__web_resource__slug='gtoplig')
-            if l.count() > 0:
-                 return l.first()
-            else:
-                lig = Ligand()
-                l = lig.load_by_gtop_id(name, ligand_id, ligand_type)
-                return l
-
-    @staticmethod
     def fetch_role(drug_type, drug_action):
         try:
             query = drug_type.title()
@@ -686,17 +670,3 @@ class Command(BaseBuild):
             return species
         except:
             return None
-
-    @staticmethod
-    def create_empty_ligand(ligand_name):
-        # gtoplig webresource
-        ligand = Ligand()
-        ligand.name = ligand_name
-        ligand.canonical = True
-        ligand.ambigious_alias = False
-        ligand.pdbe = None
-        try:
-            ligand.save()
-        except IntegrityError:
-            return Ligand.objects.get(name=ligand_name, canonical=True)
-        return ligand

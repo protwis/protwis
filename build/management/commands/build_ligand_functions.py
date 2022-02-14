@@ -10,6 +10,10 @@ import os
 import re
 
 import datamol as dm
+from rdkit import RDLogger
+
+# Disable the RDkit verbosity
+RDLogger.DisableLog('rdApp.*')
 
 external_sources = ["pubchem", "gtoplig", "chembl_ligand", "drugbank", "drug_central"]
 def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = False, extended_matching = True):
@@ -63,17 +67,30 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
     # No IDs are provided, so the only way forward is a name match
     # Very short name = not unique - minimum is length of 3
     # TODO - add filter for numerical names and typical cpd X names
-    if len(ids) == 0 and len(name) >= 3:
-        results = Ligand.objects.filter(name__iexact=name)
+    if len(ids) == 0:
+        results = Ligand.objects.filter(name__iexact=name, ambiguous_alias = True)
         if results.count() == 1:
             ligand = results.first()
-            # DEBUGGING
-            print("Semi-ambiguous matching using name")
         # DEBUGGING
         elif results.count() > 1:
             print("Ambiguous name (", name,") as it has ", results.count(), " corresponding entries")
         else:
-            print("No ligand found with name",name)
+            # Longer names could be non-ambiguous compounds
+            if len(name) >= 5:
+                results = Ligand.objects.filter(name__iexact=name, ambiguous_alias = False)
+                if results.count() == 1:
+                    ligand = results.first()
+                    # DEBUGGING
+                    print("Semi-ambiguous matching using name")
+                elif results.count() > 1:
+                    print("Error for molecule with name (", name,") as it has ", results.count(), " corresponding entries")
+
+            if ligand == None:
+                print("No ligand found with name",name)
+                ligand = create_ligand_from_id(name, "", "", lig_type)
+                ligand.ambiguous_alias = True
+                ligand.save()
+                return ligand
     else:
         # Try to find ligand via PubChem ID, Guide to Pharmacology ID, ChEMBL ID
         for type in external_sources:
@@ -83,7 +100,20 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
         # How about the InChiKey?
         if ligand == None and "inchikey" in ids:
             ligand = get_ligand_by_inchikey(ids["inchikey"])
-
+        elif "smiles" in ids:
+            # result = Ligand.objects.filter(smiles = ids["smiles"])
+            # if result.count() > 0:
+            #     ligand = result.first()
+            #     # DEBUGGING
+            #     if result.count() > 1:
+            #         print("Ambiguous SMILES (", ids["smiles"],") as it has ", results.count(), " corresponding entries")
+            # else:
+            # calculate inchikey from given SMILES and repeat inchikey check
+            input_mol = dm.to_mol(ids["smiles"], sanitize=False)
+            ligand = get_ligand_by_inchikey(dm.to_inchikey(input_mol))
+            # Try again using the InChiKey from the "cleaned" molecule
+            if ligand == None:
+                ligand = get_ligand_by_inchikey(get_cleaned_inchikey(ids["smiles"]))
 
         # Tried direct ID matching options => no ligand found => try UniChem IDs before creating new ligand
         if extended_matching and ligand == None:
@@ -97,7 +127,6 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
                             ligand = get_ligand_by_id(row["type"], row["id"])
                             current_ids.append(row["id"])
                             if ligand != None:
-                                # print("UNICHEM MATCH!!", name)
                                 print("MATCHING", type, ids[type], "via UniChem")
                                 # print(ids)
                                 # print(row)
@@ -124,22 +153,22 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
                     print("Ambiguous match - uniprot (", ids["uniprot"],") as it has ", results.count(), " corresponding entries")
 
         # SMILES
-        if ligand == None and "smiles" in ids:
-            result = Ligand.objects.filter(smiles = ids["smiles"])
-            if result.count() > 0:
-                ligand = result.first()
-                # DEBUGGING
-                if result.count() > 1:
-                    print("Ambiguous SMILES (", ids["smiles"],") as it has ", results.count(), " corresponding entries")
-            elif not "inchikey" in ids:
-                # calculate inchikey from given SMILES and repeat inchikey check
-                input_mol = dm.to_mol(ids["smiles"], sanitize=False)
-                ligand = get_ligand_by_inchikey(dm.to_inchikey(input_mol))
-            # elif ligand == None:
-            #     # calculate cleaned InchiKey and repeate check
-            #     clean_inchi = get_cleaned_inchikey(ids["smiles"])
-            #     if clean_inchi != None:
-            #         ligand = get_ligand_by_inchikey(clean_inchi)
+        # if ligand == None and "smiles" in ids:
+        #     result = Ligand.objects.filter(smiles = ids["smiles"])
+        #     if result.count() > 0:
+        #         ligand = result.first()
+        #         # DEBUGGING
+        #         if result.count() > 1:
+        #             print("Ambiguous SMILES (", ids["smiles"],") as it has ", results.count(), " corresponding entries")
+        #     elif not "inchikey" in ids:
+        #         # calculate inchikey from given SMILES and repeat inchikey check
+        #         input_mol = dm.to_mol(ids["smiles"], sanitize=False)
+        #         ligand = get_ligand_by_inchikey(dm.to_inchikey(input_mol))
+        # elif ligand == None:
+        #     # calculate cleaned InchiKey and repeate check
+        #     clean_inchi = get_cleaned_inchikey(ids["smiles"])
+        #     if clean_inchi != None:
+        #         ligand = get_ligand_by_inchikey(clean_inchi)
 
 
         # If the ligand has not been found => create ligand using the provided IDs
@@ -161,11 +190,16 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
             if ligand == None:
                 print("Creating an empty ligand", name, ids)
                 ligand = create_ligand_from_id(name, "", "", lig_type)
-                ligand.ambiguous = True
-
+                ligand.ambiguous_alias = True
 
         # Add missing IDs via (web)links to the ligand object
         if ligand != None:
+            # Validate if newly found inchikey really does not yet exist
+            if "inchikey" not in ids and ligand.inchikey != None:
+                test = get_ligand_by_inchikey(ligand.inchikey)
+                if test != None:
+                    ligand = test
+
             # Add provided entries to ligand when missing
             if "pdb" in ids and ligand.pdbe == None:
                 ligand.pdbe = ids["pdb"]
@@ -173,21 +207,21 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
                 ligand.uniprot = ids["uniprot"]
             if "sequence" in ids and ligand.sequence == None and len(ids["sequence"]) < 1000:
                 ligand.sequence = ids["sequence"]
-            if "inchikey" in ids:
+            if "inchikey" in ids and ligand.inchikey == None:
                 ligand.inchikey = ids["inchikey"]
+            ligand.save()
 
             # Create list of existing weblinks
             current_ids = []
             for wl in ligand.ids.all():
                 current_ids.append(str(wl.index))
 
-            ligand.save()
             for type_id in ids:
                 # If the ID does not yet exist => add
                 if ids[type_id] not in current_ids and type_id in external_sources:
                     wr = WebResource.objects.get(slug=type_id)
                     wl, created = LigandID.objects.get_or_create(ligand=ligand, index=ids[type_id], web_resource=wr)
-                    ligand.ids.add(wl)
+                    #ligand.ids.add(wl)
                     current_ids.append(str(ids[type_id]))
 
             # Match the GtP Identifier to other sources via UniChem
@@ -202,7 +236,7 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
                         else:
                             wr = WebResource.objects.get(slug=row["type"])
                             wl = LigandID.objects.get_or_create(ligand=ligand, index=row["id"], web_resource=wr)[0]
-                            ligand.ids.add(wl)
+                            #ligand.ids.add(wl)
     return ligand
 
 unichem_src_types = {"1": "chembl_ligand", "2": "drugbank", "3": "pdb", "4": "gtoplig", "22": "pubchem", "34": "drug_central"}
@@ -213,6 +247,14 @@ def match_id_via_unichem(type, id):
     if type in unichem_src_types_inv:
         type_id = unichem_src_types_inv[type]
         unichem_url = "https://www.ebi.ac.uk/unichem/rest/src_compound_id/$index/" + type_id
+        cache_dir[1] = "id_match_" + type
+        unichem = fetch_from_web_api(unichem_url, id, cache_dir)
+        if unichem:
+            for entry in unichem:
+                if entry["src_id"] in unichem_src_types.keys():
+                    results.append({"type" : unichem_src_types[entry["src_id"]], "id": entry["src_compound_id"]})
+    elif type == "inchikey":
+        unichem_url = "https://www.ebi.ac.uk/unichem/rest/inchikey/$index"
         cache_dir[1] = "id_match_" + type
         unichem = fetch_from_web_api(unichem_url, id, cache_dir)
         if unichem:
@@ -236,7 +278,7 @@ def create_ligand_from_id(name, type, id, lig_type):
     ligand = Ligand()
     ligand.name = name
     ligand.canonical = True # TODO: discuss if we should keep this
-    ligand.ambiguous = False
+    ligand.ambiguous_alias = False
     ligand.ligand_type = LigandType.objects.get_or_create(slug=lig_type, defaults={'name': lig_type})[0]
 
     # Obtain external data (if needed)
@@ -254,6 +296,8 @@ def create_ligand_from_id(name, type, id, lig_type):
             # check cache
             cache_dir = ['pubchem', 'cid', 'property']
             url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$index/property/IsomericSMILES,InChIKey/json'
+            if ligand.name == "":
+                url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$index/property/Title,IsomericSMILES,InChIKey/json'
             pubchem = fetch_from_web_api(url, id, cache_dir)
 
             if pubchem != False and pubchem['PropertyTable']['Properties'][0]:
@@ -262,6 +306,8 @@ def create_ligand_from_id(name, type, id, lig_type):
                     ligand.smiles = properties['IsomericSMILES']
                 if len(properties['InChIKey'])>0:
                     ligand.inchikey = properties['InChIKey']
+                if ligand.name == "":
+                    ligand.name = properties['Title']
         elif type == "gtoplig":
             # check cache
             cache_dir = ['guidetopharmacology', 'ligand_structure']
@@ -291,6 +337,10 @@ def create_ligand_from_id(name, type, id, lig_type):
                     ligand.smiles = chembl["molecule_structures"]["canonical_smiles"]
                 if len(chembl["molecule_structures"]["standard_inchi_key"]) > 0:
                     ligand.inchikey = chembl["molecule_structures"]["standard_inchi_key"]
+            if ligand.name == "" and chembl and "pref_name" in chembl and chembl["pref_name"] != None:
+                ligand.name = chembl["pref_name"]
+            elif ligand.name == "":
+                ligand.name = id
     except:
         skip=True
 
@@ -358,20 +408,19 @@ def get_ligand_by_inchikey(inchikey):
         return None
 
 def get_cleaned_inchikey(smiles):
-    return None
-    # inchikey = None
-    # try:
-    #     input_mol = dm.to_mol(smiles, sanitize=True)
-    #     if input_mol:
-    #         # Sligthly odd set of steps to get optimal cleaned and dominant tautomer
-    #         input_mol = dm.to_neutral(input_mol)
-    #         input_mol = dm.fix_mol(input_mol)
-    #         cleaned_smiles = dm.standardize_smiles(dm.to_smiles(input_mol), tautomer=True)
-    #         cleaned_mol = dm.to_mol(cleaned_smiles, sanitize=False)
-    #         inchikey = dm.to_inchikey(cleaned_mol)
-    # except:
-    #     skip = True
-    # return inchikey
+    inchikey = None
+    try:
+        input_mol = dm.to_mol(smiles, sanitize=True)
+        if input_mol:
+            # Sligthly odd set of steps to get optimal cleaned and dominant tautomer
+            input_mol = dm.to_neutral(input_mol)
+            input_mol = dm.fix_mol(input_mol)
+            cleaned_smiles = dm.standardize_smiles(dm.to_smiles(input_mol), tautomer=True)
+            cleaned_mol = dm.to_mol(cleaned_smiles, sanitize=False)
+            inchikey = dm.to_inchikey(cleaned_mol)
+    except:
+        skip = True
+    return inchikey
 
 def is_float(element):
     try:
