@@ -123,6 +123,7 @@ class Command(BaseBuild):
     def main_process(df_from_excel, cell):
         prot_dict = {}
         gprot_dict = {}
+        lig_dict = {}
         for d in df_from_excel:
             #checking data values: float, string and low_activity checks
             d = Command.data_checks(d)
@@ -156,10 +157,24 @@ class Command(BaseBuild):
             #fetching ligand information
             types = {"PubChem CID":"pubchem", "SMILES": "smiles", "IUPHAR/BPS Guide to pharmacology": "gtoplig"}
             if d['ID'] != None:
-                ids = {}
-                if d['ID type'] in types:
-                    ids[types[d['ID type']]] = d['ID']
-                l = get_or_create_ligand(d['Ligand tested for bias or func. Sel.\nName'], ids, False, True)
+                if d['ID type'] != None:
+                    key = d['ID'] + "|" + d['ID type']
+                else:
+                    key = d['ID'] + "|None"
+                if key in lig_dict:
+                    l = lig_dict[key]
+                else:
+                    ids = {}
+                    if d['ID type'] in types:
+                        ids[types[d['ID type']]] = d['ID']
+                    elif d['ID type'] == "PubChem SID":
+                        # Try to resolve SID to CID
+                        cid = resolve_pubchem_SID(d['ID'])
+                        if cid != None:
+                            ids["pubchem"] = cid
+
+                    l = get_or_create_ligand(d['Ligand tested for bias or func. Sel.\nName'], ids, "small-molecule", False, True)
+                    lig_dict[key] = l
 
             # What about the other ligand => use as reference?
             # if d['ID.1'] != None:

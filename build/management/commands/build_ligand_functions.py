@@ -59,9 +59,9 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
     for type_id in list(ids.keys()):
         if ids[type_id] == None or ids[type_id] == "None" or ids[type_id] == "":
             del ids[type_id]
-        elif ids[type_id].isnumeric():
+        elif isinstance(ids[type_id], str) and ids[type_id].isnumeric():
             ids[type_id] = int(ids[type_id])
-        elif is_float(ids[type_id]):
+        elif isinstance(ids[type_id], str) and is_float(ids[type_id]):
             ids[type_id] = int(float(ids[type_id]))
 
     # No IDs are provided, so the only way forward is a name match
@@ -421,6 +421,17 @@ def get_cleaned_inchikey(smiles):
     except:
         skip = True
     return inchikey
+
+def resolve_pubchem_SID(sid):
+    cache_dir = ['pubchem', 'ligand_sid']
+    url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/substance/sid/$index/cids/json'
+    pubchem = fetch_from_web_api(url, sid, cache_dir)
+    if pubchem and "InformationList" in pubchem and "Information" in pubchem["InformationList"]:
+        for entry in pubchem["InformationList"]["Information"]:
+            if "CID" in entry:
+                print(sid, entry["CID"])
+                return entry["CID"]
+    return None
 
 def is_float(element):
     try:
