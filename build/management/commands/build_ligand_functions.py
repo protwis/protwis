@@ -63,6 +63,10 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
             ids[type_id] = int(ids[type_id])
         elif isinstance(ids[type_id], str) and is_float(ids[type_id]):
             ids[type_id] = int(float(ids[type_id]))
+        elif isinstance(ids[type_id], str):
+            ids[type_id] = ids[type_id].strip()
+            if type_id == "chembl_ligand":
+                ids[type_id] = ids[type_id].upper()
 
     # No IDs are provided, so the only way forward is a name match
     # Very short name = not unique - minimum is length of 3
@@ -145,30 +149,12 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
         # UniProt ID if there's no sequence or other IDs
         # TODO figure out best way of matching when sequence and UniProt ID are mixed as there can be multiple variants
         elif ligand == None and "sequence" not in ids and "uniprot" in ids and len(set.intersection(set(ids.keys()), set(external_sources)))==0:
-            result = Ligand.objects.filter(uniprot = ids["uniprot"], sequence = None)
+            result = Ligand.objects.filter(uniprot = ids["uniprot"])
             if result.count() > 0:
                 ligand = result.first()
                 # DEBUGGING
                 if result.count() > 1:
-                    print("Ambiguous match - uniprot (", ids["uniprot"],") as it has ", results.count(), " corresponding entries")
-
-        # SMILES
-        # if ligand == None and "smiles" in ids:
-        #     result = Ligand.objects.filter(smiles = ids["smiles"])
-        #     if result.count() > 0:
-        #         ligand = result.first()
-        #         # DEBUGGING
-        #         if result.count() > 1:
-        #             print("Ambiguous SMILES (", ids["smiles"],") as it has ", results.count(), " corresponding entries")
-        #     elif not "inchikey" in ids:
-        #         # calculate inchikey from given SMILES and repeat inchikey check
-        #         input_mol = dm.to_mol(ids["smiles"], sanitize=False)
-        #         ligand = get_ligand_by_inchikey(dm.to_inchikey(input_mol))
-        # elif ligand == None:
-        #     # calculate cleaned InchiKey and repeate check
-        #     clean_inchi = get_cleaned_inchikey(ids["smiles"])
-        #     if clean_inchi != None:
-        #         ligand = get_ligand_by_inchikey(clean_inchi)
+                    print("Ambiguous match - uniprot (", ids["uniprot"],") as it has ", result.count(), " corresponding entries")
 
 
         # If the ligand has not been found => create ligand using the provided IDs
@@ -290,7 +276,7 @@ def create_ligand_from_id(name, type, id, lig_type):
             ligand.sequence = sequence
         elif type == "uniprot":
             ligand.uniprot = id
-        elif  type == "smiles":
+        elif type == "smiles":
             ligand.smiles = id
         elif type == "pubchem":
             # check cache
@@ -366,10 +352,6 @@ def create_ligand_from_id(name, type, id, lig_type):
             print("Issues with molecule", name)
             # TODO - try again if we have other IDs
 
-        # Verify InChiKey
-        if ligand.inchikey == None and ligand.smiles != None:
-            ligand.inchikey = dm.to_inchikey(input_mol)
-
         # Before storing - check one more time if we already have this ligand
         if ligand.inchikey != None:
             checkligand = get_ligand_by_inchikey(ligand.inchikey)
@@ -383,6 +365,15 @@ def create_ligand_from_id(name, type, id, lig_type):
 
         return ligand
     elif lig_type != "small-molecule" or type == "":
+        if type == "smiles" and ligand.inchikey == None:
+            input_mol = dm.to_mol(ligand.smiles, sanitize=True)
+            if input_mol:
+                ligand.inchikey = dm.to_inchikey(input_mol)
+                if ligand.inchikey != None:
+                    checkligand = get_ligand_by_inchikey(ligand.inchikey)
+                    if checkligand != None:
+                        return checkligand
+
         # Before storing - check one more time if we already have this ligand based on sequence
         # TODO implement this double check
         # https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/71728433/XML

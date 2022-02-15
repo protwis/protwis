@@ -14,7 +14,6 @@ from protein.models import Protein, ProteinCouplings
 from ligand.models import  Ligand, LigandType, Endogenous_GTP, BiasedData
 from ligand.functions import get_or_make_ligand
 
-
 import logging
 import math
 import pandas as pd
