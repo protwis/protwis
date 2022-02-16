@@ -41,10 +41,10 @@ def getLigandTable(receptor_id, browser_type):
         ligands = list(BiasedData.objects.filter(receptor_id=receptor_id).values_list(
             "ligand__name",
             "endogenous_status",
-            "ligand__properities__ligand_type__name",
+            "ligand__ligand_type__name",
             "ligand__id",
-            "ligand__properities__inchikey",
-            "ligand__properities__smiles",).distinct())
+            "ligand__inchikey",
+            "ligand__smiles",).distinct())
 
         data_table = "<table id='uniprot_selection' class='uniprot_selection stripe compact'> \
             <thead>\

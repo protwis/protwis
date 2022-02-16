@@ -5,9 +5,10 @@ from django.db import IntegrityError
 from common.models import WebResource
 from common.models import WebLink, Publication
 from common.tools import fetch_from_web_api
+from string import Template
 from structure.models import Structure
-
 from urllib.request import urlopen, quote
+
 import json
 import yaml
 import logging
@@ -15,11 +16,10 @@ import logging
 
 class Ligand(models.Model):
     name = models.TextField()
-    pubchem_id = models.IntegerField(null=True)
     pdbe = models.CharField(max_length=3, null=True)
     ligand_type = models.ForeignKey('LigandType', null=True, on_delete=models.CASCADE)
-    ambiguous_alias = models.NullBooleanField()
-    uniprot = models.CharField(max_length=10, null=True)
+    ambiguous_alias = models.BooleanField(default = False)
+    uniprot = models.CharField(max_length=15, null=True)
 
     # structure definition
     smiles = models.TextField(null=True)
@@ -365,8 +365,8 @@ class LigandVendors(models.Model):
 class LigandVendorLink(models.Model):
     vendor = models.ForeignKey('LigandVendors', on_delete=models.CASCADE)
     ligand = models.ForeignKey('Ligand', null=True, related_name='vendors', on_delete=models.CASCADE)
-    url = models.CharField(max_length=300)  # SourceRecordURL
-    vendor_external_id = models.CharField(max_length=300)  # RegistryID
+    url = models.CharField(max_length=400)  # SourceRecordURL
+    external_id = models.CharField(max_length=300, null=True)  # RegistryID => often does not match vendor ID
 
 
 class Endogenous_GTP(models.Model):

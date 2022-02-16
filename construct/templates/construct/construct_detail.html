@@ -3,8 +3,8 @@
 
 {% block addon_css %}
 <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
-<link href="{% static 'home/css/constructannotations.css' %}" rel="stylesheet">    
-    <link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />    
+<link href="{% static 'home/css/constructannotations.css' %}" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
 
 <style type="text/css">
         .select2-result-label{
@@ -26,7 +26,7 @@
 
 {% block content %}
 
-<button id='{{ c.name }}' class='button_edit'>EDIT</button>
+<!--<button id='{{ c.name }}' class='button_edit'>EDIT</button>-->
 
 <div class="row text-success">
     <div class="text-center">
@@ -100,7 +100,7 @@
                 <td>{{ mut.wild_type_amino_acid }}</td>
                 <td>{{ mut.mutated_amino_acid }} </td>
             </tr>
-            {% endfor %} 
+            {% endfor %}
         </table>
     </div>
 </div>
@@ -112,7 +112,7 @@
     <div class="col-md-10">
         {% for del in c.deletions.all %}
             <li> from {{ del.start }} to {{ del.end }} </li>
-        {% endfor %} 
+        {% endfor %}
         <br>
     </div>
 </div>
@@ -125,7 +125,7 @@
         {% for mod in c.modifications.all %}
             <li> {{ mod.modification }} ({{ mod.position_type }} from {{ mod.pos_start }} to {{ mod.pos_end }})
             {% if mod.remark != 'NA' %} {{mod.remark}} {% endif %}</li>
-        {% endfor %} 
+        {% endfor %}
         <br>
     </div>
 </div>
@@ -142,7 +142,7 @@
         <h6> Positions: {{ aux.position }} {{ aux.start }}:{{ aux.end }} </h6>
         <h6> Presence in Crystal:{{ aux.presence }} </h6>
         <h6> Remarks: {{ aux.remarks }} </h6>
-    {% endfor %} 
+    {% endfor %}
         <br>
     </div>
 </div>
@@ -165,7 +165,7 @@
                      <td>{{ c.expression.host_cell }}</td>
                      <td>{{ c.expression.remarks }}</td>
                  </tr>
-             </table> 
+             </table>
     </div>
  </div>
 
@@ -186,9 +186,9 @@
                 <td>{{ listitem.chemical.name }}</td>
                 <td>{{ listitem.concentration }} {{ listitem.concentration_unit }} </td>
             </tr>
-            {% endfor %} 
+            {% endfor %}
         </table>
-        <h4><small>Remarks:{{ sol.remarks }} </small></h4> 
+        <h4><small>Remarks:{{ sol.remarks }} </small></h4>
     </div>
 </div>
 
@@ -217,7 +217,7 @@
         <h4>CRYSTALLIZATION</h4>
     </div>
     <div class="col-md-10">
-    <h6>METHOD: {{ c.crystallization.crystal_method.name }} </h6>   
+    <h6>METHOD: {{ c.crystallization.crystal_method.name }} </h6>
     <h6>TYPE: {{ c.crystallization.crystal_type.name }} ({{ c.crystallization.crystal_type.sub_name }})</h6>
     <h6>PROTEIN CONCENTRATION: {{ c.crystallization.protein_conc }} {{ c.crystallization.protein_conc_unit }}</h6>
 <!--     <h6>Aqueous_solution_lipid_ratio_LCP:{{ c.crystallization.aqueous_solution_lipid_ratio }}</h6>
@@ -253,9 +253,9 @@
 <script src="{% static 'home/js/diagrams.js' %}"></script>
 <script type="text/javascript" charset="utf-8">
 
-$('.button_edit').click(function() {
+/*$('.button_edit').click(function() {
    window.location = "/structure/construct/" + this.id;
-});
+});*/
 
 
 $(document).ready(function() {

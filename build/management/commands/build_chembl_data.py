@@ -274,6 +274,6 @@ class Command(BaseBuild):
         links = []
         for index, row in vendor_links_data.iterrows():
             if len(row["SourceRecordURL"]) < 300:
-                links.append(LigandVendorLink(vendor_id=vendor_dict[row["SourceName"]], ligand_id = lig_dict[row["chembl_id"]], url = row["SourceRecordURL"]))
+                links.append(LigandVendorLink(vendor_id=vendor_dict[row["SourceName"]], ligand_id = lig_dict[row["chembl_id"]], url = row["SourceRecordURL"], external_id = row["RegistryID"]))
 
         LigandVendorLink.objects.bulk_create(links)

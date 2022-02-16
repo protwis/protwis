@@ -12,7 +12,6 @@ from common.tools import fetch_from_cache, save_to_cache, fetch_from_web_api
 from common.models import WebLink, WebResource, Publication
 from protein.models import Protein, ProteinCouplings
 from ligand.models import  Ligand, LigandType, Endogenous_GTP, BiasedData
-from ligand.functions import get_or_make_ligand
 
 import logging
 import math
@@ -165,7 +164,10 @@ class Command(BaseBuild):
                 else:
                     ids = {}
                     if d['ID type'] in types:
-                        ids[types[d['ID type']]] = d['ID']
+                        if isinstance(d['ID'], list):
+                            ids[types[d['ID type']]] = d['ID'][0]
+                        else:
+                            ids[types[d['ID type']]] = d['ID']
                     elif d['ID type'] == "PubChem SID":
                         # Try to resolve SID to CID
                         cid = resolve_pubchem_SID(d['ID'])

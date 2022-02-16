@@ -108,7 +108,11 @@
 
 		});
 
-
+		$("#ligands tbody tr").click(function(){
+			if ($(event.target).attr('type') != 'checkbox'){
+				$(this).find("input[type=checkbox]").click();
+			}
+		});
 
 		$('#all_ligs_btn').click(function() {
 			if (getCheckedCheckboxesFor() == true) {

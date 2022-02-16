@@ -212,14 +212,14 @@ def PdbTableData(request):
                 "pdb_code",
                 "state",
                 "stabilizing_agents",
-                "structureligandinteraction_set__ligand__properities__ligand_type",
+                "structureligandinteraction_set__ligand__ligand_type",
                 "structureligandinteraction_set__ligand_role",
                 "structure_type",
                 "protein_conformation__protein__parent__parent__parent",
                 "protein_conformation__protein__parent__family__parent",
                 "protein_conformation__protein__parent__family__parent__parent__parent",
                 "protein_conformation__protein__species",Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
-                annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role')),
+                annotated=True).prefetch_related('ligand__ligand_type', 'ligand_role')),
 				Prefetch("extra_proteins", queryset=StructureExtraProteins.objects.all().prefetch_related(
 					'protein_conformation','wt_protein'))).order_by('protein_conformation__protein__parent','state').annotate(res_count = Sum(Case(When(protein_conformation__residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
 
@@ -461,8 +461,8 @@ def PdbTableData(request):
             if len(r['ligand'])>20:
                 r['ligand'] = r['ligand'][:20] + ".."
             r['ligand_function'] = l.ligand_role.name
-            if l.ligand.properities.ligand_type != None:
-                r['ligand_type'] = l.ligand.properities.ligand_type.name
+            if l.ligand.ligand_type != None:
+                r['ligand_type'] = l.ligand.ligand_type.name
 
 
         data_dict[pdb_id] = r

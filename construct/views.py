@@ -2150,62 +2150,62 @@ def create_structural_rule_trees(rule_dictionary):
 
 
 
-def fetch_all_pdb(request):
+# def fetch_all_pdb(request):
+#
+#     structures = Structure.objects.all()
+#
+#     for s in structures:
+#         pdbname = str(s)
+#         print(pdbname)
+#         failed = []
+#         try:
+#             protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
+#             d = fetch_pdb_info(pdbname,protein)
+#
+#             #delete before adding new
+#             Construct.objects.filter(name=d['construct_crystal']['pdb_name']).delete()
+#             add_construct(d)
+#         except:
+#             print(pdbname,'failed')
+#             failed.append(pdbname)
+#
+#
+#     context = {'failed':failed}
+#
+#     return render(request,'pdb_all.html',context)
 
-    structures = Structure.objects.all()
+# def fetch_pdb(request, slug):
+#
+#     try:
+#         protein = Protein.objects.filter(entry_name=slug.lower()).get()
+#     except:
+#         protein = False
+#
+#     d = fetch_pdb_info(slug,protein, ignore_gasper_annotation=True)
+#
+#
+#     #delete before adding new
+#     print(d['construct_crystal']['pdb_name'])
+#     #Construct.objects.filter(name__iexact=d['construct_crystal']['pdb_name']).delete()
+#     #add_construct(d)
+#
+#     #cache.delete(d['construct_crystal']['pdb_name']+'_schematics')
+#     #cache.delete(d['construct_crystal']['pdb_name']+'_snake')
+#     context = {'d':d}
+#
+#     return render(request,'pdb_fetch.html',context)
 
-    for s in structures:
-        pdbname = str(s)
-        print(pdbname)
-        failed = []
-        try:
-            protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
-            d = fetch_pdb_info(pdbname,protein)
-
-            #delete before adding new
-            Construct.objects.filter(name=d['construct_crystal']['pdb_name']).delete()
-            add_construct(d)
-        except:
-            print(pdbname,'failed')
-            failed.append(pdbname)
-
-
-    context = {'failed':failed}
-
-    return render(request,'pdb_all.html',context)
-
-def fetch_pdb(request, slug):
-
-    try:
-        protein = Protein.objects.filter(entry_name=slug.lower()).get()
-    except:
-        protein = False
-
-    d = fetch_pdb_info(slug,protein, ignore_gasper_annotation=True)
-
-
-    #delete before adding new
-    print(d['construct_crystal']['pdb_name'])
-    #Construct.objects.filter(name__iexact=d['construct_crystal']['pdb_name']).delete()
-    #add_construct(d)
-
-    #cache.delete(d['construct_crystal']['pdb_name']+'_schematics')
-    #cache.delete(d['construct_crystal']['pdb_name']+'_snake')
-    context = {'d':d}
-
-    return render(request,'pdb_fetch.html',context)
-
-def fetch_pdb_for_webform(request, slug, **response_kwargs):
-
-    slug = slug.lower()
-    protein = Protein.objects.filter(entry_name=slug).get()
-
-    d = fetch_pdb_info(slug,protein)
-    d = convert_ordered_to_disordered_annotation(d)
-
-    jsondata = json.dumps(d)
-    response_kwargs['content_type'] = 'application/json'
-    return HttpResponse(jsondata, **response_kwargs)
+# def fetch_pdb_for_webform(request, slug, **response_kwargs):
+#
+#     slug = slug.lower()
+#     protein = Protein.objects.filter(entry_name=slug).get()
+#
+#     d = fetch_pdb_info(slug,protein)
+#     d = convert_ordered_to_disordered_annotation(d)
+#
+#     jsondata = json.dumps(d)
+#     response_kwargs['content_type'] = 'application/json'
+#     return HttpResponse(jsondata, **response_kwargs)
 
 class ConstructBrowser(TemplateView):
     """Fetching construct data for browser."""
@@ -2248,7 +2248,7 @@ class ExperimentBrowser(TemplateView):
                 "crystallization__chemical_lists", "crystallization__chemical_lists__chemicals__chemical__chemical_type",
                 "protein__species","structure__pdb_code","structure__publication__web_link", "contributor",
                 Prefetch("structure__ligands", queryset=StructureLigandInteraction.objects.filter(
-                annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role','ligand__properities__web_links__web_resource'))).annotate(pur_count = Count('purification__steps')).annotate(sub_count = Count('solubilization__chemical_list__chemicals'))
+                annotated=True).prefetch_related('ligand__ligand_type', 'ligand_role','ligand__ids__web_resource'))).annotate(pur_count = Count('purification__steps')).annotate(sub_count = Count('solubilization__chemical_list__chemicals'))
             #context['constructs'] = cache.get('construct_browser')
             #if context['constructs']==None:
             context['constructs'] = []

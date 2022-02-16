@@ -139,7 +139,7 @@
                 $('.alt').parent().parent().toggleClass('alt_selected');
             });
         });
-    </script> 
+    </script>
 {% endblock %}
 
 {% block content %}
@@ -158,7 +158,7 @@
     </div>
     <br />
     <br />
-    {% if structures %}              
+    {% if structures %}
         <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;" width="100%">
             <table class="display" id="crystal_structures">
 
@@ -244,7 +244,7 @@
                         N/A
                         {% endfor %}
                     </td>
-                    <td>{{ structure.2.protein_conformation.protein.parent.endogenous_ligands.all.0.properities.ligand_type }}</td>
+                    <td>{{ structure.2.protein_conformation.protein.parent.endogenous_ligands.all.0.ligand_type }}</td>
                     <td>
                         {% for ligand in structure.2.ligands.all %}
                         {{ ligand.ligand.name|safe }}<br />
@@ -261,7 +261,7 @@
                     </td>
                     <td>
                         {% for ligand in structure.2.ligands.all %}
-                        {{ ligand.ligand.properities.ligand_type }}<br />
+                        {{ ligand.ligand.ligand_type }}<br />
                         {% empty %}
                         N/A
                         {% endfor %}

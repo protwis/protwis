@@ -238,8 +238,7 @@ class Command(BaseCommand):
         """
         Function that assess the type of the ligand tested making a call to the Protein model.
         It is used to provide precise info to the get_or_make_ligand function in terms of
-        ligand_type for the loaded properties (ligand_properities table). Usually used for Peptide
-        or Protein calls. Defaults as Peptide call.
+        ligand_type for the ligand. Usually used for Peptide or Protein calls. Defaults as Peptide call.
         """
         call = list(Protein.objects.filter(accession=accession_id).values_list("family__parent__parent__name"))
         label = call[0][0].split(' ')[0].lower()

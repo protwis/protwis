@@ -120,7 +120,7 @@
   <div class="col-md-9">
     {% for l in ligands %}
     <p style="display: inline;">{{ l.ligand.name|safe }} - {{l.ligand_role.name|safe}}
-      {% for link in l.ligand.properities.web_links.all %}
+      {% for link in l.ligand.ids.all %}
       <a href="{{link}}" target="_blank">{{link.web_resource.slug}}</a>
       {% endfor %}
       {% if forloop.last %}{% else %}, {% endif %}
