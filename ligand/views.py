@@ -22,7 +22,7 @@ from common.views import AbsTargetSelectionTable, Alignment, AbsReferenceSelecti
 from common.models import ReleaseNotes, WebResource, Publication
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
-from ligand.models import Ligand, LigandVendorLink, LigandVendors, BiasedPathways, AssayExperiment, BiasedData, Endogenous_GTP
+from ligand.models import Ligand, LigandVendorLink, LigandVendors, BiasedPathways, AssayExperiment, BiasedData, Endogenous_GTP, BalancedLigands
 from ligand.functions import OnTheFly, AddPathwayData
 from protein.models import Protein, ProteinFamily, ProteinCouplings
 from interaction.models import StructureLigandInteraction
@@ -415,39 +415,95 @@ def TargetPurchasabilityDetails(request, **kwargs):
 
     return render(request, 'target_purchasability_details.html', context)
 
-#Biased Effector Family Browser
-class BiasTargetSelection(AbsReferenceSelectionTable):
+#Biased Effector Family View (handles browser, Emax/Tau RankOder and Emax/Tau PathProfile)
+class BiasedSignallingSelection(AbsReferenceSelectionTable):
+    step = 1
     number_of_steps = 1
     filters = False
     filter_tableselect = False
     family_tree = False
-    docs = 'sequences.html#structure-based-alignments'
-    title = "SELECT RECEPTORS with ligands biased for a G protein or arrestin family (relative to an endogenous reference ligand)"
-    description = 'Select a receptor in the table (below) or browse the classification tree (center).\nThen click a green button (right)'
+    subtype = False
+    pathway = False
+    pathfinder = {'EmaxRankOrder': {'Title': 'SELECT RECEPTOR for Ligand Bias Rank Order ΔΔLog(Emax/EC50)',
+                                    'Continue': "submitSelection('/ligand/emax_rankorder');",
+                                    'Pathway': "submitSelection('/ligand/emax_rankorder_path_bias');",
+                                    'Biased': "submitSelection('/ligand/userselectionbiased_emax_rank_order');"},
+                  'TauRankOrder': {'Title': 'SELECT RECEPTOR for Ligand Bias Rank Order ΔΔLog(Tau/KA)',
+                                   'Continue': "submitSelection('/ligand/tau_rankorder');",
+                                   'Pathway': "submitSelection('/ligand/tau_rankorder_path_bias');",
+                                   'Biased': "submitSelection('/ligand/userselectionbiased_tau_rank_order');"},
+                  'EmaxPathProfile': {'Title': 'SELECT RECEPTOR for Ligand Pathway Profiles ΔLog(Emax/EC50)',
+                                      'Continue': "submitSelection('/ligand/emax_path_profiles');",
+                                      'Pathway': "submitSelection('/ligand/emax_path_profiles_path_bias');",
+                                      'Biased': "submitSelection('/ligand/userselectionbiased_emax_path_profile');"},
+                  'TauPathProfile': {'Title': 'SELECT RECEPTOR for Ligand Pathway Profiles ΔΔLog(Tau/KA)',
+                                     'Continue': "submitSelection('/ligand/tau_path_profiles');",
+                                     'Pathway': "submitSelection('/ligand/tau_path_profiles_path_bias');",
+                                     'Biased': "submitSelection('/ligand/userselectionbiased_tau_path_profile');"},
+                  'Browser': {'Title': 'SELECT RECEPTORS with ligands biased for a G protein or arrestin family (relative to an endogenous reference ligand)',
+                              'Continue': "submitSelection('/ligand/biased');",
+                              'Pathway': "submitSelection('/ligand/pathwaybiased');",
+                              'Biased': "submitSelection('/ligand/userselectionbiased');"},
+                  'EmaxRankOrderSubtype': {'Title': 'SELECT RECEPTOR for Ligand biased (subtype) rank orders ΔΔLog(Emax/EC50)',
+                                           'Continue': "submitSelection('/ligand/subtype_emax_rankorder');",
+                                           'Pathway': "submitSelection('/ligand/subtype_emax_rankorder_path_bias');",
+                                           'Biased': "submitSelection('/ligand/userselectionbiasedsubtype_emax_rank_order');"},
+                  'TauRankOrderSubtype': {'Title': 'SELECT RECEPTOR for Ligand Bias (subtype) Rank Order ΔΔLog(Tau/KA)',
+                                          'Continue': "submitSelection('/ligand/subtype_tau_rankorder');",
+                                          'Pathway': "submitSelection('/ligand/subtype_tau_rankorder_path_bias');",
+                                          'Biased': "submitSelection('/ligand/userselectionbiasedsubtype_tau_rank_order');"},
+                  'EmaxPathProfileSubtype': {'Title': 'SELECT RECEPTOR for Ligand biased (subtype) Pathway Profiles Δlog(Emax/EC50)',
+                                             'Continue': "submitSelection('/ligand/subtype_emax_path_profiles');",
+                                             'Pathway': "submitSelection('/ligand/subtype_emax_path_profiles_path_bias');",
+                                             'Biased': "submitSelection('/ligand/userselectionbiasedsubtype_emax_path_profile');"},
+                  'TauPathProfileSubtype': {'Title': 'SELECT RECEPTOR for Ligand (subtype) Pathway Profiles ΔΔLog(Tau/KA)',
+                                            'Continue': "submitSelection('/ligand/subtype_tau_path_profiles');",
+                                            'Pathway': "submitSelection('/ligand/subtype_tau_path_profiles_path_bias');",
+                                            'Biased': "submitSelection('/ligand/userselectionbiasedsubtype_tau_path_profile');"},
+                  'BrowserSubtype': {'Title': 'SELECT RECEPTORS with ligands biased for a G protein or arrestin subtype',
+                                     'Continue': "submitSelection('/ligand/biasedsubtypes');",
+                                     'Pathway': "submitSelection('/ligand/pathwaybiasedsubtypes');",
+                                     'Biased': "submitSelection('/ligand/userselectionbiasedsubtype');"},
+                  'BrowserPathway': {'Title': 'SELECT RECEPTORS to retrieve ligands with a preferred G protein or arrestin pathway ΔLog(Emax/EC50) values across pathways for one ligand (no reference ligand)',
+                                     'Continue': "submitSelection('/ligand/pathwaypreference');"},
+                  'EmaxRankOrderPathway': {'Title': 'SELECT RECEPTOR for Ligand Pathway Preference rank orders ΔLog(Emax/EC50)',
+                                           'Continue': "submitSelection('/ligand/path_preference_emax_rankorder');"},
+                  'EmaxPathProfilePathway': {'Title': 'SELECT RECEPTOR for Ligand Pathway Profiles Log(Emax/EC50)',
+                                            'Continue': "submitSelection('/ligand/path_preference_emax_path_profiles');"}
+                }
+    way = 'EmaxRankOrder'
+    title = pathfinder[way]['Title']
+    description = 'Select a receptor in the table (below).' \
+        + ' \n\nand click the green button (upper right).'
     selection_boxes = OrderedDict([
         ('reference', True),
         ('targets', False),
         ('segments', False),
     ])
+
     buttons = {
         'continue': {
             'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
-            'onclick': "submitSelection('/ligand/biased');",
+            'onclick': pathfinder[way]['Continue'],
             'color': 'success',
+            'invisible': 'No',
+            "sameSize": True,
         },
         "pathway": {
             "label": "Pathway-biased ligands<br>(balanced reference ligand)",
-            "modal": "path_bias",
-            "color": 'default active',
+            'onclick': pathfinder[way]['Pathway'],
+            'color': 'success',
             "sameSize": True,
         },
         "biased": {
             "label": "Biased ligands<br>(any reference ligand)",
-            'onclick': "submitSelection('/ligand/userselectionbiased');",
+            'onclick': pathfinder[way]['Biased'],
             "color": 'success',
+            'invisible': 'No',
             "sameSize": True,
         },
     }
+
 
     def get_context_data(self, **kwargs):
         """Get context from parent class
@@ -456,12 +512,28 @@ class BiasTargetSelection(AbsReferenceSelectionTable):
         not have any context variables)
         """
         context = super().get_context_data(**kwargs)
+
+        context['buttons']['continue']['onclick'] = context['pathfinder'][context['way']]['Continue']
+        context['title'] = context['pathfinder'][context['way']]['Title']
         # get selection from session and add to context
-        context['table_data'] = getReferenceTable("no", "no")
+        if context['subtype']: #subtype define all three buttons
+            context['table_data'] = getReferenceTable("no", "yes")
+            context['buttons']['pathway']['onclick'] = context['pathfinder'][context['way']]['Pathway']
+            context['buttons']['biased']['onclick'] = context['pathfinder'][context['way']]['Biased']
+            context['buttons']['pathway']['invisible'] = "No"
+            context['buttons']['biased']['invisible'] = "No"
+        elif context['pathway']: #pathway define only continue button, delete others
+            context['table_data'] = getReferenceTable("yes", "no")
+            context['buttons']['pathway']['invisible'] = "Yes"
+            context['buttons']['biased']['invisible'] = "Yes"
+        else: #not subtype not pathway, define all three buttons
+            context['table_data'] = getReferenceTable("no", "no")
+            context['buttons']['pathway']['onclick'] = context['pathfinder'][context['way']]['Pathway']
+            context['buttons']['biased']['onclick'] = context['pathfinder'][context['way']]['Biased']
+            context['buttons']['pathway']['invisible'] = "No"
+            context['buttons']['biased']['invisible'] = "No"
 
         return context
-
-
 
 #Biased Effector Family Browser (Ligand Selection)
 class UserBiased(AbsReferenceSelectionTable):
@@ -475,6 +547,31 @@ class UserBiased(AbsReferenceSelectionTable):
     docs = 'sequences.html#structure-based-alignments'
     title = "SELECT LIGAND to be used as reference for the calculation of bias ligands"
     description = 'Select a ligand in the table (below)\nThen click the green button (right)'
+    way = 'Browser'
+    subtype = False
+
+    analysis = {
+    #Biased Effector Family Browser (Ligand Selection)
+    'Browser': "submitSelection('/ligand/userbiased');",
+    #Biased Effector Family Emax/EC50 Rank Order (Ligand Selection)
+    'EmaxRankOrder': "submitSelection('/ligand/userbiased_emax_rank_order');",
+    #Biased Effector Family Tau/KA Rank Order (Ligand Selection)
+    'TauRankOrder': "submitSelection('/ligand/userbiased_tau_rank_order');",
+    #Biased Effector Family Emax/EC50 Pathway Profiles (Ligand Selection)
+    'EmaxPathProfiles': "submitSelection('/ligand/userbiased_emax_path_profile');",
+    #Biased Effector Family Tau/KA Pathway Profiles (Ligand Selection)
+    'TauPathProfiles': "submitSelection('/ligand/userbiased_tau_path_profile');",
+    #Biased Effector Subtype Browser (Ligand Selection)
+    'BrowserSubtype': "submitSelection('/ligand/userbiasedsubtypes');",
+    #Biased Effector Subtype Emax/EC50 Rank Order (Ligand Selection)
+    'EmaxRankOrderSubtype': "submitSelection('/ligand/userbiasedsubtypes_emax_rank_order');",
+    #Biased Effector Subtype Tau/KA Rank Order (Ligand Selection)
+    'TauRankOrderSubtype': "submitSelection('/ligand/userbiasedsubtypes_tau_rank_order');",
+    #Biased Effector Subtype Emax/EC50 Pathway Profiles (Ligand Selection)
+    'EmaxPathProfilesSubtype': "submitSelection('/ligand/userbiasedsubtypes_emax_path_profile');",
+    #Biased Effector Subtype Tau/KA Pathway Profiles (Ligand Selection)
+    'TauPathProfilesSubtype': "submitSelection('/ligand/userbiasedsubtypes_tau_path_profile');"}
+
     selection_boxes = OrderedDict([
         ('reference', True),
         ('targets', True),
@@ -496,591 +593,30 @@ class UserBiased(AbsReferenceSelectionTable):
         """
         protein_ids = []
         context = super().get_context_data(**kwargs)
+
         # get selection from session and add to context
         # get simple selection from session
         simple_selection = self.request.session.get('selection', False)
         # create full selection and import simple selection (if it exists)
         for target in simple_selection.reference:
             protein_ids.append(target.item)
-        context['table_data'] = getLigandTable(protein_ids[0], "biased")
+        if context['subtype']:
+            context['table_data'] = getLigandTable(protein_ids[0], "subtype")
+        else:
+            context['table_data'] = getLigandTable(protein_ids[0], "biased")
 
+        context['buttons']['continue']['onclick'] = context['analysis'][context['way']]
         return context
 
-#Biased Effector Family Subtype Browser (Ligand Selection)
-class UserBiasedSubtype(AbsReferenceSelectionTable):
-
-    template_name = 'common/userligandselectiontable.html'
-    step = 2
-    number_of_steps = 2
-    filters = False
-    filter_tableselect = False
-    family_tree = False
-    docs = 'sequences.html#structure-based-alignments'
-    title = "SELECT LIGAND to be used as reference for the calculation of bias ligands"
-    description = 'Select a ligand in the table (below)\nThen click the green button (right)'
-    selection_boxes = OrderedDict([
-        ('reference', True),
-        ('targets', True),
-        ('segments', False),
-    ])
-    buttons = {
-        'continue': {
-            'label': 'Calculate bias',
-            'onclick': "submitSelection('/ligand/userbiasedsubtypes');",
-            'color': 'success',
-        },
-    }
-
-    def get_context_data(self, **kwargs):
-        """Get context from parent class
-
-        (really only relevant for children of this class, as TemplateView does
-        not have any context variables)
-        """
-        protein_ids = []
-        context = super().get_context_data(**kwargs)
-        # get selection from session and add to context
-        # get simple selection from session
-        simple_selection = self.request.session.get('selection', False)
-        # create full selection and import simple selection (if it exists)
-        for target in simple_selection.reference:
-            protein_ids.append(target.item)
-        context['table_data'] = getLigandTable(protein_ids[0], "subtype")
-
-        return context
-
-#Pathway Preferred Browser
-class BiasPredictionTargetSelection(AbsReferenceSelectionTable):
-    step = 1
-    number_of_steps = 1
-    filters = False
-    filter_tableselect = False
-    family_tree = False
-    pathway = True
-    docs = 'sequences.html#structure-based-alignments'
-    title = "SELECT RECEPTORS to retrieve ligands with a preferred G protein or arrestin pathway (ΔLog(Emax/EC50  values across pathways for one ligand (no reference ligand)))"
-    description = 'Select a receptor in the table (below) or browse the classification tree (center).\nThen click the green button (right)'
-    selection_boxes = OrderedDict([
-        ('reference', False),
-        ('targets', True),
-        ('segments', False),
-    ])
-    buttons = {
-        'continue': {
-            'label': 'Physiology-biased ligands<br>(no reference ligand)',
-            'onclick': "submitSelection('/ligand/pathwaypreference');",
-            'color': 'success',
-        },
-    }
-
-    def get_context_data(self, **kwargs):
-        """Get context from parent class
-
-        (really only relevant for children of this class, as TemplateView does
-        not have any context variables)
-        """
-        context = super().get_context_data(**kwargs)
-        # get selection from session and add to context
-        context['table_data'] = getReferenceTable("yes", "no")
-
-        return context
-
-#Biased Subtype Browser
-class BiasGTargetSelection(AbsReferenceSelectionTable):
-    step = 1
-    number_of_steps = 1
-    filters = False
-    filter_tableselect = False
-    family_tree = False
-    docs = 'sequences.html#structure-based-alignments'
-    title = "SELECT RECEPTORS with ligands biased for a G protein or arrestin subtype"
-    description = 'Select a receptor in the table (below) or browse the classification tree (center).\nThen click a green button (right)'
-    selection_boxes = OrderedDict([
-        ('reference', False),
-        ('targets', True),
-        ('segments', False),
-    ])
-    buttons = {
-        "continue": {
-            "label": "Physiology-biased ligands<br>(endogenous agonist reference)",
-            "onclick": "submitSelection('/ligand/biasedsubtypes');",
-            "color": 'success',
-            "sameSize": True,
-        },
-        "pathway": {
-            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
-            "modal": "path_bias",
-            "color": 'default active',
-            "sameSize": True,
-        },
-        "biased": {
-            "label": "Biased ligands<br>(any reference ligand)",
-            'onclick': "submitSelection('/ligand/userselectionbiasedsubtypes');",
-            "color": 'success',
-            "sameSize": True,
-        },
-    }
-
-    def get_context_data(self, **kwargs):
-        """Get context from parent class
-
-        (really only relevant for children of this class, as TemplateView does
-        not have any context variables)
-        """
-        context = super().get_context_data(**kwargs)
-        # get selection from session and add to context
-        context['table_data'] = getReferenceTable("no", "yes")
-
-        return context
-
-class RankOrderSelection(AbsReferenceSelectionTable):
-    step = 1
-    number_of_steps = 1
-    filters = False
-    filter_tableselect = False
-    family_tree = False
-    title = "SELECT RECEPTOR for Ligand Bias Rank Order ΔΔLog(Emax/EC50)"
-    description = 'Select a receptor in the table (below).' \
-        + ' \n\nand click the green button (upper right).'
-    selection_boxes = OrderedDict([
-        ('reference', True),
-        ('targets', False),
-        ('segments', False),
-    ])
-    buttons = {
-        'continue': {
-            'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
-            'onclick': "submitSelection('/ligand/emax_rankorder');",
-            'color': 'success',
-        },
-        "pathway": {
-            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
-            "modal": "path_bias",
-            "color": 'default active',
-            "sameSize": True,
-        },
-        "biased": {
-            "label": "Biased ligands<br>(any reference ligand)",
-            "modal": "biased",
-            "color": 'default active',
-            "sameSize": True,
-        },
-    }
-
-    def get_context_data(self, **kwargs):
-        """Get context from parent class
-
-        (really only relevant for children of this class, as TemplateView does
-        not have any context variables)
-        """
-        context = super().get_context_data(**kwargs)
-        # get selection from session and add to context
-        context['table_data'] = getReferenceTable("no", "no")
-
-        return context
-
-class TauRankOrderSelection(AbsReferenceSelectionTable):
-    step = 1
-    number_of_steps = 1
-    filters = False
-    filter_tableselect = False
-    family_tree = False
-    title = "SELECT RECEPTOR for Ligand Bias Rank Order ΔΔLog(Tau/KA)"
-    description = 'Select a receptor in the table (below).' \
-        + ' \n\nand click the green button (upper right).'
-    selection_boxes = OrderedDict([
-        ('reference', True),
-        ('targets', False),
-        ('segments', False),
-    ])
-    buttons = {
-        'continue': {
-            'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
-            'onclick': "submitSelection('/ligand/tau_rankorder');",
-            'color': 'success',
-        },
-        "pathway": {
-            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
-            "modal": "path_bias",
-            "color": 'default active',
-            "sameSize": True,
-        },
-        "biased": {
-            "label": "Biased ligands<br>(any reference ligand)",
-            "modal": "biased",
-            "color": 'default active',
-            "sameSize": True,
-        },
-    }
-
-    def get_context_data(self, **kwargs):
-        """Get context from parent class
-
-        (really only relevant for children of this class, as TemplateView does
-        not have any context variables)
-        """
-        context = super().get_context_data(**kwargs)
-        # get selection from session and add to context
-        context['table_data'] = getReferenceTable("no", "no")
-
-        return context
-
-class TauSubtypeRankOrderSelection(AbsReferenceSelectionTable):
-    step = 1
-    number_of_steps = 1
-    filters = False
-    filter_tableselect = False
-    family_tree = False
-    title = "SELECT RECEPTOR for Ligand Bias (subtype) Rank Order ΔΔLog(Tau/KA)"
-    description = 'Select a receptor in the table (below).' \
-        + ' \n\nand click the green button (upper right).'
-    selection_boxes = OrderedDict([
-        ('reference', True),
-        ('targets', False),
-        ('segments', False),
-    ])
-    buttons = {
-        'continue': {
-            'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
-            'onclick': "submitSelection('/ligand/subtype_tau_rankorder');",
-            'color': 'success',
-        },
-        "pathway": {
-            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
-            "modal": "path_bias",
-            "color": 'default active',
-            "sameSize": True,
-        },
-        "biased": {
-            "label": "Biased ligands<br>(any reference ligand)",
-            "modal": "biased",
-            "color": 'default active',
-            "sameSize": True,
-        },
-    }
-
-    def get_context_data(self, **kwargs):
-        """Get context from parent class
-
-        (really only relevant for children of this class, as TemplateView does
-        not have any context variables)
-        """
-        context = super().get_context_data(**kwargs)
-        # get selection from session and add to context
-        context['table_data'] = getReferenceTable("no", "yes")
-
-        return context
-
-class EmaxPathProfileSelection(AbsReferenceSelectionTable):
-    step = 1
-    number_of_steps = 1
-    filters = False
-    filter_tableselect = False
-    family_tree = False
-    title = "SELECT RECEPTOR for Ligand Pathway Profiles ΔLog(Emax/EC50)"
-    description = 'Select a receptor in the table (below).' \
-        + ' \n\nand click the green button (upper right).'
-    selection_boxes = OrderedDict([
-        ('reference', True),
-        ('targets', False),
-        ('segments', False),
-    ])
-    buttons = {
-        'continue': {
-            'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
-            'onclick': "submitSelection('/ligand/emax_path_profiles');",
-            'color': 'success',
-        },
-        "pathway": {
-            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
-            "modal": "path_bias",
-            "color": 'default active',
-            "sameSize": True,
-        },
-        "biased": {
-            "label": "Biased ligands<br>(any reference ligand)",
-            "modal": "biased",
-            "color": 'default active',
-            "sameSize": True,
-        },
-    }
-
-    def get_context_data(self, **kwargs):
-        """Get context from parent class
-
-        (really only relevant for children of this class, as TemplateView does
-        not have any context variables)
-        """
-        context = super().get_context_data(**kwargs)
-        # get selection from session and add to context
-        context['table_data'] = getReferenceTable("no", "no")
-
-        return context
-
-class TauPathProfileSelection(AbsReferenceSelectionTable):
-    step = 1
-    number_of_steps = 1
-    filters = False
-    filter_tableselect = False
-    family_tree = False
-    title = "SELECT RECEPTOR for Ligand Pathway Profiles ΔΔLog(Tau/KA)"
-    description = 'Select a receptor in the table (below).' \
-        + ' \n\nand click the green button (upper right).'
-    selection_boxes = OrderedDict([
-        ('reference', True),
-        ('targets', False),
-        ('segments', False),
-    ])
-    buttons = {
-        'continue': {
-            'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
-            'onclick': "submitSelection('/ligand/tau_path_profiles');",
-            'color': 'success',
-        },
-        "pathway": {
-            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
-            "modal": "path_bias",
-            "color": 'default active',
-            "sameSize": True,
-        },
-        "biased": {
-            "label": "Biased ligands<br>(any reference ligand)",
-            "modal": "biased",
-            "color": 'default active',
-            "sameSize": True,
-        },
-    }
-
-    def get_context_data(self, **kwargs):
-        """Get context from parent class
-
-        (really only relevant for children of this class, as TemplateView does
-        not have any context variables)
-        """
-        context = super().get_context_data(**kwargs)
-        # get selection from session and add to context
-        context['table_data'] = getReferenceTable("no", "no")
-
-        return context
-
-class TauSubtypePathProfileSelection(AbsReferenceSelectionTable):
-    step = 1
-    number_of_steps = 1
-    filters = False
-    filter_tableselect = False
-    family_tree = False
-    title = "SELECT RECEPTOR for Ligand (subtype) Pathway Profiles ΔΔLog(Tau/KA)"
-    description = 'Select a receptor in the table (below).' \
-        + ' \n\nand click the green button (upper right).'
-    selection_boxes = OrderedDict([
-        ('reference', True),
-        ('targets', False),
-        ('segments', False),
-    ])
-    buttons = {
-        'continue': {
-            'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
-            'onclick': "submitSelection('/ligand/subtype_tau_path_profiles');",
-            'color': 'success',
-        },
-        "pathway": {
-            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
-            "modal": "path_bias",
-            "color": 'default active',
-            "sameSize": True,
-        },
-        "biased": {
-            "label": "Biased ligands<br>(any reference ligand)",
-            "modal": "biased",
-            "color": 'default active',
-            "sameSize": True,
-        },
-    }
-
-    def get_context_data(self, **kwargs):
-        """Get context from parent class
-
-        (really only relevant for children of this class, as TemplateView does
-        not have any context variables)
-        """
-        context = super().get_context_data(**kwargs)
-        # get selection from session and add to context
-        context['table_data'] = getReferenceTable("no", "yes")
-
-        return context
-
-class EmaxPathPrefRankOrderSelection(AbsReferenceSelectionTable):
-    step = 1
-    number_of_steps = 1
-    filters = False
-    filter_tableselect = False
-    family_tree = False
-    pathway = True
-    title = "SELECT RECEPTOR for Ligand Pathway Preference rank orders (ΔLog(Emax/EC50))"
-    description = 'Select a receptor in the table (below).' \
-        + ' \n\nand click the green button (upper right).'
-    selection_boxes = OrderedDict([
-        ('reference', True),
-        ('targets', False),
-        ('segments', False),
-    ])
-    buttons = {
-        'continue': {
-            'label': 'Physiology-biased ligands<br>(no reference ligand)',
-            'onclick': "submitSelection('/ligand/path_preference_emax_rankorder');",
-            'color': 'success',
-        },
-    }
-
-    def get_context_data(self, **kwargs):
-        """Get context from parent class
-
-        (really only relevant for children of this class, as TemplateView does
-        not have any context variables)
-        """
-        context = super().get_context_data(**kwargs)
-        # get selection from session and add to context
-        context['table_data'] = getReferenceTable("yes", "no")
-
-        return context
-
-
-class EmaxPathPrefPathProfilesSelection(AbsReferenceSelectionTable):
-    step = 1
-    number_of_steps = 1
-    filters = False
-    filter_tableselect = False
-    family_tree = False
-    pathway = True
-    title = "SELECT RECEPTOR for Ligand Pathway Profiles (log(Emax/EC50))"
-    description = 'Select a receptor in the table (below).' \
-        + ' \n\nand click the green button (upper right).'
-    selection_boxes = OrderedDict([
-        ('reference', True),
-        ('targets', False),
-        ('segments', False),
-    ])
-    buttons = {
-        'continue': {
-            'label': 'Physiology-biased ligands<br>(no reference ligand)',
-            'onclick': "submitSelection('/ligand/path_preference_emax_path_profiles');",
-            'color': 'success',
-        },
-    }
-
-    def get_context_data(self, **kwargs):
-        """Get context from parent class
-
-        (really only relevant for children of this class, as TemplateView does
-        not have any context variables)
-        """
-        context = super().get_context_data(**kwargs)
-        # get selection from session and add to context
-        context['table_data'] = getReferenceTable("yes", "no")
-
-        return context
-
-
-class EmaxSubtypeRankOrderSelection(AbsReferenceSelectionTable):
-    step = 1
-    number_of_steps = 1
-    filters = False
-    filter_tableselect = False
-    family_tree = False
-    title = "SELECT RECEPTOR for Ligand biased (subtype) rank orders (ΔΔLog(Emax/EC50))"
-    description = 'Select a receptor in the table (below).' \
-        + ' \n\nand click the green button (upper right).'
-    selection_boxes = OrderedDict([
-        ('reference', True),
-        ('targets', False),
-        ('segments', False),
-    ])
-    buttons = {
-        'continue': {
-            'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
-            'onclick': "submitSelection('/ligand/subtype_emax_rankorder');",
-            'color': 'success',
-        },
-        "pathway": {
-            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
-            "modal": "path_bias",
-            "color": 'default active',
-            "sameSize": True,
-        },
-        "biased": {
-            "label": "Biased ligands<br>(any reference ligand)",
-            "modal": "biased",
-            "color": 'default active',
-            "sameSize": True,
-        },
-    }
-
-    def get_context_data(self, **kwargs):
-        """Get context from parent class
-
-        (really only relevant for children of this class, as TemplateView does
-        not have any context variables)
-        """
-        context = super().get_context_data(**kwargs)
-        # get selection from session and add to context
-        context['table_data'] = getReferenceTable("no", "yes")
-
-        return context
-
-class EmaxSubtypePathProfilesSelection(AbsReferenceSelectionTable):
-    step = 1
-    number_of_steps = 1
-    filters = False
-    filter_tableselect = False
-    family_tree = False
-    title = "SELECT RECEPTOR for Ligand biased (subtype) Pathway Profiles (Δlog(Emax/EC50))"
-    description = 'Select a receptor in the table (below).' \
-        + ' \n\nand click the green button (upper right).'
-    selection_boxes = OrderedDict([
-        ('reference', True),
-        ('targets', False),
-        ('segments', False),
-    ])
-    buttons = {
-        'continue': {
-            'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
-            'onclick': "submitSelection('/ligand/subtype_emax_path_profiles');",
-            'color': 'success',
-        },
-        "pathway": {
-            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
-            "modal": "path_bias",
-            "color": 'default active',
-            "sameSize": True,
-        },
-        "biased": {
-            "label": "Biased ligands<br>(any reference ligand)",
-            "modal": "biased",
-            "color": 'default active',
-            "sameSize": True,
-        },
-    }
-
-    def get_context_data(self, **kwargs):
-        """Get context from parent class
-
-        (really only relevant for children of this class, as TemplateView does
-        not have any context variables)
-        """
-        context = super().get_context_data(**kwargs)
-        # get selection from session and add to context
-        context['table_data'] = getReferenceTable("no", "yes")
-
-        return context
-
-class BiasedRankOrderOnTheFly(TemplateView):
+class BiasedSignallingOnTheFlyCalculation(TemplateView):
     #set a global variable for different pages
     page = "rankorder"
     label = "emax"
     template_name = "otf_biased_rank_orders.html"
     subtype = False
     pathway = False
-    user = ''
+    balanced = False
+    user = False
 
     @staticmethod
     def jitter_tooltip(page, pathway, ligand, value, headers, prefix='', small_data=None, large_data=None, small_ref=None):
@@ -1184,6 +720,11 @@ class BiasedRankOrderOnTheFly(TemplateView):
         for item in simple_selection.reference:
             receptor = item.item
 
+        if self.user:
+            for ligand in simple_selection.targets:
+                self.user = ligand.item
+
+
         rec_name = list(Protein.objects.filter(id=receptor)
                                         .values_list('entry_name',
                                                      'name'))
@@ -1222,7 +763,8 @@ class BiasedRankOrderOnTheFly(TemplateView):
             prefix = ''
         else:
             prefix = 'Δ'
-        data = OnTheFly(int(receptor), self.subtype, self.pathway)
+
+        data = OnTheFly(int(receptor), subtype=self.subtype, pathway=self.pathway, user=self.user, balanced=self.balanced)
         #### added code
         flat_data = {}
         for key, value in data.items():
@@ -1291,13 +833,19 @@ class BiasedRankOrderOnTheFly(TemplateView):
                 except KeyError:
                     double_delta = None
                 emax_tau = result["Emax"]
-                EC50_ka = result["EC50"]
+                try:
+                    EC50_ka = '{:0.2e}'.format(result["EC50"])
+                except TypeError:
+                    EC50_ka = result["EC50"]
                 EC50_sign = result['EC50_sign'] #Remember these parameters for additional info
                 Emax_sign = result['Emax_sign'] #Remember these parameters for additional info
                 components = ['Emax', 'EC50']
                 if set(['Reference_Emax', 'Reference_EC50']).issubset(set(result.keys())):
                     reference_emax_tau = result['Reference_Emax']
-                    reference_EC50_ka = result['Reference_EC50']
+                    try:
+                        reference_EC50_ka = '{:0.2e}'.format(result['Reference_EC50'])
+                    except TypeError:
+                        reference_EC50_ka = result['Reference_EC50']
                 else:
                     reference_emax_tau = 'NA'
                     reference_EC50_ka = 'NA'
@@ -1312,6 +860,8 @@ class BiasedRankOrderOnTheFly(TemplateView):
                     double_delta = None
                 emax_tau = "NA" #need to be updated IF datacolumn for TAU will be added
                 EC50_ka = "NA"  #need to be updated IF datacolumn for KA will be added
+                EC50_sign = '=' #Assign defaulted as '=' because they are not used in case of Tau/KA display
+                Emax_sign = '=' #Assign defaulted as '=' because they are not used in case of Tau/KA display
                 components = ['Tau', 'KA']
                 reference_emax_tau = "NA" #need to be updated IF datacolumn for TAU will be added
                 reference_EC50_ka = "NA"  #need to be updated IF datacolumn for KA will be added
@@ -1387,7 +937,7 @@ class BiasedRankOrderOnTheFly(TemplateView):
                 jitterDict[jitterAuthors][lig_name]["Emax_Tau"] = emax_tau
                 jitterDict[jitterAuthors][lig_name]["EC50_KA"] = EC50_ka
 
-            tooltip_info = BiasedRankOrderOnTheFly.jitter_tooltip(self.page, self.pathway, lig_name, value, components,
+            tooltip_info = BiasedSignallingOnTheFlyCalculation.jitter_tooltip(self.page, self.pathway, lig_name, value, components,
                                                           small_data=[result['primary_effector_family'], emax_tau, EC50_ka, lig_name],
                                                           small_ref=[reference_path, reference_emax_tau, reference_EC50_ka, reference_ligand])
 
@@ -1455,7 +1005,7 @@ class BiasedRankOrderOnTheFly(TemplateView):
                     try:
                         for i in indices:
                             name["PathwaysData"][i]["value"] = [MAX,"ARTIFICIAL"]
-                            name["PathwaysData"][i]["tooltip"] = BiasedRankOrderOnTheFly.jitter_tooltip(self.page, self.pathway, lig_name, value, components,
+                            name["PathwaysData"][i]["tooltip"] = BiasedSignallingOnTheFlyCalculation.jitter_tooltip(self.page, self.pathway, lig_name, value, components,
                                                                                                 small_data=[result['primary_effector_family'], emax_tau, 'High', lig_name],
                                                                                                 small_ref=[reference_path, reference_emax_tau, reference_EC50_ka, reference_ligand])
                     except ValueError:
@@ -1464,7 +1014,7 @@ class BiasedRankOrderOnTheFly(TemplateView):
                     try:
                         for i in indices:
                             name["PathwaysData"][i]["value"] = [MIN,"ARTIFICIAL"]
-                            name["PathwaysData"][i]["tooltip"] = BiasedRankOrderOnTheFly.jitter_tooltip(self.page, self.pathway, lig_name, value, components,
+                            name["PathwaysData"][i]["tooltip"] = BiasedSignallingOnTheFlyCalculation.jitter_tooltip(self.page, self.pathway, lig_name, value, components,
                                                                                                 small_data=[result['primary_effector_family'], emax_tau, 'Low', lig_name],
                                                                                                 small_ref=[reference_path, reference_emax_tau, reference_EC50_ka, reference_ligand])
                     except ValueError:
@@ -1504,7 +1054,7 @@ class BiasedRankOrderOnTheFly(TemplateView):
             for ligand in jitterDict[pub]:
                 try:
                     if ligand not in Colors.keys():
-                        color = '#%02x%02x%02x' % (BiasedRankOrderOnTheFly.create_rgb_color(), BiasedRankOrderOnTheFly.create_rgb_color(), BiasedRankOrderOnTheFly.create_rgb_color())
+                        color = '#%02x%02x%02x' % (BiasedSignallingOnTheFlyCalculation.create_rgb_color(), BiasedSignallingOnTheFlyCalculation.create_rgb_color(), BiasedSignallingOnTheFlyCalculation.create_rgb_color())
                         Colors[ligand] = color
                     little = [reference_path, reference_emax_tau, reference_EC50_ka, reference_ligand]
                     if self.subtype:
@@ -1514,9 +1064,9 @@ class BiasedRankOrderOnTheFly(TemplateView):
                         big = [jitterDict[pub][ligand]["Pathway"], jitterDict[pub][ligand]['delta'], jitterDict[pub][ligand]['Emax_Tau'], jitterDict[pub][ligand]['EC50_KA'],
                                jitterDict[pub][ligand]['2nd_Pathway'], jitterDict[pub][ligand]['2nd_Pathway_delta'], jitterDict[pub][ligand]['2nd_Pathway_emax_tau'], jitterDict[pub][ligand]['2nd_Pathway_EC50_KA']]
                     if (jitterDict[pub][ligand]['deltadelta'][1] == 'High Bias') or (jitterDict[pub][ligand]['deltadelta'][1] == 'Full Bias'):
-                        tooltip = BiasedRankOrderOnTheFly.jitter_tooltip(self.page, self.pathway, ligand, jitterDict[pub][ligand]['deltadelta'][1], components, prefix, small_data=little, large_data=big)
+                        tooltip = BiasedSignallingOnTheFlyCalculation.jitter_tooltip(self.page, self.pathway, ligand, jitterDict[pub][ligand]['deltadelta'][1], components, prefix, small_data=little, large_data=big)
                     else:
-                        tooltip = BiasedRankOrderOnTheFly.jitter_tooltip(self.page, self.pathway, ligand, jitterDict[pub][ligand]['deltadelta'][0], components, prefix, small_data=little, large_data=big)
+                        tooltip = BiasedSignallingOnTheFlyCalculation.jitter_tooltip(self.page, self.pathway, ligand, jitterDict[pub][ligand]['deltadelta'][0], components, prefix, small_data=little, large_data=big)
                     jitterPlot[jitterDict[pub][ligand]["Pathway"]].append([pub, jitterDict[pub][ligand]['deltadelta'][0], Colors[ligand], ligand, jitterDict[pub][ligand]['deltadelta'][1], tooltip, jitterDict[pub][ligand]['EC50_sign'], jitterDict[pub][ligand]['Emax_sign']])
                     jitterLegend[jitterDict[pub][ligand]["Pathway"]].append(tuple((ligand, jitterDict[pub][ligand]['deltadelta'][0])))
                 except KeyError:
@@ -2014,21 +1564,27 @@ class BiasPathways(TemplateView):
 ################### NEW STUFF ##################################################
 
 def CachedOTFBiasBrowser(request):
-    return CachedOTFBiasBrowsers("bias", False, request)
+    return CachedOTFBiasBrowsers("bias", False, False, request)
 
 def CachedOTFBiasSubtypeBrowser(request):
-    return CachedOTFBiasBrowsers("subtype", False, request)
+    return CachedOTFBiasBrowsers("subtype", False, False, request)
+
+def CachedOTFBalancedBrowser(request):
+    return CachedOTFBiasBrowsers("bias", False, True, request)
+
+def CachedOTFBalancedSubtypeBrowser(request):
+    return CachedOTFBiasBrowsers("subtype", False, True, request)
 
 def CachedOTFPathwayPrefBrowser(request):
-    return CachedOTFBiasBrowsers("pathway", False, request)
+    return CachedOTFBiasBrowsers("pathway", False, False, request)
 
 def CachedOTFBiasBrowserUser(request):
-    return CachedOTFBiasBrowsers("bias", True, request)
+    return CachedOTFBiasBrowsers("bias", True, False, request)
 
 def CachedOTFBiasSubtypeBrowserUser(request):
-    return CachedOTFBiasBrowsers("subtype", True, request)
+    return CachedOTFBiasBrowsers("subtype", True, False, request)
 
-def CachedOTFBiasBrowsers(browser_type, user_ligand, request):
+def CachedOTFBiasBrowsers(browser_type, user_ligand, balanced, request):
     protein_ids = []
     user_ids = []
     try:
@@ -2050,9 +1606,15 @@ def CachedOTFBiasBrowsers(browser_type, user_ligand, request):
     if return_html == None:
         if user_ligand == False:
             if browser_type == "bias":
-                return_html = OTFBiasBrowser.as_view(protein_id=protein_ids[0])(request).render()
+                if balanced:
+                    return_html = OTFBiasBrowser.as_view(protein_id=protein_ids[0], balanced=True)(request).render()
+                else:
+                    return_html = OTFBiasBrowser.as_view(protein_id=protein_ids[0])(request).render()
             elif browser_type == "subtype":
-                return_html = OTFBiasBrowser.as_view(protein_id=protein_ids[0], subtype=True)(request).render()
+                if balanced:
+                    return_html = OTFBiasBrowser.as_view(protein_id=protein_ids[0], balanced=True, subtype=True)(request).render()
+                else:
+                    return_html = OTFBiasBrowser.as_view(protein_id=protein_ids[0], subtype=True)(request).render()
             elif browser_type == "pathway":
                 return_html = OTFBiasBrowser.as_view(protein_id=protein_ids[0], pathway=True)(request).render()
         else:
@@ -2074,11 +1636,12 @@ class OTFBiasBrowser(TemplateView):
     protein_id = ''
     subtype = False #need to pass these values onto the context
     pathway = False
+    balanced = False
     user = False
     template_name = 'otf_bias_browser.html'
     context_object_name = 'data'
     def get_context_data(self, **kwargs):
-        data = OnTheFly(int(self.protein_id), self.subtype, self.pathway, int(self.user))
+        data = OnTheFly(int(self.protein_id), self.subtype, self.pathway, int(self.user), self.balanced)
 
         browser_columns = ['Class', 'Receptor family', 'UniProt', 'IUPHAR', 'Species',
                            'Reference ligand', 'Tested ligand', '#Vendors', '#Articles', '#Labs',
@@ -2174,4 +1737,5 @@ class OTFBiasBrowser(TemplateView):
         context = dict()
         context['Array'] = table.to_numpy()
         context['Pathway'] = self.pathway
+        context['Balanced'] = self.balanced
         return context
