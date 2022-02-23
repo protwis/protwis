@@ -1,4 +1,4 @@
-function draw_tree(data, options) {
+function draw_tree(data, options, id_label='') {
 
     var branches = {};
     var branch_offset = 0;
@@ -110,7 +110,7 @@ function draw_tree(data, options) {
         .style("opacity", .99);
 
     node.filter(function (d) { return (d.depth == options.depth) })
-        .attr("id", function (d) { if (d.name == '') { return "innerNode" } else { return 'X'+d.name.toUpperCase() } });
+        .attr("id", function (d) { if (d.name == '') { return "innerNode" } else { return 'X'+d.name.toUpperCase()+id_label } });
 
     node.append("text")
         .attr("dy", ".31em")
@@ -242,7 +242,7 @@ function changeLeavesLabels(location, value, dict){
       labelName = labelName.replace("Short-wave-sensitive",'SWS');
       labelName = labelName.replace("Olfactory", 'OLF');
       labelName = labelName.replace("Calcitonin -like", 'CLR');
-      node = d3.select('#X'+name);
+      node = d3.select('#'+location).select('#X'+name);
       if (node.size() !== 0){
         if (value === "IUPHAR"){
           node.selectAll("text")[0].forEach(

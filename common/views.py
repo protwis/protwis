@@ -394,9 +394,9 @@ def getReferenceTable(pathway, subtype):
                     <th class=\"text-highlight\">Receptor<br>(UniProt)</th> \
                     <th class=\"text-highlight\">Receptor<br>(GtP)</th> \
                     <th>Tested<br>(total)</th> \
+                    <th>Balanced<br>references</th> \
                     <th>Physiology<br>biased</th> \
                     <th>Pathway<br>biased</th> \
-                    <th>Balanced<br>references</th> \
                   </tr> \
                 </thead>\
                 \n \
@@ -493,9 +493,9 @@ def getReferenceTable(pathway, subtype):
                     t['uniprot'],
                     t['iuphar'],
                     t['ligand_count'],
+                    t['balanced_refs'], #this should be t['balanced_count']
                     t['biased_count'],
                     t['pathway_count'],
-                    t['balanced_refs'], #this should be t['balanced_count']
                 )
 
         data_table += "</tbody></table>"

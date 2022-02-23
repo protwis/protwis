@@ -1129,6 +1129,10 @@ class LigandStatistics(TemplateView):
                     .filter(physiology_biased__isnull=False)
                     .values('receptor_id__family__parent__parent__parent__name')
                     .annotate(c=Count('ligand_id', distinct=True)))
+                assays_balanced_lig = list(BiasedData.objects
+                    .filter(pathway_biased__contains='path')
+                    .values('receptor_id__family__parent__parent__parent__name')
+                    .annotate(c=Count('ligand_id', distinct=True)))
             elif self.page == 'pathway_pref':
                 assays_lig = list(BiasedData.objects
                     .filter(pathway_preferred__isnull=False)
@@ -1137,6 +1141,10 @@ class LigandStatistics(TemplateView):
             elif self.page == 'subtype':
                 assays_lig = list(BiasedData.objects
                     .filter(subtype_biased__isnull=False)
+                    .values('receptor_id__family__parent__parent__parent__name')
+                    .annotate(c=Count('ligand_id', distinct=True)))
+                assays_balanced_lig = list(BiasedData.objects
+                    .filter(pathway_biased__contains='sub')
                     .values('receptor_id__family__parent__parent__parent__name')
                     .annotate(c=Count('ligand_id', distinct=True)))
             for a in assays_lig:
@@ -1199,7 +1207,6 @@ class LigandStatistics(TemplateView):
 
         context['ligands_total'] = lig_total
         context['ligands_by_class'] = ligands
-
         context['release_notes'] = ReleaseNotes.objects.all()[0]
 
         tree = PhylogeneticTreeGenerator()
@@ -1271,6 +1278,7 @@ class LigandStatistics(TemplateView):
                 whole_rec_dict[rec_uniprot] = [rec_iuphar.capitalize()]
 
         context["whole_receptors"] = json.dumps(whole_rec_dict)
+        
         if self.page == 'ligands':
             context["render"] = "not_bias"
 
@@ -1278,6 +1286,10 @@ class LigandStatistics(TemplateView):
             if self.page == 'ligand_bias':
                 context["render"] = "bias"
                 circle_data = BiasedData.objects.filter(physiology_biased__isnull=False).values_list(
+                              "physiology_biased", "receptor_id__entry_name", "ligand_id").order_by(
+                              "physiology_biased", "receptor_id__entry_name", "ligand_id").distinct(
+                              "physiology_biased", "receptor_id__entry_name", "ligand_id")
+                circle_data_bal = BiasedData.objects.filter(pathway_biased__contains='path').values_list(
                               "physiology_biased", "receptor_id__entry_name", "ligand_id").order_by(
                               "physiology_biased", "receptor_id__entry_name", "ligand_id").distinct(
                               "physiology_biased", "receptor_id__entry_name", "ligand_id")
@@ -1293,6 +1305,10 @@ class LigandStatistics(TemplateView):
                               "subtype_biased", "receptor_id__entry_name", "ligand_id").order_by(
                               "subtype_biased", "receptor_id__entry_name", "ligand_id").distinct(
                               "subtype_biased", "receptor_id__entry_name", "ligand_id")
+                circle_data_bal = BiasedData.objects.filter(pathway_biased__contains='sub').values_list(
+                              "physiology_biased", "receptor_id__entry_name", "ligand_id").order_by(
+                              "physiology_biased", "receptor_id__entry_name", "ligand_id").distinct(
+                              "physiology_biased", "receptor_id__entry_name", "ligand_id")
 
             circles = {}
             for data in circle_data:
@@ -1305,6 +1321,70 @@ class LigandStatistics(TemplateView):
                     circles[key][data[0]] += 1
 
             context["circles_data"] = json.dumps(circles)
+            #Addressing section for Balanced Reference ligands and pathway biased
+            if self.page in ['subtype', 'ligand_bias']:
+                bal_ligands = []
+                bal_lig_count_dict = {}
+
+                for a in assays_balanced_lig:
+                    bal_lig_count_dict[a['receptor_id__family__parent__parent__parent__name']] = a['c']
+
+                for fam in classes:
+                    if fam.name in bal_lig_count_dict:
+                        lig_count = bal_lig_count_dict[fam.name]
+                        target_count = target_count_dict[fam.name]
+                    else:
+                        lig_count = 0
+                        target_count = 0
+                    prot_count = prot_count_dict[fam.name]
+                    bal_ligands.append({
+                        'name': fam.name.replace('Class', ''),
+                        'num_ligands': lig_count,
+                        'avg_num_ligands': lig_count / prot_count,
+                        'target_percentage': target_count / prot_count * 100,
+                        'target_count': target_count
+                    })
+
+                bal_lig_count_total = sum([x['num_ligands'] for x in bal_ligands])
+
+                target_count_total = sum([x['target_count'] for x in bal_ligands])
+
+                bal_lig_total = {
+                    'num_ligands': bal_lig_count_total,
+                    'avg_num_ligands': bal_lig_count_total / prot_count_total,
+                    'target_percentage': target_count_total / prot_count_total * 100,
+                    'target_count': target_count_total
+                }
+
+                context['bal_ligands_total'] = bal_lig_total
+                context['bal_ligands_by_class'] = bal_ligands
+
+                circles_bal = {}
+                for data in circle_data_bal:
+                    if data[1].split('_')[1] == 'human':
+                        key = data[1].split('_')[0].upper()
+                        if key not in circles_bal.keys():
+                            circles_bal[key] = {}
+                        if data[0] not in circles_bal[key].keys():
+                            circles_bal[key][data[0]] = 1
+                        circles_bal[key][data[0]] += 1
+
+                context["circles_bal_data"] = json.dumps(circles_bal)
+                #Adding options for pathway biased plots to context
+                context['class_a_bal_options'] = deepcopy(context['class_a_options'])
+                context['class_a_bal_options']['anchor'] = 'class_a_bal'
+                context['class_b1_bal_options'] = deepcopy(context['class_b1_options'])
+                context['class_b1_bal_options']['anchor'] = 'class_b1_bal'
+                context['class_b2_bal_options'] = deepcopy(context['class_b2_options'])
+                context['class_b2_bal_options']['anchor'] = 'class_b2_bal'
+                context['class_c_bal_options'] = deepcopy(context['class_c_options'])
+                context['class_c_bal_options']['anchor'] = 'class_c_bal'
+                context['class_f_bal_options'] = deepcopy(context['class_f_options'])
+                context['class_f_bal_options']['anchor'] = 'class_f_bal'
+                context['class_t2_bal_options'] = deepcopy(context['class_t2_options'])
+                context['class_t2_bal_options']['anchor'] = 'class_t2_bal'
+                context['orphan_bal_options'] = deepcopy(context['orphan_options'])
+                context['orphan_bal_options']['anchor'] = 'orphan_bal'
 
         return context
 
