@@ -69,7 +69,7 @@ class StructureBrowser(TemplateView):
 				"protein_conformation__protein__family__parent__parent__parent",
 				"publication__web_link__web_resource").prefetch_related(
 				"stabilizing_agents", "construct__crystallization__crystal_method",
-				"protein_conformation__protein__parent__endogenous_ligands__ligand_type",
+				"protein_conformation__protein__parent__endogenous_gtp_set__ligand__ligand_type",
 				"protein_conformation__site_protein_conformation__site",
 				Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
 				annotated=True).prefetch_related('ligand__ligand_type', 'ligand_role','ligand__ids__web_resource')),
@@ -108,7 +108,7 @@ class GProteinStructureBrowser(TemplateView):
 				"protein_conformation__protein__family__parent__parent__parent",
 				"publication__web_link__web_resource").prefetch_related(
 				"stabilizing_agents", "construct__crystallization__crystal_method",
-				"protein_conformation__protein__parent__endogenous_ligands__ligand_type",
+				"protein_conformation__protein__parent__endogenous_gtp_set__ligand__ligand_type",
 				"protein_conformation__site_protein_conformation__site",
 				Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
 				annotated=True).prefetch_related('ligand__ligand_type', 'ligand_role','ligand__ids__web_resource')),
@@ -1971,7 +1971,7 @@ class TemplateBrowser(TemplateView):
 			"protein_conformation__protein__family__parent__parent__parent",
 			"publication__web_link__web_resource").prefetch_related(
 			"stabilizing_agents",
-			"protein_conformation__protein__parent__endogenous_ligands__ligand_type",
+			"protein_conformation__protein__parent__endogenous_gtp_set__ligand__ligand_type",
 			Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
 			annotated=True).prefetch_related('ligand__ligand_type', 'ligand_role')))
 

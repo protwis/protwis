@@ -1145,7 +1145,7 @@ class ParseStructureCSV():
             for l in ligands:
                 if 'ligand' not in self.structures[l[0]]:
                     self.structures[l[0]]['ligand'] = []
-                self.structures[l[0]]['ligand'].append({'chain':l[1], 'name':l[2], 'pubhemId':l[3], 'role':l[4], 'title':l[5], 'type': l[6]})
+                self.structures[l[0]]['ligand'].append({'chain':l[1], 'name':l[2], 'pubchemId':l[3], 'role':l[4], 'title':l[5], 'type': l[6]})
 
     def parse_nanobodies(self):
         with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'nanobodies.csv']), newline='') as csvfile:
@@ -1210,7 +1210,7 @@ class StructureBuildCheck():
                     try:
                         Residue.objects.get(protein_conformation=s.protein_conformation, sequence_number=r.sequence_number)
                     except Residue.MultipleObjectsReturned:
-                        if s in self.duplicate_residue_error: 
+                        if s in self.duplicate_residue_error:
                             self.duplicate_residue_error[s].append(r)
                         else:
                             self.duplicate_residue_error[s] = [r]

@@ -42,8 +42,8 @@ select.form-control {
 	font-size:9pt;
 }
 input.form-control{
-    width: 180px;  
-    height:24px; 
+    width: 180px;
+    height:24px;
     padding: 2px 2px;
     font-size: 9pt;
 }
@@ -65,7 +65,7 @@ textarea.form-control{
 	text-align: right;
 	white-space: nowrap;
 }
-#expr_system input.form-control, #solubil_purif input.form-control, 
+#expr_system input.form-control, #solubil_purif input.form-control,
 #crystallization input.form-control, #solubil_deterg input.form-control {
 	width:110px;
 	height:24px;
@@ -76,28 +76,28 @@ textarea.form-control{
 	height:26px;
 	padding: 2px 2px;
 }
-#expr_system textarea.form-control, #solubil_purif textarea.form-control, 
+#expr_system textarea.form-control, #solubil_purif textarea.form-control,
 #crystallization textarea.form-control{
-	width:110px;	
+	width:110px;
 }
 #solubil_purif input.half.form-control, #crystallization input.half.form-control{
-	width:40px;		
+	width:40px;
 }
 #solubil_purif input.unit.form-control, #crystallization input.unit.form-control {
-	width:70px;	
+	width:70px;
 }
 #crystallization select.ph.form-control {
-	width:60px;	
+	width:60px;
 	font-size: 8pt;
 }
 #crystallization input.single_ph.form-control {
-	width:50px;		
+	width:50px;
 }
 #crystallization input.range_ph.form-control {
 	width:23px;
 	padding: 1px 1px;
 }
-#id_date_month { 
+#id_date_month {
     width:85px;
     font-size: 9pt;
 }
@@ -142,7 +142,7 @@ input.chem_enz_remark.form-control::-webkit-input-placeholder { font-size: 9pt;}
 input.other_type_deterg.form-control::-webkit-input-placeholder { font-size: 9pt;}
 .unit.form-control{
 	width:90px;
-	padding: 1px 1px; 
+	padding: 1px 1px;
 	font-size:8pt;
 }
 .half.form-control{
@@ -170,10 +170,10 @@ input.other_type_deterg.form-control::-webkit-input-placeholder { font-size: 9pt
 	width:15px;
 	height:22px;
 }
-.left_border_contact{ 
+.left_border_contact{
 	padding-left: 20px;
 }
-.left_border{ 
+.left_border{
 	padding-left: 10px;
 }
 .left_border_sol{
@@ -221,7 +221,7 @@ span.required_ind{
 	width: 1200px;
     overflow: auto;
     overflow-y: hidden;
-}  
+}
 .del_single.form-control{
 	width:86px;
 	padding:1px 1px;
@@ -291,8 +291,8 @@ select option:disabled {
 	left:0;
 }
 @-webkit-keyframes fadeIn {
-	0% { 
-		opacity:0; 
+	0% {
+		opacity:0;
 		transform: scale(0.6);
 	}
 
@@ -353,7 +353,7 @@ select option:disabled {
 .help_aux p:after{
 	width:100%;
 	height:40px;
-	content:'';	
+	content:'';
 }
 span.glyphicon-calendar{
 	color: #428bca;
@@ -391,16 +391,16 @@ select.optional option{
 <!-- <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
 <script src="http://cdn.jsdelivr.net/jquery.validation/1.15.0/jquery.validate.min.js"></script>
 <script src="http://cdn.jsdelivr.net/jquery.validation/1.15.0/additional-methods.min.js"></script> -->
-<link rel="stylesheet" href="http://code.jquery.com/ui/1.11.0/themes/smoothness/jquery-ui.css"> 
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.11.0/themes/smoothness/jquery-ui.css">
 <script src="http://code.jquery.com/ui/1.11.0/jquery-ui.js"></script>
 
 
  <script src="{% static 'home/js/selection.js' %}"> </script>
 
  <script>
- 	
+
 (function(){
-    
+
     function onChange(event) {
         var reader = new FileReader();
         reader.onload = onReaderLoad;
@@ -411,19 +411,19 @@ select.optional option{
         // console.log(event.target.result);
         var obj = JSON.parse(event.target.result);
         prefill_data(obj);
- 		ValidateForm(); 
+ 		ValidateForm();
     }
 
-    $("#get_json").click(function () 
+    $("#get_json").click(function ()
 	{
 		slug = $("#fetch_json").val();
 	    $.getJSON( "/construct/auto_webform/"+slug, function( data ) {
 	  		// console.log(data);
 	  		prefill_data(data);
- 			ValidateForm(); 
+ 			ValidateForm();
 	  	});
 	});
-    
+
     function prefill_data(obj){
 
     	var keys = [];
@@ -449,7 +449,7 @@ select.optional option{
 			    		$("#id_"+k ).click();
 			    		$("#id_"+k ).change();
 			    	}
-			    	
+
 			    	// $( "[name='"+k+"']" ).onchange();
 
 				} else if ($( "[name='"+k+"']" ).is(":visible")) {
@@ -485,7 +485,7 @@ select.optional option{
 					// console.log('Not found '+k)
 				}
 
-				
+
 			} else {
 				// console.log(k + ' is empty value anyway..');
 			}
@@ -497,7 +497,7 @@ select.optional option{
 	    	v = obj.raw_data[k];
 	    	if ( $( "[name='"+k+"']" ).length && v) {
 	    		if($( "[name='"+k+"']" ).is("select") && $( "[name='"+k+"']" ).is(":visible")) {
-	    			
+
 	    			// if select, then select correctly
 	    			// console.log('is select '+k);
 	    			if ($( "[name='"+k+"']" ).val()!=v) {
@@ -546,7 +546,7 @@ select.optional option{
 				} else {
 					// console.log('Not found '+k)
 				}
-			} 
+			}
 		}
 
 
@@ -596,7 +596,7 @@ select.optional option{
 			}
 			else if (!($( "[name='"+k+"']" ).length)) {
 				console.log('Not found '+k)
-			} 
+			}
 		}
 
 				//run 4th time to fix those that happened after onchange
@@ -644,7 +644,7 @@ select.optional option{
 			}
 			else if (!($( "[name='"+k+"']" ).length)) {
 				console.log('Not found '+k)
-			} 
+			}
 		}
     }
     {% if edit %}
@@ -653,7 +653,7 @@ select.optional option{
     	prefill_data(json_edit);
 	})
     {% endif %}
- 
+
     document.getElementById('file').addEventListener('change', onChange);
 
 }());
@@ -661,14 +661,14 @@ select.optional option{
 
 
 {% endblock %}
-{% block content %}	
+{% block content %}
 	Load a JSON file: <input id="file" type="file" class="optional" />
 	<input id="fetch_json"  class="optional"><button id="get_json" value="Fetch data">Fetch data</button>
 	<form id="xtals_form" method="post"  target="_blank" action='/structure/webformdata'>
 		{% csrf_token %}
 		<div id ="tabs">
 		<table class="table_1"  id="table_1">
-			<td> 
+			<td>
 				<div id="contr_contact_div" class="contr_contact col-md-12 panel panel-primary">
 					<span id="required_indication" class="hidetext required_ind">Fields marked with * are required.Please fill them out , or select a value from the list</span>
 					<h2>Contributor Contact information</h2><br>
@@ -676,20 +676,20 @@ select.optional option{
 						  <tr>
 						    <th>Date</th>
 						    <td><input class="datepicker datepicker form-control random" id="id_date" name="date" type="text" /><span class="glyphicon glyphicon-calendar">
-						    </td> 
+						    </td>
 						  </tr>
 						  <tr>
 						    <th>Name</th>
 						    <td><input class="required form-control random" id="id_name_cont" maxlength="50" name="name_cont" type="text" />
-						    </td> 
+						    </td>
 						  </tr>
 				     	  <tr>
 						    <th>Name of PI (group leader)</th>
-						    <td><input class="form-control random" id="id_pi_name" maxlength="50" name="pi_name" type="text" /></td> 
+						    <td><input class="form-control random" id="id_pi_name" maxlength="50" name="pi_name" type="text" /></td>
 						  </tr>
 						  <tr>
 						    <th>PI contact e-mail address</th>
-						    <td><input class="form-control random" id="id_pi_email" maxlength="50" name="pi_email" type="email" /></td> 
+						    <td><input class="form-control random" id="id_pi_email" maxlength="50" name="pi_email" type="email" /></td>
 						  </tr>
 					     <tr>
 						    <th>Affiliation address</th>
@@ -698,13 +698,13 @@ select.optional option{
 					     </tr>
 					     <tr>
 						    <th>Database group/URL</th>
-						    <td><input class="opt optional form-control form-control row_id" id="id_url" name="url" type="text" value="http://Database/" /><span name="url_add" type="button" id="remove_db" class="hidetext btn btn-danger btn-xs delrow delrow_db glyphicon glyphicon glyphicon-remove row_id"></span></td> 
-						 </tr>      
+						    <td><input class="opt optional form-control form-control row_id" id="id_url" name="url" type="text" value="http://Database/" /><span name="url_add" type="button" id="remove_db" class="hidetext btn btn-danger btn-xs delrow delrow_db glyphicon glyphicon glyphicon-remove row_id"></span></td>
+						 </tr>
 					</table>
-					<br>		    	
-					
+					<br>
+
 				</div>
-		    </td> 
+		    </td>
 
 			<td style="vertical-align: top" class="left_border_contact">
 				<div id="construct_crystal_div" class="construct_crystal col-md-12 panel panel-primary">
@@ -712,7 +712,7 @@ select.optional option{
 					<table style="table-layout: fixed" style="width:100%"  id="construct">
 						  <tr>
 						    <th>PDB code</th>
-						    <td><input class="form-control random" id="id_pdb" placeholder="e.g.2RH1" maxlength="50" name="pdb" type="text" /></td> 
+						    <td><input class="form-control random" id="id_pdb" placeholder="e.g.2RH1" maxlength="50" name="pdb" type="text" /></td>
 						  </tr>
 			              <tr>
 						    <th>Name</th>
@@ -724,7 +724,7 @@ select.optional option{
 						  </tr>
 						   <tr>
 						    <th>Ligand Name</th>
-						    <td><input class="form-control random" id="id_ligand_name" maxlength="50" name="ligand_name" type="text"/></td> 
+						    <td><input class="form-control random" id="id_ligand_name" maxlength="50" name="ligand_name" type="text"/></td>
 						 </tr>
 						 <tr>
 						    <th>Ligand activity type</th>
@@ -738,7 +738,7 @@ select.optional option{
 								<option value="agonist-partial">Agonist (partial)</option>
 								<option value="pam">PAM</option>
 								<option value="inverse-agonist-partial">Inverse Agonist (partial)</option>
-								<option value="binding-unknown-pharmacological-activity">Binding-unknown pharmacological activity</option>
+								<option value="binding-unknown-pharmacological-activity">Binding</option>
 								<option value="negative-allosteric-modulator-noncompetitive-antagonist">Negative allosteric modulator - Non Competitive Antagonist</option>
 								<option value="positive-allosteric-modulator">Positive allosteric modulator</option>
 								<option value="positive-ago-allosteric-modulator">Positive ago-allosteric modulator</option>
@@ -768,87 +768,17 @@ select.optional option{
 						 </tr>
 						 <tr>
 						    <th>Ligand ID</th>
-						    <td><input class="form-control " id="id_ligand_id" maxlength="50" name="ligand_id" type="text"/></td> 
+						    <td><input class="form-control " id="id_ligand_id" maxlength="50" name="ligand_id" type="text"/></td>
 						 </tr>
 						 <tr>
 						    <th>Ligand Concentration</th>
-						    <td><input class="half form-control random optional" id="id_ligand_conc" maxlength="50" name="ligand_conc" placeholder="value" type="text" /><input class="unit form-control random optional" id="id_ligand_conc_unit" name="ligand_conc_unit" placeholder="unit i.e.%w/v" type="text" /></td> 
-						 </tr>      
-			        </table>   
+						    <td><input class="half form-control random optional" id="id_ligand_conc" maxlength="50" name="ligand_conc" placeholder="value" type="text" /><input class="unit form-control random optional" id="id_ligand_conc_unit" name="ligand_conc_unit" placeholder="unit i.e.%w/v" type="text" /></td>
+						 </tr>
+			        </table>
 				</div>
 			</td>
-
-			<!-- <td style="vertical-align: top" class="left_border_contact">
-				<div id="construct_crystal_div" class="construct_crystal col-md-12 panel panel-primary">
-					<h2>Complexed Ligand</h2> <br>
-					<table style="table-layout: fixed" style="width:100%"  id="construct">
-						  <tr>
-						    <th>PDB code</th>
-						    <td><input class="form-control random" id="id_pdb" placeholder="e.g.2RH1" maxlength="50" name="pdb" type="text" /></td> 
-						  </tr>
-			              <tr>
-						    <th>Name</th>
-						    <td><input class="form-control random" id="id_pdb_name" maxlength="50" placeholder="e.g.Rhodopsin" name="pdb_name" type="text"/></td>
-						  </tr>
-		                  <tr>
-						    <th ><a href="http://www.uniprot.org/">Protein name or ID (Uniprot)</a></th>
-						    <td><input placeholder="e.g.OPSD_HUMAN or P08100 "  class="form-control random" id="id_uniprot" maxlength="50" name="uniprot" type="text"/></td>
-						  </tr>
-						   <tr>
-						    <th>Ligand Name</th>
-						    <td><input class="form-control random" id="id_ligand_name" maxlength="50" name="ligand_name" type="text"/></td> 
-						 </tr>
-						 <tr>
-						    <th>Ligand activity type</th>
-						    <td><select class="form-control custom_select" id="id_ligand_activity" name="ligand_activity">
-								<option value="">Please Select</option>
-								<option value="agonist">Agonist</option>
-								<option value="antagonist">Antagonist</option>
-								<option value="nam">NAM</option>
-								<option value="inverse agonist">Inverse Agonist</option>
-								<option value="unknown">Unknown</option>
-								<option value="agonist-partial">Agonist (partial)</option>
-								<option value="pam">PAM</option>
-								<option value="inverse-agonist-partial">Inverse Agonist (partial)</option>
-								<option value="binding-unknown-pharmacological-activity">Binding-unknown pharmacological activity</option>
-								<option value="negative-allosteric-modulator-noncompetitive-antagonist">Negative allosteric modulator - Non Competitive Antagonist</option>
-								<option value="positive-allosteric-modulator">Positive allosteric modulator</option>
-								<option value="positive-ago-allosteric-modulator">Positive ago-allosteric modulator</option>
-								<option value="allosteric-agonist">Allosteric agonist</option>
-								<option value="full-agonist">Full agonist</option>
-								<option value="antagonist-neutralsilent">Antagonist(neutral/silent)</option>
-								<option value="other">Other</option>
-						    </select><br>
-						<input class="hidetext ligand_act_oth form-control random" id="id_ligand_act_oth" name="other_lig_act" placeholder="please insert" type="text"/></td>
-						 </tr>
-						 <tr>
-						    <th>Ligand ID Type</th>
-						    <td>
-						    <select class="form-control custom_select	" id="id_ligand_id_type" name="ligand_id_type">
-								<option value="">Please Select</option>
-								<option value="PubChem CID">PubChem CID</option>
-								<option value="ChEMBL Compound ID">ChEMBL Compound ID</option>
-								<option value="SMILES">SMILES</option>
-								<option value="FASTA sequence (peptide)">FASTA sequence (peptide)</option>
-								<option value="UniProt Entry Code (peptide)">UniProt Entry Code (peptide)</option>
-								<option value="Other">Other</option>
-						    </select><span class="help-tip"><p>PubChem CID:description<br>ChEMBL Compound ID:description<br>SMILES:description<br>FASTA sequence (peptide):description<br>UniProt Entry Code (peptide):description</p></span><br>
-						    <input class="hidetext other_ligand form-control random" id="id_ligandidother" name="other_lig_id" placeholder="please insert" type="text"/>
-						</td>
-						 </tr>
-						 <tr>
-						    <th>Ligand ID</th>
-						    <td><input class="form-control " id="id_ligand_id" maxlength="50" name="ligand_id" type="text"/></td> 
-						 </tr>
-						 <tr>
-						    <th>Ligand Concentration</th>
-						    <td><input class="half form-control random optional" id="id_ligand_conc" maxlength="50" name="ligand_conc" placeholder="value" type="text" /><input class="unit form-control random optional" id="id_ligand_conc_unit" name="ligand_conc_unit" placeholder="unit i.e.%w/v" type="text" /></td> 
-						 </tr>      
-			        </table>   
-				</div>
-			</td> -->
 		</table>
-<br><br><br>   
+<br><br><br>
 		<div id="hintbox"></div>
 		<table class="table_2" id="table_2">
 			<tr><td colspan="3">
@@ -864,7 +794,7 @@ select.optional option{
 						    <th>Sorted position</th>
 						    <td class="hidetext">
 									<input class="form-control optional col_id" id="sort_pos" name="sort_pos" placeholder="number" type="text" />
-							</td> 
+							</td>
 						   </tr>
 						   <tr>
 						    <th>Position in construct</th>
@@ -874,10 +804,10 @@ select.optional option{
 									<option value="Within Receptor">Within Receptor</option>
 									<option name="C-term" value="C-term">C-term</option>
 							    </select>
-							</td> 
+							</td>
 						   </tr>
-						   <tr> 	
-						    <th>Protein Type</th>	    		 
+						   <tr>
+						    <th>Protein Type</th>
 						    <td class="hidetext"><select class="custom_select form-control protein_type col_id" id="id_protein_type" name="protein_type">
 									<option value="" >Please select Type</option>
 									<option value="fusion">Fusion Protein</option>
@@ -886,10 +816,10 @@ select.optional option{
 									<option value="linker">Linker sequence</option>
 									<option value="prot_cleavage">Proteolytic Cleavage site</option>
 								</select>
-							</td> 
+							</td>
 						   </tr>
-						   <tr> 	
-							    <th>Protein ID</th>	    		 
+						   <tr>
+							    <th>Protein ID</th>
 							    <td class="hidetext">
 							    	<select class="custom_select optional form-control protein_id_type col_id" id="id_protein_id_type" name="protein_id_type">
 										<option value="" >Please select ID Type</option>
@@ -901,9 +831,9 @@ select.optional option{
 							    <th> </th>
 							    <td class="hidetext">
 									<input class="form-control optional protein_id col_id" id="id_protein_id" name="protein_id" placeholder="id" type="text" />
-								</td> 
+								</td>
 						   </tr>
-						   <tr> 
+						   <tr>
 						    <th class="sub_type hidetext">Subprotein Type</th>
 						    <td class="hidetext"><select class="custom_select form-control prot_type fusion hidetext col_id" id="id_fusion_prot" name="fusion_prot">
 									<option value=''>Please Select</option>
@@ -948,9 +878,9 @@ select.optional option{
 									<option value="YFP">YFP</option>
 									<option value="Luciferase">Luficerase</option>
 									<option value="SNAP tag">SNAP tag</option>
-									<option value="Flash tag">Flash tag</option>						
+									<option value="Flash tag">Flash tag</option>
 									<option value="Other">Other</option>
-								</select> 
+								</select>
 								<input class="form-control prot_type linker hidetext col_id" id="id_linker_seq" maxlength="50" name="linker_seq" placeholder="Please input sequence" type="text" />
   								<select class="custom_select form-control prot_type prot_cleavage hidetext col_id" id="id_prot_cleavage" name="prot_cleavage">
 									<option value="">Please Select</option>
@@ -963,13 +893,13 @@ select.optional option{
 								</select>
 								<br class="hidetext prot_type other_signal col_id">
 								<input class="form-control hidetext prot_type others other_signal col_id" id="id_other_signal" name="other_signal" placeholder="insert signal" type="text" />
-								<br class="hidetext prot_type other_tag col_id"> 
+								<br class="hidetext prot_type other_tag col_id">
 								<input class="form-control hidetext prot_type others other_tag col_id" id="id_other_tag" name="other_tag" placeholder="insert tag" type="text" />
 								<br class="hidetext prot_type other_prot col_id">
 								<input class="form-control hidetext others prot_type other_prot col_id" id="id_other_prot_cleavage" name="other_prot_cleavage" placeholder="insert cleavage site" type="text" />
 								<br class="hidetext prot_type other_fusion col_id">
 								<input class="form-control hidetext others prot_type other_fusion col_id" id="id_other_fusion" name="other_prot_cleavage" type="text" hinttext="Please add both identifier and sequence" />
-						    </td> 
+						    </td>
 						   </tr>
 						  <tr>
 						     <th class="hidetext within_receptor_th"> Position of insert in receptor</th>
@@ -981,12 +911,12 @@ select.optional option{
 								 </select>
 								 <input class="form-control with_rec_val hidetext ins_pos_type numeric to_change ins_single custom_single col_id" id="id_insert_pos_single" name="insert_pos_single" placeholder="pos" type="text" />
 								 <input class="form-control with_rec_val hidetext ins_start ins_pos_type ins_range custom_range col_id" id="id_ins_start" name="ins_start" placeholder="pos" type="text" />
-								 <label class="with_rec_val ins_pos_type ins_range hidetext col_id">-</label> 
+								 <label class="with_rec_val ins_pos_type ins_range hidetext col_id">-</label>
 								 <input class="form-control with_rec_val hidetext ins_end ins_pos_type ins_range custom_range col_id" id="id_ins_end" name="ins_end" placeholder="pos" type="text" />
-							</td> 
+							</td>
 						  </tr>
-					      <tr> 
-						    <th>Present in Crystallization Construct</th> 
+					      <tr>
+						    <th>Present in Crystallization Construct</th>
 				 		    <td class="hidetext"><select class="custom_select form-control col_id col_id" id="id_presence" name="presence">
 									<option value="">Please Select</option>
 									<option value="YES">YES</option>
@@ -994,8 +924,8 @@ select.optional option{
 								</select>
 							</td>
 						  </tr>
-						   <tr> 
-						    <th>Present in Expression Construct</th> 
+						   <tr>
+						    <th>Present in Expression Construct</th>
 				 		    <td class="hidetext"><select class="optional custom_select form-control col_id col_id" id="id_presence_expr" name="presence_expr">
 									<option value="">Please Select</option>
 									<option value="YES">YES</option>
@@ -1003,8 +933,8 @@ select.optional option{
 								</select>
 							</td>
 						  </tr>
-				 		  <tr> 
-						    <th></th> 
+				 		  <tr>
+						    <th></th>
 				 		    <td class="hidetext" align="center"><span type="button" id="remove_button" class="btn btn-danger btn-xs hidetext delcol glyphicon glyphicon glyphicon-remove col_id"></span></td>
 						 </tr>
 				    </table>
@@ -1019,7 +949,7 @@ select.optional option{
 		                <table id="deletions">
 							<tr>
 			              	<th style="text-align:center">Deletion</th>
-						    <th style="text-align:center">Deletion position</th>   
+						    <th style="text-align:center">Deletion position</th>
 						    </tr>
 						    <tr class="hidetext">
 						   	<td><select class="form-control deletion_type half row_id" id="id_deletion" name="deletion">
@@ -1029,11 +959,11 @@ select.optional option{
 								</select>
 							</td>
 						    <td><input class="numeric form-control hidetext del_single numeric del_type row_id" id="id_deletion_single" name="deletion_single" placeholder="position" type="text"/><input class="numeric form-control delet_range hidetext del_range del_type row_id" id="id_delet_start" name="delet_start" placeholder="start" type="text" />
-						    	<label class="del_type hidetext del_range row_id"> 
+						    	<label class="del_type hidetext del_range row_id">
 						    	-</label>
 						    	<input class="numeric form-control delet_range hidetext del_range del_type row_id" id="id_delet_end" name="delet_end" placeholder="end" type="text"/>
 						    	<span id="del_deletions" type="button"  class="btn btn-danger btn-xs hidetext del_delrow delrow glyphicon glyphicon-remove row_id"></span>
-						    </td> 
+						    </td>
 						    </tr>
 						</table>
 					</div>
@@ -1047,14 +977,14 @@ select.optional option{
 			                  <tr>
 							    <th>Res No.</th>
 							    <th>WT AA</th>
-							    <th>Mutant AA</th> 
-							    <th>Effect</th> 
-							    <th>Remark</th> 
-							    <th></th> 
-							  </tr>     
+							    <th>Mutant AA</th>
+							    <th>Effect</th>
+							    <th>Remark</th>
+							    <th></th>
+							  </tr>
 			                  <tr class="hidetext">
 							    <td><input class="form-control numeric second_table row_id" id="id_aa_no" maxlength="50" name="aa_no" type="text" />
-							    </td> 
+							    </td>
 							    <td><select class="form-control wild mut row_id" id="id_wt_aa" name="wt_aa">
 							    		<option value="">---</option>
 										<option value="A">A</option>
@@ -1119,9 +1049,9 @@ select.optional option{
 					            	<input class="optional form-control second_table row_id" id="id_mut_remark" maxlength="300" name="mut_remark" type="text" />
 							    </td>
 					            <td><span id="del_mut" type="button"  class="btn btn-danger btn-xs hidetext mut_delrow delrow glyphicon glyphicon-remove row_id"></span>
-					            </td> 
-						      </tr>             
-					    </table>    
+					            </td>
+						      </tr>
+					    </table>
 					</div>
 				</td>
 				<td class="mod_3 left_border">
@@ -1157,11 +1087,11 @@ select.optional option{
 									<input class="form-control hidetext aa_type custom_range range row_id" id="id_aamod_start" maxlength="50" name="aamod_start" placeholder="pos" type="text" />
 									<label id="mod_minus"  class="aa_type hidetext range row_id">-</label>
 									<input class="form-control hidetext aa_type custom_range range row_id" id="id_aamod_end" maxlength="50" name="aamod_end" placeholder="pos" type="text" />
-								</td> 
+								</td>
 							    <td><textarea class="form-control modremark modremark row_id" cols="40" id="id_mod_remark" name="mod_remark" rows="10"></textarea>
 							    </td>
 							    <td><span id='del_mod' type="button" class='btn btn-danger btn-xs glyphicon glyphicon-remove hidetext mod_delrow delrow row_id'/></td>
-							  </tr>  
+							  </tr>
 						</table>
 					</div>
 				</td>
@@ -1230,11 +1160,11 @@ select.optional option{
 										<option value="Other [In case of E.Coli or Yeast recombinant expression]">Other [In case of E.Coli or Yeast recombinant expression]</option>
 									</select><br>
 									<input class="form-control hidetext other_expr" id="other_expr_method" name="expr_other" placeholder="please insert" type="text" />
-								</td>        
+								</td>
 						     </tr>
 						       <tr>
 							    <th>Expression time</th>
-							    <td><input class="form-control random optional" id="id_expr_time" maxlength="50" name="time_expr" type="text" /></td> 
+							    <td><input class="form-control random optional" id="id_expr_time" maxlength="50" name="time_expr" type="text" /></td>
 							 </tr>
 			                 <tr>
 						        <th>Remark</th>
@@ -1263,20 +1193,20 @@ select.optional option{
 								</td>
 							    <td><input class="form-control half random" id="id_deterg_concentr" maxlength="50" name="deterg_concentr" placeholder="value" type="text"/><input class="form-control unit random" id="id_deterg_concentr_unit" maxlength="50" name="deterg_concentr_unit" placeholder="unit i.e.% w/v" type="text" />
 							    <span type="button" id="add_deterg" name="det_button" class="btn btn-info btn-xs glyphicon glyphicon-plus add_deterg row_id"></span><span type="button" id='del_deterg' class='btn btn-xs btn-danger glyphicon glyphicon-remove  hidetext deterg_delrow delrow row_id'/></span>
-							    </td> 
+							    </td>
 						     </tr>
-						  </table> 
+						  </table>
 						  <table  style="table-layout: fixed"  id="solubil_purif">
 			                 <tr>
-							    
+
 							 </tr>
 			                 <tr>
 							    <th>Solubilization additive</th>
-							    <td><input class="form-control random" id="id_solub_additive" maxlength="50" name="solub_additive" type="text" /></td> 
+							    <td><input class="form-control random" id="id_solub_additive" maxlength="50" name="solub_additive" type="text" /></td>
 							 </tr>
 			                 <tr>
 							    <th>Additive concentration</th>
-							    <td><input class="form-control half random" id="id_additive_concentr" maxlength="50" name="additive_concentr" placeholder="value" type="text" /><input class="form-control unit random" id="id_addit_concentr_unit" maxlength="50" name="addit_concentr_unit" placeholder="unit i.e.:% w/v" type="text" /></td> 
+							    <td><input class="form-control half random" id="id_additive_concentr" maxlength="50" name="additive_concentr" placeholder="value" type="text" /><input class="form-control unit random" id="id_addit_concentr_unit" maxlength="50" name="addit_concentr_unit" placeholder="unit i.e.:% w/v" type="text" /></td>
 							 </tr>
 			                 <tr class="last">
 							    <th>Chemical/Enzymatic treatment</th>
@@ -1339,11 +1269,11 @@ select.optional option{
 			                 <tr>
 							    <th>Protein concentration</th>
 							    <td><input class="half form-control random" id="id_protein_concentr" maxlength="50" name="protein_concentr" placeholder="value" type="text" /><input class="unit form-control random" id="id_protein_conc_unit" maxlength="50" name="protein_conc_unit" placeholder="unit i.e.mg/ml" type="text" />
-							    </td> 
+							    </td>
 							 </tr>
 			                 <tr>
 							    <th>Temperature</th>
-							    <td><input class="form-control random" id="id_temperature" maxlength="50" name="temperature" placeholder="°C" type="numberzzz"/></td> 
+							    <td><input class="form-control random" id="id_temperature" maxlength="50" name="temperature" placeholder="°C" type="numberzzz"/></td>
 							 </tr>
 			                 <tr>
 							    <th>pH</th>
@@ -1356,7 +1286,7 @@ select.optional option{
 							</tr>
 			                 <tr>
 						        <th>Remark</th>
-						        <td><textarea class="form-control random" cols="40" id="id_crystal_remark" name="crystal_remark" rows="10"></textarea>  
+						        <td><textarea class="form-control random" cols="40" id="id_crystal_remark" name="crystal_remark" rows="10"></textarea>
 								</td>
 					          </tr>
 			                 <tr class="hidetext lcp">
@@ -1383,11 +1313,11 @@ select.optional option{
 						     </tr>
 			                 <tr>
 							    <th class="lcp hidetext">LCP Lipid additive</th>
-							    <td><input class="lcp hidetext form-control random" id="id_lcp_add" maxlength="50" name="lcp_add" type="text" /></td> 
+							    <td><input class="lcp hidetext form-control random" id="id_lcp_add" maxlength="50" name="lcp_add" type="text" /></td>
 							 </tr>
 			                 <tr>
 							    <th class="lcp hidetext">LCP Lipid additive concentration</th>
-							    <td><input class="lcp hidetext half form-control random" id="id_lcp_conc" maxlength="50" name="lcp_conc" placeholder="value" type="text" /><input class="lcp hidetext unit form-control random" id="id_lcp_conc_unit" maxlength="50" name="lcp_conc_unit" placeholder="unit" type="text"/></td> 
+							    <td><input class="lcp hidetext half form-control random" id="id_lcp_conc" maxlength="50" name="lcp_conc" placeholder="value" type="text" /><input class="lcp hidetext unit form-control random" id="id_lcp_conc_unit" maxlength="50" name="lcp_conc_unit" placeholder="unit" type="text"/></td>
 							 </tr>
 							 <tr>
 							    <th>Detergent</th>
@@ -1422,13 +1352,13 @@ select.optional option{
 										<option value="other [See next field]">other [See next field]</option>
 									</select><br>
 									<input class="optional opt hidetext other_det form-control random" id="id_other_deterg" maxlength="50" name="other_deterg" placeholder="insert detergent" type="text"/>
-							    </td> 
+							    </td>
 							 </tr>
 							 <tr>
 							    <th>Detergent Concentration</th>
 							    <td><input class="opt optional half form-control random" id="id_deterg_conc" maxlength="50" name="deterg_conc" placeholder="value" type="text"/><input class="opt optional unit form-control random" id="id_deterg_conc_unit" maxlength="50" name="deterg_conc_unit" placeholder="unit i.e.%w/v" type="text"/>
-							    </td> 
-							 </tr>	                 
+							    </td>
+							 </tr>
 			                 <tr>
 							    <th>Lipid</th>
 							    <td><select class="optional form-control random" id="id_lipid" name="lipid">
@@ -1448,12 +1378,12 @@ select.optional option{
 										<option value="other [See next field]">other [See next field]</option>
 									</select><br>
 									<input class="opt optional hidetext other_lipid form-control random" id="id_other_lipid" maxlength="50" name="other_lipid" placeholder="insert lipid" type="text"/>
-								</td> 
+								</td>
 							 </tr>
 							 <tr>
 							    <th>Lipid Concentration</th>
 							    <td><input class="opt optional half form-control random" id="id_lipid_concentr" maxlength="50" name="lipid_concentr" placeholder="value" type="text" /><input class="opt optional unit form-control random" id="id_lipid_concentr_unit" maxlength="50" name="lipid_concentr_unit" placeholder="unit i.e.%w/v" type="text"/>
-							    </td> 
+							    </td>
 							 </tr>
 						</table> <br>
 						<input  type="button" value="Add Component" id="add_chem" onclick="addRow('chem_comp')"  class="button btn btn-primary "/>
@@ -1478,9 +1408,9 @@ select.optional option{
 									</select>
 							    </td>
 							    <td><input type="search" class="form-control half half row_id" id="id_concentr" maxlength="50" name="concentr" placeholder="value" type="text" /><input class="form-control unit unit row_id" id="id_concentr_unit" maxlength="50" name="concentr_unit" placeholder="unit" type="text" />
-							    </td> 
+							    </td>
 							    <td><span id='chem_delrow' type="button" class='btn btn-danger btn-xs glyphicon glyphicon-remove hidetext chem_delrow delrow row_id'/>
-							    </td> 
+							    </td>
 							 </tr>
 						</table>
 						<br><br>

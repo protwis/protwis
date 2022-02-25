@@ -15,7 +15,6 @@ class Protein(models.Model):
     residue_numbering_scheme = models.ForeignKey('residue.ResidueNumberingScheme', on_delete=models.CASCADE, null=True)
     sequence_type = models.ForeignKey('ProteinSequenceType', on_delete=models.CASCADE)
     states = models.ManyToManyField('ProteinState', through='ProteinConformation')
-    endogenous_ligands = models.ManyToManyField('ligand.Ligand')
     web_links = models.ManyToManyField('common.WebLink')
     entry_name = models.SlugField(max_length=100, unique=True)
     accession = models.CharField(max_length=100, db_index=True, null=True)

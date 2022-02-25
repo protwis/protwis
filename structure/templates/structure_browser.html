@@ -279,10 +279,10 @@
                         <!-- Endogenous ligand -->
                         <td class='expand'>
                             {% autoescape off %}
-                                {{ structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat }}
+                              {{ structure.protein_conformation.protein.parent.endogenous_gtp_set.all | endo_format }}
                             {% endautoescape %}
                         </td>
-                        <td>{{ structure.protein_conformation.protein.parent.endogenous_ligands.all.0.ligand_type|dashwhenempty }}</td>
+                        <td>{{ structure.protein_conformation.protein.parent.endogenous_gtp_set.all.0.ligand.ligand_type|dashwhenempty }}</td>
                         <!-- Sodium ion site -->
                         <td>
                             {% if structure.protein_conformation.is_sodium %}

@@ -51,7 +51,6 @@ class Command(BaseCommand):
             ['build_links'],
             ['build_construct_proteins'],
             ['build_structures', {'proc': safe_proc_num, 'skip_cn': options['test']}],
-            ['build_endogenous_ligands'],
             ['build_consensus_sequences', {'proc': options['proc']}],
             ['build_g_proteins'],
             ['build_consensus_sequences', {'proc': options['proc'], 'signprot': 'Alpha'}],

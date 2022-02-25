@@ -5,6 +5,7 @@ from django.utils.text import slugify
 from django.db import IntegrityError
 
 from build.management.commands.base_build import Command as BaseBuild
+from build.management.commands.build_ligand_functions import get_or_create_ligand, match_id_via_unichem
 from protein.models import (Protein, ProteinConformation, ProteinState, ProteinAnomaly, ProteinAnomalyType,
     ProteinSegment)
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme, Residue, ResidueGenericNumberEquivalent
@@ -21,7 +22,7 @@ from Bio import pairwise2
 
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.functions import StructureBuildCheck, ParseStructureCSV
-from ligand.models import Ligand, LigandType, LigandRole, LigandProperities, LigandPeptideStructure
+from ligand.models import Ligand, LigandType, LigandRole, LigandPeptideStructure
 from interaction.models import *
 from interaction.views import runcalculation,parsecalculation
 from residue.functions import dgn
@@ -31,6 +32,7 @@ import os
 import re
 import yaml
 import time
+import gc
 from collections import OrderedDict
 import json
 from urllib.request import urlopen
@@ -131,7 +133,7 @@ class Command(BaseBuild):
         self.parsed_structures.parse_ligands()
         self.parsed_structures.parse_nanobodies()
         self.parsed_structures.parse_fusion_proteins()
-        
+
         if options['structure']:
             self.parsed_structures.pdb_ids = [i for i in self.parsed_structures.pdb_ids if i in options['structure'] or i.lower() in options['structure']]
 
@@ -154,6 +156,23 @@ class Command(BaseBuild):
             print(msg)
             self.logger.error(msg)
 
+    @staticmethod
+    def queryset_iterator(qs, batchsize = 5000, gc_collect = True):
+        # See https://www.guguweb.com/2020/03/27/optimize-django-memory-usage/
+        iterator = qs.values_list('pk', flat=True).order_by('pk').distinct().iterator()
+        eof = False
+        while not eof:
+            primary_key_buffer = []
+            try:
+                while len(primary_key_buffer) < batchsize:
+                    primary_key_buffer.append(iterator.__next__())
+            except StopIteration:
+                eof = True
+            for obj in qs.filter(pk__in=primary_key_buffer).order_by('pk').iterator():
+                yield obj
+            if gc_collect:
+                gc.collect()
+
     def purge_structures(self):
         Structure.objects.all().delete()
         ResidueFragmentInteraction.objects.all().delete()
@@ -162,6 +181,11 @@ class Command(BaseBuild):
         #Remove previous Rotamers/Residues to prepare repopulate
         Fragment.objects.all().delete()
         Rotamer.objects.all().delete()
+
+        # FOR DEBUGGING - using queryset_iterator as otherwise the
+        # memory was exceeded when deleting >300K PDBs simultaneously
+        #for obj in self.queryset_iterator(PdbData.objects.all()):
+        #    obj.delete()
         PdbData.objects.all().delete()
 
     def create_rotamers(self, structure, pdb_path,d):
@@ -1352,65 +1376,48 @@ class Command(BaseBuild):
                             lt, created = LigandType.objects.get_or_create(
                                 slug=slugify(default_ligand_type), defaults={'name': default_ligand_type})
                         # set pdb reference for structure-ligand interaction
-                        if ligand['type'] in ['peptide','protein']:
-                            pdb_reference = 'pep'
-                            db_lig = Ligand.objects.filter(name=ligand['title'])
+                        # if ligand['type'] in ['peptide','protein']:
+                        #     pdb_reference = 'pep'
+                        #     db_lig = Ligand.objects.filter(name=ligand['title'])
+                        # else:
+                        #     pdb_reference = ligand['name']
+                        #     if ligand['name']=='RET':
+                        #         db_lig = Ligand.objects.filter(name=ligand['title'])
+                        #     else:
+                        #         db_lig = Ligand.objects.filter(pdbe=ligand['name'])
+                        #
+                        # # check if ligand exists already
+                        # if len(db_lig)>0:
+                        #     l = db_lig[0]
+                        # else:
+                        # use ligand title, if specified
+                        if 'title' in ligand and ligand['title']:
+                            ligand_title = ligand['title']
                         else:
-                            pdb_reference = ligand['name']
-                            if ligand['name']=='RET':
-                                db_lig = Ligand.objects.filter(name=ligand['title'])
-                            else:
-                                db_lig = Ligand.objects.filter(pdbe=ligand['name'])
+                            ligand_title = ligand['name']
 
-                        # check if ligand exists already
-                        if len(db_lig)>0:
-                            l = db_lig[0]
-                        else:
-                            # use pubchem_id
-                            if 'pubchemId' in ligand and ligand['pubchemId'] and ligand['pubchemId'] != 'None':
-                                # create ligand
-                                l = Ligand()
+                        # Adding the PDB three-letter code
+                        ids = {}
+                        pdb_reference = ligand['name']
+                        if ligand['name'] != "pep" and ligand['name'] != "apo":
+                            ids["pdb"] = ligand['name']
 
+                        # use pubchem_id
+                        if 'pubchemId' in ligand and ligand['pubchemId'] and ligand['pubchemId'] != 'None':
+                            ids["pubchem"] = ligand['pubchemId']
+                        elif "pdb" in ids:
+                            # match PDB via UniChem
+                            uc_entries = match_id_via_unichem("pdb", ids["pdb"])
+                            print("UNICHEM matching", ids["pdb"])
+                            for entry in uc_entries:
+                                if entry["type"] not in ids:
+                                    ids[entry["type"]] = entry["id"]
 
-                                # update ligand by pubchem id
-                                ligand_title = False
-                                if 'title' in ligand and ligand['title']:
-                                    ligand_title = ligand['title']
-                                else:
-                                    ligand_title = ligand['name']
-                                l = l.load_from_pubchem('cid', ligand['pubchemId'], lt, ligand_title, pdbe=pdb_reference)
-                                l.save()
+                        l = get_or_create_ligand(ligand_title, ids, ligand['type'])
 
-
-                            # if no pubchem id is specified, use name
-                            else:
-                                # use ligand title, if specified
-                                if 'title' in ligand and ligand['title']:
-                                    ligand_title = ligand['title']
-                                else:
-                                    ligand_title = ligand['name']
-
-                                # create empty properties
-                                lp = LigandProperities.objects.create()
-                                lp.ligand_type = lt
-                                lp.save()
-                                # create the ligand
-                                try:
-                                    l, created = Ligand.objects.get_or_create(name=ligand_title, canonical=True, pdbe=ligand['name'],
-                                        defaults={'properities': lp, 'ambigious_alias': False})
-                                    if created:
-                                        self.logger.info('Created ligand {}'.format(ligand['name']))
-                                    else:
-                                        pass
-                                except:
-                                    l = Ligand.objects.get(name=ligand_title, canonical=True)
-
-                                # save ligand
-                                l.save()
                         # Create LigandPeptideStructure object to store chain ID for peptide ligands - supposed to b TEMP
                         if ligand['type'] in ['peptide','protein']:
                             lps, created = LigandPeptideStructure.objects.get_or_create(structure=s, ligand=l, chain=peptide_chain)
-
                     else:
                         continue
 

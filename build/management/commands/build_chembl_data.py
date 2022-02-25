@@ -62,7 +62,7 @@ class Command(BaseBuild):
     @staticmethod
     def build_chembl_ligands():
         print("\n===============\n#1 Reading ChEMBL ligand data", datetime.datetime.now())
-        ligand_input_file = os.sep.join([settings.DATA_DIR, "ligand_data", "assay_data", "chembl_cpds.csv"])
+        ligand_input_file = os.sep.join([settings.DATA_DIR, "ligand_data", "assay_data", "chembl_cpds.csv.gz"])
         ligand_data = pd.read_csv(ligand_input_file, keep_default_na=False)
         for column in ligand_data:
             ligand_data[column] = ligand_data[column].replace({"":None})
@@ -213,7 +213,7 @@ class Command(BaseBuild):
     def build_chembl_bioactivities():
         AssayExperiment.objects.all().delete()
         print("\n===============\n#1 Reading ChEMBL bioacitivity data")
-        bioactivity_input_file = os.sep.join([settings.DATA_DIR, "ligand_data", "assay_data", "chembl_bioactivity_data.csv"])
+        bioactivity_input_file = os.sep.join([settings.DATA_DIR, "ligand_data", "assay_data", "chembl_bioactivity_data.csv.gz"])
         bioactivity_data = pd.read_csv(bioactivity_input_file, dtype=str)
         bio_entries = len(bioactivity_data)
         print("Found", bio_entries, "bioactivities", datetime.datetime.now())
@@ -256,7 +256,7 @@ class Command(BaseBuild):
     def build_pubchem_vendor_links():
         LigandVendors.objects.all().delete()
         print("\n===============\n#1 Reading and creating Vendors")
-        vendor_url = os.sep.join([settings.DATA_DIR, "ligand_data", "assay_data", "pubchem_vendor_list.csv"])
+        vendor_url = os.sep.join([settings.DATA_DIR, "ligand_data", "assay_data", "pubchem_vendor_list.csv.gz"])
         vendor_data = pd.read_csv(vendor_url, dtype=str)
         vendors = []
         for index, row in vendor_data.iterrows():
@@ -269,7 +269,7 @@ class Command(BaseBuild):
         lig_dict = {entry[1]: entry[0] for entry in ligands}
 
         print("\n#3 Creating all vendor links", datetime.datetime.now())
-        vendor_links_url = os.sep.join([settings.DATA_DIR, "ligand_data", "assay_data", "pubchem_vendor_links.csv"])
+        vendor_links_url = os.sep.join([settings.DATA_DIR, "ligand_data", "assay_data", "pubchem_vendor_links.csv.gz"])
         vendor_links_data = pd.read_csv(vendor_links_url, dtype=str)
         links = []
         for index, row in vendor_links_data.iterrows():

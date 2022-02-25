@@ -238,13 +238,11 @@
                         {% endfor %}
                     </td>
                     <td>
-                        {% for ligand in structure.2.protein_conformation.protein.parent.endogenous_ligands.all %}
-                        {{ ligand|safe }}<br />
-                        {% empty %}
-                        N/A
-                        {% endfor %}
+                        {% autoescape off %}
+                          {{ structure.2.protein_conformation.protein.parent.endogenous_gtp_set.all | endo_format }}
+                        {% endautoescape %}
                     </td>
-                    <td>{{ structure.2.protein_conformation.protein.parent.endogenous_ligands.all.0.ligand_type }}</td>
+                    <td>{{ structure.2.protein_conformation.protein.parent.endogenous_gtp_set.all.0.ligand.ligand_type|dashwhenempty }}</td>
                     <td>
                         {% for ligand in structure.2.ligands.all %}
                         {{ ligand.ligand.name|safe }}<br />

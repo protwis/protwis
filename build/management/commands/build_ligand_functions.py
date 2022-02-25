@@ -230,8 +230,10 @@ unichem_src_types_inv = {v: k for k, v in unichem_src_types.items()}
 def match_id_via_unichem(type, id):
     results = []
     cache_dir = ['unichem', 'id_match']
-    if type in unichem_src_types_inv:
-        type_id = unichem_src_types_inv[type]
+    if type in unichem_src_types_inv or type == "pdb":
+        type_id = 3 # default to PDB otherwise in list
+        if type in unichem_src_types_inv:
+            type_id = unichem_src_types_inv[type]
         unichem_url = "https://www.ebi.ac.uk/unichem/rest/src_compound_id/$index/" + type_id
         cache_dir[1] = "id_match_" + type
         unichem = fetch_from_web_api(unichem_url, id, cache_dir)

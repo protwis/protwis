@@ -8,13 +8,25 @@ register = template.Library()
 def join_attr(obj_list, attr_name, sep=', '):
     return sep.join(getattr(i, attr_name) for i in obj_list)
 
+# @register.filter
+# def lineformat ( objs ):
+#     elements = [obj.name for obj in objs]
+#     if len(elements) > 0:
+#         return ", ".join(elements)
+#     else:
+#         return '-'
+
 @register.filter
-def lineformat ( objs ):
-    elements = [obj.name for obj in objs]
+def endo_format ( objs ):
+    elements = list(set([obj.ligand.name for obj in objs]))
     if len(elements) > 0:
         return ", ".join(elements)
     else:
         return '-'
+
+@register.filter
+def create_struct_links ( objs ):
+    return ", ".join(["<a href=\"structure/" + obj.pdb_code.index + "\">" + obj.pdb_code.index + "</a>" for obj in objs])
 
 @register.filter
 def dashwhenempty (obj):

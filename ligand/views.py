@@ -1876,9 +1876,8 @@ class LigandInformationView(TemplateView):
                 return_dict[name] = dict()
                 return_dict[name]['potency_values'] = list()
                 return_dict[name]['affinity_values'] = list()
-                return_dict[name]['receptor_gtp'] = i.protein.name.split(
-                    ' ', 1)[0].split('-adrenoceptor', 1)[0].strip()
-                return_dict[name]['receptor_uniprot'] = i.protein.entry_name
+                return_dict[name]['receptor_gtp'] = i.protein.short()
+                return_dict[name]['receptor_uniprot'] = i.protein.entry_short()
                 return_dict[name]['receptor_species'] = i.protein.species.common_name
                 return_dict[name]['receptor_family'] = i.protein.family.parent.name
                 return_dict[name]['receptor_class'] = i.protein.family.parent.parent.parent.name
