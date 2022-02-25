@@ -103,7 +103,7 @@ class Command(BaseBuild):
         print('**** Stage #8: updating biased ligands using balanced reference')
         Command.update_biased_columns(subtype=True, balanced=True)
         print('**** Stage #9: updating biased ligands using balanced reference (subtype)')
-        stop = timeit.default_timer() 
+        stop = timeit.default_timer()
         print('Total Time:', stop - start)
 
     @staticmethod

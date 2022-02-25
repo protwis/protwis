@@ -800,7 +800,7 @@ Inner circle colors indicate a number of ligands:
   class_f_bal_options = {{ class_f_bal_options | safe }};
   class_t2_bal = {{ class_t2_bal | safe }};
   class_t2_bal_options = {{ class_t2_bal_options | safe }};
-  orphan = {{ orphan | safe }};
+  orphan_bal = {{ orphan_bal | safe }};
   orphan_bal_options = {{ orphan_bal_options | safe }};
   whole_dict = {{ whole_receptors|safe }};
 </script>
@@ -855,7 +855,7 @@ $(window).on("load",function() {
     draw_tree(class_c_bal, class_c_bal_options);
     draw_tree(class_f_bal, class_f_bal_options);
     draw_tree(class_t2_bal, class_t2_bal_options);
-    draw_tree(orphan, orphan_bal_options);
+    draw_tree(orphan_bal, orphan_bal_options);
     DrawCircles('class_a_bal',circles_bal, maxLeafNodeLenght,conversion,true,false);
     DrawCircles('class_b1_bal',circles_bal, maxLeafNodeLenght,conversion,true,false);
     DrawCircles('class_b2_bal',circles_bal, maxLeafNodeLenght,conversion,true,false);

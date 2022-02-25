@@ -1402,8 +1402,8 @@ class LigandStatistics(TemplateView):
                 context['class_t2_bal_options']['anchor'] = 'class_t2_bal'
                 context['orphan_bal_options'] = deepcopy(context['orphan_options'])
                 context['orphan_bal_options']['anchor'] = 'orphan_bal'
+                context['orphan_bal'] = json.dumps(orphan_data_bal)
 
-                print(context['class_a_bal_options'])
         return context
 
 # Biased pathways part
