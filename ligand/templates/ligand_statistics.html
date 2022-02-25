@@ -788,17 +788,17 @@ Inner circle colors indicate a number of ligands:
 <br />
 
 <script type="text/javascript" charset="utf-8">
-  class_a = {{ class_a | safe }};
+  class_a_bal = {{ class_a_bal | safe }};
   class_a_bal_options = {{ class_a_bal_options | safe }};
-  class_b1 = {{ class_b1 | safe }};
+  class_b1_bal = {{ class_b1_bal | safe }};
   class_b1_bal_options = {{ class_b1_bal_options | safe }};
-  class_b2 = {{ class_b2 | safe }};
+  class_b2_bal = {{ class_b2_bal | safe }};
   class_b2_bal_options = {{ class_b2_bal_options | safe }};
-  class_c = {{ class_c | safe }};
+  class_c_bal = {{ class_c_bal | safe }};
   class_c_bal_options = {{ class_c_bal_options | safe }};
-  class_f = {{ class_f | safe }};
+  class_f_bal = {{ class_f_bal | safe }};
   class_f_bal_options = {{ class_f_bal_options | safe }};
-  class_t2 = {{ class_t2 | safe }};
+  class_t2_bal = {{ class_t2_bal | safe }};
   class_t2_bal_options = {{ class_t2_bal_options | safe }};
   orphan = {{ orphan | safe }};
   orphan_bal_options = {{ orphan_bal_options | safe }};
@@ -849,12 +849,12 @@ $(window).on("load",function() {
         changeLeavesLabels("orphan_bal","IUPHAR", whole_dict);
         DrawCircles('orphan_bal',circles_bal, maxLeafNodeLenght,conversion,true,false);
     });
-    draw_tree(class_a, class_a_bal_options);
-    draw_tree(class_b1, class_b1_bal_options);
-    draw_tree(class_b2, class_b2_bal_options);
-    draw_tree(class_c, class_c_bal_options);
-    draw_tree(class_f, class_f_bal_options);
-    draw_tree(class_t2, class_t2_bal_options);
+    draw_tree(class_a_bal, class_a_bal_options);
+    draw_tree(class_b1_bal, class_b1_bal_options);
+    draw_tree(class_b2_bal, class_b2_bal_options);
+    draw_tree(class_c_bal, class_c_bal_options);
+    draw_tree(class_f_bal, class_f_bal_options);
+    draw_tree(class_t2_bal, class_t2_bal_options);
     draw_tree(orphan, orphan_bal_options);
     DrawCircles('class_a_bal',circles_bal, maxLeafNodeLenght,conversion,true,false);
     DrawCircles('class_b1_bal',circles_bal, maxLeafNodeLenght,conversion,true,false);
@@ -870,6 +870,7 @@ $(window).on("load",function() {
     $("#class_c_bal svg g").first().attr('transform', 'translate(200,200) scale(0.85,0.85) ');
     $("#orphan_bal svg g").first().attr('transform', 'translate(175,180) scale(0.85,0.85)');
     $("#orphan_svg_bal").attr('height', 360).attr('width', 360);
+
 });
 </script>
 <div id="class_a_bal" class="text-center">

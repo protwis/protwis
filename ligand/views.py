@@ -1130,7 +1130,7 @@ class LigandStatistics(TemplateView):
                     .values('receptor_id__family__parent__parent__parent__name')
                     .annotate(c=Count('ligand_id', distinct=True)))
                 assays_balanced_lig = list(BiasedData.objects
-                    .filter(pathway_biased__contains='path')
+                    .filter(pathway_biased__isnull=False)
                     .values('receptor_id__family__parent__parent__parent__name')
                     .annotate(c=Count('ligand_id', distinct=True)))
             elif self.page == 'pathway_pref':
@@ -1144,7 +1144,7 @@ class LigandStatistics(TemplateView):
                     .values('receptor_id__family__parent__parent__parent__name')
                     .annotate(c=Count('ligand_id', distinct=True)))
                 assays_balanced_lig = list(BiasedData.objects
-                    .filter(pathway_biased__contains='sub')
+                    .filter(pathway_subtype_biased__isnull=False)
                     .values('receptor_id__family__parent__parent__parent__name')
                     .annotate(c=Count('ligand_id', distinct=True)))
             for a in assays_lig:
@@ -1278,7 +1278,7 @@ class LigandStatistics(TemplateView):
                 whole_rec_dict[rec_uniprot] = [rec_iuphar.capitalize()]
 
         context["whole_receptors"] = json.dumps(whole_rec_dict)
-        
+
         if self.page == 'ligands':
             context["render"] = "not_bias"
 
@@ -1289,10 +1289,10 @@ class LigandStatistics(TemplateView):
                               "physiology_biased", "receptor_id__entry_name", "ligand_id").order_by(
                               "physiology_biased", "receptor_id__entry_name", "ligand_id").distinct(
                               "physiology_biased", "receptor_id__entry_name", "ligand_id")
-                circle_data_bal = BiasedData.objects.filter(pathway_biased__contains='path').values_list(
-                              "physiology_biased", "receptor_id__entry_name", "ligand_id").order_by(
-                              "physiology_biased", "receptor_id__entry_name", "ligand_id").distinct(
-                              "physiology_biased", "receptor_id__entry_name", "ligand_id")
+                circle_data_bal = BiasedData.objects.filter(pathway_biased__isnull=False).values_list(
+                              "pathway_biased", "receptor_id__entry_name", "ligand_id").order_by(
+                              "pathway_biased", "receptor_id__entry_name", "ligand_id").distinct(
+                              "pathway_biased", "receptor_id__entry_name", "ligand_id")
             elif self.page == 'pathway_pref':
                 context["render"] = "pathway"
                 circle_data = BiasedData.objects.filter(pathway_preferred__isnull=False).values_list(
@@ -1305,10 +1305,10 @@ class LigandStatistics(TemplateView):
                               "subtype_biased", "receptor_id__entry_name", "ligand_id").order_by(
                               "subtype_biased", "receptor_id__entry_name", "ligand_id").distinct(
                               "subtype_biased", "receptor_id__entry_name", "ligand_id")
-                circle_data_bal = BiasedData.objects.filter(pathway_biased__contains='sub').values_list(
-                              "physiology_biased", "receptor_id__entry_name", "ligand_id").order_by(
-                              "physiology_biased", "receptor_id__entry_name", "ligand_id").distinct(
-                              "physiology_biased", "receptor_id__entry_name", "ligand_id")
+                circle_data_bal = BiasedData.objects.filter(pathway_biased__isnull=False).values_list(
+                              "pathway_subtype_biased", "receptor_id__entry_name", "ligand_id").order_by(
+                              "pathway_subtype_biased", "receptor_id__entry_name", "ligand_id").distinct(
+                              "pathway_subtype_biased", "receptor_id__entry_name", "ligand_id")
 
             circles = {}
             for data in circle_data:
@@ -1360,6 +1360,7 @@ class LigandStatistics(TemplateView):
                 context['bal_ligands_by_class'] = bal_ligands
 
                 circles_bal = {}
+                # print(circle_data_bal)
                 for data in circle_data_bal:
                     if data[1].split('_')[1] == 'human':
                         key = data[1].split('_')[0].upper()
@@ -1370,7 +1371,23 @@ class LigandStatistics(TemplateView):
                         circles_bal[key][data[0]] += 1
 
                 context["circles_bal_data"] = json.dumps(circles_bal)
-                #Adding options for pathway biased plots to context
+
+                #Adding options and data for pathway biased plots to context
+                whole_class_a_bal = class_a_data.get_nodes_dict(self.page+'_bal')
+                for item in whole_class_a_bal['children']:
+                    if item['name'] == 'Orphan':
+                        orphan_data_bal = OrderedDict(
+                            [('name', ''), ('value', 3000), ('color', ''), ('children', [item])])
+                        whole_class_a_bal['children'].remove(item)
+                        break
+                context['class_a_bal'] = json.dumps(whole_class_a_bal)
+
+                context['class_b1_bal'] = json.dumps(class_b1_data.get_nodes_dict(self.page+'_bal'))
+                context['class_b2_bal'] = json.dumps(class_b2_data.get_nodes_dict(self.page+'_bal'))
+                context['class_c_bal'] = json.dumps(class_c_data.get_nodes_dict(self.page+'_bal'))
+                context['class_f_bal'] = json.dumps(class_f_data.get_nodes_dict(self.page+'_bal'))
+                context['class_t2_bal'] = json.dumps(class_t2_data.get_nodes_dict(self.page+'_bal'))
+
                 context['class_a_bal_options'] = deepcopy(context['class_a_options'])
                 context['class_a_bal_options']['anchor'] = 'class_a_bal'
                 context['class_b1_bal_options'] = deepcopy(context['class_b1_options'])
@@ -1386,6 +1403,7 @@ class LigandStatistics(TemplateView):
                 context['orphan_bal_options'] = deepcopy(context['orphan_options'])
                 context['orphan_bal_options']['anchor'] = 'orphan_bal'
 
+                print(context['class_a_bal_options'])
         return context
 
 # Biased pathways part

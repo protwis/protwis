@@ -466,6 +466,7 @@ class BiasedData(models.Model):
     subtype_biased = models.CharField(max_length=60, null=True)     #subtype biased ligands
     physiology_biased = models.CharField(max_length=60, null=True)  #biased ligands
     pathway_biased = models.CharField(max_length=60, null=True)     #balanced ligands
+    pathway_subtype_biased = models.CharField(max_length=60, null=True)     #balanced subtype ligands
 
 class BalancedLigands(models.Model):
     ligand = models.ForeignKey(Ligand, on_delete=models.CASCADE) #LINK
