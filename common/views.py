@@ -12,7 +12,7 @@ from common import definitions
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 from common.selection import SimpleSelection, Selection, SelectionItem
-from ligand.models import AssayExperiment, BiasedData
+from ligand.models import AssayExperiment, BiasedData, BalancedLigands
 from structure.models import Structure, StructureModel, StructureComplexModel
 from protein.models import Protein, ProteinFamily, ProteinSegment, Species, ProteinSource, ProteinSet, ProteinCouplings
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent, ResiduePositionSet, Residue
@@ -316,7 +316,6 @@ def getTargetTable():
 def getReferenceTable(pathway, subtype):
     cache_key = "reference_table_" + pathway + "_" + subtype
     data_table = cache.get(cache_key)
-    data_table = None
     if data_table == None:
         #get all the proteins that are in biaseddata
         biased_proteins = list(BiasedData.objects.values_list("receptor_id__entry_name").distinct())
@@ -336,10 +335,14 @@ def getReferenceTable(pathway, subtype):
 
         if subtype == 'yes':
             physio_bias = list(BiasedData.objects.filter(subtype_biased__isnull=False).values("receptor_id__family__slug").annotate(physio=Count("ligand_id", distinct=True)))
+            balanced_refs = list(BalancedLigands.objects.filter(subtype_balanced=True).values("receptor_id__family__slug").annotate(balanced=Count("ligand_id", distinct=True)))
+            path_bias = list(BiasedData.objects.filter(pathway_biased__contains="sub").values("receptor_id__family__slug").annotate(path=Count("ligand_id", distinct=True)))
         else:
             physio_bias = list(BiasedData.objects.filter(physiology_biased__isnull=False).values("receptor_id__family__slug").annotate(physio=Count("ligand_id", distinct=True)))
+            balanced_refs = list(BalancedLigands.objects.filter(subtype_balanced=False).values("receptor_id__family__slug").annotate(balanced=Count("ligand_id", distinct=True)))
+            path_bias = list(BiasedData.objects.filter(pathway_biased__contains="path").values("receptor_id__family__slug").annotate(path=Count("ligand_id", distinct=True)))
 
-        # path_bias = list(BiasedData.objects.filter(pathway_biased=True).values("receptor_id__family__slug").annotate(path=Count("ligand_id", distinct=True)))
+
         ligand_tot = {}
         for entry in totals:
             if entry['receptor_id__family__slug'] not in ligand_tot.keys():
@@ -347,9 +350,12 @@ def getReferenceTable(pathway, subtype):
         for entry in physio_bias:
             if entry['receptor_id__family__slug'] in ligand_tot.keys():
                 ligand_tot[entry['receptor_id__family__slug']].append(entry['physio'])
-        # for entry in path_bias:
-        #     if entry['receptor_id__family__slug'] in ligand_count.keys():
-        #         ligand_count[entry['receptor_id__family__slug']].append(entry['path'])
+        for entry in balanced_refs:
+            if entry['receptor_id__family__slug'] in ligand_tot.keys():
+                ligand_tot[entry['receptor_id__family__slug']].append(entry['balanced'])
+        for entry in path_bias:
+            if entry['receptor_id__family__slug'] in ligand_tot.keys():
+                ligand_tot[entry['receptor_id__family__slug']].append(entry['path'])
 
 
         if pathway == "yes":
@@ -388,9 +394,9 @@ def getReferenceTable(pathway, subtype):
                     <th class=\"text-highlight\">Receptor<br>(UniProt)</th> \
                     <th class=\"text-highlight\">Receptor<br>(GtP)</th> \
                     <th>Tested<br>(total)</th> \
+                    <th>Balanced<br>references</th> \
                     <th>Physiology<br>biased</th> \
                     <th>Pathway<br>biased</th> \
-                    <th>Balanced<br>references</th> \
                   </tr> \
                 </thead>\
                 \n \
@@ -436,6 +442,14 @@ def getReferenceTable(pathway, subtype):
                     t['biased_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_tot[t['slug']][1])
                 except IndexError:
                     t['biased_count'] = '-'
+                try:
+                    t['balanced_refs'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_tot[t['slug']][2])
+                except IndexError:
+                    t['balanced_refs'] = '-'
+                try:
+                    t['pathway_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_tot[t['slug']][3])
+                except IndexError:
+                    t['pathway_count'] = '-'
 
             if pathway == "yes":
                 data_table += "<tr> \
@@ -479,9 +493,9 @@ def getReferenceTable(pathway, subtype):
                     t['uniprot'],
                     t['iuphar'],
                     t['ligand_count'],
+                    t['balanced_refs'], #this should be t['balanced_count']
                     t['biased_count'],
-                    '-', #this should be t['pathway_count']
-                    '-', #this should be t['balanced_count']
+                    t['pathway_count'],
                 )
 
         data_table += "</tbody></table>"

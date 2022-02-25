@@ -12,6 +12,7 @@ from common.tools import fetch_from_cache, save_to_cache, fetch_from_web_api
 from common.models import WebLink, WebResource, Publication
 from protein.models import Protein, ProteinCouplings
 from ligand.models import  Ligand, LigandType, Endogenous_GTP, BiasedData
+from ligand.functions import OnTheFly
 
 import logging
 import math
@@ -86,15 +87,25 @@ class Command(BaseBuild):
     @staticmethod
     def prepare_all_data():
         start = timeit.default_timer()
-        print('**** Stage #1 : reading Excel  ****')
+        print('**** Stage #1: reading Excel  ****')
         bias_data = Command.read_excel_pandas(Command.structure_data_dir, 'Biased_ligand_single_pathway_data.xlsx')
         cell_data = Command.read_excel_pandas(Command.cell_data_dir, 'Cell_lines.xlsx')
-        print('**** Stage #2 : parsing Excel  ****')
+        print('**** Stage #2: parsing Excel  ****')
         df_from_excel = Command.convert_df_to_dict(bias_data)
-        print('**** Stage #3 : processing data  ****')
+        print('**** Stage #3: processing data  ****')
         Command.main_process(df_from_excel, cell_data)
-        print('**** Stage #4 : uploading data  ****')
-        stop = timeit.default_timer() #TO DEFINE
+        print('**** Stage #4: uploading data  ****')
+        Command.update_biased_columns()
+        print('**** Stage #5: updating physiology biased ligands')
+        Command.update_biased_columns(subtype=True)
+        print('**** Stage #6: updating physiology biased (subtypes) ligands')
+        Command.update_biased_columns(pathway=True)
+        print('**** Stage #7: updating pathway preference')
+        Command.update_biased_columns(balanced=True)
+        print('**** Stage #8: updating biased ligands using balanced reference')
+        Command.update_biased_columns(subtype=True, balanced=True)
+        print('**** Stage #9: updating biased ligands using balanced reference (subtype)')
+        stop = timeit.default_timer()
         print('Total Time:', stop - start)
 
     @staticmethod
@@ -414,3 +425,46 @@ class Command(BaseBuild):
         except:
             pub = Publication.objects.filter(web_link__index = publication_doi).first()
         return pub
+
+    @staticmethod
+    def update_biased_columns(subtype=False, pathway=False, balanced=False):
+
+        receptors = list(BiasedData.objects.all().values_list("receptor_id", flat=True).distinct())
+
+        key = 'physiology_biased'
+
+        if subtype:
+            if balanced:
+                key = 'pathway_subtype_biased'
+            else:
+                key =  'subtype_biased'
+        elif pathway:
+            key = 'pathway_preferred'
+        elif balanced:
+            key = 'pathway_biased'
+
+
+        for protein in receptors:
+            data = OnTheFly(protein, subtype, pathway, balanced)
+            for publication in data.keys():
+                for row in data[publication]:
+                    if pathway:
+                        if 'P1' in data[publication][row].keys():
+                            BiasedData.objects.filter(ligand_id=data[publication][row]['ligand_id'],
+                                                      publication_id=publication,
+                                                      receptor_id=protein).update({key: data[publication][row]['P1']})
+                        elif 'Pathway Rank' in data[publication][row].keys():
+                            BiasedData.objects.filter(ligand_id=data[publication][row]['ligand_id'],
+                                                      publication_id=publication,
+                                                      receptor_id=protein).update({key: data[publication][row]['primary_effector_family']})
+                        else:
+                            continue
+
+                    else:
+                        try:
+                            if data[publication][row]['Bias factor'] > 1:
+                                BiasedData.objects.filter(ligand_id=data[publication][row]['ligand_id'],
+                                                          publication_id=publication,
+                                                          receptor_id=protein).update({key: data[publication][row]['P1']})
+                        except (KeyError, TypeError):
+                            continue

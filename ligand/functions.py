@@ -7,7 +7,7 @@ from django.db.models import Q
 
 #from chembl_webresource_client import new_client
 from common.models import WebResource, Publication
-from ligand.models import Ligand, LigandType, BiasedData, Endogenous_GTP
+from ligand.models import Ligand, LigandType, BiasedData, Endogenous_GTP, BalancedLigands
 from protein.models import Protein
 
 # def get_or_make_ligand(ligand_id, type_id, name = None, pep_or_prot = None):
@@ -246,7 +246,7 @@ def assess_reference(data_dict, user=False):
                         try:
                             reference_ligand = min(gtp_info, key=gtp_info.get)
                         except TypeError:
-                            print("You have encountered the only excpetion, hooray!")
+                            print("You have encountered the only exception, hooray!")
                             #grabbing the first ligand among the available as reference
                             reference_ligand = list(gtp_info.keys())[0]
 
@@ -270,6 +270,59 @@ def assess_reference(data_dict, user=False):
         tested[assay]['Reference_ligand'] = reference_name
 
     return reference, tested, skip
+
+#check if that publication has balanced ligands, otherwise skip and go to next one
+def retrieve_balanced_references(receptor, pub, subtype):
+    skip = False
+    hits = BalancedLigands.objects.filter(receptor_id=receptor,
+                                          publication_id=pub,
+                                          subtype_balanced=subtype).values_list(
+                                                                    "first_pathway",
+                                                                    "second_pathway",
+                                                                    "ligand_id",
+                                                                    "ligand_id__name")
+    if len(hits) == 0:
+        skip = True
+    balanced_refs = {}
+    for drug in hits:
+        cmp = drug[0] + ' - ' + drug[1]
+        balanced_refs[cmp] = [drug[2], drug[3]]
+
+    return balanced_refs, skip
+
+def assess_pathway_pairs(ranking, data, balanced_refs, subtype):
+        #assess the pathway pairs in the tested ligands
+        pairs = {}
+        level = 'primary_effector_family'
+        if subtype:
+            level = 'primary_effector_subtype'
+        #make all the comparison to strongest ranked pathway
+        for drug in ranking:
+            for i in range(1, len(ranking[drug])):
+                #we don't want empty comparisons (manly in case of subtype)
+                if (data[ranking[drug][0]][level] != None) and (data[ranking[drug][i]][level] != None):
+                    comparison = data[ranking[drug][0]][level] + ' - ' + data[ranking[drug][i]][level]
+                    if comparison not in pairs.keys():
+                        pairs[comparison] = []
+                    pairs[comparison].append(drug)
+        matched_keys = set(list(balanced_refs.keys())).intersection(set(list(pairs.keys())))
+        #now i need to create the reference and tested dicts based on the entries
+        #and also the comparisons that are tied to the balanced reference and the pathway pair
+        reference = {}
+        tested = {}
+        for key in matched_keys:
+            balanced_id = balanced_refs[key][0]
+            balanced_name = balanced_refs[key][1]
+            if balanced_id in pairs[key]:
+                pairs[key].remove(balanced_id)
+            for entry in ranking[balanced_id]:
+                reference[entry] = data[entry]
+            for drug in pairs[key]:
+                for entry in ranking[drug]:
+                    tested[entry] = data[entry]
+                    tested[entry]['Reference_ligand'] = balanced_name
+
+        return reference, tested
 
 def assess_comparisons(reference, tested):
     # Do we need to add these fields for comparison's sake?
@@ -384,6 +437,8 @@ def calculate_second_delta(comparisons, tested, subtype=False, pathway=False):
                 #Match pathway levels + skip matching if Arrestin involved
                 if (tested[test]['pathway_level'] == tested[path1]['pathway_level']) or ('Arrestin' in [tested[path1]['primary_effector_family'], tested[test]['primary_effector_family']]):
                     tested[test]['P1'] = tested[path1]['primary_effector_family']
+                    if subtype:
+                        tested[test]['P1'] = tested[path1]['primary_effector_subtype']
                     if pathway:
                         try:
                             delta_logtauka = round(tested[path1]['Tau_KA'] - tested[test]['Tau_KA'], 3)
@@ -503,7 +558,7 @@ def define_ligand_pathways(master):
         ligands[master[key]['ligand_id']].append(key)
     return ligands
 
-def OnTheFly(receptor_id, subtype=False, pathway=False, user=False):
+def OnTheFly(receptor_id, subtype=False, pathway=False, user=False, balanced=False):
     receptor_name = list(Protein.objects.filter(id=receptor_id).values_list("name", flat=True))[0]
 
     #fetching data given the receptor id
@@ -520,7 +575,7 @@ def OnTheFly(receptor_id, subtype=False, pathway=False, user=False):
     pub_objs = Publication.objects.filter(id__in=pub_ids).values_list("id", "web_link_id__index", "year", "journal_id__name", "authors")
     pub_objs_dict = {pub_obj[0]:pub_obj[1:] for pub_obj in pub_objs}
 
-    lig_objs = Ligand.objects.filter(id__in=lig_ids).values_list("id", "name", "properities_id")
+    lig_objs = Ligand.objects.filter(id__in=lig_ids).values_list("id", "name")
     lig_objs_dict = {lig_obj[0]:lig_obj[1:] for lig_obj in lig_objs}
 
     publications = {}
@@ -539,7 +594,7 @@ def OnTheFly(receptor_id, subtype=False, pathway=False, user=False):
             if entry.ligand_id in lig_objs_dict:
                 ligand_data = lig_objs_dict[entry.ligand_id]
             else:
-                ligand_data = Ligand.objects.filter(id=entry.ligand_id).values_list("name", "properities_id")
+                ligand_data = Ligand.objects.filter(id=entry.ligand_id).values_list("name")
 
             publications[entry.publication_id][entry.id] = {'experiment': entry.experiment,
                                                             'endogenous_status': entry.endogenous_status,
@@ -552,7 +607,6 @@ def OnTheFly(receptor_id, subtype=False, pathway=False, user=False):
                                                             'receptor_id': entry.receptor_id,
                                                             'ligand_id': entry.ligand_id,
                                                             'ligand_name': ligand_data[0],
-                                                            'ligand__properities_id': ligand_data[1], #for browser vendors
                                                             'receptor_isoform': entry.receptor_isoform,
                                                             'active_receptor_complex': entry.active_receptor_complex,
                                                             'cell_line': entry.cell_line,
@@ -574,37 +628,26 @@ def OnTheFly(receptor_id, subtype=False, pathway=False, user=False):
                                                             'delta_Tau_KA': entry.delta_Tau_KA,
                                                             'time_resolved': entry.time_resolved}
 
-    #Fix needed to for testing purposes
-    if receptor_id == 37:
-        for pub in publications.keys():
-            for assay in publications[pub].keys():
-                if publications[pub][assay]['ligand_id'] in [278403, 284573]:
-                    publications[pub][assay]['ligand_id'] = 273200
-                if user:
-                    user = 273200
-
-    if receptor_id == 1:
-        for pub in publications.keys():
-            for assay in publications[pub].keys():
-                if publications[pub][assay]['ligand_id'] == 201738:
-                    publications[pub][assay]['ligand_id'] = 273194
-                if user:
-                    user = 273194
-
-    if receptor_id == 28:
-        for pub in publications.keys():
-            for assay in publications[pub].keys():
-                if publications[pub][assay]['ligand_id'] == 279520:
-                    publications[pub][assay]['ligand_id'] = 273275
 
     for pub in list(publications.keys()):
-        #Calculation branch 1 for Biased ligands
+        #Calculation branch 1 for Biased ligands (Regular, Balanced, Subtype)
         if pathway == False:
-            #Assess reference and tested ligands
-            reference, tested, skip = assess_reference(publications[pub], user)
-            if skip == True:
-                del publications[pub]
-                continue
+            #If we use Balanced referece, we need a set of preliminary steps
+            if balanced == True:
+                balanced_refs, skip = retrieve_balanced_references(receptor_id, pub, subtype)
+                if skip == True:
+                    del publications[pub]
+                    continue
+                #define ligand pathway and assess the pathway ranking for each ligand
+                ligands = define_ligand_pathways(publications[pub])
+                ranking = assess_pathway_preferences(ligands, publications[pub], subtype)
+                reference, tested = assess_pathway_pairs(ranking, publications[pub], balanced_refs, subtype)
+            else:
+                #Assess reference and tested ligands
+                reference, tested, skip = assess_reference(publications[pub], user)
+                if skip == True:
+                    del publications[pub]
+                    continue
 
             #Assess available comparisons
             comparisons = assess_comparisons(reference, tested)
