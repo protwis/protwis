@@ -1,23 +1,12 @@
-from django.core.management.base import BaseCommand
-from django.conf import settings
-from django.db import connection
-from django.db import IntegrityError
-from django.utils.text import slugify
-from django.http import HttpResponse, JsonResponse
-from decimal import Decimal
 from build.management.commands.base_build import Command as BaseBuild
-from common.tools import fetch_from_cache, save_to_cache, fetch_from_web_api
 from protein.models import Protein
-from ligand.models import  Ligand, LigandProperities, LigandType, BiasedData, BalancedLigands
+from ligand.models import  Ligand, BiasedData, BalancedLigands
 
-from ligand.functions import get_or_make_ligand
-from common.models import WebLink, WebResource, Publication
+from common.models import Publication
 import logging
 import math
 import pandas as pd
 import numpy as np
-import os
-import traceback
 
 #Hello and welcome to the build of the Balanced Ligands.
 #This build is totally subordinated to the data in the BiasedData Model

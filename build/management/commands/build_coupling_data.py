@@ -7,13 +7,14 @@ from collections import defaultdict
 
 import xlrd
 
+from build.management.commands.build_ligand_functions import get_or_create_ligand
 from common.models import Publication, WebLink, WebResource
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from protein.models import Protein, ProteinFamily, ProteinCouplings
 from ligand.models import Ligand
-from ligand.functions import get_or_make_ligand
+
 
 class Command(BaseCommand):
     help = 'Build G proteins'
@@ -336,8 +337,10 @@ class Command(BaseCommand):
         data, ligands = self.read_all_coupling(filepath)
 
         lookup = {}
+        lig_lookup = {}
         bulk = []
         ######### MODIFIED #########
+
         for source in data.keys():
             print("PROCESSING: "+str(source)+" DATA")
             for entry_name, couplings in data[source].items():
@@ -372,31 +375,31 @@ class Command(BaseCommand):
                     # print("PROCESSING: LIGANDS INFORMATION OF " + str(ligands[couplings['ligand_id']][0]) + " FOR "+ str(g))
                     #ligand here should be fetched via the function get_or_make_ligand
                     #(0) Ligand Name, (1) PubChem CID, (2) SMILES, (3) Accession Number
-                    if len(ligands[couplings['ligand_id']]) == 4:
-                        if ligands[couplings['ligand_id']][2] != 'NA':
-                            # print("FETCHING: LIGAND " + str(ligands[couplings['ligand_id']][0]) + " BY SMILES")
-                            try:
-                                l = get_or_make_ligand(ligands[couplings['ligand_id']][2], 'SMILES', ligands[couplings['ligand_id']][0])
-                            except UnboundLocalError:
-                                # print("ERROR WITH SMILES. TRYING WITH CID")
-                                # print("FETCHING: LIGAND " + str(ligands[couplings['ligand_id']][0]) + " BY CID")
-                                l = get_or_make_ligand(ligands[couplings['ligand_id']][1], 'PubChem CID', ligands[couplings['ligand_id']][0])
-                        elif ligands[couplings['ligand_id']][1] != 'NA':
-                            # print("FETCHING: LIGAND " + str(ligands[couplings['ligand_id']][0]) + " BY CID")
-                            l = get_or_make_ligand(ligands[couplings['ligand_id']][1], 'PubChem CID', ligands[couplings['ligand_id']][0])
+                    if couplings['ligand_id'] in lig_lookup:
+                        l = lig_lookup[couplings['ligand_id']]
+                    elif len(ligands[couplings['ligand_id']]) == 4:
+                        if ligands[couplings['ligand_id']][1] != 'NA':
+                            ids = {"pubchem" : ligands[couplings['ligand_id']][1]}
+                            l = get_or_create_ligand(ligands[couplings['ligand_id']][0], ids)
+                        elif ligands[couplings['ligand_id']][2] != 'NA':
+                            ids = {"smiles" : ligands[couplings['ligand_id']][2]}
+                            l = get_or_create_ligand(ligands[couplings['ligand_id']][0], ids)
                         else:
                             #make the call to search for peptide/protein
                             # print("NO INFO IN THE DATABASE. ADDING NEW LIGAND.")
                             label = self.assess_type(ligands[couplings['ligand_id']][3])
-                            # print("ADDING: LIGAND " + str(ligands[couplings['ligand_id']][0]) + " AS " + str(label))
-                            l = get_or_make_ligand('NA', 'NA', ligands[couplings['ligand_id']][0], label)
+                            ids = {}
+                            if ligands[couplings['ligand_id']][3] != 'NA':
+                                ids = {"uniprot": ligands[couplings['ligand_id']][3]}
+
+                            l = get_or_create_ligand(ligands[couplings['ligand_id']][0], ids, label)
                     else:
                         #make the call to search for peptide/protein
                         # print("NO INFO IN THE DATABASE. ADDING NEW LIGAND.")
                         label = self.assess_type(ligands[couplings['ligand_id']][1])
-                        # print("ADDING: LIGAND " + str(ligands[couplings['ligand_id']][0]) + " AS " + str(label))
-                        l = get_or_make_ligand('NA', 'NA', ligands[couplings['ligand_id']][0], label)
+                        l = get_or_create_ligand(ligands[couplings['ligand_id']][0], {}, label)
 
+                    lig_lookup[couplings['ligand_id']] = l
                     #here it fills the data in ProteinCouplings model
                     #new data in dictionary: {'ligand_name': 'Serotonin', 'ligand_id': 5.0, 'ligand_type': 'Physiological'}
                     # print("CREATING CALL TO MODEL")
