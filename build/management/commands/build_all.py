@@ -50,6 +50,11 @@ class Command(BaseCommand):
             ['build_blast_database'],
             ['build_links'],
             ['build_construct_proteins'],
+            ['build_all_gtp_ligands', {'test_run': options['test']}],
+            ['build_endogenous_data_from_gtp_source', {'test_run': options['test']}],
+            ['build_bias_preprocess_data', {'test_run': options['test']}],
+            ['build_chembl_data', {'test_run': options['test']}],
+            ['build_mutant_data', {'test_run': options['test']}],
             ['build_structures', {'proc': safe_proc_num, 'skip_cn': options['test']}],
             ['build_consensus_sequences', {'proc': options['proc']}],
             ['build_g_proteins'],
@@ -65,13 +70,9 @@ class Command(BaseCommand):
         ]
         phase2 = [
             ['build_structure_angles', {'proc': options['proc']}],
-            # ['build_distance_representative'],
             ['build_contact_representative'],
             ['build_construct_data'],
             ['update_construct_mutations'],
-            #['build_ligands_from_cache', {'proc': options['proc'], 'test_run': options['test']}],
-            #['build_ligand_assays', {'test_run': options['test']}],
-            ['build_mutant_data', {'proc': options['proc'], 'test_run': options['test']}],
             ['build_protein_sets'],
             ['build_drugs'],
             ['build_nhs'],
@@ -82,7 +83,6 @@ class Command(BaseCommand):
             ['build_complex_interactions'],
             ['assign_structure_states'],
             ['build_mammalian_representative'],
-            # ['build_homology_models', ['--update', '-z'], {'proc': options['proc'], 'test_run': options['test']}],
             ['build_text'],
             ['build_release_notes'],
         ]
