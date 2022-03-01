@@ -471,11 +471,11 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
                         structureligandinteraction = structureligandinteraction.get()
                         structureligandinteraction.pdb_file = pdbdata
                         ligand = structureligandinteraction.ligand
-                        if structureligandinteraction.ligand.properities.inchikey is None:
-                            structureligandinteraction.ligand.properities.inchikey = output['inchikey'].strip()
-                        elif structureligandinteraction.ligand.properities.inchikey != output['inchikey'].strip():
-                            logger.error(
-                                'Ligand/PDB inchikey mismatch (PDB:' + pdbname + ' LIG:' + output['prettyname'] + '): '+structureligandinteraction.ligand.properities.inchikey+' vs '+ output['inchikey'].strip())
+                        # if structureligandinteraction.ligand.inchikey is None:
+                        #     structureligandinteraction.ligand.inchikey = output['inchikey'].strip()
+                        # elif structureligandinteraction.ligand.inchikey != output['inchikey'].strip():
+                        #     logger.error(
+                        #         'Ligand/PDB inchikey mismatch (PDB:' + pdbname + ' LIG:' + output['prettyname'] + '): '+structureligandinteraction.ligand.inchikey+' vs '+ output['inchikey'].strip())
                     except Exception as msg:
                         print('error with dublication structureligand',temp[1],msg)
                         break
@@ -981,7 +981,7 @@ def download(request):
         # here's the needed fix
         try:
             pair = StructureLigandInteraction.objects.filter(structure__pdb_code__index=pdbname).filter(
-                Q(ligand__properities__inchikey=ligand) | Q(ligand__name=ligand)).exclude(pdb_file__isnull=True).get()
+                Q(ligand__inchikey=ligand) | Q(ligand__name=ligand)).exclude(pdb_file__isnull=True).get()
             response = HttpResponse(pair.pdb_file.pdb, content_type='text/plain')
         except:
             return redirect("/interaction/")

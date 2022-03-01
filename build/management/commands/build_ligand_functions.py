@@ -149,7 +149,7 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
         # UniProt ID if there's no sequence or other IDs
         # TODO figure out best way of matching when sequence and UniProt ID are mixed as there can be multiple variants
         elif ligand == None and "sequence" not in ids and "uniprot" in ids and len(set.intersection(set(ids.keys()), set(external_sources)))==0:
-            result = Ligand.objects.filter(uniprot = ids["uniprot"])
+            result = Ligand.objects.filter(uniprot__contains = ids["uniprot"].upper())
             if result.count() > 0:
                 ligand = result.first()
                 # DEBUGGING
@@ -190,7 +190,7 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
             if "pdb" in ids and ligand.pdbe == None:
                 ligand.pdbe = ids["pdb"]
             if "uniprot" in ids and ligand.uniprot == None:
-                ligand.uniprot = ids["uniprot"]
+                ligand.uniprot = ids["uniprot"].upper()
             if "sequence" in ids and ligand.sequence == None and len(ids["sequence"]) < 1000:
                 ligand.sequence = ids["sequence"]
             if "inchikey" in ids and ligand.inchikey == None:
@@ -252,8 +252,12 @@ def match_id_via_unichem(type, id):
     return results
 
 
-def get_ligand_by_id(type, id):
-    result = Ligand.objects.filter(ids__index=id, ids__web_resource__slug=type)
+def get_ligand_by_id(type, id, uniprot = None):
+    if uniprot == None:
+        result = Ligand.objects.filter(ids__index=id, ids__web_resource__slug=type)
+    else:
+        result = Ligand.objects.filter(ids__index=id, ids__web_resource__slug=type, uniprot__contains=uniprot.upper())
+
     if result.count() > 0:
         if result.count() > 1:
             print("Multiple entries for the same ID - This should never happen - error", type, id)
