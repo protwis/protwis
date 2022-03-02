@@ -67,6 +67,8 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
             ids[type_id] = ids[type_id].strip()
             if type_id == "chembl_ligand":
                 ids[type_id] = ids[type_id].upper()
+        elif isinstance(ids[type_id], list) and len(ids[type_id]) == 1:
+            ids[type_id] = ids[type_id][0]
 
     # No IDs are provided, so the only way forward is a name match
     # Very short name = not unique - minimum is length of 3
@@ -426,8 +428,7 @@ def resolve_pubchem_SID(sid):
     if pubchem and "InformationList" in pubchem and "Information" in pubchem["InformationList"]:
         for entry in pubchem["InformationList"]["Information"]:
             if "CID" in entry:
-                print(sid, entry["CID"])
-                return entry["CID"]
+                return entry["CID"][0]
     return None
 
 def is_float(element):

@@ -396,6 +396,7 @@ def calculate_first_delta(comparisons, reference, tested, subtype=False):
 
 def find_best_subtype(comparisons, reference, tested):
     families = {}
+    to_be_deleted = []
     for ref in list(comparisons.keys()):
         #assessing the values
         r_emax, r_ec50 = reference[ref]['Emax'], reference[ref]['EC50']
@@ -412,14 +413,22 @@ def find_best_subtype(comparisons, reference, tested):
         else:
             #updating with most relevant subtype
             if r_logemaxec50 > families[reference[ref]['primary_effector_family']][0]:
-                families[reference[ref]['primary_effector_family']] = [r_logemaxec50, ref]
-                for test in comparisons[families[reference[ref]['primary_effector_family']][1]]:
-                    del tested[test]
+                #Adding the obsolete tests by comparing old key to updated key
+                to_be_deleted += list(set(comparisons[families[reference[ref]['primary_effector_family']][1]]) - set(comparisons[ref]))
+                #Delete obsolete key from comparisons register
                 del comparisons[families[reference[ref]['primary_effector_family']][1]]
+                #update reference key
+                families[reference[ref]['primary_effector_family']] = [r_logemaxec50, ref]
             else:
-                for test in comparisons[ref]:
-                    del tested[test]
+                #Adding the obsolete tests by comparing old key to updated key
+                to_be_deleted += list(set(comparisons[ref]) - set(comparisons[families[reference[ref]['primary_effector_family']][1]]))
+                #Delete obsolete key from comparisons register
                 del comparisons[ref]
+
+    #get unique obsolete test keys and remove them
+    to_be_deleted = list(set(to_be_deleted))
+    for test in to_be_deleted:
+        del tested[test]
 
 def calculate_second_delta(comparisons, tested, subtype=False, pathway=False):
     ranking = assess_pathway_preferences(comparisons, tested, subtype, pathway)
