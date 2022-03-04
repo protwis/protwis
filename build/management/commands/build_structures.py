@@ -1417,7 +1417,8 @@ class Command(BaseBuild):
                                 if entry["type"] not in ids:
                                     ids[entry["type"]] = entry["id"]
 
-                        l = get_or_create_ligand(ligand_title, ids, ligand['type'])
+                        with lock:
+                            l = get_or_create_ligand(ligand_title, ids, ligand['type'])
 
                         # Create LigandPeptideStructure object to store chain ID for peptide ligands - supposed to b TEMP
                         if ligand['type'] in ['peptide','protein']:
