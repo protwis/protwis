@@ -179,9 +179,27 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
 
             # Create empty ligand
             if ligand == None:
-                print("Creating an empty ligand", name, ids)
-                ligand = create_ligand_from_id(name, "", "", lig_type)
-                ligand.ambiguous_alias = True
+                tmp_types = list(ids.keys())
+                if "uniprot" in tmp_types:
+                    tmp_types.remove("uniprot")
+
+                if len(tmp_types) == 0 and len(name) >= 4:
+                    # Try to find ligand based on name
+                    results = Ligand.objects.filter(name=name, ambiguous_alias = True)
+                    if results.count() == 1:
+                        ligand = results.first()
+                    # DEBUGGING
+                    elif results.count() > 1:
+                        print("Ambiguous name (", name,") as it has ", results.count(), " corresponding entries")
+                    else:
+                        results = Ligand.objects.filter(name__iexact=name, ambiguous_alias = True)
+                        if results.count() == 1:
+                            ligand = results.first()
+
+                if ligand == None:
+                    print("Creating an empty ligand", name, ids)
+                    ligand = create_ligand_from_id(name, "", "", lig_type)
+                    ligand.ambiguous_alias = True
 
         # Add missing IDs via (web)links to the ligand object
         if ligand != None:
