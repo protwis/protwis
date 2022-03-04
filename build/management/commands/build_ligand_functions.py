@@ -74,7 +74,7 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
     # Very short name = not unique - minimum is length of 3
     # TODO - add filter for numerical names and typical cpd X names
     if len(ids) == 0:
-        results = Ligand.objects.filter(name__iexact=name, ambiguous_alias = True)
+        results = Ligand.objects.filter(name=name, ambiguous_alias = True)
         if results.count() == 1:
             ligand = results.first()
         # DEBUGGING
@@ -82,7 +82,10 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
             print("Ambiguous name (", name,") as it has ", results.count(), " corresponding entries")
         else:
             # Longer names could be non-ambiguous compounds
-            if len(name) >= 5:
+            results = Ligand.objects.filter(name__iexact=name, ambiguous_alias = True)
+            if results.count() == 1:
+                ligand = results.first()
+            elif len(name) >= 5:
                 results = Ligand.objects.filter(name__iexact=name, ambiguous_alias = False)
                 if results.count() == 1:
                     ligand = results.first()
@@ -271,7 +274,6 @@ def create_ligand_from_id(name, type, id, lig_type):
     # create new ligand
     ligand = Ligand()
     ligand.name = name
-    ligand.canonical = True # TODO: discuss if we should keep this
     ligand.ambiguous_alias = False
     ligand.ligand_type = LigandType.objects.get_or_create(slug=lig_type, defaults={'name': lig_type})[0]
 
