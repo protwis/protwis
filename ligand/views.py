@@ -1603,7 +1603,6 @@ class BiasPathways(TemplateView):
         '''
         rd = dict()
         increment = 0
-        self.logger.info('receptor not found error')
         for instance in content:
             fin_obj = {}
             fin_obj['main'] = instance

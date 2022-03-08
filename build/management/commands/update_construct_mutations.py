@@ -6,6 +6,8 @@ from django.conf import settings
 from django.db import connection
 from django.core.cache import cache
 
+from build.management.commands.build_ligand_functions import get_or_create_ligand
+
 from structure.models import Structure
 from construct.functions import  fetch_pdb_info
 from construct.models import *
@@ -303,10 +305,10 @@ class Command(BaseCommand):
             else:
                 print('no chems for ',pdb)
 
-
             if pdb in xtal_ligands_list:
                 l = xtal_ligands_list[pdb][0]
-                ligand = get_or_create_ligand(l[7],l[6],l[2])
+                ligand = get_or_create_ligand(l[2])
+                # ligand = get_or_create_ligand(l[7],l[6],l[2])
                 role_slug = slugify(l[3])
                 try:
                     lr, created = LigandRole.objects.get_or_create(slug=role_slug,
@@ -799,7 +801,7 @@ class Command(BaseCommand):
             uniprot = protein.parent.entry_name
             d = cache.get(pdbname+"_auto_d")
             # d = None
-            if not d and 'deletions' in d:
+            if d == None or (not d and 'deletions' in d):
                 d = fetch_pdb_info(c_pdb,protein,ignore_gasper_annotation=True)
                 cache.set(pdbname+"_auto_d",d,60*60*24)
             if 'deletions' in d:

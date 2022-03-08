@@ -79,10 +79,10 @@ class Command(BaseCommand):
             ['build_mutational_landscape'],
             ['build_residue_sets'],
             ['build_dynamine_annotation', {'proc': options['proc']}],
-            ['build_blast_database'],
             ['build_complex_interactions'],
             ['assign_structure_states'],
             ['build_mammalian_representative'],
+            ['upload_excel_bias_pathways'],
             ['build_text'],
             ['build_release_notes'],
         ]

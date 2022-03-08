@@ -290,7 +290,7 @@ class Command(BaseCommand):
             self.references = Structure.objects.all().prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
 
         # DEBUG for a specific PDB
-        self.references = Structure.objects.filter(pdb_code__index="2RH1").prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+        # self.references = Structure.objects.filter(pdb_code__index="2RH1").prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
 
         if 'proc' in options and options['proc']>0:
             self.processes = options['proc']
