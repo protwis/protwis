@@ -1762,18 +1762,17 @@ class OTFBiasBrowser(TemplateView):
                                                                                "entry_name",
                                                                                "name")
         # Preprocess ligand vendors
-        ligprop_ids = set([data[pub][key]['ligand_id'] for pub in data for key in data[pub]])
-        vendor_output = list(LigandVendorLink.objects.filter(lp_id__in=ligprop_ids).values_list("lp_id").annotate(Count('vendor_id', distinct=True)))
+        lig_ids = set([data[pub][key]['ligand_id'] for pub in data for key in data[pub]])
+        vendor_output = list(LigandVendorLink.objects.filter(ligand_id__in=lig_ids).values_list("ligand_id").annotate(Count('vendor_id', distinct=True)))
         vendors_dict = {entry[0]:entry[1] for entry in vendor_output}
 
         # Preprocess ligand_id => articles
-        lig_ids = set([data[pub][key]['ligand_id'] for pub in data for key in data[pub]])
         articles_output = list(BiasedData.objects.filter(ligand_id__in=lig_ids).values_list("ligand_id").annotate(Count('publication_id', distinct=True)))
         articles_dict = {entry[0]:entry[1] for entry in articles_output}
 
         # Preprocess ligand id => labs
         labs_dict = {}
-        for authors in BiasedData.objects.filter(ligand_id__in=lig_ids).values_list("ligand_id", "publication_id__authors").distinct():
+        for authors in BiasedData.objects.filter(ligand_id__in=lig_ids).exclude(publication_id__authors=None).values_list("ligand_id", "publication_id__authors").distinct():
             if authors[0] not in labs_dict:
                 labs_dict[authors[0]] = set()
             labs_dict[authors[0]].add(authors[1].split(',')[-1])
