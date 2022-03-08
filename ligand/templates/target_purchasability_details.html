@@ -314,7 +314,7 @@
                         <td>{{p.standard_relation}}</td>
                         <td>{{p.standard_value|floatformat}}</td>
                         <td>{{p.standard_units}}</td>
-                        <td>{% if p.assay_type == 'b' %} Bind {% else %} Funct {% endif %}</td>
+                        <td>{% if p.assay_type == 'B' %} Bind {% else %} Funct {% endif %}</td>
                         <td class="AssayCell"> <div style="overflow: hidden; text-overflow: ellipsis; word-wrap: break-word; max-width: 350px;white-space: nowrap;">{{p.assay_description}}<span class="AssayDetail">{{p.assay_description}}</span> </div></td>
                         <td>{{p.ligand__mw|floatformat:0}}</td>
                         <td>{{p.ligand__rotatable_bonds}}</td>

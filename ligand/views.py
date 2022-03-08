@@ -238,7 +238,7 @@ def TargetDetailsCompact(request, **kwargs):
             tmp = defaultdict(list)
             tmp_count = 0
             for data_line in per_target_data:
-                tmp["Bind" if data_line.assay_type == 'b' else "Funct"].append(
+                tmp["Bind" if data_line.assay_type == 'B' else "Funct"].append(
                     data_line.pchembl_value)
                 tmp_count += 1
 
