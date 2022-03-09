@@ -172,6 +172,7 @@ class Command(BaseBuild):
                             ids[key] = str(int(float(ids[key])))
 
                 # When protein or peptide => get UNIPROT AND FASTA Here
+                uniprot_ids = []
                 if types_dict[row['Type']] != "small-molecule":
                     if pep_df["Ligand id"].eq(row["Ligand ID"]).any():
                         peptide_entry = pep_df.loc[pep_df["Ligand id"] == row["Ligand ID"]]
@@ -183,13 +184,19 @@ class Command(BaseBuild):
                         uniprot = peptide_entry["UniProt id"].item()
                         if uniprot != None and uniprot != "":
                             # TODO - when multiple UniProt IDs => clone ligand add new UniProt IDs for other species
-                            ids["uniprot"] = uniprot.split("|")[0]
+                            uniprot_ids = uniprot.split("|")
+                            ids["uniprot"] = uniprot_ids[0].strip()
 
-                # Get ligand
+                # Create or get ligand
                 ligand = get_or_create_ligand(row['Name'], ids, types_dict[row['Type']], True, False)
                 if ligand == None:
                     print("Issue with", row['Name'])
                     exit()
+
+                # Process multiple UniProt IDs
+                if len(uniprot_ids) > 1:
+                    ligand.uniprot = ",".join(uniprot_ids)
+                    ligand.save()
 
         print("DONE - Ligands with issues:")
         print(issues)

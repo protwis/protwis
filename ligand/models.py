@@ -19,7 +19,7 @@ class Ligand(models.Model):
     pdbe = models.CharField(max_length=3, null=True)
     ligand_type = models.ForeignKey('LigandType', null=True, on_delete=models.CASCADE)
     ambiguous_alias = models.BooleanField(default = False)
-    uniprot = models.CharField(max_length=15, null=True)
+    uniprot = models.CharField(max_length=35, null=True)
 
     # structure definition
     smiles = models.TextField(null=True)

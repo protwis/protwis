@@ -430,7 +430,6 @@ def find_best_subtype(comparisons, reference, tested):
     for test in to_be_deleted:
         del tested[test]
 
-
 def calculate_second_delta(comparisons, tested, subtype=False, pathway=False):
     ranking = assess_pathway_preferences(comparisons, tested, subtype, pathway)
     #STEPS

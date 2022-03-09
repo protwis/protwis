@@ -67,12 +67,14 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
             ids[type_id] = ids[type_id].strip()
             if type_id == "chembl_ligand":
                 ids[type_id] = ids[type_id].upper()
+        elif isinstance(ids[type_id], list) and len(ids[type_id]) == 1:
+            ids[type_id] = ids[type_id][0]
 
     # No IDs are provided, so the only way forward is a name match
     # Very short name = not unique - minimum is length of 3
     # TODO - add filter for numerical names and typical cpd X names
     if len(ids) == 0:
-        results = Ligand.objects.filter(name__iexact=name, ambiguous_alias = True)
+        results = Ligand.objects.filter(name=name, ambiguous_alias = True)
         if results.count() == 1:
             ligand = results.first()
         # DEBUGGING
@@ -80,7 +82,10 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
             print("Ambiguous name (", name,") as it has ", results.count(), " corresponding entries")
         else:
             # Longer names could be non-ambiguous compounds
-            if len(name) >= 5:
+            results = Ligand.objects.filter(name__iexact=name, ambiguous_alias = True)
+            if results.count() == 1:
+                ligand = results.first()
+            elif len(name) >= 5:
                 results = Ligand.objects.filter(name__iexact=name, ambiguous_alias = False)
                 if results.count() == 1:
                     ligand = results.first()
@@ -149,7 +154,7 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
         # UniProt ID if there's no sequence or other IDs
         # TODO figure out best way of matching when sequence and UniProt ID are mixed as there can be multiple variants
         elif ligand == None and "sequence" not in ids and "uniprot" in ids and len(set.intersection(set(ids.keys()), set(external_sources)))==0:
-            result = Ligand.objects.filter(uniprot = ids["uniprot"])
+            result = Ligand.objects.filter(uniprot__contains = ids["uniprot"].upper())
             if result.count() > 0:
                 ligand = result.first()
                 # DEBUGGING
@@ -174,9 +179,27 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
 
             # Create empty ligand
             if ligand == None:
-                print("Creating an empty ligand", name, ids)
-                ligand = create_ligand_from_id(name, "", "", lig_type)
-                ligand.ambiguous_alias = True
+                tmp_types = list(ids.keys())
+                if "uniprot" in tmp_types:
+                    tmp_types.remove("uniprot")
+
+                if len(tmp_types) == 0 and len(name) >= 4:
+                    # Try to find ligand based on name
+                    results = Ligand.objects.filter(name=name, ambiguous_alias = True)
+                    if results.count() == 1:
+                        ligand = results.first()
+                    # DEBUGGING
+                    elif results.count() > 1:
+                        print("Ambiguous name (", name,") as it has ", results.count(), " corresponding entries")
+                    else:
+                        results = Ligand.objects.filter(name__iexact=name, ambiguous_alias = True)
+                        if results.count() == 1:
+                            ligand = results.first()
+
+                if ligand == None:
+                    print("Creating an empty ligand", name, ids)
+                    ligand = create_ligand_from_id(name, "", "", lig_type)
+                    ligand.ambiguous_alias = True
 
         # Add missing IDs via (web)links to the ligand object
         if ligand != None:
@@ -190,7 +213,7 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
             if "pdb" in ids and ligand.pdbe == None:
                 ligand.pdbe = ids["pdb"]
             if "uniprot" in ids and ligand.uniprot == None:
-                ligand.uniprot = ids["uniprot"]
+                ligand.uniprot = ids["uniprot"].upper()
             if "sequence" in ids and ligand.sequence == None and len(ids["sequence"]) < 1000:
                 ligand.sequence = ids["sequence"]
             if "inchikey" in ids and ligand.inchikey == None:
@@ -252,8 +275,12 @@ def match_id_via_unichem(type, id):
     return results
 
 
-def get_ligand_by_id(type, id):
-    result = Ligand.objects.filter(ids__index=id, ids__web_resource__slug=type)
+def get_ligand_by_id(type, id, uniprot = None):
+    if uniprot == None:
+        result = Ligand.objects.filter(ids__index=id, ids__web_resource__slug=type)
+    else:
+        result = Ligand.objects.filter(ids__index=id, ids__web_resource__slug=type, uniprot__contains=uniprot.upper())
+
     if result.count() > 0:
         if result.count() > 1:
             print("Multiple entries for the same ID - This should never happen - error", type, id)
@@ -265,7 +292,6 @@ def create_ligand_from_id(name, type, id, lig_type):
     # create new ligand
     ligand = Ligand()
     ligand.name = name
-    ligand.canonical = True # TODO: discuss if we should keep this
     ligand.ambiguous_alias = False
     ligand.ligand_type = LigandType.objects.get_or_create(slug=lig_type, defaults={'name': lig_type})[0]
 
@@ -422,8 +448,7 @@ def resolve_pubchem_SID(sid):
     if pubchem and "InformationList" in pubchem and "Information" in pubchem["InformationList"]:
         for entry in pubchem["InformationList"]["Information"]:
             if "CID" in entry:
-                print(sid, entry["CID"])
-                return entry["CID"]
+                return entry["CID"][0]
     return None
 
 def is_float(element):

@@ -297,12 +297,16 @@ class Command(BaseBuild):
                       'Synthetic organic': 'small-molecule',
                       None: 'na'}
         values = ['pKi', 'pEC50', 'pKd', 'pIC50']
+
+        human_entries = [entry["Target_ID"]+"|"+entry["Ligand_ID"] for entry in GtoP_endogenous if entry["Interaction_Species"] in [None, "None", "", "Human"]]
+
         ligands = {}
         stereo_ligs = {}
         for row in GtoP_endogenous:
             numeric_data = {}
             receptor = Command.fetch_protein(row['Target_ID'], row['Interaction_Species'])
 
+            # TODO Handle multiple matches (uniprot filter?)
             ligand = get_ligand_by_id("gtoplig", row['Ligand_ID'])
             if ligand != None:
                 # Process stereoisomers when not specified:
@@ -395,9 +399,21 @@ class Command(BaseBuild):
                         gtp_data.pk = None
                         gtp_data.ligand = isomer
 
-                        # Affinity/Activity varies between isomers/mixture => no copy
+                        # Affinity/Activity varies between isomers/mixture => do not copy
                         gtp_data.pec50 = gtp_data.pKi = gtp_data.pic50 = gtp_data.pKd = "None | None | None"
                         gtp_data.save()
+
+                    # If endogenous is not present for HUMANs => add it
+                    key_id = row['Target_ID']+"|"+row['Ligand_ID']
+                    if gtp_data and key_id not in human_entries:
+                        human_receptor = Command.fetch_protein(row['Target_ID'], "Human")
+                        if human_receptor:
+                            human_entries.append(key_id)
+                            gtp_data.pk = None
+                            gtp_data.receptor = human_receptor
+                            # Affinity/Activity varies between species => do not copy
+                            gtp_data.pec50 = gtp_data.pKi = gtp_data.pic50 = gtp_data.pKd = "None | None | None"
+                            gtp_data.save()
                 elif len(species) == 1:
                     ligand_species = Command.fetch_species(species[0], row['Interaction_Species'])
                     gtp_data = Endogenous_GTP(
@@ -413,6 +429,7 @@ class Command(BaseBuild):
                                 pKd = numeric_data['pKd'],
                                 )
                     gtp_data.save()
+
                     try:
                         for pmid in pmids:
                             publication = Command.fetch_publication(pmid)

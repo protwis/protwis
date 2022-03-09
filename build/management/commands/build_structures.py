@@ -1404,16 +1404,21 @@ class Command(BaseBuild):
 
                         # use pubchem_id
                         if 'pubchemId' in ligand and ligand['pubchemId'] and ligand['pubchemId'] != 'None':
-                            ids["pubchem"] = ligand['pubchemId']
+                            # TODO expand list and expand structure annotation
+                            if isinstance(ligand['pubchemId'], str) and ligand['pubchemId'].startswith("gtoplig:"):
+                                ids["gtoplig"] = ligand['pubchemId'][8:]
+                            else:
+                                ids["pubchem"] = ligand['pubchemId']
                         elif "pdb" in ids:
                             # match PDB via UniChem
                             uc_entries = match_id_via_unichem("pdb", ids["pdb"])
-                            print("UNICHEM matching", ids["pdb"])
+                            #print("UNICHEM matching", ids["pdb"])
                             for entry in uc_entries:
                                 if entry["type"] not in ids:
                                     ids[entry["type"]] = entry["id"]
 
-                        l = get_or_create_ligand(ligand_title, ids, ligand['type'])
+                        with lock:
+                            l = get_or_create_ligand(ligand_title, ids, ligand['type'])
 
                         # Create LigandPeptideStructure object to store chain ID for peptide ligands - supposed to b TEMP
                         if ligand['type'] in ['peptide','protein']:
