@@ -445,18 +445,18 @@ class Command(BaseBuild):
 
 
         for protein in receptors:
-            data = OnTheFly(protein, subtype, pathway, balanced)
+            data = OnTheFly(protein, subtype=subtype, pathway=pathway, balanced=balanced)
             for publication in data.keys():
                 for row in data[publication]:
                     if pathway:
                         if 'P1' in data[publication][row].keys():
                             BiasedData.objects.filter(ligand_id=data[publication][row]['ligand_id'],
                                                       publication_id=publication,
-                                                      receptor_id=protein).update({key: data[publication][row]['P1']})
+                                                      receptor_id=protein).update(**{key: data[publication][row]['P1']})
                         elif 'Pathway Rank' in data[publication][row].keys():
                             BiasedData.objects.filter(ligand_id=data[publication][row]['ligand_id'],
                                                       publication_id=publication,
-                                                      receptor_id=protein).update({key: data[publication][row]['primary_effector_family']})
+                                                      receptor_id=protein).update(**{key: data[publication][row]['primary_effector_family']})
                         else:
                             continue
 
@@ -465,6 +465,6 @@ class Command(BaseBuild):
                             if data[publication][row]['Bias factor'] > 1:
                                 BiasedData.objects.filter(ligand_id=data[publication][row]['ligand_id'],
                                                           publication_id=publication,
-                                                          receptor_id=protein).update({key: data[publication][row]['P1']})
+                                                          receptor_id=protein).update(**{key: data[publication][row]['P1']})
                         except (KeyError, TypeError):
                             continue

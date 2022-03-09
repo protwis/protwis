@@ -412,194 +412,489 @@ function FancyCircles(location, data, starter, dict){
     }
   }
 
+/**
+* draw_cluster
+*
+* Function designed to draw horizontal cluster
+*
+*
+* @data {Object} data - data provided by the view (json dict usually)
+* @options {dictionary} options - options provided for the sake of depth, data info and text anchor
+* @trim {boolean} trim - boolean value to select trimming empty leaves
+*/
 
+function draw_cluster(data, options, trim=true) {
 
-  function draw_cluster(data, options) {
-
-      var branches = {};
-      var branch_offset = 0;
-      for (var key in options.branch_length) {
-          if (key == options.depth) { continue };
-          if (options.label_free.includes(parseInt(key))) {
-              branch_offset = branch_offset + 10;
-          } else {
-              if (options.branch_trunc != 0) {
-                  branch_offset = branch_offset + 2*options.branch_trunc + 10;
-              } else {
-                  branch_offset = branch_offset + string_pixlen(options.branch_length[key], key);
-              }
+    if (trim==true) {
+      for (var family in data['children']) {
+        for (var child in data['children'][family]['children']){
+          var i = data['children'][family]['children'][child]['children'].length;
+          while (i-- ){
+            if (data['children'][family]['children'][child]['children'][i]['value'] == 0) {
+              data['children'][family]['children'][child]['children'].splice(i, 1);
+            }
           }
-          branches[key] = branch_offset;
-      }
-      branches[options.depth] = branch_offset + options.leaf_offset;
-
-      var dimension = 2 * branches[options.depth] + 100;
-
-      var cluster = d3.layout.cluster()
-          .size([dimension, dimension - 160]);
-          // .separation(function (a, b) { return (a.parent == b.parent ? 1 : 2) / a.depth; });
-
-      var diagonal = d3.svg.diagonal()
-          .projection(function (d) {
-            return [d.y, d.x];
-          });
-
-      var svg = d3.select('#'+options.anchor).append("svg")
-          .attr("width", dimension)
-          .attr("height", dimension)
-          .attr("id", options.anchor+"_svg")
-          .attr("transform", "translate(0,0)");
-
-      var nodes = cluster.nodes(data);
-
-      nodes.forEach(function (d) {
-          if (d.depth == 0) {
-              d.y = 0
-          } else {
-              d.y = branches[d.depth]
+        }
+        var k = data['children'][family]['children'].length;
+        while (k-- ){
+          if (data['children'][family]['children'][k]['children'].length == 0) {
+            data['children'][family]['children'].splice(k, 1);
           }
-      });
+        }
+      }
+      var j = data['children'].length;
+      while (j-- ){
+        if (data['children'][j]['children'].length == 0) {
+          data['children'].splice(j, 1);
+        }
+      }
+    }
 
-      var links = cluster.links(nodes);
+    var branches = {};
+    var branch_offset = 0;
+    for (var key in options.branch_length) {
+        if (key == options.depth) { continue };
+        if (options.label_free.includes(parseInt(key))) {
+            branch_offset = branch_offset + 10;
+        } else {
+            if (options.branch_trunc != 0) {
+                branch_offset = branch_offset + 2*options.branch_trunc + 10;
+            } else {
+                branch_offset = branch_offset + string_pixlen(options.branch_length[key], key);
+            }
+        }
+        branches[key] = branch_offset;
+    }
+    branches[options.depth] = branch_offset + options.leaf_offset;
 
-      // var link = svg_g.append("g")
-      //     .attr("class", "links")
-      //     .selectAll("path")
-      var link = svg.selectAll(".link")
-          .data(links)
-          .enter()
-          .append("path")
-          .each(function (d) { d.target.linkNode = this; })
-          .attr("class", "link_continuous")
-          .attr("d", diagonal)
-          .style("stroke", function (d) { return d.target.color; })
-          .style("stroke-width", function (d) { if (d.target.depth > 0) { return 4 - d.target.depth; } else { return 0; } })
-          .style("fill-opacity", 0);
+    var dimension = 2 * branches[options.depth] + 100;
 
-      var node = svg.selectAll(".node")
-          .data(nodes)
-          .enter()
-          .append("g")
-          .attr("class", "node")
-          .attr("transform", function (d) {
-        return "translate(" + d.y + "," + d.x + ")";
-    })
-  //TODO: add a check to remove circles when nothing is passed (?)
-      // node.filter(function (d) { return (d.depth == options.depth) })
-      //     .filter(function (d) { return (d.value !== 3000) })
-      node.append("circle")
-          .attr("r", "4.0")
-          .style("stroke", "black")
-          .style("stroke-width", ".3px")
-          .style("fill", function (d) {
-              if (d.color && d.depth < options.depth) { return d.color }
-              else if ( d.value === 1) {
-                  return "FireBrick";
-              }
-              else if ( d.value === 10) {
-                  return "LightGray";
-              }
-              else if ( d.value === 20) {
-                  return "DarkGray";
-              }
-              else if ( d.value === 30) {
-                  return "Gray";
-              }
-              else if ( d.value === 40) {
-                  return "Black";
-              }
-              else if (d.value === 100) {
-                  return 'LightGray';
-              }
-              else if (d.value === 500) {
-                  return 'DarkGray';
-              }
-              else if (d.value === 1000) {
-                  return 'Gray';
-              }
-              else if (d.value === 2000) {
-                  return 'Black';
-              }
-              else { return "White" };
-          })
-          .style("opacity", .99);
+    var cluster = d3.layout.cluster()
+        .size([dimension/3, (dimension/3) - 100])
+        .separation(function (a, b) { return (a.parent == b.parent ? 1 : 2) / a.depth; });
 
-      node.filter(function (d) { return (d.depth == options.depth) })
-          .attr("id", function (d) { if (d.name == '') { return "innerNode" } else { return 'X'+d.name.toUpperCase() } });
+    var diagonal = d3.svg.diagonal()
+        .projection(function (d) {
+          return [d.y, d.x];
+        });
 
-      node.append("text")
-          .attr("dy", "3")
-          .attr("dx", function(d) { return d.children ? -8 : 8; })
-          .attr("name", function (d) { if (d.name == '') { return "branch" } else { return d.name } })
-          .attr("text-anchor", function (d) {
-                return d.children ? "end" : "start";
-          })
-          .text(function (d) {
-              if (d.depth == options.depth) {
-                  return d.name.toUpperCase();
-              } else if (options.label_free.includes(d.depth)) {
-                  return "";
-              } else if (d.depth > 0) {
-                  return d.name;
-              } else {
-                  return "";
-              }
-          })
-          // .call(wrap, options.branch_trunc)
-          .style("font-size", "10px")
-          .style("font-family", "Palatino")
-          .style("fill", function (d) {
-              if (d.color) { return "#111" }
-              else { return "#222" };
-          }); //.call(getBB);
-      // node.filter(function (d) { return (d.depth != options.depth) }).insert("rect", "text")
-      //     .attr("x", function (d) { return d.x < 180 ? d.bbox.x - 12 : d.bbox.x - d.bbox.width - 12; })
-      //     .attr("y", function (d) { return d.bbox.y })
-      //     .attr("width", function (d) { return d.bbox.width })
-      //     .attr("height", function (d) { return d.bbox.height })
-      //     .style("fill", "#FFF");
+    var svg = d3.select('#'+options.anchor).append("svg")
+        .attr("width", dimension)
+        .attr("height", dimension/2)
+        .attr("id", options.anchor+"_svg")
+        .attr("transform", "translate(0," + (dimension/12) + ")");
 
-      function string_pixlen(text, depth) {
-          var canvas = document.createElement('canvas');
-          var ctx = canvas.getContext("2d");
-          if (depth < 2) {
-              ctx.font = "20px Palatino"
-          } else if (depth == 2) {
-              ctx.font = "14px Palatino"
-          } else {
-              ctx.font = "12px Palatino"
+
+
+    var nodes = cluster.nodes(data);
+
+    nodes.forEach(function (d) {
+        if (d.depth == 0) {
+            d.y = 0
+        } else {
+            d.y = branches[d.depth]
+        }
+    });
+
+    var links = cluster.links(nodes);
+
+    var link = svg.selectAll(".link")
+        .data(links)
+        .enter()
+        .append("path")
+        .each(function (d) { d.target.linkNode = this; })
+        .attr("class", "link_continuous")
+        .attr("d", diagonal)
+        .style("stroke", function (d) { return d.target.color; })
+        .style("stroke-width", function (d) { if (d.target.depth > 0) { return 4 - d.target.depth; } else { return 0; } })
+        .style("fill-opacity", 0);
+
+    var node = svg.selectAll(".node")
+        .data(nodes)
+        .enter()
+        .append("g")
+        .attr("class", "node")
+        .attr("transform", function (d) {
+      return "translate(" + d.y + "," + d.x + ")";
+        })
+
+    node.filter(function (d) { return (d.depth == options.depth) })
+        .append("circle")
+        .attr("r", "4.0")
+        .style("stroke", "black")
+        .style("stroke-width", ".3px")
+        .style("fill", function (d) {
+            if (d.color && d.depth < options.depth) { return d.color }
+            else if ( d.value === 10) {
+                return "LightGray";
+            }
+            else if ( d.value === 20) {
+                return "DarkGray";
+            }
+            else if ( d.value === 30) {
+                return "Gray";
+            }
+            else if ( d.value === 40) {
+                return "Black";
+            }
+            else { return "White" };
+        })
+        .style("opacity", .99);
+
+    node.filter(function (d) { return (d.depth == options.depth) })
+        .attr("id", function (d) { if (d.name == '') { return "innerNode" } else { return 'X'+d.name.toUpperCase() } });
+
+    node.append("text")
+        .attr("dy", "3")
+        .attr("dx", function(d) { return d.children ? -8 : 8; })
+        .attr("name", function (d) { if (d.name == '') { return "branch" } else { return d.name } })
+        .attr("text-anchor", function (d) {
+              return d.children ? "end" : "start";
+        })
+        .text(function (d) {
+            if (d.depth == options.depth) {
+                return d.name.toUpperCase();
+            } else if (options.label_free.includes(d.depth)) {
+                return "";
+            } else if (d.depth > 0) {
+                return d.name;
+            } else {
+                return "";
+            }
+        })
+        // .call(wrap, options.branch_trunc)
+        .style("font-size", "12px")
+        .style("font-family", "Palatino")
+        .style("fill", function (d) {
+            if (d.color) { return "#111" }
+            else { return "#222" };
+        }).call(getBB);
+    node.filter(function (d) { return (d.depth != options.depth) }).insert("rect", "text")
+        .attr("x", function (d) { return d.bbox.x })
+        .attr("y", function (d) { return d.bbox.y })
+        .attr("width", function (d) { return d.bbox.width })
+        .attr("height", function (d) { return d.bbox.height })
+        .style("fill", "#FFF");
+
+    function string_pixlen(text, depth) {
+        var canvas = document.createElement('canvas');
+        var ctx = canvas.getContext("2d");
+        if (depth < 2) {
+            ctx.font = "22px Palatino"
+        } else if (depth == 2) {
+            ctx.font = "16px Palatino"
+        } else {
+            ctx.font = "14px Palatino"
+        }
+        return parseInt(ctx.measureText(text).width) - 100;
+    }
+
+    function getBB(selection) {
+        selection.each(function (d) { d.bbox = this.getBBox(); })
+    }
+
+    function wrap(text, width) {
+        if (width == 0) {
+            return;
+        }
+        text.each(function () {
+            var text = d3.select(this),
+                words = text.text().split(/\s+/).reverse(),
+                word,
+                line = [],
+                lineNumber = 0,
+                lineHeight = 1.1, // ems
+                y = text.attr("y"),
+                dy = parseFloat(text.attr("dy"));
+                // tspan = text.text(null).append("tspan").attr("x", 0).attr("y", y).attr("dy", dy + "em");
+            while (word = words.pop()) {
+                line.push(word);
+                tspan.text(line.join(" "));
+                if (tspan.node().getComputedTextLength() > width) {
+                    line.pop();
+                    tspan.text(line.join(" "));
+                    line = [word];
+                    tspan = text.append("tspan").attr("x", 0).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
+                }
+            }
+        });
+    }
+
+}
+
+
+
+// Heatmap (circles_bal, heatmap_data, master_dict, buttonObjects);
+function draw_heatmap(square_data, data, bible, options, trim=true) {
+  // set the dimensions and margins of the graph
+
+  var support = (function () {
+  	if (!window.DOMParser) return false;
+  	var parser = new DOMParser();
+  	try {
+  		parser.parseFromString('x', 'text/html');
+  	} catch(err) {
+  		return false;
+  	}
+  	return true;
+  })();
+
+  var textToHTML = function (str) {
+
+  	// check for DOMParser support
+  	if (support) {
+  		var parser = new DOMParser();
+  		var doc = parser.parseFromString(str, 'text/html');
+  		return doc.body.innerHTML;
+  	}
+
+  	// Otherwise, create div and append HTML
+  	var dom = document.createElement('div');
+  	dom.innerHTML = str;
+  	return dom;
+
+  };
+
+  var counting = function (var1, var2, var3) {
+    for (var i=0; i < var1.length; i++){
+      id = var1[i].replace(' (','').replace(')','');
+      var2[id] = (i + 1)*var3;
+    }
+    return var2;
+  };
+
+  var margin = {top: 30, right: 30, bottom: 30, left: 30};
+
+  // Labels of row and columns
+  var rows = [];
+  var html_converter = [];
+  var cols = [];
+  var colorCols = ['color'];
+  var chartData = [];
+  var colorData = [];
+  var clone = structuredClone(data);
+  var gpcrClasses = [];
+  var gpcrLigandType = [];
+  var gpcrReceptorFamily = [];
+  var gpcrName = [];
+  var sorterDict = {};
+  var filtered_square_data = {};
+  var rows_to_uniprot = {};
+
+  if (trim==true) {
+    for (var prot_class in clone){
+      for (var entry in clone[prot_class]) {
+        for (var family in clone[prot_class][entry]['children']) {
+          var i = clone[prot_class][entry]['children'][family]['children'].length;
+          while (i-- ){
+            if (clone[prot_class][entry]['children'][family]['children'][i]['value'] == 0) {
+              clone[prot_class][entry]['children'][family]['children'].splice(i, 1);
+            }
           }
-          return parseInt(ctx.measureText(text).width) + 40;
-      }
-
-      function getBB(selection) {
-          selection.each(function (d) { d.bbox = this.getBBox(); })
-      }
-
-      function wrap(text, width) {
-          if (width == 0) {
-              return;
+        }
+        var k = clone[prot_class][entry]['children'].length;
+        while (k-- ){
+          if (clone[prot_class][entry]['children'][k]['children'].length == 0) {
+            clone[prot_class][entry]['children'].splice(k, 1);
           }
-          text.each(function () {
-              var text = d3.select(this),
-                  words = text.text().split(/\s+/).reverse(),
-                  word,
-                  line = [],
-                  lineNumber = 0,
-                  lineHeight = 1.1, // ems
-                  y = text.attr("y"),
-                  dy = parseFloat(text.attr("dy"));
-                  // tspan = text.text(null).append("tspan").attr("x", 0).attr("y", y).attr("dy", dy + "em");
-              while (word = words.pop()) {
-                  line.push(word);
-                  tspan.text(line.join(" "));
-                  if (tspan.node().getComputedTextLength() > width) {
-                      line.pop();
-                      tspan.text(line.join(" "));
-                      line = [word];
-                      tspan = text.append("tspan").attr("x", 0).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
-                  }
-              }
-          });
+        }
       }
+      var l = clone[prot_class].length;
+      while (l-- ){
+        if (clone[prot_class][l]['children'].length == 0) {
+          clone[prot_class].splice(l, 1);
+        }
+      }
+    }
+    for (var prot_class in clone) {
+      gpcrClasses.push(prot_class);
+      if (options['classClick'].includes(prot_class)){
+        for (var entry in clone[prot_class]){
+          gpcrLigandType.push(clone[prot_class][entry]['name']);
+          for (var family in clone[prot_class][entry]['children']) {
+            gpcrReceptorFamily.push(clone[prot_class][entry]['children'][family]['name']);
+            for (var i in clone[prot_class][entry]['children'][family]['children']){
+              tmp = clone[prot_class][entry]['children'][family]['children'][i]['name'].toUpperCase();
+              row_val = bible[clone[prot_class][entry]['children'][family]['children'][i]['name'].toUpperCase()][options['namesClick']];
+              gpcrName.push(tmp);
+              filtered_square_data[tmp] = square_data[tmp];
+              rows_to_uniprot[row_val] = tmp;
+              rows.push(row_val);
+              html_converter.push(
+                {
+                  row: bible[clone[prot_class][entry]['children'][family]['children'][i]['name'].toUpperCase()][options['namesClick']],
+                  html: textToHTML(bible[clone[prot_class][entry]['children'][family]['children'][i]['name'].toUpperCase()][options['namesClick']])
+                }
+              );
+              // console.log(textToHTML(bible[clone[prot_class][entry]['children'][family]['children'][i]['name'].toUpperCase()][options['namesClick']]));
+              colorData.push(
+                { row: bible[clone[prot_class][entry]['children'][family]['children'][i]['name'].toUpperCase()][options['namesClick']],
+                  col: 'color',
+                  value: bible[clone[prot_class][entry]['children'][family]['children'][i]['name'].toUpperCase()][options['colorClick']]
+                }
+              );
+            }
+          }
+        }
+      }
+    }
+  } else {
+    for (var prot_class in data) {
+      gpcrClasses.push(prot_class);
+      if (options['classClick'].includes(prot_class)){
+        for (var entry in data[prot_class]){
+          gpcrLigandType.push(data[prot_class][entry]['name']);
+          for (var family in data[prot_class][entry]['children']) {
+            gpcrReceptorFamily.push(data[prot_class][entry]['children'][family]['name']);
+            for (var i in data[prot_class][entry]['children'][family]['children']){
+              gpcrName.push(data[prot_class][entry]['children'][family]['children'][i]['name'].toUpperCase());
+              rows.push(
+                textToHTML(bible[data[prot_class][entry]['children'][family]['children'][i]['name'].toUpperCase()][options['namesClick']])
+              );
+              colorData.push(
+                { row: bible[data[prot_class][entry]['children'][family]['children'][i]['name'].toUpperCase()][options['namesClick']],
+                  col: 'color',
+                  value: bible[data[prot_class][entry]['children'][family]['children'][i]['name'].toUpperCase()][options['colorClick']]
+                }
+              );
+            }
+          }
+        }
+      }
+    }
   }
+
+  sorterDict = counting(gpcrClasses.sort().reverse(), sorterDict, 1000000);
+  sorterDict = counting(gpcrLigandType.sort().reverse(), sorterDict, 10000);
+  sorterDict = counting(gpcrReceptorFamily.sort().reverse(), sorterDict, 100);
+  sorterDict = counting(gpcrName.sort().reverse(), sorterDict, 1);
+
+  var sorted_rows = [];
+  for (var i=0; i < rows.length; i++){
+    k = 0;
+    for (var id in options['sortClick']){
+      name = options['sortClick'][id];
+      fam = bible[rows_to_uniprot[rows[i]]][name].replace(' receptors','').replace('(','').replace(')','');
+      k = k + sorterDict[fam];
+    }
+    sorterDict[k] = rows[i];
+    sorted_rows.push(k);
+  }
+  sorted_rows.sort((a,b) => a-b);
+  for (var i=0; i < sorted_rows.length; i++){
+    sorted_rows[i] = sorterDict[sorted_rows[i]];
+  }
+
+  for (var receptor in filtered_square_data){
+    for (var subtype in filtered_square_data[receptor]){
+      if (subtype != 'null'){
+        cols.push(subtype);
+        chartData.push({ row: bible[receptor][options['namesClick']], col: subtype, value: filtered_square_data[receptor][subtype]});
+      }
+    }
+  }
+
+  var cols = cols.filter(function(item, pos){
+                          return cols.indexOf(item)== pos;
+                          });
+  cols.sort();
+
+  var width = (60 * cols.length);
+  var height = (55 * rows.length) - margin.top - margin.bottom;
+
+  // append the svg object to the body of the page
+  var svg_home = d3v4.select("#class_a_bal")
+              .append("svg")
+              .attr("width", width + margin.left + margin.right)
+              .attr("height", height + margin.top + margin.bottom)
+              .attr("transform", "translate(0,0)")
+
+  var color_svg = svg_home.append("g")
+                    .attr("transform", "translate(" + (margin.left*1.5) + "," + margin.top + ")");
+
+  var svg = svg_home.append("g")
+                    .attr("transform", "translate(" + (margin.left*2.5) + "," + margin.top + ")");
+
+  // Build X scales and axis:
+  var x = d3v4.scaleBand()
+    .range([ 0, width ])
+    .domain(cols)
+    .padding(0.01);
+
+  var xColor = d3v4.scaleBand()
+    .range([ 0, width ])
+    .domain(colorCols)
+    .padding(0.01);
+
+  svg.append("g")
+    .attr("transform", "translate(0," + height + ")")
+    .attr('id', 'Xaxis')
+    .call(d3v4.axisBottom(x));
+
+  // Build X scales and axis:
+  var y = d3v4.scaleBand()
+    .range([ height, 0 ])
+    .domain(sorted_rows)
+    .padding(0.01);
+
+  color_svg.append("g")
+    .attr('id', 'Yaxis')
+    .call(d3v4.axisLeft(y));
+
+  // Build color scale
+  var myColor = d3v4.scaleLinear()
+    .range(["white", "black"])
+    .domain([1,30])
+
+  //Read the data
+    color_svg.selectAll()
+        .data(colorData, function(d) {return d.row+':'+d.col;})
+        .enter()
+        .append("rect")
+        .attr("x", function(d) { return x(d.col) })
+        .attr("y", function(d) { return y(d.row) })
+        .attr("width", "15px" )
+        .attr("height", y.bandwidth() )
+        .style("fill", function(d) { return d.value} )
+
+  //Read the data
+    svg.selectAll()
+        .data(chartData, function(d) {return d.row+':'+d.col;})
+        .enter()
+        .append("rect")
+        .attr("x", function(d) { return x(d.col) })
+        .attr("y", function(d) { return y(d.row) })
+        .attr("width", x.bandwidth() )
+        .attr("height", y.bandwidth() )
+        .style("fill", function(d) { return myColor(d.value)} )
+
+    svg.select('#Xaxis')
+       .attr('text-anchor', 'start')
+
+    d3v4.selectAll("#Yaxis>.tick>text")
+        .each(function(d, i){
+          d3.select(this).style("font-size","18px");
+        });
+
+    ticks = svg.select('#Xaxis').selectAll('.tick');
+    ticks.each(function(d) {
+      text = d3.select(this).select('text');
+      text.attr("transform", "rotate(45)");
+      text.attr("y", "5");
+    });
+
+    yTicks = color_svg.select('#Yaxis').selectAll('.tick');
+    yTicks.each(function(d) {
+      yText = d3.select(this).select('text')[0];
+      for (var i=0; i < html_converter.length; i++){
+        if (html_converter[i]['row'] === yText[0].innerHTML.replaceAll("&lt;", "<").replaceAll("&gt;", ">").replaceAll("amp;","")){
+          yText[0].innerHTML = html_converter[i]['html'];
+          labelSize = yText[0].getBBox().width*1.05 + 0.5 * 10
+          svg_home.attr("width", width + margin.left + margin.right + labelSize);
+          svg.attr("transform", "translate(" + (labelSize+40) + "," + margin.top + ")");
+          color_svg.attr("transform", "translate(" + (labelSize+20) + "," + margin.top + ")");
+        }
+      }
+    });
+
+}
