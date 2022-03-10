@@ -445,7 +445,7 @@ class Command(BaseBuild):
 
 
         for protein in receptors:
-            data = OnTheFly(protein, subtype, pathway, balanced)
+            data = OnTheFly(protein, subtype=subtype, pathway=pathway, balanced=balanced)
             for publication in data.keys():
                 for row in data[publication]:
                     if pathway:
