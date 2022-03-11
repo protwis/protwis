@@ -41,6 +41,7 @@ class Command(BaseCommand):
             safe_proc_num = options['proc']
 
         phase1 = [
+            ['clear_cache'],
             ['build_common'],
             ['build_citations'],
             ['build_human_proteins'],
@@ -53,6 +54,7 @@ class Command(BaseCommand):
             ['build_all_gtp_ligands', {'test_run': options['test']}],
             ['build_endogenous_data_from_gtp_source', {'test_run': options['test']}],
             ['build_bias_preprocess_data', {'test_run': options['test']}],
+            ['build_balanced_ligands', {'test_run': options['test']}],
             ['build_chembl_data', {'test_run': options['test']}],
             ['build_mutant_data', {'test_run': options['test']}],
             ['build_structures', {'proc': safe_proc_num, 'skip_cn': options['test']}],
@@ -70,7 +72,6 @@ class Command(BaseCommand):
         ]
         phase2 = [
             ['build_structure_angles', {'proc': options['proc']}],
-            ['build_contact_representative'],
             ['build_construct_data'],
             ['update_construct_mutations'],
             ['build_protein_sets'],
@@ -81,6 +82,7 @@ class Command(BaseCommand):
             ['build_dynamine_annotation', {'proc': options['proc']}],
             ['build_complex_interactions'],
             ['assign_structure_states'],
+            ['build_contact_representative'],
             ['build_mammalian_representative'],
             ['upload_excel_bias_pathways'],
             ['build_text'],

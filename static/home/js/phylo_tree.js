@@ -672,7 +672,12 @@ function draw_heatmap(square_data, data, bible, options, trim=true) {
   var colorCols = ['color'];
   var chartData = [];
   var colorData = [];
-  var clone = structuredClone(data);
+  var clone = [];
+  if (typeof structuredClone === "function") { 
+    clone = structuredClone(data);
+  } else {
+    clone = JSON.parse(JSON.stringify(data));
+  }
   var gpcrClasses = [];
   var gpcrLigandType = [];
   var gpcrReceptorFamily = [];

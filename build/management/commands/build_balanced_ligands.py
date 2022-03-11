@@ -193,14 +193,10 @@ class Command(BaseBuild):
         #fetching data given the receptor id
         test_data = BiasedData.objects.filter(receptor=receptor_id, Emax__gte=90)
         pub_ids = list(BiasedData.objects.filter(receptor=receptor_id).values_list("publication", flat=True).distinct())
-        lig_ids = list(BiasedData.objects.filter(receptor=receptor_id).values_list("ligand_id", flat=True).distinct())
 
         # Performance: first collect all publication and ligand data
         pub_objs = Publication.objects.filter(id__in=pub_ids).values_list("id", "web_link_id__index", "year", "journal_id__name", "authors")
         pub_objs_dict = {pub_obj[0]:pub_obj[1:] for pub_obj in pub_objs}
-
-        lig_objs = Ligand.objects.filter(id__in=lig_ids).values_list("id", "name", "properities_id")
-        lig_objs_dict = {lig_obj[0]:lig_obj[1:] for lig_obj in lig_objs}
 
         publications = {}
         for entry in test_data:
@@ -247,9 +243,9 @@ class Command(BaseBuild):
         parsed_data['preferred_metric'] = parsed_data['Delta Log(Tau/KA)'].combine_first(parsed_data['Delta Log(Emax/EC50)'])
         filtered = parsed_data.loc[~parsed_data['preferred_metric'].isnull()]
 
-        test = filtered[filtered['preferred_metric'].between(-0.2, 0.2, inclusive=False)]
+        test = filtered[filtered['preferred_metric'].between(-0.2, 0.2, inclusive="neither")]
 
-        balanced_db = test[['receptor_id', 'ligand_id', 'doi', 'Comparison', 'Delta Log(Tau/KA)', 'Delta Log(Emax/EC50)', 'preferred_metric', 'subtype']]
+        balanced_db = test[['receptor_id', 'ligand_id', 'doi', 'Comparison', 'Delta Log(Tau/KA)', 'Delta Log(Emax/EC50)', 'preferred_metric', 'subtype']].copy()
         balanced_db[['Pathway 1', 'Pathway 2']] = balanced_db['Comparison'].str.split(' - ', 1, expand=True)
         #this step is needed to undiscriminate order of pathways in comparisons
         #while assessing the balance reference ligand for that specific pathway pair
