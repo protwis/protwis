@@ -532,6 +532,7 @@ class UserBiased(AbsReferenceSelectionTable):
     number_of_steps = 2
     filters = False
     filter_tableselect = False
+    import_export_box = False
     family_tree = False
     docs = 'sequences.html#structure-based-alignments'
     title = "SELECT LIGAND to be used as reference for the calculation of bias ligands"

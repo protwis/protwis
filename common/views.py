@@ -579,7 +579,7 @@ class AbsReferenceSelectionTable(TemplateView):
     filters = True
 
     target_input = False
-
+    import_export_box = True
     default_species = 'Human'
     default_slug = '000'
     default_subslug = '00'
@@ -681,6 +681,7 @@ class AbsTargetSelectionTable(TemplateView):
 
     type_of_selection = 'targets_table'
     selection_only_receptors = False
+    import_export_box = True
     step = 1
     number_of_steps = 2
     title = 'SELECT TARGETS'
@@ -804,6 +805,7 @@ class AbsTargetSelection(TemplateView):
 
     type_of_selection = 'targets'
     selection_only_receptors = False
+    import_export_box = True
     step = 1
     number_of_steps = 2
     title = 'SELECT TARGETS'
@@ -917,6 +919,7 @@ class AbsReferenceSelection(AbsTargetSelection):
     type_of_selection = 'reference'
     step = 1
     number_of_steps = 3
+    import_export_box = True
     title = 'SELECT A REFERENCE TARGET'
     description = 'Select a reference target by searching or browsing in the right column.\n\nThe reference will be compared to the targets you select later in the workflow.\n\nOnce you have selected your reference target, you will be redirected to the next step.'
     redirect_on_select = True

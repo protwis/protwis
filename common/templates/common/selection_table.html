@@ -47,6 +47,7 @@
         <div class="col-md-3">
         {% block middle_left_column %}
         {% endblock %}
+        {% if import_export_box %}
         <div class="col-md-12 panel panel-primary">
             <div class="panel-body" id="selection-{{ selection_box }}">
               <div><input type="text" id="copyboxTargets" class="form-control" placeholder="UniProt names"></div>
@@ -56,6 +57,7 @@
               </div>
             </div>
         </div>
+        {% endif %}
         </div>
 
         <div class="col-md-3">
@@ -111,6 +113,7 @@
                 </div>
             </div>
 
+            {% if import_export_box %}
             <div class="col-md-12 panel panel-primary">
                 <div class="panel-body" id="selection-{{ selection_box }}">
                   <div><input type="text" id="copyboxTargets" class="form-control" placeholder="UniProt names"></div>
@@ -120,6 +123,7 @@
                   </div>
                 </div>
             </div>
+            {% endif %}
         </div>
 
         <!-- selection column -->
