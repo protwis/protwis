@@ -661,7 +661,6 @@ class Command(BaseBuild):
         for index, row in balanced_db.iterrows():
             row['sorter'] = ''.join(list(set([row['Pathway 1'], row['Pathway 2']])))
 
-        recs = list(balanced_db['receptor_id'].unique())
         balanced_db['Ranking'] = np.nan
         to_be_parsed = balanced_db.groupby(['receptor_id', 'sorter', 'doi']).size().reset_index().rename(columns={0:'count'})
         the_tuples = list(zip(to_be_parsed.receptor_id, to_be_parsed.sorter, to_be_parsed.doi))
