@@ -334,7 +334,7 @@ function initTargetTable(elementID, pathway) {
                       filter_type: "multi_select",
                       select_type: "select2",
                       column_data_type: "html",
-                      filter_default_label: "Uniprot",
+                      filter_default_label: "Species",
                       filter_reset_button_text: false,
                       select_type_options: {
                           "width": "110px",
@@ -342,6 +342,17 @@ function initTargetTable(elementID, pathway) {
                   },
                   {
                       column_number: 5,
+                      filter_type: "multi_select",
+                      select_type: "select2",
+                      column_data_type: "html",
+                      filter_default_label: "Uniprot",
+                      filter_reset_button_text: false,
+                      select_type_options: {
+                          "width": "110px",
+                      }
+                  },
+                  {
+                      column_number: 6,
                       filter_type: "multi_select",
                       select_type: "select2",
                       column_data_type: "html",
@@ -354,7 +365,7 @@ function initTargetTable(elementID, pathway) {
                       }
                   },
                   {
-                      column_number: 6,
+                      column_number: 7,
                       filter_type: "range_number",
                       filter_default_label: ["From", "To"],
                       filter_reset_button_text: false,
@@ -432,7 +443,7 @@ function initTargetTable(elementID, pathway) {
                       filter_type: "multi_select",
                       select_type: "select2",
                       column_data_type: "html",
-                      filter_default_label: "Uniprot",
+                      filter_default_label: "Species",
                       filter_reset_button_text: false,
                       select_type_options: {
                           "width": "110px",
@@ -440,6 +451,17 @@ function initTargetTable(elementID, pathway) {
                   },
                   {
                       column_number: 5,
+                      filter_type: "multi_select",
+                      select_type: "select2",
+                      column_data_type: "html",
+                      filter_default_label: "Uniprot",
+                      filter_reset_button_text: false,
+                      select_type_options: {
+                          "width": "110px",
+                      }
+                  },
+                  {
+                      column_number: 6,
                       filter_type: "multi_select",
                       select_type: "select2",
                       column_data_type: "html",
@@ -452,18 +474,10 @@ function initTargetTable(elementID, pathway) {
                       }
                   },
                   {
-                      column_number: 6,
-                      filter_type: "range_number",
-                      filter_default_label: ["From", "To"],
-                      filter_reset_button_text: false,
-                      column_data_type: "html",
-                  },
-                  {
                       column_number: 7,
                       filter_type: "range_number",
                       filter_default_label: ["From", "To"],
                       filter_reset_button_text: false,
-                      // style_class: "center",
                       column_data_type: "html",
                   },
                   {
@@ -476,6 +490,14 @@ function initTargetTable(elementID, pathway) {
                   },
                   {
                       column_number: 9,
+                      filter_type: "range_number",
+                      filter_default_label: ["From", "To"],
+                      filter_reset_button_text: false,
+                      // style_class: "center",
+                      column_data_type: "html",
+                  },
+                  {
+                      column_number: 10,
                       filter_type: "range_number",
                       filter_default_label: ["From", "To"],
                       filter_reset_button_text: false,

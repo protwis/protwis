@@ -687,7 +687,7 @@ def AddPathwayData(master, data, rank, pathway=False):
     master[rank+' - Pathway'] = data['primary_effector_family']
     try:
         master[rank+' - EC50'] = -math.log(data['EC50'],10)
-    except TypeError:
+    except (TypeError, ValueError):
         master[rank+' - EC50'] = data['EC50']
     master[rank+' - Emax'] = data['Emax']
     master[rank+' - Measured molecule 1'] = data['molecule_1']
@@ -701,7 +701,10 @@ def AddPathwayData(master, data, rank, pathway=False):
         master[rank+' - Bias factor'] = data['Bias factor']
     if pathway:
         master[rank+' - log(Tau/KA)'] = data['Tau_KA']
-        master[rank+' - log(Emax/EC50)'] = data['log(Emax/EC50)']
+        try:
+            master[rank+' - log(Emax/EC50)'] = data['log(Emax/EC50)']
+        except KeyError:
+            master[rank+' - log(Emax/EC50)'] = None
         if set(['Delta_log(Emax/EC50)','Delta_log(Tau/KA)']).issubset(set(data.keys())):
             master['P1-'+rank+' - ΔLog(Emax/EC50)'] = data['Delta_log(Emax/EC50)']
             master['P1-'+rank+' - ΔLog(Tau/KA)'] = data['Delta_log(Tau/KA)']
