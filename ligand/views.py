@@ -1624,6 +1624,7 @@ class LigandInformationView(TemplateView):
 
     @staticmethod
     def process_ligand(ligand_data):
+        img_setup_smiles = "<img style=\"max-height: 300px; max-width: 400px;\" src=\"https://cactus.nci.nih.gov/chemical/structure/{}/image\">"
         ld = dict()
         ld['ligand_id'] = ligand_data.id
         ld['ligand_name'] = ligand_data.name
@@ -1640,11 +1641,12 @@ class LigandInformationView(TemplateView):
         ld['logp'] = ligand_data.logp
         ld['mw'] = ligand_data.mw
         ld['wl'] = list()
-        ld['picture'] = None
+        ld['picture'] = img_setup_smiles.format(str(ligand_data.smiles)) if ligand_data.smiles != None else None
+        print(ld['picture'])
         for i in ligand_data.ids.all():
             ld['wl'].append({'name': i.web_resource.name, "link": str(i)})
-            if i.web_resource.slug == 'chembl_ligand':
-                ld['picture'] = i.index
+            # if i.web_resource.slug == 'chembl_ligand':
+            #     ld['picture'] = i.index
         return ld
 
 
