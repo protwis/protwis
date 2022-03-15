@@ -316,7 +316,6 @@ def getTargetTable():
 def getReferenceTable(pathway, subtype):
     cache_key = "reference_table_" + pathway + "_" + subtype
     data_table = cache.get(cache_key)
-    data_table = None
     if data_table == None:
         #get all the proteins that are in biaseddata
         biased_proteins = list(BiasedData.objects.values_list("receptor_id__entry_name").distinct())

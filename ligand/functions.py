@@ -257,7 +257,8 @@ def assess_reference(data_dict, user=False):
 
     #if reference ligand is provided by the user
     else:
-        reference_ligand = user
+        reference_ligand = int(user)
+
 
     for assay in data_dict.keys():
         if data_dict[assay]['ligand_id'] == reference_ligand:
@@ -580,6 +581,9 @@ def OnTheFly(receptor_id, subtype=False, pathway=False, user=False, balanced=Fal
         test_data = BiasedData.objects.filter(receptor=receptor_id, publication__in=pub_ids)
         lig_ids = list(BiasedData.objects.filter(receptor=receptor_id, publication__in=pub_ids).values_list("ligand_id", flat=True).distinct())
 
+    print(receptor_id)
+    print(user)
+    print(test_data)
     # Performance: first collect all publication and ligand data
     pub_objs = Publication.objects.filter(id__in=pub_ids).values_list("id", "web_link_id__index", "year", "journal_id__name", "authors")
     pub_objs_dict = {pub_obj[0]:pub_obj[1:] for pub_obj in pub_objs}
