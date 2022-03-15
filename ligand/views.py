@@ -1301,14 +1301,21 @@ class LigandStatistics(TemplateView):
                               "pathway_subtype_biased", "receptor_id__entry_name", "ligand_id")
 
             circles = {}
+            label_converter = {'Arrestin-2': "β-Arr",
+                               'Arrestin-3': "β-Arr 2",
+                               'Gaq/i-chimera': "Gq/i-chim",
+                               'Minigi': "MiniGi"}
             for data in circle_data:
                 # if data[1].split('_')[1] == 'human':
                 key = data[1].split('_')[0].upper()
+                val = data[0].split(' (')[0].capitalize()
+                if val in label_converter.keys():
+                    val = label_converter[val]
                 if key not in circles.keys():
                     circles[key] = {}
-                if data[0] not in circles[key].keys():
-                    circles[key][data[0]] = 1
-                circles[key][data[0]] += 1
+                if val not in circles[key].keys():
+                    circles[key][val] = 1
+                circles[key][val] += 1
 
             context["circles_data"] = json.dumps(circles)
             #Addressing section for Balanced Reference ligands and pathway biased
@@ -1354,113 +1361,118 @@ class LigandStatistics(TemplateView):
                 for data in circle_data_bal:
                     # if data[1].split('_')[1] == 'human':
                     key = data[1].split('_')[0].upper()
+                    val = data[0].split(' (')[0].capitalize()
+                    if val in label_converter.keys():
+                        val = label_converter[val]
                     if key not in circles_bal.keys():
                         circles_bal[key] = {}
-                    if data[0] not in circles_bal[key].keys():
-                        circles_bal[key][data[0]] = 1
-                    circles_bal[key][data[0]] += 1
+                    if val not in circles_bal[key].keys():
+                        circles_bal[key][val] = 1
+                    circles_bal[key][val] += 1
 
                 context["circles_bal_data"] = json.dumps(circles_bal)
 
                 #Adding options and data for pathway biased plots to context
                 whole_class_a_bal = class_a_data.get_nodes_dict(self.page+'_bal')
-                for item in whole_class_a_bal['children']:
-                    if item['name'] == 'Orphan':
-                        orphan_data_bal = OrderedDict(
-                            [('name', ''), ('value', 3000), ('color', ''), ('children', [item])])
-                        whole_class_a_bal['children'].remove(item)
-                        break
+                HeatMapData_bal = whole_class_a_bal
+                HeatMapData_bal = OrderedDict([('Class A', v) if k == 'children' else (k, v) for k, v in HeatMapData_bal.items()])
+                HeatMapData_bal['Class B1'] = class_b1_data.get_nodes_dict(self.page+'_bal')['children']
+                HeatMapData_bal['Class B2'] = class_b2_data.get_nodes_dict(self.page+'_bal')['children']
+                HeatMapData_bal['Class C'] = class_c_data.get_nodes_dict(self.page+'_bal')['children']
+                HeatMapData_bal['Class F'] = class_f_data.get_nodes_dict(self.page+'_bal')['children']
+                HeatMapData_bal['Class T2'] = class_t2_data.get_nodes_dict(self.page+'_bal')['children']
+                context['HeatMapData_bal'] = json.dumps(HeatMapData_bal)
 
-                HeatMapData = whole_class_a_bal
-                HeatMapData = OrderedDict([('Class A', v) if k == 'children' else (k, v) for k, v in HeatMapData.items()])
-                HeatMapData['Class B1'] = class_b1_data.get_nodes_dict(self.page+'_bal')['children']
-                HeatMapData['Class B2'] = class_b2_data.get_nodes_dict(self.page+'_bal')['children']
-                HeatMapData['Class C'] = class_c_data.get_nodes_dict(self.page+'_bal')['children']
-                HeatMapData['Class F'] = class_f_data.get_nodes_dict(self.page+'_bal')['children']
-                HeatMapData['Class T2'] = class_t2_data.get_nodes_dict(self.page+'_bal')['children']
-                HeatMapData['Orphans'] = orphan_data_bal['children']
-                context['HeatMapData'] = json.dumps(HeatMapData)
 
-                #######################################################################################
-                ##################### Setting up data for the Heatmap calculation #####################
-                CSS_COLORS = {
-                    "Adhesion receptors": 'Crimson',
-                    "Alicarboxylic acid receptors": 'Red',
-                    "Aminergic receptors": 'OrangeRed',
-                    "Amino acid receptors": 'Orange',
-                    "Ion receptors": 'GoldenRod',
-                    "Lipid receptors": 'Gold',
-                    "Melatonin receptors": 'Yellow',
-                    "Nucleotide receptors": 'YellowGreen',
-                    "Orphan receptors": 'Gold',
-                    "Other": 'Green',
-                    "Olfactory receptors": 'Black',
-                    "Peptide receptors": 'SkyBlue',
-                    "Protein receptors": 'SteelBlue',
-                    "Sensory receptors": 'Indigo',
-                    "Steroid receptors": 'Purple',
-                    "Class B2 (Adhesion)": 'LawnGreen',
-                    "Class B1 (Secretin)": 'MediumBlue',
-                    "Class C (Glutamate)": 'DarkGoldenRod',
-                    "Class C Orphans": 'DarkGoldenRod',
-                    "Class A orphans": 'DarkSalmon',
-                    "Class A (Rhodopsin)": 'Violet',
-                    "Class F (Frizzled)": 'Teal',
-                    "Other GPCR orphans": "Grey",
-                    "Class T (Taste 2)": 'MediumPurple',
-                    }
-                heatmap_receptors = Protein.objects.filter(family__slug__startswith='00', species_id=1).exclude(
-                                                  family__slug__startswith='005').prefetch_related(
-                                                  "family", "family__parent", "family__parent__parent", "family__parent__parent__parent")
-                MasterDict = {}
-                color_cache = {}
-                for rec in heatmap_receptors:
-                    if 'CONSENSUS' in rec.entry_short():
-                        continue
-                    if (rec.entry_short()[0].isdigit()) and (rec.entry_short()[0] != '5'):
-                        continue
-                    if rec.family.name.startswith('Class') or rec.family.name.startswith('Other'):
-                        continue
-                    if rec.family.parent.name.startswith('Class'):
-                        class_name = rec.family.parent.name.split(' (')[0]
-                        class_color = CSS_COLORS[rec.family.parent.name]
-                        lig_type_color = "NA"
-                        lig_type_name = "NA"
-                        rec_family_color = "NA"
-                        rec_family_name = "NA"
-                    if rec.family.parent.parent.name.startswith('Class') or rec.family.parent.parent.name.startswith('Orphan'):
-                        class_name = rec.family.parent.parent.name.split(' (')[0]
-                        class_color = CSS_COLORS[rec.family.parent.parent.name]
-                        lig_type_color = CSS_COLORS[rec.family.parent.name]
-                        lig_type_name = rec.family.parent.name
-                        if rec.family.name not in color_cache:
-                            color_cache[rec.family.name] = '#%02x%02x%02x' % (BiasedSignallingOnTheFlyCalculation.create_rgb_color(), BiasedSignallingOnTheFlyCalculation.create_rgb_color(), BiasedSignallingOnTheFlyCalculation.create_rgb_color())
-                        rec_family_color = color_cache[rec.family.name]
-                        rec_family_name = rec.family.name
-                    if rec.family.parent.parent.parent.name.startswith('Class'):
-                        class_name = rec.family.parent.parent.parent.name.split(' (')[0]
-                        class_color = CSS_COLORS[rec.family.parent.parent.parent.name]
-                        lig_type_color = CSS_COLORS[rec.family.parent.parent.name]
-                        lig_type_name = rec.family.parent.parent.name
-                        if rec.family.parent.name not in color_cache:
-                            color_cache[rec.family.parent.name] = '#%02x%02x%02x' % (BiasedSignallingOnTheFlyCalculation.create_rgb_color(), BiasedSignallingOnTheFlyCalculation.create_rgb_color(), BiasedSignallingOnTheFlyCalculation.create_rgb_color())
-                        rec_family_color = color_cache[rec.family.parent.name]
-                        rec_family_name = rec.family.parent.name
+            HeatMapData = whole_class_a
+            HeatMapData = OrderedDict([('Class A', v) if k == 'children' else (k, v) for k, v in HeatMapData.items()])
+            HeatMapData['Class B1'] = class_b1_data.get_nodes_dict(self.page)['children']
+            HeatMapData['Class B2'] = class_b2_data.get_nodes_dict(self.page)['children']
+            HeatMapData['Class C'] = class_c_data.get_nodes_dict(self.page)['children']
+            HeatMapData['Class F'] = class_f_data.get_nodes_dict(self.page)['children']
+            HeatMapData['Class T2'] = class_t2_data.get_nodes_dict(self.page)['children']
+            context['HeatMapData'] = json.dumps(HeatMapData)
 
-                    rec_uniprot = rec.entry_short()
-                    rec_iuphar_long = "<tspan>" + rec.family.name.capitalize().replace("<sub>", '</tspan><tspan baseline-shift = "sub">').replace("</sub>", '</tspan><tspan>').replace("<i>", '</tspan><tspan font-style = "italic">').replace("</i>", '</tspan><tspan>').strip() + "</tspan>"
-                    rec_iuphar_short = rec_iuphar_long.replace("-adrenoceptor", '').replace("receptor", '').replace("Long-wave-sensitive",'LWS').replace("Medium-wave-sensitive",'MWS').replace("Short-wave-sensitive",'SWS').replace("Olfactory", 'OLF').replace("Calcitonin -like", 'CLR').strip()
+            #######################################################################################
+            ##################### Setting up data for the Heatmap calculation #####################
+            CSS_COLORS = {
+                "Adhesion receptors": 'Crimson',
+                "Alicarboxylic acid receptors": 'Red',
+                "Aminergic receptors": 'OrangeRed',
+                "Amino acid receptors": 'Orange',
+                "Ion receptors": 'GoldenRod',
+                "Lipid receptors": 'Gold',
+                "Melatonin receptors": 'Yellow',
+                "Nucleotide receptors": 'YellowGreen',
+                "Orphan receptors": 'Gold',
+                "Other": 'Green',
+                "Olfactory receptors": 'Black',
+                "Peptide receptors": 'SkyBlue',
+                "Protein receptors": 'SteelBlue',
+                "Sensory receptors": 'Indigo',
+                "Steroid receptors": 'Purple',
+                "Class B2 (Adhesion)": 'LawnGreen',
+                "Class B1 (Secretin)": 'MediumBlue',
+                "Class C (Glutamate)": 'DarkGoldenRod',
+                "Class C Orphans": 'DarkGoldenRod',
+                "Class A orphans": 'DarkSalmon',
+                "Class A (Rhodopsin)": 'Violet',
+                "Class F (Frizzled)": 'Teal',
+                "Other GPCR orphans": "Grey",
+                "Class T (Taste 2)": 'MediumPurple',
+                }
+            heatmap_receptors = Protein.objects.filter(family__slug__startswith='00', species_id=1).exclude(
+                                              family__slug__startswith='005').prefetch_related(
+                                              "family", "family__parent", "family__parent__parent", "family__parent__parent__parent")
+            MasterDict = {}
+            color_cache = {}
+            for rec in heatmap_receptors:
+                if 'CONSENSUS' in rec.entry_short():
+                    continue
+                if (rec.entry_short()[0].isdigit()) and (rec.entry_short()[0] != '5'):
+                    continue
+                if rec.family.name.startswith('Class') or rec.family.name.startswith('Other'):
+                    continue
+                if rec.family.parent.name.startswith('Class'):
+                    class_name = rec.family.parent.name.split(' (')[0]
+                    class_color = CSS_COLORS[rec.family.parent.name]
+                    lig_type_color = "NA"
+                    lig_type_name = "NA"
+                    rec_family_color = "NA"
+                    rec_family_name = "NA"
+                if rec.family.parent.parent.name.startswith('Class') or rec.family.parent.parent.name.startswith('Orphan'):
+                    class_name = rec.family.parent.parent.name.split(' (')[0]
+                    class_color = CSS_COLORS[rec.family.parent.parent.name]
+                    lig_type_color = CSS_COLORS[rec.family.parent.name]
+                    lig_type_name = rec.family.parent.name
+                    if rec.family.name not in color_cache:
+                        color_cache[rec.family.name] = '#%02x%02x%02x' % (BiasedSignallingOnTheFlyCalculation.create_rgb_color(), BiasedSignallingOnTheFlyCalculation.create_rgb_color(), BiasedSignallingOnTheFlyCalculation.create_rgb_color())
+                    rec_family_color = color_cache[rec.family.name]
+                    rec_family_name = rec.family.name
+                if rec.family.parent.parent.parent.name.startswith('Class'):
+                    class_name = rec.family.parent.parent.parent.name.split(' (')[0]
+                    class_color = CSS_COLORS[rec.family.parent.parent.parent.name]
+                    lig_type_color = CSS_COLORS[rec.family.parent.parent.name]
+                    lig_type_name = rec.family.parent.parent.name
+                    if rec.family.parent.name not in color_cache:
+                        color_cache[rec.family.parent.name] = '#%02x%02x%02x' % (BiasedSignallingOnTheFlyCalculation.create_rgb_color(), BiasedSignallingOnTheFlyCalculation.create_rgb_color(), BiasedSignallingOnTheFlyCalculation.create_rgb_color())
+                    rec_family_color = color_cache[rec.family.parent.name]
+                    rec_family_name = rec.family.parent.name
 
-                    MasterDict[rec_uniprot] = {'UniProt': rec_uniprot,
-                                               'IUPHAR Short': rec_iuphar_short,
-                                               'IUPHAR Long': rec_iuphar_long,
-                                               'Receptor Family': rec_family_color,
-                                               'Ligand Type': lig_type_color,
-                                               'Class': class_color,
-                                               'Class Name': class_name,
-                                               'Ligand Type Name': lig_type_name,
-                                               'Receptor Family Name': rec_family_name}
-                    context['MasterDict'] = json.dumps(MasterDict)
+                rec_uniprot = rec.entry_short()
+                rec_iuphar_long = "<tspan>" + rec.family.name.capitalize().replace("<sub>", '</tspan><tspan baseline-shift = "sub">').replace("</sub>", '</tspan><tspan>').replace("<i>", '</tspan><tspan font-style = "italic">').replace("</i>", '</tspan><tspan>').strip() + "</tspan>"
+                rec_iuphar_short = rec_iuphar_long.replace("-adrenoceptor", '').replace("receptor", '').replace("Long-wave-sensitive",'LWS').replace("Medium-wave-sensitive",'MWS').replace("Short-wave-sensitive",'SWS').replace("Olfactory", 'OLF').replace("Calcitonin -like", 'CLR').strip()
+
+                MasterDict[rec_uniprot] = {'UniProt': rec_uniprot,
+                                           'IUPHAR Short': rec_iuphar_short,
+                                           'IUPHAR Long': rec_iuphar_long,
+                                           'Receptor Family': rec_family_color,
+                                           'Ligand Type': lig_type_color,
+                                           'Class': class_color,
+                                           'Class Name': class_name,
+                                           'Ligand Type Name': lig_type_name,
+                                           'Receptor Family Name': rec_family_name}
+                context['MasterDict'] = json.dumps(MasterDict)
 
         return context
 

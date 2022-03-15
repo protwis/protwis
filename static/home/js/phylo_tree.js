@@ -625,7 +625,7 @@ function draw_cluster(data, options, trim=true) {
 
 
 // Heatmap (circles_bal, heatmap_data, master_dict, buttonObjects);
-function draw_heatmap(square_data, data, bible, options, trim=true) {
+function draw_heatmap(square_data, data, bible, options, location, trim=true) {
   // set the dimensions and margins of the graph
 
   var support = (function () {
@@ -638,6 +638,10 @@ function draw_heatmap(square_data, data, bible, options, trim=true) {
   	}
   	return true;
   })();
+
+  function oddOrEven(x) {
+    return ( x & 1 ) ? "odd" : "even";
+  }
 
   var textToHTML = function (str) {
 
@@ -673,7 +677,7 @@ function draw_heatmap(square_data, data, bible, options, trim=true) {
   var chartData = [];
   var colorData = [];
   var clone = [];
-  if (typeof structuredClone === "function") { 
+  if (typeof structuredClone === "function") {
     clone = structuredClone(data);
   } else {
     clone = JSON.parse(JSON.stringify(data));
@@ -684,6 +688,7 @@ function draw_heatmap(square_data, data, bible, options, trim=true) {
   var gpcrName = [];
   var sorterDict = {};
   var filtered_square_data = {};
+  var highest_value = 0;
   var rows_to_uniprot = {};
 
   if (trim==true) {
@@ -694,6 +699,11 @@ function draw_heatmap(square_data, data, bible, options, trim=true) {
           while (i-- ){
             if (clone[prot_class][entry]['children'][family]['children'][i]['value'] == 0) {
               clone[prot_class][entry]['children'][family]['children'].splice(i, 1);
+            }
+            else {
+              if (clone[prot_class][entry]['children'][family]['children'][i]['value'] > highest_value){
+                highest_value = clone[prot_class][entry]['children'][family]['children'][i]['value'];
+              }
             }
           }
         }
@@ -752,6 +762,9 @@ function draw_heatmap(square_data, data, bible, options, trim=true) {
           for (var family in data[prot_class][entry]['children']) {
             gpcrReceptorFamily.push(data[prot_class][entry]['children'][family]['name']);
             for (var i in data[prot_class][entry]['children'][family]['children']){
+              if (data[prot_class][entry]['children'][family]['children'][i]['value'] > highest_value){
+                highest_value = clone[prot_class][entry]['children'][family]['children'][i]['value'];
+              }
               gpcrName.push(data[prot_class][entry]['children'][family]['children'][i]['name'].toUpperCase());
               rows.push(
                 textToHTML(bible[data[prot_class][entry]['children'][family]['children'][i]['name'].toUpperCase()][options['namesClick']])
@@ -775,6 +788,7 @@ function draw_heatmap(square_data, data, bible, options, trim=true) {
   sorterDict = counting(gpcrName.sort().reverse(), sorterDict, 1);
 
   var sorted_rows = [];
+  var tmpdict = {};
   for (var i=0; i < rows.length; i++){
     k = 0;
     for (var id in options['sortClick']){
@@ -782,14 +796,24 @@ function draw_heatmap(square_data, data, bible, options, trim=true) {
       fam = bible[rows_to_uniprot[rows[i]]][name].replace(' receptors','').replace('(','').replace(')','');
       k = k + sorterDict[fam];
     }
-    sorterDict[k] = rows[i];
-    sorted_rows.push(k);
-  }
-  sorted_rows.sort((a,b) => a-b);
-  for (var i=0; i < sorted_rows.length; i++){
-    sorted_rows[i] = sorterDict[sorted_rows[i]];
-  }
+    tmpdict[rows[i]] = k;
 
+  }
+  // from dictionary to array
+  var tmpItems = Object.keys(tmpdict).map(function(key) {
+    return [key, tmpdict[key]];
+  });
+  // sorting the generated array based on the calculated values
+  tmpItems.sort(function(first, second) {
+    return second[1] - first[1];
+  });
+  // pushing the sorted names to the rows
+  for (var i=0; i < tmpItems.length; i++){
+    sorted_rows.push(tmpItems[i][0]);
+  }
+  // reversing the array for plotting purposes
+  sorted_rows.reverse();
+  // pushing data to the chart to be plotted
   for (var receptor in filtered_square_data){
     for (var subtype in filtered_square_data[receptor]){
       if (subtype != 'null'){
@@ -804,21 +828,21 @@ function draw_heatmap(square_data, data, bible, options, trim=true) {
                           });
   cols.sort();
 
-  var width = (60 * cols.length);
-  var height = (55 * rows.length) - margin.top - margin.bottom;
+  var width = (50 * cols.length);
+  var height = (35 * rows.length);
 
   // append the svg object to the body of the page
-  var svg_home = d3v4.select("#class_a_bal")
+  var svg_home = d3v4.select("#" + location)
               .append("svg")
               .attr("width", width + margin.left + margin.right)
-              .attr("height", height + margin.top + margin.bottom)
-              .attr("transform", "translate(0,0)")
+              .attr("height", height + margin.top + margin.bottom + margin.bottom)
+              .attr("transform", "translate(0,-" + margin.bottom + ")")
 
   var color_svg = svg_home.append("g")
-                    .attr("transform", "translate(" + (margin.left*1.5) + "," + margin.top + ")");
+                    .attr("transform", "translate(" + (margin.left*1.5) + ",0)");
 
   var svg = svg_home.append("g")
-                    .attr("transform", "translate(" + (margin.left*2.5) + "," + margin.top + ")");
+                    .attr("transform", "translate(" + (margin.left*2.5) + ",0)");
 
   // Build X scales and axis:
   var x = d3v4.scaleBand()
@@ -849,7 +873,7 @@ function draw_heatmap(square_data, data, bible, options, trim=true) {
   // Build color scale
   var myColor = d3v4.scaleLinear()
     .range(["white", "black"])
-    .domain([1,30])
+    .domain([1,highest_value])
 
   //Read the data
     color_svg.selectAll()
@@ -881,11 +905,23 @@ function draw_heatmap(square_data, data, bible, options, trim=true) {
           d3.select(this).style("font-size","18px");
         });
 
+    d3v4.selectAll("#Xaxis>.tick>text")
+        .each(function(d, i){
+          d3.select(this).style("font-size","18px");
+        });
+
+    var count = 1;
     ticks = svg.select('#Xaxis').selectAll('.tick');
     ticks.each(function(d) {
+      value = oddOrEven(count);
       text = d3.select(this).select('text');
-      text.attr("transform", "rotate(45)");
-      text.attr("y", "5");
+      text.attr("transform", null);
+      text.attr("x", "-25");
+      if(value === "even"){
+        text.attr("x", "-15");
+        text.attr("y", "30");
+      }
+      count = count + 1;
     });
 
     yTicks = color_svg.select('#Yaxis').selectAll('.tick');

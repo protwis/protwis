@@ -108,25 +108,23 @@
 </style>
 {% endblock %}
 
-
-
-
 {% block content %}
 
 <!-- Starting the tab panel section -->
 {% if render != "not_bias" and render != "pathway" %}
 <ul class="nav nav-tabs">
   <li class="nav-item active">
-    <a class="nav-link active" data-toggle="tab" href="#physio">Physiology-biased (endogenous reference ligand)</a>
+    <a class="nav-link active" data-toggle="tab" href="#physio" id="first_tab">Physiology-biased (endogenous reference ligand)</a>
   </li>
   <li class="nav-item">
-    <a class="nav-link" data-toggle="tab" href="#path_bias">Pathway-bias (balanced reference ligand)</a>
+    <a class="nav-link" data-toggle="tab" href="#path_bias" id="second_tab">Pathway-bias (balanced reference ligand)</a>
   </li>
 </ul>
+{% endif %}
 <div class="tab-content">
   <div class="tab-pane container active" id="physio">
     <br />
-{% endif %}
+
 {% if render == "not_bias" %}
 <h4>Number of unique ligands per receptor class</h4>
 <table style="width:80% !important" class="table table-stripped">
@@ -226,6 +224,7 @@ Biased ligand statistics were last updated <strong>{{ release_notes.date|date:"Y
 <h4>Pathway preference ligand coverage by GPCR Class</h4><br />
 {% endif %}
 
+{% if render == "not_bias" %}
 <div>
   Receptor names:
     <div class="btn-group" role="group" id="gtp_plus">
@@ -235,7 +234,6 @@ Biased ligand statistics were last updated <strong>{{ release_notes.date|date:"Y
 </div>
 <br />
 
-{% if render == "not_bias" %}
 Circle colors indicate a number of ligands:
 <table style="width:30%">
     <tr>
@@ -249,7 +247,8 @@ Circle colors indicate a number of ligands:
         <td> 1000+</td>
     </tr>
 </table>
-{% else %}
+{% endif %}
+
 <style type="text/css">
   .gprot_orange {
     color: orange;
@@ -277,7 +276,7 @@ Circle colors indicate a number of ligands:
       background: linear-gradient(to right, white 0%, black 100%)
   }
 </style>
-Inner circle colors indicate a number of ligands:
+<!-- Inner circle colors indicate a number of ligands:
 <table style="width:30%">
     <tr>
         <td ><div id="circle_lightgray"></div></td>
@@ -289,8 +288,7 @@ Inner circle colors indicate a number of ligands:
         <td ><div id="circle_black"></div></td>
         <td> 30+</td>
     </tr>
-</table>
-{% endif %}
+</table> -->
 <br />
 
 <script type="text/javascript" charset="utf-8">
@@ -339,91 +337,164 @@ Inner circle colors indicate a number of ligands:
 {% else %}
 <script type="text/javascript" charset="utf-8">
   circles = {{ circles_data | safe}}
+  heatmap_data = {{ HeatMapData | safe }};
+  master_dict = {{ MasterDict | safe}}
 </script>
+
 <script type="text/javascript" charset="utf-8">
-$(window).on("load",function() {
-    maxLeafNodeLenght = 46;
-    conversion = {"Gs":"#0000FF", "Gi/o":"#FF0000", "Gq/11":"#000000", "G12/13":"#008000", "Arrestin":"#FFA500"};
-    $("#UniProtNames").click(function(){
-        $("#UniProtNames").addClass("active");
-        $("#IUPHARNames").removeClass("active");
-        changeLeavesLabels("class_a","UniProt", whole_dict);
-        DrawCircles('class_a',circles,maxLeafNodeLenght,conversion,true,false);
-        changeLeavesLabels("class_b1","UniProt", whole_dict);
-        DrawCircles('class_b1',circles,maxLeafNodeLenght,conversion,true,false);
-        changeLeavesLabels("class_b2","UniProt", whole_dict);
-        DrawCircles('class_b2',circles,maxLeafNodeLenght,conversion,true,false);
-        changeLeavesLabels("class_c","UniProt", whole_dict);
-        DrawCircles('class_c',circles,maxLeafNodeLenght,conversion,true,false);
-        changeLeavesLabels("class_f","UniProt", whole_dict);
-        DrawCircles('class_f',circles,maxLeafNodeLenght,conversion,true,false);
-        changeLeavesLabels("class_t2","UniProt", whole_dict);
-        DrawCircles('class_t2',circles,maxLeafNodeLenght,conversion,true,false);
-        changeLeavesLabels("orphan","UniProt", whole_dict);
-        DrawCircles('orphan',circles,maxLeafNodeLenght,conversion,true,false);
+// $(window).on("load",function() {
+$(document).ready(function(){
+    let buttonObjects = [];
+    let checkboxes = $('#HeatmapHandler').find('label');
+    let selectedCheckboxes = checkboxes.filter('.active');
+    selectedCheckboxes
+      .each(function(index, element) {
+        if (!($(element).data('name') in buttonObjects)){
+          buttonObjects[$(element).data('name')] = [];
+        }
+        buttonObjects[$(element).data('name')].push($(element).data('value'));
       });
-    $("#IUPHARNames").click(function() {
-        $("#UniProtNames").removeClass("active");
-        $("#IUPHARNames").addClass("active");
-        changeLeavesLabels("class_a","IUPHAR", whole_dict);
-        DrawCircles('class_a',circles, maxLeafNodeLenght,conversion,true,false);
-        changeLeavesLabels("class_b1","IUPHAR", whole_dict);
-        DrawCircles('class_b1',circles, maxLeafNodeLenght,conversion,true,false);
-        changeLeavesLabels("class_b2","IUPHAR", whole_dict);
-        DrawCircles('class_b2',circles, maxLeafNodeLenght,conversion,true,false);
-        changeLeavesLabels("class_c","IUPHAR", whole_dict);
-        DrawCircles('class_c',circles, maxLeafNodeLenght,conversion,true,false);
-        changeLeavesLabels("class_f","IUPHAR", whole_dict);
-        DrawCircles('class_f',circles, maxLeafNodeLenght,conversion,true,false);
-        changeLeavesLabels("class_t2","IUPHAR", whole_dict);
-        DrawCircles('class_t2',circles, maxLeafNodeLenght,conversion,true,false);
-        changeLeavesLabels("orphan","IUPHAR", whole_dict);
-        DrawCircles('orphan',circles, maxLeafNodeLenght,conversion,true,false);
-    });
-    draw_tree(class_a, class_a_options);
-    draw_tree(class_b1, class_b1_options);
-    draw_tree(class_b2, class_b2_options);
-    draw_tree(class_c, class_c_options);
-    draw_tree(class_f, class_f_options);
-    draw_tree(class_t2, class_t2_options);
-    draw_tree(orphan, orphan_options);
-    DrawCircles('class_a',circles, maxLeafNodeLenght,conversion,true,false);
-    DrawCircles('class_b1',circles, maxLeafNodeLenght,conversion,true,false);
-    DrawCircles('class_b2',circles, maxLeafNodeLenght,conversion,true,false);
-    DrawCircles('class_c',circles, maxLeafNodeLenght,conversion,true,false);
-    DrawCircles('class_f',circles, maxLeafNodeLenght,conversion,true,false);
-    DrawCircles('class_t2',circles, maxLeafNodeLenght,conversion,true,false);
-    DrawCircles('orphan',circles, maxLeafNodeLenght,conversion,true,false);
-    $("#class_a svg g").first().attr('transform', 'translate(555,585) scale(0.9,0.9) ');
-    $("#class_a_svg").attr('height', 1210);
-    $("#class_a_svg").attr('width', 1110);
-    $("#class_b1 svg g").first().attr('transform', 'translate(180,220) scale(0.83,0.83)');
-    $("#class_b2 svg g").first().attr('transform', 'translate(182,200) scale(0.85,0.85) ');
-    $("#class_c svg g").first().attr('transform', 'translate(200,200) scale(0.85,0.85) ');
-    $("#orphan svg g").first().attr('transform', 'translate(175,180) scale(0.85,0.85)');
-    $("#orphan_svg").attr('height', 360).attr('width', 360);
+    draw_heatmap(circles, heatmap_data, master_dict, buttonObjects, 'HeatMap_div');
+
 });
 </script>
+<script>
+  $(document).ready(function(){
+    $('#HeatmapHandler').on("change", function() {
+        let buttonObjects = [];
+        let checkboxes = $('#HeatmapHandler').find('label');
+        let selectedCheckboxes = checkboxes.filter('.active');
+        selectedCheckboxes
+          .each(function(index, element) {
+            if (!($(element).data('name') in buttonObjects)){
+              buttonObjects[$(element).data('name')] = [];
+            }
+            buttonObjects[$(element).data('name')].push($(element).data('value'));
+          });
+        d3.select("#HeatMap_div").select("svg").remove();
+        draw_heatmap(circles, heatmap_data, master_dict, buttonObjects, 'HeatMap_div');
+      });
+  })
+</script>
 {% endif %}
-<div id="class_a" class="text-center">
-  <h4>Class A<br />(Rhodopsin)</h4>
 {% if render != "not_bias" %}
   <br />
   <div>
     <div style="float: right; position: relative" class="text-center">
-      <b>Primary transducer frequency (from low to high)</b>
+      <b>Primary transducer count (from low to high)</b>
       <div class="graydiv"></div>
     </div>
-    <div style="float: left; position: relative" class="text-center">
-      <b>Transducers</b> <br />
-            <span class="gprot_blue">&#9675; G&alpha;<sub>s</sub></span>
-            <span class="gprot_red">&#9675; G&alpha;<sub>i/o</sub></span>
-            <span class="gprot_black">&#9675; G&alpha;<sub>q/11</sub></span>
-            <span class="gprot_green">&#9675; G&alpha;<sub>12/13</sub></span>
-            <span class="gprot_orange">&#9675; &beta;-Arrestin</span>
+  </div>
+
+  <div id="HeatmapHandler">
+    <div style="padding-top: 5px;">
+    Classes:&ensp;
+      <div class="btn-group" data-toggle="buttons" id="class_selection">
+        <label class="btn btn-primary active" data-value="Class A" data-name="classClick">
+          <input type="checkbox" checked> A
+        </label>
+        <label class="btn btn-primary active" data-value="Class B1" data-name="classClick">
+          <input type="checkbox" checked> B1
+        </label>
+        <label class="btn btn-primary active" data-value="Class B2" data-name="classClick">
+          <input type="checkbox" checked> B2
+        </label>
+        <label class="btn btn-primary active" data-value="Class C" data-name="classClick">
+          <input type="checkbox" checked> C
+        </label>
+        <label class="btn btn-primary active" data-value="Class F" data-name="classClick">
+          <input type="checkbox" checked> F
+         </label>
+        <label class="btn btn-primary active" data-value="Class T2" data-name="classClick">
+          <input type="checkbox" checked> T2
+        </label>
+      </div>
+    </div>
+
+    <div style="padding-top: 5px;">
+    Sort by:&nbsp;&nbsp;
+      <div class="btn-group" data-toggle="buttons" id="sorting_selection">
+        <label class="btn btn-primary active" data-value="Class Name" data-name="sortClick">
+          <input type="checkbox" checked> Class
+        </label>
+        <label class="btn btn-primary active" data-value="Ligand Type Name" data-name="sortClick">
+          <input type="checkbox" checked> Ligand type
+        </label>
+        <label class="btn btn-primary active" data-value="Receptor Family Name" data-name="sortClick">
+          <input type="checkbox" checked> Receptor family
+        </label>
+        <label class="btn btn-primary active" data-value="UniProt" data-name="sortClick">
+          <input type="checkbox" checked> Receptor name
+        </label>
+      </div>
+    </div>
+
+    <div style="padding-top: 5px;">
+      Color by:
+      <div class="btn-group btn-group-toggle" data-toggle="buttons">
+        <label class="btn btn-info active" data-name="colorClick" data-value="Class">
+          <input type="radio" name="options" id="option1" autocomplete="off" checked> Class
+        </label>
+        <label class="btn btn-info" data-name="colorClick" data-value="Ligand Type">
+          <input type="radio" name="options" id="option2" autocomplete="off"> Ligand type
+        </label>
+        <label class="btn btn-info" data-name="colorClick" data-value="Receptor Family">
+          <input type="radio" name="options" id="option3" autocomplete="off"> Receptor family
+        </label>
+      </div>
+    </div>
+
+
+    <div style="padding-top: 5px;">
+      Receptor names:
+      <div class="btn-group btn-group-toggle" data-toggle="buttons">
+        <label class="btn btn-info active" data-name="namesClick" data-value="UniProt">
+          <input type="radio" name="options" id="option1" autocomplete="off" checked> UniProt
+        </label>
+        <label class="btn btn-info" data-name="namesClick" data-value="IUPHAR Short">
+          <input type="radio" name="options" id="option2" autocomplete="off"> IUPHAR (short)
+        </label>
+        <label class="btn btn-info" data-name="namesClick" data-value="IUPHAR Long">
+          <input type="radio" name="options" id="option3" autocomplete="off"> IUPHAR (long)
+        </label>
+      </div>
     </div>
   </div>
+
+  <br />
+  <br />
+
+  <div id="HeatMap_div" class="text-center">
+</div>
+
+<div class="text-center">
+  <div class="btn-group">
+      <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+              aria-haspopup="true" aria-expanded="false">
+          <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+      </button>
+      <ul class="dropdown-menu">
+          <li>
+              <a href="javascript:saveSvgAsPng(document.getElementById('HeatMap_div'), 'HeatMap_div.png');">PNG</a>
+          </li>
+          <li>
+              <a href="javascript:saveSvgAsJpg(document.getElementById('HeatMap_div'), 'HeatMap_div.jpg');">JPG</a>
+          </li>
+          <li>
+              <a href="javascript:saveSvgAsTiff(document.getElementById('HeatMap_div'), 'HeatMap_div.tiff');">TIFF</a>
+          </li>
+          <li>
+              <a href="javascript:saveSvg(document.getElementById('HeatMap_div'), 'HeatMap_div.svg');">SVG</a>
+          </li>
+      </ul>
+  </div>
+</div>
+
 {% endif %}
+
+{% if render == "not_bias" %}
+<div id="class_a" class="text-center">
+  <h4>Class A<br />(Rhodopsin)</h4>
 </div>
 <p>
   <div class="text-center">
@@ -448,10 +519,10 @@ $(window).on("load",function() {
         </ul>
     </div>
   </div>
-<br />
-<br />
-<br />
 
+<br />
+<br />
+<br />
 
 <div class="row-fluid">
   <div class="span12">
@@ -673,10 +744,11 @@ $(window).on("load",function() {
     </div>
   </div>
 </div>
-{% if render != "not_bias" %}
+{% endif %}
+
+{% if render == "bias" or render == "subtype" %}
   </div>
-  <div class="tab-pane container active" id="path_bias">
-  <br />
+  <div class="tab-pane container" id="path_bias">
 <!-- MIRRORED SECTION FOR THE PATHWAY BIASED STUFF -->
 {% if render == "bias" %}
 <p><h4>Biased ligand counts</h4>
@@ -737,19 +809,14 @@ Biased ligand statistics were last updated <strong>{{ release_notes.date|date:"Y
 <h4>Biased ligand coverage by GPCR Class</h4><br />
 {% endif %}
 
-<!-- <div>
-  Classes:&nbsp;
-    <div class="btn-group" role="group" >
-        <button id="ClassA" class="btn btn-info active">A</button>
-        <button id="ClassB1" class="btn btn-info active">B1</button>
-        <button id="ClassB2" class="btn btn-info active">B2</button>
-        <button id="ClassC" class="btn btn-info active">C</button>
-        <button id="ClassF" class="btn btn-info active">F</button>
-        <button id="ClassT2" class="btn btn-info active">T2</button>
-        <button id="ClassAOrphan" class="btn btn-info active">Orphans (Class A)</button>
-    </div>
-</div> -->
-<div id="HeatmapHandler">
+<div>
+  <div style="float: right; position: relative" class="text-center">
+    <b>Primary transducer count (from low to high)</b>
+    <div class="graydiv"></div>
+  </div>
+</div>
+
+<div id="HeatmapHandlerBal">
   <div style="padding-top: 5px;">
   Classes:&ensp;
     <div class="btn-group" data-toggle="buttons" id="class_selection">
@@ -770,9 +837,6 @@ Biased ligand statistics were last updated <strong>{{ release_notes.date|date:"Y
        </label>
       <label class="btn btn-primary active" data-value="Class T2" data-name="classClick">
         <input type="checkbox" checked> T2
-      </label>
-      <label class="btn btn-primary active" data-value="Orphans" data-name="classClick">
-        <input type="checkbox" checked> Orphans (Class A)
       </label>
     </div>
   </div>
@@ -808,11 +872,6 @@ Biased ligand statistics were last updated <strong>{{ release_notes.date|date:"Y
         <input type="radio" name="options" id="option3" autocomplete="off"> Receptor family
       </label>
     </div>
-      <!-- <div class="btn-group" role="group" id="coloring_selection" data-toggle="button">
-          <button data-name="colorClick" data-value="Class" class="btn btn-info active">Class</button>
-          <button data-name="colorClick" data-value="Ligand Type" class="btn btn-info">Ligand type</button>
-          <button data-name="colorClick" data-value="Receptor Family" class="btn btn-info">Receptor family</button>
-      </div> -->
   </div>
 
 
@@ -829,11 +888,6 @@ Biased ligand statistics were last updated <strong>{{ release_notes.date|date:"Y
         <input type="radio" name="options" id="option3" autocomplete="off"> IUPHAR (long)
       </label>
     </div>
-      <!-- <div class="btn-group" role="group" id="labeling_selection" data-toggle="button">
-          <button data-name="namesClick" data-value="UniProt" class="btn btn-info active">UniProt</button>
-          <button data-name="namesClick" data-value="IUPHAR (short)" class="btn btn-info">IUPHAR (short)</button>
-          <button data-name="namesClick" data-value="IUPHAR (long)" class="btn btn-info">IUPHAR (long)</button>
-      </div> -->
   </div>
 
 
@@ -841,26 +895,6 @@ Biased ligand statistics were last updated <strong>{{ release_notes.date|date:"Y
 <br />
 
 <style type="text/css">
-  .gprot_orange {
-    color: orange;
-  }
-
-  .gprot_blue {
-    color: blue;
-  }
-
-  .gprot_red {
-    color: red;
-  }
-
-  .gprot_black {
-    color: black;
-  }
-
-  .gprot_green {
-    color: forestgreen;
-  }
-
   .graydiv {
       height: 20px;
       width: 350px;
@@ -870,15 +904,17 @@ Biased ligand statistics were last updated <strong>{{ release_notes.date|date:"Y
 <br />
 
 <script type="text/javascript" charset="utf-8">
-  heatmap_data = {{ HeatMapData | safe }};
+  heatmap_data_bal = {{ HeatMapData_bal | safe }};
   master_dict = {{ MasterDict | safe}}
   circles_bal = {{ circles_bal_data | safe}}
 </script>
 <script type="text/javascript" charset="utf-8">
-$(window).on("load",function() {
 
+$(window).on("load",function() {
+  // $('#second_tab').on('click', function () {
+    d3.select("#HeatmapDivBal").select("svg").remove();
     let buttonObjects = [];
-    let checkboxes = $('#HeatmapHandler').find('label');
+    let checkboxes = $('#HeatmapHandlerBal').find('label');
     let selectedCheckboxes = checkboxes.filter('.active');
     selectedCheckboxes
       .each(function(index, element) {
@@ -887,91 +923,15 @@ $(window).on("load",function() {
         }
         buttonObjects[$(element).data('name')].push($(element).data('value'));
       });
-    draw_heatmap(circles_bal, heatmap_data, master_dict, buttonObjects);
-
-    // $('#HeatmapHandler')
-    //   .click(function() {
-    //     let buttonObjects = [];
-    //     let checkboxes = $('#HeatmapHandler').find('label');
-    //     let selectedCheckboxes = checkboxes.filter('.active');
-    //     selectedCheckboxes
-    //       .each(function(index, element) {
-    //         if (!($(element).data('name') in buttonObjects)){
-    //           buttonObjects[$(element).data('name')] = [];
-    //         }
-    //         buttonObjects[$(element).data('name')].push($(element).data('value'));
-    //       });
-    //     console.log("Objects:", buttonObjects);
-    //     d3.select("#class_a_bal").select("svg").remove();
-    //     draw_heatmap(circles_bal, heatmap_data, master_dict, buttonObjects);
-    //   });
-
-    // $("#UniProtNamesBal").click(function(){
-    //     $("#UniProtNamesBal").addClass("active");
-    //     $("#IUPHARNamesBal").removeClass("active");
-    //     changeLeavesLabels('class_a_bal',"UniProt", whole_dict);
-    //     DrawCircles('class_a_bal',circles_bal,maxLeafNodeLenght,conversion,true,false);
-    //     changeLeavesLabels('class_b1_bal',"UniProt", whole_dict);
-    //     DrawCircles('class_b1_bal',circles_bal,maxLeafNodeLenght,conversion,true,false);
-    //     changeLeavesLabels('class_b2_bal',"UniProt", whole_dict);
-    //     DrawCircles('class_b2_bal',circles_bal,maxLeafNodeLenght,conversion,true,false);
-    //     changeLeavesLabels('class_c_bal',"UniProt", whole_dict);
-    //     DrawCircles('class_c_bal',circles_bal,maxLeafNodeLenght,conversion,true,false);
-    //     changeLeavesLabels('class_f_bal',"UniProt", whole_dict);
-    //     DrawCircles('class_f_bal',circles_bal,maxLeafNodeLenght,conversion,true,false);
-    //     changeLeavesLabels('class_t2_bal',"UniProt", whole_dict);
-    //     DrawCircles('class_t2_bal',circles_bal,maxLeafNodeLenght,conversion,true,false);
-    //     changeLeavesLabels('orphan_bal',"UniProt", whole_dict);
-    //     DrawCircles('orphan_bal',circles_bal,maxLeafNodeLenght,conversion,true,false);
-    //   });
-    // $("#IUPHARNamesBal").click(function() {
-    //     $("#UniProtNamesBal").removeClass("active");
-    //     $("#IUPHARNamesBal").addClass("active");
-    //     changeLeavesLabels("class_a_bal","IUPHAR", whole_dict);
-    //     DrawCircles('class_a_bal',circles_bal, maxLeafNodeLenght,conversion,true,false);
-    //     changeLeavesLabels("class_b1_bal","IUPHAR", whole_dict);
-    //     DrawCircles('class_b1_bal',circles_bal, maxLeafNodeLenght,conversion,true,false);
-    //     changeLeavesLabels("class_b2_bal","IUPHAR", whole_dict);
-    //     DrawCircles('class_b2_bal',circles_bal, maxLeafNodeLenght,conversion,true,false);
-    //     changeLeavesLabels("class_c_bal","IUPHAR", whole_dict);
-    //     DrawCircles('class_c_bal',circles_bal, maxLeafNodeLenght,conversion,true,false);
-    //     changeLeavesLabels("class_f_bal","IUPHAR", whole_dict);
-    //     DrawCircles('class_f_bal',circles_bal, maxLeafNodeLenght,conversion,true,false);
-    //     changeLeavesLabels("class_t2_bal","IUPHAR", whole_dict);
-    //     DrawCircles('class_t2_bal',circles_bal, maxLeafNodeLenght,conversion,true,false);
-    //     changeLeavesLabels("orphan_bal","IUPHAR", whole_dict);
-    //     DrawCircles('orphan_bal',circles_bal, maxLeafNodeLenght,conversion,true,false);
-    // });
-    // draw_tree(class_a_bal, class_a_bal_options);
-    // draw_cluster(class_a_bal, class_a_bal_options, circles_bal);
-    // draw_tree(class_b1_bal, class_b1_bal_options);
-    // draw_tree(class_b2_bal, class_b2_bal_options);
-    // draw_tree(class_c_bal, class_c_bal_options);
-    // draw_tree(class_f_bal, class_f_bal_options);
-    // draw_tree(class_t2_bal, class_t2_bal_options);
-    // draw_tree(orphan_bal, orphan_bal_options);
-    // DrawCircles('class_a_bal',circles_bal, maxLeafNodeLenght,conversion,true,false);
-    // DrawCircles('class_b1_bal',circles_bal, maxLeafNodeLenght,conversion,true,false);
-    // DrawCircles('class_b2_bal',circles_bal, maxLeafNodeLenght,conversion,true,false);
-    // DrawCircles('class_c_bal',circles_bal, maxLeafNodeLenght,conversion,true,false);
-    // DrawCircles('class_f_bal',circles_bal, maxLeafNodeLenght,conversion,true,false);
-    // DrawCircles('class_t2_bal',circles_bal, maxLeafNodeLenght,conversion,true,false);
-    // DrawCircles('orphan_bal',circles_bal, maxLeafNodeLenght,conversion,true,false);
-    // $("#class_a_bal svg g").first().attr('transform', 'translate(555,585) scale(0.9,0.9) ');
-    // $("#class_a_svg_bal").attr('height', 1210);
-    // $("#class_b1_bal svg g").first().attr('transform', 'translate(180,220) scale(0.83,0.83)');
-    // $("#class_b2_bal svg g").first().attr('transform', 'translate(182,200) scale(0.85,0.85) ');
-    // $("#class_c_bal svg g").first().attr('transform', 'translate(200,200) scale(0.85,0.85) ');
-    // $("#orphan_bal svg g").first().attr('transform', 'translate(175,180) scale(0.85,0.85)');
-    // $("#orphan_svg_bal").attr('height', 360).attr('width', 360);
-
+    draw_heatmap(circles_bal, heatmap_data_bal, master_dict, buttonObjects, 'HeatmapDivBal');
 });
+
 </script>
 <script>
   $(document).ready(function(){
-    $('#HeatmapHandler').on("change", function() {
+    $('#HeatmapHandlerBal').on("change", function() {
         let buttonObjects = [];
-        let checkboxes = $('#HeatmapHandler').find('label');
+        let checkboxes = $('#HeatmapHandlerBal').find('label');
         let selectedCheckboxes = checkboxes.filter('.active');
         selectedCheckboxes
           .each(function(index, element) {
@@ -980,15 +940,14 @@ $(window).on("load",function() {
             }
             buttonObjects[$(element).data('name')].push($(element).data('value'));
           });
-        console.log("Objects:", buttonObjects);
-        d3.select("#class_a_bal").select("svg").remove();
-        draw_heatmap(circles_bal, heatmap_data, master_dict, buttonObjects);
+        d3.select("#HeatmapDivBal").select("svg").remove();
+        draw_heatmap(circles_bal, heatmap_data_bal, master_dict, buttonObjects, 'HeatmapDivBal');
       });
   })
 </script>
-<div id="class_a_bal" class="text-center">
 
-</div>
+<div id="HeatmapDivBal" class="text-center"></div>
+
 <p>
   <div class="text-center">
     <div class="btn-group">
@@ -998,26 +957,27 @@ $(window).on("load",function() {
         </button>
         <ul class="dropdown-menu">
             <li>
-                <a href="javascript:saveSvgAsPng(document.getElementById('class_a_svg_bal'), 'xtals_tree_class_a_bal.png');">PNG</a>
+                <a href="javascript:saveSvgAsPng(document.getElementById('HeatmapDivBal'), 'HeatMap_pathway_bias.png');">PNG</a>
             </li>
             <li>
-                <a href="javascript:saveSvgAsJpg(document.getElementById('class_a_svg_bal'), 'xtals_tree_class_a_bal.jpg');">JPG</a>
+                <a href="javascript:saveSvgAsJpg(document.getElementById('HeatmapDivBal'), 'HeatMap_pathway_bias.jpg');">JPG</a>
             </li>
             <li>
-                <a href="javascript:saveSvgAsTiff(document.getElementById('class_a_svg_bal'), 'xtals_tree_class_a_bal.tiff');">TIFF</a>
+                <a href="javascript:saveSvgAsTiff(document.getElementById('HeatmapDivBal'), 'HeatMap_pathway_bias.tiff');">TIFF</a>
             </li>
             <li>
-                <a href="javascript:saveSvg(document.getElementById('class_a_svg_bal'), 'xtals_tree_class_a_bal.svg');">SVG</a>
+                <a href="javascript:saveSvg(document.getElementById('HeatmapDivBal'), 'HeatMap_pathway_bias.svg');">SVG</a>
             </li>
         </ul>
     </div>
   </div>
+
+
 <br />
 <br />
 <br />
 
 <!-- END MIRRORED SECTION  -->
-  </div>
 </div>
 {% endif %}
 {% endblock %}
