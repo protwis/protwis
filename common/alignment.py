@@ -1217,6 +1217,7 @@ class Alignment:
         similarityscore = 0
         totalcount = 0
         totalsimilarity = 0
+        scoring_matrix = substitution_matrices.load("BLOSUM62")
         for j, s in protein_2.alignment.items():
             for k, p in enumerate(s):
                 reference_residue = protein_1.alignment[j][k][2]
@@ -1230,12 +1231,11 @@ class Alignment:
                     # similarity
                     if not (reference_residue in self.gaps or protein_residue in self.gaps):
                         pair = (protein_residue, reference_residue)
-                        # Similarity lookup is slow -> disabling results in 1/3 reduction calc. time
-                        similarity = self.score_match(pair, substitution_matrices.load("BLOSUM62"))
-                        #                        similarity = 1
+                        similarity = self.score_match(pair, scoring_matrix)
+                        totalsimilarity += similarity
                         if similarity > 0:
                             similarityscore += 1
-                            totalsimilarity += similarity
+
 
         # format the calculated values
         #if identityscore and similarityscore:
@@ -1259,6 +1259,7 @@ class Alignment:
         similarities = OrderedDict()
         similarity_scores = OrderedDict()
         ref_seq, temp_seq = '',''
+        scoring_matrix = substitution_matrices.load("BLOSUM62")
         for j, s in protein_2.alignment.items():
             for k, p in enumerate(s):
                 reference_residue = protein_1.alignment[j][k][2]
@@ -1281,7 +1282,7 @@ class Alignment:
                         pass
                     else:
                         pair = (protein_residue, reference_residue)
-                        similarity = self.score_match(pair, substitution_matrices.load("BLOSUM62"))
+                        similarity = self.score_match(pair, scoring_matrix)
                         if similarity > 0:
                             similarities[p[0]] = 1
                         else:
