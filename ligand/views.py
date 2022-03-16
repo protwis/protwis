@@ -4,6 +4,7 @@ import json
 import re
 import time
 import pandas as pd
+import urllib
 
 from random import SystemRandom
 from copy import deepcopy
@@ -1654,12 +1655,15 @@ class LigandInformationView(TemplateView):
         ld['logp'] = ligand_data.logp
         ld['mw'] = ligand_data.mw
         ld['wl'] = list()
-        ld['picture'] = img_setup_smiles.format(str(ligand_data.smiles)) if ligand_data.smiles != None else None
-        print(ld['picture'])
+
+        if ligand_data.smiles != None and (ld['mw'] == None or ld['mw'] < 800):
+            ld['picture'] = img_setup_smiles.format(urllib.parse.quote(ligand_data.smiles))
+        else:
+            # "No image available" SVG (source: https://commons.wikimedia.org/wiki/File:No_image_available.svg)
+            ld['picture'] = "<img style=\"max-height: 300px; max-width: 400px;\" src=\"data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIj8+CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogICAgIGhlaWdodD0iMzAwcHgiIHdpZHRoPSIzMDBweCIKICAgICB2ZXJzaW9uPSIxLjEiCiAgICAgdmlld0JveD0iLTMwMCAtMzAwIDYwMCA2MDAiCiAgICAgZm9udC1mYW1pbHk9IkJpdHN0cmVhbSBWZXJhIFNhbnMsTGliZXJhdGlvbiBTYW5zLCBBcmlhbCwgc2Fucy1zZXJpZiIKICAgICBmb250LXNpemU9IjcyIgogICAgIHRleHQtYW5jaG9yPSJtaWRkbGUiID4KICAKICA8Y2lyY2xlIHN0cm9rZT0iI0FBQSIgc3Ryb2tlLXdpZHRoPSIxMCIgcj0iMjgwIiBmaWxsPSIjRkZGIi8+CiAgPHRleHQgc3R5bGU9ImZpbGw6IzQ0NDsiPgogICAgPHRzcGFuIHg9IjAiIHk9Ii04Ij5OTyBJTUFHRTwvdHNwYW4+PHRzcGFuIHg9IjAiIHk9IjgwIj5BVkFJTEFCTEU8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+==\">"
+
         for i in ligand_data.ids.all():
             ld['wl'].append({'name': i.web_resource.name, "link": str(i)})
-            # if i.web_resource.slug == 'chembl_ligand':
-            #     ld['picture'] = i.index
         return ld
 
 

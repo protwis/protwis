@@ -30,6 +30,7 @@ from io import BytesIO
 import xlsxwriter, xlrd
 import time
 import json
+import urllib
 
 default_schemes_excluded = ["cgn", "ecd", "can"]
 
@@ -90,7 +91,7 @@ def getLigandTable(receptor_id, browser_type):
             t['endogenous'] = p[1]
             t['publications'] = len(pubs)
             t['compared'] = len(compared) - 1
-            t['2d_structure'] = img_setup_smiles.format(str(p[5])) if p[5] != None else "Image not available"
+            t['2d_structure'] = img_setup_smiles.format(urllib.parse.quote(p[5])) if p[5] != None else "Image not available"
             data_table += "<tr> \
             <td data-sort=\"0\"><input autocomplete='off' class=\"form-check-input\" type=\"checkbox\" name=\"reference\" id=\"{}\" data-entry=\"{}\" entry-value=\"{}\"></td> \
             <td data-html=\"true\">{}</td> \
