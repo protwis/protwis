@@ -310,10 +310,10 @@ function gproteinstructurebrowser() {
                 html_data_type: "text",
                 filter_default_label: "Ligand type",
                 filter_reset_button_text: false,
+                text_data_delimiter: "<br>",
                 select_type_options: {
                     width: "100px",
-                },
-                data: ["none", "peptide", "peptidesmall molecule", "protein", "small molecule", "small moleculesmall molecule","-"]
+                }
             },
             {
                 column_number : 24,
@@ -322,10 +322,10 @@ function gproteinstructurebrowser() {
                 filter_default_label: "Modality",
                 filter_match_mode : "exact",
                 filter_reset_button_text: false,
+                text_data_delimiter: "<br>",
                 select_type_options: {
                     width: "100px",
-                },
-                data: ["AgonistPAM", "Agonist", "Apo (no ligand)", "-", "Ago-PAM"]
+                }
             },
             {
                 column_number : 25,

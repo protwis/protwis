@@ -1,6 +1,8 @@
 #from django.db import connection
 #from django.db import IntegrityError
 from django.db.models import Q
+from django.utils.text import slugify
+
 from ligand.models import Ligand, LigandID, LigandType, LigandRole
 from common.models import WebResource
 from common.tools import get_or_create_url_cache, fetch_from_web_api
@@ -293,7 +295,7 @@ def create_ligand_from_id(name, type, id, lig_type):
     ligand = Ligand()
     ligand.name = name
     ligand.ambiguous_alias = False
-    ligand.ligand_type = LigandType.objects.get_or_create(slug=lig_type, defaults={'name': lig_type})[0]
+    ligand.ligand_type = LigandType.objects.get_or_create(slug=slugify(lig_type), defaults={'name': lig_type})[0]
 
     # Obtain external data (if needed)
     try:

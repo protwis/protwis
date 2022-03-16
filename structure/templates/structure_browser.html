@@ -266,12 +266,14 @@
                         <td class='expand'>
                             {% for ligand in structure.ligands.all|dictsort:"ligand_role.name" %}
                                 {{ ligand.ligand.name|safe }}
-                            {% for link in ligand.ligand.ids.all %}
-                                <a href="{{ link}}" target="_blank">{{link.web_resource.slug}}</a>
-                            {% endfor %}
-                                <br />
+                                  <br />
+                                <a href="/ligand/{{ ligand.ligand.id }}/info" target="_blank">GPCRdb</a>
+                                {% for link in ligand.ligand.ids.all %}
+                                    <a href="{{ link}}" target="_blank">{{link.web_resource.slug}}</a>
+                                {% endfor %}
+                                    <br />
                             {% empty %}
-                                -
+                            -
                             {% endfor %}
                         </td>
                         <td>{{ structure.ligands.all|ligandtype|linebreaksbr }}</td>
