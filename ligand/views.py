@@ -548,9 +548,9 @@ class UserBiased(AbsReferenceSelectionTable):
     #Biased Effector Family Tau/KA Rank Order (Ligand Selection)
     'TauRankOrder': "submitSelection('/ligand/userbiased_tau_rank_order');",
     #Biased Effector Family Emax/EC50 Pathway Profiles (Ligand Selection)
-    'EmaxPathProfiles': "submitSelection('/ligand/userbiased_emax_path_profile');",
+    'EmaxPathProfile': "submitSelection('/ligand/userbiased_emax_path_profile');",
     #Biased Effector Family Tau/KA Pathway Profiles (Ligand Selection)
-    'TauPathProfiles': "submitSelection('/ligand/userbiased_tau_path_profile');",
+    'TauPathProfile': "submitSelection('/ligand/userbiased_tau_path_profile');",
     #Biased Effector Subtype Browser (Ligand Selection)
     'BrowserSubtype': "submitSelection('/ligand/userbiasedsubtypes');",
     #Biased Effector Subtype Emax/EC50 Rank Order (Ligand Selection)
@@ -714,7 +714,6 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
             for ligand in simple_selection.targets:
                 self.user = ligand.item
 
-
         rec_name = list(Protein.objects.filter(id=receptor)
                                         .values_list('entry_name',
                                                      'name'))
@@ -799,6 +798,7 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
             if self.pathway:
                 if result['Pathway Rank'] == 'P1':
                     reference_path = tooltip_dict[result['primary_effector_family']]
+
                 else:
                     reference_path = tooltip_dict[result['P1']]
 
@@ -1305,6 +1305,7 @@ class LigandStatistics(TemplateView):
                                'Arrestin-3': "β-Arr 2",
                                'Gaq/i-chimera': "Gq/i-chim",
                                'Minigi': "MiniGi"}
+            endpoint = 0
             for data in circle_data:
                 # if data[1].split('_')[1] == 'human':
                 key = data[1].split('_')[0].upper()
@@ -1316,8 +1317,11 @@ class LigandStatistics(TemplateView):
                 if val not in circles[key].keys():
                     circles[key][val] = 1
                 circles[key][val] += 1
+                if circles[key][val] > endpoint:
+                    endpoint = circles[key][val]
 
             context["circles_data"] = json.dumps(circles)
+            context["endpoint"] = endpoint
             #Addressing section for Balanced Reference ligands and pathway biased
             if self.page in ['subtype', 'ligand_bias']:
                 bal_ligands = []
@@ -1357,6 +1361,7 @@ class LigandStatistics(TemplateView):
                 context['bal_ligands_by_class'] = bal_ligands
 
                 circles_bal = {}
+                endpoint_bal = 0
                 # print(circle_data_bal)
                 for data in circle_data_bal:
                     # if data[1].split('_')[1] == 'human':
@@ -1369,8 +1374,11 @@ class LigandStatistics(TemplateView):
                     if val not in circles_bal[key].keys():
                         circles_bal[key][val] = 1
                     circles_bal[key][val] += 1
+                    if circles_bal[key][val] > endpoint_bal:
+                        endpoint_bal = circles_bal[key][val]
 
                 context["circles_bal_data"] = json.dumps(circles_bal)
+                context["endpoint_bal"] = endpoint_bal
 
                 #Adding options and data for pathway biased plots to context
                 whole_class_a_bal = class_a_data.get_nodes_dict(self.page+'_bal')
@@ -1655,7 +1663,6 @@ class LigandInformationView(TemplateView):
         ld['mw'] = ligand_data.mw
         ld['wl'] = list()
         ld['picture'] = img_setup_smiles.format(str(ligand_data.smiles)) if ligand_data.smiles != None else None
-        print(ld['picture'])
         for i in ligand_data.ids.all():
             ld['wl'].append({'name': i.web_resource.name, "link": str(i)})
             # if i.web_resource.slug == 'chembl_ligand':

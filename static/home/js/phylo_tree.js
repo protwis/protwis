@@ -625,7 +625,7 @@ function draw_cluster(data, options, trim=true) {
 
 
 // Heatmap (circles_bal, heatmap_data, master_dict, buttonObjects);
-function draw_heatmap(square_data, data, bible, options, location, trim=true) {
+function draw_heatmap(square_data, data, bible, options, location, element_id, trim=true) {
   // set the dimensions and margins of the graph
 
   var support = (function () {
@@ -700,11 +700,6 @@ function draw_heatmap(square_data, data, bible, options, location, trim=true) {
             if (clone[prot_class][entry]['children'][family]['children'][i]['value'] == 0) {
               clone[prot_class][entry]['children'][family]['children'].splice(i, 1);
             }
-            else {
-              if (clone[prot_class][entry]['children'][family]['children'][i]['value'] > highest_value){
-                highest_value = clone[prot_class][entry]['children'][family]['children'][i]['value'];
-              }
-            }
           }
         }
         var k = clone[prot_class][entry]['children'].length;
@@ -762,9 +757,6 @@ function draw_heatmap(square_data, data, bible, options, location, trim=true) {
           for (var family in data[prot_class][entry]['children']) {
             gpcrReceptorFamily.push(data[prot_class][entry]['children'][family]['name']);
             for (var i in data[prot_class][entry]['children'][family]['children']){
-              if (data[prot_class][entry]['children'][family]['children'][i]['value'] > highest_value){
-                highest_value = clone[prot_class][entry]['children'][family]['children'][i]['value'];
-              }
               gpcrName.push(data[prot_class][entry]['children'][family]['children'][i]['name'].toUpperCase());
               rows.push(
                 textToHTML(bible[data[prot_class][entry]['children'][family]['children'][i]['name'].toUpperCase()][options['namesClick']])
@@ -819,6 +811,9 @@ function draw_heatmap(square_data, data, bible, options, location, trim=true) {
       if (subtype != 'null'){
         cols.push(subtype);
         chartData.push({ row: bible[receptor][options['namesClick']], col: subtype, value: filtered_square_data[receptor][subtype]});
+        if (filtered_square_data[receptor][subtype] > highest_value){
+          highest_value = filtered_square_data[receptor][subtype];
+        }
       }
     }
   }
@@ -837,6 +832,7 @@ function draw_heatmap(square_data, data, bible, options, location, trim=true) {
               .attr("width", width + margin.left + margin.right)
               .attr("height", height + margin.top + margin.bottom + margin.bottom)
               .attr("transform", "translate(0,-" + margin.bottom + ")")
+              .attr("id", element_id)
 
   var color_svg = svg_home.append("g")
                     .attr("transform", "translate(" + (margin.left*1.5) + ",0)");

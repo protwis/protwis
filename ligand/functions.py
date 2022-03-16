@@ -440,6 +440,8 @@ def calculate_second_delta(comparisons, tested, subtype=False, pathway=False):
         #Set reference pathway (first in list)
             path1 = ranking[drug][0]
             tested[path1]['Pathway Rank'] = 'P1'
+            reference_emax = tested[path1]['Emax']
+            reference_ec50 = tested[path1]['EC50']
             path_count = 1
             for test in ranking[drug][1:]:
                 path_count +=1
@@ -477,6 +479,10 @@ def calculate_second_delta(comparisons, tested, subtype=False, pathway=False):
 
                         tested[test]['Delta_log(Tau/KA)'] = delta_logtauka
                         tested[test]['Delta_log(Emax/EC50)'] = delta_logemaxec50
+                        tested[test]['Reference_Emax'] = reference_emax
+                        tested[path1]['Reference_Emax'] = reference_emax
+                        tested[test]['Reference_EC50'] = reference_ec50
+                        tested[path1]['Reference_EC50'] = reference_ec50
                     else:
                         try:
                             deltadelta_logtauka = round(tested[path1]['Delta_log(Tau/KA)'] - tested[test]['Delta_log(Tau/KA)'], 3)
@@ -581,9 +587,6 @@ def OnTheFly(receptor_id, subtype=False, pathway=False, user=False, balanced=Fal
         test_data = BiasedData.objects.filter(receptor=receptor_id, publication__in=pub_ids)
         lig_ids = list(BiasedData.objects.filter(receptor=receptor_id, publication__in=pub_ids).values_list("ligand_id", flat=True).distinct())
 
-    print(receptor_id)
-    print(user)
-    print(test_data)
     # Performance: first collect all publication and ligand data
     pub_objs = Publication.objects.filter(id__in=pub_ids).values_list("id", "web_link_id__index", "year", "journal_id__name", "authors")
     pub_objs_dict = {pub_obj[0]:pub_obj[1:] for pub_obj in pub_objs}
@@ -685,6 +688,8 @@ def OnTheFly(receptor_id, subtype=False, pathway=False, user=False, balanced=Fal
             ligands = define_ligand_pathways(publications[pub])
             publications[pub] = calculate_second_delta(ligands, publications[pub], subtype, pathway)
 
+    # Cleaning time, removing empty publication records
+    publications = {pub:value_id for pub,value_id in publications.items() if value_id != {}}
     return publications
 
 def AddPathwayData(master, data, rank, pathway=False):

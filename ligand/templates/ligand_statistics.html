@@ -275,6 +275,18 @@ Circle colors indicate a number of ligands:
       width: 350px;
       background: linear-gradient(to right, white 0%, black 100%)
   }
+  .alignleft {
+    float: left;
+    width: 175px;
+    text-align: left;
+    font-weight: bold;
+  }
+  .alignright {
+      float: right;
+      width: 175px;
+      text-align: right;
+      font-weight: bold;
+  }
 </style>
 <!-- Inner circle colors indicate a number of ligands:
 <table style="width:30%">
@@ -354,7 +366,7 @@ $(document).ready(function(){
         }
         buttonObjects[$(element).data('name')].push($(element).data('value'));
       });
-    draw_heatmap(circles, heatmap_data, master_dict, buttonObjects, 'HeatMap_div');
+    draw_heatmap(circles, heatmap_data, master_dict, buttonObjects, 'HeatMap_div', 'HeatMap_BiasedLigands');
 
 });
 </script>
@@ -372,7 +384,7 @@ $(document).ready(function(){
             buttonObjects[$(element).data('name')].push($(element).data('value'));
           });
         d3.select("#HeatMap_div").select("svg").remove();
-        draw_heatmap(circles, heatmap_data, master_dict, buttonObjects, 'HeatMap_div');
+        draw_heatmap(circles, heatmap_data, master_dict, buttonObjects, 'HeatMap_div', 'HeatMap_BiasedLigands');
       });
   })
 </script>
@@ -381,8 +393,13 @@ $(document).ready(function(){
   <br />
   <div>
     <div style="float: right; position: relative" class="text-center">
-      <b>Primary transducer count (from low to high)</b>
+      {% if render == "bias" %}
+      <b>Primary transducer count</b>
+      {% elif render == "subtype" %}
+      <b>Primary transducer subtype count</b>
+      {% endif %}
       <div class="graydiv"></div>
+      <div class="alignleft">0</div><div class="alignright">{{endpoint}}</div>
     </div>
   </div>
 
@@ -475,16 +492,16 @@ $(document).ready(function(){
       </button>
       <ul class="dropdown-menu">
           <li>
-              <a href="javascript:saveSvgAsPng(document.getElementById('HeatMap_div'), 'HeatMap_div.png');">PNG</a>
+              <a href="javascript:saveSvgAsPng(document.getElementById('HeatMap_BiasedLigands'), 'HeatMap_div.png');">PNG</a>
           </li>
           <li>
-              <a href="javascript:saveSvgAsJpg(document.getElementById('HeatMap_div'), 'HeatMap_div.jpg');">JPG</a>
+              <a href="javascript:saveSvgAsJpg(document.getElementById('HeatMap_BiasedLigands'), 'HeatMap_div.jpg');">JPG</a>
           </li>
           <li>
-              <a href="javascript:saveSvgAsTiff(document.getElementById('HeatMap_div'), 'HeatMap_div.tiff');">TIFF</a>
+              <a href="javascript:saveSvgAsTiff(document.getElementById('HeatMap_BiasedLigands'), 'HeatMap_div.tiff');">TIFF</a>
           </li>
           <li>
-              <a href="javascript:saveSvg(document.getElementById('HeatMap_div'), 'HeatMap_div.svg');">SVG</a>
+              <a href="javascript:saveSvg(document.getElementById('HeatMap_BiasedLigands'), 'HeatMap_div.svg');">SVG</a>
           </li>
       </ul>
   </div>
@@ -811,8 +828,13 @@ Biased ligand statistics were last updated <strong>{{ release_notes.date|date:"Y
 
 <div>
   <div style="float: right; position: relative" class="text-center">
-    <b>Primary transducer count (from low to high)</b>
+    {% if render == "bias" %}
+    <b>Primary transducer count</b>
+    {% elif render == "subtype" %}
+    <b>Primary transducer subtype count</b>
+    {% endif %}
     <div class="graydiv"></div>
+    <div class="alignleft">0</div><div class="alignright">{{endpoint_bal}}</div>
   </div>
 </div>
 
@@ -923,7 +945,7 @@ $(window).on("load",function() {
         }
         buttonObjects[$(element).data('name')].push($(element).data('value'));
       });
-    draw_heatmap(circles_bal, heatmap_data_bal, master_dict, buttonObjects, 'HeatmapDivBal');
+    draw_heatmap(circles_bal, heatmap_data_bal, master_dict, buttonObjects, 'HeatmapDivBal', 'Heatmap_BalancedRefenced');
 });
 
 </script>
@@ -941,7 +963,7 @@ $(window).on("load",function() {
             buttonObjects[$(element).data('name')].push($(element).data('value'));
           });
         d3.select("#HeatmapDivBal").select("svg").remove();
-        draw_heatmap(circles_bal, heatmap_data_bal, master_dict, buttonObjects, 'HeatmapDivBal');
+        draw_heatmap(circles_bal, heatmap_data_bal, master_dict, buttonObjects, 'HeatmapDivBal', 'Heatmap_BalancedRefenced');
       });
   })
 </script>
@@ -957,16 +979,16 @@ $(window).on("load",function() {
         </button>
         <ul class="dropdown-menu">
             <li>
-                <a href="javascript:saveSvgAsPng(document.getElementById('HeatmapDivBal'), 'HeatMap_pathway_bias.png');">PNG</a>
+                <a href="javascript:saveSvgAsPng(document.getElementById('Heatmap_BalancedRefenced'), 'HeatMap_pathway_bias.png');">PNG</a>
             </li>
             <li>
-                <a href="javascript:saveSvgAsJpg(document.getElementById('HeatmapDivBal'), 'HeatMap_pathway_bias.jpg');">JPG</a>
+                <a href="javascript:saveSvgAsJpg(document.getElementById('Heatmap_BalancedRefenced'), 'HeatMap_pathway_bias.jpg');">JPG</a>
             </li>
             <li>
-                <a href="javascript:saveSvgAsTiff(document.getElementById('HeatmapDivBal'), 'HeatMap_pathway_bias.tiff');">TIFF</a>
+                <a href="javascript:saveSvgAsTiff(document.getElementById('Heatmap_BalancedRefenced'), 'HeatMap_pathway_bias.tiff');">TIFF</a>
             </li>
             <li>
-                <a href="javascript:saveSvg(document.getElementById('HeatmapDivBal'), 'HeatMap_pathway_bias.svg');">SVG</a>
+                <a href="javascript:saveSvg(document.getElementById('Heatmap_BalancedRefenced'), 'HeatMap_pathway_bias.svg');">SVG</a>
             </li>
         </ul>
     </div>
