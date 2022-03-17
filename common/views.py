@@ -488,9 +488,9 @@ def getReferenceTable(pathway, subtype):
                 <td><span class=\"expand\">{}</span></td> \
                 <td><span class=\"expand\">{}</span></td> \
                 <td>{}</td> \
-                <td><span data-search={}>{}</span></td> \
-                <td><span data-search={}>{}</span></td> \
-                <td><span data-search={}>{}</span></td> \
+                <td data-search=\"{}\">{}</td> \
+                <td data-search=\"{}\">{}</td> \
+                <td data-search=\"{}\">{}</td> \
                 </tr> \n".format(
                     t['slug'],
                     t['name'],
