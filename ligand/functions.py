@@ -431,8 +431,8 @@ def find_best_subtype(comparisons, reference, tested):
     for test in to_be_deleted:
         del tested[test]
 
-def calculate_second_delta(comparisons, tested, subtype=False, pathway=False):
-    ranking = assess_pathway_preferences(comparisons, tested, subtype, pathway)
+def calculate_second_delta(comparisons, tested, rank_method, subtype=False, pathway=False):
+    ranking = assess_pathway_preferences(comparisons, tested, rank_method, subtype, pathway)
     #STEPS
     for drug in ranking.keys():
         #perform analysis only when we have multiple pathways to actually compare
@@ -509,8 +509,10 @@ def calculate_second_delta(comparisons, tested, subtype=False, pathway=False):
                         tested[test]['Bias factor'] = bias_factor
     return tested
 
-def assess_pathway_preferences(comparisons, tested, subtype=False, pathway=False):
+def assess_pathway_preferences(comparisons, tested, rank_method, subtype=False, pathway=False):
     pathway_preference = {}
+    if pathway:
+        comparisons, tested = find_best_pathway_family(comparisons, tested)
     #calculate values for ranking (or replace with qualitative activity when missing)
     for assay in comparisons.keys():
         for test in comparisons[assay]:
@@ -548,12 +550,17 @@ def assess_pathway_preferences(comparisons, tested, subtype=False, pathway=False
     #ranking accordingly to ∆Tau/KA or ∆Emax/EC50 (depending on how many missing values are)
     for val in pathway_preference.keys():
         temp = []
-        none_tau = len([pathway_preference[val][key][0] for key in pathway_preference[val] if pathway_preference[val][key][0] is None])
-        none_emax = len([pathway_preference[val][key][1] for key in pathway_preference[val] if pathway_preference[val][key][1] is None])
-        if none_tau <= none_emax:
+        if rank_method == 'tau':
             pathway_preference[val] = list(dict(sorted(pathway_preference[val].items(), key=lambda item: -1000 if (item[1][0] == 'No activity' or item[1][0] == None or item[1][0] == 'Inverse agonism/antagonism') else item[1][0], reverse=True)).keys())
-        else:
+        elif rank_method == 'emax':
             pathway_preference[val] = list(dict(sorted(pathway_preference[val].items(), key=lambda item: -1000 if (item[1][1] == 'No activity' or item[1][1] == None or item[1][1] == 'Inverse agonism/antagonism') else item[1][1], reverse=True)).keys())
+        else: #for the build procedure
+            none_tau = len([pathway_preference[val][key][0] for key in pathway_preference[val] if pathway_preference[val][key][0] is None])
+            none_emax = len([pathway_preference[val][key][1] for key in pathway_preference[val] if pathway_preference[val][key][1] is None])
+            if none_tau <= none_emax:
+                pathway_preference[val] = list(dict(sorted(pathway_preference[val].items(), key=lambda item: -1000 if (item[1][0] == 'No activity' or item[1][0] == None or item[1][0] == 'Inverse agonism/antagonism') else item[1][0], reverse=True)).keys())
+            else:
+                pathway_preference[val] = list(dict(sorted(pathway_preference[val].items(), key=lambda item: -1000 if (item[1][1] == 'No activity' or item[1][1] == None or item[1][1] == 'Inverse agonism/antagonism') else item[1][1], reverse=True)).keys())
     #provide ranked keys
         for path in pathway_preference[val]:
             if subtype:
@@ -566,6 +573,39 @@ def assess_pathway_preferences(comparisons, tested, subtype=False, pathway=False
         pathway_preference[val] = temp
     return pathway_preference
 
+def find_best_pathway_family(comparisons, tested):
+    for ligand in list(comparisons.keys()):
+        families = {}
+        to_be_deleted = []
+        for data in comparisons[ligand]:
+        #assessing the values
+            emax, ec50 = tested[data]['Emax'], tested[data]['EC50']
+            try:
+                logemaxec50 = math.log((emax/ec50),10)
+            except (ValueError, TypeError, ZeroDivisionError):
+                #setting a largely negative value insted of None for comparisons sake
+                #excepting situations where one value is None or 0.0 [ValueError, TypeError, ZeroDivisionError]
+                logemaxec50 = -100
+            if tested[data]['primary_effector_family'] not in families.keys():
+                #adding new family and values
+                families[tested[data]['primary_effector_family']] = [logemaxec50, data]
+            else:
+                #updating with most relevant value
+                if logemaxec50 > families[tested[data]['primary_effector_family']][0]:
+                    #Adding the obsolete old data to the lists of tests to be deleted
+                    to_be_deleted.append(families[tested[data]['primary_effector_family']][1])
+                    #The data is a better duplicate and thus need to overwrite previous version
+                    families[tested[data]['primary_effector_family']] = [logemaxec50, data]
+                else:
+                    #Adding the obsolete tests to the lists of tests to be deleted
+                    to_be_deleted.append(data)
+        #Delete obsolete key from comparisons register
+        comparisons[ligand] = [item for item in comparisons[ligand] if item not in to_be_deleted]
+        #get unique obsolete test keys and remove them
+        for test in to_be_deleted:
+            del tested[test]
+    return comparisons, tested
+
 def define_ligand_pathways(master):
     ligands = {}
     for key in master:
@@ -574,7 +614,7 @@ def define_ligand_pathways(master):
         ligands[master[key]['ligand_id']].append(key)
     return ligands
 
-def OnTheFly(receptor_id, subtype=False, pathway=False, user=False, balanced=False):
+def OnTheFly(receptor_id, rank_method='Default', subtype=False, pathway=False, user=False, balanced=False):
     receptor_name = list(Protein.objects.filter(id=receptor_id).values_list("name", flat=True))[0]
 
     #fetching data given the receptor id
@@ -656,7 +696,7 @@ def OnTheFly(receptor_id, subtype=False, pathway=False, user=False, balanced=Fal
                     continue
                 #define ligand pathway and assess the pathway ranking for each ligand
                 ligands = define_ligand_pathways(publications[pub])
-                ranking = assess_pathway_preferences(ligands, publications[pub], subtype)
+                ranking = assess_pathway_preferences(ligands, publications[pub], rank_method, subtype)
                 reference, tested = assess_pathway_pairs(ranking, publications[pub], balanced_refs, subtype)
             else:
                 #Assess reference and tested ligands
@@ -677,7 +717,7 @@ def OnTheFly(receptor_id, subtype=False, pathway=False, user=False, balanced=Fal
                 continue
 
             #calculate the second delta (across pathways)
-            tested = calculate_second_delta(comparisons, tested, subtype, pathway) #need subtype (defined by button)
+            tested = calculate_second_delta(comparisons, tested, rank_method, subtype, pathway) #need subtype (defined by button)
 
             #save the updated data in the original key
             reference.update(tested)
@@ -686,7 +726,7 @@ def OnTheFly(receptor_id, subtype=False, pathway=False, user=False, balanced=Fal
         #Calculation branch 2 for Pathway preference
         else:
             ligands = define_ligand_pathways(publications[pub])
-            publications[pub] = calculate_second_delta(ligands, publications[pub], subtype, pathway)
+            publications[pub] = calculate_second_delta(ligands, publications[pub], rank_method, subtype, pathway)
 
     # Cleaning time, removing empty publication records
     publications = {pub:value_id for pub,value_id in publications.items() if value_id != {}}

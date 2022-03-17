@@ -754,7 +754,7 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
         else:
             prefix = 'Δ'
 
-        data = OnTheFly(int(receptor), subtype=self.subtype, pathway=self.pathway, user=self.user, balanced=self.balanced)
+        data = OnTheFly(int(receptor), self.label, subtype=self.subtype, pathway=self.pathway, user=self.user, balanced=self.balanced)
         #### added code
         flat_data = {}
         for key, value in data.items():
