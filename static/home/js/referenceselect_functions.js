@@ -483,7 +483,7 @@ function initTargetTable(elementID, pathway) {
                       filter_default_label: ["From", "To"],
                       filter_reset_button_text: false,
                       // style_class: "center",
-                      column_data_type: "html",
+                      // column_data_type: "html",
                       html5_data: "data-search",
                   },
                   {
@@ -492,7 +492,7 @@ function initTargetTable(elementID, pathway) {
                       filter_default_label: ["From", "To"],
                       filter_reset_button_text: false,
                       // style_class: "center",
-                      column_data_type: "html",
+                      // column_data_type: "html",
                       html5_data: "data-search",
                   },
                   {
@@ -501,7 +501,7 @@ function initTargetTable(elementID, pathway) {
                       filter_default_label: ["From", "To"],
                       filter_reset_button_text: false,
                       // style_class: "center",
-                      column_data_type: "html",
+                      // column_data_type: "html",
                       html5_data: "data-search",
                   },
                   /*{
