@@ -317,6 +317,7 @@ def getTargetTable():
 def getReferenceTable(pathway, subtype):
     cache_key = "reference_table_" + pathway + "_" + subtype
     data_table = cache.get(cache_key)
+    data_table =  None
     if data_table == None:
         #get all the proteins that are in biaseddata
         biased_proteins = list(BiasedData.objects.values_list("receptor_id__entry_name").distinct())
@@ -439,16 +440,22 @@ def getReferenceTable(pathway, subtype):
                 t['ligand_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_tot[t['id']][0])
                 try:
                     t['biased_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_tot[t['id']][1])
+                    t['biased_span'] = ligand_tot[t['id']][1]
                 except IndexError:
                     t['biased_count'] = '-'
+                    t['biased_span'] = ''
                 try:
                     t['balanced_refs'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_tot[t['id']][2])
+                    t['balanced_span'] = ligand_tot[t['id']][2]
                 except IndexError:
                     t['balanced_refs'] = '-'
+                    t['balanced_span'] = ''
                 try:
                     t['pathway_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_tot[t['id']][3])
+                    t['pathway_span'] = ligand_tot[t['id']][3]
                 except IndexError:
                     t['pathway_count'] = '-'
+                    t['pathway_span'] = ''
 
             if pathway == "yes":
                 data_table += "<tr> \
@@ -482,9 +489,9 @@ def getReferenceTable(pathway, subtype):
                 <td><span class=\"expand\">{}</span></td> \
                 <td><span class=\"expand\">{}</span></td> \
                 <td>{}</td> \
-                <td>{}</td> \
-                <td>{}</td> \
-                <td>{}</td> \
+                <td><span data-search={}>{}</span></td> \
+                <td><span data-search={}>{}</span></td> \
+                <td><span data-search={}>{}</span></td> \
                 </tr> \n".format(
                     t['slug'],
                     t['name'],
@@ -496,8 +503,11 @@ def getReferenceTable(pathway, subtype):
                     t['uniprot'],
                     t['iuphar'],
                     t['ligand_count'],
+                    t['balanced_span'],
                     t['balanced_refs'],
+                    t['biased_span'],
                     t['biased_count'],
+                    t['pathway_span'],
                     t['pathway_count'],
                 )
 

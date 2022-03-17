@@ -333,9 +333,9 @@ function initTargetTable(elementID, pathway) {
                       column_number: 4,
                       filter_type: "multi_select",
                       select_type: "select2",
-                      column_data_type: "html",
                       filter_default_label: "Species",
                       filter_reset_button_text: false,
+                      filter_match_mode : "exact",
                       select_type_options: {
                           "width": "110px",
                       }
@@ -442,12 +442,9 @@ function initTargetTable(elementID, pathway) {
                       column_number: 4,
                       filter_type: "multi_select",
                       select_type: "select2",
-                      column_data_type: "html",
                       filter_default_label: "Species",
                       filter_reset_button_text: false,
-                      select_type_options: {
-                          "width": "110px",
-                      }
+                      filter_match_mode : "exact",
                   },
                   {
                       column_number: 5,
@@ -487,6 +484,7 @@ function initTargetTable(elementID, pathway) {
                       filter_reset_button_text: false,
                       // style_class: "center",
                       column_data_type: "html",
+                      html5_data: "data-search",
                   },
                   {
                       column_number: 9,
@@ -495,6 +493,7 @@ function initTargetTable(elementID, pathway) {
                       filter_reset_button_text: false,
                       // style_class: "center",
                       column_data_type: "html",
+                      html5_data: "data-search",
                   },
                   {
                       column_number: 10,
@@ -503,6 +502,7 @@ function initTargetTable(elementID, pathway) {
                       filter_reset_button_text: false,
                       // style_class: "center",
                       column_data_type: "html",
+                      html5_data: "data-search",
                   },
                   /*{
                       column_number: 7,
