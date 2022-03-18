@@ -547,7 +547,11 @@ def assess_pathway_preferences(comparisons, tested, rank_method, subtype=False, 
                     Emax_EC50 = tested[test]['Delta_log(Emax/EC50)']
                 except KeyError:
                     Emax_EC50 = tested[test]['qualitative_activity']
-            pathway_preference[tested[test]['ligand_id']][path_label] = [Tau_KA, Emax_EC50]
+            #will overwrite if multiple experiments,
+            #then when parsing down will fetch ONLY the first match
+            #To quick fix, don't allow overwrite:
+            if path_label not in pathway_preference[tested[test]['ligand_id']].keys():
+                pathway_preference[tested[test]['ligand_id']][path_label] = [Tau_KA, Emax_EC50]
 
     #ranking accordingly to ∆Tau/KA or ∆Emax/EC50 (depending on how many missing values are)
     for val in pathway_preference.keys():
