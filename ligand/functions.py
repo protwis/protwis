@@ -444,10 +444,10 @@ def calculate_second_delta(comparisons, tested, rank_method, subtype=False, path
             reference_ec50 = tested[path1]['EC50']
             path_count = 1
             for test in ranking[drug][1:]:
-                path_count +=1
-                tested[test]['Pathway Rank'] = 'P'+str(path_count)
                 #Match pathway levels + skip matching if Arrestin involved
                 if (tested[test]['pathway_level'] == tested[path1]['pathway_level']) or ('Arrestin' in [tested[path1]['primary_effector_family'], tested[test]['primary_effector_family']]):
+                    path_count +=1
+                    tested[test]['Pathway Rank'] = 'P'+str(path_count)
                     tested[test]['P1'] = tested[path1]['primary_effector_family']
                     if subtype:
                         tested[test]['P1'] = tested[path1]['primary_effector_subtype']
@@ -507,6 +507,8 @@ def calculate_second_delta(comparisons, tested, rank_method, subtype=False, path
                         tested[test]['DeltaDelta_log(Tau/KA)'] = deltadelta_logtauka
                         tested[test]['DeltaDelta_log(Emax/EC50)'] = deltadelta_logemaxec50
                         tested[test]['Bias factor'] = bias_factor
+                else:
+                    del tested[test]
     return tested
 
 def assess_pathway_preferences(comparisons, tested, rank_method, subtype=False, pathway=False):

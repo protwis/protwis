@@ -912,9 +912,9 @@ function draw_heatmap(square_data, data, bible, options, location, element_id, t
       value = oddOrEven(count);
       text = d3.select(this).select('text');
       text.attr("transform", null);
-      text.attr("x", "-25");
+      text.attr("x", "-15");
       if(value === "even"){
-        text.attr("x", "-15");
+        // text.attr("x", "-15");
         text.attr("y", "30");
       }
       count = count + 1;

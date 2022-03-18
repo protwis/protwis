@@ -789,6 +789,7 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
             deltadelta_tk_key = 'DeltaDelta_log(Tau/KA)'
             deltadelta_ee_key = 'DeltaDelta_log(Emax/EC50)'
 
+
         for row in flat_data:
             result = flat_data[row]
             try:
@@ -799,7 +800,6 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
             if self.pathway:
                 if result['Pathway Rank'] == 'P1':
                     reference_path = tooltip_dict[result['primary_effector_family']]
-
                 else:
                     reference_path = tooltip_dict[result['P1']]
 
@@ -1305,7 +1305,7 @@ class LigandStatistics(TemplateView):
             label_converter = {'Arrestin-2': "β-Arr",
                                'Arrestin-3': "β-Arr 2",
                                'Gaq/i-chimera': "Gq/i-chim",
-                               'Minigi': "MiniGi"}
+                               'Minigi': "Mini-Gi"}
             endpoint = 0
             for data in circle_data:
                 # if data[1].split('_')[1] == 'human':
@@ -1821,7 +1821,6 @@ class OTFBiasBrowser(TemplateView):
         if self.user:
             self.user = int(self.user)
         data = OnTheFly(int(self.protein_id), rank_method=self.rank_method, subtype=self.subtype, pathway=self.pathway, user=self.user, balanced=self.balanced)
-        print(data)
         browser_columns = ['Class', 'Receptor family', 'UniProt', 'IUPHAR', 'Species',
                            'Reference ligand', 'Tested ligand', '#Vendors', '#Articles', '#Labs',
                            'P1 - Pathway', 'P2 - Pathway', 'P3 - Pathway', 'P4 - Pathway', 'P5 - Pathway',
