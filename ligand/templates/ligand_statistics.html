@@ -931,21 +931,27 @@ Biased ligand statistics were last updated <strong>{{ release_notes.date|date:"Y
   circles_bal = {{ circles_bal_data | safe}}
 </script>
 <script type="text/javascript" charset="utf-8">
-
-$(window).on("load",function() {
-  // $('#second_tab').on('click', function () {
-    d3.select("#HeatmapDivBal").select("svg").remove();
-    let buttonObjects = [];
-    let checkboxes = $('#HeatmapHandlerBal').find('label');
-    let selectedCheckboxes = checkboxes.filter('.active');
-    selectedCheckboxes
-      .each(function(index, element) {
-        if (!($(element).data('name') in buttonObjects)){
-          buttonObjects[$(element).data('name')] = [];
-        }
-        buttonObjects[$(element).data('name')].push($(element).data('value'));
-      });
-    draw_heatmap(circles_bal, heatmap_data_bal, master_dict, buttonObjects, 'HeatmapDivBal', 'Heatmap_BalancedRefenced');
+$('#second_tab').on('click', function () {
+  console.log('clicked tab');
+});
+// $(window).on("load",function() {
+  $('#second_tab').on('click', function () {
+    setTimeout(
+    function() {
+      d3.select("#HeatmapDivBal").select("svg").remove();
+      let buttonObjects = [];
+      let checkboxes = $('#HeatmapHandlerBal').find('label');
+      let selectedCheckboxes = checkboxes.filter('.active');
+      selectedCheckboxes
+        .each(function(index, element) {
+          if (!($(element).data('name') in buttonObjects)){
+            buttonObjects[$(element).data('name')] = [];
+          }
+          buttonObjects[$(element).data('name')].push($(element).data('value'));
+        });
+      draw_heatmap(circles_bal, heatmap_data_bal, master_dict, buttonObjects, 'HeatmapDivBal', 'Heatmap_BalancedRefenced');
+    },
+    1);
 });
 
 </script>
