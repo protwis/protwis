@@ -1819,7 +1819,7 @@ class OTFBiasBrowser(TemplateView):
     context_object_name = 'data'
     def get_context_data(self, **kwargs):
         if self.user:
-            user = int(self.user)
+            self.user = int(self.user)
         data = OnTheFly(int(self.protein_id), rank_method=self.rank_method, subtype=self.subtype, pathway=self.pathway, user=self.user, balanced=self.balanced)
         print(data)
         browser_columns = ['Class', 'Receptor family', 'UniProt', 'IUPHAR', 'Species',
