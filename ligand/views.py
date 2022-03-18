@@ -1497,15 +1497,12 @@ class PathwayExperimentEntryView(DetailView):
 @csrf_exempt
 def test_link(request):
     request.session['ids'] = ''
-    # try:
-    request.session['ids']
     if request.POST.get('action') == 'post':
         request.session.modified = True
         data = request.POST.get('ids')
         data = filter(lambda char: char not in " \"?.!/;:[]", data)
         datum = "".join(data)
         request.session['ids'] = datum
-        request.session.set_expiry(15)
 
     return HttpResponse(request)
 
@@ -1518,30 +1515,21 @@ class BiasVendorBrowser(TemplateView):
         # try:
         context = dict()
         datum = self.request.session.get('ids')
-
-        self.request.session.modified = True
         rd = list()
         for i in datum.split(','):
-            ligand = Ligand.objects.filter(id=i)
-            ligand = ligand.get()
-            links = LigandVendorLink.objects.filter(
-                ligand=ligand).prefetch_related('lp', 'vendor')
+            ligand = Ligand.objects.get(id=i)
+            links = LigandVendorLink.objects.filter(ligand=ligand).exclude(vendor__name__in=['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem'])
             for x in links:
-                if x.vendor.name not in ['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem']:
-                    temp = dict()
-                    vendor = LigandVendors.objects.filter(id=x.vendor_id)
-                    vendor = vendor.get()
-                    temp['ligand'] = ligand
-                    temp['url'] = x.url
-                    temp['vendor_id'] = x.external_id
-                    temp['vendor'] = vendor
+                temp = {}
+                temp['ligand'] = ligand
+                temp['url'] = x.url
+                temp['vendor_id'] = x.external_id
+                temp['vendor'] = x.vendor
+                rd.append(temp)
 
-                    rd.append(temp)
-            context['data'] = rd
-        del self.request.session['ids']
+        context['data'] = rd
+
         return context
-        # except:
-        #     raise
 
 class LigandInformationView(TemplateView):
     template_name = 'ligand_info.html'
@@ -1598,7 +1586,13 @@ class LigandInformationView(TemplateView):
         maximum = max(value)
         minimum = min(value)
         avg = sum(value) / len(value)
-        return round(minimum,1), round(avg,1), round(maximum,1)
+
+        if (minimum >= 100):
+            return round(minimum), round(avg), round(maximum)
+        else:
+            return round(minimum, 1), round(avg, 1), round(maximum, 1)
+
+
 
     @staticmethod
     def process_assay(assays):
@@ -1617,8 +1611,8 @@ class LigandInformationView(TemplateView):
                 return_dict[name]['receptor_gtp'] = i.protein.short()
                 return_dict[name]['receptor_uniprot'] = i.protein.entry_short()
                 return_dict[name]['receptor_species'] = i.protein.species.common_name
-                return_dict[name]['receptor_family'] = i.protein.family.parent.name
-                return_dict[name]['receptor_class'] = i.protein.family.parent.parent.parent.name
+                return_dict[name]['receptor_family'] = i.protein.family.parent.short()
+                return_dict[name]['receptor_class'] = i.protein.family.parent.parent.parent.short()
                 if i.standard_type == 'EC50' or i.standard_type == 'potency':
                     return_dict[name]['potency_values'].append(
                         i.standard_value)
