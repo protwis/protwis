@@ -1814,11 +1814,14 @@ class OTFBiasBrowser(TemplateView):
     pathway = False
     balanced = False
     user = False
+    rank_method = 'Default'
     template_name = 'otf_bias_browser.html'
     context_object_name = 'data'
     def get_context_data(self, **kwargs):
-        data = OnTheFly(int(self.protein_id), self.subtype, self.pathway, int(self.user), self.balanced)
-
+        if self.user:
+            user = int(self.user)
+        data = OnTheFly(int(self.protein_id), rank_method=self.rank_method, subtype=self.subtype, pathway=self.pathway, user=self.user, balanced=self.balanced)
+        print(data)
         browser_columns = ['Class', 'Receptor family', 'UniProt', 'IUPHAR', 'Species',
                            'Reference ligand', 'Tested ligand', '#Vendors', '#Articles', '#Labs',
                            'P1 - Pathway', 'P2 - Pathway', 'P3 - Pathway', 'P4 - Pathway', 'P5 - Pathway',
