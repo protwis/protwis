@@ -551,32 +551,40 @@ def assess_pathway_preferences(comparisons, tested, rank_method, subtype=False, 
             #then when parsing down will fetch ONLY the first match
             #To quick fix, don't allow overwrite:
             if path_label not in pathway_preference[tested[test]['ligand_id']].keys():
-                pathway_preference[tested[test]['ligand_id']][path_label] = [Tau_KA, Emax_EC50]
+                #saving also the record ID so it will be easy to match the values
+                pathway_preference[tested[test]['ligand_id']][path_label] = [Tau_KA, Emax_EC50, test]
+            else:
+                #Overwrite ONLY if both values are higher
+                #because we want to keep the best outcome
+                #from the different experiments performed
+                try:
+                    if (Tau_KA > pathway_preference[tested[test]['ligand_id']][path_label][0]) and (Emax_EC50 > pathway_preference[tested[test]['ligand_id']][path_label][1]):
+                        pathway_preference[tested[test]['ligand_id']][path_label] = [Tau_KA, Emax_EC50, test]
+                except TypeError:
+                #Nedd to assess when comparing str to float
+                    if (type(Tau_KA) == float) and (type(Emax_EC50) == float):
+                        pathway_preference[tested[test]['ligand_id']][path_label] = [Tau_KA, Emax_EC50, test]
+                    #only option is to overwrite when both new values are floats and we have the error
 
     #ranking accordingly to ∆Tau/KA or ∆Emax/EC50 (depending on how many missing values are)
     for val in pathway_preference.keys():
         temp = []
         if rank_method == 'tau':
-            pathway_preference[val] = list(dict(sorted(pathway_preference[val].items(), key=lambda item: -1000 if (item[1][0] == 'No activity' or item[1][0] == None or item[1][0] == 'Inverse agonism/antagonism') else item[1][0], reverse=True)).keys())
+            tmp_dict = dict(sorted(pathway_preference[val].items(), key=lambda item: -1000 if (item[1][0] == 'No activity' or item[1][0] == None or item[1][0] == 'Inverse agonism/antagonism') else item[1][0], reverse=True))
         elif rank_method == 'emax':
-            pathway_preference[val] = list(dict(sorted(pathway_preference[val].items(), key=lambda item: -1000 if (item[1][1] == 'No activity' or item[1][1] == None or item[1][1] == 'Inverse agonism/antagonism') else item[1][1], reverse=True)).keys())
+            tmp_dict = dict(sorted(pathway_preference[val].items(), key=lambda item: -1000 if (item[1][1] == 'No activity' or item[1][1] == None or item[1][1] == 'Inverse agonism/antagonism') else item[1][1], reverse=True))
         else: #for the build procedure
             none_tau = len([pathway_preference[val][key][0] for key in pathway_preference[val] if pathway_preference[val][key][0] is None])
             none_emax = len([pathway_preference[val][key][1] for key in pathway_preference[val] if pathway_preference[val][key][1] is None])
             if none_tau <= none_emax:
-                pathway_preference[val] = list(dict(sorted(pathway_preference[val].items(), key=lambda item: -1000 if (item[1][0] == 'No activity' or item[1][0] == None or item[1][0] == 'Inverse agonism/antagonism') else item[1][0], reverse=True)).keys())
+                tmp_dict = dict(sorted(pathway_preference[val].items(), key=lambda item: -1000 if (item[1][0] == 'No activity' or item[1][0] == None or item[1][0] == 'Inverse agonism/antagonism') else item[1][0], reverse=True))
             else:
-                pathway_preference[val] = list(dict(sorted(pathway_preference[val].items(), key=lambda item: -1000 if (item[1][1] == 'No activity' or item[1][1] == None or item[1][1] == 'Inverse agonism/antagonism') else item[1][1], reverse=True)).keys())
-    #provide ranked keys
-        for path in pathway_preference[val]:
-            if subtype:
-                if path.split(' - ')[1] == 'None':
-                    temp.append([key for key in tested.keys() if (tested[key]['ligand_id'] == val and tested[key]['primary_effector_family'] == path.split(' - ')[0] and tested[key]['primary_effector_subtype'] ==  None)][0])
-                else:
-                    temp.append([key for key in tested.keys() if (tested[key]['ligand_id'] == val and tested[key]['primary_effector_family'] == path.split(' - ')[0] and tested[key]['primary_effector_subtype'] == path.split(' - ')[1])][0])
-            else:
-                temp.append([key for key in tested.keys() if (tested[key]['ligand_id'] == val and tested[key]['primary_effector_family'] == path)][0])
+                tmp_dict = dict(sorted(pathway_preference[val].items(), key=lambda item: -1000 if (item[1][1] == 'No activity' or item[1][1] == None or item[1][1] == 'Inverse agonism/antagonism') else item[1][1], reverse=True))
+        #provide ranked keys
+        for key in tmp_dict:
+            temp.append(tmp_dict[key][2])
         pathway_preference[val] = temp
+
     return pathway_preference
 
 def find_best_pathway_family(comparisons, tested):
