@@ -18,8 +18,8 @@ urlpatterns = [
     # url(r'^statistics', views.LigandStatistics.as_view(), name='ligand_statistics'),
 
     # BIASED LIGANDS
-    # url(r'^bias_statistics', cache_page(3600*24*7)(views.LigandStatistics.as_view(page='ligand_bias')), name='ligand_statistics'),
-    url(r'^bias_statistics', views.LigandStatistics.as_view(page='ligand_bias'), name='ligand_statistics'),
+    url(r'^bias_statistics', cache_page(3600*24*7)(views.LigandStatistics.as_view(page='ligand_bias')), name='ligand_statistics'),
+    # url(r'^bias_statistics', views.LigandStatistics.as_view(page='ligand_bias'), name='ligand_statistics'),
     path('emax_rank_order_selection', views.BiasedSignallingSelection.as_view(way='EmaxRankOrder'), name='emax_ro_selection'),
     path('emax_rankorder', views.BiasedSignallingOnTheFlyCalculation.as_view(), name='biased_rank_order'),
     path('emax_rankorder_path_bias', views.BiasedSignallingOnTheFlyCalculation.as_view(balanced=True), name='biased_rank_order'),
@@ -37,8 +37,8 @@ urlpatterns = [
     path('tau_path_profiles_path_bias', views.BiasedSignallingOnTheFlyCalculation.as_view(page='pathwayprofiles', label='tau', balanced=True), name='biased_rank_order'),
     path('userbiased_tau_path_profile', views.BiasedSignallingOnTheFlyCalculation.as_view(page='pathwayprofiles', label='tau', user=True), name='biased_rank_order'),
     # SUBTYPE BIASED
-    # url(r'^subtype_statistics', cache_page(3600*24*7)(views.LigandStatistics.as_view(page='subtype')), name='ligand_statistics'),
-    url(r'^subtype_statistics', views.LigandStatistics.as_view(page='subtype'), name='ligand_statistics'),
+    url(r'^subtype_statistics', cache_page(3600*24*7)(views.LigandStatistics.as_view(page='subtype')), name='ligand_statistics'),
+    # url(r'^subtype_statistics', views.LigandStatistics.as_view(page='subtype'), name='ligand_statistics'),
     path('subtype_emax_rankorder_selection', views.BiasedSignallingSelection.as_view(subtype=True, way='EmaxRankOrderSubtype'), name='ema_subtype_ro_selection'),
     path('subtype_emax_rankorder', views.BiasedSignallingOnTheFlyCalculation.as_view(subtype=True), name='biased_rank_order'),
     path('subtype_emax_rankorder_path_bias', views.BiasedSignallingOnTheFlyCalculation.as_view(subtype=True, balanced=True), name='biased_rank_order'),

@@ -562,7 +562,7 @@ def assess_pathway_preferences(comparisons, tested, rank_method, subtype=False, 
                         pathway_preference[tested[test]['ligand_id']][path_label] = [Tau_KA, Emax_EC50, test]
                 except TypeError:
                 #Nedd to assess when comparing str to float
-                    if (type(Tau_KA) == float) and (type(Emax_EC50) == float):
+                    if isinstance(Tau_KA, float) and isinstance(Emax_EC50, float):
                         pathway_preference[tested[test]['ligand_id']][path_label] = [Tau_KA, Emax_EC50, test]
                     #only option is to overwrite when both new values are floats and we have the error
 
