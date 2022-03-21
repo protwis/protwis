@@ -5,8 +5,7 @@ from django.utils.html import strip_tags
 from django.db import IntegrityError
 
 from build.management.commands.base_build import Command as BaseBuild
-from protein.models import (Protein, ProteinConformation, ProteinState, ProteinSequenceType, ProteinSegment,
-ProteinFusion, ProteinFusionProtein, ProteinSource)
+from protein.models import (Protein, ProteinConformation, ProteinState, ProteinSequenceType, ProteinSegment, ProteinSource)
 from residue.models import Residue
 from structure.functions import ParseStructureCSV
 
@@ -146,5 +145,3 @@ class Command(BaseBuild):
                     print('Failed creating conformation {} of protein {}'.format(pc.state.name,p.entry_name))
                     self.logger.error('Failed creating conformation {} of protein {}'.format(pc.state.name,
                         p.entry_name))
-
-                    

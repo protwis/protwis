@@ -3,7 +3,7 @@ from django.conf import settings
 
 from common.models import ReleaseNotes, ReleaseStatistics, ReleaseStatisticsType
 from drugs.models import Drugs
-from interaction.models import StructureLigandInteraction, ProteinLigandInteraction, ResidueFragmentInteraction
+from interaction.models import ResidueFragmentInteraction
 from ligand.models import Ligand
 from mutation.models import MutationExperiment
 from mutational_landscape.models import NaturalMutations
@@ -72,7 +72,7 @@ class Command(BaseCommand):
             #['Species', Species.objects.all().count()],
             ['Genetic variants', NaturalMutations.objects.all().count()],
             ['Drugs', Drugs.objects.all().count()],
-            ['Ligands', Ligand.objects.filter(canonical=True).count()],
+            ['Ligands', Ligand.objects.all().count()],
             ['Ligand site mutations', MutationExperiment.objects.all().count()],
             ['Ligand interactions', ResidueFragmentInteraction.objects.all().count()],
             ['Exp. GPCR structures', Structure.objects.filter(protein_conformation__protein__family__slug__startswith="00").count()],

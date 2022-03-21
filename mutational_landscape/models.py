@@ -22,35 +22,7 @@ class NaturalMutations(models.Model):
         db_table = 'mutation_natural'
         # unique_together = ('protein','residue','amino_acid','allele_frequency')
 
-class CancerMutations(models.Model):
 
-    protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
-    residue = models.ForeignKey('residue.Residue', on_delete=models.CASCADE)
-    amino_acid = models.CharField(max_length=1)
-    cancer_type = models.CharField(max_length=100)
-    # allele_frequency = models.FloatField()
-    # allele_count = models.IntegerField()
-
-    def __str__(self):
-        return self.protein.name
-
-    class Meta():
-        db_table = 'mutation_cancer'
-        # unique_together = ('protein','residue','amino_acid')
-
-class DiseaseMutations(models.Model):
-
-    protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
-    residue = models.ForeignKey('residue.Residue', on_delete=models.CASCADE)
-    amino_acid = models.CharField(max_length=1)
-    disease = models.CharField(max_length=100)
-
-    def __str__(self):
-        return self.protein.name
-
-    class Meta():
-        db_table = 'mutation_disease'
-        # unique_together = ('protein','residue','amino_acid')
 
 class PTMs(models.Model):
 

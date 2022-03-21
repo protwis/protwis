@@ -198,10 +198,10 @@ class Command(BaseCommand):
                     continue
                 pdb_info_all[entry][key] = val
 
-        pdb_info = OrderedDict(sorted(pdb_info.items())) 
+        pdb_info = OrderedDict(sorted(pdb_info.items()))
         with open(self.mod_xtal_seg_end_file, 'a') as outfile:
             yaml.dump(pdb_info, outfile, indent=4)
-        pdb_info_all = OrderedDict(sorted(pdb_info_all.items())) 
+        pdb_info_all = OrderedDict(sorted(pdb_info_all.items()))
         with open(self.xtal_seg_end_file, 'a') as outfile:
             yaml.dump(pdb_info_all, outfile, indent=4)
 
@@ -236,6 +236,11 @@ class Command(BaseCommand):
             for curr_row in range(1,num_rows+1):
                 row = worksheet.row(curr_row)
                 key = worksheet.cell_value(curr_row, 0)
+                # Workaround for structures as there can be multiple entries per structure
+                # TODO - discuss if this shouldn't be the default?
+                if "GPCRdb_structure_info.xlsx" in path:
+                    key = curr_row
+
 
                 if key=='':
                     #in case there is no key for whatever reason
@@ -427,11 +432,11 @@ class Command(BaseCommand):
                 Seqs[entry][key] = val
 
 
-        pdb_info = OrderedDict(sorted(pdb_info.items())) 
+        pdb_info = OrderedDict(sorted(pdb_info.items()))
         with open(self.mod_xtal_seg_end_file, 'w') as outfile:
             yaml.dump(pdb_info, outfile, indent=4)
 
-        pdb_info_all = OrderedDict(sorted(pdb_info_all.items())) 
+        pdb_info_all = OrderedDict(sorted(pdb_info_all.items()))
         with open(self.xtal_seg_end_file, 'w') as outfile:
             yaml.dump(pdb_info_all, outfile, indent=4)
 
@@ -555,6 +560,3 @@ class Command(BaseCommand):
                 #     states.append(values['State'])
                 #     resolutions.append(values['Resolution'])
                 # prev_rec = values['UniProt']
-                
-
-

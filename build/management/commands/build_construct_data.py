@@ -12,7 +12,6 @@ ConstructDeletion,ConstructModification,CrystalInfo,ExpressionSystem,Solubilizat
 from construct.functions import add_construct, fetch_pdb_info
 
 from ligand.models import Ligand, LigandType, LigandRole
-from ligand.functions import get_or_make_ligand
 
 from optparse import make_option
 import logging

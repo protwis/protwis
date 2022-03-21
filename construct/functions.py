@@ -7,7 +7,6 @@ from structure.models import Structure
 from construct.models import *
 
 from ligand.models import Ligand, LigandType, LigandRole
-from ligand.functions import get_or_make_ligand
 
 from common.tools import fetch_from_web_api
 from urllib.parse import quote

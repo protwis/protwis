@@ -22,7 +22,7 @@ from construct.views import create_structural_rule_trees, ConstructMutation
 from contactnetwork.models import InteractingResiduePair
 from interaction.models import ResidueFragmentInteraction
 from mutation.models import MutationExperiment
-from mutational_landscape.models import NaturalMutations, CancerMutations, DiseaseMutations, PTMs, NHSPrescribings
+from mutational_landscape.models import NaturalMutations, PTMs, NHSPrescribings
 from protein.models import ProteinSegment, Protein, ProteinFamily
 from residue.models import Residue,ResidueNumberingScheme, ResiduePositionSet, ResidueSet
 

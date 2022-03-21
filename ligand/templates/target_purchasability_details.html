@@ -92,6 +92,13 @@
     };
 
     $(document).ready(function () {
+        // Enable row click
+        $("#proteins tbody tr").click(function(event){
+          if ($(event.target).attr('type') != 'checkbox'){
+            $(this).find("input[type=checkbox]").click();
+          }
+        });
+
         //ClearSelection('targets');
         var table = $('#proteins').DataTable({
             'scrollX': true,
@@ -185,28 +192,20 @@
             }
         });
         $('#smi_btn').click(function () {
-            var checked_data = table.rows('.alt_selected').data();
-            var smi_data = [];
+            let checked_data = table.rows('.alt_selected').data();
+            let smi_data = [];
+            let processed = [];
             for (i = 0; i < checked_data.length; i++) {
-                var smi_row = []
-                for (j = 1; j < checked_data[i].length; j++) {
-                    var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][18];
-                    if (typeof div.innerText !== "undefined") {
-                        smi_row.push(div.innerText.replace(/\s+/g, ''));
-                    } else {
-                        smi_row.push(div.textContent.replace(/\s+/g, ''));
-                    }
-                    div.innerHTML = checked_data[i][1];
-                    if (typeof div.innerText !== "undefined") {
-                        smi_row.push(div.innerText.replace(/\s+/g, ''));
-                    } else {
-                        smi_row.push(div.textContent.replace(/\s+/g, ''));
-                    }
+                var div = document.createElement("div");
+                div.innerHTML = checked_data[i][1];
+                name = div.textContent;
+                if (!processed.includes(name)){
+                  let smi_row = checked_data[i][18] + "\t" + name;
+                  smi_data.push(smi_row);
+                  processed.push(name);
                 }
-                smi_data.push(smi_row.join(' '));
             }
-            var smi_string = smi_data.join("\n");
+            let smi_string = smi_data.join("\n");
             if (window.navigator.msSaveOrOpenBlob) {
                 var blob = new Blob([smi_string]);
                 window.navigator.msSaveOrOpenBlob(blob, 'target_ligands.smi');
@@ -305,24 +304,24 @@
                     {% for p in proteins %}
                     <tr>
                         <td><input class="alt" type="checkbox"></td>
-                        <td><a class="struct" rel="http://www.ebi.ac.uk/chembl/api/data/image/{{p.ligand__properities__web_links__index}}" href="/ligand/{{p.ligand__properities__web_links__index}}">{{p.ligand__properities__web_links__index}}</a></td>
+                        <td><a class="struct" rel="http://www.ebi.ac.uk/chembl/api/data/image/{{p.ligand__ids__index}}" href="/ligand/{{p.ligand_id}}/info">{{p.ligand__ids__index}}</a></td>
                         <td>{{p.protein__entry_name}}</td>
                         <td>{{p.protein__species__common_name}}</td>
-                        <td>{{p.ligand__properities__vendors__vendor__name}}</td>
-                        <td><a href="{{p.vendor_link}}">{{p.vendor_id}}</a></td>
+                        <td><a href="http://{{p.vendor__url}}" target="_blank">{{p.vendor__name}}</a></td>
+                        <td><a href="{{p.url}}" target="_blank">{% if p.external_id == '' %}product link{% else %}{{p.external_id}}{% endif %}</a></td>
                         <td align="right">{{p.pchembl_value|floatformat:1}}</td>
                         <td align="center">{{p.standard_type}}</td>
                         <td>{{p.standard_relation}}</td>
                         <td>{{p.standard_value|floatformat}}</td>
                         <td>{{p.standard_units}}</td>
-                        <td>{% if p.assay_type == 'b' %} Bind {% else %} Funct {% endif %}</td>
+                        <td>{% if p.assay_type == 'B' %} Bind {% else %} Funct {% endif %}</td>
                         <td class="AssayCell"> <div style="overflow: hidden; text-overflow: ellipsis; word-wrap: break-word; max-width: 350px;white-space: nowrap;">{{p.assay_description}}<span class="AssayDetail">{{p.assay_description}}</span> </div></td>
-                        <td>{{p.ligand__properities__mw|floatformat:0}}</td>
-                        <td>{{p.ligand__properities__rotatable_bonds}}</td>
-                        <td>{{p.ligand__properities__hdon}}</td>
-                        <td>{{p.ligand__properities__hacc}}</td>
-                        <td>{{p.ligand__properities__logp|floatformat:1}}</td>
-                        <td class="dt-left">{{p.ligand__properities__smiles}}</td>
+                        <td>{{p.ligand__mw|floatformat:0}}</td>
+                        <td>{{p.ligand__rotatable_bonds}}</td>
+                        <td>{{p.ligand__hdon}}</td>
+                        <td>{{p.ligand__hacc}}</td>
+                        <td>{{p.ligand__logp|floatformat:1}}</td>
+                        <td class="dt-left">{{p.ligand__smiles}}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

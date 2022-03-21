@@ -265,13 +265,17 @@
                         <!-- Structure ligand -->
                         <td class='expand'>
                             {% for ligand in structure.ligands.all|dictsort:"ligand_role.name" %}
-                                {{ ligand.ligand.name|safe }}
-                            {% for link in ligand.ligand.properities.web_links.all %}
-                                <a href="{{ link}}" target="_blank">{{link.web_resource.slug}}</a>
-                            {% endfor %}
-                                <br />
+                                  {% if ligand.ligand.ambiguous_alias %}
+                                    {{ ligand.ligand.name|safe }}
+                                  {% else %}
+                                    <a href="/ligand/{{ ligand.ligand.id }}/info" target="_blank">{{ ligand.ligand.name|safe }}</a>
+                                    {% for link in ligand.ligand.ids.all %}
+                                        <a class="external_link" href="{{ link}}" target="_blank">{{link.web_resource.name}}</a>
+                                    {% endfor %}
+                                  {% endif %}
+                                  <br>
                             {% empty %}
-                                -
+                            -
                             {% endfor %}
                         </td>
                         <td>{{ structure.ligands.all|ligandtype|linebreaksbr }}</td>
@@ -279,10 +283,10 @@
                         <!-- Endogenous ligand -->
                         <td class='expand'>
                             {% autoescape off %}
-                                {{ structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat }}
+                              {{ structure.protein_conformation.protein.parent.endogenous_gtp_set.all | endo_format }}
                             {% endautoescape %}
                         </td>
-                        <td>{{ structure.protein_conformation.protein.parent.endogenous_ligands.all.0.properities.ligand_type|dashwhenempty }}</td>
+                        <td>{{ structure.protein_conformation.protein.parent.endogenous_gtp_set.all.0.ligand.ligand_type|dashwhenempty }}</td>
                         <!-- Sodium ion site -->
                         <td>
                             {% if structure.protein_conformation.is_sodium %}

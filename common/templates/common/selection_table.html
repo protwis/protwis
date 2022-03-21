@@ -4,6 +4,7 @@
 {% block addon_css %}
 <link rel="stylesheet" href="{% static 'home/css/button_spinner.css' %}" type="text/css" />
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+<link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
@@ -16,6 +17,7 @@
     {% endif %}
     <div class="row">
 
+        {% if filters and family_tree %}
         <!-- description column -->
         <div class="col-md-4">
 
@@ -45,6 +47,7 @@
         <div class="col-md-3">
         {% block middle_left_column %}
         {% endblock %}
+        {% if import_export_box %}
         <div class="col-md-12 panel panel-primary">
             <div class="panel-body" id="selection-{{ selection_box }}">
               <div><input type="text" id="copyboxTargets" class="form-control" placeholder="UniProt names"></div>
@@ -54,6 +57,7 @@
               </div>
             </div>
         </div>
+        {% endif %}
         </div>
 
         <div class="col-md-3">
@@ -91,8 +95,51 @@
 {% endcomment %}
 
         </div>
+        {% else %}
+        <!-- description column -->
+        <div class="col-md-7">
 
+            <!-- main description -->
+            <div class="col-md-12 panel panel-primary">
+                <div class="panel-body">
+                    {% if step and number_of_steps and number_of_steps > 1 %}
+                    <h2>STEP {{ step }} of {{ number_of_steps }}</h2>
+                    {% endif %}
+                    <h4>{{ title }}</h4>
+                    {{ description|linebreaks }}
+                    {% if docs %}
+                    For more information on this tool, see the <a href="{{ documentation_url }}{{ docs }}">docs</a>.
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if import_export_box %}
+            <div class="col-md-12 panel panel-primary">
+                <div class="panel-body" id="selection-{{ selection_box }}">
+                  <div><input type="text" id="copyboxTargets" class="form-control" placeholder="UniProt names"></div>
+                  <div>
+                    <button type="button" onclick="importTargets();" class="btn btn-primary">Import</button>
+                    <button type="button" onclick="exportTargets();" class="btn btn-primary">Export</button>
+                  </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- selection column -->
+        <div class="col-md-5">
+
+            <!-- button(s) -->
+            {% if buttons.continue.label %}
+            <div id="selection-buttons">
+                {% include 'common/selection_buttons.html' %}
+            </div>
+            {% endif %}
+
+        </div>
+        {% endif %}
     </div>
+
     <div class="row">
       <div class="col-md-4">
         <span>

@@ -10,13 +10,14 @@ import urllib
 from urllib.parse import quote
 from urllib.request import urlopen
 from urllib.error import HTTPError
+import hashlib
 import json
 import gzip
 from io import BytesIO
 from string import Template
 from Bio import Entrez, Medline
 import xml.etree.ElementTree as etree
-
+from http.client import HTTPException
 
 
 def save_to_cache(path, file_id, data):
@@ -33,7 +34,7 @@ def fetch_from_cache(path, file_id):
         with open(cache_file_path) as cache_file:
             return yaml.load(cache_file, Loader=yaml.FullLoader)
     else:
-        return False
+        return None
 
 def create_cache_dirs(path):
     cache_file_path = os.sep.join([settings.BUILD_CACHE_DIR] + path)
@@ -52,9 +53,9 @@ def fetch_from_web_api(url, index, cache_dir=False, xml=False, raw=False):
 
     # try fetching from cache
     if cache_dir:
-        d = cache.get(cache_file_path)
-        # d = fetch_from_cache(cache_dir, index_slug)
-        if not d is None:
+        # d = cache.get(cache_file_path)
+        d = fetch_from_cache(cache_dir, index_slug)
+        if d:
             logger.info('Fetched {} from cache'.format(cache_file_path))
             return d
 
@@ -101,6 +102,9 @@ def fetch_from_web_api(url, index, cache_dir=False, xml=False, raw=False):
                 return False
             else:
                 time.sleep(2)
+        except HTTPException as e:
+            tries += 1
+            time.sleep(2)
         except urllib.error.URLError as e:
             # Catches 101 network is unreachable -- I think it's auto limiting feature
             tries +=1
@@ -108,13 +112,47 @@ def fetch_from_web_api(url, index, cache_dir=False, xml=False, raw=False):
         else:
             # save to cache
             if cache_dir:
-                # save_to_cache(cache_dir, index_slug, d)
-                cache.set(cache_file_path, d, 60*60*24*7) #7 days
+                save_to_cache(cache_dir, index_slug, d)
+                # cache.set(cache_file_path, d, 60*60*24*7) #7 days
                 logger.info('Saved entry for {} in cache'.format(cache_file_path))
             return d
 
     # give up if the lookup fails 5 times
     logger.error('Failed fetching {} {} times, giving up'.format(full_url, max_tries))
+    return False
+
+def get_or_create_url_cache(url, validity = -1):
+    # Hash the url
+    url_hash = hashlib.md5(url.encode('utf-8')).hexdigest()
+
+    # Check the cache if exists
+    valid = True
+    urlcache_dir = os.sep.join([settings.DATA_DIR, 'common_data','url_cache'])
+    cache_file = os.sep.join([urlcache_dir, url_hash])
+    if os.path.isfile(cache_file):
+        # Check if the data is still valid if set
+        if validity > 0:
+            seconds = int(time.time()) - int(os.path.getctime(cache_file))
+            valid = seconds < validity
+
+        # return cached filepath when still valid
+        if valid:
+            return cache_file
+
+    # Data not yet exists => collect data and store in cache
+    response = urlopen_with_retry(url)
+    if response:
+        # Write new results to file cache
+        with open(cache_file, 'wb') as f:
+            f.write(response.read())
+            f.close()
+        return cache_file
+    elif not valid:
+        print("WARNING: file cache not valid anymore - but new version could not be downloaded")
+        print("WARNING:", url)
+        return cache_file
+
+    # Data could not be obtained
     return False
 
 def fetch_from_entrez(index, cache_dir=''):

@@ -109,21 +109,6 @@ class Structure(models.Model):
     class Meta():
         db_table = 'structure'
 
-
-class StructureComplexProtein(models.Model):
-    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
-    protein_conformation = models.ForeignKey('protein.ProteinConformation', on_delete=models.CASCADE)
-    chain = models.CharField(max_length=1)
-
-    def __repr__(self):
-        return '<StructureComplexProtein: '+str(self.protein_conformation.protein)+'>'
-
-    def __str__(self):
-        return '<StructureComplexProtein: '+str(self.protein_conformation.protein)+'>'
-
-    class Meta():
-        db_table = 'structure_complex_protein'
-
 class StructureVectors(models.Model):
     structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
     translation = models.CharField(max_length=100, null=True)

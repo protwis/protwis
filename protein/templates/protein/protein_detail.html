@@ -109,11 +109,13 @@
         <h4>ENDOGENOUS LIGANDS</h4>
     </div>
     <div class="col-md-10">
-        {% for e in p.endogenous_ligands.all %}
-        <p style="display: inline;">{{ e.name|safe }}{% if forloop.last %}{% else %}, {% endif %}</p>
-        {% empty %}
-        No endogenous ligands available
-        {% endfor %}
+        <p style="display: inline;">
+          {% if p.endogenous_gtp_set.all.count > 0 %}
+            {{ p.endogenous_gtp_set.all | endo_format | safe }}
+          {% else %}
+            No endogenous ligands available
+          {% endif %}
+        </p>
     </div>
 </div>
 
@@ -126,7 +128,11 @@
         {% for hommod in homology_models %}
             <p style="display: inline;"><a href="/structure/homology_models/{{ hommod.protein.entry_name }}_{{ hommod.state.slug }}">{{ hommod.protein.entry_name }} {{ hommod.state.slug }}</a>{% if forloop.last %} {% else %}, {% endif %}</p>
         {% empty %}
-        No homology models available. Check the Archive on <a href="/structure/homology_models">Structure models</a> for earlier releases.
+          {% if structures|length > 0 %}
+            No homology models have been generated as experimental structures are available (see below).
+          {% else %}
+            No homology models available. Check the Archive on <a href="/structure/homology_models">Structure models</a> for earlier releases.
+          {% endif %}
         {% endfor %}
     </div>
 </div>
@@ -137,9 +143,10 @@
     </div>
     {% if structures|length > 0 %}
     <div class="col-md-10">
-        <p>View in <a href="/structure" target='_blank'>Structures</a></p>
+        <p>Found {{ structures|length }} structure(s) - view all details on the <a href="/structure" target='_blank'>Structures page</a></p>
+        <p>PDBs: {{ structures | create_struct_links | safe }}</p>
     </div>
-    
+
     {% else %}
     <div class="col-md-10">
         No structures available
@@ -175,4 +182,3 @@
     <script src="{% static 'home/js/alignment.js' %}"> </script>
     <script src="{% static 'home/js/jquery.powertip.js' %}"></script>
 {% endblock %}
-

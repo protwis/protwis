@@ -5,7 +5,7 @@ register = template.Library()
 
 @register.simple_tag
 def get_hostnames():
-    if settings.DEBUG:
+    if settings.DEBUG or not settings.HUB_ENABLED:
         return {
             'gpcr': "",
             'gprotein': "",

@@ -1,50 +1,30 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
-from django.db import connection
 from django.db import IntegrityError
 from django.utils.text import slugify
 
-
 from build.management.commands.base_build import Command as BaseBuild
+from build.management.commands.build_ligand_functions import *
+
 from mutation.models import *
-from common.views import AbsTargetSelection
-from common.views import AbsSegmentSelection
-from common.tools import fetch_from_cache, save_to_cache, fetch_from_web_api
+from common.tools import fetch_from_web_api
 from residue.models import Residue
 from protein.models import Protein
-from ligand.models import Ligand, LigandProperities, LigandRole, LigandType
-from ligand.functions import get_or_make_ligand
+from ligand.models import Ligand, LigandRole, LigandType
 from common.models import WebLink, WebResource, Publication
 
 import json
 import yaml
 import logging
 import os
+import random
 import re
 from datetime import datetime
-from collections import OrderedDict
-from urllib.request import urlopen, quote
 import math
 import xlrd
 import operator
 import traceback
 import time
-
-## FOR VIGNIR ORDERED DICT YAML IMPORT/DUMP
-_mapping_tag = yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG
-def dict_constructor(loader, node):
-    return OrderedDict(loader.construct_pairs(node))
-
-def represent_ordereddict(dumper, data):
-    value = []
-
-    for item_key, item_value in data.items():
-        node_key = dumper.represent_data(item_key)
-        node_value = dumper.represent_data(item_value)
-
-        value.append((node_key, node_value))
-
-    return yaml.nodes.MappingNode(u'tag:yaml.org,2002:map', value)
 
 class Command(BaseBuild):
     help = 'Reads source data and creates pdb structure records'
@@ -76,30 +56,31 @@ class Command(BaseBuild):
     ligand_cache = {}
     ref_ligand_cache = {}
     data_all = []
+    mol_types = {"PubChem CID": "pubchem",
+                "ChEMBL Compound ID": "chembl_ligand",
+                "IUPHAR/BPS Guide to pharmacology": "gtoplig",
+                "SMILES" : "smiles",
+                "FASTA sequence (peptide)": "sequence",
+                "UniProt Entry Code (peptide)" : "uniprot"}
 
     def handle(self, *args, **options):
         if options['test_run']:
             print('Skipping in test run')
             return
-        # delete any existing structure data
+
+        # delete any existing mutant data
         if options['purge']:
             try:
                 self.purge_mutants()
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
-        # import the structure data
+
+        # import the mutant data
         try:
-            #self.create_mutant_data(options['filename'])
             self.logger.info('CREATING MUTANT DATA')
             self.prepare_all_data(options['filename'])
-            import random
             random.shuffle(self.data_all)
-            # self.data_all = random.shuffle(self.data_all)
-            # split into 10 runs to average out slow ones
-            #n = 5
-            #for d in [ self.data_all[i::n] for i in range(n) ]:
-            #    self.data = d
             self.prepare_input(options['proc'], self.data_all)
             self.logger.info('COMPLETED CREATING MUTANTS')
 
@@ -490,7 +471,13 @@ class Command(BaseBuild):
 
                 if not l:
                     try:
-                        l = get_or_make_ligand(r['ligand_id'],r['ligand_type'],str(r['ligand_name']))
+                        ids = {}
+                        lig_type = "small-molecule"
+                        if r['ligand_type'] in self.mol_types:
+                            ids[self.mol_types[r['ligand_type']]] = r['ligand_id']
+                            if self.mol_types[r['ligand_type']] in ["uniprot", "sequence"]:
+                                lig_type = "peptide"
+                        l = get_or_create_ligand(r['ligand_name'], ids, lig_type, True, True)
                     except Exception as msg:
                         print('Something errored with ligand, aborting entry of mutation',r['ligand_name'],r['ligand_type'],r['ligand_id'],r['source_file'])
                         print(msg)
@@ -501,54 +488,8 @@ class Command(BaseBuild):
 
                 l_ref = None
                 if str(r['exp_mu_ligand_ref']) in self.ref_ligand_cache:
-                    l_ref = self.ref_ligand_cache[str(r['exp_mu_ligand_ref'])]
-                else:
-                    if Ligand.objects.filter(name=r['exp_mu_ligand_ref'], canonical=True).exists(): #if this name is canonical and it has a ligand record already
-                        l_ref = Ligand.objects.get(name=r['exp_mu_ligand_ref'], canonical=True)
-                    elif Ligand.objects.filter(name=r['exp_mu_ligand_ref'], canonical=False, ambigious_alias=False).exists(): #if this matches an alias that only has "one" parent canonical name - eg distinct
-                        l_ref = Ligand.objects.get(name=r['exp_mu_ligand_ref'], canonical=False, ambigious_alias=False)
-                    elif Ligand.objects.filter(name=r['exp_mu_ligand_ref'], canonical=False, ambigious_alias=True).exists(): #if this matches an alias that only has several canonical parents, must investigate, start with empty.
-                        lp = LigandProperities()
-                        lp.save()
-                        l_ref = Ligand()
-                        l_ref.properities = lp
-                        l_ref.name = r['exp_mu_ligand_ref']
-                        l_ref.canonical = False
-                        l_ref.ambigious_alias = True
-                        l_ref.save()
-                        l_ref.load_by_name(r['exp_mu_ligand_ref'])
-                        l_ref.save()
-                    elif Ligand.objects.filter(name=r['exp_mu_ligand_ref'], canonical=False).exists(): #amigious_alias not specified
-                        l_ref = Ligand.objects.get(name=r['exp_mu_ligand_ref'], canonical=False)
-                        l_ref.ambigious_alias = False
-                        l_ref.save()
-                    elif r['exp_mu_ligand_ref']: #if neither a canonical or alias exists, create the records. Remember to check for canonical / alias status.
-                        lp = LigandProperities()
-                        lp.save()
-                        l_ref = Ligand()
-                        l_ref.properities = lp
-                        l_ref.name = r['exp_mu_ligand_ref']
-                        l_ref.canonical = True
-                        l_ref.ambigious_alias = False
-                        try:
-                            l_ref.save()
-                            l_ref.load_by_name(r['exp_mu_ligand_ref'])
-                        except IntegrityError:
-                            if Ligand.objects.filter(name=r['exp_mu_ligand_ref'], canonical=True).exists():
-                                l_ref = Ligand.objects.get(name=r['exp_mu_ligand_ref'], canonical=True)
-                            else:
-                                l_ref = Ligand.objects.get(name=r['exp_mu_ligand_ref'], canonical=False)
-                            # print("error failing ligand, duplicate?")
-                        try:
-                            l_ref.save()
-                        except IntegrityError:
-                            l_ref = Ligand.objects.get(name=r['exp_mu_ligand_ref'], canonical=False)
-                            # print("error failing ligand, duplicate?")
-                            # logger.error("FAILED SAVING LIGAND, duplicate?")
-                    else:
-                        l_ref = None
+                    l_ref = get_or_create_ligand(r['exp_mu_ligand_ref'], {})
                     self.ref_ligand_cache[str(r['exp_mu_ligand_ref'])] = l_ref
-
 
                 protein_id = 0
                 residue_id = 0
@@ -602,14 +543,25 @@ class Command(BaseBuild):
                     continue
 
 
-                res=Residue.objects.filter(protein_conformation__protein=protein,amino_acid=r['mutation_from'],sequence_number=r['mutation_pos']) #FIXME MAKE AA CHECK
+                res=Residue.objects.filter(protein_conformation__protein=protein,amino_acid=r['mutation_from'], sequence_number=r['mutation_pos']) #FIXME MAKE AA CHECK
                 if res.exists():
                     res=res.get()
                 else:
-                    self.logger.error('Skipped due to no residue or mismatch AA ' + r['protein'] + ' pos:'+str(r['mutation_pos']) + ' AA:'+r['mutation_from'])
-                    # print('Skipped due to no residue or mismatch AA ' + r['protein'] + ' pos:'+str(r['mutation_pos']) + ' AA:'+r['mutation_from'],r['source_file'])
-                    skipped += 1
-                    continue
+                    # In case of ada2a try again with correction for historical numbering
+                    failed = True
+                    if protein.entry_name in ["ada2a_human", "ada2a_pig", "ada2a_mouse"]:
+                        if isinstance(r['mutation_pos'], str):
+                            r['mutation_pos'] = int(r['mutation_pos'])
+                        res=Residue.objects.filter(protein_conformation__protein=protein,amino_acid=r['mutation_from'], sequence_number=r['mutation_pos'] + 15)
+                        if res.exists():
+                            res=res.get()
+                            failed = False
+
+                    if failed:
+                        self.logger.error('Skipped due to no residue or mismatch AA ' + r['protein'] + ' pos:'+str(r['mutation_pos']) + ' AA:'+r['mutation_from'])
+                        # print('Skipped due to no residue or mismatch AA ' + r['protein'] + ' pos:'+str(r['mutation_pos']) + ' AA:'+r['mutation_from'],r['source_file'])
+                        skipped += 1
+                        continue
 
                 if r['ligand_class']:
                     try:
@@ -685,35 +637,35 @@ class Command(BaseBuild):
                 raw_experiment = self.insert_raw(r)
                 # raw_experiment.save()
                 bulk = MutationExperiment(
-                refs=pub,
-                review=pub_review,
-                submitting_group = r['submitting_group'],
-                data_container = r['data_container'],
-                data_container_number = r['data_container_number'],
-                protein=protein,
-                residue=res,
-                ligand=l,
-                ligand_role=l_role,
-                ligand_ref = l_ref,
-                # raw = raw_experiment, #raw_experiment, OR None
-                # optional = exp_opt_id,
-                exp_type=exp_type_id,
-                exp_func=exp_func_id,
-                exp_qual = exp_qual_id,
+                    refs=pub,
+                    review=pub_review,
+                    submitting_group = r['submitting_group'],
+                    data_container = r['data_container'],
+                    data_container_number = r['data_container_number'],
+                    protein=protein,
+                    residue=res,
+                    ligand=l,
+                    ligand_role=l_role,
+                    ligand_ref = l_ref,
+                    # raw = raw_experiment, #raw_experiment, OR None
+                    # optional = exp_opt_id,
+                    exp_type=exp_type_id,
+                    exp_func=exp_func_id,
+                    exp_qual = exp_qual_id,
 
-                mutation=mutation,
-                wt_value=r['exp_wt_value'], #
-                wt_unit=r['exp_wt_unit'],
+                    mutation=mutation,
+                    wt_value=r['exp_wt_value'], #
+                    wt_unit=r['exp_wt_unit'],
 
-                mu_value = r['exp_mu_value_raw'],
-                mu_sign = r['exp_mu_effect_sign'],
-                foldchange = foldchange,
-                opt_receptor_expression = r['opt_receptor_expression'],
-                opt_basal_activity = r['opt_basal_activity'],
-                opt_gain_of_activity = r['opt_gain_of_activity'],
-                opt_ligand_emax = r['opt_ligand_emax'],
-                opt_agonist =  r['opt_agonist'],
-                )
+                    mu_value = r['exp_mu_value_raw'],
+                    mu_sign = r['exp_mu_effect_sign'],
+                    foldchange = foldchange,
+                    opt_receptor_expression = r['opt_receptor_expression'],
+                    opt_basal_activity = r['opt_basal_activity'],
+                    opt_gain_of_activity = r['opt_gain_of_activity'],
+                    opt_ligand_emax = r['opt_ligand_emax'],
+                    opt_agonist =  r['opt_agonist'],
+                    )
                 # for line,val in r.items():
                 #     val = str(val)
                 #     if len(val)>100:
@@ -734,7 +686,8 @@ class Command(BaseBuild):
 
             except:
                 print('error with mutation record')
-                #traceback.print_exc()
+                traceback.print_exc()
+                exit(0)
 
             #print(diff)
 

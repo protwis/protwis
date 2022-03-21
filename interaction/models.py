@@ -60,37 +60,3 @@ class StructureLigandInteraction(models.Model):
 
     class Meta():
         db_table = 'interaction_structure_ligand'
-
-
-class ProteinLigandInteraction(models.Model):
-    protein = models.ForeignKey('protein.ProteinConformation', on_delete=models.CASCADE)
-    ligand = models.ForeignKey('ligand.Ligand', on_delete=models.CASCADE)
-
-    def __str__(self):
-        return "{} {}".format(self.protein.entry_name, self.ligand.name)
-
-    class Meta():
-        db_table = 'interaction_protein_ligand'
-
-class ResidueFragmentAtom(models.Model):
-    structureligandpair = models.ForeignKey('StructureLigandInteraction', on_delete=models.CASCADE)
-    interaction = models.ForeignKey('ResidueFragmentInteraction', null=True, on_delete=models.CASCADE)
-    atomtype = models.CharField(max_length = 20)
-    atomnr = models.SmallIntegerField()
-    atomclass = models.CharField(max_length = 20)
-    residuename = models.CharField(max_length = 20)
-    chain = models.CharField(max_length = 20)
-    residuenr = models.SmallIntegerField()
-    x = models.DecimalField(max_digits=6, decimal_places=3)
-    y = models.DecimalField(max_digits=6, decimal_places=3)
-    z = models.DecimalField(max_digits=6, decimal_places=3)
-    occupancy = models.DecimalField(max_digits=6, decimal_places=2)
-    temperature = models.DecimalField(max_digits=6, decimal_places=2)
-    element_name = models.CharField(max_length = 20)
-
-
-    class Meta():
-        db_table = 'interaction_residue_fragment_atoms'
-
-    def __str__(self):
-        return self.atomtype

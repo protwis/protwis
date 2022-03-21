@@ -114,7 +114,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
     simple_selection = request.session.get('selection', False)
     if (simple_selection == False or not simple_selection.targets) and (receptor_class == None and gn == None and aa == None):
         return redirect("/mutations/")
-    
+
      # local protein list
     proteins = []
     alignment_proteins = []
@@ -216,8 +216,8 @@ def render_mutations(request, protein = None, family = None, download = None, re
                                 Q(residue__protein_segment__in=original_segments) | Q(residue__generic_number__label__in=original_positions)
                                 ).prefetch_related('residue__display_generic_number',
                                 'residue__protein_segment','residue__generic_number','exp_func','exp_qual',
-                                'exp_measure', 'exp_type', 'ligand_role', 'ligand','refs','raw',
-                                'ligand__properities', 'refs__web_link', 'refs__web_link__web_resource', 'review__web_link__web_resource','protein','mutation__protein')
+                                'exp_type', 'ligand_role', 'ligand','refs','raw',
+                                'refs__web_link', 'refs__web_link__web_resource', 'review__web_link__web_resource','protein','mutation__protein')
     else:
         # print(gn,receptor_class,aa)
         protein_ids = ''
@@ -231,8 +231,8 @@ def render_mutations(request, protein = None, family = None, download = None, re
         mutations = MutationExperiment.objects.filter(protein__family__slug__startswith=receptor_class,
                                 residue__generic_number__label=gn, residue__amino_acid=aa).prefetch_related('residue__generic_number',
                                 'residue__protein_segment','residue__generic_number','exp_func','exp_qual',
-                                'exp_measure', 'exp_type', 'ligand_role', 'ligand','refs','raw',
-                                'ligand__properities', 'refs__web_link', 'refs__web_link__web_resource', 'review__web_link__web_resource','protein','mutation__protein')
+                                'exp_type', 'ligand_role', 'ligand','refs','raw',
+                                'refs__web_link', 'refs__web_link__web_resource', 'review__web_link__web_resource','protein','mutation__protein')
 
     mutations_list = {}
     mutations_list_seq = {}
@@ -316,8 +316,8 @@ def render_mutations(request, protein = None, family = None, download = None, re
             mutation.review_main = mutation.review_citation()
 
         smiles = ""
-        if mutation.ligand and mutation.ligand.properities and mutation.ligand.properities.smiles:
-            smiles = urllib.parse.quote_plus(mutation.ligand.properities.smiles)
+        if mutation.ligand and mutation.ligand.smiles:
+            smiles = urllib.parse.quote_plus(mutation.ligand.smiles)
 
         lig_name = ""
         lig_role_name = ""
@@ -777,7 +777,7 @@ def coverage(request):
         class_interactions = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__annotated=True).prefetch_related(
             'rotamer__residue__display_generic_number','interaction_type',
             'structure_ligand_pair__structure__protein_conformation__protein__parent__family',
-            'structure_ligand_pair__ligand__properities',
+            'structure_ligand_pair__ligand',
             )
 
         class_mutations = MutationExperiment.objects.all().prefetch_related('protein__family','protein__parent__family','exp_func','residue__display_generic_number','mutation','refs__web_link', 'exp_qual','ligand').order_by('foldchange','exp_qual')
@@ -966,7 +966,7 @@ def pocket(request):
         structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=gpcr_class, structure_ligand_pair__annotated=True).prefetch_related(
         'rotamer__residue__display_generic_number','interaction_type',
         'structure_ligand_pair__structure__protein_conformation__protein__parent',
-        'structure_ligand_pair__ligand__properities')
+        'structure_ligand_pair__ligand')
 
     class_mutations = MutationExperiment.objects.filter(
         protein__family__slug__startswith=gpcr_class).prefetch_related('protein','residue__display_generic_number','mutation','refs__web_link', 'exp_qual','ligand').order_by('foldchange','exp_qual')
@@ -1104,7 +1104,7 @@ def showcalculation(request):
         structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=gpcr_class.slug, structure_ligand_pair__annotated=True).prefetch_related(
         'rotamer__residue__generic_number','interaction_type',
         'structure_ligand_pair__structure__protein_conformation__protein__parent__family',
-        'structure_ligand_pair__ligand__properities')
+        'structure_ligand_pair__ligand')
 
     class_mutations = MutationExperiment.objects.filter(
         protein__family__slug__startswith=gpcr_class.slug).prefetch_related('protein__family','residue__generic_number','mutation','refs__web_link', 'exp_qual','ligand').order_by('foldchange','exp_qual')
@@ -1236,10 +1236,10 @@ def showcalculation(request):
 
     #NEW CLASS METHOD, then select closest
     class_interactions = ResidueFragmentInteraction.objects.filter(
-        structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=family.slug, structure_ligand_pair__annotated=True).prefetch_related('rotamer__residue__generic_number','interaction_type','structure_ligand_pair__structure__protein_conformation__protein__parent__family','structure_ligand_pair__structure__pdb_code','structure_ligand_pair__ligand__properities')
+        structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=family.slug, structure_ligand_pair__annotated=True).prefetch_related('rotamer__residue__generic_number','interaction_type','structure_ligand_pair__structure__protein_conformation__protein__parent__family','structure_ligand_pair__structure__pdb_code','structure_ligand_pair__ligand')
 
     class_mutations = MutationExperiment.objects.filter(
-        protein__family__slug__startswith=family.slug).prefetch_related('protein__family','residue__generic_number','mutation','refs__web_link', 'exp_qual','ligand__properities').order_by('-foldchange','exp_qual')
+        protein__family__slug__startswith=family.slug).prefetch_related('protein__family','residue__generic_number','mutation','refs__web_link', 'exp_qual','ligand').order_by('-foldchange','exp_qual')
 
     # class_proteins = Protein.objects.filter(family__slug__startswith=family.slug, source__name='SWISSPROT',species__common_name='Human').all()
     # family_proteins = Protein.objects.filter(family__parent__in=family_ids, source__name='SWISSPROT').all() #,species__common_name='Human'
@@ -1362,8 +1362,8 @@ def showcalculation(request):
             family_id = i.structure_ligand_pair.structure.protein_conformation.protein.parent.family.slug.split("_")
             pdbcode = i.structure_ligand_pair.structure.pdb_code.index
             ligand = i.structure_ligand_pair.ligand.name
-            if i.structure_ligand_pair.ligand.properities:
-                smiles = i.structure_ligand_pair.ligand.properities.smiles
+            if i.structure_ligand_pair.ligand:
+                smiles = i.structure_ligand_pair.ligand.smiles
             else:
                 smiles = ""
 
@@ -1460,8 +1460,8 @@ def showcalculation(request):
             family_id = m.protein.family.slug.split("_")
             if m.ligand:
                 ligand = m.ligand.name
-                if m.ligand.properities:
-                    smiles = m.ligand.properities.smiles
+                if m.ligand.smiles:
+                    smiles = urllib.parse.quote_plus(m.ligand.smiles)
                 else:
                     smiles = ""
             else:
@@ -1950,146 +1950,6 @@ def ajaxSegments(request, slug, segments, **response_kwargs):
     response_kwargs['content_type'] = 'application/json'
     return HttpResponse(jsondata, **response_kwargs)
 
-def importmutation(request):
-
-    rows = loaddatafromexcel('/vagrant/protwis/mutation/import.xlsx')
-
-    rows = analyse_rows(rows)
-
-    whattoreturn = []
-    c = 0
-    skipped = 0
-    inserted = 0
-    for r in rows:
-        #print(r)
-        raw_id = insert_raw(r)
-        ref_id = check_reference(r['reference'])
-        lig_id = get_ligand(r)
-
-        if (ref_id==None):
-            whattoreturn.append(['Skipped due to no working reference',r])
-            skipped += 1
-            continue
-
-        protein_id = 0
-        residue_id = 0
-
-        check=Protein.objects.filter(entry_name=r['protein'])
-        if check.exists():
-            check=Protein.objects.get(entry_name=r['protein'])
-            protein_id = check
-        else:
-            whattoreturn.append(['Skipped due to no protein',r['protein']])
-            skipped += 1
-            continue
-
-        check=Residue.objects.filter(protein_conformation__protein=protein_id,sequence_number=r['mutation_pos'])
-        if check.exists():
-            check=Residue.objects.get(protein_conformation__protein=protein_id,sequence_number=r['mutation_pos'])
-            residue_id = check
-        else:
-            whattoreturn.append(['Skipped due to no residue',r['protein'],r['mutation_pos']])
-            skipped += 1
-            continue
-            # residue_id = Residue()
-            # residue_id.protein = protein_id
-            # residue_id.sequence_number = r['mutation_pos']
-            # residue_id.amino_acid = r['mutation_from']
-            # residue_id.save()
-
-        obj, created = MutationLigandClass.objects.get_or_create(classname=r['ligand_class'])
-        ligclass_id = obj
-
-        obj, created = MutationLigandRef.objects.get_or_create(reference=r['exp_mu_ligand_ref'])
-        ligref_id = obj
-
-        obj, created = MutationExperimentalType.objects.get_or_create(type=r['exp_type'])
-        exp_type_id = obj
-
-        obj, created = MutationFunc.objects.get_or_create(func=r['exp_func'])
-        exp_func_id = obj
-
-        obj, created = MutationMeasure.objects.get_or_create(measure=r['exp_mu_effect_type'])
-        exp_measure_id = obj
-
-        obj, created = MutationQual.objects.get_or_create(qual=r['exp_mu_effect_qual'], prop=r['exp_mu_effect_ligand_prop'])
-        exp_qual_id = obj
-
-        obj, created = MutationLigandRef.objects.get_or_create(reference=r['exp_mu_ligand_ref'])
-        effect_ligand_reference_id = obj
-
-        obj, created =  MutationOptional.objects.get_or_create(type=r['opt_type'], wt=r['opt_wt'], mu=r['opt_mu'], sign=r['opt_sign'], percentage=r['opt_percentage'], qual=r['opt_qual'], agonist=r['opt_agonist'])
-        exp_opt_id = obj
-
-        obj, created =  Mutation.objects.get_or_create(amino_acid=r['mutation_to'],protein=protein_id, residue=residue_id)
-        mutation_id = obj
-
-
-
-        logtypes = ['pEC50','pIC50','pK']
-
-
-        foldchange = 0
-        typefold = ''
-        if r['exp_mu_effect_type']=='Activity/affinity' and r['exp_wt_value']!=0:
-
-            if re.match("(" + ")|(".join(logtypes) + ")", r['exp_type']):  #-log values!
-                foldchange = round(math.pow(10,-r['exp_mu_value_raw'])/pow(10,-r['exp_wt_value']),3);
-                typefold = r['exp_type']+"_log"
-            else:
-                foldchange = round(r['exp_mu_value_raw']/r['exp_wt_value'],3);
-                typefold = r['exp_type']+"_not_log"
-
-
-            if foldchange<1 and foldchange!=0:
-                foldchange = -round((1/foldchange),3)
-            elif r['exp_mu_effect_type'] =='Fold effect (mut/wt)':
-                foldchange = round(r['exp_mu_value_raw'],3);
-                if foldchange<1: foldchange = -round((1/foldchange),3);
-
-
-        obj, created = MutationExperiment.objects.get_or_create(
-        refs=ref_id,
-        protein=protein_id,
-        residue=residue_id, #MISSING
-        ligand=lig_id,
-        ligand_class=ligclass_id,
-        ligand_ref = ligref_id,
-        raw = raw_id,
-        optional = exp_opt_id,
-        exp_type=exp_type_id,
-        exp_func=exp_func_id,
-        exp_measure = exp_measure_id,
-        exp_qual = exp_qual_id,
-
-        mutation=mutation_id,
-        wt_value=r['exp_wt_value'], #
-        wt_unit=r['exp_wt_unit'],
-
-        mu_value = r['exp_mu_value_raw'],
-        mu_sign = r['exp_mu_effect_sign'],
-        foldchange = foldchange
-        #foldchange = 1
-
-        #added_by='munk',
-        #added_date=datetime.now()
-        )
-        #print(foldchange)
-        mut_id = obj.id
-
-
-        #whattoreturn.append([protein_id,residue_id,raw_id,ref_id,lig_id,ligclass_id,exp_type_id,exp_func_id,exp_measure_id,exp_qual_id,typefold,foldchange,mut_id])
-        whattoreturn.append(['Inserted',protein_id.entry_name,residue_id.sequence_number,foldchange])
-        inserted += 1
-        c += 1
-        #if c>10: break
-
-    print('DONE!')
-    context = {'rows': whattoreturn, 'skipped' : skipped, 'inserted' : inserted}
-
-    #return HttpResponse(ref_id)
-    return render(request,'mutation/index.html',context)
-
 class designStateSelector(AbsReferenceSelection):
     step = 1
     number_of_steps = 1
@@ -2364,13 +2224,13 @@ def contactMutationDesign(request, goal = "both"):
                     .prefetch_related(
                                 "pdb_code",
                                 "state",
-                                "structureligandinteraction_set__ligand__properities__ligand_type",
+                                "structureligandinteraction_set__ligand__ligand_type",
                                 "structureligandinteraction_set__ligand_role",
                                 "protein_conformation__protein__parent__parent__parent",
                                 "protein_conformation__protein__parent__family__parent",
                                 "protein_conformation__protein__parent__family__parent__parent__parent",
                                 "protein_conformation__protein__species", Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
-                                annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role')))\
+                                annotated=True).prefetch_related('ligand__ligand_type', 'ligand_role')))\
                     .annotate(res_count = Sum(Case(When(protein_conformation__residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
 
                 for s in active_structs:
@@ -2445,14 +2305,14 @@ def contactMutationDesign(request, goal = "both"):
                                 "pdb_code",
                                 "state",
                                 "stabilizing_agents",
-                                "structureligandinteraction_set__ligand__properities__ligand_type",
+                                "structureligandinteraction_set__ligand__ligand_type",
                                 "structureligandinteraction_set__ligand_role",
                                 "structure_type",
                                 "protein_conformation__protein__parent__parent__parent",
                                 "protein_conformation__protein__parent__family__parent",
                                 "protein_conformation__protein__parent__family__parent__parent__parent",
                                 "protein_conformation__protein__species", Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
-                                annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role')))\
+                                annotated=True).prefetch_related('ligand__ligand_type', 'ligand_role')))\
                     .annotate(res_count = Sum(Case(When(protein_conformation__residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
 
                 for s in inactive_structs:

@@ -246,8 +246,7 @@ class StructureList(views.APIView):
             'protein_conformation__protein__parent__family', 'protein_conformation__protein__parent__species',
             'publication__web_link', 'publication__web_link__web_resource', 'structure_type',
             'structureligandinteraction_set__ligand',
-            'structureligandinteraction_set__ligand__properities',
-            'structureligandinteraction_set__ligand__properities__ligand_type',
+            'structureligandinteraction_set__ligand__ligand_type',
             'structureligandinteraction_set__ligand_role',
             'signprot_complex', 'signprot_complex__protein', 'signprot_complex__protein__parent',
             'signprot_complex__beta_protein', 'signprot_complex__gamma_protein',
@@ -288,14 +287,14 @@ class StructureList(views.APIView):
                     ligand = {}
                     if interaction.ligand.name:
                         ligand['name'] = interaction.ligand.name
-                    if interaction.ligand.properities.ligand_type and interaction.ligand.properities.ligand_type.name:
-                        ligand['type'] = interaction.ligand.properities.ligand_type.name
+                    if interaction.ligand.ligand_type and interaction.ligand.ligand_type.name:
+                        ligand['type'] = interaction.ligand.ligand_type.name
                     if interaction.ligand_role and interaction.ligand_role.name:
                         ligand['function'] = interaction.ligand_role.name
                     if interaction.ligand.pdbe:
                         ligand['PDB'] = interaction.ligand.pdbe
-                    if interaction.ligand.properities.smiles:
-                        ligand['SMILES'] = interaction.ligand.properities.smiles
+                    if interaction.ligand.smiles:
+                        ligand['SMILES'] = interaction.ligand.smiles
                     if ligand:
                         ligands.append(ligand)
             structure_data['ligands'] = ligands
