@@ -1323,13 +1323,13 @@ class LigandStatistics(TemplateView):
             context['class_c_options_bal']['anchor'] = 'class_c_bal'
             context['class_c_options_bal']['branch_trunc'] = 50
             context['class_c_options_bal']['label_free'] = [1, ]
-            context['class_c_bal'] = json.dumps(class_c_data.get_nodes_dict(self.page+"_bal"))
+            context['class_c_bal'] = json.dumps(class_c_data_bal.get_nodes_dict(self.page+"_bal"))
             class_f_data_bal = tree.get_tree_data(
                 ProteinFamily.objects.get(name__startswith='Class F (Frizzled)'))
             context['class_f_options_bal'] = deepcopy(tree.d3_options)
             context['class_f_options_bal']['anchor'] = 'class_f_bal'
             context['class_f_options_bal']['label_free'] = [1, ]
-            context['class_f_bal'] = json.dumps(class_f_data.get_nodes_dict(self.page+"_bal"))
+            context['class_f_bal'] = json.dumps(class_f_data_bal.get_nodes_dict(self.page+"_bal"))
             class_t2_data_bal = tree.get_tree_data(
                 ProteinFamily.objects.get(name__startswith='Class T (Taste 2)'))
             context['class_t2_options_bal'] = deepcopy(tree.d3_options)
@@ -1986,7 +1986,6 @@ class OTFBiasBrowser(TemplateView):
             context['Lig_Count'] = len(table['Ligand'].unique())
         else:
             context['Lig_Count'] = len(table['Tested ligand'].unique())
-            
         context['UniProt'] = receptor_info[0][2].split('_')[0].upper()
         context['IUPHAR'] = receptor_info[0][3]
         context['Array'] = table.to_numpy()
