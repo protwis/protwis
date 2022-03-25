@@ -625,7 +625,7 @@ function draw_cluster(data, options, trim=true) {
 
 
 // Heatmap (circles_bal, heatmap_data, master_dict, buttonObjects);
-function draw_heatmap(square_data, data, bible, options, location, element_id, trim=true) {
+function draw_heatmap(square_data, data, bible, options, location, element_id, legend_label, trim=true) {
   // set the dimensions and margins of the graph
 
   var support = (function () {
@@ -823,8 +823,8 @@ function draw_heatmap(square_data, data, bible, options, location, element_id, t
                           });
   cols.sort();
 
-  var width = (50 * cols.length);
-  var height = (35 * rows.length);
+  var width = (35 * cols.length);
+  var height = (20 * rows.length);
 
   // append the svg object to the body of the page
   var svg_home = d3v4.select("#" + location)
@@ -834,11 +834,62 @@ function draw_heatmap(square_data, data, bible, options, location, element_id, t
               .attr("transform", "translate(0,-" + margin.bottom + ")")
               .attr("id", element_id)
 
+  var greyscale = [ 'rgb(255,255,255)', 'rgb(0,0,0)' ];
+
+  var legend = svg_home.append('defs')
+                       .append('linearGradient')
+                       .attr('id', 'grad')
+                       .attr('x1', '0%')
+                       .attr('x2', '100%')
+                       .attr('y1', '0%')
+                       .attr('y2', '0%');
+
+   legend.selectAll('stop')
+         .data(greyscale)
+         .enter()
+         .append('stop')
+         .style('stop-color', function(d){ return d; })
+         .attr('offset', function(d,i){
+                return 100 * (i / (greyscale.length - 1)) + '%';
+              })
+
+
+  var legend_svg = svg_home.append("g")
+                    .attr("transform", "translate(0,0)");
+
   var color_svg = svg_home.append("g")
                     .attr("transform", "translate(" + (margin.left*1.5) + ",0)");
 
   var svg = svg_home.append("g")
                     .attr("transform", "translate(" + (margin.left*2.5) + ",0)");
+
+  legend_svg.append("text")
+            .attr('x', 75)
+            .attr('y', 10)
+            .style("font", "14px sans-serif")
+            .style("font-weight", "bold")
+            .text(legend_label); 
+
+  legend_svg.append("text")
+            .attr('x', 0)
+            .attr('y', 30)
+            .style("font", "14px sans-serif")
+            .style("font-weight", "bold")
+            .text('0');
+
+  legend_svg.append('rect')
+            .attr('x', 20)
+            .attr('y', 15)
+            .attr('width', 275)
+            .attr('height', 20)
+            .style('fill', 'url(#grad)');
+
+  legend_svg.append("text")
+            .attr('x', 300)
+            .attr('y', 30)
+            .style("font", "14px sans-serif")
+            .style("font-weight", "bold")
+            .text(highest_value);
 
   // Build X scales and axis:
   var x = d3v4.scaleBand()
@@ -898,12 +949,12 @@ function draw_heatmap(square_data, data, bible, options, location, element_id, t
 
     d3v4.selectAll("#Yaxis>.tick>text")
         .each(function(d, i){
-          d3.select(this).style("font-size","18px");
+          d3.select(this).style("font-size","1.3em");
         });
 
     d3v4.selectAll("#Xaxis>.tick>text")
         .each(function(d, i){
-          d3.select(this).style("font-size","18px");
+          d3.select(this).style("font-size","1.3em");
         });
 
     var count = 1;
@@ -911,8 +962,9 @@ function draw_heatmap(square_data, data, bible, options, location, element_id, t
     ticks.each(function(d) {
       value = oddOrEven(count);
       text = d3.select(this).select('text');
+      textSize = Math.floor(text[0][0].getBBox().width*1.05 + 0.5 * 10);
       text.attr("transform", null);
-      text.attr("x", "-15");
+      text.attr("x", "-" + textSize/2 + "px");
       if(value === "even"){
         // text.attr("x", "-15");
         text.attr("y", "30");
@@ -928,8 +980,8 @@ function draw_heatmap(square_data, data, bible, options, location, element_id, t
           yText[0].innerHTML = html_converter[i]['html'];
           labelSize = yText[0].getBBox().width*1.05 + 0.5 * 10
           svg_home.attr("width", width + margin.left + margin.right + labelSize);
-          svg.attr("transform", "translate(" + (labelSize+40) + "," + margin.top + ")");
-          color_svg.attr("transform", "translate(" + (labelSize+20) + "," + margin.top + ")");
+          svg.attr("transform", "translate(" + (labelSize+40) + "," + (margin.top*1.5) + ")");
+          color_svg.attr("transform", "translate(" + (labelSize+20) + "," + (margin.top*1.5) + ")");
         }
       }
     });

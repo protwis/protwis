@@ -412,59 +412,74 @@ class BiasedSignallingSelection(AbsReferenceSelectionTable):
     filters = False
     filter_tableselect = False
     family_tree = False
+    import_export_box = False
     subtype = False
     pathway = False
-    pathfinder = {'EmaxRankOrder': {'Title': 'SELECT RECEPTOR for Ligand Bias Rank Order ΔΔLog(Emax/EC50)',
+    pathfinder = {'EmaxRankOrder': {'Description': 'The next page shows plots for the ligand bias rank order ΔΔLog(Emax/EC50) by transducer or effector family across publications.' \
+                                                    + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>',
                                     'Continue': "submitSelection('/ligand/emax_rankorder');",
                                     'Pathway': "submitSelection('/ligand/emax_rankorder_path_bias');",
                                     'Biased': "submitSelection('/ligand/userselectionbiased_emax_rank_order');"},
-                  'TauRankOrder': {'Title': 'SELECT RECEPTOR for Ligand Bias Rank Order ΔΔLog(Tau/KA)',
+                  'TauRankOrder': {'Description': 'The next page shows plots for the ligand bias rank order ΔΔLog(Tau/KA) by transducer or effector family across publications.' \
+                                                    + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>',
                                    'Continue': "submitSelection('/ligand/tau_rankorder');",
                                    'Pathway': "submitSelection('/ligand/tau_rankorder_path_bias');",
                                    'Biased': "submitSelection('/ligand/userselectionbiased_tau_rank_order');"},
-                  'EmaxPathProfile': {'Title': 'SELECT RECEPTOR for Ligand Pathway Profiles ΔLog(Emax/EC50)',
+                  'EmaxPathProfile': {'Description': 'The next page shows plots for the ligand pathway profiles ΔLog(Emax/EC50) by transducer or effector family across publications.' \
+                                                     + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>',
                                       'Continue': "submitSelection('/ligand/emax_path_profiles');",
                                       'Pathway': "submitSelection('/ligand/emax_path_profiles_path_bias');",
                                       'Biased': "submitSelection('/ligand/userselectionbiased_emax_path_profile');"},
-                  'TauPathProfile': {'Title': 'SELECT RECEPTOR for Ligand Pathway Profiles ΔΔLog(Tau/KA)',
+                  'TauPathProfile': {'Description': 'The next page shows plots for the ligand pathway profiles ΔLog(Tau/KA) by transducer or effector family across publications.' \
+                                                     + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>',
                                      'Continue': "submitSelection('/ligand/tau_path_profiles');",
                                      'Pathway': "submitSelection('/ligand/tau_path_profiles_path_bias');",
                                      'Biased': "submitSelection('/ligand/userselectionbiased_tau_path_profile');"},
-                  'Browser': {'Title': 'SELECT RECEPTORS with ligands biased for a G protein or arrestin family (relative to an endogenous reference ligand)',
-                              'Continue': "submitSelection('/ligand/biased');",
-                              'Pathway': "submitSelection('/ligand/pathwaybiased');",
-                              'Biased': "submitSelection('/ligand/userselectionbiased');"},
-                  'EmaxRankOrderSubtype': {'Title': 'SELECT RECEPTOR for Ligand biased (subtype) rank orders ΔΔLog(Emax/EC50)',
+                  'EmaxRankOrderSubtype': {'Description': 'The next page shows plots for the ligand bias rank order ΔΔLog(Emax/EC50) by transducer or effector family across publications.' \
+                                                            + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>',
                                            'Continue': "submitSelection('/ligand/subtype_emax_rankorder');",
                                            'Pathway': "submitSelection('/ligand/subtype_emax_rankorder_path_bias');",
                                            'Biased': "submitSelection('/ligand/userselectionbiasedsubtype_emax_rank_order');"},
-                  'TauRankOrderSubtype': {'Title': 'SELECT RECEPTOR for Ligand Bias (subtype) Rank Order ΔΔLog(Tau/KA)',
+                  'TauRankOrderSubtype': {'Description': 'The next page shows plots for the ligand bias rank order ΔΔLog(Tau/KA) by transducer or effector family across publications.' \
+                                                         + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>',
                                           'Continue': "submitSelection('/ligand/subtype_tau_rankorder');",
                                           'Pathway': "submitSelection('/ligand/subtype_tau_rankorder_path_bias');",
                                           'Biased': "submitSelection('/ligand/userselectionbiasedsubtype_tau_rank_order');"},
-                  'EmaxPathProfileSubtype': {'Title': 'SELECT RECEPTOR for Ligand biased (subtype) Pathway Profiles Δlog(Emax/EC50)',
+                  'EmaxPathProfileSubtype': {'Description': 'The next page shows plots for the ligand pathway profiles ΔLog(Emax/EC50) by transducer or effector family across publications.' \
+                                                            + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>',
                                              'Continue': "submitSelection('/ligand/subtype_emax_path_profiles');",
                                              'Pathway': "submitSelection('/ligand/subtype_emax_path_profiles_path_bias');",
                                              'Biased': "submitSelection('/ligand/userselectionbiasedsubtype_emax_path_profile');"},
-                  'TauPathProfileSubtype': {'Title': 'SELECT RECEPTOR for Ligand (subtype) Pathway Profiles ΔΔLog(Tau/KA)',
+                  'TauPathProfileSubtype': {'Description': 'The next page shows plots for the ligand pathway profiles ΔLog(Tau/KA) by transducer or effector family across publications.' \
+                                                            + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>',
                                             'Continue': "submitSelection('/ligand/subtype_tau_path_profiles');",
                                             'Pathway': "submitSelection('/ligand/subtype_tau_path_profiles_path_bias');",
                                             'Biased': "submitSelection('/ligand/userselectionbiasedsubtype_tau_path_profile');"},
-                  'BrowserSubtype': {'Title': 'SELECT RECEPTORS with ligands biased for a G protein or arrestin subtype',
+                  'Browser': {'Description': 'The next page shows ligands biased for a transducer or effector family (e.g. G protein, arrestin, GRK, ERK etc.).' \
+                                                    + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>',
+                              'Continue': "submitSelection('/ligand/biased');",
+                              'Pathway': "submitSelection('/ligand/pathwaybiased');",
+                              'Biased': "submitSelection('/ligand/userselectionbiased');"},
+                  'BrowserSubtype': {'Description': 'The next page shows ligands biased for a transducer or effector family (e.g. G protein, arrestin, GRK, ERK etc.).' \
+                                                    + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>',
                                      'Continue': "submitSelection('/ligand/biasedsubtypes');",
                                      'Pathway': "submitSelection('/ligand/pathwaybiasedsubtypes');",
                                      'Biased': "submitSelection('/ligand/userselectionbiasedsubtype');"},
-                  'BrowserPathway': {'Title': 'SELECT RECEPTORS to retrieve ligands with a preferred G protein or arrestin pathway ΔLog(Emax/EC50) values across pathways for one ligand (no reference ligand)',
+                  'BrowserPathway': {'Description': 'The next page shows ligands biased for a transducer or effector family (e.g. G protein, arrestin, GRK, ERK etc.).' \
+                                                    + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>',
                                      'Continue': "submitSelection('/ligand/pathwaypreference');"},
-                  'EmaxRankOrderPathway': {'Title': 'SELECT RECEPTOR for Ligand Pathway Preference rank orders ΔLog(Emax/EC50)',
+                  'EmaxRankOrderPathway': {'Description': 'The next page shows plots for the ligand bias rank order ΔLog(Emax/EC50) by transducer or effector family across publications.' \
+                                                            + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>',
                                            'Continue': "submitSelection('/ligand/path_preference_emax_rankorder');"},
-                  'EmaxPathProfilePathway': {'Title': 'SELECT RECEPTOR for Ligand Pathway Profiles Log(Emax/EC50)',
+                  'EmaxPathProfilePathway': {'Description': 'The next page shows plots for the ligand pathway profiles Log(Emax/EC50) by transducer or effector family across publications.' \
+                                                            + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>',
                                             'Continue': "submitSelection('/ligand/path_preference_emax_path_profiles');"}
                 }
     way = 'EmaxRankOrder'
-    title = pathfinder[way]['Title']
-    description = 'Select a receptor in the table (below).' \
-        + ' \n\nand click the green button (upper right).'
+    title = "SELECT A RECEPTOR in the table and click a green button"
+    description = pathfinder[way]['Description']
+    # description = 'Select a receptor in the table (below).' \
+    #     + ' \n\nand click the green button (upper right).'
     selection_boxes = OrderedDict([
         ('reference', True),
         ('targets', False),
@@ -486,7 +501,7 @@ class BiasedSignallingSelection(AbsReferenceSelectionTable):
             "sameSize": True,
         },
         "biased": {
-            "label": "Biased ligands<br>(any reference ligand)",
+            "label": "Benchmark-biased ligands<br>(other reference ligand)",
             'onclick': pathfinder[way]['Biased'],
             "color": 'success',
             'invisible': 'No',
@@ -504,7 +519,7 @@ class BiasedSignallingSelection(AbsReferenceSelectionTable):
         context = super().get_context_data(**kwargs)
 
         context['buttons']['continue']['onclick'] = context['pathfinder'][context['way']]['Continue']
-        context['title'] = context['pathfinder'][context['way']]['Title']
+        context['description'] = context['pathfinder'][context['way']]['Description']
         # get selection from session and add to context
         if context['subtype']: #subtype define all three buttons
             context['table_data'] = getReferenceTable("no", "yes")
@@ -1270,6 +1285,66 @@ class LigandStatistics(TemplateView):
 
         context["whole_receptors"] = json.dumps(whole_rec_dict)
 
+        #Adding section for addressing the data for tree against balanced reference ONLY for ligand_bias page
+        if self.page == 'ligand_bias':
+            tree = PhylogeneticTreeGenerator()
+            class_a_data_bal = tree.get_tree_data(ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
+            context['class_a_options_bal'] = deepcopy(tree.d3_options)
+            context['class_a_options_bal']['anchor'] = 'class_a_bal'
+            context['class_a_options_bal']['leaf_offset'] = 50
+            context['class_a_options_bal']['label_free'] = []
+            # section to remove Orphan from Class A tree and apply to a different tree
+            whole_class_a_bal = class_a_data_bal.get_nodes_dict(self.page+'_bal')
+            for item in whole_class_a_bal['children']:
+                if item['name'] == 'Orphan':
+                    orphan_data_bal = OrderedDict(
+                        [('name', ''), ('value', 3000), ('color', ''), ('children', [item])])
+                    whole_class_a_bal['children'].remove(item)
+                    break
+            context['class_a_bal'] = json.dumps(whole_class_a_bal)
+            class_b1_data_bal = tree.get_tree_data(
+                ProteinFamily.objects.get(name__startswith='Class B1 (Secretin)'))
+            context['class_b1_options_bal'] = deepcopy(tree.d3_options)
+            context['class_b1_options_bal']['anchor'] = 'class_b1_bal'
+            context['class_b1_options_bal']['branch_trunc'] = 60
+            context['class_b1_options_bal']['label_free'] = [1, ]
+            context['class_b1_bal'] = json.dumps(
+                class_b1_data_bal.get_nodes_dict(self.page+'_bal'))
+            class_b2_data_bal = tree.get_tree_data(
+                ProteinFamily.objects.get(name__startswith='Class B2 (Adhesion)'))
+            context['class_b2_options_bal'] = deepcopy(tree.d3_options)
+            context['class_b2_options_bal']['anchor'] = 'class_b2_bal'
+            context['class_b2_options_bal']['label_free'] = [1, ]
+            context['class_b2_bal'] = json.dumps(
+                class_b2_data_bal.get_nodes_dict(self.page+"_bal"))
+            class_c_data_bal = tree.get_tree_data(
+                ProteinFamily.objects.get(name__startswith='Class C (Glutamate)'))
+            context['class_c_options_bal'] = deepcopy(tree.d3_options)
+            context['class_c_options_bal']['anchor'] = 'class_c_bal'
+            context['class_c_options_bal']['branch_trunc'] = 50
+            context['class_c_options_bal']['label_free'] = [1, ]
+            context['class_c_bal'] = json.dumps(class_c_data.get_nodes_dict(self.page+"_bal"))
+            class_f_data_bal = tree.get_tree_data(
+                ProteinFamily.objects.get(name__startswith='Class F (Frizzled)'))
+            context['class_f_options_bal'] = deepcopy(tree.d3_options)
+            context['class_f_options_bal']['anchor'] = 'class_f_bal'
+            context['class_f_options_bal']['label_free'] = [1, ]
+            context['class_f_bal'] = json.dumps(class_f_data.get_nodes_dict(self.page+"_bal"))
+            class_t2_data_bal = tree.get_tree_data(
+                ProteinFamily.objects.get(name__startswith='Class T (Taste 2)'))
+            context['class_t2_options_bal'] = deepcopy(tree.d3_options)
+            context['class_t2_options_bal']['anchor'] = 'class_t2_bal'
+            context['class_t2_options_bal']['label_free'] = [1, ]
+            context['class_t2_bal'] = json.dumps(
+                class_t2_data_bal.get_nodes_dict(self.page+"_bal"))
+            # definition of the class a orphan tree
+            context['orphan_options_bal'] = deepcopy(tree.d3_options)
+            context['orphan_options_bal']['anchor'] = 'orphan_bal'
+            context['orphan_options_bal']['label_free'] = [1, ]
+            context['orphan_bal'] = json.dumps(orphan_data_bal)
+
+        ##### END COPIED SECTION #####
+
         if self.page == 'ligands':
             context["render"] = "not_bias"
 
@@ -1906,6 +1981,14 @@ class OTFBiasBrowser(TemplateView):
 
         table.fillna('', inplace=True)
         context = dict()
+
+        if self.pathway:
+            context['Lig_Count'] = len(table['Ligand'].unique())
+        else:
+            context['Lig_Count'] = len(table['Tested ligand'].unique())
+            
+        context['UniProt'] = receptor_info[0][2].split('_')[0].upper()
+        context['IUPHAR'] = receptor_info[0][3]
         context['Array'] = table.to_numpy()
         context['Pathway'] = self.pathway
         context['Balanced'] = self.balanced
