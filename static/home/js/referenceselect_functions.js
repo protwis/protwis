@@ -378,6 +378,7 @@ function initTargetTable(elementID, pathway) {
                   filters_tr_index: 1
               }
           );
+          yadcf.exFilterColumn(referenceTable, [[4, ["Homo sapiens"]]], true);
       }
     }else{
       if (!$.fn.DataTable.isDataTable(elementID + " table")) {
@@ -443,6 +444,7 @@ function initTargetTable(elementID, pathway) {
                       filter_type: "multi_select",
                       select_type: "select2",
                       filter_default_label: "Species",
+                      // filter_delay: 10,
                       filter_reset_button_text: false,
                       filter_match_mode : "exact",
                   },
@@ -550,6 +552,7 @@ function initTargetTable(elementID, pathway) {
                   filters_tr_index: 1
               }
           );
+          yadcf.exFilterColumn(referenceTable, [[4, ["Homo sapiens"]]], true);
       }
     }
     // When redrawing update the information selection message
@@ -569,6 +572,7 @@ function initTargetTable(elementID, pathway) {
 
     // Ready to draw the table
     referenceTable.draw();
+
 }
 
 /**
