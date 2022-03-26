@@ -80,7 +80,7 @@ class Command(BaseBuild):
             # fetch the parent protein
             try:
                 ppc = ProteinConformation.objects.prefetch_related('protein__family', 'protein__species',
-                    'protein__residue_numbering_scheme').get(protein__entry_name=sd['protein'],
+                    'protein__residue_numbering_scheme').get(protein__entry_name=sd['protein'].lower(),
                     state__slug=settings.DEFAULT_PROTEIN_STATE)
             except ProteinConformation.DoesNotExist:
                 # abort if parent protein is not found
