@@ -54,7 +54,7 @@ class Command(BaseCommand):
             ['build_all_gtp_ligands', {'test_run': options['test']}],
             ['build_endogenous_data_from_gtp_source', {'test_run': options['test']}],
             ['build_bias_preprocess_data', {'test_run': options['test']}],
-            ['build_balanced_ligands', {'test_run': options['test']}],
+            #['build_balanced_ligands', {'test_run': options['test']}],
             ['build_chembl_data', {'test_run': options['test']}],
             ['build_mutant_data', {'test_run': options['test']}],
             ['build_structures', {'proc': safe_proc_num, 'skip_cn': options['test']}],
