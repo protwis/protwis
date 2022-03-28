@@ -104,6 +104,41 @@
         border-radius: 5px;
         background: Black;
     }
+    .gprot_orange {
+      color: orange;
+    }
+
+    .gprot_blue {
+      color: blue;
+    }
+
+    .gprot_red {
+      color: red;
+    }
+
+    .gprot_black {
+      color: black;
+    }
+
+    .gprot_green {
+      color: forestgreen;
+    }
+    .graydiv {
+        height: 20px;
+        width: 350px;
+        background: linear-gradient(to right, white 0%, black 100%)
+    }
+    .alignleft {
+      float: left;
+      width: 175px;
+      text-align: left;
+      font-weight: bold;
+    }
+    .alignright {
+        float: right;
+        width: 175px;
+        text-align: right;
+        font-weight: bold;
     }
 </style>
 {% endblock %}
@@ -220,12 +255,10 @@ Specific sets of ligands can be downloaded from the <a href="/ligand/biasedsubty
 <br />
 {% if render == "not_bias" %}
 <h4>Ligand coverage of GPCR Classes</h4><br />
-{% elif render == "bias" %}
-<h4>Biased ligand coverage by GPCR Class</h4><br />
-{% elif render == "subtype" %}
-<h4>Biased ligand coverage by GPCR Class</h4><br />
 {% elif render == "pathway" %}
 <h4>Pathway preference ligand coverage by GPCR Class</h4><br />
+{% else %}
+<h4>Biased ligand coverage by GPCR Class</h4><br />
 {% endif %}
 
 {% if render == "not_bias" %}
@@ -253,45 +286,6 @@ Circle colors indicate a number of ligands:
 </table>
 {% endif %}
 
-<style type="text/css">
-  .gprot_orange {
-    color: orange;
-  }
-
-  .gprot_blue {
-    color: blue;
-  }
-
-  .gprot_red {
-    color: red;
-  }
-
-  .gprot_black {
-    color: black;
-  }
-
-  .gprot_green {
-    color: forestgreen;
-  }
-
-  .graydiv {
-      height: 20px;
-      width: 350px;
-      background: linear-gradient(to right, white 0%, black 100%)
-  }
-  .alignleft {
-    float: left;
-    width: 175px;
-    text-align: left;
-    font-weight: bold;
-  }
-  .alignright {
-      float: right;
-      width: 175px;
-      text-align: right;
-      font-weight: bold;
-  }
-</style>
 <!-- Inner circle colors indicate a number of ligands:
 <table style="width:30%">
     <tr>
@@ -528,7 +522,7 @@ $(document).ready(function(){
   {% if render != "subtype" %}
       </div>
 
-      <div class="tab-pane container active" id="trees">
+      <div class="tab-pane container" id="trees">
 
         <div style="padding-top: 5px;">
           Receptor names:
@@ -1321,13 +1315,6 @@ Specific sets of ligands can be downloaded from the <a href="/ligand/biasedsubty
 </div>
 <br />
 
-<style type="text/css">
-  .graydiv {
-      height: 20px;
-      width: 350px;
-      background: linear-gradient(to right, white 0%, black 100%)
-  }
-</style>
 <br />
 
 <script type="text/javascript" charset="utf-8">
