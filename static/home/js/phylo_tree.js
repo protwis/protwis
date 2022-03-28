@@ -838,7 +838,7 @@ function draw_heatmap(square_data, data, bible, options, location, element_id, l
 
   var legend = svg_home.append('defs')
                        .append('linearGradient')
-                       .attr('id', 'grad')
+                       .attr('id', 'grad_' + element_id )
                        .attr('x1', '0%')
                        .attr('x2', '100%')
                        .attr('y1', '0%')
@@ -864,11 +864,11 @@ function draw_heatmap(square_data, data, bible, options, location, element_id, l
                     .attr("transform", "translate(" + (margin.left*2.5) + ",0)");
 
   legend_svg.append("text")
-            .attr('x', 75)
+            // .attr('x', 75)
             .attr('y', 10)
             .style("font", "14px sans-serif")
             .style("font-weight", "bold")
-            .text(legend_label); 
+            .text(legend_label);
 
   legend_svg.append("text")
             .attr('x', 0)
@@ -880,16 +880,21 @@ function draw_heatmap(square_data, data, bible, options, location, element_id, l
   legend_svg.append('rect')
             .attr('x', 20)
             .attr('y', 15)
-            .attr('width', 275)
+            .attr('width', width + margin.left + margin.right)
             .attr('height', 20)
-            .style('fill', 'url(#grad)');
+            .style('fill', 'url(#grad_' + element_id + ')');
 
   legend_svg.append("text")
-            .attr('x', 300)
+            .attr('x', width + margin.left + (margin.right*1.75))
             .attr('y', 30)
             .style("font", "14px sans-serif")
             .style("font-weight", "bold")
             .text(highest_value);
+
+  legendLabel = legend_svg.select('text')['_groups'][0][0].getBBox().width*1.05 + 0.5 * 10;
+
+  legend_svg.select("text")
+            .attr("x", (width + margin.left + margin.right - legendLabel)/2 + margin.left)
 
   // Build X scales and axis:
   var x = d3v4.scaleBand()
