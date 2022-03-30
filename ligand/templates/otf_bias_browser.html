@@ -250,7 +250,7 @@
 			<tr class="header-spans">
 				<!-- <th id="receptor" style="text-align:left" colspan="5">Receptor</th> -->
 				{% if Pathway %}
-				<th style="border-left: 1px solid black; text-align:left" colspan="4" style="">
+				<th style="text-align:left" colspan="4" style="">
 					Tested ligands</th>
 				<th id="pathways_effector" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Pathway preference<br>(Log(&#964;/KA) or Log(Emax/EC50))</th>
@@ -263,7 +263,7 @@
 				<th id="relative_transduction_coef" class="color-column" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Pathway activity Log(Emax/EC50)</th>
 				{% else %}
-				<th style="border-left: 1px solid black; text-align:left" colspan="5" style="">
+				<th style="text-align:left" colspan="5" style="">
 					Ligands</th>
 				<th id="pathways_effector" style="border-left: 1px solid black; text-align:left" colspan="5">
 					Pathway rank order<br>(&#916;Log(&#964;/KA) or &#916;Log(Emax/EC50))</th>
@@ -439,7 +439,7 @@
 					<td title='{{value.4}}'>{{value.4}}</td> -->
 
 					<!-- Tested ligand block -->
-					<td style="border-left: 1px solid black;" title='{{value.5}}'><a href='/ligand/{{value.65|floatformat:"-1"}}/info' target='_blank'>{{value.5}}</a></td>
+					<td title='{{value.5}}'><a href='/ligand/{{value.65|floatformat:"-1"}}/info' target='_blank'>{{value.5|title}}</a></td>
 					<td style="text-align:right">{{value.6|floatformat}}</td>
 					<td style="text-align:right">{{value.7|floatformat}}</td>
 					<td style="text-align:right">{{value.8|floatformat}}</td>
@@ -538,8 +538,8 @@
 					<td title='{{ value.4 }}'>{{ value.4 }}</td> -->
 
 					<!-- ligand block -->
-					<td title='{{ value.5 }}' style="border-left: 1px solid black;">{{ value.5 }}</td>
-					<td title='{{ value.6 }}'><a href='/ligand/{{ value.76|floatformat:"-1" }}/info' target='_blank'>{{ value.6 }}</a></td>
+					<td title='{{ value.5 }}'>{{ value.5|title }}</td>
+					<td title='{{ value.6 }}'><a href='/ligand/{{ value.76|floatformat:"-1" }}/info' target='_blank'>{{ value.6|title }}</a></td>
 					<td title='#Vendor' style="text-align:right">{{ value.7|floatformat }}</td>
 					<td title='#Articles' style="text-align:right">{{ value.8|floatformat }}</td>
 					<td title='#Labs' style="text-align:right">{{ value.9|floatformat }}</td>

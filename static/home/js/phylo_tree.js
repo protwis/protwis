@@ -910,7 +910,7 @@ function draw_heatmap(square_data, data, bible, options, location, element_id, l
   svg.append("g")
     .attr("transform", "translate(0," + height + ")")
     .attr('id', 'Xaxis')
-    .call(d3v4.axisBottom(x));
+    .call(d3v4.axisBottom(x).tickSizeOuter(0));
 
   // Build X scales and axis:
   var y = d3v4.scaleBand()
@@ -920,7 +920,7 @@ function draw_heatmap(square_data, data, bible, options, location, element_id, l
 
   color_svg.append("g")
     .attr('id', 'Yaxis')
-    .call(d3v4.axisLeft(y));
+    .call(d3v4.axisLeft(y).tickSizeOuter(0));
 
   // Build color scale
   var myColor = d3v4.scaleLinear()

@@ -166,17 +166,17 @@
 <p><h4>Biased ligand counts</h4>
 Physiology-bias and pathway-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.
 <br />
-The number of ligands with a bias factor &ge; 1</p>
+This page shows the number of biased ligands with a bias factor &ge; 1</p>
 <table style="width:60% !important" class="table table-stripped">
 {% elif render == "pathway" %}
 <p><h4>Pathway preferred ligand counts</h4>
-The number of ligands showing a pathway preference</p>
+This page shows the number of ligands with a pathway preference</p>
 <table style="width:60% !important" class="table table-stripped">
 {% elif render == "subtype" %}
 <p><h4>Biased ligand counts</h4>
 Physiology-bias and pathway-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.
 <br />
-The number of ligands with a bias factor &ge; 1 (subtype)</p>
+This page shows the number of biased ligands with a bias factor &ge; 1 (subtype)</p>
 <table style="width:60% !important" class="table table-stripped">
 {% endif %}
     <thead>
@@ -227,7 +227,7 @@ The number of ligands with a bias factor &ge; 1 (subtype)</p>
             <td align="center" style="vertical-align:middle !important">{{ ligands_total.num_ligands|floatformat:0|intcomma }}</td>
         </tr>
         <tr>
-            <td nowrap>No. GPCRs with ligand</td>
+            <td nowrap>No. GPCRs with biased ligand</td>
             {% for data in ligands_by_class %}
             <td align="center" style="vertical-align:middle !important">{{ data.target_count|floatformat:0 }}</td>
             {% endfor %}
