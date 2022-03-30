@@ -134,6 +134,7 @@ class Command(BaseCommand):
                         "5NX2" : "intermediate", # Closer to active + groups together but internally more inactive
                         "6N51" : "intermediate", # Holds middle between active and inactive
                         "7CA5" : "intermediate",  # Apo state holds middle between active and inactive
+                        "7CA3" : "active",  # GABA with PAM groups to active state structures within family, but not class
                         "7M3E" : "inactive", #
                         "7M3J" : "inactive", #
                         "7DD5" : "inactive", #

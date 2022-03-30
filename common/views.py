@@ -37,7 +37,7 @@ default_schemes_excluded = ["cgn", "ecd", "can"]
 def getLigandTable(receptor_id, browser_type):
     cache_key = "reference_table_" + str(receptor_id) + browser_type
     data_table = cache.get(cache_key)
-    data_table = None
+    # data_table = None
     if data_table == None:
         ligands = list(BiasedData.objects.filter(receptor_id=receptor_id).values_list(
             "ligand__name",
@@ -193,8 +193,8 @@ def getTargetTable():
                 <th>Class<br>&nbsp;</th> \
                 <th>Ligand type<br>&nbsp;</th> \
                 <th style=\"width; 100px;\">Family<br>&nbsp;</th> \
-                <th class=\"text-highlight\">Receptor<br>(UniProt)</th> \
-                <th class=\"text-highlight\">Receptor<br>(GtP)</th> \
+                <th style=\"color:red\">Receptor<br>(UniProt)</th> \
+                <th style=\"color:red\">Receptor<br>(GtP)</th> \
                 <th>Count</th> \
                 <th>Count</th> \
                 <th>PDB(s)<br>&nbsp;</th> \
@@ -317,6 +317,7 @@ def getTargetTable():
 def getReferenceTable(pathway, subtype):
     cache_key = "reference_table_" + pathway + "_" + subtype
     data_table = cache.get(cache_key)
+    # data_table = None
     if data_table == None:
         #get all the proteins that are in biaseddata
         biased_proteins = list(BiasedData.objects.values_list("receptor_id__entry_name").distinct())
@@ -366,13 +367,13 @@ def getReferenceTable(pathway, subtype):
                     <th colspan=1>Number of ligands</th> \
                   </tr> \
                   <tr> \
-                    <th><br><br><input autocomplete='off' class='form-check-input' type='checkbox' onclick='return check_all_targets();'></th> \
+                    <th><br><br></th> \
                     <th>Class<br>&nbsp;</th> \
                     <th>Ligand type<br>&nbsp;</th> \
                     <th style=\"width; 100px;\">Family<br>&nbsp;</th> \
                     <th>Species<br>&nbsp;</th> \
-                    <th class=\"text-highlight\">Receptor<br>(UniProt)</th> \
-                    <th class=\"text-highlight\">Receptor<br>(GtP)</th> \
+                    <th style=\"color:red\">Receptor<br>(UniProt)</th> \
+                    <th style=\"color:red\">Receptor<br>(GtP)</th> \
                     <th>Tested<br>(total)</th> \
                   </tr> \
                 </thead>\
@@ -387,13 +388,13 @@ def getReferenceTable(pathway, subtype):
                     <th colspan=4>Number of ligands</th> \
                   </tr> \
                   <tr> \
-                    <th><br><br><input autocomplete='off' class='form-check-input' type='checkbox' onclick='return check_all_targets();'></th> \
+                    <th><br><br></th> \
                     <th>Class<br>&nbsp;</th> \
                     <th>Ligand type<br>&nbsp;</th> \
                     <th style=\"width; 100px;\">Family<br>&nbsp;</th> \
                     <th>Species<br>&nbsp;</th> \
-                    <th class=\"text-highlight\">Receptor<br>(UniProt)</th> \
-                    <th class=\"text-highlight\">Receptor<br>(GtP)</th> \
+                    <th style=\"color:red\">Receptor<br>(UniProt)</th> \
+                    <th style=\"color:red\">Receptor<br>(GtP)</th> \
                     <th>Tested<br>(total)</th> \
                     <th>Balanced<br>references</th> \
                     <th>Physiology<br>biased</th> \

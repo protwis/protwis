@@ -42,20 +42,18 @@ class Command(BaseCommand):
             self.logger.info('Parsing file ' + source_file)
             source_file_path = os.sep.join([self.release_notes_data_dir, source_file])
 
-            if source_file.endswith('.yaml'):
-                with open(source_file_path, 'r') as f:
-                    ds = yaml.load(f, Loader=yaml.FullLoader)
-
-                    release_notes, created = ReleaseNotes.objects.get_or_create(date=ds['date'])
-                    if created:
-                        self.logger.info('Created release notes for {}'.format(ds['date']))
+            if source_file.endswith('.html'):
+                file_date = source_file_path[:-5].split("/")[-1]
+                release_notes, created = ReleaseNotes.objects.get_or_create(date=file_date)
+                if created:
+                    self.logger.info('Created release notes for {}'.format(file_date))
 
                 with open(source_file_path[:-4]+'html', 'r') as h:
                     release_notes.html = h.read()
                     release_notes.save()
 
                     if created:
-                        self.logger.info('Updated html for release notes {}'.format(ds['date']))
+                        self.logger.info('Updated html for release notes {}'.format(file_date))
 
         # generate statistics
         latest_release_notes = ReleaseNotes.objects.all()[0]

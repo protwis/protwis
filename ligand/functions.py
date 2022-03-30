@@ -761,7 +761,10 @@ def AddPathwayData(master, data, rank, pathway=False):
     if set(['DeltaDelta_log(Emax/EC50)','DeltaDelta_log(Tau/KA)']).issubset(set(data.keys())):
         master['P1-'+rank+' - ΔΔLog(Emax/EC50)'] = data['DeltaDelta_log(Emax/EC50)']
         master['P1-'+rank+' - ΔΔLog(Tau/KA)'] = data['DeltaDelta_log(Tau/KA)']
-        master[rank+' - Bias factor'] = data['Bias factor']
+        try:
+            master[rank+' - Bias factor'] = round(data['Bias factor'], 1)
+        except:
+            master[rank+' - Bias factor'] = 'Full Bias'
     if pathway:
         master[rank+' - log(Tau/KA)'] = data['Tau_KA']
         try:

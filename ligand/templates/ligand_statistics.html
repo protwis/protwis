@@ -104,6 +104,41 @@
         border-radius: 5px;
         background: Black;
     }
+    .gprot_orange {
+      color: orange;
+    }
+
+    .gprot_blue {
+      color: blue;
+    }
+
+    .gprot_red {
+      color: red;
+    }
+
+    .gprot_black {
+      color: black;
+    }
+
+    .gprot_green {
+      color: forestgreen;
+    }
+    .graydiv {
+        height: 20px;
+        width: 350px;
+        background: linear-gradient(to right, white 0%, black 100%)
+    }
+    .alignleft {
+      float: left;
+      width: 175px;
+      text-align: left;
+      font-weight: bold;
+    }
+    .alignright {
+        float: right;
+        width: 175px;
+        text-align: right;
+        font-weight: bold;
     }
 </style>
 {% endblock %}
@@ -117,33 +152,36 @@
     <a class="nav-link active" data-toggle="tab" href="#physio" id="first_tab">Physiology-biased (endogenous reference ligand)</a>
   </li>
   <li class="nav-item">
-    <a class="nav-link" data-toggle="tab" href="#path_bias" id="second_tab">Pathway-bias (balanced reference ligand)</a>
+    <a class="nav-link" data-toggle="tab" href="#path_bias" id="second_tab">Pathway-biased (balanced reference ligand)</a>
   </li>
 </ul>
 {% endif %}
 <div class="tab-content">
   <div class="tab-pane container active" id="physio">
     <br />
-
 {% if render == "not_bias" %}
 <h4>Number of unique ligands per receptor class</h4>
 <table style="width:80% !important" class="table table-stripped">
 {% elif render == "bias" %}
 <p><h4>Biased ligand counts</h4>
-<h6>The number of ligands with a bias factor equal or greater than 1</h6></p>
+Physiology-bias and pathway-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.
+<br />
+This page shows the number of biased ligands with a bias factor &ge; 1</p>
 <table style="width:60% !important" class="table table-stripped">
 {% elif render == "pathway" %}
 <p><h4>Pathway preferred ligand counts</h4>
-<h6>The number of ligands showing a pathway preference</h6></p>
+This page shows the number of ligands with a pathway preference</p>
 <table style="width:60% !important" class="table table-stripped">
 {% elif render == "subtype" %}
 <p><h4>Biased ligand counts</h4>
-<h6>The number of ligands with a bias factor equal or greater than 1 (subtype)</h6></p>
+Physiology-bias and pathway-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.
+<br />
+This page shows the number of biased ligands with a bias factor &ge; 1 (subtype)</p>
 <table style="width:60% !important" class="table table-stripped">
 {% endif %}
     <thead>
         <tr>
-            <td align="right"><b>Class (Family)</b></td>
+            <td align="center"><b>Class<br />(Family)</b></td>
             {% for data in ligands_by_class %}
             <td align="center"><b>
               {% if data.name == " T (Taste 2)" %}T2 (Taste&nbsp;2)
@@ -152,7 +190,7 @@
               {% endif %}
             </b></td>
             {% endfor %}
-            <td align="center"><b>Total</b></td>
+            <td align="center"><b><br />Total</b></td>
         </tr>
     </thead>
     {% if render == "not_bias" %}
@@ -189,11 +227,11 @@
             <td align="center" style="vertical-align:middle !important">{{ ligands_total.num_ligands|floatformat:0|intcomma }}</td>
         </tr>
         <tr>
-            <td nowrap>No. GPCRs with ligand (%)</td>
+            <td nowrap>No. GPCRs with biased ligand</td>
             {% for data in ligands_by_class %}
-            <td align="center" style="vertical-align:middle !important">{{ data.target_count|floatformat:0 }} ({{ data.target_percentage|floatformat:0 }})</td>
+            <td align="center" style="vertical-align:middle !important">{{ data.target_count|floatformat:0 }}</td>
             {% endfor %}
-            <td align="center" style="vertical-align:middle !important; white-space: nowrap; overflow: hidden;"> {{ ligands_total.target_count|floatformat:0 }} ({{ ligands_total.target_percentage|floatformat:0 }})</td>
+            <td align="center" style="vertical-align:middle !important; white-space: nowrap; overflow: hidden;"> {{ ligands_total.target_count|floatformat:0 }}</td>
         </tr>
     </tbody>
     {% endif %}
@@ -202,26 +240,25 @@
 </table>
 
 {% if render == "not_bias" %}
-Specific sets of ligands can be downloaded from the <a href="/ligand"> biased ligand browser</a>.<br />
-{% elif render == "bias" %}
-Specific sets of ligands can be downloaded from the <a href="/ligand/biasedbrowser"> biased ligand browser</a>.<br />
-{% elif render == "pathway" %}
-Specific sets of ligands can be downloaded from the <a href="/ligand/pathwaypreferencebrowser"> biased ligand browser</a>.<br />
-{% elif render == "subtype" %}
-Specific sets of ligands can be downloaded from the <a href="/ligand/biasedsubtypebrowser"> biased ligand browser</a>.<br />
+Specific sets of ligands can be downloaded from the <a href="/ligand"> ligand browser</a>.<br />
 {% endif %}
 
-Biased ligand statistics were last updated <strong>{{ release_notes.date|date:"Y-m-d" }}</strong>.<br />
+<!-- elif render == "bias"
+Specific sets of ligands can be downloaded from the <a href="/ligand/biasedbrowser"> biased ligand browser</a>.<br />
+elif render == "pathway"
+Specific sets of ligands can be downloaded from the <a href="/ligand/pathwaypreferencebrowser"> biased ligand browser</a>.<br />
+elif render == "subtype"
+Specific sets of ligands can be downloaded from the <a href="/ligand/biasedsubtypebrowser"> biased ligand browser</a>.<br /> -->
+<!-- Biased ligand statistics were last updated <strong>{{ release_notes.date|date:"Y-m-d" }}</strong>.<br /> -->
+
 <br />
 <br />
 {% if render == "not_bias" %}
 <h4>Ligand coverage of GPCR Classes</h4><br />
-{% elif render == "bias" %}
-<h4>Biased ligand coverage by GPCR Class</h4><br />
-{% elif render == "subtype" %}
-<h4>Biased ligand coverage by GPCR Class</h4><br />
 {% elif render == "pathway" %}
 <h4>Pathway preference ligand coverage by GPCR Class</h4><br />
+{% else %}
+<h4>Biased ligand coverage by GPCR Class</h4><br />
 {% endif %}
 
 {% if render == "not_bias" %}
@@ -249,45 +286,6 @@ Circle colors indicate a number of ligands:
 </table>
 {% endif %}
 
-<style type="text/css">
-  .gprot_orange {
-    color: orange;
-  }
-
-  .gprot_blue {
-    color: blue;
-  }
-
-  .gprot_red {
-    color: red;
-  }
-
-  .gprot_black {
-    color: black;
-  }
-
-  .gprot_green {
-    color: forestgreen;
-  }
-
-  .graydiv {
-      height: 20px;
-      width: 350px;
-      background: linear-gradient(to right, white 0%, black 100%)
-  }
-  .alignleft {
-    float: left;
-    width: 175px;
-    text-align: left;
-    font-weight: bold;
-  }
-  .alignright {
-      float: right;
-      width: 175px;
-      text-align: right;
-      font-weight: bold;
-  }
-</style>
 <!-- Inner circle colors indicate a number of ligands:
 <table style="width:30%">
     <tr>
@@ -301,7 +299,6 @@ Circle colors indicate a number of ligands:
         <td> 30+</td>
     </tr>
 </table> -->
-<br />
 
 <script type="text/javascript" charset="utf-8">
     class_a = {{ class_a | safe }};
@@ -366,10 +363,11 @@ $(document).ready(function(){
         }
         buttonObjects[$(element).data('name')].push($(element).data('value'));
       });
-    draw_heatmap(circles, heatmap_data, master_dict, buttonObjects, 'HeatMap_div', 'HeatMap_BiasedLigands');
+    draw_heatmap(circles, heatmap_data, master_dict, buttonObjects, 'HeatMap_div', 'HeatMap_BiasedLigands', 'Primary transducer count');
 
 });
 </script>
+
 <script>
   $(document).ready(function(){
     $('#HeatmapHandler').on("change", function() {
@@ -384,129 +382,516 @@ $(document).ready(function(){
             buttonObjects[$(element).data('name')].push($(element).data('value'));
           });
         d3.select("#HeatMap_div").select("svg").remove();
-        draw_heatmap(circles, heatmap_data, master_dict, buttonObjects, 'HeatMap_div', 'HeatMap_BiasedLigands');
+        draw_heatmap(circles, heatmap_data, master_dict, buttonObjects, 'HeatMap_div', 'HeatMap_BiasedLigands', 'Primary transducer count');
       });
   })
 </script>
 {% endif %}
 {% if render != "not_bias" %}
-  <br />
-  <div>
-    <div style="float: right; position: relative" class="text-center">
-      {% if render == "bias" %}
-      <b>Primary transducer count</b>
-      {% elif render == "subtype" %}
-      <b>Primary transducer subtype count</b>
-      {% endif %}
-      <div class="graydiv"></div>
-      <div class="alignleft">0</div><div class="alignright">{{endpoint}}</div>
-    </div>
-  </div>
 
-  <div id="HeatmapHandler">
-    <div style="padding-top: 5px;">
-    Classes:&ensp;
-      <div class="btn-group" data-toggle="buttons" id="class_selection">
-        <label class="btn btn-primary active" data-value="Class A" data-name="classClick">
-          <input type="checkbox" checked> A
-        </label>
-        <label class="btn btn-primary active" data-value="Class B1" data-name="classClick">
-          <input type="checkbox" checked> B1
-        </label>
-        <label class="btn btn-primary active" data-value="Class B2" data-name="classClick">
-          <input type="checkbox" checked> B2
-        </label>
-        <label class="btn btn-primary active" data-value="Class C" data-name="classClick">
-          <input type="checkbox" checked> C
-        </label>
-        <label class="btn btn-primary active" data-value="Class F" data-name="classClick">
-          <input type="checkbox" checked> F
-         </label>
-        <label class="btn btn-primary active" data-value="Class T2" data-name="classClick">
-          <input type="checkbox" checked> T2
-        </label>
+  {% if render != "subtype" %}
+    <ul class="nav nav-tabs">
+      <li class="nav-item active">
+        <a class="nav-link active" data-toggle="tab" href="#heatmap" id="heatmap_tab">Heatmap</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" data-toggle="tab" href="#trees" id="tree_tab">Trees</a>
+      </li>
+    </ul>
+
+    <div class="tab-content">
+      <div class="tab-pane container active" id="heatmap">
+  {% endif %}
+      <div id="HeatmapHandler">
+        <div style="padding-top: 5px;">
+        Classes:&ensp;
+          <div class="btn-group" data-toggle="buttons" id="class_selection">
+            <label class="btn btn-primary active" data-value="Class A" data-name="classClick">
+              <input type="checkbox" checked> A
+            </label>
+            <label class="btn btn-primary active" data-value="Class B1" data-name="classClick">
+              <input type="checkbox" checked> B1
+            </label>
+            <label class="btn btn-primary active" data-value="Class B2" data-name="classClick">
+              <input type="checkbox" checked> B2
+            </label>
+            <label class="btn btn-primary active" data-value="Class C" data-name="classClick">
+              <input type="checkbox" checked> C
+            </label>
+            <label class="btn btn-primary active" data-value="Class F" data-name="classClick">
+              <input type="checkbox" checked> F
+             </label>
+            <label class="btn btn-primary active" data-value="Class T2" data-name="classClick">
+              <input type="checkbox" checked> T2
+            </label>
+          </div>
+        </div>
+
+        <div style="padding-top: 5px;">
+        Sort by:&nbsp;&nbsp;
+          <div class="btn-group" data-toggle="buttons" id="sorting_selection">
+            <label class="btn btn-primary active" data-value="Class Name" data-name="sortClick">
+              <input type="checkbox" checked> Class
+            </label>
+            <label class="btn btn-primary active" data-value="Ligand Type Name" data-name="sortClick">
+              <input type="checkbox" checked> Ligand type
+            </label>
+            <label class="btn btn-primary active" data-value="Receptor Family Name" data-name="sortClick">
+              <input type="checkbox" checked> Receptor family
+            </label>
+            <label class="btn btn-primary active" data-value="UniProt" data-name="sortClick">
+              <input type="checkbox" checked> Receptor name
+            </label>
+          </div>
+        </div>
+
+        <div style="padding-top: 5px;">
+          Color by:
+          <div class="btn-group btn-group-toggle" data-toggle="buttons">
+            <label class="btn btn-info active" data-name="colorClick" data-value="Class">
+              <input type="radio" name="options" id="option1" autocomplete="off" checked> Class
+            </label>
+            <label class="btn btn-info" data-name="colorClick" data-value="Ligand Type">
+              <input type="radio" name="options" id="option2" autocomplete="off"> Ligand type
+            </label>
+            <label class="btn btn-info" data-name="colorClick" data-value="Receptor Family">
+              <input type="radio" name="options" id="option3" autocomplete="off"> Receptor family
+            </label>
+          </div>
+        </div>
+
+
+        <div style="padding-top: 5px;">
+          Receptor names:
+          <div class="btn-group btn-group-toggle" data-toggle="buttons">
+            <label class="btn btn-info active" data-name="namesClick" data-value="UniProt">
+              <input type="radio" name="options" id="option1" autocomplete="off" checked> UniProt
+            </label>
+            <label class="btn btn-info" data-name="namesClick" data-value="IUPHAR Short">
+              <input type="radio" name="options" id="option2" autocomplete="off"> IUPHAR (short)
+            </label>
+            <label class="btn btn-info" data-name="namesClick" data-value="IUPHAR Long">
+              <input type="radio" name="options" id="option3" autocomplete="off"> IUPHAR (long)
+            </label>
+          </div>
+        </div>
+
+        <!-- <div>
+          <div style="padding-top: 5px; width: 350px; margin:0px auto;" class="text-center">
+            {% if render == "bias" %}
+            <b>Primary transducer count</b>
+            {% elif render == "subtype" %}
+            <b>Primary transducer subtype count</b>
+            {% endif %}
+            <div class="graydiv"></div>
+            <div class="alignleft">0</div><div class="alignright">{{endpoint}}</div>
+          </div>
+        </div> -->
+      </div>
+
+
+
+      <br />
+      <br />
+
+      <div id="HeatMap_div" class="text-center">
+    </div>
+
+    <div class="text-center">
+      <div class="btn-group">
+          <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                  aria-haspopup="true" aria-expanded="false">
+              <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu">
+              <li>
+                  <a href="javascript:saveSvgAsPng(document.getElementById('HeatMap_BiasedLigands'), 'HeatMap_div.png');">PNG</a>
+              </li>
+              <li>
+                  <a href="javascript:saveSvgAsJpg(document.getElementById('HeatMap_BiasedLigands'), 'HeatMap_div.jpg');">JPG</a>
+              </li>
+              <li>
+                  <a href="javascript:saveSvgAsTiff(document.getElementById('HeatMap_BiasedLigands'), 'HeatMap_div.tiff');">TIFF</a>
+              </li>
+              <li>
+                  <a href="javascript:saveSvg(document.getElementById('HeatMap_BiasedLigands'), 'HeatMap_div.svg');">SVG</a>
+              </li>
+          </ul>
       </div>
     </div>
+  {% if render != "subtype" %}
+      </div>
 
-    <div style="padding-top: 5px;">
-    Sort by:&nbsp;&nbsp;
-      <div class="btn-group" data-toggle="buttons" id="sorting_selection">
-        <label class="btn btn-primary active" data-value="Class Name" data-name="sortClick">
-          <input type="checkbox" checked> Class
-        </label>
-        <label class="btn btn-primary active" data-value="Ligand Type Name" data-name="sortClick">
-          <input type="checkbox" checked> Ligand type
-        </label>
-        <label class="btn btn-primary active" data-value="Receptor Family Name" data-name="sortClick">
-          <input type="checkbox" checked> Receptor family
-        </label>
-        <label class="btn btn-primary active" data-value="UniProt" data-name="sortClick">
-          <input type="checkbox" checked> Receptor name
-        </label>
+      <div class="tab-pane container" id="trees">
+
+        <div style="padding-top: 5px;">
+          Receptor names:
+            <div class="btn-group" role="group" id="gtp_plus">
+                <button id="UniProtNames" class="btn btn-info active">UniProt</button>
+                <button id="IUPHARNames" class="btn btn-info">IUPHAR</button>
+            </div>
+        </div>
+        <br />
+        Inner circle colors indicate a number of ligands:
+        <table style="width:30%">
+            <tr>
+                <td ><div id="circle_lightgray"></div></td>
+                <td> < 10 </td>
+                <td ><div id="circle_darkgray"></div></td>
+                <td> < 20 </td>
+                <td ><div id="circle_gray"></div></td>
+                <td> < 30 </td>
+                <td ><div id="circle_black"></div></td>
+                <td> 30+</td>
+            </tr>
+        </table>
+        <br />
+        <div style="float: left; position: relative" class="text-center">
+          <b>Transducers</b> <br />
+            <span class="gprot_blue">&#9675; G&alpha;<sub>s</sub></span>
+            <span class="gprot_red">&#9675; G&alpha;<sub>i/o</sub></span>
+            <span class="gprot_black">&#9675; G&alpha;<sub>q/11</sub></span>
+            <span class="gprot_green">&#9675; G&alpha;<sub>12/13</sub></span>
+            <span class="gprot_orange">&#9675; &beta;-Arrestin</span>
+        </div>
+        <div style="float: right;" class="text-center">
+          <b>Primary transducer frequency (from low to high)</b>
+          <div class="graydiv"></div>
+        </div>
+        <br />
+        <br />
+        <br />
+        <div id="class_a" class="text-center">
+          <h4>Class A<br />(Rhodopsin)</h4>
+        </div>
+
+        <div class="text-center">
+          <div class="btn-group">
+              <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a href="javascript:saveSvgAsPng(document.getElementById('class_a_svg'), 'xtals_tree_class_a.png');">PNG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvgAsJpg(document.getElementById('class_a_svg'), 'xtals_tree_class_a.jpg');">JPG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvgAsTiff(document.getElementById('class_a_svg'), 'xtals_tree_class_a.tiff');">TIFF</a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvg(document.getElementById('class_a_svg'), 'xtals_tree_class_a.svg');">SVG</a>
+                  </li>
+              </ul>
+          </div>
+        </div>
+
+        <br />
+        <br />
+        <br />
+
+        <div class="row-fluid">
+          <div class="span12">
+            <div class="row-fluid">
+
+              <div class="span4">
+                <div id="orphan" class="text-center">
+                  <h4>Class A <br /> Orphans</h4>
+                </div>
+              </div>
+
+              <div class="span4">
+                <div id="class_b1" class="text-center">
+                  <h4>Class B1<br />(Secretin)</h4>
+                </div>
+              </div>
+
+              <div class="span4">
+                <div id="class_b2" class="text-center">
+                  <h4>Class B2<br />(Adhesion)</h4>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <div class="row-fluid">
+          <div class="span12">
+            <div class="row-fluid">
+
+              <div class="span4">
+                <div class="text-center">
+                  <div class="btn-group">
+                      <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                              aria-haspopup="true" aria-expanded="false">
+                          <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                      </button>
+                      <ul class="dropdown-menu">
+                          <li>
+                              <a href="javascript:saveSvgAsPng(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.png');">PNG</a>
+                          </li>
+                          <li>
+                              <a href="javascript:saveSvgAsJpg(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.jpg');">JPG</a>
+                          </li>
+                          <li>
+                              <a href="javascript:saveSvgAsTiff(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.tiff');">TIFF</a>
+                              </a>
+                          </li>
+                          <li>
+                              <a href="javascript:saveSvg(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.svg');">SVG</a>
+                          </li>
+                      </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div class="span4">
+                <div class="text-center">
+                  <div class="btn-group">
+                      <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                              aria-haspopup="true" aria-expanded="false">
+                          <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                      </button>
+                      <ul class="dropdown-menu">
+                          <li>
+                              <a href="javascript:saveSvgAsPng(document.getElementById('class_b1_svg'), 'xtal_coverage_tree_class_b1.png');">PNG</a>
+                          </li>
+                          <li>
+                              <a href="javascript:saveSvgAsJpg(document.getElementById('class_b1_svg'), 'xtal_coverage_tree_class_b1.jpg');">JPG</a>
+                          </li>
+                          <li>
+                              <a href="javascript:saveSvgAsTiff(document.getElementById('class_b1_svg'), 'xtal_coverage_tree_class_b1.tiff');">TIFF</a>
+                              </a>
+                          </li>
+                          <li>
+                              <a href="javascript:saveSvg(document.getElementById('class_b1_svg'), 'xtal_coverage_tree_class_b1.svg');">SVG</a>
+                          </li>
+                      </ul>
+                  </div>
+                </div>
+              </div>
+              <div class="span4">
+                <div class="text-center">
+                  <div class="btn-group">
+                      <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                              aria-haspopup="true" aria-expanded="false">
+                          <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                      </button>
+                      <ul class="dropdown-menu">
+                          <li>
+                              <a href="javascript:saveSvgAsPng(document.getElementById('class_b2_svg'), 'xtal_coverage_tree_class_b2.png');">PNG</a>
+                          </li>
+                          <li>
+                              <a href="javascript:saveSvgAsJpg(document.getElementById('class_b2_svg'), 'xtal_coverage_tree_class_b2.jpg');">JPG</a>
+                          </li>
+                          <li>
+                              <a href="javascript:saveSvgAsTiff(document.getElementById('class_b2_svg'), 'xtal_coverage_tree_class_b2.tiff');">TIFF</a>
+                              </a>
+                          </li>
+                          <li>
+                              <a href="javascript:saveSvg(document.getElementById('class_b2_svg'), 'xtal_coverage_tree_class_b2.svg');">SVG</a>
+                          </li>
+                      </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <br />
+        <br />
+        <br />
+
+        <div class="row-fluid">
+          <div class="span12">
+            <div class="row-fluid">
+              <div class="span4">
+                <div id="class_c" class="text-center">
+                  <h4>Class C<br />(Glutamate)</h4>
+                </div>
+              </div>
+
+              <div class="span4">
+                <div id="class_f" class="text-center">
+                  <h4>Class F<br />(Frizzled)</h4>
+                </div>
+              </div>
+
+              <div class="span4">
+                <div id="class_t2" class="text-center">
+                  <h4>Class T <br /> (Taste 2)</h4>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <div class="row-fluid">
+          <div class="span12">
+            <div class="row-fluid">
+              <div class="span4">
+                <div class="text-center">
+                  <div class="btn-group">
+                      <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                              aria-haspopup="true" aria-expanded="false">
+                          <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                      </button>
+                      <ul class="dropdown-menu">
+                          <li>
+                              <a href="javascript:saveSvgAsPng(document.getElementById('class_c_svg'), 'xtal_coverage_tree_class_c.png');">PNG</a>
+                          </li>
+                          <li>
+                              <a href="javascript:saveSvgAsJpg(document.getElementById('class_c_svg'), 'xtal_coverage_tree_class_c.jpg');">JPG</a>
+                          </li>
+                          <li>
+                              <a href="javascript:saveSvgAsTiff(document.getElementById('class_c_svg'), 'xtal_coverage_tree_class_c.tiff');">TIFF</a>
+                              </a>
+                          </li>
+                          <li>
+                              <a href="javascript:saveSvg(document.getElementById('class_c_svg'), 'xtal_coverage_tree_class_c.svg');">SVG</a>
+                          </li>
+                      </ul>
+                  </div>
+                </div>
+              </div>
+              <div class="span4">
+                <div class="text-center">
+                  <div class="btn-group">
+                      <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                              aria-haspopup="true" aria-expanded="false">
+                          <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                      </button>
+                      <ul class="dropdown-menu">
+                          <li>
+                              <a href="javascript:saveSvgAsPng(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.png');">PNG</a>
+                          </li>
+                          <li>
+                              <a href="javascript:saveSvgAsJpg(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.jpg');">JPG</a>
+                          </li>
+                          <li>
+                              <a href="javascript:saveSvgAsTiff(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.tiff');">TIFF</a>
+                              </a>
+                          </li>
+                          <li>
+                              <a href="javascript:saveSvg(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.svg');">SVG</a>
+                          </li>
+                      </ul>
+                  </div>
+                </div>
+              </div>
+              <div class="span4">
+                <div class="text-center">
+                  <div class="btn-group">
+                      <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                              aria-haspopup="true" aria-expanded="false">
+                          <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                      </button>
+                      <ul class="dropdown-menu">
+                          <li>
+                              <a href="javascript:saveSvgAsPng(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.png');">PNG</a>
+                          </li>
+                          <li>
+                              <a href="javascript:saveSvgAsJpg(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.jpg');">JPG</a>
+                          </li>
+                          <li>
+                              <a href="javascript:saveSvgAsTiff(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.tiff');">TIFF</a>
+                              </a>
+                          </li>
+                          <li>
+                              <a href="javascript:saveSvg(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.svg');">SVG</a>
+                          </li>
+                      </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
+  {% endif %}
 
-    <div style="padding-top: 5px;">
-      Color by:
-      <div class="btn-group btn-group-toggle" data-toggle="buttons">
-        <label class="btn btn-info active" data-name="colorClick" data-value="Class">
-          <input type="radio" name="options" id="option1" autocomplete="off" checked> Class
-        </label>
-        <label class="btn btn-info" data-name="colorClick" data-value="Ligand Type">
-          <input type="radio" name="options" id="option2" autocomplete="off"> Ligand type
-        </label>
-        <label class="btn btn-info" data-name="colorClick" data-value="Receptor Family">
-          <input type="radio" name="options" id="option3" autocomplete="off"> Receptor family
-        </label>
-      </div>
-    </div>
-
-
-    <div style="padding-top: 5px;">
-      Receptor names:
-      <div class="btn-group btn-group-toggle" data-toggle="buttons">
-        <label class="btn btn-info active" data-name="namesClick" data-value="UniProt">
-          <input type="radio" name="options" id="option1" autocomplete="off" checked> UniProt
-        </label>
-        <label class="btn btn-info" data-name="namesClick" data-value="IUPHAR Short">
-          <input type="radio" name="options" id="option2" autocomplete="off"> IUPHAR (short)
-        </label>
-        <label class="btn btn-info" data-name="namesClick" data-value="IUPHAR Long">
-          <input type="radio" name="options" id="option3" autocomplete="off"> IUPHAR (long)
-        </label>
-      </div>
-    </div>
-  </div>
-
-  <br />
-  <br />
-
-  <div id="HeatMap_div" class="text-center">
-</div>
-
-<div class="text-center">
-  <div class="btn-group">
-      <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-              aria-haspopup="true" aria-expanded="false">
-          <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-      </button>
-      <ul class="dropdown-menu">
-          <li>
-              <a href="javascript:saveSvgAsPng(document.getElementById('HeatMap_BiasedLigands'), 'HeatMap_div.png');">PNG</a>
-          </li>
-          <li>
-              <a href="javascript:saveSvgAsJpg(document.getElementById('HeatMap_BiasedLigands'), 'HeatMap_div.jpg');">JPG</a>
-          </li>
-          <li>
-              <a href="javascript:saveSvgAsTiff(document.getElementById('HeatMap_BiasedLigands'), 'HeatMap_div.tiff');">TIFF</a>
-          </li>
-          <li>
-              <a href="javascript:saveSvg(document.getElementById('HeatMap_BiasedLigands'), 'HeatMap_div.svg');">SVG</a>
-          </li>
-      </ul>
-  </div>
-</div>
-
+<script>
+  // $(window).on("load",function() {
+  // $(document).ready(function(){
+  $('#tree_tab').on('click', function () {
+    setTimeout(
+    function() {
+      d3.select("#class_a").select("svg").remove();
+      d3.select("#class_b1").select("svg").remove();
+      d3.select("#class_b2").select("svg").remove();
+      d3.select("#class_c").select("svg").remove();
+      d3.select("#class_f").select("svg").remove();
+      d3.select("#class_t2").select("svg").remove();
+      d3.select("#orphan").select("svg").remove();
+      maxLeafNodeLenght = 46;
+      conversion = {"Gs":"#0000FF", "Gi/o":"#FF0000", "Gq/11":"#000000", "G12/13":"#008000", "Arrestin":"#FFA500"};
+      $("#UniProtNames").click(function(){
+          $("#UniProtNames").addClass("active");
+          $("#IUPHARNames").removeClass("active");
+          changeLeavesLabels("class_a", "UniProt", whole_dict);
+          DrawCircles('class_a', circles, maxLeafNodeLenght, conversion, true, false);
+          changeLeavesLabels("class_b1", "UniProt", whole_dict);
+          DrawCircles('class_b1', circles, maxLeafNodeLenght, conversion, true, false);
+          changeLeavesLabels("class_b2", "UniProt", whole_dict);
+          DrawCircles('class_b2', circles, maxLeafNodeLenght, conversion, true, false);
+          changeLeavesLabels("class_c", "UniProt", whole_dict);
+          DrawCircles('class_c', circles, maxLeafNodeLenght, conversion, true, false);
+          changeLeavesLabels("class_f", "UniProt", whole_dict);
+          DrawCircles('class_f', circles, maxLeafNodeLenght, conversion, true, false);
+          changeLeavesLabels("class_t2", "UniProt", whole_dict);
+          DrawCircles('class_t2', circles, maxLeafNodeLenght, conversion, true, false);
+          changeLeavesLabels("orphan", "UniProt", whole_dict);
+          DrawCircles('orphan', circles, maxLeafNodeLenght, conversion, true, false);
+      });
+      $("#IUPHARNames").click(function() {
+        $("#UniProtNames").removeClass("active");
+        $("#IUPHARNames").addClass("active");
+        changeLeavesLabels("class_a","IUPHAR", whole_dict);
+        DrawCircles('class_a',circles, maxLeafNodeLenght,conversion,true,false);
+        changeLeavesLabels("class_b1","IUPHAR", whole_dict);
+        DrawCircles('class_b1',circles, maxLeafNodeLenght,conversion,true,false);
+        changeLeavesLabels("class_b2","IUPHAR", whole_dict);
+        DrawCircles('class_b2',circles, maxLeafNodeLenght,conversion,true,false);
+        changeLeavesLabels("class_c","IUPHAR", whole_dict);
+        DrawCircles('class_c',circles, maxLeafNodeLenght,conversion,true,false);
+        changeLeavesLabels("class_f","IUPHAR", whole_dict);
+        DrawCircles('class_f',circles, maxLeafNodeLenght,conversion,true,false);
+        changeLeavesLabels("class_t2","IUPHAR", whole_dict);
+        DrawCircles('class_t2',circles, maxLeafNodeLenght,conversion,true,false);
+        changeLeavesLabels("orphan","IUPHAR", whole_dict);
+        DrawCircles('orphan',circles, maxLeafNodeLenght,conversion,true,false);
+      });
+    draw_tree(class_a, class_a_options);
+    draw_tree(class_b1, class_b1_options);
+    draw_tree(class_b2, class_b2_options);
+    draw_tree(class_c, class_c_options);
+    draw_tree(class_f, class_f_options);
+    draw_tree(class_t2, class_t2_options);
+    draw_tree(orphan, orphan_options);
+    DrawCircles('class_a', circles, maxLeafNodeLenght, conversion, true, false);
+    DrawCircles('class_b1', circles, maxLeafNodeLenght, conversion, true, false);
+    DrawCircles('class_b2', circles, maxLeafNodeLenght, conversion, true, false);
+    DrawCircles('class_c', circles, maxLeafNodeLenght, conversion, true, false);
+    DrawCircles('class_f', circles, maxLeafNodeLenght, conversion, true, false);
+    DrawCircles('class_t2', circles, maxLeafNodeLenght, conversion, true, false);
+    DrawCircles('orphan', circles, maxLeafNodeLenght, conversion, true, false);
+    $("#class_a svg g").first().attr('transform', 'translate(555,585) scale(0.9,0.9) ');
+    $("#class_a_svg").attr('height', 1210);
+    $("#class_a_svg").attr('width', 1110);
+    $("#class_b1 svg g").first().attr('transform', 'translate(180,220) scale(0.83,0.83)');
+    $("#class_b2 svg g").first().attr('transform', 'translate(182,200) scale(0.85,0.85) ');
+    $("#class_c svg g").first().attr('transform', 'translate(200,200) scale(0.85,0.85) ');
+    $("#orphan svg g").first().attr('transform', 'translate(175,180) scale(0.85,0.85)');
+    $("#orphan_svg").attr('height', 360).attr('width', 360);
+  },10);
+});
+</script>
 {% endif %}
 
 {% if render == "not_bias" %}
@@ -766,19 +1151,24 @@ $(document).ready(function(){
 {% if render == "bias" or render == "subtype" %}
   </div>
   <div class="tab-pane container" id="path_bias">
+    <br />
 <!-- MIRRORED SECTION FOR THE PATHWAY BIASED STUFF -->
 {% if render == "bias" %}
 <p><h4>Biased ligand counts</h4>
-<h6>The number of ligands with a bias factor equal or greater than 1</h6></p>
+Physiology-bias and pathway-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.
+<br />
+The number of ligands with a bias factor &ge; 1</p>
 <table style="width:60% !important" class="table table-stripped">
 {% elif render == "subtype" %}
 <p><h4>Biased ligand counts</h4>
-<h6>The number of ligands with a bias factor equal or greater than 1 (subtype)</h6></p>
+Physiology-bias and pathway-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.
+<br />
+The number of ligands with a bias factor &ge; 1 (subtype)</p>
 <table style="width:60% !important" class="table table-stripped">
 {% endif %}
     <thead>
         <tr>
-            <td align="right"><b>Class (Family)</b></td>
+            <td align="center"><b>Class<br />(Family)</b></td>
             {% for data in bal_ligands_by_class %}
             <td align="center"><b>
               {% if data.name == " T (Taste 2)" %}T2 (Taste&nbsp;2)
@@ -787,7 +1177,7 @@ $(document).ready(function(){
               {% endif %}
             </b></td>
             {% endfor %}
-            <td align="center"><b>Total</b></td>
+            <td align="center"><b><br />Total</b></td>
         </tr>
     </thead>
     <tbody>
@@ -799,44 +1189,42 @@ $(document).ready(function(){
             <td align="center" style="vertical-align:middle !important">{{ bal_ligands_total.num_ligands|floatformat:0|intcomma }}</td>
         </tr>
         <tr>
-            <td nowrap>No. GPCRs with ligand (%)</td>
+            <td nowrap>No. GPCRs with ligand</td>
             {% for data in bal_ligands_by_class %}
-            <td align="center" style="vertical-align:middle !important">{{ data.target_count|floatformat:0 }} ({{ data.target_percentage|floatformat:0 }})</td>
+            <td align="center" style="vertical-align:middle !important">{{ data.target_count|floatformat:0 }}</td>
             {% endfor %}
-            <td align="center" style="vertical-align:middle !important; white-space: nowrap; overflow: hidden;"> {{ bal_ligands_total.target_count|floatformat:0 }} ({{ ligands_total.target_percentage|floatformat:0 }})</td>
+            <td align="center" style="vertical-align:middle !important; white-space: nowrap; overflow: hidden;"> {{ bal_ligands_total.target_count|floatformat:0 }}</td>
         </tr>
     </tbody>
     <tr> </tr>
 
 </table>
 
-{% if render == "bias" %}
+<!-- {% if render == "bias" %}
 Specific sets of ligands can be downloaded from the <a href="/ligand/biasedbrowser"> biased ligand browser</a>.<br />
 {% elif render == "subtype" %}
 Specific sets of ligands can be downloaded from the <a href="/ligand/biasedsubtypebrowser"> biased ligand browser</a>.<br />
-{% endif %}
+{% endif %} -->
+<!-- Biased ligand statistics were last updated <strong>{{ release_notes.date|date:"Y-m-d" }}</strong>.<br /> -->
 
-Biased ligand statistics were last updated <strong>{{ release_notes.date|date:"Y-m-d" }}</strong>.<br />
 <br />
 <br />
 
 {% if render == "bias" %}
 <h4>Biased ligand coverage by GPCR Class</h4><br />
+<ul class="nav nav-tabs">
+  <li class="nav-item active">
+    <a class="nav-link active" data-toggle="tab" href="#heatmap_balanced" id="balanced_heatmap_tab">Heatmap</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" data-toggle="tab" href="#trees_balanced" id="balanced_tree_tab">Trees</a>
+  </li>
+</ul>
+<div class="tab-content">
+  <div class="tab-pane container active" id="heatmap_balanced">
 {% elif render == "subtype" %}
 <h4>Biased ligand coverage by GPCR Class</h4><br />
 {% endif %}
-
-<div>
-  <div style="float: right; position: relative" class="text-center">
-    {% if render == "bias" %}
-    <b>Primary transducer count</b>
-    {% elif render == "subtype" %}
-    <b>Primary transducer subtype count</b>
-    {% endif %}
-    <div class="graydiv"></div>
-    <div class="alignleft">0</div><div class="alignright">{{endpoint_bal}}</div>
-  </div>
-</div>
 
 <div id="HeatmapHandlerBal">
   <div style="padding-top: 5px;">
@@ -912,23 +1300,28 @@ Biased ligand statistics were last updated <strong>{{ release_notes.date|date:"Y
     </div>
   </div>
 
+  <!-- <div>
+    <div style="padding-top: 5px; width: 350px; margin:0px auto;" class="text-center">
+      {% if render == "bias" %}
+      <b>Primary transducer count</b>
+      {% elif render == "subtype" %}
+      <b>Primary transducer subtype count</b>
+      {% endif %}
+      <div class="graydiv"></div>
+      <div class="alignleft">0</div><div class="alignright">{{endpoint_bal}}</div>
+    </div>
+  </div> -->
 
 </div>
 <br />
 
-<style type="text/css">
-  .graydiv {
-      height: 20px;
-      width: 350px;
-      background: linear-gradient(to right, white 0%, black 100%)
-  }
-</style>
 <br />
 
 <script type="text/javascript" charset="utf-8">
   heatmap_data_bal = {{ HeatMapData_bal | safe }};
   master_dict = {{ MasterDict | safe}}
   circles_bal = {{ circles_bal_data | safe}}
+
 </script>
 <script type="text/javascript" charset="utf-8">
 // $(window).on("load",function() {
@@ -946,7 +1339,7 @@ Biased ligand statistics were last updated <strong>{{ release_notes.date|date:"Y
           }
           buttonObjects[$(element).data('name')].push($(element).data('value'));
         });
-      draw_heatmap(circles_bal, heatmap_data_bal, master_dict, buttonObjects, 'HeatmapDivBal', 'Heatmap_BalancedRefenced');
+      draw_heatmap(circles_bal, heatmap_data_bal, master_dict, buttonObjects, 'HeatmapDivBal', 'Heatmap_BalancedRefenced', 'Primary transducer count');
     },
     1);
 });
@@ -966,7 +1359,7 @@ Biased ligand statistics were last updated <strong>{{ release_notes.date|date:"Y
             buttonObjects[$(element).data('name')].push($(element).data('value'));
           });
         d3.select("#HeatmapDivBal").select("svg").remove();
-        draw_heatmap(circles_bal, heatmap_data_bal, master_dict, buttonObjects, 'HeatmapDivBal', 'Heatmap_BalancedRefenced');
+        draw_heatmap(circles_bal, heatmap_data_bal, master_dict, buttonObjects, 'HeatmapDivBal', 'Heatmap_BalancedRefenced', 'Primary transducer count');
       });
   })
 </script>
@@ -1001,6 +1394,392 @@ Biased ligand statistics were last updated <strong>{{ release_notes.date|date:"Y
 <br />
 <br />
 <br />
+
+{% if render == "bias" %}
+</div>
+  <div class="tab-pane container" id="trees_balanced">
+    <div style="padding-top: 5px;">
+      Receptor names:
+        <div class="btn-group" role="group" id="gtp_plus">
+            <button id="UniProtNames_bal" class="btn btn-info active">UniProt</button>
+            <button id="IUPHARNames_bal" class="btn btn-info">IUPHAR</button>
+        </div>
+    </div>
+    <br />
+    Inner circle colors indicate a number of ligands:
+    <table style="width:30%">
+        <tr>
+            <td ><div id="circle_lightgray"></div></td>
+            <td> < 10 </td>
+            <td ><div id="circle_darkgray"></div></td>
+            <td> < 20 </td>
+            <td ><div id="circle_gray"></div></td>
+            <td> < 30 </td>
+            <td ><div id="circle_black"></div></td>
+            <td> 30+</td>
+        </tr>
+    </table>
+    <br />
+    <div style="float: left; position: relative" class="text-center">
+      <b>Transducers</b> <br />
+        <span class="gprot_blue">&#9675; G&alpha;<sub>s</sub></span>
+        <span class="gprot_red">&#9675; G&alpha;<sub>i/o</sub></span>
+        <span class="gprot_black">&#9675; G&alpha;<sub>q/11</sub></span>
+        <span class="gprot_green">&#9675; G&alpha;<sub>12/13</sub></span>
+        <span class="gprot_orange">&#9675; &beta;-Arrestin</span>
+    </div>
+    <div style="float: right;" class="text-center">
+      <b>Primary transducer frequency (from low to high)</b>
+      <div class="graydiv"></div>
+    </div>
+    <br />
+    <br />
+    <br />
+    <div id="class_a_bal" class="text-center">
+      <h4>Class A<br />(Rhodopsin)</h4>
+    </div>
+
+    <div class="text-center">
+      <div class="btn-group">
+          <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu">
+              <li>
+                  <a href="javascript:saveSvgAsPng(document.getElementById('class_a_bal_svg'), 'xtals_tree_class_a_bal.png');">PNG</a>
+              </li>
+              <li>
+                  <a href="javascript:saveSvgAsJpg(document.getElementById('class_a_bal_svg'), 'xtals_tree_class_a_bal.jpg');">JPG</a>
+              </li>
+              <li>
+                  <a href="javascript:saveSvgAsTiff(document.getElementById('class_a_bal_svg'), 'xtals_tree_class_a_bal.tiff');">TIFF</a>
+              </li>
+              <li>
+                  <a href="javascript:saveSvg(document.getElementById('class_a_bal_svg'), 'xtals_tree_class_a_bal.svg');">SVG</a>
+              </li>
+          </ul>
+      </div>
+    </div>
+
+    <br />
+    <br />
+    <br />
+
+    <div class="row-fluid">
+      <div class="span12">
+        <div class="row-fluid">
+
+          <div class="span4">
+            <div id="orphan_bal" class="text-center">
+              <h4>Class A <br /> Orphans</h4>
+            </div>
+          </div>
+
+          <div class="span4">
+            <div id="class_b1_bal" class="text-center">
+              <h4>Class B1<br />(Secretin)</h4>
+            </div>
+          </div>
+
+          <div class="span4">
+            <div id="class_b2_bal" class="text-center">
+              <h4>Class B2<br />(Adhesion)</h4>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="row-fluid">
+      <div class="span12">
+        <div class="row-fluid">
+
+          <div class="span4">
+            <div class="text-center">
+              <div class="btn-group">
+                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                          aria-haspopup="true" aria-expanded="false">
+                      <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu">
+                      <li>
+                          <a href="javascript:saveSvgAsPng(document.getElementById('orphan_bal_svg'), 'xtal_coverage_tree_class_a_orphan_bal.png');">PNG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsJpg(document.getElementById('orphan_bal_svg'), 'xtal_coverage_tree_class_a_orphan_bal.jpg');">JPG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsTiff(document.getElementById('orphan_bal_svg'), 'xtal_coverage_tree_class_a_orphan_bal.tiff');">TIFF</a>
+                          </a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvg(document.getElementById('orphan_bal_svg'), 'xtal_coverage_tree_class_a_orphan_bal.svg');">SVG</a>
+                      </li>
+                  </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="span4">
+            <div class="text-center">
+              <div class="btn-group">
+                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                          aria-haspopup="true" aria-expanded="false">
+                      <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu">
+                      <li>
+                          <a href="javascript:saveSvgAsPng(document.getElementById('class_b1_bal_svg'), 'xtal_coverage_tree_class_b1_bal.png');">PNG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsJpg(document.getElementById('class_b1_bal_svg'), 'xtal_coverage_tree_class_b1_bal.jpg');">JPG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsTiff(document.getElementById('class_b1_bal_svg'), 'xtal_coverage_tree_class_b1_bal.tiff');">TIFF</a>
+                          </a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvg(document.getElementById('class_b1_bal_svg'), 'xtal_coverage_tree_class_b1_bal.svg');">SVG</a>
+                      </li>
+                  </ul>
+              </div>
+            </div>
+          </div>
+          <div class="span4">
+            <div class="text-center">
+              <div class="btn-group">
+                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                          aria-haspopup="true" aria-expanded="false">
+                      <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu">
+                      <li>
+                          <a href="javascript:saveSvgAsPng(document.getElementById('class_b2_bal_svg'), 'xtal_coverage_tree_class_b2_bal.png');">PNG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsJpg(document.getElementById('class_b2_bal_svg'), 'xtal_coverage_tree_class_b2_bal.jpg');">JPG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsTiff(document.getElementById('class_b2_bal_svg'), 'xtal_coverage_tree_class_b2_bal.tiff');">TIFF</a>
+                          </a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvg(document.getElementById('class_b2_bal_svg'), 'xtal_coverage_tree_class_b2_bal.svg');">SVG</a>
+                      </li>
+                  </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <br />
+    <br />
+    <br />
+
+    <div class="row-fluid">
+      <div class="span12">
+        <div class="row-fluid">
+          <div class="span4">
+            <div id="class_c_bal" class="text-center">
+              <h4>Class C<br />(Glutamate)</h4>
+            </div>
+          </div>
+
+          <div class="span4">
+            <div id="class_f_bal" class="text-center">
+              <h4>Class F<br />(Frizzled)</h4>
+            </div>
+          </div>
+
+          <div class="span4">
+            <div id="class_t2_bal" class="text-center">
+              <h4>Class T <br /> (Taste 2)</h4>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="row-fluid">
+      <div class="span12">
+        <div class="row-fluid">
+          <div class="span4">
+            <div class="text-center">
+              <div class="btn-group">
+                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                          aria-haspopup="true" aria-expanded="false">
+                      <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu">
+                      <li>
+                          <a href="javascript:saveSvgAsPng(document.getElementById('class_c_bal_svg'), 'xtal_coverage_tree_class_c_bal.png');">PNG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsJpg(document.getElementById('class_c_bal_svg'), 'xtal_coverage_tree_class_c_bal.jpg');">JPG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsTiff(document.getElementById('class_c__balsvg'), 'xtal_coverage_tree_class_c_bal.tiff');">TIFF</a>
+                          </a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvg(document.getElementById('class_c_bal_svg'), 'xtal_coverage_tree_class_c_bal.svg');">SVG</a>
+                      </li>
+                  </ul>
+              </div>
+            </div>
+          </div>
+          <div class="span4">
+            <div class="text-center">
+              <div class="btn-group">
+                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                          aria-haspopup="true" aria-expanded="false">
+                      <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu">
+                      <li>
+                          <a href="javascript:saveSvgAsPng(document.getElementById('class_f_bal_svg'), 'xtal_coverage_tree_class_f_bal.png');">PNG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsJpg(document.getElementById('class_f_bal_svg'), 'xtal_coverage_tree_class_f_bal.jpg');">JPG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsTiff(document.getElementById('class_f_bal_svg'), 'xtal_coverage_tree_class_f_bal.tiff');">TIFF</a>
+                          </a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvg(document.getElementById('class_f_bal_svg'), 'xtal_coverage_tree_class_f_bal.svg');">SVG</a>
+                      </li>
+                  </ul>
+              </div>
+            </div>
+          </div>
+          <div class="span4">
+            <div class="text-center">
+              <div class="btn-group">
+                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                          aria-haspopup="true" aria-expanded="false">
+                      <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu">
+                      <li>
+                          <a href="javascript:saveSvgAsPng(document.getElementById('class_t2_bal_svg'), 'xtal_coverage_tree_class_t2_bal.png');">PNG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsJpg(document.getElementById('class_t2_bal_svg'), 'xtal_coverage_tree_class_t2_bal.jpg');">JPG</a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvgAsTiff(document.getElementById('class_t2_bal_svg'), 'xtal_coverage_tree_class_t2_bal.tiff');">TIFF</a>
+                          </a>
+                      </li>
+                      <li>
+                          <a href="javascript:saveSvg(document.getElementById('class_t2_bal_svg'), 'xtal_coverage_tree_class_t2_bal.svg');">SVG</a>
+                      </li>
+                  </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+<script type="text/javascript" charset="utf-8">
+    class_a_bal = {{ class_a_bal | safe }};
+    class_a_options_bal = {{ class_a_options_bal | safe }};
+    class_b1_bal = {{ class_b1_bal | safe }};
+    class_b1_options_bal = {{ class_b1_options_bal | safe }};
+    class_b2_bal = {{ class_b2_bal | safe }};
+    class_b2_options_bal = {{ class_b2_options_bal | safe }};
+    class_c_bal = {{ class_c_bal | safe }};
+    class_c_options_bal = {{ class_c_options_bal | safe }};
+    class_f_bal = {{ class_f_bal | safe }};
+    class_f_options_bal = {{ class_f_options_bal | safe }};
+    class_t2_bal = {{ class_t2_bal | safe }};
+    class_t2_options_bal = {{ class_t2_options_bal | safe }};
+    orphan_bal = {{ orphan_bal | safe }};
+    orphan_options_bal = {{ orphan_options_bal | safe }};
+    whole_dict = {{ whole_receptors|safe }};
+</script>
+<script>
+  $('#balanced_tree_tab').on('click', function () {
+    setTimeout(
+    function() {
+      d3.select("#class_a_bal").select("svg").remove();
+      d3.select("#class_b1_bal").select("svg").remove();
+      d3.select("#class_b2_bal").select("svg").remove();
+      d3.select("#class_c_bal").select("svg").remove();
+      d3.select("#class_f_bal").select("svg").remove();
+      d3.select("#class_t2_bal").select("svg").remove();
+      d3.select("#orphan_bal").select("svg").remove();
+      maxLeafNodeLenght = 46;
+      conversion = {"Gs":"#0000FF", "Gi/o":"#FF0000", "Gq/11":"#000000", "G12/13":"#008000", "Arrestin":"#FFA500"};
+      $("#UniProtNames_bal").click(function(){
+          $("#UniProtNames_bal").addClass("active");
+          $("#IUPHARNames_bal").removeClass("active");
+          changeLeavesLabels("class_a_bal", "UniProt", whole_dict);
+          DrawCircles('class_a_bal', circles_bal, maxLeafNodeLenght, conversion, true, false);
+          changeLeavesLabels("class_b1_bal", "UniProt", whole_dict);
+          DrawCircles('class_b1_bal', circles_bal, maxLeafNodeLenght, conversion, true, false);
+          changeLeavesLabels("class_b2_bal", "UniProt", whole_dict);
+          DrawCircles('class_b2_bal', circles_bal, maxLeafNodeLenght, conversion, true, false);
+          changeLeavesLabels("class_c_bal", "UniProt", whole_dict);
+          DrawCircles('class_c_bal', circles_bal, maxLeafNodeLenght, conversion, true, false);
+          changeLeavesLabels("class_f_bal", "UniProt", whole_dict);
+          DrawCircles('class_f_bal', circles_bal, maxLeafNodeLenght, conversion, true, false);
+          changeLeavesLabels("class_t2_bal", "UniProt", whole_dict);
+          DrawCircles('class_t2_bal', circles_bal, maxLeafNodeLenght, conversion, true, false);
+          changeLeavesLabels("orphan_bal", "UniProt", whole_dict);
+          DrawCircles('orphan_bal', circles_bal, maxLeafNodeLenght, conversion, true, false);
+      });
+      $("#IUPHARNames_bal").click(function() {
+        $("#UniProtNames_bal").removeClass("active");
+        $("#IUPHARNames_bal").addClass("active");
+        changeLeavesLabels("class_a_bal","IUPHAR", whole_dict);
+        DrawCircles('class_a_bal',circles_bal, maxLeafNodeLenght,conversion,true,false);
+        changeLeavesLabels("class_b1_bal","IUPHAR", whole_dict);
+        DrawCircles('class_b1_bal',circles_bal, maxLeafNodeLenght,conversion,true,false);
+        changeLeavesLabels("class_b2_bal","IUPHAR", whole_dict);
+        DrawCircles('class_b2_bal',circles_bal, maxLeafNodeLenght,conversion,true,false);
+        changeLeavesLabels("class_c_bal","IUPHAR", whole_dict);
+        DrawCircles('class_c_bal',circles_bal, maxLeafNodeLenght,conversion,true,false);
+        changeLeavesLabels("class_f_bal","IUPHAR", whole_dict);
+        DrawCircles('class_f_bal',circles_bal, maxLeafNodeLenght,conversion,true,false);
+        changeLeavesLabels("class_t2_bal","IUPHAR", whole_dict);
+        DrawCircles('class_t2_bal',circles_bal, maxLeafNodeLenght,conversion,true,false);
+        changeLeavesLabels("orphan_bal","IUPHAR", whole_dict);
+        DrawCircles('orphan_bal',circles_bal, maxLeafNodeLenght,conversion,true,false);
+      });
+      draw_tree(class_a_bal, class_a_options_bal);
+      draw_tree(class_b1_bal, class_b1_options_bal);
+      draw_tree(class_b2_bal, class_b2_options_bal);
+      draw_tree(class_c_bal, class_c_options_bal);
+      draw_tree(class_f_bal, class_f_options_bal);
+      draw_tree(class_t2_bal, class_t2_options_bal);
+      draw_tree(orphan_bal, orphan_options_bal);
+      DrawCircles('class_a_bal', circles_bal, maxLeafNodeLenght, conversion, true, false);
+      DrawCircles('class_b1_bal', circles_bal, maxLeafNodeLenght, conversion, true, false);
+      DrawCircles('class_b2_bal', circles_bal, maxLeafNodeLenght, conversion, true, false);
+      DrawCircles('class_c_bal', circles_bal, maxLeafNodeLenght, conversion, true, false);
+      DrawCircles('class_f_bal', circles_bal, maxLeafNodeLenght, conversion, true, false);
+      DrawCircles('class_t2_bal', circles_bal, maxLeafNodeLenght, conversion, true, false);
+      DrawCircles('orphan_bal', circles_bal, maxLeafNodeLenght, conversion, true, false);
+      $("#class_a_bal svg g").first().attr('transform', 'translate(555,585) scale(0.9,0.9) ');
+      $("#class_a_bal_svg").attr('height', 1210);
+      $("#class_a_bal_svg").attr('width', 1110);
+      $("#class_b1_bal svg g").first().attr('transform', 'translate(180,220) scale(0.83,0.83)');
+      $("#class_b2_bal svg g").first().attr('transform', 'translate(182,200) scale(0.85,0.85) ');
+      $("#class_c_bal svg g").first().attr('transform', 'translate(200,200) scale(0.85,0.85) ');
+      $("#orphan_bal svg g").first().attr('transform', 'translate(175,180) scale(0.85,0.85)');
+      $("#orphan_bal_svg").attr('height', 360).attr('width', 360);
+    },10);
+  });
+</script>
+</div>
+
+{% endif %}
 
 <!-- END MIRRORED SECTION  -->
 </div>

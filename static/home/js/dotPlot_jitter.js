@@ -467,29 +467,29 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
           .style("font", "14px sans-serif")
           .style("alignment-baseline", "middle");
 
-    chart.append("g")
-       .attr("class", "ytitle")
-       .attr("transform", position)
-          .append("text")
-            .attr("x", xSeed)
-            .attr("y", margin.top + 25)
-            .text("Top 20 Ligands") //ΔΔLog(Emax/EC50)
-            .attr("text-anchor", "left")
-            .attr("font-weight", "bold")
-            .style("font", "10px sans-serif")
-            .style("alignment-baseline", "middle");
-
-    chart.append("g")
-       .attr("class", "ytitle")
-       .attr("transform", position)
-          .append("text")
-            .attr("x", xSeed)
-            .attr("y", margin.top + 35)
-            .text("sorted by decreasing value")
-            .attr("text-anchor", "left")
-            .attr("font-weight", "bold")
-            .style("font", "10px sans-serif")
-            .style("alignment-baseline", "middle");
+    // chart.append("g")
+    //    .attr("class", "ytitle")
+    //    .attr("transform", position)
+    //       .append("text")
+    //         .attr("x", xSeed)
+    //         .attr("y", margin.top + 25)
+    //         .text("Top 20 Ligands") //ΔΔLog(Emax/EC50)
+    //         .attr("text-anchor", "left")
+    //         .attr("font-weight", "bold")
+    //         .style("font", "10px sans-serif")
+    //         .style("alignment-baseline", "middle");
+    //
+    // chart.append("g")
+    //    .attr("class", "ytitle")
+    //    .attr("transform", position)
+    //       .append("text")
+    //         .attr("x", xSeed)
+    //         .attr("y", margin.top + 35)
+    //         .text("sorted by decreasing value")
+    //         .attr("text-anchor", "left")
+    //         .attr("font-weight", "bold")
+    //         .style("font", "10px sans-serif")
+    //         .style("alignment-baseline", "middle");
 
   var legend = chart.selectAll("mylabels")
         .data(legendData)
@@ -502,8 +502,8 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
     chart.append("g")
        .attr("transform", position)
           .append("rect")
-            .attr("x", xSeed + 6)
-            .attr("y", margin.top + 48)
+            .attr("x", xSeed) //+ 6
+            .attr("y", margin.top + 25) //48
             .attr("width", 8)
             .attr("height", 8)
             .style("fill", "#FAFAFA") //'url(#gradient)'
@@ -519,7 +519,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
        .attr("transform", position)
           .append("text")
             .attr("x", xSeed + 20)
-            .attr("y", margin.top + 53)
+            .attr("y", margin.top + 30) //53
             .text("Qualitative data point")
             .attr("text-anchor", "left")
             .attr("font-weight", "bold")
@@ -533,8 +533,8 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
     chart.append("g")
        .attr("transform", position)
           .append("circle")
-            .attr("cx", xSeed + 10)
-            .attr("cy", margin.top + 67)
+            .attr("cx", xSeed + 4) //+10
+            .attr("cy", margin.top + 44) //67
             .attr("r", 4)
             .style("stroke", "black")
             .attr("class", "Legend")
@@ -545,7 +545,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
        .attr("transform", position)
           .append("text")
             .attr("x", xSeed + 20)
-            .attr("y", margin.top + 67)
+            .attr("y", margin.top + 44) //67
             .attr("class", "Legend")
             .text("Quantitative data point")
             .attr("text-anchor", "left")
@@ -557,7 +557,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
       .attr("transform", position)
         .append("path")
         .attr("class", "dot")
-        .attr("transform", function(d) { return "translate(" + (xSeed + 10) + "," +  (margin.top + 80) + ")"; })
+        .attr("transform", function(d) { return "translate(" + (xSeed + 4) + "," +  (margin.top + 57) + ")"; }) //+10 / 80
         .attr("d", symbolTypes.triangleUp())
         .style("stroke", "black")
         .attr("class", "Legend")
@@ -568,7 +568,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
        .attr("transform", position)
           .append("text")
             .attr("x", xSeed + 20)
-            .attr("y", margin.top + 80)
+            .attr("y", margin.top + 57) //80
             .attr("class", "Legend")
             .text("Minimum estimated value")
             .attr("text-anchor", "left")
@@ -580,7 +580,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
       .attr("transform", position)
         .append("path")
         .attr("class", "dot")
-        .attr("transform", function(d) { return "translate(" + (xSeed + 10) + "," +  (margin.top + 94) + ")"; })
+        .attr("transform", function(d) { return "translate(" + (xSeed  + 4) + "," +  (margin.top + 71) + ")"; }) //+10 / 94
         .attr("d", symbolTypes.triangleDown())
         .style("stroke", "black")
         .attr("class", "Legend")
@@ -591,7 +591,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
        .attr("transform", position)
           .append("text")
             .attr("x", xSeed + 20)
-            .attr("y", margin.top + 94)
+            .attr("y", margin.top + 71) //94
             .attr("class", "Legend")
             .text("Maximum estimated value")
             .attr("text-anchor", "left")
@@ -599,9 +599,33 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
             .style("font", "10px sans-serif")
             .style("alignment-baseline", "middle");
 
+    chart.append("g")
+       .attr("class", "ytitle")
+       .attr("transform", position)
+          .append("text")
+            .attr("x", xSeed)
+            .attr("y", margin.top + 95)
+            .text("Top 20 Ligands") //ΔΔLog(Emax/EC50)
+            .attr("text-anchor", "left")
+            .attr("font-weight", "bold")
+            .style("font", "10px sans-serif")
+            .style("alignment-baseline", "middle");
+
+    chart.append("g")
+       .attr("class", "ytitle")
+       .attr("transform", position)
+          .append("text")
+            .attr("x", xSeed)
+            .attr("y", margin.top + 105)
+            .text("sorted by decreasing value")
+            .attr("text-anchor", "left")
+            .attr("font-weight", "bold")
+            .style("font", "10px sans-serif")
+            .style("alignment-baseline", "middle");
+
     legend.append("rect")
       .attr("x", xSeed + 6)
-      .attr("y", margin.top + 108)
+      .attr("y", margin.top + 118) //108
       .attr("width", 8)
       .attr("height", 2)
       .attr("id", function(d) {return "LC" + d.replace(/\[|\]|\(|\)|\s|\,/g,"");})
@@ -631,7 +655,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
 
     legend.append("text")
       .attr("x", xSeed + 20)
-      .attr("y", margin.top + 108)
+      .attr("y", margin.top + 120) //108
       // .style("fill", function(d){ return colors[d]})
       .text(function(d) {
               if (d.length > 25) {
@@ -671,8 +695,8 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
        .attr("transform", position)
           .append("circle")
             .attr("class", "Legend")
-            .attr("cx", xSeed + 10)
-            .attr("cy", margin.top + 48)
+            .attr("cx", xSeed + 4) // +10
+            .attr("cy", margin.top + 25) //48
             .attr("r", 4)
             .style("stroke", "black")
             .attr("fill","#FAFAFA"); //'url(#gradient)'
@@ -681,9 +705,33 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
        .attr("class", "ytitle")
        .attr("transform", position)
           .append("text")
-            .attr("x", xSeed + 20)
-            .attr("y", margin.top + 49)
+            .attr("x", xSeed + 14) // +20
+            .attr("y", margin.top + 26) //49
             .text("Quantitative data point")
+            .attr("text-anchor", "left")
+            .attr("font-weight", "bold")
+            .style("font", "10px sans-serif")
+            .style("alignment-baseline", "middle");
+
+    chart.append("g")
+       .attr("class", "ytitle")
+       .attr("transform", position)
+          .append("text")
+            .attr("x", xSeed)
+            .attr("y", margin.top + 50)
+            .text("Top 20 Ligands") //ΔΔLog(Emax/EC50)
+            .attr("text-anchor", "left")
+            .attr("font-weight", "bold")
+            .style("font", "10px sans-serif")
+            .style("alignment-baseline", "middle");
+
+    chart.append("g")
+       .attr("class", "ytitle")
+       .attr("transform", position)
+          .append("text")
+            .attr("x", xSeed)
+            .attr("y", margin.top + 60)
+            .text("sorted by decreasing value")
             .attr("text-anchor", "left")
             .attr("font-weight", "bold")
             .style("font", "10px sans-serif")
@@ -691,7 +739,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
 
     legend.append("rect")
       .attr("x", xSeed + 6)
-      .attr("y", margin.top + 63)
+      .attr("y", margin.top + 73)
       .attr("width", 8)
       .attr("height", 2)
       .attr("id", function(d) {return "LC" + d.replace(/\[|\]|\(|\)|\s|\,/g,"");})
@@ -721,7 +769,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
 
     legend.append("text")
       .attr("x", xSeed + 20)
-      .attr("y", margin.top + 65)
+      .attr("y", margin.top + 75)
       // .style("fill", function(d){ return colors[d]})
       .text(function(d) {
               if (d.length > 25) {
