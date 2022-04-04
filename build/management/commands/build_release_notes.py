@@ -3,7 +3,7 @@ from django.conf import settings
 
 from common.models import ReleaseNotes, ReleaseStatistics, ReleaseStatisticsType
 from drugs.models import Drugs
-from interaction.models import StructureLigandInteraction, ProteinLigandInteraction, ResidueFragmentInteraction
+from interaction.models import ResidueFragmentInteraction
 from ligand.models import Ligand
 from mutation.models import MutationExperiment
 from mutational_landscape.models import NaturalMutations
@@ -42,20 +42,18 @@ class Command(BaseCommand):
             self.logger.info('Parsing file ' + source_file)
             source_file_path = os.sep.join([self.release_notes_data_dir, source_file])
 
-            if source_file.endswith('.yaml'):
-                with open(source_file_path, 'r') as f:
-                    ds = yaml.load(f, Loader=yaml.FullLoader)
-
-                    release_notes, created = ReleaseNotes.objects.get_or_create(date=ds['date'])
-                    if created:
-                        self.logger.info('Created release notes for {}'.format(ds['date']))
+            if source_file.endswith('.html'):
+                file_date = source_file_path[:-5].split("/")[-1]
+                release_notes, created = ReleaseNotes.objects.get_or_create(date=file_date)
+                if created:
+                    self.logger.info('Created release notes for {}'.format(file_date))
 
                 with open(source_file_path[:-4]+'html', 'r') as h:
                     release_notes.html = h.read()
                     release_notes.save()
 
                     if created:
-                        self.logger.info('Updated html for release notes {}'.format(ds['date']))
+                        self.logger.info('Updated html for release notes {}'.format(file_date))
 
         # generate statistics
         latest_release_notes = ReleaseNotes.objects.all()[0]
@@ -72,7 +70,7 @@ class Command(BaseCommand):
             #['Species', Species.objects.all().count()],
             ['Genetic variants', NaturalMutations.objects.all().count()],
             ['Drugs', Drugs.objects.all().count()],
-            ['Ligands', Ligand.objects.filter(canonical=True).count()],
+            ['Ligands', Ligand.objects.all().count()],
             ['Ligand site mutations', MutationExperiment.objects.all().count()],
             ['Ligand interactions', ResidueFragmentInteraction.objects.all().count()],
             ['Exp. GPCR structures', Structure.objects.filter(protein_conformation__protein__family__slug__startswith="00").count()],

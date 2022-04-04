@@ -7,20 +7,12 @@ import ast
 class Mutation(models.Model):
     protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
     residue = models.ForeignKey('residue.Residue', null=True, on_delete=models.CASCADE) #If auxilliary it will be null
-    mutation_type = models.ForeignKey('MutationType', null=True, on_delete=models.CASCADE)
     amino_acid = models.CharField(max_length=1) #amino acid one-letter
 
     class Meta():
         db_table = 'mutation'
         unique_together = ('protein','residue','amino_acid')
 
-
-class MutationType(models.Model):
-
-    type = models.CharField(max_length=100) #type of mutation, eg thermostabilization, expression-increasing..
-
-    class Meta():
-        db_table = 'mutation_type'
 
 class MutationExperiment(models.Model):
 
@@ -40,10 +32,8 @@ class MutationExperiment(models.Model):
     ligand_role = models.ForeignKey('ligand.LigandRole', null=True, on_delete=models.CASCADE) #Change to a ligand model?
     ligand_ref = models.ForeignKey('ligand.Ligand', null=True, related_name='reference_ligand', on_delete=models.CASCADE) #Change to a ligand model?
     raw = models.ForeignKey('MutationRaw', null=True, on_delete=models.CASCADE)
-    optional = models.ForeignKey('MutationOptional', null=True, on_delete=models.CASCADE)
     exp_type = models.ForeignKey('MutationExperimentalType', null=True, on_delete=models.CASCADE)
     exp_func= models.ForeignKey('MutationFunc', null=True, on_delete=models.CASCADE)
-    exp_measure = models.ForeignKey('MutationMeasure', null=True, on_delete=models.CASCADE)
     exp_qual = models.ForeignKey('MutationQual', null=True, on_delete=models.CASCADE)
 
     #Values
@@ -104,7 +94,6 @@ class MutationExperiment(models.Model):
                     self.foldchange = temp
                     self.save()
 
-            #"Type: "+ self.exp_measure.measure + " <br>
             temp = (" Measure: "+self.exp_type.type+" <br> Unit: " + str(self.wt_unit) +  " <br> WT: " + str(self.wt_value) + " <br> Mu: "+ str(self.mu_value) +" <br> Foldchange: "+str(self.foldchange))
         else:
             temp = "No information"
@@ -150,21 +139,6 @@ class MutationExperiment(models.Model):
     class Meta():
         db_table = 'mutation_experiment'
 
-
-
-class MutationOptional(models.Model):
-
-    type = models.CharField(max_length=100)
-
-    wt = models.FloatField()
-    mu = models.FloatField()
-    sign = models.CharField(max_length=2)
-    percentage = models.FloatField()
-    qual = models.CharField(max_length=100)
-    agonist = models.CharField(max_length=100)
-
-    class Meta():
-        db_table = 'mutation_opt'
 
 class MutationRaw(models.Model):
 
@@ -229,14 +203,6 @@ class MutationRaw(models.Model):
             yield (field_name, value)
 
 
-class MutationMeasure(models.Model):
-
-    measure = models.CharField(max_length=100)
-
-    class Meta():
-        db_table = 'mutation_measure'
-
-
 class MutationQual(models.Model):
 
     qual = models.CharField(max_length=100)
@@ -262,19 +228,3 @@ class MutationExperimentalType(models.Model):
 
     class Meta():
         db_table = 'mutation_experimental_type'
-
-
-class MutationLigandClass(models.Model):
-
-    classname = models.CharField(max_length=100, unique=True)
-
-    class Meta():
-        db_table = 'mutation_ligand_class'
-
-
-class MutationLigandRef(models.Model):
-
-    reference = models.CharField(max_length=100, unique=True)
-
-    class Meta():
-        db_table = 'mutation_ligand_reference'

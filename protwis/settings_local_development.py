@@ -30,6 +30,9 @@ DATABASES = {
     }
 }
 
+# Toggle "hub" function => this will add HUB hostnames to the menu system
+HUB_ENABLED = False
+
 # Quick-start development settings - unsuitable for production
 
 # SECURITY WARNING: keep the secret key used in production secret!

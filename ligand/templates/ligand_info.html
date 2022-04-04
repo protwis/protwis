@@ -77,9 +77,9 @@
 		<div class="col-md-4 ml-auto">
 			<h3>Structure</h3>
 			{% if ligand.picture is not None %}
-			<img style="margin-top: -15%;" src="http://www.ebi.ac.uk/chembl/api/data/image/{{ligand.picture}}.svg" />
+				{{ligand.picture}}
 			{%else%}
-			<h3>Image temporarily not available</h3>
+			<h3>Image not available</h3>
 			{%endif%}
 		</div>
 

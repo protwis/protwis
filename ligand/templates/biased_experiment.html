@@ -89,7 +89,7 @@
       <tbody>
         {% for experiment in data %}
         <tr>
-          <td> <a href='experiment/{{experiment.id}}/detail'>link</a></td>
+          <td> <a href ='/ligand/{{e.ligand.id}}/info' target='_blank'>link</a></td>
           <td>{{experiment.ligand.name}}</td>
           {% if experiment.mutation.amino_acid or residue.amino_acid %}
           <td>{{experiment.receptor.entry_name}}&nbsp(*Mutated)</td>

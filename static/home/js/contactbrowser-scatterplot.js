@@ -10,7 +10,7 @@ function createScatterplot(data,containerSelector) {
     //     .attr("viewBox", min_x + " " + min_y + " " + (max_x - min_x) + " " + (max_y - min_y))
     //     .attr("width", "100%")
     //     .attr("style", "height: 500px");
-    
+
     // console.log('making snakeplot!')
     // console.log(containerSelector)
     // console.log(data['snakeplot'])
@@ -41,7 +41,7 @@ function createScatterplot(data,containerSelector) {
         'distance': 'Distance',
         'distance_abs': 'Distance (abs)',
         'core_distance': 'Distance to 7TM axis',
-        'core_distance_abs': 'Distance to 7TM axis (abs)',  
+        'core_distance_abs': 'Distance to 7TM axis (abs)',
         'set_presence' : 'Set specific presense'
     }
 
@@ -60,7 +60,7 @@ function createScatterplot(data,containerSelector) {
         }
         colors['distance'][seq_pos] = [value,scale_abs,data['ngl_max_diff_distance']];
         colors['distance_abs'][seq_pos] = [Math.abs(value), scale, data['ngl_max_diff_distance']];
-        
+
     });
     console.log(colors)
 
@@ -104,7 +104,7 @@ function createScatterplot(data,containerSelector) {
             }
             if (neg_and_positive) {
                 colors[index_names[i]][seq_pos] = [value,scale_abs,max_values[i]];
-                colors[index_names[i] + '_abs'][seq_pos] = [Math.abs(value), scale, max_values[i]];              
+                colors[index_names[i] + '_abs'][seq_pos] = [Math.abs(value), scale, max_values[i]];
             } else {
                 colors[index_names[i]][seq_pos] = [value, scale, max_values[i]];
             }
@@ -112,10 +112,10 @@ function createScatterplot(data,containerSelector) {
         });
         var seg = data['segm_lookup'][gn];
         colors["segment"][seq_pos] = rb_colors[highlight.indexOf(seg)];
-        
+
     });
     //console.log('colors',colors)
-    
+
     function get_values(x, y) {
         index_names = { 0: 'core_distance', 1: 'a_angle', 2: 'outer_angle', 3: 'tau', 4: 'phi', 5: 'psi', 6: 'sasa', 7: 'rsa', 8: 'theta', 9: 'hse', 10: 'tau_angle' }
         const index_names_rev = {};
@@ -133,7 +133,7 @@ function createScatterplot(data,containerSelector) {
             y = y.slice(0, -4);
             y_abs = true;
         }
-        
+
         var X = [];
         var Y = [];
         var names = [];
@@ -184,7 +184,7 @@ function createScatterplot(data,containerSelector) {
         'distance': 'Distance',
         'distance_abs': 'Distance (abs)',
         'core_distance': 'Distance to 7TM axis',
-        'core_distance_abs': 'Distance to 7TM axis (abs)',  
+        'core_distance_abs': 'Distance to 7TM axis (abs)',
         'set_presence' : 'Set specific presense'
     }
 
@@ -202,7 +202,7 @@ function createScatterplot(data,containerSelector) {
         .attr("id","scatter_id")
         .attr("transform",
             "translate(" + margin.left + "," + margin.top + ")")
-    
+
     function draw_plot() {
         x_axis_type = $(containerSelector_hash + " #change_x").val();
         y_axis_type = $(containerSelector_hash + " #change_y").val();
@@ -216,7 +216,7 @@ function createScatterplot(data,containerSelector) {
         color_id2  = $(containerSelector_hash+" #color2").val();
         color_id3  = $(containerSelector_hash+" #color3").val();
 
-        
+
         console.log('draw scatter', x_axis_type, y_axis_type, sp_color, sp_size,'label_only',label_only);
         plot_data = get_values(x_axis_type, y_axis_type)
         // set the dimensions and margins of the graph
@@ -224,7 +224,7 @@ function createScatterplot(data,containerSelector) {
         // append the svg object to the body of the page
         // .attr("width", "100%")
         // .attr("style", "height: 500px");
-    
+
 
 
         // Add the grey background that makes ggplot2 famous
@@ -236,7 +236,7 @@ function createScatterplot(data,containerSelector) {
             .attr("width", width)
             // .style("fill", "EBEBEB")
             .style("fill", "white")
-    
+
         //console.log(plot_data);
 
         // Add X axis
@@ -275,7 +275,7 @@ function createScatterplot(data,containerSelector) {
             .attr("x", -margin.top - height / 2 + 20)
             .text(nice_index_names[y_axis_type])
 
-        // Color scale: give me a specie name, I return a color
+        // Color scale: give me a species name, I return a color
         // var color = d3v4.scaleOrdinal()
         //     .domain(["setosa", "versicolor", "virginica"])
         //     .range(["#F8766D", "#00BA38", "#619CFF"])
@@ -326,7 +326,7 @@ function createScatterplot(data,containerSelector) {
                     }
                 })
         }
-    
+
         scatter_svg.append("g")
             .attr("font-family", "sans-serif")
             .selectAll("text")
@@ -366,12 +366,12 @@ function createScatterplot(data,containerSelector) {
                     return label_only && d.name in colors[sp_color] ? color_by_scale(colors[sp_color][d.name][1], color_id1, color_id2, color_id3) : "black";
                 }
             });
-    
+
 
 }
 
 
-   
+
     nice_index_names = {
         'a_angle' : 'Angle to helix&7TM axes',
         'outer_angle': 'Rotamer',
@@ -389,7 +389,7 @@ function createScatterplot(data,containerSelector) {
         'distance': 'Distance',
         'distance_abs': 'Distance (abs)',
         'core_distance': 'Distance to 7TM axis',
-        'core_distance_abs': 'Distance to 7TM axis (abs)',  
+        'core_distance_abs': 'Distance to 7TM axis (abs)',
         'set_presence' : 'Set specific presense'
     }
     var select_data_options = ''
@@ -429,9 +429,9 @@ function createScatterplot(data,containerSelector) {
             '<div>Font Size</div><div><input id="change_text_size" style="width:80px;" type="range" min="0" max="50" step="any" value="12"></div>' +
             '<div>Replace marker with label</div><div><input id="label_only" class="change_axis" type="checkbox"></div>';
             // 'Only plot kept positions <input id="color_filtered" type="checkbox" checked><br>';
-        
+
         index_names = { 0: 'core_distance', 1: 'a_angle', 2: 'outer_angle', 3: 'tau', 4: 'phi', 5: 'psi', 6: 'sasa', 7: 'rsa', 8: 'theta', 9: 'hse', 10: 'tau_angle' }
-    
+
         content += '<div><strong>Visualisation</strong></div><div></div>' +
                    '<div>X-axis</div><div><select id="change_x" class="change_axis">' +
             select_data_options +
@@ -440,7 +440,7 @@ function createScatterplot(data,containerSelector) {
         content += '<div>Y-axis</div><div><select id="change_y" class="change_axis">' +
             select_data_options +
             '</select></div>';
-            
+
         content += '<div>Marker size</div><div><select id="sp_size" class="change_axis">' +
         '<option value="none">Fixed</option>' +
         select_data_options +
@@ -492,7 +492,7 @@ function createScatterplot(data,containerSelector) {
 
         d3v4.select(containerSelector_hash).select("#change_text_size")
             .on("input", change_text_size);
-        
+
         function change_text_size() {
             console.log('change text size!',this.value)
             original_size = 8;
@@ -535,5 +535,5 @@ function createScatterplot(data,containerSelector) {
 
 
     draw_plot();
-    
+
 }

@@ -7,7 +7,6 @@ from mutation import views
 
 urlpatterns = [
     path('', cache_page(60*60*24*7)(views.TargetSelection.as_view()), name='targetselection'),
-    path('import', views.importmutation, name='import'),
     path('designpdb', views.designPDB.as_view(), name='design'),
     path('design', cache_page(60*60*24*7)(views.design.as_view()), name='design'),
 

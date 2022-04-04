@@ -277,10 +277,10 @@ function structurebrowser() {
                 html_data_type: "text",
                 filter_default_label: "Ligand type",
                 filter_reset_button_text: false,
+                text_data_delimiter: "<br>",
                 select_type_options: {
                     width: "100px",
-                },
-                data: ["none", "peptide", "peptideion", "peptidesmall molecule", "protein", "small molecule", "small moleculesmall molecule", "-"]
+                }
             },
             {
                 column_number : 22,
@@ -289,11 +289,10 @@ function structurebrowser() {
                 filter_default_label: "Modality",
                 filter_match_mode : "exact",
                 filter_reset_button_text: false,
+                text_data_delimiter: "<br>",
                 select_type_options: {
                     width: "100px",
-                },
-                data: ["Agonist", "Agonist (partial)", "Allosteric antagonist", "Allosteric agonist", "AgonistNAM", "Antagonist", "AntagonistCofactor", "AntagonistNAM", "Apo (no ligand)", "Inverse agonist", "Inverse agonistNAM",
-                        "AgonistPAM", "NAM", "PAM", "unknown", "-", "Ago-PAM"]
+                }
             },
             {
                 column_number : 23,

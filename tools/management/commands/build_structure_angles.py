@@ -290,7 +290,7 @@ class Command(BaseCommand):
             self.references = Structure.objects.all().prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
 
         # DEBUG for a specific PDB
-        # self.references = Structure.objects.filter(pdb_code__index="4OO9").prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+        # self.references = Structure.objects.filter(pdb_code__index="2RH1").prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
 
         if 'proc' in options and options['proc']>0:
             self.processes = options['proc']
@@ -539,9 +539,6 @@ class Command(BaseCommand):
 
         res_dict = {ref.pdb_code.index:qgen(ref.protein_conformation.protein,qset) for ref in references}
 
-        # clean structure vectors table
-        # StructureVectors.objects.all().delete()
-
         #######################################################################
         ######################### Start of main loop ##########################
         #######################################################################
@@ -730,7 +727,9 @@ class Command(BaseCommand):
 
                 # fast and fancy way to take the average of N consecutive elements
                 N = 3
-                hres_three = np.asarray([sum([h[i:-(len(h) % N) or None:N] for i in range(N)])/N for h in hres_list])
+
+                # NOTE - can result in ragged nested sequences
+                hres_three = np.asarray([sum([h[i:-(len(h) % N) or None:N] for i in range(N)])/N for h in hres_list], dtype=object)
 
                 ### PCA - determine axis through center + each transmembrane helix
                 helix_pcas = [PCA() for i in range(7)]

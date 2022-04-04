@@ -58,6 +58,7 @@ class Command(BaseCommand):
     xtal_seg_end_bw_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'xtal_segends_bw.yaml'])
     ECD_annotation_source_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'ECD_annotation.xlsx'])
     ClassD_annotation_source_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'Class_D_Annotation.xlsx'])
+    GPCRdb_structure_info = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'GPCRdb_structure_info.xlsx'])
 
     non_xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'non_xtal_segends.yaml'])
     non_xtal_seg_end_bw_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'non_xtal_segends_bw.yaml'])
@@ -81,10 +82,28 @@ class Command(BaseCommand):
         self.dump_ECD_files()
         self.ClassD_data = self.parse_excel(self.ClassD_annotation_source_file)
         self.dump_ClassD_data()
+        self.GPCRdb_structure_data = self.parse_excel(self.GPCRdb_structure_info)
+        self.dump_GPCRdb_structure_data()
         # self.analyse_annotation_consistency()
         self.find_representatives()
         if options['m']:
             self.main_template_search()
+
+    def dict_to_csv(self, file_name, tab_name):
+        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', file_name+'.csv']), 'w') as f1:
+            c = 0
+            for key, val in self.GPCRdb_structure_data[tab_name].items():
+                if c==0:
+                    header = '\t'.join([i for i in val])+'\n'
+                    f1.write(header)
+                line = '\t'.join([str(j) for i,j in val.items()])+'\n'
+                f1.write(line)
+                c+=1
+
+    def dump_GPCRdb_structure_data(self):
+        structures, ligands, nanobodies, fusion_proteins, g_proteins, arrestins, ramps, grks = OrderedDict(),OrderedDict(),OrderedDict(),OrderedDict(),OrderedDict(),OrderedDict(),OrderedDict(),OrderedDict()
+        for i,j in [('structures', 'Structures'), ('ligands','Ligands'), ('nanobodies','Nanobodies'), ('fusion_proteins','Fusion proteins'), ('g_proteins','G protein'), ('arrestins','Arrestin'), ('ramp','RAMP'), ('grk', 'GRK')]:
+            self.dict_to_csv(i,j)
 
     def dump_ECD_files(self):
         data_dict = OrderedDict()
@@ -179,10 +198,10 @@ class Command(BaseCommand):
                     continue
                 pdb_info_all[entry][key] = val
 
-        pdb_info = OrderedDict(sorted(pdb_info.items())) 
+        pdb_info = OrderedDict(sorted(pdb_info.items()))
         with open(self.mod_xtal_seg_end_file, 'a') as outfile:
             yaml.dump(pdb_info, outfile, indent=4)
-        pdb_info_all = OrderedDict(sorted(pdb_info_all.items())) 
+        pdb_info_all = OrderedDict(sorted(pdb_info_all.items()))
         with open(self.xtal_seg_end_file, 'a') as outfile:
             yaml.dump(pdb_info_all, outfile, indent=4)
 
@@ -217,6 +236,11 @@ class Command(BaseCommand):
             for curr_row in range(1,num_rows+1):
                 row = worksheet.row(curr_row)
                 key = worksheet.cell_value(curr_row, 0)
+                # Workaround for structures as there can be multiple entries per structure
+                # TODO - discuss if this shouldn't be the default?
+                if "GPCRdb_structure_info.xlsx" in path:
+                    key = curr_row
+
 
                 if key=='':
                     #in case there is no key for whatever reason
@@ -408,11 +432,11 @@ class Command(BaseCommand):
                 Seqs[entry][key] = val
 
 
-        pdb_info = OrderedDict(sorted(pdb_info.items())) 
+        pdb_info = OrderedDict(sorted(pdb_info.items()))
         with open(self.mod_xtal_seg_end_file, 'w') as outfile:
             yaml.dump(pdb_info, outfile, indent=4)
 
-        pdb_info_all = OrderedDict(sorted(pdb_info_all.items())) 
+        pdb_info_all = OrderedDict(sorted(pdb_info_all.items()))
         with open(self.xtal_seg_end_file, 'w') as outfile:
             yaml.dump(pdb_info_all, outfile, indent=4)
 
@@ -536,6 +560,3 @@ class Command(BaseCommand):
                 #     states.append(values['State'])
                 #     resolutions.append(values['Resolution'])
                 # prev_rec = values['UniProt']
-                
-
-

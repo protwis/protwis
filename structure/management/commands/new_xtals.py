@@ -11,7 +11,7 @@ from protein.models import Protein, ProteinConformation, ProteinSequenceType, Pr
 from residue.models import Residue
 from structure.models import Structure, PdbData, StructureType
 from structure.sequence_parser import SequenceParser
-from structure.functions import PdbChainSelector, PdbStateIdentifier, get_pdb_ids
+from structure.functions import PdbChainSelector, PdbStateIdentifier, ParseStructureCSV, get_pdb_ids
 from structure.management.commands.structure_yaml_editor import StructureYaml
 from construct.functions import *
 from common.models import WebResource, WebLink, Publication
@@ -65,7 +65,7 @@ class Command(BaseBuild):
                 self.uniprots = self.fetch_accession_from_entryname(options['r'])
             else:
                 self.uniprots = self.get_all_GPCR_uniprots()
-            self.yamls = self.get_all_yamls()
+            self.pdbs = ParseStructureCSV().pdb_ids
             self.prepare_input(options['proc'], self.uniprots)
 
     def main_func(self, positions, iteration, count, lock):
@@ -73,7 +73,7 @@ class Command(BaseBuild):
             uniprot_list = self.uniprots[positions[0]:]
         else:
             uniprot_list = self.uniprots[positions[0]:positions[1]]
-        q = QueryPDB(self.uniprots, self.yamls)
+        q = QueryPDB(self.uniprots, self.pdbs)
 
         brp = BlastRecentPDB()
         blast_pdbs = brp.run()
@@ -81,7 +81,7 @@ class Command(BaseBuild):
         for b in blast_pdbs:
             blast_uniprots = q.pdb_request_by_pdb(b, 'polymer_entity')
             if not blast_uniprots:
-                self.yaml_list.append(b)
+                q.csv_list.append(b)
                 continue
             for bu in blast_uniprots:
                 if bu not in self.blast_uniprot_dict:
@@ -96,7 +96,7 @@ class Command(BaseBuild):
 
         for uni in uniprot_list:
             # print(uni)
-            q.new_xtals(uni)
+            q.new_xtals(uni, self.blast_uniprot_dict)
             for i in q.consider_list:
                 if i not in consider_list and i not in structs_with_missing_x50:
                     consider_list.append(i)
@@ -105,7 +105,7 @@ class Command(BaseBuild):
                     error_list.append(i)
         if self.verbose:
             print('Missing from db: ', q.db_list)
-            print('Missing yamls: ', q.yaml_list)
+            print('Missing from csv: ', q.csv_list)
             print('Structures with missing x50s: {} structures {}'.format(len(consider_list), consider_list))
             print('Structures with an error: {} structures {}'.format(len(error_list), error_list))
 
@@ -121,6 +121,7 @@ class Command(BaseBuild):
             uniprots = [i.split('.')[0] for i in os.listdir('/protwis/data/protwis/gpcr/protein_data/uniprot/')]
         return uniprots
 
+    # Deprecated
     def get_all_yamls(self):
         yamls = [i.split('.')[0] for i in os.listdir('/protwis/data/protwis/gpcr/structure_data/structures/')]
         return yamls
@@ -129,17 +130,17 @@ class Command(BaseBuild):
 class QueryPDB():
     ''' Queries PDB using GPCRdb protein and structure entries. If those are not available, it uses the structure and uniprot data folders.
     '''
-    def __init__(self, uniprots, yamls):
+    def __init__(self, uniprots, pdbs):
         self.exceptions = []
         self.uniprots = uniprots
-        self.yamls = yamls
-        self.db_list, self.yaml_list = [], []
+        self.pdbs = pdbs
+        self.db_list, self.csv_list = [], []
         self.missing_x50_list = ['4KNG','3N7P','3N7R','3N7S','4HJ0','6DKJ','5OTT','5OTU','5OTV','5OTX','6GB1']
         self.missing_x50_exceptions = ['6TPG','6TPJ']
         self.consider_list, self.error_list = [], []
 
-    def new_xtals(self, uniprot):
-        ''' List GPCR crystal structures missing from GPCRdb and the yaml files. Adds missing structures to DB.
+    def new_xtals(self, uniprot, blast_uniprot_dict):
+        ''' List GPCR crystal structures missing from GPCRdb and the csv files. Adds missing structures to DB.
         '''
         # structs = self.pdb_request_by_uniprot(uniprot)
         structs = get_pdb_ids(uniprot)
@@ -151,8 +152,8 @@ class QueryPDB():
             x50s = Residue.objects.filter(protein_conformation__protein=protein, generic_number__label__in=['1x50','2x50','3x50','4x50','5x50','6x50','7x50'])
         except:
             x50s = None
-        if uniprot in self.blast_uniprot_dict:
-            for i in self.blast_uniprot_dict[uniprot]:
+        if uniprot in blast_uniprot_dict:
+            for i in blast_uniprot_dict[uniprot]:
                 if i not in structs:
                     if structs==['null']:
                         structs = [i]
@@ -161,7 +162,7 @@ class QueryPDB():
         if structs!=['null']:
             for s in structs:
                 # print(s)
-                missing_from_db, missing_yaml = False, False
+                missing_from_db, missing_csv = False, False
                 try:
                     st_obj = Structure.objects.get(pdb_code__index=s)
                 except:
@@ -171,14 +172,14 @@ class QueryPDB():
                             self.db_list.append(s)
                             missing_from_db = True
 
-                if s not in self.yamls and s not in self.exceptions:
+                if s not in self.pdbs and s not in self.exceptions:
                     if s not in self.db_list:
                         check = self.pdb_request_by_pdb(s, 'entry')
                     else:
                         check = True
                     if check:
-                        self.yaml_list.append(s)
-                        missing_yaml = True
+                        self.csv_list.append(s)
+                        missing_csv = True
                 if not missing_from_db:
                     continue
                 try:
@@ -206,7 +207,7 @@ class QueryPDB():
                                     try:
                                         del self.db_list[self.db_list.index(s)]
                                         missing_from_db = False
-                                        del self.yaml_list[self.yaml_list.index(s)]
+                                        del self.csv_list[self.csv_list.index(s)]
                                     except:
                                         pass
                     if 'not_observed' in pdb_data_dict:
@@ -222,7 +223,7 @@ class QueryPDB():
                                     try:
                                         del self.db_list[self.db_list.index(s)]
                                         missing_from_db = False
-                                        del self.yaml_list[self.yaml_list.index(s)]
+                                        del self.csv_list[self.csv_list.index(s)]
                                     except:
                                         pass
                     else:
@@ -270,70 +271,70 @@ class QueryPDB():
                         # Run state identification
 
                         # Create yaml files
-                        with open(os.sep.join([settings.DATA_DIR, 'structure_data','constructs', '{}.yaml'.format(pdb_code.index)]), 'w') as construct_file:
-                            yaml.dump({'name': pdb_code.index.lower(), 'protein': protein.entry_name}, construct_file, indent=4)
-                        with open(os.sep.join([settings.DATA_DIR, 'structure_data','structures','{}.yaml'.format(pdb_code.index)]), 'w') as structure_file:
-                            struct_yaml_dict = {'construct': pdb_code.index.lower(), 'pdb': pdb_code.index, 'preferred_chain': preferred_chain, 'auxiliary_protein': '',
-                                                'ligand': {'name': 'None', 'pubchemId': 'None', 'title': 'None', 'role': '.nan', 'type': 'None'}, 'signaling_protein': 'None', 'state': 'Inactive'}
-                            auxiliary_proteins, ligands = [], []
-                            if pdb_data_dict['ligands']!='None':
-                                for key, values in pdb_data_dict['ligands'].items():
-                                    if key in ['SO4','NA','CLR','OLA','OLB','OLC','TAR','NAG','EPE','BU1','ACM','GOL','PEG','PO4','TLA','BOG','CIT','PLM','BMA','MAN','MLI','PGE','SIN','PGO','MES','ZN','NO3','NI','MG','PG4']:
-                                        continue
-                                    else:
-                                        ligands.append({'name': key, 'pubchemId': 'None', 'title': pdb_data_dict['ligands'][key]['comp_name'], 'role': '.nan', 'type': 'None'})
-                                sy = StructureYaml(s+'.yaml')
-                                bril, by = sy.check_aux_protein('BRIL')
-                                t4, ty = sy.check_aux_protein('T4-Lysozyme')
-                                if bril:
-                                    auxiliary_proteins.append('BRIL')
-                                if t4:
-                                    auxiliary_proteins.append('T4-Lysozyme')
-                                for key, values in pdb_data_dict['auxiliary'].items():
-                                    if pdb_data_dict['auxiliary'][key]['subtype'] in ['Expression tag', 'Linker']:
-                                        continue
-                                    else:
-                                        if pdb_data_dict['auxiliary'][key]['subtype']=='Soluble cytochrome b562':
-                                            aux_p = 'BRIL'
-                                        elif pdb_data_dict['auxiliary'][key]['subtype'] in ['Endolysin','T4-Lysozyme']:
-                                            aux_p = 'T4-Lysozyme'
-                                        else:
-                                            aux_p = pdb_data_dict['auxiliary'][key]['subtype']
-                                        if aux_p not in auxiliary_proteins:
-                                            auxiliary_proteins.append(aux_p)
-                                for key, values in pdb_data_dict['construct_sequences'].items():
-                                    if key!=protein.entry_name and key not in struct_yaml_dict['auxiliary_protein']:
-                                        if 'arrestin' in key:
-                                            struct_yaml_dict['signaling_protein'] = key
-                                if len(auxiliary_proteins)>1:
-                                    struct_yaml_dict['auxiliary_protein'] = ', '.join(auxiliary_proteins)
-                                if len(ligands)>1:
-                                    struct_yaml_dict['ligand'] = ligands
-                            yaml.dump(struct_yaml_dict, structure_file, indent=4, default_flow_style=False)
+                        # with open(os.sep.join([settings.DATA_DIR, 'structure_data','constructs', '{}.yaml'.format(pdb_code.index)]), 'w') as construct_file:
+                        #     yaml.dump({'name': pdb_code.index.lower(), 'protein': protein.entry_name}, construct_file, indent=4)
+                        # with open(os.sep.join([settings.DATA_DIR, 'structure_data','structures','{}.yaml'.format(pdb_code.index)]), 'w') as structure_file:
+                        #     struct_yaml_dict = {'construct': pdb_code.index.lower(), 'pdb': pdb_code.index, 'preferred_chain': preferred_chain, 'auxiliary_protein': '',
+                        #                         'ligand': {'name': 'None', 'pubchemId': 'None', 'title': 'None', 'role': '.nan', 'type': 'None'}, 'signaling_protein': 'None', 'state': 'Inactive'}
+                        #     auxiliary_proteins, ligands = [], []
+                        #     if pdb_data_dict['ligands']!='None':
+                        #         for key, values in pdb_data_dict['ligands'].items():
+                        #             if key in ['SO4','NA','CLR','OLA','OLB','OLC','TAR','NAG','EPE','BU1','ACM','GOL','PEG','PO4','TLA','BOG','CIT','PLM','BMA','MAN','MLI','PGE','SIN','PGO','MES','ZN','NO3','NI','MG','PG4']:
+                        #                 continue
+                        #             else:
+                        #                 ligands.append({'name': key, 'pubchemId': 'None', 'title': pdb_data_dict['ligands'][key]['comp_name'], 'role': '.nan', 'type': 'None'})
+                        #         sy = StructureYaml(s+'.yaml')
+                        #         bril, by = sy.check_aux_protein('BRIL')
+                        #         t4, ty = sy.check_aux_protein('T4-Lysozyme')
+                        #         if bril:
+                        #             auxiliary_proteins.append('BRIL')
+                        #         if t4:
+                        #             auxiliary_proteins.append('T4-Lysozyme')
+                        #         for key, values in pdb_data_dict['auxiliary'].items():
+                        #             if pdb_data_dict['auxiliary'][key]['subtype'] in ['Expression tag', 'Linker']:
+                        #                 continue
+                        #             else:
+                        #                 if pdb_data_dict['auxiliary'][key]['subtype']=='Soluble cytochrome b562':
+                        #                     aux_p = 'BRIL'
+                        #                 elif pdb_data_dict['auxiliary'][key]['subtype'] in ['Endolysin','T4-Lysozyme']:
+                        #                     aux_p = 'T4-Lysozyme'
+                        #                 else:
+                        #                     aux_p = pdb_data_dict['auxiliary'][key]['subtype']
+                        #                 if aux_p not in auxiliary_proteins:
+                        #                     auxiliary_proteins.append(aux_p)
+                        #         for key, values in pdb_data_dict['construct_sequences'].items():
+                        #             if key!=protein.entry_name and key not in struct_yaml_dict['auxiliary_protein']:
+                        #                 if 'arrestin' in key:
+                        #                     struct_yaml_dict['signaling_protein'] = key
+                        #         if len(auxiliary_proteins)>1:
+                        #             struct_yaml_dict['auxiliary_protein'] = ', '.join(auxiliary_proteins)
+                        #         if len(ligands)>1:
+                        #             struct_yaml_dict['ligand'] = ligands
+                        #     yaml.dump(struct_yaml_dict, structure_file, indent=4, default_flow_style=False)
 
-                        # Build residue table for structure
-                        build_structure_command = shlex.split('/env/bin/python3 manage.py build_structures -f {}.yaml'.format(pdb_code.index))
-                        subprocess.call(build_structure_command)
+                        # # Build residue table for structure
+                        # build_structure_command = shlex.split('/env/bin/python3 manage.py build_structures -f {}.yaml'.format(pdb_code.index))
+                        # subprocess.call(build_structure_command)
 
-                        # Check state
-                        struct = Structure.objects.get(pdb_code__index=pdb_code.index)
-                        pi = PdbStateIdentifier(struct)
-                        pi.run()
-                        if pi.state!=None:
-                            Structure.objects.filter(pdb_code__index=pdb_code.index).update(state=pi.state)
-                            print(pi.state, pi.activation_value)
-                            with open('../../data/protwis/gpcr/structure_data/structures/{}.yaml'.format(pdb_code.index), 'r') as yf:
-                                struct_yaml = yaml.load(yf, Loader=yaml.FullLoader)
-                            struct_yaml['state'] = pi.state.name
-                            try:
-                                struct_yaml['distance'] = round(float(pi.activation_value), 2)
-                            except:
-                                struct_yaml['distance'] = None
-                            with open('../../data/protwis/gpcr/structure_data/structures/{}.yaml'.format(pdb_code.index), 'w') as struct_yaml_file:
-                                yaml.dump(struct_yaml, struct_yaml_file, indent=4, default_flow_style=False)
+                        # # Check state
+                        # struct = Structure.objects.get(pdb_code__index=pdb_code.index)
+                        # pi = PdbStateIdentifier(struct)
+                        # pi.run()
+                        # if pi.state!=None:
+                        #     Structure.objects.filter(pdb_code__index=pdb_code.index).update(state=pi.state)
+                        #     print(pi.state, pi.activation_value)
+                        #     with open('../../data/protwis/gpcr/structure_data/structures/{}.yaml'.format(pdb_code.index), 'r') as yf:
+                        #         struct_yaml = yaml.load(yf, Loader=yaml.FullLoader)
+                        #     struct_yaml['state'] = pi.state.name
+                        #     try:
+                        #         struct_yaml['distance'] = round(float(pi.activation_value), 2)
+                        #     except:
+                        #         struct_yaml['distance'] = None
+                        #     with open('../../data/protwis/gpcr/structure_data/structures/{}.yaml'.format(pdb_code.index), 'w') as struct_yaml_file:
+                        #         yaml.dump(struct_yaml, struct_yaml_file, indent=4, default_flow_style=False)
 
-                        # Check sodium pocket
-                        new_prot_conf.sodium_pocket()
+                        # # Check sodium pocket
+                        # new_prot_conf.sodium_pocket()
 
                         print('{} added to db (preferred_chain chain: {})'.format(s, preferred_chain))
                 except Exception as msg:
@@ -341,7 +342,7 @@ class QueryPDB():
                     self.error_list.append(s)
                     del self.db_list[self.db_list.index(s)]
                     missing_from_db = False
-                    del self.yaml_list[self.yaml_list.index(s)]
+                    del self.csv_list[self.csv_list.index(s)]
 
 
 
@@ -548,10 +549,16 @@ def yamls_to_csv():
         d[pdb]['obj'] = s_obj
         if type(d[pdb]['ligand'])!=type([]):
             d[pdb]['ligand'] = [d[pdb]['ligand']]
+    # Order by pub date
+    ordered_structs = Structure.objects.filter(pdb_code__index__in=d.keys()).order_by('publication_date', 'pdb_code__index__in').values_list('pdb_code__index', flat=True)
+    temp_d = OrderedDict()
+    for s in ordered_structs:
+        temp_d[s] = d[s]
+    d = temp_d
     # structures.csv
     with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'structures.csv']), 'w', newline='') as s_csv:
         struct_w = csv.writer(s_csv, delimiter=',', quotechar="'", quoting=csv.QUOTE_MINIMAL)
-        struct_w.writerow(['PDB', 'Receptor_UniProt', 'Method', 'Resolution', 'State', 'ChainID', 'Note'])
+        struct_w.writerow(['PDB', 'Receptor_UniProt', 'Method', 'Resolution', 'State', 'ChainID', 'Note', 'Date'])
         for pdb, vals in d.items():
             if vals['obj'].structure_type.name.startswith('X-ray'):
                 method = 'X-ray'
@@ -559,7 +566,7 @@ def yamls_to_csv():
                 method = 'cryo-EM'
             else:
                 method = vals['obj'].structure_type.name
-            struct_w.writerow([pdb, vals['protein'], method, vals['obj'].resolution, vals['state'], vals['preferred_chain'], ''])
+            struct_w.writerow([pdb, vals['protein'], method, vals['obj'].resolution, vals['state'], vals['preferred_chain'], '', vals['obj'].publication_date])
     # ligands.csv
     with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'ligands.csv']), 'w', newline='') as l_csv:
         lig_w = csv.writer(l_csv, delimiter='\t', quotechar="'", quoting=csv.QUOTE_MINIMAL)
@@ -625,6 +632,15 @@ def yamls_to_csv():
     with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'extra_protein_notes.yaml']), 'r') as f3:
         extra = yaml.load(f3, Loader=yaml.FullLoader)
     arrestin = OrderedDict()
+    # # Order g proteins and extra by pub date
+    # temp_gprots, temp_extra = OrderedDict(), OrderedDict()
+    # ordered_g_structs = Structure.objects.filter(pdb_code__index__in=gprots.keys()).order_by('publication_date').values_list('pdb_code__index', flat=True)
+    # ordered_extra = Structure.objects.filter(pdb_code__index__in=extra.keys()).order_by('publication_date').values_list('pdb_code__index', flat=True)
+    # for s in ordered_g_structs:
+    #     temp_gprots[s] =  gprots[s]
+    # for s in ordered_extra:
+    #     temp_extra[s] = extra[s]
+    # gprots, extra = temp_gprots, temp_extra
     with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'g_proteins.csv']), 'w', newline='') as gp_csv:
         gp_w = csv.writer(gp_csv, delimiter=',', quotechar="'", quoting=csv.QUOTE_MINIMAL)
         gp_w.writerow(['PDB', 'Alpha_UniProt', 'Alpha_ChainID', 'Beta_UniProt', 'Beta_ChainID', 'Gamma_UniProt', 'Gamma_ChainID', 'Note'])

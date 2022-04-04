@@ -1,0 +1,86 @@
+{% extends "common/selection_table.html" %}
+{% load static %}
+
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/targetselect_functions.css' %}" type="text/css" />
+{% endblock %}
+
+{% block middle_right_column %}
+    <!-- target family tree -->
+    {% if family_tree %}
+        <div class="col-md-12 panel panel-primary">
+            <div class="panel-body">
+                <h4>Browse</h4>
+                <div class="selection-tree-box selection_table">
+                    {% include 'common/selection_tree.html' %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block middle_left_column %}
+    <!-- filters -->
+    {% if filters %}
+        <div class="col-md-12 panel panel-primary">
+            <div class="panel-body">
+                <div id="filters-species">
+                    {% include 'common/selection_filters_species.html' %}
+                </div>
+                <br>
+                <div id="filters-annotation">
+                    {% include 'common/selection_filters_annotation.html' %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+{% endblock %}
+
+{% block table %}
+    {{ table_data | safe }}
+{% endblock %}
+
+{% block addon_js %}
+    <!--<script src="{% static 'home/js/selection-autocomplete.js' %}"></script>-->
+    <script src="{% static 'home/js/selection-filters.js' %}"></script>
+    <script src="{% static 'home/js/selection.js' %}"></script>
+
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+    <script src="{% static 'home/js/select2.js' %}"> </script>
+
+    <!-- Target select modal table -->
+    <script type="text/javascript" src="{% static 'home/js/referenceselect_functions.js' %}"> </script>
+
+    <script>
+        const csrf_token = "{{ csrf_token }}";
+        var button = document.getElementById("only_selected");
+        button.remove();
+        var path = {{pathway|yesno:"true,false"}};
+        $(document).ready(function() {
+
+          // initialize YADCF table
+          initTargetTable('#target-table-container', path);
+          // initialize tooltips
+          $('[data-toggle="tooltip"]').tooltip({
+            trigger : 'hover'
+          });
+
+          // Enable row clicks
+          $('table#uniprot_selection tbody').on('click', 'tr', function () {
+            var checkbox = $(this).find("[type=checkbox]")[0];
+                clearTargetSelection();
+                addTarget(checkbox);
+                updateTargetCount();
+          });
+
+          // Update selection message
+          updateTargetCount();
+        });
+
+    </script>
+{% endblock %}

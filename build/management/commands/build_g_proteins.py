@@ -36,8 +36,6 @@ from residue.models import (Residue, ResidueGenericNumber,
                             ResidueNumberingScheme)
 from signprot.models import SignprotBarcode, SignprotComplex, SignprotStructure, SignprotStructureExtraProteins
 from structure.models import Structure, StructureStabilizingAgent, StructureType, StructureExtraProteins
-from ligand.models import Ligand, LigandType, LigandProperities
-from ligand.functions import get_or_make_ligand
 
 
 class Command(BaseCommand):

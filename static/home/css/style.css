@@ -305,3 +305,7 @@ span.stats_indent {
 ul.nav-tabs li a {
   white-space: nowrap;
 }
+
+a.external_link:link, a.external_link:visited, a.external_link:hover, a.external_link:active {
+  color: #036;
+}

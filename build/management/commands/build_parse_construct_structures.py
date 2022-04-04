@@ -11,9 +11,6 @@ from construct.models import (Construct,Crystallization,CrystallizationLigandCon
 CrystallizationMethods,CrystallizationTypes,ChemicalListName,ContributorInfo,ConstructMutation,ConstructInsertion,ConstructInsertionType,
 ConstructDeletion,ConstructModification,CrystalInfo,ExpressionSystem,Solubilization,PurificationStep,Purification)
 
-from ligand.models import Ligand, LigandType, LigandRole
-from ligand.functions import get_or_make_ligand
-
 from Bio.PDB import parse_pdb_header
 
 from collections import OrderedDict

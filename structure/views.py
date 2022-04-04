@@ -69,10 +69,10 @@ class StructureBrowser(TemplateView):
 				"protein_conformation__protein__family__parent__parent__parent",
 				"publication__web_link__web_resource").prefetch_related(
 				"stabilizing_agents", "construct__crystallization__crystal_method",
-				"protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
+				"protein_conformation__protein__parent__endogenous_gtp_set__ligand__ligand_type",
 				"protein_conformation__site_protein_conformation__site",
 				Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
-				annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role','ligand__properities__web_links__web_resource')),
+				annotated=True).prefetch_related('ligand__ligand_type', 'ligand_role','ligand__ids__web_resource')),
 				Prefetch("extra_proteins", queryset=StructureExtraProteins.objects.all().prefetch_related(
 					'protein_conformation','wt_protein')),
 				Prefetch("signprotcomplex_set", queryset=SignprotComplex.objects.all().prefetch_related('protein')))
@@ -108,10 +108,10 @@ class GProteinStructureBrowser(TemplateView):
 				"protein_conformation__protein__family__parent__parent__parent",
 				"publication__web_link__web_resource").prefetch_related(
 				"stabilizing_agents", "construct__crystallization__crystal_method",
-				"protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
+				"protein_conformation__protein__parent__endogenous_gtp_set__ligand__ligand_type",
 				"protein_conformation__site_protein_conformation__site",
 				Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
-				annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role','ligand__properities__web_links__web_resource')),
+				annotated=True).prefetch_related('ligand__ligand_type', 'ligand_role','ligand__ids__web_resource')),
 				Prefetch("extra_proteins", queryset=StructureExtraProteins.objects.all().prefetch_related(
 					'protein_conformation','wt_protein')),
 				Prefetch("signprot_complex", queryset=SignprotComplex.objects.all().prefetch_related('protein')))
@@ -238,7 +238,7 @@ def RefinedModelDetails(request, pdbname):
 		try:
 			structure = Structure.objects.get(pdb_code__index=pdbname.upper())
 			if structure.refined:
-				complex_mod_details = SignprotComplex.objects.filter(structure=structure)
+				complex_mod_details = SignprotComplex.objects.filter(structure=structure, beta_protein__isnull=False, gamma_protein__isnull=False) # Temp fix for G protein fragment coupled structures
 				if len(complex_mod_details) > 0:
 					complex_mod = complex_mod_details.first()
 					return ComplexModelDetails(request, pdbname.lower(), complex_mod.protein.entry_name)
@@ -599,7 +599,7 @@ def ServeUprightPdbDiagram(request, pdbname):
 	return HttpResponse(out_stream.getvalue(), content_type='chemical/x-pdb')
 
 def ServePdbLigandDiagram(request,pdbname,ligand):
-	pair = StructureLigandInteraction.objects.filter(structure__pdb_code__index=pdbname).filter(Q(ligand__properities__inchikey=ligand) | Q(ligand__name=ligand)).exclude(pdb_file__isnull=True).get()
+	pair = StructureLigandInteraction.objects.filter(structure__pdb_code__index=pdbname).filter(Q(ligand__inchikey=ligand) | Q(ligand__name=ligand)).exclude(pdb_file__isnull=True).get()
 	response = HttpResponse(pair.pdb_file.pdb, content_type='text/plain')
 	return response
 
@@ -647,14 +647,6 @@ class StructureStatistics(TemplateView):
 		unique_g_F_complexes = all_g_F_complexes.annotate(distinct_name=Concat('signprot_complex__protein__family__parent__name', 'protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
 		unique_g_T2_complexes = all_g_T2_complexes.annotate(distinct_name=Concat('signprot_complex__protein__family__parent__name', 'protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
 		unique_active = unique_structs.filter(protein_conformation__state__slug = 'active')
-		tree_dots_data = {}
-		tree_dots_data = self.grab_matches(unique_g_A_complexes, tree_dots_data)
-		tree_dots_data = self.grab_matches(unique_g_B1_complexes, tree_dots_data)
-		tree_dots_data = self.grab_matches(unique_g_B2_complexes, tree_dots_data)
-		tree_dots_data = self.grab_matches(unique_g_C_complexes, tree_dots_data)
-		tree_dots_data = self.grab_matches(unique_g_D1_complexes, tree_dots_data)
-		tree_dots_data = self.grab_matches(unique_g_F_complexes, tree_dots_data)
-		tree_dots_data = self.grab_matches(unique_g_T2_complexes, tree_dots_data)
 		#Stats
 		struct_count = Structure.objects.all().annotate(Count('id'))
 		struct_lig_count = Structure.objects.exclude(ligands=None)
@@ -713,8 +705,6 @@ class StructureStatistics(TemplateView):
 		context['chartdata_class'] = self.get_per_class_cumulative_data_series(years, unique_structs, lookup)
 		context['chartdata_class_y'] = self.get_per_class_data_series(years, unique_structs, lookup)
 		context['chartdata_class_all'] = self.get_per_class_cumulative_data_series(years, all_structs, lookup)
-
-		context['tree_dots_data'] = tree_dots_data
 		#context['coverage'] = self.get_diagram_coverage()
 		#{
 		#    'depth': 3,
@@ -736,7 +726,7 @@ class StructureStatistics(TemplateView):
 		context['class_a_options']['leaf_offset'] = 50
 		context['class_a_options']['label_free'] = []
         # section to remove Orphan from Class A tree and apply to a different tree
-		whole_class_a = class_a_data.get_nodes_dict('crystals')
+		whole_class_a = class_a_data.get_nodes_dict(None)
 		for item in whole_class_a['children']:
 			if item['name'] == 'Orphan':
 				orphan_data = OrderedDict([('name', ''), ('value', 3000), ('color', ''), ('children',[item])])
@@ -788,6 +778,33 @@ class StructureStatistics(TemplateView):
 
 		context["whole_receptors"] = json.dumps(whole_rec_dict)
 		context["page"] = self.origin
+
+		#Adding external circles info about structure state
+		if self.origin == 'structure':
+			circle_data = all_structs.values_list(
+			              "state_id__slug", "protein_conformation__protein__parent__entry_name", "pdb_code_id__index").order_by(
+			              "state_id__slug", "protein_conformation__protein__parent__entry_name", "pdb_code_id__index").distinct(
+			              "state_id__slug", "protein_conformation__protein__parent__entry_name", "pdb_code_id__index")
+		elif self.origin == 'gprot':
+			circle_data = all_gprots.values_list(
+			              "signprot_complex__protein__family__parent__name", "protein_conformation__protein__parent__entry_name", "pdb_code_id__index").order_by(
+			              "signprot_complex__protein__family__parent__name", "protein_conformation__protein__parent__entry_name", "pdb_code_id__index").distinct(
+			              "signprot_complex__protein__family__parent__name", "protein_conformation__protein__parent__entry_name", "pdb_code_id__index")
+
+
+		circles = {}
+
+		for data in circle_data:
+		    if data[1].split('_')[1] == 'human':
+		        key = data[1].split('_')[0].upper()
+		        if key not in circles.keys():
+		            circles[key] = {}
+		        if data[0] not in circles[key].keys():
+		            circles[key][data[0]] = 1
+		        circles[key][data[0]] += 1
+
+		context["circles_data"] = json.dumps(circles)
+
 		return context
 
 	def get_families_dict(self, queryset, lookup):
@@ -800,20 +817,6 @@ class StructureStatistics(TemplateView):
 			if fname not in families:
 				families.append(fname)
 		return families
-
-	def grab_matches(self, queryset, output):
-
-		#Grab data from queryset
-		for s in queryset:
-			gprot = s.signprot_complex.protein.family.parent.name
-			receptor = s.protein_conformation.protein.parent.entry_short()
-			if receptor in output.keys():
-				output[receptor].append(gprot)
-			else:
-				output[receptor] = []
-				output[receptor].append(gprot)
-
-		return output
 
 	def count_by_class(self, queryset, lookup):
 
@@ -1060,7 +1063,7 @@ class StructureStatistics(TemplateView):
 		class_interactions = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__annotated=True).prefetch_related(
 			'rotamer__residue__display_generic_number','interaction_type',
 			'structure_ligand_pair__structure__protein_conformation__protein__parent__family',
-			'structure_ligand_pair__ligand__properities',
+			'structure_ligand_pair__ligand',
 			)
 
 
@@ -1174,7 +1177,7 @@ class StructureStatistics(TemplateView):
 		class_interactions = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__annotated=True).prefetch_related(
 			'rotamer__residue__display_generic_number','interaction_type',
 			'structure_ligand_pair__structure__protein_conformation__protein__parent__family',
-			'structure_ligand_pair__ligand__properities',
+			'structure_ligand_pair__ligand',
 			)
 
 		score_copy = {'score': {'a':0,'i':0,'i_weight':0,'m':0,'m_weight':0,'s':0,'s_weight':0} , 'interaction' : {},'mutation': {}}
@@ -1968,9 +1971,9 @@ class TemplateBrowser(TemplateView):
 			"protein_conformation__protein__family__parent__parent__parent",
 			"publication__web_link__web_resource").prefetch_related(
 			"stabilizing_agents",
-			"protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
+			"protein_conformation__protein__parent__endogenous_gtp_set__ligand__ligand_type",
 			Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
-			annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role')))
+			annotated=True).prefetch_related('ligand__ligand_type', 'ligand_role')))
 
 		# Dirty but fast
 		qsd = {}
@@ -2490,259 +2493,259 @@ def RenderTrees(request):
 	context = {'tree':tree, 'leg':legend, 'num':number}
 	return render(request, 'phylogenetic_trees.html', context)
 
-def webform(request):
-	form = construct_form()
-	context = {'form':form}
-	return render(request, 'web_form.html',context)
-
-def webform_two(request, slug=None):
-	context = {}
-	if slug:
-		c = Construct.objects.filter(name=slug).get()
-		# print(c.json)
-		# test = ast.literal_eval(c.json)
-		# print(test)
-		json_data = json.loads(c.json)
-		if 'raw_data' not in json_data:
-			json_data = convert_ordered_to_disordered_annotation(json_data)
-		else:
-			if 'csrfmiddlewaretoken' in json_data['raw_data']:
-				del json_data['raw_data']['csrfmiddlewaretoken'] #remove to prevent errors
-
-		context = {'edit':json.dumps(json_data)}
-	return render(request, 'web_form_2.html',context)
-
-def webformdata(request) :
-
-	data = request.POST
-	raw_data = deepcopy(data)
-	purge_keys = ('Please Select','aamod_position','wt_aa','mut_aa','insert_pos_type','protein_type','deletion','csrfmiddlewaretoken')
-	data = dict((k, v) for k, v in data.items() if v!='' and v!='Please Select') #remove empty
-	deletions = []
-	mutations = []
-	contact_info= OrderedDict()
-	construct_crystal=OrderedDict()
-	auxiliary=OrderedDict()
-	expression=OrderedDict()
-	solubilization = OrderedDict()
-	crystallization = OrderedDict()
-	modifications = []
-
-	error = 0
-	error_msg = []
-	for key,value in sorted(data.items()):
-		try:
-			if key.startswith('delet_start'):
-				deletions.append({'start':value, 'end':data[key.replace('start','end')], 'origin':'user', 'type':'range'})
-				data.pop(key, None)
-				data.pop(key.replace('start','end'), None)
-			elif key.startswith('ins_start'):
-				deletions.append({'start':value, 'end':data[key.replace('start','end')], 'origin':'insertion'+key.replace('ins_start',''), 'type':'range'})
-				data.pop(key, None)
-				data.pop(key.replace('start','end'), None)
-				data.pop(key.replace('ins_start',''), None)
-			elif key.startswith(('deletion_single', 'insert_pos_single')):
-				if key.startswith('insert_pos_single'):
-					deletions.append({'pos':value, 'origin':'insertion'+key.replace('insert_pos_single',''), 'type':'single'})
-					data.pop(key.replace('insert_pos_single',''), None)
-				else:
-					deletions.append({'pos':value, 'origin':'user', 'type':'single'})
-				data.pop(key, None)
-
-			if key.startswith('aa_no'):
-				pos_id = key.replace('aa_no','')
-				# if pos_id=='':
-				# 	mut_id='1'
-				# else:
-				# 	mut_id=pos_id.replace('_','')
-
-				if 'mut_remark'+pos_id in data:
-					remark = data['mut_remark'+pos_id]
-				else:
-					remark = ''
-
-				mutations.append({'pos':value,'wt':data['wt_aa'+pos_id],'mut':data['mut_aa'+pos_id], 'type':data['mut_type'+pos_id], 'remark':remark})
-				data.pop(key, None)
-				data.pop('wt_aa'+pos_id, None)
-				data.pop('mut_aa'+pos_id, None)
-				data.pop('mut_type'+pos_id, None)
-
-			if key.startswith(('date','name_cont', 'pi_name',
-				'pi_address','address','url','pi_email' )):
-				contact_info[key]=value
-				data.pop(key, None)
-
-			if key.startswith(('pdb', 'pdb_name',
-				'uniprot','ligand_name', 'ligand_activity', 'ligand_conc', 'ligand_conc_unit','ligand_id','ligand_id_type')):
-				construct_crystal[key]=value
-				data.pop(key, None)
-
-			if key.startswith('position'):
-				pos_id = key.replace('position','')
-				if pos_id=='':
-					aux_id='1'
-				else:
-					aux_id=pos_id.replace('_','')
-
-				if 'aux'+aux_id not in auxiliary:
-					auxiliary['aux'+aux_id] = {'position':value,'type':data['protein_type'+pos_id],'presence':data['presence'+pos_id]}
-
-					data.pop(key, None)
-					data.pop('protein_type'+pos_id, None)
-					data.pop('presence'+pos_id, None)
-
-			if key.startswith(('tag', 'fusion_prot', 'signal', 'linker_seq','prot_cleavage', 'other_prot_cleavage' )):
-				temp = key.split('_')
-				if len(temp)==4:
-					pos_id = "_"+temp[3]
-					aux_id=pos_id.replace('_','')
-				elif len(temp)==3:
-					pos_id = "_"+temp[2]
-					aux_id=pos_id.replace('_','')
-				elif len(temp)==2 and temp[1].isdigit():
-					pos_id = "_"+temp[1]
-					aux_id=pos_id.replace('_','')
-				else:
-					pos_id = ''
-					aux_id = '1'
-				# print(key,aux_id,pos_id)
-
-				if 'aux'+aux_id not in auxiliary:
-					auxiliary['aux'+aux_id] = {'position':data['position'+pos_id],'type':data['protein_type'+pos_id],'presence':data['presence'+pos_id]}
-
-					data.pop('position'+pos_id, None)
-					data.pop('protein_type'+pos_id, None)
-					data.pop('presence'+pos_id, None)
-
-				# if value=='Other':
-				#     auxiliary['aux'+aux_id]['other'] = data['other_'+auxiliary['aux'+aux_id]['type']+pos_id]
-				#     data.pop('other_'+auxiliary['aux'+aux_id]['type']+pos_id,None)
-
-				auxiliary['aux'+aux_id]['subtype'] = value
-				data.pop(key, None)
-
-			if key.startswith(('expr_method', 'host_cell_type',
-					'host_cell', 'expr_remark','expr_other','other_host','other_host_cell' )):
-				expression[key]=value
-				data.pop(key, None)
-
-			if key.startswith(('deterg_type','deterg_concentr','deterg_concentr_unit','solub_additive','additive_concentr','addit_concentr_unit','chem_enz_treatment','sol_remark')):
-				solubilization[key]=value
-				data.pop(key, None)
-
-			elif key.startswith(('crystal_type','crystal_method','other_method','other_crystal_type',
-							   'protein_concentr','protein_conc_unit','temperature','ph_single','ph',
-							   'ph_range_one','ph_range_two','crystal_remark','lcp_lipid','lcp_add',
-							   'lcp_conc','lcp_conc_unit','detergent','deterg_conc','deterg_conc_unit','lipid','lipid_concentr','lipid_concentr_unit',
-							   'other_deterg','other_deterg_type', 'other_lcp_lipid','other_lipid')):
-				crystallization[key]=value
-				data.pop(key, None)
-
-			if key.startswith('chemical_comp') and not key.startswith('chemical_comp_type'):
-
-				if 'chemical_components' not in crystallization:
-					crystallization['chemical_components'] = []
-
-				# print(key)
-				if key!='chemical_comp': #not first
-					comp_id = key.replace('chemical_comp','')
-				else:
-					comp_id = ''
-
-				crystallization['chemical_components'].append({'component':value,'type':data['chemical_comp_type'+comp_id],'value':data['concentr'+comp_id],'unit':data['concentr_unit'+comp_id]})
-				data.pop(key, None)
-				data.pop('concentr'+comp_id, None)
-				data.pop('concentr_unit'+comp_id, None)
-				data.pop('chemical_comp_type'+comp_id, None)
-
-
-			if key.startswith('aamod') and not key.startswith('aamod_position') and not key.startswith('aamod_pair') and not key=='aamod_position' and not key=='aamod_single':
-				if key!='aamod': #not first
-					mod_id = key.replace('aamod','')
-				else:
-					mod_id = ''
-
-				if data['aamod_position'+mod_id]=='single':
-					pos = ['single',data['aamod_single'+mod_id]]
-					data.pop('aamod_single'+mod_id, None)
-				elif data['aamod_position'+mod_id]=='range':
-					pos = ['range',[data['aamod_start'+mod_id],data['aamod_end'+mod_id]]]
-					data.pop('aamod_start'+mod_id, None)
-					data.pop('aamod_end'+mod_id, None)
-				elif data['aamod_position'+mod_id]=='pair':
-					pos = ['pair',[data['aamod_pair_one'+mod_id],data['aamod_pair_two'+mod_id]]]
-					data.pop('aamod_pair_one'+mod_id, None)
-					data.pop('aamod_pair_two'+mod_id, None)
-
-				remark = ''
-				if 'mod_remark'+mod_id in data:
-					remark = data['mod_remark'+mod_id]
-				modifications.append({'type':value,'remark':remark,'position':pos })
-				data.pop(key, None)
-				data.pop('mod_remark'+mod_id, None)
-				data.pop('aamod_position'+mod_id, None)
-
-			if key.startswith(purge_keys):
-				data.pop(key, None)
-		except BaseException as e:
-			error_msg.append(str(e))
-			error = 1
-
-	auxiliary = OrderedDict(sorted(auxiliary.items()))
-
-	context = OrderedDict( [('contact_info',contact_info), ('construct_crystal',construct_crystal),
-						   ('auxiliary' , auxiliary),  ('deletions',deletions), ('mutations',mutations),
-						   ('modifications', modifications), ('expression', expression), ('solubilization',solubilization),
-						   ('crystallization',crystallization),  ('unparsed',data),  ('raw_data',raw_data), ('error', error), ('error_msg',error_msg)] )
-
-	add_construct(context)
-
-	if error==0:
-		dump_dir = '/protwis/construct_dump'
-		# dump_dir = '/web/sites/files/construct_data' #for sites
-		if not os.path.exists(dump_dir):
-			os.makedirs(dump_dir)
-		ts = int(time.time())
-		json_data = context
-		json.dump(json_data, open(dump_dir+"/"+str(ts)+"_"+construct_crystal['pdb']+".json", 'w'), indent=4, separators=(',', ': '))
-
-		context['data'] = sorted(data.items())
-		#context['data'] = sorted(raw_data.items())
-
-		recipients = ['christian@munk.be']
-		emaillist = [elem.strip().split(',') for elem in recipients]
-		msg = MIMEMultipart()
-		msg['Subject'] = 'GPCRdb: New webform data'
-		msg['From'] = 'gpcrdb@gmail.com'
-		msg['Reply-to'] = 'gpcrdb@gmail.com'
-
-		msg.preamble = 'Multipart massage.\n'
-
-		part = MIMEText("Hi, please find the attached file")
-		msg.attach(part)
-
-		part = MIMEApplication(open(str(dump_dir+"/"+str(ts)+"_"+construct_crystal['pdb']+".json"),"rb").read())
-		part.add_header('Content-Disposition', 'attachment', filename=str(dump_dir+"/"+str(ts)+"_"+construct_crystal['pdb']+".json"))
-		msg.attach(part)
-
-
-		server = smtplib.SMTP("smtp.gmail.com:587")
-		server.ehlo()
-		server.starttls()
-		server.login("gpcrdb@gmail.com", "gpcrdb2016")
-
-		server.sendmail(msg['From'], emaillist , msg.as_string())
-
-		context['filename'] = str(ts)+"_"+construct_crystal['pdb']
-
-	return render(request, 'web_form_results.html', context)
-
-def webform_download(request,slug):
-	dump_dir = '/protwis/construct_dump'
-	# dump_dir = '/web/sites/files/construct_data' #for sites
-	file = dump_dir+"/"+str(slug)+".json"
-	out_stream = open(file,"rb").read()
-	response = HttpResponse(content_type="application/json")
-	response['Content-Disposition'] = 'attachment; filename="{}"'.format(file)
-	response.write(out_stream)
-	return response
+# def webform(request):
+# 	form = construct_form()
+# 	context = {'form':form}
+# 	return render(request, 'web_form.html',context)
+#
+# def webform_two(request, slug=None):
+# 	context = {}
+# 	if slug:
+# 		c = Construct.objects.filter(name=slug).get()
+# 		# print(c.json)
+# 		# test = ast.literal_eval(c.json)
+# 		# print(test)
+# 		json_data = json.loads(c.json)
+# 		if 'raw_data' not in json_data:
+# 			json_data = convert_ordered_to_disordered_annotation(json_data)
+# 		else:
+# 			if 'csrfmiddlewaretoken' in json_data['raw_data']:
+# 				del json_data['raw_data']['csrfmiddlewaretoken'] #remove to prevent errors
+#
+# 		context = {'edit':json.dumps(json_data)}
+# 	return render(request, 'web_form_2.html',context)
+#
+# def webformdata(request) :
+#
+# 	data = request.POST
+# 	raw_data = deepcopy(data)
+# 	purge_keys = ('Please Select','aamod_position','wt_aa','mut_aa','insert_pos_type','protein_type','deletion','csrfmiddlewaretoken')
+# 	data = dict((k, v) for k, v in data.items() if v!='' and v!='Please Select') #remove empty
+# 	deletions = []
+# 	mutations = []
+# 	contact_info= OrderedDict()
+# 	construct_crystal=OrderedDict()
+# 	auxiliary=OrderedDict()
+# 	expression=OrderedDict()
+# 	solubilization = OrderedDict()
+# 	crystallization = OrderedDict()
+# 	modifications = []
+#
+# 	error = 0
+# 	error_msg = []
+# 	for key,value in sorted(data.items()):
+# 		try:
+# 			if key.startswith('delet_start'):
+# 				deletions.append({'start':value, 'end':data[key.replace('start','end')], 'origin':'user', 'type':'range'})
+# 				data.pop(key, None)
+# 				data.pop(key.replace('start','end'), None)
+# 			elif key.startswith('ins_start'):
+# 				deletions.append({'start':value, 'end':data[key.replace('start','end')], 'origin':'insertion'+key.replace('ins_start',''), 'type':'range'})
+# 				data.pop(key, None)
+# 				data.pop(key.replace('start','end'), None)
+# 				data.pop(key.replace('ins_start',''), None)
+# 			elif key.startswith(('deletion_single', 'insert_pos_single')):
+# 				if key.startswith('insert_pos_single'):
+# 					deletions.append({'pos':value, 'origin':'insertion'+key.replace('insert_pos_single',''), 'type':'single'})
+# 					data.pop(key.replace('insert_pos_single',''), None)
+# 				else:
+# 					deletions.append({'pos':value, 'origin':'user', 'type':'single'})
+# 				data.pop(key, None)
+#
+# 			if key.startswith('aa_no'):
+# 				pos_id = key.replace('aa_no','')
+# 				# if pos_id=='':
+# 				# 	mut_id='1'
+# 				# else:
+# 				# 	mut_id=pos_id.replace('_','')
+#
+# 				if 'mut_remark'+pos_id in data:
+# 					remark = data['mut_remark'+pos_id]
+# 				else:
+# 					remark = ''
+#
+# 				mutations.append({'pos':value,'wt':data['wt_aa'+pos_id],'mut':data['mut_aa'+pos_id], 'type':data['mut_type'+pos_id], 'remark':remark})
+# 				data.pop(key, None)
+# 				data.pop('wt_aa'+pos_id, None)
+# 				data.pop('mut_aa'+pos_id, None)
+# 				data.pop('mut_type'+pos_id, None)
+#
+# 			if key.startswith(('date','name_cont', 'pi_name',
+# 				'pi_address','address','url','pi_email' )):
+# 				contact_info[key]=value
+# 				data.pop(key, None)
+#
+# 			if key.startswith(('pdb', 'pdb_name',
+# 				'uniprot','ligand_name', 'ligand_activity', 'ligand_conc', 'ligand_conc_unit','ligand_id','ligand_id_type')):
+# 				construct_crystal[key]=value
+# 				data.pop(key, None)
+#
+# 			if key.startswith('position'):
+# 				pos_id = key.replace('position','')
+# 				if pos_id=='':
+# 					aux_id='1'
+# 				else:
+# 					aux_id=pos_id.replace('_','')
+#
+# 				if 'aux'+aux_id not in auxiliary:
+# 					auxiliary['aux'+aux_id] = {'position':value,'type':data['protein_type'+pos_id],'presence':data['presence'+pos_id]}
+#
+# 					data.pop(key, None)
+# 					data.pop('protein_type'+pos_id, None)
+# 					data.pop('presence'+pos_id, None)
+#
+# 			if key.startswith(('tag', 'fusion_prot', 'signal', 'linker_seq','prot_cleavage', 'other_prot_cleavage' )):
+# 				temp = key.split('_')
+# 				if len(temp)==4:
+# 					pos_id = "_"+temp[3]
+# 					aux_id=pos_id.replace('_','')
+# 				elif len(temp)==3:
+# 					pos_id = "_"+temp[2]
+# 					aux_id=pos_id.replace('_','')
+# 				elif len(temp)==2 and temp[1].isdigit():
+# 					pos_id = "_"+temp[1]
+# 					aux_id=pos_id.replace('_','')
+# 				else:
+# 					pos_id = ''
+# 					aux_id = '1'
+# 				# print(key,aux_id,pos_id)
+#
+# 				if 'aux'+aux_id not in auxiliary:
+# 					auxiliary['aux'+aux_id] = {'position':data['position'+pos_id],'type':data['protein_type'+pos_id],'presence':data['presence'+pos_id]}
+#
+# 					data.pop('position'+pos_id, None)
+# 					data.pop('protein_type'+pos_id, None)
+# 					data.pop('presence'+pos_id, None)
+#
+# 				# if value=='Other':
+# 				#     auxiliary['aux'+aux_id]['other'] = data['other_'+auxiliary['aux'+aux_id]['type']+pos_id]
+# 				#     data.pop('other_'+auxiliary['aux'+aux_id]['type']+pos_id,None)
+#
+# 				auxiliary['aux'+aux_id]['subtype'] = value
+# 				data.pop(key, None)
+#
+# 			if key.startswith(('expr_method', 'host_cell_type',
+# 					'host_cell', 'expr_remark','expr_other','other_host','other_host_cell' )):
+# 				expression[key]=value
+# 				data.pop(key, None)
+#
+# 			if key.startswith(('deterg_type','deterg_concentr','deterg_concentr_unit','solub_additive','additive_concentr','addit_concentr_unit','chem_enz_treatment','sol_remark')):
+# 				solubilization[key]=value
+# 				data.pop(key, None)
+#
+# 			elif key.startswith(('crystal_type','crystal_method','other_method','other_crystal_type',
+# 							   'protein_concentr','protein_conc_unit','temperature','ph_single','ph',
+# 							   'ph_range_one','ph_range_two','crystal_remark','lcp_lipid','lcp_add',
+# 							   'lcp_conc','lcp_conc_unit','detergent','deterg_conc','deterg_conc_unit','lipid','lipid_concentr','lipid_concentr_unit',
+# 							   'other_deterg','other_deterg_type', 'other_lcp_lipid','other_lipid')):
+# 				crystallization[key]=value
+# 				data.pop(key, None)
+#
+# 			if key.startswith('chemical_comp') and not key.startswith('chemical_comp_type'):
+#
+# 				if 'chemical_components' not in crystallization:
+# 					crystallization['chemical_components'] = []
+#
+# 				# print(key)
+# 				if key!='chemical_comp': #not first
+# 					comp_id = key.replace('chemical_comp','')
+# 				else:
+# 					comp_id = ''
+#
+# 				crystallization['chemical_components'].append({'component':value,'type':data['chemical_comp_type'+comp_id],'value':data['concentr'+comp_id],'unit':data['concentr_unit'+comp_id]})
+# 				data.pop(key, None)
+# 				data.pop('concentr'+comp_id, None)
+# 				data.pop('concentr_unit'+comp_id, None)
+# 				data.pop('chemical_comp_type'+comp_id, None)
+#
+#
+# 			if key.startswith('aamod') and not key.startswith('aamod_position') and not key.startswith('aamod_pair') and not key=='aamod_position' and not key=='aamod_single':
+# 				if key!='aamod': #not first
+# 					mod_id = key.replace('aamod','')
+# 				else:
+# 					mod_id = ''
+#
+# 				if data['aamod_position'+mod_id]=='single':
+# 					pos = ['single',data['aamod_single'+mod_id]]
+# 					data.pop('aamod_single'+mod_id, None)
+# 				elif data['aamod_position'+mod_id]=='range':
+# 					pos = ['range',[data['aamod_start'+mod_id],data['aamod_end'+mod_id]]]
+# 					data.pop('aamod_start'+mod_id, None)
+# 					data.pop('aamod_end'+mod_id, None)
+# 				elif data['aamod_position'+mod_id]=='pair':
+# 					pos = ['pair',[data['aamod_pair_one'+mod_id],data['aamod_pair_two'+mod_id]]]
+# 					data.pop('aamod_pair_one'+mod_id, None)
+# 					data.pop('aamod_pair_two'+mod_id, None)
+#
+# 				remark = ''
+# 				if 'mod_remark'+mod_id in data:
+# 					remark = data['mod_remark'+mod_id]
+# 				modifications.append({'type':value,'remark':remark,'position':pos })
+# 				data.pop(key, None)
+# 				data.pop('mod_remark'+mod_id, None)
+# 				data.pop('aamod_position'+mod_id, None)
+#
+# 			if key.startswith(purge_keys):
+# 				data.pop(key, None)
+# 		except BaseException as e:
+# 			error_msg.append(str(e))
+# 			error = 1
+#
+# 	auxiliary = OrderedDict(sorted(auxiliary.items()))
+#
+# 	context = OrderedDict( [('contact_info',contact_info), ('construct_crystal',construct_crystal),
+# 						   ('auxiliary' , auxiliary),  ('deletions',deletions), ('mutations',mutations),
+# 						   ('modifications', modifications), ('expression', expression), ('solubilization',solubilization),
+# 						   ('crystallization',crystallization),  ('unparsed',data),  ('raw_data',raw_data), ('error', error), ('error_msg',error_msg)] )
+#
+# 	add_construct(context)
+#
+# 	if error==0:
+# 		dump_dir = '/protwis/construct_dump'
+# 		# dump_dir = '/web/sites/files/construct_data' #for sites
+# 		if not os.path.exists(dump_dir):
+# 			os.makedirs(dump_dir)
+# 		ts = int(time.time())
+# 		json_data = context
+# 		json.dump(json_data, open(dump_dir+"/"+str(ts)+"_"+construct_crystal['pdb']+".json", 'w'), indent=4, separators=(',', ': '))
+#
+# 		context['data'] = sorted(data.items())
+# 		#context['data'] = sorted(raw_data.items())
+#
+# 		recipients = ['christian@munk.be']
+# 		emaillist = [elem.strip().split(',') for elem in recipients]
+# 		msg = MIMEMultipart()
+# 		msg['Subject'] = 'GPCRdb: New webform data'
+# 		msg['From'] = 'gpcrdb@gmail.com'
+# 		msg['Reply-to'] = 'gpcrdb@gmail.com'
+#
+# 		msg.preamble = 'Multipart massage.\n'
+#
+# 		part = MIMEText("Hi, please find the attached file")
+# 		msg.attach(part)
+#
+# 		part = MIMEApplication(open(str(dump_dir+"/"+str(ts)+"_"+construct_crystal['pdb']+".json"),"rb").read())
+# 		part.add_header('Content-Disposition', 'attachment', filename=str(dump_dir+"/"+str(ts)+"_"+construct_crystal['pdb']+".json"))
+# 		msg.attach(part)
+#
+#
+# 		server = smtplib.SMTP("smtp.gmail.com:587")
+# 		server.ehlo()
+# 		server.starttls()
+# 		server.login("gpcrdb@gmail.com", "gpcrdb2016")
+#
+# 		server.sendmail(msg['From'], emaillist , msg.as_string())
+#
+# 		context['filename'] = str(ts)+"_"+construct_crystal['pdb']
+#
+# 	return render(request, 'web_form_results.html', context)
+#
+# def webform_download(request,slug):
+# 	dump_dir = '/protwis/construct_dump'
+# 	# dump_dir = '/web/sites/files/construct_data' #for sites
+# 	file = dump_dir+"/"+str(slug)+".json"
+# 	out_stream = open(file,"rb").read()
+# 	response = HttpResponse(content_type="application/json")
+# 	response['Content-Disposition'] = 'attachment; filename="{}"'.format(file)
+# 	response.write(out_stream)
+# 	return response

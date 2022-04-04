@@ -11,7 +11,7 @@ from residue.models import Residue,ResidueGenericNumber
 from mutation.models import MutationExperiment
 from structure.models import Structure
 from interaction.models import ResidueFragmentInteraction
-from mutational_landscape.models import NaturalMutations, CancerMutations, DiseaseMutations, PTMs
+from mutational_landscape.models import NaturalMutations, PTMs
 
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')

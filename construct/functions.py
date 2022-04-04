@@ -7,7 +7,6 @@ from structure.models import Structure
 from construct.models import *
 
 from ligand.models import Ligand, LigandType, LigandRole
-from ligand.functions import get_or_make_ligand
 
 from common.tools import fetch_from_web_api
 from urllib.parse import quote
@@ -37,9 +36,9 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     # ignore_gaspar_annotation skips PDB_RANGE edits that mark missing residues as deleted, which messes up constructs.
 
     if not protein:
-        if pdbname=='6ORV':
-            with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs', '6ORV.pdb']), 'r') as pdb6orv:
-                pdbdata_raw = pdb6orv.read()
+        if pdbname in ['6ORV','6YVR','6Z4Q','6Z4S','6Z4V','6Z66','6Z8N','6ZA8','6ZIN']:
+            with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs', '{}.pdb'.format(pdbname)]), 'r') as pdbcustom:
+                pdbdata_raw = pdbcustom.read()
         else:
             url = 'https://www.rcsb.org/pdb/files/%s.pdb' % pdbname
             pdbdata_raw = urlopen(url).read().decode('utf-8')
