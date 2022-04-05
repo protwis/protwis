@@ -6,12 +6,9 @@ from ligand import views
 urlpatterns = [
     #  url(r'^browser$', cache_page(3600*24*7)(views.LigandBrowser.as_view()), name='ligand_browser'),
     url(r'^$', views.LigandTargetSelection.as_view(), name='ligand_selection'),
-    url(r'^browser$', views.LigandBrowser.as_view(), name='ligand_browser'),
 
-    url(r'^target/all/(?P<slug>[-\w]+)/$', views.TargetDetails, name='ligand_target_detail'),
-    url(r'^target/compact/(?P<slug>[-\w]+)/$', views.TargetDetailsCompact, name='ligand_target_detail_compact'),
-    url(r'^targets$', views.TargetDetails, name='ligand_target_detail'),
-    url(r'^targets_compact', views.TargetDetailsCompact, name='ligand_target_detail_compact'),
+    path('target_detail', views.TargetDetailsExtended, name='ligand_target_detail'),
+    path('targets_compact', views.TargetDetailsCompact, name='ligand_target_detail_compact'),
     url(r'^targets_purchasable', views.TargetPurchasabilityDetails, name='ligand_target_detail_purchasable'),
     url(r'^(?P<ligand_id>[-\w]+)/details$', views.LigandDetails, name='ligand_detail'),
     url(r'^statistics', cache_page(3600*24*7)(views.LigandStatistics.as_view()), name='ligand_statistics'),

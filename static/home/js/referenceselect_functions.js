@@ -575,6 +575,149 @@ function initTargetTable(elementID, pathway) {
 
 }
 
+
+/**
+ * This function initializes the YADCF datatables for a specific element
+ * @param {string} elementID The identifier of the container containing the table
+ */
+function initLigandCountTable(elementID) {
+
+    if (!$.fn.DataTable.isDataTable(elementID + " table")) {
+        referenceTable = $(elementID + " table").DataTable({
+            deferRender: true,
+            scrollY: "50vh",
+            scrollX: true,
+            scrollCollapse: true,
+            scroller: true,
+            paging: false,
+            aaSorting: [],
+            autoWidth: false,
+            bInfo: true,
+            columnDefs: [{
+                targets: 0,
+                orderable: false,
+                className: "select-checkbox"
+            },{
+                targets: 1,
+                className: "text-center"
+            },
+          ],
+        });
+
+        yadcf.init(referenceTable,
+            [
+                {
+                    column_number: 0,
+                    filter_type: "custom_func",
+                    custom_func: selectedTargetFilter,
+                    filter_container_id: "hidden_filter_container",
+                    html5_data: "data-search", // which does not exist - prevent warning logs
+                },
+                {
+                    column_number: 1,
+                    filter_type: "multi_select",
+                    select_type: "select2",
+                    filter_default_label: "Class",
+                    filter_reset_button_text: false,
+                    select_type_options: {
+                        "width": "70px",
+                    },
+                },
+                {
+                    column_number: 2,
+                    filter_type: "multi_select",
+                    select_type: "select2",
+                    filter_default_label: "Ligand",
+                    filter_reset_button_text: false,
+                    filter_match_mode : "exact",
+                },
+                {
+                    column_number: 3,
+                    filter_type: "multi_select",
+                    select_type: "select2",
+                    filter_default_label: "Family",
+                    filter_reset_button_text: false,
+                    filter_match_mode : "exact",
+                },
+                {
+                    column_number: 4,
+                    filter_type: "multi_select",
+                    select_type: "select2",
+                    filter_default_label: "Species",
+                    filter_reset_button_text: false,
+                    filter_match_mode : "exact",
+                },
+                {
+                    column_number: 5,
+                    filter_type: "multi_select",
+                    select_type: "select2",
+                    column_data_type: "html",
+                    filter_default_label: "Uniprot",
+                    filter_reset_button_text: false,
+                    select_type_options: {
+                        "width": "110px",
+                    }
+                },
+                {
+                    column_number: 6,
+                    filter_type: "multi_select",
+                    select_type: "select2",
+                    column_data_type: "html",
+                    html_data_type: "text",
+                    filter_default_label: "GtP",
+                    filter_match_mode : "exact",
+                    filter_reset_button_text: false,
+                    select_type_options: {
+                        "width": "110px",
+                    }
+                },
+                {
+                    column_number: 7,
+                    filter_type: "range_number",
+                    filter_default_label: ["From", "To"],
+                    filter_reset_button_text: false,
+                    //style_class: "center"
+                    //html5_data: "data-search",
+                    column_data_type: "html",
+                },
+                {
+                    column_number: 8,
+                    select_type: "select2",
+                    filter_reset_button_text: false,
+                    filter_match_mode : "exact",
+                },
+                {
+                    column_number: 9,
+                    select_type: "select2",
+                    filter_reset_button_text: false,
+                    filter_match_mode : "exact",
+                },
+            ], {
+                // cumulative_filtering: true,
+                filters_tr_index: 1
+            }
+        );
+        // yadcf.exFilterColumn(referenceTable, [[4, ["Homo sapiens"]]], true);
+    }
+    // When redrawing update the information selection message
+    referenceTable.on("draw.dt", function(e, oSettings) {
+        updateTargetCount();
+    });
+
+    // Put top scroller
+    // https://stackoverflow.com/questions/35147038/how-to-place-the-datatables-horizontal-scrollbar-on-top-of-the-table
+    $(".dataTables_scrollHead").css({
+        "overflow-x": "scroll"
+    }).on("scroll", function(e){
+        var scrollBody = $(this).parent().find(".dataTables_scrollBody").get(0);
+        scrollBody.scrollLeft = this.scrollLeft;
+        $(scrollBody).trigger("scroll");
+    });
+
+    // Ready to draw the table
+    referenceTable.draw();
+
+}
 /**
  * This function submits the selected target slug to the backend and opens
  * the ligands overview page in a new window

@@ -19,7 +19,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from django.core.cache import cache
 
-from common.views import AbsTargetSelectionTable, Alignment, AbsReferenceSelectionTable, getReferenceTable, getLigandTable
+from common.views import AbsTargetSelectionTable, Alignment, AbsReferenceSelectionTable, getReferenceTable, getLigandTable, getLigandCountTable
 from common.models import ReleaseNotes, WebResource, Publication
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
@@ -29,80 +29,56 @@ from protein.models import Protein, ProteinFamily, ProteinCouplings
 from interaction.models import StructureLigandInteraction
 from mutation.models import MutationExperiment
 
-class LigandTargetSelection(AbsTargetSelectionTable):
-    step = 1
-    number_of_steps = 1
-    filter_tableselect = False
-    #docs = 'sequences.html#structure-based-alignments'
-    title = "SELECT RECEPTORS with ligand assays"
-    description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
-        + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
-    selection_boxes = OrderedDict([
-        ('reference', False),
-        ('targets', True),
-        ('segments', False),
-    ])
-    buttons = {
-        'continue': {
-            'label': 'Next',
-            'onclick': "submitSelection('/ligand/browser');",
-            'color': 'success',
-        },
-    }
+class LigandTargetSelection(AbsReferenceSelectionTable):
+        step = 1
+        number_of_steps = 1
+        filters = False
+        filter_tableselect = False
+        family_tree = False
+        import_export_box = False
+        ligand_js = True
 
-class LigandBrowser(TemplateView):
-    """
-    Per target summary of ligands.
-    """
-    template_name = 'ligand_browser.html'
+        title = "SELECT A RECEPTOR with ligand assays"
+        description = 'Select a receptor in the table (below).' \
+            + '\n\nOnce you have selected your receptor, click a green button.'
 
-    def get_context_data(self, **kwargs):
-        protein_list = list()
-        try:
-            simple_selection = self.request.session.get('selection', False)
-            a = Alignment()
-            # load data from selection into the alignment
-            a.load_proteins_from_selection(simple_selection)
-            for items in a.proteins:
-                protein_list.append(items.protein)
-        except:
-            protein_list.append(1)
-        context = super(LigandBrowser, self).get_context_data(**kwargs)
-        ligands = AssayExperiment.objects.filter(protein__in=protein_list,).values(
-            'protein',
-            'protein__entry_name',
-            'protein__species__common_name',
-            'protein__family__name',
-            'protein__family__parent__name',
-            'protein__family__parent__parent__name',
-            'protein__family__parent__parent__parent__name',
-            'protein__species__common_name'
-        ).annotate(num_ligands=Count('ligand', distinct=True)).prefetch_related('protein')
-        context['ligands'] = ligands
+        selection_boxes = OrderedDict([
+            ('reference', True),
+            ('targets', False),
+            ('segments', False),
+        ])
 
-        return context
+        buttons = {
+            'continue': {
+                'label': 'Compact (1 row/ligand)',
+                'onclick': "submitSelection('/ligand/targets_compact');",
+                'color': 'success',
+                "sameSize": True,
+            },
+            'pathway': {
+                'label': "Extended (1 row/ligand)",
+                'onclick': "submitSelection('/ligand/target_detail');",
+                'color': 'success',
+                "sameSize": True,
+            },
+            'browser': {
+                'label': 'Old button',
+                'onclick': "submitSelection('/ligand/browser');",
+                'color': 'success',
+                "sameSize": True,
+            },
+        }
 
-    def fetch_receptor_transducers(self, receptor):
-        primary = set()
-        temp = str()
-        temp1 = str()
-        secondary = set()
-        try:
-            gprotein = ProteinCouplings.objects.filter(protein=receptor)
-            for x in gprotein:
-                if x.transduction and x.transduction == 'primary':
-                    primary.add(x.g_protein.name)
-                elif x.transduction and x.transduction == 'secondary':
-                    secondary.add(x.g_protein.name)
-            for i in primary:
-                temp += str(i.replace(' family', '')) + str(', ')
+        def get_context_data(self, **kwargs):
+            """Get context from parent class
 
-            for i in secondary:
-                temp1 += str(i.replace('family', '')) + str(', ')
-            return temp, temp1
-        except:
-            self.logger.info('receptor not found error')
-            return None, None
+            (really only relevant for children of this class, as TemplateView does
+            not have any context variables)
+            """
+            context = super().get_context_data(**kwargs)
+            context['table_data'] = getLigandCountTable()
+
+            return context
 
 def LigandDetails(request, ligand_id):
     """
@@ -158,52 +134,19 @@ def LigandDetails(request, ligand_id):
 
     return render(request, 'ligand_details.html', context)
 
-
 def TargetDetailsCompact(request, **kwargs):
-    if 'slug' in kwargs:
-        slug = kwargs['slug']
-        if slug.count('_') == 0:
-            ps = AssayExperiment.objects.filter(
-                protein__family__parent__parent__parent__slug=slug, ligand__ids__web_resource__slug='chembl_ligand')
-        elif slug.count('_') == 1 and len(slug) == 7:
-            ps = AssayExperiment.objects.filter(
-                protein__family__parent__parent__slug=slug, ligand__ids__web_resource__slug='chembl_ligand')
-        elif slug.count('_') == 2:
-            ps = AssayExperiment.objects.filter(
-                protein__family__parent__slug=slug, ligand__ids__web_resource__slug='chembl_ligand')
-        elif slug.count('_') == 3:
-            ps = AssayExperiment.objects.filter(
-                protein__family__slug=slug, ligand__ids__web_resource__slug='chembl_ligand')
-        elif slug.count('_') == 1 and len(slug) != 7:
-            ps = AssayExperiment.objects.filter(
-                protein__entry_name=slug, ligand__ids__web_resource__slug='chembl_ligand')
 
-        if slug.count('_') == 1 and len(slug) == 7:
-            f = ProteinFamily.objects.get(slug=slug)
-        else:
-            f = slug
-
-        context = {
-            'target': f
-        }
-    else:
-        simple_selection = request.session.get('selection', False)
-        if simple_selection == False or not simple_selection.targets :
-            return redirect("ligand_browser")
-        selection = Selection()
-        if simple_selection:
-            selection.importer(simple_selection)
-        if selection.targets != []:
-            prot_ids = [x.item.id for x in selection.targets]
-            ps = AssayExperiment.objects.filter(
-                protein__in=prot_ids, ligand__ids__web_resource__slug='chembl_ligand')
-            context = {
-                'target': ', '.join([x.item.entry_name for x in selection.targets])
-            }
+    simple_selection = request.session.get('selection', False)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+    if selection.reference != []:
+        prot_id = [x.item for x in selection.reference]
+        ps = AssayExperiment.objects.filter(
+            protein__in=prot_id, ligand__ids__web_resource__slug='chembl_ligand')
     # if queryset is empty redirect to ligand browser
     if not ps:
         return redirect("ligand_browser")
-
 
     ps = ps.prefetch_related(
         'protein', 'ligand__ids__web_resource', 'ligand__vendors__vendor')
@@ -268,53 +211,22 @@ def TargetDetailsCompact(request, **kwargs):
                     'hacc': lig.hacc,
                     'logp': lig.logp,
                 })
+    context = {}
     context['ligand_data'] = ligand_data
 
     return render(request, 'target_details_compact.html', context)
 
+def TargetDetailsExtended(request, **kwargs):
 
-def TargetDetails(request, **kwargs):
+    simple_selection = request.session.get('selection', False)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+    if selection.reference != []:
+        prot_id = [x.item for x in selection.reference]
+        ps = AssayExperiment.objects.filter(
+            protein__in=prot_id, ligand__ids__web_resource__slug='chembl_ligand')
 
-    if 'slug' in kwargs:
-        slug = kwargs['slug']
-        if slug.count('_') == 0:
-            ps = AssayExperiment.objects.filter(
-                protein__family__parent__parent__parent__slug=slug, ligand__ids__web_resource__slug='chembl_ligand')
-        elif slug.count('_') == 1 and len(slug) == 7:
-            ps = AssayExperiment.objects.filter(
-                protein__family__parent__parent__slug=slug, ligand__ids__web_resource__slug='chembl_ligand')
-        elif slug.count('_') == 2:
-            ps = AssayExperiment.objects.filter(
-                protein__family__parent__slug=slug, ligand__ids__web_resource__slug='chembl_ligand')
-        elif slug.count('_') == 3:
-            ps = AssayExperiment.objects.filter(
-                protein__family__slug=slug, ligand__ids__web_resource__slug='chembl_ligand')
-        elif slug.count('_') == 1 and len(slug) != 7:
-            ps = AssayExperiment.objects.filter(
-                protein__entry_name=slug, ligand__ids__web_resource__slug='chembl_ligand')
-
-        if slug.count('_') == 1 and len(slug) == 7:
-            f = ProteinFamily.objects.get(slug=slug)
-        else:
-            f = slug
-
-        context = {
-            'target': f
-        }
-    else:
-        simple_selection = request.session.get('selection', False)
-        if simple_selection == False or not simple_selection.targets :
-            return redirect("ligand_browser")
-        selection = Selection()
-        if simple_selection:
-            selection.importer(simple_selection)
-        if selection.targets != []:
-            prot_ids = [x.item.id for x in selection.targets]
-            ps = AssayExperiment.objects.filter(
-                protein__in=prot_ids, ligand__ids__web_resource__slug='chembl_ligand')
-            context = {
-                'target': ', '.join([x.item.entry_name for x in selection.targets])
-            }
     # if queryset is empty redirect to ligand browser
     if not ps:
         return redirect("ligand_browser")
@@ -341,6 +253,7 @@ def TargetDetails(request, **kwargs):
         record['purchasability'] = 'Yes' if LigandVendorLink.objects.filter(ligand__id=record['ligand__id']).exclude(
             vendor__name__in=['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem']).count() > 0 else 'No'
 
+    context = {}
     context['proteins'] = ps
 
     return render(request, 'target_details.html', context)
