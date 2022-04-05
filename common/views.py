@@ -6,12 +6,13 @@ from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.db.models import Count, Case, When, Min, Q
 from django.core.cache import cache
+from django.contrib.postgres.aggregates import ArrayAgg
 
 from common import definitions
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 from common.selection import SimpleSelection, Selection, SelectionItem
-from ligand.models import AssayExperiment, AnalyzedAssay
+from ligand.models import AssayExperiment, BiasedData, BalancedLigands
 from structure.models import Structure, StructureModel, StructureComplexModel
 from protein.models import Protein, ProteinFamily, ProteinSegment, Species, ProteinSource, ProteinSet, ProteinCouplings
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent, ResiduePositionSet, Residue
@@ -29,8 +30,92 @@ from io import BytesIO
 import xlsxwriter, xlrd
 import time
 import json
+import urllib
 
 default_schemes_excluded = ["cgn", "ecd", "can"]
+
+def getLigandTable(receptor_id, browser_type):
+    cache_key = "reference_table_" + str(receptor_id) + browser_type
+    data_table = cache.get(cache_key)
+    # data_table = None
+    if data_table == None:
+        ligands = list(BiasedData.objects.filter(receptor_id=receptor_id).values_list(
+            "ligand__name",
+            "endogenous_status",
+            "ligand__ligand_type__name",
+            "ligand__id",
+            "ligand__inchikey",
+            "ligand__smiles",).distinct())
+
+        data_table = "<table id='uniprot_selection' class='uniprot_selection stripe compact'> \
+            <thead>\
+              <tr> \
+                <th colspan=1>&nbsp;</th> \
+                <th colspan=4>Ligands</th> \
+                <th colspan=2>Data</th> \
+              </tr> \
+              <tr> \
+                <th><br><br><input autocomplete='off' class='form-check-input' type='checkbox' onclick='return check_all_targets();'></th> \
+                <th style=\"width; 100px;\">Ligand name<br>&nbsp;</th> \
+                <th>2D structure<br>&nbsp;</th> \
+                <th>Ligand type<br>&nbsp;</th> \
+                <th>Endogenous<br>&nbsp;</th> \
+                <th>Publication count</th> \
+                <th>Comparable ligands</th> \
+              </tr> \
+            </thead>\
+            \n \
+            <tbody>\n"
+
+        #link_setup = "<a target=\"_blank\" href=\"{}\"><span class=\"glyphicon glyphicon-new-window btn-xs\"></span></a>"
+        link_setup = "<a target=\"_blank\" href=\"{}\">{}</a>"
+        # img_setup_inchi = "<img style=\"max-height: 300px; max-width: 300px;\" src=\"http://www.ebi.ac.uk/chembl/api/data/image/{}.svg\">"
+        img_setup_smiles = "<img style=\"max-height: 300px; max-width: 300px;\" src=\"https://cactus.nci.nih.gov/chemical/structure/{}/image\">"
+
+        # Prefetch and aggregate related data (ligand_ids and publication_ids)
+        lig_pubs = list(BiasedData.objects.filter(receptor_id=receptor_id).values("ligand_id").
+                        annotate(pubs_ids=ArrayAgg("publication_id", distinct=True)))
+        lig_pubs = { item["ligand_id"]: item["pubs_ids"] for item in lig_pubs }
+        pub_lig_ids = list(BiasedData.objects.filter(receptor_id=receptor_id).values("publication_id")
+                         .annotate(lig_ids=ArrayAgg("ligand_id", distinct=True)))
+        pub_lig_ids = { item["publication_id"]:item["lig_ids"] for item in pub_lig_ids }
+        for p in ligands:
+            pubs = lig_pubs[p[3]]
+            compared = set()
+            for pub_id in pubs:
+                compared.update(pub_lig_ids[pub_id])
+
+            t = {}
+            t['ligandname'] = link_setup.format(str(p[3])+"/info", p[0])
+            t['ligandtype'] = p[2]
+            t['endogenous'] = p[1]
+            t['publications'] = len(pubs)
+            t['compared'] = len(compared) - 1
+            t['2d_structure'] = img_setup_smiles.format(urllib.parse.quote(p[5])) if p[5] != None else "Image not available"
+            data_table += "<tr> \
+            <td data-sort=\"0\"><input autocomplete='off' class=\"form-check-input\" type=\"checkbox\" name=\"reference\" id=\"{}\" data-entry=\"{}\" entry-value=\"{}\"></td> \
+            <td data-html=\"true\">{}</td> \
+            <td>{}</td> \
+            <td>{}</td> \
+            <td>{}</td> \
+            <td>{}</td> \
+            <td>{}</td> \
+            </tr> \n".format(
+                p[0],
+                p[3],
+                p[3],
+                t['ligandname'],
+                t['2d_structure'],
+                t['ligandtype'],
+                ("No" if t['endogenous'] == None else t['endogenous']),
+                t['publications'],
+                t['compared'],
+            )
+
+        data_table += "</tbody></table>"
+        # cache.set("target_table", data_table, 60*60*24*7)
+
+    return data_table
 
 def getTargetTable():
     data_table = cache.get("target_table")
@@ -108,8 +193,8 @@ def getTargetTable():
                 <th>Class<br>&nbsp;</th> \
                 <th>Ligand type<br>&nbsp;</th> \
                 <th style=\"width; 100px;\">Family<br>&nbsp;</th> \
-                <th class=\"text-highlight\">Receptor<br>(UniProt)</th> \
-                <th class=\"text-highlight\">Receptor<br>(GtP)</th> \
+                <th style=\"color:red\">Receptor<br>(UniProt)</th> \
+                <th style=\"color:red\">Receptor<br>(GtP)</th> \
                 <th>Count</th> \
                 <th>Count</th> \
                 <th>PDB(s)<br>&nbsp;</th> \
@@ -229,97 +314,105 @@ def getTargetTable():
 
     return data_table
 
-def getReferenceTable(filtering, assay_type):
-    cache_key = "reference_table_" + filtering + "_" + assay_type
+def getReferenceTable(pathway, subtype):
+    cache_key = "reference_table_" + pathway + "_" + subtype
     data_table = cache.get(cache_key)
     # data_table = None
     if data_table == None:
-        #get all the proteins that are in ligandanalyzedassay
-        biased_proteins = list(AnalyzedAssay.objects.filter(
-                        family__isnull=False,
-                        experiment__source=filtering).values_list(
-                        "experiment__receptor__entry_name").distinct())
+        #get all the proteins that are in biaseddata
+        biased_proteins = list(BiasedData.objects.values_list("receptor_id__entry_name").distinct())
 
         biased_entry_names = [b[0] for b in biased_proteins]
-        #original code
+
         proteins = Protein.objects.filter(
                                           entry_name__in=biased_entry_names,
                                           sequence_type__slug="wt",
-                                          family__slug__startswith="00",
-                                          species__common_name="Human").prefetch_related(
+                                          family__slug__startswith="00").prefetch_related(
             "family",
             "family__parent__parent__parent"
         )
-        # Acquired slugs
-        #original code
-        slug_list = [ p.family.slug for p in proteins ]
-        # original code
-        # ligand_set = list(AssayExperiment.objects.values("protein__family__slug")
-        #                                          .annotate(num_ligands=Count("ligand", distinct=True)))
-        #NEW CODE
-        ligand_zero = list(AnalyzedAssay.objects
-            .filter(order_no__lte=1,
-                    experiment__source=filtering,
-                    assay_description=assay_type)
-            .values('experiment__receptor__family__slug',
-                    'experiment__ligand_id')
-            .annotate(orders=Count('order_no', distinct=True))
-            .filter(orders=2)
-            .values('experiment__receptor__family__slug')
-            .annotate(total=Count('experiment__ligand_id', distinct=True))
-            .annotate(biased=Count('log_bias_factor', filter=Q(log_bias_factor__gte=1))))
 
-        #NEW CODE
-        ligand_count = {}
-        for entry in ligand_zero:
-            if entry['experiment__receptor__family__slug'] not in ligand_count.keys():
-                ligand_count[entry['experiment__receptor__family__slug']] = [entry['total'], entry['biased']]
+        #Complete data
+        totals = list(BiasedData.objects.values("receptor_id").annotate(total=Count("ligand_id", distinct=True)))
 
-        #MOCKUP QUERY FOR BALANCED LIGANDS
-        #THIS IS PURELY A SETUP FOR THE FURTHER
-        #IMPLEMENTATION OF BALANCED LIGAND DATA
-        # ligand_balanced = list(BalancedLigands.objects.values("protein__family__slug")
-        #                                          .annotate(num_ligands=Count("ligand", distinct=True)))
-        # balanced_count = {}
-        # for entry in ligand_balanced:
-        #     balanced_count[entry["protein__family__slug"]] = entry["num_ligands"]
+        if subtype == 'yes':
+            physio_bias = list(BiasedData.objects.filter(subtype_biased__isnull=False).values("receptor_id").annotate(physio=Count("ligand_id", distinct=True)))
+            balanced_refs = list(BalancedLigands.objects.filter(subtype_balanced=True).values("receptor_id").annotate(balanced=Count("ligand_id", distinct=True)))
+            path_bias = list(BiasedData.objects.filter(pathway_subtype_biased__isnull=False).values("receptor_id").annotate(path=Count("ligand_id", distinct=True)))
+        else:
+            physio_bias = list(BiasedData.objects.filter(physiology_biased__isnull=False).values("receptor_id").annotate(physio=Count("ligand_id", distinct=True)))
+            balanced_refs = list(BalancedLigands.objects.filter(subtype_balanced=False).values("receptor_id").annotate(balanced=Count("ligand_id", distinct=True)))
+            path_bias = list(BiasedData.objects.filter(pathway_biased__isnull=False).values("receptor_id").annotate(path=Count("ligand_id", distinct=True)))
 
-        # original code
-        # for entry in ligand_set:
-        #     ligand_count[entry["protein__family__slug"]] = entry["num_ligands"]
+        ligand_tot = {}
+        for entry in totals:
+            if entry['receptor_id'] not in ligand_tot.keys():
+                ligand_tot[entry['receptor_id']] = [entry['total']]
+        for entry in physio_bias:
+            if entry['receptor_id'] in ligand_tot.keys():
+                ligand_tot[entry['receptor_id']].append(entry['physio'])
+        for entry in balanced_refs:
+            if entry['receptor_id'] in ligand_tot.keys():
+                ligand_tot[entry['receptor_id']].append(entry['balanced'])
+        for entry in path_bias:
+            if entry['receptor_id'] in ligand_tot.keys():
+                ligand_tot[entry['receptor_id']].append(entry['path'])
 
-        data_table = "<table id='uniprot_selection' class='uniprot_selection stripe compact'> \
-            <thead>\
-              <tr> \
-                <th colspan=1>&nbsp;</th> \
-                <th colspan=5>Receptor classification</th> \
-                <th colspan=3>Number of ligands</th> \
-              </tr> \
-              <tr> \
-                <th><br><br><input autocomplete='off' class='form-check-input' type='checkbox' onclick='return check_all_targets();'></th> \
-                <th>Class<br>&nbsp;</th> \
-                <th>Ligand type<br>&nbsp;</th> \
-                <th style=\"width; 100px;\">Family<br>&nbsp;</th> \
-                <th class=\"text-highlight\">Receptor<br>(UniProt)</th> \
-                <th class=\"text-highlight\">Receptor<br>(GtP)</th> \
-                <th>Tested<br>(total)</th> \
-                <th>Physiology<br>biased</th> \
-                <th>Balanced<br>references</th> \
-              </tr> \
-            </thead>\
-            \n \
-            <tbody>\n"
+        if pathway == "yes":
+            data_table = "<table id='uniprot_selection' class='uniprot_selection stripe compact'> \
+                <thead>\
+                  <tr> \
+                    <th colspan=1>&nbsp;</th> \
+                    <th colspan=6>Receptor classification</th> \
+                    <th colspan=1>Number of ligands</th> \
+                  </tr> \
+                  <tr> \
+                    <th><br><br></th> \
+                    <th>Class<br>&nbsp;</th> \
+                    <th>Ligand type<br>&nbsp;</th> \
+                    <th style=\"width; 100px;\">Family<br>&nbsp;</th> \
+                    <th>Species<br>&nbsp;</th> \
+                    <th style=\"color:red\">Receptor<br>(UniProt)</th> \
+                    <th style=\"color:red\">Receptor<br>(GtP)</th> \
+                    <th>Tested<br>(total)</th> \
+                  </tr> \
+                </thead>\
+                \n \
+                <tbody>\n"
+        else:
+            data_table = "<table id='uniprot_selection' class='uniprot_selection stripe compact'> \
+                <thead>\
+                  <tr> \
+                    <th colspan=1>&nbsp;</th> \
+                    <th colspan=6>Receptor classification</th> \
+                    <th colspan=4>Number of ligands</th> \
+                  </tr> \
+                  <tr> \
+                    <th><br><br></th> \
+                    <th>Class<br>&nbsp;</th> \
+                    <th>Ligand type<br>&nbsp;</th> \
+                    <th style=\"width; 100px;\">Family<br>&nbsp;</th> \
+                    <th>Species<br>&nbsp;</th> \
+                    <th style=\"color:red\">Receptor<br>(UniProt)</th> \
+                    <th style=\"color:red\">Receptor<br>(GtP)</th> \
+                    <th>Tested<br>(total)</th> \
+                    <th>Balanced<br>references</th> \
+                    <th>Physiology<br>biased</th> \
+                    <th>Pathway<br>biased</th> \
+                  </tr> \
+                </thead>\
+                \n \
+                <tbody>\n"
 
-        slug_list = []
-        #link_setup = "<a target=\"_blank\" href=\"{}\"><span class=\"glyphicon glyphicon-new-window btn-xs\"></span></a>"
+        # slug_list = []
+        id_list = []
         link_setup = "<a target=\"_blank\" href=\"{}\">{}</a>"
 
         # NEW CODE
         for p in proteins:
-            # Do not repeat slugs (only unhuman proteins)
-            if p.family.slug in slug_list:
+            if p.id in id_list:
                 continue
-            slug_list.append(p.family.slug)
+            id_list.append(p.id)
             t = {}
             t['id'] = p.id
             t['accession'] = p.accession
@@ -327,53 +420,96 @@ def getReferenceTable(filtering, assay_type):
             t['slug'] = p.family.slug
             t['class'] = p.family.parent.parent.parent.short().split(' ')[0]
             t['ligandtype'] = p.family.parent.parent.short()
+            t['species'] = p.species.latin_name
             t['family'] = p.family.parent.short()
             t['uniprot'] = p.entry_short()
             t['iuphar'] = p.family.name.replace("receptor", '').strip()
 
             uniprot_links = p.web_links.filter(web_resource__slug='uniprot')
             if uniprot_links.count() > 0:
-                #t['uniprot_link'] = link_setup.format(p.web_links.filter(web_resource__slug='uniprot')[0])
                 t['uniprot'] = link_setup.format(p.web_links.filter(web_resource__slug='uniprot')[0], t['uniprot'])
 
             gtop_links = p.web_links.filter(web_resource__slug='gtop')
             if gtop_links.count() > 0:
-                #t['gtp_link'] = link_setup.format(p.web_links.filter(web_resource__slug='gtop')[0])
                 t['iuphar'] = link_setup.format(p.web_links.filter(web_resource__slug='gtop')[0], t['iuphar'])
 
             # Ligand count
             t['ligand_count'] = 0
-            t['biased_cound'] = 0
-            if t['slug'] in ligand_count:
-                t['ligand_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_count[t['slug']][0])
-                t['biased_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_count[t['slug']][1])
+
+            if t['id'] in ligand_tot:
+                t['ligand_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_tot[t['id']][0])
+                try:
+                    t['biased_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_tot[t['id']][1])
+                    t['biased_span'] = ligand_tot[t['id']][1]
+                except IndexError:
+                    t['biased_count'] = '-'
+                    t['biased_span'] = ''
+                try:
+                    t['balanced_refs'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_tot[t['id']][2])
+                    t['balanced_span'] = ligand_tot[t['id']][2]
+                except IndexError:
+                    t['balanced_refs'] = '-'
+                    t['balanced_span'] = ''
+                try:
+                    t['pathway_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_tot[t['id']][3])
+                    t['pathway_span'] = ligand_tot[t['id']][3]
+                except IndexError:
+                    t['pathway_count'] = '-'
+                    t['pathway_span'] = ''
+
+            if pathway == "yes":
+                data_table += "<tr> \
+                <td data-sort=\"0\"><input autocomplete='off' class=\"form-check-input\" type=\"checkbox\" name=\"reference\" id=\"{}\" data-entry=\"{}\" entry-value=\"{}\"></td> \
+                <td>{}</td> \
+                <td>{}</td> \
+                <td>{}</td> \
+                <td>{}</td> \
+                <td><span class=\"expand\">{}</span></td> \
+                <td><span class=\"expand\">{}</span></td> \
+                <td>{}</td> \
+                </tr> \n".format(
+                    t['slug'],
+                    t['name'],
+                    t['id'],
+                    t['class'],
+                    t['ligandtype'],
+                    t['family'],
+                    t['species'],
+                    t['uniprot'],
+                    t['iuphar'],
+                    t['ligand_count'],
+                )
             else:
-                continue
-
-
-            data_table += "<tr> \
-            <td data-sort=\"0\"><input autocomplete='off' class=\"form-check-input\" type=\"checkbox\" name=\"reference\" id=\"{}\" data-entry=\"{}\" entry-value=\"{}\"></td> \
-            <td>{}</td> \
-            <td>{}</td> \
-            <td>{}</td> \
-            <td><span class=\"expand\">{}</span></td> \
-            <td><span class=\"expand\">{}</span></td> \
-            <td>{}</td> \
-            <td>{}</td> \
-            <td>{}</td> \
-            </tr> \n".format(
-                t['slug'],
-                t['name'],
-                t['id'],
-                t['class'],
-                t['ligandtype'],
-                t['family'],
-                t['uniprot'],
-                t['iuphar'],
-                t['ligand_count'],
-                t['biased_count'],
-                '-', #this should be t['balanced_count']
-            )
+                data_table += "<tr> \
+                <td data-sort=\"0\"><input autocomplete='off' class=\"form-check-input\" type=\"checkbox\" name=\"reference\" id=\"{}\" data-entry=\"{}\" entry-value=\"{}\"></td> \
+                <td>{}</td> \
+                <td>{}</td> \
+                <td>{}</td> \
+                <td>{}</td> \
+                <td><span class=\"expand\">{}</span></td> \
+                <td><span class=\"expand\">{}</span></td> \
+                <td>{}</td> \
+                <td data-search=\"{}\">{}</td> \
+                <td data-search=\"{}\">{}</td> \
+                <td data-search=\"{}\">{}</td> \
+                </tr> \n".format(
+                    t['slug'],
+                    t['name'],
+                    t['id'],
+                    t['class'],
+                    t['ligandtype'],
+                    t['family'],
+                    t['species'],
+                    t['uniprot'],
+                    t['iuphar'],
+                    t['ligand_count'],
+                    t['balanced_span'],
+                    t['balanced_refs'],
+                    t['biased_span'],
+                    t['biased_count'],
+                    t['pathway_span'],
+                    t['pathway_count'],
+                )
 
         data_table += "</tbody></table>"
         cache.set(cache_key, data_table, 60*60*24*7)
@@ -401,7 +537,7 @@ class AbsReferenceSelectionTable(TemplateView):
     filters = True
 
     target_input = False
-
+    import_export_box = True
     default_species = 'Human'
     default_slug = '000'
     default_subslug = '00'
@@ -440,7 +576,7 @@ class AbsReferenceSelectionTable(TemplateView):
     #         del ppf
 
             # Load the target table data
-    table_data = getReferenceTable('different_family', 'tested_assays')
+    # table_data = getReferenceTable('no', 'no')
     # except Exception as e:
     #     pass
 
@@ -458,6 +594,8 @@ class AbsReferenceSelectionTable(TemplateView):
         """
 
         context = super().get_context_data(**kwargs)
+
+        context["table_data"] = getReferenceTable('no', 'no')
         # get selection from session and add to context
         # get simple selection from session
         simple_selection = self.request.session.get('selection', False)
@@ -501,6 +639,7 @@ class AbsTargetSelectionTable(TemplateView):
 
     type_of_selection = 'targets_table'
     selection_only_receptors = False
+    import_export_box = True
     step = 1
     number_of_steps = 2
     title = 'SELECT TARGETS'
@@ -624,6 +763,7 @@ class AbsTargetSelection(TemplateView):
 
     type_of_selection = 'targets'
     selection_only_receptors = False
+    import_export_box = True
     step = 1
     number_of_steps = 2
     title = 'SELECT TARGETS'
@@ -737,6 +877,7 @@ class AbsReferenceSelection(AbsTargetSelection):
     type_of_selection = 'reference'
     step = 1
     number_of_steps = 3
+    import_export_box = True
     title = 'SELECT A REFERENCE TARGET'
     description = 'Select a reference target by searching or browsing in the right column.\n\nThe reference will be compared to the targets you select later in the workflow.\n\nOnce you have selected your reference target, you will be redirected to the next step.'
     redirect_on_select = True
@@ -2153,13 +2294,20 @@ def ReadTargetInput(request):
             except:
                 obj = None
 
+        # # Try id
+        if obj == None and (up_name.isnumeric()):
+            selection_subtype = 'protein'
+            try:
+                obj = up_name
+            except:
+                obj = None
+
         if obj != None:
             selection_object = SelectionItem(selection_subtype, obj)
             selection.add(selection_type, selection_subtype, selection_object)
 
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
-
     # add simple selection to session
     request.session['selection'] = simple_selection
 
@@ -2174,12 +2322,10 @@ def ReadReferenceInput(request):
 
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
-
     # create full selection and import simple selection (if it exists)
     selection = Selection()
     if simple_selection:
         selection.importer(simple_selection)
-
     selection_type = 'reference'
     selection_subtype = 'protein'
 
@@ -2227,9 +2373,9 @@ def ReadReferenceInput(request):
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
 
+
     # add simple selection to session
     request.session['selection'] = simple_selection
-
     # context
     context = selection.dict(selection_type)
 

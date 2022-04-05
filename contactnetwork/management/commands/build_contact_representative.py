@@ -235,7 +235,7 @@ class Command(BaseCommand):
                     ci.structures.add(*consensus[pair]["pdbs"])
                     ci.proteins.add(*consensus[pair]["proteins"])
                 #print(consensus)
-        
+
 
         # Find state-specific contacts
         frequent_contacts = {}
@@ -273,7 +273,7 @@ class Command(BaseCommand):
                 pairs = pdb_contacts[pdb]
             else:
                 # Need to fetch pairs
-                
+
                 interactions = list(Interaction.objects.filter(
                     interacting_pair__referenced_structure__pdb_code__index=pdb
                 ).prefetch_related(
@@ -294,24 +294,34 @@ class Command(BaseCommand):
 
             gpcr_class = pdb_to_class_lookup[pdb]
             pdb_state = pdb_to_state_lookup[pdb]
-            class_pairs = state_pairs[gpcr_class]
-            active_intersection = class_pairs['active'].intersection(pairs)
-            inactive_intersection = class_pairs['inactive'].intersection(pairs)
-
-            if len(class_pairs['active']):
-                active_intersection_fraction = len(active_intersection)/len(class_pairs['active'])
+            if gpcr_class in state_pairs:
+                class_pairs = state_pairs[gpcr_class]
+                active_intersection = class_pairs['active'].intersection(pairs)
+                inactive_intersection = class_pairs['inactive'].intersection(pairs)
+                if len(class_pairs['active']):
+                    active_intersection_fraction = len(active_intersection)/len(class_pairs['active'])
+                else:
+                    active_intersection_fraction = 0
+                if len(class_pairs['inactive']):
+                    inactive_intersection_fraction = len(inactive_intersection)/len(class_pairs['inactive'])
+                else:
+                    inactive_intersection_fraction = 0
+                print(pdb,pdb_state, gpcr_class,'active',len(active_intersection),active_intersection_fraction,'inactive',len(inactive_intersection),inactive_intersection_fraction)
+                s = Structure.objects.get(pdb_code__index=pdb)
+                s.active_class_contacts_fraction = active_intersection_fraction
+                s.inactive_class_contacts_fraction = inactive_intersection_fraction
+                s.save()
             else:
-                active_intersection_fraction = 0
-            if len(class_pairs['inactive']):
-                inactive_intersection_fraction = len(inactive_intersection)/len(class_pairs['inactive'])
-            else:
-                inactive_intersection_fraction = 0
-            print(pdb,pdb_state, gpcr_class,'active',len(active_intersection),active_intersection_fraction,'inactive',len(inactive_intersection),inactive_intersection_fraction)
-
-            s = Structure.objects.get(pdb_code__index=pdb)
-            s.active_class_contacts_fraction = active_intersection_fraction
-            s.inactive_class_contacts_fraction = inactive_intersection_fraction
-            s.save()
+                s = Structure.objects.get(pdb_code__index=pdb)
+                if s.state.slug == "active":
+                    s.active_class_contacts_fraction = 1
+                    s.inactive_class_contacts_fraction = 0
+                    s.save()
+                elif s.state.slug == "inactive":
+                    s.active_class_contacts_fraction = 0
+                    s.inactive_class_contacts_fraction = 1
+                    s.save()
+                print("Class has no pairs, setting", pdb," to 100%")
 
     def class_based_representative(self):
         print('Script to decide contact representative for a conformation. Maximising highest frequence of common contacts, while minimizing uncommon (50%)')
@@ -350,7 +360,7 @@ class Command(BaseCommand):
                 print("REPRESENTATIVE:",pdbs[0])
                 conformation_representative.append(pdbs[0])
                 continue
-            
+
             scores = []
             for s in pdbs:
                 fraction_active = s.active_class_contacts_fraction
@@ -362,11 +372,11 @@ class Command(BaseCommand):
 
             if state=='active':
                 scores_sorted = sorted(scores, key=lambda x: (x[3]))
-            elif state=='inactive': 
+            elif state=='inactive':
                 scores_sorted = sorted(scores, key=lambda x: (-x[3]))
             elif state=='intermediate':
                 scores_sorted = sorted(scores, key=lambda x: (x[4]))
-            
+
             print("REPRESENTATIVE:",scores_sorted[0])
             conformation_representative.append(scores_sorted[0][0])
             conformation_non_representative += [row[0] for row in scores_sorted[1:]]

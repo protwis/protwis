@@ -351,39 +351,6 @@ def fragment(request):
     fragments = ResidueFragmentInteraction.objects.get(id=fragment)
     return render(request, 'interaction/fragment.html', {'form': form, 'pdbname': pdbname, 'ligand': ligand, 'fragmentid': fragment, 'fragments': fragments})
 
-
-def updateall(request):
-    structures = Structure.objects.values('pdb_code__index').distinct()
-    for s in structures:
-        pdbname = s['pdb_code__index']
-        check = ResidueFragmentInteraction.objects.filter(
-            structure_ligand_pair__structure__pdb_code__index=pdbname).all()
-
-        if check.count() == 0:
-            t1 = datetime.now()
-            runcalculation(pdbname)
-            t2 = datetime.now()
-            delta = t2 - t1
-            seconds = delta.total_seconds()
-            print("Calculation: Total time " +
-                  str(seconds) + " seconds for " + pdbname)
-            t1 = datetime.now()
-            results = parsecalculation(pdbname, False)
-            t2 = datetime.now()
-            delta = t2 - t1
-            seconds = delta.total_seconds()
-            print("Parsing: Total time " +
-                  str(seconds) + " seconds for " + pdbname)
-            check = ResidueFragmentInteraction.objects.filter(
-                structure_ligand_pair__structure__pdb_code__index=pdbname).all()
-            print("Interactions found: " + str(check.count()))
-        else:
-            print(pdbname + " already calculated")
-
-    # return render(request,'interaction/view.html',{'form': form, 'pdbname':
-    # pdbname, 'structures': structures})
-
-
 def runcalculation(pdbname, peptide=""):
     calc_script = os.sep.join(
         [os.path.dirname(__file__), 'legacy_functions.py'])
@@ -504,13 +471,13 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
                         structureligandinteraction = structureligandinteraction.get()
                         structureligandinteraction.pdb_file = pdbdata
                         ligand = structureligandinteraction.ligand
-                        if structureligandinteraction.ligand.properities.inchikey is None:
-                            structureligandinteraction.ligand.properities.inchikey = output['inchikey'].strip()
-                        elif structureligandinteraction.ligand.properities.inchikey != output['inchikey'].strip():
-                            logger.error(
-                                'Ligand/PDB inchikey mismatch (PDB:' + pdbname + ' LIG:' + output['prettyname'] + '): '+structureligandinteraction.ligand.properities.inchikey+' vs '+ output['inchikey'].strip())
+                        # if structureligandinteraction.ligand.inchikey is None:
+                        #     structureligandinteraction.ligand.inchikey = output['inchikey'].strip()
+                        # elif structureligandinteraction.ligand.inchikey != output['inchikey'].strip():
+                        #     logger.error(
+                        #         'Ligand/PDB inchikey mismatch (PDB:' + pdbname + ' LIG:' + output['prettyname'] + '): '+structureligandinteraction.ligand.inchikey+' vs '+ output['inchikey'].strip())
                     except Exception as msg:
-                        print('error with dublication structureligand',temp[1],msg)
+                        print('error with duplication structureligand',temp[1],msg)
                         break
                 elif StructureLigandInteraction.objects.filter(pdb_reference=temp[1], structure=structure).exists():
                     try:
@@ -522,34 +489,34 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
                             pdb_reference=temp[1], structure=structure, pdb_file=pdbdata).get()
                     ligand = structureligandinteraction.ligand
                 else:  # create ligand and pair
-
-                    ligand = Ligand.objects.filter(
-                        name=output['prettyname'], canonical=True)
-
-                    if ligand.exists():  # if ligand with name (either hetsyn or 3 letter) exists use that.
-                        ligand = ligand.get()
-                    else:  # create it
-                        default_ligand_type = 'N/A'
-                        lt, created = LigandType.objects.get_or_create(slug=slugify(default_ligand_type),
-                                                                       defaults={'name': default_ligand_type})
-
-                        ligand = Ligand()
-                        ligand = ligand.load_from_pubchem(
-                            'inchikey', output['inchikey'].strip(), lt, output['prettyname'])
-                        try:
-                            ligand.save()
-                        except:
-                            #print('ligand save failed, empty ligand?',output['prettyname'])
-                            continue
-
-                    ligandrole, created = LigandRole.objects.get_or_create(
-                        name='unknown', slug='unknown')
-                    structureligandinteraction = StructureLigandInteraction()
-                    structureligandinteraction.ligand = ligand
-                    structureligandinteraction.structure = structure
-                    structureligandinteraction.ligand_role = ligandrole
-                    structureligandinteraction.pdb_file = pdbdata
-                    structureligandinteraction.pdb_reference = temp[1]
+                    print(pdbname, "Skipping interactions with ", output['prettyname'])
+                    continue
+                    # ligand = Ligand.objects.filter(name=output['prettyname'])
+                    #
+                    # if ligand.exists():  # if ligand with name (either hetsyn or 3 letter) exists use that.
+                    #     ligand = ligand.get()
+                    # else:  # create it
+                    #     default_ligand_type = 'N/A'
+                    #     lt, created = LigandType.objects.get_or_create(slug=slugify(default_ligand_type),
+                    #                                                    defaults={'name': default_ligand_type})
+                    #
+                    #     ligand = Ligand()
+                    #     ligand = ligand.load_from_pubchem(
+                    #         'inchikey', output['inchikey'].strip(), lt, output['prettyname'])
+                    #     try:
+                    #         ligand.save()
+                    #     except:
+                    #         #print('ligand save failed, empty ligand?',output['prettyname'])
+                    #         continue
+                    #
+                    # ligandrole, created = LigandRole.objects.get_or_create(
+                    #     name='unknown', slug='unknown')
+                    # structureligandinteraction = StructureLigandInteraction()
+                    # structureligandinteraction.ligand = ligand
+                    # structureligandinteraction.structure = structure
+                    # structureligandinteraction.ligand_role = ligandrole
+                    # structureligandinteraction.pdb_file = pdbdata
+                    # structureligandinteraction.pdb_reference = temp[1]
 
                 structureligandinteraction.save()
 
@@ -1014,7 +981,7 @@ def download(request):
         # here's the needed fix
         try:
             pair = StructureLigandInteraction.objects.filter(structure__pdb_code__index=pdbname).filter(
-                Q(ligand__properities__inchikey=ligand) | Q(ligand__name=ligand)).exclude(pdb_file__isnull=True).get()
+                Q(ligand__inchikey=ligand) | Q(ligand__name=ligand)).exclude(pdb_file__isnull=True).get()
             response = HttpResponse(pair.pdb_file.pdb, content_type='text/plain')
         except:
             return redirect("/interaction/")

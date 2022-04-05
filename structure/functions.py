@@ -1124,15 +1124,71 @@ class StructureSeqNumOverwrite():
                 r.save()
 
 
+class ParseStructureCSV():
+    def __init__(self):
+        self.pdb_ids = []
+        self.structures = {}
+        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'structures.csv']), newline='') as csvfile:
+            structures = csv.reader(csvfile, delimiter='\t')
+            next(structures, None)
+            for s in structures:
+                self.pdb_ids.append(s[0])
+                self.structures[s[0]]= {'protein':s[1], 'name':s[0].lower(), 'state':s[4], 'preferred_chain':s[5], 'resolution':s[3]}
+
+    def __str__(self):
+        return '<ParsedStructures: {} entries>'.format(len(self.pdb_ids))
+
+    def parse_ligands(self):
+        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'ligands.csv']), newline='') as csvfile:
+            ligands = csv.reader(csvfile, delimiter='\t')
+            next(ligands, None)
+            for l in ligands:
+                if 'ligand' not in self.structures[l[0]]:
+                    self.structures[l[0]]['ligand'] = []
+                self.structures[l[0]]['ligand'].append({'chain':l[1], 'name':l[2], 'pubchemId':l[3], 'role':l[4], 'title':l[5], 'type': l[6]})
+
+    def parse_nanobodies(self):
+        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'nanobodies.csv']), newline='') as csvfile:
+            nanobodies = csv.reader(csvfile, delimiter='\t')
+            next(nanobodies, None)
+            for n in nanobodies:
+                if 'auxiliary_protein' not in self.structures[n[0]]:
+                    self.structures[n[0]]['auxiliary_protein'] = []
+                self.structures[n[0]]['auxiliary_protein'].append(n[1])
+
+    def parse_fusion_proteins(self):
+        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'fusion_proteins.csv']), newline='') as csvfile:
+            fusions = csv.reader(csvfile, delimiter='\t')
+            next(fusions, None)
+            for f in fusions:
+                if 'auxiliary_protein' not in self.structures[f[0]]:
+                    self.structures[f[0]]['auxiliary_protein'] = []
+                self.structures[f[0]]['auxiliary_protein'].append(f[1])
+
+    def parse_g_proteins(self):
+        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'g_proteins.csv']), newline='') as csvfile:
+            g_proteins = csv.reader(csvfile, delimiter='\t')
+            next(g_proteins, None)
+            for g in g_proteins:
+                self.structures[g[0]]['g_protein'] = {'alpha_uniprot': g[1], 'alpha_chain': g[2], 'beta_uniprot': g[3], 'beta_chain': g[4], 'gamma_uniprot': g[5], 'gamma_chain': g[6], 'note': g[7]}
+
+    def parse_arrestins(self):
+        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'arrestins.csv']), newline='') as csvfile:
+            arrestins = csv.reader(csvfile, delimiter='\t')
+            next(arrestins, None)
+            for a in arrestins:
+                self.structures[a[0]]['arrestin'] = {'protein': a[1], 'chain': a[2], 'note': a[3]}
+
+
+
 class StructureBuildCheck():
-    local_yaml_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'structures'])
     local_annotation_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation'])
     local_wt_pdb_lookup_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'wt_pdb_lookup'])
 
     def __init__(self):
         with open(self.local_annotation_dir+'/xtal_segends.yaml', 'r') as f:
             self.segends_dict = yaml.safe_load(f)
-        self.yamls = os.listdir(self.local_yaml_dir)
+        self.pdbs = ParseStructureCSV().pdb_ids
         self.wt_pdb_lookup_files = [i.split('.')[0] for i in os.listdir(self.local_wt_pdb_lookup_dir)]
         self.missing_seg = []
         self.start_error = []
@@ -1140,8 +1196,7 @@ class StructureBuildCheck():
         self.duplicate_residue_error = {}
 
     def check_structures(self):
-        for y in self.yamls:
-            pdb = y.split('.')[0]
+        for pdb in self.pdbs:
             try:
                 Structure.objects.get(pdb_code__index=pdb)
             except Structure.DoesNotExist:
@@ -1155,11 +1210,10 @@ class StructureBuildCheck():
                     try:
                         Residue.objects.get(protein_conformation=s.protein_conformation, sequence_number=r.sequence_number)
                     except Residue.MultipleObjectsReturned:
-                        if s in self.duplicate_residue_error: 
+                        if s in self.duplicate_residue_error:
                             self.duplicate_residue_error[s].append(r)
                         else:
                             self.duplicate_residue_error[s] = [r]
-
 
     def check_segment_ends(self, structure):
         key = structure.protein_conformation.protein.parent.entry_name + '_' + structure.pdb_code.index
@@ -1220,6 +1274,12 @@ class StructureBuildCheck():
                                 self.end_error.append([structure, seg, seg_resis.reverse()[0].sequence_number, anno_e])
         else:
             print('Warning: {} not annotated'.format(key))
+
+    def check_g_prot_struct_residues(self, signprot_complex):
+        pdb = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('struct', StringIO(str(signprot_complex.structure.pdb_data.pdb)))[0]
+        resis = Residue.objects.filter(protein_conformation=ProteinConformation.objects.get(protein__entry_name=signprot_complex.structure.pdb_code.index.lower()+'_a'))
+        if len(pdb[signprot_complex.alpha])!=len(resis):
+            print(signprot_complex.structure, len(pdb[signprot_complex.alpha]), len(resis))
 
 
 class ModelRotamer(object):

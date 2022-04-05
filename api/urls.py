@@ -1,4 +1,5 @@
 from django.conf.urls import include, url
+from django.views.decorators.cache import cache_page
 from api import views
 
 
@@ -9,7 +10,7 @@ urlpatterns = [
         name='proteinbyaccession'),
     url(r'^protein/(?P<entry_name>[^/].+)/$', views.ProteinDetail.as_view(), name='protein-detail'),
 
-    url(r'^proteinfamily/$', views.ProteinFamilyList.as_view(), name='proteinfamily-list'),
+    url(r'^proteinfamily/$', cache_page(3600*24*7)(views.ProteinFamilyList.as_view()), name='proteinfamily-list'),
     url(r'^proteinfamily/(?P<slug>[^/]+)/$', views.ProteinFamilyDetail.as_view(), name='proteinfamily-detail'),
     url(r'^proteinfamily/children/(?P<slug>[^/]+)/$', views.ProteinFamilyChildrenList.as_view(),
         name='proteinfamily-children'),
@@ -19,6 +20,8 @@ urlpatterns = [
         name='proteinfamily-proteins'),
     url(r'^proteinfamily/proteins/(?P<slug>[^/]+)/(?P<latin_name>[^/]+)/$', views.ProteinsInFamilySpeciesList.as_view(),
         name='proteinfamily-proteins'),
+
+    url(r'^receptorlist/$', cache_page(3600*24*7)(views.ReceptorList.as_view()), name='receptor-list'),
 
     url(r'^residues/(?P<entry_name>[^/]+)/$', views.ResiduesList.as_view(), name='residues'),
     url(r'^residues/extended/(?P<entry_name>[^/]+)/$', views.ResiduesExtendedList.as_view(), name='residues-extended'),
@@ -50,8 +53,8 @@ urlpatterns = [
     url(r'^alignment/similarity/(?P<proteins>[^/]+)/(?P<segments>[^/]+)/$', views.ProteinSimilaritySearchAlignment.as_view(),
         name='proteinsimilarityalignment'),
 
-    url(r'^structure/$', views.StructureList.as_view(), name='structure-list'),
-    url(r'^structure/representative/$', views.RepresentativeStructureList.as_view(), {'representative': True},
+    url(r'^structure/$', cache_page(3600*24*7)(views.StructureList.as_view()), name='structure-list'),
+    url(r'^structure/representative/$', cache_page(3600*24*7)(views.RepresentativeStructureList.as_view()), {'representative': True},
         name='structure-representative-list'),
     url(r'^structure/protein/(?P<entry_name>[^/]+)/$', views.StructureListProtein.as_view(),
         name='structure-list-protein'),
@@ -67,7 +70,7 @@ urlpatterns = [
     url(r'structure/assign_generic_numbers$', views.StructureAssignGenericNumbers.as_view(),
         name='assign_generic_numbers'),
     url(r'structure/parse_pdb$', views.StructureSequenceParser.as_view(), name='sequence_parser'),
-    url(r'^species/$', views.SpeciesList.as_view(), name='species-list'),
+    url(r'^species/$', cache_page(3600*24*7)(views.SpeciesList.as_view()), name='species-list'),
     url(r'^species/(?P<latin_name>[^/]+)/$', views.SpeciesDetail.as_view(), name='species-detail'),
     url(r'^mutants/(?P<entry_name>[^/].+)/$', views.MutantList.as_view(), name='mutants'),
     url(r'^drugs/(?P<entry_name>[^/].+)/$', views.DrugList.as_view(), name='drugs'),

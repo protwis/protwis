@@ -134,9 +134,15 @@ class Command(BaseCommand):
                         "5NX2" : "intermediate", # Closer to active + groups together but internally more inactive
                         "6N51" : "intermediate", # Holds middle between active and inactive
                         "7CA5" : "intermediate",  # Apo state holds middle between active and inactive
+                        "7CA3" : "active",  # GABA with PAM groups to active state structures within family, but not class
                         "7M3E" : "inactive", #
                         "7M3J" : "inactive", #
-                        "7DD5" : "inactive" #
+                        "7DD5" : "inactive", #
+                        "4IAR" : "inactive", #
+                        "4IAQ" : "inactive", #
+                        "5V54" : "inactive", #
+                        "6IQL" : "inactive", #
+                        "7C61" : "inactive"
                     }
 
                     # Percentage score for TM2-TM6 opening
@@ -173,7 +179,7 @@ class Command(BaseCommand):
                             structure_state = "active"
                             if slug[0] == "001" and score > -15:
                                 structure_state = "intermediate"
-                        elif score < -3 and slug[0] == "004": # above this score always inactive structure
+                        elif score < -6.5 and slug[0] == "004": # above this score always inactive structure
                             structure_state = "active"
                         elif score < 0 and slug[0] == "006": # above this score always inactive structure
                             structure_state = "active"

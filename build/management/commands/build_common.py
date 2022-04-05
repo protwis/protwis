@@ -4,7 +4,7 @@ from django.conf import settings
 from common.models import WebResource, WebLink, PublicationJournal, Publication
 from protein.models import (ProteinSegment, ProteinAnomaly, ProteinAnomalyType, ProteinAnomalyRuleSet,
     ProteinAnomalyRule)
-from ligand.models import Ligand, LigandProperities, LigandType, LigandRole
+from ligand.models import Ligand, LigandType, LigandRole
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme
 from news.models import News
 

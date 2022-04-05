@@ -681,7 +681,7 @@ function ajaxMutantsPos(plotid) {
             increases ++;
           } else if (v[0]>0) {
             unchanged ++;
-          }  else if (v[0]<-10) {
+          } else if (v[0]<-10) {
             bigdecreases ++;
           } else if (v[0]<-5) {
             decreases ++;
@@ -717,31 +717,13 @@ function ajaxMutantsPos(plotid) {
         winner2 = Math.max.apply(window,counts);
         color = "#D9D7CE";
         color_letter = "#000";
-        // if (winner==0 && winner2) {
-        //   if (increases>bigincreases) {
-        //     color = "#FF7373";
-        //     color_letter = "#FFF";
-        //   } else {
-        //     color = "#FA1111";
-        //     color_letter = "#FDFF7B";
-        //   }
-        // } else if (winner==1) {
-        //   if (decreases>bigdecreases) {
-        //     color = "#87E88F";
-        //   } else {
-        //     color = "#66B36C";
-        //   }
-        // } else if (winner==2) {
-        //   color = "#F7DA00";
-        //   color_letter = "#000";
-        // }
 
         if (bigincreases>0) {
-            color = "#FF7373";
-            color_letter = "#FFF";
+          color = "#FA1111";
+          color_letter = "#FDFF7B";
         } else if (increases>0) {
-            color = "#FA1111";
-            color_letter = "#FDFF7B";
+          color = "#FF7373";
+          color_letter = "#FFF";
         } else if (bigdecreases>0) {
             color = "#66B36C";
         } else if (decreases>0) {
@@ -751,11 +733,7 @@ function ajaxMutantsPos(plotid) {
           color_letter = "#000";
         }
 
-
-
-
          original_title = $('#'+plotid).find("#"+key).attr('original_title')
-
          $('#'+plotid).find("#"+key).css("fill", color);
          $('#'+plotid).find("#"+key).next().css("fill",color_letter );
          $('#'+plotid).find("#"+key).attr('title',original_title+extra);

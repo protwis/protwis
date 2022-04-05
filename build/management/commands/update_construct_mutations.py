@@ -6,13 +6,14 @@ from django.conf import settings
 from django.db import connection
 from django.core.cache import cache
 
+from build.management.commands.build_ligand_functions import get_or_create_ligand
+
 from structure.models import Structure
 from construct.functions import  fetch_pdb_info
 from construct.models import *
 from residue.models import Residue
 
 from ligand.models import Ligand, LigandType, LigandRole
-from ligand.functions import get_or_make_ligand
 
 from operator import itemgetter
 from itertools import groupby
@@ -39,7 +40,7 @@ class Command(BaseCommand):
 
         ## DEBUG ITEMS
         # self.match_all_with_uniprot_mutations()
-        # Simply check deletions on record vs newest pdb 
+        # Simply check deletions on record vs newest pdb
         # self.check_deletions()
         # # Make sure json file is correct
         # # self.json_check_for_mutations_deletions()
@@ -60,7 +61,7 @@ class Command(BaseCommand):
         # changes deletions to match PDB
         # Custom rules exist in the function
         self.replace_deletions()
-        
+
         ## IMPORTS ###
         self.import_inserts()
         self.import_expression()
@@ -181,7 +182,7 @@ class Command(BaseCommand):
                 ct, created = ChemicalType.objects.get_or_create(name=c[3])
                 chem, created = Chemical.objects.get_or_create(name=c[2], chemical_type=ct)
                 cc, created = ChemicalConc.objects.get_or_create(concentration=c[4], concentration_unit=c[5], chemical=chem)
-                c_list.chemicals.add(cc)      
+                c_list.chemicals.add(cc)
 
             solubilization = Solubilization.objects.create(chemical_list = c_list)
             try:
@@ -289,7 +290,7 @@ class Command(BaseCommand):
                     if ctype not in chem_types:
                         chem_types[ctype] = []
                     chem_types[ctype].append(chem)
-                    
+
                 for ctype,chems in chem_types.items():
                     c_list = ChemicalList()
                     list_name,created  = ChemicalListName.objects.get_or_create(name=ctype)
@@ -304,10 +305,10 @@ class Command(BaseCommand):
             else:
                 print('no chems for ',pdb)
 
-
             if pdb in xtal_ligands_list:
                 l = xtal_ligands_list[pdb][0]
-                ligand = get_or_make_ligand(l[7],l[6],l[2])
+                ligand = get_or_create_ligand(l[2])
+                # ligand = get_or_create_ligand(l[7],l[6],l[2])
                 role_slug = slugify(l[3])
                 try:
                     lr, created = LigandRole.objects.get_or_create(slug=role_slug,
@@ -318,7 +319,7 @@ class Command(BaseCommand):
                     ligand_c = CrystallizationLigandConc()
                     ligand_c.construct_crystallization = c
                     ligand_c.ligand = ligand
-                    if lr: 
+                    if lr:
                         ligand_c.ligand_role = lr
                     if l[4]:
                         ligand_c.ligand_conc = l[4]
@@ -347,7 +348,7 @@ class Command(BaseCommand):
 
             if i[2]=='NONE':
                 # SKip those that are entries just to show there is nothing
-                continue 
+                continue
             if i[3]=='?':
                 continue
             print(i)
@@ -406,9 +407,9 @@ class Command(BaseCommand):
             else:
                 print("dump auto annotation for",pdbname," (considering adding these to excel sheet)")
 
-            fusion_position, fusions, linkers = c.fusion() 
+            fusion_position, fusions, linkers = c.fusion()
             protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
-            uniprot = protein.parent.entry_name   
+            uniprot = protein.parent.entry_name
             #print(c.name,fusion_position)
 
             # if pdbname != '4UHR':
@@ -422,7 +423,7 @@ class Command(BaseCommand):
                 if c.crystallization.crystal_type.sub_name == 'other [See next field]':
                     print(pdbname,'Has other subname',c.crystallization.crystal_type.sub_name)
                     print(d['crystallization']['lcp_lipid'],d['crystallization']['other_lcp_lipid'])
-                    c_type, created = CrystallizationTypes.objects.get_or_create(name=d['crystallization']['crystal_type'], sub_name=d['crystallization']['other_lcp_lipid'])    
+                    c_type, created = CrystallizationTypes.objects.get_or_create(name=d['crystallization']['crystal_type'], sub_name=d['crystallization']['other_lcp_lipid'])
                     c.crystallization.crystal_type = c_type
                     c.crystallization.save()
 
@@ -523,7 +524,7 @@ class Command(BaseCommand):
                 if i.insert_type.subtype == 'Flavodoxin':
                     i.insert_type.name = 'fusion'
                 if i.insert_type.subtype == 'GlgA glycogen synthase':
-                    i.insert_type.subtype = 'PGS (Pyrococcus abyssi glycogen synthase)' 
+                    i.insert_type.subtype = 'PGS (Pyrococcus abyssi glycogen synthase)'
                     i.insert_type.name = 'fusion'
 
                 if i.start:
@@ -617,12 +618,12 @@ class Command(BaseCommand):
                         #print('ligand',lig)
                         l = lig.ligand
                         l_name = l.name
-                        smiles = l.properities.smiles
-                        inchi = l.properities.inchikey
+                        smiles = l.smiles
+                        inchi = l.inchikey
 
                         id_type = None
                         id_index = None
-                        for links in l.properities.web_links.all():
+                        for links in l.ids.all():
                             #Just use the first link
                             id_type = links.web_resource.slug
                             id_index = links.index
@@ -800,7 +801,7 @@ class Command(BaseCommand):
             uniprot = protein.parent.entry_name
             d = cache.get(pdbname+"_auto_d")
             # d = None
-            if not d and 'deletions' in d:
+            if d == None or (not d and 'deletions' in d):
                 d = fetch_pdb_info(c_pdb,protein,ignore_gasper_annotation=True)
                 cache.set(pdbname+"_auto_d",d,60*60*24)
             if 'deletions' in d:
@@ -820,7 +821,7 @@ class Command(BaseCommand):
             if 'raw_data' not in d:
                 d['raw_data'] = {}
             else:
-                # remove points associated with mutations and deletions 
+                # remove points associated with mutations and deletions
                 # FIXME also do inserts / modifications
                 delete = []
                 for k,v in d['raw_data'].items():
@@ -838,7 +839,7 @@ class Command(BaseCommand):
             cons_muts = ConstructMutation.objects.filter(construct = c)
             i = 2
             for m in cons_muts:
-                d['mutations'].append({'mut':m.mutated_amino_acid,'wt':m.wild_type_amino_acid,'pos':m.sequence_number,'type':str(m.effects.all())})                  
+                d['mutations'].append({'mut':m.mutated_amino_acid,'wt':m.wild_type_amino_acid,'pos':m.sequence_number,'type':str(m.effects.all())})
                 d['raw_data']['mut_aa_'+str(i)] = m.mutated_amino_acid
                 d['raw_data']['wt_aa_'+str(i)] = m.wild_type_amino_acid
                 d['raw_data']['aa_no_'+str(i)] = m.sequence_number
@@ -942,7 +943,7 @@ class Command(BaseCommand):
         with open('construct_mut_issues.csv', 'w') as f:
             writer = csv.writer(f, delimiter = '\t')
             writer.writerows(csv_rows)
-            
+
 
     def check_mutations(self):
         track_annotated_mutations = []
@@ -1089,7 +1090,7 @@ class Command(BaseCommand):
         print(sorted(missing2)," do not have any mutations annotated (but auto has them having) -- add them to sheet with NONE if they have none")
 
         for mut in non_annotated_muts:
-            pdb = mut.construct.structure.pdb_code.index 
+            pdb = mut.construct.structure.pdb_code.index
             uniprot = mut.construct.protein.entry_name
             seg = mut.residue.protein_segment.slug
             if mut.residue.generic_number:
@@ -1112,5 +1113,3 @@ class Command(BaseCommand):
         with open('construct_mut_missing.csv', 'w') as f:
             writer = csv.writer(f, delimiter = '\t')
             writer.writerows(csv_rows)
-
-

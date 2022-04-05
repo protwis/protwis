@@ -121,8 +121,7 @@ class Command(BaseCommand):
             class_interactions = ResidueFragmentInteraction.objects.filter(
                 structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=gpcr_class[c], structure_ligand_pair__annotated=True).prefetch_related(
                 'rotamer__residue__display_generic_number','interaction_type',
-                'structure_ligand_pair__structure__protein_conformation__protein__parent',
-                'structure_ligand_pair__ligand__properities')
+                'structure_ligand_pair__structure__protein_conformation__protein__parent')
 
             generic = {}
 

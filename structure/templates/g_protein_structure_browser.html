@@ -258,7 +258,7 @@
                         <td class='expand'>
                             {% for ligand in structure.ligands.all|dictsort:"ligand_role.name" %}
                                 {{ ligand.ligand.name|safe }}
-                            {% for link in ligand.ligand.properities.web_links.all %}
+                            {% for link in ligand.ligand.ids.all %}
                                 <a href="{{ link}}" target="_blank">{{link.web_resource.slug}}</a>
                             {% endfor %}
                                 <br />
@@ -272,12 +272,13 @@
                         <td>
                             {{ structure.ligands.all|ligandrole|linebreaksbr }}
                         </td>
+                        <!-- Endogenous ligand -->
                         <td class='expand'>
                             {% autoescape off %}
-                                {{ structure.protein_conformation.protein.parent.endogenous_ligands.all|lineformat }}
+                              {{ structure.protein_conformation.protein.parent.endogenous_gtp_set.all | endo_format }}
                             {% endautoescape %}
                         </td>
-                        <td>{{ structure.protein_conformation.protein.parent.endogenous_ligands.all.0.properities.ligand_type|dashwhenempty }}</td>
+                        <td>{{ structure.protein_conformation.protein.parent.endogenous_gtp_set.all.0.ligand.ligand_type|dashwhenempty }}</td>
                         <td class='expand'>
                             {% if structure.publication %}
                                 {{ structure.publication.authors}}

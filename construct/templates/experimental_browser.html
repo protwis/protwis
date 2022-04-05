@@ -602,7 +602,7 @@
                                 {% else %}
                                     {{ ligand.ligand.name|safe }}
                                 {% endif %}
-                                {% for link in ligand.ligand.properities.web_links.all %}
+                                {% for link in ligand.ligand.ids.all %}
                                     <a href="{{ link}}" target="_blank">{{link.web_resource.slug}}</a>
                                 {% endfor %}
                                     <br />

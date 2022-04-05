@@ -304,6 +304,52 @@ function submitSelection(url, minimum = 1, maximum = 0) {
 }
 
 /**
+ * This function submits the selected targets to the backend and moves to the
+ * next page. This function should be executed upon pressing the green button
+ * after target selection.
+ * @param {string} url The url to go to after synchronizing the target selection
+ */
+function onTheFlySelection(url, subtype=false, pathway=false, minimum = 1, maximum = 0) {
+  // Check species selection and assume correct # species if not human
+  let species = $("div#filters-species a.btn.active")[0].innerText.trim();
+  let species_exemption = false;
+  if (species !== "Human"){
+    species_exemption = true;
+  }
+  console.log(selected_targets);
+  if (species_exemption || (selected_targets.size >= minimum && (maximum === 0 || selected_targets.size <= maximum))) {
+    // set CSRF csrf_token
+    $.ajaxSetup({
+        headers:
+        { "X-CSRF-TOKEN": $("meta[name=\"csrf-token\"]").attr("content") }
+    });
+
+    // Submit proteins to target selection
+    var group = Array.from(selected_targets);
+    $.post("/common/targetformread", { "input-targets": group.join("\r") },  function (data) {
+      // On success go to alignment page
+      window.location.href = url;
+    })
+    .fail(
+      function(){
+        showAlert("Something went wrong, please try again or contact us.", "danger");
+      });
+  } else {
+    if (maximum > 0 && selected_targets.size > maximum){
+      if (maximum > 1) {
+        showAlert("Please select a maximum of " + maximum + " targets.", "warning");
+      } else {
+        showAlert("Please select only one target.", "warning");
+      }
+    } else if (minimum === 1) {
+      showAlert("Please select at least one target.", "warning");
+    } else {
+      showAlert("Please select at least "+minimum+" targets.", "warning");
+    }
+  }
+}
+
+/**
  * This function initializes the YADCF datatables for a specific element
  * @param {string} elementID The identifier of the container containing the table
  */

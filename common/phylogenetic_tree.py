@@ -5,7 +5,7 @@ Annotates crystalized targets and number of ligands/target available in ChEMBL.
 from django.db.models import Count
 
 from interaction.models import ResidueFragmentInteraction, StructureLigandInteraction
-from ligand.models import AssayExperiment, AnalyzedExperiment
+from ligand.models import AssayExperiment, BiasedData
 from protein.models import Protein, ProteinFamily
 from structure.models import Structure
 
@@ -26,8 +26,10 @@ class PhylogeneticTreeNode(object):
             'mutations': 0,
             'ligands': 0,
             'ligand_bias': 0,
+            'ligand_bias_bal': 0,
             'pathway_pref': 0,
             'subtype' : 0,
+            'subtype_bal' : 0,
             }
 
     def get_value(self, param):
@@ -201,12 +203,13 @@ class PhylogeneticTreeGenerator(object):
                         'mutations': [],
                         'ligands': {},
                         'ligand_bias': {},
+                        'ligand_bias_bal': {},
                         'pathway_pref': {},
-                        'subtype' : {}
+                        'subtype': {},
+                        'subtype_bal': {}
                         }
 
         self.get_aux_data()
-
         self.d3_options = {
             'depth': self.tree_depth,
             'branch_length': {},
@@ -265,43 +268,69 @@ class PhylogeneticTreeGenerator(object):
             2000 : [x['protein'] for x in ligand_data if x['num_ligands'] > 1000] #more than 1000
             }
 
-        ligand_bias_data = AnalyzedExperiment.objects.filter(
-            source='different_family').values(
-            'receptor',
-            'receptor__entry_name'
+        ligand_bias_data = BiasedData.objects.filter(
+            physiology_biased__isnull=False).values(
+            'receptor_id',
+            'receptor_id__entry_name'
             ).annotate(num_ligands=Count('ligand_id', distinct=True))
 
         self.aux_data['ligand_bias'] = {
-            10 : [x['receptor'] for x in ligand_bias_data if x['num_ligands'] <= 10],
-            20 : [x['receptor'] for x in ligand_bias_data if 10 < x['num_ligands'] <= 20],
-            30 : [x['receptor'] for x in ligand_bias_data if 20 < x['num_ligands'] <= 30],
-            40 : [x['receptor'] for x in ligand_bias_data if x['num_ligands'] > 30] #more than 1000
+            10 : [x['receptor_id'] for x in ligand_bias_data if x['num_ligands'] <= 10],
+            20 : [x['receptor_id'] for x in ligand_bias_data if 10 < x['num_ligands'] <= 20],
+            30 : [x['receptor_id'] for x in ligand_bias_data if 20 < x['num_ligands'] <= 30],
+            40 : [x['receptor_id'] for x in ligand_bias_data if x['num_ligands'] > 30] #more than 1000
             }
 
-        pathway_pref_data = AnalyzedExperiment.objects.filter(
-            source='predicted_family').values(
-            'receptor',
-            'receptor__entry_name'
+        ligand_balanced_data = BiasedData.objects.filter(
+            pathway_biased__isnull=False).values(
+            'receptor_id',
+            'receptor_id__entry_name'
+            ).annotate(num_ligands=Count('ligand_id', distinct=True))
+
+        self.aux_data['ligand_bias_bal'] = {
+            10 : [x['receptor_id'] for x in ligand_balanced_data if x['num_ligands'] <= 10],
+            20 : [x['receptor_id'] for x in ligand_balanced_data if 10 < x['num_ligands'] <= 20],
+            30 : [x['receptor_id'] for x in ligand_balanced_data if 20 < x['num_ligands'] <= 30],
+            40 : [x['receptor_id'] for x in ligand_balanced_data if x['num_ligands'] > 30] #more than 1000
+            }
+
+        pathway_pref_data = BiasedData.objects.filter(
+            pathway_preferred__isnull=False).values(
+            'receptor_id',
+            'receptor_id__entry_name'
             ).annotate(num_ligands=Count('ligand_id', distinct=True))
 
         self.aux_data['pathway_pref'] = {
-            10 : [x['receptor'] for x in pathway_pref_data if x['num_ligands'] <= 10],
-            20 : [x['receptor'] for x in pathway_pref_data if 10 < x['num_ligands'] <= 20],
-            30 : [x['receptor'] for x in pathway_pref_data if 20 < x['num_ligands'] <= 30],
-            40 : [x['receptor'] for x in pathway_pref_data if x['num_ligands'] > 30] #more than 1000
+            10 : [x['receptor_id'] for x in pathway_pref_data if x['num_ligands'] <= 10],
+            20 : [x['receptor_id'] for x in pathway_pref_data if 10 < x['num_ligands'] <= 20],
+            30 : [x['receptor_id'] for x in pathway_pref_data if 20 < x['num_ligands'] <= 30],
+            40 : [x['receptor_id'] for x in pathway_pref_data if x['num_ligands'] > 30] #more than 1000
             }
 
-        subtype_data = AnalyzedExperiment.objects.filter(
-            source='sub_different_family').values(
-            'receptor',
-            'receptor__entry_name'
+        subtype_data = BiasedData.objects.filter(
+            subtype_biased__isnull=False).values(
+            'receptor_id',
+            'receptor_id__entry_name'
             ).annotate(num_ligands=Count('ligand_id', distinct=True))
 
         self.aux_data['subtype'] = {
-            10 : [x['receptor'] for x in subtype_data if x['num_ligands'] <= 10],
-            20 : [x['receptor'] for x in subtype_data if 10 < x['num_ligands'] <= 20],
-            30 : [x['receptor'] for x in subtype_data if 20 < x['num_ligands'] <= 30],
-            40 : [x['receptor'] for x in subtype_data if x['num_ligands'] > 30] #more than 1000
+            10 : [x['receptor_id'] for x in subtype_data if x['num_ligands'] <= 10],
+            20 : [x['receptor_id'] for x in subtype_data if 10 < x['num_ligands'] <= 20],
+            30 : [x['receptor_id'] for x in subtype_data if 20 < x['num_ligands'] <= 30],
+            40 : [x['receptor_id'] for x in subtype_data if x['num_ligands'] > 30] #more than 1000
+            }
+
+        subtype_balanced_data = BiasedData.objects.filter(
+            pathway_subtype_biased__isnull=False).values(
+            'receptor_id',
+            'receptor_id__entry_name'
+            ).annotate(num_ligands=Count('ligand_id', distinct=True))
+
+        self.aux_data['subtype_bal'] = {
+            10 : [x['receptor_id'] for x in subtype_balanced_data if x['num_ligands'] <= 10],
+            20 : [x['receptor_id'] for x in subtype_balanced_data if 10 < x['num_ligands'] <= 20],
+            30 : [x['receptor_id'] for x in subtype_balanced_data if 20 < x['num_ligands'] <= 30],
+            40 : [x['receptor_id'] for x in subtype_balanced_data if x['num_ligands'] > 30] #more than 1000
             }
 
     def map_family_colors(self):
@@ -347,12 +376,18 @@ class PhylogeneticTreeGenerator(object):
                         for key in self.aux_data['ligand_bias']:
                             if protein.id in self.aux_data['ligand_bias'][key]:
                                 tmp_node.increment_value('ligand_bias', key)
+                        for key in self.aux_data['ligand_bias_bal']:
+                            if protein.id in self.aux_data['ligand_bias_bal'][key]:
+                                tmp_node.increment_value('ligand_bias_bal', key)
                         for key in self.aux_data['pathway_pref']:
                             if protein.id in self.aux_data['pathway_pref'][key]:
                                 tmp_node.increment_value('pathway_pref', key)
                         for key in self.aux_data['subtype']:
                             if protein.id in self.aux_data['subtype'][key]:
                                 tmp_node.increment_value('subtype', key)
+                        for key in self.aux_data['subtype_bal']:
+                            if protein.id in self.aux_data['subtype_bal'][key]:
+                                tmp_node.increment_value('subtype_bal', key)
                         coverage.add_data(protein.family.slug, tmp_node)
                 return coverage
             children = OrderedDict()

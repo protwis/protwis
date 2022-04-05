@@ -28,7 +28,7 @@
                     <h2>STEP {{ step }} of {{ number_of_steps }}</h2>
                     {% endif %}
                     <h4>{{ title }}</h4>
-                    {{ description|linebreaks }}
+                    {{ description|safe|linebreaks }}
                 </div>
 
               {% if docs %}
@@ -47,6 +47,7 @@
         <div class="col-md-3">
         {% block middle_left_column %}
         {% endblock %}
+        {% if import_export_box %}
         <div class="col-md-12 panel panel-primary">
             <div class="panel-body" id="selection-{{ selection_box }}">
               <div><input type="text" id="copyboxTargets" class="form-control" placeholder="UniProt names"></div>
@@ -56,6 +57,7 @@
               </div>
             </div>
         </div>
+        {% endif %}
         </div>
 
         <div class="col-md-3">
@@ -104,13 +106,14 @@
                     <h2>STEP {{ step }} of {{ number_of_steps }}</h2>
                     {% endif %}
                     <h4>{{ title }}</h4>
-                    {{ description|linebreaks }}
+                    {{ description|safe|linebreaks }}
                     {% if docs %}
                     For more information on this tool, see the <a href="{{ documentation_url }}{{ docs }}">docs</a>.
                     {% endif %}
                 </div>
             </div>
 
+            {% if import_export_box %}
             <div class="col-md-12 panel panel-primary">
                 <div class="panel-body" id="selection-{{ selection_box }}">
                   <div><input type="text" id="copyboxTargets" class="form-control" placeholder="UniProt names"></div>
@@ -120,6 +123,7 @@
                   </div>
                 </div>
             </div>
+            {% endif %}
         </div>
 
         <!-- selection column -->
@@ -134,42 +138,6 @@
 
         </div>
         {% endif %}
-    </div>
-
-    <div id="path_bias" class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-          <h4 class="modal-title">Pathway-biased ligands (balance reference ligand)</h4>
-        </div>
-        <div class="modal-body">
-          <!-- <a href="#close" title="Close" class="close">X</a> -->
-          <p>Ligand pathway-bias is calculated relative to a referenced ligand with balanced (near-equal)
-            signaling across two pathways measured in the same system (see <a href="#">pre-print)</a>.</p>
-          <p>GPCRdb is currently collecting such reference ligands and will avail this page when done.
-          Please help by submitting your balanced reference ligands <a href="#">here</a>.</p>
-        </div>
-      </div>
-    </div>
-
-    <div id="biased" class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-          <h4 class="modal-title">Biased ligands (any reference ligand)</h4>
-        </div>
-        <div class="modal-body">
-          <!-- <a href="#close" title="Close" class="close">X</a> -->
-          <p>GPCRdb is currently working on this page.<br>
-            It will allow users to select which ligand from an annotated publication should be
-            used as the reference ligand to calculate bias for the other tested ligands in
-            the same publication.</p>
-        </div>
-      </div>
     </div>
 
     <div class="row">

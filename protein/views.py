@@ -87,20 +87,7 @@ def detail(request, slug):
         alt_genes = genes[1:]
 
     # get structures of this protein
-    structures = Structure.objects.filter(protein_conformation__protein__parent=p).select_related(
-                "state",
-                "pdb_code__web_resource",
-                "protein_conformation__protein__species",
-                "protein_conformation__protein__source",
-                "protein_conformation__protein__family__parent__parent__parent",
-                "publication__web_link__web_resource").prefetch_related(
-                "stabilizing_agents", "construct__crystallization__crystal_method",
-                "protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
-                "protein_conformation__site_protein_conformation__site",
-                Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
-                annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role','ligand__properities__web_links__web_resource')),
-                Prefetch("extra_proteins", queryset=StructureExtraProteins.objects.all().prefetch_related(
-                    'protein_conformation','wt_protein'))).order_by('-representative','resolution')
+    structures = Structure.objects.filter(protein_conformation__protein__parent=p)
 
     # get residues
     residues = Residue.objects.filter(protein_conformation=pc).order_by('sequence_number').prefetch_related(

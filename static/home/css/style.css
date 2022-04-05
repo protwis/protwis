@@ -239,6 +239,10 @@ input.form-control {
   border-radius: 6px 0 6px 6px;
 }
 
+.dropdown-submenu.guidelines > a::after {
+  padding-left:300px;
+}
+
 h3.dropleft .dropleft > .dropdown-menu {
   right: 100% !important;
   left: auto !important;
@@ -300,4 +304,8 @@ span.stats_indent {
 
 ul.nav-tabs li a {
   white-space: nowrap;
+}
+
+a.external_link:link, a.external_link:visited, a.external_link:hover, a.external_link:active {
+  color: #036;
 }

@@ -6,7 +6,7 @@ from django.utils.text import slugify
 from django.conf import settings
 
 from residue.models import Residue, ResidueDataType, ResidueDataPoint
-from protein.models import ProteinSet
+from protein.models import Protein, ProteinSet
 
 import logging
 from urllib import request, parse
@@ -38,17 +38,16 @@ class Command(BaseBuild):
         dynamine_type.save()
 
         # All human proteins and xtaled
-        # self.proteins = list(set(list(Protein.objects.filter(sequence_type__slug='wt',species__common_name="Human").all())+list(ProteinSet.objects.get(name='All').proteins.all())))
-        self.proteins = list(
-            set(list(ProteinSet.objects.get(name="All").proteins.all())))
+        self.proteins = list(set(list(Protein.objects.filter(sequence_type__slug='wt',species__common_name="Human").all())+list(ProteinSet.objects.get(name="All").proteins.all())))
+        #self.proteins = list( set(list(ProteinSet.objects.get(name="All").proteins.all())))
         self.prepare_input(options["proc"], self.proteins)
         # self.logger.info('Finishing adding dynamine annotations')
 
     def get_dynamine_prediction(self, protein):
-        # First: try the local Django cache and return if exists
-        dynamine_results = cache.get("dynamine_prediction_%s" % (protein.entry_name))
-        if dynamine_results:
-            return dynamine_results
+        # DEPRECATED First: try the local Django cache and return if exists
+        # dynamine_results = cache.get("dynamine_prediction_%s" % (protein.entry_name))
+        # if dynamine_results:
+        #     return dynamine_results
 
         # Second: try the dynamine file cache and return if exists
         dynamine_dir = os.sep.join([settings.DATA_DIR, 'structure_data','dynamine_cache'])
@@ -67,36 +66,39 @@ class Command(BaseBuild):
 
         # Third: request from the dynamine server
         json_api_key = "26cf5c434a171cab9220666030cd981bdbe485a449729a7c8c6272b9"
-        job = {"protocol": "1.0",
-               "json_api_key": json_api_key,
-               "sequences": {protein.entry_name: protein.sequence},
-               "predictions_only": "true",
+        job = {"tool_list": ["dynamine"],
+               "TOKEN": json_api_key,
+               protein.entry_name: protein.sequence,
                }
-        url = 'http://dynamine.ibsquare.be/batch_request'
+        url = 'https://bio2byte.be/msatools/api/'
+        response_code = 0
         try:
-            # this will make the method "POST"
-            data = parse.urlencode({"batch": json.dumps(job)}).encode()
+            # "POST" the job information to the DynaMine API
+            data = parse.urlencode(job).encode()
             req = request.Request(url, data=data)
-            resp = json.loads(request.urlopen(req).read().decode("UTF-8"))
+            reqr = request.urlopen(req)
+            resp = json.loads(reqr.read().decode("UTF-8"))
         except Exception as e:
             resp = {}
             print("Error starting job", e)
 
-        job_id = resp["job_id"]
-        poll = {"protocol": "1.0",
-                "json_api_key": json_api_key,
-                "job_id": job_id
-                }
-        resp["status"] = "Started"
+        hash_id = resp["hash_id"]
         tries = 0
-        while resp["status"] != "completed":
-            time.sleep(2)
+        response_code = -1
+        while response_code != "200":
+            time.sleep(5)
             tries += 1
             try:
-                data = parse.urlencode({"batch": json.dumps(poll)}).encode()
-                # this will make the method "POST"
-                req = request.Request(url, data=data)
+                req = request.Request("https://bio2byte.be/msatools/api/queue/" + hash_id)
                 resp = json.loads(request.urlopen(req).read().decode('UTF-8'))
+                if "status" in resp and resp["status"] not in [200, 202]:
+                    print("Errors when querying DynaMine server")
+                    exit(0)
+                elif "results" in resp:
+                    response_code = "200"
+                    # Error in new DynaMine API => tries processing tool_list and TOKEN entries
+                    resp["results"] = {"predictions": { resp["results"][-1]["proteinID"] : resp["results"][-1]["backbone"]}}
+
             except Exception as e:
                 resp = {}
                 print("Error polling job", e)
@@ -120,22 +122,32 @@ class Command(BaseBuild):
             slug=slugify("dynamine"), name="Dynamine Prediction")
         residues = Residue.objects.filter(
             protein_conformation__protein=protein).all()
-        c = r["status"]
-        if r["status"] == "completed":
+
+        c = 0
+        if "results" in r and protein.entry_name in r["results"]["predictions"]:
             predictions = r["results"]["predictions"][protein.entry_name]
-            # print(predictions)
-            c = 0
+            bulk = []
             for i, p in enumerate(predictions):
                 # fetch residue
                 try:
                     r = residues.filter(sequence_number=i + 1).get()
-                    # print(protein,r,p[1],r.pk,i)
-                    point, created = ResidueDataPoint.objects.get_or_create(
-                        data_type=dynamine, residue=r, value=p[1])
-                    if created:
-                        c += 1
+                    if isinstance(p, float):
+                        data = p # process results > Feb-2022
+                    else:
+                        data = p[1] # process results <= Feb-2022
+
+                    c += 1
+                    bulk.append(ResidueDataPoint(data_type=dynamine, residue=r, value=data))
+
                 except:
                     print("Missing residue for", protein.entry_name, i + 1)
+            ResidueDataPoint.objects.bulk_create(bulk)
+        else:
+            print(protein, r)
+            print("ERROR processing DynaMine for", protein.entry_name)
+            exit(0)
+
+        #print("PROCESSED", protein, "residue count", c, "vs", len(protein.sequence))
         return c
 
     # @transaction.atomic

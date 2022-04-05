@@ -99,7 +99,9 @@ def render_alignment(request):
     a.load_segments_from_selection(simple_selection)
 
     # build the alignment data matrix
-    a.build_alignment()
+    check = a.build_alignment()
+    if check == 'Too large':
+        return render(request, 'similaritysearch/error.html', {'proteins': len(a.proteins), 'residues':a.number_of_residues_total})
 
     # calculate consensus sequence + amino acid and feature frequency
     a.calculate_statistics()

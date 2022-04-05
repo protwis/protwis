@@ -1,20 +1,13 @@
-from django.core.management.base import BaseCommand, CommandError
-from django.db import IntegrityError
-
 from build.management.commands.base_build import Command as BaseBuild
+from build.management.commands.build_ligand_functions import get_or_create_ligand
 from protein.models import Protein
 from ligand.models import BiasedPathwaysAssay, BiasedPathways
-from ligand.functions import get_or_make_ligand
-from common.models import WebLink, WebResource, Publication
+from common.models import Publication
 
+from django.conf import settings
 import logging
 import os
 import xlrd
-
-
-MISSING_PROTEINS = {}
-SKIPPED = 0
-
 
 class Command(BaseBuild):
     mylog = logging.getLogger(__name__)
@@ -27,11 +20,16 @@ class Command(BaseBuild):
 
     help = 'Reads bias data and imports it'
     # source file directory
-    # structure_data_dir = os.sep.join([settings.EXCEL_DATA, 'ligand_data', 'bias'])
-    structure_data_dir = 'excel/pathways/'
+    structure_data_dir = os.sep.join([settings.DATA_DIR, 'ligand_data', 'bias_data', 'pathways'])
     publication_cache = {}
     ligand_cache = {}
     data_all = []
+    mol_types = {"PubChem CID": "pubchem",
+                "ChEMBL Compound ID": "chembl_ligand",
+                "IUPHAR/BPS Guide to pharmacology": "gtoplig",
+                "SMILES" : "smiles",
+                "FASTA sequence (peptide)": "sequence",
+                "UniProt Entry Code (peptide)" : "uniprot"}
 
     def add_arguments(self, parser):
         parser.add_argument('-p', '--proc',
@@ -63,17 +61,10 @@ class Command(BaseBuild):
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
-        # import the structure data
-        #self.bias_list()
-        try:
-            print('CREATING BIAS PATHWAYS DATA')
-            print(options['filename'])
-            self.prepare_all_data(options['filename'])
-            self.logger.info('COMPLETED CREATING BIAS')
 
-        except Exception as msg:
-            print('--error--', msg, '\n')
-            self.logger.info("The error appeared in def handle")
+        print('CREATING BIAS PATHWAYS DATA')
+        self.prepare_all_data(options['filename'])
+        self.logger.info('COMPLETED CREATING BIAS')
 
     def purge_bias_data(self):
         BiasedPathwaysAssay.objects.all().delete()
@@ -85,6 +76,7 @@ class Command(BaseBuild):
         try:
             workbook = xlrd.open_workbook(excelpath)
             worksheets = workbook.sheet_names()
+            worksheets.remove("Dropdown") # remove annotation info sheet
             temp = []
 
             for worksheet_name in worksheets:
@@ -94,13 +86,13 @@ class Command(BaseBuild):
                 curr_row = 0  # skip first, otherwise -1
                 while curr_row < num_rows:
                     curr_row += 1
-                    row = worksheet.row(curr_row)
+                    #row = worksheet.row(curr_row)
                     curr_cell = -1
                     temprow = []
                     while curr_cell < num_cells:
                         curr_cell += 1
                         cell_value = worksheet.cell_value(curr_row, curr_cell)
-                        cell_type = worksheet.cell_type(curr_row, curr_cell)
+                        #cell_type = worksheet.cell_type(curr_row, curr_cell)
 
                         # fix wrong spaced cells
                         if cell_value == " ":
@@ -111,7 +103,7 @@ class Command(BaseBuild):
             return temp
         except:
             self.logger.info(
-                "The error appeared during reading the excel", num_rows)
+                "The error appeared during reading the excel" + num_rows)
 
     def analyse_rows(self, rows, source_file):
         """
@@ -119,22 +111,12 @@ class Command(BaseBuild):
         Fetch data to models.
         Saves to DB.
         """
-        skipped = 0
         # Analyse the rows from excel and assign the right headers
         temp = []
-        print("start")
         for i, r in enumerate(rows, 1):
-            # code to skip rows in excel for faster testing
-            # if i < 58:
-            #     continue
-            # if i > 58:
-            #     break
-            # print(r)
             d = {}
             if r[4] != '':  # checks if the receptor field exists
                 # try:
-                res = ''
-                mut = ''
                 d['submitting_group'] = r[0]
                 d['relevance'] = r[15]
                 # doi
@@ -160,27 +142,22 @@ class Command(BaseBuild):
                 if not isinstance(d['ligand_id'], str):
                     d['ligand_id'] = int(d['ligand_id'])
 
-                #define G family
-                family = self.define_g_family(d['signalling_protein'])
-
                 # fetch publicaition
                 pub = self.fetch_publication(d['reference'])
 
                 # fetch main ligand
-                l = self.fetch_ligand(
-                    d['ligand_id'], d['ligand_type'], d['ligand_name'], d['source_file'])
+                # TODO - replace this one
+                l = get_or_create_ligand(d['ligand_name'], {self.mol_types[d['ligand_type']]: d['ligand_id']})
 
                 #fetch ChEMBL
-                chembl = None
                 chembl = self.fetch_chembl(l)
 
                 # fetch protein
                 protein = self.fetch_protein(d['receptor'], d['source_file'])
                 if protein == None:
-                    print('уккщк')
                     continue
 
-## TODO:  check if it was already uploaded
+                ## TODO:  check if it was already uploaded
                 experiment_entry = BiasedPathways(submission_author=d['submitting_group'],
                                                     publication=pub,
                                                     ligand=l,
@@ -188,7 +165,6 @@ class Command(BaseBuild):
                                                     chembl = chembl,
                                                     relevance = d['relevance'],
                                                     signalling_protein = d['signalling_protein']
-
                                                     )
                 experiment_entry.save()
 
@@ -210,54 +186,12 @@ class Command(BaseBuild):
             temp.append(d)
         return temp
 
-    def define_g_family(self, protein):
-        if (protein == 'β-arrestin' or
-            protein == 'β-arrestin-1 (non-visual arrestin-2)' or
-                protein == 'β-arrestin-2 (non-visual arrestin-3)'):
-            family = 'B-arr'
-
-        elif (protein == 'gi/o-family' or
-              protein == 'gαi1' or
-              protein == 'gαi2' or
-              protein == 'gαi3' or
-              protein == 'gαo' or
-              protein == 'gαoA' or
-              protein == 'gαoB'):
-            family = 'Gi/o'
-
-        elif (protein == 'gq-family' or
-                protein == 'gαq' or
-                protein == 'gαq11' or
-                protein == 'gαq14' or
-                protein == 'gαq14' or
-                protein == 'gαq16' or
-                protein == 'gαq14 (gαq16)'):
-            family = 'Gq/11'
-
-        elif (protein == 'g12/13-family' or
-              protein == 'gα12' or
-              protein == 'gα13'):
-            family = 'G12/13'
-
-        elif (protein == 'gs-family' or
-              protein == 'gαs' or
-              protein == 'gαolf'):
-            family = 'Gs'
-        else:
-            family = 'No data'
-
-        return family
-
     def fetch_chembl(self,ligand):
-        temp = ligand
-        chembl_id = None
-        links = temp.properities.web_links.all()
-        # print('\n----link id---', links)
-        for x in links:
-            if x.web_resource.slug=='chembl_ligand':
-                chembl_id = [x for x in links if x.web_resource.slug=='chembl_ligand'][0].index
-        print('\n----chembl id---', chembl_id)
-        return chembl_id
+        links = ligand.ids.filter(web_resource__slug="chembl_ligand")
+        if links.exists() > 0:
+            return links.first().index
+        else:
+            return None
 
     def fetch_protein(self, protein_from_excel, source):
         """
@@ -265,39 +199,12 @@ class Command(BaseBuild):
         requires: protein id, source
         """
         test = None
-        if Protein.objects.filter(entry_name=protein_from_excel):
-            protein = Protein.objects.filter(entry_name=protein_from_excel)
-            test = protein.get()
-        elif Protein.objects.filter(web_links__index=protein_from_excel, web_links__web_resource__slug='uniprot'):
-            protein1 = Protein.objects.filter(
-                web_links__index=protein_from_excel, web_links__web_resource__slug='uniprot')
-            test = protein1[0]
-
-        return test
-
-    def fetch_ligand(self, ligand_id, ligand_type, ligand_name, source_file):
-        """
-        fetch ligands with Ligand model
-        requires: ligand id, ligand id type, ligand name
-        requires: source_file name
-        """
-        l = None
-        if str(ligand_id) in self.ligand_cache:
-            if ligand_id in self.ligand_cache[str(ligand_id)]:
-                l = self.ligand_cache[str(ligand_id)][ligand_id]
+        if Protein.objects.filter(entry_name=protein_from_excel).exists():
+            return Protein.objects.get(entry_name=protein_from_excel)
+        elif Protein.objects.filter(web_links__index=protein_from_excel, web_links__web_resource__slug='uniprot').exists():
+            return Protein.objects.get(web_links__index=protein_from_excel, web_links__web_resource__slug='uniprot')
         else:
-            self.ligand_cache[str(ligand_id)] = {}
-
-        if not l:
-            try:
-                l = get_or_make_ligand(
-                    ligand_id, ligand_type, str(ligand_name))
-            except Exception as msg:
-                l = None
-                self.ligand_cache[str(ligand_name), ligand_id] = l
-                self.mylog.exception("Protein fetching error | module: fetch_ligand. Row # is : ",
-                                     ligand_name, ligand_type, ligand_id, source_file)
-        return l
+            return test
 
     def fetch_publication(self, publication_doi):
         """

@@ -290,7 +290,7 @@ class Command(BaseCommand):
             self.references = Structure.objects.all().prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
 
         # DEBUG for a specific PDB
-        # self.references = Structure.objects.filter(pdb_code__index="4OO9").prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+        # self.references = Structure.objects.filter(pdb_code__index="2RH1").prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
 
         if 'proc' in options and options['proc']>0:
             self.processes = options['proc']
@@ -539,9 +539,6 @@ class Command(BaseCommand):
 
         res_dict = {ref.pdb_code.index:qgen(ref.protein_conformation.protein,qset) for ref in references}
 
-        # clean structure vectors table
-        # StructureVectors.objects.all().delete()
-
         #######################################################################
         ######################### Start of main loop ##########################
         #######################################################################
@@ -702,19 +699,16 @@ class Command(BaseCommand):
                 gn_res_ids = [res.sequence_number for res in gn_reslist]
 
                 # Order by GNs
-                # QUICK HACK: to be cleaned up and simplified
                 gns_order = []
-                for gn in gn_res_gns:
+                for idx, gn in enumerate(gn_res_gns):
                     part1, part2 = gn.split("x")
-                    multiply1 = 10000
-                    if len(part1)>=2:
-                        multiply1 = 1000
-
-                    multiply2 = 1
-                    if (len(part2))<=2:
-                        multiply2 = 10
-
-                    gns_order.append(int(part1)*multiply1 + int(part2)*multiply2)
+                    if part1.isnumeric():
+                        multiply1 = 1000 if len(part1)>=2 else 10000
+                        multiply2 = 10 if (len(part2))<=2 else 1
+                        gns_order.append(int(part1)*multiply1 + int(part2)*multiply2)
+                    else:
+                        # When not a numerical GN (e.g. D1e1) - just use seq num
+                        gns_order.append(gn_res_ids[idx])
 
 
                 gns_ids_list = [gn_res_ids[key] for key in np.argsort(gns_order)]
@@ -733,7 +727,9 @@ class Command(BaseCommand):
 
                 # fast and fancy way to take the average of N consecutive elements
                 N = 3
-                hres_three = np.asarray([sum([h[i:-(len(h) % N) or None:N] for i in range(N)])/N for h in hres_list])
+
+                # NOTE - can result in ragged nested sequences
+                hres_three = np.asarray([sum([h[i:-(len(h) % N) or None:N] for i in range(N)])/N for h in hres_list], dtype=object)
 
                 ### PCA - determine axis through center + each transmembrane helix
                 helix_pcas = [PCA() for i in range(7)]
