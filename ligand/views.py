@@ -19,7 +19,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from django.core.cache import cache
 
-from common.views import AbsTargetSelectionTable, Alignment, AbsReferenceSelectionTable, getReferenceTable, getLigandTable, getLigandCountTable
+from common.views import Alignment, AbsReferenceSelectionTable, getReferenceTable, getLigandTable, getLigandCountTable
 from common.models import ReleaseNotes, WebResource, Publication
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
@@ -58,12 +58,6 @@ class LigandTargetSelection(AbsReferenceSelectionTable):
             'pathway': {
                 'label': "Extended (1 row/ligand)",
                 'onclick': "submitSelection('/ligand/target_detail');",
-                'color': 'success',
-                "sameSize": True,
-            },
-            'browser': {
-                'label': 'Old button',
-                'onclick': "submitSelection('/ligand/browser');",
                 'color': 'success',
                 "sameSize": True,
             },

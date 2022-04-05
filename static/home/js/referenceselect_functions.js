@@ -697,7 +697,7 @@ function initLigandCountTable(elementID) {
                 filters_tr_index: 1
             }
         );
-        // yadcf.exFilterColumn(referenceTable, [[4, ["Homo sapiens"]]], true);
+        yadcf.exFilterColumn(referenceTable, [[4, ["Homo sapiens"]]], true);
     }
     // When redrawing update the information selection message
     referenceTable.on("draw.dt", function(e, oSettings) {
