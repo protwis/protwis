@@ -99,7 +99,6 @@ class DrawArrestinPlot(Diagram):
         self.count_sheet = 0
 
         for s in ARRESTIN_SEGMENTS['Full']:
-
             if self.segments_full[s].category == 'helix':
                 self.helixoutput += self.drawSnakePlotHelix(s)
                 self.count += 1
@@ -110,7 +109,7 @@ class DrawArrestinPlot(Diagram):
         self.count = 0
 
         for s in ARRESTIN_SEGMENTS['Full']:
-            if self.segments_full[s].category == 'loop' and s != 's19c':
+            if self.segments_full[s].category == 'loop' and s != 's20c':
                 #pass
                 try:
                     self.drawSnakePlotLoop(s)
@@ -492,8 +491,7 @@ class DrawArrestinPlot(Diagram):
         bezier_pull = 80
 
         between_residues = 18
-
-        for name in ['ns1', 's19c']:
+        for name in ['ns1', 's20c']:
             drawn_residues = []
 
             if name not in self.segments: continue # continue if no terminus
@@ -511,8 +509,8 @@ class DrawArrestinPlot(Diagram):
             else:
                 orientation = 1
                 # y_max = self.maxY['intra']+between_residues*4
-                position = 'bottom'
-                linked_helix = 20
+                position = 'top'
+                linked_helix = 21
                 y_max = self.TBCoords[linked_helix][position][1] + 450
                 x_max = self.maxX['left'] - 600
 
@@ -520,11 +518,16 @@ class DrawArrestinPlot(Diagram):
             y1 = self.TBCoords[linked_helix][position][1]
 
             # Get positions of two  linking residues from each helix
-            x2 = x1 - 30
-            y2 = y1 + 80 * orientation
+            if name == 'ns1':
+                x2 = x1 - 30
+                y2 = y1 + 80 * orientation
+                points = "M "+str(x1)+" "+str(y1)+" Q"+str(x1+30)+" "+str(y2)+" "+str(x2)+" "+str(y2)
+            else:
+                x2 = x1 + 30
+                y2 = y1 - 80 * orientation
+                points = "M "+str(x1)+" "+str(y1)+" Q"+str(x1-30)+" "+str(y2)+" "+str(x2)+" "+str(y2)
 
             # Make line and box for short version
-            points = "M "+str(x1)+" "+str(y1)+" Q"+str(x1+30)+" "+str(y2)+" "+str(x2)+" "+str(y2)
             self.output += "<path class='"+name+" short' d='" + points + "' stroke='black' fill='none' stroke-width='2' />"
             self.output += "<rect class='"+name+" short segment' onclick='toggleLoop(\"."+name+"\",\"short\");' x="+str(x2-25)+" y="+str(y2-13)+" rx=5 ry=5 width='50' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
             self.output += str("<text class='"+name+" short segment' onclick='toggleLoop(\"."+name+"\",\"short\");' x="+str(x2)+" y="+str(y2)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
@@ -584,7 +587,8 @@ class DrawArrestinPlot(Diagram):
                 if where[1][1]<self.low: self.low = where[1][1]
                 if where[1][1]>self.high: self.high = where[1][1]
 
-            if name=='s19c': drawn_residues = drawn_residues[::-1]
+            if name=='s20c':
+                drawn_residues = drawn_residues[::-1]
             self.output += ''.join(drawn_residues)
             self.output += "<rect onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long segment' x="+str(self.TBCoords[linked_helix][position][0]-40*orientation-25)+" y="+str((labely+self.TBCoords[linked_helix][position][1])/2-13)+" rx=5 ry=5 width='50' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
             self.output += str("<text onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long segment' x="+str(self.TBCoords[linked_helix][position][0]-40*orientation)+" y="+str((labely+self.TBCoords[linked_helix][position][1])/2)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
