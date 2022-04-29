@@ -133,6 +133,8 @@ class Command(BaseBuild):
         self.parsed_structures.parse_ligands()
         self.parsed_structures.parse_nanobodies()
         self.parsed_structures.parse_fusion_proteins()
+        self.parsed_structures.parse_ramp()
+        self.parsed_structures.parse_grk()
 
         if options['structure']:
             self.parsed_structures.pdb_ids = [i for i in self.parsed_structures.pdb_ids if i in options['structure'] or i.lower() in options['structure']]
@@ -371,6 +373,21 @@ class Command(BaseBuild):
                 deletions.remove(i)
         elif structure.pdb_code.index=='7EWR':
             removed, deletions = [], []
+        elif structure.pdb_code.index in ['7T10', '7T11']:
+            deletions = []
+        elif structure.pdb_code.index in ['7PX4','7PYR']:
+            deletions.remove(1)
+            removed.remove(1)
+        elif structure.pdb_code.index=='7B6W':
+            deletions = list(range(352,525))
+        elif structure.pdb_code.index=='7V9M':
+            deletions = []
+        elif structure.pdb_code.index=='7F4F':
+            deletions = []
+        elif structure.pdb_code.index in ['7EVY','7EVZ','7EW0']:
+            removed = list(range(1,47))
+        elif structure.pdb_code.index=='7VAB':
+            removed = list(range(1,127))
 
         if self.debug:
             print('Deletions: ', deletions)
@@ -597,6 +614,18 @@ class Command(BaseBuild):
             temp_seq = temp_seq[:36]+'I'+temp_seq[36:44]+temp_seq[45:]
         elif structure.pdb_code.index in ['7EWP','7EWR']:
             temp_seq = temp_seq[:667]+'S'+temp_seq[667:701]+temp_seq[702:]
+        elif structure.pdb_code.index in ['7T10','7T11']:
+            temp_seq = temp_seq[:237]+temp_seq[239:246]+'R'+temp_seq[251:]
+            ref_seq = ref_seq[:244]+ref_seq[245:253]+ref_seq[258:]
+        elif structure.pdb_code.index in ['7FIY']:
+            temp_seq = temp_seq[:306]+'R---'+temp_seq[310:]
+        elif structure.pdb_code.index in ['7B6W']:
+            temp_seq = temp_seq[:318]+'L----'+temp_seq[323:]
+            temp_seq = temp_seq[:245]+temp_seq[246:282]+'-S'+temp_seq[283:]
+        elif structure.pdb_code.index in ['7SIL','7SIM','7SIN']:
+            temp_seq = temp_seq[:702]+'L'+temp_seq[702:720]+temp_seq[721:]
+        elif structure.pdb_code.index in ['7WIH']:
+            temp_seq = temp_seq[:26]+'E'+temp_seq[26:33]+temp_seq[34:94]+'L'+temp_seq[94:117]+temp_seq[118:]
 
         for i, r in enumerate(ref_seq, 1): #loop over alignment to create lookups (track pos)
             if self.debug:
@@ -1268,7 +1297,7 @@ class Command(BaseBuild):
                 structure_type_slug = slugify(sd['structure_method'])
                 if sd['pdb']=='6ORV':
                     structure_type_slug = 'electron-microscopy'
-                elif sd['pdb'] in ['6YVR','6Z4Q','6Z4S','6Z4V','6Z66','6Z8N','6ZA8','6ZIN']:
+                elif sd['pdb'] in ['6YVR','6Z4Q','6Z4S','6Z4V','6Z66','6Z8N','6ZA8','6ZIN','7B6W']:
                     structure_type_slug = 'x-ray-diffraction'
 
                 try:
@@ -1317,9 +1346,6 @@ class Command(BaseBuild):
             else:
                 self.logger.warning('Preferred chain not specified for structure {}'.format(sd['pdb']))
             if 'resolution' in sd:
-                # if sd['pdb']=='6ORV':
-                #     s.resolution = 3.00
-                # else:
                 s.resolution = float(sd['resolution'])
             else:
                 self.logger.warning('Resolution not specified for structure {}'.format(sd['pdb']))
@@ -1327,6 +1353,8 @@ class Command(BaseBuild):
                 sd['publication_date'] = '2020-01-08'
             elif sd['pdb'] in ['6YVR','6Z4Q','6Z4S','6Z4V','6Z66','6Z8N','6ZA8','6ZIN']:
                 sd['publication_date'] = '2021-02-10'
+            elif sd['pdb']=='7B6W':
+                sd['publication_date'] = '2022-01-12'
             if 'publication_date' in sd:
                 s.publication_date = sd['publication_date']
             else:

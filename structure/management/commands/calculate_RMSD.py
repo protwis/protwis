@@ -79,14 +79,14 @@ class Validation():
             this = []
             for c in p.get_chains():
                 this.append(c.get_id())
-            chains.append(this)
+            chains.append(sorted(this))
+        if force_chain:
+            chains = [[force_chain] for i in chains]
         usable_chains = []
         for m in chains[1:]:
             for c in m:
                 if c in chains[0]:
                     usable_chains.append(c)
-        if force_chain:
-            chains[0] = [force_chain]
 
         arrays = []
         model_counter = 0
