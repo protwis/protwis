@@ -133,6 +133,8 @@ class Command(BaseBuild):
         self.parsed_structures.parse_ligands()
         self.parsed_structures.parse_nanobodies()
         self.parsed_structures.parse_fusion_proteins()
+        self.parsed_structures.parse_ramp()
+        self.parsed_structures.parse_grk()
 
         if options['structure']:
             self.parsed_structures.pdb_ids = [i for i in self.parsed_structures.pdb_ids if i in options['structure'] or i.lower() in options['structure']]

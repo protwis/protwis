@@ -1148,22 +1148,16 @@ class ParseStructureCSV():
                 self.structures[l[0]]['ligand'].append({'chain':l[1], 'name':l[2], 'pubchemId':l[3], 'role':l[4], 'title':l[5], 'type': l[6]})
 
     def parse_nanobodies(self):
-        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'nanobodies.csv']), newline='') as csvfile:
-            nanobodies = csv.reader(csvfile, delimiter='\t')
-            next(nanobodies, None)
-            for n in nanobodies:
-                if 'auxiliary_protein' not in self.structures[n[0]]:
-                    self.structures[n[0]]['auxiliary_protein'] = []
-                self.structures[n[0]]['auxiliary_protein'].append(n[1])
+        self.parse_aux_file('nanobodies.csv')
 
     def parse_fusion_proteins(self):
-        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'fusion_proteins.csv']), newline='') as csvfile:
-            fusions = csv.reader(csvfile, delimiter='\t')
-            next(fusions, None)
-            for f in fusions:
-                if 'auxiliary_protein' not in self.structures[f[0]]:
-                    self.structures[f[0]]['auxiliary_protein'] = []
-                self.structures[f[0]]['auxiliary_protein'].append(f[1])
+        self.parse_aux_file('fusion_proteins.csv')
+
+    def parse_ramp(self):
+        self.parse_aux_file('ramp.csv')
+
+    def parse_grk(self):
+        self.parse_aux_file('grk.csv')
 
     def parse_g_proteins(self):
         with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'g_proteins.csv']), newline='') as csvfile:
@@ -1179,6 +1173,14 @@ class ParseStructureCSV():
             for a in arrestins:
                 self.structures[a[0]]['arrestin'] = {'protein': a[1], 'chain': a[2], 'note': a[3]}
 
+    def parse_aux_file(self, aux_csv):
+        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', aux_csv]), newline='') as csvfile:
+            aux = csv.reader(csvfile, delimiter='\t')
+            next(aux, None)
+            for a in aux:
+                if 'auxiliary_protein' not in self.structures[a[0]]:
+                    self.structures[a[0]]['auxiliary_protein'] = []
+                self.structures[a[0]]['auxiliary_protein'].append(a[1])
 
 
 class StructureBuildCheck():
