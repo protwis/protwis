@@ -348,7 +348,7 @@ class AssayExperiment(models.Model):
 
     pchembl_value = models.CharField(max_length=10, null=True)
 
-    standard_value = models.CharField(max_length=10, null=True)
+    standard_value = models.CharField(max_length=15, null=True)
     standard_relation = models.CharField(max_length=10)
     standard_type = models.CharField(max_length=20)
     standard_units = models.CharField(max_length=20)
