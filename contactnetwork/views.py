@@ -197,7 +197,9 @@ def PdbTreeData(request):
 @cache_page(60*60*24*7)
 def PdbTableData(request):
     exclude_non_interacting = True if request.GET.get('exclude_non_interacting') == 'true' else False
-
+    effector = request.GET.get('effector') if request.GET.get('effector') != 'false' else False
+    print(effector)
+    # interaction_protein_class = request.GET.get('interaction_protein_class')
     #constructs = Construct.objects.defer('schematics','snakecache').all().prefetch_related('crystallization__crystal_method')
     #methods = {}
     #for c in constructs:
@@ -242,7 +244,15 @@ def PdbTableData(request):
         best_resolutions[key] = r['res']
 
     # get best signalprotein/species/receptor
-    signal_ps = StructureExtraProteins.objects.all().values('structure__protein_conformation__protein__parent','display_name').order_by().annotate(coverage = Max('wt_coverage'))
+    # if effector is defined (as one letter), filter by that
+    # 'G' = G proteins (all G protein classes starts with G)
+    # 'A' = Arrestin
+    if effector:
+        signal_ps = StructureExtraProteins.objects.filter(category__startswith=effector).values('structure__protein_conformation__protein__parent','display_name').order_by().annotate(coverage = Max('wt_coverage'))
+    else:
+        signal_ps = StructureExtraProteins.objects.all().values('structure__protein_conformation__protein__parent','display_name').order_by().annotate(coverage = Max('wt_coverage'))
+
+    print(len(signal_ps))
     best_signal_p = {}
     for ps in signal_ps:
         key = '{}_{}'.format(ps['structure__protein_conformation__protein__parent'], ps['display_name'])

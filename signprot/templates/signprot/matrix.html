@@ -31,8 +31,11 @@
     </ul>
 </div>
 
-
-<h1 class="page-header">GPCR - G protein interface interactions</h1>
+{% if page == 'gprotein' %}
+<h1 class="page-header" id="htmlVariable" data-url="G">GPCR - G protein interface interactions</h1>
+{% else %}
+<h1 class="page-header" id="htmlVariable" data-url="A">GPCR - Arrestin interface interactions</h1>
+{% endif %}
 
 <div class="row">
     <div class="col-md-12">
@@ -47,7 +50,7 @@
 
                 <div class="col-md-2">
                     <p
-                            id='single-crystal-group-pdbs-modal-text'
+                            id='single-crystal-group-pdbs-modal-external-text'
                             class="crystal-count"
                             style="font-weight: 700">
                     0 structures selected.
@@ -213,15 +216,72 @@
         <!--     </div>                                                                                        -->
         <!-- </div>                                                                                            -->
     </div>
-    <table id='sigmatch_table' class="display" style="width: 100%"></table>
+    <table id='sigmatch_table' class="display" style="width: 100%">
+      <thead id="headers">
+        <tr class="header-spans">
+          {% if page == 'gprotein' %}
+          <th style="text-align:left" colspan="6">
+            Receptors</th>
+          <th style="border-left: 1px solid black; text-align:left" colspan="4">
+            Guide to Pharmacology</th>
+          <th style="border-left: 1px solid black; text-align:left" colspan="4">
+            GPCRdb Mean</th>
+          {% else %}
+          <th style="text-align:left" colspan="6">
+            Receptors</th>
+          <th style="border-left: 1px solid black; text-align:left" colspan="2">
+            Guide to Pharmacology</th>
+          <th style="border-left: 1px solid black; text-align:left" colspan="2">
+            GPCRdb Mean</th>
+          {% endif %}
+        </tr>
+        <tr class="table-filter-dropdown">
+          <th style="text-align:center" colspan="1"></th>
+          <th style="text-align:center" colspan="1">
+            Class</th>
+          <th style="text-align:center" colspan="1">
+            Family</th>
+          <th style="text-align:center" colspan="1">
+            IUPHAR</th>
+          <th style="text-align:center" colspan="1">
+            UniProt</th>
+          <th style="text-align:center" colspan="1">
+            Interface Conservation (%)</th>
+          {% if page == 'gprotein' %}
+          <th style="text-align:center" colspan="1">
+            Gs</th>
+          <th style="text-align:center" colspan="1">
+            Gi/o</th>
+          <th style="text-align:center" colspan="1">
+            Gq/11</th>
+          <th style="text-align:center" colspan="1">
+            G12/13</th>
+          <th style="text-align:center" colspan="1">
+            Gs</th>
+          <th style="text-align:center" colspan="1">
+            Gi/o</th>
+          <th style="text-align:center" colspan="1">
+            Gq/11</th>
+          <th style="text-align:center" colspan="1">
+            G12/13</th>
+          {% else %}
+          <th style="text-align:center" colspan="1">
+            ARRB1</th>
+          <th style="text-align:center" colspan="1">
+            ARRB2</th>
+          <th style="text-align:center" colspan="1">
+            ARRB1</th>
+          <th style="text-align:center" colspan="1">
+            ARRB2</th>
+          {% endif %}
+        </tr>
+      </thead>
+    </table>
 </div>
-
 {% endblock %}
 
 {% block addon_js %}
 <script type="text/javascript">
-const interactions = {{ interactions | safe}};
-let non_interactions = {{ non_interactions | safe}};
 const interactions_metadata = {{ interactions_metadata | safe}};
 const gprot = {{ gprot | safe}};
 const receptor = {{ receptor | safe}};
@@ -241,12 +301,12 @@ const csrf_token = "{{ csrf_token }}"
 <script src="{% static 'home/js/selection.js' %}"> </script>
 <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
 <script src="{% static 'home/js/select2.js' %}"> </script>
+<script src="{% static 'home/js/gpcrdb.js' %}"></script>
 <script src="{% static 'home/js/jquery.tablesorter.js' %}"></script>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-
+<script src="{% static 'home/js/matrix_utilities.js' %}"></script>
 <script src="{% static 'home/js/signprotmat.js' %}"></script>
 <script src="{% static 'home/js/fixed_columns.js' %}"></script>
 <script type="text/javascript" src="{% static 'home/js/contactbrowser_functions.js' %}"> </script>
-<script src="{% static 'home/js/matrix_utilities.js' %}"></script>
 
 {% endblock %}

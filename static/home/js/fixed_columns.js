@@ -23,11 +23,14 @@ function update_text_in_modal() {
         var total_selected = pdbs.length
         var selected_visible = $('.dataTables_scrollBody:visible .pdb_selected:checked').length
         var ModalpdbsCountSelector = '#single-crystal-group-pdbs-modal-text';
+        var ExternalModalpdbCounter = '#single-crystal-group-pdbs-modal-external-text';
 
         if (total_selected == selected_visible) {
             $(ModalpdbsCountSelector).html(total_selected + ' structure(s) selected (ticked leftmost)');
+            $(ExternalModalpdbCounter).html(total_selected + ' structure(s) selected');
         } else {
             $(ModalpdbsCountSelector).html(total_selected + ' structure(s) selected (ticket leftmost — ' + (total_selected - selected_visible) + ' currently filtered)');
+            $(ExternalModalpdbCounter).html(total_selected + ' structure(s) selected (' + (total_selected - selected_visible) + ' currently filtered)');
         }
 
         var pdbsInputSelector = '#single-crystal-group-tab .crystal-pdb';

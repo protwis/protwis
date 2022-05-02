@@ -21,9 +21,18 @@ let tooltip;
 let sigmatch_table;
 let sigmatch_data;
 
+var selected_interactions;
+var non_interactions;
+
 let old_sets = [];
 let pos_set = [];
 let neg_set = [];
+
+try {
+  var filtering_particle = document.getElementById("htmlVariable").getAttribute( "data-url" );
+} catch (e) {
+  var filtering_particle = false;
+}
 
 const get_gn = function() {
   const segments = [];
@@ -290,11 +299,17 @@ const run_seq_sig = function(interface_data) {
         svg,
         xScale,
       );
-
-      initialize_consensus(data.feat);
-
+      var startTime = performance.now();
       // Once done run the signature match
       run_sig_match();
+      var endTime = performance.now();
+      var elapsed = endTime - startTime;
+      console.log("run_sig_match execution Time: " + elapsed);
+      var startTime = performance.now();
+      initialize_consensus(data.feat);
+      var endTime = performance.now();
+      var elapsed = endTime - startTime;
+      console.log("initialize_consensus execution Time: " + elapsed);
     },
     error(jqXHR, exception) {
       console.log(jqXHR);
@@ -359,6 +374,7 @@ const run_sig_match = function() {
       csrfmiddlewaretoken: csrf_token,
       pos: pos_set,
       seg: segments.label,
+      filtering_particle,
       cutoff,
     },
     beforeSend() {
@@ -368,160 +384,121 @@ const run_sig_match = function() {
       //console.log(data);
       document.querySelector("#sigmatch-container").style.display = "inline-block";
       //sigmatch_data = Object.keys(data).map((key) => {data[String(key)];});
+      let column_filters = [];
+      // Family column
+      column_filters = column_filters.concat(createYADCFfilters(2, 1, "multi_select", "select2", "Select", false, null, null, "120px"));
+      // IUPHAR column
+      column_filters = column_filters.concat(createYADCFfilters(3, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
+      // Interface Conservation % column
+      column_filters = column_filters.concat(createYADCFfilters(5, 1, "range_number_slider", null, null, false, null, null, "40px"));
+      let columns_definition = [{
+                data: null,
+                targets: 0,
+                defaultContent: "",
+                orderable: false,
+                className: "select-checkbox",
+                visible: false,
+              }, {
+                data: "class",
+                title: "Class",
+                targets: 1,
+              }, {
+                data: "family",
+                title: "Family",
+                targets: 2,
+              }, {
+                data: "prot",
+                title: "IUPHAR",
+                targets: 3,
+              }, {
+                data: "entry",
+                title: "UniProt",
+                targets: 4,
+              }, {
+                data: "nscore",
+                title: "Interface Conservation (%)",
+                targets: 5,
+              }];
       sigmatch_data = Object.keys(data).map(key => data[key]);
-
+      if (filtering_particle == 'G') {
+        columns_to_add = [{
+              data: "Gs.html",
+              title: "Gs",
+              targets: 6,
+            }, {
+              data: "Gi/o.html",
+              title: "Gi/o",
+              targets: 7,
+            }, {
+              data: "Gq/11.html",
+              title: "Gq/11",
+              targets: 8,
+            }, {
+              data: "G12/13.html",
+              title: "G12/13",
+              targets: 9,
+            }, {
+              data: "Gs_emax.html",
+              title: "Gs",
+              targets: 10,
+            }, {
+              data: "Gi/o_emax.html",
+              title: "Gi/o",
+              targets: 11,
+            }, {
+              data: "Gq/11_emax.html",
+              title: "Gq/11",
+              targets: 12,
+            }, {
+              data: "G12/13_emax.html",
+              title: "G12/13",
+              targets: 13,
+            }, ];
+        columns_definition = columns_definition.concat(columns_to_add);
+        // Gprots columns (4 GtoP + 4 GPCRdb Mean)
+        column_filters = column_filters.concat(createYADCFfilters(6, 8, "multi_select", "select2", "Select", false, null, "html", "40px"));
+      } else {
+        columns_to_add = [{
+              data: "arrb1.html",
+              title: "ARRB1",
+              targets: 6,
+            }, {
+              data: "arrb2.html",
+              title: "ARRB2",
+              targets: 7,
+            }, {
+              data: "arrb1_emax.html",
+              title: "ARRB1 (GPCRdb Mean)",
+              targets: 8,
+              visible: false,
+            }, {
+              data: "arrb2.html",
+              title: "ARRB2 (GPCRdb Mean)",
+              targets: 9,
+              visible: false,
+            },];
+        // Arrestins columns (2 GtoP + 2 GPCRdb Mean)
+        column_filters = column_filters.concat(createYADCFfilters(6, 4, "multi_select", "select2", "Select", false, null, "html", "40px"));
+      }
+      columns_definition = columns_definition.concat(columns_to_add);
       sigmatch_table = $("#sigmatch_table").DataTable({
         dom: "Bfrtip",
         data: sigmatch_data,
-        scrollY: "60vh",
+        // scrollY: "60vh",
+        scrollY: true,
+        scrollX: true,
+        scrollCollapse: true,
+        scroller: true,
         destroy: true,
-        columnDefs: [{
-          data: null,
-          targets: 0,
-          defaultContent: "",
-          orderable: false,
-          className: "select-checkbox",
-          visible: false,
-        }, {
-          data: "class",
-          title: "Class",
-          targets: 1,
-        }, {
-          data: "family",
-          title: "Family",
-          targets: 2,
-        }, {
-          data: "subfamily",
-          title: "Sub-Family",
-          targets: 3,
-          visible: false,
-        }, {
-          data: "prot",
-          title: "IUPHAR",
-          targets: 4,
-        }, {
-          data: "nscore",
-          title: "Interface Conservation (%)",
-          targets: 6,
-        }, {
-          data: "entry",
-          title: "UniProt",
-          targets: 5,
-        }, {
-          data: "GuideToPharma.Gs.html",
-          title: "   Gs   ",
-          targets: 7,
-          className: "gtop dt-center",
-          visible: true,
-        }, {
-          data: "GuideToPharma.Gi/o.html",
-          title: "Gi/o ",
-          targets: 8,
-          className: "gtop dt-center",
-          visible: true,
-        }, {
-          data: "GuideToPharma.Gq/11.html",
-          title: "Gq/11",
-          targets: 9,
-          className: "gtop dt-center",
-          visible: true,
-        }, {
-          data: "GuideToPharma.G12/13.html",
-          title: "G12/13",
-          targets: 10,
-          className: "gtop dt-center",
-          visible: true,
-        }, {
-          data: "Aska.Gs.html",
-          title: "   Gs   ",
-          targets: 11,
-          className: "aska dt-center",
-          visible: false,
-        }, {
-          data: "Aska.Gi/o.html",
-          title: "Gi/o ",
-          targets: 12,
-          className: "aska dt-center",
-          visible: false,
-        }, {
-          data: "Aska.Gq/11.html",
-          title: "Gq/11",
-          targets: 13,
-          className: "aska dt-center",
-          visible: false,
-        }, {
-          data: "Aska.G12/13.html",
-          title: "G12/13",
-          targets: 14,
-          className: "aska dt-center",
-          visible: false,
-        }, {
-          data: "Merged.Gs.html",
-          title: "   Gs   ",
-          targets: 15,
-          className: "merg dt-center",
-          visible: false,
-        }, {
-          data: "Merged.Gi/o.html",
-          title: "Gi/o ",
-          targets: 16,
-          className: "merg dt-center",
-          visible: false,
-        }, {
-          data: "Merged.Gq/11.html",
-          title: "Gq/11",
-          targets: 17,
-          className: "merg dt-center",
-          visible: false,
-        }, {
-          data: "Merged.G12/13.html",
-          title: "G12/13",
-          targets: 18,
-          className: "merg dt-center",
-          visible: false,
-        }, ],
+        columnDefs: columns_definition,
         order: [
-          [6, "desc"]
+          [5, "desc"]
         ],
         select: {
           style: "single",
         },
-        paging: false,
-        buttons: [{
-            text: "Toggle <b>GuideToPharma</b> / Asuka Inoue / Merged Data",
-            className: "toggle-source hidden",
-            action() {
-              let gtopText = "<span>Toggle <b>GuideToPharma</b> / Asuka Inoue / Merged Data</span>";
-              let askaText = "<span>Toggle GuideToPharma / <b>Asuka Inoue</b> / Merged Data</span>";
-              let mergText = "<span>Toggle GuideToPharma / Asuka Inoue / <b>Merged Data</b></span>";
-              let currText = $(".dt-button.toggle-source").html();
-              let columns;
-
-              if (currText === gtopText) {
-                $(".dt-button.toggle-source").html(askaText);
-                columns = sigmatch_table.columns(".gtop");
-                columns.visible(!columns.visible()[0]);
-
-                columns = sigmatch_table.columns(".aska");
-                columns.visible(!columns.visible()[0]);
-              } else if (currText === askaText) {
-                $(".dt-button.toggle-source").html(mergText);
-                columns = sigmatch_table.columns(".aska");
-                columns.visible(!columns.visible()[0]);
-
-                columns = sigmatch_table.columns(".merg");
-                columns.visible(!columns.visible()[0]);
-              } else if (currText === mergText) {
-                $(".dt-button.toggle-source").html(gtopText);
-                columns = sigmatch_table.columns(".merg");
-                columns.visible(!columns.visible()[0]);
-
-                columns = sigmatch_table.columns(".gtop");
-                columns.visible(!columns.visible()[0]);
-              }
-
-            }
-          },
+        paging: true,
+        buttons: [
           {
             text: "Export to Excel",
             action() {
@@ -534,25 +511,21 @@ const run_sig_match = function() {
               var table_data = sigmatch_table.data().toArray();
 
               var export_data = [];
-              for (let i of Object.values(table_data)) {
-                let r = {};
-                r["name"] = i["entry"];
-                r["family"] = i["family"];
-                r["subfamily"] = i["subfamily"];
-                r["score"] = i["nscore"];
-                r["aska_gs"] = i["Aska"]["Gs"]["text"];
-                r["aska_gio"] = i["Aska"]["Gi/o"]["text"];
-                r["aska_gq11"] = i["Aska"]["Gq/11"]["text"];
-                r["aska_g1213"] = i["Aska"]["G12/13"]["text"];
-                r["gtop_gs"] = i["GuideToPharma"]["Gs"]["text"];
-                r["gtop_gio"] = i["GuideToPharma"]["Gi/o"]["text"];
-                r["gtop_gq11"] = i["GuideToPharma"]["Gq/11"]["text"];
-                r["gtop_g1213"] = i["GuideToPharma"]["G12/13"]["text"];
-                r["merg_gs"] = i["Merged"]["Gs"]["text"];
-                r["merg_gio"] = i["Merged"]["Gi/o"]["text"];
-                r["merg_gq11"] = i["Merged"]["Gq/11"]["text"];
-                r["merg_g1213"] = i["Merged"]["G12/13"]["text"];
-                export_data.push(r);
+              for (let item of Object.values(table_data)) {
+                let record = {};
+                record["name"] = item["entry"];
+                record["family"] = item["family"];
+                record["subfamily"] = item["subfamily"];
+                record["score"] = item["nscore"];
+                record["gtop_gs"] = item["Gs"]["text"];
+                record["gtop_gio"] = item["Gi/o"]["text"];
+                record["gtop_gq11"] = item["Gq/11"]["text"];
+                record["gtop_g1213"] = item["G12/13"]["text"];
+                record["GPCRdb_mean_gs"] = item["Gs_emax"]["text"];
+                record["GPCRdb_mean_gio"] = item["Gi/o_emax"]["text"];
+                record["GPCRdb_mean_gq11"] = item["Gq/11_emax"]["text"];
+                record["GPCRdb_mean_g1213"] = item["G12/13_emax"]["text"];
+                export_data.push(record);
               }
 
               export_data = Papa.unparse(export_data);
@@ -584,88 +557,9 @@ const run_sig_match = function() {
           },
         ]
       });
-
-      var text_col_filter = {
-        filter_type: "multi_select",
-        select_type: "select2",
-        filter_reset_button_text: false,
-      }
-
-      var range_col_filter = {
-        filter_type: "range_number_slider",
-        filter_delay: 70,
-        filter_reset_button_text: false,
-      }
-
-      var coupl_col_filter = {
-        filter_type: "multi_select",
-        select_type: "select2",
-        filter_reset_button_text: false,
-        column_data_type: "html",
-        html_data_type: "text",
-      }
-
-      yadcf.init(sigmatch_table, [{
-          column_number: 2,
-          ...text_col_filter
-        },
-        {
-          column_number: 4,
-          ...text_col_filter
-        },
-        {
-          column_number: 6,
-          ...range_col_filter
-        },
-        {
-          column_number: 7,
-          ...coupl_col_filter
-        },
-        {
-          column_number: 8,
-          ...coupl_col_filter
-        },
-        {
-          column_number: 9,
-          ...coupl_col_filter
-        },
-        {
-          column_number: 10,
-          ...coupl_col_filter
-        },
-        {
-          column_number: 11,
-          ...coupl_col_filter
-        },
-        {
-          column_number: 12,
-          ...coupl_col_filter
-        },
-        {
-          column_number: 13,
-          ...coupl_col_filter
-        },
-        {
-          column_number: 14,
-          ...coupl_col_filter
-        },
-        {
-          column_number: 15,
-          ...coupl_col_filter
-        },
-        {
-          column_number: 16,
-          ...coupl_col_filter
-        },
-        {
-          column_number: 17,
-          ...coupl_col_filter
-        },
-        {
-          column_number: 18,
-          ...coupl_col_filter
-        },
-      ]);
+      yadcf.init(sigmatch_table.draw(), column_filters, {
+        cumulative_filtering: false
+      });
 
       $(".score-button").click(function() {
         //const render_url = window.location.origin + "/signprot/matrix/render_sigmat/";
@@ -768,8 +662,10 @@ const reset_slider = function() {
 
 
 $(document).ready(function() {
+  // Calling the PDBTableData
   $.get("/signprot/pdbtabledata", {
-    exclude_non_interacting: true
+    exclude_non_interacting: true,
+    effector: filtering_particle,
   }, function(data) {
     $("#interface-modal-table .tableview").html(data);
   })
@@ -798,6 +694,21 @@ $(document).ready(function() {
       pdb_sel.push(($(this).attr("id")));
     });
 
+    // api request
+    $.ajax({
+      type: "POST",
+      url: "/signprot/matrix/AJAX_Interactions/",
+      async: false,
+      data: {
+        selected_pdbs: pdb_sel,
+        csrfmiddlewaretoken: csrf_token,
+      },
+      success: function (data) {
+        non_interactions = data[0];
+        selected_interactions = data[1];
+      }
+    });
+
     // get corresponding protein entry_name values
     for (var int_meta of interactions_metadata) {
       if (pdb_sel.indexOf(int_meta["pdb_id"]) !== -1) {
@@ -812,7 +723,8 @@ $(document).ready(function() {
       document.querySelector("#conseq-container").style.display = "none";
       document.getElementById("interface-svg").className = "collapse in";
 
-      data = signprotmat.data.dataTransformationWrapper(interactions, pdb_sel);
+      // data = signprotmat.data.dataTransformationWrapper(interactions, pdb_sel);
+      data = signprotmat.data.dataTransformationWrapper(selected_interactions, pdb_sel);
       svg = signprotmat.d3.setup("div#interface-svg");
       xScale = signprotmat.d3.xScale(data.transformed, receptor);
       yScale = signprotmat.d3.yScale(data.transformed, gprot);
@@ -844,7 +756,12 @@ $(document).ready(function() {
       document.querySelector("#resbut").classList.remove("active");
 
       reset_slider();
+
+      var startTime = performance.now();
       run_seq_sig(data);
+      var endTime = performance.now();
+      var elapsed = endTime - startTime;
+      console.log("run_seq_sig execution Time: " + elapsed);
     };
   });
 });
