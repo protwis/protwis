@@ -420,7 +420,7 @@ const run_sig_match = function() {
                 targets: 5,
               }];
       sigmatch_data = Object.keys(data).map(key => data[key]);
-      if (filtering_particle == 'G') {
+      if (filtering_particle == 'G alpha') {
         columns_to_add = [{
               data: "Gs.html",
               title: "Gs",
@@ -708,7 +708,6 @@ $(document).ready(function() {
         selected_interactions = data[1];
       }
     });
-
     // get corresponding protein entry_name values
     for (var int_meta of interactions_metadata) {
       if (pdb_sel.indexOf(int_meta["pdb_id"]) !== -1) {
@@ -722,7 +721,6 @@ $(document).ready(function() {
       document.querySelector("#seqsig-container").style.display = "none";
       document.querySelector("#conseq-container").style.display = "none";
       document.getElementById("interface-svg").className = "collapse in";
-
       // data = signprotmat.data.dataTransformationWrapper(interactions, pdb_sel);
       data = signprotmat.data.dataTransformationWrapper(selected_interactions, pdb_sel);
       svg = signprotmat.d3.setup("div#interface-svg");

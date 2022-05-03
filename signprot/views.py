@@ -44,7 +44,6 @@ class BrowseSelection(AbsTargetSelection):
 
     type_of_selection = 'browse_gprot'
 
-    description = 'Select a G protein or family by searching or browsing in the right column.'
     description = 'Select a G protein (family) by searching or browsing in the middle. The selection is viewed to' \
                   + ' the right.'
     docs = 'receptors.html'
@@ -1363,7 +1362,6 @@ def InteractionMatrix(request, database='gprotein'):
 
     request.session['signature'] = None
     request.session.modified = True
-
     return render(request,
                   'signprot/matrix.html',
                   context

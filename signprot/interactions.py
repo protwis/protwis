@@ -330,7 +330,7 @@ def extract_coupling(entry, effector):
     sources = list(entry['sources'].keys())
     couplings = {}
     # not needed and to be better worded
-    if effector == 'G':
+    if effector == 'G alpha':
         capital = 'G'
         refined_coupling = {'Gs': "",
                             'Gi/o': "",
