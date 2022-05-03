@@ -325,7 +325,7 @@ class LigandPeptideStructure(models.Model):
     chain = models.CharField(max_length=20)
 
     def __str__(self):
-        return '<PeptideLigand: {} {} {}>'.format(structure, ligand, chain)
+        return '<PeptideLigand: {} {} {}>'.format(self.structure, self.ligand, self.chain)
 
     class Meta():
         db_table = "ligand_peptide_structure"
@@ -348,7 +348,7 @@ class AssayExperiment(models.Model):
 
     pchembl_value = models.CharField(max_length=10, null=True)
 
-    standard_value = models.CharField(max_length=10, null=True)
+    standard_value = models.CharField(max_length=15, null=True)
     standard_relation = models.CharField(max_length=10)
     standard_type = models.CharField(max_length=20)
     standard_units = models.CharField(max_length=20)

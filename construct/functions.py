@@ -36,7 +36,7 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     # ignore_gaspar_annotation skips PDB_RANGE edits that mark missing residues as deleted, which messes up constructs.
 
     if not protein:
-        if pdbname in ['6ORV','6YVR','6Z4Q','6Z4S','6Z4V','6Z66','6Z8N','6ZA8','6ZIN']:
+        if pdbname in ['6ORV','6YVR','6Z4Q','6Z4S','6Z4V','6Z66','6Z8N','6ZA8','6ZIN','7B6W']:
             with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs', '{}.pdb'.format(pdbname)]), 'r') as pdbcustom:
                 pdbdata_raw = pdbcustom.read()
         else:
@@ -719,6 +719,8 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                                 uniprot_pos = pos
                             # print(chain,pos,uniprot_pos,uniprot_aa)
                             if pdbname in ['7EPE','7EPF'] and pos>1000:
+                                continue
+                            if pdbname in ['7F4D','7F4F','7F4H','7F4I'] and chain!='R':
                                 continue
                             wt_aa = d['wt_seq'][uniprot_pos-1]
                             prev_receptor = True

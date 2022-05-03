@@ -162,6 +162,7 @@ class ResidueTablesDisplay(TemplateView):
         # get the user selection from session
         simple_selection = self.request.session.get('selection', False)
         origin_checked = False
+
         # local protein list
         proteins = []
         # flatten the selection into individual proteins
@@ -181,13 +182,14 @@ class ResidueTablesDisplay(TemplateView):
                 protein_source_list = []
                 for protein_source in simple_selection.annotation:
                     protein_source_list.append(protein_source.item)
-
                 if species_list:
                     family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
+                        sequence_type__slug="wt",
                         species__in=(species_list),
                         source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
                 else:
                     family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
+                        sequence_type__slug="wt",
                         source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
 
                 for fp in family_proteins:
@@ -240,7 +242,6 @@ class ResidueTablesDisplay(TemplateView):
             default_scheme = ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME)
         else:
             default_scheme = numbering_schemes[0]
-
         # prepare the dictionary
         # each segment has a dictionary of positions
         # default_generic_number or first scheme on the list is the key
@@ -256,7 +257,7 @@ class ResidueTablesDisplay(TemplateView):
                         data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
                 elif scheme == default_scheme:
                     for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
-                            data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
+                        data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
 
             for residue in residues:
                 alternatives = residue.alternative_generic_numbers.all()
