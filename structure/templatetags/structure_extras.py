@@ -128,7 +128,7 @@ def only_fusions ( objs ):
 
 @register.filter
 def only_antibodies ( objs ):
-    elements = [element for obj in objs for element in obj.name.split(',') if re.match(".*bod.*|.*Ab.*|.*scFv.*|.*Fab.*|.*activity.*|.*RAMP.*|Unidentified peptide|.*CD4.*|.*IgG.*|.*NB.*|.*Fv.*", element)]
+    elements = [element for obj in objs for element in obj.name.split(',') if re.match(".*bod.*|.*Ab.*|.*scFv.*|.*Fab.*|.*activity.*|.*RAMP.*|.*GRK.*|Unidentified peptide|.*CD4.*|.*IgG.*|.*NB.*|.*Fv.*", element)]
     if len(elements) > 0:
         return "\n".join(elements)
     else:
