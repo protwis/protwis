@@ -67,6 +67,7 @@ urlpatterns = [
     url(r'^biased/$', views.CachedOTFBiasBrowser, name='bias_browser-list'),
     url(r'^biasedsubtypes/$',views.CachedOTFBiasSubtypeBrowser, name='bias_browser-list'),
     url(r'^pathwaypreference/$',views.CachedOTFPathwayPrefBrowser, name='bias_browser-list'),
+    url(r'^endogenousbrowser/$', views.EndogenousBrowser.as_view(), name='endogenous_browser'),
     #User selected calculations
     #Biased Family
     path('userselectionbiased', views.UserBiased.as_view(way='Browser'), name='bias_browser-list'),

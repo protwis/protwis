@@ -23,7 +23,7 @@ from common.views import Alignment, AbsReferenceSelectionTable, getReferenceTabl
 from common.models import ReleaseNotes, WebResource, Publication
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
-from ligand.models import Ligand, LigandVendorLink, LigandVendors, BiasedPathways, AssayExperiment, BiasedData, Endogenous_GTP, BalancedLigands
+from ligand.models import Ligand, LigandVendorLink, LigandVendors, BiasedPathways, AssayExperiment, BiasedData, Endogenous_GTP, BalancedLigands, LigandID
 from ligand.functions import OnTheFly, AddPathwayData
 from protein.models import Protein, ProteinFamily, ProteinCouplings
 from interaction.models import StructureLigandInteraction
@@ -1907,4 +1907,81 @@ class BiasGuidelines(TemplateView):
     def get_context_data(self, **kwargs):
 
         context = super().get_context_data(**kwargs)
+        return context
+
+class EndogenousBrowser(TemplateView):
+
+    template_name = 'endogenous_browser.html'
+
+    def get_context_data(self, **kwargs):
+
+        context = super().get_context_data(**kwargs)
+
+        browser_columns = ['Class', 'Receptor family', 'UniProt', 'IUPHAR', 'Species',
+                           'Ligand name', 'GtP link', 'Principal/Secondary', 'Type',
+                           'pEC50 - min', 'pEC50 - mid', 'pEC50 - max',
+                           'pKi - min', 'pKi - mid', 'pKi - max',
+                           'Authors', 'DOI/PMID', 'ID', 'pub_link']
+
+        table = pd.DataFrame(columns=browser_columns)
+        #receptor_id
+        endogenous_data = Endogenous_GTP.objects.filter(Q(endogenous_status__isnull=False) | Q(potency_ranking=1)).values_list(
+                            "receptor__family__parent__parent__parent__name", #0 Class
+                            "receptor__family__parent__name",                 #1 Receptor Family
+                            "receptor__entry_name",                           #2 UniProt
+                            "receptor__name",                                 #3 IUPHAR
+                            "receptor__species__common_name",                 #4 Species
+                            "ligand__name",                                   #5 Ligand
+                            "ligand",                                         #6 Ligand ID
+                            "endogenous_status",                              #7 Principal/Secondary
+                            "ligand__ligand_type__name",                      #8 Type
+                            "pec50",                                          #9 pEC50 - min - med - max
+                            "pKi",                                            #10 pKi - min - med - max
+                            "publication__authors",                           #11 Authors
+                            "publication__web_link__index",                   #12 DOI/PMID
+                            "receptor").distinct()
+
+        gtpidlinks = dict(list(LigandID.objects.filter(web_resource__slug='gtoplig').values_list(
+                            "ligand",
+                            "index").distinct()))
+        print(gtpidlinks)
+        gtplink = 'https://www.guidetopharmacology.org/GRAC/LigandDisplayForward?ligandId={}'
+
+        matches = {}
+
+        for data in endogenous_data:
+            if data[6] not in gtpidlinks.keys():
+                continue
+            if data[13] not in matches.keys():
+                matches[data[13]] = []
+            if data[5] not in matches[data[13]]:
+                matches[data[13]].append(data[5])
+                data_subset = {}
+                data_subset['Class'] = data[0]                                  #0
+                data_subset['Receptor family'] = data[1].strip('receptors')     #1
+                data_subset['UniProt'] = data[2].split('_')[0].upper()          #2
+                data_subset['IUPHAR'] = data[3]                                 #3
+                data_subset['Species'] = data[4]                                #4
+                data_subset['Ligand name'] = data[5]                            #5
+                data_subset['GtP link'] =  gtplink.format(gtpidlinks[data[6]])  #6
+                data_subset['Principal/Secondary'] = data[7] if data[7] else "Most Potent"  #7
+                data_subset['Type'] = data[8]                                   #8
+                data_subset['pEC50 - min'] = data[9].split(' | ')[0]            #9
+                data_subset['pEC50 - mid'] = data[9].split(' | ')[1]            #10
+                data_subset['pEC50 - max'] = data[9].split(' | ')[2]            #11
+                data_subset['pKi - min'] = data[10].split(' | ')[0]             #12
+                data_subset['pKi - mid'] = data[10].split(' | ')[1]             #13
+                data_subset['pKi - max'] = data[10].split(' | ')[2]             #14
+                data_subset['Authors'] = data[11]                               #15
+                data_subset['DOI/PMID'] = data[12]                              #16
+                data_subset['ID'] = data[6]                                     #17
+                if data[12]:
+                    data_subset['pub_link'] = "https://pubmed.ncbi.nlm.nih.gov/" + data[12] if data[12].isdigit() else "https://dx.doi.org/" + data[12]
+                else:
+                    data_subset['pub_link'] = ''                                #18
+                table = table.append(data_subset, ignore_index=True)
+
+        table.fillna('', inplace=True)
+        # context = dict()
+        context['Array'] = table.to_numpy()
         return context
