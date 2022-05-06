@@ -61,7 +61,7 @@
 
 
 {% block content %}
-{% if page != 'gprot' %}
+{% if page == 'structure' %}
 <h4>Number of structures, including multiple of same receptor (complex)</h4>
 <table style="width:75% !important" class="table table-stripped">
     <thead>
@@ -163,7 +163,7 @@
 </table>
 *Active state is defined as agonist-bound and opened intracellular TM bundle.
 **Receptor-orthologues are only counted once.
-{% else %}
+{% elif page == 'gprot' %}
 <h4>Number of G protein structures</h4>
 <table style="width:75% !important" class="table table-stripped">
     <thead>
@@ -266,12 +266,116 @@
     </tbody>
     <tr> </tr>
 </table>
+{% elif page == 'arrestin' %}
+<h4>Number of arrestin structures</h4>
+<table style="width:75% !important" class="table table-stripped">
+    <thead>
+        <tr>
+            <td><b>Structures</td>
+            {% for class in all_arrestins_by_gclass.items %}
+            <td align="center"><b>{{ class.0|safe}}</b></td>
+            {% endfor %}
+            <td align="center"><b>Total</b></td>
+        </tr>
+    </thead>
+    <tbody>
+      <tr>
+          <td>Non complexed arrestin</td>
+          {% for class in noncomplex_arrestins_by_gclass.items %}
+          <td align="center" style="vertical-align:middle !important">{% if class.1 == 0 %}-{% else %}{{ class.1 }}{% endif %}</td>
+          {% endfor %}
+          <td align="center" style="vertical-align:middle !important">{{ noncomplex_arrestins }}</td>
+      </tr>
+      <tr>
+          <td>Receptor - arrestin complexes</td>
+          {% for class in all_arrestins_by_gclass.items %}
+          <td align="center" style="vertical-align:middle !important">{% if class.1 == 0 %}-{% else %}{{ class.1 }}{% endif %}</td>
+          {% endfor %}
+          <td align="center" style="vertical-align:middle !important">{{ all_arrestins }}</td>
+      </tr>
+      <tr>
+          <td>Total structures</td>
+          {% for item in total_arrestins_by_gclass %}
+          <td align="center" style="vertical-align:middle !important">{{ item }}</td>
+          {% endfor %}
+          <td align="center" style="vertical-align:middle !important">{{ total_arrestins }}</td>
+      </tr>
+    </tbody>
+    <tr> </tr>
+</table>
+<br />
+<br />
+<h4>Number of GPCR-Arrestin structures (distinct complexes)</h4>
+<table style="width:75% !important" class="table table-stripped">
+    <thead>
+        <tr>
+            <td><b>Receptor Class</td>
+            {% for class in all_arrestins_by_gclass.items %}
+            <td align="center"><b>{{ class.0|safe }}</b></td>
+            {% endfor %}
+            <td align="center"><b>Total</b></td>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Class A</td>
+            {% for total, unique in arrA_complexes %}
+            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_arr_A_complexes }} ({{ unique_arr_A_complexes }})</td>
+        </tr>
+        <tr>
+            <td>Class B1</td>
+            {% for total, unique in arrB1_complexes %}
+            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_arr_B1_complexes }} ({{ unique_arr_B1_complexes }})</td>
+        </tr>
+        <tr>
+            <td>Class B2</td>
+            {% for total, unique in arrB2_complexes %}
+            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_arr_B2_complexes }} ({{ unique_arr_B2_complexes }})</td>
+        </tr>
+        <tr>
+            <td>Class C</td>
+            {% for total, unique in arrC_complexes %}
+            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_arr_C_complexes }} ({{ unique_arr_C_complexes }})</td>
+        </tr>
+        <tr>
+            <td>Class D1</td>
+            {% for total, unique in arrD1_complexes %}
+            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_arr_D1_complexes }} ({{ unique_arr_D1_complexes }})</td>
+        </tr>
+        <tr>
+            <td>Class F</td>
+            {% for total, unique in arrF_complexes %}
+            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_arr_F_complexes }} ({{ unique_arr_F_complexes }})</td>
+        </tr>
+        <tr>
+            <td>Class T2</td>
+            {% for total, unique in arrT2_complexes %}
+            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ all_arr_T2_complexes }} ({{ unique_arr_T2_complexes }})</td>
+        </tr>
+    </tbody>
+    <tr> </tr>
+</table>
 {% endif %}
 <br />
 <br />
 Specific sets of structures can be downloaded from the <a href="/structure">Structures</a> page.<br />
 The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }}</strong>.<br />
-{% if page != 'gprot' %}
+
+{% if page == 'structure' %}
 <style type="text/css">
   .gprot_orange {
     color: orange;
@@ -610,7 +714,8 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
       DrawCircles('orphan', circles_data, maxLeafNodeLenght, conversion, true, false);
   });
 </script>
-{% else %}
+
+{% elif page == 'gprot' %}
 <style type="text/css">
   .gprot_blue {
     color: blue;
@@ -704,10 +809,112 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
       DrawCircles('orphan', matching, maxLeafNodeLenght, conversion, true);
   });
 </script>
+
+{% elif page == 'arrestin' %}
+<style type="text/css">
+  .gprot_blue {
+    color: blue;
+  }
+  .gprot_red {
+    color: red;
+  }
+  .gprot_black {
+    color: black;
+  }
+  .gprot_green {
+    color: forestgreen;
+  }
+  .gprot_pink {
+    color: pink;
+  }
+  .gprot_orange{
+    color: orange;
+  }
+  .gprot_purple{
+    color: purple;
+  }
+  .graydiv {
+      height: 20px;
+      width: 350px;
+      background: linear-gradient(to right, white 0%, black 100%)
+  }
+</style>
+<br />
+<br />
+<p><h4><strong>Structural coverage of GPCR-Arrestin complexes.</strong></h4></p>
+<br />
+<div>
+  Receptor names:
+    <div class="btn-group" role="group" id="gtp_plus">
+        <button id="UniProtNames" class="btn btn-info active">UniProt</button>
+        <button id="IUPHARNames" class="btn btn-info">IUPHAR</button>
+    </div>
+</div>
+<br />
+<br />
+<script type="text/javascript" charset="utf-8">
+    class_a = {{ class_a|safe }};
+    class_a_options = {{ class_a_options|safe }};
+    class_b1 = {{ class_b1|safe }};
+    class_b1_options = {{ class_b1_options|safe }};
+    class_b2 = {{ class_b2|safe }};
+    class_b2_options = {{ class_b2_options|safe }};
+    class_c = {{ class_c|safe }};
+    class_c_options = {{ class_c_options|safe }};
+    class_f = {{ class_f|safe }};
+    class_f_options = {{ class_f_options|safe }};
+    class_t2 = {{ class_t2|safe }};
+    class_t2_options = {{ class_t2_options|safe }};
+    orphan = {{ orphan|safe }};
+    orphan_options = {{ orphan_options|safe }};
+    whole_dict = {{ whole_receptors|safe }};
+    matching = {{ circles_data|safe }}
+</script>
+<script language='javascript'>
+  maxLeafNodeLenght = 46;
+  conversion = {"ARRB1":"#FFC300", "ARRB2":"#581845"};
+  $("#UniProtNames").click(function() {
+      $("#UniProtNames").addClass("active");
+      $("#IUPHARNames").removeClass("active");
+      changeLeavesLabels("class_a","UniProt", whole_dict);
+      DrawCircles('class_a', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_b1","UniProt", whole_dict);
+      DrawCircles('class_b1', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_b2","UniProt", whole_dict);
+      DrawCircles('class_b2', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_c","UniProt", whole_dict);
+      DrawCircles('class_c', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_f","UniProt", whole_dict);
+      DrawCircles('class_f', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_t2","UniProt", whole_dict);
+      DrawCircles('class_t2', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("orphan","UniProt", whole_dict);
+      DrawCircles('orphan', matching, maxLeafNodeLenght, conversion, true);
+  });
+  $("#IUPHARNames").click(function() {
+      $("#UniProtNames").removeClass("active");
+      $("#IUPHARNames").addClass("active");
+      changeLeavesLabels("class_a","IUPHAR", whole_dict);
+      DrawCircles('class_a', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_b1","IUPHAR", whole_dict);
+      DrawCircles('class_b1', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_b2","IUPHAR", whole_dict);
+      DrawCircles('class_b2', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_c","IUPHAR", whole_dict);
+      DrawCircles('class_c', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_f","IUPHAR", whole_dict);
+      DrawCircles('class_f', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("class_t2","IUPHAR", whole_dict);
+      DrawCircles('class_t2', matching, maxLeafNodeLenght, conversion, true);
+      changeLeavesLabels("orphan","IUPHAR", whole_dict);
+      DrawCircles('orphan', matching, maxLeafNodeLenght, conversion, true);
+  });
+</script>
+
 {% endif %}
 <div id="class_a" class="text-center">
   <h4>Class A<br />(Rhodopsin)</h4>
-  {% if page != 'gprot' %}
+  {% if page == 'structure' %}
     <br />
     <div>
       <div style="float: right; position: relative" class="text-center">
@@ -721,7 +928,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
               <span class="gprot_red">&#9675; <b>Inactive</b></span>
       </div>
     </div>
-  {% else %}
+  {% elif page == 'gprot' %}
   <br />
   <div>
     <div style="float: right; position: relative" class="text-center">
@@ -735,6 +942,19 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
               <span class="gprot_black">&#9675; <b>G&alpha;<sub>q/11</sub></b></span>
               <span class="gprot_green">&#9675; <b>G&alpha;<sub>12/13</sub></b></span>
               <span class="gprot_pink">&#9675; <b>GPa1</b></span>
+    </div>
+  </div>
+  {% elif page == 'arrestin' %}
+  <br />
+  <div>
+    <div style="float: right; position: relative" class="text-center">
+      <b>Arrestin complexes structures frequency (from low to high)</b>
+      <div class="graydiv"></div>
+    </div>
+    <div style="float: left; position: relative" class="text-center">
+      <b>Arrestin complexes</b> <br />
+          <span class="gprot_orange">&#11044; &beta;-Arrestin<sub>1</sub></span>
+          <span class="gprot_purple">&#11044; &beta;-Arrestin<sub>2</sub></span>
     </div>
   </div>
   {% endif %}
@@ -998,7 +1218,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
 <script src="{% static 'home/js/saveSvg.js' %}"></script>
 <script src="{% static 'home/js/phylo_tree.js' %}"></script>
-{% if page != 'gprot' %}
+{% if page == 'structure' %}
 <script type="text/javascript" charset="utf-8">
     maxLeafNodeLenght = 46;
     conversion = {"active":"#008000", "intermediate":"#FFA500", "inactive":"#FF0000"};
@@ -1030,10 +1250,42 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
         $("#orphan_svg").attr('height', 360).attr('width', 360);
     });
 </script>
-{% else %}
+{% elif page == 'gprot' %}
 <script type="text/javascript" charset="utf-8">
     maxLeafNodeLenght = 46;
     conversion = {"Gs":"#0000FF", "Gi/o":"#FF0000", "Gq/11":"#000000", "G12/13":"#008000", "GPa1 family":"#FFC0CB"};
+    $(window).on("load", function() {
+        draw_tree(class_a, class_a_options);
+        draw_tree(class_b1, class_b1_options);
+        draw_tree(class_b2, class_b2_options);
+        draw_tree(class_c, class_c_options);
+        draw_tree(class_f, class_f_options);
+        draw_tree(class_t2, class_t2_options);
+        draw_tree(orphan, orphan_options);
+        DrawCircles('class_a', matching, maxLeafNodeLenght, conversion, true);
+        DrawCircles('class_b1', matching, maxLeafNodeLenght, conversion, true);
+        DrawCircles('class_b2', matching, maxLeafNodeLenght, conversion, true);
+        DrawCircles('class_c', matching, maxLeafNodeLenght, conversion, true);
+        DrawCircles('class_f', matching, maxLeafNodeLenght, conversion, true);
+        DrawCircles('class_t2', matching, maxLeafNodeLenght, conversion, true);
+        DrawCircles('orphan', matching, maxLeafNodeLenght, conversion, true);
+        $("#class_a svg g").first().attr('transform', 'translate(555,555) scale(0.9,0.9) ');
+        $("#class_a_svg").attr('height', 1210);
+        $("#class_a_svg").attr('width', 1110);
+        $("#class_b1 svg g").first().attr('transform', 'translate(190,220) scale(0.80,0.80) ');
+        $("#class_b2 svg g").first().attr('transform', 'translate(195,182) scale(0.85,0.85) ');
+        $("#class_b2_svg").attr('height', 390);
+        $("#class_c svg g").first().attr('transform', 'translate(200,200) scale(0.85,0.85) ');
+        $("#class_f svg g").first().attr('transform', 'translate(180,180) scale(0.85,0.85) ');
+        $("#class_t2 svg g").first().attr('transform', 'translate(172,172) scale(0.85,0.85) ');
+        $("#orphan svg g").first().attr('transform', 'translate(175,180) scale(0.85,0.85)');
+        $("#orphan_svg").attr('height', 360).attr('width', 360);
+    });
+</script>
+{% elif page == 'arrestin' %}
+<script type="text/javascript" charset="utf-8">
+    maxLeafNodeLenght = 46;
+    conversion = {"ARRB1":"#FFC300", "ARRB2":"#581845"};
     $(window).on("load", function() {
         draw_tree(class_a, class_a_options);
         draw_tree(class_b1, class_b1_options);
