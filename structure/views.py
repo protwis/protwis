@@ -89,16 +89,22 @@ class StructureBrowser(TemplateView):
 		return context
 
 
-class GProteinStructureBrowser(TemplateView):
+class EffectorStructureBrowser(TemplateView):
 	"""
 	Fetching Structure data for browser
 	"""
 	template_name = "g_protein_structure_browser.html"
+	effector = 'gprot'
 
 	def get_context_data (self, **kwargs):
 		# Fetch g prot - receptor compleces
-		context = super(GProteinStructureBrowser, self).get_context_data(**kwargs)
-		complexstructs = SignprotComplex.objects.filter(protein__family__slug__startswith='100')
+		if self.effector == 'gprot':
+			slug_start = '100'
+		elif self.effector == 'arrestin':
+			slug_start = '200'
+
+		context = super(EffectorStructureBrowser, self).get_context_data(**kwargs)
+		complexstructs = SignprotComplex.objects.filter(protein__family__slug__startswith=slug_start)
 		try:
 			context['structures'] = Structure.objects.filter(id__in=complexstructs.values_list('structure', flat=True)).select_related(
 				"state",
@@ -118,7 +124,7 @@ class GProteinStructureBrowser(TemplateView):
 		except Structure.DoesNotExist as e:
 			pass
 		# Fetch non-complex g prot structures and filter for overlaps preferring SignprotComplex
-		ncstructs = SignprotStructure.objects.filter(protein__family__slug__startswith='100').select_related(
+		ncstructs = SignprotStructure.objects.filter(protein__family__slug__startswith=slug_start).select_related(
 				"protein__family",
 				"pdb_code__web_resource",
 				"publication__web_link__web_resource").prefetch_related(
