@@ -8,7 +8,7 @@ from io import StringIO
 
 from protein.models import ProteinConformation
 
-from structure.models import Structure
+from structure.models import Structure, StructureExtraProteins
 
 from signprot.models import SignprotComplex
 
@@ -86,7 +86,11 @@ def compute_interactions(pdb_name,save_to_db = False):
     if do_complexes:
         try:
             # check if structure in signprot_complex
-            complex = SignprotComplex.objects.get(structure=struc)
+            signprot_chain = ""
+            if StructureExtraProteins.objects.filter(structure=struc, category="Arrestin"):
+                signprot_chain = StructureExtraProteins.objects.get(structure=struc, category="Arrestin").chain
+            else:
+                signprot_chain = SignprotComplex.objects.get(structure=struc).alpha
 
             # Get all GPCR residue atoms based on preferred chain
             gpcr_atom_list = [ atom for residue in Selection.unfold_entities(s[preferred_chain], 'R') if is_aa(residue) \
@@ -94,7 +98,7 @@ def compute_interactions(pdb_name,save_to_db = False):
 
             # Get all residue atoms from the coupled protein (e.g. G-protein)
             # NOW: select alpha subnit protein chain using complex model
-            sign_atom_list = [ atom for residue in Selection.unfold_entities(s[complex.alpha], 'R') if is_aa(residue) \
+            sign_atom_list = [ atom for residue in Selection.unfold_entities(s[signprot_chain], 'R') if is_aa(residue) \
                                 for atom in residue.get_atoms()]
 
             ns_gpcr = NeighborSearch(gpcr_atom_list)
