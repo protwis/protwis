@@ -11,25 +11,6 @@
 <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/modal.css' %}" type="text/css" />
 <!-- <link rel="stylesheet" href="{% static 'home/css/signprot-multitabtable.css' %}" type="text/css" /> -->
-<!-- configure radio buttons style -->
-<style>
-	.highlight_green {
-		display: none;
-		/* background-color: green; */
-	}
-
-	.highlight {
-		display: none;
-		/* background-color: red; */
-	}
-
-	.inuse,
-	.ui-slider-range .inuse,
-	.yadcf-filter-range-number-slider .inuse {
-		border-color: yellow;
-		border-width: initial;
-	}
-</style>
 
 <style type="text/css">
 	.dataTables_scrollHeadInner {
@@ -86,18 +67,6 @@
 		min-width: 40px;
 	}
 
-	table.dataTable thead .sorting {
-		background-image: none !important;
-	}
-
-	table.dataTable thead .sorting_desc {
-		background-image: none !important;
-	}
-
-	table.dataTable thead .sorting_asc {
-		background-image: none !important;
-	}
-
 	table.dataTable.compact tbody th,
 	table.dataTable.compact tbody td {
 		padding: 5px 10px 5px 0px !important;
@@ -130,10 +99,6 @@
 		min-width: 40px;
 	}
 
-	.clicked_button {
-		background-color: rgb(215, 215, 215);
-	}
-
 	#overlay {
 		top: 0px;
 		position: absolute;
@@ -163,28 +128,8 @@
 		text-align: center;
 	}
 
-	.switch-field label:hover {
-		cursor: pointer;
-		/* width: 100%; */
-	}
-
-	.switch-field input:checked+label {
-		background-color: #337ab7;
-		/* #a5dc86; */
-		box-shadow: none;
-	}
-
 	.border-left {
 		padding-left: 3px;
-	}
-
-	.switch-field label:first-of-type {
-		border-radius: 4px 0 0 4px;
-
-	}
-
-	.switch-field label:last-of-type {
-		border-radius: 0 4px 4px 0;
 	}
 
 	.name {
@@ -221,10 +166,7 @@
 		text-overflow: ellipsis;
 	}
 </style>
-<style>
-  .toggle.ios, .toggle-on.ios, .toggle-off.ios { border-radius: 20px; }
-  .toggle.ios .toggle-handle { border-radius: 20px; }
-</style>
+
 {% endblock %}
 
 {% block content %}
@@ -250,7 +192,7 @@
 				<th style="border-left: 1px solid black; text-align:left" colspan="4" style="">Endogenous ligands</th>
 				<th style="border-left: 1px solid black; text-align:left" colspan="3">pEC50</th>
         <th style="border-left: 1px solid black; text-align:left" colspan="3">pKi</th>
-        <th style="border-left: 1px solid black; text-align:left" colspan="1">Reference</th>
+        <th style="border-left: 1px solid black; text-align:left" colspan="1">References</th>
 			</tr>
 			<tr class="table-filter-dropdown">
         <!-- Receptor block -->
@@ -273,7 +215,7 @@
         <th class="color-column">Mid</th>
         <th class="color-column">Max</th>
         <!-- Reference block  -->
-				<th id="doi_reference_filter_select">Reference</th>
+				<th id="doi_reference_filter_select">References</th>
 			</tr>
 		</thead>
 		<tbody id='structures_scrollable_body'>
@@ -303,29 +245,30 @@
 					<td style="text-align:right" class="color-column" id="dee_p4_p1">{{value.15|floatformat:1}}</td>
 
 					<!-- Reference -->
-					<td class="name"><a href='#' onClick="javascript:reference_list('{{value.16|safe}}');">References</a></td>
+					<!-- <td class="name"><a href='#' onClick="javascript:reference_list('{{value.16|safe}}');">References</a></td> -->
+          <td class="name" style="text-align:center"><a href="#references" data-toggle="modal" data-book-id="{{value.16|safe}}"> Refs</a></td>
 				</tr>
 				{% endfor %}
 		</tbody>
 	</table>
 </div>
-<div id="references" class="modal modal-sm">
+
+<div class="modal" id="references">
+  <div class="modal-dialog modal-lg">
     <div class="modal-content">
-        <div class="modal-header">
-          <button style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close close_modal" onclick="javascript:$('#references').modal('toggle');">&times;</button>
-          <h3 class="modal-title">
-            <b>References:</b>
-          </h3>
-        </div>
-        <div class="modal-body">
-          <p>
-          </p>
-        </div>
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+          <b><h4 class="modal-title">References:</h4></b>
+      </div>
+      <div class="modal-body">
+        <p></p>
+      </div>
     </div>
+  </div>
 </div>
+
 <br>
 {% endautoescape %}
-<br>
 {% endblock %}
 {% block addon_js %}
 
@@ -337,24 +280,17 @@
 <script src="{% static 'home/js/grayscale.js' %}"></script>
 <script src="{% static 'home/js/gpcrdb.js' %}"></script>
 <script src="{% static 'home/js/signprot-multitabtable.js' %}"></script>
-<script>
-function openPopup(url, title, win, w, h) {
 
-		const y = win.top.outerHeight / 2 + win.top.screenY - (h / 2);
-		const x = win.top.outerWidth / 2 + win.top.screenX - (w / 2);
-		return win.open(url, title, 'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width=' + w + ', height=' + h + ', top=' + y + ', left=' + x);
-
-}
-</script>
 <script>
-function reference_list(message) {
-	// create join us modal and fill with text + show
-	$("#references .modal-body p").html(message);
-	// trigger modal
-	$('#references').modal('show');
-	// Move as a temporary workaround
-	$("#references").appendTo("body");
-}
+  //triggered when modal is about to be shown
+$('#references').on('show.bs.modal', function(e) {
+
+    //get data-id attribute of the clicked element
+    var bookId = $(e.relatedTarget).data('book-id');
+    $("#references .modal-body p").html(bookId);
+    //populate the textbox
+    // $(e.currentTarget).find('.modal-body p').val(bookId);
+});
 </script>
 <script>
 	$(document).ready(function() {

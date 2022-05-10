@@ -1952,7 +1952,7 @@ class EndogenousBrowser(TemplateView):
         matches = []
         publications = {}
         gtplink = 'https://www.guidetopharmacology.org/GRAC/LigandDisplayForward?ligandId={}'
-        pub_ref = "<b>{0}. ({1})</b><br />{2}.<br /><i>{3}</i>, <b>{4}</b> [PMID: <a href='{5}'>{6}</a><br />"
+        pub_ref = "<b>{0}. ({1})</b><br />{2}.<br /><i>{3}</i>, <b>{4}</b> [PMID: <a href='{5}'>{6}</a>]<br />"
         for data in endogenous_data:
             pub_link = ''
             ligand_receptor = str(data[6]) + '_' + str(data[18])
