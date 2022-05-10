@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="{% static 'home/css/bootstrap2-toggle.min.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/modal.css' %}" type="text/css" />
 <!-- <link rel="stylesheet" href="{% static 'home/css/signprot-multitabtable.css' %}" type="text/css" /> -->
 <!-- configure radio buttons style -->
 <style>
@@ -230,7 +231,14 @@
 {% autoescape off %}
 
 <div style='padding-top: 0px; font-size: 10px; white-space: nowrap; overflow-y:hidden;  width:100%;'>
-	<a id="dlink" style="display:none;"></a>
+  <br />
+  <div style='font-size: 12px;'>
+  <p> Data showed in this table is continously collected from the <a href='https://www.guidetopharmacology.org/' target='_blank'>Guide to Pharmacology</a> database.<b> Main reference:</b><br />
+
+      <b>The IUPHAR/BPS guide to PHARMACOLOGY in 2022: curating pharmacology for COVID-19, malaria and antibacterials.</b>
+      Harding SD, Armstrong JF, Faccenda E, Southan C, Alexander SPH, Davenport AP, Pawson AJ, Spedding M, Davies JA; NC-IUPHAR.
+      <i>Nucl. Acids Res.</i> <b>50</b>, D1282–D1294 (2021) PMID: [<a href='https://pubmed.ncbi.nlm.nih.gov/34718737/' target='_blank'>34718737</a>]</p>
+  </div>
 	<div id="excel_table" style2="display:none;"></div>
 	<button onclick="tableToExcel('structures_scrollable', 'Families data', 'EndogenousData.xls')" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Export to Excel </button>
 	<button id="reset" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Reset filters </button>
@@ -242,7 +250,7 @@
 				<th style="border-left: 1px solid black; text-align:left" colspan="4" style="">Endogenous ligands</th>
 				<th style="border-left: 1px solid black; text-align:left" colspan="3">pEC50</th>
         <th style="border-left: 1px solid black; text-align:left" colspan="3">pKi</th>
-        <th style="border-left: 1px solid black; text-align:left" colspan="2">Reference</th>
+        <th style="border-left: 1px solid black; text-align:left" colspan="1">Reference</th>
 			</tr>
 			<tr class="table-filter-dropdown">
         <!-- Receptor block -->
@@ -253,8 +261,8 @@
         <th>Species</th>
         <!-- ligand block -->
 				<th class="pathways">Ligand</th>
-				<th class="pathways">Guide to Pharmacology</th>
-				<th class="pathways">Endogenous status</th>
+				<th class="pathways">GtP Classification</th>
+				<th class="pathways">Potency Ranking</th>
 				<th class="pathways">Type</th>
 				<!-- pEC50 block  -->
 				<th class="color-column">Min</th>
@@ -265,11 +273,7 @@
         <th class="color-column">Mid</th>
         <th class="color-column">Max</th>
         <!-- Reference block  -->
-				<th id="authors_filter_select" style="overflow: hidden;
-                          white-space: nowrap;
-                          text-overflow: ellipsis;
-                          max-width: 100px;">Authors</th>
-				<th id="doi_reference_filter_select">DOI/PMID</th>
+				<th id="doi_reference_filter_select">Reference</th>
 			</tr>
 		</thead>
 		<tbody id='structures_scrollable_body'>
@@ -284,29 +288,41 @@
 
 					<!-- ligand block -->
           <td style="text-align:left"><a href='/ligand/{{value.17}}/info' target='_blank'>{{value.5|title}}</a></td>
-					<td style="text-align:left"><a href='{{ value.6 }}' target='_blank'>{{value.5|title}}</a></td>
-					<td style="text-align:left" class="pathway">{{value.7}}</td>
-					<td style="text-align:left" class="pathway ">{{value.8}}</td>
+					<td style="text-align:left">{{value.7|title}}</td>
+					<td style="text-align:left" class="pathway">{{value.8|floatformat:0}}</td>
+					<td style="text-align:left" class="pathway ">{{value.9}}</td>
 
 					<!-- pEC50 block  -->
-					<td style="text-align:right" class="color-column" id="lbf_p2_p1">{{value.9|floatformat:1}}</td>
-					<td style="text-align:right" class="color-column" id="lbf_p3_p1">{{value.10|floatformat:1}}</td>
-					<td style="text-align:right" class="color-column" id="lbf_p4_p1">{{value.11|floatformat:1}}</td>
+					<td style="text-align:right" class="color-column" id="lbf_p2_p1">{{value.10|floatformat:1}}</td>
+					<td style="text-align:right" class="color-column" id="lbf_p3_p1">{{value.11|floatformat:1}}</td>
+					<td style="text-align:right" class="color-column" id="lbf_p4_p1">{{value.12|floatformat:1}}</td>
 
 					<!-- pKi block -->
-					<td style="text-align:right" class="color-column" id="dee_p2_p1">{{value.12|floatformat:1}}</td>
-					<td style="text-align:right" class="color-column" id="dee_p3_p1">{{value.13|floatformat:1}}</td>
-					<td style="text-align:right" class="color-column" id="dee_p4_p1">{{value.14|floatformat:1}}</td>
+					<td style="text-align:right" class="color-column" id="dee_p2_p1">{{value.13|floatformat:1}}</td>
+					<td style="text-align:right" class="color-column" id="dee_p3_p1">{{value.14|floatformat:1}}</td>
+					<td style="text-align:right" class="color-column" id="dee_p4_p1">{{value.15|floatformat:1}}</td>
 
 					<!-- Reference -->
-					<td class="name" style="border-left: 1px solid black;">{{ value.15 }}</td>
-					<td class="name"><a href='{{value.18}}' target='_blank'>{{ value.16 }}</a></td>
+					<td class="name"><a href='#' onClick="javascript:reference_list('{{value.16|safe}}');">References</a></td>
 				</tr>
 				{% endfor %}
 		</tbody>
 	</table>
 </div>
-
+<div id="references" class="modal modal-sm">
+    <div class="modal-content">
+        <div class="modal-header">
+          <button style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close close_modal" onclick="javascript:$('#references').modal('toggle');">&times;</button>
+          <h3 class="modal-title">
+            <b>References:</b>
+          </h3>
+        </div>
+        <div class="modal-body">
+          <p>
+          </p>
+        </div>
+    </div>
+</div>
 <br>
 {% endautoescape %}
 <br>
@@ -330,7 +346,16 @@ function openPopup(url, title, win, w, h) {
 
 }
 </script>
-
+<script>
+function reference_list(message) {
+	// create join us modal and fill with text + show
+	$("#references .modal-body p").html(message);
+	// trigger modal
+	$('#references').modal('show');
+	// Move as a temporary workaround
+	$("#references").appendTo("body");
+}
+</script>
 <script>
 	$(document).ready(function() {
 
@@ -360,15 +385,16 @@ function openPopup(url, title, win, w, h) {
 		// Vendors/Articles/Labs (3)
 		column_filters = column_filters.concat(createYADCFfilters(7, 2, "multi_select", "select2", "Select", false, null, null, "80px"));
 		// Pathway Preference block (5)
-    column_filters = column_filters.concat(createYADCFfilters(9, 6, "range_number", null, ["Min", "Max"], false, null, null, "80px"))
+    column_filters = column_filters.concat(createYADCFfilters(9, 6, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
     // Authors
-		column_filters = column_filters.concat(createYADCFfilters(15, 1, "multi_select", "select2", "Authors", false, null, null, "80px"));
+		// column_filters = column_filters.concat(createYADCFfilters(15, 1, "multi_select", "select2", "Authors", false, null, null, "80px"));
 		// DOI
-		column_filters = column_filters.concat(createYADCFfilters(16, 1, "multi_select", "select2", "DOI", false, null, "html", "80px"));
+		// column_filters = column_filters.concat(createYADCFfilters(16, 1, "multi_select", "select2", "DOI", false, null, "html", "80px"));
 
 		yadcf.init(oTable1.draw(), column_filters, {
 			cumulative_filtering: false
 		});
+    yadcf.exFilterColumn(oTable1, [[4, ["Human"]]], true);
 
 		gray_scale_table($("#structures_scrollable"));
 

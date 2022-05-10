@@ -105,9 +105,14 @@ class Command(BaseBuild):
 
     @staticmethod
     def compare_proteins(gtp_data):
+        #Probably the files have been changed:
+        #Now "uniprot_id" is "UniProtKB ID"
+        #and "iuphar_id" is "GtoPdb IUPHAR ID"
         gpcrdb_proteins = Protein.objects.filter(family__slug__startswith="00", sequence_type__slug="wt").values_list('entry_name','accession')
-        entries = gtp_data.loc[gtp_data['uniprot_id'].isin([protein[1].split("-")[0] for protein in gpcrdb_proteins]), ['uniprot_id', 'iuphar_id']]
-        return list(entries['iuphar_id'].unique())
+        # entries = gtp_data.loc[gtp_data['uniprot_id'].isin([protein[1].split("-")[0] for protein in gpcrdb_proteins]), ['uniprot_id', 'iuphar_id']]
+        entries = gtp_data.loc[gtp_data['UniProtKB ID'].isin([protein[1].split("-")[0] for protein in gpcrdb_proteins]), ['UniProtKB ID', 'GtoPdb IUPHAR ID']]
+        # return list(entries['iuphar_id'].unique())
+        return list(entries['GtoPdb IUPHAR ID'].unique())
 
     @staticmethod
     def obtain_ligands(data, compare_set, labels):

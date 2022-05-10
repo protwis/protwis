@@ -79,13 +79,22 @@ class Command(BaseBuild):
         """
         print('*** Starting *** \n')
         print('\n#1 Fetching and setting up the GTP endogenous data')
-        gtp_detailed_endogenous_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/detailed_endogenous_ligands.csv", 7 * 24 * 3600)
-        gtp_data = pd.read_csv(gtp_detailed_endogenous_link, dtype=str)
-        gtp_interactions_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/interactions.csv", 7 * 24 * 3600)
-        gtp_interactions = pd.read_csv(gtp_interactions_link, dtype=str)
-        gtp_uniprot_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/GtP_to_UniProt_mapping.csv", 7 * 24 * 3600)
-        gtp_uniprot = pd.read_csv(gtp_uniprot_link, dtype=str)
-        iuphar_ids = GtPLigand.compare_proteins(gtp_uniprot)
+        # gtp_detailed_endogenous_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/detailed_endogenous_ligands.csv", 7 * 24 * 3600)
+        gtp_detailed_endogenous_link = "https://www.guidetopharmacology.org/DATA/detailed_endogenous_ligands.csv"
+        # gtp_data = pd.read_csv(gtp_detailed_endogenous_link, dtype=str) #MAY BE NEEDED TO ADD header=1
+        gtp_data = pd.read_csv(gtp_detailed_endogenous_link, dtype=str, header=1) #MAY BE NEEDED TO ADD header=1
+        # gtp_interactions_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/interactions.csv", 7 * 24 * 3600)
+        gtp_interactions_link = "https://www.guidetopharmacology.org/DATA/interactions.csv"
+        # gtp_interactions = pd.read_csv(gtp_interactions_link, dtype=str) #MAY BE NEEDED TO ADD header=1
+        gtp_interactions = pd.read_csv(gtp_interactions_link, dtype=str, header=1) #MAY BE NEEDED TO ADD header=1
+        # gtp_uniprot_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/GtP_to_UniProt_mapping.csv", 7 * 24 * 3600)
+        gtp_uniprot_link = "https://www.guidetopharmacology.org/DATA/GtP_to_UniProt_mapping.csv"
+        # gtp_uniprot = pd.read_csv(gtp_uniprot_link, dtype=str) #MAY BE NEEDED TO ADD header=1
+        gtp_uniprot = pd.read_csv(gtp_uniprot_link, dtype=str, header=1) #MAY BE NEEDED TO ADD header=1
+        #Probably the files have been changed:
+        #Now "uniprot_id" is "UniProtKB ID"
+        #and "iuphar_id" is "GtoPdb IUPHAR ID"
+        iuphar_ids = GtPLigand.compare_proteins(gtp_uniprot) #NEED TO CHECK THE COLUMN IDS
 
         processed_data = self.data_preparation(gtp_data, gtp_interactions, iuphar_ids)
 
@@ -189,6 +198,8 @@ class Command(BaseBuild):
         dataframe['Principal/Secondary'] = np.nan
         IDS = list(dataframe['Target_ID'].unique())
         not_commented = []
+        #Adding a new labeling for drugs that have been
+        #defined as Proposed endogenous ligands
         for id in IDS:
             slice = dataframe.loc[dataframe['Target_ID'] == id]
             try:
@@ -196,7 +207,10 @@ class Command(BaseBuild):
             except AttributeError: #the comment is nan
                 comment = ''
             if len(slice['Ligand_Name'].unique()) == 1:
-                dataframe.loc[dataframe['Target_ID'] == id, 'Principal/Secondary'] = 'Principal'
+                label = 'Principal'
+                if 'Proposed' in comment:
+                    label = 'Proposed'
+                dataframe.loc[dataframe['Target_ID'] == id, 'Principal/Secondary'] = label
             if 'principal' in comment:
                 if 'agonists' in comment:
                     drugs = comment.replace(' and ', ', ').split(' are')[0].split(', ')
@@ -207,8 +221,12 @@ class Command(BaseBuild):
                     drugs = comment.split(' is')[0]
                     dataframe.loc[(dataframe['Target_ID'] == id) & (dataframe['Ligand_Name'] == drugs), 'Principal/Secondary'] = 'Principal'
                     dataframe.loc[(dataframe['Target_ID'] == id) & (dataframe['Ligand_Name'] != drugs), 'Principal/Secondary'] = 'Secondary'
+            elif ('Proposed' in comment) and (len(slice['Ligand_Name'].unique()) > 1):
+                dataframe.loc[dataframe['Target_ID'] == id, 'Principal/Secondary'] = 'Proposed'
+                not_commented.append(id)
             else:
                 not_commented.append(id)
+
         return dataframe, not_commented
 
     @staticmethod
@@ -334,9 +352,10 @@ class Command(BaseBuild):
                     stereo_ligs[row['Ligand_ID']] = []
             else:
                 print("Ligand ", row['Ligand_ID'], "not found", row['Ligand_Name'])
+                continue #Commented, but needed for my machine (relaxin-3 was not found)
 
             try:
-                role = Command.fetch_role(row['Ligand_Action'].lower(), row['Ligand_Role'].lower())
+                role = Command.fetch_role(row['Ligand_Action'], row['Ligand_Role'])
             except AttributeError:
                 role = None
             for v in values:
@@ -476,7 +495,7 @@ class Command(BaseBuild):
                       'Allosteric modulator Positive': 'PAM',
                       'Allosteric modulator Potentiation': 'PAM',
                       'Antagonist Inverse agonist': 'Inverse agonist'}
-        lig_function = str(drug_type) + str(drug_action)
+        lig_function = ' '.join([str(drug_type), str(drug_action)])
         lr = None
         if lig_function in conversion.keys():
             query = conversion[lig_function]
