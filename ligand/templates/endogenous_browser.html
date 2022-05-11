@@ -175,11 +175,7 @@
 <div style='padding-top: 0px; font-size: 10px; white-space: nowrap; overflow-y:hidden;  width:100%;'>
   <br />
   <div style='font-size: 12px;'>
-  <p> Data showed in this table is continously collected from the <a href='https://www.guidetopharmacology.org/' target='_blank'>Guide to Pharmacology</a> database.<b> Main reference:</b><br />
-
-      <b>The IUPHAR/BPS guide to PHARMACOLOGY in 2022: curating pharmacology for COVID-19, malaria and antibacterials.</b>
-      Harding SD, Armstrong JF, Faccenda E, Southan C, Alexander SPH, Davenport AP, Pawson AJ, Spedding M, Davies JA; NC-IUPHAR.
-      <i>Nucl. Acids Res.</i> <b>50</b>, D1282–D1294 (2021) PMID: [<a href='https://pubmed.ncbi.nlm.nih.gov/34718737/' target='_blank'>34718737</a>]</p>
+  <p> Data showed in this table is continously collected from the <a href='https://www.guidetopharmacology.org/' target='_blank'>Guide to Pharmacology</a> database. <a href='https://pubmed.ncbi.nlm.nih.gov/34718737/' target='_blank'>Ref</a>]</p>
   </div>
 	<div id="excel_table" style2="display:none;"></div>
 	<button onclick="tableToExcel('structures_scrollable', 'Families data', 'EndogenousData.xls')" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Export to Excel </button>
@@ -203,8 +199,8 @@
         <th>Species</th>
         <!-- ligand block -->
 				<th class="pathways">Ligand</th>
-				<th class="pathways">GtP Classification</th>
-				<th class="pathways">Potency Ranking</th>
+				<th class="pathways">GtP<br />Classification</th>
+				<th class="pathways">Potency<br />Ranking</th>
 				<th class="pathways">Type</th>
 				<!-- pEC50 block  -->
 				<th class="color-column">Min</th>
@@ -215,7 +211,7 @@
         <th class="color-column">Mid</th>
         <th class="color-column">Max</th>
         <!-- Reference block  -->
-				<th id="doi_reference_filter_select">References</th>
+				<th></th>
 			</tr>
 		</thead>
 		<tbody id='structures_scrollable_body'>
@@ -258,7 +254,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-          <b><h4 class="modal-title">References:</h4></b>
+          <b><h4 class="modal-title">Refs:</h4></b>
       </div>
       <div class="modal-body">
         <p></p>
@@ -317,7 +313,8 @@ $('#references').on('show.bs.modal', function(e) {
 		// Receptor section (4)
 		column_filters = column_filters.concat(createYADCFfilters(1, 4, "multi_select", "select2", "Select", false, null, null, "80px"));
 		// Ligand column
-		column_filters = column_filters.concat(createYADCFfilters(5, 2, "multi_select", "select2", "Select", false, null, "html", "80px"));
+		column_filters = column_filters.concat(createYADCFfilters(5, 1, "multi_select", "select2", "Select", false, null, "html", "80px"));
+    column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
 		// Vendors/Articles/Labs (3)
 		column_filters = column_filters.concat(createYADCFfilters(7, 2, "multi_select", "select2", "Select", false, null, null, "80px"));
 		// Pathway Preference block (5)

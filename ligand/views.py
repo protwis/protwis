@@ -1952,17 +1952,31 @@ class EndogenousBrowser(TemplateView):
         matches = []
         publications = {}
         gtplink = 'https://www.guidetopharmacology.org/GRAC/LigandDisplayForward?ligandId={}'
-        pub_ref = "<b>{0}. ({1})</b><br />{2}.<br /><i>{3}</i>, <b>{4}</b> [PMID: <a href='{5}'>{6}</a>]<br />"
+        pub_ref = "<b>{0}. ({1})</b><br />{2}.<br /><i>{3}</i>, <b>{4}</b> [PMID: <a href='{5}'>{6}</a>]<br /><br />"
         for data in endogenous_data:
             pub_link = ''
             ligand_receptor = str(data[6]) + '_' + str(data[18])
             if data[6] not in gtpidlinks.keys():
                 continue
             if ligand_receptor not in publications.keys():
-                publications[ligand_receptor] = ''
+                publications[ligand_receptor] = {}
             if data[17]:
                 pub_link = "https://pubmed.ncbi.nlm.nih.gov/" + data[17] if data[17].isdigit() else "https://dx.doi.org/" + data[17]
-                publications[ligand_receptor] = publications[ligand_receptor] + pub_ref.format(data[12],data[13],data[14],data[15],data[16], pub_link, data[17])
+                #skipping publications without info (probably bug in the database)
+                if data[13] == None:
+                    continue
+                #splicing for years so we can then merge later
+                if data[13] not in publications[ligand_receptor].keys():
+                    publications[ligand_receptor][data[13]] = ''
+                publications[ligand_receptor][data[13]] = publications[ligand_receptor][data[13]] + pub_ref.format(data[12],data[13],data[14],data[15],data[16], pub_link, data[17])
+        #Cycling through the years to make a single reference string
+        for key in publications:
+            years = sorted(publications[key].keys())
+            refs = ''
+            for year in years:
+                refs += publications[key][year]
+            publications[key] = refs
+
 
         for data in endogenous_data:
             if data[6] not in gtpidlinks.keys():
