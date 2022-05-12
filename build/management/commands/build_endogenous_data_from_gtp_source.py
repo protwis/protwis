@@ -79,18 +79,18 @@ class Command(BaseBuild):
         """
         print('*** Starting *** \n')
         print('\n#1 Fetching and setting up the GTP endogenous data')
-        # gtp_detailed_endogenous_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/detailed_endogenous_ligands.csv", 7 * 24 * 3600)
-        gtp_detailed_endogenous_link = "https://www.guidetopharmacology.org/DATA/detailed_endogenous_ligands.csv"
+        gtp_detailed_endogenous_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/detailed_endogenous_ligands.csv", 7 * 24 * 3600)
+        # gtp_detailed_endogenous_link = "https://www.guidetopharmacology.org/DATA/detailed_endogenous_ligands.csv"
         # gtp_data = pd.read_csv(gtp_detailed_endogenous_link, dtype=str) #MAY BE NEEDED TO ADD header=1
-        gtp_data = pd.read_csv(gtp_detailed_endogenous_link, dtype=str, header=1) #MAY BE NEEDED TO ADD header=1
-        # gtp_interactions_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/interactions.csv", 7 * 24 * 3600)
-        gtp_interactions_link = "https://www.guidetopharmacology.org/DATA/interactions.csv"
+        gtp_data = pd.read_csv(gtp_detailed_endogenous_link, dtype=str, header=1) 
+        gtp_interactions_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/interactions.csv", 7 * 24 * 3600)
+        # gtp_interactions_link = "https://www.guidetopharmacology.org/DATA/interactions.csv"
         # gtp_interactions = pd.read_csv(gtp_interactions_link, dtype=str) #MAY BE NEEDED TO ADD header=1
-        gtp_interactions = pd.read_csv(gtp_interactions_link, dtype=str, header=1) #MAY BE NEEDED TO ADD header=1
-        # gtp_uniprot_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/GtP_to_UniProt_mapping.csv", 7 * 24 * 3600)
-        gtp_uniprot_link = "https://www.guidetopharmacology.org/DATA/GtP_to_UniProt_mapping.csv"
+        gtp_interactions = pd.read_csv(gtp_interactions_link, dtype=str, header=1)
+        gtp_uniprot_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/GtP_to_UniProt_mapping.csv", 7 * 24 * 3600)
+        # gtp_uniprot_link = "https://www.guidetopharmacology.org/DATA/GtP_to_UniProt_mapping.csv"
         # gtp_uniprot = pd.read_csv(gtp_uniprot_link, dtype=str) #MAY BE NEEDED TO ADD header=1
-        gtp_uniprot = pd.read_csv(gtp_uniprot_link, dtype=str, header=1) #MAY BE NEEDED TO ADD header=1
+        gtp_uniprot = pd.read_csv(gtp_uniprot_link, dtype=str, header=1)
         #Probably the files have been changed:
         #Now "uniprot_id" is "UniProtKB ID"
         #and "iuphar_id" is "GtoPdb IUPHAR ID"
