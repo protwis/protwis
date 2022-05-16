@@ -833,6 +833,12 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
   .gprot_purple{
     color: purple;
   }
+  .gprot_aquamarine{
+    color: mediumturquoise;
+  }
+  .gprot_cornflower{
+    color: cornflowerblue;
+  }
   .graydiv {
       height: 20px;
       width: 350px;
@@ -872,7 +878,8 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
 </script>
 <script language='javascript'>
   maxLeafNodeLenght = 46;
-  conversion = {"ARRB1":"#FFC300", "ARRB2":"#581845"};
+  conversion = {"ARRB1":"#FFC300", "ARRB2":"#581845", "ARRC":"#48D1CC", "ARRS":"#6495ED"};
+  console.log(matching);
   $("#UniProtNames").click(function() {
       $("#UniProtNames").addClass("active");
       $("#IUPHARNames").removeClass("active");
@@ -955,6 +962,8 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
       <b>Arrestin complexes</b> <br />
           <span class="gprot_orange">&#11044; &beta;-Arrestin<sub>1</sub></span>
           <span class="gprot_purple">&#11044; &beta;-Arrestin<sub>2</sub></span>
+          <span class="gprot_aquamarine">&#11044; Arrestin-C</span>
+          <span class="gprot_cornflower">&#11044; S-Arrestin</span>
     </div>
   </div>
   {% endif %}
@@ -1285,7 +1294,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
 {% elif page == 'arrestin' %}
 <script type="text/javascript" charset="utf-8">
     maxLeafNodeLenght = 46;
-    conversion = {"ARRB1":"#FFC300", "ARRB2":"#581845"};
+    conversion = {"ARRB1":"#FFC300", "ARRB2":"#581845", "ARRC":"#48D1CC", "ARRS":"#6495ED"};
     $(window).on("load", function() {
         draw_tree(class_a, class_a_options);
         draw_tree(class_b1, class_b1_options);
