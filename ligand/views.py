@@ -5,6 +5,7 @@ import re
 import time
 import pandas as pd
 import urllib
+import math
 
 from random import SystemRandom
 from copy import deepcopy
@@ -1520,16 +1521,23 @@ class LigandInformationView(TemplateView):
         context = super(LigandInformationView, self).get_context_data(**kwargs)
         ligand_id = self.kwargs['pk']
         ligand_data = Ligand.objects.get(id=ligand_id)
+        endogenous_ligands =  Endogenous_GTP.objects.all().values_list("ligand_id", flat=True)
         assay_data = list(AssayExperiment.objects.filter(ligand=ligand_id).prefetch_related(
             'ligand', 'protein', 'protein__family',
             'protein__family__parent', 'protein__family__parent__parent__parent',
             'protein__family__parent__parent', 'protein__family', 'protein__species'))
         context = dict()
         structures = LigandInformationView.get_structure(ligand_data)
-        ligand_data = LigandInformationView.process_ligand(ligand_data)
+        ligand_data = LigandInformationView.process_ligand(ligand_data, endogenous_ligands)
         assay_data = LigandInformationView.process_assay(assay_data)
-        assay_data = LigandInformationView.process_values(assay_data)
         mutations = LigandInformationView.get_mutations(ligand_data)
+        if int(ligand_id) in endogenous_ligands:
+            endo_data = list(Endogenous_GTP.objects.filter(ligand=ligand_id).prefetch_related(
+            'ligand', 'receptor', 'receptor__family',
+            'receptor__family__parent', 'receptor__family__parent__parent__parent',
+            'receptor__family__parent__parent', 'receptor__species'))
+            endo_values = LigandInformationView.process_endo(endo_data)
+            assay_data = assay_data + endo_values
         context.update({'structure': structures})
         context.update({'ligand': ligand_data})
         context.update({'assay': assay_data})
@@ -1563,66 +1571,55 @@ class LigandInformationView(TemplateView):
         return return_list
 
     @staticmethod
-    def get_min_max_values(value):
-        value = list(map(float, value))
-        maximum = max(value)
-        minimum = min(value)
-        avg = sum(value) / len(value)
-
-        if (minimum >= 100):
-            return round(minimum), round(avg), round(maximum)
-        else:
-            return round(minimum, 1), round(avg, 1), round(maximum, 1)
-
-
-
-    @staticmethod
     def process_assay(assays):
         return_dict = dict()
         for i in assays:
             name = str(i.protein)
+            type = i.standard_type
+            if type[0] != 'P':
+               type = 'p'+type
             if name in return_dict:
-                if i.standard_type in ['EC50', "AC50", 'Potency']:
-                    return_dict[name]['potency_values'].append(i.standard_value)
+                if type in return_dict[name]['data_type'].keys():
+                    return_dict[name]['data_type'][type].append(round(-math.log(float(i.standard_value)), 2))
                 else:
-                    return_dict[name]['affinity_values'].append(i.standard_value)
+                    return_dict[name]['data_type'][type] = [round(-math.log(float(i.standard_value)), 2)]
             else:
                 return_dict[name] = dict()
-                return_dict[name]['potency_values'] = list()
-                return_dict[name]['affinity_values'] = list()
+                return_dict[name]['data_type'] = dict()
+                return_dict[name]['data_type'][type] = [round(-math.log(float(i.standard_value)), 2)]
                 return_dict[name]['receptor_gtp'] = i.protein.short()
                 return_dict[name]['receptor_uniprot'] = i.protein.entry_short()
                 return_dict[name]['receptor_species'] = i.protein.species.common_name
                 return_dict[name]['receptor_family'] = i.protein.family.parent.short()
                 return_dict[name]['receptor_class'] = i.protein.family.parent.parent.parent.short()
-                if i.standard_type == 'EC50' or i.standard_type == 'potency':
-                    return_dict[name]['potency_values'].append(
-                        i.standard_value)
-                elif i.standard_type == 'IC50':
-                    return_dict[name]['affinity_values'].append(
-                        i.standard_value)
-        return return_dict
+
+        for item in return_dict.keys():
+            for type in return_dict[item]['data_type'].keys():
+                return_dict[item]['data_type'][type] = LigandInformationView.get_min_max_values(return_dict[item]['data_type'][type])
+    	#Unpacking
+        unpacked = dict()
+        for key in return_dict.keys():
+            for data_type in return_dict[key]['data_type'].keys():
+                label = '_'.join([key,data_type])
+                unpacked[label] = return_dict[key]
+                unpacked[label]['type'] = data_type
+                unpacked[label]['min'] = return_dict[key]['data_type'][data_type][0]
+                unpacked[label]['avg'] = return_dict[key]['data_type'][data_type][1]
+                unpacked[label]['max'] = return_dict[key]['data_type'][data_type][2]
+                unpacked[label]['source'] = 'ChEMBL'
+
+        return list(unpacked.values())
 
     @staticmethod
-    def process_values(return_dict):
-        return_list = list()
-        for item in return_dict.items():
-            temp_dict = dict()
-            temp_dict = item[1]
-
-            if item[1]['potency_values']:
-                temp_dict['potency_min'],temp_dict['potency_avg'],temp_dict['potency_max'] = LigandInformationView.get_min_max_values(
-                    item[1]['potency_values'])
-                return_list.append(temp_dict)
-            if item[1]['affinity_values']:
-                temp_dict['affinity_min'],temp_dict['affinity_avg'],temp_dict['affinity_max'] = LigandInformationView.get_min_max_values(
-                    item[1]['affinity_values'])
-                if not item[1]['potency_values']:
-                    return_list.append(temp_dict)
-        return return_list
+    def get_min_max_values(value):
+        maximum = max(value)
+        minimum = min(value)
+        avg = sum(value) / len(value)
+        output = [round(minimum, 2), round(avg, 2), round(maximum, 2)]
+        return output
 
     @staticmethod
-    def process_ligand(ligand_data):
+    def process_ligand(ligand_data, endogenous_ligands):
         img_setup_smiles = "<img style=\"max-height: 300px; max-width: 400px;\" src=\"https://cactus.nci.nih.gov/chemical/structure/{}/image\">"
         ld = dict()
         ld['ligand_id'] = ligand_data.id
@@ -1630,7 +1627,7 @@ class LigandInformationView(TemplateView):
         ld['ligand_smiles'] = ligand_data.smiles
         ld['ligand_inchikey'] = ligand_data.inchikey
         try:
-            ld['type'] = ligand_data.ligand_type.name
+            ld['type'] = ligand_data.ligand_type.name.replace('-',' ').capitalize()
         except:
             ld['type'] = None
         ld['rotatable'] = ligand_data.rotatable_bonds
@@ -1639,6 +1636,7 @@ class LigandInformationView(TemplateView):
         ld['hdon'] = ligand_data.hdon
         ld['logp'] = ligand_data.logp
         ld['mw'] = ligand_data.mw
+        ld['labels'] = LigandInformationView.get_labels(ligand_data, endogenous_ligands, ld['type'])
         ld['wl'] = list()
 
         if ligand_data.smiles != None and (ld['mw'] == None or ld['mw'] < 800):
@@ -1646,11 +1644,79 @@ class LigandInformationView(TemplateView):
         else:
             # "No image available" SVG (source: https://commons.wikimedia.org/wiki/File:No_image_available.svg)
             ld['picture'] = "<img style=\"max-height: 300px; max-width: 400px;\" src=\"data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIj8+CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogICAgIGhlaWdodD0iMzAwcHgiIHdpZHRoPSIzMDBweCIKICAgICB2ZXJzaW9uPSIxLjEiCiAgICAgdmlld0JveD0iLTMwMCAtMzAwIDYwMCA2MDAiCiAgICAgZm9udC1mYW1pbHk9IkJpdHN0cmVhbSBWZXJhIFNhbnMsTGliZXJhdGlvbiBTYW5zLCBBcmlhbCwgc2Fucy1zZXJpZiIKICAgICBmb250LXNpemU9IjcyIgogICAgIHRleHQtYW5jaG9yPSJtaWRkbGUiID4KICAKICA8Y2lyY2xlIHN0cm9rZT0iI0FBQSIgc3Ryb2tlLXdpZHRoPSIxMCIgcj0iMjgwIiBmaWxsPSIjRkZGIi8+CiAgPHRleHQgc3R5bGU9ImZpbGw6IzQ0NDsiPgogICAgPHRzcGFuIHg9IjAiIHk9Ii04Ij5OTyBJTUFHRTwvdHNwYW4+PHRzcGFuIHg9IjAiIHk9IjgwIj5BVkFJTEFCTEU8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+==\">"
-
-        for i in ligand_data.ids.all():
-            ld['wl'].append({'name': i.web_resource.name, "link": str(i)})
+        #Sorting links if ligand is endogenous
+        if ligand_data.id in endogenous_ligands:
+            sorted_list = ['Guide To Pharmacology', 'DrugBank', 'Drug Central', 'ChEMBL_compound_ids', 'PubChem']
+            to_be_sorted = {}
+            for i in ligand_data.ids.all():
+                to_be_sorted[i.web_resource.name] = {'name': i.web_resource.name, "link": str(i)}
+            tmp = sorted(to_be_sorted.items(), key=lambda pair: sorted_list.index(pair[0]))
+            for i in tmp:
+                ld['wl'].append(i[1])
+        else:
+            for i in ligand_data.ids.all():
+                ld['wl'].append({'name': i.web_resource.name, "link": str(i)})
         return ld
 
+    @staticmethod
+    def process_endo(endo_data):
+        return_dict = dict()
+        for i in endo_data:
+            name = str(i.receptor)
+            return_dict[name] = dict()
+            return_dict[name]['data_type'] = dict()
+            return_dict[name]['data_type']['pEC50'] = i.pec50.split(' | ')
+            return_dict[name]['data_type']['pIC50'] = i.pic50.split(' | ')
+            return_dict[name]['data_type']['pKi'] = i.pKi.split(' | ')
+            return_dict[name]['receptor_gtp'] = i.receptor.short()
+            return_dict[name]['receptor_uniprot'] = i.receptor.entry_short()
+            return_dict[name]['receptor_species'] = i.receptor.species.common_name
+            return_dict[name]['receptor_family'] = i.receptor.family.parent.short()
+            return_dict[name]['receptor_class'] = i.receptor.family.parent.parent.parent.short()
+
+    	#Unpacking
+        unpacked = dict()
+        for key in return_dict.keys():
+            for data_type in return_dict[key]['data_type'].keys():
+                label = '_'.join([key,data_type])
+                unpacked[label] = return_dict[key]
+                unpacked[label]['type'] = data_type
+                unpacked[label]['min'] = float(return_dict[key]['data_type'][data_type][0]) if return_dict[key]['data_type'][data_type][0] != 'None' else ''
+                unpacked[label]['avg'] = float(return_dict[key]['data_type'][data_type][1]) if return_dict[key]['data_type'][data_type][1] != 'None' else ''
+                unpacked[label]['max'] = float(return_dict[key]['data_type'][data_type][2]) if return_dict[key]['data_type'][data_type][2] != 'None' else ''
+                unpacked[label]['source'] = 'Guide to Pharmacology'
+
+        return list(unpacked.values())
+
+    @staticmethod
+    def get_labels(ligand_data, endogenous_ligands, type):
+        endogenous_label = '<img src="https://icon-library.com/images/icon-e/icon-e-17.jpg" title="Endogenous ligand from GtoP" width="20" height="20"></img>'
+        surrogate_label = '<img src="https://icon-library.com/images/letter-s-icon/letter-s-icon-15.jpg" title="Surrogate ligand" width="20" height="20"></img>'
+        drug_label = '<img src="https://icon-library.com/images/drugs-icon/drugs-icon-7.jpg" title="Approved drug" width="20" height="20"></img>'
+        trial_label = '<img src="https://icon-library.com/images/clinical-trial-icon-2793430_960_720_7492.png" title="Drug in clinical trial" width="20" height="20"></img>'
+        small_molecule_label = '<img src="https://icon-library.com/images/282dfa029c.png" title="Small molecule" width="20" height="20"></img>'
+        peptide_label = '<img src="https://media.istockphoto.com/vectors/protein-structure-molecule-3d-icon-vector-id1301952426?k=20&m=1301952426&s=612x612&w=0&h=a3ik50-faiP2BqiB7wMP3s_rVZyzPl9yHNQy7Rg89aE=" title="Peptide" width="20" height="20"></img>'
+        antibody_label = '<img src="https://icon-library.com/images/2018/2090572_antibody-antibody-hd-png-download.png" title="Antibody" width="20" height="20"></img>'
+        label = ''
+        #Endogenous OR Surrogate
+        if ligand_data.id in endogenous_ligands:
+            label += endogenous_label
+        else:
+            label += surrogate_label
+        #Drug or Trial
+        sources = [i.web_resource.name for i in ligand_data.ids.all()]
+        drug_banks = ['DrugBank', 'Drug Central']
+        if any(value in sources for value in drug_banks):
+            label += drug_label
+        #Small molecule, Peptide or Antibody
+        if type == 'Small molecule':
+            label += small_molecule_label
+        elif type == 'Peptide':
+            label += peptide_label
+        elif type == 'Antibody':
+            label += antibody_label
+
+        return label
 
 class BiasPathways(TemplateView):
     template_name = 'bias_browser_pathways.html'
