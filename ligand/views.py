@@ -1580,13 +1580,13 @@ class LigandInformationView(TemplateView):
                type = 'p'+type
             if name in return_dict:
                 if type in return_dict[name]['data_type'].keys():
-                    return_dict[name]['data_type'][type].append(round(-math.log(float(i.standard_value)), 2))
+                    return_dict[name]['data_type'][type].append(float(i.pchembl_value))
                 else:
-                    return_dict[name]['data_type'][type] = [round(-math.log(float(i.standard_value)), 2)]
+                    return_dict[name]['data_type'][type] = [float(i.pchembl_value)]
             else:
                 return_dict[name] = dict()
                 return_dict[name]['data_type'] = dict()
-                return_dict[name]['data_type'][type] = [round(-math.log(float(i.standard_value)), 2)]
+                return_dict[name]['data_type'][type] = [float(i.pchembl_value)]
                 return_dict[name]['receptor_gtp'] = i.protein.short()
                 return_dict[name]['receptor_uniprot'] = i.protein.entry_short()
                 return_dict[name]['receptor_species'] = i.protein.species.common_name
@@ -1601,12 +1601,13 @@ class LigandInformationView(TemplateView):
         for key in return_dict.keys():
             for data_type in return_dict[key]['data_type'].keys():
                 label = '_'.join([key,data_type])
-                unpacked[label] = return_dict[key]
+                unpacked[label] = deepcopy(return_dict[key])
                 unpacked[label]['type'] = data_type
                 unpacked[label]['min'] = return_dict[key]['data_type'][data_type][0]
                 unpacked[label]['avg'] = return_dict[key]['data_type'][data_type][1]
                 unpacked[label]['max'] = return_dict[key]['data_type'][data_type][2]
                 unpacked[label]['source'] = 'ChEMBL'
+                unpacked[label].pop('data_type', None)
 
         return list(unpacked.values())
 
@@ -1679,12 +1680,13 @@ class LigandInformationView(TemplateView):
         for key in return_dict.keys():
             for data_type in return_dict[key]['data_type'].keys():
                 label = '_'.join([key,data_type])
-                unpacked[label] = return_dict[key]
+                unpacked[label] = deepcopy(return_dict[key])
                 unpacked[label]['type'] = data_type
                 unpacked[label]['min'] = float(return_dict[key]['data_type'][data_type][0]) if return_dict[key]['data_type'][data_type][0] != 'None' else ''
                 unpacked[label]['avg'] = float(return_dict[key]['data_type'][data_type][1]) if return_dict[key]['data_type'][data_type][1] != 'None' else ''
                 unpacked[label]['max'] = float(return_dict[key]['data_type'][data_type][2]) if return_dict[key]['data_type'][data_type][2] != 'None' else ''
                 unpacked[label]['source'] = 'Guide to Pharmacology'
+                unpacked[label].pop('data_type', None)
 
         return list(unpacked.values())
 
