@@ -10,7 +10,7 @@ from residue.models import (ResidueNumberingScheme, ResidueGenericNumber, Residu
 from signprot.models import SignprotComplex, SignprotStructure, SignprotStructureExtraProteins
 from common.models import WebResource, WebLink, Publication
 from structure.models import StructureType, StructureStabilizingAgent, PdbData, Rotamer
-from structure.functions import get_pdb_ids
+from structure.functions import get_pdb_ids, create_structure_rotamer, fetch_signprot_data, build_signprot_struct
 
 import re
 from Bio import pairwise2
@@ -36,9 +36,6 @@ AA = {"ALA":"A", "ARG":"R", "ASN":"N", "ASP":"D",
      "MET":"M", "PHE":"F", "PRO":"P", "SER":"S",
      "THR":"T", "TRP":"W", "TYR":"Y", "VAL":"V",
      "YCM":"C", "CSD":"C", "TYS":"Y", "SEP":"S"} #non-standard AAs
-
-atom_num_dict = {'E':9, 'S':6, 'Y':12, 'G':4, 'A':5, 'V':7, 'M':8, 'L':8, 'I':8, 'T':7, 'F':11, 'H':10, 'K':9,
-                 'D':8, 'C':6, 'R':11, 'P':7, 'Q':9, 'N':8, 'W':14, '-':0}
 
 
 class Command(BaseBuild):
@@ -72,21 +69,22 @@ class Command(BaseBuild):
             if self.options["s"]:
                 self.scs = SignprotComplex.objects.filter(structure__pdb_code__index__in=[i.upper() for i in self.options["s"]])
             else:
-                self.scs = SignprotComplex.objects.all()
+                self.scs = SignprotComplex.objects.filter(protein__family__slug__startswith='100_001')
             self.prepare_input(self.options['proc'], self.scs, 1)
 
         if not self.options["s"]:
             ### Build SignprotStructure objects from non-complex signprots
             g_prot_alphas = Protein.objects.filter(family__slug__startswith="100_001", accession__isnull=False)#.filter(entry_name="gnai1_human")
-            complex_structures = SignprotComplex.objects.all().values_list("structure__pdb_code__index", flat=True)
+            complex_structures = SignprotComplex.objects.filter(protein__family__slug__startswith="100_001").values_list("structure__pdb_code__index", flat=True)
             for a in g_prot_alphas:
                 pdb_list = get_pdb_ids(a.accession)
                 for pdb in pdb_list:
                     if pdb not in complex_structures:
                         try:
-                            data = self.fetch_gprot_data(pdb, a)
+                            data = fetch_signprot_data(pdb, a, os.listdir(self.local_uniprot_beta_dir), os.listdir(self.local_uniprot_gamma_dir))
                             if data:
-                                self.build_g_prot_struct(a, pdb, data)
+                                ss = build_signprot_struct(alpha_prot, pdb, data) 
+                                self.build_g_prot_extra_proteins(a, pdb, ss, data)
                         except Exception as msg:
                             self.logger.error("SignprotStructure of {} {} failed\n{}: {}".format(a.entry_name, pdb, type(msg), msg))
         if self.options["debug"]:
@@ -421,7 +419,7 @@ class Command(BaseBuild):
                         res_obj.protein_conformation = alpha_protconf
                         res_obj.protein_segment = val[1].protein_segment
                         res_obj.save()
-                        rot = self.create_structure_rotamer(val[0], res_obj, sc.structure)
+                        rot = create_structure_rotamer(val[0], res_obj, sc.structure)
                         bulked_rotamers.append(rot)
                     else:
                         self.logger.info("Skipped {} as no annotation was present, while building for alpha subunit of {}".format(val[1], sc))
@@ -433,18 +431,6 @@ class Command(BaseBuild):
                 if self.options["debug"]:
                     print("Error: ", sc, msg)
                 self.logger.info("Protein, ProteinConformation and Residue build for alpha subunit of {} has failed".format(sc))
-
-    @staticmethod
-    def create_structure_rotamer(PDB_residue, residue_object, structure):
-        out_stream = StringIO()
-        io = PDBIO()
-        # print(PDB_residue)
-        io.set_structure(PDB_residue)
-        io.save(out_stream)
-        pdbdata = PdbData.objects.get_or_create(pdb=out_stream.getvalue())[0]
-        missing_atoms = atom_num_dict[Polypeptide.three_to_one(PDB_residue.get_resname())] > len(PDB_residue.get_unpacked_list())
-        rot = Rotamer(missing_atoms=missing_atoms, pdbdata=pdbdata, residue=residue_object, structure=structure)
-        return rot
 
     @staticmethod
     def get_next_presumed_cgn(res):
@@ -459,136 +445,8 @@ class Command(BaseBuild):
         except ResidueGenericNumber.DoesNotExist:
             return False
 
-    def fetch_gprot_data(self, pdb, alpha_protein):
-        data = {}
-        beta_uniprots = os.listdir(self.local_uniprot_beta_dir)
-        gamma_uniprots = os.listdir(self.local_uniprot_gamma_dir)
 
-        response = urllib.request.urlopen("https://data.rcsb.org/rest/v1/core/entry/{}".format(pdb))
-        json_data = json.loads(response.read())
-        response.close()
-
-        data["method"] = json_data["exptl"][0]["method"]
-        if data["method"].startswith("THEORETICAL") or data["method"] in ["SOLUTION NMR","SOLID-STATE NMR"]:
-            return None
-        if "citation" in json_data and "pdbx_database_id_doi" in json_data["citation"]:
-            data["doi"] = json_data["citation"]["pdbx_database_id_doi"]
-        else:
-            data["doi"] = None
-        if "pubmed_id" in json_data["rcsb_entry_container_identifiers"]:
-            data["pubmedId"] = json_data["rcsb_entry_container_identifiers"]["pubmed_id"]
-        else:
-            data["pubmedId"] = None
-
-        # Format server time stamp to match release date shown on entry pages
-        # print(pdb, json_data["rcsb_accession_info"]["initial_release_date"])
-        # date = datetime.date.fromisoformat(json_data["rcsb_accession_info"]["initial_release_date"][:10])
-        # date += datetime.timedelta(days=1)
-        # print(datetime.date.isoformat(date))
-        # data["release_date"] = datetime.date.isoformat(date)
-        data["release_date"] = json_data["rcsb_accession_info"]["initial_release_date"][:10]
-        data["resolution"] = json_data["rcsb_entry_info"]["resolution_combined"][0]
-        entities_num = len(json_data["rcsb_entry_container_identifiers"]["polymer_entity_ids"])
-        data["alpha"] = alpha_protein.accession
-        data["alpha_chain"] = None
-        data["alpha_coverage"] = None
-        data["beta"] = None
-        data["beta_chain"] = None
-        data["gamma"] = None
-        data["gamma_chain"] = None
-        data["other"] = []
-        for i in range(1,entities_num+1):
-            response = urllib.request.urlopen("https://data.rcsb.org/rest/v1/core/polymer_entity/{}/{}".format(pdb, i))
-            json_data = json.loads(response.read())
-            response.close()
-            if "uniprot_ids" in json_data["rcsb_polymer_entity_container_identifiers"]:
-                for j, u_id in enumerate(json_data["rcsb_polymer_entity_container_identifiers"]["uniprot_ids"]):
-                    if u_id+".txt" in beta_uniprots:
-                        data["beta"] = u_id
-                        data["beta_chain"] = json_data["rcsb_polymer_entity_container_identifiers"]["auth_asym_ids"][j][0]
-                    elif u_id+".txt" in gamma_uniprots:
-                        data["gamma"] = u_id
-                        data["gamma_chain"] = json_data["rcsb_polymer_entity_container_identifiers"]["auth_asym_ids"][j][0]
-                    elif u_id==alpha_protein.accession:
-                        data["alpha"] = u_id
-                        data["alpha_coverage"] = json_data["entity_poly"]["rcsb_sample_sequence_length"]
-                        # pprint.pprint(json_data)
-                        try:
-                            data["alpha_chain"] = json_data["rcsb_polymer_entity_container_identifiers"]["auth_asym_ids"][j][0]
-                        except IndexError as e:
-                            data["alpha_chain"] = json_data["rcsb_polymer_entity_container_identifiers"]["auth_asym_ids"][j-1][0]
-                    else:
-                        if json_data["rcsb_polymer_entity"]["pdbx_description"] not in data["other"]:
-                            data["other"].append(json_data["rcsb_polymer_entity"]["pdbx_description"])
-            else:
-                if json_data["rcsb_polymer_entity"]["pdbx_description"] not in data["other"]:
-                    data["other"].append(json_data["rcsb_polymer_entity"]["pdbx_description"])
-        return data
-
-    def build_g_prot_struct(self, alpha_prot, pdb, data):
-        ss = SignprotStructure()
-        pdb_code, p_c = WebLink.objects.get_or_create(index=pdb, web_resource=WebResource.objects.get(slug="pdb"))
-        pub_date = data["release_date"]
-        # Structure type
-        if "x-ray" in data["method"].lower():
-            structure_type_slug = "x-ray-diffraction"
-        elif "electron" in data["method"].lower():
-            structure_type_slug = "electron-microscopy"
-        else:
-            structure_type_slug = "-".join(data["method"].lower().split(" "))
-        try:
-            structure_type = StructureType.objects.get(slug=structure_type_slug)
-        except StructureType.DoesNotExist as e:
-            structure_type, c = StructureType.objects.get_or_create(slug=structure_type_slug, name=data["method"])
-            self.logger.info("Created StructureType:"+str(structure_type))
-
-        # Publication
-        pub = None
-        if data["doi"]:
-            try:
-                pub = Publication.get_or_create_from_doi(data["doi"])
-            except:
-                # 2nd try (in case of paralellization clash)
-                pub = Publication.get_or_create_from_doi(data["doi"])
-        elif data["pubmedId"]:
-            try:
-                pub = Publication.get_or_create_from_pubmed(data["pubmedId"])
-            except:
-                # 2nd try (in case of paralellization clash)
-                pub = Publication.get_or_create_from_pubmed(data["pubmedId"])
-
-        # PDB data
-        url = 'https://www.rcsb.org/pdb/files/{}.pdb'.format(pdb)
-        req = urllib.request.Request(url)
-        with urllib.request.urlopen(req) as response:
-            pdbdata_raw = response.read().decode('utf-8')
-        pdbdata_object = PdbData.objects.get_or_create(pdb=pdbdata_raw)[0]
-        ss.pdb_code = pdb_code
-        ss.structure_type = structure_type
-        ss.resolution = data["resolution"]
-        ss.publication_date = pub_date
-        ss.publication = pub
-        ss.protein = alpha_prot
-        ss.pdb_data = pdbdata_object
-        if len(SignprotStructure.objects.filter(pdb_code=ss.pdb_code))>0:
-            self.logger.warning('SignprotStructure {} already created, skipping'.format(pdb_code))
-            return 0
-        ss.save()
-        # Stabilizing agent
-        for o in data["other"]:
-            if len(o)>75:
-                continue
-            if o=="REGULATOR OF G-PROTEIN SIGNALING 14":
-                o = "Regulator of G-protein signaling 14"
-            elif o=="Nanobody 35":
-                o = "Nanobody-35"
-            elif o=="ADENYLATE CYCLASE, TYPE V":
-                o = "Adenylate cyclase, type V"
-            elif o=="1-phosphatidylinositol-4,5-bisphosphate phosphodiesterase beta-3":
-                o = "1-phosphatidylinositol 4,5-bisphosphate phosphodiesterase beta-3"
-            stabagent, sa_created = StructureStabilizingAgent.objects.get_or_create(slug=o.replace(" ","-").replace(" ","-"), name=o)
-            ss.stabilizing_agents.add(stabagent)
-        ss.save()
+    def build_gprot_extra_proteins(self, alpha_prot, signprot_structure, data):
         # Extra proteins
         # Alpha - ### A bit redundant, consider changing this in the future
         if data["alpha"]:
@@ -624,7 +482,7 @@ class Command(BaseBuild):
             gamma_prot = Protein.objects.get(accession=data["gamma"])
             gamma_sep = SignprotStructureExtraProteins()
             gamma_sep.wt_protein = gamma_prot
-            gamma_sep.structure = ss
+            gamma_sep.structure = signprot_structure
             gamma_sep.protein_conformation = ProteinConformation.objects.get(protein=gamma_prot)
             gamma_sep.display_name = self.display_name_lookup[gamma_prot.name]
             gamma_sep.note = None
