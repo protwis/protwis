@@ -87,10 +87,13 @@ def compute_interactions(pdb_name,save_to_db = False):
         try:
             # check if structure in signprot_complex
             signprot_chain = ""
+            extension = ""
             if StructureExtraProteins.objects.filter(structure=struc, category="Arrestin"):
                 signprot_chain = StructureExtraProteins.objects.get(structure=struc, category="Arrestin").chain
+                extension = "_arrestin"
             else:
                 signprot_chain = SignprotComplex.objects.get(structure=struc).alpha
+                extension = "_a"
 
             # Get all GPCR residue atoms based on preferred chain
             gpcr_atom_list = [ atom for residue in Selection.unfold_entities(s[preferred_chain], 'R') if is_aa(residue) \
@@ -111,7 +114,7 @@ def compute_interactions(pdb_name,save_to_db = False):
             # For each pair of interacting residues, determine the type of interaction
             #residues_sign = ProteinConformation.objects.get(protein__entry_name=pdb_name+"_"+complex.alpha.lower()).residue_set.exclude(generic_number=None).all().prefetch_related('generic_number')
             # TOFIX: Current workaround is forcing _a to pdb for indicating alpha-subunit
-            residues_sign = ProteinConformation.objects.get(protein__entry_name=pdb_name+"_a").residue_set.exclude(generic_number=None).all().prefetch_related('generic_number')
+            residues_sign = ProteinConformation.objects.get(protein__entry_name=pdb_name+extension).residue_set.exclude(generic_number=None).all().prefetch_related('generic_number')
 
             # grab labels from sign protein
             dbres_sign = {}
