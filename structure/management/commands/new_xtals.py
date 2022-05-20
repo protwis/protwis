@@ -43,7 +43,8 @@ structs_with_missing_x50 = ['5EM9', '5AER', '3BEF', '3LU9', '3HKI', '3HKJ', '1NR
                             '5KZY', '5KZZ', '7JQD', '2PUX', '2PV9', '6EXJ', '7JNZ', '7NW3', '4F8K', '1RY1', '2J28', '4UE5', '6O9I', '6O9H', '7ALO', '6SKA', '4DLQ',
                             '5OVP', '6SKE', '5FTT', '5FTU', '4YEB', '4RMK', '4RML', '6JBU', '6IDX', '5KVM', '6V55', '7NJZ', '3N96', '3N93', '3N95', '7D86', '7DO4',
                             '4OAJ', '4LI1', '4LI2', '7R84', '7R85', '7R86', '1EWK', '1EWT', '1EWV', '1ISR', '1ISS', '2E4U', '2E4V', '2E4W', '2E4X', '2E4Y', '1DDV', 
-                            '2E4Z', '5X2M', '5X2N', '5X2O', '5X2P', '5X2Q', '7N95', '7N97', '7N9S', '1IJY', '4F0A', '6AHY', '6TFB', '6TFM', '4C79', '4C7A']
+                            '2E4Z', '5X2M', '5X2N', '5X2O', '5X2P', '5X2Q', '7N95', '7N97', '7N9S', '1IJY', '4F0A', '6AHY', '6TFB', '6TFM', '4C79', '4C7A', '7DF9', 
+                            '7DFA', '7DFB', '7DFC', '7P8X', '7P93']
 
 
 class Command(BaseBuild):

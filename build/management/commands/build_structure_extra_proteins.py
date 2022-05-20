@@ -50,7 +50,7 @@ class Command(BaseBuild):
         self.build_arrestin_extra_protein()     
 
     def build_g_protein_heterotrimer(self):
-        sc = SignprotComplex.objects.all()
+        sc = SignprotComplex.objects.filter(protein__family__slug__startswith='100')
         for s in sc:
             # Alpha
             sep = StructureExtraProteins()
