@@ -95,21 +95,14 @@ def compute_interactions(pdb_name,save_to_db = False):
                 signprot_chain = SignprotComplex.objects.get(structure=struc).alpha
                 extension = "_a"
 
+            # Workaround for fused receptor - signaling proteins constructs
+            if signprot_chain == preferred_chain:
+                pdb_io = StringIO(struc.pdb_data.pdb)
+                s = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', pdb_io)[0]
+
             # Get all GPCR residue atoms based on preferred chain
-            gpcr_atom_list = [ atom for residue in Selection.unfold_entities(s[preferred_chain], 'R') if is_aa(residue) \
+            gpcr_atom_list = [ atom for residue in Selection.unfold_entities(s[preferred_chain], 'R') if is_aa(residue) and residue.get_id()[1] in dbres \
                             for atom in residue.get_atoms()]
-
-            # Get all residue atoms from the coupled protein (e.g. G-protein)
-            # NOW: select alpha subnit protein chain using complex model
-            sign_atom_list = [ atom for residue in Selection.unfold_entities(s[signprot_chain], 'R') if is_aa(residue) \
-                                for atom in residue.get_atoms()]
-
-            ns_gpcr = NeighborSearch(gpcr_atom_list)
-            ns_sign = NeighborSearch(sign_atom_list)
-
-            # For each GPCR atom perform the neighbor search on the signaling protein
-            all_neighbors = {(gpcr_atom.parent, match_res) for gpcr_atom in gpcr_atom_list
-                            for match_res in ns_sign.search(gpcr_atom.coord, 4.5, "R")}
 
             # For each pair of interacting residues, determine the type of interaction
             #residues_sign = ProteinConformation.objects.get(protein__entry_name=pdb_name+"_"+complex.alpha.lower()).residue_set.exclude(generic_number=None).all().prefetch_related('generic_number')
@@ -122,6 +115,17 @@ def compute_interactions(pdb_name,save_to_db = False):
             for r in residues_sign:
                 dbres_sign[r.sequence_number] = r
                 dblabel_sign[r.sequence_number] = r.generic_number.label
+
+            # Get all residue atoms from the coupled protein (e.g. G-protein)
+            sign_atom_list = [ atom for residue in Selection.unfold_entities(s[signprot_chain], 'R') if is_aa(residue) and residue.get_id()[1] in dbres_sign \
+                                for atom in residue.get_atoms()]
+
+            ns_gpcr = NeighborSearch(gpcr_atom_list)
+            ns_sign = NeighborSearch(sign_atom_list)
+
+            # For each GPCR atom perform the neighbor search on the signaling protein
+            all_neighbors = {(gpcr_atom.parent, match_res) for gpcr_atom in gpcr_atom_list
+                            for match_res in ns_sign.search(gpcr_atom.coord, 4.5, "R")}
 
             # Find interactions
             interactions = [InteractingPair(res_pair[0], res_pair[1], dbres[res_pair[0].id[1]], dbres_sign[res_pair[1].id[1]], struc) for res_pair in all_neighbors if res_pair[0].id[1] in dbres and res_pair[1].id[1] in dbres_sign ]
