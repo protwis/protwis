@@ -10,6 +10,8 @@ from common.tools import get_or_create_url_cache, fetch_from_web_api
 import time
 import os
 import re
+import requests
+import xmltodict
 
 import datamol as dm
 from rdkit import RDLogger
@@ -56,7 +58,7 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
     """
 
     ligand = None
-
+    cas_to_cid_url =  "http://www.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pccompound&retmax=100&term={}"
     # Check and filter IDs
     for type_id in list(ids.keys()):
         if ids[type_id] == None or ids[type_id] == "None" or ids[type_id] == "":
@@ -69,6 +71,20 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
             ids[type_id] = ids[type_id].strip()
             if type_id == "chembl_ligand":
                 ids[type_id] = ids[type_id].upper()
+            if type_id == "CAS":
+                response = requests.get(cas_to_cid_url.format(ids[type_id]))
+                try:
+                    data = xmltodict.parse(response.content)
+                except:
+                    ids.pop('CAS', None)
+                    continue
+                try:
+                    ids['pubchem'] = int(data['eSearchResult']['IdList']['Id'])
+                except TypeError: #this is a list, we grab the first entry
+                    if data['eSearchResult']['IdList'] is not None:
+                        if len(data['eSearchResult']['IdList']['Id']) > 1:
+                            ids['pubchem'] = int(data['eSearchResult']['IdList']['Id'][0])
+                ids.pop('CAS', None)
         elif isinstance(ids[type_id], list) and len(ids[type_id]) == 1:
             ids[type_id] = ids[type_id][0]
 
