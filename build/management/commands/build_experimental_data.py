@@ -128,7 +128,7 @@ class Command(BaseBuild):
                     bioacts[-1].document_chembl_id = row["document_chembl_id"]
                     bioacts[-1].source = 'ChEMBL'
 
-                    response = requests.get(url_template.format(row["document_chembl_id"))
+                    response = requests.get(url_template.format(row["document_chembl_id"]))
                     try:
                         data = xmltodict.parse(response.content)
                         doi = data['response']['documents']['document']['doi']
@@ -145,7 +145,7 @@ class Command(BaseBuild):
                         data_pub = ExperimentalData.publication.through
                         data_pub.objects.bulk_create([
                                             data_pub(experimentaldata_id=data_id, publication_id=pub_id)
-                                            for (data_id, pub_id) in pub_links])
+                                            for (data_id, pub_id) in pub_links], ignore_conflicts=True)
                         print("Inserted", index, "out of", bio_entries, "bioactivities")
                         bioacts = []
                         pub_links = []
