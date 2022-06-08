@@ -4,8 +4,9 @@ from django.conf import settings
 from django.db.models import Prefetch
 from django.utils.text import slugify
 
+from common.tools import get_or_create_url_cache, fetch_from_web_api
 from common.models import WebLink, WebResource, Publication
-from ligand.models import Ligand, LigandType, ExperimentalData, LigandVendors, LigandVendorLink #AssayExperiment
+from ligand.models import Ligand, LigandType, LigandVendors, LigandVendorLink, AssayExperiment
 from protein.models import Protein
 
 import math
@@ -74,25 +75,30 @@ class Command(BaseBuild):
 
         # Building GtP bioactivity data
         print("\n\nStarted building Guide to Pharmacology bioactivities")
-        build_gtp_bioactivities(bioactivity_data_gtp)
+        self.build_gtp_bioactivities(bioactivity_data_gtp)
         print("Ended building Guide to Pharmacology bioactivities")
 
         # Building PDSP KiDatabase bioactivity data
         print("\n\nStarted building PDSP KiDatabase bioactivities")
-        build_kidatabase_bioactivities() #14,562
+        self.build_kidatabase_bioactivities() #14,562
         print("Ended building PDSP KiDatabase bioactivities")
 
     @staticmethod
     def purge_experimental_data():
-        delete_experimental = ExperimentalData.objects.all() #New Model Biased Data
+        delete_experimental = AssayExperiment.objects.all() #New Model Biased Data
         delete_experimental.delete()
 
     @staticmethod
     def build_chembl_bioactivities():
         print("\n===============\n#1 Reading ChEMBL bioacitivity data")
+
+        cache_dir = ['chembl', 'document_entry']
         bioactivity_input_file = os.sep.join([settings.DATA_DIR, "ligand_data", "assay_data", "chembl_bioactivity_data.csv.gz"])
+        chembl_document_conversion_file = os.sep.join([settings.DATA_DIR, "ligand_data", "assay_data", "chembl_document_data.csv.gz"])
+        chembl_document_data = pd.read_csv(chembl_document_conversion_file, dtype=str)
         bioactivity_data = pd.read_csv(bioactivity_input_file, dtype=str)
-        url_template = 'https://www.ebi.ac.uk/chembl/api/data/document?document_chembl_id={}'
+        # url_template = 'https://www.ebi.ac.uk/chembl/api/data/document?document_chembl_id={}'
+        url_template = 'https://www.ebi.ac.uk/chembl/api/data/document?document_chembl_id=$index'
         bioactivity_data.fillna('None', inplace=True)
         bio_entries = len(bioactivity_data)
         print("Found", bio_entries, "bioactivities", datetime.datetime.now())
@@ -115,7 +121,7 @@ class Command(BaseBuild):
         for index, row in bioactivity_data.iterrows():
             try:
                 if (row["parent_molecule_chembl_id"] in lig_dict.keys()) and (row["Entry name"] in prot_dict.keys()):
-                    bioacts.append(ExperimentalData())
+                    bioacts.append(AssayExperiment())
                     bioacts[-1].ligand_id = lig_dict[row["parent_molecule_chembl_id"]]
                     bioacts[-1].protein_id = prot_dict[row["Entry name"]]
                     bioacts[-1].assay_type = row["assay_type"]
@@ -128,23 +134,30 @@ class Command(BaseBuild):
                     bioacts[-1].document_chembl_id = row["document_chembl_id"]
                     bioacts[-1].source = 'ChEMBL'
 
-                    response = requests.get(url_template.format(row["document_chembl_id"]))
+                    # response = requests.get(url_template.format(row["document_chembl_id"]))
+                    # response = fetch_from_web_api(url_template, row["document_chembl_id"], cache_dir, xml=True)
                     try:
-                        data = xmltodict.parse(response.content)
-                        doi = data['response']['documents']['document']['doi']
-                        if doi is not None:
-                            publication = fetch_publication(doi)
-                            if ((len(bioacts)-1), publication.id) not in pub_links:
-                                pub_links.append((len(bioacts)-1), publication.id)
-                    except:
-                        pass
+                        doi = chembl_document_data.loc[chembl_document_data['document_chembl_id'] == row["document_chembl_id"], 'doi'].iloc[0]
+                    except IndexError:
+                        response = fetch_from_web_api(url_template, row["document_chembl_id"], cache_dir, xml=True)
+                        doi = response[0][0][4].text
+                        # data = xmltodict.parse(response.content)
+                        # doi = data['response']['documents']['document']['doi']
+                    if doi is not None:
+                        publication = Command.fetch_publication(doi)
+                        if publication is not None:
+                            if (len(bioacts), publication.id) not in pub_links:
+                                pub_links.append((len(bioacts), publication.id))
+                    # except:
+                    #     pass
 
                     # BULK insert every X entries or last entry
                     if (len(bioacts) == Command.bulk_size) or (index == bio_entries - 1):
-                        ExperimentalData.objects.bulk_create(bioacts)
-                        data_pub = ExperimentalData.publication.through
+                        print('Inserting bulk data')
+                        AssayExperiment.objects.bulk_create(bioacts)
+                        data_pub = AssayExperiment.publication.through
                         data_pub.objects.bulk_create([
-                                            data_pub(experimentaldata_id=data_id, publication_id=pub_id)
+                                            data_pub(assayexperiment_id=data_id, publication_id=pub_id)
                                             for (data_id, pub_id) in pub_links], ignore_conflicts=True)
                         print("Inserted", index, "out of", bio_entries, "bioactivities")
                         bioacts = []
@@ -249,7 +262,7 @@ class Command(BaseBuild):
     def build_gtp_bioactivities(gtp_biodata):
         print("# Start parsing the GTP Dataframe")
         for index, row in gtp_biodata.iterrows():
-            receptor = Command.fetch_protein(row['target_id'], row['target_species'])
+            receptor = Command.fetch_protein(row['target_id'], 'GtoP', row['target_species'])
             # TODO Handle multiple matches (uniprot filter?)
             ligand = get_ligand_by_id("gtoplig", row['Ligand ID'])
 
@@ -283,7 +296,7 @@ class Command(BaseBuild):
 
             if (receptor is not None) and (ligand is not None):
             #last step because it requires multiple uploads in case we have multiple species
-                    gtp_data = ExperimentalData(
+                    gtp_data = AssayExperiment(
                                 ligand = ligand,
                                 protein = receptor,
                                 assay_type = row['assay_type'],
@@ -313,7 +326,10 @@ class Command(BaseBuild):
         requires: publication doi or pmid
 
         """
-        if ("ISBN" in publication_doi) or (int(publication_doi) == 0):
+        if pd.isna(publication_doi) == True:
+            return None
+
+        if ("ISBN" in publication_doi) or (publication_doi == '0'):
             return None
 
         try:
@@ -358,43 +374,38 @@ class Command(BaseBuild):
         return pub
 
     @staticmethod
-    def fetch_protein(target, species):
+    def fetch_protein(target, database, species=None):
         """
         fetch receptor with Protein model
         requires: protein id, source
         """
-        try:
-            if species == None or species == "None":
-                # Sorting by species => human first, otherwise next species in line
-                # TODO => potentially capture all species with GtP ID
-                return Protein.objects.filter(web_links__index=target, web_links__web_resource__slug='gtop').order_by("species_id").first()
-            else:
-                prots = Protein.objects.filter(web_links__index=target, web_links__web_resource__slug='gtop', species__common_name__iexact=species)
-                if prots.count() > 0:
-                    return prots.first()
+        if database == 'GtoP':
+            try:
+                if species == None or species == "None":
+                    # Sorting by species => human first, otherwise next species in line
+                    # TODO => potentially capture all species with GtP ID
+                    return Protein.objects.filter(web_links__index=target, web_links__web_resource__slug='gtop').order_by("species_id").first()
                 else:
-                    receptor_fam = list(Protein.objects.filter(web_links__index=target, web_links__web_resource__slug='gtop').values_list("family_id", flat = True))[0]
-                    return Protein.objects.get(family_id=receptor_fam, species__common_name__iexact=species)
-        except:
-            return None
-
-    @staticmethod
-    def fetch_protein_from_kidata(protein_input):
-        """
-        fetch receptor with Protein model
-        requires: protein entry name
-        """
-        try:
-            test = None
-            if Protein.objects.filter(entry_name=protein_input):
-                protein = Protein.objects.filter(entry_name=protein_input)
-                test = protein.get()
-            elif Protein.objects.filter(web_links__index=protein_input, web_links__web_resource__slug='uniprot'):
-                protein1 = Protein.objects.filter(web_links__index=protein_input, web_links__web_resource__slug='uniprot')
-                test = protein1[0]
-            return test
-        except:
-            return None
+                    prots = Protein.objects.filter(web_links__index=target, web_links__web_resource__slug='gtop', species__common_name__iexact=species)
+                    if prots.count() > 0:
+                        return prots.first()
+                    else:
+                        receptor_fam = list(Protein.objects.filter(web_links__index=target, web_links__web_resource__slug='gtop').values_list("family_id", flat = True))[0]
+                        return Protein.objects.get(family_id=receptor_fam, species__common_name__iexact=species)
+            except:
+                return None
+        elif database == 'PDSP':
+            try:
+                test = None
+                if Protein.objects.filter(entry_name=protein_input):
+                    protein = Protein.objects.filter(entry_name=protein_input)
+                    test = protein.get()
+                elif Protein.objects.filter(web_links__index=protein_input, web_links__web_resource__slug='uniprot'):
+                    protein1 = Protein.objects.filter(web_links__index=protein_input, web_links__web_resource__slug='uniprot')
+                    test = protein1[0]
+                return test
+            except:
+                return None
 
     @staticmethod
     def build_kidatabase_bioactivities():
@@ -425,11 +436,11 @@ class Command(BaseBuild):
             if row['CAS'] != 'None':
                 ids['CAS'] = row['CAS']
             if row[' Ligand Name'] not in ligand_cache.keys():
-                ligand = get_or_create_ligandrow[' Ligand Name'], ids)
+                ligand = get_or_create_ligand(row[' Ligand Name'], ids)
                 ligand_cache[row[' Ligand Name']] = ligand
-            receptor = Command.fetch_protein_from_kidata(protein_names[label])
+            receptor = Command.fetch_protein(protein_names[label], 'PDSP')
             if (receptor is not None) and (ligand_cache[row[' Ligand Name']] is not None):
-                bioacts.append(ExperimentalData())
+                bioacts.append(AssayExperiment())
                 bioacts[-1].ligand_id = ligand_cache[row[' Ligand Name']].id
                 bioacts[-1].protein_id = receptor.id
                 bioacts[-1].assay_type = 'B'
@@ -443,6 +454,6 @@ class Command(BaseBuild):
                 bioacts[-1].document_chembl_id = None
                 # BULK insert every X entries or last entry
                 if (len(bioacts) == Command.bulk_size) or (index == bio_entries - 1):
-                    ExperimentalData.objects.bulk_create(bioacts)
+                    AssayExperiment.objects.bulk_create(bioacts)
                     print("Inserted", index, "out of", bio_entries, "bioactivities")
                     bioacts = []
