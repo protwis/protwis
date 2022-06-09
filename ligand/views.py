@@ -100,8 +100,8 @@ def LigandDetails(request, ligand_id):
         tmp = defaultdict(lambda: defaultdict(list))
         tmp_count = 0
         for data_line in per_target_data:
-            tmp[data_line.assay_type][data_line.standard_type].append(
-                data_line.standard_value)
+            tmp[data_line.assay_type][data_line.value_type].append(
+                data_line.standard_activity_value)
             tmp_count += 1
 
         # Flattened list of lists of dict values
@@ -121,8 +121,8 @@ def LigandDetails(request, ligand_id):
                 # Flattened list of lists of dict keys:
                 'value_types': ', '.join(itertools.chain(*(list(tmp[x]) for x in tmp.keys()))),
                 'low_value': min(values),
-                'average_value': sum(values) / len(values),
-                'standard_units': ', '.join(list(set([x.standard_units for x in per_target_data])))
+                'average_value': sum(values) / len(values)
+                # 'standard_units': ', '.join(list(set([x.standard_units for x in per_target_data])))
             })
 
     context = {'ligand_data': ligand_data, 'ligand': ligand_id}
@@ -178,7 +178,7 @@ def TargetDetailsCompact(request, **kwargs):
             tmp_count = 0
             for data_line in per_target_data:
                 tmp["Bind" if data_line.assay_type == 'B' else "Funct"].append(
-                    data_line.pchembl_value)
+                    data_line.p_activity_value)
                 tmp_count += 1
 
             # TEMPORARY workaround for handling string values
@@ -198,7 +198,7 @@ def TargetDetailsCompact(request, **kwargs):
                     'low_value': min(values),
                     'average_value': sum(values) / len(values),
                     'high_value': max(values),
-                    'standard_units': ', '.join(list(set([x.standard_units for x in per_target_data]))),
+                    # 'standard_units': ', '.join(list(set([x.standard_units for x in per_target_data]))),
                     'smiles': lig.smiles,
                     'mw': lig.mw,
                     'rotatable_bonds': lig.rotatable_bonds,
@@ -226,13 +226,13 @@ def TargetDetailsExtended(request, **kwargs):
     if not ps:
         return redirect("ligand_browser")
 
-    ps = ps.values('standard_type',
+    ps = ps.values('value_type',
                    'standard_relation',
-                   'standard_value',
+                   'standard_activity_value',
                    'assay_description',
                    'assay_type',
-                   'standard_units',
-                   'pchembl_value',
+                   # 'standard_units',
+                   'p_activity_value',
                    'ligand__id',
                    'ligand__ids__index',
                    'protein__species__common_name',
@@ -271,13 +271,13 @@ def TargetPurchasabilityDetails(request, **kwargs):
     else:
         return
 
-    ps = ps.values('standard_type',
+    ps = ps.values('value_type',
                    'standard_relation',
-                   'standard_value',
+                   'standard_activity_value',
                    'assay_description',
                    'assay_type',
-                   'standard_units',
-                   'pchembl_value',
+                   # 'standard_units',
+                   'p_activity_value',
                    'ligand__id',
                    'ligand__ids__index',
                    'protein__species__common_name',
@@ -1575,18 +1575,18 @@ class LigandInformationView(TemplateView):
         return_dict = dict()
         for i in assays:
             name = str(i.protein)
-            type = i.standard_type
-            if type[0] != 'P':
-               type = 'p'+type
+            type = i.value_type
+            # if type[0] != 'P':
+            #    type = 'p'+type
             if name in return_dict:
                 if type in return_dict[name]['data_type'].keys():
-                    return_dict[name]['data_type'][type].append(float(i.pchembl_value))
+                    return_dict[name]['data_type'][type].append(float(i.p_activity_value))
                 else:
-                    return_dict[name]['data_type'][type] = [float(i.pchembl_value)]
+                    return_dict[name]['data_type'][type] = [float(i.p_activity_value)]
             else:
                 return_dict[name] = dict()
                 return_dict[name]['data_type'] = dict()
-                return_dict[name]['data_type'][type] = [float(i.pchembl_value)]
+                return_dict[name]['data_type'][type] = [float(i.p_activity_value)]
                 return_dict[name]['receptor_gtp'] = i.protein.short()
                 return_dict[name]['receptor_uniprot'] = i.protein.entry_short()
                 return_dict[name]['receptor_species'] = i.protein.species.common_name
