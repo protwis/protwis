@@ -701,6 +701,7 @@ $(document).ready(function() {
       async: false,
       data: {
         selected_pdbs: pdb_sel,
+        effector: filtering_particle,
         csrfmiddlewaretoken: csrf_token,
       },
       success: function (data) {

@@ -1181,10 +1181,14 @@ def interface_dataset():
 def AJAX_Interactions(request):
     t1 = time.time()
     selected_pdbs = request.POST.getlist("selected_pdbs[]")
+    effector = request.POST.get('effector')
     # selected_pdbs = request.GET.get('selected_pdbs') if request.GET.get('selected_pdbs') != 'false' else False
     # if selected_pdbs is false throw and error and get back
     # correct receptor entry names - the ones with '_a' appended
-    complex_names = [pdb_name.lower() + '_a' for pdb_name in selected_pdbs]
+    if effector == 'G alpha':
+        complex_names = [pdb_name.lower() + '_a' for pdb_name in selected_pdbs]
+    elif effector == 'A':
+        complex_names = [pdb_name.lower() + '_arrestin' for pdb_name in selected_pdbs]
     pdbs_names = [pdb.lower() for pdb in selected_pdbs]
     complex_objs = SignprotComplex.objects.filter(structure__protein_conformation__protein__entry_name__in=pdbs_names).prefetch_related('structure__protein_conformation__protein')
     # fetching the id of the selected structures

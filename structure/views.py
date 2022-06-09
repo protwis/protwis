@@ -922,7 +922,10 @@ class StructureStatistics(TemplateView):
 					records.append(translate[cname])
 		else:
 			for s in queryset:
-				fid = s.protein.family.parent.slug
+				if effector == 'gprot':
+					fid = s.protein.family.parent.slug
+				elif effector == 'arrestin':
+					fid = s.protein.family.slug
 				cname = lookup[fid]
 				records.append(translate[cname])
 

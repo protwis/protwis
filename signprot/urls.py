@@ -28,7 +28,7 @@ urlpatterns = [
     path('family/<slug>/', views.familyDetail, name='familyDetail'),
     #Have two set of URLs with two prefixes: GP, Arr
     path('matrix/', views.GProteinInteractionMatrix, name='InteractionMatrix'),
-    path('Arr_matrix/', views.ArrestinInteractionMatrix, name='InteractionMatrix'),
+    path('arr_matrix/', views.ArrestinInteractionMatrix, name='InteractionMatrix'),
     path('matrix/seqsig/', views.IMSequenceSignature, name='SequenceSignature'),
     path('matrix/sigmat/', views.IMSignatureMatch, name='SignatureMatch'),
     path('matrix/render_sigmat/', views.render_IMSigMat, name='renderSignatureMatch'),
