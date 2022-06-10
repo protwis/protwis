@@ -140,6 +140,7 @@ class EffectorStructureBrowser(TemplateView):
 				pdbs.append(i.pdb_code.index)
 				filtered_ncstructs.append(i)
 		context['structures'] = list(context['structures'])+list(filtered_ncstructs)
+		context['effector'] = self.effector
 		return context
 
 

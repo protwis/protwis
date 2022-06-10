@@ -1,56 +1,6 @@
-function gproteinstructurebrowser() {
+function gproteinstructurebrowser(effector) {
 // $(document).ready(function () {
     // 'use strict';
-
-    var oTable2 = $('#structures_scrollable').DataTable({
-        "scrollY":        "65vh",
-        "scrollX":        true,
-        "scrollCollapse": true,
-        "scroller": true,
-        "paging":         false,
-        // "bSortCellsTop": true,
-        "aaSorting": [],
-        "autoWidth": false,
-        "order": [[29,'desc'],[1,'asc']],
-        "columnDefs": [
-            { "targets": 'no-sort', "orderable": false }
-            ],
-        "columns": [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            {"width": "20%"},
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null //Not displayed, storing protein id
-        ],
-        "bInfo" : true,
-    });
-
     var prev_ids = Array()
     var current_align_ids = Array()
 
@@ -64,323 +14,485 @@ function gproteinstructurebrowser() {
 
     $("#loading_div").hide();
 
-    yadcf.init(oTable2,
-        [
-            {
-                column_number : 1,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Fam.",
-                filter_match_mode : "exact",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '50px',
-                }
-            },
-            {
-                column_number : 2,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                column_data_type: "html",
-                filter_default_label: "&alpha;",
-                filter_match_mode : "exact",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '40px',
-                }
-            },
-            {
-                column_number: 3,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Species",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '55px',
-                }
-            },
-            {
-                column_number : 4,
-                filter_type: "text",
-                select_type: 'select2',
-                filter_default_label: "Note",
-                filter_match_mode : "exact",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                }
-            },
-            {
-                column_number : 5,
-                filter_type: "range_number",
-                filter_reset_button_text: false,
-                filter_default_label: ["Min", "Max"],
-                select_type_options: {
-                    width: '30px',
-                }
-            },
-            {
-                column_number : 6,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "&beta;",
-                html_data_type: "text",
-                filter_match_mode : "exact",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '40px',
-                }
-            },
-            {
-                column_number: 7,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Species",
-                html_data_type: "text",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '55px',
-                }
-            },
-            {
-                column_number : 8,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "&gamma;",
-                filter_match_mode : "exact",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '40px',
-                }
-            },
-            {
-                column_number: 9,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Species",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '55px',
-                }
-            },
-            {
-                column_number : 10,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Method",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '60px',
-                }
-            },
-            {
-                column_number : 11,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                column_data_type: "html",
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '50px',
-                }
-            },
-            {
-                column_number : 12,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Select",
-                column_data_type: "html",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '50px',
-                }
-            },
-            {
-                column_number : 13,
-                filter_type: "range_number",
-                filter_reset_button_text: false,
-                filter_default_label: ["Min", "Max"],
-            },
-            {
-                column_number : 14,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                column_data_type: "html",
-                html_data_type: "text",
-                filter_default_label: "UniProt",
-                filter_match_mode : "exact",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '60px',
-                }
-            },
-            {
-                column_number : 15,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                column_data_type: "html",
-                html_data_type: "text",
-                filter_default_label: "IUPHAR",
-                filter_match_mode : "exact",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '60px',
-                }
-            },
-            {
-                column_number : 16,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                column_data_type: "html",
-                html_data_type: "text",
-                filter_default_label: "Receptor family",
-                filter_match_mode : "exact",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '120px',
-                }
-            },
-            {
-                column_number: 17,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                column_data_type: "html",
-                html_data_type: "text",
-                filter_default_label: "Class",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                }
-            },
-            {
-                column_number: 18,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Species",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '55px',
-                }
-            },
-            {
-                column_number : 19,
-                filter_type: "text",
-                select_type: 'select2',
-                filter_default_label: "Receptor fusion",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '100px',
-                }
-            },
-            {
-                column_number : 20,
-                filter_type: "text",
-                select_type: 'select2',
-                filter_default_label: "Antibodies",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '100px',
-                }
-            },
-            {
-                column_number : 21,
-                filter_type: "text",
-                select_type: 'select2',
-                filter_default_label: "Other",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '100px',
-                }
-            },
-            {
-                column_number : 22,
-                filter_type: "text",
-                select_type: 'select2',
-                html_data_type: "text",
-                filter_default_label: "Ligand name",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '100px',
-                }
-            },
-            {
-                column_number : 23,
-                filter_type: "multi_select",
-                select_type: "select2",
-                html_data_type: "text",
-                filter_default_label: "Ligand type",
-                filter_reset_button_text: false,
-                text_data_delimiter: "<br>",
-                select_type_options: {
-                    width: "100px",
-                }
-            },
-            {
-                column_number : 24,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Modality",
-                filter_match_mode : "exact",
-                filter_reset_button_text: false,
-                text_data_delimiter: "<br>",
-                select_type_options: {
-                    width: "100px",
-                }
-            },
-            {
-                column_number : 25,
-                filter_type: "text",
-                select_type: "select2",
-                filter_default_label: "Ligand name",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "100px",
-                }
-            },
-            {
-                column_number : 26,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Ligand type",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '80px',
-                }
-            },
-            {
-                column_number : 27,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Last author",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '100px',
-                }
-            },
-            {
-                column_number : 28,
-                filter_type: "multi_select",
-                select_type: 'select2',
-                filter_default_label: "Reference",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: '140px',
-                }
-            },
-            {
-                column_number : 29,
-                filter_type: "range_date",
-                filter_reset_button_text: false,
-                date_format: "yyyy-mm-dd",
-                select_type: 'select2',
-                filter_default_label: ["Min", "Max"],
-                // filter_reset_button_text: false,
-            },
-        ],
-        {
-            cumulative_filtering: false
-        }
-    );
+    let column_filters = [];
+
+    if (effector == 'gprot'){
+      var oTable2 = $('#structures_scrollable').DataTable({
+          "scrollY":        "65vh",
+          "scrollX":        true,
+          "scrollCollapse": true,
+          "scroller": true,
+          "paging":         false,
+          // "bSortCellsTop": true,
+          "aaSorting": [],
+          "autoWidth": false,
+          "order": [[29,'desc'],[1,'asc']],
+          "columnDefs": [
+              { "targets": 'no-sort', "orderable": false }
+              ],
+          "columns": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              {"width": "20%"},
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null //Not displayed, storing protein id
+          ],
+          "bInfo" : true,
+      });
+
+      // Selector column
+      // Arg list: createYADCFfilters(start_column, num_cols, filter_type, select_type*, filter_default_label*, filter_reset_button_text*, filter_match_mode*, column_data_type*, width*)
+      column_filters = column_filters.concat(createYADCFfilters(0, 1, "none"));
+      // Receptor section
+      column_filters = column_filters.concat(createYADCFfilters(1, 1, "multi_select", "select2", "Fam.", false, "exact", null, "50px"));
+      column_filters = column_filters.concat(createYADCFfilters(2, 1, "multi_select", "select2", "&alpha", false, "exact", "html", "40px"));
+      column_filters = column_filters.concat(createYADCFfilters(3, 1, "multi_select", "select2", "Species", false, null, null, "55px"));
+      column_filters = column_filters.concat(createYADCFfilters(3, 1, "multi_select", "select2", "Note", false, null, null, "80px"));
+      column_filters = column_filters.concat(createYADCFfilters(5, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+      column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "&beta", false, "exact", "html", "40px"));
+      column_filters = column_filters.concat(createYADCFfilters(7, 1, "multi_select", "select2", "Species", false, null, null, "55px"));
+      column_filters = column_filters.concat(createYADCFfilters(8, 1, "multi_select", "select2", "&gamma", false, "exact", "html", "40px"));
+      column_filters = column_filters.concat(createYADCFfilters(9, 1, "multi_select", "select2", "Species", false, null, null, "55px"));
+      column_filters = column_filters.concat(createYADCFfilters(10, 1, "multi_select", "select2", "Method", false, null, null, "60px"));
+      column_filters = column_filters.concat(createYADCFfilters(11, 2, "multi_select", "select2", "", false, null, "html", "50px"));
+      column_filters = column_filters.concat(createYADCFfilters(13, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+      column_filters = column_filters.concat(createYADCFfilters(14, 1, "multi_select", "select2", "UniProt", false, "exact", "html", "60px"));
+      column_filters = column_filters.concat(createYADCFfilters(15, 1, "multi_select", "select2", "IUPHAR", false, "exact", "html", "60px"));
+      column_filters = column_filters.concat(createYADCFfilters(16, 1, "multi_select", "select2", "Receptor family", false, "exact", "html", "120px"));
+      column_filters = column_filters.concat(createYADCFfilters(17, 1, "multi_select", "select2", "Class", false, "exact", "html", "80px"));
+      column_filters = column_filters.concat(createYADCFfilters(18, 1, "multi_select", "select2", "Species", false, "exact", null, "55px"));
+      column_filters = column_filters.concat(createYADCFfilters(19, 1, "text", "select2", "Receptor fusion", false, null, null, "100px"));
+      column_filters = column_filters.concat(createYADCFfilters(20, 1, "text", "select2", "Antibodies", false, null, null, "100px"));
+      column_filters = column_filters.concat(createYADCFfilters(21, 1, "text", "select2", "Other", false, null, null, "100px"));
+      column_filters = column_filters.concat(createYADCFfilters(22, 1, "text", "select2", "Ligand name", false, null, null, "100px"));
+      column_filters = column_filters.concat(createYADCFfilters(23, 1, "multi_select", "select2", "Ligand type", false, null, null, "100px"));
+      column_filters = column_filters.concat(createYADCFfilters(24, 1, "multi_select", "select2", "Modality", false, "exact", null, "100px"));
+      column_filters = column_filters.concat(createYADCFfilters(25, 1, "multi_select", "select2", "Ligand name", false, null, null, "100px"));
+      column_filters = column_filters.concat(createYADCFfilters(26, 1, "multi_select", "select2", "Ligand type", false, null, null, "100px"));
+      column_filters = column_filters.concat(createYADCFfilters(27, 1, "multi_select", "select2", "Last author", false, null, null, "100px"));
+      column_filters = column_filters.concat(createYADCFfilters(28, 1, "multi_select", "select2", "Reference", false, null, null, "140px"));
+      column_filters = column_filters.concat(createYADCFfilters(29, 1, "range_date", null, ["Min", "Max"], false, null, null, "30px"));
+    } else {
+      var oTable2 = $('#structures_scrollable').DataTable({
+          "scrollY":        "65vh",
+          "scrollX":        true,
+          "scrollCollapse": true,
+          "scroller": true,
+          "paging":         false,
+          // "bSortCellsTop": true,
+          "aaSorting": [],
+          "autoWidth": false,
+          "order": [[25,'desc'],[1,'asc']],
+          "columnDefs": [
+              { "targets": 'no-sort', "orderable": false }
+              ],
+          "columns": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              {"width": "20%"},
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null //Not displayed, storing protein id
+          ],
+          "bInfo" : true,
+      });
+      // Selector column
+      // Arg list: createYADCFfilters(start_column, num_cols, filter_type, select_type*, filter_default_label*, filter_reset_button_text*, filter_match_mode*, column_data_type*, width*)
+      column_filters = column_filters.concat(createYADCFfilters(0, 1, "none"));
+      column_filters = column_filters.concat(createYADCFfilters(1, 1, "multi_select", "select2", "Fam.", false, "exact", null, "50px"));
+      column_filters = column_filters.concat(createYADCFfilters(2, 1, "multi_select", "select2", "Arrestin", false, "exact", "html", "40px"));
+      column_filters = column_filters.concat(createYADCFfilters(3, 1, "multi_select", "select2", "Species", false, null, null, "55px"));
+      column_filters = column_filters.concat(createYADCFfilters(3, 1, "multi_select", "select2", "Note", false, null, null, "80px"));
+      column_filters = column_filters.concat(createYADCFfilters(5, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+      column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "Method", false, null, null, "60px"));
+      column_filters = column_filters.concat(createYADCFfilters(7, 2, "multi_select", "select2", "", false, null, "html", "50px"));
+      column_filters = column_filters.concat(createYADCFfilters(9, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+      column_filters = column_filters.concat(createYADCFfilters(10, 1, "multi_select", "select2", "UniProt", false, "exact", "html", "60px"));
+      column_filters = column_filters.concat(createYADCFfilters(11, 1, "multi_select", "select2", "IUPHAR", false, "exact", "html", "60px"));
+      column_filters = column_filters.concat(createYADCFfilters(12, 1, "multi_select", "select2", "Receptor family", false, "exact", "html", "120px"));
+      column_filters = column_filters.concat(createYADCFfilters(13, 1, "multi_select", "select2", "Class", false, "exact", "html", "80px"));
+      column_filters = column_filters.concat(createYADCFfilters(14, 1, "multi_select", "select2", "Species", false, "exact", null, "55px"));
+      column_filters = column_filters.concat(createYADCFfilters(15, 1, "text", "select2", "Receptor fusion", false, null, null, "100px"));
+      column_filters = column_filters.concat(createYADCFfilters(16, 1, "text", "select2", "Antibodies", false, null, null, "100px"));
+      column_filters = column_filters.concat(createYADCFfilters(17, 1, "text", "select2", "Other", false, null, null, "100px"));
+      column_filters = column_filters.concat(createYADCFfilters(18, 1, "text", "select2", "Ligand name", false, null, null, "100px"));
+      column_filters = column_filters.concat(createYADCFfilters(19, 1, "multi_select", "select2", "Ligand type", false, null, null, "100px"));
+      column_filters = column_filters.concat(createYADCFfilters(20, 1, "multi_select", "select2", "Modality", false, "exact", null, "100px"));
+      column_filters = column_filters.concat(createYADCFfilters(21, 1, "multi_select", "select2", "Ligand name", false, null, null, "100px"));
+      column_filters = column_filters.concat(createYADCFfilters(22, 1, "multi_select", "select2", "Ligand type", false, null, null, "100px"));
+      column_filters = column_filters.concat(createYADCFfilters(23, 1, "multi_select", "select2", "Last author", false, null, null, "100px"));
+      column_filters = column_filters.concat(createYADCFfilters(24, 1, "multi_select", "select2", "Reference", false, null, null, "140px"));
+      column_filters = column_filters.concat(createYADCFfilters(25, 1, "range_date", null, ["Min", "Max"], false, null, null, "30px"));
+  }
+
+    yadcf.init(oTable2, column_filters, {
+      cumulative_filtering: false
+    });
+
+    // yadcf.init(oTable2,
+    //     [
+    //         {
+    //             column_number : 1,
+    //             filter_type: "multi_select",
+    //             select_type: 'select2',
+    //             filter_default_label: "Fam.",
+    //             filter_match_mode : "exact",
+    //             filter_reset_button_text: false,
+    //             select_type_options: {
+    //                 width: '50px',
+    //             }
+    //         },
+    //         {
+    //             column_number : 2,
+    //             filter_type: "multi_select",
+    //             select_type: 'select2',
+    //             column_data_type: "html",
+    //             filter_default_label: "&alpha;",
+    //             filter_match_mode : "exact",
+    //             filter_reset_button_text: false,
+    //             select_type_options: {
+    //                 width: '40px',
+    //             }
+    //         },
+    //         {
+    //             column_number: 3,
+    //             filter_type: "multi_select",
+    //             select_type: 'select2',
+    //             filter_default_label: "Species",
+    //             filter_reset_button_text: false,
+    //             select_type_options: {
+    //                 width: '55px',
+    //             }
+    //         },
+    //         {
+    //             column_number : 4,
+    //             filter_type: "text",
+    //             select_type: 'select2',
+    //             filter_default_label: "Note",
+    //             filter_match_mode : "exact",
+    //             filter_reset_button_text: false,
+    //             select_type_options: {
+    //                 width: '80px',
+    //             }
+    //         },
+    //         {
+    //             column_number : 5,
+    //             filter_type: "range_number",
+    //             filter_reset_button_text: false,
+    //             filter_default_label: ["Min", "Max"],
+    //             select_type_options: {
+    //                 width: '30px',
+    //             }
+    //         },
+    //         {
+    //             column_number : 6,
+    //             filter_type: "multi_select",
+    //             select_type: 'select2',
+    //             filter_default_label: "&beta;",
+    //             html_data_type: "text",
+    //             filter_match_mode : "exact",
+    //             filter_reset_button_text: false,
+    //             select_type_options: {
+    //                 width: '40px',
+    //             }
+    //         },
+    //         {
+    //             column_number: 7,
+    //             filter_type: "multi_select",
+    //             select_type: 'select2',
+    //             filter_default_label: "Species",
+    //             html_data_type: "text",
+    //             filter_reset_button_text: false,
+    //             select_type_options: {
+    //                 width: '55px',
+    //             }
+    //         },
+    //         {
+    //             column_number : 8,
+    //             filter_type: "multi_select",
+    //             select_type: 'select2',
+    //             filter_default_label: "&gamma;",
+    //             filter_match_mode : "exact",
+    //             filter_reset_button_text: false,
+    //             select_type_options: {
+    //                 width: '40px',
+    //             }
+    //         },
+    //         {
+    //             column_number: 9,
+    //             filter_type: "multi_select",
+    //             select_type: 'select2',
+    //             filter_default_label: "Species",
+    //             filter_reset_button_text: false,
+    //             select_type_options: {
+    //                 width: '55px',
+    //             }
+    //         },
+    //         {
+    //             column_number : 10,
+    //             filter_type: "multi_select",
+    //             select_type: 'select2',
+    //             filter_default_label: "Method",
+    //             filter_reset_button_text: false,
+    //             select_type_options: {
+    //                 width: '60px',
+    //             }
+    //         },
+    //         {
+    //             column_number : 11,
+    //             filter_type: "multi_select",
+    //             select_type: 'select2',
+    //             column_data_type: "html",
+    //             filter_default_label: "Select",
+    //             filter_reset_button_text: false,
+    //             select_type_options: {
+    //                 width: '50px',
+    //             }
+    //         },
+    //         {
+    //             column_number : 12,
+    //             filter_type: "multi_select",
+    //             select_type: 'select2',
+    //             filter_default_label: "Select",
+    //             column_data_type: "html",
+    //             filter_reset_button_text: false,
+    //             select_type_options: {
+    //                 width: '50px',
+    //             }
+    //         },
+    //         {
+    //             column_number : 13,
+    //             filter_type: "range_number",
+    //             filter_reset_button_text: false,
+    //             filter_default_label: ["Min", "Max"],
+    //         },
+    //         {
+    //             column_number : 14,
+    //             filter_type: "multi_select",
+    //             select_type: 'select2',
+    //             column_data_type: "html",
+    //             html_data_type: "text",
+    //             filter_default_label: "UniProt",
+    //             filter_match_mode : "exact",
+    //             filter_reset_button_text: false,
+    //             select_type_options: {
+    //                 width: '60px',
+    //             }
+    //         },
+    //         {
+    //             column_number : 15,
+    //             filter_type: "multi_select",
+    //             select_type: 'select2',
+    //             column_data_type: "html",
+    //             html_data_type: "text",
+    //             filter_default_label: "IUPHAR",
+    //             filter_match_mode : "exact",
+    //             filter_reset_button_text: false,
+    //             select_type_options: {
+    //                 width: '60px',
+    //             }
+    //         },
+    //         {
+    //             column_number : 16,
+    //             filter_type: "multi_select",
+    //             select_type: 'select2',
+    //             column_data_type: "html",
+    //             html_data_type: "text",
+    //             filter_default_label: "Receptor family",
+    //             filter_match_mode : "exact",
+    //             filter_reset_button_text: false,
+    //             select_type_options: {
+    //                 width: '120px',
+    //             }
+    //         },
+    //         {
+    //             column_number: 17,
+    //             filter_type: "multi_select",
+    //             select_type: 'select2',
+    //             column_data_type: "html",
+    //             html_data_type: "text",
+    //             filter_default_label: "Class",
+    //             filter_reset_button_text: false,
+    //             select_type_options: {
+    //                 width: '80px',
+    //             }
+    //         },
+    //         {
+    //             column_number: 18,
+    //             filter_type: "multi_select",
+    //             select_type: 'select2',
+    //             filter_default_label: "Species",
+    //             filter_reset_button_text: false,
+    //             select_type_options: {
+    //                 width: '55px',
+    //             }
+    //         },
+    //         {
+    //             column_number : 19,
+    //             filter_type: "text",
+    //             select_type: 'select2',
+    //             filter_default_label: "Receptor fusion",
+    //             filter_reset_button_text: false,
+    //             select_type_options: {
+    //                 width: '100px',
+    //             }
+    //         },
+    //         {
+    //             column_number : 20,
+    //             filter_type: "text",
+    //             select_type: 'select2',
+    //             filter_default_label: "Antibodies",
+    //             filter_reset_button_text: false,
+    //             select_type_options: {
+    //                 width: '100px',
+    //             }
+    //         },
+    //         {
+    //             column_number : 21,
+    //             filter_type: "text",
+    //             select_type: 'select2',
+    //             filter_default_label: "Other",
+    //             filter_reset_button_text: false,
+    //             select_type_options: {
+    //                 width: '100px',
+    //             }
+    //         },
+    //         {
+    //             column_number : 22,
+    //             filter_type: "text",
+    //             select_type: 'select2',
+    //             html_data_type: "text",
+    //             filter_default_label: "Ligand name",
+    //             filter_reset_button_text: false,
+    //             select_type_options: {
+    //                 width: '100px',
+    //             }
+    //         },
+    //         {
+    //             column_number : 23,
+    //             filter_type: "multi_select",
+    //             select_type: "select2",
+    //             html_data_type: "text",
+    //             filter_default_label: "Ligand type",
+    //             filter_reset_button_text: false,
+    //             text_data_delimiter: "<br>",
+    //             select_type_options: {
+    //                 width: "100px",
+    //             }
+    //         },
+    //         {
+    //             column_number : 24,
+    //             filter_type: "multi_select",
+    //             select_type: 'select2',
+    //             filter_default_label: "Modality",
+    //             filter_match_mode : "exact",
+    //             filter_reset_button_text: false,
+    //             text_data_delimiter: "<br>",
+    //             select_type_options: {
+    //                 width: "100px",
+    //             }
+    //         },
+    //         {
+    //             column_number : 25,
+    //             filter_type: "text",
+    //             select_type: "select2",
+    //             filter_default_label: "Ligand name",
+    //             filter_reset_button_text: false,
+    //             select_type_options: {
+    //                 width: "100px",
+    //             }
+    //         },
+    //         {
+    //             column_number : 26,
+    //             filter_type: "multi_select",
+    //             select_type: 'select2',
+    //             filter_default_label: "Ligand type",
+    //             filter_reset_button_text: false,
+    //             select_type_options: {
+    //                 width: '80px',
+    //             }
+    //         },
+    //         {
+    //             column_number : 27,
+    //             filter_type: "multi_select",
+    //             select_type: 'select2',
+    //             filter_default_label: "Last author",
+    //             filter_reset_button_text: false,
+    //             select_type_options: {
+    //                 width: '100px',
+    //             }
+    //         },
+    //         {
+    //             column_number : 28,
+    //             filter_type: "multi_select",
+    //             select_type: 'select2',
+    //             filter_default_label: "Reference",
+    //             filter_reset_button_text: false,
+    //             select_type_options: {
+    //                 width: '140px',
+    //             }
+    //         },
+    //         {
+    //             column_number : 29,
+    //             filter_type: "range_date",
+    //             filter_reset_button_text: false,
+    //             date_format: "yyyy-mm-dd",
+    //             select_type: 'select2',
+    //             filter_default_label: ["Min", "Max"],
+    //             // filter_reset_button_text: false,
+    //         },
+    //     ],
+    //     {
+    //         cumulative_filtering: false
+    //     }
+    // );
 
     //yadcf.exResetAllFilters(oTable2);
     oTable2.columns.adjust()
