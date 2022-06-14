@@ -79,22 +79,14 @@ class Command(BaseBuild):
         """
         print('*** Starting *** \n')
         print('\n#1 Fetching and setting up the GTP endogenous data')
-        # gtp_detailed_endogenous_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/detailed_endogenous_ligands.csv", 7 * 24 * 3600)
-        gtp_detailed_endogenous_link = "https://www.guidetopharmacology.org/DATA/detailed_endogenous_ligands.csv"
-        # gtp_data = pd.read_csv(gtp_detailed_endogenous_link, dtype=str) #MAY BE NEEDED TO ADD header=1
+        gtp_detailed_endogenous_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/detailed_endogenous_ligands.csv", 7 * 24 * 3600)
         gtp_data = pd.read_csv(gtp_detailed_endogenous_link, dtype=str, header=1)
-        # gtp_interactions_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/interactions.csv", 7 * 24 * 3600)
-        gtp_interactions_link = "https://www.guidetopharmacology.org/DATA/interactions.csv"
-        # gtp_interactions = pd.read_csv(gtp_interactions_link, dtype=str) #MAY BE NEEDED TO ADD header=1
+        gtp_interactions_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/interactions.csv", 7 * 24 * 3600)
         gtp_interactions = pd.read_csv(gtp_interactions_link, dtype=str, header=1)
-        # gtp_uniprot_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/GtP_to_UniProt_mapping.csv", 7 * 24 * 3600)
-        gtp_uniprot_link = "https://www.guidetopharmacology.org/DATA/GtP_to_UniProt_mapping.csv"
-        # gtp_uniprot = pd.read_csv(gtp_uniprot_link, dtype=str) #MAY BE NEEDED TO ADD header=1
+        gtp_interactions.columns = gtp_interactions.columns.str.strip() # Fixing GtP whitespace issues in the headers
+        gtp_uniprot_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/GtP_to_UniProt_mapping.csv", 7 * 24 * 3600)
         gtp_uniprot = pd.read_csv(gtp_uniprot_link, dtype=str, header=1)
-        #Probably the files have been changed:
-        #Now "uniprot_id" is "UniProtKB ID"
-        #and "iuphar_id" is "GtoPdb IUPHAR ID"
-        iuphar_ids = GtPLigand.compare_proteins(gtp_uniprot) #NEED TO CHECK THE COLUMN IDS
+        iuphar_ids = GtPLigand.compare_proteins(gtp_uniprot)
 
         processed_data = self.data_preparation(gtp_data, gtp_interactions, iuphar_ids)
 
@@ -143,22 +135,21 @@ class Command(BaseBuild):
         uniq_rows = uniq_rows.reindex(columns=columns+new_columns)
         #remove spaces in the column names
         uniq_rows.columns = [c.replace(' ', '_') for c in uniq_rows.columns]
-
         for target in association.keys():
             for ligand in association[target]:
                 #adding species and role info
                 try:
-                    role = interactions.loc[(interactions['target_id'] == target) & (interactions['ligand_id'] == ligand), 'action'].values[0]
+                    role = interactions.loc[(interactions['Target ID'] == target) & (interactions['Ligand ID'] == ligand), 'Action'].values[0]
                 except IndexError:
                     role = None
                 uniq_rows.loc[(uniq_rows['Target_ID'] == target) & (uniq_rows['Ligand_ID'] == ligand), 'Ligand_Role'] = role
                 try:
-                    action = interactions.loc[(interactions['target_id'] == target) & (interactions['ligand_id'] == ligand), 'type'].values[0]
+                    action = interactions.loc[(interactions['Target ID'] == target) & (interactions['Ligand ID'] == ligand), 'Type'].values[0]
                 except IndexError:
                     action = None
                 uniq_rows.loc[(uniq_rows['Target_ID'] == target) & (uniq_rows['Ligand_ID'] == ligand), 'Ligand_Action'] = action
                 try:
-                    species = interactions.loc[(interactions['target_id'] == target) & (interactions['ligand_id'] == ligand), 'ligand_species'].values[0]
+                    species = interactions.loc[(interactions['Target ID'] == target) & (interactions['Ligand ID'] == ligand), 'Ligand Species'].values[0]
                 except IndexError:
                     species = None
                 uniq_rows.loc[(uniq_rows['Target_ID'] == target) & (uniq_rows['Ligand_ID'] == ligand), 'Ligand_Species'] = species
