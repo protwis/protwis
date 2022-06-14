@@ -70,29 +70,30 @@ class Command(BaseBuild):
 
         print('\n#1 Reading info sheets from Guide to Pharmacology')
         gtp_uniprot_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/GtP_to_UniProt_mapping.csv", 7 * 24 * 3600)
-        gtp_uniprot = pd.read_csv(gtp_uniprot_link, dtype=str)
+        gtp_uniprot = pd.read_csv(gtp_uniprot_link, dtype=str, header = 1)
 
         gtp_complete_ligands_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/ligands.csv", 7 * 24 * 3600)
-        gtp_complete_ligands = pd.read_csv(gtp_complete_ligands_link, dtype=str)
+        gtp_complete_ligands = pd.read_csv(gtp_complete_ligands_link, dtype=str, header = 1)
 
         gtp_ligand_mapping_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/ligand_id_mapping.csv", 7 * 24 * 3600)
-        gtp_ligand_mapping = pd.read_csv(gtp_ligand_mapping_link, dtype=str)
+        gtp_ligand_mapping = pd.read_csv(gtp_ligand_mapping_link, dtype=str, header = 1)
 
         gtp_detailed_endogenous_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/detailed_endogenous_ligands.csv", 7 * 24 * 3600)
-        gtp_detailed_endogenous = pd.read_csv(gtp_detailed_endogenous_link, dtype=str)
+        gtp_detailed_endogenous = pd.read_csv(gtp_detailed_endogenous_link, dtype=str, header = 1)
 
         gtp_interactions_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/interactions.csv", 7 * 24 * 3600)
-        gtp_interactions = pd.read_csv(gtp_interactions_link, dtype=str)
+        gtp_interactions = pd.read_csv(gtp_interactions_link, dtype=str, header = 1)
+        gtp_interactions.columns = gtp_interactions.columns.str.strip() # Fixing GtP whitespace issues in the headers
 
         gtp_peptides_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/peptides.csv", 7 * 24 * 3600)
-        gtp_peptides = pd.read_csv(gtp_peptides_link, dtype=str)
+        gtp_peptides = pd.read_csv(gtp_peptides_link, dtype=str, header = 1)
 
         print('\n#2 Retrieving IUPHAR ids from UniProt ids')
         iuphar_ids = self.compare_proteins(gtp_uniprot)
 
         print('\n#3 Retrieving ALL ligands from GTP associated to GPCRs')
-        bioactivity_ligands_ids = self.obtain_ligands(gtp_interactions, iuphar_ids, ['target_id','ligand_id']) #4181
-        endogenous_ligands_ids = self.obtain_ligands(gtp_detailed_endogenous, iuphar_ids, ['Target ID','Ligand ID']) #4325
+        bioactivity_ligands_ids = self.obtain_ligands(gtp_interactions, iuphar_ids, ['Target ID','Ligand ID'])
+        endogenous_ligands_ids = self.obtain_ligands(gtp_detailed_endogenous, iuphar_ids, ['Target ID','Ligand ID'])
         ligand_ids = list(set(bioactivity_ligands_ids + endogenous_ligands_ids))
 
         print('\n#4 Collating all info from GPCR related ligands in the GTP')
@@ -105,13 +106,8 @@ class Command(BaseBuild):
 
     @staticmethod
     def compare_proteins(gtp_data):
-        #Probably the files have been changed:
-        #Now "uniprot_id" is "UniProtKB ID"
-        #and "iuphar_id" is "GtoPdb IUPHAR ID"
         gpcrdb_proteins = Protein.objects.filter(family__slug__startswith="00", sequence_type__slug="wt").values_list('entry_name','accession')
-        # entries = gtp_data.loc[gtp_data['uniprot_id'].isin([protein[1].split("-")[0] for protein in gpcrdb_proteins]), ['uniprot_id', 'iuphar_id']]
         entries = gtp_data.loc[gtp_data['UniProtKB ID'].isin([protein[1].split("-")[0] for protein in gpcrdb_proteins]), ['UniProtKB ID', 'GtoPdb IUPHAR ID']]
-        # return list(entries['iuphar_id'].unique())
         return list(entries['GtoPdb IUPHAR ID'].unique())
 
     @staticmethod
