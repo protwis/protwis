@@ -278,7 +278,7 @@ def match_id_via_unichem(type, id):
         unichem_url = "https://www.ebi.ac.uk/unichem/rest/src_compound_id/$index/" + type_id
         cache_dir[1] = "id_match_" + type
         unichem = fetch_from_web_api(unichem_url, id, cache_dir)
-        if unichem:
+        if unichem and "error" not in unichem:
             for entry in unichem:
                 if entry["src_id"] in unichem_src_types.keys():
                     results.append({"type" : unichem_src_types[entry["src_id"]], "id": entry["src_compound_id"]})
@@ -286,7 +286,7 @@ def match_id_via_unichem(type, id):
         unichem_url = "https://www.ebi.ac.uk/unichem/rest/inchikey/$index"
         cache_dir[1] = "id_match_" + type
         unichem = fetch_from_web_api(unichem_url, id, cache_dir)
-        if unichem:
+        if unichem and "error" not in unichem:
             for entry in unichem:
                 if entry["src_id"] in unichem_src_types.keys():
                     results.append({"type" : unichem_src_types[entry["src_id"]], "id": entry["src_compound_id"]})
