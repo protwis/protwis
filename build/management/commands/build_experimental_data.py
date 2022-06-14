@@ -55,14 +55,18 @@ class Command(BaseBuild):
         print("\n\nStarted parsing Guide to Pharmacology bioactivities data")
         gtp_uniprot_link = "https://www.guidetopharmacology.org/DATA/GtP_to_UniProt_mapping.csv"
         gtp_uniprot = pd.read_csv(gtp_uniprot_link, dtype=str, header=1)
-        gtp_complete_ligands_link = "https://www.guidetopharmacology.org/DATA/ligands.csv"
+        gtp_complete_ligands_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/ligands.csv", 7 * 24 * 3600)
         gtp_complete_ligands = pd.read_csv(gtp_complete_ligands_link, dtype=str, header=1)
-        gtp_ligand_mapping_link = "https://www.guidetopharmacology.org/DATA/ligand_id_mapping.csv"
+        gtp_ligand_mapping_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/ligand_id_mapping.csv", 7 * 24 * 3600)
         gtp_ligand_mapping = pd.read_csv(gtp_ligand_mapping_link, dtype=str, header=1)
-        gtp_interactions_link = "https://www.guidetopharmacology.org/DATA/interactions.csv"
+        gtp_interactions_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/interactions.csv", 7 * 24 * 3600)
         gtp_interactions = pd.read_csv(gtp_interactions_link, dtype=str, header=1)
-        gtp_peptides_link = "https://www.guidetopharmacology.org/DATA/peptides.csv"
+        gtp_interactions.columns = gtp_interactions.columns.str.strip() # Fixing GtP whitespace issues in the headers
+        gtp_interactions.columns = [c.lower().replace(' ', '_') for c in gtp_interactions.columns] # match with previous GtP header formatting
+        
+        gtp_peptides_link = get_or_create_url_cache("https://www.guidetopharmacology.org/DATA/peptides.csv", 7 * 24 * 3600)
         gtp_peptides = pd.read_csv(gtp_peptides_link, dtype=str, header=1)
+
         # This gets all the info of the ligand and the interaction with the target
         iuphar_ids = self.compare_proteins(gtp_uniprot)
         bioactivity_ligands_ids = self.obtain_ligands(gtp_interactions, iuphar_ids, ['target_id','ligand_id'])
@@ -97,8 +101,8 @@ class Command(BaseBuild):
         chembl_document_conversion_file = os.sep.join([settings.DATA_DIR, "ligand_data", "assay_data", "chembl_document_data.csv.gz"])
         chembl_document_data = pd.read_csv(chembl_document_conversion_file, dtype=str)
         bioactivity_data = pd.read_csv(bioactivity_input_file, dtype=str)
-        # url_template = 'https://www.ebi.ac.uk/chembl/api/data/document?document_chembl_id={}'
-        url_template = 'https://www.ebi.ac.uk/chembl/api/data/document?document_chembl_id=$index'
+
+        url_doc_template = 'https://www.ebi.ac.uk/chembl/api/data/document?document_chembl_id=$index'
         bioactivity_data.fillna('None', inplace=True)
         bio_entries = len(bioactivity_data)
         print("Found", bio_entries, "bioactivities", datetime.datetime.now())
@@ -134,15 +138,12 @@ class Command(BaseBuild):
                     bioacts[-1].document_chembl_id = row["document_chembl_id"]
                     bioacts[-1].source = 'ChEMBL'
 
-                    # response = requests.get(url_template.format(row["document_chembl_id"]))
-                    # response = fetch_from_web_api(url_template, row["document_chembl_id"], cache_dir, xml=True)
                     try:
                         doi = chembl_document_data.loc[chembl_document_data['document_chembl_id'] == row["document_chembl_id"], 'doi'].iloc[0]
                     except IndexError:
-                        response = fetch_from_web_api(url_template, row["document_chembl_id"], cache_dir, xml=True)
+                        response = fetch_from_web_api(url_doc_template, row["document_chembl_id"], cache_dir, xml=True)
                         doi = response[0][0][4].text
-                        # data = xmltodict.parse(response.content)
-                        # doi = data['response']['documents']['document']['doi']
+
                     if doi is not None:
                         publication = Command.fetch_publication(doi)
                         if publication is not None:
@@ -204,7 +205,7 @@ class Command(BaseBuild):
         full_info = ['Ligand id', 'Name','Species','Type','Approved','Withdrawn','Labelled','Radioactive', 'PubChem SID', 'PubChem CID',
                      'UniProt id','IUPAC name', 'INN', 'Synonyms','SMILES','InChIKey','InChI','GtoImmuPdb','GtoMPdb']
         bioactivity_info = ['ligand_id', 'action','target', 'target_id', 'target_species',
-                            'target_gene_symbol', 'target_uniprot', 'original_affinity_relation',
+                            'target_gene_symbol', 'target_uniprot_id', 'original_affinity_relation',
                             'action_comment', 'selectivity', 'primary_target',
                             'concentration_range', 'affinity_units', 'affinity_high',
                             'affinity_median', 'affinity_low', 'assay_description', 'pubmed_id']
