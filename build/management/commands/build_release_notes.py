@@ -4,7 +4,7 @@ from django.conf import settings
 from common.models import ReleaseNotes, ReleaseStatistics, ReleaseStatisticsType
 from drugs.models import Drugs
 from interaction.models import ResidueFragmentInteraction
-from ligand.models import Ligand
+from ligand.models import Ligand, AssayExperiment
 from mutation.models import MutationExperiment
 from mutational_landscape.models import NaturalMutations
 from protein.models import Protein, Species
@@ -66,11 +66,12 @@ class Command(BaseCommand):
         stats = [
             #['Proteins', Protein.objects.filter(sequence_type__slug='wt').count()],
             ['Human proteins', Protein.objects.filter(sequence_type__slug='wt', species__common_name="Human").count()],
-            ['Species orthologs', Protein.objects.filter(sequence_type__slug='wt').exclude(species__common_name="Human").count()],
+            ['Species orthologs', Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith='00').exclude(species__common_name="Human").count()],
             #['Species', Species.objects.all().count()],
             ['Genetic variants', NaturalMutations.objects.all().count()],
             ['Drugs', Drugs.objects.all().count()],
             ['Ligands', Ligand.objects.all().count()],
+            ['Ligand bioactivities', AssayExperiment.objects.all().count()],
             ['Ligand site mutations', MutationExperiment.objects.all().count()],
             ['Ligand interactions', ResidueFragmentInteraction.objects.all().count()],
             ['Exp. GPCR structures', Structure.objects.filter(protein_conformation__protein__family__slug__startswith="00").count()],
