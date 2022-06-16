@@ -56,7 +56,7 @@ class LigandTargetSelection(AbsReferenceSelectionTable):
                 "sameSize": True,
             },
             'pathway': {
-                'label': "Extended (1 row/ligand)",
+                'label': "Extended (1 row/activity)",
                 'onclick': "submitSelection('/ligand/target_detail');",
                 'color': 'success',
                 "sameSize": True,
