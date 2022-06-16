@@ -206,13 +206,16 @@
                     {% endif %}
                         <td class="text-center"><input class="alt" type="checkbox" id="{{ structure.pk }}"></td>
 
-                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha,family"|safe }}</td>
+
                         {% if structure.protein %}
-                            <td><a target='_blank' href="/signprot/{{ structure.protein.entry_name }}">{{ structure.extra_proteins.all|only_one_subunit:"Alpha,name"|safe }}</a></td>
+                            <td>{{ structure.protein.family.parent|safe }}</td>
+                            <td><a target='_blank' href="/signprot/{{ structure.protein.entry_name }}">{{ structure.protein| alpha_display_name | safe }}</a></td>
+                            <td>{{ structure.protein.species.common_name|safe }}</td>
                         {% else %}
+                            <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha,family"|safe }}</td>
                             <td><a target='_blank' href="/signprot/{{ structure.extra_proteins.all|only_one_subunit:'Alpha,entry_name' }}">{{ structure.extra_proteins.all|only_one_subunit:"Alpha,name"|safe }}</a></td>
+                            <td class='expand'>{{ structure.extra_proteins.all|only_one_subunit:"Alpha,species"|safe }}</td>
                         {% endif %}
-                        <td class='expand'>{{ structure.extra_proteins.all|only_one_subunit:"Alpha,species"|safe }}</td>
 
                         <td class='expand'>
                             {{ structure.extra_proteins.all|only_one_subunit:"Alpha,note"|safe }}
@@ -443,18 +446,18 @@
 
                       {% if structure.protein %}
                         <td>{{ structure.protein.family.parent|safe }}</td>
-                        <td><a target='_blank' href="/signprot/{{ structure.protein.name }}">{{ structure.protein.name|safe }}</a></td>
+                        <td><a target='_blank' href="/signprot/{{ structure.protein.entry_name }}">{{ structure.protein.name|safe }}</a></td>
                         <td>{{ structure.protein.species.common_name|safe }}</td>
                       {% else %}
-                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha,family"|safe }}</td>
-                        <td><a target='_blank' href="/signprot/{{ structure.extra_proteins.all|only_one_subunit:'Beta,entry_name' }}">{{ structure.extra_proteins.all|only_one_subunit:"Beta,name"|safe }}</a></td>
-                        <td class='expand'>{{ structure.extra_proteins.all|only_one_subunit:"Alpha,species"|safe }}</td>
+                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Arrestin,family"|safe }}</td>
+                        <td><a target='_blank' href="/signprot/{{ structure.extra_proteins.all|only_one_subunit:'Arrestin,entry_name' }}">{{ structure.extra_proteins.all|only_one_subunit:"Arrestin,name"|safe }}</a></td>
+                        <td class='expand'>{{ structure.extra_proteins.all|only_one_subunit:"Arrestin,species"|safe }}</td>
                       {% endif %}
 
 
-                      <td class='expand'>{{ structure.extra_proteins.all|only_one_subunit:"Beta,note"|safe }}</td>
+                      <td class='expand'>{{ structure.extra_proteins.all|only_one_subunit:"Arrestin,note"|safe }}</td>
 
-                      <td class="text-center">{{ structure.extra_proteins.all|only_one_subunit:"Alpha,coverage"|safe }}</td>
+                      <td class="text-center">{{ structure.extra_proteins.all|only_one_subunit:"Arrestin,coverage"|safe }}</td>
 
                       <td>{{ structure.structure_type.type_short|escape }}</td>
                       {% if structure.protein %}

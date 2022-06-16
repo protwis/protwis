@@ -70,6 +70,13 @@ def only_gproteins ( objs ):
         return '-'
 
 @register.filter
+def alpha_display_name ( obj ):
+    if obj.family.name != "GPa1":
+        return '&alpha;' + obj.family.name[3:].lower()
+    else:
+        return obj.family.name
+
+@register.filter
 def only_one_subunit ( objs, arg ):
     protfams, value = arg.split(',')
     if '-' in protfams:
