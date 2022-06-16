@@ -854,14 +854,29 @@ class StructureStatistics(TemplateView):
 
 		circles = {}
 
+		save_mapping = {}
 		for data in circle_data:
-		    if data[1].split('_')[1] == 'human':
-		        key = data[1].split('_')[0].upper()
-		        if key not in circles.keys():
-		            circles[key] = {}
-		        if data[0] not in circles[key].keys():
-		            circles[key][data[0]] = 1
-		        circles[key][data[0]] += 1
+			# Ugly workaround for mapping non-human receptors to human
+			if data[1].split('_')[1] != 'human':
+				if data[1] not in save_mapping:
+					tmp = Protein.objects.get(entry_name=data[1])
+					reference = Protein.objects.filter(sequence_type__slug="wt", species__common_name="Human", family=tmp.family)
+					if reference.count():
+						save_mapping[data[1]] = reference.first().entry_name.split('_')[0].upper()
+
+			key = 0
+			if data[1].split('_')[1] == 'human':
+				key = data[1].split('_')[0].upper()
+			elif data[1] in save_mapping:
+				key = save_mapping[data[1]]
+			if key:
+				if key not in circles.keys():
+					circles[key] = {}
+					circles[key][data[0]] = 1
+				elif data[0] not in circles[key].keys():
+					circles[key][data[0]] = 1
+				else:
+					circles[key][data[0]] += 1
 
 		context["circles_data"] = json.dumps(circles)
 
