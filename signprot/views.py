@@ -1111,9 +1111,9 @@ def interface_dataset():
     # complex_names = [complex_obj.structure.protein_conformation.protein.entry_name + '_' + complex_obj.alpha.lower() for
     #                 complex_obj in complex_objs]
     complex_names = [complex_obj.structure.protein_conformation.protein.entry_name + '_a' for
-                     complex_obj in complex_objs[:5]] #added [:5] for fast debugging purpose
+                     complex_obj in complex_objs]
 
-    complex_struc_ids = [co.structure_id for co in complex_objs[:5]] #added [:5] for fast debugging purpose
+    complex_struc_ids = [co.structure_id for co in complex_objs]
     # protein conformations for those
     prot_conf = ProteinConformation.objects.filter(protein__entry_name__in=complex_names).values_list('id', flat=True)
 
