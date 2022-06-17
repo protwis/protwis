@@ -4,16 +4,12 @@ from django.conf import settings
 from django.db.models import Prefetch
 from django.utils.text import slugify
 from django.db import IntegrityError
-from django.db import connection
-from django.http import HttpResponse, JsonResponse
 
-from common.tools import get_or_create_url_cache, fetch_from_web_api, save_to_cache
+from common.tools import get_or_create_url_cache, fetch_from_web_api
 from common.models import WebLink, WebResource, Publication
-from ligand.models import Ligand, LigandType, LigandVendors, LigandVendorLink, AssayExperiment, Endogenous_GTP, LigandRole
+from ligand.models import Ligand, LigandID, LigandType, LigandVendors, LigandVendorLink, AssayExperiment, Endogenous_GTP, LigandRole
 from protein.models import Protein, Species
 
-import logging
-import time
 import math
 import os
 import statistics
@@ -25,7 +21,6 @@ import requests
 import xmltodict
 import urllib.parse
 import urllib.request
-import xml.etree.ElementTree as etree
 
 from rdkit import Chem
 from rdkit.Chem.EnumerateStereoisomers import EnumerateStereoisomers, StereoEnumerationOptions
@@ -228,8 +223,8 @@ class Command(BaseBuild):
         not_commented = []
         #Adding a new labeling for drugs that have been
         #defined as Proposed endogenous ligands
-        for id in IDS:
-            slice = dataframe.loc[dataframe['Target_ID'] == id]
+        for val_id in IDS:
+            slice = dataframe.loc[dataframe['Target_ID'] == val_id]
             try:
                 comment = slice['Natural/Endogenous_Ligand_Comments'].unique()[0].split('.')[0]
             except AttributeError: #the comment is nan
@@ -243,17 +238,17 @@ class Command(BaseBuild):
                 if 'agonists' in comment:
                     drugs = comment.replace(' and ', ', ').split(' are')[0].split(', ')
                     drugs = [x.strip(',') for x in drugs]
-                    dataframe.loc[(dataframe['Target_ID'] == id) & (dataframe.Ligand_Name.isin(drugs)), 'Principal/Secondary'] = 'Principal'
-                    dataframe.loc[(dataframe['Target_ID'] == id) & (~dataframe.Ligand_Name.isin(drugs)), 'Principal/Secondary'] = 'Secondary'
+                    dataframe.loc[(dataframe['Target_ID'] == val_id) & (dataframe.Ligand_Name.isin(drugs)), 'Principal/Secondary'] = 'Principal'
+                    dataframe.loc[(dataframe['Target_ID'] == val_id) & (~dataframe.Ligand_Name.isin(drugs)), 'Principal/Secondary'] = 'Secondary'
                 else:
                     drugs = comment.split(' is')[0]
-                    dataframe.loc[(dataframe['Target_ID'] == id) & (dataframe['Ligand_Name'] == drugs), 'Principal/Secondary'] = 'Principal'
-                    dataframe.loc[(dataframe['Target_ID'] == id) & (dataframe['Ligand_Name'] != drugs), 'Principal/Secondary'] = 'Secondary'
+                    dataframe.loc[(dataframe['Target_ID'] == val_id) & (dataframe['Ligand_Name'] == drugs), 'Principal/Secondary'] = 'Principal'
+                    dataframe.loc[(dataframe['Target_ID'] == val_id) & (dataframe['Ligand_Name'] != drugs), 'Principal/Secondary'] = 'Secondary'
             elif ('Proposed' in comment) and (len(slice['Ligand_Name'].unique()) > 1):
                 dataframe.loc[dataframe['Target_ID'] == id, 'Principal/Secondary'] = 'Proposed'
-                not_commented.append(id)
+                not_commented.append(val_id)
             else:
-                not_commented.append(id)
+                not_commented.append(val_id)
 
         return dataframe, not_commented
 
@@ -270,28 +265,28 @@ class Command(BaseBuild):
         #Adding Ranking to ligands in receptors without Principal status information
         #while tracking problematic values (missing info, symbols in data etc)
         for id in not_commented:
-          slice = GtoP_endogenous.loc[GtoP_endogenous['Target_ID'] == id]
-          if len(slice['Ligand_Name'].unique()) != 1:
-              if slice['pEC50_avg'].isna().any() == False:
+          data_slice = GtoP_endogenous.loc[GtoP_endogenous['Target_ID'] == id]
+          if len(data_slice['Ligand_Name'].unique()) != 1:
+              if data_slice['pEC50_avg'].isna().any() == False:
                   try:
                       #we have all pEC50 values
-                      sorted_list = sorted(list(set([float(x) for x in slice['pEC50_avg'].to_list()])), reverse=True)
+                      sorted_list = sorted(list(set([float(x) for x in data_slice['pEC50_avg'].to_list()])), reverse=True)
                       counter = 1
                       for item in sorted_list:
-                          if item in slice['pEC50_avg'].to_list():
+                          if item in data_slice['pEC50_avg'].to_list():
                               GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == id) & (GtoP_endogenous['pEC50_avg'] == item), 'Ranking'] = counter
                           else:
                               GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == id) & (GtoP_endogenous['pEC50_avg'] == str(item)), 'Ranking'] = counter
                           counter += 1
                   except ValueError:
                       missing_info.append(id)
-              elif slice['pKi_avg'].isna().any() == False:
+              elif data_slice['pKi_avg'].isna().any() == False:
                   try:
                       #we have all pEC50 values
-                      sorted_list = sorted(list(set([float(x) for x in slice['pKi_avg'].to_list()])), reverse=True)
+                      sorted_list = sorted(list(set([float(x) for x in data_slice['pKi_avg'].to_list()])), reverse=True)
                       counter = 1
                       for item in sorted_list:
-                          if item in slice['pKi_avg'].to_list():
+                          if item in data_slice['pKi_avg'].to_list():
                               GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == id) & (GtoP_endogenous['pKi_avg'] == item), 'Ranking'] = counter
                           else:
                               GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == id) & (GtoP_endogenous['pKi_avg'] == str(item)), 'Ranking'] = counter
@@ -300,15 +295,15 @@ class Command(BaseBuild):
                       missing_info.append(id)
               else:
                   #we don't have full values, grab higher pEC50 or higher pKi?
-                  values_pEC50 = slice['pEC50_avg'].dropna().to_list()
-                  values_pKi = slice['pKi_avg'].dropna().to_list()
+                  values_pEC50 = data_slice['pEC50_avg'].dropna().to_list()
+                  values_pKi = data_slice['pKi_avg'].dropna().to_list()
                   if len(values_pEC50) > 0:
                       try:
                           #we have all pEC50 values
-                          sorted_list = sorted(list(set([float(x) for x in slice['pEC50_avg'].dropna().to_list()])), reverse=True)
+                          sorted_list = sorted(list(set([float(x) for x in data_slice['pEC50_avg'].dropna().to_list()])), reverse=True)
                           counter = 1
                           for item in sorted_list:
-                              if item in slice['pEC50_avg'].to_list():
+                              if item in data_slice['pEC50_avg'].to_list():
                                   GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == id) & (GtoP_endogenous['pEC50_avg'] == item), 'Ranking'] = counter
                               else:
                                   GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == id) & (GtoP_endogenous['pEC50_avg'] == str(item)), 'Ranking'] = counter
@@ -319,10 +314,10 @@ class Command(BaseBuild):
                   elif len(values_pKi) > 0:
                       try:
                           #we have all pEC50 values
-                          sorted_list = sorted(list(set([float(x) for x in slice['pKi_avg'].dropna().to_list()])), reverse=True)
+                          sorted_list = sorted(list(set([float(x) for x in data_slice['pKi_avg'].dropna().to_list()])), reverse=True)
                           counter = 1
                           for item in sorted_list:
-                              if item in slice['pKi_avg'].to_list():
+                              if item in data_slice['pKi_avg'].to_list():
                                   GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == id) & (GtoP_endogenous['pKi_avg'] == item), 'Ranking'] = counter
                               else:
                                   GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == id) & (GtoP_endogenous['pKi_avg'] == str(item)), 'Ranking'] = counter
@@ -345,17 +340,10 @@ class Command(BaseBuild):
 
     @staticmethod
     def create_model(GtoP_endogenous):
-        types_dict = {'Inorganic': 'small-molecule',
-                      'Metabolite': 'small-molecule',
-                      'Natural product': 'small-molecule',
-                      'Peptide': 'peptide',
-                      'Synthetic organic': 'small-molecule',
-                      None: 'na'}
         values = ['pKi', 'pEC50', 'pKd', 'pIC50']
 
         human_entries = [entry["Target_ID"]+"|"+entry["Ligand_ID"] for entry in GtoP_endogenous if entry["Interaction_Species"] in [None, "None", "", "Human"]]
 
-        ligands = {}
         stereo_ligs = {}
         for row in GtoP_endogenous:
             numeric_data = {}
@@ -435,7 +423,7 @@ class Command(BaseBuild):
                                 ligand = ligand,
                                 ligand_species = species,
                                 ligand_action = role,
-                                endogenous_status = row['Principal/Secondary'], #principal/secondary
+                                endogenous_status = endo_status, #principal/secondary
                                 potency_ranking = potency, #Ranking
                                 receptor = receptor, #link to protein model
                                 pec50 = numeric_data['pEC50'],
@@ -659,11 +647,11 @@ class Command(BaseBuild):
                         ligands[-1].hdon = dm.descriptors.n_hbd(input_mol)
                         ligands[-1].logp = dm.descriptors.clogp(input_mol)
                 except:
-                    skip = True
+                    pass
 
                 # Adding ligand IDs
-                for id in ids:
-                    weblinks.append({"link" : LigandID(index=id, web_resource=wr_chembl), "lig_idx" : len(ligands)-1})
+                for val_id in ids:
+                    weblinks.append({"link" : LigandID(index=val_id, web_resource=wr_chembl), "lig_idx" : len(ligands)-1})
                 if row['pubchem_cid'] != None:
                     cids = row['pubchem_cid'].split(";")
                     for cid in cids:
