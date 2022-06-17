@@ -4,28 +4,37 @@ from django.conf import settings
 from django.db.models import Prefetch
 from django.utils.text import slugify
 from django.db import IntegrityError
+from django.db import connection
+from django.http import HttpResponse, JsonResponse
 
 from common.tools import get_or_create_url_cache, fetch_from_web_api, save_to_cache
 from common.models import WebLink, WebResource, Publication
-from ligand.models import Ligand, LigandType, LigandVendors, LigandVendorLink, AssayExperiment
-from protein.models import Protein
+from ligand.models import Ligand, LigandType, LigandVendors, LigandVendorLink, AssayExperiment, Endogenous_GTP, LigandRole
+from protein.models import Protein, Species
 
+import logging
+import time
 import math
+import os
 import statistics
 import datamol as dm
 import datetime
 import pandas as pd
+import numpy as np
 import requests
 import xmltodict
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as etree
 
+from rdkit import Chem
+from rdkit.Chem.EnumerateStereoisomers import EnumerateStereoisomers, StereoEnumerationOptions
 
 class Command(BaseBuild):
     help = "Build ChEMBL, PDSP and GtoP bioactivities data"
     bulk_size = 50000
     mapper_cache = {}
+    publication_cache = {}
 
     def add_arguments(self, parser):
         parser.add_argument("--test_run",
@@ -46,12 +55,9 @@ class Command(BaseBuild):
         if options['purge']:
             # delete any existing ChEMBL bioactivity data
             # For deleting the ligands - purse all ligand data using the GtP ligand build
-            print("Started purging bioactivity data")
-            self.purge_experimental_data()
-            print("Ended purging bioactivity data")
-            print("Started purging ligand data")
-            self.purge_ligand_data()
-            print("Ended purging ligand data")
+            print("Started purging bioactivity and ligand data")
+            self.purge_data()
+            print("Ended purging data")
 
         #Fetching all the Guide to Pharmacology data
         print("\n\nStarted parsing Guide to Pharmacology bioactivities data")
@@ -99,6 +105,20 @@ class Command(BaseBuild):
         self.build_gtp_bioactivities(bioactivity_data_gtp)
         print("Ended building Guide to Pharmacology bioactivities")
 
+        print("\n\nStarted building the Endogenous data from Guide to Pharmacology")
+
+        print('\n#1 Preprecessing the data')
+        processed_data = self.data_preparation(gtp_detailed_endogenous, gtp_interactions, iuphar_ids)
+        print('\n#2 Labeling Principal and Secondary endogenous ligands')
+        endogenous_data, to_be_ranked = self.labeling_principals(processed_data)
+        print('\n#3 Adding potency ranking where required')
+        ranked_data = self.adding_potency_rankings(endogenous_data, to_be_ranked)
+        print('\n#4 Creating and filling the Endogenous_GTP model')
+        endogenous_dicts = self.convert_dataframe(ranked_data)
+        self.create_model(endogenous_dicts)
+
+        print("\n\Ended building endogenous data")
+
         print("\n\nStarted building ChEBML ligands")
         self.build_chembl_ligands()
         print("\n\nEnded building ChEMBL ligands")
@@ -118,13 +138,385 @@ class Command(BaseBuild):
 
 
     @staticmethod
-    def purge_experimental_data():
+    def purge_data():
         delete_experimental = AssayExperiment.objects.all() #New Model Biased Data
         delete_experimental.delete()
+        endo_data = Endogenous_GTP.objects.all()
+        endo_data.delete()
+        Ligand.objects.all().delete()
+
 
     @staticmethod
-    def purge_ligand_data():
-        Ligand.objects.all().delete()
+    def data_preparation(endogenous_data, interactions, iuphar_ids):
+        #Remove parameter, value and PMID is columns to have the complete dataset
+        filtered_data = endogenous_data.loc[endogenous_data['Target ID'].isin(iuphar_ids)]
+        uniq_rows = filtered_data.drop(columns=['Parameter','Value','PubMed IDs']).drop_duplicates()
+        uniq_rows = uniq_rows.dropna(subset=['Ligand Name'])
+        association = filtered_data[['Ligand ID','Target ID']].drop_duplicates().groupby('Target ID')['Ligand ID'].apply(list).to_dict()
+
+        info_we_want = ['pKi', 'pIC50', 'pKd', 'pEC50']
+        new_columns = ['pKi_min', 'pKi_avg', 'pKi_max',
+                       'pKd_min', 'pKd_avg', 'pKd_max',
+                       'pIC50_min', 'pIC50_avg', 'pIC50_max',
+                       'pEC50_min', 'pEC50_avg', 'pEC50_max',
+                       'Ligand Species', 'Ligand Action', 'Ligand Role', 'PubMed IDs']
+
+        columns = ['Ligand ID', 'Ligand Name', 'Ligand Type', 'Ligand UniProt IDs',
+                   'Ligand Ensembl Gene ID', 'Ligand Subunit ID', 'Ligand Subunit Name',
+                   'Ligand Subunit UniProt IDs', 'Ligand Subunit Ensembl IDs', 'Target ID',
+                   'Target Name', 'Target UniProt ID', 'Target Ensembl Gene ID',
+                   'Subunit ID', 'Subunit Name', 'Subunit UniProt IDs',
+                   'Subunit Ensembl IDs', 'Natural/Endogenous Ligand Comments',
+                   'RankPotency', 'Interaction Species']
+
+        uniq_rows = uniq_rows.reindex(columns=columns+new_columns)
+        #remove spaces in the column names
+        uniq_rows.columns = [c.replace(' ', '_') for c in uniq_rows.columns]
+        for target in association.keys():
+            for ligand in association[target]:
+                #adding species and role info
+                try:
+                    role = interactions.loc[(interactions['Target ID'] == target) & (interactions['Ligand ID'] == ligand), 'Action'].values[0]
+                except IndexError:
+                    role = None
+                uniq_rows.loc[(uniq_rows['Target_ID'] == target) & (uniq_rows['Ligand_ID'] == ligand), 'Ligand_Role'] = role
+                try:
+                    action = interactions.loc[(interactions['Target ID'] == target) & (interactions['Ligand ID'] == ligand), 'Type'].values[0]
+                except IndexError:
+                    action = None
+                uniq_rows.loc[(uniq_rows['Target_ID'] == target) & (uniq_rows['Ligand_ID'] == ligand), 'Ligand_Action'] = action
+                try:
+                    species = interactions.loc[(interactions['Target ID'] == target) & (interactions['Ligand ID'] == ligand), 'Ligand Species'].values[0]
+                except IndexError:
+                    species = None
+                uniq_rows.loc[(uniq_rows['Target_ID'] == target) & (uniq_rows['Ligand_ID'] == ligand), 'Ligand_Species'] = species
+                #fetching the parameters of interaction between receptor and ligand
+                params = endogenous_data.loc[(endogenous_data['Target ID'] == target) & (endogenous_data['Ligand ID'] == ligand), 'Parameter'].to_list()
+                pmids = '|'.join(endogenous_data.loc[(endogenous_data['Target ID'] == target) & (endogenous_data['Ligand ID'] == ligand), 'PubMed IDs'].dropna().to_list())
+                uniq_rows.loc[(uniq_rows['Target_ID'] == target) & (uniq_rows['Ligand_ID'] == ligand), 'PubMed_IDs'] = pmids
+                #now parsing the data based on parameter
+                for par in params:
+                    #we want only pKi, pKd, pEC50 and pIC50, not nans or other weird stuff
+                    if par in info_we_want:
+                        species = endogenous_data.loc[(endogenous_data['Target ID'] == target) & (endogenous_data['Ligand ID'] == ligand) & (endogenous_data['Parameter'] == par)]['Interaction Species'].tolist()
+                        for org in species:
+                            data = endogenous_data.loc[(endogenous_data['Target ID'] == target) & (endogenous_data['Ligand ID'] == ligand) & (endogenous_data['Parameter'] == par) & (endogenous_data['Interaction Species'] == org)]['Value'].tolist()
+                            if len(data) == 1:
+                                if '-' not in data[0]:
+                                    uniq_rows.loc[(uniq_rows['Target_ID'] == target) & (uniq_rows['Ligand_ID'] == ligand), par+'_avg'] = data[0]
+                                    uniq_rows.loc[(uniq_rows['Target_ID'] == target) & (uniq_rows['Ligand_ID'] == ligand), par+'_max'] = data[0]
+                                elif data[0] == '-':
+                                    continue
+                                else:
+                                    uniq_rows.loc[(uniq_rows['Target_ID'] == target) & (uniq_rows['Ligand_ID'] == ligand), par+'_min'] = data[0].split(' - ')[0]
+                                    uniq_rows.loc[(uniq_rows['Target_ID'] == target) & (uniq_rows['Ligand_ID'] == ligand), par+'_avg'] = statistics.mean([float(data[0].split(' - ')[0]), float(data[0].split(' - ')[1])])
+                                    uniq_rows.loc[(uniq_rows['Target_ID'] == target) & (uniq_rows['Ligand_ID'] == ligand), par+'_max'] = data[0].split(' - ')[1]
+                            else:
+                                try:
+                                    vals = [float(x) for x in data]
+                                except ValueError:
+                                    vals = [float(y) for x in data for y in x.split(' - ')]
+                                uniq_rows.loc[(uniq_rows['Target_ID'] == target) & (uniq_rows['Ligand_ID'] == ligand), par+'_min'] = min(vals)
+                                uniq_rows.loc[(uniq_rows['Target_ID'] == target) & (uniq_rows['Ligand_ID'] == ligand), par+'_avg'] = statistics.mean(vals)
+                                uniq_rows.loc[(uniq_rows['Target_ID'] == target) & (uniq_rows['Ligand_ID'] == ligand), par+'_max'] = max(vals)
+        return uniq_rows
+
+    @staticmethod
+    def labeling_principals(dataframe):
+        dataframe['Principal/Secondary'] = np.nan
+        IDS = list(dataframe['Target_ID'].unique())
+        not_commented = []
+        #Adding a new labeling for drugs that have been
+        #defined as Proposed endogenous ligands
+        for id in IDS:
+            slice = dataframe.loc[dataframe['Target_ID'] == id]
+            try:
+                comment = slice['Natural/Endogenous_Ligand_Comments'].unique()[0].split('.')[0]
+            except AttributeError: #the comment is nan
+                comment = ''
+            if len(slice['Ligand_Name'].unique()) == 1:
+                label = 'Principal'
+                if 'Proposed' in comment:
+                    label = 'Proposed'
+                dataframe.loc[dataframe['Target_ID'] == id, 'Principal/Secondary'] = label
+            if 'principal' in comment:
+                if 'agonists' in comment:
+                    drugs = comment.replace(' and ', ', ').split(' are')[0].split(', ')
+                    drugs = [x.strip(',') for x in drugs]
+                    dataframe.loc[(dataframe['Target_ID'] == id) & (dataframe.Ligand_Name.isin(drugs)), 'Principal/Secondary'] = 'Principal'
+                    dataframe.loc[(dataframe['Target_ID'] == id) & (~dataframe.Ligand_Name.isin(drugs)), 'Principal/Secondary'] = 'Secondary'
+                else:
+                    drugs = comment.split(' is')[0]
+                    dataframe.loc[(dataframe['Target_ID'] == id) & (dataframe['Ligand_Name'] == drugs), 'Principal/Secondary'] = 'Principal'
+                    dataframe.loc[(dataframe['Target_ID'] == id) & (dataframe['Ligand_Name'] != drugs), 'Principal/Secondary'] = 'Secondary'
+            elif ('Proposed' in comment) and (len(slice['Ligand_Name'].unique()) > 1):
+                dataframe.loc[dataframe['Target_ID'] == id, 'Principal/Secondary'] = 'Proposed'
+                not_commented.append(id)
+            else:
+                not_commented.append(id)
+
+        return dataframe, not_commented
+
+    @staticmethod
+    def adding_potency_rankings(GtoP_endogenous, not_commented):
+        #fix things, drop unused values
+        GtoP_endogenous['Ranking'] = np.nan
+        missing_info = []
+        GtoP_endogenous.pKi_avg.fillna(GtoP_endogenous.pKi_max, inplace=True)
+        GtoP_endogenous.pEC50_avg.fillna(GtoP_endogenous.pEC50_max, inplace=True)
+        GtoP_endogenous.pKd_avg.fillna(GtoP_endogenous.pKd_max, inplace=True)
+        GtoP_endogenous.pIC50_avg.fillna(GtoP_endogenous.pIC50_max, inplace=True)
+
+        #Adding Ranking to ligands in receptors without Principal status information
+        #while tracking problematic values (missing info, symbols in data etc)
+        for id in not_commented:
+          slice = GtoP_endogenous.loc[GtoP_endogenous['Target_ID'] == id]
+          if len(slice['Ligand_Name'].unique()) != 1:
+              if slice['pEC50_avg'].isna().any() == False:
+                  try:
+                      #we have all pEC50 values
+                      sorted_list = sorted(list(set([float(x) for x in slice['pEC50_avg'].to_list()])), reverse=True)
+                      counter = 1
+                      for item in sorted_list:
+                          if item in slice['pEC50_avg'].to_list():
+                              GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == id) & (GtoP_endogenous['pEC50_avg'] == item), 'Ranking'] = counter
+                          else:
+                              GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == id) & (GtoP_endogenous['pEC50_avg'] == str(item)), 'Ranking'] = counter
+                          counter += 1
+                  except ValueError:
+                      missing_info.append(id)
+              elif slice['pKi_avg'].isna().any() == False:
+                  try:
+                      #we have all pEC50 values
+                      sorted_list = sorted(list(set([float(x) for x in slice['pKi_avg'].to_list()])), reverse=True)
+                      counter = 1
+                      for item in sorted_list:
+                          if item in slice['pKi_avg'].to_list():
+                              GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == id) & (GtoP_endogenous['pKi_avg'] == item), 'Ranking'] = counter
+                          else:
+                              GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == id) & (GtoP_endogenous['pKi_avg'] == str(item)), 'Ranking'] = counter
+                          counter += 1
+                  except ValueError:
+                      missing_info.append(id)
+              else:
+                  #we don't have full values, grab higher pEC50 or higher pKi?
+                  values_pEC50 = slice['pEC50_avg'].dropna().to_list()
+                  values_pKi = slice['pKi_avg'].dropna().to_list()
+                  if len(values_pEC50) > 0:
+                      try:
+                          #we have all pEC50 values
+                          sorted_list = sorted(list(set([float(x) for x in slice['pEC50_avg'].dropna().to_list()])), reverse=True)
+                          counter = 1
+                          for item in sorted_list:
+                              if item in slice['pEC50_avg'].to_list():
+                                  GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == id) & (GtoP_endogenous['pEC50_avg'] == item), 'Ranking'] = counter
+                              else:
+                                  GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == id) & (GtoP_endogenous['pEC50_avg'] == str(item)), 'Ranking'] = counter
+                              counter += 1
+                          GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == id) & (GtoP_endogenous['pEC50_avg'].isna()), 'Ranking'] = counter
+                      except ValueError:
+                          missing_info.append(id)
+                  elif len(values_pKi) > 0:
+                      try:
+                          #we have all pEC50 values
+                          sorted_list = sorted(list(set([float(x) for x in slice['pKi_avg'].dropna().to_list()])), reverse=True)
+                          counter = 1
+                          for item in sorted_list:
+                              if item in slice['pKi_avg'].to_list():
+                                  GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == id) & (GtoP_endogenous['pKi_avg'] == item), 'Ranking'] = counter
+                              else:
+                                  GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == id) & (GtoP_endogenous['pKi_avg'] == str(item)), 'Ranking'] = counter
+                              counter += 1
+                          GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == id) & (GtoP_endogenous['pKi_avg'].isna()), 'Ranking'] = counter
+                      except ValueError:
+                          missing_info.append(id)
+                  else:
+                      missing_info.append(id)
+        return GtoP_endogenous
+
+    @staticmethod
+    def convert_dataframe(df):
+        df = df.astype(str)
+        for column in df:
+            df[column] = df[column].replace({'nan':None})
+        return_list_of_dicts = df.to_dict('records')
+        return return_list_of_dicts
+
+
+    @staticmethod
+    def create_model(GtoP_endogenous):
+        types_dict = {'Inorganic': 'small-molecule',
+                      'Metabolite': 'small-molecule',
+                      'Natural product': 'small-molecule',
+                      'Peptide': 'peptide',
+                      'Synthetic organic': 'small-molecule',
+                      None: 'na'}
+        values = ['pKi', 'pEC50', 'pKd', 'pIC50']
+
+        human_entries = [entry["Target_ID"]+"|"+entry["Ligand_ID"] for entry in GtoP_endogenous if entry["Interaction_Species"] in [None, "None", "", "Human"]]
+
+        ligands = {}
+        stereo_ligs = {}
+        for row in GtoP_endogenous:
+            numeric_data = {}
+            receptor = Command.fetch_protein(row['Target_ID'], 'GtoP', row['Interaction_Species'])
+
+            # TODO Handle multiple matches (uniprot filter?)
+            ligand = get_ligand_by_id("gtoplig", row['Ligand_ID'])
+            if ligand != None:
+                # Process stereoisomers when not specified:
+                if ligand != None and ligand.smiles != None and row['Ligand_ID'] not in stereo_ligs:
+                    stereo_ligs[row['Ligand_ID']] = []
+                    # Check if compound has undefined chiral centers
+                    input_mol = dm.to_mol(ligand.smiles, sanitize=False)
+                    chiral_centers = Chem.FindMolChiralCenters(input_mol, useLegacyImplementation=False, includeUnassigned=True)
+                    undefined_centers = [center for center in chiral_centers if center[1] == "?"]
+                    # If up to 2 chiral centers => generate and match them via UniChem
+                    if len(chiral_centers) > 0 and len(chiral_centers) <= 2 and len(chiral_centers) == len(undefined_centers):
+                        isomers = tuple(EnumerateStereoisomers(input_mol, options = StereoEnumerationOptions(unique=True)))
+                        for isomer in isomers:
+                            new_key = dm.to_inchikey(isomer)
+                            matches = match_id_via_unichem("inchikey", new_key)
+                            if len(matches) > 0:
+                                ster_ids = {}
+                                ster_ids["inchikey"] = new_key
+                                for match in matches:
+                                    if match["type"] in ["chembl_ligand", "pubchem"]:
+                                        ster_ids[match["type"]] = match["id"]
+                                        stereo_ligs[row['Ligand_ID']].append(get_or_create_ligand("", ster_ids, unichem = True, extended_matching = True))
+                                        continue
+                elif row['Ligand_ID'] not in stereo_ligs:
+                    stereo_ligs[row['Ligand_ID']] = []
+            else:
+                print("Ligand ", row['Ligand_ID'], "not found", row['Ligand_Name'])
+                continue #Commented, but needed for my machine (relaxin-3 was not found)
+
+            try:
+                role = Command.fetch_role(row['Ligand_Action'], row['Ligand_Role'])
+            except AttributeError:
+                role = None
+            for v in values:
+                #adapting average values to 2 decimal numbers when available
+                try:
+                    avg = "{:.2f}".format(float(row[v+'_avg']))
+                except (ValueError, TypeError):
+                    avg = row[v+'_avg']
+                try:
+                    numeric_data[v] = (' | ').join([str(row[v+'_min']), str(avg), str(row[v+'_max'])])
+                except KeyError: #missing info on pEC50
+                    numeric_data[v] = ''
+
+            #Adding publications from the PMIDs section
+            try:
+                pmids = row['PubMed_IDs'].split('|')
+            except AttributeError:
+                pmids = None
+
+            #Species check
+            try:
+                species = row['Ligand_Species'].split('|')
+            except AttributeError:
+                species = None
+
+            try:
+                potency = int(float(row['Ranking']))
+            except (TypeError, ValueError):
+                potency = None
+
+            try:
+                endo_status = str(row['Principal/Secondary'])
+            except:
+                endo_status = None
+
+            if receptor is not None:
+            #last step because it requires multiple uploads in case we have multiple species
+                if species is None:
+                    gtp_data = Endogenous_GTP(
+                                ligand = ligand,
+                                ligand_species = species,
+                                ligand_action = role,
+                                endogenous_status = row['Principal/Secondary'], #principal/secondary
+                                potency_ranking = potency, #Ranking
+                                receptor = receptor, #link to protein model
+                                pec50 = numeric_data['pEC50'],
+                                pKi = numeric_data['pKi'],
+                                pic50 = numeric_data['pIC50'],
+                                pKd = numeric_data['pKd'],
+                                )
+                    gtp_data.save()
+                    try:
+                        for pmid in pmids:
+                            publication = Command.fetch_publication(pmid)
+                            gtp_data.publication.add(publication)
+                    except:
+                        publication= None
+
+                    for isomer in stereo_ligs[row['Ligand_ID']]:
+                        gtp_data.pk = None
+                        gtp_data.ligand = isomer
+
+                        # Affinity/Activity varies between isomers/mixture => do not copy
+                        gtp_data.pec50 = gtp_data.pKi = gtp_data.pic50 = gtp_data.pKd = "None | None | None"
+                        gtp_data.save()
+
+                    # If endogenous is not present for HUMANs => add it
+                    key_id = row['Target_ID']+"|"+row['Ligand_ID']
+                    if gtp_data and key_id not in human_entries:
+                        human_receptor = Command.fetch_protein(row['Target_ID'], 'GtoP', "Human")
+                        if human_receptor:
+                            human_entries.append(key_id)
+                            gtp_data.pk = None
+                            gtp_data.receptor = human_receptor
+                            # Affinity/Activity varies between species => do not copy
+                            gtp_data.pec50 = gtp_data.pKi = gtp_data.pic50 = gtp_data.pKd = "None | None | None"
+                            gtp_data.save()
+                elif len(species) == 1:
+                    ligand_species = Command.fetch_species(species[0], row['Interaction_Species'])
+                    gtp_data = Endogenous_GTP(
+                                ligand = ligand,
+                                ligand_species = ligand_species,
+                                ligand_action = role,
+                                endogenous_status = row['Principal/Secondary'], #principal/secondary
+                                potency_ranking = potency, #Ranking
+                                receptor = receptor, #link to protein model
+                                pec50 = numeric_data['pEC50'],
+                                pKi = numeric_data['pKi'],
+                                pic50 = numeric_data['pIC50'],
+                                pKd = numeric_data['pKd'],
+                                )
+                    gtp_data.save()
+
+                    try:
+                        for pmid in pmids:
+                            publication = Command.fetch_publication(pmid)
+                            gtp_data.publication.add(publication)
+                    except:
+                        publication= None
+                else:
+                    for s in species:
+                        species = Command.fetch_species(s, row['Interaction_Species'])
+                        gtp_data = Endogenous_GTP(
+                                    ligand = ligand,
+                                    ligand_species = species,
+                                    ligand_action = role,
+                                    endogenous_status = row['Principal/Secondary'], #principal/secondary
+                                    potency_ranking = potency, #Ranking
+                                    receptor = receptor, #link to protein model
+                                    pec50 = numeric_data['pEC50'],
+                                    pKi = numeric_data['pKi'],
+                                    pic50 = numeric_data['pIC50'],
+                                    pKd = numeric_data['pKd'],
+                                    )
+                        gtp_data.save()
+                        try:
+                            for pmid in pmids:
+                                publication = Command.fetch_publication(pmid)
+                                gtp_data.publication.add(publication)
+                        except:
+                            publication= None
+            else:
+                print("SKIPPING", row["Ligand_ID"], row['Target_ID'], row['Interaction_Species'])
+
 
 
     @staticmethod
@@ -679,34 +1071,39 @@ class Command(BaseBuild):
         else:  # assume doi
             pub_type = 'doi'
 
-        try:
-            wl = WebLink.objects.get(index=publication_doi, web_resource__slug=pub_type)
-        except WebLink.DoesNotExist:
+        if publication_doi not in Command.publication_cache:
             try:
-                wl = WebLink.objects.create(index=publication_doi, web_resource=WebResource.objects.get(slug=pub_type))
-            except IntegrityError:
                 wl = WebLink.objects.get(index=publication_doi, web_resource__slug=pub_type)
+            except WebLink.DoesNotExist:
+                try:
+                    wl = WebLink.objects.create(index=publication_doi, web_resource=WebResource.objects.get(slug=pub_type))
+                except IntegrityError:
+                    wl = WebLink.objects.get(index=publication_doi, web_resource__slug=pub_type)
 
-        try:
-            pub = Publication.objects.get(web_link=wl)
-        except Publication.DoesNotExist:
-            pub = Publication()
             try:
-                pub.web_link = wl
-                pub.save()
-            except IntegrityError:
                 pub = Publication.objects.get(web_link=wl)
+            except Publication.DoesNotExist:
+                pub = Publication()
+                try:
+                    pub.web_link = wl
+                    pub.save()
+                except IntegrityError:
+                    pub = Publication.objects.get(web_link=wl)
 
-            if pub_type == 'doi':
-                pub.update_from_doi(doi=publication_doi)
-            elif pub_type == 'pubmed':
-                pub.update_from_pubmed_data(index=publication_doi)
-            try:
-                pub.save()
-            except:
-                self.mylog.debug(
-                    "publication fetching error | module: fetch_publication. Row # is : " + str(publication_doi) + ' ' + pub_type)
-                # if something off with publication, skip.
+                if pub_type == 'doi':
+                    pub.update_from_doi(doi=publication_doi)
+                elif pub_type == 'pubmed':
+                    pub.update_from_pubmed_data(index=publication_doi)
+                try:
+                    pub.save()
+                except:
+                    self.mylog.debug(
+                        "publication fetching error | module: fetch_publication. Row # is : " + str(publication_doi) + ' ' + pub_type)
+                    # if something off with publication, skip.
+            Command.publication_cache[publication_doi] = pub
+        else:
+            pub = Command.publication_cache[publication_doi]
+
         return pub
 
     @staticmethod
@@ -742,6 +1139,41 @@ class Command(BaseBuild):
                 return test
             except:
                 return None
+
+    @staticmethod
+    def fetch_role(drug_type, drug_action):
+        #This still need to be addressed and fixed
+        conversion = {'Activator Agonist': 'Agonist',
+                      'Activator Full agonist': 'Agonist',
+                      'Agonist Agonist': 'Agonist',
+                      'Agonist Binding': 'Agonist',
+                      'Agonist Full agonist': 'Agonist',
+                      'Agonist Partial agonist': 'Agonist (partial)',
+                      'Agonist Unknown': 'Agonist',
+                      'Allosteric modulator Inhibition': 'NAM',
+                      'Allosteric modulator Negative': 'NAM',
+                      'Allosteric modulator Positive': 'PAM',
+                      'Allosteric modulator Potentiation': 'PAM',
+                      'Antagonist Inverse agonist': 'Inverse agonist'}
+        lig_function = ' '.join([str(drug_type), str(drug_action)])
+        lr = None
+        if lig_function in conversion.keys():
+            query = conversion[lig_function]
+            lr = LigandRole.objects.get(name=query)
+        return lr
+
+    @staticmethod
+    def fetch_species(ligand_species, target_species):
+        try:
+            if ligand_species == 'Same as target':
+                species = Species.objects.get(common_name=target_species)
+            elif ligand_species == None:
+                species = None
+            else:
+                species = Species.objects.get(common_name=ligand_species)
+            return species
+        except:
+            return None
 
     @staticmethod
     def build_kidatabase_bioactivities():

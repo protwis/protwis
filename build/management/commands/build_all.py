@@ -53,7 +53,7 @@ class Command(BaseCommand):
             ['build_construct_proteins'],
             ['build_experimental_data', {'test_run': options['test']}],
             # ['build_all_gtp_ligands', {'test_run': options['test']}],
-            ['build_endogenous_data_from_gtp_source', {'test_run': options['test']}],
+            # ['build_endogenous_data_from_gtp_source', {'test_run': options['test']}],
             ['build_bias_preprocess_data', {'test_run': options['test']}],
             #['build_balanced_ligands', {'test_run': options['test']}],
             # ['build_chembl_data', {'test_run': options['test']}],
