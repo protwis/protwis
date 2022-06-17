@@ -224,12 +224,12 @@ class Command(BaseBuild):
         #Adding a new labeling for drugs that have been
         #defined as Proposed endogenous ligands
         for val_id in IDS:
-            slice = dataframe.loc[dataframe['Target_ID'] == val_id]
+            data_slice = dataframe.loc[dataframe['Target_ID'] == val_id]
             try:
-                comment = slice['Natural/Endogenous_Ligand_Comments'].unique()[0].split('.')[0]
+                comment = data_slice['Natural/Endogenous_Ligand_Comments'].unique()[0].split('.')[0]
             except AttributeError: #the comment is nan
                 comment = ''
-            if len(slice['Ligand_Name'].unique()) == 1:
+            if len(data_slice['Ligand_Name'].unique()) == 1:
                 label = 'Principal'
                 if 'Proposed' in comment:
                     label = 'Proposed'
@@ -244,7 +244,7 @@ class Command(BaseBuild):
                     drugs = comment.split(' is')[0]
                     dataframe.loc[(dataframe['Target_ID'] == val_id) & (dataframe['Ligand_Name'] == drugs), 'Principal/Secondary'] = 'Principal'
                     dataframe.loc[(dataframe['Target_ID'] == val_id) & (dataframe['Ligand_Name'] != drugs), 'Principal/Secondary'] = 'Secondary'
-            elif ('Proposed' in comment) and (len(slice['Ligand_Name'].unique()) > 1):
+            elif ('Proposed' in comment) and (len(data_slice['Ligand_Name'].unique()) > 1):
                 dataframe.loc[dataframe['Target_ID'] == id, 'Principal/Secondary'] = 'Proposed'
                 not_commented.append(val_id)
             else:
