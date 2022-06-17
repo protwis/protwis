@@ -1279,9 +1279,12 @@ class StructureBuildCheck():
         else:
             print('Warning: {} not annotated'.format(key))
 
-    def check_g_prot_struct_residues(self, signprot_complex):
+    def check_signprot_struct_residues(self, signprot_complex):
         pdb = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('struct', StringIO(str(signprot_complex.structure.pdb_data.pdb)))[0]
-        resis = Residue.objects.filter(protein_conformation=ProteinConformation.objects.get(protein__entry_name=signprot_complex.structure.pdb_code.index.lower()+'_a'))
+        if signprot_complex.protein.family.slug.startswith('100'):
+            resis = Residue.objects.filter(protein_conformation=ProteinConformation.objects.get(protein__entry_name=signprot_complex.structure.pdb_code.index.lower()+'_a'))
+        elif signprot_complex.protein.family.slug.startswith('200'):
+            resis = Residue.objects.filter(protein_conformation=ProteinConformation.objects.get(protein__entry_name=signprot_complex.structure.pdb_code.index.lower()+'_arrestin'))
         if len(pdb[signprot_complex.alpha])!=len(resis):
             print(signprot_complex.structure, len(pdb[signprot_complex.alpha]), len(resis))
 

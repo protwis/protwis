@@ -32,4 +32,4 @@ class Command(BaseCommand):
                 print("Error: {} has duplicate residue for {}".format(i,j))
         else:
             for sc in SignprotComplex.objects.all():
-                sbc.check_g_prot_struct_residues(sc)
+                sbc.check_signprot_struct_residues(sc)
