@@ -4,6 +4,7 @@ from Bio.PDB.NeighborSearch import NeighborSearch
 from contactnetwork.interaction import *
 from contactnetwork.pdb import *
 from contactnetwork.models import *
+from contactnetwork.residue import is_aa
 from io import StringIO
 
 from protein.models import ProteinConformation
