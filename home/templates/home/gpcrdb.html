@@ -79,6 +79,39 @@
             {#  NOTE: we need the spacing here to keep all elements including icons in a single line #}
             <li><a href="{{ hosts.gpcr }}/structure/generic_numbering_index">Generic residue numbering (PDB)&nbsp;&nbsp;&nbsp;&nbsp;</a></li>
 
+            <!-- STRUCTURE CONSTRUCTS -->
+            <li class="divider"></li>
+            <li class="nav-header disabled text-left"><a>STRUCTURE CONSTRUCTS</a></li>
+            <li class="dropdown-submenu">
+                <a tabindex="0" href="#">Construct/Experiment design</a>
+                <ul class="dropdown-menu">
+                    <li><a href="{{ hosts.gpcr }}/construct">Construct alignments</a></li>
+                    <li><a href="{{ hosts.gpcr }}/construct/design">Construct design tool
+                        <button mp4="https://files.gpcrdb.org/video/constructtool3.mp4" type="button"
+                                class="videoLink pull-right btn btn-xs btn-default">
+                            <span class="glyphicon glyphicon-film"></span>
+                        </button>
+                    </a></li>
+                    <li><a href="{{ hosts.gpcr }}/construct/experiments">Experiment browser</a></li>
+                </ul>
+            </li>
+            <li class="dropdown-submenu">
+                <a tabindex="0" href="#">Truncation/Fusion analysis</a>
+                <ul class="dropdown-menu">
+                    <li><a href="{{ hosts.gpcr }}/construct/analysis#truncations">Truncation sites</a></li>
+                    <li><a href="{{ hosts.gpcr }}/construct/analysis#fusions">Fusion sites</a></li>
+                    <li><a href="{{ hosts.gpcr }}/construct/analysis#loopdeletions">Loop deletions</a></li>
+                </ul>
+            </li>
+            <li class="dropdown-submenu">
+                <a tabindex="0" href="#">Mutation analysis</a>
+                <ul class="dropdown-menu">
+                    <li><a href="{{ hosts.gpcr }}/construct/mutations">Stabilising mutations</a></li>
+                    <li><a href="{{ hosts.gpcr }}/construct/stabilisation">StabMutAnalyser</a></li>
+                    <li><a href="{{ hosts.gpcr }}/construct/analysis#mutations">Mutation substitution matrix</a></li>
+                </ul>
+            </li>
+
             <!-- DETERMINANTS & MUTATIONS -->
             <li class="divider"></li>
             <li class="nav-header disabled text-left"><a>DETERMINANTS & MUTATIONS</a></li>
@@ -112,6 +145,9 @@
         Drugs <span>&#38;</span> ligands<span class="caret"></span>
     </a>
     <ul class="dropdown-menu" role="menu">
+        <li class="nav-header disabled"><a>ENDOGENOUS LIGANDS</a></li>
+        <li><a href="{{ hosts.gpcr }}/ligand/endogenousbrowser">Endogenous ligands (GtP)</a></li>
+        <li class="divider"></li>
         <li class="nav-header disabled"><a>DRUGS & AGENTS IN TRIAL</a></li>
         <li><a href="{{ hosts.gpcr }}/drugs/drugbrowser">Drugs, targets <span>&#38;</span> indications</a></li>
         <li><a href="{{ hosts.gpcr }}/drugs/drugmapping">Drug target tree</a></li>
@@ -170,36 +206,6 @@
             </ul>
         </li>
         <li><a href="{{ documentation_url }}mutations.html#mutation-data-submission">Mutation data submission</a></li>
-    </ul>
-</li>
-
-
-
-<!-- STRUCTURE CONSTRUCTS -->
-<li class="dropdown gpcr {% if current_site == 'gpcr' %}highlight_menu {{current_site}}{% endif %}" id="constructs_menu">
-    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-        Structure constructs<span class="caret"></span>
-    </a>
-    <ul class="dropdown-menu" role="menu">
-        <li class="nav-header disabled text-left"><a>Construct & experiment design</a></li>
-        <li><a href="{{ hosts.gpcr }}/construct">Construct alignments</a></li>
-        <li><a href="{{ hosts.gpcr }}/construct/design">Construct design tool
-            <button mp4="https://files.gpcrdb.org/video/constructtool3.mp4" type="button"
-                    class="videoLink pull-right btn btn-xs btn-default">
-                <span class="glyphicon glyphicon-film"></span>
-            </button>
-        </a></li>
-        <li><a href="{{ hosts.gpcr }}/construct/experiments">Experiment browser</a></li>
-        <li class="divider"></li>
-        <li class="nav-header disabled text-left"><a>Truncation & fusion analysis</a></li>
-        <li><a href="{{ hosts.gpcr }}/construct/analysis#truncations">Truncation sites</a></li>
-        <li><a href="{{ hosts.gpcr }}/construct/analysis#fusions">Fusion sites</a></li>
-        <li><a href="{{ hosts.gpcr }}/construct/analysis#loopdeletions">Loop deletions</a></li>
-        <li class="divider"></li>
-        <li class="nav-header disabled text-left"><a>Mutation analysis</a></li>
-        <li><a href="{{ hosts.gpcr }}/construct/mutations">Stabilising mutations</a></li>
-        <li><a href="{{ hosts.gpcr }}/construct/stabilisation">StabMutAnalyser</a></li>
-        <li><a href="{{ hosts.gpcr }}/construct/analysis#mutations">Mutation substitution matrix</a></li>
     </ul>
 </li>
 
