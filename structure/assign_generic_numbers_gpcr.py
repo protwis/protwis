@@ -221,7 +221,8 @@ class GenericNumbering(object):
                 if alignment == []:
                     continue
                 for hsps in alignment[1].hsps:
-                    self.map_blast_seq(alignment[0], hsps, chain)
+                    if Protein.objects.get(id=alignment[0]).family.slug.startswith('00'):
+                        self.map_blast_seq(alignment[0], hsps, chain)
 
         return self.get_annotated_structure()
 
