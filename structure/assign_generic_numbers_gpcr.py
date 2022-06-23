@@ -25,7 +25,7 @@ class GenericNumbering(object):
     exceptions = {'6GDG':[255, 10]}
 
     def __init__ (self, pdb_file=None, pdb_filename=None, structure=None, pdb_code=None, blast_path='blastp',
-        blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_blastdb']),top_results=1, sequence_parser=False, signprot=False):
+        blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_gpcr_blastdb']),top_results=1, sequence_parser=False, signprot=False):
 
         # pdb_file can be either a name/path or a handle to an open file
         self.pdb_file = pdb_file
