@@ -388,6 +388,11 @@ class Command(BaseBuild):
             removed = list(range(1,47))
         elif structure.pdb_code.index=='7VAB':
             removed = list(range(1,127))
+        elif structure.pdb_code.index=='7SBF':
+            for i in range(65,73):
+                deletions.remove(i)
+        elif structure.pdb_code.index in ['7SF7','7SF8']:
+            deletions, removed = [], []
 
         if self.debug:
             print('Deletions: ', deletions)
@@ -518,7 +523,7 @@ class Command(BaseBuild):
             seq = seq[:265]
         elif structure.pdb_code.index in ['1GZM', '3C9L']:
             seq = seq[:-3]
-        if structure.pdb_code.index in ['6NBI','6NBF','6NBH','6U1N','6M1H','6PWC','7JVR','7SHF']:
+        if structure.pdb_code.index in ['6NBI','6NBF','6NBH','6U1N','6M1H','6PWC','7JVR','7SHF','7EJ0','7EJ8','7EJA','7EJK']:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -3, -1)
         elif structure.pdb_code.index in ['6KUX', '6KUY', '6KUW']:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -4, -1.5)
@@ -626,6 +631,25 @@ class Command(BaseBuild):
             temp_seq = temp_seq[:702]+'L'+temp_seq[702:720]+temp_seq[721:]
         elif structure.pdb_code.index in ['7WIH']:
             temp_seq = temp_seq[:26]+'E'+temp_seq[26:33]+temp_seq[34:94]+'L'+temp_seq[94:117]+temp_seq[118:]
+        elif structure.pdb_code.index=='7SBF':
+            temp_seq = temp_seq[:8]+temp_seq[10:]
+            ref_seq = ref_seq[2:]
+        elif structure.pdb_code.index=='7RA3':
+            temp_seq = temp_seq[:306]+'R'+temp_seq[306:311]+temp_seq[312:]
+        elif structure.pdb_code.index in ['7EJ8']:
+            temp_seq = temp_seq[:182]+'P'+temp_seq[182:200]+temp_seq[201:]
+        elif structure.pdb_code.index in ['7EJ0']:
+            temp_seq = temp_seq[:242]+'R'+temp_seq[242:377]+temp_seq[378:]
+        elif structure.pdb_code.index in ['7EJK']:
+            temp_seq = temp_seq[:182]+'P'+temp_seq[182:200]+temp_seq[201:242]+'R'+temp_seq[242:379]+temp_seq[380:]
+        elif structure.pdb_code.index=='7EZC':
+            temp_seq = temp_seq[:146]+'Q'+temp_seq[146:155]+temp_seq[156:]
+        elif structure.pdb_code.index=='7RBT':
+            temp_seq = temp_seq[:306]+'R'+temp_seq[306:311]+temp_seq[312:]
+        elif structure.pdb_code.index=='7WUJ':
+            temp_seq = temp_seq[:158]+'T'+temp_seq[158:163]+temp_seq[164:]
+        
+
 
         for i, r in enumerate(ref_seq, 1): #loop over alignment to create lookups (track pos)
             if self.debug:
@@ -859,9 +883,9 @@ class Command(BaseBuild):
                                                     residue.generic_number = None
                                         elif residue.protein_segment.slug=='ICL2':
                                             if seg_ends['i2b']!='-' and seg_ends['i2e']!='-':
-                                                if residue.sequence_number<seg_ends['i2b']:
-                                                    residue.protein_segment = self.segments['TM3']
-                                                elif residue.sequence_number>seg_ends['i2e'] and residue.sequence_number>=seg_ends['4b']:
+                                                # if residue.sequence_number<seg_ends['i2b']:
+                                                #     residue.protein_segment = self.segments['TM3']
+                                                if residue.sequence_number>seg_ends['i2e'] and residue.sequence_number>=seg_ends['4b']:
                                                     residue.protein_segment = self.segments['TM4']
                                                 elif (residue.sequence_number>=seg_ends['i2b'] and residue.sequence_number<=seg_ends['i2e']) and residue.generic_number is None:
                                                     if debug: print("Missing GN in loop!",residue.sequence_number)

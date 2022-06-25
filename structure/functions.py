@@ -1,5 +1,5 @@
 ﻿from Bio.Blast import NCBIXML, NCBIWWW
-from Bio.PDB import PDBParser
+from Bio.PDB import PDBParser, PDBIO
 from Bio.PDB.PDBIO import Select
 import Bio.PDB.Polypeptide as polypeptide
 from Bio.PDB.AbstractPropertyMap import AbstractPropertyMap
@@ -13,10 +13,12 @@ from django.conf import settings
 from common.selection import SimpleSelection
 from common.alignment import Alignment
 from common.tools import urlopen_with_retry
+from common.models import WebResource, WebLink, Publication
 from protein.models import Protein, ProteinSegment, ProteinConformation, ProteinState
 from residue.functions import dgn, ggn
 from residue.models import Residue, ResidueGenericNumberEquivalent
-from structure.models import Structure, Rotamer
+from structure.models import Structure, Rotamer, PdbData, StructureStabilizingAgent, StructureType
+from signprot.models import SignprotStructure
 
 from subprocess import Popen, PIPE
 from io import StringIO
@@ -1277,9 +1279,12 @@ class StructureBuildCheck():
         else:
             print('Warning: {} not annotated'.format(key))
 
-    def check_g_prot_struct_residues(self, signprot_complex):
+    def check_signprot_struct_residues(self, signprot_complex):
         pdb = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('struct', StringIO(str(signprot_complex.structure.pdb_data.pdb)))[0]
-        resis = Residue.objects.filter(protein_conformation=ProteinConformation.objects.get(protein__entry_name=signprot_complex.structure.pdb_code.index.lower()+'_a'))
+        if signprot_complex.protein.family.slug.startswith('100'):
+            resis = Residue.objects.filter(protein_conformation=ProteinConformation.objects.get(protein__entry_name=signprot_complex.structure.pdb_code.index.lower()+'_a'))
+        elif signprot_complex.protein.family.slug.startswith('200'):
+            resis = Residue.objects.filter(protein_conformation=ProteinConformation.objects.get(protein__entry_name=signprot_complex.structure.pdb_code.index.lower()+'_arrestin'))
         if len(pdb[signprot_complex.alpha])!=len(resis):
             print(signprot_complex.structure, len(pdb[signprot_complex.alpha]), len(resis))
 
@@ -1357,3 +1362,148 @@ def get_pdb_ids(uniprot_id):
 
     response.close()
     return pdb_list
+
+
+def create_structure_rotamer(PDB_residue, residue_object, structure):
+    atom_num_dict = {'E':9, 'S':6, 'Y':12, 'G':4, 'A':5, 'V':7, 'M':8, 'L':8, 'I':8, 'T':7, 'F':11, 'H':10, 'K':9,
+                 'D':8, 'C':6, 'R':11, 'P':7, 'Q':9, 'N':8, 'W':14, '-':0}
+    out_stream = StringIO()
+    io = PDBIO()
+    io.set_structure(PDB_residue)
+    io.save(out_stream)
+    pdbdata = PdbData.objects.get_or_create(pdb=out_stream.getvalue())[0]
+    missing_atoms = atom_num_dict[polypeptide.three_to_one(PDB_residue.get_resname())] > len(PDB_residue.get_unpacked_list())
+    rot = Rotamer(missing_atoms=missing_atoms, pdbdata=pdbdata, residue=residue_object, structure=structure)
+    return rot
+
+def fetch_signprot_data(pdb, protein, beta_uniprots=[], gamma_uniprots=[]):
+    data = {}
+
+    response = urllib.request.urlopen("https://data.rcsb.org/rest/v1/core/entry/{}".format(pdb))
+    json_data = json.loads(response.read())
+    response.close()
+
+    data["method"] = json_data["exptl"][0]["method"]
+    if data["method"].startswith("THEORETICAL") or data["method"] in ["SOLUTION NMR","SOLID-STATE NMR"]:
+        return None
+    if "citation" in json_data and "pdbx_database_id_doi" in json_data["citation"]:
+        data["doi"] = json_data["citation"]["pdbx_database_id_doi"]
+    else:
+        data["doi"] = None
+    if "pubmed_id" in json_data["rcsb_entry_container_identifiers"]:
+        data["pubmedId"] = json_data["rcsb_entry_container_identifiers"]["pubmed_id"]
+    else:
+        data["pubmedId"] = None
+
+    data["release_date"] = json_data["rcsb_accession_info"]["initial_release_date"][:10]
+    data["resolution"] = json_data["rcsb_entry_info"]["resolution_combined"][0]
+    entities_num = len(json_data["rcsb_entry_container_identifiers"]["polymer_entity_ids"])
+    data["alpha"] = protein.accession
+    data["alpha_chain"] = None
+    data["alpha_coverage"] = None
+    data["beta"] = None
+    data["beta_chain"] = None
+    data["gamma"] = None
+    data["gamma_chain"] = None
+    data["other"] = []
+    for i in range(1,entities_num+1):
+        response = urllib.request.urlopen("https://data.rcsb.org/rest/v1/core/polymer_entity/{}/{}".format(pdb, i))
+        json_data = json.loads(response.read())
+        response.close()
+        if "uniprot_ids" in json_data["rcsb_polymer_entity_container_identifiers"]:
+            for j, u_id in enumerate(json_data["rcsb_polymer_entity_container_identifiers"]["uniprot_ids"]):
+                if u_id+".txt" in beta_uniprots:
+                    data["beta"] = u_id
+                    data["beta_chain"] = json_data["rcsb_polymer_entity_container_identifiers"]["auth_asym_ids"][j][0]
+                elif u_id+".txt" in gamma_uniprots:
+                    data["gamma"] = u_id
+                    data["gamma_chain"] = json_data["rcsb_polymer_entity_container_identifiers"]["auth_asym_ids"][j][0]
+                elif u_id==protein.accession:
+                    data["alpha"] = u_id
+                    data["alpha_coverage"] = json_data["entity_poly"]["rcsb_sample_sequence_length"]
+                    try:
+                        data["alpha_chain"] = json_data["rcsb_polymer_entity_container_identifiers"]["auth_asym_ids"][j][0]
+                    except IndexError as e:
+                        data["alpha_chain"] = json_data["rcsb_polymer_entity_container_identifiers"]["auth_asym_ids"][j-1][0]
+                else:
+                    if json_data["rcsb_polymer_entity"]["pdbx_description"] not in data["other"]:
+                        data["other"].append(json_data["rcsb_polymer_entity"]["pdbx_description"])
+        else:
+            if json_data["rcsb_polymer_entity"]["pdbx_description"] not in data["other"]:
+                data["other"].append(json_data["rcsb_polymer_entity"]["pdbx_description"])
+    return data
+
+
+def build_signprot_struct(protein, pdb, data):
+    ss = SignprotStructure()
+    pdb_code, p_c = WebLink.objects.get_or_create(index=pdb, web_resource=WebResource.objects.get(slug="pdb"))
+    pub_date = data["release_date"]
+    # Structure type
+    if "x-ray" in data["method"].lower():
+        structure_type_slug = "x-ray-diffraction"
+    elif "electron" in data["method"].lower():
+        structure_type_slug = "electron-microscopy"
+    else:
+        structure_type_slug = "-".join(data["method"].lower().split(" "))
+    try:
+        structure_type = StructureType.objects.get(slug=structure_type_slug)
+    except StructureType.DoesNotExist as e:
+        structure_type, c = StructureType.objects.get_or_create(slug=structure_type_slug, name=data["method"])
+        # self.logger.info("Created StructureType:"+str(structure_type))
+
+    # Publication
+    pub = None
+    if data["doi"]:
+        try:
+            pub = Publication.get_or_create_from_doi(data["doi"])
+        except:
+            # 2nd try (in case of paralellization clash)
+            pub = Publication.get_or_create_from_doi(data["doi"])
+    elif data["pubmedId"]:
+        try:
+            pub = Publication.get_or_create_from_pubmed(data["pubmedId"])
+        except:
+            # 2nd try (in case of paralellization clash)
+            pub = Publication.get_or_create_from_pubmed(data["pubmedId"])
+
+    # PDB data
+    url = 'https://www.rcsb.org/pdb/files/{}.pdb'.format(pdb)
+    req = urllib.request.Request(url)
+    with urllib.request.urlopen(req) as response:
+        pdbdata_raw = response.read().decode('utf-8')
+    pdbdata_object = PdbData.objects.get_or_create(pdb=pdbdata_raw)[0]
+    ss.pdb_code = pdb_code
+    ss.structure_type = structure_type
+    ss.resolution = data["resolution"]
+    ss.publication_date = pub_date
+    ss.publication = pub
+    ss.protein = protein
+    ss.pdb_data = pdbdata_object
+    if len(SignprotStructure.objects.filter(pdb_code=ss.pdb_code))>0:
+        # self.logger.warning('SignprotStructure {} already created, skipping'.format(pdb_code))
+        return 0
+    ss.save()
+    # Stabilizing agent
+    for o in data["other"]:
+        if len(o)>75:
+            continue
+        if o=="REGULATOR OF G-PROTEIN SIGNALING 14":
+            o = "Regulator of G-protein signaling 14"
+        elif o=="Nanobody 35":
+            o = "Nanobody-35"
+        elif o=="ADENYLATE CYCLASE, TYPE V":
+            o = "Adenylate cyclase, type V"
+        elif o=="1-phosphatidylinositol-4,5-bisphosphate phosphodiesterase beta-3":
+            o = "1-phosphatidylinositol 4,5-bisphosphate phosphodiesterase beta-3"
+        elif o=="FAB30 HEAVY CHAIN":
+            o = "Fab30 Heavy Chain"
+        elif o=="FAB30 LIGHT CHAIN":
+            o = "Fab30 Light Chain"
+        elif o=="VASOPRESSIN V2 RECEPTOR PHOSPHOPEPTIDE":
+            o = "Vasopressin V2 receptor phosphopeptide"
+        elif o=="AP-2 COMPLEX SUBUNIT BETA-1":
+            o = "AP-2 complex subunit Beta-1"
+        stabagent, sa_created = StructureStabilizingAgent.objects.get_or_create(slug=o.replace(" ","-").replace(" ","-"), name=o)
+        ss.stabilizing_agents.add(stabagent)
+    ss.save()
+    return ss

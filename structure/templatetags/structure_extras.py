@@ -26,7 +26,7 @@ def endo_format ( objs ):
 
 @register.filter
 def create_struct_links ( objs ):
-    return ", ".join(["<a href=\"structure/" + obj.pdb_code.index + "\">" + obj.pdb_code.index + "</a>" for obj in objs])
+    return ", ".join(["<a href=\"/structure/" + obj.pdb_code.index + "\">" + obj.pdb_code.index + "</a>" for obj in objs])
 
 @register.filter
 def dashwhenempty (obj):
