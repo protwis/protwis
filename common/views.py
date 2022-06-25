@@ -125,7 +125,8 @@ def getLigandCountTable():
                                           family__slug__startswith="00").prefetch_related(
                                           # species__common_name="Human").prefetch_related(
             "family",
-            "family__parent__parent__parent"
+            "family__parent__parent__parent",
+            "species"
         )
         # Acquired slugs
         # entry_names = [ p.entry_name for p in proteins ]
@@ -141,7 +142,7 @@ def getLigandCountTable():
         #     .annotate(num_ligands=Count("ligand", distinct=True)))
 
         ligand_set = list(AssayExperiment.objects.values("protein__entry_name")\
-            .annotate(num_ligands=Count("ligand", distinct=True)))
+            .annotate(num_ligands=Count("ligand__pk", distinct=True)))
 
         ligand_count = {}
         for entry in ligand_set:
@@ -185,10 +186,11 @@ def getLigandCountTable():
             t['entry_name'] = p.entry_name
             # Ligand count
             t['ligand_count'] = 0
-            if t['entry_name'] in ligand_count:
+            if t['entry_name'] in ligand_count and ligand_count[t['entry_name']] > 0:
                 t['species'] = p.species
                 t['id'] = p.id
-                t['ligand_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_count[t['entry_name']])
+                #t['ligand_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_count[t['entry_name']])
+                t['ligand_count'] = ligand_count[t['entry_name']]
                 t['accession'] = p.accession
                 t['class'] = p.family.parent.parent.parent.short().split(' ')[0]
                 t['ligandtype'] = p.family.parent.parent.short()
@@ -202,16 +204,12 @@ def getLigandCountTable():
                 uniprot_links = p.web_links.filter(web_resource__slug='uniprot')
                 if uniprot_links.count() > 0:
                     #t['uniprot_link'] = link_setup.format(p.web_links.filter(web_resource__slug='uniprot')[0])
-                    t['uniprot'] = link_setup.format(p.web_links.filter(web_resource__slug='uniprot')[0], t['uniprot'])
+                    t['uniprot'] = link_setup.format(uniprot_links[0], t['uniprot'])
 
                 gtop_links = p.web_links.filter(web_resource__slug='gtop')
                 if gtop_links.count() > 0:
                     #t['gtp_link'] = link_setup.format(p.web_links.filter(web_resource__slug='gtop')[0])
-                    t['iuphar'] = link_setup.format(p.web_links.filter(web_resource__slug='gtop')[0], t['iuphar'])
-
-                # Skip all proteins without any ligand
-                if t['ligand_count'] == 0:
-                    continue
+                    t['iuphar'] = link_setup.format(gtop_links[0], t['iuphar'])
 
                 t['approved_target'] = "Yes" if p.entry_name in drugtargets_approved else "No"
                 t['clinical_target'] = "Yes" if p.entry_name in drugtargets_trials else "No"
@@ -361,13 +359,11 @@ def getTargetTable():
             #t['gtp_link'] = ""
             uniprot_links = p.web_links.filter(web_resource__slug='uniprot')
             if uniprot_links.count() > 0:
-                #t['uniprot_link'] = link_setup.format(p.web_links.filter(web_resource__slug='uniprot')[0])
-                t['uniprot'] = link_setup.format(p.web_links.filter(web_resource__slug='uniprot')[0], t['uniprot'])
+                t['uniprot'] = link_setup.format(uniprot_links[0], t['uniprot'])
 
             gtop_links = p.web_links.filter(web_resource__slug='gtop')
             if gtop_links.count() > 0:
-                #t['gtp_link'] = link_setup.format(p.web_links.filter(web_resource__slug='gtop')[0])
-                t['iuphar'] = link_setup.format(p.web_links.filter(web_resource__slug='gtop')[0], t['iuphar'])
+                t['iuphar'] = link_setup.format(gtop_links[0], t['iuphar'])
 
             # Ligand count
             t['ligand_count'] = 0
@@ -458,7 +454,8 @@ def getReferenceTable(pathway, subtype):
                                           sequence_type__slug="wt",
                                           family__slug__startswith="00").prefetch_related(
             "family",
-            "family__parent__parent__parent"
+            "family__parent__parent__parent",
+            "species"
         )
 
         #Complete data
@@ -556,11 +553,11 @@ def getReferenceTable(pathway, subtype):
 
             uniprot_links = p.web_links.filter(web_resource__slug='uniprot')
             if uniprot_links.count() > 0:
-                t['uniprot'] = link_setup.format(p.web_links.filter(web_resource__slug='uniprot')[0], t['uniprot'])
+                t['uniprot'] = link_setup.format(uniprot_links[0], t['uniprot'])
 
             gtop_links = p.web_links.filter(web_resource__slug='gtop')
             if gtop_links.count() > 0:
-                t['iuphar'] = link_setup.format(p.web_links.filter(web_resource__slug='gtop')[0], t['iuphar'])
+                t['iuphar'] = link_setup.format(gtop_links[0], t['iuphar'])
 
             # Ligand count
             t['ligand_count'] = 0

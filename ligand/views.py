@@ -211,15 +211,18 @@ def TargetDetailsCompact(request, **kwargs):
     return render(request, 'target_details_compact.html', context)
 
 def TargetDetailsExtended(request, **kwargs):
-
-    simple_selection = request.session.get('selection', False)
-    selection = Selection()
-    if simple_selection:
-        selection.importer(simple_selection)
-    if selection.reference != []:
-        prot_id = [x.item for x in selection.reference]
+    if 'slug' in kwargs:
         ps = AssayExperiment.objects.filter(
-            protein__in=prot_id, ligand__ids__web_resource__slug='chembl_ligand')
+             protein__family__slug=kwargs['slug'], ligand__ids__web_resource__slug='chembl_ligand')
+    else:
+        simple_selection = request.session.get('selection', False)
+        selection = Selection()
+        if simple_selection:
+            selection.importer(simple_selection)
+        if selection.reference != []:
+            prot_id = [x.item for x in selection.reference]
+            ps = AssayExperiment.objects.filter(
+                protein__in=prot_id, ligand__ids__web_resource__slug='chembl_ligand')
 
     # if queryset is empty redirect to ligand browser
     if not ps:

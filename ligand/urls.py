@@ -7,6 +7,7 @@ urlpatterns = [
     #  url(r'^browser$', cache_page(3600*24*7)(views.LigandBrowser.as_view()), name='ligand_browser'),
     url(r'^$', views.LigandTargetSelection.as_view(), name='ligand_selection'),
 
+    url(r'^target/all/(?P<slug>[-\w]+)/$', views.TargetDetailsExtended, name='ligand_target_detail'),
     path('target_detail', views.TargetDetailsExtended, name='ligand_target_detail'),
     path('targets_compact', views.TargetDetailsCompact, name='ligand_target_detail_compact'),
     url(r'^targets_purchasable', views.TargetPurchasabilityDetails, name='ligand_target_detail_purchasable'),
@@ -67,7 +68,7 @@ urlpatterns = [
     url(r'^biased/$', views.CachedOTFBiasBrowser, name='bias_browser-list'),
     url(r'^biasedsubtypes/$',views.CachedOTFBiasSubtypeBrowser, name='bias_browser-list'),
     url(r'^pathwaypreference/$',views.CachedOTFPathwayPrefBrowser, name='bias_browser-list'),
-    url(r'^endogenousbrowser/$', views.EndogenousBrowser.as_view(), name='endogenous_browser'),
+    url(r'^endogenousbrowser/$', cache_page(3600*24*7)(views.EndogenousBrowser.as_view()), name='endogenous_browser'),
     #User selected calculations
     #Biased Family
     path('userselectionbiased', views.UserBiased.as_view(way='Browser'), name='bias_browser-list'),
