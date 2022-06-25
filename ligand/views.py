@@ -5,7 +5,6 @@ import re
 import time
 import pandas as pd
 import urllib
-import math
 
 from random import SystemRandom
 from copy import deepcopy
@@ -20,13 +19,13 @@ from django.views.decorators.csrf import csrf_exempt
 
 from django.core.cache import cache
 
-from common.views import Alignment, AbsReferenceSelectionTable, getReferenceTable, getLigandTable, getLigandCountTable
+from common.views import AbsReferenceSelectionTable, getReferenceTable, getLigandTable, getLigandCountTable
 from common.models import ReleaseNotes, WebResource, Publication
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
-from ligand.models import Ligand, LigandVendorLink, LigandVendors, BiasedPathways, AssayExperiment, BiasedData, Endogenous_GTP, BalancedLigands, LigandID
+from ligand.models import Ligand, LigandVendorLink, BiasedPathways, AssayExperiment, BiasedData, Endogenous_GTP, LigandID
 from ligand.functions import OnTheFly, AddPathwayData
-from protein.models import Protein, ProteinFamily, ProteinCouplings
+from protein.models import Protein, ProteinFamily
 from interaction.models import StructureLigandInteraction
 from mutation.models import MutationExperiment
 
@@ -1575,18 +1574,18 @@ class LigandInformationView(TemplateView):
         return_dict = dict()
         for i in assays:
             name = str(i.protein)
-            type = i.value_type
+            assay_type = i.value_type
             # if type[0] != 'P':
             #    type = 'p'+type
             if name in return_dict:
-                if type in return_dict[name]['data_type'].keys():
-                    return_dict[name]['data_type'][type].append(float(i.p_activity_value))
+                if assay_type in return_dict[name]['data_type'].keys():
+                    return_dict[name]['data_type'][assay_type].append(float(i.p_activity_value))
                 else:
-                    return_dict[name]['data_type'][type] = [float(i.p_activity_value)]
+                    return_dict[name]['data_type'][assay_type] = [float(i.p_activity_value)]
             else:
                 return_dict[name] = dict()
                 return_dict[name]['data_type'] = dict()
-                return_dict[name]['data_type'][type] = [float(i.p_activity_value)]
+                return_dict[name]['data_type'][assay_type] = [float(i.p_activity_value)]
                 return_dict[name]['receptor_gtp'] = i.protein.short()
                 return_dict[name]['receptor_uniprot'] = i.protein.entry_short()
                 return_dict[name]['receptor_species'] = i.protein.species.common_name
@@ -1594,8 +1593,8 @@ class LigandInformationView(TemplateView):
                 return_dict[name]['receptor_class'] = i.protein.family.parent.parent.parent.short()
 
         for item in return_dict.keys():
-            for type in return_dict[item]['data_type'].keys():
-                return_dict[item]['data_type'][type] = LigandInformationView.get_min_max_values(return_dict[item]['data_type'][type])
+            for assay_type in return_dict[item]['data_type'].keys():
+                return_dict[item]['data_type'][assay_type] = LigandInformationView.get_min_max_values(return_dict[item]['data_type'][assay_type])
     	#Unpacking
         unpacked = dict()
         for key in return_dict.keys():
@@ -1691,11 +1690,11 @@ class LigandInformationView(TemplateView):
         return list(unpacked.values())
 
     @staticmethod
-    def get_labels(ligand_data, endogenous_ligands, type):
+    def get_labels(ligand_data, endogenous_ligands, label_type):
         endogenous_label = '<img src="https://icon-library.com/images/icon-e/icon-e-17.jpg" title="Endogenous ligand from GtoP" width="20" height="20"></img>'
         surrogate_label = '<img src="https://icon-library.com/images/letter-s-icon/letter-s-icon-15.jpg" title="Surrogate ligand" width="20" height="20"></img>'
         drug_label = '<img src="https://icon-library.com/images/drugs-icon/drugs-icon-7.jpg" title="Approved drug" width="20" height="20"></img>'
-        trial_label = '<img src="https://icon-library.com/images/clinical-trial-icon-2793430_960_720_7492.png" title="Drug in clinical trial" width="20" height="20"></img>'
+        #trial_label = '<img src="https://icon-library.com/images/clinical-trial-icon-2793430_960_720_7492.png" title="Drug in clinical trial" width="20" height="20"></img>'
         small_molecule_label = '<img src="https://icon-library.com/images/282dfa029c.png" title="Small molecule" width="20" height="20"></img>'
         peptide_label = '<img src="https://media.istockphoto.com/vectors/protein-structure-molecule-3d-icon-vector-id1301952426?k=20&m=1301952426&s=612x612&w=0&h=a3ik50-faiP2BqiB7wMP3s_rVZyzPl9yHNQy7Rg89aE=" title="Peptide" width="20" height="20"></img>'
         antibody_label = '<img src="https://icon-library.com/images/2018/2090572_antibody-antibody-hd-png-download.png" title="Antibody" width="20" height="20"></img>'
@@ -1711,11 +1710,11 @@ class LigandInformationView(TemplateView):
         if any(value in sources for value in drug_banks):
             label += drug_label
         #Small molecule, Peptide or Antibody
-        if type == 'Small molecule':
+        if label_type == 'Small molecule':
             label += small_molecule_label
-        elif type == 'Peptide':
+        elif label_type == 'Peptide':
             label += peptide_label
-        elif type == 'Antibody':
+        elif label_type == 'Antibody':
             label += antibody_label
 
         return label
