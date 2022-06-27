@@ -295,7 +295,8 @@ def get_ligand_by_id(type, id, uniprot = None):
         result = Ligand.objects.filter(ids__index=id, ids__web_resource__slug=type, uniprot__contains=uniprot.upper())
 
     if result.count() > 0:
-        if result.count() > 1:
+        # For drugs we allow multiple entries because of stereochemistry if drug is racemic
+        if result.count() > 1 and type not in ["drugbank", "drug_central"]:
             print("Multiple entries for the same ID - This should never happen - error", type, id)
         return result.first()
     else:
