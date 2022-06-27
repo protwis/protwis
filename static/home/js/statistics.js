@@ -1,28 +1,40 @@
+/*global $,nv,d3,data_cryst_year_container,data_unique_class_cryst_container,data_unique_class_cryst_year_container,data_cryst_class_year_container,data_unique_cryst_container,data_unique_cryst_year_container*/
+
  function mergeSVG(div) {
-     var SVG = $('#'+div).find('svg')[0];
-     h = parseInt($(SVG).attr('height'));
-     w = parseInt($(SVG).attr('width'));
-     var legend = $('#legend').find('svg')[0];
-     h2 = parseInt($(legend).attr('height'));
-     w2 = parseInt($(legend).attr('width'));
-     leg_w = (w-w2)/2
+     let SVG = $('#'+div).find('svg')[0];
+     let h = parseInt($(SVG).attr('height'));
+     let w = parseInt($(SVG).attr('width'));
+     let legend = $('#legend').find('svg')[0];
+     let h2 = parseInt($(legend).attr('height'));
+     let w2 = parseInt($(legend).attr('width'));
+     let leg_w = (w-w2)/2
      SVG.setAttribute('height', (h + h2));
      if (w2 > w) {
          SVG.setAttribute('width', (w2));
          leg_w = 0
-         svg_w = Math.abs(w-w2)/2
+         //svg_w = Math.abs(w-w2)/2
      } else {
          leg_w = Math.abs(w-w2)/2
-         svg_w = 0
+         //svg_w = 0
      };
-     for (i = 0; i < legend.children.length; i++) {
+     for (let i = 0; i < legend.children.length; i++) {
          legend.children[i].setAttribute('transform', 'translate ('+leg_w.toString()+' ' + h.toString()+')');
          $(SVG).append(legend.children[i]);
      };
  };
+
+ function clear_all() {
+     $('#charts').find(".chart_type").each(function () {
+         $(this).css("fill", '');
+     });
+     $('#charts').find(".chart_container").each(function () {
+         $(this).css("display", 'none');
+     });
+ };
+
  $(window).on("load", function () {
     //Unique crystallized receptors graph
-    if (typeof data_unique_cryst_container != 'undefined'){
+    if (typeof data_unique_cryst_container != "undefined"){
       nv.addGraph(function () {
           var datum = data_unique_cryst_container;
           var chart = nv.models.multiBarChart()
@@ -202,22 +214,12 @@
       });
 
       $(".chart_type").click(function () {
-          Clear_all()
+          clear_all()
           $(this).css("fill", '#000000');
-          point = $('#' + $(this).attr('id')).find('svg')
+          let point = $('#' + $(this).attr('id')).find('svg')
           $(point).css("visibility", 'hidden');
           $('#'+$(this).attr('id') + '.chart_container').css("display", '');
       });
-
-      function Clear_all() {
-          $('#charts').find(".chart_type").each(function (index) {
-              $(this).css("fill", '');
-          });
-          $('#charts').find(".chart_container").each(function (index) {
-              $(this).css("display", 'none');
-          });
-      };
-
 
       $(document).ready(function () {
           $('#unique_class.chart_type').css("fill", '#000000');

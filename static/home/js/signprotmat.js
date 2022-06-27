@@ -358,8 +358,8 @@ var signprotmat = {
       var pdbs = [];
       var range;
       for (var i=0; i < data.length; i++){
-        if (!pdbs.includes(data[i]['pdb_id'])){
-          pdbs.push(data[i]['pdb_id']);
+        if (!pdbs.includes(data[i]["pdb_id"])){
+          pdbs.push(data[i]["pdb_id"]);
         }
       }
       if (pdbs.length <= 300){

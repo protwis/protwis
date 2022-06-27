@@ -19,13 +19,13 @@ from django.views.decorators.csrf import csrf_exempt
 
 from django.core.cache import cache
 
-from common.views import Alignment, AbsReferenceSelectionTable, getReferenceTable, getLigandTable, getLigandCountTable
+from common.views import AbsReferenceSelectionTable, getReferenceTable, getLigandTable, getLigandCountTable
 from common.models import ReleaseNotes, WebResource, Publication
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection
 from ligand.models import Ligand, LigandVendorLink, LigandVendors, BiasedPathways, AssayExperiment, BiasedData, Endogenous_GTP, BalancedLigands
 from ligand.functions import OnTheFly, AddPathwayData
-from protein.models import Protein, ProteinFamily, ProteinCouplings
+from protein.models import Protein, ProteinFamily
 from interaction.models import StructureLigandInteraction
 from mutation.models import MutationExperiment
 
