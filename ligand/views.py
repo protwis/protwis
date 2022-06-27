@@ -22,7 +22,7 @@ from django.core.cache import cache
 from common.views import AbsReferenceSelectionTable, getReferenceTable, getLigandTable, getLigandCountTable
 from common.models import ReleaseNotes, WebResource, Publication
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
-from common.selection import Selection
+from common.selection import Selection, SelectionItem
 from ligand.models import Ligand, LigandVendorLink, BiasedPathways, AssayExperiment, BiasedData, Endogenous_GTP, LigandID
 from ligand.functions import OnTheFly, AddPathwayData
 from protein.models import Protein, ProteinFamily
@@ -192,7 +192,6 @@ def TargetDetailsCompact(request, **kwargs):
                 # TEMPORARY workaround for handling string values
                 values = [float(item) for item in itertools.chain(
                     *tmp.values()) if item != None and float(item)]
-                values = [1]
 
                 if len(values) > 0:
                     ligand_data.append({
@@ -222,16 +221,26 @@ def TargetDetailsCompact(request, **kwargs):
     return render(request, 'target_details_compact.html', context)
 
 def TargetDetailsExtended(request, **kwargs):
+    simple_selection = request.session.get('selection', False)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
     cache_key = False
     if 'slug' in kwargs:
         cache_key = "lig_ext_slug_" + kwargs['slug']
         ps = AssayExperiment.objects.filter(
              protein__family__slug=kwargs['slug'], ligand__ids__web_resource__slug='chembl_ligand')
+
+        # Set selection for purchasability page
+        prot_ids = list(AssayExperiment.objects.filter(
+             protein__family__slug=kwargs['slug'], ligand__ids__web_resource__slug='chembl_ligand').values_list("protein_id", flat = True).distinct())
+        proteins = Protein.objects.filter(pk__in=prot_ids)
+        for prot in proteins:
+            selection.add('targets', 'protein', SelectionItem('protein', prot))
+        simple_selection = selection.exporter()
+        request.session['selection'] = simple_selection
     else:
-        simple_selection = request.session.get('selection', False)
-        selection = Selection()
-        if simple_selection:
-            selection.importer(simple_selection)
         if selection.reference != []:
             prot_id = [x.item for x in selection.reference]
             if len(prot_id) > 0:
@@ -279,62 +288,75 @@ def TargetDetailsExtended(request, **kwargs):
 
 
 def TargetPurchasabilityDetails(request, **kwargs):
-
+    cache_key = False
     simple_selection = request.session.get('selection', False)
     selection = Selection()
     if simple_selection:
         selection.importer(simple_selection)
 
     if selection.targets != []:
-        prot_ids = [x.item.id for x in selection.targets]
+        prot_ids = [str(x.item.id) for x in selection.targets]
+        cache_key = "lig_purchasable_" + ",".join(prot_ids)
         ps = AssayExperiment.objects.filter(
             protein__in=prot_ids, ligand__ids__web_resource__slug='chembl_ligand')
         context = {
             'target': ', '.join([x.item.entry_name for x in selection.targets])
         }
+    elif selection.reference != []:
+        prot_id = [x.item for x in selection.reference]
+        cache_key = "lig_purchasable_" + ",".join(prot_id)
+        ps = AssayExperiment.objects.filter(
+            protein__in=prot_id, ligand__ids__web_resource__slug='chembl_ligand')
+        context = {}
+
+    # if queryset is empty redirect to ligand browser
+    if not ps:
+        return redirect("ligand_browser")
+
+    if cache_key != False and cache.has_key(cache_key):
+        purchasable = cache.get(cache_key)
     else:
-        return
+        ps = ps.values('value_type',
+                       'standard_relation',
+                       'standard_activity_value',
+                       'assay_description',
+                       'assay_type',
+                       # 'standard_units',
+                       'p_activity_value',
+                       'ligand__id',
+                       'ligand__ids__index',
+                       'protein__species__common_name',
+                       'protein__entry_name',
+                       'ligand_id',
+                       'ligand__name',
+                       'ligand__mw',
+                       'ligand__logp',
+                       'ligand__rotatable_bonds',
+                       'ligand__smiles',
+                       'ligand__hdon',
+                       'ligand__hacc',
+                       )
 
-    ps = ps.values('value_type',
-                   'standard_relation',
-                   'standard_activity_value',
-                   'assay_description',
-                   'assay_type',
-                   # 'standard_units',
-                   'p_activity_value',
-                   'ligand__id',
-                   'ligand__ids__index',
-                   'protein__species__common_name',
-                   'protein__entry_name',
-                   'ligand_id',
-                   'ligand__name',
-                   'ligand__mw',
-                   'ligand__logp',
-                   'ligand__rotatable_bonds',
-                   'ligand__smiles',
-                   'ligand__hdon',
-                   'ligand__hacc',
-                   )
+        lig_ids = [entry["ligand_id"] for entry in ps]
+        vendorlinks = LigandVendorLink.objects.filter(ligand__id__in=lig_ids)\
+            .exclude(vendor__name__in=['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem', 'IUPHAR/BPS Guide to PHARMACOLOGY'])\
+            .values("ligand_id", "vendor__name", "vendor__url", "url", "external_id")
 
-    lig_ids = [entry["ligand_id"] for entry in ps]
-    vendorlinks = LigandVendorLink.objects.filter(ligand__id__in=lig_ids)\
-        .exclude(vendor__name__in=['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem', 'IUPHAR/BPS Guide to PHARMACOLOGY'])\
-        .values("ligand_id", "vendor__name", "vendor__url", "url", "external_id")
+        vendor_dict = {}
+        for link in vendorlinks:
+            if link["ligand_id"] not in vendor_dict:
+                vendor_dict[link["ligand_id"]] = []
+            vendor_dict[link["ligand_id"]].append(link)
 
-    vendor_dict = {}
-    for link in vendorlinks:
-        if link["ligand_id"] not in vendor_dict:
-            vendor_dict[link["ligand_id"]] = []
-        vendor_dict[link["ligand_id"]].append(link)
-
-    purchasable = []
-    for record in ps:
-        if record["ligand_id"] in vendor_dict:
-            for link in vendor_dict[record["ligand_id"]]:
-                entry = {**record, **link}
-                purchasable.append(entry)
+        purchasable = []
+        for record in ps:
+            if record["ligand_id"] in vendor_dict:
+                for link in vendor_dict[record["ligand_id"]]:
+                    entry = {**record, **link}
+                    purchasable.append(entry)
 
     context['proteins'] = purchasable
+    cache.set(cache_key, purchasable, 60*60*24*7)
     return render(request, 'target_purchasability_details.html', context)
 
 #Biased Effector Family View (handles browser, Emax/Tau RankOder and Emax/Tau PathProfile)
