@@ -2115,7 +2115,10 @@ class EndogenousBrowser(TemplateView):
                 data_subset['pKi - min'] = data[11].split(' | ')[0]                         #13
                 data_subset['pKi - mid'] = data[11].split(' | ')[1]                         #14
                 data_subset['pKi - max'] = data[11].split(' | ')[2]                         #15
-                data_subset['Reference'] = publications[pair]                               #16
+                if len(publications[pair]) != 0:
+                    data_subset['Reference'] = publications[pair]                           #16
+                else:
+                    data_subset['Reference'] = 'empty'
                 data_subset['ID'] = data[6]                                                 #17
 
                 table = table.append(data_subset, ignore_index=True)

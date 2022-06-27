@@ -242,7 +242,11 @@
 
 					<!-- Reference -->
 					<!-- <td class="name"><a href='#' onClick="javascript:reference_list('{{value.16|safe}}');">References</a></td> -->
-          <td class="name" style="text-align:center"><a href="#references" data-toggle="modal" data-book-id="{{value.16|safe}}"> Refs</a></td>
+					{% if value.16|safe != 'empty' %}
+	          <td class="name" style="text-align:center"><a href="#references" data-toggle="modal" data-book-id="{{value.16|safe}}"> Refs</a></td>
+					{% else %}
+						<td class="name" style="text-align:center"></td>
+					{% endif %}
 				</tr>
 				{% endfor %}
 		</tbody>
