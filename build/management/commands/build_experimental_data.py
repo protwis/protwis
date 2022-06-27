@@ -514,7 +514,7 @@ class Command(BaseBuild):
         wr_doi = WebResource.objects.get(slug="doi")
         existing_ids = list(WebLink.objects.filter(web_resource=wr_doi).values_list("index", flat=True).distinct())
 
-        for index, row in publication_data.iterrows():
+        for index, (pd_num, row) in enumerate(publication_data.iterrows()):
             if row['doi'] in existing_ids:
                 wl = WebLink.objects.get(index=row['doi'], web_resource=wr_doi)
             else:
@@ -588,7 +588,7 @@ class Command(BaseBuild):
         smallmol = LigandType.objects.get(slug="small-molecule")
         ligands = []
         weblinks = []
-        for index, row in sm_data.iterrows():
+        for index, (pd_num, row) in enumerate(sm_data.iterrows()):
             insert = True
             ids = [row['molecule_chembl_id']]
 
@@ -681,7 +681,7 @@ class Command(BaseBuild):
         ligands = []
         ligand_types = {"Unknown": "na", "Protein": "protein"}
         weblinks = []
-        for index, row in nonsm_data.iterrows():
+        for index, (pd_num, row) in enumerate(nonsm_data.iterrows()):
             ids = {}
             ids["smiles"] = row['smiles']
             ids["sequence"] = row['sequence']
@@ -736,7 +736,7 @@ class Command(BaseBuild):
         print("\n#4 Building ChEMBL bioactivity entries", datetime.datetime.now())
         bioacts = []
         pub_links = []
-        for index, row in bioactivity_data.iterrows():
+        for index, (pd_num, row) in enumerate(bioactivity_data.iterrows()):
             try:
                 if (row["parent_molecule_chembl_id"] in lig_dict.keys()) and (row["Entry name"] in prot_dict.keys()):
                     bioacts.append(AssayExperiment())
@@ -790,7 +790,7 @@ class Command(BaseBuild):
         vendor_url = os.sep.join([settings.DATA_DIR, "ligand_data", "assay_data", "pubchem_vendor_list.csv.gz"])
         vendor_data = pd.read_csv(vendor_url, dtype=str)
         vendors = []
-        for index, row in vendor_data.iterrows():
+        for index, (pd_num, row) in enumerate(vendor_data.iterrows()):
             vendors.append(LigandVendors(slug=slugify(row["SourceName"]), name = row["SourceName"], url = row["SourceURL"]))
         LigandVendors.objects.bulk_create(vendors)
         vendor_dict = {vendor.name : vendor.pk for vendor in vendors}
@@ -803,7 +803,7 @@ class Command(BaseBuild):
         vendor_links_url = os.sep.join([settings.DATA_DIR, "ligand_data", "assay_data", "pubchem_vendor_links.csv.gz"])
         vendor_links_data = pd.read_csv(vendor_links_url, dtype=str)
         links = []
-        for index, row in vendor_links_data.iterrows():
+        for index, (pd_num, row) in enumerate(vendor_links_data.iterrows()):
             if len(row["SourceRecordURL"]) < 300:
                 links.append(LigandVendorLink(vendor_id=vendor_dict[row["SourceName"]], ligand_id = lig_dict[row["chembl_id"]], url = row["SourceRecordURL"], external_id = row["RegistryID"]))
 
@@ -938,7 +938,7 @@ class Command(BaseBuild):
 
         #start parsing the GtP ligands
         issues = []
-        for index, row in lig_df.iterrows():
+        for index, (pd_num, row) in enumerate(lig_df.iterrows()):
             if row['Name']:
                 ids = {}
                 for key, value in weblink_keys.items():
@@ -980,7 +980,7 @@ class Command(BaseBuild):
     @staticmethod
     def build_gtp_bioactivities(gtp_biodata):
         print("# Start parsing the GTP Dataframe")
-        for index, row in gtp_biodata.iterrows():
+        for index, (pd_num, row) in enumerate(gtp_biodata.iterrows()):
             receptor = Command.fetch_protein(row['target_id'], 'GtoP', row['target_species'])
             # TODO Handle multiple matches (uniprot filter?)
             ligand = get_ligand_by_id("gtoplig", row['Ligand ID'])
@@ -1181,7 +1181,7 @@ class Command(BaseBuild):
         bio_entries = len(bioactivity_data_filtered)
         print("\n===============\n#2 Start parsing PDSP data")
         bioacts = []
-        for index, row in bioactivity_data_filtered.iterrows():
+        for index, (pd_num, row) in enumerate(bioactivity_data_filtered.iterrows()):
             ids = {}
             receptor = None
             label = '_'.join([row['Unigene'], row['species']])
