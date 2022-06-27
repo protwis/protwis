@@ -6,7 +6,7 @@ from django.utils.text import slugify
 from django.db import IntegrityError
 
 from common.tools import get_or_create_url_cache, fetch_from_web_api
-from common.models import WebLink, WebResource, Publication
+from common.models import WebLink, WebResource, Publication, PublicationJournal
 from ligand.models import Ligand, LigandID, LigandType, LigandVendors, LigandVendorLink, AssayExperiment, Endogenous_GTP, LigandRole
 from protein.models import Protein, Species
 
@@ -171,17 +171,17 @@ class Command(BaseBuild):
             for ligand in association[target]:
                 #adding species and role info
                 try:
-                    role = interactions.loc[(interactions['Target ID'] == target) & (interactions['Ligand ID'] == ligand), 'Action'].values[0]
+                    role = interactions.loc[(interactions['target_id'] == target) & (interactions['ligand_id'] == ligand), 'action'].values[0]
                 except IndexError:
                     role = None
                 uniq_rows.loc[(uniq_rows['Target_ID'] == target) & (uniq_rows['Ligand_ID'] == ligand), 'Ligand_Role'] = role
                 try:
-                    action = interactions.loc[(interactions['Target ID'] == target) & (interactions['Ligand ID'] == ligand), 'Type'].values[0]
+                    action = interactions.loc[(interactions['target_id'] == target) & (interactions['ligand_id'] == ligand), 'type'].values[0]
                 except IndexError:
                     action = None
                 uniq_rows.loc[(uniq_rows['Target_ID'] == target) & (uniq_rows['Ligand_ID'] == ligand), 'Ligand_Action'] = action
                 try:
-                    species = interactions.loc[(interactions['Target ID'] == target) & (interactions['Ligand ID'] == ligand), 'Ligand Species'].values[0]
+                    species = interactions.loc[(interactions['target_id'] == target) & (interactions['ligand_id'] == ligand), 'ligand_species'].values[0]
                 except IndexError:
                     species = None
                 uniq_rows.loc[(uniq_rows['Target_ID'] == target) & (uniq_rows['Ligand_ID'] == ligand), 'Ligand_Species'] = species
@@ -511,17 +511,17 @@ class Command(BaseBuild):
     def build_chembl_publications(publication_data):
 
         pub_db = {}
-
-        existing_ids = list(WebLink.objects.filter(web_resource=3).values_list("index", flat=True).distinct())
+        wr_doi = WebResource.objects.get(slug="doi")
+        existing_ids = list(WebLink.objects.filter(web_resource=wr_doi).values_list("index", flat=True).distinct())
 
         for index, row in publication_data.iterrows():
             if row['doi'] in existing_ids:
-                wl = WebLink.objects.get(index=row['doi'], web_resource=3)
+                wl = WebLink.objects.get(index=row['doi'], web_resource=wr_doi)
             else:
                 try:
                     wl = WebLink.objects.create(index=row['doi'], web_resource=WebResource.objects.get(slug='doi'))
                 except IntegrityError:
-                    wl = WebLink.objects.get(index=row['doi'], web_resource=3)
+                    wl = WebLink.objects.get(index=row['doi'], web_resource=wr_doi)
             try:
                 pub_db[row['doi']] = Publication.objects.get(web_link=wl)
             except Publication.DoesNotExist:
@@ -535,6 +535,9 @@ class Command(BaseBuild):
                     journal_slug = slugify(row['journal'].replace('.',' '))
                     if not pd.isnull(row['journal_full_title']):
                         journal_fullname =  row['journal_full_title']
+                        # Remove dot when present at the end
+                        if journal_fullname[-1] == ".":
+                            journal_fullname = journal_fullname[:-1]
                     else:
                         journal_fullname =  row['journal']
                     pub.journal, created = PublicationJournal.objects.get_or_create(defaults={"name": journal_fullname, 'slug': journal_slug}, name__iexact=journal_fullname)
@@ -1168,8 +1171,8 @@ class Command(BaseBuild):
         protein_names = {}
         ligand_cache = {}
         print("\n===============\n#1 Reading PDSP bioacitivity data")
-        bioactivity_kidatabase_file = os.sep.join([settings.DATA_DIR, "ligand_data", "assay_data", "KiDatabase.csv"])
-        bioactivity_kidata = pd.read_csv(bioactivity_kidatabase_file, dtype=str)
+        pdsp_link = get_or_create_url_cache("https://pdsp.unc.edu/databases/kiDownload/download.php", 7 * 24 * 3600)
+        bioactivity_kidata = pd.read_csv(pdsp_link, dtype=str, encoding='mac_roman')
         #Keeping data that has either SMILES info OR CAS info
         #CAS number can be translated into pubchem CID
         bioactivity_data_filtered = bioactivity_kidata.loc[(~bioactivity_kidata['SMILES'].isnull()) | (~bioactivity_kidata['CAS'].isnull())]
