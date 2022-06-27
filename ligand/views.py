@@ -129,89 +129,102 @@ def LigandDetails(request, ligand_id):
     return render(request, 'ligand_details.html', context)
 
 def TargetDetailsCompact(request, **kwargs):
-
+    cache_key = False
     simple_selection = request.session.get('selection', False)
     selection = Selection()
     if simple_selection:
         selection.importer(simple_selection)
     if selection.reference != []:
         prot_id = [x.item for x in selection.reference]
+        cache_key = "lig_compact_protid_" + ",".join(prot_id)
         ps = AssayExperiment.objects.filter(
             protein__in=prot_id, ligand__ids__web_resource__slug='chembl_ligand')
+
     # if queryset is empty redirect to ligand browser
     if not ps:
         return redirect("ligand_browser")
 
-    ps = ps.prefetch_related(
-        'protein', 'ligand__ids__web_resource', 'ligand__vendors__vendor')
-    d = {}
-    for p in ps:
-        if p.ligand not in d:
-            d[p.ligand] = {}
-        if p.protein not in d[p.ligand]:
-            d[p.ligand][p.protein] = []
-        d[p.ligand][p.protein].append(p)
-    ligand_data = []
-    for lig, records in d.items():
+    if cache_key != False and cache.has_key(cache_key):
+        ligand_data = cache.get(cache_key)
+    else:
+        ps = ps.prefetch_related(
+            'protein', 'ligand__ids__web_resource')
+        d = {}
+        for p in ps:
+            if p.ligand not in d:
+                d[p.ligand] = {}
+            if p.protein not in d[p.ligand]:
+                d[p.ligand][p.protein] = []
+            d[p.ligand][p.protein].append(p)
 
-        links = lig.ids.all()
-        chembl_id = [x for x in links if x.web_resource.slug ==
-                     'chembl_ligand'][0].index
 
-        vendors = lig.vendors.all()
-        purchasability = 'No'
-        for v in vendors:
-            if v.vendor.name not in ['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem']:
-                purchasability = 'Yes'
+        lig_ids = set([record.ligand_id for record in ps])
+        purchasable = list(LigandVendorLink.objects.filter(ligand__pk__in=lig_ids).exclude(vendor__name__in=['ZINC', 'ChEMBL',
+            'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem']).values_list('ligand__pk', flat = True).distinct())
 
-        for record, vals in records.items():
-            per_target_data = vals
-            protein_details = record
-            """
-            A dictionary of dictionaries with a list of values.
-            Assay_type
-            |
-            ->  Standard_type [list of values]
-            """
-            tmp = defaultdict(list)
-            tmp_count = 0
-            for data_line in per_target_data:
-                tmp["Bind" if data_line.assay_type == 'B' else "Funct"].append(
-                    data_line.p_activity_value)
-                tmp_count += 1
+        ligand_data = []
+        for lig, records in d.items():
 
-            # TEMPORARY workaround for handling string values
-            values = [float(item) for item in itertools.chain(
-                *tmp.values()) if float(item)]
+            links = lig.ids.all()
+            chembl_id = [x for x in links if x.web_resource.slug ==
+                         'chembl_ligand'][0].index
 
-            if len(values) > 0:
-                ligand_data.append({
-                    'lig_id': lig.id,
-                    'ligand_id': chembl_id,
-                    'protein_name': protein_details.entry_name,
-                    'species': protein_details.species.common_name,
-                    'record_count': tmp_count,
-                    'assay_type': ', '.join(tmp.keys()),
-                    'purchasability': purchasability,
-                    # Flattened list of lists of dict keys:
-                    'low_value': min(values),
-                    'average_value': sum(values) / len(values),
-                    'high_value': max(values),
-                    # 'standard_units': ', '.join(list(set([x.standard_units for x in per_target_data]))),
-                    'smiles': lig.smiles,
-                    'mw': lig.mw,
-                    'rotatable_bonds': lig.rotatable_bonds,
-                    'hdon': lig.hdon,
-                    'hacc': lig.hacc,
-                    'logp': lig.logp,
-                })
+            purchasability = 'No'
+            if lig.id in purchasable:
+                    purchasability = 'Yes'
+
+            for record, vals in records.items():
+                per_target_data = vals
+                protein_details = record
+                """
+                A dictionary of dictionaries with a list of values.
+                Assay_type
+                |
+                ->  Standard_type [list of values]
+                """
+                tmp = defaultdict(list)
+                tmp_count = 0
+                for data_line in per_target_data:
+                    tmp["Bind" if data_line.assay_type == 'B' else "Funct"].append(
+                        data_line.p_activity_value)
+                    tmp_count += 1
+
+                # TEMPORARY workaround for handling string values
+                values = [float(item) for item in itertools.chain(
+                    *tmp.values()) if item != None and float(item)]
+                values = [1]
+
+                if len(values) > 0:
+                    ligand_data.append({
+                        'lig_id': lig.id,
+                        'ligand_id': chembl_id,
+                        'protein_name': protein_details.entry_name,
+                        'species': protein_details.species.common_name,
+                        'record_count': tmp_count,
+                        'assay_type': ', '.join(tmp.keys()),
+                        'purchasability': purchasability,
+                        # Flattened list of lists of dict keys:
+                        'low_value': min(values),
+                        'average_value': sum(values) / len(values),
+                        'high_value': max(values),
+                        # 'standard_units': ', '.join(list(set([x.standard_units for x in per_target_data]))),
+                        'smiles': lig.smiles,
+                        'mw': lig.mw,
+                        'rotatable_bonds': lig.rotatable_bonds,
+                        'hdon': lig.hdon,
+                        'hacc': lig.hacc,
+                        'logp': lig.logp,
+                    })
     context = {}
     context['ligand_data'] = ligand_data
+    cache.set(cache_key, ligand_data, 60*60*24*7)
 
     return render(request, 'target_details_compact.html', context)
 
 def TargetDetailsExtended(request, **kwargs):
+    cache_key = False
     if 'slug' in kwargs:
+        cache_key = "lig_ext_slug_" + kwargs['slug']
         ps = AssayExperiment.objects.filter(
              protein__family__slug=kwargs['slug'], ligand__ids__web_resource__slug='chembl_ligand')
     else:
@@ -221,37 +234,46 @@ def TargetDetailsExtended(request, **kwargs):
             selection.importer(simple_selection)
         if selection.reference != []:
             prot_id = [x.item for x in selection.reference]
-            ps = AssayExperiment.objects.filter(
-                protein__in=prot_id, ligand__ids__web_resource__slug='chembl_ligand')
+            if len(prot_id) > 0:
+                cache_key = "lig_ext_protid_" + ",".join(prot_id)
+                ps = AssayExperiment.objects.filter(
+                    protein__in=prot_id, ligand__ids__web_resource__slug='chembl_ligand')
 
     # if queryset is empty redirect to ligand browser
     if not ps:
         return redirect("ligand_browser")
 
-    ps = ps.values('value_type',
-                   'standard_relation',
-                   'standard_activity_value',
-                   'assay_description',
-                   'assay_type',
-                   # 'standard_units',
-                   'p_activity_value',
-                   'ligand__id',
-                   'ligand__ids__index',
-                   'protein__species__common_name',
-                   'protein__entry_name',
-                   'ligand__mw',
-                   'ligand__logp',
-                   'ligand__rotatable_bonds',
-                   'ligand__smiles',
-                   'ligand__hdon',
-                   'ligand__hacc', 'protein'
-                   ).annotate(num_targets=Count('protein__id', distinct=True))
-    for record in ps:
-        record['purchasability'] = 'Yes' if LigandVendorLink.objects.filter(ligand__id=record['ligand__id']).exclude(
-            vendor__name__in=['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem']).count() > 0 else 'No'
+    if cache_key != False and cache.has_key(cache_key):
+        ps = cache.get(cache_key)
+    else:
+        ps = ps.values('value_type',
+                       'standard_relation',
+                       'standard_activity_value',
+                       'assay_description',
+                       'assay_type',
+                       # 'standard_units',
+                       'p_activity_value',
+                       'ligand__id',
+                       'ligand__ids__index',
+                       'protein__species__common_name',
+                       'protein__entry_name',
+                       'ligand__mw',
+                       'ligand__logp',
+                       'ligand__rotatable_bonds',
+                       'ligand__smiles',
+                       'ligand__hdon',
+                       'ligand__hacc', 'protein'
+                       ).annotate(num_targets=Count('protein__id', distinct=True))
+
+        lig_ids = set([record['ligand__id'] for record in ps])
+        purchasable = list(LigandVendorLink.objects.filter(ligand__pk__in=lig_ids).exclude(vendor__name__in=['ZINC', 'ChEMBL',
+            'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem']).values_list('ligand__pk', flat = True).distinct())
+        for record in ps:
+            record['purchasability'] = 'Yes' if record['ligand__id'] in purchasable else 'No'
 
     context = {}
     context['proteins'] = ps
+    cache.set(cache_key, ps, 60*60*24*7)
 
     return render(request, 'target_details.html', context)
 
