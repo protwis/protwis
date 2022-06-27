@@ -1,4 +1,4 @@
-/*global Papa,d3,yadcf,showPDBtable,showAlert, _, signprotmat, con_seq, non_interactions,interactions_metadata,interactions,gprot,receptor,csrf_token*/
+/*global Papa,d3,yadcf,createYADCFfilters,showPDBtable,showAlert, _, signprotmat, con_seq, non_interactions,interactions_metadata,interactions,gprot,receptor,csrf_token*/
 /*eslint complexity: ["error", 20]*/
 
 let pdb_sel = [];
@@ -28,10 +28,11 @@ let old_sets = [];
 let pos_set = [];
 let neg_set = [];
 
+var filtering_particle = false;
 try {
-  var filtering_particle = document.getElementById("htmlVariable").getAttribute( "data-url" );
+  filtering_particle = document.getElementById("htmlVariable").getAttribute( "data-url" );
 } catch (e) {
-  var filtering_particle = false;
+  filtering_particle = false;
 }
 
 const get_gn = function() {
@@ -305,10 +306,11 @@ const run_seq_sig = function(interface_data) {
       var endTime = performance.now();
       var elapsed = endTime - startTime;
       console.log("run_sig_match execution Time: " + elapsed);
-      var startTime = performance.now();
+
+      startTime = performance.now();
       initialize_consensus(data.feat);
-      var endTime = performance.now();
-      var elapsed = endTime - startTime;
+      endTime = performance.now();
+      elapsed = endTime - startTime;
       console.log("initialize_consensus execution Time: " + elapsed);
     },
     error(jqXHR, exception) {
@@ -385,6 +387,7 @@ const run_sig_match = function() {
       document.querySelector("#sigmatch-container").style.display = "inline-block";
       //sigmatch_data = Object.keys(data).map((key) => {data[String(key)];});
       let column_filters = [];
+      let columns_to_add = [];
       // Family column
       column_filters = column_filters.concat(createYADCFfilters(2, 1, "multi_select", "select2", "Select", false, null, null, "120px"));
       // IUPHAR column
@@ -420,7 +423,7 @@ const run_sig_match = function() {
                 targets: 5,
               }];
       sigmatch_data = Object.keys(data).map(key => data[key]);
-      if (filtering_particle == 'G alpha') {
+      if (filtering_particle === "G alpha") {
         columns_to_add = [{
               data: "Gs.html",
               title: "Gs",
@@ -704,7 +707,7 @@ $(document).ready(function() {
         effector: filtering_particle,
         csrfmiddlewaretoken: csrf_token,
       },
-      success: function (data) {
+      success(data) {
         non_interactions = data[0];
         selected_interactions = data[1];
       }

@@ -893,7 +893,8 @@ class StructureStatistics(TemplateView):
 				families.append(fname)
 		return families
 
-	def count_by_class(self, queryset, lookup, extra=False):
+	@staticmethod
+	def count_by_class(queryset, lookup, extra=False):
 
 		#Ugly walkaround
 		classes = [lookup[x] for x in reversed(['001', '002', '003', '004', '005', '006', '007'])]
@@ -915,7 +916,8 @@ class StructureStatistics(TemplateView):
 
 		return tmp
 
-	def count_by_effector_class(self, queryset, lookup, nc=False, effector='gprot'):
+	@staticmethod
+	def count_by_effector_class(queryset, lookup, nc=False, effector='gprot'):
 
 		#Ugly walkaround
 		if effector == 'gprot':

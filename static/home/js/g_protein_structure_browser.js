@@ -1,3 +1,4 @@
+/*global yadcf, createYADCFfilters*/
 function gproteinstructurebrowser(effector) {
 // $(document).ready(function () {
     // 'use strict';
@@ -15,9 +16,9 @@ function gproteinstructurebrowser(effector) {
     $("#loading_div").hide();
 
     let column_filters = [];
-
-    if (effector == 'gprot'){
-      var oTable2 = $('#structures_scrollable').DataTable({
+    var oTable2;
+    if (effector === "gprot"){
+      oTable2 = $('#structures_scrollable').DataTable({
           "scrollY":        "65vh",
           "scrollX":        true,
           "scrollCollapse": true,
@@ -26,7 +27,7 @@ function gproteinstructurebrowser(effector) {
           // "bSortCellsTop": true,
           "aaSorting": [],
           "autoWidth": false,
-          "order": [[29,'desc'],[1,'asc']],
+          "order": [[29,"desc"],[1,"asc"]],
           "columnDefs": [
               { "targets": 'no-sort', "orderable": false }
               ],
@@ -74,14 +75,14 @@ function gproteinstructurebrowser(effector) {
       column_filters = column_filters.concat(createYADCFfilters(2, 1, "multi_select", "select2", "&alpha", false, "exact", "html", "40px"));
       column_filters = column_filters.concat(createYADCFfilters(3, 1, "multi_select", "select2", "Species", false, null, null, "55px"));
       column_filters = column_filters.concat(createYADCFfilters(3, 1, "multi_select", "select2", "Note", false, null, null, "80px"));
-      column_filters = column_filters.concat(createYADCFfilters(5, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+      column_filters = column_filters.concat(createYADCFfilters(5, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"));
       column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "&beta", false, "exact", "html", "40px"));
       column_filters = column_filters.concat(createYADCFfilters(7, 1, "multi_select", "select2", "Species", false, null, null, "55px"));
       column_filters = column_filters.concat(createYADCFfilters(8, 1, "multi_select", "select2", "&gamma", false, "exact", "html", "40px"));
       column_filters = column_filters.concat(createYADCFfilters(9, 1, "multi_select", "select2", "Species", false, null, null, "55px"));
       column_filters = column_filters.concat(createYADCFfilters(10, 1, "multi_select", "select2", "Method", false, null, null, "60px"));
       column_filters = column_filters.concat(createYADCFfilters(11, 2, "multi_select", "select2", "", false, null, "html", "50px"));
-      column_filters = column_filters.concat(createYADCFfilters(13, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+      column_filters = column_filters.concat(createYADCFfilters(13, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"));
       column_filters = column_filters.concat(createYADCFfilters(14, 1, "multi_select", "select2", "UniProt", false, "exact", "html", "60px"));
       column_filters = column_filters.concat(createYADCFfilters(15, 1, "multi_select", "select2", "IUPHAR", false, "exact", "html", "60px"));
       column_filters = column_filters.concat(createYADCFfilters(16, 1, "multi_select", "select2", "Receptor family", false, "exact", "html", "120px"));
@@ -99,7 +100,7 @@ function gproteinstructurebrowser(effector) {
       column_filters = column_filters.concat(createYADCFfilters(28, 1, "multi_select", "select2", "Reference", false, null, null, "140px"));
       column_filters = column_filters.concat(createYADCFfilters(29, 1, "range_date", null, ["Min", "Max"], false, null, null, "30px"));
     } else {
-      var oTable2 = $('#structures_scrollable').DataTable({
+      oTable2 = $('#structures_scrollable').DataTable({
           "scrollY":        "65vh",
           "scrollX":        true,
           "scrollCollapse": true,
@@ -150,10 +151,10 @@ function gproteinstructurebrowser(effector) {
       column_filters = column_filters.concat(createYADCFfilters(2, 1, "multi_select", "select2", "Arrestin", false, "exact", "html", "40px"));
       column_filters = column_filters.concat(createYADCFfilters(3, 1, "multi_select", "select2", "Species", false, null, null, "55px"));
       column_filters = column_filters.concat(createYADCFfilters(3, 1, "multi_select", "select2", "Note", false, null, null, "80px"));
-      column_filters = column_filters.concat(createYADCFfilters(5, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+      column_filters = column_filters.concat(createYADCFfilters(5, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"));
       column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "Method", false, null, null, "60px"));
       column_filters = column_filters.concat(createYADCFfilters(7, 2, "multi_select", "select2", "", false, null, "html", "50px"));
-      column_filters = column_filters.concat(createYADCFfilters(9, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+      column_filters = column_filters.concat(createYADCFfilters(9, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"));
       column_filters = column_filters.concat(createYADCFfilters(10, 1, "multi_select", "select2", "UniProt", false, "exact", "html", "60px"));
       column_filters = column_filters.concat(createYADCFfilters(11, 1, "multi_select", "select2", "IUPHAR", false, "exact", "html", "60px"));
       column_filters = column_filters.concat(createYADCFfilters(12, 1, "multi_select", "select2", "Receptor family", false, "exact", "html", "120px"));
@@ -705,7 +706,7 @@ var tableToExcel = (function () {
     var uri = 'data:application/vnd.ms-excel;base64,',
         template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>',
         base64 = function (s) {
-            return window.btoa(unescape(encodeURIComponent(s)))
+            return window.btoa(unescape(encodeURIComponent(s)));
         }, format = function (s, c) {
             return s.replace(/{(\w+)}/g, function (m, p) {
                 return c[p];
@@ -777,7 +778,7 @@ function copyToClipboard(array, delimiter, data_name, powertip_object=false) {
             $.powerTip.hide();
             powertip_object.data('powertipjq', $([
                 '<p>Copied to clipboard!</p>'
-                ].join('\n')))
+              ].join('\n')));
             powertip_object.powerTip('show');
             setTimeout(function() {
             powertip_object.data('powertipjq', $([
