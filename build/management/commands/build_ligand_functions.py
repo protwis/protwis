@@ -76,7 +76,7 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
                 data = fetch_from_web_api(cas_to_cid_url, ids[type_id], cache_dir, xml=True)
                 if data:
                     try:
-                        ids['pubchem'] = int(data[3][0])
+                        ids['pubchem'] = int(data[3][0].text)
                     except:
                         pass
                 ids.pop('CAS', None)
