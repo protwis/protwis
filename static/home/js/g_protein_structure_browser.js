@@ -1,4 +1,5 @@
-/*global $,yadcf,createYADCFfilters*/
+/*global yadcf,createYADCFfilters,ClearSelection,superposition,AddToSelection,copyToClipboard,*/
+/*eslint complexity: ["error", 20]*/
 function gproteinstructurebrowser(effector) {
 // $(document).ready(function () {
     // 'use strict';
@@ -6,9 +7,9 @@ function gproteinstructurebrowser(effector) {
     var current_align_ids = Array()
 
     //Uncheck every row when using back button on browser
-    $(".alt_selected").prop("checked",false)
-    $(".alt").prop("checked",false)
-    $(".select-all").prop("checked",false)
+    $(".alt_selected").prop("checked",false);
+    $(".alt").prop("checked",false);
+    $(".select-all").prop("checked",false);
     //
     ClearSelection("targets");
     ClearSelection("reference");
@@ -496,7 +497,7 @@ function gproteinstructurebrowser(effector) {
     // );
 
     //yadcf.exResetAllFilters(oTable2);
-    oTable2.columns.adjust()
+    oTable2.columns.adjust();
 
     // $(function(){
     //     $(".wrapper").scroll(function(){
@@ -651,7 +652,7 @@ function gproteinstructurebrowser(effector) {
     });
 
     $("#reset_filters_btn").click(function () {
-        window.location.href = "/structure/"
+        window.location.href = "/structure/";
     });
 
     $(".close_modal").click(function () {
@@ -659,7 +660,7 @@ function gproteinstructurebrowser(effector) {
         modal.style.display = "none";
     });
 
-    $(".dataTables_scrollBody").append('<div id=overlay><table id="overlay_table" class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
+    $(".dataTables_scrollBody").append("<div id=overlay><table id=\"overlay_table\" class=\"row-border text-center compact dataTable no-footer text-nowrap\"><tbody></tbody></table></div>");
 
     function create_overlay() {
         // This function fires upon filtering, to update what rows to show as an overlay
@@ -724,7 +725,9 @@ var tableToExcel = (function () {
             var tr = $("#excel_table thead tr:eq(1)");
             // reattach th titles
             tr.find("th").each (function( column, th) {
-              if ($(th).attr("title")) $(th).html($(th).attr("title"));
+              if ($(th).attr("title")){
+                $(th).html($(th).attr("title"));
+              }
             });
 
         var ctx = {
@@ -763,8 +766,8 @@ function copyToClipboard(array, delimiter, data_name, powertip_object=false) {
         out+=ele[ele.length-1]+delimiter;
     });
     if (out.length===0) {
-        window.alert("No entries selected for copying")
-        return 0
+        window.alert("No entries selected for copying");
+        return 0;
     }
     var textArea = document.createElement("textarea");
     textArea.value = out;
@@ -783,7 +786,7 @@ function copyToClipboard(array, delimiter, data_name, powertip_object=false) {
             setTimeout(function() {
             powertip_object.data("powertipjq", $([
                 "<p>Export "+data_name+"</p>"
-                ].join("\n")))
+              ].join("\n")));
             },1000);
         }
     } catch (err) {

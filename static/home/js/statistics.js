@@ -1,4 +1,4 @@
-/*global $,nv,d3,data_cryst_year_container,data_unique_class_cryst_container,data_unique_class_cryst_year_container,data_cryst_class_year_container,data_unique_cryst_container,data_unique_cryst_year_container*/
+/*global nv,d3,data_cryst_year_container,data_unique_class_cryst_container,data_unique_class_cryst_year_container,data_cryst_class_year_container,data_unique_cryst_container,data_unique_cryst_year_container*/
 
  function mergeSVG(div) {
      let SVG = $("#"+div).find("svg")[0];
@@ -7,7 +7,7 @@
      let legend = $("#legend").find("svg")[0];
      let h2 = parseInt($(legend).attr("height"), 10);
      let w2 = parseInt($(legend).attr("width"), 10);
-     let leg_w = (w-w2)/2
+     let leg_w = (w-w2)/2;
      SVG.setAttribute("height", (h + h2));
      if (w2 > w) {
          SVG.setAttribute("width", (w2));
@@ -214,9 +214,9 @@
       });
 
       $(".chart_type").click(function () {
-          clear_all()
+          clear_all();
           $(this).css("fill", "#000000");
-          let point = $("#" + $(this).attr("id")).find("svg")
+          let point = $("#" + $(this).attr("id")).find("svg");
           $(point).css("visibility", "hidden");
           $("#"+$(this).attr("id") + ".chart_container").css("display", "");
       });
