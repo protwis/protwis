@@ -228,7 +228,7 @@ def PdbTableData(request):
         data = data.filter(extra_proteins__category__startswith=effector).prefetch_related(
         'extra_proteins__protein_conformation','extra_proteins__wt_protein').order_by(
         'extra_proteins__protein_conformation__protein__parent','state').annotate(
-        res_count = Sum(Case(When(extra_proteins__protein_conformation__residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
+        res_count = Sum(Case(When(extra_proteins__structure__protein_conformation__residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
         signal_ps = StructureExtraProteins.objects.filter(category__startswith=effector).values('structure__protein_conformation__protein__parent','display_name').order_by().annotate(coverage = Max('wt_coverage'))
     else:
         data = data.prefetch_related('extra_proteins__protein_conformation','extra_proteins__wt_protein').order_by(
