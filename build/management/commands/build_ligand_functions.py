@@ -5,11 +5,13 @@ from django.utils.text import slugify
 
 from ligand.models import Ligand, LigandID, LigandType, LigandRole
 from common.models import WebResource
-from common.tools import get_or_create_url_cache, fetch_from_web_api
+from common.tools import get_or_create_url_cache, fetch_from_web_api, save_to_cache
 
 import time
 import os
 import re
+import requests
+import xmltodict
 
 import datamol as dm
 from rdkit import RDLogger
@@ -56,7 +58,8 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
     """
 
     ligand = None
-
+    cas_to_cid_url =  "http://www.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pccompound&retmax=100&term=$index"
+    cache_dir = ['CAS', 'cas_codes']
     # Check and filter IDs
     for type_id in list(ids.keys()):
         if ids[type_id] == None or ids[type_id] == "None" or ids[type_id] == "":
@@ -69,6 +72,14 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
             ids[type_id] = ids[type_id].strip()
             if type_id == "chembl_ligand":
                 ids[type_id] = ids[type_id].upper()
+            if type_id == "CAS":
+                data = fetch_from_web_api(cas_to_cid_url, ids[type_id], cache_dir, xml=True)
+                if data:
+                    try:
+                        ids['pubchem'] = int(data[3][0].text)
+                    except:
+                        pass
+                ids.pop('CAS', None)
         elif isinstance(ids[type_id], list) and len(ids[type_id]) == 1:
             ids[type_id] = ids[type_id][0]
 
@@ -262,7 +273,7 @@ def match_id_via_unichem(type, id):
         unichem_url = "https://www.ebi.ac.uk/unichem/rest/src_compound_id/$index/" + type_id
         cache_dir[1] = "id_match_" + type
         unichem = fetch_from_web_api(unichem_url, id, cache_dir)
-        if unichem:
+        if unichem and "error" not in unichem:
             for entry in unichem:
                 if entry["src_id"] in unichem_src_types.keys():
                     results.append({"type" : unichem_src_types[entry["src_id"]], "id": entry["src_compound_id"]})
@@ -270,7 +281,7 @@ def match_id_via_unichem(type, id):
         unichem_url = "https://www.ebi.ac.uk/unichem/rest/inchikey/$index"
         cache_dir[1] = "id_match_" + type
         unichem = fetch_from_web_api(unichem_url, id, cache_dir)
-        if unichem:
+        if unichem and "error" not in unichem:
             for entry in unichem:
                 if entry["src_id"] in unichem_src_types.keys():
                     results.append({"type" : unichem_src_types[entry["src_id"]], "id": entry["src_compound_id"]})
@@ -284,7 +295,8 @@ def get_ligand_by_id(type, id, uniprot = None):
         result = Ligand.objects.filter(ids__index=id, ids__web_resource__slug=type, uniprot__contains=uniprot.upper())
 
     if result.count() > 0:
-        if result.count() > 1:
+        # For drugs we allow multiple entries because of stereochemistry if drug is racemic
+        if result.count() > 1 and type not in ["drugbank", "drug_central"]:
             print("Multiple entries for the same ID - This should never happen - error", type, id)
         return result.first()
     else:

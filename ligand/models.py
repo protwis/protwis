@@ -340,20 +340,34 @@ class LigandRole(models.Model):
     class Meta():
         db_table = 'ligand_role'
 
+# class AssayExperiment(models.Model):
+#     ligand = models.ForeignKey('Ligand', on_delete=models.CASCADE)
+#     protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
+#     assay_type = models.CharField(max_length=10)
+#     assay_description = models.TextField(max_length=1000)
+#
+#     pchembl_value = models.CharField(max_length=10, null=True)
+#
+#     standard_value = models.CharField(max_length=15, null=True)
+#     standard_relation = models.CharField(max_length=10)
+#     standard_type = models.CharField(max_length=20)
+#     standard_units = models.CharField(max_length=20)
+#
+#     document_chembl_id = models.CharField(max_length=50, null=True)
+
 class AssayExperiment(models.Model):
     ligand = models.ForeignKey('Ligand', on_delete=models.CASCADE)
     protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
     assay_type = models.CharField(max_length=10)
-    assay_description = models.TextField(max_length=1000)
-
-    pchembl_value = models.CharField(max_length=10, null=True)
-
-    standard_value = models.CharField(max_length=15, null=True)
+    assay_description = models.TextField(max_length=1000, null=True)
+    standard_activity_value = models.CharField(max_length=20, null=True)
+    p_activity_value = models.CharField(max_length=100, null=True) #Only 1 value, median/max fot GTP (p activity)
+    p_activity_ranges = models.CharField(max_length=40, null=True) #If we have ranges (GtP)
     standard_relation = models.CharField(max_length=10)
-    standard_type = models.CharField(max_length=20)
-    standard_units = models.CharField(max_length=20)
-
-    document_chembl_id = models.CharField(max_length=50, null=True)
+    value_type = models.CharField(max_length=50, null=True)
+    source = models.CharField(max_length=50, null=True)
+    publication = models.ManyToManyField(Publication)
+    document_chembl_id = models.CharField(max_length=100, null=True)
 
 
 class LigandVendors(models.Model):

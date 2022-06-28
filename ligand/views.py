@@ -19,90 +19,60 @@ from django.views.decorators.csrf import csrf_exempt
 
 from django.core.cache import cache
 
-from common.views import AbsTargetSelectionTable, Alignment, AbsReferenceSelectionTable, getReferenceTable, getLigandTable
+from common.views import AbsReferenceSelectionTable, getReferenceTable, getLigandTable, getLigandCountTable
 from common.models import ReleaseNotes, WebResource, Publication
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
-from common.selection import Selection
-from ligand.models import Ligand, LigandVendorLink, LigandVendors, BiasedPathways, AssayExperiment, BiasedData, Endogenous_GTP, BalancedLigands
+from common.selection import Selection, SelectionItem
+from ligand.models import Ligand, LigandVendorLink, BiasedPathways, AssayExperiment, BiasedData, Endogenous_GTP, LigandID
 from ligand.functions import OnTheFly, AddPathwayData
-from protein.models import Protein, ProteinFamily, ProteinCouplings
+from protein.models import Protein, ProteinFamily
 from interaction.models import StructureLigandInteraction
 from mutation.models import MutationExperiment
 
-class LigandTargetSelection(AbsTargetSelectionTable):
-    step = 1
-    number_of_steps = 1
-    filter_tableselect = False
-    #docs = 'sequences.html#structure-based-alignments'
-    title = "SELECT RECEPTORS with ligand assays"
-    description = 'Select receptors in the table (below) or browse the classification tree (right). You can select entire' \
-        + ' families or individual receptors.\n\nOnce you have selected all your receptors, click the green button.'
-    selection_boxes = OrderedDict([
-        ('reference', False),
-        ('targets', True),
-        ('segments', False),
-    ])
-    buttons = {
-        'continue': {
-            'label': 'Next',
-            'onclick': "submitSelection('/ligand/browser');",
-            'color': 'success',
-        },
-    }
+class LigandTargetSelection(AbsReferenceSelectionTable):
+        step = 1
+        number_of_steps = 1
+        filters = False
+        filter_tableselect = False
+        family_tree = False
+        import_export_box = False
+        ligand_js = True
 
-class LigandBrowser(TemplateView):
-    """
-    Per target summary of ligands.
-    """
-    template_name = 'ligand_browser.html'
+        title = "SELECT A RECEPTOR with ligand assays"
+        description = 'Select a receptor in the table (below).' \
+            + '\n\nOnce you have selected your receptor, click a green button.'
 
-    def get_context_data(self, **kwargs):
-        protein_list = list()
-        try:
-            simple_selection = self.request.session.get('selection', False)
-            a = Alignment()
-            # load data from selection into the alignment
-            a.load_proteins_from_selection(simple_selection)
-            for items in a.proteins:
-                protein_list.append(items.protein)
-        except:
-            protein_list.append(1)
-        context = super(LigandBrowser, self).get_context_data(**kwargs)
-        ligands = AssayExperiment.objects.filter(protein__in=protein_list,).values(
-            'protein',
-            'protein__entry_name',
-            'protein__species__common_name',
-            'protein__family__name',
-            'protein__family__parent__name',
-            'protein__family__parent__parent__name',
-            'protein__family__parent__parent__parent__name',
-            'protein__species__common_name'
-        ).annotate(num_ligands=Count('ligand', distinct=True)).prefetch_related('protein')
-        context['ligands'] = ligands
+        selection_boxes = OrderedDict([
+            ('reference', True),
+            ('targets', False),
+            ('segments', False),
+        ])
 
-        return context
+        buttons = {
+            'continue': {
+                'label': 'Compact (1 row/ligand)',
+                'onclick': "submitSelection('/ligand/targets_compact');",
+                'color': 'success',
+                "sameSize": True,
+            },
+            'pathway': {
+                'label': "Extended (1 row/ligand)",
+                'onclick': "submitSelection('/ligand/target_detail');",
+                'color': 'success',
+                "sameSize": True,
+            },
+        }
 
-    def fetch_receptor_transducers(self, receptor):
-        primary = set()
-        temp = str()
-        temp1 = str()
-        secondary = set()
-        try:
-            gprotein = ProteinCouplings.objects.filter(protein=receptor)
-            for x in gprotein:
-                if x.transduction and x.transduction == 'primary':
-                    primary.add(x.g_protein.name)
-                elif x.transduction and x.transduction == 'secondary':
-                    secondary.add(x.g_protein.name)
-            for i in primary:
-                temp += str(i.replace(' family', '')) + str(', ')
+        def get_context_data(self, **kwargs):
+            """Get context from parent class
 
-            for i in secondary:
-                temp1 += str(i.replace('family', '')) + str(', ')
-            return temp, temp1
-        except:
-            self.logger.info('receptor not found error')
-            return None, None
+            (really only relevant for children of this class, as TemplateView does
+            not have any context variables)
+            """
+            context = super().get_context_data(**kwargs)
+            context['table_data'] = getLigandCountTable()
+
+            return context
 
 def LigandDetails(request, ligand_id):
     """
@@ -129,8 +99,8 @@ def LigandDetails(request, ligand_id):
         tmp = defaultdict(lambda: defaultdict(list))
         tmp_count = 0
         for data_line in per_target_data:
-            tmp[data_line.assay_type][data_line.standard_type].append(
-                data_line.standard_value)
+            tmp[data_line.assay_type][data_line.value_type].append(
+                data_line.standard_activity_value)
             tmp_count += 1
 
         # Flattened list of lists of dict values
@@ -150,259 +120,243 @@ def LigandDetails(request, ligand_id):
                 # Flattened list of lists of dict keys:
                 'value_types': ', '.join(itertools.chain(*(list(tmp[x]) for x in tmp.keys()))),
                 'low_value': min(values),
-                'average_value': sum(values) / len(values),
-                'standard_units': ', '.join(list(set([x.standard_units for x in per_target_data])))
+                'average_value': sum(values) / len(values)
+                # 'standard_units': ', '.join(list(set([x.standard_units for x in per_target_data])))
             })
 
     context = {'ligand_data': ligand_data, 'ligand': ligand_id}
 
     return render(request, 'ligand_details.html', context)
 
-
 def TargetDetailsCompact(request, **kwargs):
-    if 'slug' in kwargs:
-        slug = kwargs['slug']
-        if slug.count('_') == 0:
-            ps = AssayExperiment.objects.filter(
-                protein__family__parent__parent__parent__slug=slug, ligand__ids__web_resource__slug='chembl_ligand')
-        elif slug.count('_') == 1 and len(slug) == 7:
-            ps = AssayExperiment.objects.filter(
-                protein__family__parent__parent__slug=slug, ligand__ids__web_resource__slug='chembl_ligand')
-        elif slug.count('_') == 2:
-            ps = AssayExperiment.objects.filter(
-                protein__family__parent__slug=slug, ligand__ids__web_resource__slug='chembl_ligand')
-        elif slug.count('_') == 3:
-            ps = AssayExperiment.objects.filter(
-                protein__family__slug=slug, ligand__ids__web_resource__slug='chembl_ligand')
-        elif slug.count('_') == 1 and len(slug) != 7:
-            ps = AssayExperiment.objects.filter(
-                protein__entry_name=slug, ligand__ids__web_resource__slug='chembl_ligand')
+    cache_key = False
+    simple_selection = request.session.get('selection', False)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+    if selection.reference != []:
+        prot_id = [x.item for x in selection.reference]
+        cache_key = "lig_compact_protid_" + ",".join(prot_id)
+        ps = AssayExperiment.objects.filter(
+            protein__in=prot_id, ligand__ids__web_resource__slug='chembl_ligand')
 
-        if slug.count('_') == 1 and len(slug) == 7:
-            f = ProteinFamily.objects.get(slug=slug)
-        else:
-            f = slug
-
-        context = {
-            'target': f
-        }
-    else:
-        simple_selection = request.session.get('selection', False)
-        if simple_selection == False or not simple_selection.targets :
-            return redirect("ligand_browser")
-        selection = Selection()
-        if simple_selection:
-            selection.importer(simple_selection)
-        if selection.targets != []:
-            prot_ids = [x.item.id for x in selection.targets]
-            ps = AssayExperiment.objects.filter(
-                protein__in=prot_ids, ligand__ids__web_resource__slug='chembl_ligand')
-            context = {
-                'target': ', '.join([x.item.entry_name for x in selection.targets])
-            }
     # if queryset is empty redirect to ligand browser
     if not ps:
         return redirect("ligand_browser")
 
+    if cache_key != False and cache.has_key(cache_key):
+        ligand_data = cache.get(cache_key)
+    else:
+        ps = ps.prefetch_related(
+            'protein', 'ligand__ids__web_resource')
+        d = {}
+        for p in ps:
+            if p.ligand not in d:
+                d[p.ligand] = {}
+            if p.protein not in d[p.ligand]:
+                d[p.ligand][p.protein] = []
+            d[p.ligand][p.protein].append(p)
 
-    ps = ps.prefetch_related(
-        'protein', 'ligand__ids__web_resource', 'ligand__vendors__vendor')
-    d = {}
-    for p in ps:
-        if p.ligand not in d:
-            d[p.ligand] = {}
-        if p.protein not in d[p.ligand]:
-            d[p.ligand][p.protein] = []
-        d[p.ligand][p.protein].append(p)
-    ligand_data = []
-    for lig, records in d.items():
 
-        links = lig.ids.all()
-        chembl_id = [x for x in links if x.web_resource.slug ==
-                     'chembl_ligand'][0].index
+        lig_ids = set([record.ligand_id for record in ps])
+        purchasable = list(LigandVendorLink.objects.filter(ligand__pk__in=lig_ids).exclude(vendor__name__in=['ZINC', 'ChEMBL',
+            'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem']).values_list('ligand__pk', flat = True).distinct())
 
-        vendors = lig.vendors.all()
-        purchasability = 'No'
-        for v in vendors:
-            if v.vendor.name not in ['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem']:
-                purchasability = 'Yes'
+        ligand_data = []
+        for lig, records in d.items():
 
-        for record, vals in records.items():
-            per_target_data = vals
-            protein_details = record
-            """
-            A dictionary of dictionaries with a list of values.
-            Assay_type
-            |
-            ->  Standard_type [list of values]
-            """
-            tmp = defaultdict(list)
-            tmp_count = 0
-            for data_line in per_target_data:
-                tmp["Bind" if data_line.assay_type == 'B' else "Funct"].append(
-                    data_line.pchembl_value)
-                tmp_count += 1
+            links = lig.ids.all()
+            chembl_id = [x for x in links if x.web_resource.slug ==
+                         'chembl_ligand'][0].index
 
-            # TEMPORARY workaround for handling string values
-            values = [float(item) for item in itertools.chain(
-                *tmp.values()) if float(item)]
+            purchasability = 'No'
+            if lig.id in purchasable:
+                    purchasability = 'Yes'
 
-            if len(values) > 0:
-                ligand_data.append({
-                    'lig_id': lig.id,
-                    'ligand_id': chembl_id,
-                    'protein_name': protein_details.entry_name,
-                    'species': protein_details.species.common_name,
-                    'record_count': tmp_count,
-                    'assay_type': ', '.join(tmp.keys()),
-                    'purchasability': purchasability,
-                    # Flattened list of lists of dict keys:
-                    'low_value': min(values),
-                    'average_value': sum(values) / len(values),
-                    'high_value': max(values),
-                    'standard_units': ', '.join(list(set([x.standard_units for x in per_target_data]))),
-                    'smiles': lig.smiles,
-                    'mw': lig.mw,
-                    'rotatable_bonds': lig.rotatable_bonds,
-                    'hdon': lig.hdon,
-                    'hacc': lig.hacc,
-                    'logp': lig.logp,
-                })
+            for record, vals in records.items():
+                per_target_data = vals
+                protein_details = record
+                """
+                A dictionary of dictionaries with a list of values.
+                Assay_type
+                |
+                ->  Standard_type [list of values]
+                """
+                tmp = defaultdict(list)
+                tmp_count = 0
+                for data_line in per_target_data:
+                    tmp["Bind" if data_line.assay_type == 'B' else "Funct"].append(
+                        data_line.p_activity_value)
+                    tmp_count += 1
+
+                # TEMPORARY workaround for handling string values
+                values = [float(item) for item in itertools.chain(
+                    *tmp.values()) if item != None and float(item)]
+
+                if len(values) > 0:
+                    ligand_data.append({
+                        'lig_id': lig.id,
+                        'ligand_id': chembl_id,
+                        'protein_name': protein_details.entry_name,
+                        'species': protein_details.species.common_name,
+                        'record_count': tmp_count,
+                        'assay_type': ', '.join(tmp.keys()),
+                        'purchasability': purchasability,
+                        # Flattened list of lists of dict keys:
+                        'low_value': min(values),
+                        'average_value': sum(values) / len(values),
+                        'high_value': max(values),
+                        # 'standard_units': ', '.join(list(set([x.standard_units for x in per_target_data]))),
+                        'smiles': lig.smiles,
+                        'mw': lig.mw,
+                        'rotatable_bonds': lig.rotatable_bonds,
+                        'hdon': lig.hdon,
+                        'hacc': lig.hacc,
+                        'logp': lig.logp,
+                    })
+    context = {}
     context['ligand_data'] = ligand_data
+    cache.set(cache_key, ligand_data, 60*60*24*7)
 
     return render(request, 'target_details_compact.html', context)
 
+def TargetDetailsExtended(request, **kwargs):
+    simple_selection = request.session.get('selection', False)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
 
-def TargetDetails(request, **kwargs):
-
+    cache_key = False
     if 'slug' in kwargs:
-        slug = kwargs['slug']
-        if slug.count('_') == 0:
-            ps = AssayExperiment.objects.filter(
-                protein__family__parent__parent__parent__slug=slug, ligand__ids__web_resource__slug='chembl_ligand')
-        elif slug.count('_') == 1 and len(slug) == 7:
-            ps = AssayExperiment.objects.filter(
-                protein__family__parent__parent__slug=slug, ligand__ids__web_resource__slug='chembl_ligand')
-        elif slug.count('_') == 2:
-            ps = AssayExperiment.objects.filter(
-                protein__family__parent__slug=slug, ligand__ids__web_resource__slug='chembl_ligand')
-        elif slug.count('_') == 3:
-            ps = AssayExperiment.objects.filter(
-                protein__family__slug=slug, ligand__ids__web_resource__slug='chembl_ligand')
-        elif slug.count('_') == 1 and len(slug) != 7:
-            ps = AssayExperiment.objects.filter(
-                protein__entry_name=slug, ligand__ids__web_resource__slug='chembl_ligand')
+        cache_key = "lig_ext_slug_" + kwargs['slug']
+        ps = AssayExperiment.objects.filter(
+             protein__family__slug=kwargs['slug'], ligand__ids__web_resource__slug='chembl_ligand')
 
-        if slug.count('_') == 1 and len(slug) == 7:
-            f = ProteinFamily.objects.get(slug=slug)
-        else:
-            f = slug
-
-        context = {
-            'target': f
-        }
+        # Set selection for purchasability page
+        prot_ids = list(AssayExperiment.objects.filter(
+             protein__family__slug=kwargs['slug'], ligand__ids__web_resource__slug='chembl_ligand').values_list("protein_id", flat = True).distinct())
+        proteins = Protein.objects.filter(pk__in=prot_ids)
+        for prot in proteins:
+            selection.add('targets', 'protein', SelectionItem('protein', prot))
+        simple_selection = selection.exporter()
+        request.session['selection'] = simple_selection
     else:
-        simple_selection = request.session.get('selection', False)
-        if simple_selection == False or not simple_selection.targets :
-            return redirect("ligand_browser")
-        selection = Selection()
-        if simple_selection:
-            selection.importer(simple_selection)
-        if selection.targets != []:
-            prot_ids = [x.item.id for x in selection.targets]
-            ps = AssayExperiment.objects.filter(
-                protein__in=prot_ids, ligand__ids__web_resource__slug='chembl_ligand')
-            context = {
-                'target': ', '.join([x.item.entry_name for x in selection.targets])
-            }
+        if selection.reference != []:
+            prot_id = [x.item for x in selection.reference]
+            if len(prot_id) > 0:
+                cache_key = "lig_ext_protid_" + ",".join(prot_id)
+                ps = AssayExperiment.objects.filter(
+                    protein__in=prot_id, ligand__ids__web_resource__slug='chembl_ligand')
+
     # if queryset is empty redirect to ligand browser
     if not ps:
         return redirect("ligand_browser")
 
-    ps = ps.values('standard_type',
-                   'standard_relation',
-                   'standard_value',
-                   'assay_description',
-                   'assay_type',
-                   'standard_units',
-                   'pchembl_value',
-                   'ligand__id',
-                   'ligand__ids__index',
-                   'protein__species__common_name',
-                   'protein__entry_name',
-                   'ligand__mw',
-                   'ligand__logp',
-                   'ligand__rotatable_bonds',
-                   'ligand__smiles',
-                   'ligand__hdon',
-                   'ligand__hacc', 'protein'
-                   ).annotate(num_targets=Count('protein__id', distinct=True))
-    for record in ps:
-        record['purchasability'] = 'Yes' if LigandVendorLink.objects.filter(ligand__id=record['ligand__id']).exclude(
-            vendor__name__in=['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem']).count() > 0 else 'No'
+    if cache_key != False and cache.has_key(cache_key):
+        ps = cache.get(cache_key)
+    else:
+        ps = ps.values('value_type',
+                       'standard_relation',
+                       'standard_activity_value',
+                       'assay_description',
+                       'assay_type',
+                       # 'standard_units',
+                       'p_activity_value',
+                       'ligand__id',
+                       'ligand__ids__index',
+                       'protein__species__common_name',
+                       'protein__entry_name',
+                       'ligand__mw',
+                       'ligand__logp',
+                       'ligand__rotatable_bonds',
+                       'ligand__smiles',
+                       'ligand__hdon',
+                       'ligand__hacc', 'protein'
+                       ).annotate(num_targets=Count('protein__id', distinct=True))
 
+        lig_ids = set([record['ligand__id'] for record in ps])
+        purchasable = list(LigandVendorLink.objects.filter(ligand__pk__in=lig_ids).exclude(vendor__name__in=['ZINC', 'ChEMBL',
+            'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem']).values_list('ligand__pk', flat = True).distinct())
+        for record in ps:
+            record['purchasability'] = 'Yes' if record['ligand__id'] in purchasable else 'No'
+
+    context = {}
     context['proteins'] = ps
+    cache.set(cache_key, ps, 60*60*24*7)
 
     return render(request, 'target_details.html', context)
 
 
 def TargetPurchasabilityDetails(request, **kwargs):
-
+    cache_key = False
     simple_selection = request.session.get('selection', False)
     selection = Selection()
     if simple_selection:
         selection.importer(simple_selection)
 
     if selection.targets != []:
-        prot_ids = [x.item.id for x in selection.targets]
+        prot_ids = [str(x.item.id) for x in selection.targets]
+        cache_key = "lig_purchasable_" + ",".join(prot_ids)
         ps = AssayExperiment.objects.filter(
             protein__in=prot_ids, ligand__ids__web_resource__slug='chembl_ligand')
         context = {
             'target': ', '.join([x.item.entry_name for x in selection.targets])
         }
+    elif selection.reference != []:
+        prot_id = [x.item for x in selection.reference]
+        cache_key = "lig_purchasable_" + ",".join(prot_id)
+        ps = AssayExperiment.objects.filter(
+            protein__in=prot_id, ligand__ids__web_resource__slug='chembl_ligand')
+        context = {}
+
+    # if queryset is empty redirect to ligand browser
+    if not ps:
+        return redirect("ligand_browser")
+
+    if cache_key != False and cache.has_key(cache_key):
+        purchasable = cache.get(cache_key)
     else:
-        return
+        ps = ps.values('value_type',
+                       'standard_relation',
+                       'standard_activity_value',
+                       'assay_description',
+                       'assay_type',
+                       # 'standard_units',
+                       'p_activity_value',
+                       'ligand__id',
+                       'ligand__ids__index',
+                       'protein__species__common_name',
+                       'protein__entry_name',
+                       'ligand_id',
+                       'ligand__name',
+                       'ligand__mw',
+                       'ligand__logp',
+                       'ligand__rotatable_bonds',
+                       'ligand__smiles',
+                       'ligand__hdon',
+                       'ligand__hacc',
+                       )
 
-    ps = ps.values('standard_type',
-                   'standard_relation',
-                   'standard_value',
-                   'assay_description',
-                   'assay_type',
-                   'standard_units',
-                   'pchembl_value',
-                   'ligand__id',
-                   'ligand__ids__index',
-                   'protein__species__common_name',
-                   'protein__entry_name',
-                   'ligand_id',
-                   'ligand__name',
-                   'ligand__mw',
-                   'ligand__logp',
-                   'ligand__rotatable_bonds',
-                   'ligand__smiles',
-                   'ligand__hdon',
-                   'ligand__hacc',
-                   )
+        lig_ids = [entry["ligand_id"] for entry in ps]
+        vendorlinks = LigandVendorLink.objects.filter(ligand__id__in=lig_ids)\
+            .exclude(vendor__name__in=['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem', 'IUPHAR/BPS Guide to PHARMACOLOGY'])\
+            .values("ligand_id", "vendor__name", "vendor__url", "url", "external_id")
 
-    lig_ids = [entry["ligand_id"] for entry in ps]
-    vendorlinks = LigandVendorLink.objects.filter(ligand__id__in=lig_ids)\
-        .exclude(vendor__name__in=['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem', 'IUPHAR/BPS Guide to PHARMACOLOGY'])\
-        .values("ligand_id", "vendor__name", "vendor__url", "url", "external_id")
+        vendor_dict = {}
+        for link in vendorlinks:
+            if link["ligand_id"] not in vendor_dict:
+                vendor_dict[link["ligand_id"]] = []
+            vendor_dict[link["ligand_id"]].append(link)
 
-    vendor_dict = {}
-    for link in vendorlinks:
-        if link["ligand_id"] not in vendor_dict:
-            vendor_dict[link["ligand_id"]] = []
-        vendor_dict[link["ligand_id"]].append(link)
-
-    purchasable = []
-    for record in ps:
-        if record["ligand_id"] in vendor_dict:
-            for link in vendor_dict[record["ligand_id"]]:
-                entry = {**record, **link}
-                purchasable.append(entry)
+        purchasable = []
+        for record in ps:
+            if record["ligand_id"] in vendor_dict:
+                for link in vendor_dict[record["ligand_id"]]:
+                    entry = {**record, **link}
+                    purchasable.append(entry)
 
     context['proteins'] = purchasable
+    cache.set(cache_key, purchasable, 60*60*24*7)
     return render(request, 'target_purchasability_details.html', context)
 
 #Biased Effector Family View (handles browser, Emax/Tau RankOder and Emax/Tau PathProfile)
@@ -1613,16 +1567,23 @@ class LigandInformationView(TemplateView):
         context = super(LigandInformationView, self).get_context_data(**kwargs)
         ligand_id = self.kwargs['pk']
         ligand_data = Ligand.objects.get(id=ligand_id)
+        endogenous_ligands =  Endogenous_GTP.objects.all().values_list("ligand_id", flat=True)
         assay_data = list(AssayExperiment.objects.filter(ligand=ligand_id).prefetch_related(
             'ligand', 'protein', 'protein__family',
             'protein__family__parent', 'protein__family__parent__parent__parent',
             'protein__family__parent__parent', 'protein__family', 'protein__species'))
         context = dict()
         structures = LigandInformationView.get_structure(ligand_data)
-        ligand_data = LigandInformationView.process_ligand(ligand_data)
+        ligand_data = LigandInformationView.process_ligand(ligand_data, endogenous_ligands)
         assay_data = LigandInformationView.process_assay(assay_data)
-        assay_data = LigandInformationView.process_values(assay_data)
         mutations = LigandInformationView.get_mutations(ligand_data)
+        if int(ligand_id) in endogenous_ligands:
+            endo_data = list(Endogenous_GTP.objects.filter(ligand=ligand_id).prefetch_related(
+            'ligand', 'receptor', 'receptor__family',
+            'receptor__family__parent', 'receptor__family__parent__parent__parent',
+            'receptor__family__parent__parent', 'receptor__species'))
+            endo_values = LigandInformationView.process_endo(endo_data)
+            assay_data = assay_data + endo_values
         context.update({'structure': structures})
         context.update({'ligand': ligand_data})
         context.update({'assay': assay_data})
@@ -1656,66 +1617,56 @@ class LigandInformationView(TemplateView):
         return return_list
 
     @staticmethod
-    def get_min_max_values(value):
-        value = list(map(float, value))
-        maximum = max(value)
-        minimum = min(value)
-        avg = sum(value) / len(value)
-
-        if (minimum >= 100):
-            return round(minimum), round(avg), round(maximum)
-        else:
-            return round(minimum, 1), round(avg, 1), round(maximum, 1)
-
-
-
-    @staticmethod
     def process_assay(assays):
         return_dict = dict()
         for i in assays:
             name = str(i.protein)
+            assay_type = i.value_type
+            # if type[0] != 'P':
+            #    type = 'p'+type
             if name in return_dict:
-                if i.standard_type in ['EC50', "AC50", 'Potency']:
-                    return_dict[name]['potency_values'].append(i.standard_value)
+                if assay_type in return_dict[name]['data_type'].keys():
+                    return_dict[name]['data_type'][assay_type].append(float(i.p_activity_value))
                 else:
-                    return_dict[name]['affinity_values'].append(i.standard_value)
+                    return_dict[name]['data_type'][assay_type] = [float(i.p_activity_value)]
             else:
                 return_dict[name] = dict()
-                return_dict[name]['potency_values'] = list()
-                return_dict[name]['affinity_values'] = list()
+                return_dict[name]['data_type'] = dict()
+                return_dict[name]['data_type'][assay_type] = [float(i.p_activity_value)]
                 return_dict[name]['receptor_gtp'] = i.protein.short()
                 return_dict[name]['receptor_uniprot'] = i.protein.entry_short()
                 return_dict[name]['receptor_species'] = i.protein.species.common_name
                 return_dict[name]['receptor_family'] = i.protein.family.parent.short()
                 return_dict[name]['receptor_class'] = i.protein.family.parent.parent.parent.short()
-                if i.standard_type == 'EC50' or i.standard_type == 'potency':
-                    return_dict[name]['potency_values'].append(
-                        i.standard_value)
-                elif i.standard_type == 'IC50':
-                    return_dict[name]['affinity_values'].append(
-                        i.standard_value)
-        return return_dict
+
+        for item in return_dict.keys():
+            for assay_type in return_dict[item]['data_type'].keys():
+                return_dict[item]['data_type'][assay_type] = LigandInformationView.get_min_max_values(return_dict[item]['data_type'][assay_type])
+    	#Unpacking
+        unpacked = dict()
+        for key in return_dict.keys():
+            for data_type in return_dict[key]['data_type'].keys():
+                label = '_'.join([key,data_type])
+                unpacked[label] = deepcopy(return_dict[key])
+                unpacked[label]['type'] = data_type
+                unpacked[label]['min'] = return_dict[key]['data_type'][data_type][0]
+                unpacked[label]['avg'] = return_dict[key]['data_type'][data_type][1]
+                unpacked[label]['max'] = return_dict[key]['data_type'][data_type][2]
+                unpacked[label]['source'] = 'ChEMBL'
+                unpacked[label].pop('data_type', None)
+
+        return list(unpacked.values())
 
     @staticmethod
-    def process_values(return_dict):
-        return_list = list()
-        for item in return_dict.items():
-            temp_dict = dict()
-            temp_dict = item[1]
-
-            if item[1]['potency_values']:
-                temp_dict['potency_min'],temp_dict['potency_avg'],temp_dict['potency_max'] = LigandInformationView.get_min_max_values(
-                    item[1]['potency_values'])
-                return_list.append(temp_dict)
-            if item[1]['affinity_values']:
-                temp_dict['affinity_min'],temp_dict['affinity_avg'],temp_dict['affinity_max'] = LigandInformationView.get_min_max_values(
-                    item[1]['affinity_values'])
-                if not item[1]['potency_values']:
-                    return_list.append(temp_dict)
-        return return_list
+    def get_min_max_values(value):
+        maximum = max(value)
+        minimum = min(value)
+        avg = sum(value) / len(value)
+        output = [round(minimum, 2), round(avg, 2), round(maximum, 2)]
+        return output
 
     @staticmethod
-    def process_ligand(ligand_data):
+    def process_ligand(ligand_data, endogenous_ligands):
         img_setup_smiles = "<img style=\"max-height: 300px; max-width: 400px;\" src=\"https://cactus.nci.nih.gov/chemical/structure/{}/image\">"
         ld = dict()
         ld['ligand_id'] = ligand_data.id
@@ -1723,7 +1674,7 @@ class LigandInformationView(TemplateView):
         ld['ligand_smiles'] = ligand_data.smiles
         ld['ligand_inchikey'] = ligand_data.inchikey
         try:
-            ld['type'] = ligand_data.ligand_type.name
+            ld['type'] = ligand_data.ligand_type.name.replace('-',' ').capitalize()
         except:
             ld['type'] = None
         ld['rotatable'] = ligand_data.rotatable_bonds
@@ -1732,6 +1683,7 @@ class LigandInformationView(TemplateView):
         ld['hdon'] = ligand_data.hdon
         ld['logp'] = ligand_data.logp
         ld['mw'] = ligand_data.mw
+        ld['labels'] = LigandInformationView.get_labels(ligand_data, endogenous_ligands, ld['type'])
         ld['wl'] = list()
 
         if ligand_data.smiles != None and (ld['mw'] == None or ld['mw'] < 800):
@@ -1739,11 +1691,80 @@ class LigandInformationView(TemplateView):
         else:
             # "No image available" SVG (source: https://commons.wikimedia.org/wiki/File:No_image_available.svg)
             ld['picture'] = "<img style=\"max-height: 300px; max-width: 400px;\" src=\"data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIj8+CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogICAgIGhlaWdodD0iMzAwcHgiIHdpZHRoPSIzMDBweCIKICAgICB2ZXJzaW9uPSIxLjEiCiAgICAgdmlld0JveD0iLTMwMCAtMzAwIDYwMCA2MDAiCiAgICAgZm9udC1mYW1pbHk9IkJpdHN0cmVhbSBWZXJhIFNhbnMsTGliZXJhdGlvbiBTYW5zLCBBcmlhbCwgc2Fucy1zZXJpZiIKICAgICBmb250LXNpemU9IjcyIgogICAgIHRleHQtYW5jaG9yPSJtaWRkbGUiID4KICAKICA8Y2lyY2xlIHN0cm9rZT0iI0FBQSIgc3Ryb2tlLXdpZHRoPSIxMCIgcj0iMjgwIiBmaWxsPSIjRkZGIi8+CiAgPHRleHQgc3R5bGU9ImZpbGw6IzQ0NDsiPgogICAgPHRzcGFuIHg9IjAiIHk9Ii04Ij5OTyBJTUFHRTwvdHNwYW4+PHRzcGFuIHg9IjAiIHk9IjgwIj5BVkFJTEFCTEU8L3RzcGFuPgogIDwvdGV4dD4KPC9zdmc+==\">"
-
-        for i in ligand_data.ids.all():
-            ld['wl'].append({'name': i.web_resource.name, "link": str(i)})
+        #Sorting links if ligand is endogenous
+        if ligand_data.id in endogenous_ligands:
+            sorted_list = ['Guide To Pharmacology', 'DrugBank', 'Drug Central', 'ChEMBL_compound_ids', 'PubChem']
+            to_be_sorted = {}
+            for i in ligand_data.ids.all():
+                to_be_sorted[i.web_resource.name] = {'name': i.web_resource.name, "link": str(i)}
+            tmp = sorted(to_be_sorted.items(), key=lambda pair: sorted_list.index(pair[0]))
+            for i in tmp:
+                ld['wl'].append(i[1])
+        else:
+            for i in ligand_data.ids.all():
+                ld['wl'].append({'name': i.web_resource.name, "link": str(i)})
         return ld
 
+    @staticmethod
+    def process_endo(endo_data):
+        return_dict = dict()
+        for i in endo_data:
+            name = str(i.receptor)
+            return_dict[name] = dict()
+            return_dict[name]['data_type'] = dict()
+            return_dict[name]['data_type']['pEC50'] = i.pec50.split(' | ')
+            return_dict[name]['data_type']['pIC50'] = i.pic50.split(' | ')
+            return_dict[name]['data_type']['pKi'] = i.pKi.split(' | ')
+            return_dict[name]['receptor_gtp'] = i.receptor.short()
+            return_dict[name]['receptor_uniprot'] = i.receptor.entry_short()
+            return_dict[name]['receptor_species'] = i.receptor.species.common_name
+            return_dict[name]['receptor_family'] = i.receptor.family.parent.short()
+            return_dict[name]['receptor_class'] = i.receptor.family.parent.parent.parent.short()
+
+    	#Unpacking
+        unpacked = dict()
+        for key in return_dict.keys():
+            for data_type in return_dict[key]['data_type'].keys():
+                label = '_'.join([key,data_type])
+                unpacked[label] = deepcopy(return_dict[key])
+                unpacked[label]['type'] = data_type
+                unpacked[label]['min'] = float(return_dict[key]['data_type'][data_type][0]) if return_dict[key]['data_type'][data_type][0] != 'None' else ''
+                unpacked[label]['avg'] = float(return_dict[key]['data_type'][data_type][1]) if return_dict[key]['data_type'][data_type][1] != 'None' else ''
+                unpacked[label]['max'] = float(return_dict[key]['data_type'][data_type][2]) if return_dict[key]['data_type'][data_type][2] != 'None' else ''
+                unpacked[label]['source'] = 'Guide to Pharmacology'
+                unpacked[label].pop('data_type', None)
+
+        return list(unpacked.values())
+
+    @staticmethod
+    def get_labels(ligand_data, endogenous_ligands, label_type):
+        endogenous_label = '<img src="https://icon-library.com/images/icon-e/icon-e-17.jpg" title="Endogenous ligand from GtoP" width="20" height="20"></img>'
+        surrogate_label = '<img src="https://icon-library.com/images/letter-s-icon/letter-s-icon-15.jpg" title="Surrogate ligand" width="20" height="20"></img>'
+        drug_label = '<img src="https://icon-library.com/images/drugs-icon/drugs-icon-7.jpg" title="Approved drug" width="20" height="20"></img>'
+        #trial_label = '<img src="https://icon-library.com/images/clinical-trial-icon-2793430_960_720_7492.png" title="Drug in clinical trial" width="20" height="20"></img>'
+        small_molecule_label = '<img src="https://icon-library.com/images/282dfa029c.png" title="Small molecule" width="20" height="20"></img>'
+        peptide_label = '<img src="https://media.istockphoto.com/vectors/protein-structure-molecule-3d-icon-vector-id1301952426?k=20&m=1301952426&s=612x612&w=0&h=a3ik50-faiP2BqiB7wMP3s_rVZyzPl9yHNQy7Rg89aE=" title="Peptide" width="20" height="20"></img>'
+        antibody_label = '<img src="https://icon-library.com/images/2018/2090572_antibody-antibody-hd-png-download.png" title="Antibody" width="20" height="20"></img>'
+        label = ''
+        #Endogenous OR Surrogate
+        if ligand_data.id in endogenous_ligands:
+            label += endogenous_label
+        else:
+            label += surrogate_label
+        #Drug or Trial
+        sources = [i.web_resource.name for i in ligand_data.ids.all()]
+        drug_banks = ['DrugBank', 'Drug Central']
+        if any(value in sources for value in drug_banks):
+            label += drug_label
+        #Small molecule, Peptide or Antibody
+        if label_type == 'Small molecule':
+            label += small_molecule_label
+        elif label_type == 'Peptide':
+            label += peptide_label
+        elif label_type == 'Antibody':
+            label += antibody_label
+
+        return label
 
 class BiasPathways(TemplateView):
     template_name = 'bias_browser_pathways.html'
@@ -2000,4 +2021,109 @@ class BiasGuidelines(TemplateView):
     def get_context_data(self, **kwargs):
 
         context = super().get_context_data(**kwargs)
+        return context
+
+class EndogenousBrowser(TemplateView):
+
+    template_name = 'endogenous_browser.html'
+
+    def get_context_data(self, **kwargs):
+
+        context = super().get_context_data(**kwargs)
+
+        browser_columns = ['Class', 'Receptor family', 'UniProt', 'IUPHAR', 'Species',
+                           'Ligand name', 'GtP link', 'GtP Classification', 'Potency Ranking', 'Type',
+                           'pEC50 - min', 'pEC50 - mid', 'pEC50 - max',
+                           'pKi - min', 'pKi - mid', 'pKi - max', 'Reference', 'ID']
+
+        table = pd.DataFrame(columns=browser_columns)
+        #receptor_id
+        endogenous_data = Endogenous_GTP.objects.all().values_list(
+                            "receptor__family__parent__parent__parent__name", #0 Class
+                            "receptor__family__parent__name",                 #1 Receptor Family
+                            "receptor__entry_name",                           #2 UniProt
+                            "receptor__name",                                 #3 IUPHAR
+                            "receptor__species__common_name",                 #4 Species
+                            "ligand__name",                                   #5 Ligand
+                            "ligand",                                         #6 Ligand ID
+                            "endogenous_status",                              #7 Principal/Secondary
+                            "potency_ranking",                                #8 Potency Ranking
+                            "ligand__ligand_type__name",                      #9 Type
+                            "pec50",                                          #10 pEC50 - min - med - max
+                            "pKi",                                            #11 pKi - min - med - max
+                            "publication__authors",                           #12 Pub Authors
+                            "publication__year",                              #13 Pub Year
+                            "publication__title",                             #14 Pub Title
+                            "publication__journal__name",                     #15 Pub Journal
+                            "publication__reference",                         #16 Pub Reference
+                            "publication__web_link__index",                   #17 DOI/PMID
+                            "receptor").distinct()                            #18 Receptor ID
+
+        gtpidlinks = dict(list(LigandID.objects.filter(web_resource__slug='gtoplig').values_list(
+                            "ligand",
+                            "index").distinct()))
+
+        matches = []
+        publications = {}
+        gtplink = 'https://www.guidetopharmacology.org/GRAC/LigandDisplayForward?ligandId={}'
+        pub_ref = "<b>{0}. ({1})</b><br />{2}.<br /><i>{3}</i>, <b>{4}</b> [PMID: <a href='{5}'>{6}</a>]<br /><br />"
+        for data in endogenous_data:
+            pub_link = ''
+            ligand_receptor = str(data[6]) + '_' + str(data[18])
+            if data[6] not in gtpidlinks.keys():
+                continue
+            if ligand_receptor not in publications.keys():
+                publications[ligand_receptor] = {}
+            if data[17]:
+                pub_link = "https://pubmed.ncbi.nlm.nih.gov/" + data[17] if data[17].isdigit() else "https://dx.doi.org/" + data[17]
+                #skipping publications without info (probably bug in the database)
+                if data[13] == None:
+                    continue
+                #splicing for years so we can then merge later
+                if data[13] not in publications[ligand_receptor].keys():
+                    publications[ligand_receptor][data[13]] = ''
+                publications[ligand_receptor][data[13]] = publications[ligand_receptor][data[13]] + pub_ref.format(data[12],data[13],data[14],data[15],data[16], pub_link, data[17])
+        #Cycling through the years to make a single reference string
+        for key in publications:
+            years = sorted(publications[key].keys())
+            refs = ''
+            for year in years:
+                refs += publications[key][year]
+            publications[key] = refs
+
+
+        for data in endogenous_data:
+            if data[6] not in gtpidlinks.keys():
+                continue
+            pair = str(data[6]) + '_' + str(data[18])
+            if pair not in matches:
+                matches.append(pair)
+                data_subset = {}
+                data_subset['Class'] = data[0].replace('Class ', '')                        #0
+                data_subset['Receptor family'] = data[1].strip('receptors')                 #1
+                data_subset['UniProt'] = data[2].split('_')[0].upper()                      #2
+                data_subset['IUPHAR'] = data[3].strip('receptor')                           #3
+                data_subset['Species'] = data[4]                                            #4
+                data_subset['Ligand name'] = data[5]                                        #5
+                data_subset['GtP link'] =  gtplink.format(gtpidlinks[data[6]])              #6
+                data_subset['GtP Classification'] = data[7] if data[7] else ""              #7
+                data_subset['Potency Ranking'] = str(data[8]) if data[8] else ""            #8
+                data_subset['Type'] = data[9].replace('-',' ').capitalize()                 #9
+                data_subset['pEC50 - min'] = data[10].split(' | ')[0]                       #10
+                data_subset['pEC50 - mid'] = data[10].split(' | ')[1]                       #11
+                data_subset['pEC50 - max'] = data[10].split(' | ')[2]                       #12
+                data_subset['pKi - min'] = data[11].split(' | ')[0]                         #13
+                data_subset['pKi - mid'] = data[11].split(' | ')[1]                         #14
+                data_subset['pKi - max'] = data[11].split(' | ')[2]                         #15
+                if len(publications[pair]) != 0:
+                    data_subset['Reference'] = publications[pair]                           #16
+                else:
+                    data_subset['Reference'] = 'empty'
+                data_subset['ID'] = data[6]                                                 #17
+
+                table = table.append(data_subset, ignore_index=True)
+
+        table.fillna('', inplace=True)
+        # context = dict()
+        context['Array'] = table.to_numpy()
         return context
