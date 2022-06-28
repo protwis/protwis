@@ -79,7 +79,7 @@ function clearFilters(){
  */
 function clearTargetSelection(){
   // clear filters, otherwise there will be mismatches
-  clearFilters();
+  // clearFilters();
 
   // uncheck all selected targets
   $("table#uniprot_selection tbody tr [type=checkbox]:checked").each(function() {
@@ -591,6 +591,7 @@ function initLigandCountTable(elementID) {
             scroller: true,
             paging: false,
             aaSorting: [],
+            bStateSave: true,
             autoWidth: false,
             bInfo: true,
             columnDefs: [{
