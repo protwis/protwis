@@ -1441,7 +1441,8 @@ def IMSignatureMatch(request):
     request.session['ss_pos'] = ss_pos
     request.session['cutoff'] = cutoff
 
-    pos_set = Protein.objects.filter(entry_name__in=ss_pos).select_related('residue_numbering_scheme', 'species')
+    pos_set = Protein.objects.filter(entry_name__in=ss_pos).select_related('residue_numbering_scheme', 'species')\
+            .prefetch_related('family')
     pos_set = [protein for protein in pos_set]
     pfam = [protein.family.slug[:3] for protein in pos_set]
 
@@ -1455,6 +1456,7 @@ def IMSignatureMatch(request):
         cutoff=0,
         signprot=True
     )
+
     maj_pfam = Counter(pfam).most_common()[0][0]
     signature_match.score_protein_class(maj_pfam, signprot=True)
     # request.session['signature_match'] = signature_match
@@ -1470,6 +1472,7 @@ def IMSignatureMatch(request):
         'relevant_segments': signature_match.relevant_segments,
         'numbering_schemes': signature_match.schemes,
     }
+
     signature_match_parsed = prepare_signature_match(signature_match, effector)
     return JsonResponse(signature_match_parsed, safe=False)
 

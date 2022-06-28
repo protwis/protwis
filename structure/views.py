@@ -658,12 +658,12 @@ class StructureStatistics(TemplateView):
 		context['chartdata_class_y'] = self.get_per_class_data_series(years, unique_structs, lookup)
 		context['chartdata_class_all'] = self.get_per_class_cumulative_data_series(years, all_structs, lookup)
 
-		#GPROT
-		if self.origin == 'gprot':
-			all_gprots = StructureExtraProteins.objects.filter(category='G alpha')
-			# all_gprots = all_structs.filter(id__in=SignprotComplex.objects.filter(protein__family__slug__startswith='100').values_list("structure__id", flat=True))
-			noncomplex_gprots = SignprotStructure.objects.filter(protein__family__slug__startswith='100')
-			###### these are query sets for G-Prot Structure Statistics
+		# GPROT Complex information
+		all_gprots = StructureExtraProteins.objects.filter(category='G alpha')
+		# all_gprots = all_structs.filter(id__in=SignprotComplex.objects.filter(protein__family__slug__startswith='100').values_list("structure__id", flat=True))
+
+		###### these are query sets for G-Prot Structure Statistics
+		if self.origin != 'arrestin':
 			all_g_A_complexes = all_gprots.filter(structure__protein_conformation__protein__family__slug__startswith='001')
 			all_g_B1_complexes = all_gprots.filter(structure__protein_conformation__protein__family__slug__startswith='002')
 			all_g_B2_complexes = all_gprots.filter(structure__protein_conformation__protein__family__slug__startswith='003')
@@ -684,8 +684,6 @@ class StructureStatistics(TemplateView):
 			context['all_gprots'] = len(all_gprots)
 			context['all_gprots_by_class'] = self.count_by_class(all_gprots, lookup, extra=True)
 			context['all_gprots_by_gclass'] = self.count_by_effector_class(all_gprots, lookup)
-			context['noncomplex_gprots_by_gclass'] = self.count_by_effector_class(noncomplex_gprots, lookup, nc=True)
-			context['noncomplex_gprots'] = len(noncomplex_gprots)
 			context['gA_complexes'] = zip(list(self.count_by_effector_class(all_g_A_complexes, lookup).items()), list(self.count_by_effector_class(unique_g_A_complexes, lookup).items()))
 			context['all_g_A_complexes'] = len(all_g_A_complexes)
 			context['unique_g_A_complexes'] = len(unique_g_A_complexes)
@@ -710,16 +708,28 @@ class StructureStatistics(TemplateView):
 			context['unique_gprots'] = len(unique_gprots)
 			context['unique_gprots_by_gclass'] = self.count_by_effector_class(unique_gprots, lookup)
 			context['unique_gprots_by_class'] = self.count_by_class(unique_gprots, lookup, extra=True)
-			circle_data = all_gprots.values_list(
-			              "wt_protein__family__parent__name", "structure__protein_conformation__protein__parent__entry_name", "structure__pdb_code_id__index").order_by(
-			              "wt_protein__family__parent__name", "structure__protein_conformation__protein__parent__entry_name", "structure__pdb_code_id__index").distinct(
-			              "wt_protein__family__parent__name", "structure__protein_conformation__protein__parent__entry_name", "structure__pdb_code_id__index")
-			context['total_gprots_by_gclass'] = []
-			for key in context['all_gprots_by_gclass']:
-				context['total_gprots_by_gclass'].append(context['all_gprots_by_gclass'][key] + context['noncomplex_gprots_by_gclass'][key])
-			context['total_gprots'] = sum(context['total_gprots_by_gclass'])
+
+			#GPROT
+			if self.origin == 'gprot':
+				noncomplex_gprots = SignprotStructure.objects.filter(protein__family__slug__startswith='100')
+				context['noncomplex_gprots_by_gclass'] = self.count_by_effector_class(noncomplex_gprots, lookup, nc=True)
+				context['noncomplex_gprots'] = len(noncomplex_gprots)
+				circle_data = all_gprots.values_list(
+				              "wt_protein__family__parent__name", "structure__protein_conformation__protein__parent__entry_name", "structure__pdb_code_id__index").order_by(
+				              "wt_protein__family__parent__name", "structure__protein_conformation__protein__parent__entry_name", "structure__pdb_code_id__index").distinct(
+				              "wt_protein__family__parent__name", "structure__protein_conformation__protein__parent__entry_name", "structure__pdb_code_id__index")
+				context['total_gprots_by_gclass'] = []
+				for key in context['all_gprots_by_gclass']:
+					context['total_gprots_by_gclass'].append(context['all_gprots_by_gclass'][key] + context['noncomplex_gprots_by_gclass'][key])
+				context['total_gprots'] = sum(context['total_gprots_by_gclass'])
+			else:
+				circle_data = all_structs.values_list(
+				              "state_id__slug", "protein_conformation__protein__parent__entry_name", "pdb_code_id__index").order_by(
+				              "state_id__slug", "protein_conformation__protein__parent__entry_name", "pdb_code_id__index").distinct(
+				              "state_id__slug", "protein_conformation__protein__parent__entry_name", "pdb_code_id__index")
+
 		#ARRESTIN
-		elif self.origin == 'arrestin':
+		else:
 			all_arrestins = StructureExtraProteins.objects.filter(category='Arrestin')
 			noncomplex_arrestins = SignprotStructure.objects.filter(protein__family__slug__startswith='200')
 			###### these are query sets for Arrestin Structure Statistics
@@ -776,11 +786,6 @@ class StructureStatistics(TemplateView):
 			for key in context['all_arrestins_by_gclass']:
 				context['total_arrestins_by_gclass'].append(context['all_arrestins_by_gclass'][key] + context['noncomplex_arrestins_by_gclass'][key])
 			context['total_arrestins'] = sum(context['total_arrestins_by_gclass'])
-		else:
-			circle_data = all_structs.values_list(
-			              "state_id__slug", "protein_conformation__protein__parent__entry_name", "pdb_code_id__index").order_by(
-			              "state_id__slug", "protein_conformation__protein__parent__entry_name", "pdb_code_id__index").distinct(
-			              "state_id__slug", "protein_conformation__protein__parent__entry_name", "pdb_code_id__index")
 
 		#context['coverage'] = self.get_diagram_coverage()
 		#{
