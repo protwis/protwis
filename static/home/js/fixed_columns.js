@@ -1,3 +1,5 @@
+/*eslint complexity: ["error", 8]*/
+var oTable = [];
 function update_text_in_modal() {
 
     var pdbs = [];
@@ -26,8 +28,8 @@ function update_text_in_modal() {
     });
 
     if (mode === "Single set of structures" || $("#single-group-tree-tab").length) {
-        total_selected = pdbs.length
-        selected_visible = $(".dataTables_scrollBody:visible .pdb_selected:checked").length
+        total_selected = pdbs.length;
+        selected_visible = $(".dataTables_scrollBody:visible .pdb_selected:checked").length;
         ModalpdbsCountSelector = "#single-crystal-group-pdbs-modal-text";
         ExternalModalpdbCounter = "#single-crystal-group-pdbs-modal-external-text";
 
@@ -82,7 +84,12 @@ function thisPDB(elem) {
     var pdbName = $(elem).attr("id");
     if (mode === "Single structure") {
         if ($("input", oTable[mode].cells().nodes()).filter(":checkbox").not(elem).length > 0) {
-          $("input", oTable[mode].cells().nodes()).filter(":checkbox").not(elem).each(function(i,e) { if (referenceObject.find("#overlaycheck_" + e.id).length > 0) {referenceObject.find("#overlaycheck_" + e.id)[ 0 ].checked = false}}); // deselect from overlay
+          $("input", oTable[mode].cells().nodes()).filter(":checkbox").not(elem).each(function(i,e)
+            { if (referenceObject.find("#overlaycheck_" + e.id).length > 0)
+              { referenceObject.find("#overlaycheck_" + e.id)[ 0 ].checked = false;
+              }
+            }
+          ); // deselect from overlay
           $("input", oTable[mode].cells().nodes()).filter(":checkbox").not(elem).prop("checked", false); // deselect from original table
         }
         var pdbs = [];
@@ -158,7 +165,7 @@ function check_all(elem, button) {
 
 function check_all_representatives() {
     var mode = $("ul#mode_nav").find("li.active").find("a").text().trim();
-    group = $(".tableview:visible").attr("group-number");
+    var group = $(".tableview:visible").attr("group-number");
     if (group) mode = mode + group;
     $("input", oTable[mode].cells().nodes()).prop("checked", false);
     $('input[representative="Yes"]:visible').each(function() {
@@ -242,7 +249,7 @@ function prepopulatePDBs() {
     var pdb;
     var mode = $("ul#mode_nav").find("li.active").find("a").text().trim();
     var mode2 = $("ul#mode_nav").find("li.active").find("a").text().trim();
-    group = $(".tableview:visible").attr("group-number");
+    var group = $(".tableview:visible").attr("group-number");
     if (group) mode = mode + group;
     if (mode2 === "Two sets of structures") {
         pdbsInputSelector = "#two-crystal-groups-tab .crystal-group-" + group + "-pdbs";
@@ -265,7 +272,7 @@ function prepopulatePDBs() {
         if ( $( pdbsInputSelector ).length ) {
           var pdbs = JSON.parse($(pdbsInputSelector).val());
           $(".pdb_selected", oTable[mode].cells().nodes()).each(function () {
-              pdb = $(this).attr("id")
+              pdb = $(this).attr("id");
               check = $.inArray(pdb, pdbs);
               if (check !== -1) {
                   $(this).prop("checked", true);
@@ -283,7 +290,7 @@ function prepopulatePDBs() {
 
 function exportPDBs() {
     var mode = $("ul#mode_nav").find("li.active").find("a").text().trim();
-    group = $(".tableview:visible").attr("group-number");
+    var group = $(".tableview:visible").attr("group-number");
     if (group) mode = mode + group;
     var pdbs = [];
     $(".pdb_selected:checked", oTable[mode].cells().nodes()).each(function() {
@@ -307,8 +314,6 @@ function exportPDBs() {
 
     document.body.removeChild(textArea);
 }
-
-var oTable = [];
 
 function toggle_best(mode, index, value) {
     var filter_value;
