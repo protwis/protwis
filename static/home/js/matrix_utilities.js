@@ -383,7 +383,7 @@ const run_sig_match = function() {
       // document.querySelector("#sigm_spin").style.display = "inline-block";
     },
     success(data) {
-      console.log(data);
+      // console.log(data);
       document.querySelector("#sigmatch-container").style.display = "inline-block";
       //sigmatch_data = Object.keys(data).map((key) => {data[String(key)];});
       let column_filters = [];

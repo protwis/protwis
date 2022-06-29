@@ -1,8 +1,17 @@
+/*eslint complexity: ["error", 20]*/
+var oTable = [];
 function update_text_in_modal() {
 
     var pdbs = [];
     var mode = $("ul#mode_nav").find("li.active").find("a").text().trim();
-
+    var ModalpdbsCountSelector;
+    var ExternalModalpdbCounter;
+    var total_selected;
+    var pdbsInputSelector;
+    var pdbsCountSelector;
+    var selected_visible;
+    var selector;
+    var group;
     group = $(".tableview:visible").attr("group-number");
     if (group) mode = mode + group;
     $(".pdb_selected", oTable[mode].cells().nodes()).each(function() {
@@ -17,13 +26,12 @@ function update_text_in_modal() {
             $(this).closest(".dataTables_scroll").find("#overlay_" + $(this).attr("id")).removeClass("selected");
         }
     });
-    var mode = $("ul#mode_nav").find("li.active").find("a").text().trim();
 
     if (mode === "Single set of structures" || $("#single-group-tree-tab").length) {
-        var total_selected = pdbs.length
-        var selected_visible = $(".dataTables_scrollBody:visible .pdb_selected:checked").length
-        var ModalpdbsCountSelector = "#single-crystal-group-pdbs-modal-text";
-        var ExternalModalpdbCounter = "#single-crystal-group-pdbs-modal-external-text";
+        total_selected = pdbs.length;
+        selected_visible = $(".dataTables_scrollBody:visible .pdb_selected:checked").length;
+        ModalpdbsCountSelector = "#single-crystal-group-pdbs-modal-text";
+        ExternalModalpdbCounter = "#single-crystal-group-pdbs-modal-external-text";
 
         if (total_selected == selected_visible) {
             $(ModalpdbsCountSelector).html(total_selected + " structure(s) selected (ticked leftmost)");
@@ -33,15 +41,15 @@ function update_text_in_modal() {
             $(ExternalModalpdbCounter).html(total_selected + " structure(s) selected (" + (total_selected - selected_visible) + " currently filtered)");
         }
 
-        var pdbsInputSelector = "#single-crystal-group-tab .crystal-pdb";
-        var pdbsCountSelector = "#single-crystal-group-tab .crystal-count";
+        pdbsInputSelector = "#single-crystal-group-tab .crystal-pdb";
+        pdbsCountSelector = "#single-crystal-group-tab .crystal-count";
         $(pdbsInputSelector).val(JSON.stringify(pdbs));
         $(pdbsCountSelector).html(pdbs.length);
 
     } else if (mode === "Two sets of structures") {
-        var total_selected = pdbs.length;
-        var selected_visible = $(".pdb_selected:checked:visible").length;
-        var ModalpdbsCountSelector = "#two-crystal-group-pdbs-modal-" + group + "-text";
+        total_selected = pdbs.length;
+        selected_visible = $(".pdb_selected:checked:visible").length;
+        ModalpdbsCountSelector = "#two-crystal-group-pdbs-modal-" + group + "-text";
 
         if (total_selected == selected_visible) {
             $(ModalpdbsCountSelector).html(total_selected + " structure(s) selected");
@@ -49,8 +57,8 @@ function update_text_in_modal() {
             $(ModalpdbsCountSelector).html(total_selected + " structure(s) selected (" + (total_selected - selected_visible) + " currently filtered)");
         }
 
-        var pdbsInputSelector = "#two-crystal-groups-tab .crystal-group-" + group + "-pdbs";
-        var pdbsCountSelector = "#two-crystal-groups-tab .crystal-count-" + group;
+        pdbsInputSelector = "#two-crystal-groups-tab .crystal-group-" + group + "-pdbs";
+        pdbsCountSelector = "#two-crystal-groups-tab .crystal-count-" + group;
         $(pdbsInputSelector).val(JSON.stringify(pdbs));
         $(pdbsCountSelector).html(pdbs.length);
 
@@ -74,9 +82,14 @@ function thisPDB(elem) {
     }
 
     var pdbName = $(elem).attr("id");
-    if (mode == "Single structure") {
+    if (mode === "Single structure") {
         if ($("input", oTable[mode].cells().nodes()).filter(":checkbox").not(elem).length > 0) {
-          $("input", oTable[mode].cells().nodes()).filter(":checkbox").not(elem).each(function(i,e) { if (referenceObject.find("#overlaycheck_" + e.id).length > 0) referenceObject.find("#overlaycheck_" + e.id)[ 0 ].checked = false}) // deselect from overlay
+          $("input", oTable[mode].cells().nodes()).filter(":checkbox").not(elem).each(function(i,e)
+            { if (referenceObject.find("#overlaycheck_" + e.id).length > 0)
+              { referenceObject.find("#overlaycheck_" + e.id)[ 0 ].checked = false;
+              }
+            }
+          ); // deselect from overlay
           $("input", oTable[mode].cells().nodes()).filter(":checkbox").not(elem).prop("checked", false); // deselect from original table
         }
         var pdbs = [];
@@ -96,7 +109,7 @@ function thisPDB(elem) {
 
 function resetselection(not_update = false, reset_filters = false) {
     var mode = $("ul#mode_nav").find("li.active").find("a").text().trim();
-    group = $(".tableview:visible").attr("group-number");
+    var group = $(".tableview:visible").attr("group-number");
     if (group) mode = mode + group;
 
     $(".check_all:visible").prop("checked", false);
@@ -109,6 +122,8 @@ function resetselection(not_update = false, reset_filters = false) {
 }
 
 function check_all(elem, button) {
+    var show_all;
+    var group;
     var mode = $("ul#mode_nav").find("li.active").find("a").text().trim();
     show_all = $(".check_all:visible").prop("checked");
     if (button) {
@@ -132,7 +147,7 @@ function check_all(elem, button) {
         } else {
             $(".pdb_selected:visible").prop("checked", false);
         }
-    } else if (mode == "Two sets of structures") {
+    } else if (mode === "Two sets of structures") {
         group = $(elem).closest(".tableview").attr("group-number");
         if (group) mode = mode + group;
         var pdbs = [];
@@ -150,7 +165,7 @@ function check_all(elem, button) {
 
 function check_all_representatives() {
     var mode = $("ul#mode_nav").find("li.active").find("a").text().trim();
-    group = $(".tableview:visible").attr("group-number");
+    var group = $(".tableview:visible").attr("group-number");
     if (group) mode = mode + group;
     $("input", oTable[mode].cells().nodes()).prop("checked", false);
     $('input[representative="Yes"]:visible').each(function() {
@@ -161,7 +176,7 @@ function check_all_representatives() {
 
 function check_all_distance_representatives() {
     var mode = $("ul#mode_nav").find("li.active").find("a").text().trim();
-    group = $(".tableview:visible").attr("group-number");
+    var group = $(".tableview:visible").attr("group-number");
     if (group) mode = mode + group;
     $("input", oTable[mode].cells().nodes()).prop("checked", false);
     $('input[distance_representative="Yes"]:visible').each(function() {
@@ -173,7 +188,7 @@ function check_all_distance_representatives() {
 
 function check_all_class_representatives() {
     var mode = $("ul#mode_nav").find("li.active").find("a").text().trim();
-    group = $(".tableview:visible").attr("group-number");
+    let group = $(".tableview:visible").attr("group-number");
     if (group) mode = mode + group;
     $("input", oTable[mode].cells().nodes()).prop("checked", false);
     $('input[class_consensus_based_representative="Yes"]:visible').each(function() {
@@ -193,13 +208,13 @@ $.fn.dataTable.ext.order["dom-checkbox"] = function(settings, col) {
 
 function pastePDBs() {
     var mode = $("ul#mode_nav").find("li.active").find("a").text().trim();
-    group = $(".tableview:visible").attr("group-number");
+    var group = $(".tableview:visible").attr("group-number");
     if (group) mode = mode + group;
-    pdbs = $(".pastePDBs:visible").val().toUpperCase().trim();
+    var pdbs = $(".pastePDBs:visible").val().toUpperCase().trim();
     pdbs = pdbs.split(/[ ,]+/);
     resetselection(1);
     $(".pdb_selected", oTable[mode].cells().nodes()).each(function() {
-        pdb = $(this).attr("id")
+        var pdb = $(this).attr("id");
         check = $.inArray(pdb, pdbs);
         if (check !== -1) {
             $(this).prop("checked", true);
@@ -217,8 +232,9 @@ function pastePDBs() {
         $(".pastePDBs").popover("show");
         $(".pastePDBs").on("shown.bs.popover",function() {
          setTimeout(function() {
-          $(".pastePDBs").popover("destroy")}, 3000);
-        })
+          $(".pastePDBs").popover("destroy");
+          }, 3000);
+        });
     } /*else {
         $(".pastePDBs").popover("destroy");
     }*/
@@ -229,15 +245,17 @@ function pastePDBs() {
 }
 
 function prepopulatePDBs() {
+    var pdbsInputSelector;
+    var pdb;
     var mode = $("ul#mode_nav").find("li.active").find("a").text().trim();
     var mode2 = $("ul#mode_nav").find("li.active").find("a").text().trim();
-    group = $(".tableview:visible").attr("group-number");
+    var group = $(".tableview:visible").attr("group-number");
     if (group) mode = mode + group;
-    if (mode2 == "Two sets of structures") {
-        var pdbsInputSelector = "#two-crystal-groups-tab .crystal-group-" + group + "-pdbs";
+    if (mode2 === "Two sets of structures") {
+        pdbsInputSelector = "#two-crystal-groups-tab .crystal-group-" + group + "-pdbs";
         var pdbs = JSON.parse($(pdbsInputSelector).val());
         $(".pdb_selected", oTable[mode].cells().nodes()).each(function () {
-            pdb = $(this).attr("id")
+            pdb = $(this).attr("id");
             check = $.inArray(pdb, pdbs);
             if (check !== -1) {
                 $(this).prop("checked", true);
@@ -249,12 +267,12 @@ function prepopulatePDBs() {
             [0, "desc"]
         ]);
         oTable[mode].draw();
-    } else if (mode2 == "Single set of structures") {
-        var pdbsInputSelector = "#single-crystal-group-tab .crystal-pdb";
+    } else if (mode2 === "Single set of structures") {
+        pdbsInputSelector = "#single-crystal-group-tab .crystal-pdb";
         if ( $( pdbsInputSelector ).length ) {
           var pdbs = JSON.parse($(pdbsInputSelector).val());
           $(".pdb_selected", oTable[mode].cells().nodes()).each(function () {
-              pdb = $(this).attr("id")
+              pdb = $(this).attr("id");
               check = $.inArray(pdb, pdbs);
               if (check !== -1) {
                   $(this).prop("checked", true);
@@ -272,7 +290,7 @@ function prepopulatePDBs() {
 
 function exportPDBs() {
     var mode = $("ul#mode_nav").find("li.active").find("a").text().trim();
-    group = $(".tableview:visible").attr("group-number");
+    var group = $(".tableview:visible").attr("group-number");
     if (group) mode = mode + group;
     var pdbs = [];
     $(".pdb_selected:checked", oTable[mode].cells().nodes()).each(function() {
@@ -297,19 +315,63 @@ function exportPDBs() {
     document.body.removeChild(textArea);
 }
 
-var oTable = [];
-
 function toggle_best(mode, index, value) {
-    filter_value = value == "On" ? "Best" : "";
+    var filter_value;
+    filter_value = value === "On" ? "Best" : "";
     yadcf.exFilterColumn(oTable[mode], [[index, filter_value]]);
+}
+
+function create_overlay(table_id) {
+    // This function fires upon filtering, to update what rows to show as an overlay
+    $(".overlay_table tbody tr").remove();
+    var $target = $(".overlay_table tbody");
+    $(table_id + " tbody tr").each(function() {
+        var $tds = $(this).children(),
+            $row = $("<tr id='overlay_" + $tds.eq(7).html() + "''></tr>");
+        // $row.append($tds.eq(0).clone()).append($tds.eq(1).clone()).appendTo($target);
+        $row.append($tds.eq(0).clone()).append($tds.eq(1).clone()).append($tds.eq(2).clone()).append($tds.eq(3).clone()).appendTo($target);
+    });
+    $(".overlay_table .border-right").removeClass("border-right");
+
+    // rename checkboxes for overlay to link to the original and remove class
+    $(".overlay_table tbody tr :checkbox").each(function(i, e){
+      e.id = "overlaycheck_" + e.id;
+      e.classList.remove("pdb_selected");
+    });
+    // rebind click event
+    /*$(".structure_overlay tr").click(function(event) {
+        console.log("clicking overlay tr");
+        if (event.target.type !== "checkbox") {
+            $(":checkbox", this).trigger("click");
+            pdb_id = $(this).attr("id").split("_")[1];
+            console.log(pdb_id);
+            if ($(":checkbox", this).length === 0) {
+                pdb_id = $(this).attr("id").split("_")[1];
+                console.log("2", pdb_id, "#" + pdb_id + ":checkbox:visible", $("#" + pdb_id + ":checkbox:visible"));
+                // $("#"+pdb_id+":checkbox:visible").find("tr").trigger("click");
+            }
+        }
+    });*/
+    $(".structure_overlay tr").click(function(event) {
+        if (event.target.type !== "checkbox") {
+            $(":checkbox", this).trigger("click");
+            if ($(":checkbox", this).length === 0) {
+                var pdb_id = $(this).attr("id").split("_")[1];
+                console.log(pdb_id);
+                var checkbox = $(".dataTables_scrollBody").find("#" + pdb_id);
+                checkbox.trigger("click");
+            }
+        }
+    });
+    $(".structure_overlay tr").css("cursor", "pointer");
 }
 
 function showPDBtable(element) {
     var mode = $("ul#mode_nav").find("li.active").find("a").text().trim();
-    group = $(element + " .tableview").attr("group-number");
+    var group = $(element + " .tableview").attr("group-number");
     if (group) mode = mode + group;
     // console.log(element,mode,group);
-
+    var mode_without_space;
     mode_without_space = mode.replace(/ /g, "_");
 
     if (!$.fn.DataTable.isDataTable(element + " .tableview table")) {
@@ -338,8 +400,8 @@ function showPDBtable(element) {
             $(this).find(".btn").toggleClass("btn-default");
             $(this).find(".active").html($(this).find(".active").attr("value"));
             $(this).find(".btn-default").html("&nbsp;");
-            toggle_best($(this).attr("mode"), $(this).attr("column"),$(this).find(".active").attr("value"))
-        })
+            toggle_best($(this).attr("mode"), $(this).attr("column"),$(this).find(".active").attr("value"));
+        });
 
 
 
@@ -351,21 +413,21 @@ function showPDBtable(element) {
         $(element + " .modal-title").hide();
 
         if (mode!="Single structure"){
-          $(element + " .modal-header").append('<span><button type="button" onclick="check_all(this,1);" class="btn btn-xs btn-primary reset-selection">Select all displayed</button></span>');
-          $(element + " .modal-header").append(' | <span><input type=text class="pastePDBs" placeholder="Paste PDBs with comma- or space-separated"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Import</button></span>');
+          $(element + " .modal-header").append("<span><button type='button' onclick='check_all(this,1);' class='btn btn-xs btn-primary reset-selection'>Select all displayed</button></span>");
+          $(element + " .modal-header").append(" | <span><input type=text class='pastePDBs' placeholder='Paste PDBs with comma- or space-separated'><button type='button' onclick='pastePDBs();' class='btn btn-xs btn-primary reset-selection'>Import</button></span>");
         } else {
-          $(element + " .modal-header").append(' <span><input type=text class="pastePDBs" placeholder="Paste PDB"><button type="button" onclick="pastePDBs();" class="btn btn-xs btn-primary reset-selection">Import</button></span>');
+          $(element + " .modal-header").append(" <span><input type=text class='pastePDBs' placeholder='Paste PDB'><button type='button' onclick='pastePDBs();' class='btn btn-xs btn-primary reset-selection'>Import</button></span>");
         }
 
         $(element + " .modal-header .pastePDBs").keypress(function(event) {
             var keycode = (event.keyCode ? event.keyCode : event.which);
-            if(keycode == "13"){
+            if(keycode === "13"){
                pastePDBs();
             }
         });
 
 
-        $(element + " .modal-header").append(' | <span><button type="button" onclick="exportPDBs();" class="btn btn-xs btn-primary export_pdbs">Export</button></span>');
+        $(element + " .modal-header").append(" | <span><button type='button' onclick='exportPDBs();' class='btn btn-xs btn-primary export_pdbs'>Export</button></span>");
         // $(element + ' .modal-header').append(' | <span><button type="button" onclick="toggle_best(\''+mode+'\',7);" class="btn btn-xs btn-primary">Best</button></span>');
         /*if (window.location.href.endsWith("contactnetwork/clustering") || window.location.href.endsWith("contactnetwork/clustering#"))
           $(element + ' .modal-header').append(' | <span>Structure shortest distance to all other structures of the same receptor and same state: <button type="button" onclick="check_all_distance_representatives();" class="btn btn-xs btn-primary">Distance Representative</button></span>');
@@ -820,7 +882,7 @@ function showPDBtable(element) {
             if (event.target.type !== "checkbox") {
                 $(":checkbox", this).trigger("click");
                 if ($(":checkbox", this).length === 0) {
-                    pdb_id = $(this).attr("id").split("_")[1];
+                    var pdb_id = $(this).attr("id").split("_")[1];
                     var checkbox = $(this).closest(".dataTables_scrollBody").find("#" + pdb_id);
                     checkbox.trigger("click");
                 }
@@ -833,51 +895,6 @@ function showPDBtable(element) {
     prepopulatePDBs();
 }
 
-function create_overlay(table_id) {
-    // This function fires upon filtering, to update what rows to show as an overlay
-    $(".overlay_table tbody tr").remove();
-    var $target = $(".overlay_table tbody");
-    $(table_id + " tbody tr").each(function() {
-        var $tds = $(this).children(),
-            $row = $('<tr id="overlay_' + $tds.eq(7).html() + '"></tr>');
-        // $row.append($tds.eq(0).clone()).append($tds.eq(1).clone()).appendTo($target);
-        $row.append($tds.eq(0).clone()).append($tds.eq(1).clone()).append($tds.eq(2).clone()).append($tds.eq(3).clone()).appendTo($target);
-    });
-    $(".overlay_table .border-right").removeClass("border-right");
-
-    // rename checkboxes for overlay to link to the original and remove class
-    $(".overlay_table tbody tr :checkbox").each(function(i, e){
-      e.id = "overlaycheck_" + e.id;
-      e.classList.remove("pdb_selected");
-    });
-    // rebind click event
-    /*$(".structure_overlay tr").click(function(event) {
-        console.log("clicking overlay tr");
-        if (event.target.type !== "checkbox") {
-            $(":checkbox", this).trigger("click");
-            pdb_id = $(this).attr("id").split("_")[1];
-            console.log(pdb_id);
-            if ($(":checkbox", this).length === 0) {
-                pdb_id = $(this).attr("id").split("_")[1];
-                console.log("2", pdb_id, "#" + pdb_id + ":checkbox:visible", $("#" + pdb_id + ":checkbox:visible"));
-                // $("#"+pdb_id+":checkbox:visible").find("tr").trigger("click");
-            }
-        }
-    });*/
-    $(".structure_overlay tr").click(function(event) {
-        if (event.target.type !== "checkbox") {
-            $(":checkbox", this).trigger("click");
-            if ($(":checkbox", this).length === 0) {
-                pdb_id = $(this).attr("id").split("_")[1];
-                console.log(pdb_id);
-                var checkbox = $(".dataTables_scrollBody").find("#" + pdb_id);
-                checkbox.trigger("click");
-            }
-        }
-    });
-    $(".structure_overlay tr").css("cursor", "pointer");
-}
-
 function track_scrolling(element) {
     var left = 0;
     var old_left = 0;
@@ -887,7 +904,7 @@ function track_scrolling(element) {
     $(element + " .dataTables_scrollBody").scroll(function () {
 
         var d = new Date();
-        now = d.getTime();
+        var now = d.getTime();
 
         if (now>(last_change+1000)) {
 
@@ -927,6 +944,7 @@ function new_track_scrolling(element) {
     old_height = 0;
     old_top = 0;
     var d = new Date();
+    var scrollTop;
     last_change = d.getTime();
     scroll_visible = false;
 

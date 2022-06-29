@@ -7,30 +7,29 @@ from django.http import HttpResponse
 
 
 from common.views import AbsTargetSelection
-from common.definitions import FULL_AMINO_ACIDS, STRUCTURAL_RULES, STRUCTURAL_SWITCHES
+from common.definitions import FULL_AMINO_ACIDS, STRUCTURAL_SWITCHES
 from common.selection import Selection
 Alignment = getattr(__import__(
     'common.alignment_' + settings.SITE_NAME,
     fromlist=['Alignment']
     ), 'Alignment')
 
-from seqsign.sequence_signature import SequenceSignature, SignatureMatch
+from seqsign.sequence_signature import SequenceSignature
 
 from alignment.functions import get_proteins_from_selection
 from alignment.views import TargetSelectionGprotein, TargetSelectionArrestin
-from construct.views import create_structural_rule_trees, ConstructMutation
+from construct.views import ConstructMutation
 from contactnetwork.models import InteractingResiduePair
 from interaction.models import ResidueFragmentInteraction
 from mutation.models import MutationExperiment
-from mutational_landscape.models import NaturalMutations, PTMs, NHSPrescribings
+from mutational_landscape.models import NaturalMutations, PTMs
 from protein.models import ProteinSegment, Protein, ProteinFamily
-from residue.models import Residue,ResidueNumberingScheme, ResiduePositionSet, ResidueSet
+from residue.models import Residue,ResidueNumberingScheme, ResiduePositionSet
 
 from collections import OrderedDict
 
 import html
 import re
-import time
 from io import BytesIO
 import xlsxwriter
 
@@ -369,14 +368,14 @@ class ResidueFunctionBrowser(TemplateView):
             gio = list(human_class_a_gpcrs.filter(proteinfamily__slug="100_001_002"))
             gq  = list(human_class_a_gpcrs.filter(proteinfamily__slug="100_001_003"))
             g12 = list(human_class_a_gpcrs.filter(proteinfamily__slug="100_001_004"))
-            all = set(gs + gio + gq + g12)
+            g_all = set(gs + gio + gq + g12)
 
             # Create sequence signatures for the G-protein sets
             for gprotein in ["gs", "gio", "gq", "g12"]:
 #                print("Processing " + gprotein)
                 # Signature receptors specific for a G-protein vs all others
                 signature = SequenceSignature()
-                signature.setup_alignments(segments, locals()[gprotein], all.difference(locals()[gprotein]))
+                signature.setup_alignments(segments, locals()[gprotein], g_all.difference(locals()[gprotein]))
                 signature.calculate_signature()
                 rfb_panel["signatures"][gprotein] = signature.signature
                 rfb_panel["signatures"][gprotein + "_positions"] = signature.common_gn
@@ -461,9 +460,6 @@ class ResidueFunctionBrowser(TemplateView):
             rfb_panel["inactive_contacts"] = inactive_contacts
 
             cache.set(cache_name, rfb_panel, 3600*24*7) # cache a week
-
-        # Other rules
-#        structural_rule_tree = create_structural_rule_trees(STRUCTURAL_RULES)
 
         ######## CREATE REFERENCE sets (or use structural rules)
 
@@ -579,22 +575,22 @@ class ResidueFunctionBrowser(TemplateView):
         # NOTE: We might need to split this into B1 and B2 when adhesion X-rays are published
         # Positions in center of membrane selected using 5XEZ (GCGR) together with OPM membrane positioning
         # Reference: ['1x51', '2x58', '3x41', '4x54', '5x45', '6x49', '7x50']
-        mid_membrane_classB = {'TM1': 51,'TM2': 58,'TM3': 41,'TM4': 54,'TM5': 45, 'TM6': 49, 'TM7': 50}
+        #mid_membrane_classB = {'TM1': 51,'TM2': 58,'TM3': 41,'TM4': 54,'TM5': 45, 'TM6': 49, 'TM7': 50}
 
         # Positions in center of membrane selected using 4OR2 (mGLUR1) together with OPM membrane positioning
         # Reference: ['1x49', '2x48', '3x40', '4x41', '5x48', '6x48', '7.39x40']
-        mid_membrane_classC = {'TM1': 49,'TM2': 48,'TM3': 40,'TM4': 41,'TM5': 48, 'TM6': 48, 'TM7': 40}
+        #mid_membrane_classC = {'TM1': 49,'TM2': 48,'TM3': 40,'TM4': 41,'TM5': 48, 'TM6': 48, 'TM7': 40}
 
         # Positions in center of membrane selected using 6BD4 (FZD4) together with OPM membrane positioning
         # Reference: ['1x43', '2x53', '3x38', '4x53', '5x53', '6x43', '7x47']
-        mid_membrane_classF = {'TM1': 43,'TM2': 53,'TM3': 38,'TM4': 53,'TM5': 53, 'TM6': 43, 'TM7': 47}
+        #mid_membrane_classF = {'TM1': 43,'TM2': 53,'TM3': 38,'TM4': 53,'TM5': 53, 'TM6': 43, 'TM7': 47}
 
         # Positions within membrane layer selected using 4BVN together with OPM membrane positioning
         core_membrane_classA = {'TM1': [33, 55],'TM2': [42,65],'TM3': [23,47],'TM4': [43,64],'TM5': [36,59], 'TM6': [37,60], 'TM7': [32,54]}
         # TODO: other classes
-        core_membrane_classB = {'TM1': [33, 55],'TM2': [42,65],'TM3': [23,47],'TM4': [43,64],'TM5': [36,59], 'TM6': [37,60], 'TM7': [32,54]}
-        core_membrane_classC = {'TM1': [33, 55],'TM2': [42,65],'TM3': [23,47],'TM4': [43,64],'TM5': [36,59], 'TM6': [37,60], 'TM7': [32,54]}
-        core_membrane_classF = {'TM1': [33, 55],'TM2': [42,65],'TM3': [23,47],'TM4': [43,64],'TM5': [36,59], 'TM6': [37,60], 'TM7': [32,54]}
+        #core_membrane_classB = {'TM1': [33, 55],'TM2': [42,65],'TM3': [23,47],'TM4': [43,64],'TM5': [36,59], 'TM6': [37,60], 'TM7': [32,54]}
+        #core_membrane_classC = {'TM1': [33, 55],'TM2': [42,65],'TM3': [23,47],'TM4': [43,64],'TM5': [36,59], 'TM6': [37,60], 'TM7': [32,54]}
+        #core_membrane_classF = {'TM1': [33, 55],'TM2': [42,65],'TM3': [23,47],'TM4': [43,64],'TM5': [36,59], 'TM6': [37,60], 'TM7': [32,54]}
 
         # Residue oriented outward of bundle (based on inactive 4BVN and active 3SN6)
         outward_orientation = {
@@ -873,7 +869,7 @@ def render_residue_table_excel(request):
     segments = clean_segments
     flattened_data = clean_dict
 
-    header = [x.short_name for x in numbering_schemes] + [x.name+" "+species_list[x.species.common_name] for x in proteins]
+    #header = [x.short_name for x in numbering_schemes] + [x.name+" "+species_list[x.species.common_name] for x in proteins]
 
 
     # Now excel time
