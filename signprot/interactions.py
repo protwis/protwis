@@ -360,24 +360,25 @@ def extract_coupling(entry, effector):
                             'arrb1_emax': "",
                             'arrb2_emax': ""}
         for source in sources:
-            transducers = list(entry['sources'][source].keys())
-            # Keeping only Arrestin values given the effector selection
-            transducers = [item for item in transducers if item.startswith(capital)]
-            # Then parsing if we have at least one Arrestin (which should be labeled as 'Beta')
-            if len(transducers) == 1:
-                couplings[source] = {}
-                transducer = transducers[0]
-                for subunit in entry['sources'][source][transducer]['subunits']:
-                    couplings[source][subunit] = float(entry['sources'][source][transducer]['subunits'][subunit])
-        # Here we need at least one source that provides info
+            if source == 'Bouvier':
+                transducers = list(entry['sources'][source].keys())
+                # Keeping only Arrestin values given the effector selection
+                transducers = [item for item in transducers if item.startswith(capital)]
+                # Then parsing if we have at least one Arrestin (which should be labeled as 'Beta')
+                if len(transducers) == 1:
+                    couplings[source] = {}
+                    transducer = transducers[0]
+                    for subunit in entry['sources'][source][transducer]['subunits']:
+                        couplings[source][subunit] = float(entry['sources'][source][transducer]['subunits'][subunit])
+        # Here we need at least one source that provides info (Bouvier Data)
         if len(couplings.keys()) == 1:
             source = list(couplings.keys())[0]
             filtered_dict = {arrestin:value for arrestin,value in couplings[source].items() if value != 0.0}
             if len(filtered_dict) > 0:
                 sorted_list = list({arrestin: value for arrestin, value in sorted(filtered_dict.items(), key=lambda item: item[1], reverse=True)})
-                refined_coupling[sorted_list[0]] = 'primary'
+                refined_coupling[sorted_list[0]] = filtered_dict[sorted_list[0]]
                 try:
-                    refined_coupling[sorted_list[1]] = 'secondary'
+                    refined_coupling[sorted_list[1]] = filtered_dict[sorted_list[1]]
                 except IndexError:
                     pass
     # If more sources are provided, we define the mean values as in the browser

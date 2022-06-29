@@ -383,7 +383,7 @@ const run_sig_match = function() {
       // document.querySelector("#sigm_spin").style.display = "inline-block";
     },
     success(data) {
-      //console.log(data);
+      console.log(data);
       document.querySelector("#sigmatch-container").style.display = "inline-block";
       //sigmatch_data = Object.keys(data).map((key) => {data[String(key)];});
       let column_filters = [];
@@ -469,97 +469,171 @@ const run_sig_match = function() {
               data: "arrb2.html",
               title: "ARRB2",
               targets: 7,
-            }, {
-              data: "arrb1_emax.html",
-              title: "ARRB1 (GPCRdb Mean)",
-              targets: 8,
-              visible: false,
-            }, {
-              data: "arrb2.html",
-              title: "ARRB2 (GPCRdb Mean)",
-              targets: 9,
-              visible: false,
             },];
+            // {
+            //   data: "arrb1_emax.html",
+            //   title: "ARRB1 (GPCRdb Mean)",
+            //   targets: 8,
+            //   visible: false,
+            // }, {
+            //   data: "arrb2.html",
+            //   title: "ARRB2 (GPCRdb Mean)",
+            //   targets: 9,
+            //   visible: false,
+            // },];
         // Arrestins columns (2 GtoP + 2 GPCRdb Mean)
-        column_filters = column_filters.concat(createYADCFfilters(6, 4, "multi_select", "select2", "Select", false, null, "html", "40px"));
+        column_filters = column_filters.concat(createYADCFfilters(6, 2, "multi_select", "select2", "Select", false, null, "html", "40px"));
       }
       columns_definition = columns_definition.concat(columns_to_add);
-      sigmatch_table = $("#sigmatch_table").DataTable({
-        dom: "Bfrtip",
-        data: sigmatch_data,
-        // scrollY: "60vh",
-        scrollY: true,
-        scrollX: true,
-        scrollCollapse: true,
-        scroller: true,
-        destroy: true,
-        columnDefs: columns_definition,
-        order: [
-          [5, "desc"]
-        ],
-        select: {
-          style: "single",
-        },
-        paging: true,
-        buttons: [
-          {
-            text: "Export to Excel",
-            action() {
-              tableToExcel("sigmatch_table", "Signature Match data", "SignatureMatch_coupling.xls");
-            }
+      if (filtering_particle === "G alpha") {
+        sigmatch_table = $("#sigmatch_table").DataTable({
+          dom: "Bfrtip",
+          data: sigmatch_data,
+          // scrollY: "60vh",
+          scrollY: true,
+          scrollX: true,
+          scrollCollapse: true,
+          scroller: true,
+          destroy: true,
+          columnDefs: columns_definition,
+          order: [
+            [5, "desc"]
+          ],
+          select: {
+            style: "single",
           },
-          {
-            text: "Export to CSV",
-            action(e, dt, button, config) {
-              var table_data = sigmatch_table.data().toArray();
-
-              var export_data = [];
-              for (let item of Object.values(table_data)) {
-                let record = {};
-                record["name"] = item["entry"];
-                record["family"] = item["family"];
-                record["subfamily"] = item["subfamily"];
-                record["score"] = item["nscore"];
-                record["gtop_gs"] = item["Gs"]["text"];
-                record["gtop_gio"] = item["Gi/o"]["text"];
-                record["gtop_gq11"] = item["Gq/11"]["text"];
-                record["gtop_g1213"] = item["G12/13"]["text"];
-                record["GPCRdb_mean_gs"] = item["Gs_emax"]["text"];
-                record["GPCRdb_mean_gio"] = item["Gi/o_emax"]["text"];
-                record["GPCRdb_mean_gq11"] = item["Gq/11_emax"]["text"];
-                record["GPCRdb_mean_g1213"] = item["G12/13_emax"]["text"];
-                export_data.push(record);
+          paging: true,
+          buttons: [
+            {
+              text: "Export to Excel",
+              action() {
+                tableToExcel("sigmatch_table", "Signature Match data", "SignatureMatch_coupling.xls");
               }
+            },
+            {
+              text: "Export to CSV",
+              action(e, dt, button, config) {
+                var table_data = sigmatch_table.data().toArray();
 
-              export_data = Papa.unparse(export_data);
+                var export_data = [];
+                for (let item of Object.values(table_data)) {
+                  let record = {};
+                  record["name"] = item["entry"];
+                  record["family"] = item["family"];
+                  record["subfamily"] = item["subfamily"];
+                  record["score"] = item["nscore"];
+                  record["gtop_gs"] = item["Gs"]["text"];
+                  record["gtop_gio"] = item["Gi/o"]["text"];
+                  record["gtop_gq11"] = item["Gq/11"]["text"];
+                  record["gtop_g1213"] = item["G12/13"]["text"];
+                  record["GPCRdb_mean_gs"] = item["Gs_emax"]["text"];
+                  record["GPCRdb_mean_gio"] = item["Gi/o_emax"]["text"];
+                  record["GPCRdb_mean_gq11"] = item["Gq/11_emax"]["text"];
+                  record["GPCRdb_mean_g1213"] = item["G12/13_emax"]["text"];
+                  export_data.push(record);
+                }
 
-              $("<a></a>")
-                .attr("id", "downloadFile")
-                .attr("href", "data:text/csv;charset=utf8," + encodeURIComponent(export_data))
-                .attr("download", "export.csv")
-                .appendTo("body");
+                export_data = Papa.unparse(export_data);
 
-              $("#downloadFile").ready(function() {
-                $("#downloadFile").get(0).click();
-                $("#downloadFile").remove();
-              });
-            }
+                $("<a></a>")
+                  .attr("id", "downloadFile")
+                  .attr("href", "data:text/csv;charset=utf8," + encodeURIComponent(export_data))
+                  .attr("download", "export.csv")
+                  .appendTo("body");
+
+                $("#downloadFile").ready(function() {
+                  $("#downloadFile").get(0).click();
+                  $("#downloadFile").remove();
+                });
+              }
+            },
+            {
+              text: "Reset All Filters",
+              action() {
+                yadcf.exResetAllFilters(sigmatch_table);
+              }
+            },
+            {
+              text: "Show Alignment",
+              className: "score-button",
+              action() {
+                sigmatch_table.rows().deselect();
+              }
+            },
+          ]
+        });
+      } else {
+        sigmatch_table = $("#sigmatch_table").DataTable({
+          dom: "Bfrtip",
+          data: sigmatch_data,
+          // scrollY: "60vh",
+          scrollY: true,
+          scrollX: true,
+          scrollCollapse: true,
+          scroller: true,
+          destroy: true,
+          columnDefs: columns_definition,
+          order: [
+            [5, "desc"]
+          ],
+          select: {
+            style: "single",
           },
-          {
-            text: "Reset All Filters",
-            action() {
-              yadcf.exResetAllFilters(sigmatch_table);
-            }
-          },
-          {
-            text: "Show Alignment",
-            className: "score-button",
-            action() {
-              sigmatch_table.rows().deselect();
-            }
-          },
-        ]
-      });
+          paging: true,
+          buttons: [
+            {
+              text: "Export to Excel",
+              action() {
+                tableToExcel("sigmatch_table", "Signature Match data", "SignatureMatch_coupling.xls");
+              }
+            },
+            {
+              text: "Export to CSV",
+              action(e, dt, button, config) {
+                var table_data = sigmatch_table.data().toArray();
+
+                var export_data = [];
+                for (let item of Object.values(table_data)) {
+                  let record = {};
+                  record["name"] = item["entry"];
+                  record["family"] = item["family"];
+                  record["subfamily"] = item["subfamily"];
+                  record["score"] = item["nscore"];
+                  record["GPCRdb_mean_arrb1"] = item["arrb1"]["text"];
+                  record["GPCRdb_mean_arrb2"] = item["arrb2"]["text"];
+                  export_data.push(record);
+                }
+
+                export_data = Papa.unparse(export_data);
+
+                $("<a></a>")
+                  .attr("id", "downloadFile")
+                  .attr("href", "data:text/csv;charset=utf8," + encodeURIComponent(export_data))
+                  .attr("download", "export.csv")
+                  .appendTo("body");
+
+                $("#downloadFile").ready(function() {
+                  $("#downloadFile").get(0).click();
+                  $("#downloadFile").remove();
+                });
+              }
+            },
+            {
+              text: "Reset All Filters",
+              action() {
+                yadcf.exResetAllFilters(sigmatch_table);
+              }
+            },
+            {
+              text: "Show Alignment",
+              className: "score-button",
+              action() {
+                sigmatch_table.rows().deselect();
+              }
+            },
+          ]
+        });
+      }
       yadcf.init(sigmatch_table.draw(), column_filters, {
         cumulative_filtering: false
       });
