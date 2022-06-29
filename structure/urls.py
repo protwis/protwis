@@ -7,7 +7,9 @@ from django.views.decorators.cache import cache_page
 
 urlpatterns = [
     url(r'^$', cache_page(60*60*24)(StructureBrowser.as_view()), name='structure_browser'),
-    url(r'^g_protein_structure_browser$', cache_page(60*60*24)(GProteinStructureBrowser.as_view()), name='g_protein_structure_browser'),
+    url(r'^g_protein_structure_browser$', cache_page(60*60*24)(EffectorStructureBrowser.as_view(effector='gprot')), name='g_protein_structure_browser'),
+    url(r'^arrestin_structure_browser$', cache_page(60*60*24)(EffectorStructureBrowser.as_view(effector='arrestin')), name='arrestin_structure_browser'),
+
     url(r'^browser$', RedirectBrowser, name='redirect_browser'),
     url(r'^selection_convert$', ConvertStructuresToProteins, name='convert'),
     url(r'^selection_convert_model$', ConvertStructureModelsToProteins, name='convert_mod'),
@@ -18,6 +20,7 @@ urlpatterns = [
     url(r'^template_selection', TemplateTargetSelection.as_view(), name='structure_browser'),
     url(r'^template_segment_selection', TemplateSegmentSelection.as_view(), name='structure_browser'),
     url(r'^gprot_statistics$', cache_page(60*60*24)(StructureStatistics.as_view(origin='gprot')), name='structure_statistics'),
+    url(r'^arrestin_statistics$', cache_page(60*60*24)(StructureStatistics.as_view(origin='arrestin')), name='structure_statistics'),
     url(r'^statistics$', cache_page(60*60*24)(StructureStatistics.as_view()), name='structure_statistics'),
     url(r'^homology_models$', cache_page(60*60*24)(ServeHomologyModels.as_view()), name='homology_models'),
     url(r'^complex_models$', cache_page(60*60*24)(ServeComplexModels.as_view()), name='complex_models'),

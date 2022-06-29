@@ -538,7 +538,7 @@ function highlightBG(element, color) {
 }
 function linkLikeClick(element, color) {
     element.style.color = color;
-    element.style.textDecoration = 'underline';
+    // element.style.textDecoration = 'underline';
 }
 </script>
 <div class="container">
@@ -562,7 +562,7 @@ function linkLikeClick(element, color) {
                   <button id="CrossClass" class="btn btn-primary">Cross</button>
               </div>
             <div id="jvenn-container"></div>
-            <table style="width:80% !important" class="table table-stripped">
+            <table style="width:55% !important" class="table table-stripped">
                 <thead>
                     <tr>
                         <td><b>Class<br />(Family)</td>
@@ -577,45 +577,45 @@ function linkLikeClick(element, color) {
                     <tr>
                         <td>G<sub>s</sub></td>
                         {% for text in table.Gs %}
-                        <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='ToTable(" {{ text.1}} "); linkLikeClick(this, "purple")' align="center">{{ text.0 }}</td>
+                        <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='ToTable(" {{ text.1}} "); linkLikeClick(this, "black")' align="center">{{ text.0 }}</td>
                         {% endfor %}
                     </tr>
                     <tr>
                         <td nowrap>G<sub>i/o</sub></td>
                         {% for text in table.Gio %}
-                        <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='ToTable(" {{ text.1}} "); linkLikeClick(this, "purple")' align="center">{{ text.0 }}</td>
+                        <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='ToTable(" {{ text.1}} "); linkLikeClick(this, "black")' align="center">{{ text.0 }}</td>
                         {% endfor %}
                     </tr>
                     <tr>
                         <td nowrap>G<sub>q/11</sub></td>
                         {% for text in table.Gq11 %}
-                        <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='ToTable(" {{ text.1}} "); linkLikeClick(this, "purple")' align="center">{{ text.0 }}</td>
+                        <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='ToTable(" {{ text.1}} "); linkLikeClick(this, "black")' align="center">{{ text.0 }}</td>
                         {% endfor %}
                     </tr>
                     <tr>
                         <td nowrap>G<sub>12/13</sub></td>
                         {% for text in table.G1213 %}
-                        <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='ToTable(" {{ text.1}} "); linkLikeClick(this, "purple")' align="center">{{ text.0 }}</td>
+                        <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='ToTable(" {{ text.1}} "); linkLikeClick(this, "black")' align="center">{{ text.0 }}</td>
                         {% endfor %}
                     </tr>
                     {% else %}
                     <tr>
                         <td>Beta-Arrestin-1</td>
                         {% for text in table.Betaarrestin1 %}
-                        <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='ToTable(" {{ text.1}} "); linkLikeClick(this, "purple")' align="center">{{ text.0 }}</td>
+                        <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='ToTable(" {{ text.1}} "); linkLikeClick(this, "black")' align="center">{{ text.0 }}</td>
                         {% endfor %}
                     </tr>
                     <tr>
                         <td nowrap>Beta-Arrestin-2</td>
                         {% for text in table.Betaarrestin2 %}
-                        <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='ToTable(" {{ text.1}} "); linkLikeClick(this, "purple")' align="center">{{ text.0 }}</td>
+                        <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='ToTable(" {{ text.1}} "); linkLikeClick(this, "black")' align="center">{{ text.0 }}</td>
                         {% endfor %}
                     </tr>
                     {% endif %}
                     <tr>
                         <td nowrap>Total (unique)</td>
                         {% for text in table.Total %}
-                        <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='ToTable(" {{ text.1}} "); linkLikeClick(this, "purple")' align="center">{{ text.0 }}</td>
+                        <td onMouseOver="highlightBG(this, 'lightgrey')" onMouseOut="highlightBG(this, 'white')" onclick='ToTable(" {{ text.1}} "); linkLikeClick(this, "black")' align="center">{{ text.0 }}</td>
                         {% endfor %}
                     </tr>
                 </tbody>
