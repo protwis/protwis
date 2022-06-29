@@ -8,6 +8,7 @@ function update_text_in_modal() {
     var pdbsInputSelector;
     var pdbsCountSelector;
     var selected_visible;
+    var selector;
     var group;
     group = $(".tableview:visible").attr("group-number");
     if (group) mode = mode + group;
@@ -23,7 +24,6 @@ function update_text_in_modal() {
             $(this).closest(".dataTables_scroll").find("#overlay_" + $(this).attr("id")).removeClass("selected");
         }
     });
-    var mode = $("ul#mode_nav").find("li.active").find("a").text().trim();
 
     if (mode === "Single set of structures" || $("#single-group-tree-tab").length) {
         total_selected = pdbs.length
@@ -102,7 +102,7 @@ function thisPDB(elem) {
 
 function resetselection(not_update = false, reset_filters = false) {
     var mode = $("ul#mode_nav").find("li.active").find("a").text().trim();
-    group = $(".tableview:visible").attr("group-number");
+    var group = $(".tableview:visible").attr("group-number");
     if (group) mode = mode + group;
 
     $(".check_all:visible").prop("checked", false);
@@ -116,7 +116,7 @@ function resetselection(not_update = false, reset_filters = false) {
 
 function check_all(elem, button) {
     var show_all;
-    var gorup;
+    var group;
     var mode = $("ul#mode_nav").find("li.active").find("a").text().trim();
     show_all = $(".check_all:visible").prop("checked");
     if (button) {
@@ -225,7 +225,8 @@ function pastePDBs() {
         $(".pastePDBs").popover("show");
         $(".pastePDBs").on("shown.bs.popover",function() {
          setTimeout(function() {
-          $(".pastePDBs").popover("destroy")}, 3000);
+          $(".pastePDBs").popover("destroy")
+          }, 3000);
         });
     } /*else {
         $(".pastePDBs").popover("destroy");
@@ -238,6 +239,7 @@ function pastePDBs() {
 
 function prepopulatePDBs() {
     var pdbsInputSelector;
+    var pdb;
     var mode = $("ul#mode_nav").find("li.active").find("a").text().trim();
     var mode2 = $("ul#mode_nav").find("li.active").find("a").text().trim();
     group = $(".tableview:visible").attr("group-number");
@@ -246,7 +248,7 @@ function prepopulatePDBs() {
         pdbsInputSelector = "#two-crystal-groups-tab .crystal-group-" + group + "-pdbs";
         var pdbs = JSON.parse($(pdbsInputSelector).val());
         $(".pdb_selected", oTable[mode].cells().nodes()).each(function () {
-            pdb = $(this).attr("id")
+            pdb = $(this).attr("id");
             check = $.inArray(pdb, pdbs);
             if (check !== -1) {
                 $(this).prop("checked", true);
@@ -310,8 +312,53 @@ var oTable = [];
 
 function toggle_best(mode, index, value) {
     var filter_value;
-    filter_value = value == "On" ? "Best" : "";
+    filter_value = value === "On" ? "Best" : "";
     yadcf.exFilterColumn(oTable[mode], [[index, filter_value]]);
+}
+
+function create_overlay(table_id) {
+    // This function fires upon filtering, to update what rows to show as an overlay
+    $(".overlay_table tbody tr").remove();
+    var $target = $(".overlay_table tbody");
+    $(table_id + " tbody tr").each(function() {
+        var $tds = $(this).children(),
+            $row = $("<tr id='overlay_" + $tds.eq(7).html() + "''></tr>");
+        // $row.append($tds.eq(0).clone()).append($tds.eq(1).clone()).appendTo($target);
+        $row.append($tds.eq(0).clone()).append($tds.eq(1).clone()).append($tds.eq(2).clone()).append($tds.eq(3).clone()).appendTo($target);
+    });
+    $(".overlay_table .border-right").removeClass("border-right");
+
+    // rename checkboxes for overlay to link to the original and remove class
+    $(".overlay_table tbody tr :checkbox").each(function(i, e){
+      e.id = "overlaycheck_" + e.id;
+      e.classList.remove("pdb_selected");
+    });
+    // rebind click event
+    /*$(".structure_overlay tr").click(function(event) {
+        console.log("clicking overlay tr");
+        if (event.target.type !== "checkbox") {
+            $(":checkbox", this).trigger("click");
+            pdb_id = $(this).attr("id").split("_")[1];
+            console.log(pdb_id);
+            if ($(":checkbox", this).length === 0) {
+                pdb_id = $(this).attr("id").split("_")[1];
+                console.log("2", pdb_id, "#" + pdb_id + ":checkbox:visible", $("#" + pdb_id + ":checkbox:visible"));
+                // $("#"+pdb_id+":checkbox:visible").find("tr").trigger("click");
+            }
+        }
+    });*/
+    $(".structure_overlay tr").click(function(event) {
+        if (event.target.type !== "checkbox") {
+            $(":checkbox", this).trigger("click");
+            if ($(":checkbox", this).length === 0) {
+                var pdb_id = $(this).attr("id").split("_")[1];
+                console.log(pdb_id);
+                var checkbox = $(".dataTables_scrollBody").find("#" + pdb_id);
+                checkbox.trigger("click");
+            }
+        }
+    });
+    $(".structure_overlay tr").css("cursor", "pointer");
 }
 
 function showPDBtable(element) {
@@ -348,7 +395,7 @@ function showPDBtable(element) {
             $(this).find(".btn").toggleClass("btn-default");
             $(this).find(".active").html($(this).find(".active").attr("value"));
             $(this).find(".btn-default").html("&nbsp;");
-            toggle_best($(this).attr("mode"), $(this).attr("column"),$(this).find(".active").attr("value"))
+            toggle_best($(this).attr("mode"), $(this).attr("column"),$(this).find(".active").attr("value"));
         });
 
 
@@ -841,51 +888,6 @@ function showPDBtable(element) {
     };
     $(element + " .loading_overlay").hide();
     prepopulatePDBs();
-}
-
-function create_overlay(table_id) {
-    // This function fires upon filtering, to update what rows to show as an overlay
-    $(".overlay_table tbody tr").remove();
-    var $target = $(".overlay_table tbody");
-    $(table_id + " tbody tr").each(function() {
-        var $tds = $(this).children(),
-            $row = $("<tr id='overlay_" + $tds.eq(7).html() + "''></tr>");
-        // $row.append($tds.eq(0).clone()).append($tds.eq(1).clone()).appendTo($target);
-        $row.append($tds.eq(0).clone()).append($tds.eq(1).clone()).append($tds.eq(2).clone()).append($tds.eq(3).clone()).appendTo($target);
-    });
-    $(".overlay_table .border-right").removeClass("border-right");
-
-    // rename checkboxes for overlay to link to the original and remove class
-    $(".overlay_table tbody tr :checkbox").each(function(i, e){
-      e.id = "overlaycheck_" + e.id;
-      e.classList.remove("pdb_selected");
-    });
-    // rebind click event
-    /*$(".structure_overlay tr").click(function(event) {
-        console.log("clicking overlay tr");
-        if (event.target.type !== "checkbox") {
-            $(":checkbox", this).trigger("click");
-            pdb_id = $(this).attr("id").split("_")[1];
-            console.log(pdb_id);
-            if ($(":checkbox", this).length === 0) {
-                pdb_id = $(this).attr("id").split("_")[1];
-                console.log("2", pdb_id, "#" + pdb_id + ":checkbox:visible", $("#" + pdb_id + ":checkbox:visible"));
-                // $("#"+pdb_id+":checkbox:visible").find("tr").trigger("click");
-            }
-        }
-    });*/
-    $(".structure_overlay tr").click(function(event) {
-        if (event.target.type !== "checkbox") {
-            $(":checkbox", this).trigger("click");
-            if ($(":checkbox", this).length === 0) {
-                var pdb_id = $(this).attr("id").split("_")[1];
-                console.log(pdb_id);
-                var checkbox = $(".dataTables_scrollBody").find("#" + pdb_id);
-                checkbox.trigger("click");
-            }
-        }
-    });
-    $(".structure_overlay tr").css("cursor", "pointer");
 }
 
 function track_scrolling(element) {
