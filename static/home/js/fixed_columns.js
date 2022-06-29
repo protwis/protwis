@@ -1,4 +1,4 @@
-/*eslint complexity: ["error", 8]*/
+/*eslint complexity: ["error", 20]*/
 var oTable = [];
 function update_text_in_modal() {
 
@@ -176,7 +176,7 @@ function check_all_representatives() {
 
 function check_all_distance_representatives() {
     var mode = $("ul#mode_nav").find("li.active").find("a").text().trim();
-    group = $(".tableview:visible").attr("group-number");
+    var group = $(".tableview:visible").attr("group-number");
     if (group) mode = mode + group;
     $("input", oTable[mode].cells().nodes()).prop("checked", false);
     $('input[distance_representative="Yes"]:visible').each(function() {
@@ -232,7 +232,7 @@ function pastePDBs() {
         $(".pastePDBs").popover("show");
         $(".pastePDBs").on("shown.bs.popover",function() {
          setTimeout(function() {
-          $(".pastePDBs").popover("destroy")
+          $(".pastePDBs").popover("destroy");
           }, 3000);
         });
     } /*else {
