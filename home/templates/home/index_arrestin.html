@@ -31,7 +31,7 @@
                     <div class="item">
                         <img src="{% static 'home/carousel/constructs.png' %}">
                         <div class="carousel-caption">
-                            <h3>G protein couplings</h3>
+                            <h3>Arrestin couplings</h3>
                             <p>Unified coupling atlas and G protein selectivity profiles.</p>
                         </div>
                     </div>
@@ -40,7 +40,7 @@
                         <img src="{% static 'home/carousel/strbrowser.png' %}">
                         <div class="carousel-caption">
                             <h3>Structures</h3>
-                            <p>G protein structure statistics and browser with unique annotation.</p>
+                            <p>Arrestin structure statistics and browser with unique annotation.</p>
                         </div>
                     </div>
 
@@ -48,14 +48,14 @@
                         <img src="{% static 'home/carousel/homomodels.png' %}">
                         <div class="carousel-caption">
                             <h3>Structure models</a></h3>
-                            <p>GPCR-G protein structure models.</p>
+                            <p>GPCR-Arrestin structure models.</p>
                         </div>
                     </div>
 
                     <div class="item">
                         <img src="{% static 'home/carousel/residplots.png' %}">
                         <div class="carousel-caption">
-                            <h3>GPCR-G protein structure interface</h3>
+                            <h3>GPCR-Arrestin structure interface</h3>
                             <p>Structure based coupling interface interactions.</p>
                         </div>
                     </div>
@@ -96,7 +96,7 @@
                         <p style="text-align:justify">ArrestinDb contains reference data, interactive
                             visualization and experiment design tools for arrestins. ArrestinDb
                             curates sequence alignments, structures and mutations from literature. Interactive
-                            diagrams visualise arrestin residues (e.g. snakeplot) and interactions with receptors. 
+                            diagrams visualise arrestin residues (e.g. snakeplot) and interactions with receptors.
                             <!-- See the GPCRdb graphical <a href="/static/home/poster/overview.pdf">overview</a>,
                             <a href="https://files.gpcrdb.org/video/GPCRdb-David_Gloriam.mp4">video</a>,
                             <a onclick="citation_tool(window.location.href);" href="#">articles</a> or
@@ -154,7 +154,7 @@
                     <ul class="stats_list">
                         {% for stat in release_statistics %}
                             <li>
-                                {{ stat.value| safe }} {{ stat.statistics_type | safe }} 
+                                {{ stat.value| safe }} {{ stat.statistics_type | safe }}
                             </li>
                         {% endfor %}
                     </ul>
@@ -166,34 +166,34 @@
         </div>
 
         <!-- Release Notes -->
-        <div class="col-md-4">
+        <div class="col-md-8">
             <div class="panel panel-primary">
                 <div class="panel-body">
-                    <h3>Latest <a href="/pages/releasenotes">release</a></h3>
-                    <strong>{{ release_notes.date }}</strong>
-                    {{ release_notes.html|safe }}
+                    <h3>Welcome message</h3>
+                    <!-- <strong>{{ release_notes.date }}</strong>
+                    {{ release_notes.html|safe }} -->
                 </div>
             </div>
         </div>
 
-        <div class="col-md-4">
+        <!-- <div class="col-md-4">
             <div class="panel panel-primary">
                 <div class="panel-body">
                     <iframe width="100%" height="200" src="https://www.youtube.com/embed/X8j_xpryZ4U?start=778&end=3732;" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                 </div>
             </div>
-        </div>
+        </div> -->
 
         <!-- Twitter feed -->
-        <!-- <div class="col-md-4"> 
-            <div class="panel panel-primary"> 
-                <div class="panel-body"> 
-                    <h3> 
+        <!-- <div class="col-md-4">
+            <div class="panel panel-primary">
+                <div class="panel-body">
+                    <h3>
                         <a class="twitter-timeline" data-height="400" data-theme="light" href="https://twitter.com/gpcrdb"></a>
-                    </h3> 
+                    </h3>
                    <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-                </div> 
-            </div> 
+                </div>
+            </div>
         </div> -->
 
         {#<!-- News -->#}
