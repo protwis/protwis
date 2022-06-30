@@ -91,7 +91,7 @@ def index(request):
             context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry stats_title\"><i>Experimental structures</i></span>", "value" : "<span  class=\"stats_value\"></span>"})
             signcomp = SignprotComplex.objects.filter(protein__family__slug__startswith='200')
             context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + "Arrestins" + "</span>", "value": "<span  class=\"stats_value\">" + "{:,}".format(signcomp.count()+SignprotStructure.objects.filter(protein__family__slug__startswith='200').count()) + "</span>"})
-            context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + "GPCR-Arrestin complexes" + "</span>", "value": "<span  class=\"stats_value\">" + "{:,}".format(signcomp.count().count()) + "</span>"})
+            context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + "GPCR-Arrestin complexes" + "</span>", "value": "<span  class=\"stats_value\">" + "{:,}".format(signcomp.count()) + "</span>"})
 
             context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry stats_title\"><i>Structure interactions</i></span>", "value" : "<span  class=\"stats_value\"></span>"})
             interface_interactions_count = InteractingResiduePair.objects.filter(referenced_structure__in=signcomp.values_list('structure', flat=True)).exclude(res1__protein_conformation_id=F('res2__protein_conformation_id')).count()
@@ -101,7 +101,7 @@ def index(request):
             context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + "GPCR-Arrestin coupling" + "</span>", "value": "<span  class=\"stats_value\">" + "{:,}".format(ProteinCouplings.objects.filter(g_protein__slug__startswith="200").count()) + "</span>"})
 
             context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry stats_title\"><i>Mutations</i></span>", "value" : "<span  class=\"stats_value\"></span>"})
-            context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + "Interface mutations" + "</span>", "value": "<span  class=\"stats_value\">" + "{:,}".format(54) + "</span>"})
+            context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + "Interface mutations" + "</span>", "value": "<span  class=\"stats_value\">" + "{:,}".format(409) + "</span>"})
 
         else:
             rename_dictionary = {"Exp. GPCR structures" : "GPCRs", "Exp. Gprotein structures" : "G proteins", "GPCR structure models": "GPCRs", "GPCR-G protein structure models": "GPCR-G protein complexes", "Refined GPCR structures": "Refined GPCR structures"}
