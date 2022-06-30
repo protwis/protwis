@@ -28,7 +28,7 @@
             <li class="dropdown-submenu">
                 <a tabindex="0" href="#">Genetic variants</a>
                 <ul class="dropdown-menu">
-                  <li><a href="{{ hosts.gpcr }}/mutational_landscape/statistics">Variation statistics</a></li>
+                  <li><a href="{{ hosts.gpcr }}/mutational_landscape/statistics">Variation coverage</a></li>
                   <li><a href="{{ hosts.gpcr }}/mutational_landscape">Receptor variants</a></li>
                   <li><a href="{{ hosts.gpcr }}/mutational_landscape/economicburden">Estimated economic burden</a></li>
                 </ul>
@@ -58,7 +58,7 @@
             <!-- STRUCTURES -->
             <li class="divider"></li>
             <li class="nav-header disabled text-left"><a>STRUCTURES</a></li>
-            <li><a href="{{ hosts.gpcr }}/structure/statistics">Structure statistics
+            <li><a href="{{ hosts.gpcr }}/structure/statistics">Structure coverage
                 <button mp4="https://files.gpcrdb.org/video/structures1.mp4" type="button"
                         class="videoLink pull-right btn btn-xs btn-default">
                     <span class="glyphicon glyphicon-film"></span>
@@ -66,7 +66,7 @@
             </a></li>
             <li><a href="{{ hosts.gpcr }}/structure">Structures</a></li>
             <li><a href="{{ hosts.gpcr }}/structure/homology_models">Structure models</a></li>
-            <li><a href="{{ hosts.gpcr }}/structure/model_statistics">Structure model statistics</a></li>
+            <li><a href="{{ hosts.gpcr }}/structure/model_statistics">Structure model coverage</a></li>
             {#  DEPRECATED FOR NOW #}
             {#  <li><a href="{{ hosts.gpcr }}/structure/template_selection">Template selection</a></li> #}
 
@@ -155,7 +155,7 @@
         <li class="divider"></li>
 
         <li class="nav-header disabled"><a>LIGANDS</a></li>
-        <li><a href="{{ hosts.gpcr }}/ligand/statistics">Ligand statistics</a></li>
+        <li><a href="{{ hosts.gpcr }}/ligand/statistics">Ligand coverage</a></li>
         <li><a href="{{ hosts.gpcr }}/ligand">Ligands (ChEMBL)</a></li>
 
         <!-- DEPRECATED FUNCTION
@@ -191,7 +191,7 @@
         <!-- MUTATIONS -->
         <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>LIGAND SITE MUTATIONS</a></li>
-        <li><a href="{{ hosts.gpcr }}/mutations/statistics">Mutation statistics</a></li>
+        <li><a href="{{ hosts.gpcr }}/mutations/statistics">Mutation coverage</a></li>
         <li><a href="{{ hosts.gpcr }}/mutations">Mutations
             <button mp4="https://files.gpcrdb.org/video/mutations1.mp4" type="button"
                     class="videoLink pull-right btn btn-xs btn-default">
@@ -216,16 +216,12 @@
         Biased signalling<span class="caret"></span>
     </a>
     <ul class="dropdown-menu" role="menu">
-        <li class="dropdown-submenu guidelines">
-            <a tabindex="0" href="#">Guidelines</a>
-            <ul class="dropdown-menu">
-              <li><a href="{{ hosts.gpcr }}/biased_signalling/bias_guidelines">Guideline paper</a></li>
-              <li><a href="https://files.gpcrdb.org/bias_guidelines/Template_to_calculate_ligand_bias_factors.xlsx">Template to calculate ligand bias factors (MS Excel)</a></li>
-            </ul>
-        </li>
+        <li class="nav-header disabled"><a>GUIDELINES</a></li>
+        <li><a href="{{ hosts.gpcr }}/biased_signalling/bias_guidelines">Guideline paper</a></li>
+        <li><a href="https://files.gpcrdb.org/bias_guidelines/Template_to_calculate_ligand_bias_factors.xlsx">Template to calculate ligand bias factors</a></li>
         <li class="divider"></li>
         <li class="nav-header disabled"><a>BIASED LIGANDS (transducer family)</a></li>
-        <li><a href="{{ hosts.gpcr }}/biased_signalling/bias_statistics">Biased ligand statistics</a></li>
+        <li><a href="{{ hosts.gpcr }}/biased_signalling/bias_statistics">Biased ligand coverage</a></li>
         <li><a href="{{ hosts.gpcr }}/biased_signalling/biasedbrowser">Biased ligands (∆∆log(Emax/EC50) & ∆∆log(Tau/KA)</a></li>
         <li><a href="{{ hosts.gpcr }}/biased_signalling/emax_rank_order_selection">Ligand bias rank orders (ΔΔlog(Emax/EC50))</a></li>
         <li><a href="{{ hosts.gpcr }}/biased_signalling/tau_rank_order_selection">Ligand bias rank orders (ΔΔlog(Tau/KA))</a></li>
@@ -233,7 +229,7 @@
         <li><a href="{{ hosts.gpcr }}/biased_signalling/tau_path_profiles_selection">Ligand pathway profiles (Δlog(Tau/KA))</a></li>
         <li class="divider"></li>
         <li class="nav-header disabled"><a>BIASED LIGANDS (transducer subtype)</a></li>
-        <li><a href="{{ hosts.gpcr }}/biased_signalling/subtype_statistics">Biased ligand statistics</a></li>
+        <li><a href="{{ hosts.gpcr }}/biased_signalling/subtype_statistics">Biased ligand coverage</a></li>
         <li><a href="{{ hosts.gpcr }}/biased_signalling/biasedsubtypesbrowser">Biased ligands (subtype ∆∆log(Emax/EC50) & ∆∆log(Tau/KA)</a></li>
         <li><a href="{{ hosts.gpcr }}/biased_signalling/subtype_emax_rankorder_selection">Ligand bias rank orders (ΔΔlog(Emax/EC50))</a></li>
         <li><a href="{{ hosts.gpcr }}/biased_signalling/subtype_tau_rank_order_selection">Ligand bias rank orders (ΔΔlog(Tau/KA))</a></li>
@@ -241,7 +237,7 @@
         <li><a href="{{ hosts.gpcr }}/biased_signalling/subtype_tau_path_profiles_selection">Ligand pathway profiles (Δlog(Tau/KA))</a></li>
         <li class="divider"></li>
         <li class="nav-header disabled"><a>PATHWAY-PREFERRING LIGANDS (transducer family)</a></li>
-        <li><a href="{{ hosts.gpcr }}/biased_signalling/path_preference_statistics">Pathway-preferring ligand statistics</a></li>
+        <li><a href="{{ hosts.gpcr }}/biased_signalling/path_preference_statistics">Pathway-preferring ligand coverage</a></li>
         <li><a href="{{ hosts.gpcr }}/biased_signalling/pathwaypreferencebrowser">Pathway-preferring ligands (pathway ∆Log/(Emax/EC50)</a></li>
         <li><a href="{{ hosts.gpcr }}/biased_signalling/path_preference_emax_rankorder_selection">Ligand pathway preference rank orders (Δlog(Emax/EC50))</a></li>
         <li><a href="{{ hosts.gpcr }}/biased_signalling/path_preference_emax_path_profiles_selection">Ligand pathway profiles (Log(Emax/EC50))</a></li>
