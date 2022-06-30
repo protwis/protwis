@@ -6,6 +6,8 @@
             GPCRdb<span class="caret"></span>
         </a>
         <ul class="dropdown-menu" role="menu">
+            <li><a role="button" id='cite_gpcrdb'>Cite GPCRdb</a></li>
+            <li class="divider"></li>
             <li><a href="{{ hosts.gpcr }}/protein">Receptor page
                 <button mp4="https://files.gpcrdb.org/video/receptors1.mp4"
                         class="videoLink pull-right btn btn-xs btn-default">
@@ -213,9 +215,11 @@
 <!--  BIASED SIGNALING -->
 <li class="dropdown gpcr {% if current_site == 'gpcr' %}highlight_menu {{current_site}}{% endif %}" id="biased_menu">
     <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-submenu aria-expanded="false">
-        Biased signalling<span class="caret"></span>
+        LigandBiasDb<span class="caret"></span>
     </a>
     <ul class="dropdown-menu" role="menu">
+        <li><a role="button" id='cite_gpcrdb'>Cite LigandBiasDb</a></li>
+        <li class="divider"></li>
         <li class="nav-header disabled"><a>GUIDELINES</a></li>
         <li><a href="{{ hosts.gpcr }}/biased_signalling/bias_guidelines">Guideline paper</a></li>
         <li><a href="https://files.gpcrdb.org/bias_guidelines/Template_to_calculate_ligand_bias_factors.xlsx">Template to calculate ligand bias factors</a></li>
