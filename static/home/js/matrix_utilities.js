@@ -459,7 +459,7 @@ const run_sig_match = function() {
             }, ];
         columns_definition = columns_definition.concat(columns_to_add);
         // Gprots columns (4 GtoP + 4 GPCRdb Mean)
-        column_filters = column_filters.concat(createYADCFfilters(6, 8, "multi_select", "select2", "Select", false, null, "html", "40px"));
+        column_filters = column_filters.concat(createYADCFfilters(6, 8, "range_number", null, ["Min", "Max"], false, null, "html", "40px"));
       } else {
         columns_to_add = [{
               data: "arrb1.html",
@@ -482,7 +482,7 @@ const run_sig_match = function() {
             //   visible: false,
             // },];
         // Arrestins columns (2 GtoP + 2 GPCRdb Mean)
-        column_filters = column_filters.concat(createYADCFfilters(6, 2, "multi_select", "select2", "Select", false, null, "html", "40px"));
+        column_filters = column_filters.concat(createYADCFfilters(6, 2,"range_number", null, ["Min", "Max"], false, null, "html", "40px"));
       }
       columns_definition = columns_definition.concat(columns_to_add);
       if (filtering_particle === "G alpha") {
