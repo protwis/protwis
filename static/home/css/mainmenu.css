@@ -71,13 +71,11 @@ nav.navbar li.dropdown.open {
   background-color: #222;
 }
 
-nav.navbar li.dropdown a.dropdown-toggle:not(.select-link),
-nav.navbar a#cite {
+nav.navbar li.dropdown a.dropdown-toggle:not(.select-link) {
   color: #ccc;
 }
 
-nav.navbar li.dropdown a.dropdown-toggle:hover:not(.select-link),
-nav.navbar a#cite:hover {
+nav.navbar li.dropdown a.dropdown-toggle:hover:not(.select-link) {
   color: #fff;
   /* padding-top: 11px; */
 }
