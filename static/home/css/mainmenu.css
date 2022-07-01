@@ -92,6 +92,7 @@ nav.navbar .navbar-inverse .navbar-nav > .open > a:hover {
 
 li#gpcrdb_menu,
 li#gproteindb_menu,
+li#ligandbiasdb_menu,
 li#arrestindb_menu {
   background-repeat: no-repeat;
   background-size: 30px;
@@ -116,6 +117,10 @@ li.highlight_menu.arrestin {
   border-top: 4px solid #55ae35;
 }
 
+li.highlight_menu.ligandbias {
+  border-top: 4px solid #4169E1;
+}
+
 nav.navbar li.dropdown:not(.gpcr):not(.gprotein):not(.arrestin):not(.page-selection),
 nav.navbar li#cite_menu {
   border-top: 4px solid #5c5452;
@@ -123,8 +128,7 @@ nav.navbar li#cite_menu {
 
 li#gpcrdb_menu,
 li#drugs_menu,
-li#constructs_menu,
-li#biased_menu {
+li#constructs_menu {
   border-top: 4px solid #be00be;
   background-position: 10px 8px;
 }
@@ -143,6 +147,14 @@ li#arrestindb_menu {
   border-top: 4px solid #55ae35;
   background-position: 10px 8px;
   background-image: url('/static/home/logo/arrestin/main.png');
+  background-size: 35px;
+  padding-left: 35px;
+}
+
+li#ligandbiasdb_menu {
+  border-top: 4px solid #4169E1;
+  background-position: 10px 8px;
+  background-image: url('/static/home/logo/ligandbias/main.png');
   background-size: 35px;
   padding-left: 35px;
 }
