@@ -1,9 +1,9 @@
 $.widget( "custom.catcomplete", $.ui.autocomplete, {
-    _create: function() {
+    _create() {
       this._super();
       this.widget().menu( "option", "items", "> :not(.ui-autocomplete-category)" );
     },
-    _renderMenu: function( ul, items ) {
+    _renderMenu( ul, items ) {
       var that = this,
         currentCategory = "";
       $.each( items, function( index, item ) {
@@ -27,9 +27,9 @@ $(function() {
         minLength: 2,
         autoFocus: true,
         delay: 500,
-        create: function(event, ui) { this.focus();return false; },
-        focus: function(event, ui) { return false; },
-        select: function(event, ui) {
+        create(event, ui) { this.focus();return false; },
+        focus(event, ui) { return false; },
+        select(event, ui) {
             $( '#selection-autocomplete' ).val('');
             console.log(ui.item['id'],ui.item['type'],ui.item['label']);
             redirect_url = '/protein/'+ui.item['slug'];

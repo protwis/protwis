@@ -137,7 +137,7 @@ function createNGLview(mode, pdb, pdbs = false, pdbs_set2 = false, pdb2 = false)
                             if (label_index in int_labels[mode][0]) {
                                 ngl_tooltip.innerText += " " + int_labels[mode][0][label_index]
                                 hide = false
-                            } else if (mode == "two-groups" && (label_index in int_labels[mode][1])) {
+                            } else if (mode === "two-groups" && (label_index in int_labels[mode][1])) {
                                 ngl_tooltip.innerText += " " + int_labels[mode][1][label_index]
                                 hide = false
                             }

@@ -258,7 +258,7 @@
       function process_internal_node(a_node) {
         var count_undefined = 0;
         a_node.x = a_node.children.map(tree_layout).reduce(function(a, b) {
-          if (typeof b == "number") return a + b;
+          if (typeof b === "number") return a + b;
           count_undefined += 1;
           return a;
         }, 0.0);
@@ -408,7 +408,7 @@
       draw_scale_bar = options["show-scale"] && do_scaling;
       // this is a hack so that phylotree.pad_height would return ruler spacing
 
-      if (options["top-bottom-spacing"] == "fixed-step") {
+      if (options["top-bottom-spacing"] === "fixed-step") {
         offsets[1] = Math.max(font_size, -_extents[1][0] * fixed_width[0]);
         size[0] = _extents[0][1] * fixed_width[0];
         scales[0] = fixed_width[0];
@@ -424,7 +424,7 @@
           offsets[1] = 0;
         }
 
-        if (options["left-right-spacing"] == "fixed-step") {
+        if (options["left-right-spacing"] === "fixed-step") {
           size[1] = max_depth * fixed_width[1];
           scales[1] =
             (size[1] - offsets[1] - options["left-offset"]) / _extents[1][1];
@@ -614,7 +614,7 @@
           d.x *= scales[0];
           d.y *= scales[1];
 
-          if(options["layout"] == "right-to-left"){
+          if(options["layout"] === "right-to-left"){
             d.y = _extents[1][1]*scales[1]-d.y;
           }
 
@@ -723,7 +723,7 @@
       if (nwk.name == 'root') {
         // already parsed by phylotree.js
         _node_data = { json: nwk, error: null };
-      } else if (typeof nwk != "string") {
+      } else if (typeof nwk !== "string") {
         // old default
         _node_data = nwk;
       } else if (nwk[0] == '<'){
@@ -774,10 +774,10 @@
         phylo_attr = attr;
       }
 
-      if (options["top-bottom-spacing"] != "fixed-step") {
+      if (options["top-bottom-spacing"] !== "fixed-step") {
         size[0] = phylo_attr[0];
       }
-      if (options["left-right-spacing"] != "fixed-step") {
+      if (options["left-right-spacing"] !== "fixed-step") {
         size[1] = phylo_attr[1];
       }
 
@@ -1352,7 +1352,7 @@
           }
         }
       }
-      if(selection_callback && attr != "tag"){
+      if(selection_callback && attr !== "tag"){
         selection_callback(phylotree.get_selection());
       }
       return phylotree;
@@ -1397,7 +1397,7 @@
     phylotree.shift_tip = function(d) {
       if (options["is-radial"]) {
         return [
-          (d.text_align == "end" ? -1 : 1) *
+          (d.text_align === "end" ? -1 : 1) *
             (radius_pad_for_bubbles - d.radius),
           0
         ];
@@ -1539,7 +1539,7 @@
  */
     phylotree.node_span = function(attr) {
       if (!arguments.length) return node_span;
-      if (typeof attr == "string" && attr == "equal") {
+      if (typeof attr === "string" && attr === "equal") {
         node_span = function(d) {
           return 1;
         };
@@ -1612,7 +1612,7 @@
  * @returns The current ``phylotree``.
  */
     phylotree.delete_a_node = function(index) {
-      if (typeof index != "number") {
+      if (typeof index !== "number") {
         return phylotree.delete_a_node(nodes.indexOf(index));
       }
 
@@ -1679,7 +1679,7 @@
         callback(node);
       }
 
-      if (traversal_type == "post-order") {
+      if (traversal_type === "post-order") {
         traversal_type = post_order;
       }
 
@@ -1967,7 +1967,7 @@
       if (!arguments.length) return svg_element;
       if (svg !== svg_element) {
         svg = svg_element;
-        if(css_classes["tree-container"] == "phylotree-container"){
+        if(css_classes["tree-container"] === "phylotree-container"){
           svg.selectAll("*").remove();
           svg_defs = svg.append("defs");
         }
@@ -2261,7 +2261,7 @@
 
       drawn_nodes
         .attr("transform", function(d) {
-          const should_shift = options["layout"] == "right-to-left" && d3_phylotree_is_leafnode(d);
+          const should_shift = options["layout"] === "right-to-left" && d3_phylotree_is_leafnode(d);
           d.screen_x = x_coord(d);
           d.screen_y = y_coord(d);
           return d3_phylotree_svg_translate([should_shift ? 0 : d.screen_x, d.screen_y]);
@@ -2595,7 +2595,7 @@
           (transitions ? labels.transition() : labels)
             .attr("text-anchor", "start")
             .attr("transform", function(d) {
-              if(options["layout"] == "right-to-left"){
+              if(options["layout"] === "right-to-left"){
                 return d3_phylotree_svg_translate([-20, 0]);
               }
               return d3_phylotree_svg_translate(
@@ -2616,7 +2616,7 @@
             tracers
               .attr("x1", function(d) {
                 return (
-                  (d.text_align == "end" ? -1 : 1) *
+                  (d.text_align === "end" ? -1 : 1) *
                   phylotree.node_bubble_size(node)
                 );
               })
@@ -2626,7 +2626,7 @@
             tracers
               .transition()
               .attr("x2", function(d) {
-                if(options["layout"] == "right-to-left"){
+                if(options["layout"] === "right-to-left"){
                   return d.screen_x;
                 }
                 return phylotree.shift_tip(d)[0];
@@ -2639,7 +2639,7 @@
             tracers
               .attr("x1", function(d) {
                 return (
-                  (d.text_align == "end" ? -1 : 1) *
+                  (d.text_align === "end" ? -1 : 1) *
                   phylotree.node_bubble_size(node)
                 );
               })
@@ -2672,7 +2672,7 @@
           if (true || shown_font_size >= 5) { // always set dx
             labels.attr("dx", function(d) {
               return (
-                (d.text_align == "end" ? -1 : 1) *
+                (d.text_align === "end" ? -1 : 1) *
                 ((phylotree.align_tips() ? 0 : shift) + shown_font_size * 0.33)
               );
             });
@@ -2680,7 +2680,7 @@
         } else {
           if (true || shown_font_size >= 5) { // always set dx
             labels.attr("dx", function(d) {
-              return (d.text_align == "end" ? -1 : 1) * shown_font_size * 0.33;
+              return (d.text_align === "end" ? -1 : 1) * shown_font_size * 0.33;
             });
           }
         }
@@ -2813,7 +2813,7 @@
     if (tree.radial()) {
       var pad_radius = tree.pad_width(),
         vertical_offset =
-          tree.options()["top-bottom-spacing"] != "fit-to-size"
+          tree.options()["top-bottom-spacing"] !== "fit-to-size"
             ? tree.pad_height()
             : 0;
 
@@ -2837,11 +2837,11 @@
     } else {
       sizes = [
         sizes[1] +
-          (tree.options()["left-right-spacing"] != "fit-to-size"
+          (tree.options()["left-right-spacing"] !== "fit-to-size"
             ? tree.pad_width()
             : 0),
         sizes[0] +
-          (tree.options()["top-bottom-spacing"] != "fit-to-size"
+          (tree.options()["top-bottom-spacing"] !== "fit-to-size"
             ? tree.pad_height()
             : 0)
       ];
@@ -2970,7 +2970,7 @@
         switch (automaton_state) {
           case 0: {
             // look for the first opening parenthesis
-            if (current_char == "(") {
+            if (current_char === "(") {
               add_new_tree_level();
               automaton_state = 1; // expecting node name
             }
@@ -2979,19 +2979,19 @@
           case 1: // name
           case 3: { // branch length
             // reading name
-            if (current_char == ":") {
+            if (current_char === ":") {
               automaton_state = 3;
-            } else if (current_char == "," || current_char == ")") {
+            } else if (current_char === "," || current_char === ")") {
               try {
                 finish_node_definition();
                 automaton_state = 1;
-                if (current_char == ",") {
+                if (current_char === ",") {
                   add_new_tree_level();
                 }
               } catch (e) {
                 return generate_error(char_index);
               }
-            } else if (current_char == "(") {
+            } else if (current_char === "(") {
               if (current_node_name.length > 0) {
                 return generate_error(char_index);
               } else {
@@ -3010,7 +3010,7 @@
               }
               return generate_error(char_index);
             } else {
-              if (current_char == "[") {
+              if (current_char === "[") {
                 if (current_node_annotation.length) {
                   return generate_error(char_index);
                 } else {
@@ -3023,7 +3023,7 @@
                   if (space.test(current_char)) {
                     continue;
                   }
-                  if (current_char == ";") { // semicolon terminates tree definition
+                  if (current_char === ";") { // semicolon terminates tree definition
                     char_index = nwk_str.length;
                     break;
                   }
@@ -3052,10 +3052,10 @@
             break;
           }
           case 4: { // inside a comment / attribute
-            if (current_char == "]") {
+            if (current_char === "]") {
               automaton_state = 3;
             } else {
-              if (current_char == "[") {
+              if (current_char === "[") {
                 return generate_error(char_index);
               }
               current_node_annotation += current_char;

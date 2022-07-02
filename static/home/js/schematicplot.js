@@ -883,7 +883,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
         max: `${data.pdbs.length}`,
         step: 1,
         values: [0, `${data.pdbs.length}`],
-        slide: function( event, ui ) {
+        slide( event, ui ) {
           $( `${containerSelector} #`+$(this).attr("data-text-id") ).html( ui.values[ 0 ] + " - " + ui.values[ 1 ] );
           getCLSCGRangeChangeFunction(ui.values[ 0 ], ui.values[ 1 ]);
         }
@@ -984,7 +984,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
         max: 1,
         step: 0.01,
         values: [0,1],
-        slide: function( event, ui ) {
+        slide( event, ui ) {
           $( $(this).data("referenceContainer")+" #"+$(this).attr("data-text-id") ).html( ui.values[ 0 ] + " - " + ui.values[ 1 ] );
           getCLTCGRangeChangeFunction($(this)[0].id, ui, $(this).data("referenceContainer"));
         }
@@ -995,7 +995,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
         max: 1,
         step: 0.01,
         values: [0,1],
-        slide: function( event, ui ) {
+        slide( event, ui ) {
           $( $(this).data("referenceContainer")+" #"+$(this).attr("data-text-id") ).html( ui.values[ 0 ] + " - " + ui.values[ 1 ] );
           getCLTCGRangeChangeFunction($(this)[0].id, ui, $(this).data("referenceContainer"));
         }
@@ -1006,7 +1006,7 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
         max: 1,
         step: 0.01,
         values: [-1,1],
-        slide: function( event, ui ) {
+        slide( event, ui ) {
           $( $(this).data("referenceContainer")+" #"+$(this).attr("data-text-id") ).html( ui.values[ 0 ] + " - " + ui.values[ 1 ] );
           getCLTCGRangeChangeFunction($(this)[0].id, ui, $(this).data("referenceContainer"));
         }
@@ -1020,11 +1020,11 @@ function createSchematicPlot(data, containerSelector, options, data1, data2) {
         var d = $( container+" #cltcg-diff-range-slider" ).slider("values");
 
         // update with current slide values
-        if (origin == "cltcg-group1-range-slider")
+        if (origin === "cltcg-group1-range-slider")
             g1 = ui.values;
-        else if (origin == "cltcg-group2-range-slider")
+        else if (origin === "cltcg-group2-range-slider")
             g2 = ui.values;
-        else if (origin == "cltcg-diff-range-slider")
+        else if (origin === "cltcg-diff-range-slider")
             d = ui.values;
 
         // Hide all below min or above max treshold

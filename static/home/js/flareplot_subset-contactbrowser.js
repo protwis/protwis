@@ -9,7 +9,7 @@
  */
 function createFlareplot_subset(width, inputGraph, containerSelector, contiguousOutward = true) {
     
-    if( typeof inputGraph == "string" ){
+    if( typeof inputGraph === "string" ){
         inputGraph = JSON.parse(inputGraph);
     }
     console.log(inputGraph.edges)
@@ -1213,7 +1213,7 @@ function createFlareplot_subset(width, inputGraph, containerSelector, contiguous
                 .style("visibility", "hidden");
 
             // update coloring (if based on interactions)
-            if (edgeColoring == "interactions")
+            if (edgeColoring === "interactions")
               updateColors(edgeColoring, interactions);
 
 

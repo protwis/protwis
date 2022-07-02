@@ -34,7 +34,7 @@
 
  $(window).on("load", function () {
     //Unique crystallized receptors graph
-    if (typeof data_unique_cryst_container != "undefined"){
+    if (typeof data_unique_cryst_container !== "undefined"){
       nv.addGraph(function () {
           var datum = data_unique_cryst_container;
           var chart = nv.models.multiBarChart()

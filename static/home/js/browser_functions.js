@@ -150,7 +150,7 @@ function AddToSelection(selection_type, selection_subtype, selection_id) {
         },
         'type': 'GET',
         'async': false,
-        'success': function(data) {
+        'success'(data) {
             $("#selection-" + selection_type).html(data);
         },
     });

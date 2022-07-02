@@ -550,10 +550,10 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
 
         var mode = get_current_mode();
         // if single structure - use interaction coloring
-        if (mode == "single-crystal") {
+        if (mode === "single-crystal") {
             content += '<option value="interactions" selected>Interaction Type</option>';
             // if single group of structures - use frequency coloring (gradient)
-        } else if (mode == "single-crystal-group") {
+        } else if (mode === "single-crystal-group") {
             content += '<option value="frequency" selected>Interaction Frequency/Count</option>';
             // if group(s) of structures - use frequency coloring (gradient)
         } else {

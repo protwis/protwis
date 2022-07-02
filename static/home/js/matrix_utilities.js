@@ -270,7 +270,7 @@ const run_seq_sig = function(interface_data) {
       for (const interaction of interface_data["transformed"]) {
         let struct = interaction.pdb_id;
         let gn = interaction.rec_gn;
-        if (typeof(int_cons_list[gn]) == "undefined") {
+        if (typeof(int_cons_list[gn]) === "undefined") {
           int_cons_list[gn] = [struct];
         } else {
           if (int_cons_list[gn].indexOf(struct) === -1) {
@@ -284,7 +284,7 @@ const run_seq_sig = function(interface_data) {
       for (let i in data.feat){
         if (Object.prototype.hasOwnProperty.call(data.feat, i)) {
           for (const obj of data.feat[i]){
-            if (typeof(int_cons_list[obj.gn]) == "undefined") {
+            if (typeof(int_cons_list[obj.gn]) === "undefined") {
               obj.int_freq = 0;
             } else {
               obj.int_freq = Math.round(int_cons_list[obj.gn].length/struct_count*100,0);

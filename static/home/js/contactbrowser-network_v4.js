@@ -1306,10 +1306,10 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
 
         var mode = get_current_mode();
         // if single structure - use interaction coloring
-        if (mode == "single-crystal") {
+        if (mode === "single-crystal") {
             content += '<option value="interactions" selected>Interaction Type</option>';
             // if single group of structures - use frequency coloring (gradient)
-        } else if (mode == "single-crystal-group") {
+        } else if (mode === "single-crystal-group") {
             content += '<option value="frequency" selected>Interaction Frequency/Count</option>';
             // if group(s) of structures - use frequency coloring (gradient)
         } else {
@@ -1337,12 +1337,12 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
 
         content += 'Highlight res <input id="highlightNode" type="checkbox" ><br>';
             
-        if (mode != "single-crystal") {
+        if (mode !== "single-crystal") {
             content += 'Color links by frequency <input id="colorLinks" type="checkbox" checked><br>' +
             '% of kept contacts <input id="change_to_freq" type="checkbox"><br>';
         }
         
-        if (mode == "two-crystal-groups") {
+        if (mode === "two-crystal-groups") {
             content += 'Filter <select id="set_filter"><option value="all">All</option><option value="set1">Set1</option><option value="set2">Set2</option><option value="both">Both</option></select><br>';
         }
                    

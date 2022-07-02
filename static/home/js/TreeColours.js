@@ -169,14 +169,14 @@ function toggleLegend() {
         value: values
     },
     'type': 'GET',
-    'success': function(data) {
+    'success'(data) {
            $("#main").html(data);
        }
      });
     $.ajax({
     'url': '/phylogenetic_trees/get_buttons',
     'type': 'GET',
-    'success': function(data) {
+    'success'(data) {
            $("#ring_buttons").html(data);
        }
      });

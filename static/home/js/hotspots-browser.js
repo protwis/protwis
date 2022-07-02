@@ -527,7 +527,7 @@ function getBackendData() {
         dataType: 'json',
         data: {},
         async: true,
-        success: function(data) {
+        success(data) {
             // Re-render heatmap
             hotspotsdata = data;
             console.table(data['residue_matrix']);

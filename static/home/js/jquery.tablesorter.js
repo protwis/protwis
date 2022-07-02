@@ -212,7 +212,7 @@
         █████▀ ██████   ██   ▀████▀ ██
         */
 
-        setup : function( table, c ) {
+        setup ( table, c ) {
             // if no thead or tbody, or tablesorter is already present, quit
             if ( !table || !table.tHead || table.tBodies.length === 0 || table.hasInitialized === true ) {
                 if ( c.debug ) {
@@ -349,7 +349,7 @@
             }
         },
 
-        bindMethods : function( c ) {
+        bindMethods ( c ) {
             var $table = c.$table,
                 namespace = c.namespace,
                 events = ( 'sortReset update updateRows updateAll updateHeaders addRows updateCell updateComplete ' +
@@ -439,7 +439,7 @@
             });
         },
 
-        bindEvents : function( table, $headers, core ) {
+        bindEvents ( table, $headers, core ) {
             table = $( table )[ 0 ];
             var tmp,
                 c = table.config,
@@ -525,7 +525,7 @@
             }
         },
 
-        buildHeaders : function( c ) {
+        buildHeaders ( c ) {
             var $temp, icon, timer, indx;
             c.headerList = [];
             c.headerContent = [];
@@ -628,7 +628,7 @@
 
         // Use it to add a set of methods to table.config which will be available for all tables.
         // This should be done before table initialization
-        addInstanceMethods : function( methods ) {
+        addInstanceMethods ( methods ) {
             $.extend( ts.instanceMethods, methods );
         },
 
@@ -638,7 +638,7 @@
         ██▀▀▀  ██▀▀██ ██▀██     ▀█▄ ██▀▀   ██▀██     ▀█▄
         ██     ██  ██ ██  ██ █████▀ ██████ ██  ██ █████▀
         */
-        setupParsers : function( c, $tbodies ) {
+        setupParsers ( c, $tbodies ) {
             var rows, list, span, max, colIndex, indx, header, configHeaders,
                 noParser, parser, extractor, time, tbody, len,
                 table = c.table,
@@ -731,7 +731,7 @@
             c.extractors = list.extractors;
         },
 
-        addParser : function( parser ) {
+        addParser ( parser ) {
             var indx,
                 len = ts.parsers.length,
                 add = true;
@@ -745,7 +745,7 @@
             }
         },
 
-        getParserById : function( name ) {
+        getParserById ( name ) {
             /*jshint eqeqeq:false */
             if ( name == 'false' ) { return false; }
             var indx,
@@ -758,7 +758,7 @@
             return false;
         },
 
-        detectParserForColumn : function( c, rows, rowIndex, cellIndex ) {
+        detectParserForColumn ( c, rows, rowIndex, cellIndex ) {
             var cur, $node, row,
                 indx = ts.parsers.length,
                 node = false,
@@ -793,7 +793,7 @@
             return ts.getParserById( 'text' );
         },
 
-        getElementText : function( c, node, cellIndex ) {
+        getElementText ( c, node, cellIndex ) {
             if ( !node ) { return ''; }
             var tmp,
                 extract = c.textExtraction || '',
@@ -819,7 +819,7 @@
         },
 
         // centralized function to extract/parse cell contents
-        getParsedText : function( c, cell, colIndex, txt ) {
+        getParsedText ( c, cell, colIndex, txt ) {
             if ( typeof txt === 'undefined' ) {
                 txt = ts.getElementText( c, cell, colIndex );
             }
@@ -850,7 +850,7 @@
         ██  ▄▄ ██▀▀██ ██  ▄▄ ██▀▀██ ██▀▀
         ▀████▀ ██  ██ ▀████▀ ██  ██ ██████
         */
-        buildCache : function( c, callback, $tbodies ) {
+        buildCache ( c, callback, $tbodies ) {
             var cache, val, txt, rowIndex, colIndex, tbodyIndex, $tbody, $row,
                 cols, $cells, cell, cacheTime, totalRows, rowData, prevRowData,
                 colMax, span, cacheIndex, hasParser, max, len, index,
@@ -1005,7 +1005,7 @@
             }
         },
 
-        getColumnText : function( table, column, callback, rowFilter ) {
+        getColumnText ( table, column, callback, rowFilter ) {
             table = $( table )[0];
             var tbodyIndex, rowIndex, cache, row, tbodyLen, rowLen, raw, parsed, $cell, result,
                 hasCallback = typeof callback === 'function',
@@ -1059,7 +1059,7 @@
         ██  ██ ██▀▀▀  ██  ██ ██▀▀██   ██   ██▀▀
         ▀████▀ ██     █████▀ ██  ██   ██   ██████
         */
-        setHeadersCss : function( c ) {
+        setHeadersCss ( c ) {
             var $sorted, indx, column,
                 list = c.sortList,
                 len = list.length,
@@ -1135,7 +1135,7 @@
         },
 
         // nextSort (optional), lets you disable next sort text
-        setColumnAriaLabel : function( c, $header, nextSort ) {
+        setColumnAriaLabel ( c, $header, nextSort ) {
             if ( $header.length ) {
                 var column = parseInt( $header.attr( 'data-column' ), 10 ),
                     vars = c.sortVars[ column ],
@@ -1155,7 +1155,7 @@
             }
         },
 
-        updateHeader : function( c ) {
+        updateHeader ( c ) {
             var index, isDisabled, $header, col,
                 table = c.table,
                 len = c.$headers.length;
@@ -1168,7 +1168,7 @@
             }
         },
 
-        setColumnSort : function( c, $header, isDisabled ) {
+        setColumnSort ( c, $header, isDisabled ) {
             var id = c.table.id;
             $header[ 0 ].sortDisabled = isDisabled;
             $header[ isDisabled ? 'addClass' : 'removeClass' ]( 'sorter-false' )
@@ -1191,7 +1191,7 @@
             }
         },
 
-        updateHeaderSortCount : function( c, list ) {
+        updateHeaderSortCount ( c, list ) {
             var col, dir, group, indx, primary, temp, val, order,
                 sortList = list || c.sortList,
                 len = sortList.length;
@@ -1248,7 +1248,7 @@
             }
         },
 
-        updateAll : function( c, resort, callback ) {
+        updateAll ( c, resort, callback ) {
             var table = c.table;
             table.isUpdating = true;
             ts.refreshWidgets( table, true, true );
@@ -1258,7 +1258,7 @@
             ts.commonUpdate( c, resort, callback );
         },
 
-        update : function( c, resort, callback ) {
+        update ( c, resort, callback ) {
             var table = c.table;
             table.isUpdating = true;
             // update sorting (if enabled/disabled)
@@ -1267,14 +1267,14 @@
         },
 
         // simple header update - see #989
-        updateHeaders : function( c, callback ) {
+        updateHeaders ( c, callback ) {
             c.table.isUpdating = true;
             ts.buildHeaders( c );
             ts.bindEvents( c.table, c.$headers, true );
             ts.resortComplete( c, callback );
         },
 
-        updateCell : function( c, cell, resort, callback ) {
+        updateCell ( c, cell, resort, callback ) {
             if ( ts.isEmptyObject( c.cache ) ) {
                 // empty table, do an update instead - fixes #1099
                 ts.updateHeader( c );
@@ -1287,7 +1287,7 @@
             var tmp, indx, row, icell, cache, len,
                 $tbodies = c.$tbodies,
                 $cell = $( cell ),
-                // update cache - format: function( s, table, cell, cellIndex )
+                // update cache - format( s, table, cell, cellIndex )
                 // no closest in jQuery v1.2.6
                 tbodyIndex = $tbodies
                     .index( $.fn.closest ? $cell.closest( 'tbody' ) : $cell.parents( 'tbody' ).filter( ':first' ) ),
@@ -1339,7 +1339,7 @@
             }
         },
 
-        addRows : function( c, $row, resort, callback ) {
+        addRows ( c, $row, resort, callback ) {
             var txt, val, tbodyIndex, rowIndex, rows, cellIndex, len, order,
                 cacheIndex, rowData, cells, cell, span,
                 // allow passing a row string if only one non-info tbody exists in the table
@@ -1411,7 +1411,7 @@
             }
         },
 
-        updateCache : function( c, callback, $tbodies ) {
+        updateCache ( c, callback, $tbodies ) {
             // rebuild parsers
             if ( !( c.parsers && c.parsers.length ) ) {
                 ts.setupParsers( c, $tbodies );
@@ -1422,7 +1422,7 @@
 
         // init flag (true) used by pager plugin to prevent widget application
         // renamed from appendToTable
-        appendCache : function( c, init ) {
+        appendCache ( c, init ) {
             var parsed, totalRows, $tbody, $curTbody, rowIndex, tbodyIndex, appendTime,
                 table = c.table,
                 wo = c.widgetOptions,
@@ -1471,7 +1471,7 @@
             }
         },
 
-        commonUpdate : function( c, resort, callback ) {
+        commonUpdate ( c, resort, callback ) {
             // remove rows/elements before update
             c.$table.find( c.selectorRemove ).remove();
             // rebuild parsers
@@ -1487,7 +1487,7 @@
            ▀█▄ ██  ██ ██▀██    ██   ██ ██  ██ ██ ▀██
         █████▀ ▀████▀ ██  ██   ██   ██ ██  ██ ▀████▀
         */
-        initSort : function( c, cell, event ) {
+        initSort ( c, cell, event ) {
             if ( c.table.isUpdating ) {
                 // let any updates complete before initializing a sort
                 return setTimeout( function(){
@@ -1628,7 +1628,7 @@
         },
 
         // sort multiple columns
-        multisort : function( c ) { /*jshint loopfunc:true */
+        multisort ( c ) { /*jshint loopfunc:true */
             var tbodyIndex, sortTime, colMax, rows, tmp,
                 table = c.table,
                 sorter = [],
@@ -1708,7 +1708,7 @@
             }
         },
 
-        resortComplete : function( c, callback ) {
+        resortComplete ( c, callback ) {
             if ( c.table.isUpdating ) {
                 c.$table.triggerHandler( 'updateComplete', c.table );
             }
@@ -1717,7 +1717,7 @@
             }
         },
 
-        checkResort : function( c, resort, callback ) {
+        checkResort ( c, resort, callback ) {
             var sortList = $.isArray( resort ) ? resort : c.sortList,
                 // if no resort parameter is passed, fallback to config.resort (true by default)
                 resrt = typeof resort === 'undefined' ? c.resort : resort;
@@ -1740,7 +1740,7 @@
             }
         },
 
-        sortOn : function( c, list, callback, init ) {
+        sortOn ( c, list, callback, init ) {
             var table = c.table;
             c.$table.triggerHandler( 'sortStart', table );
             // update header count index
@@ -1763,7 +1763,7 @@
             }
         },
 
-        sortReset : function( c, callback ) {
+        sortReset ( c, callback ) {
             c.sortList = [];
             ts.setHeadersCss( c );
             ts.multisort( c );
@@ -1773,11 +1773,11 @@
             }
         },
 
-        getSortType : function( parsers, column ) {
+        getSortType ( parsers, column ) {
             return ( parsers && parsers[ column ] ) ? parsers[ column ].type || '' : '';
         },
 
-        getOrder : function( val ) {
+        getOrder ( val ) {
             // look for 'd' in 'desc' order; return true
             return ( /^d/i.test( val ) || val === 1 );
         },
@@ -1785,7 +1785,7 @@
         // Natural sort - https://github.com/overset/javascript-natural-sort (date sorting removed)
         // this function will only accept strings, or you'll see 'TypeError: undefined is not a function'
         // I could add a = a.toString(); b = b.toString(); but it'll slow down the sort overall
-        sortNatural : function( a, b ) {
+        sortNatural ( a, b ) {
             if ( a === b ) { return 0; }
             var aNum, bNum, aFloat, bFloat, indx, max,
                 regex = ts.regex;
@@ -1818,7 +1818,7 @@
             return 0;
         },
 
-        sortNaturalAsc : function( a, b, col, c ) {
+        sortNaturalAsc ( a, b, col, c ) {
             if ( a === b ) { return 0; }
             var empty = ts.string[ ( c.empties[ col ] || c.emptyTo ) ];
             if ( a === '' && empty !== 0 ) { return typeof empty === 'boolean' ? ( empty ? -1 : 1 ) : -empty || -1; }
@@ -1826,7 +1826,7 @@
             return ts.sortNatural( a, b );
         },
 
-        sortNaturalDesc : function( a, b, col, c ) {
+        sortNaturalDesc ( a, b, col, c ) {
             if ( a === b ) { return 0; }
             var empty = ts.string[ ( c.empties[ col ] || c.emptyTo ) ];
             if ( a === '' && empty !== 0 ) { return typeof empty === 'boolean' ? ( empty ? -1 : 1 ) : empty || 1; }
@@ -1835,14 +1835,14 @@
         },
 
         // basic alphabetical sort
-        sortText : function( a, b ) {
+        sortText ( a, b ) {
             return a > b ? 1 : ( a < b ? -1 : 0 );
         },
 
         // return text string value by adding up ascii value
         // so the text is somewhat sorted when using a digital sort
         // this is NOT an alphanumeric sort
-        getTextValue : function( val, num, max ) {
+        getTextValue ( val, num, max ) {
             if ( max ) {
                 // make sure the text value is greater than the max numerical value (max)
                 var indx,
@@ -1856,7 +1856,7 @@
             return 0;
         },
 
-        sortNumericAsc : function( a, b, num, max, col, c ) {
+        sortNumericAsc ( a, b, num, max, col, c ) {
             if ( a === b ) { return 0; }
             var empty = ts.string[ ( c.empties[ col ] || c.emptyTo ) ];
             if ( a === '' && empty !== 0 ) { return typeof empty === 'boolean' ? ( empty ? -1 : 1 ) : -empty || -1; }
@@ -1866,7 +1866,7 @@
             return a - b;
         },
 
-        sortNumericDesc : function( a, b, num, max, col, c ) {
+        sortNumericDesc ( a, b, num, max, col, c ) {
             if ( a === b ) { return 0; }
             var empty = ts.string[ ( c.empties[ col ] || c.emptyTo ) ];
             if ( a === '' && empty !== 0 ) { return typeof empty === 'boolean' ? ( empty ? -1 : 1 ) : empty || 1; }
@@ -1876,7 +1876,7 @@
             return b - a;
         },
 
-        sortNumeric : function( a, b ) {
+        sortNumeric ( a, b ) {
             return a - b;
         },
 
@@ -1886,19 +1886,19 @@
         ██ ██ ██ ██ ██  ██ ██ ▀██ ██▀▀     ██      ▀█▄
         ███████▀ ██ █████▀ ▀████▀ ██████   ██   █████▀
         */
-        addWidget : function( widget ) {
+        addWidget ( widget ) {
             if ( widget.id && !ts.isEmptyObject( ts.getWidgetById( widget.id ) ) ) {
                 console.warn( '"' + widget.id + '" widget was loaded more than once!' );
             }
             ts.widgets[ ts.widgets.length ] = widget;
         },
 
-        hasWidget : function( $table, name ) {
+        hasWidget ( $table, name ) {
             $table = $( $table );
             return $table.length && $table[ 0 ].config && $table[ 0 ].config.widgetInit[ name ] || false;
         },
 
-        getWidgetById : function( name ) {
+        getWidgetById ( name ) {
             var indx, widget,
                 len = ts.widgets.length;
             for ( indx = 0; indx < len; indx++ ) {
@@ -1909,7 +1909,7 @@
             }
         },
 
-        applyWidgetOptions : function( table ) {
+        applyWidgetOptions ( table ) {
             var indx, widget,
                 c = table.config,
                 len = c.widgets.length;
@@ -1925,7 +1925,7 @@
             }
         },
 
-        addWidgetFromClass : function( table ) {
+        addWidgetFromClass ( table ) {
             var len, indx,
                 c = table.config,
                 // look for widgets to apply from table class
@@ -1946,7 +1946,7 @@
             }
         },
 
-        applyWidgetId : function( table, id, init ) {
+        applyWidgetId ( table, id, init ) {
             table = $(table)[0];
             var applied, time, name,
                 c = table.config,
@@ -1992,7 +1992,7 @@
             }
         },
 
-        applyWidget : function( table, init, callback ) {
+        applyWidget ( table, init, callback ) {
             table = $( table )[ 0 ]; // in case this is called externally
             var indx, len, names, widget, time,
                 c = table.config,
@@ -2058,7 +2058,7 @@
             }
         },
 
-        removeWidget : function( table, name, refreshing ) {
+        removeWidget ( table, name, refreshing ) {
             table = $( table )[ 0 ];
             var index, widget, indx, len,
                 c = table.config;
@@ -2095,7 +2095,7 @@
             }
         },
 
-        refreshWidgets : function( table, doAll, dontapply ) {
+        refreshWidgets ( table, doAll, dontapply ) {
             table = $( table )[ 0 ]; // see issue #243
             var indx, widget,
                 c = table.config,
@@ -2132,16 +2132,16 @@
         ██  ██   ██   ██ ██     ██   ██   ██ ██▀▀      ▀█▄
         ▀████▀   ██   ██ ██████ ██   ██   ██ ██████ █████▀
         */
-        benchmark : function( diff ) {
+        benchmark ( diff ) {
             return ( ' (' + ( new Date().getTime() - diff.getTime() ) + ' ms)' );
         },
         // deprecated ts.log
-        log : function() {
+        log () {
             console.log( arguments );
         },
 
         // $.isEmptyObject from jQuery v1.4
-        isEmptyObject : function( obj ) {
+        isEmptyObject ( obj ) {
             /*jshint forin: false */
             for ( var name in obj ) {
                 return false;
@@ -2149,7 +2149,7 @@
             return true;
         },
 
-        isValueInArray : function( column, arry ) {
+        isValueInArray ( column, arry ) {
             var indx,
                 len = arry && arry.length || 0;
             for ( indx = 0; indx < len; indx++ ) {
@@ -2160,7 +2160,7 @@
             return -1;
         },
 
-        formatFloat : function( str, table ) {
+        formatFloat ( str, table ) {
             if ( typeof str !== 'string' || str === '' ) { return str; }
             // allow using formatFloat without a table; defaults to US number format
             var num,
@@ -2183,7 +2183,7 @@
             return isNaN( num ) ? $.trim( str ) : num;
         },
 
-        isDigit : function( str ) {
+        isDigit ( str ) {
             // replace all unwanted chars and match
             return isNaN( str ) ?
                 ts.regex.digitTest.test( str.toString().replace( ts.regex.digitReplace, '' ) ) :
@@ -2193,7 +2193,7 @@
         // computeTableHeaderCellIndexes from:
         // http://www.javascripttoolbox.com/lib/table/examples.php
         // http://www.javascripttoolbox.com/temp/table_cellindex.html
-        computeColumnIndex : function( $rows, c ) {
+        computeColumnIndex ( $rows, c ) {
             var i, j, k, l, cell, cells, rowIndex, rowSpan, colSpan, firstAvailCol,
                 // total columns has been calculated, use it to set the matrixrow
                 columns = c && c.columns || 0,
@@ -2242,7 +2242,7 @@
         },
 
         // automatically add a colgroup with col elements set to a percentage width
-        fixColumnWidth : function( table ) {
+        fixColumnWidth ( table ) {
             table = $( table )[ 0 ];
             var overallWidth, percent, $tbodies, len, index,
                 c = table.config,
@@ -2268,7 +2268,7 @@
         // get sorter, string, empty, etc options for each column from
         // jQuery data, metadata, header option or header class name ('sorter-false')
         // priority = jQuery data > meta > headers option > header class name
-        getData : function( header, configHeader, key ) {
+        getData ( header, configHeader, key ) {
             var meta, cl4ss,
                 val = '',
                 $header = $( header );
@@ -2291,7 +2291,7 @@
             return $.trim( val );
         },
 
-        getColumnData : function( table, obj, indx, getCell, $headers ) {
+        getColumnData ( table, obj, indx, getCell, $headers ) {
             if ( typeof obj !== 'object' || obj === null ) {
                 return obj;
             }
@@ -2322,7 +2322,7 @@
 
         // *** Process table ***
         // add processing indicator
-        isProcessing : function( $table, toggle, $headers ) {
+        isProcessing ( $table, toggle, $headers ) {
             $table = $( $table );
             var c = $table[ 0 ].config,
                 // default to all headers
@@ -2346,7 +2346,7 @@
 
         // detach tbody but save the position
         // don't use tbody because there are portions that look for a tbody index (updateCell)
-        processTbody : function( table, $tb, getIt ) {
+        processTbody ( table, $tb, getIt ) {
             table = $( table )[ 0 ];
             if ( getIt ) {
                 table.isProcessing = true;
@@ -2359,7 +2359,7 @@
             table.isProcessing = false;
         },
 
-        clearTableBody : function( table ) {
+        clearTableBody ( table ) {
             $( table )[ 0 ].config.$tbodies.children().detach();
         },
 
@@ -2381,7 +2381,7 @@
             'U' : '\u00da\u00d9\u00db\u00dc\u016e' // ÚÙÛÜŮ
         },
 
-        replaceAccents : function( str ) {
+        replaceAccents ( str ) {
             var chr,
                 acc = '[',
                 eq = ts.characterEquivalents;
@@ -2405,7 +2405,7 @@
             return str;
         },
 
-        validateOptions : function( c ) {
+        validateOptions ( c ) {
             var setting, setting2, typ, timer,
                 // ignore options containing an array
                 ignore = 'headers sortForce sortList sortAppend widgets'.split( ' ' ),
@@ -2434,7 +2434,7 @@
         },
 
         // restore headers
-        restoreHeaders : function( table ) {
+        restoreHeaders ( table ) {
             var index, $cell,
                 c = $( table )[ 0 ].config,
                 $headers = c.$table.find( c.selectorHeaders ),
@@ -2450,7 +2450,7 @@
             }
         },
 
-        destroy : function( table, removeClasses, callback ) {
+        destroy ( table, removeClasses, callback ) {
             table = $( table )[ 0 ];
             if ( !table.hasInitialized ) { return; }
             // remove all widgets
@@ -2534,10 +2534,10 @@
     // add default parsers
     ts.addParser({
         id : 'no-parser',
-        is : function() {
+        is () {
             return false;
         },
-        format : function() {
+        format () {
             return '';
         },
         type : 'text'
@@ -2545,10 +2545,10 @@
 
     ts.addParser({
         id : 'text',
-        is : function() {
+        is () {
             return true;
         },
-        format : function( str, table ) {
+        format ( str, table ) {
             var c = table.config;
             if ( str ) {
                 str = $.trim( c.ignoreCase ? str.toLocaleLowerCase() : str );
@@ -2562,10 +2562,10 @@
     ts.regex.nondigit = /[^\w,. \-()]/g;
     ts.addParser({
         id : 'digit',
-        is : function( str ) {
+        is ( str ) {
             return ts.isDigit( str );
         },
-        format : function( str, table ) {
+        format ( str, table ) {
             var num = ts.formatFloat( ( str || '' ).replace( ts.regex.nondigit, '' ), table );
             return str && typeof num === 'number' ? num :
                 str ? $.trim( str && table.config.ignoreCase ? str.toLocaleLowerCase() : str ) : str;
@@ -2577,12 +2577,12 @@
     ts.regex.currencyTest = /^\(?\d+[\u00a3$\u20ac\u00a4\u00a5\u00a2?.]|[\u00a3$\u20ac\u00a4\u00a5\u00a2?.]\d+\)?$/;
     ts.addParser({
         id : 'currency',
-        is : function( str ) {
+        is ( str ) {
             str = ( str || '' ).replace( ts.regex.currencyReplace, '' );
             // test for £$€¤¥¢
             return ts.regex.currencyTest.test( str );
         },
-        format : function( str, table ) {
+        format ( str, table ) {
             var num = ts.formatFloat( ( str || '' ).replace( ts.regex.nondigit, '' ), table );
             return str && typeof num === 'number' ? num :
                 str ? $.trim( str && table.config.ignoreCase ? str.toLocaleLowerCase() : str ) : str;
@@ -2596,10 +2596,10 @@
     ts.regex.urlProtocolReplace = /(https?|ftp|file):\/\/(www\.)?/;
     ts.addParser({
         id : 'url',
-        is : function( str ) {
+        is ( str ) {
             return ts.regex.urlProtocolTest.test( str );
         },
-        format : function( str ) {
+        format ( str ) {
             return str ? $.trim( str.replace( ts.regex.urlProtocolReplace, '' ) ) : str;
         },
         type : 'text'
@@ -2609,10 +2609,10 @@
     ts.regex.isoDate = /^\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}/;
     ts.addParser({
         id : 'isoDate',
-        is : function( str ) {
+        is ( str ) {
             return ts.regex.isoDate.test( str );
         },
-        format : function( str, table ) {
+        format ( str, table ) {
             var date = str ? new Date( str.replace( ts.regex.dash, '/' ) ) : str;
             return date instanceof Date && isFinite( date ) ? date.getTime() : str;
         },
@@ -2623,10 +2623,10 @@
     ts.regex.percentTest = /(\d\s*?%|%\s*?\d)/;
     ts.addParser({
         id : 'percent',
-        is : function( str ) {
+        is ( str ) {
             return ts.regex.percentTest.test( str ) && str.length < 15;
         },
-        format : function( str, table ) {
+        format ( str, table ) {
             return str ? ts.formatFloat( str.replace( ts.regex.percent, '' ), table ) : str;
         },
         type : 'numeric'
@@ -2635,10 +2635,10 @@
     // added image parser to core v2.17.9
     ts.addParser({
         id : 'image',
-        is : function( str, table, node, $node ) {
+        is ( str, table, node, $node ) {
             return $node.find( 'img' ).length > 0;
         },
-        format : function( str, table, cell ) {
+        format ( str, table, cell ) {
             return $( cell ).find( 'img' ).attr( table.config.imgAttr || 'alt' ) || str;
         },
         parsed : true, // filter widget flag
@@ -2650,12 +2650,12 @@
     ts.regex.usLongDateTest2 = /^\d{1,2}\s+[A-Z]{3,10}\s+\d{4}/i;
     ts.addParser({
         id : 'usLongDate',
-        is : function( str ) {
+        is ( str ) {
             // two digit years are not allowed cross-browser
             // Jan 01, 2013 12:34:56 PM or 01 Jan 2013
             return ts.regex.usLongDateTest1.test( str ) || ts.regex.usLongDateTest2.test( str );
         },
-        format : function( str, table ) {
+        format ( str, table ) {
             var date = str ? new Date( str.replace( ts.regex.dateReplace, '$1 $2' ) ) : str;
             return date instanceof Date && isFinite( date ) ? date.getTime() : str;
         },
@@ -2686,11 +2686,11 @@
 
     ts.addParser({
         id : 'shortDate', // 'mmddyyyy', 'ddmmyyyy' or 'yyyymmdd'
-        is : function( str ) {
+        is ( str ) {
             str = ( str || '' ).replace( ts.regex.spaces, ' ' ).replace( ts.regex.shortDateReplace, '/' );
             return ts.regex.shortDateTest.test( str );
         },
-        format : function( str, table, cell, cellIndex ) {
+        format ( str, table, cell, cellIndex ) {
             if ( str ) {
                 var c = table.config,
                     $header = c.$headerIndexed[ cellIndex ],
@@ -2713,10 +2713,10 @@
     ts.regex.timeMatch = /(0?[1-9]|1[0-2]):([0-5]\d)(\s[AP]M)|((?:[01]\d|[2][0-4]):[0-5]\d)/i;
     ts.addParser({
         id : 'time',
-        is : function( str ) {
+        is ( str ) {
             return ts.regex.timeTest.test( str );
         },
-        format : function( str, table ) {
+        format ( str, table ) {
             // isolate time... ignore month, day and year
             var temp,
                 timePart = ( str || '' ).match( ts.regex.timeMatch ),
@@ -2737,10 +2737,10 @@
 
     ts.addParser({
         id : 'metadata',
-        is : function() {
+        is () {
             return false;
         },
-        format : function( str, table, cell ) {
+        format ( str, table, cell ) {
             var c = table.config,
             p = ( !c.parserMetadataName ) ? 'sortValue' : c.parserMetadataName;
             return $( cell ).metadata()[ p ];
@@ -2758,7 +2758,7 @@
     ts.addWidget({
         id : 'zebra',
         priority : 90,
-        format : function( table, c, wo ) {
+        format ( table, c, wo ) {
             var $visibleRows, $row, count, isEven, tbodyIndex, rowIndex, len,
                 child = new RegExp( c.cssChildRow, 'i' ),
                 $tbodies = c.$tbodies.add( $( c.namespace + '_extra_table' ).children( 'tbody:not(.' + c.cssInfoBlock + ')' ) );
@@ -2778,7 +2778,7 @@
                 }
             }
         },
-        remove : function( table, c, wo, refreshing ) {
+        remove ( table, c, wo, refreshing ) {
             if ( refreshing ) { return; }
             var tbodyIndex, $tbody,
                 $tbodies = c.$tbodies,

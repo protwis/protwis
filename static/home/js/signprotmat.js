@@ -419,7 +419,7 @@ var signprotmat = {
     // * SETTING THE FEATURE SCALE
     fScale(data) {
       var f = _.map(data, function (d) {
-        var length_text = d.length != "" ? " (" + d.length + ")" : "";
+        var length_text = d.length !== "" ? " (" + d.length + ")" : "";
         return d.feature + length_text;
       });
       var fScale = d3
@@ -2264,7 +2264,7 @@ var signprotmat = {
       var fScale = signprotmat.d3.fScale(data);
 
       data.forEach((d) => {
-        const length_text = d.length != "" ? " (" + d.length + ")" : "";
+        const length_text = d.length !== "" ? " (" + d.length + ")" : "";
         feats.push({
           code: d.feature_code,
           feature: d.feature,
@@ -2405,7 +2405,7 @@ var signprotmat = {
         })
         .attr("x", (d) => xScale(d.gn) - xScale.step() / 2)
         .attr("y", function (d) {
-          const length_text = d.length != "" ? " (" + d.length + ")" : "";
+          const length_text = d.length !== "" ? " (" + d.length + ")" : "";
           const comb = d.feature + length_text;
           return 75 + fScale(comb) - fScale.step();
         })
@@ -2420,7 +2420,7 @@ var signprotmat = {
           return xScale(d.gn);
         })
         .attr("y", function (d) {
-          const length_text = d.length != "" ? " (" + d.length + ")" : "";
+          const length_text = d.length !== "" ? " (" + d.length + ")" : "";
           const comb = d.feature + length_text;
           return fScale(comb) - fScale.step() / 2;
         })

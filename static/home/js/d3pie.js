@@ -189,7 +189,7 @@ var defaultSettings = {
 var validate = {
 
 	// called whenever a new pie chart is created
-	initialCheck: function(pie) {
+	initialCheck(pie) {
 		var cssPrefix = pie.cssPrefix;
 		var element = pie.element;
 		var options = pie.options;
@@ -248,7 +248,7 @@ var validate = {
 var helpers = {
 
 	// creates the SVG element
-	addSVGSpace: function(pie) {
+	addSVGSpace(pie) {
 		var element = pie.element;
 		var canvasWidth = pie.options.size.canvasWidth;
 		var canvasHeight = pie.options.size.canvasHeight;
@@ -265,7 +265,7 @@ var helpers = {
 		return svg;
 	},
 
-	whenIdExists: function(id, callback) {
+	whenIdExists(id, callback) {
 		var inc = 1;
 		var giveupIterationCount = 1000;
 
@@ -281,7 +281,7 @@ var helpers = {
 		}, 1);
 	},
 
-	whenElementsExist: function(els, callback) {
+	whenElementsExist(els, callback) {
 		var inc = 1;
 		var giveupIterationCount = 1000;
 
@@ -304,7 +304,7 @@ var helpers = {
 		}, 1);
 	},
 
-	shuffleArray: function(array) {
+	shuffleArray(array) {
 		var currentIndex = array.length, tmpVal, randomIndex;
 
 		while (0 !== currentIndex) {
@@ -319,7 +319,7 @@ var helpers = {
 		return array;
 	},
 
-	processObj: function(obj, is, value) {
+	processObj(obj, is, value) {
 		if (typeof is === 'string') {
 			return helpers.processObj(obj, is.split('.'), value);
 		} else if (is.length === 1 && value !== undefined) {
@@ -332,7 +332,7 @@ var helpers = {
 		}
 	},
 
-	getDimensions: function(id) {
+	getDimensions(id) {
 		var el = document.getElementById(id);
 		var w = 0, h = 0;
 		if (el) {
@@ -351,7 +351,7 @@ var helpers = {
 	 * @param r2
 	 * @returns {boolean}
 	 */
-	rectIntersect: function(r1, r2) {
+	rectIntersect(r1, r2) {
 		var returnVal = (
 			// r2.left > r1.right
 			(r2.x > (r1.x + r1.w)) ||
@@ -375,7 +375,7 @@ var helpers = {
 	 * @param lum the luminosity factor: -0.1 is 10% darker, 0.2 is 20% lighter, etc.
 	 * @returns {string}
 	 */
-	getColorShade: function(hex, lum) {
+	getColorShade(hex, lum) {
 
 		// validate hex string
 		hex = String(hex).replace(/[^0-9a-f]/gi, '');
@@ -405,7 +405,7 @@ var helpers = {
 	 * for this pie chart.
 	 * @param data
 	 */
-	initSegmentColors: function(pie) {
+	initSegmentColors(pie) {
 		var data   = pie.options.data.content;
 		var colors = pie.options.misc.colors.segments;
 
@@ -423,7 +423,7 @@ var helpers = {
 		return finalColors;
 	},
 
-	applySmallSegmentGrouping: function(data, smallSegmentGrouping) {
+	applySmallSegmentGrouping(data, smallSegmentGrouping) {
 		var totalSize;
 		if (smallSegmentGrouping.valueType === "percentage") {
 			totalSize = math.getTotalPieSize(data);
@@ -469,16 +469,16 @@ var helpers = {
 	},
 
 	// for debugging
-	showPoint: function(svg, x, y) {
+	showPoint(svg, x, y) {
 		svg.append("circle").attr("cx", x).attr("cy", y).attr("r", 2).style("fill", "black");
 	},
 
-	isFunction: function(functionToCheck) {
+	isFunction(functionToCheck) {
 		var getType = {};
 		return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
 	},
 
-	isArray: function(o) {
+	isArray(o) {
 		return Object.prototype.toString.call(o) === '[object Array]';
 	}
 };
@@ -576,15 +576,15 @@ var extend = function() {
 	//// --------- math.js -----------
 var math = {
 
-	toRadians: function(degrees) {
+	toRadians(degrees) {
 		return degrees * (Math.PI / 180);
 	},
 
-	toDegrees: function(radians) {
+	toDegrees(radians) {
 		return radians * (180 / Math.PI);
 	},
 
-	computePieRadius: function(pie) {
+	computePieRadius(pie) {
 		var size = pie.options.size;
 		var canvasPadding = pie.options.misc.canvasPadding;
 
@@ -649,7 +649,7 @@ var math = {
 		pie.outerRadius = outerRadius;
 	},
 
-	getTotalPieSize: function(data) {
+	getTotalPieSize(data) {
 		var totalSize = 0;
 		for (var i=0; i<data.length; i++) {
 			totalSize += data[i].value;
@@ -657,7 +657,7 @@ var math = {
 		return totalSize;
 	},
 
-	sortPieData: function(pie) {
+	sortPieData(pie) {
 		var data                 = pie.options.data.content;
 		var sortOrder            = pie.options.data.sortOrder;
 
@@ -688,7 +688,7 @@ var math = {
 	
 
 	// var pieCenter = math.getPieCenter();
-	getPieTranslateCenter: function(pieCenter) {
+	getPieTranslateCenter(pieCenter) {
 		return "translate(" + pieCenter.x + "," + pieCenter.y + ")";
 	},
 
@@ -697,7 +697,7 @@ var math = {
 	 * height and position of the title, subtitle and footer, and the various paddings.
 	 * @private
 	 */
-	calculatePieCenter: function(pie) {
+	calculatePieCenter(pie) {
 		var pieCenterOffset = pie.options.misc.pieCenterOffset;
 		var hasTopTitle    = (pie.textComponents.title.exists && pie.options.header.location !== "pie-center");
 		var hasTopSubtitle = (pie.textComponents.subtitle.exists && pie.options.header.location !== "pie-center");
@@ -735,7 +735,7 @@ var math = {
 	 * @param a angle in degrees
 	 * @returns {Array}
 	 */
-	rotate: function(x, y, xm, ym, a) {
+	rotate(x, y, xm, ym, a) {
 
         a = a * Math.PI / 180; // convert to radians
 
@@ -755,7 +755,7 @@ var math = {
 	 * @param dist
 	 * @param a angle in degrees
 	 */
-	translate: function(x, y, d, a) {
+	translate(x, y, d, a) {
 		var rads = math.toRadians(a);
 		return {
 			x: x + d * Math.sin(rads),
@@ -764,7 +764,7 @@ var math = {
 	},
 
 	// from: http://stackoverflow.com/questions/19792552/d3-put-arc-labels-in-a-pie-chart-if-there-is-enough-space
-	pointIsInArc: function(pt, ptData, d3Arc) {
+	pointIsInArc(pt, ptData, d3Arc) {
 		// Center of the arc is assumed to be 0,0
 		// (pt.x, pt.y) are assumed to be relative to the center
 		var r1 = d3Arc.innerRadius()(ptData), // Note: Using the innerRadius
@@ -792,7 +792,7 @@ var labels = {
 	 * @param sectionDisplayType "percentage", "value", "label", "label-value1", etc.
 	 * @param pie
 	 */
-	add: function(pie, section, sectionDisplayType) {
+	add(pie, section, sectionDisplayType) {
 		var include = labels.getIncludes(sectionDisplayType);
 		var settings = pie.options.labels;
 
@@ -881,7 +881,7 @@ var labels = {
 	/**
 	 * @param section "inner" / "outer"
 	 */
-	positionLabelElements: function(pie, section, sectionDisplayType) {
+	positionLabelElements(pie, section, sectionDisplayType) {
 		labels["dimensions-" + section] = [];
 
 		// get the latest widths, heights
@@ -921,13 +921,13 @@ var labels = {
 	 	}
 	},
 
-	computeLabelLinePositions: function(pie) {
+	computeLabelLinePositions(pie) {
 		pie.lineCoordGroups = [];
 		d3.selectAll("." + pie.cssPrefix + "labelGroup-outer")
 			.each(function(d, i) { return labels.computeLinePosition(pie, i); });
 	},
 
-	computeLinePosition: function(pie, i) {
+	computeLinePosition(pie, i) {
 		var angle = segments.getSegmentAngle(i, pie.options.data.content, pie.totalSize, { midpoint: true });
 		var originCoords = math.rotate(pie.pieCenter.x, pie.pieCenter.y - pie.outerRadius, pie.pieCenter.x, pie.pieCenter.y, angle);
 		var heightOffset = pie.outerLabelGroupData[i].h / 5; // TODO check
@@ -990,7 +990,7 @@ var labels = {
 		}
 	},
 
-	addLabelLines: function(pie) {
+	addLabelLines(pie) {
 		var lineGroups = pie.svg.insert("g", "." + pie.cssPrefix + "pieChart") // meaning, BEFORE .pieChart
 			.attr("class", pie.cssPrefix + "lineGroups")
 			.style("opacity", 0);
@@ -1021,7 +1021,7 @@ var labels = {
 			});
 	},
 
-	positionLabelGroups: function(pie, section) {
+	positionLabelGroups(pie, section) {
     if (pie.options.labels[section].format === "none") {
       return;
     }
@@ -1060,7 +1060,7 @@ var labels = {
 	},
 
 
-	fadeInLabelsAndLines: function(pie) {
+	fadeInLabelsAndLines(pie) {
 
 		// fade in the labels when the load effect is complete - or immediately if there's no load effect
 		var loadSpeed = (pie.options.effects.load.effect === "default") ? pie.options.effects.load.speed : 1;
@@ -1101,7 +1101,7 @@ var labels = {
 		}, loadSpeed);
 	},
 
-	getIncludes: function(val) {
+	getIncludes(val) {
 		var addMainLabel  = false;
 		var addValue      = false;
 		var addPercentage = false;
@@ -1140,7 +1140,7 @@ var labels = {
 	 * 1. Make a first pass and position them in the ideal positions, based on the pie sizes
 	 * 2. Do some basic collision avoidance.
 	 */
-	computeOuterLabelCoords: function(pie) {
+	computeOuterLabelCoords(pie) {
 
 		// 1. figure out the ideal positions for the outer labels
 		pie.svg.selectAll("." + pie.cssPrefix + "labelGroup-outer")
@@ -1155,7 +1155,7 @@ var labels = {
 	/**
 	 * This attempts to resolve label positioning collisions.
 	 */
-	resolveOuterLabelCollisions: function(pie) {
+	resolveOuterLabelCollisions(pie) {
     if (pie.options.labels.outer.format === "none") {
       return;
     }
@@ -1165,7 +1165,7 @@ var labels = {
 		labels.checkConflict(pie, size-1, "anticlockwise", size);
 	},
 
-	checkConflict: function(pie, currIndex, direction, size) {
+	checkConflict(pie, currIndex, direction, size) {
     var i, curr;
 
 		if (size <= 1) {
@@ -1226,7 +1226,7 @@ var labels = {
 	},
 
 	// does a little math to shift a label into a new position based on the last properly placed one
-	adjustLabelPos: function(pie, nextIndex, lastCorrectlyPositionedLabel, info) {
+	adjustLabelPos(pie, nextIndex, lastCorrectlyPositionedLabel, info) {
 		var xDiff, yDiff, newXPos, newYPos;
 		newYPos = lastCorrectlyPositionedLabel.y + info.heightChange;
 		yDiff = info.center.y - newYPos;
@@ -1250,7 +1250,7 @@ var labels = {
 	/**
 	 * @param i 0-N where N is the dataset size - 1.
 	 */
-	getIdealOuterLabelPositions: function(pie, i) {
+	getIdealOuterLabelPositions(pie, i) {
     var labelGroupNode = d3.select("#" + pie.cssPrefix + "labelGroup" + i + "-outer").node();
     if (!labelGroupNode) {
       return;
@@ -1288,7 +1288,7 @@ var segments = {
 	 * Creates the pie chart segments and displays them according to the desired load effect.
 	 * @private
 	 */
-	create: function(pie) {
+	create(pie) {
 		var pieCenter = pie.pieCenter;
 		var colors = pie.options.colors;
 		var loadEffects = pie.options.effects.load;
@@ -1354,7 +1354,7 @@ var segments = {
 		pie.arc = arc;
 	},
 
-	addGradients: function(pie) {
+	addGradients(pie) {
 		var grads = pie.svg.append("defs")
 			.selectAll("radialGradient")
 			.data(pie.options.data.content)
@@ -1369,7 +1369,7 @@ var segments = {
 		grads.append("stop").attr("offset", pie.options.misc.gradient.percentage + "%").style("stop-color", pie.options.misc.gradient.color);
 	},
 
-	addSegmentEventHandlers: function(pie) {
+	addSegmentEventHandlers(pie) {
 		var arc = d3.selectAll("." + pie.cssPrefix + "arc,." + pie.cssPrefix + "labelGroup-inner,." + pie.cssPrefix + "labelGroup-outer");
 
 		arc.on("click", function() {
@@ -1455,7 +1455,7 @@ var segments = {
 	},
 
 	// helper function used to call the click, mouseover, mouseout segment callback functions
-	onSegmentEvent: function(pie, func, segment, isExpanded) {
+	onSegmentEvent(pie, func, segment, isExpanded) {
 		if (!helpers.isFunction(func)) {
 			return;
 		}
@@ -1468,7 +1468,7 @@ var segments = {
 		});
 	},
 
-	openSegment: function(pie, segment) {
+	openSegment(pie, segment) {
 		if (pie.isOpeningSegment) {
 			return;
 		}
@@ -1498,7 +1498,7 @@ var segments = {
 			});
 	},
 
-	closeSegment: function(pie, segment) {
+	closeSegment(pie, segment) {
 		d3.select(segment).transition()
 			.duration(400)
 			.attr("transform", "translate(0,0)")
@@ -1508,7 +1508,7 @@ var segments = {
 			});
 	},
 
-	getCentroid: function(el) {
+	getCentroid(el) {
 		var bbox = el.getBBox();
 		return {
 			x: bbox.x + bbox.width / 2,
@@ -1521,7 +1521,7 @@ var segments = {
 	 * @param index
 	 * @param opts optional object for fine-tuning exactly what you want.
 	 */
-	getSegmentAngle: function(index, data, totalSize, opts) {
+	getSegmentAngle(index, data, totalSize, opts) {
 		var options = extend({
 			// if true, this returns the full angle from the origin. Otherwise it returns the single segment angle
 			compounded: true,
@@ -1557,7 +1557,7 @@ var segments = {
 		return angle;
 	},
 
-	getPercentage: function(pie, index, decimalPlaces) {
+	getPercentage(pie, index, decimalPlaces) {
 		var relativeAmount = pie.options.data.content[index].value / pie.totalSize;
 		if (decimalPlaces <= 0) {
 			return Math.round(relativeAmount * 100);
@@ -1572,7 +1572,7 @@ var segments = {
 var text = {
 	offscreenCoord: -10000,
 
-	addTitle: function(pie) {
+	addTitle(pie) {
 		var title = pie.svg.selectAll("." + pie.cssPrefix + "title")
 			.data([pie.options.header.title])
 			.enter()
@@ -1598,7 +1598,7 @@ var text = {
 			.style("font-family", function(d) { return d.font; });
 	},
 
-	positionTitle: function(pie) {
+	positionTitle(pie) {
 		var textComponents = pie.textComponents;
 		var headerLocation = pie.options.header.location;
 		var canvasPadding = pie.options.misc.canvasPadding;
@@ -1634,7 +1634,7 @@ var text = {
 			.attr("y", y);
 	},
 
-	addSubtitle: function(pie) {
+	addSubtitle(pie) {
 		var headerLocation = pie.options.header.location;
 
 		pie.svg.selectAll("." + pie.cssPrefix + "subtitle")
@@ -1660,7 +1660,7 @@ var text = {
 			.style("font-family", function(d) { return d.font; });
 	},
 
-	positionSubtitle: function(pie) {
+	positionSubtitle(pie) {
 		var canvasPadding = pie.options.misc.canvasPadding;
 		var canvasWidth = pie.options.size.canvasWidth;
 
@@ -1680,7 +1680,7 @@ var text = {
 			.attr("y", y);
 	},
 
-	addFooter: function(pie) {
+	addFooter(pie) {
 		pie.svg.selectAll("." + pie.cssPrefix + "footer")
 			.data([pie.options.footer])
 			.enter()
@@ -1704,7 +1704,7 @@ var text = {
 			.style("font-family", function(d) { return d.font; });
 	},
 
-	positionFooter: function(pie) {
+	positionFooter(pie) {
 		var footerLocation = pie.options.footer.location;
 		var footerWidth = pie.textComponents.footer.w;
 		var canvasWidth = pie.options.size.canvasWidth;
@@ -1725,7 +1725,7 @@ var text = {
 			.attr("y", canvasHeight - canvasPadding.bottom);
 	},
 
-	getHeaderHeight: function(pie) {
+	getHeaderHeight(pie) {
 		var h;
 		if (pie.textComponents.title.exists) {
 
@@ -1750,7 +1750,7 @@ var text = {
 
   //// --------- validate.js -----------
 var tt = {
-	addTooltips: function(pie) {
+	addTooltips(pie) {
 
 		// group the label groups (label, percentage, value) into a single element for simpler positioning
 		var tooltips = pie.svg.insert("g")
@@ -1807,7 +1807,7 @@ var tt = {
 			});
 	},
 
-  showTooltip: function(pie, index) {
+  showTooltip(pie, index) {
 
 	  var fadeInSpeed = pie.options.tooltips.styles.fadeInSpeed;
 	  if (tt.currentTooltip === index) {
@@ -1823,7 +1823,7 @@ var tt = {
     tt.moveTooltip(pie);
   },
 
-  moveTooltip: function(pie) {
+  moveTooltip(pie) {
     d3.selectAll("#" + pie.cssPrefix + "tooltip" + tt.currentTooltip)
       .attr("transform", function(d) {
         var mouseCoords = d3.mouse(this.parentNode);
@@ -1833,7 +1833,7 @@ var tt = {
       });
   },
 
-  hideTooltip: function(pie, index) {
+  hideTooltip(pie, index) {
     d3.select("#" + pie.cssPrefix + "tooltip" + index)
       .style("opacity", function() { return 0; });
 
@@ -1849,7 +1849,7 @@ var tt = {
        });
   },
 
-  replacePlaceholders: function(pie, str, index, replacements) {
+  replacePlaceholders(pie, str, index, replacements) {
 
     // if the user has defined a placeholderParser function, call it before doing the replacements
     if (helpers.isFunction(pie.options.tooltips.placeholderParser)) {

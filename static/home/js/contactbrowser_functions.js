@@ -1195,7 +1195,7 @@ function initilizeInitialPlots() {
     default_plot_types = ['force_network', 'flareplot', 'ngl'];
     var mode = get_current_mode();
     // if single structure - use interaction coloring
-    if (mode == "two-crystal-groups") {
+    if (mode === "two-crystal-groups") {
         default_plot_types = ['tm7_plot_extra', 'tm7_plot_middle', 'tm7_plot_intra'];
         // default_plot_types = ['scatterplot', 'snakeplot', ''];
     }
@@ -1310,10 +1310,10 @@ function createFlareplotBox(data, container, toggle = false, subset = false) {
 
         var mode = get_current_mode();
         // if single structure - use interaction coloring
-        if (mode == "single-crystal") {
+        if (mode === "single-crystal") {
             content += '<option value="interactions" selected>Interaction Type</option>';
             // if single group of structures - use frequency coloring (gradient)
-        } else if (mode == "single-crystal-group") {
+        } else if (mode === "single-crystal-group") {
             content += '<option value="frequency" selected>Interaction Frequency/Count</option>';
             // if group(s) of structures - use frequency coloring (gradient)
         } else {
@@ -1362,7 +1362,7 @@ function createFlareplotBox(data, container, toggle = false, subset = false) {
                 max: data.pdbs.length,
                 step: 1,
                 values: [0,data.pdbs.length],
-                slide: function( event, ui ) {
+                slide( event, ui ) {
                   $( "#"+$(this).attr("data-text-id") ).html( ui.values[ 0 ] + " - " + ui.values[ 1 ] );
                   flareplot[$(this).data("referenceContainer")].updateRange(ui.values[ 0 ], ui.values[ 1 ]);
                 }
@@ -1392,7 +1392,7 @@ function createFlareplotBox(data, container, toggle = false, subset = false) {
                     max: 1,
                     step: 0.01,
                     values: [0,1],
-                    slide: function( event, ui ) {
+                    slide( event, ui ) {
                       $( "#"+$(this).attr("data-text-id") ).html( ui.values[ 0 ] + " - " + ui.values[ 1 ] );
                       updateTwoGroupSliders($(this)[0].id, ui);
                     }
@@ -1403,7 +1403,7 @@ function createFlareplotBox(data, container, toggle = false, subset = false) {
                     max: 1,
                     step: 0.01,
                     values: [0,1],
-                    slide: function( event, ui ) {
+                    slide( event, ui ) {
                       $( "#"+$(this).attr("data-text-id") ).html( ui.values[ 0 ] + " - " + ui.values[ 1 ] );
                       updateTwoGroupSliders($(this)[0].id, ui);
                     }
@@ -1414,7 +1414,7 @@ function createFlareplotBox(data, container, toggle = false, subset = false) {
                     max: 1,
                     step: 0.01,
                     values: [-1,1],
-                    slide: function( event, ui ) {
+                    slide( event, ui ) {
                       $( "#"+$(this).attr("data-text-id") ).html( ui.values[ 0 ] + " - " + ui.values[ 1 ] );
                       updateTwoGroupSliders($(this)[0].id, ui);
                     }
@@ -2097,7 +2097,7 @@ function showPlottingPanel(plot_destination, table_number, datatype, column_numb
 
     // Option 1: all data from all columns
     console.log(event)
-    if (event == "") {
+    if (event === "") {
         // Just plot all data in the current column
         // FOLLOW same idea as colorByData function - maybe merge function?
         console.log("Option 1")

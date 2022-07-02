@@ -28,7 +28,7 @@ function AddToSelection(selection_type, selection_subtype, selection_id) {
         },
         'type': 'GET',
         'async': false,
-        'success': function(data) {
+        'success'(data) {
             $("#selection-" + selection_type).html(data);
         },
     });
@@ -43,7 +43,7 @@ function RemoveFromSelection(selection_type, selection_subtype, selection_id) {
             selection_id: selection_id
         },
         'type': 'GET',
-        'success': function(data) {
+        'success'(data) {
             $("#selection-" + selection_type).html(data);
         }
     });
@@ -87,7 +87,7 @@ function SelectFullSequence(selection_type) {
             selection_type: selection_type
         },
         'type': 'GET',
-        'success': function(data) {
+        'success'(data) {
             $("#selection-" + selection_type).html(data);
         },
     });
@@ -101,7 +101,7 @@ function SelectFullSequenceGprotein(selection_type, protein_type) {
             protein_type: protein_type
         },
         'type': 'GET',
-        'success': function(data) {
+        'success'(data) {
             $("#selection-" + selection_type).html(data);
         },
     });
@@ -115,7 +115,7 @@ function SelectStructuredGprotein(selection_type, protein_type) {
             protein_type: protein_type
         },
         'type': 'GET',
-        'success': function(data) {
+        'success'(data) {
             $("#selection-" + selection_type).html(data);
         },
     });
@@ -128,7 +128,7 @@ function SelectAlignableSegments(selection_type) {
             selection_type: selection_type
         },
         'type': 'GET',
-        'success': function(data) {
+        'success'(data) {
             $("#selection-" + selection_type).html(data);
         },
     });
@@ -142,7 +142,7 @@ function SelectAlignableResidues(selection_type) {
             selection_type: selection_type
         },
         'type': 'GET',
-        'success': function(data) {
+        'success'(data) {
             $("#selection-" + selection_type).html(data);
         },
     });
@@ -158,7 +158,7 @@ function ToggleFamilyTreeNode(action, type_of_selection, node_id, tree_indent_le
             tree_indent_level: tree_indent_level
         },
         'type': 'GET',
-        'success': function(data) {
+        'success'(data) {
             $("#" + node_id).html(data);
         }
     });
@@ -171,7 +171,7 @@ function SelectionAnnotation(protein_source) {
             protein_source: protein_source
         },
         'type': 'GET',
-        'success': function(data) {
+        'success'(data) {
             $("#filters-annotation").html(data);
         }
     });
@@ -184,7 +184,7 @@ function SelectionSpeciesPredefined(species) {
             species: species
         },
         'type': 'GET',
-        'success': function(data) {
+        'success'(data) {
             $("#filters-species").html(data);
         }
     });
@@ -197,7 +197,7 @@ function SelectionSpeciesToggle(species_id) {
             species_id: species_id
         },
         'type': 'GET',
-        'success': function(data) {
+        'success'(data) {
             $("#filters-species-selector").html(data);
         }
     });
@@ -250,7 +250,7 @@ function ExpandSegment(segment_id, position_type, scheme) {
             numbering_scheme: (typeof scheme === 'undefined') ? false : scheme
         },
         'type': 'GET',
-        'success': function(data) {
+        'success'(data) {
             $("#segment-generic-numbers").html(data);
         }
     });
@@ -341,7 +341,7 @@ function SelectResidueFeature(selection_type, selection_subtype, selection_id, f
             feature: feature
         },
         'type': 'GET',
-        'success': function(data) {
+        'success'(data) {
             $("#selection-" + selection_type).html(data);
         },
     });
@@ -354,7 +354,7 @@ function AddResidueGroup(selection_type) {
             selection_type: selection_type
         },
         'type': 'GET',
-        'success': function(data) {
+        'success'(data) {
             $("#selection-" + selection_type).html(data);
         },
     });
@@ -368,7 +368,7 @@ function SelectResidueGroup(selection_type, group_id) {
             group_id: group_id
         },
         'type': 'GET',
-        'success': function(data) {
+        'success'(data) {
             $("#selection-" + selection_type).html(data);
         },
     });
@@ -382,7 +382,7 @@ function RemoveResidueGroup(selection_type, group_id) {
             group_id: group_id
         },
         'type': 'GET',
-        'success': function(data) {
+        'success'(data) {
             $("#selection-" + selection_type).html(data);
         },
     });
@@ -397,7 +397,7 @@ function SetGroupMinMatch(selection_type, group_id, min_match) {
             min_match: min_match
         },
         'type': 'GET',
-        'success': function(data) {
+        'success'(data) {
             $("#selection-" + selection_type).html(data);
         },
     });
@@ -413,15 +413,15 @@ function VerifyMinimumSelection(selection_type, minimum) {
         },
         'type': 'GET',
         'async': false,
-        'success': function(data) {
-            if (data == "True"){
+        'success'(data) {
+            if (data === "True"){
               verifiedResponse = true;
             } else {
               showAlert("Please select at least " + minimum + " " + selection_type, "danger");
               verifiedResponse = false;
             }
         },
-        'error': function() {
+        'error'() {
             showAlert("Something went wrong, please try again later", "", "danger");
             return false;
         },

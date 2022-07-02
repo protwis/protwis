@@ -29,13 +29,13 @@
 var dragtable = {
   // How far should the mouse move before it's considered a drag, not a click?
   dragRadius2: 100,
-  setMinDragDistance: function(x) {
+  setMinDragDistance(x) {
     dragtable.dragRadius2 = x * x;
   },
 
   // How long should cookies persist? (in days)
   cookieDays: 365,
-  setCookieDays: function(x) {
+  setCookieDays(x) {
     dragtable.cookieDays = x;
   },
 
@@ -50,7 +50,7 @@ var dragtable = {
   })(navigator.userAgent),
 
   // Detect all draggable tables and attach handlers to their headers.
-  init: function() {
+  init() {
     // Don't initialize twice
     if (arguments.callee.done) return;
     arguments.callee.done = true;
@@ -66,7 +66,7 @@ var dragtable = {
   },
 
   // The thead business is taken straight from sorttable.
-  makeDraggable: function(table) {
+  makeDraggable(table) {
     if (table.getElementsByTagName('thead').length == 0) {
       var the = document.createElement('thead');
       the.appendChild(table.rows[0]);
@@ -94,7 +94,7 @@ var dragtable = {
   dragObj: new Object(),
 
   // Climb up the DOM until there's a tag that matches.
-  findUp: function(elt, tag) {
+  findUp(elt, tag) {
     do {
       if (elt.nodeName && elt.nodeName.search(tag) != -1)
         return elt;
@@ -103,20 +103,20 @@ var dragtable = {
   },
 
   // clone an element, copying its style and class.
-  fullCopy: function(elt, deep) {
+  fullCopy(elt, deep) {
     var new_elt = elt.cloneNode(deep);
     new_elt.className = elt.className;
     forEach(elt.style,
         function(value, key, object) {
           if (value == null) return;
-          if (typeof(value) == "string" && value.length == 0) return;
+          if (typeof(value) === "string" && value.length == 0) return;
 
           new_elt.style[key] = elt.style[key];
         });
     return new_elt;
   },
 
-  eventPosition: function(event) {
+  eventPosition(event) {
     var x, y;
     if (dragtable.browser.isIE) {
       x = window.event.clientX + document.documentElement.scrollLeft
@@ -130,7 +130,7 @@ var dragtable = {
 
   // Determine the position of this element on the page. Many thanks to Magnus
   // Kristiansen for help making this work with "position: fixed" elements.
-  absolutePosition: function(elt, stopAtRelative) {
+  absolutePosition(elt, stopAtRelative) {
     var ex = 0, ey = 0;
     do {
       var curStyle = dragtable.browser.isIE ? elt.currentStyle
@@ -158,7 +158,7 @@ var dragtable = {
 
   // MouseDown handler -- sets up the appropriate mousemove/mouseup handlers
   // and fills in the global dragtable.dragObj object.
-  dragStart: function(event, id) {
+  dragStart(event, id) {
     var el;
     var x, y;
     var dragObj = dragtable.dragObj;
@@ -250,7 +250,7 @@ var dragtable = {
 
   // Move the floating column header with the mouse
   // TODO: Reorder columns as the mouse moves for a more interactive feel.
-  dragMove: function(event) {
+  dragMove(event) {
     var x, y;
     var dragObj = dragtable.dragObj;
 
@@ -279,7 +279,7 @@ var dragtable = {
 
   // Stop capturing mousemove and mouseup events.
   // Determine which (if any) column we're over and shuffle the table.
-  dragEnd: function(event) {
+  dragEnd(event) {
     if (dragtable.browser.isIE) {
       document.detachEvent("onmousemove", dragtable.dragMove);
       document.detachEvent("onmouseup", dragtable.dragEnd);
@@ -313,7 +313,7 @@ var dragtable = {
   },
 
   // Which column does the x value fall inside of? x should include scrollLeft.
-  findColumn: function(table, x) {
+  findColumn(table, x) {
     var header = table.tHead.rows[0].cells;
     for (var i = 0; i < header.length; i++) {
       //var left = header[i].offsetLeft;
@@ -329,7 +329,7 @@ var dragtable = {
   // Move a column of table from start index to finish index.
   // Based on the "Swapping table columns" discussion on comp.lang.javascript.
   // Assumes there are columns at sIdx and fIdx
-  moveColumn: function(table, sIdx, fIdx) {
+  moveColumn(table, sIdx, fIdx) {
     var row, cA;
     var i=table.rows.length;
     while (i--){
@@ -351,7 +351,7 @@ var dragtable = {
   },
 
   // Store a column swap in a cookie for posterity.
-  rememberDrag: function(id, a, b) {
+  rememberDrag(id, a, b) {
     var cookieName = "dragtable-" + id;
     var prev = dragtable.readCookie(cookieName);
     var new_val = "";
@@ -361,7 +361,7 @@ var dragtable = {
   },
 
   // Replay all column swaps for a table.
-  replayDrags: function(table) {
+  replayDrags(table) {
     if (!dragtable.cookiesEnabled()) return;
     var dragstr = dragtable.readCookie("dragtable-" + table.id);
     if (!dragstr) return;
@@ -378,11 +378,11 @@ var dragtable = {
 
   // Cookie functions based on http://www.quirksmode.org/js/cookies.html
   // Cookies won't work for local files.
-  cookiesEnabled: function() {
+  cookiesEnabled() {
     return (window.location.protocol != 'file:') && navigator.cookieEnabled;
   },
 
-  createCookie: function(name,value,days) {
+  createCookie(name,value,days) {
     if (days) {
       var date = new Date();
       date.setTime(date.getTime()+(days*24*60*60*1000));
@@ -394,7 +394,7 @@ var dragtable = {
     document.cookie = name+"="+value+expires+"; path="+path
   },
 
-  readCookie: function(name) {
+  readCookie(name) {
     var nameEQ = name + "=";
     var ca = document.cookie.split(';');
     for(var i=0;i < ca.length;i++) {
@@ -405,7 +405,7 @@ var dragtable = {
     return null;
   },
 
-  eraseCookie: function(name) {
+  eraseCookie(name) {
     dragtable.createCookie(name,"",-1);
   }
 
@@ -435,7 +435,7 @@ if (document.addEventListener) {
   document.write("<script id=__dt_onload defer src=//0)><\/script>");
   var script = document.getElementById("__dt_onload");
   script.onreadystatechange = function() {
-    if (this.readyState == "complete") {
+    if (this.readyState === "complete") {
       dragtable.init(); // call the onload handler
     }
   };
@@ -477,7 +477,7 @@ if (!Array.forEach) { // mozilla already supports this
 // generic enumeration
 Function.prototype.forEach = function(object, block, context) {
   for (var key in object) {
-    if (typeof this.prototype[key] == "undefined") {
+    if (typeof this.prototype[key] === "undefined") {
       block.call(context, object[key], key, object);
     }
   }
@@ -501,10 +501,10 @@ var forEach = function(object, block, opt_context) {
       // the object implements a custom forEach method so use that
       object.forEach(block, opt_context);
       return;
-    } else if (typeof object == "string") {
+    } else if (typeof object === "string") {
       // the object is a string
       resolve = String;
-    } else if (typeof object.length == "number") {
+    } else if (typeof object.length === "number") {
       // the object is array-like
       resolve = Array;
     }

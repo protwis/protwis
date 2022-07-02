@@ -1340,7 +1340,7 @@ $.extend( FixedColumns.prototype , {
 		var aOut = [];
 		for ( var i=0, iLen=nIn.childNodes.length ; i<iLen ; i++ )
 		{
-			if ( nIn.childNodes[i].nodeName.toUpperCase() == "TR" )
+			if ( nIn.childNodes[i].nodeName.toUpperCase() === "TR" )
 			{
 				aOut.push( nIn.childNodes[i] );
 			}

@@ -22,7 +22,7 @@ function ScoreBreakdown (protein_conformation, cutoff) {
         },
         'type': 'GET',
         'async': false,
-        'success': function(data) {
+        'success'(data) {
             $("#pconf-" + protein_conformation).html(data);
         },
     });
