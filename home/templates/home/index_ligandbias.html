@@ -1,0 +1,233 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+
+    <!-- Carousel -->
+    <div class="row">
+
+        <div class='col-md-12'>
+            <div id="carousel-example-generic" class="carousel slide" data-ride="carousel" data-interval="30000">
+                <!-- Indicators -->
+                <ol class="carousel-indicators">
+                    <li data-target="#carousel-example-generic" data-slide-to="0" class="active"></li>
+                    <li data-target="#carousel-example-generic" data-slide-to="1"></li>
+                    <li data-target="#carousel-example-generic" data-slide-to="2"></li>
+                    <li data-target="#carousel-example-generic" data-slide-to="3"></li>
+                    <li data-target="#carousel-example-generic" data-slide-to="4"></li>
+                </ol>
+
+                <!-- Wrapper for carousel slides -->
+                <div class="carousel-inner" role="listbox">
+                    <div class="item active">
+                        <img src="{% static 'home/carousel/gprot_seqalign.png' %}">
+                        <div class="carousel-caption">
+                            <h3>Sequence alignments</h3>
+                            <p>Alignments with generic residue numbers and residue plots.</p>
+                        </div>
+                    </div>
+
+                    <div class="item">
+                        <img src="{% static 'home/carousel/gprot_couplings.png' %}">
+                        <div class="carousel-caption">
+                            <h3>G protein couplings</h3>
+                            <p>Unified coupling atlas and G protein selectivity profiles.</p>
+                        </div>
+                    </div>
+
+                    <div class="item">
+                        <img src="{% static 'home/carousel/gprot_structures.png' %}">
+                        <div class="carousel-caption">
+                            <h3>Structures</h3>
+                            <p>G protein structure statistics and browser with unique annotation.</p>
+                        </div>
+                    </div>
+
+                    <div class="item">
+                        <img src="{% static 'home/carousel/gprot_models.png' %}">
+                        <div class="carousel-caption">
+                            <h3>Structure models</a></h3>
+                            <p>GPCR-G protein structure models.</p>
+                        </div>
+                    </div>
+
+                    <div class="item">
+                        <img src="{% static 'home/carousel/gprot_interface.png' %}">
+                        <div class="carousel-caption">
+                            <h3>G protein structure interface</h3>
+                            <p>Structure based coupling interface interactions.</p>
+                        </div>
+                    </div>
+
+                    <!-- Controls -->
+                    <a class="left carousel-control" href="#carousel-example-generic" role="button" data-slide="prev">
+                        <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
+                        <span class="sr-only">Previous</span>
+                    </a>
+                    <a class="right carousel-control" href="#carousel-example-generic" role="button" data-slide="next">
+                        <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+                        <span class="sr-only">Next</span>
+                    </a>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">&nbsp;
+        </div>
+    </div>
+
+    <!-- GPCRdb intro -->
+    <div class="row">
+
+        <div class="col-md-8">
+            <div class="panel panel-primary">
+                <div class="panel-body">
+                    <div class="col-md-1 text-center">
+                        <img style="height:90%; width:100px; margin-right:20% " src="{% static 'home/logo/ligandbias/main.png' %}">
+                    </div>
+                    <div class="col-md-1">
+                    </div>
+                    <div class="col-md-10">
+                        <p style="text-align:justify">GproteinDb contains reference data, interactive
+                            visualization and experiment design tools for G proteins. GproteinDb
+                            curates sequence alignments, structures and mutations from literature. Interactive
+                            diagrams visualise G protein residues (e.g. snakeplot) and interactions with receptors.
+                            <!-- See the GPCRdb graphical <a href="/static/home/poster/overview.pdf">overview</a>,
+                            <a href="https://files.gpcrdb.org/video/GPCRdb-David_Gloriam.mp4">video</a>,
+                            <a onclick="citation_tool(window.location.href);" href="#">articles</a> or
+                            <a href="https://docs.gpcrdb.org/">documentation</a>.</p> -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="panel panel-primary">
+                <div class="panel-body">
+                    <p>GproteinDb is developed by the <a href="https://drug.ku.dk/staff/?pure=en/persons/352279" target="_blank"> David</a>
+                        Gloriam <a href="https://drug.ku.dk/disciplines/peptides-and-proteins/gloriam-group/" target="_blank">group</a>, integrates data from the research community and maintains an active collaboration with the
+                        <a href="https://www.guidetopharmacology.org/">Guide To Pharmacology</a> (IUPHAR),
+                        <a href="http://gpcrmd.org/">GPCRmd</a>, <a href="https://ernest-gpcr.eu" target="_blank">ERNEST</a> and <a href="https://drgpcr.com" target="_blank">DrGPCR</a>.
+                        If you use the GproteinDb, please remember to <a onclick="citation_tool(window.location.href);" href="#">cite us</a>.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+
+
+    </div>
+
+    {#        <!-- Highlighted news -->#}
+    {#        <div class="row">#}
+    {#            <div class="col-md-12">#}
+    {#                <div class="panel panel-primary">#}
+    {#                    <div class="panel-body">#}
+    {#                        <div class='col-md-10'>#}
+    {#                            <h4>GPCR-G protein selectivity</h4>#}
+    {#                            The selective coupling of G-protein-coupled receptors (GPCRs) to specific G proteins is critical to trigger the appropriate physiological response. However, the determinants of selective binding have remained elusive. Here we reveal the existence of a selectivity barcode (that is, patterns of amino acids) on each of the 16 human G proteins that is recognized by distinct regions on the approximately 800 human receptors. Although universally conserved positions in the barcode allow the receptors to bind and activate G proteins in a similar manner, different receptors ...<a href="/news">Read more</a><br>#}
+    {#                            Nature: <a href="http://dx.doi.org/10.1038/nature22070">10.1038/nature22070</a><br>#}
+    {#                            <a href="http://healthsciences.ku.dk/news/2017/05/researchers-show-how-cell-receptors-regulate-specific-physiological-effects/">Press release</a>#}
+    {#                        </div>#}
+    {#                        <div class='col-md-2 text-left'>#}
+    {#                            <img src="{% static 'home/images/news/naturecover.png' %}" style="height:170px;width:170px;">#}
+    {#                            <p class="text-muted small">Photo: MRC Laboratory of Molecular Biology in Cambridge</p>#}
+    {#                        </div>#}
+    {#                    </div>#}
+    {#                </div>#}
+    {#            </div>#}
+    {#        </div>#}
+
+    <!-- Twitter, release notes, database stats.  -->
+    <div class="row">
+
+        <!-- Stats -->
+        <div class="col-md-4">
+            <div class="panel panel-primary">
+                <div class="panel-body">
+                    <h3>GproteinDb <a href="/structure/statistics">statistics</a></h3>
+                    <ul class="stats_list">
+                        {% for stat in release_statistics %}
+                            <li>
+                                {{ stat.value| safe }} {{ stat.statistics_type | safe }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    {% if users %}
+                        {{ users|safe }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Release Notes -->
+        <div class="col-md-4">
+            <div class="panel panel-primary">
+                <div class="panel-body">
+                    <h3>Latest <a href="/pages/releasenotes">release</a></h3>
+                    <strong>{{ release_notes.date }}</strong>
+                    {{ release_notes.html|safe }}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="panel panel-primary">
+                <div class="panel-body">
+                    <a href="https://www.youtube.com/watch?v=X8j_xpryZ4U&start=778&end=3732;" target="_blank"><img style="width: 100%;" src="{% static '/home/images/gprot_resource.png' %}". ></img></a>
+                    <!-- <iframe width="100%" height="200" src="https://www.youtube.com/embed/X8j_xpryZ4U?start=778&end=3732;" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe> -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Twitter feed -->
+        <!-- <div class="col-md-4">
+            <div class="panel panel-primary">
+                <div class="panel-body">
+                    <h3>
+                        <a class="twitter-timeline" data-height="400" data-theme="light" href="https://twitter.com/gpcrdb"></a>
+                    </h3>
+                   <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+                </div>
+            </div>
+        </div> -->
+
+        {#<!-- News -->#}
+        {#        <div class="col-md-3">#}
+        {#            <div class="panel panel-primary">#}
+        {#                <div class="panel-body">#}
+        {#                    <h3>Latest <a href="/news">news</a></h3>#}
+        {#                    <ul>#}
+        {#                        {% for item in news %}#}
+        {#                        <li><small>{{ item.html|safe }}</small></li>#}
+        {#                        {% endfor %}#}
+        {#                    </ul>#}
+        {#                </div>#}
+        {#            </div>#}
+        {#        </div> #}
+
+    </div>
+
+    <!-- Gloriam Group and Collabs -->
+    {#    <div class="row">#}
+    {#        <div class="col-md-12">#}
+    {#            <div class="panel panel-primary">#}
+    {#                <div class="panel-body">#}
+    {#                    <p class="text-center"> The GPCRdb is developed by the Gloriam <a href="http://gloriamgroup.org" target="_blank">group</a>.#}
+    {#                        It integrates data from the large GPCR community and maintains an active collaboration with the#}
+    {#                        Guide To Pharmacology (IUPHAR), <a href="http://gpcrmd.org/">GPCRmd</a> and the European Research Network on Signal#}
+    {#                        Transduction <a href="https://ernest-gpcr.eu" target="_blank">(ERNEST)</a>.#}
+    {#                        If you use the GPCRdb, please remember to <a onclick="citation_tool(window.location.href);" href="#">cite us</a>.#}
+    {#                    </p>#}
+    {#                    #}
+    {#                </div>#}
+    {#            </div>#}
+    {#        </div>#}
+    {#    </div>#}
+
+{% endblock %}

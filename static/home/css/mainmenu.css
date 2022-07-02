@@ -40,12 +40,10 @@
 
 .icon-button {
   appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
   outline: none;
   border: 0;
   background: transparent;
-  padding: 2px 0 2px 0;
+  padding: 2px 0;
 }
 
 nav.navbar {
@@ -61,12 +59,6 @@ nav.navbar li.dropdown.highlight_menu {
   background-position: 10px 8px;
 }
 
-nav.navbar li.dropdown.open a.dropdown-toggle,
-nav.navbar li.dropdown.open a.dropdown-toggle:hover,
-nav.navbar li.dropdown.open a.dropdown-toggle:focus {
-  background-color: transparent;
-}
-
 nav.navbar li.dropdown.open {
   background-color: #222;
 }
@@ -75,8 +67,15 @@ nav.navbar li.dropdown a.dropdown-toggle:not(.select-link) {
   color: #ccc;
 }
 
+nav.navbar li.dropdown.open a.dropdown-toggle,
+nav.navbar li.dropdown.open a.dropdown-toggle:hover,
+nav.navbar li.dropdown.open a.dropdown-toggle:focus {
+  background-color: transparent;
+}
+
 nav.navbar li.dropdown a.dropdown-toggle:hover:not(.select-link) {
   color: #fff;
+
   /* padding-top: 11px; */
 }
 
@@ -92,6 +91,7 @@ nav.navbar .navbar-inverse .navbar-nav > .open > a:hover {
 
 li#gpcrdb_menu,
 li#gproteindb_menu,
+li#ligandbiasdb_menu,
 li#arrestindb_menu {
   background-repeat: no-repeat;
   background-size: 30px;
@@ -116,33 +116,44 @@ li.highlight_menu.arrestin {
   border-top: 4px solid #55ae35;
 }
 
-nav.navbar li.dropdown:not(.gpcr):not(.gprotein):not(.arrestin):not(.page-selection),
+li.highlight_menu.ligandbias {
+  border-top: 4px solid #4169e1;
+}
+
+nav.navbar li.dropdown:not(.gpcr, .gprotein, .arrestin, .page-selection),
 nav.navbar li#cite_menu {
   border-top: 4px solid #5c5452;
 }
 
 li#gpcrdb_menu,
 li#drugs_menu,
-li#constructs_menu,
-li#biased_menu {
+li#constructs_menu {
   border-top: 4px solid #be00be;
   background-position: 10px 8px;
 }
 
 li#gpcrdb_menu {
-  background-image: url('/static/home/logo/gpcr/main.png');
+  background-image: url("/static/home/logo/gpcr/main.png");
 }
 
 li#gproteindb_menu {
   border-top: 4px solid #f46615;
   background-position: 10px 8px;
-  background-image: url('/static/home/logo/gprotein/main.png');
+  background-image: url("/static/home/logo/gprotein/main.png");
 }
 
 li#arrestindb_menu {
   border-top: 4px solid #55ae35;
   background-position: 10px 8px;
-  background-image: url('/static/home/logo/arrestin/main.png');
+  background-image: url("/static/home/logo/arrestin/main.png");
+  background-size: 35px;
+  padding-left: 35px;
+}
+
+li#ligandbiasdb_menu {
+  border-top: 4px solid #4169e1;
+  background-position: 10px 8px;
+  background-image: url("/static/home/logo/ligandbias/main.png");
   background-size: 35px;
   padding-left: 35px;
 }
