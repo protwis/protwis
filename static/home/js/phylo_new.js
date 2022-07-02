@@ -187,7 +187,7 @@ function init() {
             tree.get_newick (
                 function (node) {
                     var tags = [];
-                    selection_set.forEach (function (d) { if (node[d]) {tags.push(d)}; });
+                    selection_set.forEach (function (d) { if (node[d]) {tags.push(d)} });
                     if (tags.length) {
                         return "{" + tags.join (",") + "}";
                     }

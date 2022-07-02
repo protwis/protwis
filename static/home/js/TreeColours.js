@@ -38,8 +38,8 @@
                 if ($(this).attr('id')) {
                     if ($(this).attr("id") == id && id.length != 1) {
                         $(this).css("fill", newcolor[1]);
-                    };
-                };
+                    }
+                }
             });
 
         }
@@ -61,16 +61,16 @@
          $(this).css("stroke", newcolor[1]);
          $(this).css("stroke-width", '4');
      });
- };
+ }
 
  function predefined_colours(defs, colours) {
      resetColors();
      $('#svgCanvas').find(".bgfield").each(function (index) {
          if (defs.indexOf($(this).attr("id")) > -1) {
              $(this).css("fill", colours);
-         };
+         }
      });
- };
+ }
  
  function resetColors() {
      $('#svgCanvas').find(".path").each(function (index) {
@@ -89,33 +89,33 @@
          if ($(this).attr('id')) {
              $(this).css("fill",'');
              $(this).css("stroke", '');
-         };
+         }
      });
 
 
- };
+ }
 
 function toggleAll() {
      var style = ''
      $('#svgCanvas').find("[class^=chart]").each(function (index) {
          if ($(this).css("visibility") == 'visible'){
-             style = 'hidden'};
+             style = 'hidden'}
      });
      $('#svgCanvas').find("[class^=chart]").each(function (index) {
          $(this).css("visibility", style);
     });
- };
+ }
 function toggleLegend() {
     var style = 'visible'
     $('#svgCanvas').find(".legend").each(function (index) {
         if ($(this).css("visibility") == 'visible' || $(this).css("visibility") == '') {
             style = 'hidden'
-        };
+        }
     });
     $('#svgCanvas').find(".legend").each(function (index) {
         $(this).css("visibility", style);
     });
-};
+}
  //function toggleRings(ring) {
  //    $('#svgCanvas').find("." + ring).each(function (index) {
  //        if ($(this).css("visibility") == 'hidden') {
@@ -132,23 +132,23 @@ function toggleLegend() {
              $(this).css("display", '');
          } else {
              $(this).css("display", 'none');
-         };
+         }
      });
- };
+ }
  function SelectButtons(name) {
      $('.button_container').find('.btn-default').each(function (index) {
          if ($(this).attr('id') == name) {
              $(this).css("display", '');
-         };
+         }
      });
- };
+ }
   function DeselectButtons(name) {
      $('.button_container').find('.btn-default').each(function (index) {
          if ($(this).attr('id') == name) {
              $(this).css("display", 'none');
-         };
+         }
      });
- };
+ }
  function GetRings() {
      var args = [];
      var values = [];
@@ -159,7 +159,7 @@ function toggleLegend() {
          } else if ($(this).css("display") == 'none'){
              args.push($(this).attr('id'));
              values.push('False');
-         };
+         }
      });
     $("#svgCanvas").empty(); 
     $.ajax({
@@ -180,7 +180,7 @@ function toggleLegend() {
            $("#ring_buttons").html(data);
        }
      });
-       };
+       }
 
 
 
@@ -201,14 +201,14 @@ function toggleLegend() {
      } else {
          leg_w = Math.abs(w-w2)/2 
          svg_w = 0
-     };
+     }
      for (i = 0; i < legend.children.length; i++) {
          legend.children[i].setAttribute('transform', 'translate ('+leg_w.toString()+' ' + h.toString()+')');
          $(SVG).append(legend.children[i]);
-     };
+     }
 
 
- };
+ }
 $( document ).ready(function (){
 
     $(".pick-color").click(function () {

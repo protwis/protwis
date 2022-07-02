@@ -18,7 +18,7 @@
 * @docs (fork) - https://mottie.github.io/tablesorter/docs/
 */
 /*jshint browser:true, jquery:true, unused:false, expr: true */
-;( function( $ ) {
+( function( $ ) {
     'use strict';
     var ts = $.tablesorter = {
 

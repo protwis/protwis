@@ -980,7 +980,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
                     // scale = Math.abs(d.freq) / 100;
                     scale = Math.abs(d.sfreq2) / max_freq;
                     
-                    return colorLinks ? Math.round(20*scale) : d.size || 5; ;
+                    return colorLinks ? Math.round(20*scale) : d.size || 5; 
                 });
                 link1.style("stroke-opacity", function (d) { return colorLinks ? 1 : 0; })
                 if (colorLinks) {

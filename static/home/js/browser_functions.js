@@ -108,7 +108,7 @@ function superposition(oTable, columns, site, hide_first_column) {
         $(this).children(':first').prop("checked",true);
         window.location.href = '/structure/superposition_workflow_index';
     })
-};
+}
 
 function Sort(clicked_th, table1, table2) {
     if (clicked_th.parent().parent().parent().attr('class').includes('scrollable')) {
@@ -171,7 +171,7 @@ function select_all(e, table1_id, table2_id) {
         }
     });
     $('#loading_div').hide();
-};
+}
 
 function assign_to_row1(table1_id, table2_id){
   $('#'+table1_id+' > tbody > tr').click(function(event) {

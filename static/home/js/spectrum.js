@@ -436,7 +436,7 @@
 
             }, dragStart, dragStop);
 
-            if (!!initialColor) {
+            if (initialColor) {
                 set(initialColor);
 
                 // In case color was black - update the preview UI and set the format

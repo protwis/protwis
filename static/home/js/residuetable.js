@@ -25,7 +25,7 @@ function table_applyPresentColors() {
           $(this).css("color", presetColors[aa][1]);
         });
 
-};
+}
 
 function table_resetColors() {
 

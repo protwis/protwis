@@ -202,7 +202,7 @@ function showPDBtable(element, table) {
 
     yadcf.exResetAllFilters(oTable[table]);
 
-    };
+    }
 }
 
 

@@ -435,7 +435,7 @@
 
         function fnRegExpEscape(sText) {
             return sText.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
-        };
+        }
 
         function fnCreateDropdown(aData) {
             var index = i;
@@ -462,7 +462,7 @@
             var r = '', j, iLen = aData.length;
 
             //clean the string
-            var localLabel = label.replace('%', 'Perc').replace("&", "AND").replace("$", "DOL").replace("£", "STERL").replace("@", "AT").replace(/\s/g, "_");
+            var localLabel = label.replace('%', 'Perc').replace("&", "AND").replace("$", "DOL").replace("ï¿½", "STERL").replace("@", "AT").replace(/\s/g, "_");
             localLabel = localLabel.replace(/[^a-zA-Z 0-9]+/g, '');
             //clean the string
 
@@ -477,7 +477,7 @@
             var numCol = Math.floor(iLen / numRow);
             if (iLen % numRow > 0) {
                 numCol = numCol + 1;
-            };
+            }
 
             //count how many column should be generated and split the div size
             var divWidth = 100 / numCol - 2;

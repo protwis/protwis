@@ -50,7 +50,7 @@ var link = svg_g.selectAll(".link")
     if (d.source.depth === 0) {return "fill: none; opacity: 0.8; stroke-width: " + 10 + "; stroke: #C0C0C0"}
     else if (d.source.depth === 1) {return "fill: none; opacity: 0.8; stroke-width: " + 4 + "; stroke: #C0C0C0"}
     else if (d.source.depth === 2) {return "fill: none; opacity: 0.8; stroke-width: " + 2 + "; stroke: #C0C0C0"}
-    else if (d.source.depth === 3) {return "fill: none; opacity: 0.8; stroke-width: " + 1 + "; stroke: #C0C0C0"};})
+    else if (d.source.depth === 3) {return "fill: none; opacity: 0.8; stroke-width: " + 1 + "; stroke: #C0C0C0"}})
 
   .attr("d", diagonal);
 
@@ -172,7 +172,7 @@ legendEnter.append("circle")
            .style("fill", function(d) {
       if (d == ylegend-60) {return "#d62728"}
       else if(d == ylegend-30) {return "#43A047"}
-      else {return "#828953"};});
+      else {return "#828953"}});
 
 legendEnter.append("circle")
            .attr("cy", function(d) { return d; })
@@ -241,17 +241,17 @@ legendEnter.append("text")
 node.append("circle")
   .attr("r", function(d) {
     if (d.trials >= 1 || d.approved >= 1 ) {return 6.0}
-    else {return 0.0} ;})
+    else {return 0.0} })
   .style("fill-opacity", function(d) {
     if (d.maxphase == 4) {return 1.0}
     else if (d.maxphase == 3) {return 1.0}
     else if (d.maxphase == 2) {return 1.0}
-    else {return 1.0};})
+    else {return 1.0}})
   .style("fill", function(d) {
     if (d.maxphase == 4) {return "#d62728"}
     else if (d.maxphase == 3) {return "#43A047"}
     else if (d.maxphase == 2) {return "#88df8c"}
-    else {return "#b0f2b2"};});
+    else {return "#b0f2b2"}});
 
 // node.append("circle")
 //     .attr("r", function(d) { return d.approved})
@@ -277,7 +277,7 @@ node.append("circle")
   else if (d.depth === 3 && d.family_sum_approved > 40 && d.family_sum_approved <= 50) {return 30.0}
   else if (d.depth === 3 && d.family_sum_approved > 50 && d.family_sum_approved <= 75) {return 40.0}
   else if (d.depth === 3 && d.family_sum_approved > 75 ) {return 50.0}
-  else {return 0.0} ;})
+  else {return 0.0} })
   // .attr("r", 3.0)
 
   .style("fill-opacity", 0.70)
@@ -295,7 +295,7 @@ node.append("circle")
   else if (d.depth === 3 && d.family_sum_trials > 40 && d.family_sum_trials <= 50) {return 30.0}
   else if (d.depth === 3 && d.family_sum_trials > 50 && d.family_sum_trials <= 75) {return 40.0}
   else if (d.depth === 3 && d.family_sum_trials > 75 ) {return 50.0}
-  else {return 0.0} ;})
+  else {return 0.0} })
   // .attr("r", 3.0)
   .style("fill-opacity", 0.60)
   // .style("fill", function(d) { return color(d.establishment); })

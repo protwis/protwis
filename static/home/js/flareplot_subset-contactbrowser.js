@@ -25,7 +25,7 @@ function createFlareplot_subset(width, inputGraph, containerSelector, contiguous
     var ry = rx;
 
     var rotate = 0;
-    var discRad = 15 + 15 * scaling_factor;;
+    var discRad = 15 + 15 * scaling_factor;
 
 
     var svg;
@@ -316,7 +316,7 @@ function createFlareplot_subset(width, inputGraph, containerSelector, contiguous
                             toggleSegment(d.segment);
                           });
                   }
-              };
+              }
               /*svg.selectAll("g.segmentElement")
                   .data(graph.segments)
                   .enter().append("svg:g")

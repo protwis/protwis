@@ -179,7 +179,7 @@ function createFlareplot_segment(raw_data,width, inputGraph, containerSelector) 
             .style("stroke-opacity", opacity)
             .style("fill-opacity", opacity);
     };
-    };/*fade*/
+    }/*fade*/
 
     function assignRainbowColor(segment) {
         var segmentRainbowColors2 = {

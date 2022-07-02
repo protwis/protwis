@@ -370,7 +370,7 @@ function applyPresentColors(target) {
           $(this).next().css("fill", presetColors[aa][1]);
         });
 
-};
+}
 
 function resetColors(target) {
 

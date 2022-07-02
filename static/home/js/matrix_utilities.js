@@ -171,7 +171,7 @@ const initialize_consensus = function(cons_data) {
 
   for (let key of Object.keys(cons_data)) {
     con_seq[key] = [cons_data[key][0]];
-  };
+  }
 
   non_interactions.push(...data.receptor);
   var gn;
@@ -225,12 +225,12 @@ const run_seq_sig = function(interface_data) {
   if (pos_set.length < 1) {
     showAlert("No valid set selected.", "warning");
     return;
-  };
+  }
 
   if (_.isEqual(old_sets.sort(), pos_set.sort())) {
     showAlert("The selected set is identical to the previously selected one.", "warning");
     return;
-  };
+  }
 
   // api request
   let req = $.ajax({
@@ -838,6 +838,6 @@ $(document).ready(function() {
       var endTime = performance.now();
       var elapsed = endTime - startTime;
       console.log("run_seq_sig execution Time: " + elapsed);
-    };
+    }
   });
 });

@@ -77,7 +77,7 @@
 			__context.strokeStyle="#000000";
 			__context.stroke();
 			__context.restore();
-		};
+		}
 
 		function drawTriangle(x1, y1, x2, y2, x3, y3, fillcolor) {
 			__context.beginPath();
@@ -88,7 +88,7 @@
 			__context.fillStyle = fillcolor;
 			__context.fill();
 			__context.restore();
-		};
+		}
 
 		function drawLine(x1, y1, x2, y2, strokecolor) {
 		    __context.lineWidth = 1;
@@ -97,7 +97,7 @@
 		    __context.lineTo(x2, y2);
 			__context.strokeStyle = strokecolor;
 		    __context.stroke();
-		};
+		}
 
 		function drawCircle(x, y, r, w, h, a, strokecolor) {
 			__context.beginPath();
@@ -114,7 +114,7 @@
 		    }
 		    __context.stroke();
 			__context.restore();
-		};
+		}
 
 		function drawDoubleCircle(strokecolor) {
 			var counterClockwise = false;
@@ -191,7 +191,7 @@
 	    		__context.restore();
 	    		__context.restore();
 		    }
-		};
+		}
 
 		function drawCross(strokecolor) {
 			var counterClockwise = false;
@@ -295,7 +295,7 @@
 				__context.restore();
 				__context.restore();
 		    }
-		};
+		}
 
 		function drawCross2(strokecolor) {
 			var counterClockwise = false;
@@ -432,7 +432,7 @@
 				__context.restore();
 				__context.restore();
 		    }
-		};
+		}
 
 		function drawRoundRect(x, y, width, height, strokecolor) {
 		    var radius = 10;
@@ -454,7 +454,7 @@
 				__context.fill();
 		    }
 		    __context.stroke();
-		};
+		}
 
 		function drawAxis(ctx, startx, starty, endx, endy) {
 			ctx.beginPath();
@@ -596,7 +596,7 @@
 				ylegend = 0;
 
 			for (var i=vennSize-1; i>=0; i--) {
-				if(data2plot[i] == 0) { continue };
+				if(data2plot[i] == 0) { continue }
 			    drawRectangle(__context,
 			    			  xmargin + xprev,
 							  ymargin + 15,

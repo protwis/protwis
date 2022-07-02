@@ -77,7 +77,7 @@ function DrawMultiLineChart(Data, BaseDiv, Keys, ID, linkTitle, reference, linkP
          .style("opacity", 1);
        d3.selectAll("g.segment path")
          .style("opacity", 1);
-     };
+     }
 
     document.getElementById(ID).onclick = ResetOpacity;
 

@@ -1259,7 +1259,7 @@ function createTwoGroupFlareplotBox(data1, data2, data3, container, toggle = fal
         var f1 = 0,
             f2 = 0,
             c1 = 0,
-            c2 = 0;;
+            c2 = 0;
         if (pair in data1.interactions) {
             c1 = Object.keys(data1.interactions[pair]).length;
             f1 = c1 / data1.pdbs.length;

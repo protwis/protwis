@@ -3,7 +3,7 @@ function draw_tree(data, options) {
     var branches = {};
     var branch_offset = 0;
     for (var key in options.branch_length) {
-        if (key == options.depth) { continue };
+        if (key == options.depth) { continue }
         if (options.label_free.includes(parseInt(key))) {
             branch_offset = branch_offset + 10;
         } else {
@@ -61,7 +61,7 @@ function draw_tree(data, options) {
             if ((d.target.interactions > 0 && d.target.mutations_an > 0) || 1 == 1) { return 0.8 } //|| 1==1
             else if (d.target.interactions > 0) { return 0.5 }
             else if (d.target.mutations_an > 0) { return 0.5 }
-            else { return 0.1 };
+            else { return 0.1 }
         });
 
     var node = svg_g.selectAll(".node")
@@ -105,7 +105,7 @@ function draw_tree(data, options) {
             else if (d.value === 2000) {
                 return 'Black';
             }
-            else { return "White" };
+            else { return "White" }
         })
         .style("opacity", .99);
 
@@ -146,7 +146,7 @@ function draw_tree(data, options) {
         .style("font-family", "Palatino")
         .style("fill", function (d) {
             if (d.color) { return "#111" }
-            else { return "#222" };
+            else { return "#222" }
         }).call(getBB);
     node.filter(function (d) { return (d.depth != options.depth) }).insert("rect", "text")
         .attr("x", function (d) { return d.x < 180 ? d.bbox.x - 12 : d.bbox.x - d.bbox.width - 12; })
@@ -453,7 +453,7 @@ function draw_cluster(data, options, trim=true) {
     var branches = {};
     var branch_offset = 0;
     for (var key in options.branch_length) {
-        if (key == options.depth) { continue };
+        if (key == options.depth) { continue }
         if (options.label_free.includes(parseInt(key))) {
             branch_offset = branch_offset + 10;
         } else {
@@ -537,7 +537,7 @@ function draw_cluster(data, options, trim=true) {
             else if ( d.value === 40) {
                 return "Black";
             }
-            else { return "White" };
+            else { return "White" }
         })
         .style("opacity", .99);
 
@@ -567,7 +567,7 @@ function draw_cluster(data, options, trim=true) {
         .style("font-family", "Palatino")
         .style("fill", function (d) {
             if (d.color) { return "#111" }
-            else { return "#222" };
+            else { return "#222" }
         }).call(getBB);
     node.filter(function (d) { return (d.depth != options.depth) }).insert("rect", "text")
         .attr("x", function (d) { return d.bbox.x })

@@ -513,7 +513,7 @@ function createScatterplot(data,containerSelector) {
         // $(containerSelector_hash).find(".scatter_options").css("grid-template-rows", "auto");
         $(containerSelector_hash).find(".scatter_options").css("grid-template-areas", "'. .'");
 
-        ;
+        
 
     }
 

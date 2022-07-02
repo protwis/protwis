@@ -291,7 +291,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                           toggleSegment(d.segment);
                       });
                   }
-              };
+              }
               /*svg.selectAll("g.segmentElement")
                   .data(graph.segments)
                   .enter().append("svg:g")

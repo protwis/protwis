@@ -26,7 +26,7 @@ function ScoreBreakdown (protein_conformation, cutoff) {
             $("#pconf-" + protein_conformation).html(data);
         },
     });
-};
+}
 
 function ApplyCutoff (cutoff) {
     var row = [];
@@ -65,7 +65,7 @@ function ApplyCutoff (cutoff) {
         var colspan = $('#gns td#gn-'+segment_name+':visible').length;
         $(this).attr('colspan', colspan);
     });
-};
+}
 
 $('#cutoff-apply').click( function() {
     var cutoff = parseInt($('#cutoff-val').val());
