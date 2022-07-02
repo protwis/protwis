@@ -3,9 +3,6 @@
   opacity: 0;
   width: 0;
   transition: opacity 0.25s, width 0.25s;
-  transition: opacity 0.25s, width 0.25s;
-  transition: opacity 0.25s, width 0.25s;
-  transition: opacity 0.25s, width 0.25s;
 }
 
 .has-spinner.active {

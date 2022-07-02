@@ -55,9 +55,6 @@ path.arc {
 
 svg text {
   user-select: none;
-  user-select: none;
-  user-select: none;
-  user-select: none;
 }
 
 svg text::selection {
