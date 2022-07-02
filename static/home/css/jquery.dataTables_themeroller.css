@@ -457,8 +457,8 @@ table.dataTable td {
   padding-top: 20px;
   text-align: center;
   font-size: 1.2em;
+  background: linear-gradient(to left, rgb(255 255 255 / 0%) 0%, rgb(255 255 255 / 90%) 25%, rgb(255 255 255 / 90%) 75%, rgb(255 255 255 / 0%) 100%);
   background-color: white;
-  background: linear-gradient(left, rgb(255 255 255 / 0%) 0%, rgb(255 255 255 / 90%) 25%, rgb(255 255 255 / 90%) 75%, rgb(255 255 255 / 0%) 100%);
 }
 
 .dataTables_wrapper .dataTables_length,

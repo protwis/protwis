@@ -124,7 +124,7 @@ table.dataTable thead .sorting_desc_disabled::after {
 }
 
 .yadcf-filter-reset-button::before {
-  font-family: "Glyphicons Halflings, sans-serif";
+  font-family: "Glyphicons Halflings", sans-serif;
   content: "\E020";
   font-size: 14px;
 }
